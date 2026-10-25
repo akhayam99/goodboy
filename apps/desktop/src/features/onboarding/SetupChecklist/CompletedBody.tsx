@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
-import { finish } from '../onboarding-store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { IconButton } from '@goodboy/ui';
+import { finish } from '../onboardingSettings';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 
 export const CompletedBody = () => (
   <>

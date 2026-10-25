@@ -4,10 +4,11 @@ import { groupThreads } from '../../../features/integrations/github/comment-thre
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectResolveRows } from './projectResolveRows';
 import { viewerLoginsOf } from './viewerLogins';
-import type { SessionParams, SliceParams } from './types';
+import type { CurrentParams, SessionParams, SliceParams } from './types';
 
 type Params = SliceParams &
-  SessionParams & {
+  SessionParams &
+  CurrentParams & {
     readonly prNumber: number;
     readonly comments: ReadonlyArray<PrComment>;
   };
@@ -42,6 +43,7 @@ export const reconcileHandReplies = async ({
   sessionId,
   prNumber,
   comments,
+  isCurrent = () => true,
 }: Params): Promise<number> => {
   const viewerLogins = viewerLoginsOf({ state: get() });
   if (viewerLogins.size === 0) {
@@ -51,6 +53,9 @@ export const reconcileHandReplies = async ({
   const rows = await listResolveThreads({ db, sessionId });
   let marked = 0;
   for (const row of rows) {
+    if (!isCurrent()) {
+      return marked;
+    }
     if (row.prNumber !== prNumber || row.replyPostedAt !== null || row.state === 'closed') {
       continue;
     }
@@ -70,12 +75,17 @@ export const reconcileHandReplies = async ({
   if (marked === 0) {
     return 0;
   }
+  const projectedRows = await listResolveThreads({ db, sessionId });
+  const projectedAttempts = await listResolveAttempts({ db, sessionId });
+  if (!isCurrent()) {
+    return marked;
+  }
   projectResolveRows({
     set,
     get,
     sessionId,
-    rows: await listResolveThreads({ db, sessionId }),
-    attempts: await listResolveAttempts({ db, sessionId }),
+    rows: projectedRows,
+    attempts: projectedAttempts,
   });
   return marked;
 };

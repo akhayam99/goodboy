@@ -22,7 +22,7 @@ const provider = ({
 }): ProviderDisplayInfo => ({
   id: 'anthropic',
   binary: 'claude',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection,
   version,
   identity: 'ada@harborline.dev',

@@ -24,7 +24,7 @@ import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
 import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../workflows/runAutonomy';
 import { skipStepDescription, skipStepTitle } from '../../workflows/skipStepCopy';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { notifyWorkflowGateBlock } from '../../../store/slices/workflows/notifyWorkflowGateBlock';

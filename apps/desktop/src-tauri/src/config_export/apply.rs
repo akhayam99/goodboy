@@ -6,7 +6,11 @@ use crate::config_export::convert::{
     iso_to_ms, normalized_root_path, workspace_projects, workspace_slug,
 };
 use crate::config_export::error::ConfigExportError;
+use crate::config_export::file::read_bundle_file;
 use crate::config_export::validate::{validate_bundle, ValidationError};
+use crate::settings_overrides::{
+    override_excluded_assignments, override_placeholders, override_select_list,
+};
 use rusqlite::OptionalExtension;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -31,11 +35,51 @@ pub struct ImportResult {
     pub stats: ImportStats,
 }
 
+pub(super) struct ApplyFileRequest<'a> {
+    pub path: &'a str,
+    pub expected_sha256: &'a str,
+    pub workspace_targets: &'a HashMap<String, String>,
+    pub resolved_project_paths: &'a HashMap<String, String>,
+    pub accept_wildcard_allow: bool,
+}
+
+pub(super) fn apply_backup_file(
+    conn: &rusqlite::Connection,
+    request: ApplyFileRequest<'_>,
+) -> Result<ImportResult, ConfigExportError> {
+    let file = read_bundle_file(request.path)?;
+    if file.sha256 != request.expected_sha256 {
+        return Err(ConfigExportError::FileChanged);
+    }
+    apply_bundle(
+        conn,
+        file.bundle,
+        request.workspace_targets,
+        request.resolved_project_paths,
+        request.accept_wildcard_allow,
+    )
+}
+
+fn workspace_upsert_sql() -> String {
+    format!(
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at, {columns})
+         VALUES (?1, ?2, ?3, ?4, ?5, {placeholders})
+         ON CONFLICT(id) DO UPDATE SET
+           name = excluded.name,
+           {excluded},
+           updated_at = excluded.updated_at",
+        columns = override_select_list(),
+        placeholders = override_placeholders(6),
+        excluded = override_excluded_assignments(),
+    )
+}
+
 pub(super) fn apply_bundle(
     conn: &rusqlite::Connection,
     mut bundle: ConfigBundle,
     workspace_targets: &HashMap<String, String>,
     resolved_project_paths: &HashMap<String, String>,
+    accept_wildcard_allow: bool,
 ) -> Result<ImportResult, ConfigExportError> {
     if !is_supported_schema_version(bundle.schema_version) {
         return Err(ConfigExportError::SchemaMismatch {
@@ -50,7 +94,7 @@ pub(super) fn apply_bundle(
         }
     }
 
-    let errors = validate_bundle(&bundle);
+    let errors = validate_bundle(&bundle, accept_wildcard_allow);
     if !errors.is_empty() {
         return Ok(ImportResult {
             ok: false,
@@ -65,39 +109,13 @@ pub(super) fn apply_bundle(
         let now_ms = crate::util::now_ms();
         let mut unresolved_projects = 0usize;
         let mut project_id_remap: HashMap<String, String> = HashMap::new();
+        let workspace_upsert_sql = workspace_upsert_sql();
 
         for w in &bundle.workspaces {
             let created_ms = iso_to_ms(&w.created_at).unwrap_or(now_ms);
             let updated_ms = iso_to_ms(&w.updated_at).unwrap_or(now_ms);
             conn.execute(
-                "INSERT INTO workspaces
-                   (id, name, slug, created_at, updated_at,
-                    default_provider_id, default_branch_prefix, default_verbosity,
-                    provider_bindings, task_models, role_models, parallel_agents,
-                    provider_pool, attribution_footer, reply_voice, reply_style_note,
-                    reply_template_fixed, reply_template_no_change, resolve_on_github,
-                    resolve_commit_style, default_branch_template, workflow_rules)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)
-                 ON CONFLICT(id) DO UPDATE SET
-                   name                      = excluded.name,
-                   default_provider_id       = excluded.default_provider_id,
-                   default_branch_prefix     = excluded.default_branch_prefix,
-                   default_verbosity         = excluded.default_verbosity,
-                   provider_bindings         = excluded.provider_bindings,
-                   task_models               = excluded.task_models,
-                   role_models               = excluded.role_models,
-                   parallel_agents           = excluded.parallel_agents,
-                   provider_pool             = excluded.provider_pool,
-                   attribution_footer        = excluded.attribution_footer,
-                   reply_voice               = excluded.reply_voice,
-                   reply_style_note          = excluded.reply_style_note,
-                   reply_template_fixed      = excluded.reply_template_fixed,
-                   reply_template_no_change  = excluded.reply_template_no_change,
-                   resolve_on_github         = excluded.resolve_on_github,
-                   resolve_commit_style      = excluded.resolve_commit_style,
-                   default_branch_template   = excluded.default_branch_template,
-                   workflow_rules            = excluded.workflow_rules,
-                   updated_at                = excluded.updated_at",
+                &workspace_upsert_sql,
                 rusqlite::params![
                     w.id,
                     w.name,
@@ -112,13 +130,16 @@ pub(super) fn apply_bundle(
                     json_value_to_text(&w.overrides.role_models),
                     w.overrides.parallel_agents.map(|v| if v { 1 } else { 0 }),
                     json_value_to_text(&w.overrides.provider_pool),
-                    w.overrides.attribution_footer.map(|v| if v { 1 } else { 0 }),
+                    w.overrides
+                        .attribution_footer
+                        .map(|v| if v { 1 } else { 0 }),
                     w.overrides.reply_voice,
                     w.overrides.reply_style_note,
                     w.overrides.reply_template_fixed,
                     w.overrides.reply_template_no_change,
                     w.overrides.resolve_on_github.map(|v| if v { 1 } else { 0 }),
                     w.overrides.resolve_commit_style,
+                    w.overrides.after_merge,
                     w.overrides.default_branch_template,
                     json_value_to_text(&w.overrides.workflow_rules),
                 ],
@@ -351,11 +372,15 @@ pub(super) fn apply_bundle(
                 .cloned()
                 .unwrap_or_else(|| s.project_id.clone());
             conn.execute(
-                "INSERT INTO project_scripts (id, project_id, name, body, sort_order, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                "INSERT INTO project_scripts (id, project_id, name, body, sort_order, created_at, updated_at, is_enabled)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0)
                  ON CONFLICT(id) DO UPDATE SET
                    project_id = excluded.project_id,
                    name       = excluded.name,
+                   is_enabled = CASE
+                     WHEN project_scripts.body = excluded.body THEN project_scripts.is_enabled
+                     ELSE 0
+                   END,
                    body       = excluded.body,
                    sort_order = excluded.sort_order,
                    updated_at = excluded.updated_at",
@@ -481,5 +506,7 @@ pub(super) fn apply_bundle(
     }
 }
 
+#[cfg(test)]
+mod consent_tests;
 #[cfg(test)]
 mod tests;

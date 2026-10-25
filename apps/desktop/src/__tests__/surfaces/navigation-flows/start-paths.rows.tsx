@@ -11,7 +11,6 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { autoTreeLimitKey } from '../../../features/auto/autoTreeLimit';
 import type { IssueBriefEntry } from '../../../store/slices/issue-briefs/types';
 import { pressShortcut } from '../../helpers/pressKey';
 import {
@@ -87,7 +86,10 @@ const installFakes = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId as WorkspaceId;
   useAppStore.setState({
-    settings: { ...state.settings, [autoTreeLimitKey({ workspaceId })]: '5' },
+    workspaceValues: {
+      ...state.workspaceValues,
+      [workspaceId]: { ...state.workspaceValues[workspaceId], 'auto.treeLimitUsd': '5' },
+    },
     starredIssues: { [workspaceId]: [starredIssue()] },
     requestIssueBrief: async (params) => {
       startCalls.briefs.push(params);
@@ -127,6 +129,7 @@ const installFakes = ({ sessionId }: Ctx): void => {
     },
     generateWorkflowTitle: async () => undefined,
     loadSetting: async () => null,
+    loadWorkspaceValue: async () => null,
     attachWorkflowToSession: async (sessionId, workflowId) => {
       startCalls.runs.push({ sessionId, workflowId });
       const run: WorkflowRun = {
@@ -260,7 +263,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
       expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
-      expect(screen.getByRole('textbox', { name: 'Task' })).toBeDefined();
+      expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
       expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
       expect(startCalls.briefs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(0);

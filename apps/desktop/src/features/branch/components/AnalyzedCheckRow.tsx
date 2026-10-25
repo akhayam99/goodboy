@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
 import type {
   MountId,
   PrCheckRun,
@@ -9,7 +9,7 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
 import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';

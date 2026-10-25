@@ -12,6 +12,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { AgentQueuedTurn, GetFn, QueuedAttachment, SetFn } from './types';
+import { isRecord } from '@goodboy/types/helpers';
 
 const EMPTY: ReadonlyArray<AgentQueuedTurn> = [];
 
@@ -86,9 +87,6 @@ export const persistAgentQueue = async ({ get, agentId }: AgentParams): Promise<
     return false;
   }
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const toAttachment = (value: unknown): QueuedAttachment | null => {
   if (!isRecord(value)) {

@@ -1,16 +1,17 @@
 import type { AgentId } from '@goodboy/types';
-import { cancelPublication } from './cancelPublication';
+import { cancelPublication } from './publication/cancelPublication';
 import { answerQuestions } from './answerQuestions';
 import { continueResolveThreads } from './continueResolveThreads';
 import { dropLaneCandidate } from './dropLaneCandidate';
 import { drainResolveQueue } from './drainResolveQueue';
 import { rebuildTakenUpFix } from './rebuildTakenUpFix';
 import { reconcileResolveLane } from './reconcileResolveLane';
+import { restoreLaneRebuild } from './rebuildFailure/restoreLaneRebuild';
 import { stopResolveLane } from './stopResolveLane';
-import { preparePublication } from './preparePublication';
-import { publishConversations } from './publishConversations';
+import { preparePublication } from './publication/preparePublication';
+import { publishConversations } from './publication/publishConversations';
 import { retryCouldntFix } from './retryCouldntFix';
-import { retryPublication } from './retryPublication';
+import { retryPublication } from './publication/retryPublication';
 import { drainResolveWorktree } from './drainResolveWorktree';
 import { loadResolveSession } from './loadResolveSession';
 import { persistResolveTurn } from './persistResolveTurn';
@@ -36,7 +37,7 @@ import { resolveWithoutReply } from './resolveWithoutReply';
 import { createResolveBatch } from './resolveBatches';
 import { settleItemAnswered } from './settleItemAnswered';
 import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
-import { publishThreadNow } from './publishThreadNow';
+import { publishThreadNow } from './publication/publishThreadNow';
 import { reconcileHandReplies } from './reconcileHandReplies';
 import { switchToReplyOnly } from './switchToReplyOnly';
 import { recheckThread, settleThreadRecheck } from './recheckThread';
@@ -54,7 +55,9 @@ import type {
   DrainParams,
   PhaseParams,
   PreparePublicationParams,
+  RetryPublicationParams,
   PublishParams,
+  LaneParams,
   SessionParams,
   SliceParams,
   TurnParams,
@@ -69,6 +72,7 @@ import type {
   EnsureReviewThreadParams,
   MaterializeParams,
   CreateBatchParams,
+  RetryLaneParams,
   SettleSourceChangeParams,
   SourceSnapshotsParams,
 } from './types';
@@ -79,10 +83,17 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
   const serialize = <T>({ sessionId, run }: WriteParams<T>): Promise<T> =>
     writes.run({ key: sessionId, task: run });
   const reconciles = createKeyedQueue();
-  const reconcileLane = ({ sessionId }: SessionParams): Promise<void> =>
+  const reconcileLane = ({ sessionId, source, comments }: LaneParams): Promise<void> =>
     reconciles.run({
       key: sessionId,
-      task: () => reconcileResolveLane({ set, get, sessionId }),
+      task: () =>
+        reconcileResolveLane({
+          set,
+          get,
+          sessionId,
+          ...(source !== undefined && { source }),
+          ...(comments !== undefined && { comments }),
+        }),
     });
   const settleLane = async <T>({ sessionId, run }: WriteParams<T>): Promise<T> => {
     const result = await serialize({ sessionId, run });
@@ -204,7 +215,18 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       }),
     stopResolveLane: (params: SessionParams & { readonly worktreePath: string }) =>
       stopResolveLane({ get, ...params }),
-    reconcileResolveLane: (params: SessionParams) => reconcileLane(params),
+    reconcileResolveLane: (params: LaneParams) => reconcileLane(params),
+    retryLaneRebuild: async ({ sessionId, worktreePath, mountId, comments }: RetryLaneParams) => {
+      await reconciles.run({
+        key: sessionId,
+        task: () => restoreLaneRebuild({ set, get, sessionId, worktreePath }),
+      });
+      await reconcileLane({
+        sessionId,
+        source: { mountId },
+        ...(comments !== undefined && { comments }),
+      });
+    },
     runResolveCheck: (params: CheckRunParams) => runResolveCheck({ set, get, ...params }),
     recoverUncapturedResolveWork: (params: SessionParams) =>
       serialize({
@@ -281,7 +303,7 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     preparePublication: (params: PreparePublicationParams) =>
       preparePublication({ set, get, ...params }),
     publishConversations: (params: PublishParams) => publishConversations({ set, get, ...params }),
-    retryPublication: (params: SessionParams) => retryPublication({ set, get, ...params }),
+    retryPublication: (params: RetryPublicationParams) => retryPublication({ set, get, ...params }),
     cancelPublication: (params: PublishParams) => cancelPublication({ set, get, ...params }),
     createResolveBatch: (params: CreateBatchParams) =>
       serialize({

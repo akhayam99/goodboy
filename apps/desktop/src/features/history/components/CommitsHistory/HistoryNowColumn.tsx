@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
-import type { HistoryDropTarget } from '../../useHistoryDrag';
-import type { RowPositions } from '../../useRowPositions';
+import type { HistoryDropTarget } from '../../hooks/useHistoryDrag';
+import type { RowPositions } from '../../hooks/useRowPositions';
 import type { LaneNode } from './HistoryLaneSvg';
 import type { RebaseRequest } from './HistoryBaseRow';
 import { HistoryNowList } from './HistoryNowList';

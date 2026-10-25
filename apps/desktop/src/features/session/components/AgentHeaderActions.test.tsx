@@ -62,9 +62,7 @@ afterEach(cleanup);
 
 const renderFor = (agent: Agent, onDeleted = vi.fn()) => {
   seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-  render(
-    <AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt onDeleted={onDeleted} />,
-  );
+  render(<AgentHeaderActions agent={agent} sessionId={SESSION} allowStop onDeleted={onDeleted} />);
   return { onDeleted };
 };
 
@@ -88,7 +86,7 @@ describe('AgentHeaderActions', () => {
   it('shows no lifecycle button once an agent finished on its own', () => {
     renderFor(agentFixture({ status: 'completed' }));
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Interrupt' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     expect(screen.getByRole('button', { name: 'More agent actions' })).toBeDefined();
   });
 
@@ -146,7 +144,7 @@ describe('AgentHeaderActions', () => {
     );
   });
 
-  it('shows Interrupt only while a turn runs', () => {
+  it('shows Stop only while a turn runs', () => {
     const agent = agentFixture({ status: 'running' });
     seedActionState({
       useAppStore,
@@ -162,11 +160,11 @@ describe('AgentHeaderActions', () => {
         },
       },
     });
-    render(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
-    expect(screen.getByRole('button', { name: 'Interrupt' })).toBeDefined();
+    render(<AgentHeaderActions agent={agent} sessionId={SESSION} allowStop />);
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeDefined();
     cleanup();
     renderFor(agentFixture({ status: 'completed' }));
-    expect(screen.queryByRole('button', { name: 'Interrupt' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
   it('lists every available verb in the overflow, the buttoned ones too, in the registry order', () => {

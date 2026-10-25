@@ -42,7 +42,7 @@ const show = ({ delegation }: ShowParams) => {
 };
 
 describe('the end of an Auto child pane', () => {
-  it('asks for your OK with Confirm and Decline, never Queued or Stop agent', async () => {
+  it('asks for your OK with Confirm and Decline, never Queued or Stop', async () => {
     const port = vi.fn(async () => 'confirmed' as const);
     registerDelegationDecisionPort({ port });
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
@@ -50,7 +50,7 @@ describe('the end of an Auto child pane', () => {
 
     screen.getByText('Waiting for your OK');
     expect(screen.queryByText('Queued')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => expect(port).toHaveBeenCalledTimes(1));
@@ -76,14 +76,14 @@ describe('the end of an Auto child pane', () => {
 
     screen.getByText('Asked a question');
     expect(screen.queryByText('Queued')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('keeps Queued and Stop agent for a child that was only accepted', () => {
+  it('keeps Queued and Stop for a child that was only accepted', () => {
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'accepted' });
     show({ delegation });
 
     screen.getByText('Queued');
-    screen.getByRole('button', { name: 'Stop agent' });
+    screen.getByRole('button', { name: 'Stop' });
   });
 });

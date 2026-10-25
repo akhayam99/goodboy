@@ -11,14 +11,14 @@ import {
   type RefObject,
 } from 'react';
 import { Paperclip } from 'lucide-react';
-import { IconButton, SegmentedTabs, Textarea, cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, IconButton, SegmentedTabs, Textarea, tintClasses } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
 import {
   ATTACHMENT_LIMIT,
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
 import { useComposerClassicKeys } from '../../hooks/useComposerClassicKeys';
-import { ICON_SIZE } from '../conceptIcons';
+
 import { PromptAttachmentChip } from './PromptAttachmentChip';
 import { PromptDropOverlay } from './PromptDropOverlay';
 import { PromptKeysHint, type PromptKeyHint } from './PromptKeysHint';

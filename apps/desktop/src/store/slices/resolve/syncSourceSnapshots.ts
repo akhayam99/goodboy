@@ -8,9 +8,9 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { nextSourceSnapshot, sourceTextOf } from './sourceSnapshot';
 import { rootFingerprint } from './sourceFingerprint';
 import { loadResolveSourceSnapshotsInto } from './loadResolveSourceSnapshotsInto';
-import type { SetFn } from './types';
+import type { CurrentParams, SetFn } from './types';
 
-type Params = {
+type Params = CurrentParams & {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly prNumber: number;
@@ -22,6 +22,7 @@ export const syncSourceSnapshots = async ({
   sessionId,
   prNumber,
   comments,
+  isCurrent = () => true,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
   const rows = await listResolveThreads({ db, sessionId });
@@ -33,6 +34,9 @@ export const syncSourceSnapshots = async ({
     }
     const source = sourceTextOf({ comments, threadId: row.threadId });
     const fingerprint = await rootFingerprint({ comments, threadId: row.threadId });
+    if (!isCurrent()) {
+      return;
+    }
     if (source === null || fingerprint === null) {
       continue;
     }
@@ -55,5 +59,5 @@ export const syncSourceSnapshots = async ({
       snapshot,
     });
   }
-  await loadResolveSourceSnapshotsInto({ set, sessionId });
+  await loadResolveSourceSnapshotsInto({ set, sessionId, isCurrent });
 };

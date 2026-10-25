@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Chip } from '@goodboy/ui';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
 import { TranscriptDisclosure } from '../../../../chat/components/TranscriptDisclosure';
 import { TranscriptRowHeader } from '../../../../chat/components/TranscriptRowHeader';
 import { ReviewThreadContent } from '../../../../review/components/ReviewThreadContent';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { threadPreview } from './threadPreview';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { useNow } from '../../../../../shared/hooks/useNow';
 
 type Props = {
@@ -37,8 +37,8 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
               <span className="text-chip text-muted-foreground">{head.author}</span>
               {head.outdated === true ? (
                 <Chip
+                  kind="state"
                   tone="neutral"
-                  size="xs"
                   label="Outdated"
                   title="This comment is anchored to code that later commits changed"
                 />

@@ -1,7 +1,7 @@
 import { Wallet } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { BudgetAlert, Session } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { useAppStore } from '../../../../../store';
 import { requestSessionSpendLimitEdit } from '../../../../budget/requestSessionSpendLimitEdit';
 import { isBudgetBlocked } from '../../../../../store/slices/workflows/budgetBlock';

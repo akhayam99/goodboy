@@ -1,7 +1,7 @@
 import { useAppStore } from '../../../store';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
-import { NAMES } from '../../../shared/names';
-import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
+import { NAMES } from '../../../shared/utils/names';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 import { openImpactStudio } from '../../../features/impact/openImpactStudio';
 import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow';
 import { openChangelogStudio } from '../../../features/changelog/changelogStudioEvent';
@@ -13,19 +13,8 @@ type MenuAction = {
   readonly run: () => void;
 };
 
-type FireParams = {
-  readonly name: string;
-  readonly detail?: unknown;
-};
-
 type GuardParams = {
   readonly run: () => void;
-};
-
-const fire = ({ name, detail }: FireParams): void => {
-  window.dispatchEvent(
-    detail === undefined ? new CustomEvent(name) : new CustomEvent(name, { detail }),
-  );
 };
 
 const inWorkspace =
@@ -38,7 +27,7 @@ const inWorkspace =
   };
 
 const openNotifications = (): void => {
-  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
+  dispatchWindowEvent({ name: 'goodboy:open-notifications-studio', detail: { door: true } });
 };
 
 const openNewTerminal = (): void => {
@@ -60,12 +49,12 @@ export const MENU_ACTIONS = {
   'menu.newTerminal': { label: 'New terminal', run: openNewTerminal },
   'menu.newWorkspace': {
     label: 'New workspace',
-    run: () => fire({ name: 'goodboy:add-workspace' }),
+    run: () => dispatchWindowEvent({ name: 'goodboy:add-workspace' }),
   },
   'menu.tasks': {
     label: NAMES.tasks,
     run: inWorkspace({
-      run: () => fire({ name: 'goodboy:open-inbox', detail: { door: true } }),
+      run: () => dispatchWindowEvent({ name: 'goodboy:open-inbox', detail: { door: true } }),
     }),
   },
   'menu.chat': {
@@ -80,7 +69,8 @@ export const MENU_ACTIONS = {
   'menu.workflows': {
     label: 'Workflows',
     run: inWorkspace({
-      run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
+      run: () =>
+        dispatchWindowEvent({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
     }),
   },
   'menu.impact': {
@@ -99,6 +89,6 @@ export const MENU_ACTIONS = {
       run: () => useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } }),
     }),
   },
-  'menu.guide': { label: 'Guide', run: () => fire({ name: 'goodboy:open-guide' }) },
+  'menu.guide': { label: 'Guide', run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }) },
   'menu.whatsNew': { label: NAMES.whatsNew, run: inWorkspace({ run: openChangelogStudio }) },
 } as const satisfies Readonly<Record<string, MenuAction>>;

@@ -61,3 +61,20 @@ merges from the phone like it does on the desktop.
 - It binds a random TCP port on all network interfaces, while the QR advertises
   only the primary LAN IPv4. A handshake without a live token or a known key
   is refused, but the port answers on every interface while it is open.
+- Before a phone is authenticated the listener holds at most 8 connections,
+  one per source address; the next one is closed at accept. The whole Noise
+  handshake has 10 seconds, then the socket is dropped and the slot frees.
+- A connected phone that sends no frame for 60 seconds (three missed pings) is
+  dropped; any frame, a PONG included, counts as an answer.
+
+## What the phone sees
+
+The snapshot carries only live sessions: a deleted or archived session sends
+no messages, agents, turn events, context slots, plans, workflows, mounts, PR
+links or external tasks. Messages are capped at the newest 500 per session, and
+a workspace root is sent as its folder name, never the absolute path.
+
+A `send` that names an `agentId` must name an agent of that session. The
+executor refuses an id longer than 64 characters, a non-string, and an id the
+session does not hold, before any turn starts. Resolver agents are not in the
+session's agent list, so the phone cannot address them.

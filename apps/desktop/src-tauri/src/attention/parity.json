@@ -1,0 +1,115 @@
+{
+  "reasons": [
+    { "reason": "agent-error", "tone": "danger", "kind": "error" },
+    { "reason": "push-failed", "tone": "danger", "kind": "other" },
+    { "reason": "open-question", "tone": "warning", "kind": "human-input" },
+    { "reason": "fix-needs-you", "tone": "warning", "kind": "human-input" },
+    { "reason": "ci-failed", "tone": "danger", "kind": "other" }
+  ],
+  "cases": [
+    {
+      "name": "a quiet session counts nothing",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": false },
+      "isCounted": false,
+      "tone": null,
+      "reasons": []
+    },
+    {
+      "name": "an open question counts in amber",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 2, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": false },
+      "isCounted": true,
+      "tone": "warning",
+      "reasons": ["open-question"]
+    },
+    {
+      "name": "an open question counts even while an agent runs",
+      "session": { "isErrored": false, "isLive": true, "isBranchless": false },
+      "facts": { "openQuestions": 1, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": false },
+      "isCounted": true,
+      "tone": "warning",
+      "reasons": ["open-question"]
+    },
+    {
+      "name": "failing checks count in red",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": true },
+      "isCounted": true,
+      "tone": "danger",
+      "reasons": ["ci-failed"]
+    },
+    {
+      "name": "failing checks wait while an agent runs",
+      "session": { "isErrored": false, "isLive": true, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": true },
+      "isCounted": false,
+      "tone": null,
+      "reasons": []
+    },
+    {
+      "name": "a failed push counts in red",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 2, "isCiFailing": false },
+      "isCounted": true,
+      "tone": "danger",
+      "reasons": ["push-failed"]
+    },
+    {
+      "name": "a failed push waits while an agent runs",
+      "session": { "isErrored": false, "isLive": true, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 1, "isCiFailing": false },
+      "isCounted": false,
+      "tone": null,
+      "reasons": []
+    },
+    {
+      "name": "a fix run that needs an answer counts in amber",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 1, "pushFailed": 0, "isCiFailing": false },
+      "isCounted": true,
+      "tone": "warning",
+      "reasons": ["fix-needs-you"]
+    },
+    {
+      "name": "an errored session counts in red",
+      "session": { "isErrored": true, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": false },
+      "isCounted": true,
+      "tone": "danger",
+      "reasons": ["agent-error"]
+    },
+    {
+      "name": "a question and failing checks are one session, red",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": false },
+      "facts": { "openQuestions": 1, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": true },
+      "isCounted": true,
+      "tone": "danger",
+      "reasons": ["open-question", "ci-failed"]
+    },
+    {
+      "name": "a running session with a question and failing checks is one session, red",
+      "session": { "isErrored": false, "isLive": true, "isBranchless": false },
+      "facts": { "openQuestions": 1, "fixNeedsYou": 0, "pushFailed": 0, "isCiFailing": true },
+      "isCounted": true,
+      "tone": "danger",
+      "reasons": ["open-question", "ci-failed"]
+    },
+    {
+      "name": "a session without a branch has no push or checks to fail",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": true },
+      "facts": { "openQuestions": 0, "fixNeedsYou": 1, "pushFailed": 1, "isCiFailing": true },
+      "isCounted": false,
+      "tone": null,
+      "reasons": []
+    },
+    {
+      "name": "a session without a branch still counts its question",
+      "session": { "isErrored": false, "isLive": false, "isBranchless": true },
+      "facts": { "openQuestions": 1, "fixNeedsYou": 1, "pushFailed": 1, "isCiFailing": true },
+      "isCounted": true,
+      "tone": "warning",
+      "reasons": ["open-question"]
+    }
+  ]
+}

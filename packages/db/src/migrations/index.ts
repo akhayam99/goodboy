@@ -89,6 +89,11 @@ import { m230AutoRegistry } from './m230-auto-registry';
 import { m231AutoTreeFinished } from './m231-auto-tree-finished';
 import { m232AutoDelegationRoles } from './m232-auto-delegation-roles';
 import { m233AgentMount } from './m233-agent-mount';
+import { m234ScriptEnabled } from './m234-script-enabled';
+import { m235AutoPointerKeys } from './m235-auto-pointer-keys';
+import { m236EntityValues } from './m236-entity-values';
+import { m237TurnFileSets } from './m237-turn-file-sets';
+import { m238NotificationActedAt } from './m238-notification-acted-at';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -471,4 +476,9 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 231, sql: m231AutoTreeFinished },
   { version: 232, sql: m232AutoDelegationRoles },
   { version: 233, sql: m233AgentMount },
+  { version: 234, sql: m234ScriptEnabled },
+  { version: 235, sql: m235AutoPointerKeys },
+  { version: 236, sql: m236EntityValues },
+  { version: 237, sql: m237TurnFileSets },
+  { version: 238, sql: m238NotificationActedAt },
 ];

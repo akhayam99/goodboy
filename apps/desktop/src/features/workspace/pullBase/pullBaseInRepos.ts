@@ -1,6 +1,6 @@
 import type { Project, ProjectId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { runWithConcurrency } from '../../../shared/lib/concurrency';
+import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import { checkoutUpdateBase } from '../../../shared/lib/repo';
 
 export type PullOutcome =
@@ -38,10 +38,8 @@ export const pullBaseInRepos = async ({
   projects,
 }: PullParams): Promise<ReadonlyArray<PullOutcome>> => {
   const outcomes = new Map<ProjectId, PullOutcome>();
-  await runWithConcurrency({
-    items: projects,
-    limit: PULL_CONCURRENCY,
-    run: async (project) => {
+  await runWithLimit({
+    tasks: projects.map((project) => async () => {
       try {
         const result = await checkoutUpdateBase({
           checkoutPath: project.rootPath,
@@ -66,7 +64,8 @@ export const pullBaseInRepos = async ({
           reason,
         });
       }
-    },
+    }),
+    limit: PULL_CONCURRENCY,
   });
   return projects.flatMap((project) => outcomes.get(project.id) ?? []);
 };

@@ -118,7 +118,7 @@ describe('an empty line is written through a wrapper', () => {
 
     expect(
       grown,
-      `Write an empty line with EmptyLine, a first-time state with EmptyState (DESIGN-SYSTEM.md, Empty states):\n${grown.join('\n')}`,
+      `Write an empty line with EmptyLine, a first-time state with EmptyState (packages/ui/design/feedback.md, Empty states):\n${grown.join('\n')}`,
     ).toEqual([]);
   });
 });

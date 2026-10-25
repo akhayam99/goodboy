@@ -1,5 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
+import { DISABLED } from '../disabledStyle';
+import { ICON_SIZE } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
 import { Tooltip } from './Tooltip';
 
@@ -46,15 +49,16 @@ export const CardAction = ({
           onClick();
         }}
         className={cn(
-          'inline-flex size-full shrink-0 items-center justify-center rounded-md font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          size === 'compact' ? 'text-chip' : 'text-label',
+          'inline-flex size-full shrink-0 items-center justify-center rounded-md font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100',
+          FOCUS_RING,
+          size === 'compact' ? 'text-chip' : 'text-meta',
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
-          disabled && 'opacity-40',
+          disabled && cn(DISABLED, 'hover:bg-transparent hover:text-disabled-foreground'),
           highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
         )}
       >
-        <Icon size={size === 'compact' ? 12 : 14} aria-hidden />
+        <Icon size={size === 'compact' ? ICON_SIZE.row : ICON_SIZE.control} aria-hidden />
       </button>
     </Tooltip>
   );

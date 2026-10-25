@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import { ArmedActionPopover } from '../../shared/components/HeaderConfirm/ArmedActionPopover';
 import type { ArmedAction } from '../../shared/components/HeaderConfirm/armedAction';
 import { useActionEnv } from './useActionEnv';

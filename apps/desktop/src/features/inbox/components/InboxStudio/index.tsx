@@ -1,7 +1,7 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { inlineMarkdownText, useEscapeLayer, PaneShell } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -9,7 +9,7 @@ import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
-import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
 import { recordCanReply } from '../../recordCanReply';
@@ -43,6 +43,7 @@ import { InboxStarredGroup } from './InboxStarredGroup';
 import { TaskFullPage } from './TaskFullPage';
 import { TaskGroupRows, type TaskLine } from './TaskGroupRows';
 import { useInboxStars } from '../../useInboxStars';
+import { useTaskVisit } from '../../hooks/useTaskVisit';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
 const REPLY_FOCUS_FRAMES = 30;
@@ -139,6 +140,7 @@ export const InboxStudio = ({
     () => fetchedRecords.map((record) => attachLinkedSession({ record, linked: linkedSessions })),
     [fetchedRecords, linkedSessions],
   );
+  const { newKeys } = useTaskVisit({ workspaceId, records });
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<InboxFilters>(() =>
     initialFilters({ workspaceId, initialKind, initialProvider }),
@@ -516,6 +518,7 @@ export const InboxStudio = ({
   const groupHandlers = {
     selectedKey: openKey,
     cursorKey: activeCursorKey,
+    newKeys,
     onSelect: selectRecord,
     onActivate: launchRecord,
     starOf,
@@ -527,7 +530,7 @@ export const InboxStudio = ({
       page="inbox"
       scroll="body"
       title={NAMES.tasks}
-      meta={openCountWord({ records: inScope })}
+      meta={openCountWord({ records: inScope, newKeys })}
       actions={
         <InboxListHeader
           query={query}

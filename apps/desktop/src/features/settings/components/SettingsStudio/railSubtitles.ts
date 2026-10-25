@@ -23,6 +23,7 @@ export type RailSubtitleState = Pick<
   AppStore,
   | 'updaterStatus'
   | 'storageFolders'
+  | 'terminalTabs'
   | 'settings'
   | 'storageStats'
   | 'openSecurityFindings'

@@ -87,7 +87,8 @@ vi.mock('../../activeChatBackend', () => ({
 }));
 
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
-import { NAMES } from '../../../../shared/names';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/utils/names';
 import { startRunDetailOf } from '../../../session/startRun/startRunDetailOf';
 import { startRunEventName } from '../../../session/startRun/startRunEventName';
 import { ChatRoom } from './index';
@@ -626,15 +627,15 @@ describe('ChatRoom', () => {
     expect(within(header).queryByRole('button', { name: /Linked sessions/ })).toBeNull();
   });
 
-  it('puts the read-only hint in the composer and the keys in the Send tooltip', () => {
+  it('puts the read-only hint in the composer and the send key in the Send tooltip', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
     expect(screen.getByText('Read only. Nothing is changed.')).toBeDefined();
     expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
-    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(
-      'Send with Enter, new line with Shift+Enter',
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: NAMES.send }) })).toBe(
+      `${NAMES.send}${shortcutGlyphs('composer.send')}`,
     );
   });
 
@@ -760,7 +761,7 @@ describe('ChatRoom', () => {
 
     expect(screen.getByText('It lives in payments-api')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Read 1 file' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop the answer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(store.stopChatReply).toHaveBeenCalledWith({ chatId: CHAT_ID });
   });
 

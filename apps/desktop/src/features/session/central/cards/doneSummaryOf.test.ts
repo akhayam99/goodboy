@@ -24,6 +24,7 @@ const entryOf = ({ branch, state }: EntryParams): BranchEntry => ({
     liveTitle: null,
     isFinished: true,
     status: null,
+    series: null,
   },
   story: { steps: [], state, word: state, tone: 'merged', blocker: '', rank: 5 },
 });
@@ -40,6 +41,7 @@ const rowOf = ({ id }: RowParams): DoneRowModel => ({
   at: '09:00',
   mountId: null,
   retryAgentId: null,
+  agentIds: [],
   detail: {
     model: null,
     effort: null,
@@ -49,6 +51,7 @@ const rowOf = ({ id }: RowParams): DoneRowModel => ({
     steps: [],
     auto: null,
     branches: [],
+    files: null,
   },
 });
 

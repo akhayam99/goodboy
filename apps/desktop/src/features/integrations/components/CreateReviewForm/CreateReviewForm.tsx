@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Notice, Tooltip, formatError } from '@goodboy/ui';
+import { ArrowUpToLine } from 'lucide-react';
+import { Button, ICON_SIZE, InlineConfirm, Notice, Tooltip, formatError } from '@goodboy/ui';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { taskModelAgentSpawnConfig } from '../../../session/taskModelAgentSpawnConfig';
@@ -12,9 +13,16 @@ import {
 } from '../../github/closingIssueReferences';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { useToast } from '../../../../shared/components/Toast';
-import { branchPushStateOf, commitsToPush } from '../../../../shared/lib/branchPushState';
+import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { distanceAhead } from '../../../../shared/lib/gitStatus';
 import { useAppStore } from '../../../../store';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { forcePushConfirm } from '../../../actions/kinds/gitRuns';
+import {
+  loadOnlyOnline,
+  readOnlyOnline,
+  type OnlineCommit,
+} from '../../../../store/runtime/worktreeStatuses/onlyOnline';
 import { SCRIBE_WRITING_REASON } from '../../../../store/slices/scribe/scribeWritingReason';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { ReviewSettings } from './ReviewSettings';
@@ -24,6 +32,7 @@ import { useCreateReviewBases } from './useCreateReviewBases';
 import { useScribeJob } from './useScribeJob';
 import type {
   CreatedReview,
+  ForcePushInput,
   CreateReviewInput,
   CreateReviewNouns,
   RequestReviewersParams,
@@ -54,6 +63,10 @@ type Phase =
   | { readonly kind: 'idle' }
   | { readonly kind: 'creating'; readonly isPushed: boolean }
   | { readonly kind: 'failed'; readonly message: string };
+
+type CreateParams = {
+  readonly forcePush: ForcePushInput | null;
+};
 
 type TextSnapshot = {
   readonly title: string;
@@ -155,7 +168,47 @@ export const CreateReviewForm = ({
   );
   const statuses = useWorktreeStatuses({ targets: statusTargets });
   const status = repo === null ? null : (statuses.get(repo.worktreePath) ?? null);
-  const unpushed = status === null ? 0 : commitsToPush({ state: branchPushStateOf({ status }) });
+  const pushFacts = branchPushFactsOf({ status });
+  const unpushed = pushFacts.toPush;
+  const canForce = hasPushStep && pushFacts.canForce;
+  const workspaceId = useAppStore(
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
+  );
+  const [onlyOnline, setOnlyOnline] = useState<ReadonlyArray<OnlineCommit> | null>(null);
+  const [onlineError, setOnlineError] = useState<string | null>(null);
+  const [isConfirmingForce, setIsConfirmingForce] = useState(false);
+
+  useEffect(() => {
+    if (!canForce || repo === null) {
+      setIsConfirmingForce(false);
+      return;
+    }
+    let isCurrent = true;
+    const check = async (): Promise<void> => {
+      try {
+        await loadOnlyOnline({
+          mountId: repo.mountId,
+          worktreePath: repo.worktreePath,
+          branch: repo.branch,
+          workspaceId,
+          projectId: repo.projectId,
+        });
+        if (isCurrent) {
+          setOnlyOnline(readOnlyOnline({ mountId: repo.mountId, branch: repo.branch }));
+          setOnlineError(null);
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setOnlyOnline(null);
+          setOnlineError(formatError(error));
+        }
+      }
+    };
+    void check();
+    return () => {
+      isCurrent = false;
+    };
+  }, [canForce, repo, workspaceId]);
   const commitCount = status === null ? null : distanceAhead({ distance: status.mainDistance });
 
   const isWriting = job.status === 'writing';
@@ -257,10 +310,11 @@ export const CreateReviewForm = ({
     });
   };
 
-  const onCreate = async () => {
+  const onCreate = async ({ forcePush }: CreateParams) => {
     if (isLocked || title.trim().length === 0) {
       return;
     }
+    setIsConfirmingForce(false);
     setPhase({ kind: 'creating', isPushed: false });
     try {
       const created = await create({
@@ -270,6 +324,7 @@ export const CreateReviewForm = ({
         isDraft: canSetDraft && isDraft,
         isScribeBody: scribeBody !== null && body === scribeBody,
         dismissed,
+        forcePush,
         onPushed: () => setPhase({ kind: 'creating', isPushed: true }),
       });
       if (reviewers.length > 0 && created.number !== null) {
@@ -292,10 +347,13 @@ export const CreateReviewForm = ({
     setDismissed((current) => [...current, reference.number]);
 
   const draftLabel = canSetDraft && isDraft ? nouns.createDraft : nouns.create;
-  const createLabel =
-    hasPushStep && unpushed > 0
-      ? `Push and ${draftLabel.charAt(0).toLowerCase()}${draftLabel.slice(1)}`
+  const lowerDraftLabel = `${draftLabel.charAt(0).toLowerCase()}${draftLabel.slice(1)}`;
+  const createLabel = canForce
+    ? `Force push and ${lowerDraftLabel}`
+    : hasPushStep && unpushed > 0
+      ? `Push and ${lowerDraftLabel}`
       : draftLabel;
+  const forceConfirm = forcePushConfirm({ onlyOnline });
   const isCreateDisabled = isLocked || title.trim().length === 0;
 
   return (
@@ -365,12 +423,39 @@ export const CreateReviewForm = ({
               variant={submitVariant}
               data-create-submit={submitVariant}
               disabled={isCreateDisabled}
-              onClick={() => void onCreate()}
+              onClick={() =>
+                canForce ? setIsConfirmingForce(true) : void onCreate({ forcePush: null })
+              }
             >
               {createLabel}
             </Button>
           </Tooltip>
         </div>
+        {isConfirmingForce && canForce && (
+          <InlineConfirm
+            role="danger"
+            icon={<ArrowUpToLine size={ICON_SIZE.control} aria-hidden />}
+            title={forceConfirm.title}
+            description={forceConfirm.description}
+            confirmLabel={forceConfirm.confirmLabel}
+            note={
+              <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+                {[
+                  ...(forceConfirm.notes ?? []),
+                  ...(onlineError === null ? [] : [onlineError]),
+                ].map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
+              </div>
+            }
+            onConfirm={() =>
+              onCreate({
+                forcePush: { confirmedOnlyOnline: onlyOnline?.map((commit) => commit.sha) ?? null },
+              })
+            }
+            onCancel={() => setIsConfirmingForce(false)}
+          />
+        )}
         {trailing}
       </div>
       <ReviewSettings

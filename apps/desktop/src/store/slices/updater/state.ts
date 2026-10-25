@@ -31,7 +31,7 @@ export type UpdaterState = {
   readonly updateQueuedUntilIdle: boolean;
 };
 
-export const initialUpdaterState: UpdaterState = {
+export const updaterInitialState: UpdaterState = {
   updaterStatus: 'idle',
   updateVersion: null,
   updateNotes: null,

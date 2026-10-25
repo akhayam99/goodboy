@@ -1,6 +1,5 @@
 import { formatError } from '@goodboy/ui';
 import {
-  CHAT_PROVIDER_REFUSAL,
   isChatProvider,
   type ChatMessage,
   type ChatMessageId,
@@ -9,17 +8,18 @@ import {
   isEffortLevel,
   type ProviderRunId,
 } from '@goodboy/types';
+import { CHAT_PROVIDER_REFUSAL } from '../../../features/workspace-chat/chatProviderRefusal';
 import { buildChatSystemPrompt } from '../../../features/workspace-chat/buildChatSystemPrompt';
 import { buildChatTurnPrompt } from '../../../features/workspace-chat/buildChatTurnPrompt';
 import { chatWorkingFolder } from '../../../features/workspace-chat/chatWorkingFolder';
 import {
   resolveChatModel,
   type ChatModelArgs,
-} from '../../../features/workspace-chat/resolveChatModel';
+} from '../../../features/conversation/resolveChatModel';
 import type { ChatTurnRequest } from '../../../features/workspace-chat/runChatTurn';
 import type { GetFn } from './types';
 
-export const NO_PROJECT_MESSAGE = 'Add a folder to this workspace to ask about its code.';
+const NO_PROJECT_MESSAGE = 'Add a folder to this workspace to ask about its code.';
 
 export type ChatTurnPlan =
   | {

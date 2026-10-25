@@ -38,6 +38,7 @@ const h = vi.hoisted(() => ({
   closeLabel: '' as string,
   toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
   orderCalls: 0,
+  newKeys: new Set<string>(),
   stars: null as unknown,
   projects: new Array<never>(),
 }));
@@ -83,6 +84,10 @@ vi.mock('../../useInboxStars', () => {
   };
   return { useInboxStars: () => h.stars };
 });
+
+vi.mock('../../hooks/useTaskVisit', () => ({
+  useTaskVisit: () => ({ newKeys: h.newKeys }),
+}));
 
 vi.mock('../../orderInboxRecords', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../orderInboxRecords')>();
@@ -359,6 +364,7 @@ beforeEach(() => {
   h.openUrl.mockClear();
   h.toggleStar.mockClear();
   h.orderCalls = 0;
+  h.newKeys = new Set();
 });
 
 afterEach(() => {
@@ -813,6 +819,28 @@ describe('InboxStudio', () => {
     expect(screen.getByRole('button', { name: 'Filters, 1 active' })).toBeDefined();
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
+  });
+
+  it('dots the arrivals and says how many in the header, quietly when none arrived', () => {
+    h.newKeys = new Set(['github:issue:1', 'linear:issue:1']);
+
+    renderStudio();
+
+    screen.getByText('4 open, 2 new');
+    const dotted = Array.from(document.querySelectorAll('[data-row-key]')).filter(
+      (row) => row.querySelector('[data-task-new]') !== null,
+    );
+    expect(dotted.map((row) => row.getAttribute('data-row-key')).sort()).toEqual([
+      'github:issue:1',
+      'linear:issue:1',
+    ]);
+    cleanup();
+    h.newKeys = new Set();
+
+    renderStudio();
+
+    screen.getByText('4 open');
+    expect(document.querySelector('[data-task-new]')).toBeNull();
   });
 
   it('says how many items are open in the header', () => {

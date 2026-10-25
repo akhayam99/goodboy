@@ -73,14 +73,18 @@ export const useHintProgress = (): HintProgressControls => {
   );
 
   useEffect(() => {
-    const onStorage = (event: StorageEvent): void => {
-      if (event.key !== null && event.key !== HINT_PROGRESS_KEY) {
-        return;
-      }
-      adopt({ progress: readHintProgress({ fallback: latest.current }) });
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    const listener = new AbortController();
+    window.addEventListener(
+      'storage',
+      (event) => {
+        if (event.key !== null && event.key !== HINT_PROGRESS_KEY) {
+          return;
+        }
+        adopt({ progress: readHintProgress({ fallback: latest.current }) });
+      },
+      { signal: listener.signal },
+    );
+    return () => listener.abort();
   }, [adopt]);
 
   const mark = useCallback(

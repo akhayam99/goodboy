@@ -1,7 +1,7 @@
 import {
   DEFAULT_ISSUE_TYPE,
   type IssueTypeValue,
-} from '../../../features/settings/reportIssueTypes';
+} from '../../../features/bug-report/reportIssueTypes';
 
 export type BugReportDraft = {
   readonly issueType: IssueTypeValue;
@@ -19,6 +19,6 @@ export type BugReportDraftState = {
   readonly bugReportDraft: BugReportDraft;
 };
 
-export const initialBugReportDraftState: BugReportDraftState = {
+export const bugReportDraftInitialState: BugReportDraftState = {
   bugReportDraft: emptyBugReportDraft,
 };

@@ -7,7 +7,7 @@ import {
   registerPlan,
   WORLD_NOW,
   type AutoWorld,
-} from '../../../store/slices/auto/testing/autoWorld';
+} from '../../../store/runtime/auto/testing/autoWorld';
 import { approveAutoPlan } from './approveAutoPlan';
 
 const PLAN = brandId<ArtifactId>({ value: 'plan-1' });
@@ -124,7 +124,7 @@ describe('approveAutoPlan', () => {
 
     expect(result).toMatchObject({
       kind: 'refused',
-      message: 'This plan is not part of an Auto conversation.',
+      message: "This plan isn't part of an Auto conversation.",
     });
   });
 });

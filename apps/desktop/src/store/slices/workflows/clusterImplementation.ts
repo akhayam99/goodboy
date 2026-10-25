@@ -4,11 +4,11 @@ import type {
   AgentId,
   HandoffDraft,
   ImplementationCluster,
-  IsoDateTime,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { extractClusterDone, isAgentStatusSettled } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
@@ -39,8 +39,6 @@ const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
   /resolved model args omit/i,
   /agent not found/i,
 ];
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const isTransientStartFailure = (error: unknown): boolean => {
   const message = formatError(error);
@@ -161,7 +159,7 @@ const failChildStart = async ({
 }): Promise<void> => {
   const name =
     (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
-  await invokeAgentUpdateStatus(childId, { status: 'failed', completedAt: nowIso() }).catch(
+  await invokeAgentUpdateStatus(childId, { status: 'failed', completedAt: isoNow() }).catch(
     () => undefined,
   );
   const refreshed = await invokeAgentList(sessionId).catch(() => null);
@@ -260,7 +258,7 @@ function startChild({
   set((s) => ({
     agentTurnState: {
       ...s.agentTurnState,
-      [childId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
+      [childId]: { kind: 'idle' as const, lastActivityAt: isoNow() },
     },
     clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
   }));
@@ -373,7 +371,7 @@ export const fanOutClusters = async (
       const id = childIds[i]!;
       const fields: ChildRoutingFields = batch.entries[i]!;
       transcripts[id] = transcripts[id] ?? [];
-      agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
+      agentTurnState[id] = { kind: 'idle', lastActivityAt: isoNow() };
       agentKindOverride[id] = 'implementer';
       if (fields.modelOverride !== null) {
         agentModelOverride[id] = fields.modelOverride;
@@ -576,7 +574,7 @@ export const resumeClusterChildren = async ({
   });
   const clusters = plan?.clusters ?? [];
   if (!hasInstructions(clusters[index])) {
-    await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
+    await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: isoNow() });
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
     void get().refreshUnreadWorkspaces();
@@ -707,7 +705,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     await invokeAgentUpdateStatus(childAgentId, {
       status: 'completed',
       outputSummary,
-      completedAt: nowIso(),
+      completedAt: isoNow(),
     });
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
@@ -724,7 +722,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         await invokeAgentUpdateStatus(containerId, {
           status: 'completed',
           outputSummary: `completed ${settledCount} clusters`,
-          completedAt: nowIso(),
+          completedAt: isoNow(),
         });
         refreshed = await invokeAgentList(sessionId);
         set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
@@ -737,7 +735,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const nextIndex = children.findIndex((c) => !isDone(c));
     const next = nextIndex >= 0 ? children[nextIndex] : undefined;
     if (!next) {
-      await invokeAgentUpdateStatus(containerId, { status: 'blocked', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(containerId, { status: 'blocked', completedAt: isoNow() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
@@ -751,7 +749,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     if (!hasInstructions(clusters[nextIndex])) {
-      await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: isoNow() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();

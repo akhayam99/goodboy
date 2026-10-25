@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { kindAutoContext } from './kindAutoContext';
 import type {
   Agent,

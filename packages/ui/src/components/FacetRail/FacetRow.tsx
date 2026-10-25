@@ -35,7 +35,7 @@ export const FacetRow = ({
       selected={isSelected}
       ariaCurrent={isSelected ? 'true' : undefined}
       onClick={onClick}
-      className={cn('items-center gap-2 text-label', PANE_RHYTHM.navRail.row)}
+      className={cn('items-center gap-2 text-meta', PANE_RHYTHM.navRail.row)}
     >
       {Icon != null ? (
         <Icon

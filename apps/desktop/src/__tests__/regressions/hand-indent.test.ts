@@ -9,7 +9,7 @@ const BASELINE_PATH = join(__dirname, 'hand-indent.baseline.json');
 const isUpdatingBaseline = process.env.GOODBOY_UPDATE_BASELINE === '1';
 
 const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set(['node_modules', 'dist', 'target', 'gen']);
-const HAND_INDENT = /(?<![\w-])pl-[579](?![\w.-])/g;
+const HAND_INDENT = /(?<![\w-])pl-[579](?![\w.-])|paddingLeft:\s*(?!\s|treeIndentPx\()/g;
 
 type Counts = Readonly<Record<string, number>>;
 
@@ -62,6 +62,8 @@ const readBaseline = (): Counts => {
 
 describe('hand-indented disclosure bodies only ever shrink', () => {
   it('counts pl-5, pl-7 and pl-9 and leaves measured or other values alone', () => {
+    expect(countHandIndents({ text: 'style={{ paddingLeft: depth * 12 }}' })).toBe(1);
+    expect(countHandIndents({ text: 'style={{ paddingLeft: treeIndentPx({ depth }) }}' })).toBe(0);
     expect(countHandIndents({ text: "'flex pl-7 pr-2'" })).toBe(1);
     expect(countHandIndents({ text: "'pl-5 x pl-9'" })).toBe(2);
     expect(countHandIndents({ text: "'pl-[calc(8px+14px+8px)]'" })).toBe(0);

@@ -219,7 +219,7 @@ pub async fn worktree_fetch_origin_branch(
                 remote_head: None,
             });
         }
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         Ok(fetch_origin_branch(&cwd, &branch, token.as_deref()))
     })
     .await

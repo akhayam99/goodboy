@@ -2,18 +2,6 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-const DEPENDENCY_ANYWHERE: &[&str] = &["node_modules", "__pycache__", ".venv", "venv", "Pods"];
-
-const OUTPUT_AT_TOP: &[&str] = &[
-    "dist",
-    "build",
-    "out",
-    "target",
-    "DerivedData",
-    ".next",
-    "vendor",
-];
-
 const SECRET_NAMES: &[&str] = &[
     "id_rsa",
     "id_rsa.pub",
@@ -140,7 +128,7 @@ fn bucket_of(path: &str, has_goodboy_sessions: bool) -> Bucket {
     let folders = &parts[..parts.len().saturating_sub(1)];
     if let Some(found) = folders
         .iter()
-        .find(|part| DEPENDENCY_ANYWHERE.contains(part))
+        .find(|part| crate::reproducible_dirs::is_dependency(part))
     {
         return Bucket {
             kind: EntryKind::Dependencies,
@@ -148,7 +136,7 @@ fn bucket_of(path: &str, has_goodboy_sessions: bool) -> Bucket {
             ignore: Some(format!("{found}/")),
         };
     }
-    if parts.len() > 1 && OUTPUT_AT_TOP.contains(&first) {
+    if parts.len() > 1 && crate::reproducible_dirs::is_output_at_top(first) {
         return Bucket {
             kind: EntryKind::Output,
             key: format!("{first}/"),

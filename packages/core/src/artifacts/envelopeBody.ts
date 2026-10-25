@@ -1,3 +1,5 @@
+import { isRecord } from '@goodboy/types/helpers';
+
 export type EnvelopeBody = {
   readonly fields: Readonly<Record<string, unknown>>;
   readonly rawContent: string | null;
@@ -22,9 +24,6 @@ const CONTROL_ESCAPES: Readonly<Record<string, string>> = {
   '\b': '\\b',
   '\f': '\\f',
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parseRecord = (text: string): Readonly<Record<string, unknown>> | null => {
   try {

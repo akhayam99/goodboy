@@ -1,0 +1,21 @@
+#brand-line .chapterInner {
+  padding-block: 56px;
+}
+
+.brandLine {
+  font: var(--t-h1);
+  letter-spacing: var(--tr-h1);
+  text-align: center;
+  text-wrap: balance;
+}
+
+@media (max-width: 600px) {
+  #brand-line .chapterInner {
+    padding-block: 40px;
+  }
+  .brandLine {
+    font-size: 30px;
+    line-height: 36px;
+    letter-spacing: -0.02em;
+  }
+}

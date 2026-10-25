@@ -71,7 +71,7 @@ fn commits_origin_gained_after_the_apply_come_into_the_plan_and_push_with_lease(
         .unwrap();
     move_branch_blocking(&b.root, "feature", &rewritten, &joined).unwrap();
     let cwd = b.root.to_string_lossy().into_owned();
-    let pushed = crate::github::run_git_authenticated(
+    let pushed = crate::remote_auth::run_git_authenticated(
         &[
             "push",
             &crate::github::lease_argument("feature", Some(&ahead.remote_sha)),
@@ -154,7 +154,7 @@ fn the_lease_push_refuses_when_origin_moved() {
     move_branch_blocking(&b.root, "feature", &b.c, &new_head).unwrap();
     let cwd = b.root.to_string_lossy().into_owned();
     let refspec = "refs/heads/feature:refs/heads/feature";
-    let stale = crate::github::run_git_authenticated(
+    let stale = crate::remote_auth::run_git_authenticated(
         &[
             "push",
             &crate::github::lease_argument("feature", Some(&b.b)),
@@ -169,7 +169,7 @@ fn the_lease_push_refuses_when_origin_moved() {
         crate::github::lease_push_outcome(&stale),
         crate::github::LeasePushOutcome::Stale { .. }
     ));
-    let fresh = crate::github::run_git_authenticated(
+    let fresh = crate::remote_auth::run_git_authenticated(
         &[
             "push",
             &crate::github::lease_argument("feature", Some(&b.c)),
@@ -295,7 +295,7 @@ fn after_apply_the_lease_push_stops_when_someone_else_pushed() {
     let head = run_ok(&l, steps, "run-remote-moved").head.unwrap();
     move_branch_blocking(&l.root, "feature", &l.typo, &head).unwrap();
     let cwd = l.root.to_string_lossy().into_owned();
-    let pushed = crate::github::run_git_authenticated(
+    let pushed = crate::remote_auth::run_git_authenticated(
         &[
             "push",
             &crate::github::lease_argument("feature", Some(&l.typo)),

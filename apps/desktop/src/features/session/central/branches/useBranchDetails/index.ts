@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { brandId, type MountId, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { useSessionMountHosts } from '../../../../../shared/hooks/useSessionMountHosts';
 import type { BranchFacts } from '../branchFactsOf';
 import { branchDetailOf, needsBranchDetail } from '../branchDetailOf';
 import type { BranchDetailWords } from '../branchStoryOf';
@@ -18,7 +19,7 @@ export const useBranchDetails = ({
   sessionId,
   facts,
 }: Params): ReadonlyMap<string, BranchDetailWords> => {
-  const mountGithub = useAppStore((state) => state.mountGithub);
+  const { mountGithub } = useSessionMountHosts({ sessionId });
   const refreshSessionPrDetail = useAppStore((state) => state.refreshSessionPrDetail);
   const stuck = useMemo(
     () =>

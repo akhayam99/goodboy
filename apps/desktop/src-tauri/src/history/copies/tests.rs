@@ -163,7 +163,7 @@ fn discard_never_deletes_a_folder_goodboy_did_not_reserve() {
     assert!(root.exists());
     let l = ledger("reserved-by-someone");
     let name = slug("reserved-by-someone");
-    let taken = copy_path_of(&name);
+    let taken = copy_path_of(&name).unwrap();
     std::fs::create_dir_all(taken.parent().unwrap()).unwrap();
     std::fs::write(taken.parent().unwrap().join("note.txt"), "mine\n").unwrap();
     let args = ledger_plan(&l, picks(&[&l.export]));
@@ -195,7 +195,7 @@ fn a_failing_post_checkout_hook_leaves_no_copy_registered() {
     );
     assert!(trial(&args, &slug("copy-hook"), false).is_err());
     assert_eq!(worktree_count(&l.root), 1);
-    assert!(!copy_path_of(&slug("copy-hook")).exists());
+    assert!(!copy_path_of(&slug("copy-hook")).unwrap().exists());
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn removing_a_copy_never_prunes_the_other_worktrees_of_the_repo() {
         admin.exists(),
         "the other worktree's registration was pruned"
     );
-    assert!(!copy_path_of(&slug("no-global-prune")).exists());
+    assert!(!copy_path_of(&slug("no-global-prune")).unwrap().exists());
 }
 
 #[test]
@@ -245,7 +245,7 @@ fn the_copy_git_dirs_are_its_own_admin_folder_and_the_objects_only() {
             &l.base,
         ],
     );
-    let copy = copy_path_of(&slug("copy-git-dirs"));
+    let copy = copy_path_of(&slug("copy-git-dirs")).unwrap();
     let guard = create_copy(&l.root, &copy, &l.base).unwrap();
     let dirs = copy_git_dirs(&copy).unwrap();
     let common = std::fs::canonicalize(l.root.join(".git")).unwrap();
@@ -282,7 +282,7 @@ fn a_copy_whose_git_file_becomes_a_link_never_reaches_another_worktree() {
     );
     let review_admin =
         std::fs::canonicalize(git_ok(&other, &["rev-parse", "--absolute-git-dir"])).unwrap();
-    let copy = copy_path_of(&slug("copy-git-link"));
+    let copy = copy_path_of(&slug("copy-git-link")).unwrap();
     let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
     guard.is_kept = true;
     let own_admin = PathBuf::from(copy_git_dirs(&copy).unwrap().git_dir);
@@ -316,7 +316,7 @@ fn a_copy_whose_git_file_names_another_admin_dir_keeps_its_recorded_one() {
     );
     let review_admin =
         std::fs::canonicalize(git_ok(&other, &["rev-parse", "--absolute-git-dir"])).unwrap();
-    let copy = copy_path_of(&slug("copy-git-retarget"));
+    let copy = copy_path_of(&slug("copy-git-retarget")).unwrap();
     let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
     guard.is_kept = true;
     let own_admin = PathBuf::from(copy_git_dirs(&copy).unwrap().git_dir);
@@ -407,7 +407,7 @@ fn the_resolve_copy_links_the_dependencies_of_the_main_tree() {
     let l = ledger("deps-linked");
     pnpm_workspace(&l);
     let before = listing(&l.root);
-    let copy = copy_path_of(&slug("deps-linked"));
+    let copy = copy_path_of(&slug("deps-linked")).unwrap();
     prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     assert!(copy
         .join("node_modules")
@@ -438,7 +438,7 @@ fn the_resolve_copy_links_the_dependencies_of_the_main_tree() {
 fn a_workspace_package_in_the_copy_resolves_to_the_copy_and_not_the_main_tree() {
     let l = ledger("deps-workspace");
     pnpm_workspace(&l);
-    let copy = copy_path_of(&slug("deps-workspace"));
+    let copy = copy_path_of(&slug("deps-workspace")).unwrap();
     prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     std::fs::write(copy.join("packages/core/index.ts"), "copy core\n").unwrap();
     assert_eq!(
@@ -455,7 +455,7 @@ fn a_workspace_package_in_the_copy_resolves_to_the_copy_and_not_the_main_tree() 
 #[test]
 fn a_main_tree_without_dependencies_gives_a_copy_without_links() {
     let l = ledger("deps-missing");
-    let copy = copy_path_of(&slug("deps-missing"));
+    let copy = copy_path_of(&slug("deps-missing")).unwrap();
     let prepared = prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     assert_eq!(prepared.head, l.typo);
     assert!(!copy.join("node_modules").exists());

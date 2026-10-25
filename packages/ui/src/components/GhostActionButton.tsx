@@ -1,6 +1,7 @@
 import { OptionalTooltip } from './OptionalTooltip';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
 import { StatusDot } from './StatusDot';
 import { ICON_SIZE } from '../iconSize';
@@ -49,7 +50,9 @@ export const GhostActionButton = ({
         disabled={disabled || isBusy}
         onClick={onClick}
         className={cn(
-          'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-meta font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40',
+          'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-meta font-semibold transition-colors',
+          FOCUS_RING,
+          'disabled:pointer-events-none disabled:text-disabled-foreground',
           tone === 'neutral'
             ? 'text-muted-foreground hover:bg-hover hover:text-foreground'
             : cn(tint.text, tint.hoverBg),

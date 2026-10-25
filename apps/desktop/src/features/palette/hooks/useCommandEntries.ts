@@ -17,8 +17,8 @@ import {
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
-import { NAMES, formerNamesOf } from '../../../shared/names';
-import { getAppliedTheme, oppositeOfApplied, switchTheme } from '../../../shared/lib/theme';
+import { NAMES, formerNamesOf } from '../../../shared/utils/names';
+import { switchTheme, type ThemePreference } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
 import { openLens } from '../../session/openLens';
@@ -26,7 +26,8 @@ import { LENS_ICON } from '../../session/lens-labels';
 import { requestNewSession } from '../../session/requestNewSession';
 import { openNewSessionAs } from '../../session/startKind/openNewSessionAs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
-import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
+import { openSettings } from '../../settings/openSettings';
 import { terminalStudioPlace } from '../../terminal/terminalStudioPlace';
 import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
@@ -36,7 +37,7 @@ import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { folderCountLabel } from '../../workspace/folderCountLabel';
 import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
-import { getWizardState, resumeSetup } from '../../onboarding/onboarding-store';
+import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
 import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
 import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
@@ -68,26 +69,16 @@ const NEW_SESSION_WITH = {
   agent: 'New agent session',
 } as const;
 
+const THEME_CHOICES = ['dark', 'light', 'system'] as const satisfies ReadonlyArray<ThemePreference>;
+
 const PAIR_SEPARATOR = '\u0000';
 
 const LIST_SEPARATOR = '\u0001';
 
-type EventParams = {
-  readonly name: string;
-  readonly detail?: unknown;
-};
+const openNotificationsDoor = (): void =>
+  dispatchWindowEvent({ name: 'goodboy:open-notifications-studio', detail: { door: true } });
 
-const fire = ({ name, detail }: EventParams): void => {
-  window.dispatchEvent(
-    detail === undefined ? new CustomEvent(name) : new CustomEvent(name, { detail }),
-  );
-};
-
-const openNotificationsDoor = (): boolean =>
-  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
-
-const openSettings = (focus: SettingsFocus): void =>
-  fire({ name: 'goodboy:open-settings', detail: { ...focus, door: true } });
+const openSettingsDoor = (focus: SettingsFocus): void => openSettings({ ...focus, door: true });
 
 export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const workspaces = useWorkspaces();
@@ -149,7 +140,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
-  const theme = getAppliedTheme();
   const innerColumn = useCurrentInnerColumn();
   const isInMainWindow = useIsMainWindow();
   const canResumeSetup = isInMainWindow && getWizardState() !== 'done';
@@ -286,7 +276,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.inbox,
-          run: () => fire({ name: 'goodboy:open-inbox', detail: { door: true } }),
+          run: () => dispatchWindowEvent({ name: 'goodboy:open-inbox', detail: { door: true } }),
         },
         {
           key: 'goto:chat',
@@ -305,7 +295,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.workflows,
-          run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
+          run: () =>
+            dispatchWindowEvent({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
         },
         {
           key: 'goto:terminal',
@@ -455,7 +446,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
               title: failureTitle,
               error: `Exited with code ${outcome.result.exitCode}.`,
               sessionId,
-              action: { kind: 'open-lens', sessionId, lens: 'scripts' },
+              recovery: { action: { kind: 'open-lens', sessionId, lens: 'scripts' } },
             });
             return;
           }
@@ -494,7 +485,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             }
           }
         })
-        .catch((error: unknown) => reportError({ title: 'Could not pull the base branch', error }));
+        .catch((error: unknown) => reportError({ title: "Couldn't pull the base branch", error }));
     };
     out.push(
       ...repoEntries({ projects: workspaceProjects, statuses: projectGitStatus, pull: pullRepos }),
@@ -522,7 +513,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
                   title: failureTitle,
                   error: `Exited with code ${result.exitCode}.`,
                   sessionId,
-                  action: { kind: 'open-lens', sessionId, lens: 'scripts' },
+                  recovery: { action: { kind: 'open-lens', sessionId, lens: 'scripts' } },
                 });
                 return;
               }
@@ -555,20 +546,20 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         group: 'action',
         icon: CONCEPT_ICONS.settings,
         shortcut: 'settings.open',
-        run: () => openSettings({ scope: 'home' }),
+        run: () => openSettingsDoor({ scope: 'home' }),
       },
-      ...settingsPaletteEntries({ groups: settingsGroups, open: openSettings }).filter(
+      ...settingsPaletteEntries({ groups: settingsGroups, open: openSettingsDoor }).filter(
         (entry) => entry.key !== 'setting:app:shortcuts',
       ),
-      {
-        key: 'action:toggle-theme',
-        label: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+      ...THEME_CHOICES.map((choice): PaletteEntry => ({
+        key: `action:theme-${choice}`,
+        label: `${NAMES.theme}: ${choice}`,
         kind: 'action',
         group: 'action',
         icon: CONCEPT_ICONS.appearance,
-        secondary: ['theme appearance'],
-        run: () => switchTheme({ to: oppositeOfApplied() }),
-      },
+        secondary: ['appearance', 'color scheme', ...formerNamesOf(NAMES.theme)],
+        run: () => switchTheme({ to: choice }),
+      })),
       {
         key: 'action:check-updates',
         label: 'Check for updates',
@@ -584,7 +575,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'action',
         group: 'action',
         icon: CONCEPT_ICONS.providers,
-        run: () => openSettings({ scope: 'providers' }),
+        run: () => openSettingsDoor({ scope: 'providers' }),
       },
       {
         key: 'action:pair-device',
@@ -593,7 +584,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'page',
         group: 'action',
         icon: Smartphone,
-        run: () => fire({ name: 'goodboy:open-pair-device' }),
+        run: () => dispatchWindowEvent({ name: 'goodboy:open-pair-device' }),
       },
       {
         key: 'help:guide',
@@ -601,7 +592,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'help',
         group: 'help',
         icon: CONCEPT_ICONS.guide,
-        run: () => fire({ name: 'goodboy:open-guide' }),
+        run: () => dispatchWindowEvent({ name: 'goodboy:open-guide' }),
       },
       ...(hasWorkspace
         ? [
@@ -624,7 +615,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         icon: CONCEPT_ICONS.shortcuts,
         shortcut: 'settings.shortcuts',
         secondary: formerNamesOf(NAMES.keyboardShortcuts),
-        run: () => openSettings({ scope: 'app', section: 'shortcuts' }),
+        run: () => openSettingsDoor({ scope: 'app', section: 'shortcuts' }),
       },
       {
         key: 'action:report-issue',
@@ -668,7 +659,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     runScript,
     reportError,
     showToast,
-    theme,
     settingsGroups,
     innerColumn,
     canResumeSetup,

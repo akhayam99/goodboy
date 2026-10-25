@@ -9,6 +9,9 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../store/storyHarness';
+import { restoreSessions } from '../../features/session/sessionArchive';
+import { sessionFixture } from '../../__tests__/helpers/actionFixtures';
+import type { BulkSessionResult } from '../../store/slices/sessions/types';
 import { UndoToastBridge } from './UndoToastBridge';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -109,6 +112,59 @@ describe('app Undo', () => {
     await act(async () => {
       fireEvent.keyDown(screen.getByRole('textbox', { name }), undoKey());
     });
+    expect(useAppStore.getState().currentSessionId).toBeNull();
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+  });
+
+  it('says nothing changed when a restore brings back zero sessions', async () => {
+    setup();
+    const showToast = vi.fn();
+    const bulkUnarchiveTask = vi.fn(
+      async (_ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult> => ({
+        succeeded: [],
+        failed: [SESSION],
+      }),
+    );
+    act(() => {
+      useAppStore.getState().undoable({
+        message: 'Archived Northwind payout',
+        undo: () =>
+          restoreSessions({
+            sessions: [sessionFixture({ id: SESSION })],
+            bulkArchiveTask: useAppStore.getState().bulkArchiveTask,
+            bulkUnarchiveTask,
+            showToast,
+          }),
+      });
+    });
+    const last = screen.queryAllByRole('button', { name: 'Undo' }).at(-1);
+    if (last === undefined) {
+      throw new Error('Expected restore Undo');
+    }
+    await act(async () => {
+      fireEvent.click(last);
+    });
+    expect(bulkUnarchiveTask).toHaveBeenCalledWith([SESSION]);
+    expect(showToast).not.toHaveBeenCalled();
+    screen.getByText('Nothing changed. This operation can no longer be undone.');
+    expect(screen.queryByText('Undone.')).toBeNull();
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+  });
+
+  it('shows the conflict copy and drops the operation when undo reports a conflict', async () => {
+    setup();
+    act(() => {
+      useAppStore.getState().undoable({
+        message: 'Moved ledger-core',
+        conflictMessage: 'ledger-core moved again, nothing was undone.',
+        undo: async () => false,
+      });
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Work' }), undoKey());
+    });
+    screen.getByText('ledger-core moved again, nothing was undone.');
+    expect(screen.queryByText('Undone.')).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBeNull();
     expect(useAppStore.getState().undoStack).toHaveLength(1);
   });

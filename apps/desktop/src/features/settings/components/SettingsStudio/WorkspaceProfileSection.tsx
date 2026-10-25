@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import { WorkspaceLearnings } from '../../../../shared/components/Learnings/WorkspaceLearnings';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -32,7 +33,12 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
     try {
       await updateWorkspaceProfile({ workspaceId, profile: normalized });
     } catch (error) {
-      void reportError({ title: "Couldn't save what agents know about you", error, workspaceId });
+      void reportError({
+        title: "Couldn't save what agents know about you",
+        error,
+        workspaceId,
+        recovery: NOTHING_CHANGED,
+      });
     }
   };
 

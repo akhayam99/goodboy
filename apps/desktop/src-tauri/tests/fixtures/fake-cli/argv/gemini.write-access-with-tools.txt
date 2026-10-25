@@ -1,0 +1,8 @@
+cli-version: agy 1.1.9
+-p
+{prompt}
+--model
+fake-model
+--effort
+high
+--dangerously-skip-permissions

@@ -7,7 +7,7 @@ const worktreeStatus = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus }));
 
-import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import { useWorktreeStatuses } from '.';
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, cn } from '@goodboy/ui';
+import { Button, cn, FOCUS_RING } from '@goodboy/ui';
 import { TailGlyph } from './TailGlyph';
 import { useTailClock } from './useTailClock';
 import type { TailActionId, TailFacts, TailState } from './tailFacts';
@@ -10,7 +10,7 @@ type Props = {
   readonly verbs?: ReactNode;
 };
 
-const TICKING: ReadonlySet<TailState> = new Set(['working', 'waiting', 'queued']);
+const TICKING: ReadonlySet<TailState> = new Set(['working', 'waiting', 'queued', 'stopping']);
 
 const RUNNING: ReadonlySet<TailState> = new Set(['working', 'queued']);
 
@@ -20,6 +20,7 @@ const PHRASE_CLASS = {
   working: 'motion-safe:text-shimmer text-foreground',
   queued: 'motion-safe:text-shimmer text-foreground',
   waiting: 'text-muted-foreground',
+  stopping: 'text-muted-foreground',
   needsYou: 'text-foreground',
   paused: 'text-foreground',
   failed: 'text-foreground',
@@ -27,8 +28,10 @@ const PHRASE_CLASS = {
   idle: 'text-muted-foreground',
 } as const satisfies Record<TailState, string>;
 
-const QUIET_ACTION =
-  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const QUIET_ACTION = cn(
+  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const TailLine = ({ facts, onAction, verbs = null }: Props) => {
   const clock = useTailClock({
@@ -65,6 +68,17 @@ export const TailLine = ({ facts, onAction, verbs = null }: Props) => {
                 key={action.id}
                 variant="secondary"
                 size="xs"
+                onClick={() => onAction(action.id)}
+              >
+                {action.label}
+              </Button>
+            ) : action.isBusy === true ? (
+              <Button
+                key={action.id}
+                variant="quiet"
+                size="xs"
+                isBusy
+                aria-label={action.label}
                 onClick={() => onAction(action.id)}
               >
                 {action.label}

@@ -1,8 +1,8 @@
 import { FolderOpen } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { BandRow, Button, cn } from '@goodboy/ui';
+import { BandRow, Button, cn, ICON_SIZE, Meter } from '@goodboy/ui';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import type { OtherToolId, OtherToolUsage } from '../../otherTools';
@@ -48,13 +48,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
         {formatInteger(tool.sessions)} {tool.sessions === 1 ? meta.noun : `${meta.noun}s`}
       </span>
       <span className="flex min-w-0 flex-col gap-1">
-        <span
-          role="img"
-          aria-label={`${share}% from Goodboy sessions`}
-          className="flex h-1 overflow-hidden rounded-full bg-muted"
-        >
-          <i className="block h-full bg-primary" style={{ width: `${share}%` }} />
-        </span>
+        <Meter label={`${share}% from Goodboy sessions`} value={share} size="xs" />
         <span className="flex min-w-0 items-baseline gap-2">
           <span className={OTHER_TOOL_COLUMN.size}>{formatBytes({ bytes: tool.bytes })}</span>
           <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">

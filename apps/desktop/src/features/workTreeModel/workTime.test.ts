@@ -5,6 +5,7 @@ import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from './agentWorkTime';
 import { estimateBasis } from './estimateBasis';
 import {
+  QUIET_TURN_AFTER_MS,
   formatCostRange,
   formatEstimateRange,
   timeLeftLabel,
@@ -446,5 +447,60 @@ describe('the time column', () => {
 
     expect(running?.label).toBe('4m 40s');
     expect(done?.label).toBe('4m 40s');
+  });
+});
+
+describe('workTime quiet turns', () => {
+  const running = (quietMs: number | null) =>
+    workTime({
+      phase: 'running',
+      activeMs: 20 * MINUTE,
+      hasStarted: true,
+      estimate: ESTIMATE,
+      unknownBasis: null,
+      quietMs,
+    });
+
+  it('says nothing while the turn is quiet for less than the threshold', () => {
+    const time = running(QUIET_TURN_AFTER_MS - 1);
+
+    expect(time?.isQuiet).toBeFalsy();
+    expect(time?.note).toBe('Longer than usual');
+  });
+
+  it('names how long a running turn has been quiet after the threshold', () => {
+    const time = running(12 * MINUTE);
+
+    expect(time).toMatchObject({
+      isQuiet: true,
+      note: 'Quiet for 12 min',
+      progress: null,
+      headline: '20m · quiet for 12 min',
+    });
+    expect(time?.detail).toContain('no output and no CPU in the process tree');
+    expect(time?.detail).toContain('keeps running until you stop it');
+  });
+
+  it('starts at the threshold itself and reads hours past two', () => {
+    expect(running(QUIET_TURN_AFTER_MS)?.note).toBe('Quiet for 5 min');
+    expect(running(3 * 60 * MINUTE)?.note).toBe('Quiet for 3 h');
+  });
+
+  it('never calls a turn quiet when the backend gave no reading', () => {
+    expect(running(null)?.isQuiet).toBeFalsy();
+  });
+
+  it('only a running turn can be quiet', () => {
+    const waiting = workTime({
+      phase: 'waiting',
+      activeMs: 20 * MINUTE,
+      hasStarted: true,
+      estimate: ESTIMATE,
+      unknownBasis: null,
+      quietMs: 30 * MINUTE,
+    });
+
+    expect(waiting?.isQuiet).toBeFalsy();
+    expect(waiting?.note).toBeNull();
   });
 });

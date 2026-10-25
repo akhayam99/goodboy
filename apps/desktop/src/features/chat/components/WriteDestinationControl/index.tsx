@@ -3,11 +3,14 @@ import {
   AnchoredPopover,
   Button,
   Chip,
-  ListboxList,
   filterOptions,
+  ICON_SIZE,
+  ListboxList,
   listboxOptionId,
   useDropdown,
   useListboxKeyboard,
+  FOCUS_RING,
+  cn,
 } from '@goodboy/ui';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -16,7 +19,7 @@ import {
   writeDestinationDetail,
   writeDestinationLabel,
 } from '../../../../store/slices/project-mounts/writeDestination';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useWriteDestination } from './useWriteDestination';
 
 type Props = {
@@ -146,9 +149,9 @@ export const WriteDestinationControl = ({
 
   const trigger = (
     <Chip
+      kind="state"
       as="button"
       tone={diverges ? 'warning' : 'neutral'}
-      size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       label={
@@ -193,7 +196,7 @@ export const WriteDestinationControl = ({
               activeIndex >= 0 ? listboxOptionId({ id: listId, index: activeIndex }) : undefined
             }
             onKeyDown={keyboard.onKeyDown}
-            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn('rounded-md outline-none', FOCUS_RING)}
           >
             <ListboxList
               id={listId}

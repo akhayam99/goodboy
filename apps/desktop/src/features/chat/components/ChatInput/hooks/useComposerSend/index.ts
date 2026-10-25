@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import type { AgentId, Session, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
+import { useAppStore } from '../../../../../../store';
+import { restoreDraftOnFailedSend } from '../../../../../../shared/utils/restoreDraftOnFailedSend';
 import {
   toStoredAttachment,
   type PendingAttachment,
@@ -102,7 +104,8 @@ export const useComposerSend = ({
       if (!result.blockedOverBudget) {
         return;
       }
-      setValue(content);
+      const current = useAppStore.getState().agentDraft[selectedAgentId] ?? '';
+      setValue(restoreDraftOnFailedSend({ sent: content, current }));
       setAttachments(atts);
     },
     [

@@ -1,8 +1,7 @@
 import { GitBranch } from 'lucide-react';
-import { Chip, type ChipSize } from '@goodboy/ui';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
@@ -10,7 +9,6 @@ type Props = {
   readonly title?: string;
   readonly isOnBranch?: boolean;
   readonly extraBranches?: number;
-  readonly size?: ChipSize;
   readonly isActive?: boolean;
   readonly tooltip?: string;
   readonly ariaLabel?: string;
@@ -25,7 +23,6 @@ export const TaskLinkChip = ({
   title,
   isOnBranch = false,
   extraBranches = 0,
-  size = 'control',
   isActive,
   tooltip,
   ariaLabel,
@@ -36,10 +33,9 @@ export const TaskLinkChip = ({
   <Chip
     as={onClick === undefined ? 'span' : 'button'}
     tone={isActive === true ? 'primary' : 'neutral'}
-    shape="badge"
+    kind="reference"
     bordered={isBordered}
     className={className}
-    size={size}
     {...(isActive === undefined ? {} : { ariaPressed: isActive })}
     {...(tooltip === undefined ? {} : { title: tooltip })}
     {...(ariaLabel === undefined ? {} : { ariaLabel })}

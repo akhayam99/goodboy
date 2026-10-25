@@ -49,7 +49,7 @@
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
     "more actions at the end of the permission card actions": 1
   },
-  "apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewPanelButton.tsx": {
+  "apps/desktop/src/features/review/components/WriteReview/ReviewPanelButton.tsx": {
     "submit review at the end of the review pane header": 1
   },
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentUsageFooter.tsx": {

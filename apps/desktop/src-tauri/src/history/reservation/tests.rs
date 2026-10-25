@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 #[test]
 fn copies_are_reserved_in_the_app_folder_and_never_in_tmp() {
-    let copy = copy_path_of(&slug("tmp-check"));
+    let copy = copy_path_of(&slug("tmp-check")).unwrap();
     let tmp = std::env::temp_dir();
     for outside in [
         tmp.clone(),

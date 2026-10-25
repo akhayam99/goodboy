@@ -1,4 +1,4 @@
-import { NAMES } from '../names';
+import { NAMES } from '../utils/names';
 
 type IdentifierParams = {
   readonly identifier: string;

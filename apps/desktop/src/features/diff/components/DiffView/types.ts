@@ -12,7 +12,7 @@ export type DiffThreadAction = {
 
 type DiffThreadSource = 'note' | 'host';
 
-export type DiffThreadReply = {
+type DiffThreadReply = {
   readonly id: string;
   readonly author: string;
   readonly body: string;

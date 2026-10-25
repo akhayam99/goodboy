@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { cn } from '../../cn';
+import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';
 import type { CrumbMenuRow as CrumbMenuRowModel } from './crumbMenuTypes';
 import { CrumbMenuLead } from './CrumbMenuLead';
@@ -27,7 +28,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       onClick={() => onActivate(row)}
       className={cn(
         'flex min-h-7 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2 text-left outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-focus-ring',
+        FOCUS_RING,
         row.indent === 1 && 'pl-7',
         'hover:bg-hover focus:bg-hover',
         row.isDisabled && 'cursor-default text-disabled-foreground hover:bg-transparent',
@@ -37,7 +38,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span
           className={cn(
-            'shrink truncate text-label',
+            'shrink truncate text-meta',
             row.isDisabled ? 'text-disabled-foreground' : 'text-foreground',
             row.isCode === true && 'font-mono text-meta',
           )}

@@ -2,7 +2,7 @@ import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { disconnectWorkspaceAndProjects } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
-import { stopLiveWork } from '../live-work/stopLiveWork';
+import { stopLiveWork } from '../../runtime/live-work/stopLiveWork';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 

@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Button, FormActions } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
+import type { AgentKind } from '../../agent-kind';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
@@ -13,15 +14,42 @@ import { StartRunFileChip } from './StartRunFileChip';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useStartRun } from './useStartRun';
 
+type ActionsParams = {
+  readonly isStarting: boolean;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
   readonly mount?: SessionDraftMount | null;
+  readonly role?: AgentKind | null;
+  readonly placeholder?: string;
+  readonly hint?: string | null;
+  readonly demoAnchor?: string;
+  readonly actions?: (params: ActionsParams) => ReactNode;
+  readonly onStarted?: () => void;
 };
 
-export const StartRun = ({ workspaceId, sessionId, mount = null }: Props) => {
+export const StartRun = ({
+  workspaceId,
+  sessionId,
+  mount = null,
+  role = null,
+  placeholder = RUN_ROUTE_COPY.placeholder,
+  hint = RUN_ROUTE_COPY.hint,
+  demoAnchor,
+  actions,
+  onStarted,
+}: Props) => {
   const limit = useAutoTreeLimit({ workspaceId, sessionId });
-  const run = useStartRun({ workspaceId, sessionId, mount, prepare: limit.persist });
+  const run = useStartRun({
+    workspaceId,
+    sessionId,
+    mount,
+    role,
+    onStarted,
+    prepare: limit.persist,
+  });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
   const { setText, setFile } = run;
@@ -63,13 +91,13 @@ export const StartRun = ({ workspaceId, sessionId, mount = null }: Props) => {
         onChange={run.setText}
         onSubmit={() => void run.start()}
         isSubmitBlocked={!hasText || run.isStarting}
-        placeholder={RUN_ROUTE_COPY.placeholder}
+        placeholder={placeholder}
         disabled={run.isStarting}
         minRows={hasText ? 2 : 1}
         maxRows={8}
         keyLabels={{ send: 'start' }}
       />
-      <p className="text-label text-muted-foreground">{RUN_ROUTE_COPY.hint}</p>
+      {hint === null ? null : <p className="text-meta text-muted-foreground">{hint}</p>}
       <FormActions
         leading={
           <AutoLimitChip
@@ -81,6 +109,7 @@ export const StartRun = ({ workspaceId, sessionId, mount = null }: Props) => {
         }
         error={run.error}
       >
+        {actions === undefined ? null : actions({ isStarting: run.isStarting })}
         {hasText && !run.isStarting ? (
           <Button variant="ghost" size="sm" onClick={run.discard}>
             {RUN_ROUTE_COPY.discard}
@@ -92,6 +121,7 @@ export const StartRun = ({ workspaceId, sessionId, mount = null }: Props) => {
           isBusy={run.isStarting}
           busyLabel={RUN_ROUTE_COPY.starting}
           onClick={() => void run.start()}
+          data-demo-anchor={demoAnchor}
         >
           {run.error === null ? RUN_ROUTE_COPY.start : NAMES.retry}
         </Button>

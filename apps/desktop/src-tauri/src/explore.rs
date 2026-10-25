@@ -2,13 +2,15 @@ use std::cmp::Ordering;
 use std::fs::{self, File, Metadata};
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
-use std::process::Command;
 use std::time::UNIX_EPOCH;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use serde::Serialize;
 use thiserror::Error;
+
+use crate::util::open_guard::ExecutableRefused;
+use crate::util::scoped_path::{resolve_within, ScopedPathError};
 
 const TEXT_MAX_BYTES: usize = 256 * 1024;
 const SNIFF_BYTES: usize = 8192;
@@ -26,10 +28,21 @@ pub enum ExploreError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error(transparent)]
+    Executable(#[from] ExecutableRefused),
+    #[error(transparent)]
     Editor(#[from] crate::editor::EditorError),
 }
 
 crate::util::impl_error_serialize!(ExploreError);
+
+impl From<crate::proc::open::OpenError> for ExploreError {
+    fn from(error: crate::proc::open::OpenError) -> Self {
+        match error {
+            crate::proc::open::OpenError::Refused(refused) => ExploreError::Executable(refused),
+            crate::proc::open::OpenError::Io(io) => ExploreError::Io(io),
+        }
+    }
+}
 
 impl ExploreError {
     fn kind(&self) -> &'static str {
@@ -39,6 +52,7 @@ impl ExploreError {
             ExploreError::NotFile => "not_file",
             ExploreError::TooLarge(_) => "too_large",
             ExploreError::Io(_) => "io",
+            ExploreError::Executable(_) => "executable_refused",
             ExploreError::Editor(error) => error.kind(),
         }
     }
@@ -71,12 +85,21 @@ fn resolve_path(session_dir: &str, rel_path: &str) -> Result<PathBuf, ExploreErr
     {
         return Err(ExploreError::OutsideSession);
     }
-    let base = fs::canonicalize(session_dir)?;
-    let target = fs::canonicalize(base.join(relative))?;
-    if !target.starts_with(&base) {
-        return Err(ExploreError::OutsideSession);
+    Ok(resolve_within(Path::new(session_dir), relative)?)
+}
+
+impl From<ScopedPathError> for ExploreError {
+    fn from(error: ScopedPathError) -> Self {
+        match error {
+            ScopedPathError::Escapes => ExploreError::OutsideSession,
+            ScopedPathError::Unavailable => {
+                ExploreError::Io(std::io::Error::from(std::io::ErrorKind::NotFound))
+            }
+            ScopedPathError::Unsupported => {
+                ExploreError::Io(std::io::Error::from(std::io::ErrorKind::Unsupported))
+            }
+        }
     }
-    Ok(target)
 }
 
 fn modified_at(metadata: &Metadata) -> Option<String> {
@@ -168,46 +191,6 @@ fn read_binary(path: &Path, metadata: &Metadata) -> Result<ExploreContent, Explo
     })
 }
 
-pub(crate) fn spawn_open(path: &Path, reveal: bool) -> std::io::Result<()> {
-    spawn_open_child(path, reveal)?;
-    Ok(())
-}
-
-fn spawn_open_child(path: &Path, reveal: bool) -> std::io::Result<std::process::Child> {
-    #[cfg(target_os = "macos")]
-    let mut command = Command::new("open");
-    #[cfg(target_os = "macos")]
-    if reveal {
-        command.arg("-R");
-    }
-    #[cfg(target_os = "macos")]
-    command.arg(path);
-
-    #[cfg(target_os = "linux")]
-    let mut command = Command::new("xdg-open");
-    #[cfg(target_os = "linux")]
-    command.arg(if reveal {
-        path.parent().unwrap_or(path)
-    } else {
-        path
-    });
-
-    #[cfg(target_os = "windows")]
-    let mut command = if reveal {
-        let mut command = Command::new("explorer.exe");
-        command.arg("/select,");
-        command
-    } else {
-        let mut command = Command::new("rundll32.exe");
-        command.arg("url.dll,FileProtocolHandler");
-        command
-    };
-    #[cfg(target_os = "windows")]
-    command.arg(path);
-
-    command.spawn()
-}
-
 #[tauri::command]
 pub async fn explore_list(
     session_dir: String,
@@ -289,9 +272,11 @@ pub async fn explore_open(
     rel_path: String,
     reveal: bool,
     editor: Option<String>,
+    line: Option<u32>,
+    column: Option<u32>,
 ) -> Result<(), ExploreError> {
     tauri::async_runtime::spawn_blocking(move || {
-        explore_open_blocking(session_dir, rel_path, reveal, editor)
+        explore_open_blocking(session_dir, rel_path, reveal, editor, line, column)
     })
     .await
     .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
@@ -309,10 +294,11 @@ fn open_folder(path: &Path, reveal: bool, editor: Option<String>) -> Result<(), 
 }
 
 fn spawn_and_reap(path: &Path, reveal: bool) -> Result<(), ExploreError> {
-    let mut child = spawn_open_child(path, reveal)?;
-    std::thread::spawn(move || {
-        let _ = child.wait();
-    });
+    if reveal {
+        crate::proc::open::reveal(path)?;
+        return Ok(());
+    }
+    crate::proc::open::open_path(path)?;
     Ok(())
 }
 
@@ -321,6 +307,8 @@ fn explore_open_blocking(
     rel_path: String,
     reveal: bool,
     editor: Option<String>,
+    line: Option<u32>,
+    column: Option<u32>,
 ) -> Result<(), ExploreError> {
     let path = resolve_path(&session_dir, &rel_path)?;
     if path.is_dir() {
@@ -334,6 +322,8 @@ fn explore_open_blocking(
             session_dir,
             path.to_string_lossy().into_owned(),
             Some(binary),
+            line,
+            column,
         )?;
         return Ok(());
     }
@@ -348,6 +338,25 @@ mod tests {
         explore_list_blocking, explore_open_blocking, explore_read_blocking, ExploreContent,
         ExploreError, SNIFF_BYTES, TEXT_MAX_BYTES,
     };
+
+    #[test]
+    fn open_refuses_executable_files() {
+        let root = test_root("exec-open");
+        fs::create_dir_all(&root).unwrap();
+        for name in ["Report.command", "Run.SH", "Northwind.app", "setup.exe"] {
+            fs::write(root.join(name), "echo acme").unwrap();
+            let opened = explore_open_blocking(
+                root.to_string_lossy().into_owned(),
+                name.to_string(),
+                false,
+                None,
+                None,
+                None,
+            );
+            assert!(matches!(opened, Err(ExploreError::Executable(_))), "{name}");
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
 
     fn test_root(name: &str) -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
@@ -563,6 +572,8 @@ mod tests {
             "../escape.txt".to_string(),
             false,
             Some("goodboy-test-no-such-editor".to_string()),
+            None,
+            None,
         );
 
         assert!(matches!(result, Err(ExploreError::OutsideSession)));
@@ -570,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn opening_with_an_unknown_editor_reports_editor_missing() {
+    fn opening_with_an_unknown_editor_is_refused() {
         let root = test_root("editor-missing");
         fs::create_dir_all(&root).unwrap();
         fs::write(root.join("page.tsx"), "export {}").unwrap();
@@ -580,11 +591,13 @@ mod tests {
             "page.tsx".to_string(),
             false,
             Some("goodboy-test-no-such-editor".to_string()),
+            None,
+            None,
         );
 
-        let error = result.expect_err("a missing editor must fail");
+        let error = result.expect_err("an unknown editor must fail");
         let serialized = serde_json::to_value(&error).unwrap();
-        assert_eq!(serialized["kind"], "editor_missing");
+        assert_eq!(serialized["kind"], "editor_unknown");
         assert!(serialized["message"]
             .as_str()
             .unwrap()
@@ -650,7 +663,7 @@ mod tests {
     }
 
     #[test]
-    fn opening_a_folder_with_an_unknown_editor_reports_editor_missing() {
+    fn opening_a_folder_with_an_unknown_editor_is_refused() {
         let root = test_root("folder-editor-missing");
         fs::create_dir_all(root.join("apps")).unwrap();
 
@@ -659,12 +672,14 @@ mod tests {
             "apps".to_string(),
             false,
             Some("goodboy-test-no-such-editor".to_string()),
+            None,
+            None,
         );
 
-        let error = result.expect_err("a missing editor must fail");
+        let error = result.expect_err("an unknown editor must fail");
         assert_eq!(
             serde_json::to_value(&error).unwrap()["kind"],
-            "editor_missing"
+            "editor_unknown"
         );
         fs::remove_dir_all(root).unwrap();
     }
@@ -678,6 +693,8 @@ mod tests {
             root.to_string_lossy().into_owned(),
             "apps".to_string(),
             false,
+            None,
+            None,
             None,
         );
 
@@ -695,6 +712,8 @@ mod tests {
             "../".to_string(),
             false,
             Some("goodboy-test-no-such-editor".to_string()),
+            None,
+            None,
         );
 
         assert!(matches!(result, Err(ExploreError::OutsideSession)));
@@ -703,7 +722,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn opening_a_folder_hands_the_folder_to_the_editor() {
+    fn an_editor_given_as_a_path_to_a_script_is_never_run() {
         use std::os::unix::fs::PermissionsExt;
 
         let root = test_root("folder-editor-run");
@@ -717,24 +736,18 @@ mod tests {
         .unwrap();
         fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
 
-        explore_open_blocking(
+        let result = explore_open_blocking(
             root.to_string_lossy().into_owned(),
             "apps/ledger-core".to_string(),
             false,
             Some(editor.to_string_lossy().into_owned()),
-        )
-        .unwrap();
+            None,
+            None,
+        );
 
-        let expected = fs::canonicalize(root.join("apps/ledger-core")).unwrap();
-        let mut received = String::new();
-        for _ in 0..100 {
-            received = fs::read_to_string(&record).unwrap_or_default();
-            if !received.is_empty() {
-                break;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(50));
-        }
-        assert_eq!(received, expected.to_string_lossy());
+        assert!(matches!(result, Err(ExploreError::Editor(_))));
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        assert!(!record.exists());
         fs::remove_dir_all(root).unwrap();
     }
 }

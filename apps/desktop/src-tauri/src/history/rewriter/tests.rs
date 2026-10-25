@@ -295,7 +295,7 @@ fn the_rewriter_git_sequence_works_inside_its_roots_and_leaves_the_user_refs_unt
     std::fs::write(l.root.join("export.ts"), "work in progress\n").unwrap();
     git_ok(&l.root, &["stash", "push", "-q", "-m", "keep this"]);
     git_ok(&l.root, &["pack-refs", "--all"]);
-    let copy = copy_path_of(&slug("rewriter-roots"));
+    let copy = copy_path_of(&slug("rewriter-roots")).unwrap();
     let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
     guard.is_kept = true;
     let dirs = copy_git_dirs(&copy).unwrap();

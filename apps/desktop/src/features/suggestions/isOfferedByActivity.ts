@@ -50,8 +50,11 @@ export const isOfferedByActivity = ({ suggestion }: Params): boolean => {
     case 'open-pr':
     case 'mark-ready':
     case 'merge-pr':
+    case 'merge-series':
     case 'check-changes':
+    case 'move-tracker-item':
     case 'close-worktree':
+    case 'archive-session':
     case 'continue-with-workflow':
       return false;
     default: {

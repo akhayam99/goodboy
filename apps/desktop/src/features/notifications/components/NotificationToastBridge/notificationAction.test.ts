@@ -179,7 +179,7 @@ describe('mapNotificationAction', () => {
         publicationId: 'pub-1',
       }),
     );
-    expect(retryPublicationSpy).toHaveBeenCalledWith({ sessionId: SESSION_ID });
+    expect(retryPublicationSpy).toHaveBeenCalledWith({ sessionId: SESSION_ID, mountId: null });
   });
 
   it('retry-publication: reports a rejected retry instead of leaving an unhandled rejection', async () => {

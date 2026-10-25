@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import type { AgentRole } from '@goodboy/types';
-import { Button, Chip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, Chip, ICON_SIZE } from '@goodboy/ui';
+
 import { GUIDANCE_ROLE_CHOICES, guidanceLeftOutText, guidanceRoleNames } from '../../guidanceRoles';
 
 type Props = {

@@ -12,7 +12,6 @@ import { act, cleanup, render } from '@testing-library/react';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 import { ToastProvider } from '../../shared/components/Toast';
 import { applyDocumentTheme } from '../../shared/lib/theme';
-import { PLAIN_INSET } from '../../shared/hooks/useTitlebarInset';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { U25_R4_WORKSPACE_SCENES } from '../../app/components/MockScene/scenes/u25/r4-workspace';
@@ -22,7 +21,7 @@ const SPACING_PX = 4;
 const TOLERANCE_PX = 1;
 const COLUMN_X = COLLAPSED_RAIL_WIDTH / 2;
 const INSET_VARS: Readonly<Record<string, number>> = {
-  '--titlebar-inset': Number.parseFloat(PLAIN_INSET),
+  '--titlebar-inset': Number.parseFloat('0px'),
 };
 
 beforeAll(async () => {

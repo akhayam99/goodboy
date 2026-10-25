@@ -6,8 +6,8 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 import {
   clearOnlyOnline,
   loadOnlyOnline,
-} from '../../../../store/slices/worktreeStatuses/onlyOnline';
-import { ensure, worktreeStatusKey } from '../../../../store/slices/worktreeStatuses/cache';
+} from '../../../../store/runtime/worktreeStatuses/onlyOnline';
+import { ensure, worktreeStatusKey } from '../../../../store/runtime/worktreeStatuses/cache';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 

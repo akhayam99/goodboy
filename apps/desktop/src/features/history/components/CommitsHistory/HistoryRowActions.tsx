@@ -1,4 +1,5 @@
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { ROW_MENU_TOOLTIP } from '../../../actions/rowMenuTooltip';
 import type { CommitActionTarget } from '../../../actions/types';
 
 type Props = {
@@ -12,6 +13,7 @@ export const HistoryRowActions = ({ target, anchorKey }: Props) => (
       target={target}
       anchorKey={anchorKey}
       label={`More for ${target.facts.shortSha}`}
+      tooltip={ROW_MENU_TOOLTIP}
     />
   </span>
 );

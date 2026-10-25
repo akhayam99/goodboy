@@ -358,14 +358,16 @@ export const applyGitlabSeed = async ({
         ? {}
         : {
             [SESSION_ID]: {
-              prNumber: seed.mr.iid,
-              mountId: MOUNT_ID,
-              view,
-              isLoading: false,
-              error: view === null ? DENIED_LINE : null,
-              errorKind: view === null ? ('denied' as const) : null,
-              fetchedAt: NOW_ISO as IsoDateTime,
-              edits: [],
+              [MOUNT_ID]: {
+                prNumber: seed.mr.iid,
+                mountId: MOUNT_ID,
+                view,
+                isLoading: false,
+                error: view === null ? DENIED_LINE : null,
+                errorKind: view === null ? ('denied' as const) : null,
+                fetchedAt: NOW_ISO as IsoDateTime,
+                edits: [],
+              },
             },
           },
     sessionResolveQueueItems: { [SESSION_ID]: [] },

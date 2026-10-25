@@ -1,5 +1,5 @@
-import { Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';

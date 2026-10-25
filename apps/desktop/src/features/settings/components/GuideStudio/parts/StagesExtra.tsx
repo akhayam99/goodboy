@@ -1,9 +1,8 @@
 import type { SessionStage } from '@goodboy/types';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import type { StatePresentation } from '../../../../../shared/utils/statePresentation';
 import { Block } from './Block';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const STAGE_ORDER: ReadonlyArray<SessionStage> = [
   'building',

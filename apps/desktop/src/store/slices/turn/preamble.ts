@@ -74,12 +74,60 @@ export const buildContextPreamble = (
 
 const PRIOR_TURNS_HEADER = '## prior turns (this conversation, most recent last)';
 
-export const buildPriorTurnsBlock = (
-  transcripts: ReadonlyArray<TurnEvent>,
-  maxTokens: number,
-): string => {
-  type Line = { label: 'user' | 'assistant' | 'workflow handoff (carried forward)'; text: string };
-  const grouped: Line[] = [];
+export const PRIOR_TURNS_BUDGET_TOKENS = 8000;
+
+const PINNED_REQUEST_SHARE = 0.25;
+const CHARS_PER_TOKEN = 4;
+const MARKER_ROOM_CHARS = 60;
+const MIN_KEPT_CHARS = 40;
+
+type PriorTurnLabel = 'user' | 'assistant' | 'workflow handoff (carried forward)';
+
+type PriorTurnLine = {
+  readonly label: PriorTurnLabel;
+  readonly text: string;
+};
+
+type PriorTurnsParams = {
+  readonly transcripts: ReadonlyArray<TurnEvent>;
+  readonly maxTokens: number;
+};
+
+type LineParams = {
+  readonly line: PriorTurnLine;
+};
+
+type TranscriptParams = {
+  readonly transcripts: ReadonlyArray<TurnEvent>;
+};
+
+type ShortenParams = {
+  readonly line: PriorTurnLine;
+  readonly maxTokens: number;
+};
+
+export type PriorTurns = {
+  readonly text: string;
+  readonly carried: number;
+  readonly leftOut: number;
+  readonly isShortened: boolean;
+};
+
+const NO_PRIOR_TURNS: PriorTurns = { text: '', carried: 0, leftOut: 0, isShortened: false };
+
+const formatLine = ({ line }: LineParams): string => `${line.label}: ${line.text}`;
+
+const shorten = ({ line, maxTokens }: ShortenParams): string | null => {
+  const roomChars = maxTokens * CHARS_PER_TOKEN - line.label.length - 2 - MARKER_ROOM_CHARS;
+  if (roomChars < MIN_KEPT_CHARS) {
+    return null;
+  }
+  const cut = line.text.slice(0, roomChars);
+  return `${line.label}: ${cut}\n[shortened: ${line.text.length - cut.length} characters left out]`;
+};
+
+const groupPriorTurns = ({ transcripts }: TranscriptParams): ReadonlyArray<PriorTurnLine> => {
+  const grouped: PriorTurnLine[] = [];
   let pendingAssistant = '';
   for (const ev of transcripts) {
     if (ev.kind === 'user_text') {
@@ -108,32 +156,62 @@ export const buildPriorTurnsBlock = (
   if (pendingAssistant.length > 0) {
     grouped.push({ label: 'assistant', text: pendingAssistant });
   }
+  return grouped
+    .map((line) => ({ label: line.label, text: line.text.trim() }))
+    .filter((line) => line.text.length > 0);
+};
 
-  if (grouped.length === 0) {
-    return '';
+export const buildPriorTurnsBlock = ({ transcripts, maxTokens }: PriorTurnsParams): PriorTurns => {
+  const lines = groupPriorTurns({ transcripts });
+  if (lines.length === 0) {
+    return NO_PRIOR_TURNS;
   }
 
+  const firstUser = lines.findIndex((line) => line.label === 'user');
+  const pinnedLine = firstUser >= 0 && firstUser < lines.length - 1 ? lines[firstUser]! : null;
+  const pinnedWhole = pinnedLine === null ? null : formatLine({ line: pinnedLine });
+  const pinnedShare = Math.floor(maxTokens * PINNED_REQUEST_SHARE);
+  const pinned =
+    pinnedLine === null || pinnedWhole === null
+      ? null
+      : estimateTokens(pinnedWhole) <= pinnedShare
+        ? pinnedWhole
+        : shorten({ line: pinnedLine, maxTokens: pinnedShare });
+  const isPinnedShortened = pinned !== null && pinned !== pinnedWhole;
+
   const kept: string[] = [];
-  let budget = maxTokens;
-  for (let i = grouped.length - 1; i >= 0; i--) {
-    const line = grouped[i]!;
-    const text = line.text.trim();
-    if (text.length === 0) {
-      continue;
-    }
-    const formatted = `${line.label}: ${text}`;
+  let isShortened = isPinnedShortened;
+  let budget = maxTokens - (pinned === null ? 0 : estimateTokens(pinned));
+  const oldestWalked = pinned === null ? 0 : firstUser + 1;
+  for (let i = lines.length - 1; i >= oldestWalked; i--) {
+    const line = lines[i]!;
+    const formatted = formatLine({ line });
     const cost = estimateTokens(formatted);
     if (cost > budget) {
+      const cut = i === lines.length - 1 ? shorten({ line, maxTokens: budget }) : null;
+      if (cut !== null) {
+        kept.push(cut);
+        isShortened = true;
+      }
       break;
     }
     budget -= cost;
     kept.push(formatted);
   }
-  if (kept.length === 0) {
-    return '';
+  const carried = kept.length + (pinned === null ? 0 : 1);
+  if (carried === 0) {
+    return { ...NO_PRIOR_TURNS, leftOut: lines.length };
   }
   kept.reverse();
-  return `${PRIOR_TURNS_HEADER}\n${kept.join('\n\n')}`;
+  const leftOut = lines.length - carried;
+  const gap = leftOut > 0 ? [`[${leftOut} older turns left out]`] : [];
+  const parts = [...(pinned === null ? [] : [pinned]), ...gap, ...kept];
+  return {
+    text: `${PRIOR_TURNS_HEADER}\n${parts.join('\n\n')}`,
+    carried,
+    leftOut,
+    isShortened,
+  };
 };
 
 export const getModelContextWindow = (model: string): number | null => {

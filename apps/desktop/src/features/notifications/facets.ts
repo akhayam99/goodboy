@@ -4,6 +4,7 @@ import type {
   NotificationKind,
   NotificationSeverity,
 } from '@goodboy/db';
+import { isNotificationDebt, notificationActionClass } from './actionClass';
 import { NOTIFICATION_SOURCES, notificationSource, type NotificationSource } from './source';
 
 export type NotificationView = 'all' | 'unread' | 'action';
@@ -38,7 +39,7 @@ type NotificationFacts = {
   readonly severity: NotificationSeverity;
   readonly kind: NotificationKind;
   readonly hasSession: boolean;
-  readonly hasAction: boolean;
+  readonly isOwed: boolean;
   readonly read: boolean;
 };
 
@@ -66,7 +67,7 @@ const matchesView = ({ facts, view }: ViewMatchParams): boolean => {
     case 'unread':
       return !facts.read;
     case 'action':
-      return facts.hasAction;
+      return facts.isOwed;
     default: {
       const exhaustive: never = view;
       return exhaustive;
@@ -88,8 +89,23 @@ const notificationFacts = ({ notification }: NotificationFactsParams): Notificat
   severity: notification.severity,
   kind: notification.kind,
   hasSession: notification.sessionId != null,
-  hasAction: notification.action != null,
+  isOwed: isNotificationDebt({ notification }) && notification.actedAt === null,
   read: notification.read,
+});
+
+type BucketFactsParams = {
+  readonly bucket: NotificationCountBucket;
+};
+
+const bucketFacts = ({ bucket }: BucketFactsParams): NotificationFacts => ({
+  severity: bucket.severity,
+  kind: bucket.kind,
+  hasSession: bucket.hasSession,
+  isOwed:
+    bucket.actionKind !== null &&
+    notificationActionClass({ kind: bucket.actionKind }) === 'debt' &&
+    !bucket.isActed,
+  read: bucket.read,
 });
 
 type NotificationMatchesParams = {
@@ -158,25 +174,27 @@ export const countNotificationFacets = ({
     total: sum({ buckets: scoped }),
     unread: sum({ buckets: scoped.filter((bucket) => !bucket.read) }),
     matching: sum({
-      buckets: scoped.filter((bucket) => matchesFilters({ facts: bucket, filters })),
+      buckets: scoped.filter((bucket) =>
+        matchesFilters({ facts: bucketFacts({ bucket }), filters }),
+      ),
     }),
     view: tally({
       keys: NOTIFICATION_VIEWS,
       buckets: scoped,
       matches: ({ bucket, key }) =>
-        matchesFilters({ facts: bucket, filters: { ...filters, view: key } }),
+        matchesFilters({ facts: bucketFacts({ bucket }), filters: { ...filters, view: key } }),
     }),
     severity: tally({
       keys: NOTIFICATION_SEVERITY_FACETS,
       buckets: scoped,
       matches: ({ bucket, key }) =>
-        matchesFilters({ facts: bucket, filters: { ...filters, severity: key } }),
+        matchesFilters({ facts: bucketFacts({ bucket }), filters: { ...filters, severity: key } }),
     }),
     source: tally({
       keys: NOTIFICATION_SOURCES,
       buckets: scoped,
       matches: ({ bucket, key }) =>
-        matchesFilters({ facts: bucket, filters: { ...filters, source: key } }),
+        matchesFilters({ facts: bucketFacts({ bucket }), filters: { ...filters, source: key } }),
     }),
     workspace: sum({ buckets: buckets.filter((bucket) => bucket.inWorkspace) }),
     all: sum({ buckets }),

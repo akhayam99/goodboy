@@ -56,6 +56,7 @@ pub const REQUEST_CONFLICT: &str = "request_conflict";
 pub const DB_RESET: &str = "db_reset";
 pub const AUTO_CHILD_ACT: &str = "auto_child_act";
 pub const CALLER_UNKNOWN: &str = "caller_unknown";
+pub const SCOPE_MISMATCH: &str = "scope_mismatch";
 
 pub const ERROR_CODES: &[&str] = &[
     AMBIGUOUS_MOUNT,
@@ -68,6 +69,7 @@ pub const ERROR_CODES: &[&str] = &[
     DB_RESET,
     AUTO_CHILD_ACT,
     CALLER_UNKNOWN,
+    SCOPE_MISMATCH,
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -144,6 +146,7 @@ impl QueryResponse {
 pub enum Access {
     Read,
     Write,
+    Publish,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -474,14 +477,14 @@ pub const CATALOG: &[VerbSpec] = &[
         provider: "github",
         verb: "pr-ready",
         params: &[opt_num("number")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "mark a draft pull request ready for review",
     },
     VerbSpec {
         provider: "github",
         verb: "pr-merge",
         params: &[opt_num("number"), opt("method")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "merge a pull request with squash, merge or rebase",
     },
     VerbSpec {
@@ -495,7 +498,7 @@ pub const CATALOG: &[VerbSpec] = &[
         provider: "github",
         verb: "push",
         params: &[opt("branch"), flag("force-with-lease")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "push this session's mount branch to origin",
     },
     VerbSpec {
@@ -509,7 +512,7 @@ pub const CATALOG: &[VerbSpec] = &[
             opt("reference-mode"),
             flag("ready"),
         ],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "open a pull request from a mount branch, draft unless --ready",
     },
     VerbSpec {
@@ -633,21 +636,21 @@ pub const CATALOG: &[VerbSpec] = &[
         provider: "gitlab",
         verb: "mr-approve",
         params: &[req("project"), num("iid")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "approve a merge request",
     },
     VerbSpec {
         provider: "gitlab",
         verb: "mr-unapprove",
         params: &[req("project"), num("iid")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "withdraw an approval",
     },
     VerbSpec {
         provider: "gitlab",
         verb: "mr-merge",
         params: &[req("project"), num("iid")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "merge a merge request",
     },
     VerbSpec {
@@ -661,7 +664,7 @@ pub const CATALOG: &[VerbSpec] = &[
             opt("reference-mode"),
             flag("ready"),
         ],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "open a merge request from a mount branch, draft unless --ready",
     },
     VerbSpec {
@@ -773,42 +776,42 @@ pub const CATALOG: &[VerbSpec] = &[
         provider: "bitbucket",
         verb: "pr-approve",
         params: &[req("repo"), num("id")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "approve a pull request",
     },
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-unapprove",
         params: &[req("repo"), num("id")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "withdraw an approval",
     },
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-request-changes",
         params: &[req("repo"), num("id")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "mark a pull request as needing changes",
     },
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-unrequest-changes",
         params: &[req("repo"), num("id")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "withdraw a changes-requested mark",
     },
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-merge",
         params: &[req("repo"), num("id"), opt("message"), opt("strategy")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "merge a pull request",
     },
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-decline",
         params: &[req("repo"), num("id")],
-        access: Access::Write,
+        access: Access::Publish,
         summary: "decline a pull request",
     },
     VerbSpec {
@@ -1493,12 +1496,9 @@ mod tests {
             "pr-comment-create",
             "pr-thread-reply",
             "pr-thread-resolve",
-            "pr-ready",
-            "pr-merge",
             "issue-comment-create",
-            "push",
-            "pr-create",
         ];
+        let publish = ["pr-ready", "pr-merge", "push", "pr-create"];
 
         for verb in read {
             let spec = spec_for("github", verb).unwrap_or_else(|| panic!("{} missing", verb));
@@ -1508,7 +1508,19 @@ mod tests {
             let spec = spec_for("github", verb).unwrap_or_else(|| panic!("{} missing", verb));
             assert_eq!(spec.access, Access::Write, "{} must be write access", verb);
         }
-        assert_eq!(specs_for_provider("github").len(), read.len() + write.len());
+        for verb in publish {
+            let spec = spec_for("github", verb).unwrap_or_else(|| panic!("{} missing", verb));
+            assert_eq!(
+                spec.access,
+                Access::Publish,
+                "{} must be publish access",
+                verb
+            );
+        }
+        assert_eq!(
+            specs_for_provider("github").len(),
+            read.len() + write.len() + publish.len()
+        );
     }
 
     #[test]

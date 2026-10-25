@@ -38,6 +38,10 @@ export const seedAutoSession = async ({
       AUTO_SEED_NOW,
     ],
   );
+  await db.execute(
+    'INSERT INTO session_worktrees (id, session_id, branch, created_at) VALUES (?, ?, ?, ?)',
+    ['mount-ledger-core', AUTO_SEED_SESSION, 'main', AUTO_SEED_NOW],
+  );
   const all: ReadonlyArray<string> = [AUTO_SEED_ROOT, ...agentIds];
   for (const [ordinal, id] of all.entries()) {
     await db.execute(

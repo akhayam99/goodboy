@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { EmptyLine, ClampedProse, Markdown, SectionHeader } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ClampedProse, EmptyLine, ICON_SIZE, Markdown, SectionHeader } from '@goodboy/ui';
 
 type Props = {
   readonly goal: string;
@@ -19,9 +18,9 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
     <section aria-label="What you asked for" className="flex flex-col gap-2">
       <SectionHeader label="Goal" />
       {goal !== '' ? (
-        <ClampedProse text={goal} lines={2} className="text-label text-foreground" />
+        <ClampedProse text={goal} lines={2} className="text-meta text-foreground" />
       ) : (
-        <EmptyLine className="text-label italic text-faint-foreground">
+        <EmptyLine className="text-meta italic text-faint-foreground">
           No goal was set for this run.
         </EmptyLine>
       )}
@@ -41,7 +40,7 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
             How you described the process
           </button>
           {processOpen ? (
-            <Markdown text={processText} className="text-label text-muted-foreground" />
+            <Markdown text={processText} className="text-meta text-muted-foreground" />
           ) : null}
         </>
       ) : null}

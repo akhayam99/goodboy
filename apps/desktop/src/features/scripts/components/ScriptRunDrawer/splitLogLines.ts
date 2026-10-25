@@ -1,3 +1,5 @@
+import { collapseCarriageReturns } from '../../collapseCarriageReturns';
+
 export type LogLine = {
   readonly stream: 'stdout' | 'stderr';
   readonly text: string;
@@ -8,11 +10,15 @@ type Params = {
   readonly stderr: string;
 };
 
-const linesOf = ({ text }: { readonly text: string }): ReadonlyArray<string> => {
+type LinesParams = {
+  readonly text: string;
+};
+
+const linesOf = ({ text }: LinesParams): ReadonlyArray<string> => {
   if (text === '') {
     return [];
   }
-  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const lines = collapseCarriageReturns({ text }).replace(/\r$/, '').split('\n');
   return lines[lines.length - 1] === '' ? lines.slice(0, -1) : lines;
 };
 

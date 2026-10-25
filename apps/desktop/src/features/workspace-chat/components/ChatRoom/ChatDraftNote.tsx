@@ -1,6 +1,6 @@
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ChatDraft } from '../../hooks/useChatDrafts';
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 export const ChatDraftNote = ({ draft, onOpen }: Props) => (
   <div
     role="status"
-    className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-3 py-2 text-label text-muted-foreground"
+    className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-3 py-2 text-meta text-muted-foreground"
   >
     <span className="flex min-w-0 items-center gap-2">
       <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />

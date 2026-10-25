@@ -1,6 +1,6 @@
 import { Bot, PenLine } from 'lucide-react';
-import { Avatar, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Avatar, cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
+
 import { HOST_GLYPH } from './threadKind';
 import type { DiffThread } from './types';
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolvePublicationPreview, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { AppStore } from '../../store';
-import type { PublishConversationsResult } from './publishConversations';
+import type { PublishConversationsResult } from './publication/publishConversations';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import type { ThreadGitFacts } from './threadGitState';
 import type { GetFn } from './types';

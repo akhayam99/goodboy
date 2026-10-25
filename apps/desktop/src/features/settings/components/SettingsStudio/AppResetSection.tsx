@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover, Eyebrow, FieldRow, cn, tintClasses } from '@goodboy/ui';
+import { Button, cn, ConfirmPopover, Eyebrow, FieldRow, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+
+import { NAMES } from '../../../../shared/utils/names';
 
 type WipeState = 'idle' | 'confirm' | 'wiping' | 'done';
 
@@ -35,7 +35,7 @@ export const AppResetSection = () => {
       >
         {wipeState === 'done' ? (
           <span className="flex items-center gap-3">
-            <span className="text-label text-muted-foreground">Local data deleted.</span>
+            <span className="text-meta text-muted-foreground">Local data deleted.</span>
             <Button variant="secondary" size="sm" onClick={() => void relaunchApp()}>
               <RotateCcw size={ICON_SIZE.row} aria-hidden />
               Restart now
@@ -46,7 +46,7 @@ export const AppResetSection = () => {
             role="danger"
             icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
             title="Delete every workspace, session and rule?"
-            description="This cannot be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
+            description="This can't be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
             confirmLabel="Delete"
             isBusy={wipeState === 'wiping'}
             isOpen={wipeState === 'confirm' || wipeState === 'wiping'}

@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../../../store';
 import { selectDrawerPanel } from '../../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../../DrawerHost';
-import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
+import { SESSION, seedActivityRunScene } from '../../activityRunSeed';
 
 const noop = () => undefined;
 

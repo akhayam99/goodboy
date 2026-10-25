@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../features/artifacts/artifacts';
 import { listPlansForSession } from '../../../features/plans/plans';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { SetFn } from './types';
 
 export const refreshSessionArtifacts = async (set: SetFn, sessionId: SessionId): Promise<void> => {

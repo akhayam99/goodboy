@@ -3,10 +3,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { wipeDb } from '../../../shared/lib/dbBoot';
 import { wipeLocalStorage } from '../../../shared/lib/storage-keys';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
-import { initialState } from '../../store';
+import type { AppState } from '../../types';
 import type { GetFn, SetFn } from './types';
 
-export const wipeLocalDatabase = (set: SetFn, get: GetFn) => {
+export const wipeLocalDatabase = (set: SetFn, get: GetFn, initialState: AppState) => {
   return async () => {
     await wipeDb();
     wipeLocalStorage();

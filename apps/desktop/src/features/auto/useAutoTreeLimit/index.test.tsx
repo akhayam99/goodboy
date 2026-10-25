@@ -18,7 +18,7 @@ import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { Database } from '@goodboy/db';
 import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { autoTreeLimitKey, readAutoTreeLimit } from '../autoTreeLimit';
+import { readAutoTreeLimit } from '../autoTreeLimit';
 import { useAutoTreeLimit } from '.';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -50,7 +50,10 @@ const Probe = ({ sessionId = null }: ProbeParams) => {
 beforeEach(async () => {
   db = await makeMigratedTestDatabase();
   holder.db = db;
-  useAppStore.setState({ settings: {}, sessionBudgets: {} });
+  await db.execute(
+    "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace-harborline', 'Harborline', 'harborline', 1, 1)",
+  );
+  useAppStore.setState({ workspaceValues: {}, sessionBudgets: {} });
 });
 
 afterEach(cleanup);
@@ -62,10 +65,10 @@ describe('useAutoTreeLimit', () => {
     expect(screen.getByTestId('usd').textContent).toBe('5');
     expect(screen.getByTestId('stored').textContent).toBe('false');
     await act(async () => {
-      await db.execute('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, 0)', [
-        autoTreeLimitKey({ workspaceId: HARBORLINE }),
-        '12',
-      ]);
+      await db.execute(
+        "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
+        [HARBORLINE, '12'],
+      );
       window.dispatchEvent(new Event('focus'));
     });
     cleanup();
@@ -95,23 +98,25 @@ describe('useAutoTreeLimit', () => {
   });
 
   it('writes nothing when a limit is stored and the person changed nothing', async () => {
-    await db.execute('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, 0)', [
-      autoTreeLimitKey({ workspaceId: HARBORLINE }),
-      '7',
-    ]);
+    await db.execute(
+      "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
+      [HARBORLINE, '7'],
+    );
     render(<Probe />);
     await waitFor(() => expect(screen.getByTestId('usd').textContent).toBe('7'));
-    const before = await db.select('SELECT updated_at FROM settings');
+    const before = await db.select('SELECT updated_at FROM workspace_values');
 
     fireEvent.click(screen.getByText('persist'));
     await act(async () => undefined);
 
-    expect(await db.select('SELECT updated_at FROM settings')).toEqual(before);
+    expect(await db.select('SELECT updated_at FROM workspace_values')).toEqual(before);
   });
 
   it('follows a smaller session budget and never stores it as the Auto limit', async () => {
     useAppStore.setState({
-      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'pause' } },
+      sessionBudgets: {
+        [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'pause', warnRatio: 0.8 },
+      },
     });
     render(<Probe sessionId={SESSION} />);
 
@@ -125,7 +130,9 @@ describe('useAutoTreeLimit', () => {
 
   it('does not follow a smaller session budget that only warns', async () => {
     useAppStore.setState({
-      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'warn' } },
+      sessionBudgets: {
+        [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'warn', warnRatio: 0.8 },
+      },
     });
     render(<Probe sessionId={SESSION} />);
 
@@ -135,7 +142,9 @@ describe('useAutoTreeLimit', () => {
 
   it('keeps the smaller Auto limit under a larger session budget', async () => {
     useAppStore.setState({
-      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 25, onExceed: 'pause' } },
+      sessionBudgets: {
+        [SESSION]: { sessionId: SESSION, softCapUsd: 25, onExceed: 'pause', warnRatio: 0.8 },
+      },
     });
     render(<Probe sessionId={SESSION} />);
 

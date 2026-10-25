@@ -1,6 +1,6 @@
 import type { BranchCommit } from '@goodboy/types';
 import { worktreeIsAncestor } from '../../../features/worktree/worktree';
-import type { ApprovedPublicationScope } from './approvedPublicationScope';
+import type { ApprovedPublicationScope } from './publication/approvedPublicationScope';
 
 type Params = {
   readonly worktreePath: string;

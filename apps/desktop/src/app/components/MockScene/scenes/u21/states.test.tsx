@@ -35,7 +35,6 @@ const SCENE_IDS = [
   'notifications-empty',
   'inbox-empty',
   'inbox-error',
-  'needs-you-card',
 ] as const;
 
 const renderScene = (id: (typeof SCENE_IDS)[number]) => {
@@ -145,13 +144,5 @@ describe('the u21 page-state scenes', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Sentry' })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
-  });
-
-  it('draws the Needs you card for two owners, one Open each', async () => {
-    renderScene('needs-you-card');
-
-    const card = await screen.findByRole('region', { name: 'Needs you' });
-    expect(within(card).getAllByRole('button')).toHaveLength(2);
-    expect(within(card).queryByTestId('tone-bar')).toBeNull();
   });
 });

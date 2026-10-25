@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import type { IsoDateTime, Session } from '@goodboy/types';
-import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
+import type { Session } from '@goodboy/types';
+import type { NudgeOutcome } from '@goodboy/db';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { tauriDatabase } from '../../../../../shared/lib/db';
 import type { AgentKind } from '../../../../session/agent-kind';
 import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
 import { detectScopeMismatch, type ScopeMismatch } from '../../../utils/scope-mismatch';
@@ -24,17 +23,14 @@ export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeN
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
   const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const recordNudgeShown = useAppStore((s) => s.recordNudgeShown);
+  const recordNudgeOutcome = useAppStore((s) => s.recordNudgeOutcome);
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
-    if (!scopeNudgeEventId) return;
-    try {
-      await updateNudgeEventOutcome(
-        tauriDatabase,
-        scopeNudgeEventId,
-        outcome,
-        new Date().toISOString() as IsoDateTime,
-      );
-    } catch {}
+    if (!scopeNudgeEventId) {
+      return;
+    }
+    await recordNudgeOutcome({ id: scopeNudgeEventId, outcome });
     setScopeNudgeEventId(null);
   };
 
@@ -51,25 +47,20 @@ export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeN
       return false;
     }
     const mismatch = detectScopeMismatch({ input: content, agentKind: activeAgentKind });
-    if (!mismatch) return false;
+    if (!mismatch) {
+      return false;
+    }
 
-    const id = crypto.randomUUID();
-    try {
-      await insertNudgeEvent(tauriDatabase, {
-        id,
+    const id = await recordNudgeShown({
+      sessionId: session.id,
+      kind: 'scope-mismatch',
+      context: {
         sessionId: session.id,
-        ts: new Date().toISOString() as IsoDateTime,
-        kind: 'scope-mismatch',
-        contextJson: JSON.stringify({
-          sessionId: session.id,
-          agentKind: activeAgentKind,
-          mismatchKind: mismatch.kind,
-          suggested: mismatch.suggestedAgentKind,
-        }),
-        outcome: null,
-        outcomeTs: null,
-      });
-    } catch {}
+        agentKind: activeAgentKind,
+        mismatchKind: mismatch.kind,
+        suggested: mismatch.suggestedAgentKind,
+      },
+    });
     setScopeNudgeEventId(id);
     setScopePending({ content, attachments: atts, mismatch });
     return true;

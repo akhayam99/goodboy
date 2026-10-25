@@ -9,10 +9,10 @@ use serde::Serialize;
 use std::path::Path;
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct FastForwardResult {
     pub branch: String,
     pub upstream: String,
-    #[serde(rename = "commitsPulled")]
     pub commits_pulled: u32,
 }
 
@@ -38,7 +38,7 @@ pub async fn checkout_fast_forward(
     project_id: Option<String>,
 ) -> Result<FastForwardResult, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         checkout_fast_forward_blocking(checkout_path, token.as_deref())
     })
     .await
@@ -50,11 +50,14 @@ fn fetch_remote_authenticated(
     remote: &str,
     token: Option<&str>,
 ) -> Result<(), WorktreeError> {
-    let result =
-        crate::github::run_git_authenticated(&["fetch", "--no-tags", remote], checkout_path, token)
-            .map_err(|error| WorktreeError::Git {
-                message: error.to_string(),
-            })?;
+    let result = crate::remote_auth::run_git_authenticated(
+        &["fetch", "--no-tags", remote],
+        checkout_path,
+        token,
+    )
+    .map_err(|error| WorktreeError::Git {
+        message: error.to_string(),
+    })?;
     if result.exit_code != 0 {
         return Err(WorktreeError::Git {
             message: result.stderr.trim().to_string(),
@@ -143,3 +146,6 @@ pub(super) fn checkout_fast_forward_blocking(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod wire_shape;

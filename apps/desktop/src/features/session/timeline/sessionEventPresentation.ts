@@ -6,7 +6,7 @@ import { historyStopCause } from '../../history/historyStopCause';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../../shared/pullRequestPresentation';
+} from '../../../shared/utils/pullRequestPresentation';
 
 export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'info' | 'merged' | 'neutral';
 
@@ -201,7 +201,7 @@ export const isEmptyDecisionDiff = ({ payload }: PayloadParams): boolean => {
   return additions === 0 && deletions === 0;
 };
 
-export const CONTEXT_LABEL = 'Context';
+const CONTEXT_LABEL = 'Context';
 
 const decisionsChangedLabel = ({ payload }: PayloadParams): string =>
   payload?.consolidatedAfter === undefined
@@ -521,7 +521,7 @@ export const sessionEventLabel = ({
   }
 };
 
-export const TIMELINE_PROJECT_NAME_LIMIT = 3;
+const TIMELINE_PROJECT_NAME_LIMIT = 3;
 
 type ProjectListParams = {
   readonly names: ReadonlyArray<string>;

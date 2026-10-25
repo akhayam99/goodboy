@@ -52,7 +52,7 @@ export const CheckRunRow = ({ check, footnote, status, action, hint, onOpen }: P
         >
           <CheckConclusionIcon conclusion={check.conclusion} />
           <span className="min-w-0 truncate text-foreground">{check.name}</span>
-          <span className="text-right text-label tabular-nums text-faint-foreground">
+          <span className="text-right text-meta tabular-nums text-faint-foreground">
             {durationOf({ check })}
           </span>
         </button>

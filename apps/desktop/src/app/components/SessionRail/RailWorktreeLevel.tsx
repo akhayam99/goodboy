@@ -1,11 +1,11 @@
 import { ChevronLeft } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { StatusDot } from '@goodboy/ui';
+import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { branchScopeOf } from '../../../store/slices/session-view/branchScopeOf';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { WORKTREE_ENTRY_ICONS } from '../../../features/branch/worktreeEntryIcons';
 import { branchTabsOf, resolveBranchTab } from '../../../features/branch/branchTabs';
 import { requestNounLabel } from '../../../features/branch/requestNounLabel';
@@ -13,7 +13,7 @@ import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdent
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
 import { useWorktreeEntryFacts } from '../../../features/branch/hooks/useWorktreeEntryFacts';
 import { openLens } from '../../../features/session/openLens';
-import { sessionTitle } from '../../../features/session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { RailButton } from '../SideColumn/RailButton';
 
 type Props = {

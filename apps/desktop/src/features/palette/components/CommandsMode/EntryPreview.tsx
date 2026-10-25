@@ -75,10 +75,10 @@ export const EntryPreview = ({ entry, subject }: Props) => {
       <div className="flex flex-col gap-4">
         {objectPreview}
         {entry.action?.blockedReason != null && (
-          <p className="text-label text-muted-foreground">{entry.action.blockedReason}</p>
+          <p className="text-meta text-muted-foreground">{entry.action.blockedReason}</p>
         )}
         {entry.action?.confirm != null && (
-          <p className="text-label text-muted-foreground">{entry.action.confirm.description}</p>
+          <p className="text-meta text-muted-foreground">{entry.action.confirm.description}</p>
         )}
       </div>
     );
@@ -89,10 +89,10 @@ export const EntryPreview = ({ entry, subject }: Props) => {
       {hasExcerpt ? <PreviewHeader title={entry.label} /> : null}
       {hasExcerpt ? <ExcerptBlock text={excerptOf({ markdown: excerpt })} /> : null}
       {entry.action?.blockedReason != null && (
-        <p className="text-label text-muted-foreground">{entry.action.blockedReason}</p>
+        <p className="text-meta text-muted-foreground">{entry.action.blockedReason}</p>
       )}
       {entry.action?.confirm != null && (
-        <p className="text-label text-muted-foreground">{entry.action.confirm.description}</p>
+        <p className="text-meta text-muted-foreground">{entry.action.confirm.description}</p>
       )}
     </div>
   );

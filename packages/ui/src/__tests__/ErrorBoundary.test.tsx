@@ -97,6 +97,36 @@ describe('ErrorBoundary', () => {
     consoleError.mockRestore();
   });
 
+  it('renders the injected fallback with a reset that remounts the children', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const state = { isBroken: true };
+    function Flaky(): null {
+      if (state.isBroken) {
+        throw new Error('flaky');
+      }
+      return null;
+    }
+    render(
+      <ErrorBoundary
+        renderFallback={({ error, reset }) => (
+          <button type="button" onClick={reset}>
+            fallback for {error.message}
+          </button>
+        )}
+      >
+        <Flaky />
+        <p>recovered</p>
+      </ErrorBoundary>,
+    );
+    expect(screen.queryByRole('heading', { name: 'Something went wrong' })).toBeNull();
+
+    state.isBroken = false;
+    fireEvent.click(screen.getByRole('button', { name: 'fallback for flaky' }));
+
+    expect(screen.getByText('recovered')).toBeDefined();
+    consoleError.mockRestore();
+  });
+
   it('has no report when no report path was injected', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(

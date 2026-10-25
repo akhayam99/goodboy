@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react';
-import { SearchField, useEscapeLayer } from '@goodboy/ui';
+import { SearchField, useEscapeLayer, FOCUS_RING, cn } from '@goodboy/ui';
 import type { TreeGroup } from '../../lib/changeTree';
 import { FilterMenu, type Show } from './FilterMenu';
 
@@ -88,7 +88,7 @@ export const TreeHead = ({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn('rounded-sm text-primary hover:underline', FOCUS_RING)}
           >
             Clear
           </button>

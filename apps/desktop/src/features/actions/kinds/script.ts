@@ -10,11 +10,18 @@ import {
   Square,
   Trash2,
 } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';
 
 type ScriptPinFacts = {
   readonly isPinned: boolean;
   readonly onToggle: () => void;
+};
+
+type ScriptAskFacts = {
+  readonly label: string;
+  readonly blockedReason: string | null;
+  readonly onAsk: () => void;
 };
 
 export type ScriptFacts = {
@@ -31,6 +38,7 @@ export type ScriptFacts = {
   readonly onDelete: (() => Promise<void>) | null;
   readonly onRestart?: () => void;
   readonly pin?: ScriptPinFacts;
+  readonly ask?: ScriptAskFacts;
 };
 
 export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> = {
@@ -44,6 +52,16 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
       group: 'open',
       when: () => true,
       run: ({ facts }) => facts.onShowOutput(),
+    },
+    {
+      id: 'script.askAgent',
+      label: ({ facts }) => facts.ask?.label ?? 'Ask the agent about this',
+      shortLabel: () => 'Ask',
+      icon: CONCEPT_ICONS.agents,
+      group: 'act',
+      when: ({ facts }) => facts.ask !== undefined,
+      blockedReason: ({ facts }) => facts.ask?.blockedReason ?? null,
+      run: ({ facts }) => facts.ask?.onAsk(),
     },
     {
       id: 'script.run',

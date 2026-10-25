@@ -5,16 +5,17 @@ import { useConversationPane } from '../../../../shared/components/Conversation/
 
 type Props = {
   readonly title: string;
+  readonly label: string;
   readonly source: ConversationSource;
 };
 
-export const ConversationScenePane = ({ title, source }: Props) => {
+export const ConversationScenePane = ({ title, label, source }: Props) => {
   const conversation = useConversationPane({ source, resetKey: title });
 
   return (
     <div className="flex h-full w-[400px] shrink-0 flex-col overflow-hidden rounded-lg border border-border-soft bg-background">
       <PaneShell scroll="body" title={title} dock={conversation.composer}>
-        <RecordSections sections={[{ ...conversation.section, label: `${title} conversation` }]} />
+        <RecordSections sections={[{ ...conversation.section, label }]} />
       </PaneShell>
     </div>
   );

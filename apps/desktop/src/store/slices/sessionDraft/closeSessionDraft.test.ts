@@ -8,8 +8,6 @@ import { createNavigationSlice } from '../navigation';
 import { BOARD_PLACE, SESSION_DRAFT_PLACE, sessionPlace } from '../navigation/place';
 import { parentPlace } from '../navigation/parentPlace';
 import { createSessionDraftSlice } from '.';
-import { kickoffDraftKey } from '../workflowDrafts/kickoffDraftKey';
-import type { WorkflowBuilderDraft } from '../workflowDrafts/types';
 import { hasSessionDraftContent } from './hasSessionDraftContent';
 import { selectIsSessionDraftShown } from './selectIsSessionDraftShown';
 import { selectSessionDraft } from './selectSessionDraft';
@@ -31,7 +29,6 @@ const makeStore = () =>
     drawer: null,
     openSessionDraftWorkspaceId: null,
     sessionDrafts: {},
-    workflowDrafts: {},
     setCurrentSession: async (id: SessionId | null) => {
       set((state) => ({
         currentSessionId: id,
@@ -43,19 +40,6 @@ const makeStore = () =>
   }));
 
 type Store = ReturnType<typeof makeStore>;
-
-const builderDraft = (): WorkflowBuilderDraft => ({
-  mode: 'dynamic',
-  goalText: 'Round it',
-  goalHistory: [],
-  selectedPresetId: null,
-  basePresetId: null,
-  steps: [],
-  autoRun: false,
-  title: '',
-  orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
-  providerPool: null,
-});
 
 const write = ({
   store,
@@ -133,20 +117,15 @@ describe('closing the New session draft', () => {
     expect(draftOf({ store }).workflowGoal).toBe('Round the ledger postings');
   });
 
-  it('discards the text and both builder drafts, then leaves the page', () => {
+  it('discards the text, then leaves the page', () => {
     const store = makeStore();
     openFromSession(store);
     write({ store });
-    store.getState().setWorkflowDraft(kickoffDraftKey({ workspaceId: HARBORLINE }), builderDraft());
-    store
-      .getState()
-      .setWorkflowDraft(kickoffDraftKey({ workspaceId: HARBORLINE, lane: 'task' }), builderDraft());
 
     store.getState().discardSessionDraft({ workspaceId: HARBORLINE });
 
     const state = store.getState();
     expect(hasSessionDraftContent({ draft: draftOf({ store }) })).toBe(false);
-    expect(Object.keys(state.workflowDrafts ?? {})).toEqual([]);
     expect(state.openSessionDraftWorkspaceId).toBeNull();
     expect(state.currentSessionId).toBe(LEDGER);
   });

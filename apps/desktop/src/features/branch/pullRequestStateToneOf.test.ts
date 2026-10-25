@@ -7,7 +7,7 @@ import {
   GitPullRequestClosed,
   GitPullRequestDraft,
 } from 'lucide-react';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import { pullRequestStateToneOf } from './pullRequestStateToneOf';
 
 const CASES: ReadonlyArray<{

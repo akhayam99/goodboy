@@ -9,6 +9,7 @@ import {
   type RunDefaultScope,
 } from '../../../session/startRun/runDefaultSetting';
 import { RUN_ROUTE_COPY } from '../../../session/startRun/runRouteCopy';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly scope: RunDefaultScope;
@@ -50,7 +51,11 @@ export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
     try {
       await changeRunDefault({ scope, shape });
     } catch (error) {
-      void reportError({ title: "Couldn't save how new runs start", error });
+      void reportError({
+        title: "Couldn't save how new runs start",
+        error,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setIsSaving(false);
     }

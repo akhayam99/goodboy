@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useWorktreeActionTarget } from './useWorktreeActionTarget';
 import { SelectionCheckbox, Skeleton, Tooltip, cn } from '@goodboy/ui';
+import type { TerminalTab } from '../../../../shared/types/terminal';
 import {
   isStorageFolderIdle,
   storageFolderLastChange,
@@ -24,11 +25,13 @@ type Props = {
   readonly isSelected: boolean;
   readonly isRemoving: boolean;
   readonly isMeasuring: boolean;
+  readonly terminals: ReadonlyArray<TerminalTab>;
   readonly onToggle: ToggleFolder;
 };
 
 const STATUS_TONE = {
   safe: 'text-muted-foreground',
+  'terminal-open': 'text-foreground',
   'in-use': 'text-muted-foreground',
   checking: 'text-faint-foreground',
   dirty: 'text-foreground',
@@ -45,11 +48,14 @@ export const WorktreeRow = ({
   isSelected,
   isRemoving,
   isMeasuring,
+  terminals,
   onToggle,
 }: Props) => {
   const [intent, setIntent] = useState<RemoveIntent | null>(null);
-  const status = storageFolderStatus({ folder });
-  const statusLabel = isRemoving ? 'Removing…' : folderStatusLabel({ folder, status });
+  const status = storageFolderStatus({ folder, liveTerminals: terminals.length });
+  const statusLabel = isRemoving
+    ? 'Removing…'
+    : folderStatusLabel({ folder, status, liveTerminals: terminals.length });
   const title =
     folder.branch === '' ? (folder.path.split('/').at(-1) ?? folder.path) : folder.branch;
   const note = status === 'safe' ? localCommitsNote({ folder }) : null;
@@ -119,11 +125,12 @@ export const WorktreeRow = ({
           {formatAge({ from: lastChange, now })}
         </span>
         <span className={cn(STORAGE_COLUMN.status, 'text-meta', STATUS_TONE[status])}>
-          {status === 'safe' && !isRemoving ? null : statusLabel}
+          {statusLabel}
         </span>
         <WorktreeRowActions
           folder={folder}
           status={status}
+          terminals={terminals}
           target={actions.target}
           onEditor={actions.onEditor}
         />

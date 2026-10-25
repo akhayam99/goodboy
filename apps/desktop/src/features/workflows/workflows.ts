@@ -2,14 +2,12 @@ import { CommandError, invokeCommand, toCommandError } from '../../shared/lib/in
 import { tauriDatabase } from '../../shared/lib/db';
 import {
   normalizeWorkflowRole,
-  PlannerClient,
   polishStepExpectedOutput,
   polishStepInstruction,
   polishWorkflowGoal,
   polishWorkflowGuidance,
   type ExpectedOutputPolishInput,
   type GoalPolishDeps,
-  type PlannerClientDeps,
   type StepPolishDeps,
   type StepPolishInput,
 } from '@goodboy/core';
@@ -24,6 +22,7 @@ import {
   isWorkflowTaskProfile,
   legacyStepRoutingLock,
   listAgentsForSessions,
+  markAgentUnviewed,
   markAgentViewed,
   parseRoutingJson,
   recordAgentStatus,
@@ -352,6 +351,13 @@ export const invokeAgentSetProviderSessionId = (params: Params): Promise<void> =
 export const invokeAgentMarkViewed = (id: AgentId, at: IsoDateTime): Promise<void> =>
   persist(() => markAgentViewed(tauriDatabase, id, at));
 
+type UnviewedParams = {
+  readonly id: AgentId;
+};
+
+export const invokeAgentMarkUnviewed = ({ id }: UnviewedParams): Promise<void> =>
+  persist(() => markAgentUnviewed({ db: tauriDatabase, id }));
+
 export const invokeAgentSetDone = (
   id: AgentId,
   done: boolean,
@@ -362,6 +368,16 @@ export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<Worksp
   const ids = await invokeCommand<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
 };
+
+export type WorkspaceAttentionRow = {
+  readonly workspaceId: WorkspaceId;
+  readonly count: number;
+  readonly tone: 'danger' | 'warning';
+  readonly reasons: ReadonlyArray<string>;
+};
+
+export const invokeWorkspacesAttention = (): Promise<ReadonlyArray<WorkspaceAttentionRow>> =>
+  invokeCommand<ReadonlyArray<WorkspaceAttentionRow>>('workspaces_attention');
 
 type PolishStepParams = {
   readonly deps: Omit<StepPolishDeps, 'invokeFn'>;

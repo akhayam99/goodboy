@@ -3,8 +3,9 @@ import type { SessionId } from '@goodboy/types';
 import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
-import { tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 
 const accent = tintClasses(CONCEPT_TONE.plans);
 
@@ -24,11 +25,10 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
   const resolved = plans.find((p) => p.title === plan.title) ?? plans[plans.length - 1] ?? null;
 
   const onClick = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-plan-studio', {
-        detail: { sessionId, ...(resolved ? { planId: resolved.id } : {}) },
-      }),
-    );
+    dispatchWindowEvent({
+      name: 'goodboy:open-plan-studio',
+      detail: { sessionId, ...(resolved ? { planId: resolved.id } : {}) },
+    });
   };
 
   return (
@@ -39,7 +39,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       data-testid="plan-chip"
       tone={CONCEPT_TONE.plans}
       variant="pill"
-      className={`inline-flex w-fit items-center gap-2 text-label font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+      className={`inline-flex w-fit items-center gap-2 text-meta font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden />
       <span>{plan.title}</span>

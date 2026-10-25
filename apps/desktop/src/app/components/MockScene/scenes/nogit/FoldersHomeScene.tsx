@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { WorkspaceLauncher } from '../../../../../features/workspace/components/WorkspaceLauncher';
-import { hydrateOnboardingFromDb } from '../../../../../features/onboarding/onboarding-store';
+import { hydrateOnboardingFromDb } from '../../../../../features/onboarding/onboardingSettings';
 import { SETTING_REOPEN_LAST } from '../../../../../features/settings/settings';
 import { useAppStore } from '../../../../../store';
 import { mockSceneIpc } from '../mockSceneIpc';

@@ -1,3 +1,6 @@
+import { hostFailureOf } from '../../../shared/lib/hostFailureOf';
+import { CommandError } from '../../../shared/lib/invokeCommand';
+
 export type LookupFailure =
   'not-found' | 'unauthorized' | 'forbidden' | 'rate-limited' | 'unreachable';
 
@@ -23,7 +26,36 @@ const kindOf = (error: unknown): string | null => {
   return typeof kind === 'string' ? kind : null;
 };
 
+type FailureParams = {
+  readonly error: unknown;
+};
+
+const failureOf = ({ error }: FailureParams) =>
+  error instanceof CommandError ? error.failure : hostFailureOf({ rejection: error });
+
 export const classifyLookupError = (error: unknown): LookupFailure => {
+  const failure = failureOf({ error });
+  if (failure !== null) {
+    switch (failure.kind) {
+      case 'bad_credentials':
+        return 'unauthorized';
+      case 'denied':
+        return 'forbidden';
+      case 'not_found':
+        return 'not-found';
+      case 'rate_limited':
+        return 'rate-limited';
+      case 'network':
+      case 'timeout':
+        return 'unreachable';
+      case 'failed':
+        break;
+      default: {
+        const exhaustive: never = failure.kind;
+        return exhaustive;
+      }
+    }
+  }
   const kind = kindOf(error);
   if (kind === 'not_found') {
     return 'not-found';

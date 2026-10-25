@@ -58,7 +58,7 @@ export const InboxList = ({
           size="page"
           icon={CONCEPT_ICONS.inbox}
           title="No items yet"
-          description="Issues and errors assigned to you in your tools are listed here."
+          description="Issues and errors assigned to you in your tools arrive as items."
         />
       ) : null}
       {totalCount > 0 && visibleCount === 0 ? (

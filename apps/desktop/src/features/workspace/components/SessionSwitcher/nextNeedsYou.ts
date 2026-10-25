@@ -1,4 +1,10 @@
-import type { SessionAttentionReason, SessionId, SessionStage } from '@goodboy/types';
+import type {
+  Session,
+  SessionAttentionReason,
+  SessionId,
+  SessionStage,
+  SessionViewPrefs,
+} from '@goodboy/types';
 import type { AppStore } from '../../../../store/store';
 import { sessionMatchesProjectFilter } from '../../../../store/slices/sessionFilters/sessionMatchesProjectFilter';
 import { sortAndGroupSessions } from '../../../../store/slices/session-view/sortAndGroupSessions';
@@ -8,9 +14,34 @@ type Params = {
   readonly state: AppStore;
 };
 
-type NeedsYouTarget = {
+export type NeedsYouTarget = {
   readonly sessionId: SessionId;
   readonly reason: SessionAttentionReason | null;
+  readonly isOnlyOne: boolean;
+  readonly isOutsideFilter: boolean;
+};
+
+type OrderParams = {
+  readonly sessions: ReadonlyArray<Session>;
+  readonly prefs: SessionViewPrefs;
+  readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
+  readonly attentionSinceBySession: Readonly<Record<SessionId, number | null | undefined>>;
+};
+
+const orderOf = ({
+  sessions,
+  prefs,
+  stageBySession,
+  attentionSinceBySession,
+}: OrderParams): ReadonlyArray<Session> => {
+  const [first] = sortAndGroupSessions({
+    sessions,
+    prefs: { ...prefs, group: 'none' },
+    githubState: {},
+    stageBySession,
+    attentionSinceBySession,
+  });
+  return first?.sessions ?? [];
 };
 
 export const nextNeedsYou = ({ state }: Params): NeedsYouTarget | null => {
@@ -21,23 +52,26 @@ export const nextNeedsYou = ({ state }: Params): NeedsYouTarget | null => {
   const selectedProjectIds = state.selectedProjectIds[workspaceId] ?? [];
   const reasons = new Map<SessionId, SessionAttentionReason | null>();
   const stageBySession: Record<SessionId, SessionStage> = {};
-  const waiting = state.sessions.filter((session) => {
-    const mounts = state.sessionProjectMounts[session.id] ?? [];
-    if (!sessionMatchesProjectFilter({ mounts, selectedProjectIds })) {
-      return false;
-    }
+  const attentionSinceBySession: Record<SessionId, number | null | undefined> = {};
+  const inside: Session[] = [];
+  const outside: Session[] = [];
+  for (const session of state.sessions) {
     const info = stageInfoOf(state, session);
-    reasons.set(session.id as SessionId, info.attention);
-    stageBySession[session.id as SessionId] = info.stage;
-    return info.stage === 'attention';
-  });
-  const [first] = sortAndGroupSessions({
-    sessions: waiting,
-    prefs: { ...state.getSessionViewPrefs(workspaceId), group: 'none' },
-    githubState: {},
-    stageBySession,
-  });
-  const ordered = first?.sessions ?? [];
+    if (info.stage !== 'attention') {
+      continue;
+    }
+    reasons.set(session.id, info.attention);
+    stageBySession[session.id] = info.stage;
+    attentionSinceBySession[session.id] = info.attentionSince;
+    const mounts = state.sessionProjectMounts[session.id] ?? [];
+    (sessionMatchesProjectFilter({ mounts, selectedProjectIds }) ? inside : outside).push(session);
+  }
+  const prefs = state.getSessionViewPrefs(workspaceId);
+  const order = { prefs, stageBySession, attentionSinceBySession };
+  const ordered = [
+    ...orderOf({ sessions: inside, ...order }),
+    ...orderOf({ sessions: outside, ...order }),
+  ];
   if (ordered.length === 0) {
     return null;
   }
@@ -46,6 +80,10 @@ export const nextNeedsYou = ({ state }: Params): NeedsYouTarget | null => {
   if (target === undefined) {
     return null;
   }
-  const sessionId = target.id as SessionId;
-  return { sessionId, reason: reasons.get(sessionId) ?? null };
+  return {
+    sessionId: target.id,
+    reason: reasons.get(target.id) ?? null,
+    isOnlyOne: ordered.length === 1 && currentIndex === 0,
+    isOutsideFilter: outside.includes(target),
+  };
 };

@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::ignore_file::{append_ignore_entries, IgnoreWriteError, GOODBOY_IGNORE_ENTRY};
 use crate::proc::git::Git;
 use crate::worktree::{ensure_goodboy_excluded, exclude_file_path, remove_goodboy_exclude_entry};
 
 const PROBE_PATH: &str = ".goodboy/worktrees/probe";
-const GITIGNORE_ENTRY: &str = "/.goodboy/";
 
 #[derive(Debug, Error)]
 pub enum GoodboyIgnoreError {
@@ -15,8 +15,19 @@ pub enum GoodboyIgnoreError {
     UnknownTarget(String),
     #[error("refusing to write through a symlinked .gitignore")]
     SymlinkRefused,
+    #[error("the ignore file is read only, so Goodboy left it alone")]
+    ReadOnly,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+impl From<IgnoreWriteError> for GoodboyIgnoreError {
+    fn from(error: IgnoreWriteError) -> Self {
+        match error {
+            IgnoreWriteError::ReadOnly => GoodboyIgnoreError::ReadOnly,
+            IgnoreWriteError::Io(inner) => GoodboyIgnoreError::Io(inner),
+        }
+    }
 }
 
 crate::util::impl_error_serialize!(GoodboyIgnoreError);
@@ -26,6 +37,7 @@ impl GoodboyIgnoreError {
         match self {
             GoodboyIgnoreError::UnknownTarget(_) => "unknown_target",
             GoodboyIgnoreError::SymlinkRefused => "symlink_refused",
+            GoodboyIgnoreError::ReadOnly => "read_only",
             GoodboyIgnoreError::Io(_) => "io",
         }
     }
@@ -208,19 +220,7 @@ fn refuse_symlink(path: &Path) -> Result<(), GoodboyIgnoreError> {
 }
 
 fn append_entry_once(path: &Path) -> Result<(), GoodboyIgnoreError> {
-    let mut next = std::fs::read_to_string(path).unwrap_or_default();
-    if next.lines().any(|line| line.trim() == GITIGNORE_ENTRY) {
-        return Ok(());
-    }
-    if !next.is_empty() && !next.ends_with('\n') {
-        next.push('\n');
-    }
-    next.push_str(GITIGNORE_ENTRY);
-    next.push('\n');
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(path, next)?;
+    append_ignore_entries(path, &[GOODBOY_IGNORE_ENTRY])?;
     Ok(())
 }
 
@@ -278,8 +278,8 @@ pub async fn goodboy_ignore_status(
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GoodboyIgnoreApplyArgs {
-    #[serde(rename = "repoPath")]
     pub repo_path: String,
     pub target: String,
 }
@@ -300,6 +300,9 @@ pub async fn goodboy_ignore_apply(
         .await
         .map_err(|e| GoodboyIgnoreError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {

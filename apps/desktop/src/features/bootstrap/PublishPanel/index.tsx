@@ -138,7 +138,7 @@ export const PublishPanel = ({
           ) : null}
           {isToolAvailable && !isSignedIn ? (
             <div className="flex flex-col gap-2">
-              <p className="text-label text-muted-foreground">
+              <p className="text-meta text-muted-foreground">
                 Connect GitHub to create a repository.
               </p>
               <GithubFormBody workspaceId={null} onConnected={() => void refreshGithubStatus()} />
@@ -146,11 +146,11 @@ export const PublishPanel = ({
           ) : null}
           {isSignedIn ? (
             <>
-              <p className="text-label text-muted-foreground">
+              <p className="text-meta text-muted-foreground">
                 Connected as {owner ?? 'your GitHub account'}
               </p>
               <div className="flex flex-col gap-2">
-                <label htmlFor={nameId} className="text-label text-foreground">
+                <label htmlFor={nameId} className="text-meta text-foreground">
                   Repository name
                 </label>
                 <Input
@@ -167,7 +167,7 @@ export const PublishPanel = ({
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-label text-foreground">Visibility</span>
+                <span className="text-meta text-foreground">Visibility</span>
                 <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
                   {VISIBILITY_OPTIONS.map((option) => (
                     <Button
@@ -194,7 +194,7 @@ export const PublishPanel = ({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <label htmlFor={addressId} className="text-label text-foreground">
+          <label htmlFor={addressId} className="text-meta text-foreground">
             Repository address
           </label>
           <Input

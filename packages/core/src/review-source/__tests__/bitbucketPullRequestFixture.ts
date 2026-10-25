@@ -1,5 +1,5 @@
 import type { PullRequestFailureKind } from '../pullRequestPort';
-import { PullRequestPortError } from '../pullRequestPort';
+import { PullRequestPortError, STALE_HEAD_MESSAGE } from '../pullRequestPort';
 import type { BitbucketPullRequestTransport } from '../bitbucketPullRequestPort';
 import type {
   BitbucketMergeStrategy,
@@ -112,6 +112,7 @@ export const MEMBERS: ReadonlyArray<BitbucketPortUser> = [NADIA, KENJI, OMAR, PR
 
 export type FakeBitbucketCalls = {
   readonly merges: Array<BitbucketMergeStrategy>;
+  readonly mergeHeads: Array<string | null>;
   readonly updates: Array<{
     readonly title?: string;
     readonly description?: string;
@@ -125,6 +126,7 @@ export type FakeBitbucketOptions = Readonly<{
   failWrites?: Readonly<{ kind: PullRequestFailureKind; text: string }>;
   failStatuses?: Readonly<{ kind: PullRequestFailureKind; text: string }>;
   failCommits?: boolean;
+  headNow?: string;
   statuses?: ReadonlyArray<BitbucketPortStatus>;
   pullRequest?: BitbucketPortPullRequest;
 }>;
@@ -140,7 +142,13 @@ const failure = ({
 export const fakeBitbucketTransport = (
   options: FakeBitbucketOptions = {},
 ): { readonly transport: BitbucketPullRequestTransport; readonly calls: FakeBitbucketCalls } => {
-  const calls: FakeBitbucketCalls = { merges: [], updates: [], declines: 0, searches: [] };
+  const calls: FakeBitbucketCalls = {
+    merges: [],
+    mergeHeads: [],
+    updates: [],
+    declines: 0,
+    searches: [],
+  };
   const write = async (): Promise<void> => {
     if (options.failWrites !== undefined) {
       throw failure(options.failWrites);
@@ -165,9 +173,21 @@ export const fakeBitbucketTransport = (
       await write();
       calls.updates.push(params);
     },
-    merge: async ({ strategy }) => {
+    merge: async ({ strategy, expectedHeadSha }) => {
       await write();
+      if (
+        expectedHeadSha !== null &&
+        options.headNow !== undefined &&
+        expectedHeadSha !== options.headNow
+      ) {
+        throw new PullRequestPortError({
+          kind: 'stale_head',
+          message: STALE_HEAD_MESSAGE,
+          details: `reviewed ${expectedHeadSha}, the pull request is now at ${options.headNow}`,
+        });
+      }
       calls.merges.push(strategy);
+      calls.mergeHeads.push(expectedHeadSha);
     },
     decline: async () => {
       await write();

@@ -13,7 +13,6 @@ import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { seedLoadedSession } from './seedLoadedSession';
-import { sessionPinsKey } from '../../../../../store/slices/session-pins/sessionPinsKey';
 import { serializeSessionPins } from '../../../../../store/slices/session-pins/parseSessionPins';
 import { sceneClock } from '../../sceneClock';
 import { installSceneDatabase } from '../sceneDatabase';
@@ -135,7 +134,7 @@ const mountOf = ({ session, project }: { readonly session: Session; readonly pro
 const installPinsDatabase = (): void => {
   const pins = useAppStore.getState().sessionPins[WORKSPACE_ID] ?? [];
   installSceneDatabase({
-    settings: { [sessionPinsKey({ workspaceId: WORKSPACE_ID })]: serializeSessionPins({ pins }) },
+    workspaceValues: { [WORKSPACE_ID]: { 'sessions.pinned': serializeSessionPins({ pins }) } },
     liveSessionIds: () => useAppStore.getState().sessions.map((session) => session.id),
   });
 };

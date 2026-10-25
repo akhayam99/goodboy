@@ -34,7 +34,7 @@ export const PlanParts = ({
         </h2>
         <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
-      {hasRun ? null : <p className="text-label text-muted-foreground">{splitSentence}</p>}
+      {hasRun ? null : <p className="text-meta text-muted-foreground">{splitSentence}</p>}
       <ol className="flex min-w-0 flex-col">
         {rows.map((row) => {
           const content = (

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Band, Button, formatError, Notice, PaneShell } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import {
   bridgeRevoke,
   bridgeStart,

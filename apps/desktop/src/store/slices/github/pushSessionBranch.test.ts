@@ -27,7 +27,7 @@ import {
   readWorktreeStatus,
   resetWorktreeStatusCache,
   worktreeStatusKey,
-} from '../worktreeStatuses/cache';
+} from '../../runtime/worktreeStatuses/cache';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { pushSessionBranch } from './pushSessionBranch';
 import { useAppStore, type AppStore } from '../../store';

@@ -21,12 +21,7 @@ import {
   SESSION_GOAL_LIMITS,
   sessionGoalText,
 } from '../artifacts/sessionGoalText';
-import {
-  ARTIFACT_QUESTION_LIMIT,
-  artifactQuestionContract,
-} from '../artifacts/artifactQuestionContract';
-import { REDACTED } from '../../shared/utils/redactSecrets';
-import { ARTIFACT_SECTION_CUT_NOTE, ARTIFACT_SECTION_REMOVED_NOTE } from './allocateReportContext';
+import { artifactQuestionContract } from '../artifacts/artifactQuestionContract';
 import {
   buildReportContext,
   REPORT_CONTEXT_LIMITS,
@@ -178,7 +173,7 @@ describe('buildReportContext question contract', () => {
     expect(text).toContain(
       '<<ctx-question suggestions="first option|second option" recommended="first option" select="one" blocking="true">>the question<</ctx-question>>',
     );
-    expect(text).toContain(`at most ${ARTIFACT_QUESTION_LIMIT} questions`);
+    expect(text).toContain(`at most ${2} questions`);
     expect(text).toContain(
       'when no question is blocking, put the questions before the artifact block, in the same turn',
     );
@@ -875,7 +870,7 @@ describe('buildReportContext budget honesty', () => {
     );
     const row = context.inventory.find((entry) => entry.id === 'artifacts');
     expect(row?.state).toBe('missing');
-    expect(row?.detail).toContain(ARTIFACT_SECTION_REMOVED_NOTE);
+    expect(row?.detail).toContain('removed entirely to fit the pack budget');
   });
 
   it('keeps only the artifact ids that survived an artifacts block the evidence budget cut', () => {
@@ -904,7 +899,7 @@ describe('buildReportContext budget honesty', () => {
     expect(context.sourceIds).not.toContain('artifact-3');
     const row = context.inventory.find((entry) => entry.id === 'artifacts');
     expect(row?.state).toBe('partial');
-    expect(row?.detail).toContain(ARTIFACT_SECTION_CUT_NOTE);
+    expect(row?.detail).toContain('cut at the end to fit the pack budget');
   });
 
   it('holds the cap when the session title and the attachment list are far past the framing reservation', () => {
@@ -958,7 +953,7 @@ describe('buildReportContext session goal', () => {
       goal: goalOf({ value: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` }),
     });
     expect(context.text).not.toContain('harborline-test-value');
-    expect(context.text).toContain(REDACTED);
+    expect(context.text).toContain('[redacted]');
   });
 
   it('reports the goal the user wrote in the inventory', () => {

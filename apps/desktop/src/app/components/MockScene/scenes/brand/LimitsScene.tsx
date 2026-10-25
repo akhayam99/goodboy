@@ -17,7 +17,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ChatView } from '../../../../../features/chat/components/ChatView';
-import { finish } from '../../../../../features/onboarding/onboarding-store';
+import { finish } from '../../../../../features/onboarding/onboardingSettings';
 import { useAppStore } from '../../../../../store';
 import { ShellFrame, mockWorkspace, seedShellChrome } from '../shellChrome';
 import {

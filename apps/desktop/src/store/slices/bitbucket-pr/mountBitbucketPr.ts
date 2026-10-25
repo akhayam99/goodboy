@@ -35,6 +35,7 @@ type ApplyParams = ProjectionParams & {
 const toSessionBitbucketPr = (mount: MountBitbucketPrState): SessionBitbucketPrEntry => ({
   pr: mount.pr,
   fetchedAt: mount.fetchedAt,
+  failedAt: mount.failedAt ?? null,
   loading: mount.loading,
   error: mount.error,
 });

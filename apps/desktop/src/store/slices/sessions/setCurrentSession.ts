@@ -18,7 +18,7 @@ import type { SessionLoadingFlags } from './state';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {

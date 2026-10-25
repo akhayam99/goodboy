@@ -20,6 +20,7 @@ export type SessionBudget = Readonly<{
   sessionId: SessionId;
   softCapUsd: number;
   onExceed: SessionBudgetOnExceed;
+  warnRatio: number;
 }>;
 
 export type BudgetCheckResult = Readonly<{

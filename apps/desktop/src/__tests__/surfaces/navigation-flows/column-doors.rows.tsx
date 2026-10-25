@@ -2,6 +2,7 @@ import { expect, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ChatId } from '@goodboy/types';
 import { brandedId } from '../../../features/history/testing/brandedId';
+import { useThemeStore, type ThemePreference } from '../../../shared/lib/theme';
 import {
   type Row,
   WAIT,
@@ -38,7 +39,42 @@ const createIn = (name: string): HTMLElement => {
   return button;
 };
 
+const DOOR_ORDER: ReadonlyArray<string> = [
+  'board',
+  'inbox',
+  'workflows',
+  'chat',
+  'terminal',
+  'impact',
+  'monitoring',
+];
+
+const doorIdsInColumn = (): ReadonlyArray<string> =>
+  Array.from(document.querySelectorAll<HTMLElement>('[data-side-column] [data-column-door]')).map(
+    (door) => door.getAttribute('data-column-door') ?? '',
+  );
+
+const themeRow = ({ choice }: { readonly choice: ThemePreference }): Row => ({
+  name: `palette: Theme: ${choice} sets the theme`,
+  covers: [`palette:Theme: ${choice}`],
+  open: () => openPalette(new RegExp(`^Theme: ${choice}$`), 'theme'),
+  lands: async () => {
+    await waitFor(() => expect(useThemeStore.getState().preference).toBe(choice), WAIT);
+  },
+});
+
 export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
+  ...(['dark', 'light', 'system'] as const).map((choice) => themeRow({ choice })),
+  {
+    name: 'column: the doors stand in the ranked order',
+    covers: [],
+    open: async () => undefined,
+    lands: async () => {
+      expect(doorIdsInColumn().filter((id) => DOOR_ORDER.includes(id))).toEqual(DOOR_ORDER);
+      expect(doorIn('board').textContent).toContain('Sessions');
+      expect(doorIn('inbox').textContent).toContain('Tasks');
+    },
+  },
   {
     name: 'palette verb: Copy worktree path',
     covers: ['palette:Copy worktree path'],

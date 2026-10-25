@@ -1,11 +1,11 @@
 import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, FormActions, KeyHint, Notice, cn, useEscapeLayer } from '@goodboy/ui';
+import { Button, cn, FormActions, ICON_SIZE, KeyHint, Notice, useEscapeLayer } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
 import { FORM_BODIES } from '../../../integrations/formBodies';
 import { useToolConnections } from '../../../integrations/useToolConnections';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { hostFromRemote, hostsInOrder, type CodeHost } from '../hostFromRemote';
 import { InstantToolConnectContext } from '../instantToolConnectContext';
@@ -141,7 +141,7 @@ export const ToolsStep = ({
     <div className="flex flex-col gap-6" onKeyDown={onKeyDown}>
       <StepHeading
         title="Your tools"
-        line="Connect where code and tasks live, so agents can open pull requests and pick up issues. Settings has the same page for later."
+        line="Connect where your code lives and where your tasks come from, so agents can open pull requests and work from issues. Settings has the same page for later."
       />
       <ToolsSection label="Code">
         {firstRepo === null || leadHost === undefined ? (

@@ -8,6 +8,11 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import type { HostFailureKind } from '../../../shared/lib/hostFailure';
+import { CommandError } from '../../../shared/lib/invokeCommand';
+import { isHostAskDue } from '../host-reachability/isHostAskDue';
+import type { HostAnswer } from '../host-reachability/reachabilityAfter';
+import type { ReachabilityHost } from '../host-reachability/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 import {
@@ -72,26 +77,34 @@ type RefreshParams<TEntry extends LoadingEntry, TContext> = {
   readonly mount: MountRef;
   readonly opts?: RefreshRequestOptions;
   readonly adapter: MountRequestAdapter<TEntry, TContext>;
+  readonly host?: ReachabilityHost;
 };
 
-export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>({
+type HostParams = {
+  readonly error: unknown;
+};
+
+const hostFailureKindOf = ({ error }: HostParams): HostFailureKind | null =>
+  error instanceof CommandError ? (error.failure?.kind ?? null) : null;
+
+const loadMountRequest = async <TEntry extends LoadingEntry, TContext>({
   set,
   get,
   sessionId,
   mount,
   opts,
   adapter,
-}: RefreshParams<TEntry, TContext>): Promise<void> => {
+}: RefreshParams<TEntry, TContext>): Promise<HostAnswer | null> => {
   const existing = adapter.read(get());
   if (opts?.force !== true && existing?.loading === true) {
-    return;
+    return null;
   }
   const isCurrent = (): boolean =>
     mountRevision({ state: get(), sessionId, mountId: mount.id }) === mount.revision;
   const resolved = adapter.resolveContext({ isCurrent });
   const context = resolved instanceof Promise ? await resolved : resolved;
   if (context === null) {
-    return;
+    return null;
   }
   set((state) => adapter.apply({ state, entry: adapter.pendingEntry({ existing, context }) }));
   const maxAttempts = (opts?.retries ?? 0) + 1;
@@ -100,7 +113,7 @@ export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>
     try {
       const outcome = await adapter.load({ existing, context, isCurrent });
       if (outcome.kind === 'stale' || !isCurrent()) {
-        return;
+        return 'ok';
       }
       set((state) => {
         const next = outcome.next(adapter.read(state));
@@ -109,13 +122,14 @@ export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>
       if (outcome.after !== undefined) {
         await outcome.after();
       }
-      return;
+      return 'ok';
     } catch (error) {
       lastError = error;
     }
   }
+  const failureKind = hostFailureKindOf({ error: lastError });
   if (!isCurrent()) {
-    return;
+    return failureKind;
   }
   set((state) => {
     const current = adapter.read(state);
@@ -130,6 +144,31 @@ export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>
       }),
     });
   });
+  return failureKind;
+};
+
+export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>({
+  set,
+  get,
+  sessionId,
+  mount,
+  opts,
+  adapter,
+  host,
+}: RefreshParams<TEntry, TContext>): Promise<void> => {
+  const askedAt = Date.now();
+  const isHeldBack =
+    host !== undefined &&
+    opts?.silent === true &&
+    opts.force !== true &&
+    !isHostAskDue({ entry: get().hostReachability[host], now: askedAt });
+  if (isHeldBack) {
+    return;
+  }
+  const answer = await loadMountRequest({ set, get, sessionId, mount, opts, adapter });
+  if (host !== undefined && answer !== null) {
+    get().noteHostAnswer({ host, answer, askedAt });
+  }
 };
 
 type ItemParams<TItem> = {

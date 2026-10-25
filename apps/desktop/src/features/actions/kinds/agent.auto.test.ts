@@ -23,7 +23,7 @@ import { brandId, type AgentId, type WorkflowRunId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import type { AppStore } from '../../../store/store';
-import { adoptAgent } from '../../../store/slices/auto/adoptAgent';
+import { adoptAgent } from '../../../store/runtime/auto/adoptAgent';
 import { MOVE_TO_AUTO_EVENT } from '../../auto/adopt/moveToAutoEvent';
 import { runRoutesKey } from '../../session/startRun/runRoutesSetting';
 import { resolveActions } from '../resolveActions';

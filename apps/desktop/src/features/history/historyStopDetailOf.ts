@@ -21,7 +21,7 @@ const baseNameOf = ({ path }: PathParams): string =>
     .filter((part) => part.length > 0)
     .pop() ?? path;
 
-const namesOf = ({ files }: FilesParams): string => {
+const fileNamesOf = ({ files }: FilesParams): string => {
   const shown = files.slice(0, SHOWN_FILES).map((path) => baseNameOf({ path }));
   const hidden = files.length - shown.length;
   if (hidden > 0) {
@@ -33,7 +33,7 @@ const namesOf = ({ files }: FilesParams): string => {
 export const historyStopDetailOf = ({ payload }: Params): string | null => {
   const files = payload?.files ?? [];
   if (payload?.reason !== 'stuck' && files.length > 0) {
-    return `Conflict in ${namesOf({ files })}`;
+    return `Conflict in ${fileNamesOf({ files })}`;
   }
   const cause = historyStopCause({ reason: payload?.reason, message: payload?.title });
   if (cause === null) {

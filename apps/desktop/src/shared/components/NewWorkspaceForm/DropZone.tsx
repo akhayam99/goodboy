@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Upload } from 'lucide-react';
-import { FOCUS_RING, ICON_SIZE, cn } from '@goodboy/ui';
+import { FOCUS_RING, ICON_SIZE, ICON_STROKE, cn } from '@goodboy/ui';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget';
 
 type DropParams = {
@@ -43,7 +43,7 @@ export const DropZone = ({ readingName, isBusy, onChoose, onDrop }: Props) => {
           isDragging && 'text-primary',
         )}
       >
-        <Upload size={ICON_SIZE.hero} strokeWidth={1.6} aria-hidden />
+        <Upload size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />
       </span>
       <span className="flex flex-col items-center gap-1">
         <span className="text-row text-foreground">

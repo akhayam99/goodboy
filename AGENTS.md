@@ -11,24 +11,24 @@ The rules reviewers flag most, ordered by how often they hit. Each line names
 the guard that fails the build, or says there is none yet. The sections below
 hold the detail.
 
-1. Every function we declare takes one destructured object with a named `Params` or `Props` type, never positional or inline-object parameters (`inline-object-param`).
-2. A boolean name starts with `is`, `has`, `can` or `should` (`boolean-prefix`).
+1. Every function we declare takes one destructured object with a named `Params` or `Props` type, never positional, bare or inline-object parameters (`param-shape`).
+2. A boolean name, optional and nullable ones included, starts with `is`, `has`, `can`, `should`, `was` or `will` (`boolean-name`, lint `@typescript-eslint/naming-convention`).
 3. The parent's `gap` spaces siblings; margins, `space-*` and padding used as a spacer are forbidden (`sibling-margin`).
 4. One export per file, written `export const name = () =>`; no default export and no second component in a file (`export-function`, `export-default`, `extra-component-per-file`).
-5. Compare explicitly (`=== undefined`, `.length > 0`); only a real boolean is used bare (no guard yet).
-6. Guard clauses with braces, and no `else` after a return, in TypeScript and in Rust (`else-branch`, `unbraced-if`, `rust-else`).
+5. Compare explicitly (`x == null` for a nullable, `=== ''` for a string, `.length > 0` for a number); only a real boolean is used bare, and `=== true` is for a nullable boolean (lint `@typescript-eslint/strict-boolean-expressions`, `eqeqeq`).
+6. Guard clauses with braces, and no `else` after a return, in TypeScript and in Rust (`else-branch`, `if-without-braces`, `rust-else`).
 7. A hook is a folder `useFoo/index.ts`, even alone (`hook-folder`).
-8. No code comments, dead code included (`comment`, `config-comment`).
-9. No em dash and no en dash in code, copy, commits or docs (`em-dash`).
+8. No code comments, dead code included, an unused import too (`comment`, `config-comment`, `unused-import`).
+9. No em dash and no en dash in code, copy, commits or docs, markdown and json included (`em-dash`).
 10. Seeds, scenes, tests and docs use mock names only: Harborline, Northwind, Acme, Cascadia, ledger-core, notify-relay, payments-api (no guard yet).
 11. A test loads the real store through `storyHarness` and mocks only the Tauri boundary; module mocks come from the harness factories (`store-mocks`).
 12. A write names its target (workspace, project, mount, session) and never reads "the current one" after an await (`ambient-target` ratchet).
 13. Apply state only after the async step succeeded; a failure leaves the old state and shows the error (`catch-swallow` ratchet).
 14. Keep only the latest response: a late answer for an old request is dropped (no guard yet).
 15. Every number on screen comes from one function; a second computation drifts (no guard yet).
-16. Every retry and every undo path has a test (no guard yet).
-17. No regex that backtracks polynomially on input, and no dispatch on a key the user controls (no guard yet; CodeQL scans pull requests).
-18. Docs move with the code: the doc that owns a changed fact changes in the same commit (`check:doc-refs`).
+16. Every retry and every undo path has a test (`undo-sites-have-tests` for undo, no guard yet for retry).
+17. No regex that backtracks polynomially on input, and no dispatch on a key the user controls (lint `regexp/no-super-linear-backtracking`; CodeQL scans pull requests).
+18. Docs move with the code: the doc that owns a changed fact changes in the same commit, and a fact that is no longer true is deleted, not appended after (`check:doc-refs`, `doc-budget`).
 
 Rules 12 to 16 are written out, each with its helper and its test, in [docs/typescript/state-writes.md](./docs/typescript/state-writes.md).
 
@@ -79,16 +79,20 @@ utility that belongs to one domain stays next to its owner.
 
 Keep one main export per file. Keep public barrels (the `index.ts` files that
 re-export a folder) small. Inside the codebase, import from the file that
-defines the thing, not from a barrel. The full component and export rules live
+defines the thing, not from a barrel. The one barrel that is a door on purpose is
+`store/index.ts`: it is how callers get the store hooks and the store types, and
+nothing else re-exports from a feature. The full component and export rules live
 in [docs/typescript/components.md](./docs/typescript/components.md).
 
 ## Store selectors and memoization
 
 - A `useAppStore` selector returns a primitive or a reference the store owns.
-  A selector that builds a new collection needs `useShallow` or the required
-  proof directive.
-- Select only the keys a component needs. Never select a whole slice that
-  changes often. `useShallow` does not make a broad subscription okay.
+  A selector that builds a new collection needs `useShallow`.
+- Select only the keys a component needs. A state key typed as a record keyed
+  by an id is a whole-record key: subscribe to one entry of it, never to the
+  whole record, and never to a whole slice that changes often. `useShallow`
+  does not make a broad subscription okay. The definition, the argument name
+  and the guards are in [docs/typescript/selectors.md](./docs/typescript/selectors.md).
 - Memoize a list row only when its props are primitives or stable references.
   Memoize the work behind the row too.
 
@@ -119,12 +123,24 @@ that owns that concept in the same PR. Find the owner through
 [docs/README.md](./docs/README.md). A change under a glob in its feature-area
 ownership table updates only its matching `docs/features/<area>.md`. If it adds,
 removes or renames a main item, also update its line in `FEATURES.md` and, when
-the item appears on the site, `website/src/pages/features/features.data.json`.
+the item appears on the site, `website/src/pages/features/features.data.json`;
+`node scripts/split-features.mjs --write` writes both lines from the item's first
+sentence.
 `pnpm check:doc-refs` checks the current feature index, area files, legacy anchors and ownership table. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. If no owner exists and a reader would break
 something without knowing it, add the line to the nearest owner or to
 [docs/traps.md](./docs/traps.md). Renaming or deleting a symbol, file, or route
 means grepping `*.md` for it first. A lesson learned while working here goes
 into the owning doc, never only into an agent's private memory.
+
+A page in `docs/features/` is for the reader of the app. Keep its sentences
+short, retire a sentence that a change makes false instead of correcting it
+below, and never grow a list of every case. A code name, a source path or a
+test name goes in the `Under the hood` section at the end of the page, never in
+the body, and the claim it proves stays true there.
+`node scripts/check-doc-budget.mjs`, run by `pnpm check:doc-refs`, counts the
+breaches per page against `doc-budget.baseline.json`: a count may fall and
+never grows. [docs/tone-of-voice.md](./docs/tone-of-voice.md) lists the
+budgets.
 
 ## Git and releases
 
@@ -183,14 +199,14 @@ TypeScript in `apps/desktop/src` and `packages/*/src`, Rust in
 config. The target is every rule on every root, `website/src` and `scripts/`
 included, with the Rust `else` chain caught by `rust-else`.
 `apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts the
-ones a pattern can find (`else`, unbraced `if`, a second component per file,
+ones a pattern can find (`else`, a second component per file,
 comments in TS, Rust and YAML/TOML, em dashes, `interface`, `export function`,
 `export default`, `any`, `invoke` in a component or hook) per file, against
 `forbidden-patterns.baseline.json`. A count may fall but never grow, and a new
-file starts at zero. The same ratchet counts the design system's debt: raw
+file starts at zero. Four counters read the syntax tree instead of a line (`if-without-braces`, `param-shape`, `boolean-name`, `unused-import`), each with a baseline file of its own (the code is in `scripts/rules/ast/`). The same ratchet counts the design system's debt: raw
 type sizes, weights, leadings and tracking in place of a type role, a scroller
 that is not a `ScrollFade`, a side border on a rounded box, and a footer bar
 holding a form's actions instead of `FormActions` at the end of the content
-([DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#form-actions)). Each failure
+([layout.md](./packages/ui/design/layout.md#form-actions)). Each failure
 names the role or primitive to use instead
 ([DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#type-scale)).

@@ -1,10 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, IsoDateTime } from '@goodboy/types';
-import type {
-  OrchestratorPhase,
-  OrchestratorState,
-} from './components/OrchestratorStrip/orchestratorState';
+import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
 import { orchestratedTailOf, type OrchestratedTail } from './orchestratedTailOf';
 import type { RunPrimary } from './runPrimaryOf';
 

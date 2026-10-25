@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { TriangleAlert, Trash2 } from 'lucide-react';
 import type { ProjectId } from '@goodboy/types';
-import { Checkbox, SelectionBar, SelectionConfirm } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import {
+  Checkbox,
+  FLOATING_SURFACE,
+  ICON_SIZE,
+  SelectionBar,
+  SelectionConfirm,
+  cn,
+} from '@goodboy/ui';
+
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { branchCount } from '../../branches/branchCopy';
 import {
@@ -89,7 +96,7 @@ export const BranchBulkBar = ({
       ]}
       note={
         isConfirming || originEligible === 0 || count === 0 ? null : (
-          <div className="rounded-lg border border-border bg-floating px-3 py-2 shadow-lg">
+          <div className={cn(FLOATING_SURFACE, 'px-3 py-2')}>
             <Checkbox
               checked={alsoOrigin}
               onChange={setAlsoOrigin}
@@ -108,7 +115,7 @@ export const BranchBulkBar = ({
         isConfirming && count > 0 ? (
           <SelectionConfirm
             role="danger"
-            icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
+            icon={<TriangleAlert size={ICON_SIZE.row} aria-hidden />}
             title={title}
             description="Kept for 14 days so you can restore one."
             confirmLabel={confirmLabel}
@@ -117,7 +124,7 @@ export const BranchBulkBar = ({
             onCancel={onCancel}
             note={
               unmerged.length === 0 ? null : (
-                <p className="text-label text-warning">
+                <p className="text-meta text-warning">
                   {unmerged.length === 1 ? "1 isn't merged" : `${unmerged.length} aren't merged`}:{' '}
                   {lostCommits === 1 ? '1 commit exists' : `${lostCommits} commits exist`} only in
                   these branches.

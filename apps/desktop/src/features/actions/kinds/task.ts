@@ -6,6 +6,7 @@ import type {
   SessionId,
   SessionProjectMount,
 } from '@goodboy/types';
+import { NAMES } from '../../../shared/utils/names';
 import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import type { ObjectKindDefinition, TaskActionTarget } from '../types';
@@ -160,7 +161,7 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
     {
       id: 'task.unlink',
       slot: ({ facts }) => (facts.branch === null ? 'hover' : 'menu'),
-      label: 'Unlink from session',
+      label: NAMES.removeLinkFromSession,
       icon: Unlink,
       group: 'danger',
       when: () => true,

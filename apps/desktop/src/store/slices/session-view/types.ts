@@ -217,6 +217,7 @@ type SessionViewSliceState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
+  readonly sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
@@ -229,6 +230,11 @@ type SessionViewSliceState = {
 type DismissCheckProposalParams = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+};
+
+type SetDismissedNextStepsParams = {
+  readonly sessionId: SessionId;
+  readonly fingerprints: ReadonlySet<string>;
 };
 
 type SessionViewSliceActions = {
@@ -249,6 +255,7 @@ type SessionViewSliceActions = {
   markSessionOpened(params: { readonly sessionId: SessionId }): void;
   toggleSessionGroup(params: { readonly key: string }): void;
   dismissCheckProposal(params: DismissCheckProposalParams): void;
+  setSessionDismissedNextSteps(params: SetDismissedNextStepsParams): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;

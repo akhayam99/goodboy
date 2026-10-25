@@ -8,14 +8,15 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { PageColumn, ScrollFade, Skeleton, type DiffLayoutMode } from '@goodboy/ui';
+import { ICON_SIZE, PageColumn, ScrollFade, Skeleton } from '@goodboy/ui';
+import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { FileDiff } from '@goodboy/types';
 import { Info } from 'lucide-react';
-import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
-import { effectiveDiffLayout } from '../../../../shared/hooks/useDiffLayoutMode/effectiveDiffLayout';
+import { useDiffLayoutMode } from '../../hooks/useDiffLayoutMode';
+import { effectiveDiffLayout } from '../../hooks/useDiffLayoutMode/effectiveDiffLayout';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import type { FileSidesLoader } from '../../hooks/useFileSides';
 import { PeekHost, type IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';

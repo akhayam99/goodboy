@@ -75,7 +75,7 @@ export const BranchRow = ({
         <TruncatedText className="font-mono text-code text-foreground">{branch.name}</TruncatedText>
         <BranchSessionLine entry={entry} />
       </span>
-      <span data-cell="folder" className="truncate text-label text-muted-foreground">
+      <span data-cell="folder" className="truncate text-meta text-muted-foreground">
         {projectName}
       </span>
       <span data-cell="state" className="flex min-w-0">
@@ -84,8 +84,8 @@ export const BranchRow = ({
           anchorClassName="flex min-w-0"
         >
           <Chip
+            kind="state"
             tone={verdict.isSafe ? 'success' : 'neutral'}
-            size="xs"
             width="md"
             label={branchStateLabel({ branch, base })}
           />

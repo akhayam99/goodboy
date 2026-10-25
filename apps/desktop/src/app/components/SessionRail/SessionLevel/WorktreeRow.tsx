@@ -8,6 +8,7 @@ import type { MountRowView } from '../../../../store/slices/project-mounts/mount
 import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
+import { ROW_MENU_TOOLTIP } from '../../../../features/actions/rowMenuTooltip';
 import { useMountMenuTarget } from '../../../../features/session/hooks/useMountMenuTarget';
 import { branchRowFactsOf } from '../../../../features/branch/branchRowFactsOf';
 import { resolveBranchTab, type BranchScope } from '../../../../features/branch/branchTabs';
@@ -173,6 +174,7 @@ export const WorktreeRow = ({
           <ObjectOverflowMenu
             target={target}
             label={`${row.projectName} · ${facts.branch} actions`}
+            tooltip={ROW_MENU_TOOLTIP}
             size="compact"
             hideWhenEmpty
           />

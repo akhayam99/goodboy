@@ -1,7 +1,7 @@
 import { RefreshCw } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 

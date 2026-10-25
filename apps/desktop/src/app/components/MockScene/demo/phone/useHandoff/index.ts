@@ -14,6 +14,10 @@ type CopyParams = {
   readonly url: string;
 };
 
+type ErrorParams = {
+  readonly error: unknown;
+};
+
 type SettleParams = {
   readonly result: HandoffResult;
 };
@@ -24,7 +28,7 @@ type Handoff = {
   readonly handoff: () => void;
 };
 
-const isAbort = (error: unknown): boolean =>
+const isAbort = ({ error }: ErrorParams): boolean =>
   typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError';
 
 const canUseShare = (): boolean => typeof navigator.share === 'function';
@@ -49,7 +53,7 @@ const sendLink = async ({ url, title, text }: Params): Promise<HandoffResult> =>
     await navigator.share({ url, title, text });
     return 'shared';
   } catch (error: unknown) {
-    if (isAbort(error)) {
+    if (isAbort({ error })) {
       return 'cancelled';
     }
   }

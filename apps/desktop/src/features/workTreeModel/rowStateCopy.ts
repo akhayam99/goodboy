@@ -1,6 +1,6 @@
 import { formatUsd } from '@goodboy/ui';
 import type { Tone, WorkNodeState } from '@goodboy/ui';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
 import { REVIEW_COMMENT_NODE, REVIEW_COMMENT_TONE } from '../resolve/reviewCommentState';
 import type { RowPhase, RowState, RowStateReason } from './rowState';
@@ -25,6 +25,21 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
 
 type ReasonParams = {
   readonly reason: RowStateReason;
+};
+
+type QuietParams = {
+  readonly quietMs: number;
+};
+
+const QUIET_MINUTE_MS = 60_000;
+const QUIET_HOUR_MINUTES = 120;
+
+export const quietSentence = ({ quietMs }: QuietParams): string => {
+  const minutes = Math.max(1, Math.floor(quietMs / QUIET_MINUTE_MS));
+  if (minutes < QUIET_HOUR_MINUTES) {
+    return `Quiet for ${minutes} min`;
+  }
+  return `Quiet for ${Math.floor(minutes / 60)} h`;
 };
 
 const reasonSentence = ({ reason }: ReasonParams): string | null => {
@@ -226,7 +241,8 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       if (
         state.reason?.kind === 'blocked' ||
         state.reason?.kind === 'stepBlocked' ||
-        state.reason?.kind === 'noArtifact'
+        state.reason?.kind === 'noArtifact' ||
+        state.reason?.kind === 'needsApproval'
       ) {
         return 'approval';
       }

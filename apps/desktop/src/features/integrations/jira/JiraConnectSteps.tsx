@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeftRight, Check, ExternalLink, MessageSquare } from 'lucide-react';
-import { Button, formatError, Listbox } from '@goodboy/ui';
+import { ArrowLeftRight, Check, SquareArrowOutUpRight, MessageSquare } from 'lucide-react';
+import { Button, formatError, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { ConnectSteps, type ConnectStepDef } from '../components/ConnectSteps';
 import { CheckStatus } from '../components/ConnectSteps/CheckStatus';
 import { StepField } from '../components/ConnectSteps/StepField';
@@ -101,7 +101,7 @@ export const JiraConnectSteps = ({ workspaceId, shouldAutoFocus = false, onConne
           }}
         >
           Open Atlassian
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
         </Button>
       ),
     },
@@ -207,7 +207,7 @@ export const JiraConnectSteps = ({ workspaceId, shouldAutoFocus = false, onConne
             text: 'Comments as you',
           },
         ]}
-        footnote="Jira Cloud only. Data Center and Server are not supported."
+        footnote="Jira Cloud only. Data Center and Server aren't supported."
       />
     </div>
   );

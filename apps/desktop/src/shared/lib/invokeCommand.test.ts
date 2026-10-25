@@ -29,6 +29,36 @@ describe('invokeCommand', () => {
     expect(error).toMatchObject({ kind: 'io', message: 'the folder is locked' });
   });
 
+  it('keeps the failure kind, status, retry hint and detail of a host rejection', async () => {
+    h.invoke.mockRejectedValueOnce({
+      kind: 'rate_limited',
+      message: 'http error 429: slow down',
+      failureKind: 'rate_limited',
+      status: 429,
+      retryAfterSeconds: 9,
+      detail: 'slow down',
+    });
+
+    const error = await invokeCommand('gitlab_get_mr').catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(CommandError);
+    expect(error).toMatchObject({
+      kind: 'rate_limited',
+      failure: { kind: 'rate_limited', status: 429, retryAfterSeconds: 9, detail: 'slow down' },
+    });
+  });
+
+  it('leaves the failure empty when the host sent none or one it does not know', async () => {
+    h.invoke.mockRejectedValueOnce({ kind: 'io', message: 'locked' });
+    h.invoke.mockRejectedValueOnce({ kind: 'http', message: 'x', failureKind: 'teapot' });
+
+    const plain = await invokeCommand('worktree_status').catch((caught: unknown) => caught);
+    const unknown = await invokeCommand('gitlab_get_mr').catch((caught: unknown) => caught);
+
+    expect(plain).toMatchObject({ failure: null });
+    expect(unknown).toMatchObject({ failure: null });
+  });
+
   it('turns a string rejection into an unknown-kind CommandError', async () => {
     h.invoke.mockRejectedValueOnce('gh is not installed');
 

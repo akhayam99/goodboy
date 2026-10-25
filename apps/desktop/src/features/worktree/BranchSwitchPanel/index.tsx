@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Check, Copy, GitBranch } from 'lucide-react';
 import {
   Button,
-  IconButton,
   formatError,
+  ICON_SIZE,
+  IconButton,
   Input,
   Notice,
   SegmentedTabs,
-  useCopyLink,
   TruncatedText,
+  useCopyLink,
 } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../shared/components/Toast';
@@ -19,7 +20,6 @@ import { branchChoiceOrigin } from '../branchChoices';
 import { useBranchChoices } from '../useBranchChoices';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { selectMountById } from '../../../store/slices/project-mounts/selectors';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -116,7 +116,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
       </div>
 
       {branch === null ? null : (
-        <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-meta text-muted-foreground">
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <TruncatedText className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}
@@ -215,7 +215,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
         />
       ) : null}
 
-      {error != null ? <p className="text-label text-danger">{error}</p> : null}
+      {error != null ? <p className="text-meta text-danger">{error}</p> : null}
 
       <div className="flex justify-end">
         <Button

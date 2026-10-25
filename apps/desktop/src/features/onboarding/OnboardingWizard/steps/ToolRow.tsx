@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import {
   IntegrationGlyph,
-  integrationLabel,
   type IntegrationGlyphProvider,
 } from '../../../integrations/components/IntegrationGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { integrationLabel } from '../../../../shared/utils/integrationLabel';
+
 import { StepListRow } from './StepListRow';
 import { StepStatus } from './StepStatus';
 

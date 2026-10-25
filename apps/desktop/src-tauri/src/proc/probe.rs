@@ -161,7 +161,7 @@ mod tests {
     use super::*;
 
     fn is_alive(pid: libc::pid_t) -> bool {
-        unsafe { libc::kill(pid, 0) == 0 }
+        crate::proc::signal::exists(pid as u32)
     }
 
     fn sh(script: &str) -> Command {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { FOCUS_RECHECK_DEBOUNCE_MS, useSessionFocusRecheck } from './index';
+import { useSessionFocusRecheck } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
 
@@ -31,7 +31,7 @@ describe('useSessionFocusRecheck', () => {
     window.dispatchEvent(new Event('focus'));
     document.dispatchEvent(new Event('visibilitychange'));
     window.dispatchEvent(new Event('focus'));
-    vi.advanceTimersByTime(FOCUS_RECHECK_DEBOUNCE_MS);
+    vi.advanceTimersByTime(400);
 
     expect(recheckSessionMounts).toHaveBeenCalledTimes(1);
     expect(recheckSessionMounts).toHaveBeenCalledWith({ sessionId: SESSION_ID, reason: 'focus' });
@@ -42,7 +42,7 @@ describe('useSessionFocusRecheck', () => {
     renderHook(() => useSessionFocusRecheck());
 
     window.dispatchEvent(new Event('focus'));
-    vi.advanceTimersByTime(FOCUS_RECHECK_DEBOUNCE_MS);
+    vi.advanceTimersByTime(400);
 
     expect(recheckSessionMounts).not.toHaveBeenCalled();
   });
@@ -52,7 +52,7 @@ describe('useSessionFocusRecheck', () => {
 
     window.dispatchEvent(new Event('focus'));
     unmount();
-    vi.advanceTimersByTime(FOCUS_RECHECK_DEBOUNCE_MS);
+    vi.advanceTimersByTime(400);
 
     expect(recheckSessionMounts).not.toHaveBeenCalled();
   });

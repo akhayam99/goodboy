@@ -1,7 +1,6 @@
 import { EyeOff } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { CHIP_ACTIVE } from './chipTone';
-import { ICON_SIZE } from '../conceptIcons';
 
 const HIDDEN_IN_PICKER = 'Hidden in the picker';
 
@@ -32,7 +31,7 @@ export const PickerChip = ({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label transition-colors',
+        'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-meta transition-colors',
         active
           ? cn('font-medium shadow-sm', CHIP_ACTIVE)
           : 'text-muted-foreground hover:bg-background hover:text-foreground',

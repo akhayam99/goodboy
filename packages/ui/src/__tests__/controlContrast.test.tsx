@@ -38,7 +38,7 @@ describe('controls at 3:1', () => {
     );
   });
 
-  it('fills the secondary button and the skeleton one step inside their parent', () => {
+  it('fills the secondary button one step inside its parent and the skeleton one step above', () => {
     const { container } = render(
       <>
         <Button variant="secondary">Cancel</Button>
@@ -46,6 +46,6 @@ describe('controls at 3:1', () => {
       </>,
     );
     expect(screen.getByRole('button', { name: 'Cancel' }).className).toContain('bg-fill');
-    expect(container.querySelector('[aria-hidden]')?.className).toContain('bg-fill');
+    expect(container.querySelector('[aria-hidden]')?.className).toContain('bg-skeleton');
   });
 });

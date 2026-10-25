@@ -29,7 +29,8 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
     (total, relocation) => total + relocation.restoredSessionFolders,
     0,
   );
-  const repairFailures = completed.filter((relocation) => !relocation.repairedGitLinks).length;
+  const repairFailures = completed.filter((relocation) => !relocation.repairedGitLinks);
+  const repairReason = repairFailures.find((relocation) => relocation.repairError !== null);
   if (phase === 'success') {
     return (
       <Notice
@@ -37,9 +38,9 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         placement="inline"
         title={`Moved ${completed.length} ${completed.length === 1 ? 'folder' : 'folders'}. ${sessionFolderCount} session folders are back.`}
         detail={
-          repairFailures === 0
+          repairFailures.length === 0
             ? null
-            : `Git links could not be repaired for ${repairFailures} folders.`
+            : `Git links or saved versions could not be carried over for ${repairFailures.length} ${repairFailures.length === 1 ? 'folder' : 'folders'}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
         }
         actions={
           <Button variant="secondary" size="sm" onClick={() => void undo()}>
@@ -58,7 +59,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         <h3 id="locate-moved-projects" className="text-heading text-foreground">
           Locate moved folders
         </h3>
-        <p className="text-label text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           Confirm the folders Goodboy should reconnect. Different repositories stay unchanged.
         </p>
       </div>
@@ -74,11 +75,11 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         ))}
       </ul>
       {error !== null && (
-        <p role="alert" className="text-label text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}
-      <p className="text-label text-muted-foreground">
+      <p className="text-meta text-muted-foreground">
         Git links get repaired. Session folders move with it.
       </p>
       <FormActions>

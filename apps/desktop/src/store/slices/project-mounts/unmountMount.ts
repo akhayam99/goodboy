@@ -1,5 +1,5 @@
 import { updateSessionActiveProject, updateSessionMountLifecycle } from '@goodboy/db';
-import type { IsoDateTime, ProjectId } from '@goodboy/types';
+import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cleanupMountDirectory } from '../mount-cleanup';
 import { mountError } from './mountErrors';

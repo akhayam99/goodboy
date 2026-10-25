@@ -1,19 +1,19 @@
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import type { IssueBriefSource } from '../../store/slices/issue-briefs/types';
-import { goalFromIssue as goalFromGithubIssue } from '../integrations/github/goal-from-issue';
-import { goalFromPullRequest as goalFromGithubPullRequest } from '../integrations/github/goal-from-pull-request';
-import { goalFromIssue as goalFromGitlabIssue } from '../integrations/gitlab/goal-from-issue';
-import { goalFromMergeRequest } from '../integrations/gitlab/goal-from-merge-request';
-import { goalFromIssue as goalFromLinearIssue } from '../integrations/linear/goal-from-issue';
-import { goalFromIssue as goalFromJiraIssue } from '../integrations/jira/goal-from-issue';
-import { goalFromSentry } from '../integrations/sentry/goal-from-sentry';
-import { goalFromThread } from '../integrations/slack/goal-from-thread';
+import { goalFromIssue as goalFromGithubIssue } from '../integrations/github/githubGoalFromIssue';
+import { goalFromPullRequest as goalFromGithubPullRequest } from '../integrations/github/githubGoalFromPullRequest';
+import { goalFromIssue as goalFromGitlabIssue } from '../integrations/gitlab/gitlabGoalFromIssue';
+import { goalFromMergeRequest } from '../integrations/gitlab/gitlabGoalFromMergeRequest';
+import { goalFromIssue as goalFromLinearIssue } from '../integrations/linear/linearGoalFromIssue';
+import { goalFromIssue as goalFromJiraIssue } from '../integrations/jira/jiraGoalFromIssue';
+import { goalFromSentry } from '../integrations/sentry/goalFromSentry';
+import { goalFromThread } from '../integrations/slack/goalFromThread';
 import {
   slackThreadExternalId,
   slackThreadIdentifier,
   slackThreadTitle,
 } from '../integrations/slack/threadFormulas';
-import { goalFromPullRequest } from '../integrations/bitbucket/goal-from-pull-request';
+import { goalFromPullRequest } from '../integrations/bitbucket/bitbucketGoalFromPullRequest';
 import { bitbucketPrIdentifier } from '../integrations/bitbucket/bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../integrations/bitbucket/bitbucketPrUrl';
 import { issueIdentifier } from '../integrations/gitlab/client';

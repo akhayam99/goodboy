@@ -1,6 +1,6 @@
 import type { GeneratedArtifactKind } from './artifactCollection';
 
-export const ARTIFACT_QUESTION_LIMIT = 2;
+const ARTIFACT_QUESTION_LIMIT = 2;
 
 const ASSUMPTION_HOME: Readonly<Record<GeneratedArtifactKind, string>> = {
   report: 'a line in the body of the report',

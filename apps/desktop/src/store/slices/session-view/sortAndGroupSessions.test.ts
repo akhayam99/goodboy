@@ -112,6 +112,42 @@ describe('needs you first, then last activity', () => {
   });
 });
 
+describe('needs you ordered by how long each has waited', () => {
+  const renamed = session('renamed-today', { updatedAt: at('2026-10-06T09:00:00.000Z') });
+  const blocked = session('blocked-long', { updatedAt: at('2026-10-05T09:00:00.000Z') });
+  const unknown = session('unknown-start', { updatedAt: at('2026-10-02T09:00:00.000Z') });
+  const stages = {
+    [renamed.id]: 'attention',
+    [blocked.id]: 'attention',
+    [unknown.id]: 'attention',
+  } as const;
+
+  const waiting = (since: Readonly<Record<string, number | null>>) =>
+    ids(
+      sortAndGroupSessions({
+        sessions: [renamed, blocked, unknown],
+        prefs: { ...DEFAULT_PREFS, group: 'none' },
+        githubState: {},
+        stageBySession: stages,
+        attentionSinceBySession: since,
+      })[0]?.sessions ?? [],
+    );
+
+  it('sorts by the time the reason became true, not by the last edit of the session', () => {
+    expect(
+      waiting({
+        [renamed.id]: Date.parse('2026-10-01T08:00:00.000Z'),
+        [blocked.id]: Date.parse('2026-10-03T08:00:00.000Z'),
+        [unknown.id]: null,
+      }),
+    ).toEqual(['renamed-today', 'unknown-start', 'blocked-long']);
+  });
+
+  it('falls back to the last edit for a reason with no start, as it always did', () => {
+    expect(waiting({})).toEqual(['unknown-start', 'blocked-long', 'renamed-today']);
+  });
+});
+
 describe('the other sorts', () => {
   const a = session('Acme invoice import', {
     createdAt: at('2026-09-01T09:00:00.000Z'),

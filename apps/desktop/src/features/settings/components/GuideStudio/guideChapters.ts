@@ -1,5 +1,7 @@
 import type { GuideLink } from './guideTarget';
-import { NAMES } from '../../../../shared/names';
+import { START_CHAPTERS } from './startChapters';
+import { NAMES } from '../../../../shared/utils/names';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 export type GuideGroup = 'start' | 'daily' | 'housekeeping' | 'reference';
 
@@ -36,64 +38,7 @@ export const GUIDE_GROUP_LABEL: Readonly<Record<GuideGroup, string>> = {
 };
 
 export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
-  {
-    id: 'overview',
-    group: 'start',
-    title: 'What is Goodboy',
-    lead: 'A desk for running coding agents side by side. Each task is a session with its own agents, branches and history.',
-    note: {
-      term: "Goodboy runs each provider's own CLI",
-      desc: 'It runs each CLI as a subprocess and streams its events, so your sign in, usage and plan stay inside it. Goodboy adds the workspace, the board and the orchestration.',
-    },
-    points: [
-      {
-        term: 'Setup',
-        desc: 'The first launch walks through Agents, Workspace, Tools and First session, and Tools can wait. Home lists your workspaces under New workspace, ⌘N, and offers Resume setup until you have one.',
-      },
-      {
-        term: 'This Guide',
-        desc: 'One chapter per page. Search the rail and press Enter to land on the point you need. The Guide opens from the Goodboy row, Help in the menu bar or the palette.',
-      },
-    ],
-    links: [],
-  },
-  {
-    id: 'words',
-    group: 'start',
-    title: 'Words',
-    lead: 'The words Goodboy uses, one sentence each.',
-    points: [
-      {
-        term: 'Workspace',
-        desc: 'Where you work, named after what you work on, with your folders, connected tools and sessions.',
-      },
-      {
-        term: 'Folder',
-        desc: 'One git repository or plain folder inside a workspace, with its own scripts and settings.',
-      },
-      {
-        term: 'Session',
-        desc: 'One task with one goal and its own agents, limit and notes, moving across the board until it is done.',
-      },
-      {
-        term: 'Agent',
-        desc: 'One chat in a session with its own provider and model; every session has at least one.',
-      },
-      {
-        term: 'Turn',
-        desc: 'One message from you and the answer, which adds to what the model reads.',
-      },
-      {
-        term: 'Worktree and branch',
-        desc: 'A copy of a folder on its own branch, named gb- and six characters, so a session never touches your checkout.',
-      },
-      {
-        term: NAMES.spendCap,
-        desc: 'The most a session, a run or a provider may spend, with a warning as the spend nears it.',
-      },
-    ],
-    links: [],
-  },
+  ...START_CHAPTERS,
   {
     id: 'folders',
     group: 'daily',
@@ -228,7 +173,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'kickoff',
     group: 'daily',
     title: 'New session',
-    lead: 'A session is one task: write it or pick it from Tasks, then pick the kind of run. It stays a draft until you press Start or Start blank.',
+    lead: 'A session starts from one goal: write it or pick one from Tasks, then pick the kind of run. It stays a draft until you press Start or Start blank.',
     points: [
       {
         term: 'What kind of run?',
@@ -239,8 +184,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Not sure? Describe it and Auto picks a workflow or an agent; @Scout starts that role. Esc closes the draft, asking first if you wrote something.',
       },
       {
-        term: 'Start on a task',
-        desc: 'From Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.',
+        term: 'Start from Tasks',
+        desc: `${NAMES.startSession}, on an issue in Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.`,
       },
       {
         term: 'Where',
@@ -252,11 +197,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start blank',
-        desc: 'Opens the session on its Overview, to add the goal, folders and work later. Its short title reads Named by Goodboy until you rename it.',
+        desc: 'Opens the session on its Overview, to add the goal, folders and work later, titled Named by Goodboy until you rename it.',
       },
       {
         term: 'Chat',
-        desc: 'A sidebar door that answers questions about the whole workspace without a session and never changes a file. Start work from chat drafts a session from an answer.',
+        desc: 'A sidebar door that answers questions about the workspace and never changes a file. Start work from chat drafts a session from an answer.',
       },
     ],
     links: [{ label: 'Start a new session', target: { kind: 'newSession' } }],
@@ -273,7 +218,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Board and List',
-        desc: 'The header switches between lanes and one aligned list, and the filter beside it sorts, groups and narrows both.',
+        desc: 'The header switches between lanes and one aligned list; the filter beside it sorts, groups and narrows both.',
       },
       {
         term: 'Done and archived',
@@ -307,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Chat, Workflows, Terminal, Impact and Monitoring, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
+        desc: 'New session, then Sessions, Tasks, Workflows, Chat, Terminal, Impact and Monitoring, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -327,11 +272,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: 'Agents, or ⌘⌥L, shows what a run or Auto started as a folding tree. An agent opens its transcript; Back to agents returns.',
+        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, lists every agent, run or Auto or yours, in a tree. An agent opens beside it; j and k hop.`,
       },
       {
         term: 'Session tools',
-        desc: 'The icon column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, named on hover, each a pane beside the page that Esc closes. Fold session rail, or ⌥⌘B, shrinks the rail.',
+        desc: `The icon column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, named on hover, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],
@@ -348,7 +293,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for the next turn, and ⌘Enter sends it now. Stop keeps what the agent wrote and offers Continue, and a queued message waits until the provider takes it.',
+        desc: `Enter queues your message for the next turn, and ${shortcutGlyphs('composer.submit')} sends it now. Stop keeps what the agent wrote and offers Continue, and a queued message waits until the provider takes it.`,
       },
       {
         term: 'Runs page',
@@ -368,7 +313,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Next',
-        desc: "Up to three moves that unblock the task, such as Start, Analyze or Push. It offers only what starts something; what follows sits on that run's Running row. Not now hides one, and ⌘Z brings it back.",
+        desc: `Up to three moves that unblock the session, such as Start, Analyze or Push; what follows sits on that run's Running row. Not now hides one, and ${shortcutGlyphs('app.undo')} brings it back.`,
       },
     ],
     links: [],
@@ -393,7 +338,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Orchestrated or Auto',
-        desc: 'Orchestrated is not Auto: the orchestrator only picks the next step and you steer with hints. Auto is one agent that delegates to children, and only Auto carries the Experimental marker.',
+        desc: 'Orchestrated is not Auto: the orchestrator only picks the next step and you steer with hints. Auto is one agent that delegates to children.',
       },
       {
         term: 'Asks you and pause',
@@ -426,7 +371,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: 'Context, in the session tools or ⌘⌥C, holds the goal, decisions and summary, with Copy context. A dot on it means something changed since you looked, and Update now queues an update.',
+        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions and summary, with Copy context. A dot on it means something changed since you looked, and Update now queues an update.`,
       },
       {
         term: 'Visible to',
@@ -459,15 +404,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Find any issue',
-        desc: 'Paste a code like HBL-412 or a link in the search to open any issue, even one not assigned to you.',
+        desc: 'Paste a code like HBL-412 or a link in the search to open any issue.',
       },
       {
         term: 'Start from anything',
-        desc: 'Start session on an issue or an error opens a draft with its brief, and Review pull request starts a read-only reviewer. Link to a session attaches an item to an existing one.',
+        desc: `${NAMES.startSession} on an issue or an error opens a draft with its brief, and Review pull request starts a read-only reviewer. Link to a session attaches an item to an existing one.`,
       },
       {
         term: 'Task links',
-        desc: 'A Linked row in the rail opens its task. Its right click menu holds Move to, Take off this branch and Unlink from session, each with Undo, and the Log keeps Re-link.',
+        desc: `A Linked row in the rail opens its task. Its right click menu holds Move to, Take off this branch and ${NAMES.removeLinkFromSession}, each with Undo; the Log keeps Re-link.`,
       },
       {
         term: 'Slack',
@@ -476,7 +421,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open Tasks',
+        label: `Open ${NAMES.tasks}`,
         target: { kind: 'studio', studio: { kind: 'inbox', focus: null } },
       },
       {
@@ -542,7 +487,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Undo and versions',
-        desc: 'Undo and Redo, or ⌘Z and ⌘⇧Z, work while the page stays open. Every edit saves a backup first, and Previous versions lists them with Reset branch to this version.',
+        desc: `Undo and Redo, or ${shortcutGlyphs('history.undo')} and ${shortcutGlyphs('history.redo')}, work while the page stays open. Every edit saves a backup first, and Previous versions lists them with Reset branch to this version.`,
       },
       {
         term: 'Conflicts stop an edit',
@@ -579,7 +524,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'artifacts',
     group: 'daily',
     title: 'Artifacts',
-    lead: 'Plans, reports and wireframes live next to the task instead of inside a chat, with who made each and what it was built from.',
+    lead: 'Plans, reports and wireframes live next to the session instead of inside a chat, with who made each and what it was built from.',
     points: [
       {
         term: 'One list',
@@ -733,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ⌘,, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providersAndModels} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providersAndModels} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -790,11 +735,14 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Report a bug',
-        desc: 'The bug icon at the foot of the sidebar, or ⌘I, opens Report a bug from any screen, and What gets sent shows exactly what leaves.',
+        desc: `The bug icon at the foot of the sidebar, or ${shortcutGlyphs('report.open')}, opens Report a bug from any screen, and What gets sent shows exactly what leaves.`,
       },
     ],
     links: [
-      { label: "Open What's new", target: { kind: 'studio', studio: { kind: 'changelog' } } },
+      {
+        label: `Open ${NAMES.whatsNew}`,
+        target: { kind: 'studio', studio: { kind: 'changelog' } },
+      },
     ],
   },
   {
@@ -817,11 +765,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: '⌘B folds the sidebar, ⌥⌘B the page column. ⌘[ steps the rail out or goes Back, and ⌘↑ goes up. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context, ⌘⌥L Agents and ⌘⌥S Scripts.',
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('ask.open')} opens Ask, ${shortcutGlyphs('session.terminal')} Terminal, ${shortcutGlyphs('lens.explore')} Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts.`,
       },
       {
         term: 'Terminal',
-        desc: 'Control and backtick open Terminal, every terminal of the workspace in one list. ⌘T adds a tab while one has focus, and shells survive a reload.',
+        desc: `Control and backtick open Terminal, every terminal of the workspace in one list. ${shortcutGlyphs('terminal.newTab')} adds a tab while one has focus, and shells survive a reload.`,
       },
       {
         term: 'Right click',
@@ -829,7 +777,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Composer keys',
-        desc: 'In a message, Enter sends and ⇧Enter adds a line; in a document, ⌘Enter saves. Esc closes the menu, panel or dialog in front, never macOS full screen.',
+        desc: `In a message, ${shortcutGlyphs('composer.send')} sends and ${shortcutGlyphs('composer.newLine')} adds a line; in a document, ${shortcutGlyphs('composer.submit')} saves. ${shortcutGlyphs('overlay.close')} closes the menu, panel or dialog in front, never macOS full screen.`,
       },
     ],
     links: [

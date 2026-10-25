@@ -16,6 +16,7 @@ type RunRecord = {
   readonly result: { stdout: string; stderr: string; exitCode: number } | null;
   readonly runId: string;
   readonly startedAt: number;
+  readonly completedAt?: number;
   readonly mountId?: string;
 };
 
@@ -95,6 +96,19 @@ const manifest = (
 const pinIdOf = ({ relDir, name }: { readonly relDir: string; readonly name: string }) =>
   JSON.stringify(['package-json', relDir, name]);
 
+type EndedWorkFixture = {
+  readonly at: number;
+  readonly terminals: Record<string, string>;
+  readonly scripts: ReadonlyArray<{
+    readonly scriptId: string;
+    readonly sessionId: string;
+    readonly name: string;
+    readonly cwd: string;
+  }>;
+};
+
+let endedWork: EndedWorkFixture | null = null;
+
 const { state } = vi.hoisted(() => ({
   state: {
     mounts: [] as ReadonlyArray<Mount>,
@@ -104,6 +118,7 @@ const { state } = vi.hoisted(() => ({
     refreshDiscoveredScripts: vi.fn(async () => undefined),
     runs: {} as Record<string, RunRecord>,
     drawer: null as Drawer | null,
+    dismissEndedScripts: vi.fn(),
     pins: null as Record<string, ReadonlyArray<string>> | null,
     saveScript: vi.fn(async () => undefined),
     deleteScript: vi.fn(async () => undefined),
@@ -113,6 +128,8 @@ const { state } = vi.hoisted(() => ({
     openDrawer: vi.fn(),
     toggleDrawer: vi.fn(),
     toggleScriptPin: vi.fn(async () => undefined),
+    queueOutputHandoff: vi.fn(),
+    isArchived: false,
   },
 }));
 
@@ -157,10 +174,23 @@ vi.mock('../../../../store', () => {
   };
   const noPins = async () => undefined;
   const getStoreState = () => ({
-    sessions: [{ id: SESSION, workspaceId: WORKSPACE, activeProjectId: LEDGER.id }],
+    sessions: [
+      {
+        id: SESSION,
+        workspaceId: WORKSPACE,
+        activeProjectId: LEDGER.id,
+        ...(state.isArchived && { archivedAt: '2026-10-20T10:00:00.000Z' }),
+      },
+    ],
     currentSessionId: SESSION,
+    sessionPhaseRuns: { [SESSION]: [{ id: 'agent-implementer' }] },
+    selectedAgentId: {},
+    navigate: vi.fn(),
+    queueOutputHandoff: state.queueOutputHandoff,
     activeLens: { [SESSION]: 'scripts' },
     drawer: state.drawer,
+    endedWork,
+    dismissEndedScripts: state.dismissEndedScripts,
     projects: [LEDGER, RELAY, PAYMENTS],
     projectScripts: { [WORKSPACE]: state.saved },
     sessionProjectMounts: { [SESSION]: state.mounts },
@@ -227,8 +257,12 @@ beforeEach(() => {
   state.scans = {};
   state.refreshDiscoveredScripts.mockClear();
   state.drawer = null;
+  endedWork = null;
+  state.dismissEndedScripts.mockClear();
   state.pins = null;
+  state.isArchived = false;
   for (const fn of [
+    state.queueOutputHandoff,
     state.saveScript,
     state.deleteScript,
     state.cancelScript,
@@ -245,7 +279,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
-  it('groups scripts by mount, saved first, in a Tasks band with no source column', () => {
+  it('groups scripts by mount, saved first, in a Commands band with no source column', () => {
     renderPanel();
 
     expect(screen.getByRole('heading', { name: 'Scripts' })).toBeDefined();
@@ -260,7 +294,7 @@ describe('ScriptsPanel', () => {
       'Show test output',
       'Show lint output',
     ]);
-    expect(within(settlement).getByRole('region', { name: /^Tasks of /u })).toBeDefined();
+    expect(within(settlement).getByRole('region', { name: /^Commands of /u })).toBeDefined();
     expect(within(settlement).queryByRole('region', { name: /^Services of /u })).toBeNull();
     expect(within(settlement).queryByText('package.json')).toBeNull();
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
@@ -318,7 +352,7 @@ describe('ScriptsPanel', () => {
       'northwind scripts',
       '@acme/api scripts',
       '@northwind/web scripts',
-      'Tasks of ledger-core · nw/settlement',
+      'Commands of ledger-core · nw/settlement',
       'Saved scripts',
     ]);
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
@@ -745,7 +779,7 @@ describe('ScriptsPanel', () => {
     expect(within(settlement).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
   });
 
-  it('splits a project into Services and Tasks with a count on each band', () => {
+  it('splits a project into Services and Commands with a count on each band', () => {
     state.mounts = [SETTLEMENT];
     state.saved = [];
     state.discovered = {
@@ -759,10 +793,216 @@ describe('ScriptsPanel', () => {
 
     const settlement = group('ledger-core · nw/settlement');
     const services = within(settlement).getByRole('region', { name: /^Services of /u });
-    const tasks = within(settlement).getByRole('region', { name: /^Tasks of /u });
+    const tasks = within(settlement).getByRole('region', { name: /^Commands of /u });
     expect(within(services).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(2);
     expect(within(services).getByText('2')).toBeDefined();
     expect(within(tasks).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(1);
     expect(within(tasks).queryByText('1')).toBeNull();
+  });
+
+  it('asks the agent about a failed task from its row menu, naming the script, exit and worktree', () => {
+    state.mounts = [SETTLEMENT];
+    state.runs = {
+      [manifestKey({ path: SETTLEMENT_PATH, name: 'test' })]: {
+        status: 'error',
+        result: { stdout: 'FAIL postings/rounding.test.ts', stderr: '', exitCode: 1 },
+        runId: 'run-1',
+        startedAt: 1_000,
+        completedAt: 9_000,
+        mountId: SETTLEMENT.mountId,
+      },
+    };
+    renderPanel();
+
+    rowMenu(group('ledger-core · nw/settlement'), 'test');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Ask the agent about this' }));
+
+    expect(state.queueOutputHandoff).toHaveBeenCalledTimes(1);
+    const [{ agentId, handoff }] = state.queueOutputHandoff.mock.calls[0] ?? [{}];
+    expect(agentId).toBe('agent-implementer');
+    expect(handoff.title).toBe('Output of test, Exit 1, ledger-core on nw/settlement');
+    expect(handoff.text).toContain('FAIL postings/rounding.test.ts');
+    expect(state.runDiscoveredScript).not.toHaveBeenCalled();
+  });
+
+  it('offers the verb on a service row too, and blocks it until there is output', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([{ name: 'dev', command: 'pnpm run dev', body: 'vite' }]),
+    };
+    renderPanel();
+
+    rowMenu(group('ledger-core · nw/settlement'), 'dev');
+    const item = screen.getByRole('menuitem', { name: /Ask the agent about this/ });
+    expect(item.getAttribute('aria-disabled')).toBe('true');
+    expect(item.textContent).toContain('No output yet');
+    fireEvent.click(item);
+
+    expect(state.queueOutputHandoff).not.toHaveBeenCalled();
+  });
+
+  it('leaves the verb out of the row menu in an archived session', () => {
+    state.isArchived = true;
+    state.runs = {
+      [manifestKey({ path: SETTLEMENT_PATH, name: 'test' })]: {
+        status: 'error',
+        result: { stdout: 'boom', stderr: '', exitCode: 1 },
+        runId: 'run-1',
+        startedAt: 1_000,
+        completedAt: 2_000,
+        mountId: SETTLEMENT.mountId,
+      },
+    };
+    renderPanel();
+
+    rowMenu(group('ledger-core · nw/settlement'), 'test');
+
+    expect(screen.queryByRole('menuitem', { name: /Ask the agent about this/ })).toBeNull();
+    screen.getByRole('menuitem', { name: 'Copy command' });
+  });
+
+  it('runs a Service in place without opening the output, and keeps Enter for the output', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
+    renderPanel();
+    const settlement = group('ledger-core · nw/settlement');
+
+    fireEvent.click(within(settlement).getByRole('button', { name: 'Run dev' }));
+    expect(state.openDrawer).not.toHaveBeenCalled();
+    expect(state.runDiscoveredScript).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'dev', cwd: SETTLEMENT_PATH, mountId: SETTLEMENT.mountId }),
+    );
+
+    fireEvent.click(within(settlement).getByRole('button', { name: 'Run test' }));
+    expect(state.openDrawer).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts every idle Service of a project from the Services band and skips running ones', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+        { name: 'preview', command: 'pnpm run preview' },
+        { name: 'worker', command: 'pnpm run start' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
+    state.runs = {
+      [manifestKey({ path: SETTLEMENT_PATH, name: 'preview' })]: {
+        status: 'pending',
+        result: null,
+        runId: 'run-preview',
+        startedAt: Date.now(),
+        mountId: SETTLEMENT.mountId,
+      },
+    };
+    renderPanel();
+    const services = within(group('ledger-core · nw/settlement')).getByRole('region', {
+      name: /^Services of /u,
+    });
+
+    fireEvent.click(within(services).getByRole('button', { name: /^Start all services/u }));
+
+    expect(state.openDrawer).not.toHaveBeenCalled();
+    expect(state.runDiscoveredScript).toHaveBeenCalledTimes(2);
+    expect(state.runDiscoveredScript).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ name: 'dev' }),
+    );
+    expect(state.runDiscoveredScript).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ name: 'worker' }),
+    );
+  });
+
+  it('offers Start all services only for a project with more than one Service', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
+    renderPanel();
+
+    expect(screen.queryByRole('button', { name: /^Start all services/u })).toBeNull();
+  });
+
+  describe('services that ended when Goodboy quit', () => {
+    const endedWith = (names: ReadonlyArray<string>) => ({
+      at: 1,
+      terminals: {},
+      scripts: names.map((name) => ({
+        scriptId: manifestKey({ path: SETTLEMENT_PATH, name }),
+        sessionId: SESSION,
+        name,
+        cwd: SETTLEMENT_PATH,
+      })),
+    });
+
+    beforeEach(() => {
+      state.mounts = [SETTLEMENT];
+      state.saved = [];
+      state.discovered = {
+        [SETTLEMENT_PATH]: manifest([
+          { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+          { name: 'preview', command: 'pnpm run preview' },
+          { name: 'test', command: 'pnpm run test' },
+        ]),
+      };
+    });
+
+    it('offers one row to start them all again, without opening any output', () => {
+      endedWork = endedWith(['dev', 'preview', 'test']);
+      renderPanel();
+
+      expect(screen.getAllByText('Start the 2 services that were running')).toHaveLength(1);
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+
+      expect(state.runDiscoveredScript).toHaveBeenCalledTimes(2);
+      expect(state.openDrawer).not.toHaveBeenCalled();
+      expect(state.dismissEndedScripts).toHaveBeenCalledWith({ sessionId: SESSION });
+    });
+
+    it('leaves out a service that is running again and hides the row when none is left', () => {
+      endedWork = endedWith(['dev']);
+      state.runs = {
+        [manifestKey({ path: SETTLEMENT_PATH, name: 'dev' })]: {
+          status: 'pending',
+          result: null,
+          runId: 'run-dev',
+          startedAt: Date.now(),
+          mountId: SETTLEMENT.mountId,
+        },
+      };
+      renderPanel();
+
+      expect(screen.queryByText(/that (was|were) running/u)).toBeNull();
+    });
+
+    it('starts nothing when the row is dismissed', () => {
+      endedWork = endedWith(['dev', 'preview']);
+      renderPanel();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+      expect(state.runDiscoveredScript).not.toHaveBeenCalled();
+      expect(state.dismissEndedScripts).toHaveBeenCalledWith({ sessionId: SESSION });
+    });
+
+    it('shows no row when nothing ended', () => {
+      renderPanel();
+
+      expect(screen.queryByText(/that (was|were) running/u)).toBeNull();
+    });
   });
 });

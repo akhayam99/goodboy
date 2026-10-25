@@ -21,6 +21,9 @@ const wordOf = ({ step }: WordParams): Pick<BranchStartLine, 'word' | 'tone'> =>
   if (step.state === 'conflict') {
     return { word: 'Rebasing', tone: BRANCH_STATE_TONE.rebasing };
   }
+  if (step.diverged !== null) {
+    return { word: 'Diverged', tone: 'warning' };
+  }
   if (step.isPushed) {
     return { word: 'Pushed', tone: 'neutral' };
   }

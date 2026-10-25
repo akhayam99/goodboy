@@ -5,6 +5,10 @@ export type CreatedReview = {
   readonly url: string | null;
 };
 
+export type ForcePushInput = {
+  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+};
+
 export type CreateReviewInput = {
   readonly title: string;
   readonly body: string;
@@ -12,6 +16,7 @@ export type CreateReviewInput = {
   readonly isDraft: boolean;
   readonly isScribeBody: boolean;
   readonly dismissed: ReadonlyArray<number>;
+  readonly forcePush: ForcePushInput | null;
   readonly onPushed: () => void;
 };
 

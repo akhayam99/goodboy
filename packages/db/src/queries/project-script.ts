@@ -52,14 +52,15 @@ export const upsertProjectScript = async ({
 }: UpsertProjectScriptParams): Promise<void> => {
   await db.execute(
     `INSERT INTO project_scripts
-      (id, project_id, name, body, sort_order, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+      (id, project_id, name, body, sort_order, created_at, updated_at, is_enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1)
      ON CONFLICT(id) DO UPDATE SET
        project_id = excluded.project_id,
        name = excluded.name,
        body = excluded.body,
        sort_order = excluded.sort_order,
-       updated_at = excluded.updated_at`,
+       updated_at = excluded.updated_at,
+       is_enabled = 1`,
     [
       script.id,
       script.projectId,

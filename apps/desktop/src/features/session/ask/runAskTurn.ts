@@ -8,9 +8,9 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import { resolveChatModel } from '../../workspace-chat/resolveChatModel';
-import type { ChatTurnOutcome } from '../../workspace-chat/runChatTurn';
-import { streamChatTurn } from '../../workspace-chat/streamChatTurn';
+import { resolveChatModel } from '../../conversation/resolveChatModel';
+import type { ChatTurnOutcome } from '../../conversation/chatTurnOutcome';
+import { streamChatTurn } from '../../conversation/streamChatTurn';
 import type { AskDossierFile } from './askHandles';
 
 type AskTurnRequest = {

@@ -1,84 +1,140 @@
+use rusqlite::types::Value as SqlValue;
+use rusqlite::{params_from_iter, OptionalExtension};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use tauri::State;
+use thiserror::Error;
 
 use crate::db::{Db, DbError};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SettingsOverrides {
-    #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
-    #[serde(rename = "defaultVerbosity")]
     pub default_verbosity: Option<String>,
-    #[serde(rename = "providerBindings")]
-    pub provider_bindings: Option<serde_json::Value>,
-    #[serde(rename = "taskModels")]
-    pub task_models: Option<serde_json::Value>,
-    #[serde(rename = "roleModels")]
-    pub role_models: Option<serde_json::Value>,
-    #[serde(rename = "parallelAgents")]
+    pub provider_bindings: Option<Value>,
+    pub task_models: Option<Value>,
+    pub role_models: Option<Value>,
     pub parallel_agents: Option<bool>,
-    #[serde(
-        rename = "providerPool",
-        default,
-        deserialize_with = "provider_pool_from_wire"
-    )]
-    pub provider_pool: Option<serde_json::Value>,
-    #[serde(rename = "attributionFooter")]
+    pub provider_pool: Option<Value>,
     pub attribution_footer: Option<bool>,
-    #[serde(rename = "replyVoice", default)]
     pub reply_voice: Option<String>,
-    #[serde(rename = "replyStyleNote", default)]
     pub reply_style_note: Option<String>,
-    #[serde(rename = "replyTemplateFixed", default)]
     pub reply_template_fixed: Option<String>,
-    #[serde(rename = "replyTemplateNoChange", default)]
     pub reply_template_no_change: Option<String>,
-    #[serde(rename = "resolveOnGithub", default)]
     pub resolve_on_github: Option<bool>,
-    #[serde(rename = "resolveCommitStyle", default)]
     pub resolve_commit_style: Option<String>,
-    #[serde(rename = "afterMerge", default)]
     pub after_merge: Option<String>,
-    #[serde(rename = "defaultBranchTemplate", default)]
     pub default_branch_template: Option<String>,
-    #[serde(rename = "workflowRules", default)]
-    pub workflow_rules: Option<serde_json::Value>,
+    pub workflow_rules: Option<Value>,
 }
 
-fn bool_to_int(value: Option<bool>) -> Option<i64> {
-    value.map(|v| if v { 1 } else { 0 })
+#[derive(Debug, Error)]
+pub enum OverridesError {
+    #[error(transparent)]
+    Db(#[from] DbError),
+    #[error("{0} is not a workspace setting")]
+    UnknownKey(String),
+    #[error("{0} does not accept this value")]
+    InvalidValue(String),
+    #[error("workspace {0} does not exist")]
+    NoSuchWorkspace(String),
 }
 
-fn json_to_text(value: &Option<serde_json::Value>) -> Option<String> {
-    match value {
-        Some(serde_json::Value::Null) | None => None,
-        Some(v) => Some(v.to_string()),
+impl OverridesError {
+    fn kind(&self) -> &'static str {
+        match self {
+            OverridesError::Db(error) => error.kind(),
+            OverridesError::UnknownKey(_) => "unknown_setting",
+            OverridesError::InvalidValue(_) => "invalid_setting_value",
+            OverridesError::NoSuchWorkspace(_) => "no_such_workspace",
+        }
     }
 }
 
-fn json_from_text(raw: Option<String>) -> Option<serde_json::Value> {
+impl From<rusqlite::Error> for OverridesError {
+    fn from(error: rusqlite::Error) -> Self {
+        OverridesError::Db(DbError::Sqlite(error))
+    }
+}
+
+crate::util::impl_error_serialize!(OverridesError);
+
+pub const OVERRIDE_COLUMNS: [&str; 18] = [
+    "default_provider_id",
+    "default_branch_prefix",
+    "default_verbosity",
+    "provider_bindings",
+    "task_models",
+    "role_models",
+    "parallel_agents",
+    "provider_pool",
+    "attribution_footer",
+    "reply_voice",
+    "reply_style_note",
+    "reply_template_fixed",
+    "reply_template_no_change",
+    "resolve_on_github",
+    "resolve_commit_style",
+    "after_merge",
+    "default_branch_template",
+    "workflow_rules",
+];
+
+pub(crate) fn override_select_list() -> String {
+    OVERRIDE_COLUMNS.join(", ")
+}
+
+pub(crate) fn override_placeholders(first: usize) -> String {
+    (0..OVERRIDE_COLUMNS.len())
+        .map(|offset| format!("?{}", first + offset))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+pub(crate) fn override_excluded_assignments() -> String {
+    OVERRIDE_COLUMNS
+        .iter()
+        .map(|column| format!("{column} = excluded.{column}"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+pub(crate) fn wire_key(column: &str) -> String {
+    let mut parts = column.split('_');
+    let first = parts.next().unwrap_or_default().to_string();
+    parts.fold(first, |mut word, part| {
+        let mut letters = part.chars();
+        if let Some(initial) = letters.next() {
+            word.push(initial.to_ascii_uppercase());
+            word.extend(letters);
+        }
+        word
+    })
+}
+
+fn json_from_text(raw: Option<String>) -> Option<Value> {
     raw.and_then(|s| serde_json::from_str(&s).ok())
 }
 
 const PROVIDER_POLICY_STATES: [&str; 3] = ["on", "backup", "off"];
 
-fn is_policy_entry(entry: &serde_json::Value) -> bool {
+fn is_policy_entry(entry: &Value) -> bool {
     let Some(object) = entry.as_object() else {
         return false;
     };
-    let has_id = object.get("id").is_some_and(serde_json::Value::is_string);
+    let has_id = object.get("id").is_some_and(Value::is_string);
     let has_state = object
         .get("state")
-        .and_then(serde_json::Value::as_str)
+        .and_then(Value::as_str)
         .is_some_and(|state| PROVIDER_POLICY_STATES.contains(&state));
     has_id && has_state
 }
 
-fn provider_pool_shape(value: serde_json::Value) -> Option<serde_json::Value> {
+fn provider_pool_shape(value: Value) -> Option<Value> {
     let items = value.as_array()?;
-    let is_names = items.iter().all(serde_json::Value::is_string);
+    let is_names = items.iter().all(Value::is_string);
     let is_policy = items.iter().all(is_policy_entry);
     if is_names || is_policy {
         return Some(value);
@@ -86,23 +142,168 @@ fn provider_pool_shape(value: serde_json::Value) -> Option<serde_json::Value> {
     None
 }
 
-fn provider_pool_from_wire<'de, D>(deserializer: D) -> Result<Option<serde_json::Value>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
-    Ok(value.and_then(provider_pool_shape))
-}
-
-fn provider_pool_to_text(value: &Option<serde_json::Value>) -> Option<String> {
-    value
-        .clone()
-        .and_then(provider_pool_shape)
-        .map(|shape| shape.to_string())
-}
-
-fn provider_pool_from_text(raw: Option<String>) -> Option<serde_json::Value> {
+fn provider_pool_from_text(raw: Option<String>) -> Option<Value> {
     json_from_text(raw).and_then(provider_pool_shape)
+}
+
+enum ColumnKind {
+    Text,
+    Flag,
+    Json,
+    Pool,
+}
+
+fn column_kind(column: &str) -> Option<ColumnKind> {
+    match column {
+        "default_provider_id"
+        | "default_branch_prefix"
+        | "default_verbosity"
+        | "reply_voice"
+        | "reply_style_note"
+        | "reply_template_fixed"
+        | "reply_template_no_change"
+        | "resolve_commit_style"
+        | "after_merge"
+        | "default_branch_template" => Some(ColumnKind::Text),
+        "parallel_agents" | "attribution_footer" | "resolve_on_github" => Some(ColumnKind::Flag),
+        "provider_bindings" | "task_models" | "role_models" | "workflow_rules" => {
+            Some(ColumnKind::Json)
+        }
+        "provider_pool" => Some(ColumnKind::Pool),
+        _ => None,
+    }
+}
+
+fn column_of_wire_key(key: &str) -> Option<&'static str> {
+    OVERRIDE_COLUMNS
+        .iter()
+        .copied()
+        .find(|column| wire_key(column) == key)
+}
+
+fn sql_value(kind: &ColumnKind, key: &str, value: &Value) -> Result<SqlValue, OverridesError> {
+    if value.is_null() {
+        return Ok(SqlValue::Null);
+    }
+    let invalid = || OverridesError::InvalidValue(key.to_string());
+    match kind {
+        ColumnKind::Text => value
+            .as_str()
+            .map(|text| SqlValue::Text(text.to_string()))
+            .ok_or_else(invalid),
+        ColumnKind::Flag => value
+            .as_bool()
+            .map(|flag| SqlValue::Integer(i64::from(flag)))
+            .ok_or_else(invalid),
+        ColumnKind::Json => {
+            if !value.is_object() {
+                return Err(invalid());
+            }
+            Ok(SqlValue::Text(value.to_string()))
+        }
+        ColumnKind::Pool => provider_pool_shape(value.clone())
+            .map(|shape| SqlValue::Text(shape.to_string()))
+            .ok_or_else(invalid),
+    }
+}
+
+fn constraint_error(error: rusqlite::Error, columns: &[&'static str]) -> OverridesError {
+    let rusqlite::Error::SqliteFailure(failure, message) = &error else {
+        return OverridesError::from(error);
+    };
+    if failure.code != rusqlite::ErrorCode::ConstraintViolation {
+        return OverridesError::from(error);
+    }
+    let named = message
+        .as_deref()
+        .and_then(|text| columns.iter().find(|column| text.contains(**column)));
+    match named.or(columns.first()) {
+        Some(column) => OverridesError::InvalidValue(wire_key(column)),
+        None => OverridesError::from(error),
+    }
+}
+
+fn overrides_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<SettingsOverrides> {
+    let parallel_agents_raw: Option<i64> = row.get(6)?;
+    let attribution_footer_raw: Option<i64> = row.get(8)?;
+    let resolve_on_github_raw: Option<i64> = row.get(13)?;
+    Ok(SettingsOverrides {
+        default_provider_id: row.get(0)?,
+        default_branch_prefix: row.get(1)?,
+        default_verbosity: row.get(2)?,
+        provider_bindings: json_from_text(row.get(3)?),
+        task_models: json_from_text(row.get(4)?),
+        role_models: json_from_text(row.get(5)?),
+        parallel_agents: parallel_agents_raw.map(|v| v != 0),
+        provider_pool: provider_pool_from_text(row.get(7)?),
+        attribution_footer: attribution_footer_raw.map(|v| v != 0),
+        reply_voice: row.get(9)?,
+        reply_style_note: row.get(10)?,
+        reply_template_fixed: row.get(11)?,
+        reply_template_no_change: row.get(12)?,
+        resolve_on_github: resolve_on_github_raw.map(|v| v != 0),
+        resolve_commit_style: row.get(14)?,
+        after_merge: row.get(15)?,
+        default_branch_template: row.get(16)?,
+        workflow_rules: json_from_text(row.get(17)?),
+    })
+}
+
+fn read_workspace_overrides(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+) -> rusqlite::Result<Option<SettingsOverrides>> {
+    conn.query_row(
+        &format!(
+            "SELECT {} FROM workspaces WHERE id = ?1",
+            override_select_list()
+        ),
+        rusqlite::params![workspace_id],
+        overrides_from_row,
+    )
+    .optional()
+}
+
+pub(crate) fn patch_overrides(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+    patch: &Map<String, Value>,
+) -> Result<SettingsOverrides, OverridesError> {
+    let mut columns: Vec<&'static str> = Vec::new();
+    let mut values: Vec<SqlValue> = Vec::new();
+    for (key, value) in patch {
+        let column =
+            column_of_wire_key(key).ok_or_else(|| OverridesError::UnknownKey(key.clone()))?;
+        let kind = column_kind(column).ok_or_else(|| OverridesError::UnknownKey(key.clone()))?;
+        columns.push(column);
+        values.push(sql_value(&kind, key, value)?);
+    }
+    if !columns.is_empty() {
+        let assignments = columns
+            .iter()
+            .enumerate()
+            .map(|(index, column)| format!("{column} = ?{}", index + 1))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let count = columns.len();
+        values.push(SqlValue::Integer(crate::util::now_ms()));
+        values.push(SqlValue::Text(workspace_id.to_string()));
+        let changed = conn
+            .execute(
+                &format!(
+                    "UPDATE workspaces SET {assignments}, updated_at = ?{} WHERE id = ?{}",
+                    count + 1,
+                    count + 2
+                ),
+                params_from_iter(values.iter()),
+            )
+            .map_err(|error| constraint_error(error, &columns))?;
+        if changed == 0 {
+            return Err(OverridesError::NoSuchWorkspace(workspace_id.to_string()));
+        }
+    }
+    read_workspace_overrides(conn, workspace_id)?
+        .ok_or_else(|| OverridesError::NoSuchWorkspace(workspace_id.to_string()))
 }
 
 #[tauri::command]
@@ -111,100 +312,17 @@ pub async fn get_workspace_overrides(
     workspace_id: String,
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
-                reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style, after_merge,
-                default_branch_template, workflow_rules
-         FROM workspaces WHERE id = ?1",
-    )?;
-    let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
-        let parallel_agents_raw: Option<i64> = row.get(6)?;
-        let attribution_footer_raw: Option<i64> = row.get(8)?;
-        let resolve_on_github_raw: Option<i64> = row.get(13)?;
-        Ok(SettingsOverrides {
-            default_provider_id: row.get(0)?,
-            default_branch_prefix: row.get(1)?,
-            default_verbosity: row.get(2)?,
-            provider_bindings: json_from_text(row.get(3)?),
-            task_models: json_from_text(row.get(4)?),
-            role_models: json_from_text(row.get(5)?),
-            parallel_agents: parallel_agents_raw.map(|v| v != 0),
-            provider_pool: provider_pool_from_text(row.get(7)?),
-            attribution_footer: attribution_footer_raw.map(|v| v != 0),
-            reply_voice: row.get(9)?,
-            reply_style_note: row.get(10)?,
-            reply_template_fixed: row.get(11)?,
-            reply_template_no_change: row.get(12)?,
-            resolve_on_github: resolve_on_github_raw.map(|v| v != 0),
-            resolve_commit_style: row.get(14)?,
-            after_merge: row.get(15)?,
-            default_branch_template: row.get(16)?,
-            workflow_rules: json_from_text(row.get(17)?),
-        })
-    })?;
-    match rows.next() {
-        Some(row) => Ok(Some(row.map_err(DbError::Sqlite)?)),
-        None => Ok(None),
-    }
+    Ok(read_workspace_overrides(&conn, &workspace_id)?)
 }
 
 #[tauri::command]
-pub async fn set_workspace_overrides(
+pub async fn patch_workspace_overrides(
     state: State<'_, Db>,
     workspace_id: String,
-    overrides: SettingsOverrides,
-) -> Result<(), DbError> {
+    patch: Map<String, Value>,
+) -> Result<SettingsOverrides, OverridesError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let parallel_agents_val: Option<i64> = overrides.parallel_agents.map(|v| if v { 1 } else { 0 });
-    let attribution_footer_val: Option<i64> =
-        overrides.attribution_footer.map(|v| if v { 1 } else { 0 });
-    let now = crate::util::now_ms();
-    conn.execute(
-        "UPDATE workspaces
-         SET default_provider_id = ?1,
-             default_branch_prefix = ?2,
-             default_verbosity = ?3,
-             provider_bindings = ?4,
-             task_models = ?5,
-             role_models = ?6,
-             parallel_agents = ?7,
-             provider_pool = ?8,
-             attribution_footer = ?9,
-             reply_voice = ?10,
-             reply_style_note = ?11,
-             reply_template_fixed = ?12,
-             reply_template_no_change = ?13,
-             resolve_on_github = ?14,
-             resolve_commit_style = ?15,
-             after_merge = ?16,
-             default_branch_template = ?17,
-             workflow_rules = ?18,
-             updated_at = ?19
-         WHERE id = ?20",
-        rusqlite::params![
-            overrides.default_provider_id,
-            overrides.default_branch_prefix,
-            overrides.default_verbosity,
-            json_to_text(&overrides.provider_bindings),
-            json_to_text(&overrides.task_models),
-            json_to_text(&overrides.role_models),
-            parallel_agents_val,
-            provider_pool_to_text(&overrides.provider_pool),
-            attribution_footer_val,
-            overrides.reply_voice,
-            overrides.reply_style_note,
-            overrides.reply_template_fixed,
-            overrides.reply_template_no_change,
-            bool_to_int(overrides.resolve_on_github),
-            overrides.resolve_commit_style,
-            overrides.after_merge,
-            overrides.default_branch_template,
-            json_to_text(&overrides.workflow_rules),
-            now,
-            workspace_id,
-        ],
-    )?;
-    Ok(())
+    patch_overrides(&conn, &workspace_id, &patch)
 }
 
 #[tauri::command]
@@ -246,138 +364,338 @@ pub async fn get_session_overrides(
 }
 
 #[cfg(test)]
+mod wire_shape;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn the_provider_pool_survives_the_wire_names_the_frontend_sends() {
-        let payload = serde_json::json!({
-            "defaultProviderId": "anthropic",
-            "defaultBranchPrefix": null,
-            "defaultVerbosity": null,
-            "providerBindings": null,
-            "taskModels": null,
-            "roleModels": null,
-            "parallelAgents": null,
-            "providerPool": ["anthropic", "codex"],
-            "attributionFooter": null,
-        });
+    const WORKSPACE_COLUMNS_THAT_ARE_NOT_OVERRIDES: [&str; 9] = [
+        "id",
+        "name",
+        "slug",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "disconnected_at",
+        "last_accessed_at",
+        "default_permission_mode",
+    ];
 
-        let overrides: SettingsOverrides =
-            serde_json::from_value(payload).expect("deserialize overrides");
+    fn sorted(mut names: Vec<String>) -> Vec<String> {
+        names.sort();
+        names
+    }
 
-        assert_eq!(
-            overrides.provider_pool,
-            Some(serde_json::json!(["anthropic", "codex"]))
-        );
+    fn wire_keys(value: Value) -> Vec<String> {
+        let object = value.as_object().expect("the wire value is an object");
+        sorted(object.keys().cloned().collect())
+    }
 
-        let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
-        assert_eq!(
-            encoded.get("providerPool"),
-            Some(&serde_json::json!(["anthropic", "codex"]))
-        );
-        assert!(encoded.get("enabledProviders").is_none());
+    fn declared_wire_keys() -> Vec<String> {
+        sorted(OVERRIDE_COLUMNS.iter().map(|c| wire_key(c)).collect())
+    }
+
+    fn workspace_conn() -> rusqlite::Connection {
+        let conn = crate::test_support::migrated_connection();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+             VALUES ('w', 'Harborline', 'harborline', 1, 1);",
+        )
+        .expect("workspace inserts");
+        conn
+    }
+
+    fn patch_of(value: Value) -> Map<String, Value> {
+        value.as_object().expect("a patch is an object").clone()
+    }
+
+    fn column_text(conn: &rusqlite::Connection, column: &str) -> Option<String> {
+        conn.query_row(
+            &format!("SELECT {column} FROM workspaces WHERE id = 'w'"),
+            [],
+            |row| row.get(0),
+        )
+        .expect("column reads")
     }
 
     #[test]
-    fn reply_settings_travel_on_the_wire_and_default_when_absent() {
-        let payload = serde_json::json!({
-            "defaultProviderId": null,
-            "defaultBranchPrefix": null,
-            "defaultVerbosity": null,
-            "providerBindings": null,
-            "taskModels": null,
-            "roleModels": null,
-            "parallelAgents": null,
-            "providerPool": null,
-            "attributionFooter": null,
-            "replyVoice": "friendly",
-            "resolveOnGithub": false,
-            "resolveCommitStyle": "fixup",
-        });
+    fn the_column_list_names_every_override_column_of_the_migrated_workspaces_table() {
+        let conn = crate::test_support::migrated_connection();
+        let mut statement = conn
+            .prepare("PRAGMA table_info(workspaces)")
+            .expect("pragma prepares");
+        let columns: Vec<String> = statement
+            .query_map([], |row| row.get::<_, String>(1))
+            .expect("pragma runs")
+            .map(|name| name.expect("column name reads"))
+            .collect();
 
-        let overrides: SettingsOverrides =
-            serde_json::from_value(payload).expect("deserialize overrides");
+        let declared: Vec<String> = OVERRIDE_COLUMNS
+            .iter()
+            .chain(WORKSPACE_COLUMNS_THAT_ARE_NOT_OVERRIDES.iter())
+            .map(|column| column.to_string())
+            .collect();
 
-        assert_eq!(overrides.reply_voice.as_deref(), Some("friendly"));
-        assert_eq!(overrides.resolve_on_github, Some(false));
-        assert_eq!(overrides.resolve_commit_style.as_deref(), Some("fixup"));
-        assert_eq!(overrides.reply_template_fixed, None);
-        let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
+        assert_eq!(sorted(declared), sorted(columns));
+    }
+
+    #[test]
+    fn the_column_list_has_no_column_twice() {
+        let unique: std::collections::HashSet<&&str> = OVERRIDE_COLUMNS.iter().collect();
+
+        assert_eq!(unique.len(), OVERRIDE_COLUMNS.len());
+    }
+
+    #[test]
+    fn the_settings_struct_carries_exactly_the_declared_columns() {
+        let conn = workspace_conn();
+        let stored = read_workspace_overrides(&conn, "w")
+            .expect("row reads")
+            .expect("workspace exists");
+
+        let encoded = serde_json::to_value(&stored).expect("serialize overrides");
+
+        assert_eq!(wire_keys(encoded), declared_wire_keys());
+    }
+
+    #[test]
+    fn every_declared_column_has_a_value_kind() {
+        for column in OVERRIDE_COLUMNS {
+            assert!(column_kind(column).is_some(), "{column} has no value kind");
+        }
+    }
+
+    #[test]
+    fn the_sql_helpers_follow_the_declared_order() {
+        assert_eq!(override_select_list().split(", ").count(), 18);
+        assert!(override_select_list().starts_with("default_provider_id, default_branch_prefix"));
+        assert!(override_placeholders(6).starts_with("?6, ?7"));
+        assert!(override_placeholders(6).ends_with("?23"));
+        assert!(override_excluded_assignments().contains("after_merge = excluded.after_merge"));
+    }
+
+    #[test]
+    fn two_interleaved_patches_both_land_and_the_second_returns_the_stored_row() {
+        let conn = workspace_conn();
+
+        let first = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "defaultBranchPrefix": "hl" })),
+        )
+        .expect("first patch");
+        let second = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "parallelAgents": true })),
+        )
+        .expect("second patch");
+
+        assert_eq!(first.default_branch_prefix.as_deref(), Some("hl"));
+        assert_eq!(first.parallel_agents, None);
+        assert_eq!(second.default_branch_prefix.as_deref(), Some("hl"));
+        assert_eq!(second.parallel_agents, Some(true));
         assert_eq!(
-            encoded.get("replyVoice"),
-            Some(&serde_json::json!("friendly"))
-        );
-        assert_eq!(
-            encoded.get("replyStyleNote"),
-            Some(&serde_json::Value::Null)
+            column_text(&conn, "default_branch_prefix").as_deref(),
+            Some("hl")
         );
     }
 
     #[test]
-    fn the_workflow_rules_travel_on_the_wire_and_store_as_text() {
-        let payload = serde_json::json!({
-            "workflowRules": { "autonomy": "plan", "spreadByHeadroom": false },
-        });
+    fn a_patch_from_a_stale_window_writes_only_the_keys_it_names() {
+        let conn = workspace_conn();
+        conn.execute_batch(
+            "UPDATE workspaces SET after_merge = 'local', reply_voice = 'terse' WHERE id = 'w';",
+        )
+        .expect("another window saved");
 
-        let overrides: SettingsOverrides =
-            serde_json::from_value(payload).expect("deserialize overrides");
+        let stored = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "defaultVerbosity": "brief" })),
+        )
+        .expect("patch");
 
-        let text = json_to_text(&overrides.workflow_rules).expect("rules stored as text");
+        assert_eq!(stored.default_verbosity.as_deref(), Some("brief"));
+        assert_eq!(stored.after_merge.as_deref(), Some("local"));
+        assert_eq!(stored.reply_voice.as_deref(), Some("terse"));
+    }
+
+    #[test]
+    fn a_null_clears_one_key() {
+        let conn = workspace_conn();
+        conn.execute_batch("UPDATE workspaces SET default_branch_prefix = 'hl' WHERE id = 'w';")
+            .expect("seed");
+
+        let stored = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "defaultBranchPrefix": null })),
+        )
+        .expect("patch");
+
+        assert_eq!(stored.default_branch_prefix, None);
+        assert_eq!(column_text(&conn, "default_branch_prefix"), None);
+    }
+
+    #[test]
+    fn an_empty_patch_writes_nothing_and_returns_the_stored_row() {
+        let conn = workspace_conn();
+
+        let stored = patch_overrides(&conn, "w", &Map::new()).expect("patch");
+
+        assert_eq!(stored.default_branch_prefix, None);
+        let updated_at: i64 = conn
+            .query_row(
+                "SELECT updated_at FROM workspaces WHERE id = 'w'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("updated_at reads");
+        assert_eq!(updated_at, 1);
+    }
+
+    #[test]
+    fn a_provider_pool_of_neither_shape_is_rejected_and_nothing_is_written() {
+        let conn = workspace_conn();
+        let patch = patch_of(serde_json::json!({
+            "defaultBranchPrefix": "hl",
+            "providerPool": ["codex", { "id": "anthropic", "state": "on" }],
+        }));
+
+        let outcome = patch_overrides(&conn, "w", &patch);
+
+        assert!(matches!(
+            outcome,
+            Err(OverridesError::InvalidValue(ref key)) if key == "providerPool"
+        ));
+        assert_eq!(column_text(&conn, "default_branch_prefix"), None);
+        assert_eq!(column_text(&conn, "provider_pool"), None);
+    }
+
+    #[test]
+    fn both_provider_pool_shapes_are_stored_as_sent() {
+        let conn = workspace_conn();
+
+        patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "providerPool": ["codex", "anthropic"] })),
+        )
+        .expect("names");
         assert_eq!(
-            json_from_text(Some(text)),
+            column_text(&conn, "provider_pool").as_deref(),
+            Some(r#"["codex","anthropic"]"#)
+        );
+
+        let stored = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({
+                "providerPool": [
+                    { "id": "codex", "state": "on", "keepAfterLimit": true },
+                    { "id": "cursor", "state": "backup", "payAsYouGo": true },
+                    { "id": "gemini", "state": "off" }
+                ]
+            })),
+        )
+        .expect("policy");
+
+        assert_eq!(
+            stored.provider_pool,
+            Some(serde_json::json!([
+                { "id": "codex", "state": "on", "keepAfterLimit": true },
+                { "id": "cursor", "state": "backup", "payAsYouGo": true },
+                { "id": "gemini", "state": "off" }
+            ]))
+        );
+    }
+
+    #[test]
+    fn a_value_the_database_would_refuse_comes_back_as_a_named_setting() {
+        let conn = workspace_conn();
+        let patch = patch_of(serde_json::json!({
+            "defaultBranchPrefix": "hl",
+            "replyVoice": "shouting",
+        }));
+
+        let outcome = patch_overrides(&conn, "w", &patch);
+
+        let Err(error) = outcome else {
+            panic!("the voice should be refused");
+        };
+        assert!(matches!(error, OverridesError::InvalidValue(ref key) if key == "replyVoice"));
+        assert!(!error.to_string().to_lowercase().contains("constraint"));
+        assert_eq!(column_text(&conn, "default_branch_prefix"), None);
+    }
+
+    #[test]
+    fn a_value_of_the_wrong_type_is_refused() {
+        let conn = workspace_conn();
+
+        for (key, bad) in [
+            ("parallelAgents", serde_json::json!("yes")),
+            ("defaultBranchPrefix", serde_json::json!(7)),
+            ("workflowRules", serde_json::json!(["plan"])),
+            ("providerBindings", serde_json::json!("codex")),
+        ] {
+            let outcome = patch_overrides(&conn, "w", &patch_of(serde_json::json!({ key: bad })));
+
+            assert!(
+                matches!(outcome, Err(OverridesError::InvalidValue(ref named)) if named == key),
+                "{key} should be refused"
+            );
+        }
+    }
+
+    #[test]
+    fn a_key_that_is_not_a_workspace_setting_is_refused() {
+        let conn = workspace_conn();
+
+        let outcome = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({ "defaultPermissionMode": "plan" })),
+        );
+
+        assert!(matches!(outcome, Err(OverridesError::UnknownKey(_))));
+    }
+
+    #[test]
+    fn a_patch_for_a_workspace_that_does_not_exist_is_refused() {
+        let conn = workspace_conn();
+
+        let outcome = patch_overrides(
+            &conn,
+            "missing",
+            &patch_of(serde_json::json!({ "defaultBranchPrefix": "hl" })),
+        );
+
+        assert!(matches!(outcome, Err(OverridesError::NoSuchWorkspace(_))));
+    }
+
+    #[test]
+    fn the_json_columns_store_what_was_sent_and_read_back_as_values() {
+        let conn = workspace_conn();
+
+        let stored = patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({
+                "workflowRules": { "autonomy": "plan", "spreadByHeadroom": false },
+                "providerBindings": { "anthropic": "credential-harborline" },
+            })),
+        )
+        .expect("patch");
+
+        assert_eq!(
+            stored.workflow_rules,
             Some(serde_json::json!({ "autonomy": "plan", "spreadByHeadroom": false }))
         );
-        let cleared: SettingsOverrides =
-            serde_json::from_value(serde_json::json!({ "workflowRules": null }))
-                .expect("deserialize cleared rules");
-        assert_eq!(json_to_text(&cleared.workflow_rules), None);
-    }
-
-    #[test]
-    fn an_absent_provider_pool_reads_back_as_none() {
-        let overrides: SettingsOverrides =
-            serde_json::from_value(serde_json::json!({})).expect("deserialize overrides");
-
-        assert_eq!(overrides.provider_pool, None);
-        assert_eq!(provider_pool_to_text(&overrides.provider_pool), None);
-    }
-
-    #[test]
-    fn the_provider_pool_column_text_round_trips() {
-        let pool = Some(serde_json::json!(["anthropic", "codex"]));
-        let text = provider_pool_to_text(&pool);
-
-        assert_eq!(text.as_deref(), Some(r#"["anthropic","codex"]"#));
-        assert_eq!(provider_pool_from_text(text), pool);
-    }
-
-    #[test]
-    fn the_provider_policy_column_text_round_trips() {
-        let policy = Some(serde_json::json!([
-            { "id": "codex", "state": "on" },
-            { "id": "anthropic", "state": "on", "keepAfterLimit": true },
-            { "id": "cursor", "state": "backup", "payAsYouGo": true },
-            { "id": "gemini", "state": "off" }
-        ]));
-        let text = provider_pool_to_text(&policy);
-
-        assert_eq!(provider_pool_from_text(text), policy);
-    }
-
-    #[test]
-    fn the_provider_policy_survives_the_wire() {
-        let payload = serde_json::json!({
-            "providerPool": [{ "id": "codex", "state": "backup" }],
-        });
-
-        let overrides: SettingsOverrides =
-            serde_json::from_value(payload).expect("deserialize overrides");
-        let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
-
         assert_eq!(
-            encoded.get("providerPool"),
-            Some(&serde_json::json!([{ "id": "codex", "state": "backup" }]))
+            stored.provider_bindings,
+            Some(serde_json::json!({ "anthropic": "credential-harborline" }))
         );
     }
 
@@ -394,10 +712,17 @@ mod tests {
 
     #[test]
     fn the_older_reader_falls_back_to_every_provider_on_the_new_shape() {
-        let text = provider_pool_to_text(&Some(serde_json::json!([
-            { "id": "codex", "state": "on" }
-        ])));
-        let older: Option<Vec<String>> = text.and_then(|value| serde_json::from_str(&value).ok());
+        let conn = workspace_conn();
+        patch_overrides(
+            &conn,
+            "w",
+            &patch_of(serde_json::json!({
+                "providerPool": [{ "id": "codex", "state": "on" }]
+            })),
+        )
+        .expect("patch");
+        let older: Option<Vec<String>> =
+            column_text(&conn, "provider_pool").and_then(|value| serde_json::from_str(&value).ok());
 
         assert_eq!(older, None);
     }

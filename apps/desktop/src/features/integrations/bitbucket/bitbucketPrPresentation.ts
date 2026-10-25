@@ -1,7 +1,7 @@
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentation,
-} from '../../../shared/pullRequestPresentation';
+} from '../../../shared/utils/pullRequestPresentation';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { bitbucketPrStateKind } from '@goodboy/core';
 import type { BitbucketPullRequestState } from './client';

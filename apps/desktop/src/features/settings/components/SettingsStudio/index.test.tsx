@@ -60,6 +60,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
     loadDetectedBrowsers: vi.fn(async () => undefined),
     detectedBrowsers: [] as ReadonlyArray<{ id: string; label: string }>,
+    loadDetectedTerminals: vi.fn(async () => undefined),
+    detectedTerminals: [],
     workspaceIntegrations: {},
     integrationCredentials: [],
     integrationCredentialUsage: {},
@@ -79,6 +81,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     storageArtifacts: [],
     storageDeletingArtifacts: {},
     storageRoots: [],
+    terminalTabs: {},
     storageFocus: null,
     storageOutcome: null,
     storageRemovingPaths: {},
@@ -139,7 +142,7 @@ vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
-vi.mock('../../../onboarding/onboarding-store', () => ({
+vi.mock('../../../onboarding/onboardingSettings', () => ({
   reopenWizard: vi.fn(),
 }));
 

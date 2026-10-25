@@ -9,8 +9,8 @@ type StatusParams = {
 const monthWindow = (): { readonly startMs: number; readonly endMs: number } => {
   const now = new Date();
   return {
-    startMs: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-    endMs: Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 1,
+    startMs: new Date(now.getFullYear(), now.getMonth(), 1).getTime(),
+    endMs: new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - 1,
   };
 };
 
@@ -21,7 +21,7 @@ export const providerBudgetStatusFor = ({
 }: StatusParams): ProviderBudgetStatus => {
   const pct = (spentUsd / capUsd) * 100;
   const { startMs, endMs } = monthWindow();
-  const exceeded = spentUsd > capUsd;
+  const exceeded = spentUsd >= capUsd;
   return {
     remainingUsd: capUsd - spentUsd,
     pct,

@@ -13,6 +13,9 @@ const { state, openUrl } = vi.hoisted(() => ({
     cancelProviderConnect: vi.fn(async () => undefined),
     dismissProviderConnect: vi.fn(() => undefined),
     refreshProviders: vi.fn(async () => undefined),
+    settings: {},
+    detectedTerminals: [],
+    loadDetectedTerminals: vi.fn(async () => undefined),
   },
   openUrl: vi.fn(async () => undefined),
 }));
@@ -118,6 +121,8 @@ describe('ProviderConnect', () => {
 
     expect(screen.getByText(/If this keeps failing/)).toBeDefined();
     expect(screen.getByText('claude auth login')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Open in Terminal.app' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /copy command/i })).toHaveLength(1);
   });
 
   it('auto expands the details on a stall and keeps them closed while it runs', () => {

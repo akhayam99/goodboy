@@ -8,13 +8,17 @@ const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 describe('pausingSessionCapOf', () => {
   it('caps Auto at a session budget that pauses', () => {
     expect(
-      pausingSessionCapOf({ budget: { sessionId: SESSION, softCapUsd: 3, onExceed: 'pause' } }),
+      pausingSessionCapOf({
+        budget: { sessionId: SESSION, softCapUsd: 3, onExceed: 'pause', warnRatio: 0.8 },
+      }),
     ).toBe(3);
   });
 
   it('caps nothing for a session budget that only warns', () => {
     expect(
-      pausingSessionCapOf({ budget: { sessionId: SESSION, softCapUsd: 3, onExceed: 'warn' } }),
+      pausingSessionCapOf({
+        budget: { sessionId: SESSION, softCapUsd: 3, onExceed: 'warn', warnRatio: 0.8 },
+      }),
     ).toBeNull();
   });
 

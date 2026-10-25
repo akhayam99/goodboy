@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import type { ArmedAction } from './armedAction';
 
 type Props = {

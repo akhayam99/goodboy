@@ -44,7 +44,7 @@ export const PortRowView = ({
       onKeyDown={menu.onKeyDown}
       className={cn('group/row relative flex flex-col rounded-md', canOpen && ROW_HOVER)}
     >
-      <div className={cn(PORT_GRID, 'min-h-8 text-label')}>
+      <div className={cn(PORT_GRID, 'min-h-8 text-meta')}>
         {isNested ? null : hasCollision ? (
           <StatusDot tone="warning" size="md" role="status" ariaLabel="Collision" />
         ) : (

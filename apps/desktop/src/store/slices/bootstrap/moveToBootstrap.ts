@@ -1,4 +1,10 @@
-import type { BootstrapPhase, Project, ProjectId, Session } from '@goodboy/types';
+import type {
+  BootstrapNotUndone,
+  BootstrapPhase,
+  Project,
+  ProjectId,
+  Session,
+} from '@goodboy/types';
 import { buildBranchName } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import { setSetting } from '@goodboy/db';
@@ -13,7 +19,7 @@ import {
 } from '../../../shared/lib/repo';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { GetFn, SetFn } from '../../slice-types';
-import { selectLiveWork } from '../live-work/selectLiveWork';
+import { selectLiveWork } from '../../runtime/live-work/selectLiveWork';
 import { projectById } from '../projects/projectIndex';
 import { branchNamingSettings } from '../sessions/branchNamingSettings';
 import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
@@ -83,23 +89,83 @@ type UndoParams = {
   readonly projectId: ProjectId;
 };
 
-const undoMove = async ({ set, get, projectId }: UndoParams) => {
+type DescribeNotUndoneParams = {
+  readonly branch: string;
+  readonly item: BootstrapNotUndone;
+};
+
+const describeNotUndone = ({ branch, item }: DescribeNotUndoneParams): string => {
+  switch (item.kind) {
+    case 'branch-moved':
+      return `the branch ${branch} was kept because it has new commits`;
+    case 'branch-tip-unknown':
+      return `the branch ${branch} was kept because its starting point is not known`;
+    case 'worktree-not-removed':
+      return `the bootstrap folder could not be removed (${item.message})`;
+    case 'folder-not-removed':
+      return `the bootstrap folder is still on disk (${item.message})`;
+    case 'prune-failed':
+      return `git kept a stale record of the bootstrap folder (${item.message})`;
+    case 'branch-not-deleted':
+      return `the branch ${branch} could not be deleted (${item.message})`;
+    default: {
+      const unreachable: never = item;
+      return unreachable;
+    }
+  }
+};
+
+type WithNoteParams = {
+  readonly result: MoveToBootstrapResult;
+  readonly note: string;
+};
+
+const withNote = ({ result, note }: WithNoteParams): MoveToBootstrapResult =>
+  result.kind === 'refused' && note !== ''
+    ? { ...result, message: `${result.message} ${note}` }
+    : result;
+
+type RollbackNoteParams = {
+  readonly projectPath: string;
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly expectedTip: string | null;
+};
+
+const rollbackNote = async ({
+  projectPath,
+  worktreePath,
+  branch,
+  expectedTip,
+}: RollbackNoteParams): Promise<string> =>
+  bootstrapRollback({ projectPath, worktreePath, branch, expectedTip }).then(
+    (report) =>
+      report.notUndone.length === 0
+        ? ''
+        : `Not undone: ${report.notUndone.map((item) => describeNotUndone({ branch, item })).join('; ')}.`,
+    (error: unknown) => `Not undone: the move could not be rolled back (${formatError(error)}).`,
+  );
+
+const undoMove = async ({ set, get, projectId }: UndoParams): Promise<string> => {
   const project = projectById(get().projects, projectId);
   const phase = get().bootstrapPhase[projectId];
   if (project === undefined || phase === undefined) {
-    return;
+    return '';
   }
   if (phase.bootstrapSessionId !== null) {
     await discardUncreatedSession({ set, sessionId: phase.bootstrapSessionId });
   }
-  if (phase.branch !== null) {
-    await bootstrapRollback({
-      projectPath: project.rootPath,
-      worktreePath: phase.worktreePath ?? '',
-      branch: phase.branch,
-    }).catch(() => undefined);
-  }
+  const note =
+    phase.branch === null
+      ? ''
+      : await rollbackNote({
+          projectPath: project.rootPath,
+          worktreePath: phase.worktreePath ?? '',
+          branch: phase.branch,
+          expectedTip: phase.branchTip ?? null,
+        });
   await revertToFirstLap({ set, projectId, previous: phase });
+  return note;
 };
 
 type AdoptParams = {
@@ -198,8 +264,8 @@ const continueMove = async ({
       });
     }
   } catch (error) {
-    await undoMove({ set, get, projectId });
-    return failureOf(error);
+    const note = await undoMove({ set, get, projectId });
+    return withNote({ result: failureOf(error), note });
   }
   let cleared;
   try {
@@ -301,15 +367,21 @@ export const moveToBootstrap = (set: SetFn, get: GetFn) => {
       try {
         await get().setBootstrapPhase({
           projectId,
-          patch: { stage: 'moving', snapshotId: prepared.snapshotId, branch: prepared.branch },
+          patch: {
+            stage: 'moving',
+            snapshotId: prepared.snapshotId,
+            branch: prepared.branch,
+            branchTip: prepared.branchTip,
+          },
         });
       } catch (error) {
-        await bootstrapRollback({
+        const note = await rollbackNote({
           projectPath: project.rootPath,
           worktreePath: '',
           branch: prepared.branch,
-        }).catch(() => undefined);
-        return failureOf(error);
+          expectedTip: prepared.branchTip,
+        });
+        return withNote({ result: failureOf(error), note });
       }
       return continueMove({
         set,
@@ -338,11 +410,14 @@ export const resumeBootstrapMove = (set: SetFn, get: GetFn) => {
       phase.bootstrapSessionId !== null &&
       sessionById(get().sessions, phase.bootstrapSessionId) !== undefined;
     if (snapshotId === null || branch === null || worktreePath === null || !hasSession) {
-      await undoMove({ set, get, projectId });
-      return refused(
-        'failed',
-        'The interrupted move had not copied anything yet, so it was undone. Your folder is as you left it.',
-      );
+      const note = await undoMove({ set, get, projectId });
+      return withNote({
+        result: refused(
+          'failed',
+          'The interrupted move had not copied anything yet, so it was undone. Your folder is as you left it.',
+        ),
+        note,
+      });
     }
     const state = await bootstrapRecover({
       projectPath: project.rootPath,
@@ -350,11 +425,14 @@ export const resumeBootstrapMove = (set: SetFn, get: GetFn) => {
       worktreePath,
     }).catch(() => null);
     if (state?.kind !== 'verified') {
-      await undoMove({ set, get, projectId });
-      return refused(
-        'failed',
-        'The interrupted move did not verify, so it was undone. Your folder is as you left it.',
-      );
+      const note = await undoMove({ set, get, projectId });
+      return withNote({
+        result: refused(
+          'failed',
+          'The interrupted move did not verify, so it was undone. Your folder is as you left it.',
+        ),
+        note,
+      });
     }
     const baseProbe = get().bootstrapRemoteProbe[projectId]?.probe;
     return continueMove({

@@ -1,7 +1,7 @@
 import type { FolderPurpose } from '@goodboy/types';
-import { getSetting } from '@goodboy/db';
+import { getProjectValue } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { folderPurposeKey, parseFolderPurpose } from './folderPurposeKey';
+import { parseFolderPurpose } from './parseFolderPurpose';
 import { FOLDER_PURPOSE_QUEUE_KEY, storeFolderPurpose } from './storeFolderPurpose';
 import type { FolderPurposeDeps, LoadFolderPurposeParams } from './types';
 
@@ -10,7 +10,11 @@ export const loadFolderPurpose = ({ set, queue }: FolderPurposeDeps) => {
     queue.run({
       key: FOLDER_PURPOSE_QUEUE_KEY,
       task: async () => {
-        const raw = await getSetting(tauriDatabase, folderPurposeKey({ projectId }));
+        const raw = await getProjectValue({
+          db: tauriDatabase,
+          projectId,
+          key: 'folder.purpose',
+        });
         const purpose = parseFolderPurpose({ raw });
         storeFolderPurpose({ set, projectId, purpose });
         return purpose;

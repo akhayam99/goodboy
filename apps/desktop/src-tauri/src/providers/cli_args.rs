@@ -1,3 +1,4 @@
+use super::spec::{cli_of_binary_name, spec_of};
 use crate::aux_spawn::CLAUDE_SETTING_SOURCES;
 use crate::turn::SpawnOneArgs;
 
@@ -14,30 +15,21 @@ pub(crate) enum Cli {
 }
 
 impl Cli {
-    pub(crate) fn of_binary(binary: &str) -> Self {
+    pub(crate) fn of_binary(binary: &str) -> Option<Self> {
         let name = std::path::Path::new(binary)
-            .file_name()
+            .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or(binary);
-        match name {
-            "cursor-agent" => Cli::Cursor,
-            "agy" => Cli::Agy,
-            "codex" => Cli::Codex,
-            "opencode" | "openrouter" | "moonshot" => Cli::Opencode,
-            _ => Cli::Claude,
-        }
+        cli_of_binary_name(name)
     }
 
     pub(crate) fn of_provider(provider_id: &str) -> Option<Self> {
-        match provider_id {
-            "anthropic" => Some(Cli::Claude),
-            "cursor" => Some(Cli::Cursor),
-            "gemini" => Some(Cli::Agy),
-            "codex" => Some(Cli::Codex),
-            "opencode" | "openrouter" | "moonshot" => Some(Cli::Opencode),
-            _ => None,
-        }
+        spec_of(provider_id).map(|spec| spec.cli)
     }
+}
+
+pub(crate) fn prompt_on_stdin(cli: Cli) -> bool {
+    matches!(cli, Cli::Claude | Cli::Codex)
 }
 
 pub(crate) const CURSOR_TRUST_FLAG: &str = "--trust";
@@ -112,6 +104,7 @@ pub(crate) struct Policy {
     pub switches: &'static [&'static str],
     pub forbidden: &'static [&'static str],
     pub prompt_after_separator: bool,
+    pub prompt_on_stdin: bool,
 }
 
 pub(crate) fn read_only_policy(cli: Cli, job: Job) -> Policy {
@@ -121,42 +114,49 @@ pub(crate) fn read_only_policy(cli: Cli, job: Job) -> Policy {
             switches: &[],
             forbidden: &["--dangerously-skip-permissions"],
             prompt_after_separator: false,
+            prompt_on_stdin: true,
         },
         (Cli::Claude, Job::Planner) => Policy {
             pairs: &[("--disallowedTools", "mcp__*")],
             switches: &["--no-session-persistence"],
             forbidden: &["--dangerously-skip-permissions", "--allowedTools"],
             prompt_after_separator: false,
+            prompt_on_stdin: true,
         },
         (Cli::Claude, Job::Summarizer) => Policy {
             pairs: &[("--disallowedTools", "mcp__*"), ("--tools", "")],
             switches: &["--no-session-persistence"],
             forbidden: &["--dangerously-skip-permissions", "--allowedTools"],
             prompt_after_separator: false,
+            prompt_on_stdin: true,
         },
         (Cli::Cursor, _) => Policy {
             pairs: &[("--mode", "plan")],
             switches: &[],
             forbidden: &["--force"],
             prompt_after_separator: false,
+            prompt_on_stdin: false,
         },
         (Cli::Agy, _) => Policy {
             pairs: &[("--mode", "plan")],
             switches: &["--sandbox"],
             forbidden: &["--dangerously-skip-permissions"],
             prompt_after_separator: false,
+            prompt_on_stdin: false,
         },
         (Cli::Codex, _) => Policy {
             pairs: &[("-s", "read-only")],
             switches: &["--skip-git-repo-check"],
             forbidden: &["--full-auto", "--dangerously-bypass-approvals-and-sandbox"],
-            prompt_after_separator: true,
+            prompt_after_separator: false,
+            prompt_on_stdin: true,
         },
         (Cli::Opencode, _) => Policy {
             pairs: &[("--agent", "plan")],
             switches: &[],
             forbidden: &[],
             prompt_after_separator: true,
+            prompt_on_stdin: false,
         },
     }
 }
@@ -182,7 +182,7 @@ pub(crate) fn read_only_violations(cli: Cli, job: Job, argv: &[String]) -> Vec<S
             after_prompt_flag = false;
             continue;
         }
-        after_prompt_flag = arg == "-p";
+        after_prompt_flag = arg == "-p" && !policy.prompt_on_stdin;
         flags.push(arg.as_str());
     }
     let side_job_forbidden: &[&str] = if job == Job::Turn {
@@ -233,7 +233,6 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
         Cli::Claude => {
             let mut v = vec![
                 "-p".to_string(),
-                side.user_message.to_string(),
                 "--model".to_string(),
                 model,
                 "--system-prompt".to_string(),
@@ -284,8 +283,7 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
                 "read-only".to_string(),
             ];
             v.extend(effort);
-            v.push("--".to_string());
-            v.push(combined);
+            v.push("-".to_string());
             v
         }
         Cli::Opencode => {
@@ -312,6 +310,30 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
         return Err(ArgsError::Policy(violations.join("; ")));
     }
     Ok(argv)
+}
+
+pub(crate) fn side_job_stdin(side: &SideJob<'_>) -> Option<String> {
+    let cli = Cli::of_provider(side.provider_id)?;
+    match cli {
+        Cli::Claude => Some(side.user_message.to_string()),
+        Cli::Codex => Some(format!("{}\n\n{}", side.system_prompt, side.user_message)),
+        Cli::Cursor | Cli::Agy | Cli::Opencode => None,
+    }
+}
+
+pub(crate) fn turn_stdin(binary: &str, args: &SpawnOneArgs<'_>) -> Option<String> {
+    Cli::of_binary(binary)
+        .is_some_and(prompt_on_stdin)
+        .then(|| args.prompt.to_string())
+}
+
+pub(crate) fn feed_stdin(child: &mut std::process::Child, text: String) {
+    let Some(mut stdin) = child.stdin.take() else {
+        return;
+    };
+    std::thread::spawn(move || {
+        let _ = std::io::Write::write_all(&mut stdin, text.as_bytes());
+    });
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -368,7 +390,17 @@ fn effective_permission_mode<'a>(args: &SpawnOneArgs<'a>, access: Option<RoleAcc
 }
 
 pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
-    let cli = Cli::of_binary(binary);
+    build_turn_args(binary, args, true)
+}
+
+pub(crate) fn turn_args_with_prompt(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
+    build_turn_args(binary, args, false)
+}
+
+fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool) -> Vec<String> {
+    let Some(cli) = Cli::of_binary(binary) else {
+        return Vec::new();
+    };
     let access = confinement_of(args);
     let permission_mode = effective_permission_mode(args, access);
     match cli {
@@ -467,6 +499,10 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 }
             }
             v.extend(effort_args(cli, args.effort));
+            if is_stdin_allowed {
+                v.push("-".to_string());
+                return v;
+            }
             v.push("--".to_string());
             v.push(args.prompt.to_string());
             v
@@ -506,9 +542,11 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 v.push("--resume".to_string());
                 v.push(sid.to_string());
             }
+            v.push("-p".to_string());
+            if !is_stdin_allowed {
+                v.push(args.prompt.to_string());
+            }
             v.extend([
-                "-p".to_string(),
-                args.prompt.to_string(),
                 "--output-format".to_string(),
                 "stream-json".to_string(),
                 "--verbose".to_string(),
@@ -644,13 +682,24 @@ mod tests {
             ("cursor", "cursor-agent", Cli::Cursor),
             ("gemini", "/x/agy", Cli::Agy),
             ("codex", "codex", Cli::Codex),
-            ("moonshot", "moonshot", Cli::Opencode),
+            ("moonshot", "opencode", Cli::Opencode),
+            ("openrouter", "/x/opencode", Cli::Opencode),
         ];
         for (provider_id, binary, cli) in pairs {
             assert_eq!(Cli::of_provider(provider_id), Some(cli));
-            assert_eq!(Cli::of_binary(binary), cli);
+            assert_eq!(Cli::of_binary(binary), Some(cli));
         }
         assert_eq!(Cli::of_provider("nonexistent"), None);
+    }
+
+    #[test]
+    fn a_binary_nobody_drives_has_no_cli_and_no_arguments() {
+        assert_eq!(Cli::of_binary("moonshot"), None);
+        assert_eq!(Cli::of_binary("openrouter"), None);
+        assert_eq!(Cli::of_binary("claudee"), None);
+        assert_eq!(Cli::of_binary("/usr/bin/true"), None);
+        assert_eq!(Cli::of_binary("codex.exe"), Some(Cli::Codex));
+        assert_eq!(Cli::of_binary("cursor-agent.cmd"), Some(Cli::Cursor));
     }
 
     fn side(provider_id: &'static str, job: Job) -> SideJob<'static> {
@@ -696,16 +745,10 @@ mod tests {
     }
 
     #[test]
-    fn the_policy_rejects_a_codex_prompt_without_the_separator() {
-        let argv = strings(&[
-            "exec",
-            "--skip-git-repo-check",
-            "-s",
-            "read-only",
-            "a prompt",
-        ]);
+    fn the_policy_rejects_an_opencode_prompt_without_the_separator() {
+        let argv = strings(&["run", "--agent", "plan", "a prompt"]);
         assert_eq!(
-            read_only_violations(Cli::Codex, Job::Summarizer, &argv),
+            read_only_violations(Cli::Opencode, Job::Summarizer, &argv),
             strings(&["the prompt must follow a single --"])
         );
     }

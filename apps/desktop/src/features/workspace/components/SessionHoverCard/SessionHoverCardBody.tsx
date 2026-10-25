@@ -4,23 +4,22 @@ import {
   FactCardFootnote,
   FactCardHeader,
   FactCardState,
-  GhostActionButton,
-  StatusDot,
   formatUsd,
+  GhostActionButton,
+  ICON_SIZE,
+  StatusDot,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useReviewDraftCount } from './useReviewDraftCount';
-import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
 import { StateNode } from '../../../../shared/components/StateNode';
-import { sessionNodeOf } from '../../../session/sessionNode';
+import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
@@ -46,7 +45,7 @@ export const SessionHoverCardBody = ({
   isFactsOnly = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
-  const summary = useSessionSummary({ session });
+  const { summary, node, keys, title } = useSessionRowFacts({ session, isArchived });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
@@ -60,8 +59,6 @@ export const SessionHoverCardBody = ({
   const projectMounts = mounts.filter(
     (mount, index) => mounts.findIndex((other) => other.projectId === mount.projectId) === index,
   );
-  const node = sessionNodeOf({ info: summary.info, isArchived });
-  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
   const request = linked.state === 'none' ? null : pullRequestStateToneOf({ state: linked.state });
   const RequestIcon = request?.icon;
@@ -120,8 +117,8 @@ export const SessionHoverCardBody = ({
         <div className="flex flex-wrap gap-1">
           {request !== null && RequestIcon !== undefined ? (
             <Chip
+              kind="state"
               tone={request.tone}
-              size="xs"
               icon={<RequestIcon size={ICON_SIZE.row} aria-hidden />}
               label={requestChipLabel({ linked, pullRequest })}
             />
@@ -135,9 +132,9 @@ export const SessionHoverCardBody = ({
           ))}
           {projectMounts.map((mount) => (
             <Chip
+              kind="state"
               key={mount.mountId}
               tone="neutral"
-              size="xs"
               icon={<Folder size={ICON_SIZE.row} aria-hidden />}
               label={mount.mountName}
             />

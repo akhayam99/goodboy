@@ -1,7 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { HistoryRemoteLease } from '@goodboy/types';
 import { readRemoteLease } from '../../../features/history/historyEngine';
-import { worktreeStatus } from '../../../features/worktree/worktree';
+import { readWorktreeStatusNow } from '../../runtime/worktreeStatuses/cache';
 import type { HistoryStop, HistoryTarget } from './types';
 
 export type RemoteForPush = {
@@ -25,10 +25,10 @@ export const remoteForPush = async ({
   incorporatedSince,
   shouldPush,
 }: Params): Promise<RemoteForPush> => {
-  const status = await worktreeStatus({
+  const status = await readWorktreeStatusNow({
     worktreePath: target.worktreePath,
     baseBranch: target.baseBranch,
-  }).catch(() => null);
+  });
   const lease = await readRemoteLease({
     worktreePath: target.worktreePath,
     branch: target.branch,

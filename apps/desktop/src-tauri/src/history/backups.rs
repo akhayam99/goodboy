@@ -28,12 +28,7 @@ pub(crate) fn is_backup_of(branch: &str, ref_name: &str) -> bool {
         .is_some_and(is_stamp)
 }
 
-pub(super) fn now_nanos() -> u128 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_nanos())
-        .unwrap_or_default()
-}
+pub(super) use crate::util::now_nanos;
 
 fn created_at_of(ref_name: &str) -> u64 {
     ref_name

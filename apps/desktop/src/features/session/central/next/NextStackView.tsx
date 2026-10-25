@@ -130,7 +130,7 @@ export const NextStackView = ({
         <SectionHeader
           label="Next"
           headingLevel={2}
-          meta={<span className="text-label text-faint-foreground">{total}</span>}
+          meta={<span className="text-meta text-faint-foreground">{total}</span>}
         />
       ) : null}
       <div className="flex min-w-0 flex-col gap-1">

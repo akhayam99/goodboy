@@ -1,5 +1,6 @@
 import type { NewerDatabase } from '../../../shared/lib/newerDatabase';
 import type { DetectedBrowser, DetectedEditor } from '../../../shared/lib/editor';
+import type { DetectedTerminal } from '../../../shared/lib/terminalApp';
 
 export type BootPhase =
   | 'pending'
@@ -19,6 +20,7 @@ export type BootState = {
   readonly error: string | null;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly detectedBrowsers: ReadonlyArray<DetectedBrowser>;
+  readonly detectedTerminals: ReadonlyArray<DetectedTerminal>;
   readonly boardReady: boolean;
 };
 
@@ -30,5 +32,6 @@ export const bootInitialState: BootState = {
   error: null,
   detectedEditors: [],
   detectedBrowsers: [],
+  detectedTerminals: [],
   boardReady: true,
 };

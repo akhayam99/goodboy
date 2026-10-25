@@ -134,6 +134,16 @@ describe('resolvePrForBranch', () => {
     expect(result?.state).toBe('approved');
   });
 
+  it.each(['__proto__', 'constructor', 'toString'])(
+    'reads the inherited key %s as no review decision',
+    async (decision) => {
+      const pr = { ...BASE_RAW, number: 1, state: 'OPEN' as const, reviewDecision: decision };
+      const runner = makeJsonRunner([pr]);
+      const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+      expect(result?.reviewDecision).toBeNull();
+    },
+  );
+
   it('does not map APPROVED to approved when draft is true', async () => {
     const pr = {
       ...BASE_RAW,

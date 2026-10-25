@@ -6,12 +6,17 @@ export type FloatingCoords = {
   readonly side: FloatingSide;
 };
 
+export type FloatingRect = Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right' | 'width' | 'height'>;
+
+export type FloatingAlign = 'center' | 'start';
+
 type Params = {
-  readonly anchor: DOMRect;
-  readonly tip: DOMRect;
+  readonly anchor: FloatingRect;
+  readonly tip: FloatingRect;
   readonly side: FloatingSide;
   readonly gap: number;
   readonly edge: number;
+  readonly alignment?: FloatingAlign;
 };
 
 type Point = { readonly top: number; readonly left: number };
@@ -33,32 +38,31 @@ const flipSide = ({ side }: FlipParams): FloatingSide => {
   }
 };
 
-export const placeFloating = ({ anchor, tip, side, gap, edge }: Params): FloatingCoords => {
+export const placeFloating = ({
+  anchor,
+  tip,
+  side,
+  gap,
+  edge,
+  alignment = 'center',
+}: Params): FloatingCoords => {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+
+  const isStart = alignment === 'start';
+  const centeredLeft = isStart ? anchor.left - gap : anchor.left + anchor.width / 2 - tip.width / 2;
+  const centeredTop = isStart ? anchor.top - gap : anchor.top + anchor.height / 2 - tip.height / 2;
 
   const place = (s: FloatingSide): Point => {
     switch (s) {
       case 'top':
-        return {
-          top: anchor.top - tip.height - gap,
-          left: anchor.left + anchor.width / 2 - tip.width / 2,
-        };
+        return { top: anchor.top - tip.height - gap, left: centeredLeft };
       case 'bottom':
-        return {
-          top: anchor.bottom + gap,
-          left: anchor.left + anchor.width / 2 - tip.width / 2,
-        };
+        return { top: anchor.bottom + gap, left: centeredLeft };
       case 'left':
-        return {
-          top: anchor.top + anchor.height / 2 - tip.height / 2,
-          left: anchor.left - tip.width - gap,
-        };
+        return { top: centeredTop, left: anchor.left - tip.width - gap };
       case 'right':
-        return {
-          top: anchor.top + anchor.height / 2 - tip.height / 2,
-          left: anchor.right + gap,
-        };
+        return { top: centeredTop, left: anchor.right + gap };
     }
   };
 
@@ -72,7 +76,7 @@ export const placeFloating = ({ anchor, tip, side, gap, edge }: Params): Floatin
     if (s === 'left') {
       return p.left >= 0;
     }
-    return p.left + tip.width <= vw;
+    return p.left + tip.width <= vw - edge;
   };
 
   let chosen = side;

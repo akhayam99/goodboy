@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { githubPullRequestPort } from '../githubPullRequestPort';
-import { PullRequestPortError } from '../pullRequestPort';
+import {
+  PullRequestPortError,
+  STALE_HEAD_MESSAGE,
+  isPullRequestPortError,
+} from '../pullRequestPort';
 import {
   GITHUB_PR_REPO,
   GITHUB_PR_URL,
@@ -60,14 +64,41 @@ describe('githubPullRequestPort writes', () => {
 
   it('merges with the chosen flag', async () => {
     const { port, calls } = portOf();
-    await port.merge({ method: 'squash' });
-    await port.merge({ method: 'merge' });
-    await port.merge({ method: 'rebase' });
+    await port.merge({ method: 'squash', expectedHeadSha: null });
+    await port.merge({ method: 'merge', expectedHeadSha: null });
+    await port.merge({ method: 'rebase', expectedHeadSha: null });
     expect(calls).toEqual([
       ['pr', 'merge', '318', '--squash'],
       ['pr', 'merge', '318', '--merge'],
       ['pr', 'merge', '318', '--rebase'],
     ]);
+  });
+
+  it('pins the merge to the reviewed head with the match flag', async () => {
+    const { port, calls } = portOf();
+    await port.merge({ method: 'squash', expectedHeadSha: '6c20f48a9e1d' });
+    expect(calls).toEqual([
+      ['pr', 'merge', '318', '--squash', '--match-head-commit', '6c20f48a9e1d'],
+    ]);
+  });
+
+  it('names a moved head as stale_head, not as a generic failure', async () => {
+    const { port } = portOf({
+      override: (args) =>
+        args[1] === 'merge'
+          ? failure({
+              stderr:
+                'GraphQL: Head branch was modified. Review and try the merge again. (mergePullRequest)',
+            })
+          : null,
+    });
+    const error = await port.merge({ method: 'squash', expectedHeadSha: '6c20f48a9e1d' }).then(
+      () => null,
+      (caught: unknown) => (isPullRequestPortError(caught) ? caught : null),
+    );
+    expect(error?.kind).toBe('stale_head');
+    expect(error?.message).toBe(STALE_HEAD_MESSAGE);
+    expect(error?.details).toContain('Head branch was modified');
   });
 
   it('closes and reopens', async () => {
@@ -84,7 +115,7 @@ describe('githubPullRequestPort writes', () => {
     const { port } = portOf({
       override: (args) => (args[1] === 'merge' ? failure({ stderr: '', exitCode: 4 }) : null),
     });
-    const error = await port.merge({ method: 'squash' }).then(
+    const error = await port.merge({ method: 'squash', expectedHeadSha: null }).then(
       () => null,
       (caught: unknown) => caught,
     );

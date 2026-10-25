@@ -1,6 +1,7 @@
 import { DEFAULT_EDITOR_BINARY, SETTING_EDITOR_BINARY } from '../../features/settings/settings';
 import type { ReportErrorParams } from '../../store/slices/notifications/reportError';
 import { openInEditor } from './editor';
+import { OPEN_APP_SETTINGS_GENERAL } from '../../store/slices/notifications/errorRecovery';
 
 type Settings = Readonly<Record<string, string>>;
 
@@ -31,6 +32,10 @@ export const openInConfiguredEditor = async ({
       editor: editor ?? resolveEditorBinary({ settings: state.settings }),
     });
   } catch (error) {
-    void state.reportError({ title: "Couldn't open the editor", error });
+    void state.reportError({
+      title: "Couldn't open the editor",
+      error,
+      recovery: OPEN_APP_SETTINGS_GENERAL,
+    });
   }
 };

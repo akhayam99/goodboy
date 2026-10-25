@@ -13,7 +13,9 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -196,7 +198,15 @@ describe('a grouped list', () => {
   const merged = opened(11, 'Merged long ago');
   const idle = opened(10, 'Quiet');
 
-  const mountGrouped = (isDoneExpanded: boolean) => {
+  const wroteAfterMerge = anAgent({
+    sessionId: idOf(merged),
+    kind: 'implementer',
+    status: 'completed',
+    lastFinishedAt: brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
+    lastViewedAt: brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
+  });
+
+  const mountGrouped = (isDoneExpanded: boolean, isMergedLive = true) => {
     seedColumn({
       store: useAppStore,
       sessions: [running, merged, idle],
@@ -204,6 +214,7 @@ describe('a grouped list', () => {
     });
     useAppStore.setState({
       navigate,
+      sessionPhaseRuns: isMergedLive ? { [merged.id]: [wroteAfterMerge] } : {},
       sessionGithub: { [merged.id]: mergedGithub() },
       sessionGroupExpanded: isDoneExpanded ? { done: true } : {},
     });
@@ -229,5 +240,11 @@ describe('a grouped list', () => {
     const { result } = mountGrouped(true);
     result.current({ delta: -1 });
     expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(running) }) });
+  });
+
+  it('moves a merged session nobody wrote to after the merge to the end of the list at once', () => {
+    const { result } = mountGrouped(false, false);
+    result.current({ delta: 1 });
+    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(merged) }) });
   });
 });

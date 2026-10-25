@@ -2,7 +2,7 @@ import type { GhRunner } from '@goodboy/core';
 import type { GhTokenStatus } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { redactReport } from '../../shared/utils/redactReport';
-import { REPORT_ISSUE_REPO } from '../settings/issueUrl';
+import { REPORT_ISSUE_REPO } from './issueUrl';
 
 export type ReportFiled = {
   readonly url: string | null;
@@ -147,7 +147,6 @@ export const findSimilarIssue = async ({
       [
         'search',
         'issues',
-        query,
         '--repo',
         REPORT_ISSUE_REPO,
         '--state',
@@ -156,6 +155,8 @@ export const findSimilarIssue = async ({
         'number,title,url,commentsCount',
         '--limit',
         '1',
+        '--',
+        query,
       ],
       {},
     );

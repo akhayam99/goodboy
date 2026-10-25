@@ -27,6 +27,7 @@ import type {
   SessionMountView,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -123,9 +124,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const remoteAt = (repoRoot: string) =>
+const OTHER_MOUNT_ID = brandId<MountId>({ value: 'mount-notify-relay' });
+
+const remoteAt = (repoRoot: string, mountId: MountId | null = null) =>
   renderHook(() =>
-    useBitbucketRemote({ sessionId: SESSION_ID, workspaceId: WORKSPACE_ID, repoRoot }),
+    useBitbucketRemote({ sessionId: SESSION_ID, workspaceId: WORKSPACE_ID, mountId, repoRoot }),
   );
 
 describe('useBitbucketRemote', () => {
@@ -178,5 +181,40 @@ describe('useBitbucketRemote', () => {
 
     await waitFor(() => expect(result.current.isBitbucket).toBe(true));
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('offers the new request page of the mount on screen, not the one chat writes to', async () => {
+    useAppStore.setState({
+      sessionMounts: {
+        [SESSION_ID]: [
+          VIEW,
+          { ...VIEW, id: OTHER_MOUNT_ID, mountName: 'notify-relay', branch: 'hl/relay-retry' },
+        ],
+      },
+      mountBitbucketPr: {
+        [MOUNT_ID]: ENTRY,
+        [OTHER_MOUNT_ID]: {
+          ...ENTRY,
+          mountId: OTHER_MOUNT_ID,
+          repo: { ...ENTRY.repo!, repoSlug: 'notify-relay' },
+          repository: 'harborline/notify-relay',
+          branch: 'hl/relay-retry',
+        },
+      },
+    });
+    worktree.remote.mockResolvedValue('git@bitbucket.org:harborline/notify-relay.git');
+
+    const { result } = remoteAt(`/repos/shown-${counter}`, OTHER_MOUNT_ID);
+
+    await waitFor(() => expect(result.current.isBitbucket).toBe(true));
+    expect(result.current.newPullRequestUrl).toBe(
+      'https://bitbucket.org/harborline/notify-relay/pull-requests/new?source=hl%2Frelay-retry',
+    );
+    await waitFor(() =>
+      expect(refresh).toHaveBeenCalledWith(SESSION_ID, {
+        silent: true,
+        mountId: OTHER_MOUNT_ID,
+      }),
+    );
   });
 });

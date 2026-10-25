@@ -67,6 +67,9 @@ jobs:
       - name: typed lint
         run: pnpm run lint:ts
 
+      - name: typed lint, strict pass
+        run: pnpm run lint:ts:strict
+
       - name: website token and icon drift
         run: pnpm --dir website run sync:tokens -- --check && pnpm --dir website exec node scripts/sync-icons.mjs --check
 
@@ -102,15 +105,19 @@ jobs:
       - name: build
         run: pnpm --filter @goodboy/desktop exec vite build
 
-      - name: audit
-        id: audit
-        continue-on-error: true
-        timeout-minutes: 2
-        run: pnpm audit --prod
+      - name: lockfile changed
+        id: lockfile
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qx pnpm-lock.yaml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: audit warning
-        if: steps.audit.outcome == 'failure'
-        run: echo "::warning::pnpm audit --prod failed or timed out"
+      - name: audit
+        if: github.event_name == 'pull_request' && steps.lockfile.outputs.changed == 'true'
+        timeout-minutes: 3
+        run: node scripts/audit-gate.mjs
 
   commits:
     name: commit messages + pr title
@@ -160,6 +167,31 @@ jobs:
       - name: test
         run: pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --shard=${{ matrix.shard }}/4
 
+  test-time-zones:
+    name: scene tests in ${{ matrix.zone }}
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        zone: [Pacific/Kiritimati, Pacific/Pago_Pago, before-midnight, after-midnight]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: test
+        env:
+          ZONE: ${{ matrix.zone }}
+        run: |
+          export TZ="$(node scripts/test-time-zone.mjs "$ZONE")"
+          echo "TZ=$TZ"
+          node scripts/scene-backed-tests.mjs | xargs pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests
+
   test-packages:
     name: packages tests + a11y
     needs: changes
@@ -182,7 +214,7 @@ jobs:
 
   gate:
     name: lint + typecheck + test + build
-    needs: [changes, checks, commits, test-desktop, test-packages]
+    needs: [changes, checks, commits, test-desktop, test-time-zones, test-packages]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

@@ -1,7 +1,8 @@
 import type { TerminalDriver } from '../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import { trackTerminalInput } from './commandTracker';
 import { terminalOutputBus } from './outputBus';
-import { invokeTerminalResize, invokeTerminalSnapshot, invokeTerminalWrite } from './terminal';
+import { invokeTerminalResize, invokeTerminalSnapshot } from './terminal';
+import { writeTerminalInput } from './writeTerminalInput';
 
 type DriverParams = {
   readonly terminalId: string;
@@ -32,7 +33,7 @@ export const stringToBase64 = ({ value }: Base64Params): string => {
 export const createTerminalDriver = ({ terminalId }: DriverParams): TerminalDriver => ({
   write: (data: string) => {
     trackTerminalInput({ terminalId, data });
-    void invokeTerminalWrite(terminalId, stringToBase64({ value: data }));
+    void writeTerminalInput({ terminalId, encoded: stringToBase64({ value: data }) });
   },
   resize: (cols: number, rows: number) => {
     void invokeTerminalResize(terminalId, cols, rows);

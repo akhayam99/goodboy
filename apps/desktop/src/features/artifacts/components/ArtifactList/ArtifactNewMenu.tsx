@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { ChevronDown, FileJson, FolderOpen, Plus } from 'lucide-react';
-import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { newArtifactEventName } from '../../newArtifactEventName';
 import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';

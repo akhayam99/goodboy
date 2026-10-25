@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { Pencil, Trash2, Undo2 } from 'lucide-react';
-import { Button, Chip, ClampedProse, Markdown, cn } from '@goodboy/ui';
+import { Button, Chip, ClampedProse, cn, ICON_SIZE, Markdown, FOCUS_RING } from '@goodboy/ui';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { BlockEditor } from './BlockEditor';
 import { DecisionNumber } from './DecisionNumber';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const RewordIcon = CONCEPT_ICONS.enhance;
 const CHARS_PER_LINE = 72;
@@ -100,7 +100,7 @@ export const DecisionRowItem = ({
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="line-clamp-2 text-faint-foreground line-through [overflow-wrap:anywhere]">
-            <Markdown text={text} className="text-label" />
+            <Markdown text={text} className="text-meta" />
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -143,7 +143,7 @@ export const DecisionRowItem = ({
               onToggleOpen();
             }
           }}
-          className="flex w-full flex-col items-start gap-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn('flex w-full flex-col items-start gap-1 rounded-sm text-left', FOCUS_RING)}
         >
           <div
             key={text}
@@ -154,7 +154,7 @@ export const DecisionRowItem = ({
               isSwapped && 'motion-safe:animate-text-swap',
             )}
           >
-            <Markdown text={text} className="text-label" />
+            <Markdown text={text} className="text-meta" />
           </div>
           {isLong ? (
             <span className="text-meta text-muted-foreground">
@@ -206,7 +206,10 @@ export const DecisionRowItem = ({
               type="button"
               aria-expanded={isPreviousShown}
               onClick={() => setIsPreviousShown(!isPreviousShown)}
-              className="rounded-sm text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className={cn(
+                'rounded-sm text-muted-foreground underline-offset-2 hover:underline',
+                FOCUS_RING,
+              )}
             >
               {isPreviousShown ? 'Hide previous' : 'Show previous'}
             </button>

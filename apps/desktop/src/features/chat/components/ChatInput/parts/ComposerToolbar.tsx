@@ -5,6 +5,7 @@ import { PermissionModePicker } from '../../../../permissions/components/Permiss
 import { ATTACHMENT_ACCEPT } from '../../../attachment-kinds';
 import type { ComposerControlSlots } from '../composerControlSlots';
 import type { useTurnRouting } from '../hooks/useTurnRouting';
+import type { StopPhase } from '../../../../../shared/hooks/useAgentStop';
 import { ComposerPlusMenu } from './ComposerPlusMenu';
 import { ComposerRoutingPicker } from './ComposerRoutingPicker';
 import { SendControl } from './SendControl';
@@ -24,6 +25,9 @@ type Props = {
   readonly sendDisabledTitle: string | undefined;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
+  readonly stopPhase: StopPhase;
+  readonly isStopArmed: boolean;
+  readonly onStop: () => void;
 };
 
 export const ComposerToolbar = ({
@@ -41,6 +45,9 @@ export const ComposerToolbar = ({
   sendDisabledTitle,
   onSend,
   onSendNow,
+  stopPhase,
+  isStopArmed,
+  onStop,
 }: Props) => {
   const asks = hasPermissionPicker ? (
     <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
@@ -81,6 +88,9 @@ export const ComposerToolbar = ({
             sendDisabledTitle={sendDisabledTitle}
             onSend={onSend}
             onSendNow={onSendNow}
+            stopPhase={stopPhase}
+            isStopArmed={isStopArmed}
+            onStop={onStop}
           />
         </div>
       </div>

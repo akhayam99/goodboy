@@ -11,7 +11,7 @@ const NEVER_INCLUDED: ReadonlyArray<string> = [
 export const NeverIncluded = () => (
   <div className="flex flex-col gap-2 rounded-md bg-muted p-3">
     <span className="text-row text-foreground">Never included</span>
-    <ul className="flex flex-col gap-0.5 text-label text-muted-foreground">
+    <ul className="flex flex-col gap-0.5 text-meta text-muted-foreground">
       {NEVER_INCLUDED.map((item) => (
         <li key={item}>{item}</li>
       ))}

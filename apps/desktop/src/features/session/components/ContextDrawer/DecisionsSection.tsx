@@ -2,15 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import {
   EmptyLine,
+  ICON_SIZE,
   Input,
   SegmentedTabs,
   SkeletonText,
   type SegmentedTabOption,
+  FOCUS_RING,
+  cn,
 } from '@goodboy/ui';
 import type { DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import {
   hasDecisionChanges,
   type DecisionChangesSince,
@@ -284,7 +287,10 @@ export const DecisionsSection = ({
               <button
                 type="button"
                 onClick={undoAllRemovals}
-                className="inline-flex items-center gap-2 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover',
+                  FOCUS_RING,
+                )}
               >
                 <Undo2 size={ICON_SIZE.row} aria-hidden />
                 Undo all
@@ -345,7 +351,10 @@ export const DecisionsSection = ({
             type="button"
             aria-expanded={isClosedOpen}
             onClick={() => setIsClosedOpen(!isClosedOpen)}
-            className="flex items-center gap-2 self-start rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'flex items-center gap-2 self-start rounded-md px-2 py-1 text-meta text-muted-foreground hover:bg-hover',
+              FOCUS_RING,
+            )}
           >
             {isClosedOpen ? (
               <ChevronDown size={ICON_SIZE.row} aria-hidden />

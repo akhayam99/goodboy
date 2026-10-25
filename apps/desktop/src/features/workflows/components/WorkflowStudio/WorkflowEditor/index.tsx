@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, Notice } from '@goodboy/ui';
+import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { AnchoredConfirm } from '../../../../../shared/components/AnchoredConfirm';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, classifyStep } from '../../../../session/agent-kind';
-import { BuilderTitleField } from '../../WorkflowBuilderView/parts/BuilderTitleField';
-import { GoalField } from '../../WorkflowBuilderView/parts/GoalField';
-import { PlanDraftingBanner } from '../../WorkflowBuilderView/parts/PlanDraftingBanner';
+import { BuilderTitleField } from './BuilderTitleField';
+import { GoalField } from './GoalField';
+import { PlanDraftingBanner } from './PlanDraftingBanner';
 import type { StepDraft } from '../../../engine';
 import { addStep, blankStepDraft, duplicateStep, reorderSteps, updateStep } from '../../../engine';
 import { useSaveAsStep } from '../../../hooks/useSaveAsStep';
@@ -197,7 +197,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
             void polish.run({
               id: 'goal',
               current: form.goal,
-              keptMessage: 'Kept your wording. The goal could not be polished.',
+              keptMessage: "Kept your wording. The goal couldn't be polished.",
               polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: form.goal }),
               apply: setGoal,
             })
@@ -231,7 +231,6 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
               provider={resolvedProvider(step)}
               model={resolvedModel(step)}
               effort={effort}
-              estimate={undefined}
               span={span}
               identityIndex={IDENTITY_INDEX}
               isExpanded={expandedKey === step.key}

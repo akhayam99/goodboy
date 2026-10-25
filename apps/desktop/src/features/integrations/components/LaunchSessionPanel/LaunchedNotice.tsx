@@ -1,8 +1,7 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -22,7 +21,7 @@ export const LaunchedNotice = ({ sessionId, isLinkedToIssue, onOpened }: Props) 
         <MessagesSquare size={ICON_SIZE.control} className="text-success" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-label font-medium text-foreground">Session already started</span>
+        <span className="text-meta font-medium text-foreground">Session already started</span>
         <span className="truncate text-meta text-muted-foreground">
           {isLinkedToIssue
             ? 'A session is linked to this issue.'

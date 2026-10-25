@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 use base64::engine::general_purpose::STANDARD;
@@ -8,6 +9,8 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::db::Db;
+use crate::dropped_paths::DroppedPaths;
+use crate::util::scoped_path::{open_file_within, resolve_within, ScopedPathError};
 
 /// Attachments live inside the worktree so the spawned provider CLI can read
 /// them with a path relative to its cwd. `.goodboy/` is gitignored, so they
@@ -29,6 +32,8 @@ pub enum AttachmentError {
     TooLarge(usize),
     #[error("attachment path escapes the worktree attachment directory")]
     InvalidPath,
+    #[error("path was not dropped onto the window")]
+    NotDropped,
     #[error("unsupported attachment type: {0}")]
     UnsupportedMime(String),
     #[error("sqlite error: {0}")]
@@ -44,6 +49,7 @@ impl AttachmentError {
             AttachmentError::Decode(_) => "decode",
             AttachmentError::TooLarge(_) => "too_large",
             AttachmentError::InvalidPath => "invalid_path",
+            AttachmentError::NotDropped => "not_dropped",
             AttachmentError::UnsupportedMime(_) => "unsupported_mime",
             AttachmentError::Sqlite(_) => "sqlite",
             AttachmentError::Poisoned => "poisoned",
@@ -52,6 +58,28 @@ impl AttachmentError {
 }
 
 crate::util::impl_error_serialize!(AttachmentError);
+
+impl From<ScopedPathError> for AttachmentError {
+    fn from(error: ScopedPathError) -> Self {
+        match error {
+            ScopedPathError::Escapes => AttachmentError::InvalidPath,
+            ScopedPathError::Unavailable => {
+                AttachmentError::Io(std::io::Error::from(std::io::ErrorKind::NotFound))
+            }
+            ScopedPathError::Unsupported => {
+                AttachmentError::Io(std::io::Error::from(std::io::ErrorKind::Unsupported))
+            }
+        }
+    }
+}
+
+fn attachment_relative(rel_path: &str) -> Result<&Path, AttachmentError> {
+    let relative = Path::new(rel_path);
+    if !relative.starts_with(ATTACH_SUBDIR) {
+        return Err(AttachmentError::InvalidPath);
+    }
+    Ok(relative)
+}
 
 /// Reduces an arbitrary file name to a flat, separator-free token. Drops any
 /// directory component and replaces anything outside `[A-Za-z0-9._-]` — both a
@@ -154,8 +182,8 @@ fn attachment_write_blocking(
     }
 
     crate::session_dir::migrate_legacy_marker(Path::new(&worktree_dir))?;
-    let dir = Path::new(&worktree_dir).join(ATTACH_SUBDIR);
-    fs::create_dir_all(&dir)?;
+    fs::create_dir_all(Path::new(&worktree_dir).join(ATTACH_SUBDIR))?;
+    let dir = resolve_within(Path::new(&worktree_dir), Path::new(ATTACH_SUBDIR))?;
 
     let stored = format!(
         "{}-{}",
@@ -184,11 +212,20 @@ pub struct DroppedAttachment {
 /// filter — the second guard exists because OS drag-drop bypasses the picker.
 #[tauri::command]
 pub async fn attachment_read_dropped(
+    drops: State<'_, DroppedPaths>,
     abs_path: String,
 ) -> Result<DroppedAttachment, AttachmentError> {
+    claim_dropped(&drops, &abs_path)?;
     tauri::async_runtime::spawn_blocking(move || attachment_read_dropped_blocking(abs_path))
         .await
         .map_err(|e| AttachmentError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn claim_dropped(drops: &DroppedPaths, abs_path: &str) -> Result<(), AttachmentError> {
+    if !drops.take(Path::new(abs_path)) {
+        return Err(AttachmentError::NotDropped);
+    }
+    Ok(())
 }
 
 fn attachment_read_dropped_blocking(
@@ -243,19 +280,17 @@ fn attachment_read_blocking(
     worktree_dir: String,
     rel_path: String,
 ) -> Result<String, AttachmentError> {
-    if rel_path.contains("..") || !rel_path.starts_with(ATTACH_SUBDIR) {
-        return Err(AttachmentError::InvalidPath);
-    }
-
-    let full = Path::new(&worktree_dir).join(&rel_path);
-    let bytes = fs::read(&full)?;
+    let relative = attachment_relative(&rel_path)?;
+    let file = open_file_within(Path::new(&worktree_dir), relative)?;
+    let mut bytes = Vec::new();
+    file.take(MAX_BYTES as u64 + 1).read_to_end(&mut bytes)?;
     if bytes.len() > MAX_BYTES {
         return Err(AttachmentError::TooLarge(MAX_BYTES));
     }
 
     Ok(format!(
         "data:{};base64,{}",
-        mime_for(&full),
+        mime_for(relative),
         STANDARD.encode(&bytes)
     ))
 }
@@ -274,12 +309,19 @@ fn attachment_delete_blocking(
     worktree_dir: String,
     rel_path: String,
 ) -> Result<(), AttachmentError> {
-    if rel_path.contains("..") || !rel_path.starts_with(ATTACH_SUBDIR) {
+    let relative = attachment_relative(&rel_path)?;
+    let Some(file_name) = relative.file_name() else {
         return Err(AttachmentError::InvalidPath);
-    }
-
-    let full = Path::new(&worktree_dir).join(&rel_path);
-    match fs::remove_file(&full) {
+    };
+    let directory = match resolve_within(
+        Path::new(&worktree_dir),
+        relative.parent().unwrap_or(Path::new(ATTACH_SUBDIR)),
+    ) {
+        Ok(directory) => directory,
+        Err(ScopedPathError::Unavailable) => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    match fs::remove_file(directory.join(file_name)) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => Err(AttachmentError::Io(e)),
@@ -539,6 +581,119 @@ mod tests {
         assert_eq!(out.file_name, "shot.png");
         assert_eq!(out.mime_type, "image/png");
         assert_eq!(out.data_base64, png_b64);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn claim_dropped_refuses_a_path_that_was_never_dropped() {
+        let drops = DroppedPaths::default();
+        let err = claim_dropped(&drops, "/tmp/harborline/tool-config.json");
+        assert!(matches!(err, Err(AttachmentError::NotDropped)));
+    }
+
+    #[test]
+    fn claim_dropped_accepts_a_dropped_path_once() {
+        let drops = DroppedPaths::default();
+        drops.record(&[std::path::PathBuf::from("/tmp/harborline/brief.pdf")]);
+        assert!(claim_dropped(&drops, "/tmp/harborline/brief.pdf").is_ok());
+        let err = claim_dropped(&drops, "/tmp/harborline/brief.pdf");
+        assert!(matches!(err, Err(AttachmentError::NotDropped)));
+    }
+
+    fn scoped_worktree(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-attach-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(dir.join(ATTACH_SUBDIR)).unwrap();
+        dir
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_refuses_a_symlink_planted_in_the_attachment_directory() {
+        let dir = scoped_worktree("read-link");
+        let outside = scoped_worktree("read-outside");
+        fs::write(outside.join("secret.txt"), b"token").unwrap();
+        std::os::unix::fs::symlink(
+            outside.join("secret.txt"),
+            dir.join(ATTACH_SUBDIR).join("x.txt"),
+        )
+        .unwrap();
+        let err = attachment_read_blocking(
+            dir.to_string_lossy().to_string(),
+            format!("{ATTACH_SUBDIR}/x.txt"),
+        );
+        assert!(err.is_err());
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&outside);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_refuses_an_attachment_directory_that_points_outside_the_worktree() {
+        let dir = scoped_worktree("read-dir-link");
+        let outside = scoped_worktree("read-dir-outside");
+        fs::remove_dir_all(dir.join(ATTACH_SUBDIR)).unwrap();
+        fs::write(outside.join(ATTACH_SUBDIR).join("x.txt"), b"token").unwrap();
+        std::os::unix::fs::symlink(
+            outside.join(ATTACH_SUBDIR),
+            dir.join(".goodboy").join("attachments"),
+        )
+        .unwrap();
+        let err = attachment_read_blocking(
+            dir.to_string_lossy().to_string(),
+            format!("{ATTACH_SUBDIR}/x.txt"),
+        );
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&outside);
+    }
+
+    #[test]
+    fn read_refuses_a_sibling_directory_that_shares_the_prefix() {
+        let err = attachment_read_blocking(
+            "/tmp".to_string(),
+            ".goodboy/attachments-evil/x.txt".to_string(),
+        );
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn delete_never_removes_through_a_directory_symlink() {
+        let dir = scoped_worktree("delete-link");
+        let outside = scoped_worktree("delete-outside");
+        fs::remove_dir_all(dir.join(ATTACH_SUBDIR)).unwrap();
+        let victim = outside.join(ATTACH_SUBDIR).join("x.txt");
+        fs::write(&victim, b"keep").unwrap();
+        std::os::unix::fs::symlink(
+            outside.join(ATTACH_SUBDIR),
+            dir.join(".goodboy").join("attachments"),
+        )
+        .unwrap();
+        let err = attachment_delete_blocking(
+            dir.to_string_lossy().to_string(),
+            format!("{ATTACH_SUBDIR}/x.txt"),
+        );
+        assert!(matches!(err, Err(AttachmentError::InvalidPath)));
+        assert!(victim.exists());
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&outside);
+    }
+
+    #[test]
+    fn delete_of_a_missing_attachment_succeeds() {
+        let dir = scoped_worktree("delete-missing");
+        let result = attachment_delete_blocking(
+            dir.to_string_lossy().to_string(),
+            format!("{ATTACH_SUBDIR}/gone.png"),
+        );
+        assert!(result.is_ok());
         let _ = fs::remove_dir_all(&dir);
     }
 }

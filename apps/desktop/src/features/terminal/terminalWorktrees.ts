@@ -10,7 +10,7 @@ import type { TerminalSelection, TerminalTab, TerminalTabId } from '../../shared
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { folderName } from '../../store/slices/terminal/terminalOwner';
 import { mountOfTab, terminalWorktreeKey } from '../../store/slices/terminal/terminalWorktree';
-import { sessionTitle } from '../session/sessionTitle';
+import { sessionTitle } from '../../shared/utils/sessionTitle';
 
 export type TerminalWorktree = {
   readonly key: string;
@@ -26,7 +26,7 @@ export type TerminalWorktree = {
 
 export type TerminalGroup = {
   readonly key: string;
-  readonly kind: 'workspace' | 'session';
+  readonly kind: 'workspace' | 'session' | 'archived';
   readonly sessionId: SessionId | null;
   readonly title: string;
   readonly worktrees: ReadonlyArray<TerminalWorktree>;
@@ -36,6 +36,7 @@ type GroupsParams = {
   readonly workspaceId: WorkspaceId;
   readonly terminalTabs: Readonly<Record<string, ReadonlyArray<TerminalTab>>>;
   readonly sessions: ReadonlyArray<Session>;
+  readonly archivedSessions: ReadonlyArray<Session>;
   readonly mountsBySession: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
   readonly projects: ReadonlyArray<Pick<Project, 'id' | 'name'>>;
 };
@@ -59,6 +60,8 @@ type ActiveParams = {
 };
 
 const WORKSPACE_GROUP_KEY = 'workspace';
+export const ARCHIVED_GROUP_KEY = 'archived';
+const ARCHIVED_GROUP_TITLE = 'Archived sessions';
 const WORKSPACE_GROUP_TITLE = 'Workspace folder';
 const UNKNOWN_FOLDER_NAME = 'Terminal';
 
@@ -110,6 +113,7 @@ export const terminalGroups = ({
   workspaceId,
   terminalTabs,
   sessions,
+  archivedSessions,
   mountsBySession,
   projects,
 }: GroupsParams): ReadonlyArray<TerminalGroup> => {
@@ -125,6 +129,22 @@ export const terminalGroups = ({
       sessionId: session.id,
       title: sessionTitle({ session }),
       worktrees: terminalWorktreesOf({ tabs, mounts: mountsBySession[session.id] ?? [], projects }),
+    });
+  }
+  const archivedWorktrees = archivedSessions.flatMap((session) => {
+    const tabs = terminalTabs[session.id] ?? [];
+    if (session.workspaceId !== workspaceId || tabs.length === 0) {
+      return [];
+    }
+    return terminalWorktreesOf({ tabs, mounts: mountsBySession[session.id] ?? [], projects });
+  });
+  if (archivedWorktrees.length > 0) {
+    groups.push({
+      key: ARCHIVED_GROUP_KEY,
+      kind: 'archived',
+      sessionId: null,
+      title: ARCHIVED_GROUP_TITLE,
+      worktrees: archivedWorktrees,
     });
   }
   const workspaceTabs = terminalTabs[`ws:${workspaceId}`] ?? [];

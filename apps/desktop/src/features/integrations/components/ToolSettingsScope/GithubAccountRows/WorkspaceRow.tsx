@@ -23,7 +23,7 @@ export const WorkspaceRow = ({ workspaceId, connection, isGlobalConnected }: Pro
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-3 text-label text-muted-foreground">
+    <div className="flex min-w-0 items-center gap-3 text-meta text-muted-foreground">
       <span className="min-w-0 flex-1 truncate">
         {isGlobalConnected ? 'Uses the all-workspaces connection' : 'No key for this workspace'}
       </span>

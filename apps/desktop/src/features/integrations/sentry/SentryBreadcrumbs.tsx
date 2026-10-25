@@ -30,7 +30,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
               {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
             </div>
             {breadcrumb.message != null ? (
-              <span className="text-label text-muted-foreground">{breadcrumb.message}</span>
+              <span className="text-meta text-muted-foreground">{breadcrumb.message}</span>
             ) : null}
           </div>
         );

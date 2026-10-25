@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Markdown } from '@goodboy/ui';
+import { Markdown, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Agent, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { fixRunTranscript } from '../../../../store/slices/navigation/place';
@@ -25,8 +25,10 @@ type Props = {
   readonly brief: ResolverBrief;
 };
 
-const ROW_CLASS =
-  'flex min-w-0 items-center gap-2 rounded-sm py-1 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const ROW_CLASS = cn(
+  'flex min-w-0 items-center gap-2 rounded-sm py-1 text-left text-body hover:bg-hover',
+  FOCUS_RING,
+);
 
 const commitOf = ({ entry }: { readonly entry: ReviewEntry }) => ({
   sha: threadFixSha({

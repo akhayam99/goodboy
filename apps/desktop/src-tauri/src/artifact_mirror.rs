@@ -38,11 +38,12 @@ pub(crate) fn mirror_root(
     if slug.is_empty() {
         return Err(destination("the workspace has no usable name"));
     }
-    Ok(home
-        .join(".goodboy")
-        .join("workspaces")
-        .join(slug)
-        .join(MIRROR_DIR))
+    Ok(
+        crate::app_paths::data_dir_under(crate::app_paths::DataDirUnderParams { home })
+            .join("workspaces")
+            .join(slug)
+            .join(MIRROR_DIR),
+    )
 }
 
 fn is_date_prefix(prefix: &str) -> bool {
@@ -372,7 +373,7 @@ fn windows_default_browser_command() -> Option<String> {
     }
 }
 
-fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> std::io::Result<()> {
+fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> Result<(), ArtifactExportError> {
     if let Some(launch) = crate::editor::chosen_browser_launch(app, &path.to_string_lossy()) {
         if crate::editor::run_browser_launch(&launch) {
             return Ok(());
@@ -408,7 +409,8 @@ fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> std::io::Result<()>
             }
         }
     }
-    crate::explore::spawn_open(path, false)
+    crate::proc::open::open_path(path)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -416,7 +418,7 @@ pub async fn artifact_mirror_open_root(workspace_slug: String) -> Result<(), Art
     tauri::async_runtime::spawn_blocking(move || {
         let root = mirror_root(&home()?, &workspace_slug)?;
         std::fs::create_dir_all(&root)?;
-        crate::explore::spawn_open(&root, false)?;
+        crate::proc::open::open_path(&root)?;
         Ok(())
     })
     .await
@@ -507,6 +509,7 @@ pub async fn artifact_mirror_open(
 ) -> Result<(), ArtifactExportError> {
     tauri::async_runtime::spawn_blocking(move || {
         let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
+        crate::util::open_guard::refuse_executable(&path)?;
         open_with_browser(&app, &path)?;
         Ok(())
     })
@@ -523,7 +526,7 @@ pub async fn artifact_mirror_reveal(
     if !path.is_dir() {
         return Err(destination("the saved copy is not on disk yet"));
     }
-    crate::explore::spawn_open(&path, true)?;
+    crate::proc::open::reveal(&path)?;
     Ok(())
 }
 

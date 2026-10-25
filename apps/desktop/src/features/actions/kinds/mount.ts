@@ -1,6 +1,5 @@
-import { readOnlyOnline } from '../../../store/slices/worktreeStatuses/onlyOnline';
+import { readOnlyOnline } from '../../../store/runtime/worktreeStatuses/onlyOnline';
 import {
-  ArrowUpToLine,
   Copy,
   FolderOpen,
   GitBranch,
@@ -13,11 +12,12 @@ import {
 } from 'lucide-react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
-import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
+import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
-import { NAMES } from '../../../shared/names';
+import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
+import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
@@ -41,19 +41,9 @@ import type {
   ObjectKindDefinition,
   MountActionTarget,
 } from '../types';
-import {
-  abortRebase,
-  plural,
-  pushDescription,
-  pushLabel,
-  pushMount,
-  rebaseMount,
-  settleRequest,
-  canForcePush,
-  pushBlockedReason,
-  pushConfirm,
-} from './gitRuns';
+import { abortRebase, plural, rebaseMount, settleRequest } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
+import { pushAction } from './pushAction';
 import { mountRebaseConflictOf } from './mountRebaseConflictOf';
 import { selectRebaseStop } from '../../../store/slices/history/selectRebaseStop';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
@@ -207,6 +197,19 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     },
   },
   {
+    id: 'mount.openInTerminalApp',
+    label: 'Open in terminal app',
+    icon: CONCEPT_ICONS.terminal,
+    group: 'open',
+    when: isOpen,
+    run: async ({ facts, env }) => {
+      if (facts.worktreePath === null) {
+        return;
+      }
+      await openInConfiguredTerminal({ path: facts.worktreePath, state: env.getState() });
+    },
+  },
+  {
     id: 'mount.scripts',
     label: 'Open scripts',
     icon: CONCEPT_ICONS.scripts,
@@ -239,32 +242,11 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
         ...statusParams({ facts }),
       }),
   },
-  {
+  pushAction({
     id: 'mount.push',
-    label: pushLabel,
-    description: pushDescription,
-    icon: ArrowUpToLine,
-    group: 'act',
-    when: ({ facts }) =>
-      isOpen({ facts }) &&
-      facts.unpushed > 0 &&
-      !facts.isRebasing &&
-      facts.pr !== null &&
-      facts.pr !== 'merged',
-    blockedReason: pushBlockedReason,
-    confirm: pushConfirm,
-    slot: ({ facts }) => (facts.behind === 0 && !facts.isDiverged ? 'inline' : 'menu'),
-    pendingLabel: () => 'Pushing…',
-    run: ({ facts, env }) =>
-      pushMount({
-        env,
-        sessionId: facts.sessionId,
-        mountId: facts.mountId,
-        isForce: canForcePush({ facts }),
-        confirmedOnlyOnline: facts.onlyOnline,
-        ...statusParams({ facts }),
-      }),
-  },
+    slot: ({ facts }) =>
+      facts.pr !== null && facts.behind === 0 && !facts.isDiverged ? 'inline' : 'menu',
+  }),
   {
     id: 'mount.createPullRequest',
     label: ({ facts }) => (facts.createProvider === 'gitlab' ? 'Create MR' : 'Create PR'),

@@ -1,6 +1,6 @@
 import { Band, Button, FieldRow } from '@goodboy/ui';
 import { APP_VERSION } from '../../../../shared/lib/appVersion';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { openChangelogStudio } from '../../../changelog/changelogStudioEvent';
 import { CHANGELOG_RELEASES } from '../../../changelog/changelogSource';
 import { isInstalledRelease } from '../../../changelog/isInstalledRelease';

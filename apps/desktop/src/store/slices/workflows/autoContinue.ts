@@ -1,6 +1,7 @@
-import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -56,8 +57,6 @@ const haltNotice = ({ unit, didAgentDie, handsFree }: HaltNoticeParams) => {
   return { title: copy.title, body: handsFree ? copy.handsFree : copy.manual };
 };
 
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-
 type ResetParams = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -106,7 +105,7 @@ export const continueOrPause = async ({
   }
   resetContinueAttempts({ set, get, agentId: agent.id });
   const status = didAgentDie ? 'failed' : 'blocked';
-  await invokeAgentUpdateStatus(agent.id, { status, completedAt: nowIso() });
+  await invokeAgentUpdateStatus(agent.id, { status, completedAt: isoNow() });
   const stalled = await invokeAgentList(sessionId);
   set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: stalled } }));
   void get().refreshUnreadWorkspaces();

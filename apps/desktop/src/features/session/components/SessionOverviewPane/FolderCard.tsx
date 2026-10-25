@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
-import { Button, Chip } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, Chip, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { FolderGitNotice } from '../../../../shared/components/FolderGitNotice';
 import { tildePath } from '../../../../shared/components/NewWorkspaceForm/tildePath';
 import { homeFolder } from '../../../../shared/lib/homeFolder';

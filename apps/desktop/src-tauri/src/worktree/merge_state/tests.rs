@@ -205,3 +205,23 @@ fn branch_merge_state_is_unknown_without_a_resolvable_base() {
     assert_eq!(state, BranchMergeState::Unknown);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn only_a_merged_or_empty_branch_is_safe_to_delete() {
+    for safe in [
+        BranchMergeState::MergedViaMerge,
+        BranchMergeState::MergedViaRebase,
+        BranchMergeState::MergedViaPr,
+        BranchMergeState::NoOwnCommits,
+    ] {
+        assert!(safe.is_safe_to_delete(), "{safe:?}");
+    }
+    for unsafe_state in [
+        BranchMergeState::Unknown,
+        BranchMergeState::Protected,
+        BranchMergeState::MergedThen { new_commits: 1 },
+        BranchMergeState::NotMerged { ahead: 2 },
+    ] {
+        assert!(!unsafe_state.is_safe_to_delete(), "{unsafe_state:?}");
+    }
+}

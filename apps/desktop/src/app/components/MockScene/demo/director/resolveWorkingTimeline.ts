@@ -75,7 +75,7 @@ export const resolveWorkingTimeline = ({ state }: TimelineParams): DemoTimeline 
             store,
             sessionId,
             threadIds,
-            patch: (thread) => ({
+            patch: ({ thread }) => ({
               ...thread,
               state: 'fixed',
               stage: 'proposed',

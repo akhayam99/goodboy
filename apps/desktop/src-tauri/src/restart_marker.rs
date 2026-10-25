@@ -11,18 +11,27 @@ struct InterruptedRuns<'a> {
     at: i64,
 }
 
+pub fn write_setting(
+    conn: &Connection,
+    key: &str,
+    value: &str,
+    at_ms: i64,
+) -> rusqlite::Result<()> {
+    conn.execute(
+        "INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+        rusqlite::params![key, value, at_ms],
+    )?;
+    Ok(())
+}
+
 pub fn record(conn: &Connection, run_ids: &[String], at_ms: i64) -> rusqlite::Result<()> {
     if run_ids.is_empty() {
         return Ok(());
     }
     let value = serde_json::to_string(&InterruptedRuns { run_ids, at: at_ms })
         .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
-    conn.execute(
-        "INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3) \
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
-        rusqlite::params![INTERRUPTED_RUNS_KEY, value, at_ms],
-    )?;
-    Ok(())
+    write_setting(conn, INTERRUPTED_RUNS_KEY, &value, at_ms)
 }
 
 pub fn persist(app: &tauri::AppHandle, run_ids: &[String]) {
@@ -36,10 +45,7 @@ pub fn persist(app: &tauri::AppHandle, run_ids: &[String]) {
     let Ok(conn) = database.0.lock() else {
         return;
     };
-    let now_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_millis() as i64)
-        .unwrap_or(0);
+    let now_ms = crate::util::now_ms();
     if let Err(error) = record(&conn, run_ids, now_ms) {
         log::warn!(
             "[goodboy] could not record the interrupted runs: {}",

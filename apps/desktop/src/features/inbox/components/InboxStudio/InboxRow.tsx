@@ -1,10 +1,8 @@
 import { memo } from 'react';
-import { ListGridRow, cn, tintClasses } from '@goodboy/ui';
-import {
-  IntegrationGlyph,
-  integrationLabel,
-} from '../../../integrations/components/IntegrationGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, ListGridRow, StatusDot, tintClasses } from '@goodboy/ui';
+import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../../../shared/utils/integrationLabel';
+
 import { INBOX_STATE_PRESENTATION } from '../../../../shared/components/StudioDetail/RecordState';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { recordSessionId } from '../../recordSessionId';
@@ -19,6 +17,7 @@ type Props = {
   readonly record: InboxRecord;
   readonly selected: boolean;
   readonly isCursor?: boolean;
+  readonly isNew?: boolean;
   readonly onSelect: (record: InboxRecord) => void;
   readonly isStarred?: boolean;
   readonly onToggleStar?: (record: InboxRecord) => void;
@@ -36,6 +35,7 @@ const InboxRowView = ({
   record,
   selected,
   isCursor = false,
+  isNew = false,
   onSelect,
   isStarred,
   onToggleStar,
@@ -89,9 +89,17 @@ const InboxRowView = ({
         </span>,
         <span
           key="title"
-          className={cn('truncate', record.state === 'done' && 'text-muted-foreground')}
+          className={cn(
+            'flex min-w-0 items-center gap-2',
+            record.state === 'done' && 'text-muted-foreground',
+          )}
         >
-          {record.title}
+          {isNew ? (
+            <span data-task-new="" role="img" aria-label="New" className="flex shrink-0">
+              <StatusDot tone="primary" size="sm" />
+            </span>
+          ) : null}
+          <span className="truncate">{record.title}</span>
         </span>,
         record.provider === 'slack' ? null : (
           <StateIcon

@@ -1,5 +1,7 @@
 # Providers, limits and cost
 
+Goodboy runs the agents you already pay for. You sign in to each from the app, or paste its key, and keys stay in your system's password store.
+
 Watch how much of each plan is left, keep work moving when a provider runs out, and see what it all costs. Goodboy shows limits in the top bar and spend in one place, so you decide where work goes before a limit stops it.
 
 ### Usage limits chip
@@ -28,13 +30,15 @@ Spend a free Codex reset at the right moment. When Codex offers one, its page sh
 
 Keep a task moving when a provider runs out. With another eligible provider connected, the turn can move there, and the chat records where it went.
 
+When no provider can take the turn, because you pinned the model or only one provider is connected, the stopped turn offers **Continue at 18:40** (the reset time the provider gave) next to **Retry**. Nothing starts until you click it. After the click the turn waits and starts at that time, and **Cancel** takes it back. Goodboy has to stay open for it to start, and a new message to the same agent drops the offer.
+
 ### Provider order and Auto
 
 Choose which providers a workspace uses and in what order. **When a provider is out** in Defaults lists them, and you set each one to **On**, **Backup only** or **Off**. Auto starts new work on the first On provider that can work, and each role shows what Auto picks for it on fixed columns (model with its mark, effort, Auto or Pinned). A pin that cannot run shows a warning glyph whose tooltip says why, and one line above the roles offers **Back to Auto** for those. Auto also sizes each agent by its step: open a role to read what a small, a normal and a large step run, and each background task shows the model it uses. Under **Choosing models**, two switches are off by default: **Models in workflows** lets the workflow orchestrator name the model of each step itself (otherwise it says how hard the step is and Goodboy picks), and **Typed requests** lets a small model read the request you type to Auto and start a Scout, Planner, Debugger or Reviewer when it is sure.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Models: the line When a provider is out with Claude, Codex and Cursor as backup, the Chat row for new chats, and the roles Scout, Debugger and Planner, Implementer, Tester and Resolver, then Reviewer, Docs and Report, each with its model, effort and an Auto picker">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings › Providers and models › Models: the line When a provider is out with Claude, Codex and Cursor as backup, the Chat row for new chats, and the roles Scout, Debugger and Planner, Implementer, Tester and Resolver, then Reviewer, Docs and Report, each with its model, effort and an Auto picker">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -63,7 +67,7 @@ See what Goodboy got done and what it cost over **7 days**, **30 days** or **All
 
 ### Monthly cap and budget alert
 
-Set a monthly cap per provider and hear about it before you reach it. In **Spend**, open a provider, enter the cap and the share of it where Goodboy warns you. Past that share, the next turn goes to another provider with room.
+Set a monthly cap per provider and hear about it before you reach it. In **Spend**, open a provider, enter the cap and the share of it where Goodboy warns you. Past that share, the next turn goes to another provider with room. Spend that reaches the cap counts as over it, and the month follows your local calendar. A session limit and a workflow limit trip at the same point, with the session warning at 80 percent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-monthly-cap-dark.webp">

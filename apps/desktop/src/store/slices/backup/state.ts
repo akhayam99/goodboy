@@ -22,6 +22,7 @@ export type BackupState = {
   readonly backupImportPreview: ImportPreview | null;
   readonly backupImportWorkspaceTargets: Readonly<Record<string, string>>;
   readonly backupImportResolvedPaths: Readonly<Record<string, string>>;
+  readonly hasBackupImportWildcardConsent: boolean;
   readonly backupImportPhase: BackupImportPhase;
   readonly backupImportError: string | null;
   readonly backupImportResult: ConfigBundleImportResult | null;
@@ -40,6 +41,7 @@ export const backupInitialState: BackupState = {
   backupImportPreview: null,
   backupImportWorkspaceTargets: {},
   backupImportResolvedPaths: {},
+  hasBackupImportWildcardConsent: false,
   backupImportPhase: 'idle',
   backupImportError: null,
   backupImportResult: null,

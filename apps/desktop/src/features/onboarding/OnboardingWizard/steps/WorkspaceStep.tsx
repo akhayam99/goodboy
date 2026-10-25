@@ -8,14 +8,16 @@ type CreatedParams = {
 type Props = {
   readonly onCreated: (params: CreatedParams) => void;
   readonly onBack: (() => void) | null;
+  readonly error: string | null;
 };
 
-export const WorkspaceStep = ({ onCreated, onBack }: Props) => (
+export const WorkspaceStep = ({ onCreated, onBack, error }: Props) => (
   <NewWorkspaceForm
     mode="first-run"
     titleRole="display"
     onCreated={onCreated}
     onCancel={onBack ?? undefined}
     backLabel="Back"
+    error={error}
   />
 );

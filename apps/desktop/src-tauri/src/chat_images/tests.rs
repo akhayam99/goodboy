@@ -107,12 +107,13 @@ fn the_turn_root_is_read_only_and_holds_only_the_chat_images() {
             .collect::<Vec<_>>(),
         vec![("checkout-502.png", false), ("acme-trace.png", true)]
     );
-    assert_eq!(mode_of(&root), 0o555);
+    assert_eq!(mode_of(&root), 0o500);
+    assert_eq!(mode_of(root.parent().unwrap()), 0o700);
     for image in &turn.images {
         let path = Path::new(&image.path);
         assert!(path.starts_with(&root));
         assert_eq!(fs::read(path).unwrap(), PNG);
-        assert_eq!(mode_of(path), 0o444);
+        assert_eq!(mode_of(path), 0o400);
         assert!(fs::OpenOptions::new().write(true).open(path).is_err());
     }
     assert!(fs::write(root.join("new.txt"), b"x").is_err());
@@ -207,4 +208,38 @@ fn deleting_a_workspace_removes_its_chat_images_from_disk() {
         prune_orphans_in(&store.join("never-created"), &conn).unwrap(),
         0
     );
+}
+
+#[cfg(unix)]
+#[test]
+fn a_crash_leftover_is_swept_at_start_and_a_fresh_turn_is_kept() {
+    use crate::proc::reap::sweep_stale_turn_dirs;
+    use std::time::{Duration, SystemTime};
+
+    let store = scratch("sweep-store");
+    let temp = scratch("sweep-temp");
+    write_image_in(&store, CHAT, "img-1", "checkout-502.png", PNG).unwrap();
+    let images = vec![image("img-1", "asked", "checkout-502.png")];
+    let crashed = prepare_turn_images_in(&store, &temp, CHAT, "run-crashed", &images, None)
+        .unwrap()
+        .expect("one image on disk");
+    let live = prepare_turn_images_in(&store, &temp, CHAT, "run-live", &images, None)
+        .unwrap()
+        .expect("one image on disk");
+    let dossier = temp.join(crate::chat::ASK_DIR).join("run-ask");
+    fs::create_dir_all(dossier.join("agents")).unwrap();
+    fs::write(dossier.join("agents/A2.md"), b"Implementer").unwrap();
+    set_mode(&dossier.join("agents"), 0o500).unwrap();
+    set_mode(&dossier, 0o500).unwrap();
+    let max_age = Duration::from_secs(6 * 3600);
+
+    assert_eq!(sweep_stale_turn_dirs(&temp, SystemTime::now(), max_age), 0);
+    assert!(Path::new(&crashed.root).exists());
+
+    let later = SystemTime::now() + Duration::from_secs(7 * 3600);
+    assert_eq!(sweep_stale_turn_dirs(&temp, later, max_age), 3);
+    assert!(!Path::new(&crashed.root).exists());
+    assert!(!Path::new(&live.root).exists());
+    assert!(!dossier.exists());
+    assert!(store.join(CHAT).join("img-1-checkout-502.png").is_file());
 }

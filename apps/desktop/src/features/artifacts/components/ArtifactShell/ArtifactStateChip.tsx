@@ -1,6 +1,6 @@
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, ICON_SIZE } from '@goodboy/ui';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { ArtifactState } from '../../artifactStateOf';
 
 type Props = {
@@ -16,8 +16,8 @@ export const ArtifactStateChip = ({ state, isDetailCollapsible = false }: Props)
   return (
     <>
       <Chip
+        kind="state"
         tone={state.tone}
-        size="xs"
         bordered={false}
         icon={<Icon size={ICON_SIZE.row} aria-hidden />}
         label={state.label}

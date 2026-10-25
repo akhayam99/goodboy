@@ -11,7 +11,7 @@ vi.mock('../sessions/discardUncreatedSession', () => ({
 }));
 
 import { createSessionDraftSlice } from './index';
-import { EMPTY_SESSION_DRAFT, initialSessionDraftState } from './state';
+import { EMPTY_SESSION_DRAFT, sessionDraftInitialState } from './state';
 import { selectSessionDraft } from './selectSessionDraft';
 import { selectIsSessionDraftShown } from './selectIsSessionDraftShown';
 import { hasSessionDraftContent } from './hasSessionDraftContent';
@@ -33,7 +33,7 @@ const harness = () => {
     spawnAgent: vi.fn(async () => 'agent-1'),
   };
   let state: HarnessState = {
-    ...initialSessionDraftState,
+    ...sessionDraftInitialState,
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: null,
     projects: [],

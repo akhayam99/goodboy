@@ -29,7 +29,7 @@ export const LearningRow = ({
   if (item.status === 'dismissed') {
     return (
       <div className="flex flex-col gap-1 rounded-md px-2 py-2">
-        <span className="truncate text-label text-faint-foreground line-through">{item.title}</span>
+        <span className="truncate text-meta text-faint-foreground line-through">{item.title}</span>
         <div className="flex items-center gap-2">
           <Chip tone="neutral" kind="state" label="Dismissed" />
           <span className="flex-1" />
@@ -69,7 +69,7 @@ export const LearningRow = ({
         ) : null}
         <span
           className={cn(
-            'min-w-0 text-label text-foreground',
+            'min-w-0 text-meta text-foreground',
             isWorkspace && 'flex-1',
             !isOpen && (isWorkspace ? 'truncate' : 'line-clamp-2'),
           )}

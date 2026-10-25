@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
+import type { Project, SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import type { GitlabMergeRequest } from '../../client';
+import { CommandError } from '../../../../../shared/lib/invokeCommand';
 
 type SpawnAgent = (
   sessionId: SessionId,
@@ -24,6 +26,7 @@ type Store = {
   readonly agentKindOverride: Record<string, never>;
   sessionGitlabMr: Record<string, unknown>;
   readonly sessionBranches: Record<string, string>;
+  projects: ReadonlyArray<Project>;
   readonly refreshSessionMr: ReturnType<typeof vi.fn>;
   readonly createMrForSession: ReturnType<typeof vi.fn>;
   readonly mergeMrForSession: ReturnType<typeof vi.fn>;
@@ -48,6 +51,11 @@ type MrParams = {
 
 const h = vi.hoisted(() => ({
   gitlabMergeMr: vi.fn(async () => undefined),
+  gitlabProjectMergeMethods: vi.fn(async () => ({
+    mergeMethod: 'merge',
+    squashOption: 'default_off',
+    onlyAllowMergeIfPipelineSucceeds: false,
+  })),
   gitlabListMrDiscussions: vi.fn(async () => [] as ReadonlyArray<unknown>),
   gitlabMrApprovalState: vi.fn(async () => null),
   gitlabUpdateMrState: vi.fn<(params: Readonly<Record<string, unknown>>) => Promise<unknown>>(),
@@ -71,6 +79,7 @@ const h = vi.hoisted(() => ({
     agentKindOverride: {},
     sessionGitlabMr: {},
     sessionBranches: { 'session-3': 'ak/gitlab-release' },
+    projects: Array.of<Project>(),
     refreshSessionMr: vi.fn(async () => undefined),
     createMrForSession: vi.fn(async () => undefined),
     mergeMrForSession: vi.fn(async () => undefined),
@@ -103,6 +112,7 @@ vi.mock('../../client', async () => {
   return {
     ...actual,
     gitlabMergeMr: h.gitlabMergeMr,
+    gitlabProjectMergeMethods: h.gitlabProjectMergeMethods,
     gitlabListMrDiscussions: h.gitlabListMrDiscussions,
     gitlabMrApprovalState: h.gitlabMrApprovalState,
     gitlabUpdateMrState: h.gitlabUpdateMrState,
@@ -137,6 +147,8 @@ const makeMr = ({
 
 beforeEach(() => {
   h.gitlabMergeMr.mockClear();
+  h.gitlabProjectMergeMethods.mockClear();
+  h.store.projects = [];
   h.gitlabListMrDiscussions.mockClear();
   h.gitlabListMrDiscussions.mockResolvedValue([]);
   h.gitlabMrApprovalState.mockClear();
@@ -144,6 +156,7 @@ beforeEach(() => {
   h.gitlabUpdateMrState.mockClear();
   h.gitlabUpdateMrState.mockResolvedValue(makeMr({ title: 'Draft: Add merge request dashboard' }));
   h.store.refreshSessionMr.mockClear();
+  h.store.reportError.mockClear();
   h.store.createMrForSession.mockClear();
   h.store.spawnAgent.mockClear();
   h.store.navigate.mockClear();
@@ -177,15 +190,135 @@ describe('MrDetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
 
     await waitFor(() =>
-      expect(h.gitlabMergeMr).toHaveBeenCalledWith(
-        WORKSPACE_ID,
-        'https://gitlab.com',
-        'acme/web',
-        4,
-      ),
+      expect(h.gitlabMergeMr).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        host: 'https://gitlab.com',
+        projectPath: 'acme/web',
+        mrIid: 4,
+        method: 'merge',
+        expectedHeadSha: null,
+      }),
     );
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('merges with the Goodboy project that owns the repository and the method it prefers', async () => {
+    const ledger = aProject({
+      workspaceId: WORKSPACE_ID,
+      name: 'ledger-core',
+      remoteUrl: 'ssh://gitlab.com/acme/web.git',
+    });
+    h.store.projects = [
+      aProject({
+        workspaceId: WORKSPACE_ID,
+        name: 'notify-relay',
+        remoteUrl: 'ssh://gitlab.com/acme/relay.git',
+      }),
+      ledger,
+    ];
+    h.gitlabProjectMergeMethods.mockResolvedValueOnce({
+      mergeMethod: 'ff',
+      squashOption: 'default_off',
+      onlyAllowMergeIfPipelineSucceeds: false,
+    });
+    render(
+      <MrDetailPanel
+        mr={{ ...makeMr(), sha: 'a41c9e2b7d3f' }}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
+
+    await waitFor(() =>
+      expect(h.gitlabMergeMr).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        projectId: ledger.id,
+        host: 'https://gitlab.com',
+        projectPath: 'acme/web',
+        mrIid: 4,
+        method: 'rebase',
+        expectedHeadSha: 'a41c9e2b7d3f',
+      }),
+    );
+  });
+
+  it('merges with the host default method when the project settings are off limits', async () => {
+    h.gitlabProjectMergeMethods.mockRejectedValueOnce(
+      new CommandError({
+        kind: 'http',
+        message: '403 Forbidden',
+        failure: { kind: 'denied', status: 403, retryAfterSeconds: null, detail: 'Forbidden' },
+      }),
+    );
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
+
+    await waitFor(() =>
+      expect(h.gitlabMergeMr).toHaveBeenCalledWith(expect.objectContaining({ method: 'merge' })),
+    );
+  });
+
+  it('merges nothing and says so when the project settings cannot be reached', async () => {
+    h.gitlabProjectMergeMethods.mockRejectedValueOnce(new Error('connection reset'));
+    const onClose = vi.fn();
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
+
+    await waitFor(() => expect(h.store.reportError).toHaveBeenCalledOnce());
+    expect(h.gitlabMergeMr).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the panel open when the host refuses the merge, and merges on a retry', async () => {
+    h.gitlabMergeMr.mockRejectedValueOnce(new Error('405 Method Not Allowed'));
+    const onClose = vi.fn();
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
+
+    await waitFor(() => expect(h.gitlabMergeMr).toHaveBeenCalledOnce());
+    await waitFor(() => expect(h.store.reportError).toHaveBeenCalledOnce());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(h.showToast).not.toHaveBeenCalled();
+
+    if (screen.queryByRole('button', { name: 'Confirm merge' }) === null) {
+      fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    }
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm merge' }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(h.gitlabMergeMr).toHaveBeenCalledTimes(2);
   });
 
   it.each([

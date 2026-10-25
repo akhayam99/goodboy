@@ -2,7 +2,7 @@
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn((command: string, args?: BridgeArgs) =>
-    command === 'set_workspace_overrides' ? Promise.resolve(null) : bridge(command, args),
+    command === 'patch_workspace_overrides' ? Promise.resolve(null) : bridge(command, args),
   ),
 }));
 vi.mock('@tauri-apps/api/event', () => ({

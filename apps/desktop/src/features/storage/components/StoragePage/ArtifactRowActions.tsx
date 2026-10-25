@@ -1,8 +1,8 @@
 import { Bookmark, ChevronDown, Clock, Eye } from 'lucide-react';
-import { Button, OverflowMenu, cn, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, OverflowMenu, tintClasses, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { KEEP_DAYS } from '../../../actions/kinds/worktree';
 
 type Props = {
@@ -25,13 +25,13 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
   const attempt = ({ title, action }: AttemptParams) =>
     void action().catch((error: unknown) => reportError({ title, error }));
 
-  const keepItems: ReadonlyArray<OverflowMenuItem> = [
+  const keepEntries: ReadonlyArray<MenuEntry> = [
     {
       kind: 'item',
       key: 'keep-30',
       label: `For ${KEEP_DAYS} days`,
       icon: Clock,
-      onClick: () =>
+      onSelect: () =>
         attempt({
           title: "Couldn't keep this artifact",
           action: () => keepStorageArtifact({ id: artifact.id, days: KEEP_DAYS }),
@@ -42,7 +42,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
       key: 'keep',
       label: 'Always',
       icon: Bookmark,
-      onClick: () =>
+      onSelect: () =>
         attempt({
           title: "Couldn't keep this artifact",
           action: () => keepStorageArtifact({ id: artifact.id, days: null }),
@@ -82,10 +82,10 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
         </Button>
       ) : (
         <OverflowMenu
-          items={keepItems}
+          entries={keepEntries}
           label="Keep"
           disabled={isBusy}
-          triggerClassName="flex items-center gap-1 px-2 text-label"
+          triggerClassName="flex items-center gap-1 px-2 text-meta"
           trigger={
             <>
               Keep

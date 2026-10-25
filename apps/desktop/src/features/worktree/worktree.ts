@@ -238,15 +238,15 @@ export const worktreeWriterStatus = async ({
 };
 
 type RemoveSessionDirectoryParams = {
-  readonly basePath: string;
+  readonly sessionId: SessionId;
   readonly path: string;
 };
 
 export const removeSessionDirectory = async ({
-  basePath,
+  sessionId,
   path,
 }: RemoveSessionDirectoryParams): Promise<void> => {
-  await invokeCommand('session_dir_remove', { args: { basePath, path } });
+  await invokeCommand('session_dir_remove', { args: { sessionId, path } });
 };
 
 type SessionDirExistsParams = {
@@ -320,11 +320,13 @@ export const gitCommonDirectory = async ({
   return invokeCommand<string | null>('worktree_git_common_dir', { repoPath });
 };
 
+type WorktreeGitDirectoryParams = {
+  readonly worktreePath: string;
+};
+
 export const worktreeGitDirectory = async ({
   worktreePath,
-}: {
-  readonly worktreePath: string;
-}): Promise<string | null> => {
+}: WorktreeGitDirectoryParams): Promise<string | null> => {
   return invokeCommand<string | null>('worktree_git_dir', { worktreePath });
 };
 
@@ -385,6 +387,105 @@ export const removeWorktreeFolder = async ({
   });
 };
 
+type CarryStatus =
+  | 'copied'
+  | 'skipped-exists'
+  | 'skipped-not-ignored'
+  | 'skipped-large'
+  | 'skipped-missing'
+  | 'skipped-unsafe';
+
+export type CarryOutcome = {
+  readonly path: string;
+  readonly status: CarryStatus;
+  readonly isSecret: boolean;
+};
+
+export type CarryCandidate = {
+  readonly path: string;
+  readonly isDirectory: boolean;
+  readonly isSecret: boolean;
+  readonly sizeBytes: number | null;
+  readonly isLarge: boolean;
+};
+
+export type SetupProposal = {
+  readonly command: string;
+  readonly source: string;
+};
+
+type CarryIntoParams = {
+  readonly repoPath: string;
+  readonly worktreePath: string;
+  readonly paths: ReadonlyArray<string>;
+};
+
+export const carryIntoWorktree = async ({
+  repoPath,
+  worktreePath,
+  paths,
+}: CarryIntoParams): Promise<ReadonlyArray<CarryOutcome>> => {
+  return invokeCommand<ReadonlyArray<CarryOutcome>>('worktree_carry_into', {
+    repoPath,
+    worktreePath,
+    paths,
+  });
+};
+
+type RepoParams = {
+  readonly repoPath: string;
+};
+
+export const worktreeCarryCandidates = async ({
+  repoPath,
+}: RepoParams): Promise<ReadonlyArray<CarryCandidate>> => {
+  return invokeCommand<ReadonlyArray<CarryCandidate>>('worktree_carry_candidates', { repoPath });
+};
+
+export const worktreeSetupProposal = async ({
+  repoPath,
+}: RepoParams): Promise<SetupProposal | null> => {
+  const proposal = await invokeCommand<SetupProposal | null | undefined>(
+    'worktree_setup_proposal',
+    {
+      repoPath,
+    },
+  );
+  return proposal ?? null;
+};
+
+export type WorktreeRestoreRefusal =
+  'outside-worktree-folder' | 'path-taken' | 'branch-missing' | 'branch-in-use';
+
+export type WorktreeRestoreResult =
+  | { readonly kind: 'restored'; readonly path: string }
+  | {
+      readonly kind: 'refused';
+      readonly path: string;
+      readonly reason: WorktreeRestoreRefusal;
+    };
+
+type RestoreWorktreeFolderParams = {
+  readonly repoPath: string;
+  readonly path: string;
+  readonly branch: string;
+};
+
+export const restoreWorktreeFolder = async ({
+  repoPath,
+  path,
+  branch,
+}: RestoreWorktreeFolderParams): Promise<WorktreeRestoreResult> => {
+  return invokeCommand<WorktreeRestoreResult>('worktree_folder_restore', {
+    repoPath,
+    path,
+    branch,
+  });
+};
+
+type WorktreeFolderVerdict =
+  'safe' | 'dirty' | 'writing' | 'operation' | 'not-tracked' | 'unavailable';
+
 export type WorktreeFolderFacts = {
   readonly path: string;
   readonly exists: boolean;
@@ -395,6 +496,7 @@ export type WorktreeFolderFacts = {
   readonly changedFiles: number;
   readonly changedSample: string | null;
   readonly reasons: ReadonlyArray<WorktreeRemovalReason>;
+  readonly verdict: WorktreeFolderVerdict;
 };
 
 type WorktreeFolderFactsRequest = {
@@ -503,6 +605,40 @@ export const worktreeSnapshot = async ({
   worktreePath,
 }: WorktreeSnapshotParams): Promise<WorktreeSnapshot> => {
   return invokeCommand<WorktreeSnapshot>('worktree_snapshot', { worktreePath });
+};
+
+export type TurnBefore = {
+  readonly head: string;
+  readonly entries: ReadonlyArray<{ readonly path: string; readonly hash: string }>;
+};
+
+export type WorktreeTurnFiles = {
+  readonly own: ReadonlyArray<{
+    readonly path: string;
+    readonly status: 'added' | 'modified' | 'deleted';
+    readonly additions: number | null;
+    readonly deletions: number | null;
+  }>;
+  readonly fromBase: ReadonlyArray<string>;
+  readonly isPartial: boolean;
+};
+
+type WorktreeTurnFilesParams = {
+  readonly worktreePath: string;
+  readonly before: TurnBefore;
+  readonly baseBranch: string | null;
+};
+
+export const worktreeTurnFiles = async ({
+  worktreePath,
+  before,
+  baseBranch,
+}: WorktreeTurnFilesParams): Promise<WorktreeTurnFiles> => {
+  return invokeCommand<WorktreeTurnFiles>('worktree_turn_files', {
+    worktreePath,
+    before,
+    baseBranch,
+  });
 };
 
 export const listBranchCommits = async (
@@ -666,14 +802,19 @@ type SyncBranchRefParams = {
   readonly projectId: string;
 };
 
+export type BranchRefSync =
+  | { readonly kind: 'updated' }
+  | { readonly kind: 'unchanged' }
+  | { readonly kind: 'failed'; readonly message: string };
+
 export const worktreeSyncBranchRef = async ({
   worktreePath,
   branch,
   expectedSha,
   workspaceId,
   projectId,
-}: SyncBranchRefParams): Promise<boolean> =>
-  invokeCommand<boolean>('worktree_sync_branch_ref', {
+}: SyncBranchRefParams): Promise<BranchRefSync> =>
+  invokeCommand<BranchRefSync>('worktree_sync_branch_ref', {
     worktreePath,
     branch,
     expectedSha,

@@ -106,6 +106,7 @@ export const SpawnedRunGroup = ({ session, run, workflow, isHeaded, selectedAgen
           >
             <SpawnedTreeRow
               id={row.id}
+              agentId={row.agentId}
               level={row.level}
               hasChildren={row.hasChildren}
               rail={rowRail}
@@ -120,10 +121,7 @@ export const SpawnedRunGroup = ({ session, run, workflow, isHeaded, selectedAgen
               time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
               isSelected={row.agentId === selectedAgentId}
               onOpen={() =>
-                openSpawned({
-                  sessionId,
-                  target: { kind: 'run-agent', runId: run.id, agentId: row.agentId },
-                })
+                openSpawned({ sessionId, target: { kind: 'agent', agentId: row.agentId } })
               }
             />
           </ObjectMenuArea>

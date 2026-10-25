@@ -1,9 +1,9 @@
 import { Fragment, type ReactNode } from 'react';
 import type { PrCheckRun } from '@goodboy/types';
-import { Button, EmptyState, Skeleton, TEXT_ROLE, cn } from '@goodboy/ui';
+import { Button, cn, EmptyState, ICON_SIZE, Skeleton, TEXT_ROLE } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL, type ReviewSourceKind } from '@goodboy/core';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { hostIconOf } from '../../../../../shared/hostIconOf';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { hostIconOf } from '../../../../../shared/components/hostIconOf';
 import { CheckRunRow, type CheckRunRowParts } from './CheckRunRow';
 
 type RenderCheckRowParams = {

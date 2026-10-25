@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { mockChatSessionId } from '../../../../../features/workspace-chat/mockChatSessions';
+import { mockChatSessionId } from '../../backends/chat/mockChatSessions';
 import { sessionPlace, useAppStore } from '../../../../../store';
 import { WORKSPACE_ID } from '../BoardScene';
 import { ChatRoomScene } from '../ChatRoomScene';

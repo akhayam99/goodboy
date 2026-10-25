@@ -35,6 +35,19 @@ describe('c01 tail scenes', () => {
     screen.getByRole('button', { name: 'Stop' });
   });
 
+  it('says Stopping with a busy Stop, then Still stopping with Force stop', async () => {
+    const Stopping = U25_C01_TAIL_SCENES['c01-tail-agentstopping'];
+    const { unmount } = render(<Stopping />);
+    screen.getByText('Stopping');
+    expect(screen.getByRole('button', { name: 'Stop' }).getAttribute('aria-busy')).toBe('true');
+    unmount();
+    const Stalled = U25_C01_TAIL_SCENES['c01-tail-agentstalled'];
+    render(<Stalled />);
+    screen.getByText('Still stopping');
+    await userEvent.click(screen.getByRole('button', { name: 'Force stop' }));
+    screen.getByText('Pressed forceStop');
+  });
+
   it('offers Raise limit first when paused', async () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-paused'];
     render(<Scene />);
@@ -54,7 +67,7 @@ describe('c01 tail scenes', () => {
     render(<Scene />);
     screen.getByText('Waiting for your OK');
     expect(screen.queryByText('Queued')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     screen.getByText('Pressed confirmDelegation');
   });
@@ -64,13 +77,6 @@ describe('c01 tail scenes', () => {
     render(<Scene />);
     screen.getByText('Asked a question');
     expect(screen.queryByText('Queued')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
-  });
-
-  it('keeps the reason and Retry in the pressed row after a failed close', () => {
-    const Scene = U25_C01_TAIL_SCENES['c01-tail-cleanup'];
-    render(<Scene />);
-    screen.getByText('Could not close: 2 uncommitted files.');
-    screen.getByRole('button', { name: 'Retry' });
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 });

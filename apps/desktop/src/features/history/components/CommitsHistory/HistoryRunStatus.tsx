@@ -15,10 +15,10 @@ type Props = {
 };
 
 const STOP_TITLE: Readonly<Record<HistoryStopReason, string>> = {
-  conflict: 'Nothing was changed: a step does not replay cleanly',
+  conflict: "Nothing was changed: a step doesn't replay cleanly",
   hook: 'Nothing was changed: a hook stopped the temporary copy',
   stuck: 'History rewriter needs you',
-  invalid: 'Nothing was changed: the plan is not valid',
+  invalid: "Nothing was changed: the plan isn't valid",
   unverified: 'Nothing was changed: the result did not match the plan',
   'origin-moved': 'Someone else pushed to the online copy',
   'head-moved': 'Nothing was changed: the branch moved',
@@ -151,10 +151,10 @@ export const HistoryRunStatus = ({
   return (
     <div role="status" className="flex flex-col gap-2 rounded-lg bg-fill p-3">
       <span className="text-row text-foreground text-shimmer">{title}</span>
-      <span className="text-label text-muted-foreground">{body}</span>
+      <span className="text-meta text-muted-foreground">{body}</span>
       {run.phase === 'trying' ? (
         <>
-          <span className="text-label text-muted-foreground" data-testid="history-progress">
+          <span className="text-meta text-muted-foreground" data-testid="history-progress">
             {line.text}
           </span>
           <span aria-hidden className="h-1 overflow-hidden rounded-full bg-fill">

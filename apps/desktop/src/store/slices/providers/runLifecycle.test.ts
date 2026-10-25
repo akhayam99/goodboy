@@ -71,7 +71,6 @@ describe('runLifecycle', () => {
       expect.objectContaining({
         providerId: 'opencode',
         action: 'login',
-        command: 'opencode auth login',
       }),
     );
 

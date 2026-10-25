@@ -7,7 +7,8 @@ import {
   isReviewThreadId,
 } from '@goodboy/core';
 import type { AgentId, PrComment, ResolveThread, SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { openReviewThread } from '../../../review/openReviewThread';
 import { useFreshLanding } from '../../reveal/useFreshLanding';

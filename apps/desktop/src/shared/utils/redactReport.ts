@@ -1,4 +1,4 @@
-import { REDACTED, redactSecrets } from './redactSecrets';
+import { redactSecrets } from './redactSecrets';
 
 const REDACTED_EMAIL = '[email]';
 
@@ -12,33 +12,12 @@ const REDACTED_USER = '[user]';
 
 const ELIDED = '…';
 
-const REPORT_SECRET_LABEL = String.raw`(authorization|bearer|api[_-]?key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret)`;
+const URL_PATTERN = /\b([a-z][a-z0-9+.-]{0,31}):\/\/([^\s"'`<>()[\]{}]+)/gi;
 
-const REPORT_SECRET_VALUE = String.raw`(?:(?:bearer|basic|token)\s+)?(?:"[^"\n]*"|'[^'\n]*'|[^\s"',;&]+)`;
+const SCP_REMOTE_PATTERN = /\b[A-Za-z0-9._-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,24}:[^\s"'`]+/g;
 
-const REPORT_LABELLED_SECRET = new RegExp(
-  String.raw`\b${REPORT_SECRET_LABEL}(\s*[:=]\s*)${REPORT_SECRET_VALUE}`,
-  'gi',
-);
-
-const REPORT_BEARER_VALUE = /\b(bearer)(\s+)[^\s"',;&]+/gi;
-
-const redactShortSecrets = (text: string): string =>
-  text
-    .replace(
-      REPORT_LABELLED_SECRET,
-      (_match, label: string, separator: string) => `${label}${separator}${REDACTED}`,
-    )
-    .replace(
-      REPORT_BEARER_VALUE,
-      (_match, label: string, separator: string) => `${label}${separator}${REDACTED}`,
-    );
-
-const URL_PATTERN = /\b([a-z][a-z0-9+.-]*):\/\/([^\s"'`<>()[\]{}]+)/gi;
-
-const SCP_REMOTE_PATTERN = /\b[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}:[^\s"'`]+/g;
-
-const EMAIL_PATTERN = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g;
+const EMAIL_PATTERN =
+  /\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){0,8}\.[A-Za-z]{2,24}\b/g;
 
 const UUID_PATTERN = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
@@ -204,7 +183,7 @@ export const redactReport = ({ text, names = [] }: RedactReportParams): string =
   const withoutUrls = text.replace(URL_PATTERN, (_match, scheme: string, rest: string) =>
     redactUrl({ scheme, rest }),
   );
-  const withoutSecrets = redactSecrets({ text: redactShortSecrets(withoutUrls) });
+  const withoutSecrets = redactSecrets({ text: withoutUrls });
   const withoutEmails = withoutSecrets
     .replace(SCP_REMOTE_PATTERN, REDACTED_URL)
     .replace(EMAIL_PATTERN, REDACTED_EMAIL);

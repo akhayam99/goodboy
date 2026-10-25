@@ -16,7 +16,7 @@ import {
 import { tauriDatabase } from '../../shared/lib/db';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { dataUrlToBlob, readBlobAsBase64 } from '../attachments/pendingAttachment';
-import { cancelChatTurn } from './cancelChatTurn';
+import { cancelChatTurn } from '../conversation/cancelChatTurn';
 import type { ChatBackend } from './chatBackend';
 import { runChatTurn } from './runChatTurn';
 import { summarizeForWorkViaAux } from './summarizeForWorkViaAux';

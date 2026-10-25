@@ -11,6 +11,7 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
   worktreeStatus: vi.fn(),
   listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
   store: {
+    setSessionDismissedNextSteps: vi.fn(),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     autoTreeViews: Object.fromEntries<ReadonlyArray<unknown>>([]),
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -20,6 +21,11 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
     mountGitlabMr: {} as Record<string, unknown>,
     mountBitbucketPr: {} as Record<string, unknown>,
     mountCleanupProposals: {} as Record<string, ReadonlyArray<unknown>>,
+    prSeries: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
+    trackerMoves: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
+    trackerMoveSettled: Object.fromEntries(Array.of<[string, ReadonlyArray<string>]>()),
+    sessionExternalTasks: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
+    checkTrackerMoves: vi.fn(async () => undefined),
     agentTurnState: {} as Record<string, { readonly kind: string } | undefined>,
     agentKindOverride: {} as Record<string, string | null>,
     sessionProjectMounts: {
@@ -73,7 +79,7 @@ vi.mock('@goodboy/db', async () =>
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 import { aDelegation, aTree, aView } from '../../auto/testing/autoViewFixtures';
 import { useSessionSuggestions } from '.';
 
@@ -340,6 +346,36 @@ const mountProposed = () => ({
   kind: 'project_materialization_proposed',
   payload: { projectId: 'api', projectName: 'API', reason: 'needs write access' },
   createdAt: '2026-09-04T09:11:00.000Z',
+});
+
+describe('useSessionSuggestions and the sessions list', () => {
+  it('hands the dismissed fingerprints to the store under its own session, once loaded', async () => {
+    listNudgeEvents.mockResolvedValue([
+      {
+        ...dismissedNextStep('fix-checks', 1),
+        contextJson: JSON.stringify({ fingerprint: 'fix-checks:mount-api:318' }),
+      },
+    ]);
+    store.setSessionDismissedNextSteps.mockClear();
+
+    renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() =>
+      expect(store.setSessionDismissedNextSteps).toHaveBeenCalledWith({
+        sessionId: 'session-1',
+        fingerprints: new Set(['fix-checks:mount-api:318']),
+      }),
+    );
+  });
+
+  it('writes nothing before the set of its session has loaded', () => {
+    listNudgeEvents.mockImplementation(() => new Promise(() => undefined));
+    store.setSessionDismissedNextSteps.mockClear();
+
+    renderHook(() => useSessionSuggestions({ session }));
+
+    expect(store.setSessionDismissedNextSteps).not.toHaveBeenCalled();
+  });
 });
 
 describe('useSessionSuggestions demotion', () => {

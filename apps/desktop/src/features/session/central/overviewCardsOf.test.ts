@@ -39,6 +39,7 @@ describe('overviewCardsOf', () => {
     const shown = overviewCardsOf({
       cards: CARDS,
       runningCount: 2,
+      stuckCount: 0,
       branchCount: 3,
       doneCount: 4,
       isArchived: false,
@@ -53,10 +54,24 @@ describe('overviewCardsOf', () => {
     ]);
   });
 
+  it('keeps the running card for stuck work and counts only what runs', () => {
+    const shown = overviewCardsOf({
+      cards: [],
+      runningCount: 0,
+      stuckCount: 1,
+      branchCount: 0,
+      doneCount: 0,
+      isArchived: false,
+    });
+
+    expect(shown.map((card) => [card.id, card.count])).toEqual([['running', 0]]);
+  });
+
   it('draws no empty card', () => {
     const shown = overviewCardsOf({
       cards: actionCardsOf({ owners: [], suggestions: [PUSH], autoTargets: [] }),
       runningCount: 0,
+      stuckCount: 0,
       branchCount: 1,
       doneCount: 0,
       isArchived: false,
@@ -67,6 +82,7 @@ describe('overviewCardsOf', () => {
       overviewCardsOf({
         cards: [],
         runningCount: 0,
+        stuckCount: 0,
         branchCount: 0,
         doneCount: 0,
         isArchived: false,
@@ -78,6 +94,7 @@ describe('overviewCardsOf', () => {
     const shown = overviewCardsOf({
       cards: CARDS,
       runningCount: 2,
+      stuckCount: 0,
       branchCount: 3,
       doneCount: 4,
       isArchived: true,

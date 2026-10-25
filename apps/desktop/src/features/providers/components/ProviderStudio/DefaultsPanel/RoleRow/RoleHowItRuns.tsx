@@ -8,7 +8,7 @@ type Props = {
 };
 
 const TERM = 'text-meta text-faint-foreground';
-const VALUE = 'flex min-w-0 flex-col gap-0.5 text-label text-foreground';
+const VALUE = 'flex min-w-0 flex-col gap-0.5 text-meta text-foreground';
 const NOTE = 'text-meta text-muted-foreground';
 
 export const RoleHowItRuns = ({ label, facts }: Props) => (

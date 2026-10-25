@@ -66,7 +66,7 @@ describe('the c06 conversation scenes', () => {
     }
   });
 
-  it('c06-agent-working keeps one header row with role, title and provider, and no tabs, state or model', async () => {
+  it('c06-agent-working keeps one header row with role, title, provider and the live chip, and no tabs or model', async () => {
     await mount({ name: 'c06-agent-working' });
 
     const row = titleRow();
@@ -77,7 +77,8 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).queryByRole('button', { name: 'Rename agent' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'View transcript' })).toBeDefined();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
-    expect(within(row).queryByText('Running')).toBeNull();
+    within(row).getByText('Running');
+    within(row).getByRole('button', { name: 'Stop' });
     expect(within(row).queryByText('Sonnet 5.5')).toBeNull();
     expect(screen.queryByRole('tab')).toBeNull();
   });
@@ -103,8 +104,12 @@ describe('the c06 conversation scenes', () => {
     const cancel = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ cancelCurrentTurn: cancel }));
 
-    const stop = screen.getByRole('button', { name: 'Stop' });
-    expect(stop.closest('[data-conversation-tail]')).not.toBeNull();
+    const stop = screen
+      .getAllByRole('button', { name: 'Stop' })
+      .find((button) => button.closest('[data-conversation-tail]') !== null);
+    if (stop === undefined) {
+      throw new Error('no Stop on the tail');
+    }
     fireEvent.click(stop);
     expect(cancel).toHaveBeenCalledWith(C06_SESSION_ID, C06_AGENT_ID, 'user');
     expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);

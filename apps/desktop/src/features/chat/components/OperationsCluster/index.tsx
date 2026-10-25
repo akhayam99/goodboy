@@ -1,6 +1,6 @@
 import type { RetryRunParams } from '../../retryRun';
 import { memo, useMemo, useState } from 'react';
-import { cn, MetaRow, tintClasses, WorkNode, type Tone, type WorkNodeState } from '@goodboy/ui';
+import { MetaRow, tintClasses, WorkNode, type Tone, type WorkNodeState } from '@goodboy/ui';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemsEqual } from '../../utils/transcriptItemEqual';
@@ -9,7 +9,7 @@ import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { TranscriptCard } from '../TranscriptCards';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { turnSummary } from '../../utils/turnSummary';
 

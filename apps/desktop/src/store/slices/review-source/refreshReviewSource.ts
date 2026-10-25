@@ -1,5 +1,4 @@
-import { refreshBitbucketReviewThreads } from './refreshBitbucketReviewThreads';
-import { refreshGitlabReviewThreads } from './refreshGitlabReviewThreads';
+import { refreshSessionReviewThreads } from './refreshSessionReviewThreads';
 import type { GetFn, RefreshReviewSourceParams, SetFn } from './types';
 
 type Params = RefreshReviewSourceParams & {
@@ -16,7 +15,13 @@ export const refreshReviewSource = async ({
 }: Params): Promise<void> => {
   await Promise.all([
     get().refreshSessionPrDetail(sessionId, { force, silent }),
-    refreshGitlabReviewThreads({ set, get, sessionId, force, silent }),
-    refreshBitbucketReviewThreads({ set, get, sessionId, force, silent }),
+    refreshSessionReviewThreads({
+      set,
+      get,
+      sessionId,
+      hosts: ['gitlab', 'bitbucket'],
+      isForced: force,
+      isQuiet: silent,
+    }),
   ]);
 };

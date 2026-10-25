@@ -1,4 +1,5 @@
-use super::{worktree_detach_assessment_blocking, REPRODUCIBLE_IGNORED_DIRS};
+use super::worktree_detach_assessment_blocking;
+use crate::reproducible_dirs::REPRODUCIBLE_DIRS;
 use crate::worktree::git::git;
 use crate::worktree::types::{BranchIntegration, WorktreeDetachAssessment};
 use std::path::{Path, PathBuf};
@@ -110,13 +111,13 @@ fn assessment_treats_reproducible_ignored_directories_as_no_risk() {
         &target,
         &["push", "-u", "origin", "test/ignored-reproducible"],
     );
-    let ignores = REPRODUCIBLE_IGNORED_DIRS
+    let ignores = REPRODUCIBLE_DIRS
         .iter()
-        .map(|directory| format!("{directory}/\n"))
+        .map(|entry| format!("{}/\n", entry.name))
         .collect::<String>();
     std::fs::write(target.join(".gitignore"), ignores).unwrap();
-    for directory in REPRODUCIBLE_IGNORED_DIRS {
-        let nested = target.join(directory).join("nested");
+    for entry in REPRODUCIBLE_DIRS {
+        let nested = target.join(entry.name).join("nested");
         std::fs::create_dir_all(&nested).unwrap();
         std::fs::write(nested.join("artifact.bin"), "x").unwrap();
     }

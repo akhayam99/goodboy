@@ -12,7 +12,7 @@ import { seedLiveHistory } from '../../../features/history/testing/seedLiveHisto
 import { LEDGER_COMMITS, LEDGER } from '../../../features/history/testing/ledgerFixture';
 import { initialPlanItems, rewordStep } from '../../../features/history/historyPlan';
 import type { HistoryLiveOutcome } from '../../../features/history/historyLiveTypes';
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { setHistoryRun } from './setHistoryRun';
 
 vi.mock('@tauri-apps/api/core', async () =>

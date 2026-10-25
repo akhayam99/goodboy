@@ -1,8 +1,7 @@
 import { ArrowRight, Undo2 } from 'lucide-react';
-import { Button, Markdown, cn } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, Markdown, FOCUS_RING } from '@goodboy/ui';
 import { DecisionNumber } from './DecisionNumber';
 import type { ClosedDecisionByline } from './decisionByline';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly number: number;
@@ -38,7 +37,7 @@ export const ClosedDecisionRow = ({
     <DecisionNumber number={number} isClosed />
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="line-clamp-2 text-faint-foreground line-through [overflow-wrap:anywhere]">
-        <Markdown text={text} className="text-label" />
+        <Markdown text={text} className="text-meta" />
       </div>
       <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
         <span>{`${byline.author} · ${byline.verb}`}</span>
@@ -47,7 +46,10 @@ export const ClosedDecisionRow = ({
             type="button"
             aria-label={`Go to decision ${byline.target}`}
             onClick={() => onJump(byline.target ?? number)}
-            className="inline-flex items-center gap-0.5 rounded-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'inline-flex items-center gap-0.5 rounded-sm text-foreground hover:underline',
+              FOCUS_RING,
+            )}
           >
             <ArrowRight size={ICON_SIZE.mark} aria-hidden />
             {byline.target}

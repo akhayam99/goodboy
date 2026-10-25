@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { UnderTrailContext } from '@goodboy/ui';
-import { CTX_SESSION, CTX_SESSION_ID } from '../brand/contextBase';
 import { DiffStage } from '../brand/DiffStage';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { seedNotesScene, type NotesVariant } from './notesSeed';

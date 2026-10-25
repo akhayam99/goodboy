@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { isMergedState, type ProjectBranch } from '../../worktree/branchCleanup';
+import type { ProjectBranch } from '../../worktree/branchCleanup';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LOCAL_ONLY_STALE_DAYS = 30;
@@ -38,11 +38,8 @@ const verdictOf = ({ branch, now }: { readonly branch: ProjectBranch; readonly n
   if (state.kind === 'protected') {
     return 'protected';
   }
-  if (isMergedState(state)) {
-    return 'safe-merged';
-  }
-  if (state.kind === 'no-own-commits') {
-    return 'safe-no-commits';
+  if (branch.isSafeToDelete) {
+    return state.kind === 'no-own-commits' ? 'safe-no-commits' : 'safe-merged';
   }
   if (state.kind === 'merged-then') {
     return 'needs-look';

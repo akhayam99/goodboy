@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react';
 import type { StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { SessionDraftPane } from '../../../../../features/session/components/SessionDraftPane';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
-import { draftFromWorkflow } from '../../../../../features/workflows/engine';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
-import { kickoffDraftKey } from '../../../../../store/slices/workflowDrafts/kickoffDraftKey';
 import { durationHistory } from '../activityRunSeed';
 import { sceneClock } from '../../sceneClock';
 import { mockSceneIpc } from '../mockSceneIpc';
@@ -106,21 +104,6 @@ export const NewSessionPageScene = ({ state }: Props) => {
       openSessionDraftWorkspaceId: WORKSPACE_ID,
       currentSessionId: null,
     });
-    if (state.choice === 'workflow' && state.isPreset === true) {
-      useAppStore.getState().setWorkflowDraft(kickoffDraftKey({ workspaceId: WORKSPACE_ID }), {
-        mode,
-        goalText: state.goal,
-        goalHistory: [],
-        selectedPresetId: PRESET_ID,
-        basePresetId: PRESET_ID,
-        steps: draftFromWorkflow({ workflow: PRESET }).steps,
-        autoRun: true,
-        autonomy: 'plan',
-        title: '',
-        orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
-        providerPool: null,
-      });
-    }
     setIsReady(true);
   }, [state]);
 

@@ -2,7 +2,7 @@ import type { SessionTitleRef } from '@goodboy/db';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { formatAge } from '../../../shared/utils/time/formatAge';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import type { PaletteEntry } from '../types';
 
 export type SessionOpenParams = {

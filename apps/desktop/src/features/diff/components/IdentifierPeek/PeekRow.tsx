@@ -29,7 +29,7 @@ export const PeekRow = ({ match, word, isInChange, isChangedLine, onPick }: Prop
         'grid min-h-8 w-full shrink-0 grid-cols-[11rem_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
       )}
     >
-      <span data-peek-path="" className="flex min-w-0 items-baseline text-label">
+      <span data-peek-path="" className="flex min-w-0 items-baseline text-meta">
         <span className="min-w-0 max-w-[40%] truncate text-faint-foreground">{directory}</span>
         <span className="shrink-0 text-faint-foreground">{separator}</span>
         <span className="min-w-0 truncate text-foreground">{name}</span>

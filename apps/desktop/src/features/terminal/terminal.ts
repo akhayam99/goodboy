@@ -1,5 +1,4 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export type TerminalOutputPayload = {
   readonly sessionId: string;
@@ -23,6 +22,7 @@ export type LiveTerminal = {
   readonly cwd: string;
   readonly pid: number | null;
   readonly foregroundPid: number | null;
+  readonly foregroundCommand?: string | null;
 };
 
 export const invokeTerminalListLive = (): Promise<ReadonlyArray<LiveTerminal>> => {
@@ -56,16 +56,4 @@ export const invokeTerminalResize = (
 
 export const invokeTerminalClose = (terminalId: string): Promise<void> => {
   return invokeCommand<void>('terminal_close', { sessionId: terminalId });
-};
-
-export const listenTerminalOutput = (
-  handler: (payload: TerminalOutputPayload) => void,
-): Promise<UnlistenFn> => {
-  return listen<TerminalOutputPayload>('terminal-output', (e) => handler(e.payload));
-};
-
-export const listenTerminalExit = (
-  handler: (payload: TerminalExitPayload) => void,
-): Promise<UnlistenFn> => {
-  return listen<TerminalExitPayload>('terminal-exit', (e) => handler(e.payload));
 };

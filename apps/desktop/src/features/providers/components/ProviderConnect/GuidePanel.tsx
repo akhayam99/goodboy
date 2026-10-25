@@ -1,7 +1,6 @@
-import { cn, tintClasses } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { SquareArrowOutUpRight } from 'lucide-react';
 import type { ProviderGuide } from './guides';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly guide: ProviderGuide;
@@ -34,7 +33,7 @@ export const GuidePanel = ({ guide }: Props) => {
               {idx + 1}
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-label font-medium text-foreground">{step.title}</span>
+              <span className="text-meta font-medium text-foreground">{step.title}</span>
               <span className="text-meta text-muted-foreground">{step.body}</span>
             </div>
           </li>
@@ -48,7 +47,7 @@ export const GuidePanel = ({ guide }: Props) => {
         className="mt-auto inline-flex items-center gap-1 text-meta text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{guide.docsLabel}</span>
-        <ExternalLink size={ICON_SIZE.mark} aria-hidden />
+        <SquareArrowOutUpRight size={ICON_SIZE.mark} aria-hidden />
       </a>
     </div>
   );

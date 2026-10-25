@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Paperclip } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { GoalAttachment, GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { AttachmentChip } from '../../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../../attachments/hooks/useAttachmentThumbnail';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {
   const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments);
@@ -28,7 +27,9 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
     void loadGoalAttachments({ type: ownerType, id: ownerId });
   }, [ownerType, ownerId, loadGoalAttachments]);
 
-  if (attachments.length === 0) return null;
+  if (attachments.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-2">

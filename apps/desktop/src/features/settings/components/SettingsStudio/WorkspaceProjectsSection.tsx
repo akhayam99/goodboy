@@ -10,6 +10,7 @@ import { Button, Notice } from '@goodboy/ui';
 import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitStatuses';
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
 import { ProjectScriptsField } from '../../../scripts';
+import { NewWorktreesField } from '../../../worktree/NewWorktreesField';
 import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
 import { FolderFacesBand } from './FolderFacesBand';
 
@@ -74,7 +75,12 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }
         rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
-        editorScripts={({ project }) => <ProjectScriptsField project={project} />}
+        editorScripts={({ project }) => (
+          <>
+            <ProjectScriptsField project={project} />
+            {project.kind === 'repo' ? <NewWorktreesField project={project} /> : null}
+          </>
+        )}
       />
       <FolderFacesBand workspaceId={workspaceId} />
     </section>

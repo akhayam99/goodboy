@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
-import { AnchoredPopover, Button, IconButton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, IconButton, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
 import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../../shared/names';
+
+import { NAMES } from '../../../../../shared/utils/names';
 import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
 

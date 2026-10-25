@@ -26,6 +26,7 @@ export type HostCapabilityRow = Readonly<{
   draft: HostDraftSupport;
   canResolveThreads: boolean;
   canReopen: boolean;
+  canPinMergeToHead: boolean;
   bridgeProvider: string;
   bridgeVerbs: HostBridgeVerbs;
 }>;
@@ -43,6 +44,7 @@ export const HOST_CAPABILITIES = {
     draft: 'native',
     canResolveThreads: true,
     canReopen: true,
+    canPinMergeToHead: true,
     bridgeProvider: 'github',
     bridgeVerbs: {
       merge: 'pr-merge',
@@ -66,6 +68,7 @@ export const HOST_CAPABILITIES = {
     draft: 'title-prefix',
     canResolveThreads: true,
     canReopen: true,
+    canPinMergeToHead: true,
     bridgeProvider: 'gitlab',
     bridgeVerbs: {
       merge: 'mr-merge',
@@ -89,6 +92,7 @@ export const HOST_CAPABILITIES = {
     draft: 'none',
     canResolveThreads: false,
     canReopen: false,
+    canPinMergeToHead: true,
     bridgeProvider: 'bitbucket',
     bridgeVerbs: {
       merge: 'pr-merge',

@@ -1,9 +1,11 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
+  DiffComment,
   IsoDateTime,
   MountId,
   ProjectId,
+  ResolveQueueItemWithThread,
   SessionId,
   SessionProjectMount,
   WorkspaceId,
@@ -122,5 +124,103 @@ describe('branchScopeOf', () => {
 
   it('falls back to the write destination with no shown branch', () => {
     expect(scopeOf({ mountId: null }).state).toBe('open');
+  });
+
+  describe('the Comments tab', () => {
+    const note = ({ branch }: { readonly branch: string }): DiffComment => ({
+      id: `note-${branch}`,
+      sessionId: SESSION_ID,
+      filePath: 'src/rates.ts',
+      body: 'Round half to even here',
+      status: 'open',
+      createdAt: STAMP,
+      authorKind: 'user',
+      projectId: PROJECT_ID,
+      branch,
+    });
+
+    const hostItem = ({ prNumber }: { readonly prNumber: number }): ResolveQueueItemWithThread => ({
+      item: {
+        id: `item-${prNumber}`,
+        sessionId: SESSION_ID,
+        threadId: `thread-${prNumber}`,
+        generation: 0,
+        reopenedFromItemId: null,
+        candidateRevision: 1,
+        approvalState: 'none',
+        approvedRevision: null,
+        approvedReplyHash: null,
+        integratedSha: null,
+        deferredAt: null,
+        deliveredAt: null,
+        supersededAt: null,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      thread: {
+        id: `row-${prNumber}`,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        prNumber,
+        threadId: `thread-${prNumber}`,
+        originKind: 'review_comment',
+        diffCommentId: null,
+        state: 'open',
+        stage: 'new',
+        stateReason: null,
+        revision: 1,
+        generation: 0,
+        reopenedFromThreadId: null,
+        activeAttemptId: null,
+        disposition: null,
+        replyDraft: null,
+        commitShas: null,
+        fixupOfSha: null,
+        replacesSha: null,
+        question: null,
+        replyPostedAt: null,
+        replyId: null,
+        githubResolved: null,
+        closedAt: null,
+        closedSource: null,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    });
+
+    it('counts the notes of the shown branch only', () => {
+      useAppStore.setState({
+        diffComments: { [SESSION_ID]: [note({ branch: WRITE_MOUNT.branch })] },
+      });
+
+      expect(scopeOf({ mountId: WRITE_MOUNT_ID }).hasComments).toBe(true);
+      expect(scopeOf({ mountId: SHOWN_MOUNT_ID }).hasComments).toBe(false);
+    });
+
+    it('counts the review threads of the request of the shown branch only', () => {
+      useAppStore.setState({
+        mountGitlabMr: {
+          [WRITE_MOUNT_ID]: ENTRY,
+          [SHOWN_MOUNT_ID]: {
+            ...ENTRY,
+            mountId: SHOWN_MOUNT_ID,
+            branch: SHOWN_MOUNT.branch,
+            mr: { ...MR, iid: 9, sourceBranch: SHOWN_MOUNT.branch },
+          },
+        },
+        sessionResolveQueueItems: { [SESSION_ID]: [hostItem({ prNumber: 51 })] },
+      });
+
+      expect(scopeOf({ mountId: WRITE_MOUNT_ID }).hasComments).toBe(true);
+      expect(scopeOf({ mountId: SHOWN_MOUNT_ID }).hasComments).toBe(false);
+    });
+
+    it('keeps the whole session when no branch is shown', () => {
+      useAppStore.setState({
+        diffComments: { [SESSION_ID]: [note({ branch: SHOWN_MOUNT.branch })] },
+      });
+
+      expect(scopeOf({ mountId: null }).hasComments).toBe(true);
+    });
   });
 });

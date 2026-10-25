@@ -30,24 +30,12 @@ fn detect_editors_inner() -> Vec<DetectedEditor> {
     KNOWN_EDITORS
         .iter()
         .filter_map(|(binary, label)| {
-            which_binary(binary).map(|_| DetectedEditor {
+            crate::path_env::which(binary).map(|_| DetectedEditor {
                 binary: binary.to_string(),
                 label: label.to_string(),
             })
         })
         .collect()
-}
-
-fn which_binary(binary: &str) -> Option<()> {
-    let status = crate::path_env::command("which")
-        .arg(binary)
-        .output()
-        .ok()?;
-    if status.status.success() {
-        Some(())
-    } else {
-        None
-    }
 }
 
 #[tauri::command(async)]
@@ -67,11 +55,14 @@ pub enum EditorError {
     },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("unknown editor '{0}'")]
+    Unknown(String),
 }
 
 impl EditorError {
     pub(crate) fn kind(&self) -> &'static str {
         match self {
+            EditorError::Unknown(_) => "editor_unknown",
             EditorError::NotFound(_) => "editor_missing",
             EditorError::Spawn { .. } => "spawn",
             EditorError::Io(_) => "io",
@@ -80,6 +71,17 @@ impl EditorError {
 }
 
 crate::util::impl_error_serialize!(EditorError);
+
+fn resolve_editor(editor: Option<String>) -> Result<&'static str, EditorError> {
+    let Some(requested) = editor else {
+        return Ok(DEFAULT_EDITOR);
+    };
+    KNOWN_EDITORS
+        .iter()
+        .find(|(binary, _)| *binary == requested)
+        .map(|(binary, _)| *binary)
+        .ok_or(EditorError::Unknown(requested))
+}
 
 #[tauri::command]
 pub async fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
@@ -92,7 +94,7 @@ pub(crate) fn open_in_editor_blocking(
     path: String,
     editor: Option<String>,
 ) -> Result<(), EditorError> {
-    let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
+    let binary = resolve_editor(editor)?.to_string();
 
     // Resolve to absolute canonical path so editors load it as a workspace folder
     // rather than treating it as a relative-to-cwd file. Falls back to the input
@@ -119,19 +121,82 @@ pub(crate) fn open_in_editor_blocking(
     }
 }
 
-/// Opens a single file inside an existing workspace window of the editor.
-/// For VS Code / Cursor this means passing the workspace path first so the
-/// existing window is focused, then `-g <file>` to navigate to the file —
-/// avoiding the "new standalone window per file" behavior of `open_in_editor`,
-/// which forces `--new-window`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LineStyle {
+    GotoFlag,
+    ColonSuffix,
+    LineFlag,
+    PathOnly,
+}
+
+const EDITOR_LINE_STYLES: &[(&str, LineStyle)] = &[
+    ("code", LineStyle::GotoFlag),
+    ("cursor", LineStyle::GotoFlag),
+    ("zed", LineStyle::ColonSuffix),
+    ("subl", LineStyle::ColonSuffix),
+    ("webstorm", LineStyle::LineFlag),
+    ("idea", LineStyle::LineFlag),
+    ("vim", LineStyle::PathOnly),
+    ("nvim", LineStyle::PathOnly),
+];
+
+fn line_style_of(binary: &str) -> LineStyle {
+    EDITOR_LINE_STYLES
+        .iter()
+        .find(|(known, _)| *known == binary)
+        .map(|(_, style)| *style)
+        .unwrap_or(LineStyle::PathOnly)
+}
+
+fn with_position(file_path: &str, line: Option<u32>, column: Option<u32>) -> String {
+    match (line, column) {
+        (Some(line), Some(column)) => format!("{file_path}:{line}:{column}"),
+        (Some(line), None) => format!("{file_path}:{line}"),
+        _ => file_path.to_string(),
+    }
+}
+
+fn file_args(
+    binary: &str,
+    workspace_path: &str,
+    file_path: &str,
+    line: Option<u32>,
+    column: Option<u32>,
+) -> Vec<String> {
+    match line_style_of(binary) {
+        LineStyle::GotoFlag => vec![
+            workspace_path.to_string(),
+            "-g".to_string(),
+            with_position(file_path, line, column),
+        ],
+        LineStyle::ColonSuffix => vec![with_position(file_path, line, column)],
+        LineStyle::LineFlag => {
+            let mut args = Vec::new();
+            if let Some(line) = line {
+                args.push("--line".to_string());
+                args.push(line.to_string());
+                if let Some(column) = column {
+                    args.push("--column".to_string());
+                    args.push(column.to_string());
+                }
+            }
+            args.push(file_path.to_string());
+            args
+        }
+        LineStyle::PathOnly => vec![file_path.to_string()],
+    }
+}
+
 #[tauri::command]
 pub async fn open_file_in_workspace(
     workspace_path: String,
     file_path: String,
     editor: Option<String>,
+    line: Option<u32>,
+    column: Option<u32>,
 ) -> Result<(), EditorError> {
     tauri::async_runtime::spawn_blocking(move || {
-        open_file_in_workspace_blocking(workspace_path, file_path, editor)
+        open_file_in_workspace_blocking(workspace_path, file_path, editor, line, column)
     })
     .await
     .map_err(|e| EditorError::Io(std::io::Error::other(e.to_string())))?
@@ -141,17 +206,19 @@ pub(crate) fn open_file_in_workspace_blocking(
     workspace_path: String,
     file_path: String,
     editor: Option<String>,
+    line: Option<u32>,
+    column: Option<u32>,
 ) -> Result<(), EditorError> {
-    let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
+    let binary = resolve_editor(editor)?.to_string();
 
     let mut cmd = crate::path_env::command(&binary);
-    if binary == "code" || binary == "cursor" {
-        cmd.arg(&workspace_path);
-        cmd.arg("-g");
-        cmd.arg(&file_path);
-    } else {
-        cmd.arg(&file_path);
-    }
+    cmd.args(file_args(
+        &binary,
+        &workspace_path,
+        &file_path,
+        line,
+        column,
+    ));
 
     match cmd.spawn() {
         Ok(child) => {
@@ -289,7 +356,8 @@ fn locate_browser(platform: Platform, browser: &KnownBrowser) -> Option<PathBuf>
             if browser.linux_binary.is_empty() {
                 return None;
             }
-            which_binary(browser.linux_binary).map(|_| PathBuf::from(browser.linux_binary))
+            crate::path_env::which(browser.linux_binary)
+                .map(|_| PathBuf::from(browser.linux_binary))
         }
         Platform::Windows => {
             if browser.windows_exe.is_empty() {
@@ -345,7 +413,7 @@ fn setting_value(conn: &rusqlite::Connection, key: &str) -> Option<String> {
     .ok()
 }
 
-fn read_text_setting(app: &tauri::AppHandle, key: &str) -> Option<String> {
+pub(crate) fn read_text_setting(app: &tauri::AppHandle, key: &str) -> Option<String> {
     use tauri::Manager;
     let database = app.try_state::<crate::db::Db>()?;
     let conn = database.0.lock().ok()?;
@@ -418,19 +486,7 @@ fn open_url_blocking(app: &tauri::AppHandle, url: String) -> Result<(), MessageE
 }
 
 fn open_with_system(target: &str) -> Result<(), MessageError> {
-    #[cfg(target_os = "macos")]
-    let result = Command::new("open").arg(target).spawn();
-    #[cfg(target_os = "linux")]
-    let result = Command::new("xdg-open").arg(target).spawn();
-    #[cfg(target_os = "windows")]
-    let result = Command::new("rundll32.exe")
-        .arg("url.dll,FileProtocolHandler")
-        .arg(target)
-        .spawn();
-
-    result
-        .map(crate::proc::detach::detach)
-        .map_err(|e| MessageError::Failed(e.to_string()))
+    crate::proc::open::open_target(target).map_err(|e| MessageError::Failed(e.to_string()))
 }
 
 const FOLDER_PRIVACY_PANE: &str =
@@ -459,10 +515,24 @@ fn privacy_pane() -> Result<&'static str, MessageError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        chosen_launch, is_openable_url, privacy_pane, setting_value, BrowserLaunch, KnownBrowser,
-        Platform, FOLDER_PRIVACY_PANE, KNOWN_BROWSERS, MAX_URL_LEN, SETTING_BROWSER_APP,
+        chosen_launch, file_args, is_openable_url, privacy_pane, resolve_editor, setting_value,
+        BrowserLaunch, KnownBrowser, Platform, FOLDER_PRIVACY_PANE, KNOWN_BROWSERS, MAX_URL_LEN,
+        SETTING_BROWSER_APP,
     };
     use std::path::PathBuf;
+
+    #[test]
+    fn an_editor_outside_the_table_is_refused() {
+        assert!(resolve_editor(Some("/tmp/payload".to_string())).is_err());
+        assert!(resolve_editor(Some("sh".to_string())).is_err());
+        assert!(resolve_editor(Some("code --evil".to_string())).is_err());
+    }
+
+    #[test]
+    fn a_listed_editor_and_the_default_resolve() {
+        assert_eq!(resolve_editor(Some("zed".to_string())).unwrap(), "zed");
+        assert_eq!(resolve_editor(None).unwrap(), "code");
+    }
 
     const URL: &str = "https://harborline.test/pay?id=1&x=2";
 
@@ -614,5 +684,66 @@ mod tests {
         assert!(FOLDER_PRIVACY_PANE.ends_with("Privacy_FilesAndFolders"));
         assert!(!is_openable_url(FOLDER_PRIVACY_PANE));
         assert_eq!(privacy_pane().is_ok(), cfg!(target_os = "macos"));
+    }
+
+    const FILE: &str = "/work/ledger-core/src/billing/rounding.ts";
+    const ROOT: &str = "/work/ledger-core";
+
+    #[test]
+    fn a_goto_editor_takes_the_line_and_column_after_the_file() {
+        for binary in ["code", "cursor"] {
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(42), Some(13)),
+                vec![
+                    ROOT,
+                    "-g",
+                    "/work/ledger-core/src/billing/rounding.ts:42:13"
+                ]
+            );
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(42), None),
+                vec![ROOT, "-g", "/work/ledger-core/src/billing/rounding.ts:42"]
+            );
+            assert_eq!(
+                file_args(binary, ROOT, FILE, None, None),
+                vec![ROOT, "-g", FILE]
+            );
+        }
+    }
+
+    #[test]
+    fn a_colon_editor_takes_the_position_as_a_suffix() {
+        for binary in ["zed", "subl"] {
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(7), Some(2)),
+                vec!["/work/ledger-core/src/billing/rounding.ts:7:2"]
+            );
+            assert_eq!(file_args(binary, ROOT, FILE, None, Some(2)), vec![FILE]);
+        }
+    }
+
+    #[test]
+    fn a_jetbrains_editor_takes_line_and_column_flags() {
+        for binary in ["webstorm", "idea"] {
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(42), Some(13)),
+                vec!["--line", "42", "--column", "13", FILE]
+            );
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(42), None),
+                vec!["--line", "42", FILE]
+            );
+            assert_eq!(file_args(binary, ROOT, FILE, None, None), vec![FILE]);
+        }
+    }
+
+    #[test]
+    fn a_terminal_editor_keeps_the_plain_path() {
+        for binary in ["vim", "nvim"] {
+            assert_eq!(
+                file_args(binary, ROOT, FILE, Some(42), Some(13)),
+                vec![FILE]
+            );
+        }
     }
 }

@@ -28,10 +28,10 @@ export const formatErrorForHumans = ({ message, providerId = null }: Params): Hu
 
   switch (classification.kind) {
     case 'authentication':
-      return withDetail({ body: `${name} is not signed in.`, message });
+      return withDetail({ body: `${name} isn't signed in.`, message });
     case 'model_not_available':
       return withDetail({
-        body: `The model "${classification.model}" is not available with this account.`,
+        body: `The model "${classification.model}" isn't available with this account.`,
         message,
       });
     case 'cli_too_old':

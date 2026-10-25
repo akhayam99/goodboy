@@ -211,3 +211,44 @@ fn stale_backup_files_are_swept_keeping_only_the_newest() {
     );
     fs::remove_dir_all(&dir).unwrap();
 }
+
+#[test]
+fn a_slow_line_names_the_label_and_the_milliseconds_above_the_threshold() {
+    let threshold = Duration::from_millis(250);
+
+    assert_eq!(
+        slow_line("git fetch", Duration::from_millis(249), threshold),
+        None
+    );
+    assert_eq!(
+        slow_line("git fetch", Duration::from_millis(250), threshold),
+        Some("[slow] git fetch took 250ms".to_string())
+    );
+    assert_eq!(
+        slow_line("db_select", Duration::from_secs(3), threshold),
+        Some("[slow] db_select took 3000ms".to_string())
+    );
+}
+
+#[test]
+fn a_slow_line_reaches_the_log_file_and_a_fast_one_does_not() {
+    let dir = unique_directory("slow");
+    let logger = file_logger(&dir);
+    let threshold = Duration::from_millis(250);
+
+    for (label, elapsed) in [("db_select", 40), ("git status", 900)] {
+        if let Some(line) = slow_line(label, Duration::from_millis(elapsed), threshold) {
+            write_line(logger.as_ref(), log::Level::Info, &line);
+        }
+    }
+
+    let text = fs::read_to_string(dir.join("goodboy.log")).unwrap();
+    assert!(text.contains("[slow] git status took 900ms"));
+    assert!(!text.contains("db_select"));
+    fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn timed_returns_what_the_closure_returns() {
+    assert_eq!(timed("db_select", || 7), 7);
+}

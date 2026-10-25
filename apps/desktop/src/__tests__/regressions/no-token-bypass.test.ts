@@ -21,6 +21,16 @@ const TONE_ALPHA_ALLOW = ['packages/ui/src/tint.ts', 'packages/ui/src/components
 
 const RULES = [
   {
+    pattern: /placeholder:text-muted-foreground/,
+    allow: NO_ALLOW,
+    why: 'a placeholder is faint-foreground, so an empty field reads apart from a filled one',
+  },
+  {
+    pattern: /(?:^|[^-\w])(?:hover:|focus-visible:)?text-provider-/,
+    allow: NO_ALLOW,
+    why: 'provider colors are logo colors for glyphs, never text: label text is foreground or muted-foreground',
+  },
+  {
     pattern: /(?:text|placeholder:text)-(?:muted-)?foreground\/\d+/,
     allow: NO_ALLOW,
     why: 'text hierarchy uses foreground, muted, faint or disabled tokens without opacity',
@@ -73,6 +83,11 @@ const RULES = [
     pattern: /\bz-\[/,
     allow: NO_ALLOW,
     why: 'global layers use the named z-index tokens',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*z-(?:4[1-9]|[5-9]\d|\d{3,})(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'a layer above the content takes a named z-index token (z-studio, z-drag, z-popover, z-boot), never a bare number',
   },
   {
     pattern:
@@ -134,7 +149,7 @@ const RULES = [
     pattern:
       /(?<![\w-])(?:[\w-]+:)*text-(?:\[[\d.]+(?:px|rem)\]|3xs|2xs|xs|sm|base|lg|xl|[2-9]xl)(?![\w-])/,
     allow: NO_ALLOW,
-    why: 'type takes a role: text-row, text-label, text-meta, text-chip, text-body, text-title; only em sizes relative to prose stay arbitrary',
+    why: 'type takes a role: text-row, text-ui, text-meta, text-chip, text-body, text-title; only em sizes relative to prose stay arbitrary',
   },
   {
     pattern: /(?<![\w-])(?:[\w-]+:)*shadow-\[/,

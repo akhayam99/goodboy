@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react';
-import { DiffLayoutToggle, DrawerFrame, type DiffLayoutMode } from '@goodboy/ui';
+import { DrawerFrame } from '@goodboy/ui';
+import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
+import { DiffLayoutToggle } from '../DiffLayoutToggle';
 import type { FileDiff } from '@goodboy/types';
 import type { FileDiffWhole } from '../../../../store/slices/drawer/state';
-import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
+import { useDiffLayoutMode } from '../../hooks/useDiffLayoutMode';
 import { fileGlyphOf } from '../../../explore/fileGlyph';
 import { worktreeFileSides } from '../../../worktree/worktree';
 import { splitPath } from '../../lib/fileStatus';

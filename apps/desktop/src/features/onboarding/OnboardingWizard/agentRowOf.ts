@@ -120,7 +120,7 @@ const lineOf = ({ id, info, status, state, check }: LineParams): string => {
     case 'signin':
     case 'signing':
     case 'failed':
-      return `${product} found, not signed in`;
+      return `${product} found`;
     case 'installing':
       return `Installing ${PRODUCT_NAME[id]}`;
     case 'missing':

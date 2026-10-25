@@ -1,19 +1,20 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { AlertTriangle, Search } from 'lucide-react';
+import { TriangleAlert, Search } from 'lucide-react';
 import {
+  cn,
   Divider,
   EmptyLine,
   Eyebrow,
+  ICON_SIZE,
   Kbd,
   ScrollFade,
   SegmentedTabs,
   SkeletonRow,
-  cn,
 } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { LinkScopePreview } from './LinkScopePreview';
@@ -215,7 +216,7 @@ export const LinkWorkPicker = ({
       <Divider />
       <ScrollFade className="max-h-80" viewportClassName="p-1" fadeFrom="floating">
         {view.kind === 'unknownLink' ? (
-          <p className="px-3 py-3 text-label text-muted-foreground">
+          <p className="px-3 py-3 text-meta text-muted-foreground">
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
           </p>
         ) : rows.length === 0 && isLoading ? (
@@ -225,7 +226,7 @@ export const LinkWorkPicker = ({
             Paste a link or search
           </EmptyLine>
         ) : rows.length === 0 ? (
-          <p className="flex flex-col items-center gap-0.5 px-3 py-5 text-center text-label text-muted-foreground">
+          <p className="flex flex-col items-center gap-0.5 px-3 py-5 text-center text-meta text-muted-foreground">
             <span>{`Nothing in ${sourceName} matches.`}</span>
             <span className="text-faint-foreground">Paste a link to attach anything else.</span>
           </p>
@@ -269,7 +270,7 @@ export const LinkWorkPicker = ({
                   {row.task.identifier}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-foreground">{row.task.title}</span>
-                <span className="shrink-0 text-label text-faint-foreground">
+                <span className="shrink-0 text-meta text-faint-foreground">
                   {rowMeta({ row, now })}
                 </span>
               </li>,
@@ -293,13 +294,13 @@ export const LinkWorkPicker = ({
         />
       )}
       {error !== null ? (
-        <p role="alert" className="flex items-center gap-1 px-3 py-2 text-label text-danger">
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        <p role="alert" className="flex items-center gap-1 px-3 py-2 text-meta text-danger">
+          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
         </p>
       ) : null}
       <Divider />
-      <div className="flex items-center gap-4 bg-muted px-3 py-2 text-label text-faint-foreground">
+      <div className="flex items-center gap-4 bg-muted px-3 py-2 text-meta text-faint-foreground">
         <span className="flex items-center gap-2">
           <Kbd look="cap">↑↓</Kbd>
           move

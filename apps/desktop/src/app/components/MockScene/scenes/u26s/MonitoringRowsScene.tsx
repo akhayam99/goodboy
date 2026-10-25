@@ -97,7 +97,7 @@ const MonitoringRowsScene = ({ variant }: Props) => {
   useEffect(() => {
     installSceneDatabase({
       settings: variant === 'empty' ? {} : SETTINGS,
-      fallback: (command, payload) => answerOf({ variant, command, payload }),
+      fallback: ({ command, payload }) => answerOf({ variant, command, payload }),
     });
     useAppStore.setState({
       workspaces: [WORKSPACE],

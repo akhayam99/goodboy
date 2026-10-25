@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { PageColumn, tintClasses } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 

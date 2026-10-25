@@ -1,15 +1,11 @@
 import { useState } from 'react';
-import { Chip, ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
+import { Chip, ConfirmPopover, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useCredentialSecret } from '../../useCredentialSecret';
 import { toolHealthOf } from '../../toolHealthOf';
-import {
-  IntegrationGlyph,
-  integrationLabel,
-  type IntegrationGlyphProvider,
-} from '../IntegrationGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { IntegrationGlyph, type IntegrationGlyphProvider } from '../IntegrationGlyph';
+import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -57,13 +53,13 @@ export const IntegrationConnectedRow = ({
       <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-3">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-label font-medium text-foreground">{primary}</span>
+          <span className="truncate text-meta font-medium text-foreground">{primary}</span>
           {secondary != null ? (
             <span className="truncate font-mono text-meta text-muted-foreground">{secondary}</span>
           ) : null}
         </div>
-        {health.chip === null ? null : <Chip tone="danger" size="xs" label={health.chip} />}
-        {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}
+        {health.chip === null ? null : <Chip kind="state" tone="danger" label={health.chip} />}
+        {badge != null ? <Chip kind="state" tone="neutral" bordered label={badge} /> : null}
         {hasHeaderDisconnect ? null : (
           <ConfirmPopover
             role="danger"

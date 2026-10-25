@@ -2,7 +2,7 @@ import { Chip, cn, Tooltip } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
+import { LinkedWorkRow } from '../LinkedWorkRow';
 import { openUrl } from '../../../../shared/lib/editor';
 
 type ExternalTaskChipTask = Pick<SessionExternalTask, 'provider' | 'identifier' | 'title' | 'url'>;
@@ -20,48 +20,17 @@ type Props = {
   hasReferenceActions?: boolean;
 };
 
-type ProviderMeta = {
-  label: string;
-  colorClasses: string;
+const PROVIDER_LABEL: Record<SessionExternalTaskProvider, string> = {
+  linear: 'Linear',
+  sentry: 'Sentry',
+  gitlab: 'GitLab',
+  jira: 'Jira',
+  github: 'GitHub',
+  bitbucket: 'Bitbucket',
+  slack: 'Slack',
 };
 
-const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
-  linear: {
-    label: 'Linear',
-    colorClasses:
-      'border-provider-linear/30 bg-provider-linear/5 text-provider-linear hover:border-provider-linear/60 hover:bg-provider-linear/10',
-  },
-  sentry: {
-    label: 'Sentry',
-    colorClasses:
-      'border-provider-sentry/30 bg-provider-sentry/5 text-provider-sentry hover:border-provider-sentry/60 hover:bg-provider-sentry/10',
-  },
-  gitlab: {
-    label: 'GitLab',
-    colorClasses:
-      'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
-  },
-  jira: {
-    label: 'Jira',
-    colorClasses:
-      'border-provider-jira/30 bg-provider-jira/5 text-provider-jira hover:border-provider-jira/60 hover:bg-provider-jira/10',
-  },
-  github: {
-    label: 'GitHub',
-    colorClasses:
-      'border-provider-github/30 bg-provider-github/5 text-provider-github hover:border-provider-github/60 hover:bg-provider-github/10',
-  },
-  bitbucket: {
-    label: 'Bitbucket',
-    colorClasses:
-      'border-provider-bitbucket/30 bg-provider-bitbucket/5 text-provider-bitbucket hover:border-provider-bitbucket/60 hover:bg-provider-bitbucket/10',
-  },
-  slack: {
-    label: 'Slack',
-    colorClasses:
-      'border-provider-slack/30 bg-provider-slack/5 text-provider-slack hover:border-provider-slack/60 hover:bg-provider-slack/10',
-  },
-};
+const CHIP_CLASSES = 'border-border-soft bg-fill text-foreground hover:bg-overlay-hover';
 
 export const ExternalTaskChip = ({
   task,
@@ -75,7 +44,7 @@ export const ExternalTaskChip = ({
   navigation = 'external',
   hasReferenceActions = true,
 }: Props) => {
-  const meta = PROVIDER_META[task.provider];
+  const providerLabel = PROVIDER_LABEL[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
 
   const glyph = <IntegrationGlyph provider={task.provider} />;
@@ -84,7 +53,7 @@ export const ExternalTaskChip = ({
     return (
       <Tooltip content={tooltip}>
         <span
-          aria-label={`${task.identifier} from ${meta.label}`}
+          aria-label={`${task.identifier} from ${providerLabel}`}
           className="inline-flex shrink-0 items-center"
         >
           {glyph}
@@ -103,7 +72,7 @@ export const ExternalTaskChip = ({
           <span aria-hidden className={cn('font-mono', identifierClassName)}>
             {task.identifier}
           </span>
-          <span className="sr-only">{`${task.identifier} from ${meta.label}`}</span>
+          <span className="sr-only">{`${task.identifier} from ${providerLabel}`}</span>
         </span>
       </Tooltip>
     );
@@ -122,8 +91,8 @@ export const ExternalTaskChip = ({
     const attribution =
       repoLabel == null && branchLabel == null ? null : (
         <span className="flex min-w-0 items-center gap-1">
-          {repoLabel != null ? <Chip tone="neutral" label={repoLabel} size="xs" /> : null}
-          {branchLabel != null ? <Chip tone="neutral" label={branchLabel} size="xs" /> : null}
+          {repoLabel != null ? <Chip kind="state" tone="neutral" label={repoLabel} /> : null}
+          {branchLabel != null ? <Chip kind="state" tone="neutral" label={branchLabel} /> : null}
         </span>
       );
     return (
@@ -132,13 +101,13 @@ export const ExternalTaskChip = ({
         identifier={task.identifier}
         title={variant === 'full' ? task.title : undefined}
         onClick={handleClick}
-        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
+        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${providerLabel}`}
         tooltip={tooltip}
         navigation={navigation}
         {...(attribution != null ? { attribution } : {})}
         actions={
           hasReferenceActions && task.url !== '' ? (
-            <ExternalRefActions url={task.url} label={task.identifier} hostLabel={meta.label} />
+            <ExternalRefActions url={task.url} label={task.identifier} hostLabel={providerLabel} />
           ) : undefined
         }
       />
@@ -153,10 +122,10 @@ export const ExternalTaskChip = ({
           e.stopPropagation();
           handleClick();
         }}
-        aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
+        aria-label={ariaLabel ?? `open ${task.identifier} in ${providerLabel}`}
         className={cn(
           'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-chip transition-colors',
-          meta.colorClasses,
+          CHIP_CLASSES,
         )}
       >
         {glyph}

@@ -1,10 +1,10 @@
-import { ExternalLink } from 'lucide-react';
+import { SquareArrowOutUpRight } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { useGithubConnection } from './useGithubConnection';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -26,7 +26,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         provider="github"
         primary={`Connected as ${status.user ?? '(unknown user)'}`}
         badge="workspace key"
-        disconnectDescription="Deletes this workspace's GitHub personal API key from your keychain. This does not sign you out of the system gh CLI."
+        disconnectDescription="Deletes this workspace's GitHub personal API key from your keychain. This doesn't sign you out of the system gh CLI."
         onDisconnect={async () => {
           await clearGithubToken({ workspaceId });
         }}
@@ -59,7 +59,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               rel="noreferrer"
               className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
             >
-              configure SSO <ExternalLink size={ICON_SIZE.mark} aria-hidden />
+              configure SSO <SquareArrowOutUpRight size={ICON_SIZE.mark} aria-hidden />
             </a>{' '}
             if your org requires it. The key is stored encrypted in your operating system keychain
             and sent directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.

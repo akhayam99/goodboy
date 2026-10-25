@@ -2,7 +2,7 @@ import { formatTokens, formatUsd } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { UsageFigures } from '../../utils/usageFigures';
 import type { TurnFooterData } from './useTurnFooter';
 

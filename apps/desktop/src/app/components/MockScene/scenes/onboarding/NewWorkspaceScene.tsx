@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { InvokeArgs } from '@tauri-apps/api/core';
+import { emit } from '@tauri-apps/api/event';
 import {
   brandId,
   type FolderSignals,
@@ -14,10 +15,21 @@ import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { SETTING_NEW_PROJECT_PARENT } from '../../../../../features/settings/settings';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
-import { mockSceneIpc } from '../mockSceneIpc';
+import { mockIPC } from '@tauri-apps/api/mocks';
+import { sceneIpcAnswer } from '../sceneIpcAnswer';
 
 export type NewWorkspaceSceneState =
-  'empty' | 'repo' | 'many' | 'plain' | 'conflict' | 'denied' | 'scratch';
+  | 'empty'
+  | 'likely'
+  | 'repo'
+  | 'many'
+  | 'plain'
+  | 'conflict'
+  | 'denied'
+  | 'scratch'
+  | 'clone'
+  | 'cloning'
+  | 'clone-auth';
 
 type Props = {
   readonly state: NewWorkspaceSceneState;
@@ -29,6 +41,7 @@ const NOW = clock.iso({ at: '2026-10-17T09:00:00.000Z' });
 
 const HOME = '/mock';
 const CODE = `${HOME}/Code`;
+const WORK = `${HOME}/work`;
 const ACME_WEB = `${CODE}/acme-web`;
 const ACME_DOCS = `${CODE}/acme-docs`;
 const HARBORLINE = `${CODE}/harborline`;
@@ -127,6 +140,8 @@ const plainAt = ({ path }: PathParams): GitRepoCheck => ({
 });
 
 const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
+  [CODE]: plainAt({ path: CODE }),
+  [WORK]: plainAt({ path: WORK }),
   [ACME_WEB]: repoAt({ path: ACME_WEB, branch: 'main' }),
   [ACME_DOCS]: plainAt({ path: ACME_DOCS }),
   [HARBORLINE]: plainAt({ path: HARBORLINE }),
@@ -146,6 +161,18 @@ const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
   },
 };
 
+const notFoundAt = ({ path }: PathParams): GitRepoCheck => ({
+  isRepo: false,
+  rootPath: null,
+  resolvedPath: null,
+  defaultBranch: null,
+  error: `path does not exist: ${path}`,
+  errorKind: 'not_found',
+});
+
+const isDirectlyUnderHome = ({ path }: PathParams): boolean =>
+  path.startsWith(`${HOME}/`) && !path.slice(HOME.length + 1).includes('/');
+
 const HARBORLINE_REPOS = [
   { name: 'payments-api', path: `${HARBORLINE}/payments-api`, defaultBranch: 'main' },
   { name: 'ledger-core', path: `${HARBORLINE}/ledger-core`, defaultBranch: 'main' },
@@ -154,13 +181,23 @@ const HARBORLINE_REPOS = [
 
 const PICK = {
   empty: null,
+  likely: null,
   repo: ACME_WEB,
   many: HARBORLINE,
   plain: ACME_DOCS,
   conflict: HARBORLINE,
   denied: DENIED,
   scratch: null,
+  clone: null,
+  cloning: null,
+  'clone-auth': null,
 } as const satisfies Record<NewWorkspaceSceneState, string | null>;
+
+const CLONE_ADDRESS = 'https://github.com/Northwind/ledger-core';
+const CLONE_OWNER_NAME = 'Northwind/ledger-core';
+const CLONE_PROGRESS = { phase: 'Receiving objects', percent: 45 };
+
+let cloneRequestId = '';
 
 const COLUMN_TOP_PX = 116;
 
@@ -168,7 +205,11 @@ type AnswerParams = {
   readonly state: NewWorkspaceSceneState;
 };
 
-const pathOf = (payload: InvokeArgs | undefined): string => {
+type PayloadParams = {
+  readonly payload: InvokeArgs | undefined;
+};
+
+const pathOf = ({ payload }: PayloadParams): string => {
   if (payload === undefined || Array.isArray(payload) || payload instanceof ArrayBuffer) {
     return '';
   }
@@ -177,6 +218,17 @@ const pathOf = (payload: InvokeArgs | undefined): string => {
   }
   const path = payload['path'];
   return typeof path === 'string' ? path : '';
+};
+
+const requestIdOf = ({ payload }: PayloadParams): string => {
+  if (payload === undefined || Array.isArray(payload) || payload instanceof ArrayBuffer) {
+    return '';
+  }
+  if (payload instanceof Uint8Array) {
+    return '';
+  }
+  const requestId = payload['requestId'];
+  return typeof requestId === 'string' ? requestId : '';
 };
 
 const answerFor =
@@ -188,13 +240,28 @@ const answerFor =
       case 'plugin:path|resolve_directory':
         return HOME;
       case 'validate_git_repo':
-        return CHECKS[pathOf(payload)] ?? plainAt({ path: pathOf(payload) });
+        return (
+          CHECKS[pathOf({ payload })] ??
+          (isDirectlyUnderHome({ path: pathOf({ payload }) })
+            ? notFoundAt({ path: pathOf({ payload }) })
+            : plainAt({ path: pathOf({ payload }) }))
+        );
       case 'scan_child_repos':
-        return pathOf(payload) === HARBORLINE ? HARBORLINE_REPOS : [];
+        return pathOf({ payload }) === HARBORLINE ? HARBORLINE_REPOS : [];
       case 'repo_identity':
         return { rootCommits: [], remoteUrl: null };
       case 'read_folder_signals':
-        return pathOf(payload) === ACME_DOCS ? ACME_DOCS_SIGNALS : null;
+        return pathOf({ payload }) === ACME_DOCS ? ACME_DOCS_SIGNALS : null;
+      case 'clone_probe':
+        return state === 'clone-auth'
+          ? Promise.reject({ kind: 'auth_refused', message: 'no login' })
+          : { route: 'git', host: 'github', name: 'ledger-core' };
+      case 'clone_repository':
+        cloneRequestId = requestIdOf({ payload });
+        return new Promise<never>(() => undefined);
+      case 'clone_cancel':
+      case 'clone_free_destination':
+        return null;
       default:
         return null;
     }
@@ -218,6 +285,59 @@ const clickChooseFolder = (): void => {
   button?.click();
 };
 
+const tickCode = (): boolean => {
+  const box = document.querySelector<HTMLInputElement>('[aria-label="Look in ~/Code"]');
+  box?.click();
+  return box !== null;
+};
+
+type ClickParams = {
+  readonly selector: string;
+  readonly text: string;
+};
+
+const clickByText = ({ selector, text }: ClickParams): void => {
+  Array.from(document.querySelectorAll<HTMLElement>(selector))
+    .find((candidate) => candidate.textContent?.trim() === text)
+    ?.click();
+};
+
+const fillCloneAddress = ({ state }: AnswerParams): void => {
+  const input = document.querySelector<HTMLInputElement>('input[placeholder^="owner/name"]');
+  if (input === null) {
+    return;
+  }
+  typeInto({ input, text: state === 'clone' ? CLONE_OWNER_NAME : CLONE_ADDRESS });
+};
+
+const driveClone = ({ state }: AnswerParams): (() => void) => {
+  const timers = [
+    window.setTimeout(() => clickByText({ selector: 'form button', text: 'Clone it' }), 150),
+    window.setTimeout(() => fillCloneAddress({ state }), 300),
+    window.setTimeout(() => {
+      if (state === 'clone') {
+        clickByText({ selector: '[role="tab"]', text: 'GitHub' });
+        return;
+      }
+      clickByText({ selector: 'form button', text: 'Clone' });
+    }, 450),
+  ];
+  const poll =
+    state === 'cloning'
+      ? window.setInterval(() => {
+          if (cloneRequestId !== '') {
+            void emit('clone-progress', { requestId: cloneRequestId, ...CLONE_PROGRESS });
+          }
+        }, 200)
+      : null;
+  return () => {
+    timers.forEach((timer) => window.clearTimeout(timer));
+    if (poll !== null) {
+      window.clearInterval(poll);
+    }
+  };
+};
+
 const fillScratchName = (): void => {
   const input = document.querySelector<HTMLInputElement>('input[placeholder="acme-api"]');
   if (input !== null) {
@@ -226,7 +346,10 @@ const fillScratchName = (): void => {
 };
 
 const seed = ({ state }: AnswerParams): void => {
-  mockSceneIpc(answerFor({ state }));
+  cloneRequestId = '';
+  mockIPC(sceneIpcAnswer({ handler: answerFor({ state }) }), {
+    shouldMockEvents: state === 'cloning',
+  });
   useAppStore.setState({
     hydrated: true,
     workspaces: [NORTHWIND],
@@ -256,6 +379,17 @@ export const NewWorkspaceScene = ({ state, theme }: Props) => {
   useEffect(() => {
     if (!isReady) {
       return;
+    }
+    if (state === 'clone' || state === 'cloning' || state === 'clone-auth') {
+      return driveClone({ state });
+    }
+    if (state === 'likely') {
+      const poll = window.setInterval(() => {
+        if (tickCode()) {
+          window.clearInterval(poll);
+        }
+      }, 150);
+      return () => window.clearInterval(poll);
     }
     const timer = window.setTimeout(() => {
       if (state === 'scratch') {

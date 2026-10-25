@@ -27,8 +27,8 @@ export const IntegrationTaskCard = ({
       muted={isCompleted}
       status={
         <>
-          <Chip tone="neutral" label={branch ?? 'No branch'} size="xs" />
-          {isCompleted && <Chip tone="merged" label="Completed" size="xs" />}
+          <Chip kind="state" tone="neutral" label={branch ?? 'No branch'} />
+          {isCompleted && <Chip kind="state" tone="merged" label="Completed" />}
         </>
       }
       meta={

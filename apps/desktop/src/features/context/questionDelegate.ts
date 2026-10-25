@@ -12,7 +12,7 @@ export const QUESTION_DELEGATE_COPY = {
   offer: 'Let an agent decide',
   chosen: 'An agent decides with',
   running: 'An agent is answering this',
-  retry: 'The agent could not answer. Hand it over again',
+  retry: "The agent couldn't answer. Hand it over again",
   blocked: "A delegated agent can't delegate again. This one is yours to answer",
   recap: 'An agent decides',
   hintsPlaceholder: 'Hints for the agent: what to weigh, what to rule out. Optional.',

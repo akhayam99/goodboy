@@ -16,7 +16,12 @@ export const adaptBitbucketPrs = ({ groups, repo }: Params): InboxRecord[] =>
       kind: 'pr',
       identifier: `#${pullRequest.id}`,
       title: pullRequest.title,
-      state: requestInboxState({ kind: bitbucketPrStateKind({ state: pullRequest.state }) }),
+      state: requestInboxState({
+        kind: bitbucketPrStateKind({
+          state: pullRequest.state,
+          requestState: pullRequest.requestState,
+        }),
+      }),
       stateLabel: stateWord({ value: pullRequest.state }),
       updatedAt: pullRequest.updatedOn,
       url: pullRequest.webUrl ?? '',

@@ -560,7 +560,7 @@ const connectedProvider = (id: 'anthropic' | 'codex', binary: string): ProviderD
   connection: 'connected',
   version: '9.9.9',
   identity: 'mara@harborline.test',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
 });
 
 const claudeLimits = ({

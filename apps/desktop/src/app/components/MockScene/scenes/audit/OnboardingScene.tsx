@@ -11,7 +11,7 @@ import {
 import {
   OPEN_WIZARD_EVENT,
   type OpenWizardDetail,
-} from '../../../../../features/onboarding/onboarding-store';
+} from '../../../../../features/onboarding/onboardingSettings';
 import {
   SETTLED_MOTION,
   WIZARD_SCENE_AGENTS,

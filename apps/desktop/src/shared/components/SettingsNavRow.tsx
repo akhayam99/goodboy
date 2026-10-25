@@ -1,4 +1,4 @@
-import { SelectableRow, StatusDot, cn, type Tone } from '@goodboy/ui';
+import { SelectableRow, StatusDot, cn, type Tone, FOCUS_RING } from '@goodboy/ui';
 
 type SettingsNavStatus = {
   readonly tone: Tone;
@@ -12,8 +12,7 @@ type Props = {
   readonly onClick: () => void;
 };
 
-const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors';
+const FOCUS = cn(FOCUS_RING, 'motion-safe:transition-colors');
 
 export const SettingsNavRow = ({ label, isCurrent = false, status = null, onClick }: Props) => (
   <SelectableRow

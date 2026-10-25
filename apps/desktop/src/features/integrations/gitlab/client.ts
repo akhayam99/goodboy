@@ -1,5 +1,10 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  ProjectId,
+  RequestStateName,
+  WorkspaceId,
+} from '@goodboy/types';
 
 export type GitlabUser = {
   id: number;
@@ -148,6 +153,7 @@ export type GitlabMergeRequest = {
   isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
+  requestState?: RequestStateName;
   updatedAt: string;
   sha?: string | null;
   mergedAt?: string | null;
@@ -202,6 +208,7 @@ export const gitlabCreateMr = async (args: {
   title: string;
   description: string;
   draft: boolean;
+  shouldRemoveSourceBranch?: boolean;
   isMergeWhenPipelineSucceeds?: boolean;
 }): Promise<GitlabMergeRequest> => {
   const { projectId, ...payload } = args;
@@ -553,16 +560,27 @@ export const gitlabUpdateMrState = async ({
   });
 };
 
-export type GitlabMergeMethod = 'merge' | 'squash' | 'rebase';
+type GitlabMergeMethod = 'merge' | 'squash' | 'rebase';
 
-export const gitlabMergeMr = async (
-  workspaceId: WorkspaceId,
-  host: string,
-  projectPath: string,
-  mrIid: number,
-  projectId?: ProjectId,
-  method?: GitlabMergeMethod,
-): Promise<GitlabMergeRequest> => {
+type MergeMrParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly mrIid: number;
+  readonly method?: GitlabMergeMethod;
+  readonly expectedHeadSha?: string | null;
+};
+
+export const gitlabMergeMr = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  mrIid,
+  method,
+  expectedHeadSha,
+}: MergeMrParams): Promise<GitlabMergeRequest> => {
   return invokeCommand<GitlabMergeRequest>('gitlab_merge_mr', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
@@ -570,6 +588,7 @@ export const gitlabMergeMr = async (
     projectPath,
     mrIid,
     ...(method !== undefined ? { method } : {}),
+    ...(expectedHeadSha != null ? { expectedHeadSha } : {}),
   });
 };
 

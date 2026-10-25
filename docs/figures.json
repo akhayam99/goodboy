@@ -57,7 +57,7 @@
   },
   "features/history-backups": {
     "version": "0.27.1",
-    "recipe": "--scene 'rebase-row-versions&brand=1' --window 1280x700 --wait 8000"
+    "recipe": "--scene 'rebase-row-versions&brand=1' --window 1600x700 --wait 8000"
   },
   "features/history-conflicts": {
     "version": "0.27.1",
@@ -121,7 +121,7 @@
   },
   "features/overview-next": {
     "version": "0.27.1",
-    "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 491,217,741,172 --window 1280x800 --wait 8000"
+    "recipe": "--scene 'c05-overview-merged-next&brand=1' --selector '[data-next-stack]' --pad 48 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
     "version": "0.27.1",
@@ -193,7 +193,7 @@
   },
   "features/security-backup-notice": {
     "version": "0.27.1",
-    "recipe": "--scene 'changelog&brand=1' --window 1280x800 --clip 290,20,980,235 --wait 8000"
+    "recipe": "--scene 'changelog&brand=1' --click '0.27.0' --clip 300,8,960,232 --window 1280x800 --wait 8000"
   },
   "features/security-changelog-update": {
     "version": "0.27.1",
@@ -213,7 +213,7 @@
   },
   "features/security-updates": {
     "version": "0.27.1",
-    "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,650,380,150 --wait 8000"
+    "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,590,380,210 --wait 8000"
   },
   "features/setup-about-you": {
     "version": "0.27.1",
@@ -249,7 +249,7 @@
   },
   "features/setup-workspace": {
     "version": "0.27.1",
-    "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x600 --wait 8000"
+    "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x860 --wait 8000"
   },
   "features/storage-branches": {
     "version": "0.27.1",
@@ -293,19 +293,11 @@
   },
   "features/workflow-recap": {
     "version": "0.27.1",
-    "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x800 --wait 8000"
+    "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x900 --wait 8000"
   },
   "features/workflow-run": {
     "version": "0.27.1",
     "recipe": "--scene 'c08-run-ready&brand=1' --window 1280x720 --wait 8000"
-  },
-  "features/workflow-spend": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-builder-modes&click=Limit&brand=1' --window 1280x600 --wait 8000"
-  },
-  "features/workflow-starts": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-builder-modes&click=Starts&brand=1' --window 1280x600 --wait 8000"
   },
   "features/workflow-studio-steps": {
     "version": "0.27.1",

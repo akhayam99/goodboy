@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ROLE_MODEL_SET_MAX, type EffortLevel, type ProviderId } from '@goodboy/types';
-import { Button, StatusDot } from '@goodboy/ui';
+import { Button, ICON_SIZE, StatusDot } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+
 import { RoleModelChip } from './RoleModelChip';
 import type { RoleSetEntry } from '../../../../roleSetEntries';
 

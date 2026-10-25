@@ -113,6 +113,7 @@ describe('send', () => {
   });
 
   it('forwards an agentId when answering a specific agent', async () => {
+    h.state.value = makeStore({ sessionPhaseRuns: { s1: [{ id: 'a9' }] } });
     await executeBridgeCommand(cmd('send', { sessionId: 's1', agentId: 'a9', content: 'yes' }));
     expect(h.sendTurn).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'a9' }));
   });

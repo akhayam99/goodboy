@@ -1,7 +1,7 @@
 import type { BaseDivergence, Project } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { repoBaseDivergence } from '../../../shared/lib/repo';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { GetFn, SetFn } from './types';
 
 const LATEST = createLatestOnly();

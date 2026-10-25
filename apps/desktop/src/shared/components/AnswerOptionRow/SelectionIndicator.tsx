@@ -1,7 +1,6 @@
 import { Check } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly mode: OpenQuestionSelectMode;
@@ -19,7 +18,7 @@ export const SelectionIndicator = ({ mode, selected }: Props) => (
   >
     {selected &&
       (mode === 'many' ? (
-        <Check size={ICON_SIZE.mark} strokeWidth={3} aria-hidden />
+        <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
       ) : (
         <span className="size-1.5 rounded-full bg-current" />
       ))}

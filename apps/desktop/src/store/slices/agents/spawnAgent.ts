@@ -31,7 +31,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
-import { requireMountTarget } from '../resolve/mountTarget';
+import { namedMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
   fanOutClusters,
@@ -42,19 +42,21 @@ import type { SpawnFocus } from '../session-view/spawnFocus';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
 import { scopedKindRouting } from './scopedKindRouting';
 import { sendAutoKickoff } from './sendAutoKickoff';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
-import { sessionReads } from '../state-writes/sessionReads';
+import { createStaleMountError } from '../resolve/rebuildFailure/createStaleMountError';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
+import { OPEN_PROVIDER_SETTINGS } from '../notifications/errorRecovery';
 
 const spawnQueue = createKeyedQueue();
 
 type SpawnArgs = {
   stepId?: StepId;
   mountId?: MountId;
+  expectedMountRevision?: number;
   workflowRunId?: WorkflowRunId;
   name?: string;
   model?: string;
@@ -95,6 +97,13 @@ type Params = {
 
 const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise<AgentId> => {
   const state = get();
+  if (
+    args.kindOverride === 'resolver' &&
+    args.mountId !== undefined &&
+    namedMountTarget({ get, sessionId, mountId: args.mountId }) === null
+  ) {
+    throw new Error('This repository is no longer part of the session');
+  }
   let resolvedName = args.name;
   let stepPromptPrefix = '';
   if (args.stepId) {
@@ -130,6 +139,13 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     await spawnQueue.run({
       key: sessionId,
       task: async () => {
+        if (
+          args.expectedMountRevision !== undefined &&
+          namedMountTarget({ get, sessionId, mountId: args.mountId })?.mountRevision !==
+            args.expectedMountRevision
+        ) {
+          throw createStaleMountError();
+        }
         const currentRuns = get().sessionPhaseRuns[sessionId] ?? [];
         const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
         const agentName =
@@ -147,7 +163,12 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         const routing = scopedKindRouting({ state: get(), settings, kind: resolvedKind });
         if (routing.noAllowedModel === true && args.provider == null && args.model == null) {
           const error = new ReportedError(NO_ALLOWED_MODEL_MESSAGE);
-          await get().reportError({ title: NO_ALLOWED_MODEL_TITLE, error, sessionId });
+          await get().reportError({
+            title: NO_ALLOWED_MODEL_TITLE,
+            error,
+            sessionId,
+            recovery: OPEN_PROVIDER_SETTINGS,
+          });
           throw error;
         }
         if (
@@ -324,7 +345,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       instructions: kickoff,
       humanInstructions: machineRules === null ? null : humanPrompt,
       phase: 'queued',
-      mountTarget: requireMountTarget({ get, sessionId }),
+      mountTarget: namedMountTarget({ get, sessionId, mountId: args.mountId }),
       ...(args.resolveBatch !== undefined && { batch: args.resolveBatch }),
       ...(args.resolveLaunch !== undefined && { launch: args.resolveLaunch }),
     });

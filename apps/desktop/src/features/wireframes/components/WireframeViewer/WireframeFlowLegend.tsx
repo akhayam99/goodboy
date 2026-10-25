@@ -1,4 +1,4 @@
-import { FLOW_EDGE_GLYPH } from './WireframeFlowOverview';
+import { FLOW_EDGE_GLYPH } from '../../flowLayout/buildFlowLayout';
 
 const ENTRIES = [
   { key: 'next', glyph: '→', label: 'next' },

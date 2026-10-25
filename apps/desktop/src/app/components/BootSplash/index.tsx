@@ -4,6 +4,7 @@ import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 import type { NewerDatabase } from '../../../shared/lib/newerDatabase';
 import { BootBrand } from './BootBrand';
 import { BootErrorRecovery } from './BootErrorRecovery';
+import { DatabaseRecovery } from './DatabaseRecovery';
 import { NewerDatabaseScreen } from './NewerDatabaseScreen';
 import { BootSlowNotice } from './BootSlowNotice';
 import { BootStage } from './BootStage';
@@ -71,15 +72,18 @@ export const BootSplash = ({
   }
 
   if (hasError) {
-    const isDatabaseFailure = error === DATABASE_UNAVAILABLE_MESSAGE;
     return (
       <div className="relative flex h-screen flex-col items-center justify-center gap-8 bg-backdrop-cover text-foreground">
         <BootBrand />
-        <BootErrorRecovery
-          error={error}
-          category={bootErrorCategory({ phase: failedPhase ?? phase, isDatabaseFailure })}
-          onRetry={isDatabaseFailure ? undefined : onRetry}
-        />
+        {error === DATABASE_UNAVAILABLE_MESSAGE ? (
+          <DatabaseRecovery error={error} />
+        ) : (
+          <BootErrorRecovery
+            error={error}
+            category={bootErrorCategory({ phase: failedPhase ?? phase })}
+            onRetry={onRetry}
+          />
+        )}
       </div>
     );
   }
@@ -99,17 +103,9 @@ export const BootSplash = ({
 
 type BootErrorCategoryParams = {
   readonly phase: BootPhase;
-  readonly isDatabaseFailure: boolean;
 };
 
-export const bootErrorCategory = ({
-  phase,
-  isDatabaseFailure,
-}: BootErrorCategoryParams): string => {
-  if (isDatabaseFailure) {
-    return 'database';
-  }
-
+export const bootErrorCategory = ({ phase }: BootErrorCategoryParams): string => {
   return phase === 'migrating'
     ? 'migration'
     : phase === 'loading-settings'

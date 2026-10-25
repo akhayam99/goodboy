@@ -40,9 +40,9 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
         <div className="flex min-w-0 flex-col gap-1">
           <h3 className="text-title text-foreground">{row.title}</h3>
           {carrier === null ? (
-            <p className="text-label text-muted-foreground">{row.node.label}</p>
+            <p className="text-meta text-muted-foreground">{row.node.label}</p>
           ) : (
-            <p className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
               <span className="min-w-0 truncate">{`${row.node.label} as ${carrier.name}`}</span>
               <button
                 type="button"
@@ -84,11 +84,11 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
           <SectionHeader label="Routing" />
           <p className="text-body text-foreground">{partRoutingLabel({ row })}</p>
           {proposal === null ? (
-            <p className="text-label text-muted-foreground">
+            <p className="text-meta text-muted-foreground">
               The planner proposed no model, so the part runs on Auto.
             </p>
           ) : (
-            <p className="text-label text-muted-foreground">{proposal.reason}</p>
+            <p className="text-meta text-muted-foreground">{proposal.reason}</p>
           )}
         </section>
       </div>

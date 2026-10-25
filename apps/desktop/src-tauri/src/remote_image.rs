@@ -12,16 +12,25 @@ use tauri::State;
 use tokio::net::lookup_host;
 
 const MAX_URL_LEN: usize = 4096;
-const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+use crate::util::limits::MAX_IMAGE_BYTES;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 const BLOCKED_SUFFIXES: &[&str] = &[".localhost", ".local", ".internal", ".home.arpa"];
 
 fn is_blocked_v4(ip: Ipv4Addr) -> bool {
     let octets = ip.octets();
-    if octets[0] == 0 || octets[0] == 127 {
+    if octets[0] == 0 || octets[0] == 127 || octets[0] >= 240 {
         return true;
     }
     if octets[0] == 100 && (64..128).contains(&octets[1]) {
+        return true;
+    }
+    if octets[0] == 198 && (18..20).contains(&octets[1]) {
+        return true;
+    }
+    if octets[0] == 192 && octets[1] == 0 && octets[2] == 0 {
+        return true;
+    }
+    if octets[0] == 192 && octets[1] == 88 && octets[2] == 99 {
         return true;
     }
     ip.is_private()
@@ -36,10 +45,27 @@ fn is_blocked_v6(ip: Ipv6Addr) -> bool {
     if let Some(mapped) = ip.to_ipv4_mapped() {
         return is_blocked_v4(mapped);
     }
-    let first = ip.segments()[0];
+    let segments = ip.segments();
+    let first = segments[0];
     let is_unique_local = first & 0xfe00 == 0xfc00;
     let is_link_local = first & 0xffc0 == 0xfe80;
-    is_unique_local || is_link_local || ip.is_loopback() || ip.is_unspecified() || ip.is_multicast()
+    let is_nat64 = first == 0x0064 && segments[1] == 0xff9b;
+    let is_6to4 = first == 0x2002;
+    let is_teredo = first == 0x2001 && segments[1] == 0;
+    let is_documentation = first == 0x2001 && segments[1] == 0x0db8;
+    let is_discard = first == 0x0100 && segments[1..4] == [0, 0, 0];
+    let is_v4_compatible = segments[..6] == [0, 0, 0, 0, 0, 0];
+    is_unique_local
+        || is_link_local
+        || is_nat64
+        || is_6to4
+        || is_teredo
+        || is_documentation
+        || is_discard
+        || is_v4_compatible
+        || ip.is_loopback()
+        || ip.is_unspecified()
+        || ip.is_multicast()
 }
 
 fn is_blocked_ip(ip: IpAddr) -> bool {
@@ -365,6 +391,14 @@ pub struct LoadToolImageArgs {
     url: String,
 }
 
+const GITHUB_IMAGE_KEY_NEEDED: &str = "GitHub images need a GitHub key stored for this workspace. Goodboy does not borrow the gh sign-in to load them, so add a key in Settings";
+
+fn github_image_token(stored: Option<String>) -> Result<String, MessageError> {
+    stored
+        .filter(|token| !token.is_empty())
+        .ok_or_else(|| MessageError::Refused(GITHUB_IMAGE_KEY_NEEDED.to_string()))
+}
+
 #[tauri::command]
 pub async fn load_tool_image(
     args: LoadToolImageArgs,
@@ -392,15 +426,23 @@ pub async fn load_tool_image(
             ToolAuth::Raw(token)
         }
         "jira" => {
-            let token = crate::jira::read_token(&workspace_id, project_id.as_deref(), &jira_cache)
-                .map_err(|e| e.to_string())?;
             let email = email.ok_or_else(|| "jira images need the connected email".to_string())?;
+            let site_url =
+                site_url.ok_or_else(|| "jira images need the connected site".to_string())?;
+            let token = crate::jira::read_bound_token(
+                &workspace_id,
+                project_id.as_deref(),
+                &site_url,
+                &email,
+                &jira_cache,
+            )
+            .map_err(|e| e.to_string())?;
             ToolAuth::Basic { email, token }
         }
         "github" => {
-            let token = crate::github::read_token(Some(&workspace_id), project_id.as_deref())
-                .ok_or_else(|| "no github token stored for this workspace".to_string())?;
-            ToolAuth::Bearer(token)
+            let stored = crate::github::read_token(Some(&workspace_id), project_id.as_deref())
+                .map_err(|e| e.to_string())?;
+            ToolAuth::Bearer(github_image_token(stored)?)
         }
         other => {
             return Err(MessageError::Refused(format!(
@@ -651,6 +693,50 @@ mod tests {
     }
 
     #[test]
+    fn refuses_every_special_use_range_in_the_table() {
+        for host in [
+            "https://198.18.0.1/a.png",
+            "https://198.19.255.254/a.png",
+            "https://240.0.0.1/a.png",
+            "https://250.1.2.3/a.png",
+            "https://255.255.255.255/a.png",
+            "https://192.0.0.8/a.png",
+            "https://192.88.99.1/a.png",
+            "https://[64:ff9b::7f00:1]/a.png",
+            "https://[64:ff9b::808:808]/a.png",
+            "https://[2002:7f00:1::1]/a.png",
+            "https://[2002:c0a8:101::1]/a.png",
+            "https://[2001::1]/a.png",
+            "https://[2001:db8::1]/a.png",
+            "https://[100::1]/a.png",
+            "https://[::7f00:1]/a.png",
+            "https://[::ffff:198.18.0.1]/a.png",
+            "https://[::ffff:240.0.0.1]/a.png",
+        ] {
+            assert!(validate_image_url(host).is_err(), "accepted {host}");
+        }
+    }
+
+    #[test]
+    fn keeps_the_public_neighbours_of_each_special_use_range() {
+        for host in [
+            "https://198.17.255.255/a.png",
+            "https://198.20.0.1/a.png",
+            "https://239.0.0.1.example.com/a.png",
+            "https://192.0.1.1/a.png",
+            "https://192.88.98.1/a.png",
+            "https://192.88.100.1/a.png",
+            "https://[2001:4860:4860::8888]/a.png",
+            "https://[2606:4700::1111]/a.png",
+            "https://[2003::1]/a.png",
+            "https://[64:ff9a::1]/a.png",
+            "https://[100:0:0:1::1]/a.png",
+        ] {
+            assert!(validate_image_url(host).is_ok(), "refused {host}");
+        }
+    }
+
+    #[test]
     fn treats_a_trailing_dot_host_as_the_same_host() {
         assert!(is_blocked_host("localhost."));
         assert!(is_blocked_host("127.0.0.1."));
@@ -803,6 +889,23 @@ mod tests {
             body.contains("redirect_client\n        .get(redirect_url)")
                 || body.contains("redirect_client.get(redirect_url)"),
             "the redirect request must go out through a plain, unauthenticated client"
+        );
+    }
+
+    #[test]
+    fn a_github_image_without_a_stored_key_says_a_key_is_needed_and_not_the_gh_sign_in() {
+        for stored in [None, Some(String::new())] {
+            let error = super::github_image_token(stored).unwrap_err().to_string();
+            assert!(error.contains("need a GitHub key stored"));
+            assert!(error.contains("gh sign-in"));
+        }
+    }
+
+    #[test]
+    fn a_stored_github_key_is_used_as_it_is() {
+        assert_eq!(
+            super::github_image_token(Some("ghp_example".to_string())).unwrap(),
+            "ghp_example"
         );
     }
 }

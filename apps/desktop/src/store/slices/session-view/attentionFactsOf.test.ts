@@ -228,7 +228,63 @@ describe('isHumanInputReason', () => {
     ['pr-queued', false],
     ['pr-approved', false],
     ['unread-reply', false],
+    ['run-stopped', false],
+    ['run-paused-at-limit', true],
+    ['run-waits-for-go', true],
+    ['auto-needs-you', true],
+    ['slack-reply-waiting', true],
   ])('says %s is human input: %s', (reason, expected) => {
     expect(isHumanInputReason({ reason })).toBe(expected);
+  });
+});
+
+describe('attentionFactsOf and a deferred reason', () => {
+  const deferred = (...reasons: ReadonlyArray<SessionAttentionReason>) => new Set(reasons);
+
+  it('leaves out failing checks that the person put away, and keeps the rest', () => {
+    const pr = livePr({ checks: 'failure', reviewDecision: 'changes_requested' });
+
+    expect(attentionFactsOf({ ...base, pr, deferredReasons: deferred('ci-failed') })).toEqual([
+      'changes-requested',
+    ]);
+  });
+
+  it('leaves out an approval that Not now put away', () => {
+    const pr = livePr({ state: 'approved', reviewDecision: 'approved' });
+
+    expect(attentionFactsOf({ ...base, pr, deferredReasons: deferred('pr-approved') })).toEqual([]);
+  });
+
+  it('brings the reason back when the deferral ends', () => {
+    const pr = livePr({ checks: 'failure' });
+
+    expect(attentionFactsOf({ ...base, pr, deferredReasons: deferred() })).toEqual(['ci-failed']);
+    expect(attentionFactsOf({ ...base, pr })).toEqual(['ci-failed']);
+  });
+
+  it.each<SessionAttentionReason>([
+    'needs-approval',
+    'plan-approval',
+    'open-question',
+    'fix-needs-you',
+    'run-waits-for-go',
+    'auto-needs-you',
+    'slack-reply-waiting',
+    'run-paused-at-limit',
+  ])('never defers %s, which asks the person for input', (reason) => {
+    const holding = {
+      ...base,
+      pr: livePr(),
+      hasBlockedAgent: reason === 'needs-approval',
+      hasPlanWaiting: reason === 'plan-approval',
+      openQuestionCount: reason === 'open-question' ? 1 : 0,
+      fixNeedsYouCount: reason === 'fix-needs-you' ? 1 : 0,
+      hasRunWaitingForGo: reason === 'run-waits-for-go',
+      hasAutoNeedsYou: reason === 'auto-needs-you',
+      hasSlackReplyWaiting: reason === 'slack-reply-waiting',
+      hasLimitPausedRun: reason === 'run-paused-at-limit',
+    };
+
+    expect(attentionFactsOf({ ...holding, deferredReasons: deferred(reason) })).toEqual([reason]);
   });
 });

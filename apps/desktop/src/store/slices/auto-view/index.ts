@@ -1,5 +1,5 @@
 import { tauriDatabase } from '../../../shared/lib/db';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { SliceDeps } from '../../slice-types';
 import { readAutoTreeViews } from './readAutoTreeViews';
 import { sameAutoTreeViews } from './sameAutoTreeViews';

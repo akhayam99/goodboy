@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ConfirmPopover, Skeleton, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE, Skeleton, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { DetachDetails } from './DetachDetails';
 import { CHECKING_STATUS, detachActionFor, type DetachPlan } from './detachPlan';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';

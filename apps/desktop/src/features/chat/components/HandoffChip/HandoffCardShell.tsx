@@ -10,7 +10,7 @@ export const HandoffCardShell = ({ children }: Props) => (
     data-testid="handoff-card"
     tone="neutral"
     variant="leftBorder"
-    className="flex w-full max-w-xl flex-col gap-2 text-label"
+    className="flex w-full max-w-xl flex-col gap-2 text-meta"
   >
     {children}
   </TranscriptShell>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Checkbox, Eyebrow, Input, Switch } from '@goodboy/ui';
+import { Checkbox, Eyebrow, Input, SkeletonRow, Switch } from '@goodboy/ui';
 import type { SlackIntegrationBinding, SlackIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { IntegrationConnectedRow } from '../../components/IntegrationConnectedRow';
@@ -90,9 +90,7 @@ export const SlackSettings = ({ workspaceId, slack, hasHeaderDisconnect = false 
               }}
             />
           ))}
-          {channels.length === 0 ? (
-            <span className="text-meta text-muted-foreground">Loading your channels…</span>
-          ) : null}
+          {channels.length === 0 ? <SkeletonRow label="Loading channels" /> : null}
         </div>
         <Switch
           label="Private channels and direct messages"

@@ -145,7 +145,13 @@ const tabOf = ({ id, owner, title, cwd, mountId }: TabParams): TerminalTab => ({
 
 const LIVE = [
   { id: ZSH_TERMINAL, cwd: PAYMENTS_TREE, pid: 4090, foregroundPid: 4090 },
-  { id: DEV_TERMINAL, cwd: PAYMENTS_TREE, pid: DEV_SHELL_PID, foregroundPid: DEV_SERVER_PID },
+  {
+    id: DEV_TERMINAL,
+    cwd: PAYMENTS_TREE,
+    pid: DEV_SHELL_PID,
+    foregroundPid: DEV_SERVER_PID,
+    foregroundCommand: 'pnpm dev',
+  },
   { id: ZSH_TWO_TERMINAL, cwd: PAYMENTS_TREE, pid: 4110, foregroundPid: 4110 },
   { id: LEDGER_TERMINAL, cwd: LEDGER_TREE, pid: 4200, foregroundPid: 4200 },
   { id: NOTIFY_TERMINAL, cwd: NOTIFY_TREE, pid: 4300, foregroundPid: 4300 },

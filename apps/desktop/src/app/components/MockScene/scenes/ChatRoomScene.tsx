@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
-import { mockChatSessions } from '../../../../features/workspace-chat/mockChatSessions';
+import { mockChatSessions } from '../backends/chat/mockChatSessions';
 import { ChatStudio } from '../../../../features/workspace-chat/components/ChatStudio';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../../features/onboarding/openCommandPaletteEvent';
 import { PaletteOverlay } from '../../../../features/palette/components/PaletteOverlay';
@@ -23,7 +23,7 @@ export const CONSENT_CHAT_ID = `mock-chat-${WORKSPACE_ID}-consent` as ChatId;
 const CLAUDE: ProviderDisplayInfo = {
   id: 'anthropic',
   binary: 'claude',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '1.0.0',
   identity: 'mock-team',

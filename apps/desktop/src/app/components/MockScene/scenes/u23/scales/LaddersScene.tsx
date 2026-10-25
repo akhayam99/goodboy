@@ -38,7 +38,7 @@ export const LaddersScene = () => (
     <Section title="Icon ladder">
       <ul className="flex flex-col gap-2">
         {ICON_RUNGS.map((rung) => (
-          <li key={rung.token} className="flex items-center gap-3 text-label">
+          <li key={rung.token} className="flex items-center gap-3 text-meta">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-fill text-foreground">
               <GitBranch size={rung.size} aria-hidden />
             </span>
@@ -54,24 +54,24 @@ export const LaddersScene = () => (
     <Section title="Type roles">
       <ul className="flex flex-col gap-2">
         {ROLE_SAMPLES.map((entry) => (
-          <li key={entry.role} className="flex items-baseline gap-3 text-label">
+          <li key={entry.role} className="flex items-baseline gap-3 text-meta">
             <span className="w-40 shrink-0 text-code text-foreground">
               {`TEXT_ROLE.${entry.role}`}
             </span>
             <span className={TEXT_ROLE[entry.role]}>{entry.sample}</span>
           </li>
         ))}
-        <li className="flex items-baseline gap-3 text-label">
+        <li className="flex items-baseline gap-3 text-meta">
           <span className="w-40 shrink-0 text-code text-foreground">TEXT_ROLE.disabled</span>
-          <button type="button" disabled className={`text-label ${TEXT_ROLE.disabled}`}>
+          <button type="button" disabled className={`text-meta ${TEXT_ROLE.disabled}`}>
             Unavailable until the push lands
           </button>
         </li>
-        <li className="flex items-baseline gap-3 text-label">
+        <li className="flex items-baseline gap-3 text-meta">
           <span className="w-40 shrink-0 text-foreground">Numbers</span>
           <span className="tabular-nums text-foreground">$12.40 · 1,284 tokens · 3m 07s · 92%</span>
         </li>
-        <li className="flex items-baseline gap-3 text-label">
+        <li className="flex items-baseline gap-3 text-meta">
           <span className="w-40 shrink-0 text-foreground">Code only</span>
           <span className="font-mono text-code text-foreground">ak/fix-rounding a1b2c3d</span>
         </li>
@@ -82,7 +82,7 @@ export const LaddersScene = () => (
         {ROW_HEIGHTS.map((row) => (
           <li
             key={row.px}
-            className={`flex ${row.height} items-center gap-3 rounded-md bg-fill px-3 text-label text-foreground`}
+            className={`flex ${row.height} items-center gap-3 rounded-md bg-fill px-3 text-meta text-foreground`}
           >
             <span className="w-16 shrink-0 text-code">{row.token}</span>
             <span className={`tabular-nums ${TEXT_ROLE.secondary}`}>{row.px}px</span>
@@ -93,7 +93,7 @@ export const LaddersScene = () => (
     <Section title="Gap steps">
       <ul className="flex flex-col gap-2">
         {GAP_STEPS.map((step) => (
-          <li key={step.px} className="flex items-center gap-3 text-label">
+          <li key={step.px} className="flex items-center gap-3 text-meta">
             <span className="w-16 shrink-0 text-code text-foreground">{step.token}</span>
             <span className={`w-12 shrink-0 tabular-nums ${TEXT_ROLE.secondary}`}>{step.px}px</span>
             <span className={`flex ${step.gap}`}>

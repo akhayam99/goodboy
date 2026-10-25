@@ -1,10 +1,10 @@
-import { Button, StatusDot, Tooltip, TruncatedText, type Tone } from '@goodboy/ui';
+import { Button, ICON_SIZE, StatusDot, Tooltip, TruncatedText, type Tone } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { actionButtonStateOf } from '../../../../features/actions/actionButtonStateOf';
 import { useActionControls } from '../../../../features/actions/useActionControls';
 import type { MountActionTarget } from '../../../../features/actions/types';

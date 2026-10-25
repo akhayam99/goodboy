@@ -30,6 +30,7 @@ export type MountBitbucketPrState = SessionBitbucketPrEntry & {
 export type SessionBitbucketPrEntry = {
   readonly pr: BitbucketPullRequest | null;
   readonly fetchedAt: IsoDateTime | null;
+  readonly failedAt?: IsoDateTime | null;
   readonly loading: boolean;
   readonly error: string | null;
 };
@@ -41,7 +42,7 @@ export type BitbucketPrSliceState = {
   readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
 };
 
-export const initialBitbucketPrState: BitbucketPrSliceState = {
+export const bitbucketPrInitialState: BitbucketPrSliceState = {
   mountBitbucketPr: {},
   mountSelectedBitbucketPr: {},
   sessionBitbucketPr: {},

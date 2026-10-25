@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
 import { BranchChip } from '../../central/branches/BranchChip';
@@ -14,13 +16,14 @@ import { BranchesCard } from '../../central/cards/BranchesCard';
 import { cardsOutsideRunningOf } from '../../central/cards/cardsOutsideRunningOf';
 import { DoneCard } from '../../central/cards/DoneCard';
 import { doneSummaryOf } from '../../central/cards/doneSummaryOf';
+import { latestDoneOf } from '../../central/cards/latestDoneOf';
 import { NextRowsCard } from '../../central/cards/NextRowsCard';
 import { RunningCard } from '../../central/cards/RunningCard';
 import { useDoneRows } from '../../central/done/useDoneRows';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import { useNextCards } from '../../central/next/useNextCards';
 import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
-import { liveGroupsOf } from '../../central/now/liveGroupsOf';
+import { useLiveGroups } from '../../central/now/useLiveGroups';
 import { runLeadOf } from '../../central/now/runLeadOf';
 import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
@@ -72,14 +75,14 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
   const isArchived = session.archivedAt != null;
   const model = useSessionWorkModel({ session });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const clock = useNow(AUTO_CLOCK_MS, true);
+  const clock = useNow(AUTO_CLOCK_MS, model.autoTrees.length > 0);
   const autoTargets = useMemo(
     () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock }),
     [agents, clock, model.autoTrees],
   );
   const { cards, actionsFor, openFor } = useNextCards({ session, model, autoTargets });
   const days = useDoneRows({ session, model });
-  const groups = useMemo(() => liveGroupsOf({ model, agents, now: clock }), [agents, clock, model]);
+  const groups = useLiveGroups({ model, agents, now: clock });
   const nextCards = useMemo(() => cardsOutsideRunningOf({ cards, groups }), [cards, groups]);
   const { facts } = useBranchFacts({ sessionId, groups });
   const detailByMountId = useBranchDetails({ sessionId, facts });
@@ -92,6 +95,17 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     () => doneSummaryOf({ finished: branches.finished, days }),
     [branches.finished, days],
   );
+  const unreadAgentIds = useAppStore(
+    useShallow((state) =>
+      (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY)
+        .filter((agent) => agentHasUnread(agent, false))
+        .map((agent) => agent.id),
+    ),
+  );
+  const latest = useMemo(
+    () => latestDoneOf({ days, unreadAgentIds: new Set(unreadAgentIds) }),
+    [days, unreadAgentIds],
+  );
   const branchLabelOf = useBranchLabels({ sessionId });
   const branchNameOf = useBranchNames({ sessionId });
   const whereOf = useWhereOf({ sessionId });
@@ -103,7 +117,8 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
   const hasLead = !isArchived && nextCards.length > 0;
   const shown = overviewCardsOf({
     cards: nextCards,
-    runningCount: groups.length,
+    runningCount: groups.filter((group) => group.state !== 'stuck').length,
+    stuckCount: groups.filter((group) => group.state === 'stuck').length,
     branchCount: liveEntries.length,
     doneCount: summary.count,
     isArchived,
@@ -154,7 +169,16 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
           <BranchesCard key={card.id} sessionId={sessionId} card={card} entries={liveEntries} />
         );
       case 'done':
-        return <DoneCard key={card.id} sessionId={sessionId} card={card} summary={summary} />;
+        return (
+          <DoneCard
+            key={card.id}
+            sessionId={sessionId}
+            card={card}
+            summary={summary}
+            latest={latest}
+            entries={model.entries}
+          />
+        );
       default: {
         const exhaustive: never = card.id;
         return exhaustive;

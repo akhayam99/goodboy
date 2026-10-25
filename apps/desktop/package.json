@@ -1,6 +1,6 @@
 {
   "name": "@goodboy/desktop",
-  "version": "0.27.15",
+  "version": "0.27.49",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,6 +23,7 @@
     "@goodboy/ui": "workspace:*",
     "@tauri-apps/api": "^2.12.0",
     "@tauri-apps/plugin-dialog": "^2.8.0",
+    "@tauri-apps/plugin-notification": "2.7.0",
     "@tauri-apps/plugin-process": "^2.4.0",
     "@tauri-apps/plugin-updater": "^2.13.0",
     "@xterm/addon-clipboard": "^0.2.0",

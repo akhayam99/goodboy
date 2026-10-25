@@ -1,5 +1,5 @@
 import type { WorkflowAutonomy } from '@goodboy/types';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 
 export type RunAutonomyOption = {
   readonly key: WorkflowAutonomy;

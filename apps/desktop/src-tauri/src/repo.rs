@@ -5,7 +5,8 @@ use crate::worktree::{GitDistance, GitOperation, GitUnknownReason, GitWorkingTre
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-const CONVERSION_IGNORE_ENTRIES: [&str; 2] = ["/.goodboy", "/sessions/"];
+use crate::ignore_file::GOODBOY_IGNORE_ENTRY;
+const CONVERSION_IGNORE_ENTRIES: [&str; 2] = [GOODBOY_IGNORE_ENTRY, "/sessions/"];
 
 const IGNORE_PROBE_PATHS: [&str; 2] = [".goodboy/worktrees/probe", "sessions/probe"];
 
@@ -25,17 +26,13 @@ pub enum GitRepoErrorKind {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitRepoCheck {
-    #[serde(rename = "isRepo")]
     pub is_repo: bool,
-    #[serde(rename = "rootPath")]
     pub root_path: Option<String>,
-    #[serde(rename = "resolvedPath")]
     pub resolved_path: Option<String>,
-    #[serde(rename = "defaultBranch")]
     pub default_branch: Option<String>,
     pub error: Option<String>,
-    #[serde(rename = "errorKind")]
     pub error_kind: Option<GitRepoErrorKind>,
 }
 
@@ -57,18 +54,14 @@ impl GitRepoCheck {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceGitStatus {
     pub state: &'static str,
     pub branch: Option<String>,
-    #[serde(rename = "headSubject")]
     pub head_subject: Option<String>,
-    #[serde(rename = "upstreamDistance")]
     pub upstream_distance: GitDistance,
-    #[serde(rename = "workingTree")]
     pub working_tree: GitWorkingTree,
-    #[serde(rename = "upstream")]
     pub upstream: Option<String>,
-    #[serde(rename = "inProgress")]
     pub in_progress: Option<GitOperation>,
 }
 
@@ -113,10 +106,9 @@ impl RepoInitError {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InitializedRepo {
-    #[serde(rename = "rootPath")]
     pub root_path: String,
-    #[serde(rename = "remoteUrl")]
     pub remote_url: String,
     pub branch: String,
 }
@@ -129,7 +121,7 @@ pub(crate) enum RepoState {
 
 struct GitignoreSnapshot {
     existed: bool,
-    content: Option<String>,
+    content: Option<Vec<u8>>,
 }
 
 #[tauri::command]
@@ -248,10 +240,10 @@ pub(crate) fn is_inside_repo(path: &Path) -> bool {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
 pub struct ChildRepo {
     pub name: String,
     pub path: String,
-    #[serde(rename = "defaultBranch")]
     pub default_branch: Option<String>,
 }
 
@@ -315,7 +307,7 @@ fn normalize_remote_url(remote: &str) -> Option<String> {
     Some(normalized.trim_end_matches('/').to_lowercase())
 }
 
-fn repo_identity_blocking(path: &Path) -> Result<RepoIdentity, RepoInitError> {
+pub(crate) fn repo_identity_blocking(path: &Path) -> Result<RepoIdentity, RepoInitError> {
     if !path.is_dir() || !is_repo_root(path) {
         return Err(RepoInitError::DirNotFound(
             path.to_string_lossy().into_owned(),
@@ -554,11 +546,11 @@ fn project_fetch_blocking(
     if !root.is_dir() || !is_repo_root(root) {
         return Ok(());
     }
-    let Some(remote) = default_remote_name(root) else {
+    let Some(remote) = crate::remote::resolve(root) else {
         return Ok(());
     };
-    let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
-    let result = crate::github::run_git_authenticated(
+    let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
+    let result = crate::remote_auth::run_git_authenticated(
         &["fetch", "--no-tags", "--prune", &remote],
         &project_path,
         token.as_deref(),
@@ -569,18 +561,6 @@ fn project_fetch_blocking(
         ));
     }
     Ok(())
-}
-
-pub(crate) fn default_remote_name(root: &Path) -> Option<String> {
-    if let Some(upstream) = crate::worktree::resolve_upstream(root) {
-        if let Some((remote, _)) = upstream.split_once('/') {
-            return Some(remote.to_string());
-        }
-    }
-    run_git(root, &["remote"])
-        .ok()
-        .and_then(|out| out.lines().next().map(|line| line.trim().to_string()))
-        .filter(|remote| !remote.is_empty())
 }
 
 fn blank_status(state: &'static str) -> WorkspaceGitStatus {
@@ -737,27 +717,17 @@ fn apply_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
 }
 
 fn write_ignore_entries(root: &Path, skip_goodboy: bool) -> Result<(), RepoInitError> {
-    let path = root.join(".gitignore");
-    let mut next = std::fs::read_to_string(&path).unwrap_or_default();
-    let mut added = false;
-    for entry in CONVERSION_IGNORE_ENTRIES {
-        if skip_goodboy && entry == "/.goodboy" {
-            continue;
-        }
-        if next.lines().any(|line| line.trim() == entry) {
-            continue;
-        }
-        if !next.is_empty() && !next.ends_with('\n') {
-            next.push('\n');
-        }
-        next.push_str(entry);
-        next.push('\n');
-        added = true;
-    }
-    if !added {
-        return Ok(());
-    }
-    std::fs::write(&path, next)?;
+    let entries: Vec<&str> = CONVERSION_IGNORE_ENTRIES
+        .iter()
+        .copied()
+        .filter(|entry| !(skip_goodboy && *entry == GOODBOY_IGNORE_ENTRY))
+        .collect();
+    crate::ignore_file::append_ignore_entries(&root.join(".gitignore"), &entries).map_err(
+        |error| match error {
+            crate::ignore_file::IgnoreWriteError::Io(inner) => RepoInitError::Io(inner),
+            other => RepoInitError::Io(std::io::Error::other(other.to_string())),
+        },
+    )?;
     Ok(())
 }
 
@@ -846,7 +816,7 @@ impl GitignoreSnapshot {
         let path = root.join(".gitignore");
         Self {
             existed: path.exists(),
-            content: std::fs::read_to_string(&path).ok(),
+            content: std::fs::read(&path).ok(),
         }
     }
 
@@ -861,7 +831,7 @@ impl GitignoreSnapshot {
         let Some(previous) = self.content.as_ref() else {
             return Ok(());
         };
-        if std::fs::read_to_string(&path).ok().as_ref() == Some(previous) {
+        if std::fs::read(&path).ok().as_ref() == Some(previous) {
             return Ok(());
         }
         std::fs::write(&path, previous)
@@ -900,6 +870,9 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
         message: err.to_string(),
     })
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -978,6 +951,33 @@ mod tests {
         assert!(git_ignores(&root, "sessions/plan-1/.goodboy"));
         assert!(git_ignores(&root, ".goodboy/worktrees/probe"));
         assert!(!git_ignores(&root, "src/app/sessions/page.ts"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_gitignore_that_is_not_utf_8_keeps_its_bytes_through_the_conversion() {
+        let root = test_root("repo-init-bytes");
+        let original: Vec<u8> = b"caf\xe9/\nnode_modules\n".to_vec();
+        std::fs::write(root.join(".gitignore"), &original).unwrap();
+
+        convert(&root).unwrap();
+
+        let written = std::fs::read(root.join(".gitignore")).unwrap();
+        assert!(written.starts_with(&original));
+        assert!(written.ends_with(b"/sessions/\n"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_failed_conversion_puts_back_a_gitignore_that_is_not_utf_8() {
+        let root = test_root("repo-init-bytes-rollback");
+        let original: Vec<u8> = b"caf\xe9/\n/sessions/\n!/sessions/\n".to_vec();
+        std::fs::write(root.join(".gitignore"), &original).unwrap();
+
+        let err = convert(&root).unwrap_err();
+
+        assert!(matches!(err, RepoInitError::IgnoreNotApplied(_)));
+        assert_eq!(std::fs::read(root.join(".gitignore")).unwrap(), original);
         std::fs::remove_dir_all(root).unwrap();
     }
 

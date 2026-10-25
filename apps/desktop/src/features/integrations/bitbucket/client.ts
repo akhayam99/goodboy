@@ -1,5 +1,10 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
+import type {
+  IntegrationCredentialId,
+  ProjectId,
+  RequestStateName,
+  WorkspaceId,
+} from '@goodboy/types';
 
 export type BitbucketUser = {
   readonly uuid: string;
@@ -35,6 +40,7 @@ export type BitbucketPullRequest = {
   readonly title: string;
   readonly description: string;
   readonly state: BitbucketPullRequestState;
+  readonly requestState?: RequestStateName;
   readonly createdOn: string;
   readonly updatedOn: string;
   readonly sourceBranch: string;
@@ -312,6 +318,7 @@ type MergeParams = BitbucketPullRequestTarget & {
   readonly closeSourceBranch?: boolean;
   readonly message?: string;
   readonly strategy?: BitbucketMergeStrategyName;
+  readonly expectedHeadSha?: string | null;
 };
 
 export const bitbucketMergePullRequest = async ({
@@ -324,6 +331,7 @@ export const bitbucketMergePullRequest = async ({
   closeSourceBranch,
   message,
   strategy,
+  expectedHeadSha,
 }: MergeParams): Promise<BitbucketPullRequest> =>
   invokeCommand<BitbucketPullRequest>('bitbucket_merge_pull_request', {
     workspaceId,
@@ -335,6 +343,7 @@ export const bitbucketMergePullRequest = async ({
     closeSourceBranch: closeSourceBranch ?? null,
     message: message ?? null,
     mergeStrategy: strategy ?? null,
+    expectedHeadSha: expectedHeadSha ?? null,
   });
 
 type UpdateParams = BitbucketPullRequestTarget & {

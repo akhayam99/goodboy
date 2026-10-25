@@ -14,6 +14,13 @@ const NOW = Date.parse('2026-09-27T10:00:00.000Z');
 const DAY_S = 24 * 60 * 60;
 const nowS = NOW / 1000;
 
+const SAFE_STATES: ReadonlySet<string> = new Set([
+  'merged-via-merge',
+  'merged-via-rebase',
+  'merged-via-pr',
+  'no-own-commits',
+]);
+
 const branch = (patch: Partial<ProjectBranch>): ProjectBranch => ({
   name: 'goodboy/ledger-close',
   sha: 'abc',
@@ -21,6 +28,7 @@ const branch = (patch: Partial<ProjectBranch>): ProjectBranch => ({
   lastCommitAt: nowS - DAY_S,
   location: 'on-origin',
   mergeState: { kind: 'merged-via-pr' },
+  isSafeToDelete: SAFE_STATES.has(patch.mergeState?.kind ?? 'merged-via-pr'),
   behind: null,
   ...patch,
 });
@@ -44,6 +52,13 @@ describe('classifyBranch', () => {
 
     expect(entry.verdict).toBe('safe-merged');
     expect(entry.owner).toEqual({ kind: 'session', sessionId: 'session-close' });
+  });
+
+  it('never decides safe on its own: the flag Rust sent is the only source', () => {
+    expect(classify({ isSafeToDelete: false }).verdict).not.toBe('safe-merged');
+    expect(
+      classify({ mergeState: { kind: 'not-merged', ahead: 1 }, isSafeToDelete: true }).verdict,
+    ).toBe('safe-merged');
   });
 
   it('calls a branch that never had commits safe with no commits', () => {

@@ -1,5 +1,5 @@
 import { InlineMarkdown, cn } from '@goodboy/ui';
-import type { SessionRowTitle as RowTitle } from '../../session/sessionTitle';
+import type { SessionRowTitle as RowTitle } from '../../../shared/utils/sessionTitle';
 
 type Props = RowTitle & {
   readonly className?: string;

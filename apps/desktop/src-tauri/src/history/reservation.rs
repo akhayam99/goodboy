@@ -1,3 +1,4 @@
+use crate::app_paths::AppPathsError;
 use crate::worktree::sanitize_slug;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -16,18 +17,16 @@ pub(super) const RESERVATION_HEADER: &str = "goodboy history copy v1";
 
 pub(super) const RESERVATION_LOCK: &str = "goodboy-history.lock";
 
-pub(crate) fn reservations_dir() -> PathBuf {
-    dirs::home_dir()
-        .map(|home| home.join(".goodboy").join(RESERVATIONS_DIR))
-        .unwrap_or_default()
+pub(crate) fn reservations_dir() -> Result<PathBuf, AppPathsError> {
+    Ok(crate::app_paths::data_dir()?.join(RESERVATIONS_DIR))
 }
 
-fn reservation_of(slug: &str) -> PathBuf {
-    reservations_dir().join(format!("{COPY_PREFIX}{}", sanitize_slug(slug)))
+fn reservation_of(slug: &str) -> Result<PathBuf, AppPathsError> {
+    Ok(reservations_dir()?.join(format!("{COPY_PREFIX}{}", sanitize_slug(slug))))
 }
 
-pub(crate) fn copy_path_of(slug: &str) -> PathBuf {
-    reservation_of(slug).join(COPY_DIR)
+pub(crate) fn copy_path_of(slug: &str) -> Result<PathBuf, AppPathsError> {
+    Ok(reservation_of(slug)?.join(COPY_DIR))
 }
 
 pub(super) fn held_locks() -> &'static std::sync::Mutex<HashMap<PathBuf, std::fs::File>> {

@@ -1,6 +1,6 @@
 import { Pin } from 'lucide-react';
-import { Button, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import type { RunnableScript } from '../../buildSessionScripts';
 
 type Props = {

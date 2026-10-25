@@ -4,7 +4,7 @@ import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
-import { createLatestOnly } from '../../../../../store/slices/state-writes/latestOnly';
+import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';

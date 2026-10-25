@@ -4,7 +4,7 @@ import {
   readOriginAhead,
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
-import { worktreeStatus } from '../../../features/worktree/worktree';
+import { readWorktreeStatusNow } from '../../runtime/worktreeStatuses/cache';
 import { assertCleanTree } from './assertCleanTree';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
@@ -52,10 +52,10 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
     if (typeof ahead === 'string') {
       return stopWith({ reason: 'failed', message: ahead, files: [], sha: null });
     }
-    const status = await worktreeStatus({
+    const status = await readWorktreeStatusNow({
       worktreePath: target.worktreePath,
       baseBranch: target.baseBranch,
-    }).catch(() => null);
+    });
     const head = status?.head ?? null;
     if (head === null) {
       return stopWith({

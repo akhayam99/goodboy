@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { usePendingAction } from '../../../../../../shared/hooks/usePendingAction';
 import { exploreOpen } from '../../../../../explore/explore';
 import type { ChangeFile, ChangeTurn } from '../../../../../file-versions/changeTurnsOf';

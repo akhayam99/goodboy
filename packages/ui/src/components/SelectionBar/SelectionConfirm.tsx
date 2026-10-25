@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { InlineConfirm, type ConfirmAltAction, type ConfirmRole } from '../InlineConfirm';
 import { cn } from '../../cn';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 
 const SHOWN_ITEMS = 3;
 
@@ -34,13 +35,7 @@ export const SelectionConfirm = ({
   const shown = items.slice(0, SHOWN_ITEMS);
   const more = items.length - shown.length;
   return (
-    <InlineConfirm
-      {...rest}
-      className={cn(
-        'w-full max-w-sm rounded-lg border border-border bg-floating shadow-lg',
-        className,
-      )}
-    >
+    <InlineConfirm {...rest} className={cn(FLOATING_SURFACE, 'w-full max-w-sm', className)}>
       {goes === undefined && stays === undefined ? null : (
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-muted-foreground">
           {goes === undefined ? null : (

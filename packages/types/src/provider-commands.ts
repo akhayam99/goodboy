@@ -1,5 +1,3 @@
-import type { ProviderId } from './provider-registry';
-
 export type ProviderLifecycleAction = 'install' | 'login' | 'logout' | 'update';
 
 export type ProviderPlatform = 'darwin' | 'linux' | 'win32';

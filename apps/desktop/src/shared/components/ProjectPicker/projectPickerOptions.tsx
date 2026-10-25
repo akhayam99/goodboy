@@ -1,6 +1,7 @@
 import type { ListboxOption } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
-import { ICON_SIZE, projectGlyph } from '../conceptIcons';
+import { projectGlyph } from '../conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { projectPickerGroups } from './projectPickerGroups';
 
 type Params = {

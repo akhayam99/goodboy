@@ -31,7 +31,7 @@ export const AgentLine = ({ attempt, toneKey, word, attemptNumber = null }: Prop
     duration ?? formatAge({ from: at, now }),
   ];
   return (
-    <p className="flex min-w-0 items-center gap-2 text-label">
+    <p className="flex min-w-0 items-center gap-2 text-meta">
       <WorkNode state={REVIEW_COMMENT_NODE[toneKey]} label={word} mark={{ kind: 'dot' }} />
       <span className="shrink-0 text-foreground">
         {hasNumber ? `Attempt ${attemptNumber}` : REVIEW_FLOW_LABEL.resolver}

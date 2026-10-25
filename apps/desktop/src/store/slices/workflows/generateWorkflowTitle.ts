@@ -1,4 +1,4 @@
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { devWarn } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
@@ -7,7 +7,6 @@ import { generateTitleText } from './generateTitleText';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_TITLE_SYSTEM_PROMPT = [

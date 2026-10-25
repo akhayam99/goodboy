@@ -6,6 +6,7 @@ import { mountRevision, requestIdentityEquals } from '../project-mounts/mountReq
 import { applyMountGithub } from './mountGithub';
 import { githubRequestIdentity } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
+import { boundedThreadRead } from '../review-source/boundedThreadRead';
 import { syncSourceThreads } from '../review-source/syncSourceThreads';
 import type { MountDetailFailure } from './state';
 import type { GetFn, SetFn } from './types';
@@ -144,14 +145,18 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           });
           return;
         }
-        const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, ghOptions);
+        const detail = await boundedThreadRead({
+          read: () => fetchPrDetail(tauriGhRunner, slug, pr.number, ghOptions),
+        });
         await syncSourceThreads({
           get,
           sessionId,
+          mountId,
           kind: 'github',
           prNumber: pr.number,
           projectId: mount.projectId,
           comments: detail.comments,
+          isCurrent,
         });
         if (!isCurrent()) {
           return;

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
@@ -25,6 +26,7 @@ import {
 } from '../../../../../store';
 import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
+import { sessionHasUnread } from '../../../../../store/slices/session-view/sessionHasUnread';
 import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';
 import { DisplayValueRow } from './DisplayValueRow';
 import { FilterCheckRow } from './FilterCheckRow';
@@ -85,6 +87,15 @@ export const SessionFilterPopover = ({
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
   const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
   const stageBySession = useSessionStages(sessions);
+  const markSessionsRead = useAppStore((state) => state.markSessionsRead);
+  const unreadIds = useAppStore(
+    useShallow((state) =>
+      sessions
+        .filter((session) => session.archivedAt == null)
+        .filter((session) => sessionHasUnread({ state, sessionId: session.id }))
+        .map((session) => session.id),
+    ),
+  );
 
   const { hold, release } = useSidebarPeekHold();
   const dropdown = useDropdown({
@@ -250,6 +261,16 @@ export const SessionFilterPopover = ({
             )}
           </div>
         ) : null}
+        <div className="flex px-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={unreadIds.length === 0}
+            onClick={() => void markSessionsRead({ sessionIds: unreadIds })}
+          >
+            Mark all as read
+          </Button>
+        </div>
         {display.isDefault ? null : (
           <div className="flex px-1">
             <Button size="sm" variant="ghost" onClick={reset}>

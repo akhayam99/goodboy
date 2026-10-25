@@ -25,16 +25,16 @@ let useAppStore: StoryStore;
 
 const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 
-const savedTemplates = (): ReadonlyArray<string | null> =>
+const savedTemplates = (): ReadonlyArray<string | null | undefined> =>
   storySpies.tauriInvoke.mock.calls
-    .filter(([name]) => name === 'set_workspace_overrides')
+    .filter(([name]) => name === 'patch_workspace_overrides')
     .map(
       ([, args]) =>
-        (args as { readonly overrides: OverrideSettings }).overrides.defaultBranchTemplate,
+        (args as { readonly patch: Partial<OverrideSettings> }).patch.defaultBranchTemplate,
     );
 
 const seed = (overrides: Partial<OverrideSettings> = {}) => {
-  stubStoryInvoke({ set_workspace_overrides: null });
+  stubStoryInvoke({ patch_workspace_overrides: null });
   const session = aSession({
     id: 's-retry' as SessionId,
     workspaceId: HARBORLINE.id,

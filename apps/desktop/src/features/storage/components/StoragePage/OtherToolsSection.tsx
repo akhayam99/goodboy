@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Info, Lock, Wrench } from 'lucide-react';
-import { Band, BandRow, SectionHeader } from '@goodboy/ui';
+import { Band, BandRow, ICON_SIZE, SectionHeader } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import type { OtherToolUsage } from '../../otherTools';
@@ -55,7 +55,7 @@ export const OtherToolsSection = () => {
       />
       <Band>
         {shown.length === 0 ? (
-          <p className="px-2 py-2 text-label text-muted-foreground">
+          <p className="px-2 py-2 text-meta text-muted-foreground">
             {isMeasuring ? 'Measuring…' : 'No other tool keeps more than 100 MB on this Mac.'}
           </p>
         ) : (

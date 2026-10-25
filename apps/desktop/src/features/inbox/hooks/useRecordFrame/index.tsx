@@ -6,7 +6,7 @@ import type {
   RecordVerb,
 } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { requestNewSession } from '../../../session/requestNewSession';
 import { pickIssue } from '../../../session/pickIssue';
@@ -20,8 +20,6 @@ import { usePullRequestReviewStart } from '../../usePullRequestReviewStart';
 import { useLaunchMount } from '../../useLaunchMount';
 import { launchMountSourceOf } from '../../launchMountSourceOf';
 import type { InboxRecord } from '../../types';
-
-const START_SESSION_LABEL = 'Start session';
 
 type Params = {
   readonly record: InboxRecord;
@@ -101,7 +99,7 @@ export const useRecordFrame = ({
           />
         );
       case 'kickoff':
-        return <StartButton label={START_SESSION_LABEL} onClick={startKickoff} />;
+        return <StartButton label={NAMES.startSession} onClick={startKickoff} />;
       case 'review':
         return (
           <StartButton

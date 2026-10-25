@@ -1,7 +1,7 @@
 import type { AutoRefusalCode } from '@goodboy/core';
 import { getAutoArtifact, type Database } from '@goodboy/db';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
-import { approveArtifact } from '../../../store/slices/auto/approveArtifact';
+import { approveArtifact } from '../../../store/runtime/auto/approveArtifact';
 import { PLAN_REVISING_REASON } from '../../plans/planRevising';
 
 export type AutoPlanApproval =
@@ -34,7 +34,7 @@ const REFUSAL_TEXT: Readonly<Partial<Record<AutoRefusalCode, string>>> = {
   stale_revision: 'A newer version arrived. Review it before approving.',
   artifact_consumed: 'This plan was already used.',
   artifact_discarded: 'This plan was discarded.',
-  artifact_unknown: 'This plan is not part of an Auto conversation.',
+  artifact_unknown: "This plan isn't part of an Auto conversation.",
 };
 
 const refusalText = ({ code }: RefusalParams): string =>

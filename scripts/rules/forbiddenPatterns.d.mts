@@ -12,17 +12,18 @@ export type SourceFile = {
 export type Rule = {
   readonly id: string;
   readonly kinds: ReadonlyArray<SourceKind>;
-  readonly ledger?: 'guards';
+  readonly ledger?: 'guards' | 'own';
   readonly includeTests?: boolean;
   readonly roots?: ReadonlyArray<string>;
   readonly hint?: string;
   readonly matches?: (line: string) => boolean;
+  readonly lines?: (params: { file: SourceFile }) => ReadonlyArray<number>;
   readonly count: (file: SourceFile) => number;
 };
 
 export type Counts = Readonly<Record<string, Readonly<Record<string, number>>>>;
 
-export type Ledgers = {
+export type Ledgers = Readonly<Record<string, Counts>> & {
   readonly core: Counts;
   readonly guards: Counts;
 };
@@ -41,7 +42,6 @@ export const BASELINE_FILES: Readonly<Record<'core' | 'guards', string>>;
 export const RULES: ReadonlyArray<Rule>;
 export const TAURI_CORE_IMPORT: RegExp;
 export const FOOTER_CTA_BAR: RegExp;
-export const INLINE_OBJECT_PARAM: RegExp;
 export const classifyPath: (params: { path: string }) => Omit<SourceFile, 'lines'> | null;
 export const readSource: (params: { path: string; text: string }) => SourceFile | null;
 export const collectSources: () => ReadonlyArray<SourceFile>;
@@ -50,15 +50,18 @@ export const componentNameOf: (params: { path: string }) => string | null;
 export const isFlatHook: (params: { path: string }) => boolean;
 export const withoutStrings: (line: string) => string;
 export const applies: (params: { rule: Rule; file: SourceFile }) => boolean;
-export const ledgerOf: (params: { rule: Rule; file: SourceFile }) => 'core' | 'guards';
+export const ledgerOf: (params: { rule: Rule; file: SourceFile }) => string;
 export const countFor: (params: { rule: Rule; file: SourceFile }) => number;
 export const matchedLineNumbers: (params: {
   rule: Rule;
   file: SourceFile;
 }) => ReadonlyArray<number>;
-export const measure: (params: { sources: ReadonlyArray<SourceFile> }) => Ledgers;
+export const measure: (params: {
+  sources: ReadonlyArray<SourceFile>;
+  rules?: ReadonlyArray<Rule>;
+}) => Ledgers;
 export const serializeLedger: (params: { counts: Counts }) => string;
-export const readBaselines: (params?: { root?: string }) => Ledgers;
+export const readBaselines: (params?: { root?: string; rules?: ReadonlyArray<Rule> }) => Ledgers;
 export const hintOf: (params: { ruleId: string }) => string | undefined;
 export const grownOffenses: (params: {
   counts: Ledgers;
@@ -69,3 +72,9 @@ export const offensesFor: (params: {
   baselines: Ledgers;
 }) => ReadonlyArray<Offense>;
 export const describeOffense: (params: { offense: Offense }) => string;
+export const ledgerPath: (params: { ledger: string }) => string;
+export const shrunkOffenses: (params: {
+  counts: Ledgers;
+  baselines: Ledgers;
+}) => ReadonlyArray<Omit<Offense, 'hint'>>;
+export const describeSlack: (params: { offense: Omit<Offense, 'hint'> }) => string;

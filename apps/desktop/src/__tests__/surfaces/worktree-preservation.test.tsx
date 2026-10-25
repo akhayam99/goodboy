@@ -11,7 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { BRANCH_TAB_REGISTRY } from '../../features/branch/branchTabs';
 import { U25_C04_WORKTREE_SCENES } from '../../app/components/MockScene/scenes/u25/c04-worktree';
@@ -77,7 +77,7 @@ const branchMenu = async (): Promise<ReadonlyArray<string>> => {
   return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
 };
 
-describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
+describe('Branch page capabilities from the branch tree', () => {
   it('section keys stay on the entries: Pull request, Comments and Files carry their shortcut', async () => {
     await mount('c04-worktree-pr-behind');
 
@@ -170,17 +170,6 @@ describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
     expect(screen.getByRole('region', { name: 'Reviewers' })).toBeDefined();
   });
 
-  it('Comments keeps its groups from its entry', async () => {
-    await mount('c04-worktree-comments');
-
-    expect(
-      level()
-        .getByRole('button', { name: /^Comments/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
-    expect(screen.queryByRole('region', { name: 'Description' })).toBeNull();
-  });
-
   it('Files keeps the tree with its filter in the file rail on the right of the diff', async () => {
     await mount('c04-worktree-files');
 
@@ -206,7 +195,7 @@ describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
   });
 });
 
-describe('SPEC3 9.3 branch actions from the branch row', () => {
+describe('branch actions from the branch row', () => {
   it('the worktree menu holds Switch branch, Link work to this branch, copy and editor actions', async () => {
     await mount('c04-worktree-pr-draft');
 

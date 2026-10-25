@@ -1,18 +1,17 @@
-import { cn, tintClasses } from '@goodboy/ui';
-import { spendTone } from './lib';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
   readonly valueLabel: string;
   readonly pct: number;
+  readonly tone: Tone;
   readonly metaLabel?: string;
   readonly icon?: React.ReactNode;
   readonly onClick?: () => void;
 };
 
-export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: Props) => {
+export const SpendBar = ({ label, valueLabel, pct, tone, metaLabel, icon, onClick }: Props) => {
   const width = `${Math.min(Math.max(pct, 0), 1) * 100}%`;
-  const tone = spendTone({ pct });
   const body = (
     <>
       <div className="flex items-center gap-2">

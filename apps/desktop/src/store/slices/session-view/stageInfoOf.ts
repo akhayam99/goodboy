@@ -1,17 +1,21 @@
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { AppState } from '../../types';
-import { agentHasUnread } from '../agents/agentHasUnread';
-import { isSessionPrFetchable } from '../github/resolveSessionPrFetch';
-import { sessionPrFetchState } from '../github/sessionPrFetchState';
-import { liveWorkOfSession } from '../live-work/selectLiveWork';
+import { sessionRequestFetchOf } from '../review-source/sessionRequestFetchOf';
+import { liveWorkOfSession } from '../../runtime/live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
 import { resolveAttentionOf } from '../resolve/resolveAttention';
+import type { AutoViewState } from '../auto-view/state';
 import { isRunHeldForPlan } from '../workflows/workflowPlanApproval';
+import { attentionSinceOf } from './attentionSinceOf';
+import { attentionWaitsOf } from './attentionWaitsOf';
+import { deferredReasonsOf } from './deferredReasonsOf';
 import { deriveSessionStage } from './deriveSessionStage';
 import { isPrReviewSession } from './isPrReviewSession';
+import { sessionHasUnread } from './sessionHasUnread';
 import { resolveSessionRequest } from './resolveSessionRequest';
 import { sessionStageRequestOf } from './sessionStageRequest';
+import { settledOutcomeOf } from './settledOutcomeOf';
 
 export type StageInfoState = Pick<
   AppState,
@@ -36,9 +40,24 @@ export type StageInfoState = Pick<
   | 'selectedAgentId'
   | 'currentSessionId'
   | 'githubStatus'
+  | 'workspaceIntegrations'
+  | 'hostReachability'
   | 'agentTurnState'
 > &
-  Partial<Pick<AppState, 'sessionResolveThreads' | 'sessionResolveAttempts'>>;
+  Partial<
+    Pick<
+      AppState,
+      | 'sessionResolveThreads'
+      | 'sessionResolveAttempts'
+      | 'phaseTemplates'
+      | 'sessionWorkflows'
+      | 'agentKindOverride'
+      | 'sessionSlackDrafts'
+      | 'sessionDismissedNextSteps'
+      | 'sessionArtifacts'
+    > &
+      AutoViewState
+  >;
 
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
   const questions = state.sessionOpenQuestions[sessionId];
@@ -46,16 +65,6 @@ function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number
     return 0;
   }
   return questions.filter((q) => q.status === 'open').length;
-}
-
-function sessionHasUnreadIn(state: StageInfoState, sessionId: SessionId): boolean {
-  const runs = state.sessionPhaseRuns[sessionId];
-  if (!runs) {
-    return false;
-  }
-  const selected = state.selectedAgentId[sessionId] ?? null;
-  const isCurrent = state.currentSessionId === sessionId;
-  return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
 }
 
 function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
@@ -80,19 +89,17 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     threads: state.sessionResolveThreads?.[sessionId] ?? [],
     attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
   });
-  return deriveSessionStage({
+  const waits = attentionWaitsOf({ state, session });
+  const requestFetch = sessionRequestFetchOf({ state, sessionId });
+  const info = deriveSessionStage({
     session,
     pr: request.pr,
     requestLabel: request.requestLabel,
     remainingWork: work.remaining,
     remainingReason: work.reason,
-    prFetchState: sessionPrFetchState({
-      githubAvailable: state.githubStatus?.available ?? null,
-      fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
-      failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
-      fetchable: isSessionPrFetchable({ state, sessionId }),
-    }),
-    hasUnread: sessionHasUnreadIn(state, sessionId),
+    prFetchState: requestFetch.state,
+    requestHost: requestFetch.host,
+    hasUnread: sessionHasUnread({ state, sessionId }),
     openQuestionCount: countOpenQuestions(state, sessionId),
     fixNeedsYouCount: attention.needsYou,
     fixCouldntFixCount: attention.couldntFix,
@@ -105,8 +112,22 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
     hasRun: sessionHasRunIn(state, sessionId),
+    settledOutcome: settledOutcomeOf({
+      agents: state.sessionPhaseRuns[sessionId] ?? [],
+      artifacts: state.sessionArtifacts?.[sessionId] ?? [],
+      isBranchless,
+    }),
     hasPlanWaiting: session.workflowRuns.some(
       (run) => run.discardedAt == null && isRunHeldForPlan({ run }),
     ),
+    ...waits,
+    deferredReasons: deferredReasonsOf({
+      dismissed: state.sessionDismissedNextSteps?.[sessionId],
+      pr: request.pr,
+    }),
   });
+  return {
+    ...info,
+    attentionSince: attentionSinceOf({ state, session, reason: info.attention }),
+  };
 };

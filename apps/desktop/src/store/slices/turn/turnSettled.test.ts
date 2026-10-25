@@ -1,13 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId } from '@goodboy/types';
-import {
-  SETTLE_CEILING_MS,
-  isTurnSettling,
-  markTurnActive,
-  markTurnSettled,
-  waitTurnSettled,
-} from './turnSettled';
+import { isTurnSettling, markTurnActive, markTurnSettled, waitTurnSettled } from './turnSettled';
 
 const AGENT_ID = 'agent-settled' as AgentId;
 
@@ -20,10 +14,8 @@ describe('turnSettled', () => {
     markTurnActive({ agentId: AGENT_ID });
     try {
       expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 1_000 })).toBe(true);
-      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 1_000 + SETTLE_CEILING_MS - 1 })).toBe(
-        true,
-      );
-      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 1_000 + SETTLE_CEILING_MS })).toBe(false);
+      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 1_000 + 5 * 60 * 1000 - 1 })).toBe(true);
+      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 1_000 + 5 * 60 * 1000 })).toBe(false);
     } finally {
       markTurnSettled({ agentId: AGENT_ID });
     }
@@ -33,9 +25,9 @@ describe('turnSettled', () => {
     markTurnActive({ agentId: AGENT_ID });
     try {
       expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 0 })).toBe(true);
-      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: SETTLE_CEILING_MS + 1 })).toBe(false);
+      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 5 * 60 * 1000 + 1 })).toBe(false);
       markTurnActive({ agentId: AGENT_ID });
-      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: SETTLE_CEILING_MS + 2 })).toBe(true);
+      expect(isTurnSettling({ agentId: AGENT_ID, nowMs: 5 * 60 * 1000 + 2 })).toBe(true);
     } finally {
       markTurnSettled({ agentId: AGENT_ID });
       markTurnSettled({ agentId: AGENT_ID });

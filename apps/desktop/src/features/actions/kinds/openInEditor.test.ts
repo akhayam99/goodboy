@@ -78,6 +78,8 @@ const sessionFacts: SessionFacts = {
   worktreePaths: ['/work/payments-api'],
   prUrl: null,
   runningAgentCount: 0,
+  hasUnread: false,
+  canMarkUnread: false,
 };
 
 type Surface = {

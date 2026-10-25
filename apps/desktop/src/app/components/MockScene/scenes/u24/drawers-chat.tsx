@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { ChatStudio } from '../../../../../features/workspace-chat/components/ChatStudio';
-import { mockChatSessions } from '../../../../../features/workspace-chat/mockChatSessions';
+import { mockChatSessions } from '../../backends/chat/mockChatSessions';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
 import { shellArrangement } from '../../../../shellArrangement';
@@ -24,7 +24,7 @@ const arrangement = shellArrangement({
 const CLAUDE: ProviderDisplayInfo = {
   id: 'anthropic',
   binary: 'claude',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '1.0.0',
   identity: 'mock-team',

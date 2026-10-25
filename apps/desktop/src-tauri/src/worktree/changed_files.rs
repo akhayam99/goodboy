@@ -19,68 +19,117 @@ pub struct ChangedFilesSummary {
     pub entries: Vec<ChangedEntry>,
     pub additions: u32,
     pub deletions: u32,
-    /// Raw per-file numstat lines for the SAME change set as `paths` —
-    /// "<adds>\t<dels>\t<path>" (binary files: "-\t-\t<path>"), one per line,
-    /// INCLUDING untracked files (counted as additions, deletions 0). This is the
-    /// source of truth mirrored to the mobile `files_touched_numstat` context
-    /// slot, so the phone gets both the file list and the +/- counts from one
-    /// value computed against the same merge-base the desktop's own view uses.
     pub numstat: String,
 }
 
 const LANDED_FILE_LIMIT: usize = 400;
+const UNTRACKED_COUNT_LIMIT_BYTES: u64 = 1_048_576;
 
-fn parse_name_status_line(line: &str) -> Option<ChangedEntry> {
-    let mut parts = line.split('\t');
-    let code = parts.next()?.trim();
-    let first = parts.next()?.trim();
-    if first.is_empty() {
-        return None;
-    }
-    let letter = code.chars().next()?;
-    if letter == 'R' {
-        let target = parts.next()?.trim();
-        if target.is_empty() {
-            return None;
+fn parse_name_status_z(raw: &str) -> Vec<ChangedEntry> {
+    let mut tokens = raw.split('\0').filter(|token| !token.is_empty());
+    let mut entries = Vec::new();
+    while let Some(code) = tokens.next() {
+        let Some(letter) = code.chars().next() else {
+            continue;
+        };
+        let Some(first) = tokens.next() else {
+            break;
+        };
+        match letter {
+            'R' | 'C' => {
+                let Some(target) = tokens.next() else {
+                    break;
+                };
+                entries.push(match letter {
+                    'R' => ChangedEntry {
+                        path: target.to_string(),
+                        status: "renamed",
+                        from: Some(first.to_string()),
+                    },
+                    _ => ChangedEntry {
+                        path: target.to_string(),
+                        status: "added",
+                        from: None,
+                    },
+                });
+            }
+            'A' | 'D' | 'M' | 'T' => entries.push(ChangedEntry {
+                path: first.to_string(),
+                status: match letter {
+                    'A' => "added",
+                    'D' => "deleted",
+                    _ => "modified",
+                },
+                from: None,
+            }),
+            _ => {}
         }
-        return Some(ChangedEntry {
-            path: target.to_string(),
-            status: "renamed",
-            from: Some(first.to_string()),
-        });
     }
-    if letter == 'C' {
-        let target = parts.next()?.trim();
-        if target.is_empty() {
-            return None;
-        }
-        return Some(ChangedEntry {
-            path: target.to_string(),
-            status: "added",
-            from: None,
-        });
-    }
-    let status = match letter {
-        'A' => "added",
-        'D' => "deleted",
-        'M' | 'T' => "modified",
-        _ => return None,
-    };
-    Some(ChangedEntry {
-        path: first.to_string(),
-        status,
-        from: None,
-    })
+    entries
 }
 
-/// Whether the base branch already carries everything this branch committed.
-///
-/// `base..HEAD` is empty once the branch is merged with a merge commit. A
-/// squash or a rebase rewrites the commits, so ancestry says nothing: compare
-/// the files the branch touched instead, and call it landed when the base and
-/// the branch tip agree on every one of them. The caller then measures the
-/// working tree against `HEAD` rather than the merge-base, so a landed branch
-/// reads as clean until it is worked on again.
+struct NumstatRow<'a> {
+    additions: &'a str,
+    deletions: &'a str,
+    path: &'a str,
+    display: String,
+}
+
+fn parse_numstat_z(raw: &str) -> Vec<NumstatRow<'_>> {
+    let mut tokens = raw.split('\0').filter(|token| !token.is_empty());
+    let mut rows = Vec::new();
+    while let Some(token) = tokens.next() {
+        let mut parts = token.splitn(3, '\t');
+        let (Some(additions), Some(deletions), Some(path)) =
+            (parts.next(), parts.next(), parts.next())
+        else {
+            continue;
+        };
+        if !path.is_empty() {
+            rows.push(NumstatRow {
+                additions,
+                deletions,
+                path,
+                display: path.to_string(),
+            });
+            continue;
+        }
+        let (Some(from), Some(to)) = (tokens.next(), tokens.next()) else {
+            break;
+        };
+        rows.push(NumstatRow {
+            additions,
+            deletions,
+            path: to,
+            display: format!("{from} => {to}"),
+        });
+    }
+    rows
+}
+
+enum UntrackedCount {
+    Lines(u32),
+    Unknown,
+    Unreadable,
+}
+
+fn count_untracked(path: &Path) -> UntrackedCount {
+    let Ok(meta) = std::fs::symlink_metadata(path) else {
+        return UntrackedCount::Unreadable;
+    };
+    if !meta.is_file() {
+        return UntrackedCount::Unreadable;
+    }
+    if meta.len() > UNTRACKED_COUNT_LIMIT_BYTES {
+        return UntrackedCount::Unknown;
+    }
+    match std::fs::read(path) {
+        Ok(bytes) if bytes.contains(&0) => UntrackedCount::Unknown,
+        Ok(bytes) => UntrackedCount::Lines(String::from_utf8_lossy(&bytes).lines().count() as u32),
+        Err(_) => UntrackedCount::Unreadable,
+    }
+}
+
 fn branch_work_landed(cwd: &Path, base_ref: &str, merge_base: &str) -> bool {
     let Ok(raw) = git(cwd, &["rev-list", "--count", &format!("{base_ref}..HEAD")]) else {
         return false;
@@ -91,12 +140,11 @@ fn branch_work_landed(cwd: &Path, base_ref: &str, merge_base: &str) -> bool {
     if ahead == 0 {
         return true;
     }
-    let Ok(touched) = git(cwd, &["diff", "--name-only", merge_base, "HEAD"]) else {
+    let Ok(touched) = git(cwd, &["diff", "--name-only", "-z", merge_base, "HEAD"]) else {
         return false;
     };
     let paths: Vec<&str> = touched
-        .lines()
-        .map(str::trim)
+        .split('\0')
         .filter(|line| !line.is_empty())
         .collect();
     if paths.is_empty() || paths.len() > LANDED_FILE_LIMIT {
@@ -110,15 +158,6 @@ fn branch_work_landed(cwd: &Path, base_ref: &str, merge_base: &str) -> bool {
     remaining.trim().is_empty()
 }
 
-/// Distinct file paths that differ between the worktree (including uncommitted
-/// + untracked) and the merge-base with the given base branch, plus aggregate
-/// line +/- totals.
-///
-/// Stable across "before vs after push": pushing commits doesn't shrink the
-/// count because we diff against the merge-base, not `HEAD`. Once the branch
-/// has landed in the base there is nothing left to measure against that
-/// merge-base, so the comparison moves to `HEAD` and only uncommitted work
-/// counts. Untracked files contribute their line count to additions.
 #[tauri::command]
 pub async fn worktree_changed_files(
     worktree_path: String,
@@ -149,69 +188,45 @@ pub(super) fn worktree_changed_files_blocking(
     } else {
         merge_base
     };
-    let tracked_numstat = git(p, &["diff", "--numstat", &resolved]).unwrap_or_default();
+    let tracked_numstat = git(p, &["diff", "--numstat", "-z", &resolved])?;
     let mut additions: u32 = 0;
     let mut deletions: u32 = 0;
     let mut set: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    // Collect the per-file numstat lines so we can mirror them verbatim into the
-    // `files_touched_numstat` context slot (same merge-base as above).
     let mut numstat_lines: Vec<String> = Vec::new();
-    for line in tracked_numstat.lines() {
-        // numstat format: "<adds>\t<dels>\t<path>" — binary files show "-\t-\t<path>"
-        let mut parts = line.splitn(3, '\t');
-        let add_s = parts.next().unwrap_or("");
-        let del_s = parts.next().unwrap_or("");
-        let path = parts.next().unwrap_or("").trim();
-        if path.is_empty() {
-            continue;
-        }
-        if let Ok(a) = add_s.parse::<u32>() {
+    for row in parse_numstat_z(&tracked_numstat) {
+        if let Ok(a) = row.additions.parse::<u32>() {
             additions = additions.saturating_add(a);
         }
-        if let Ok(d) = del_s.parse::<u32>() {
+        if let Ok(d) = row.deletions.parse::<u32>() {
             deletions = deletions.saturating_add(d);
         }
-        set.insert(path.to_string());
-        // Preserve git's exact line (including "-\t-\t" for binary).
-        numstat_lines.push(format!("{add_s}\t{del_s}\t{path}"));
+        set.insert(row.path.to_string());
+        numstat_lines.push(format!(
+            "{}\t{}\t{}",
+            row.additions, row.deletions, row.display
+        ));
     }
-    // Untracked files: contribute their content as additions. `git diff` doesn't
-    // see them, so synthesize a numstat line ("<lines>\t0\t<path>") to keep the
-    // slot's file list complete and the +/- counts consistent with `additions`.
-    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
-    for line in untracked.lines() {
-        let rel = line.trim();
-        if rel.is_empty() {
-            continue;
-        }
-        set.insert(rel.to_string());
-        match std::fs::read(p.join(rel)) {
-            Ok(bytes) if bytes.contains(&0) => {
-                // Binary untracked file — mirror git's "-\t-\t<path>" form.
-                numstat_lines.push(format!("-\t-\t{rel}"));
-            }
-            Ok(bytes) => {
-                let n = String::from_utf8_lossy(&bytes).lines().count() as u32;
+    let untracked = git(p, &["ls-files", "--others", "--exclude-standard", "-z"])?;
+    let untracked_paths: Vec<&str> = untracked
+        .split('\0')
+        .filter(|rel| !rel.is_empty())
+        .collect();
+    for rel in &untracked_paths {
+        set.insert((*rel).to_string());
+        match count_untracked(&p.join(rel)) {
+            UntrackedCount::Unknown => numstat_lines.push(format!("-\t-\t{rel}")),
+            UntrackedCount::Lines(n) => {
                 additions = additions.saturating_add(n);
                 numstat_lines.push(format!("{n}\t0\t{rel}"));
             }
-            Err(_) => {
-                numstat_lines.push(format!("0\t0\t{rel}"));
-            }
+            UntrackedCount::Unreadable => numstat_lines.push(format!("0\t0\t{rel}")),
         }
     }
-    let mut entries: Vec<ChangedEntry> = git(p, &["diff", "--name-status", "-M", &resolved])
-        .unwrap_or_default()
-        .lines()
-        .filter_map(parse_name_status_line)
-        .collect();
-    for line in untracked.lines() {
-        let rel = line.trim();
-        if rel.is_empty() {
-            continue;
-        }
+    let name_status = git(p, &["diff", "--name-status", "-M", "-z", &resolved])?;
+    let mut entries: Vec<ChangedEntry> = parse_name_status_z(&name_status);
+    for rel in &untracked_paths {
         entries.push(ChangedEntry {
-            path: rel.to_string(),
+            path: (*rel).to_string(),
             status: "added",
             from: None,
         });

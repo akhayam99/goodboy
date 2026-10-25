@@ -2,6 +2,7 @@ import type { AttachmentInput } from '@goodboy/types';
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENT_LIMIT = 10;
+export const ATTACHMENT_LIMIT_NOTICE = `Up to ${ATTACHMENT_LIMIT} files per message.`;
 
 export type PendingAttachment = {
   readonly id: string;

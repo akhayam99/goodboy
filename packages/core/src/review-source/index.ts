@@ -34,6 +34,7 @@ export { githubPullRequestPort } from './githubPullRequestPort';
 export { githubReviewSource } from './githubReviewSource';
 export { gitlabDraftTitle, stripGitlabDraftPrefix } from './gitlabDraftTitle';
 export {
+  gitlabDefaultMergeMethodOf,
   gitlabMergeableOf,
   gitlabPullRequestPort,
   gitlabReviewDecisionOf,
@@ -59,10 +60,12 @@ export {
   pullRequestReviewerGroupsOf,
   type PullRequestReviewerGroups,
 } from './pullRequestReviewerGroups';
+export { requestStateKind } from './requestStateKind';
 export {
   PULL_REQUEST_CAPABILITY_METHODS,
   PULL_REQUEST_NOUNS,
   PullRequestPortError,
+  STALE_HEAD_MESSAGE,
   PullRequestPortUnsupported,
   isPullRequestPortError,
   isPullRequestPortUnsupported,

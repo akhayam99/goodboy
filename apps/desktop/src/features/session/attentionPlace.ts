@@ -5,22 +5,32 @@ import type {
   Session,
   SessionAttentionReason,
   SessionId,
-  TurnState,
 } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace } from '../../store';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
+import { isTurnStatePermissionBlocked } from './agent-lifecycle';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { resolveAttentionOf } from '../../store/slices/resolve/resolveAttention';
+import {
+  autoWaitRootsOf,
+  type AutoWaitState,
+} from '../../store/slices/session-view/autoWaitRootsOf';
+import {
+  runWaitEntriesOf,
+  type RunWaitEntry,
+  type RunWaitState,
+} from '../../store/slices/session-view/runWaitEntriesOf';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
-type State = {
-  readonly sessions: ReadonlyArray<Session>;
-  readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
-  readonly agentTurnState: Readonly<Record<string, TurnState>>;
-  readonly sessionResolveThreads?: Readonly<Record<string, ReadonlyArray<ResolveThread>>>;
-  readonly sessionResolveAttempts?: Readonly<Record<string, ReadonlyArray<ResolveAttempt>>>;
-};
+type State = AutoWaitState &
+  RunWaitState & {
+    readonly sessions: ReadonlyArray<Session>;
+    readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
+    readonly sessionResolveThreads?: Readonly<Record<string, ReadonlyArray<ResolveThread>>>;
+    readonly sessionResolveAttempts?: Readonly<Record<string, ReadonlyArray<ResolveAttempt>>>;
+  };
 
 type Params = {
   readonly state: State;
@@ -34,7 +44,43 @@ const latestAgent = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): Age
     null,
   );
 
+const RUN_WAIT_BY_REASON: Partial<Record<SessionAttentionReason, RunWaitEntry['wait']>> = {
+  'run-stopped': 'stopped',
+  'run-paused-at-limit': 'limit',
+  'run-waits-for-go': 'go',
+};
+
 export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceRequest => {
+  const runWait = reason === null ? undefined : RUN_WAIT_BY_REASON[reason];
+  if (runWait !== undefined) {
+    const session = sessionById(state.sessions, sessionId);
+    const entry =
+      session === undefined
+        ? undefined
+        : runWaitEntriesOf({
+            state,
+            session,
+            agents: state.sessionPhaseRuns[sessionId] ?? [],
+          }).find((candidate) => candidate.wait === runWait);
+    if (entry === undefined) {
+      return sessionPlace({ sessionId, lens: 'workflows' });
+    }
+    return sessionPlace({
+      sessionId,
+      lens: 'workflows',
+      target: { kind: 'run', runId: entry.runId },
+    });
+  }
+  if (reason === 'auto-needs-you') {
+    const session = sessionById(state.sessions, sessionId);
+    const [root] =
+      session === undefined
+        ? []
+        : autoWaitRootsOf({ state, session, agents: state.sessionPhaseRuns[sessionId] ?? [] });
+    return root === undefined
+      ? sessionPlace({ sessionId })
+      : agentPlace({ sessionId, agentId: root.id });
+  }
   if (reason === 'open-question') {
     return sessionPlace({ sessionId, lens: 'questions' });
   }
@@ -80,13 +126,17 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
   const target =
     reason === 'needs-approval'
       ? latestAgent({
-          agents: agents.filter((agent) => state.agentTurnState[agent.id]?.kind === 'blocked'),
+          agents: agents.filter((agent) =>
+            isTurnStatePermissionBlocked({ turnState: state.agentTurnState[agent.id] }),
+          ),
         })
       : reason === 'agent-error'
         ? latestAgent({ agents: agents.filter((agent) => agent.status === 'failed') })
         : reason === 'unread-reply'
           ? latestAgent({ agents: agents.filter((agent) => agentHasUnread(agent, false)) })
-          : null;
+          : reason === 'slack-reply-waiting'
+            ? latestAgent({ agents })
+            : null;
 
   if (target === null) {
     return sessionPlace({ sessionId });

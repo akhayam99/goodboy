@@ -96,7 +96,7 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="min-w-0 break-words text-heading text-foreground">{copy.title}</p>
-              <p className="min-w-0 break-words text-label text-muted-foreground">{copy.body}</p>
+              <p className="min-w-0 break-words text-meta text-muted-foreground">{copy.body}</p>
               {copy.detail === null ? null : (
                 <p className="min-w-0 break-words text-meta text-faint-foreground">{copy.detail}</p>
               )}

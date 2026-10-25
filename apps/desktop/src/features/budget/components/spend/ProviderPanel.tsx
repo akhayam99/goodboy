@@ -1,19 +1,20 @@
 import { useMemo } from 'react';
 import {
   ErrorStrip,
+  formatUsd,
+  formatUsdPrecise,
+  ICON_SIZE,
   PanelLoading,
   PaneShell,
   StatCard,
   StudioWidget,
   Tooltip,
-  formatUsd,
-  formatUsdPrecise,
 } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
 import { spendFigures } from '../../spendFigures';
@@ -114,9 +115,7 @@ export const ProviderPanel = ({
               centerLabel={`${figures.limit.pctUsed}%`}
               subLabel="of the limit"
               size={RING_SIZE}
-              {...(figures.limit.warnFraction !== undefined && {
-                warnAt: figures.limit.warnFraction,
-              })}
+              tone={figures.limit.tone}
             />
             <div className="grid min-w-0 flex-1 grid-cols-3 gap-3">
               <Tooltip content={formatUsdPrecise(figures.month.usd)}>

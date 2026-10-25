@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ConfirmPopover, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly title: string;

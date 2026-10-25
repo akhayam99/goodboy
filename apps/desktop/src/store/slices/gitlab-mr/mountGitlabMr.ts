@@ -33,6 +33,7 @@ const toSessionGitlabMr = (mount: MountGitlabMrState): SessionGitlabMrState => (
   mr: mount.mr,
   approvals: mount.approvals ?? null,
   fetchedAt: mount.fetchedAt,
+  failedAt: mount.failedAt ?? null,
   loading: mount.loading,
   error: mount.error,
 });

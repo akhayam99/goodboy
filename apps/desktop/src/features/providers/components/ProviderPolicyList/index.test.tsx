@@ -43,7 +43,7 @@ type ProviderParams = {
 const providerInfo = ({ id, connection = 'connected' }: ProviderParams): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection,
   version: null,
   identity: null,
@@ -59,15 +59,15 @@ const POLICY: ProviderPolicy = [
 ];
 
 type PayloadShape = {
-  readonly overrides: OverrideSettings;
+  readonly patch: Partial<OverrideSettings>;
 };
 
 const isPayload = (value: unknown): value is PayloadShape =>
-  typeof value === 'object' && value !== null && 'overrides' in value;
+  typeof value === 'object' && value !== null && 'patch' in value;
 
-const writtenRows = (): ReadonlyArray<OverrideSettings> =>
+const writtenPatches = (): ReadonlyArray<Partial<OverrideSettings>> =>
   storySpies.tauriInvoke.mock.calls.flatMap(([command, args]) =>
-    command === 'set_workspace_overrides' && isPayload(args) ? [args.overrides] : [],
+    command === 'patch_workspace_overrides' && isPayload(args) ? [args.patch] : [],
   );
 
 let useAppStore: StoryStore;
@@ -141,7 +141,7 @@ describe('ProviderPolicyList', () => {
     fireEvent.keyDown(codex, { key: 'ArrowUp', altKey: true });
 
     await waitFor(() => expect(rowNames()).toEqual(['codex', 'anthropic', 'cursor']));
-    const last = writtenRows().at(-1);
+    const last = writtenPatches().at(-1);
     expect(last?.providerPool?.map((entry) => entry.id)).toEqual(['codex', 'anthropic', 'cursor']);
     expect(last?.defaultProviderId).toBe('codex');
     expect(screen.getByRole('status').textContent).toContain(
@@ -161,7 +161,7 @@ describe('ProviderPolicyList', () => {
     spy.mockRestore();
 
     await waitFor(() => expect(rowNames()).toEqual(['cursor', 'anthropic', 'codex']));
-    expect(writtenRows().at(-1)?.defaultProviderId).toBe('anthropic');
+    expect(writtenPatches().at(-1)?.defaultProviderId).toBe('anthropic');
   });
 
   it('sets Backup only and Off through the row segment', async () => {
@@ -174,7 +174,7 @@ describe('ProviderPolicyList', () => {
     );
 
     await waitFor(() =>
-      expect(writtenRows().at(-1)?.providerPool).toEqual([
+      expect(writtenPatches().at(-1)?.providerPool).toEqual([
         { id: 'anthropic', state: 'on' },
         { id: 'codex', state: 'off' },
         { id: 'cursor', state: 'backup' },
@@ -192,7 +192,7 @@ describe('ProviderPolicyList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
 
     await waitFor(() =>
-      expect(writtenRows().at(-1)?.providerPool?.at(-1)).toEqual({ id: 'gemini', state: 'on' }),
+      expect(writtenPatches().at(-1)?.providerPool?.at(-1)).toEqual({ id: 'gemini', state: 'on' }),
     );
   });
 
@@ -204,7 +204,7 @@ describe('ProviderPolicyList', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Keep using after the limit' }));
 
     await waitFor(() =>
-      expect(writtenRows().at(-1)?.providerPool?.[1]).toEqual({
+      expect(writtenPatches().at(-1)?.providerPool?.[1]).toEqual({
         id: 'codex',
         state: 'on',
         keepAfterLimit: true,
@@ -217,11 +217,11 @@ describe('ProviderPolicyList', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    await waitFor(() => expect(writtenRows().at(-1)?.providerPool).toBeNull());
+    await waitFor(() => expect(writtenPatches().at(-1)?.providerPool).toBeNull());
     expect(screen.getAllByRole('tab', { name: 'On', selected: true })).toHaveLength(3);
   });
 
-  it('writes the same row whether the click comes from Defaults or from the footer', async () => {
+  it('writes the same patch whether the click comes from Defaults or from the footer', async () => {
     const defaults = render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
     fireEvent.click(screen.getByRole('button', { name: /Claude, Codex · Cursor as backup/ }));
     fireEvent.click(
@@ -229,8 +229,8 @@ describe('ProviderPolicyList', () => {
         name: 'Off',
       }),
     );
-    await waitFor(() => expect(writtenRows()).toHaveLength(1));
-    const fromDefaults = writtenRows()[0];
+    await waitFor(() => expect(writtenPatches()).toHaveLength(1));
+    const fromDefaults = writtenPatches()[0];
     defaults.unmount();
 
     await resetStoryStore();
@@ -242,8 +242,8 @@ describe('ProviderPolicyList', () => {
         name: 'Off',
       }),
     );
-    await waitFor(() => expect(writtenRows()).toHaveLength(1));
+    await waitFor(() => expect(writtenPatches()).toHaveLength(1));
 
-    expect(writtenRows()[0]).toEqual(fromDefaults);
+    expect(writtenPatches()[0]).toEqual(fromDefaults);
   });
 });

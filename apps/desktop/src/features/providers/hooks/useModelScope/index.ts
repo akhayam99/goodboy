@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import {
   selectModelContext,
   type ModelScope,
-} from '../../../../store/slices/models/selectModelContext';
+} from '../../../../store/runtime/models/selectModelContext';
 
 export type ScopeProps = {
   readonly sessionId?: SessionId | null;

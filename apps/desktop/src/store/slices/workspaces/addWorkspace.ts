@@ -1,10 +1,11 @@
-import type {
-  IsoDateTime,
-  OverrideSettings,
-  Project,
-  ProjectId,
-  Workspace,
-  WorkspaceId,
+import {
+  NEW_WORKSPACE_PERMISSION_MODE,
+  type IsoDateTime,
+  type OverrideSettings,
+  type Project,
+  type ProjectId,
+  type Workspace,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { seedWorkflowLibrary } from '@goodboy/core';
@@ -141,6 +142,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       name: workspaceName,
       slug: workspaceSlug({ name: workspaceName, id: workspaceId }),
       overrides: EMPTY_OVERRIDES,
+      defaultPermissionMode: NEW_WORKSPACE_PERMISSION_MODE,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,

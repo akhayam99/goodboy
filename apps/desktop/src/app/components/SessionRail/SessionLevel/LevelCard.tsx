@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { FOCUS_RING, Reveal, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, FOCUS_RING, ICON_SIZE, Reveal } from '@goodboy/ui';
+
 import { CARD_INSET, CARD_ROW_INSET } from './railInset';
 
 type Props = {

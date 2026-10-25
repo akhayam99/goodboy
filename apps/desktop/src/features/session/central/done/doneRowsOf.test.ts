@@ -30,6 +30,26 @@ const rowsOf = (model: Parameters<typeof doneRowsOf>[0]['model']) =>
   doneRowsOf({ model, source: null, costs: NO_COSTS }).flatMap((day) => day.rows);
 
 describe('doneRowsOf', () => {
+  it('puts the files a turn wrote in the row of the agent that wrote them, and none in another', () => {
+    const model = modelOf({
+      agents: [
+        done({ id: brandId<AgentId>({ value: 'writer' }), kind: 'scribe', name: 'a' }),
+        done({ id: brandId<AgentId>({ value: 'reader' }), kind: 'planner', name: 'b' }),
+      ],
+    });
+    const files = {
+      own: [
+        { path: 'src/webhooks/retry.ts', status: 'modified' as const, additions: 4, deletions: 1 },
+      ],
+      fromBase: ['src/ledger/post.ts'],
+    };
+
+    const rows = rowsOf({ ...model, turnFiles: new Map([['writer', files]]) });
+
+    expect(rows.find((row) => row.entryId === 'agent:writer')?.detail.files).toEqual(files);
+    expect(rows.find((row) => row.entryId === 'agent:reader')?.detail.files).toBeNull();
+  });
+
   it('lists finished work only', () => {
     const model = modelOf({
       agents: [

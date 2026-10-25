@@ -16,7 +16,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { U25_B_GONE_BRANCH_SCENES } from './b-gone-branch';
 
 const WAIT = { timeout: 6000 };

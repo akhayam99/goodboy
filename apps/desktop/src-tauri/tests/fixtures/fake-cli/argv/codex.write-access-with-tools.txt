@@ -1,0 +1,15 @@
+cli-version: codex-cli 0.130.0
+exec
+--json
+--skip-git-repo-check
+-m
+fake-model
+--cd
+{work_dir}
+-s
+workspace-write
+-c
+sandbox_workspace_write.network_access=true
+-c
+model_reasoning_effort="high"
+-

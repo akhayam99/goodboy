@@ -1,17 +1,16 @@
-import { cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { LinearLinkedPr } from '../client';
 import { linearPrStateKind } from '../linearPrStateKind';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentation,
-} from '../../../../shared/pullRequestPresentation';
+} from '../../../../shared/utils/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pr: LinearLinkedPr;

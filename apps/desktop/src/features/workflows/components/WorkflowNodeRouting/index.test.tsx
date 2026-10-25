@@ -23,7 +23,6 @@ vi.mock('../../../../store/store', () => ({
   useAppStore: (selector: (state: Record<string, unknown>) => unknown) => selector(storeState),
 }));
 
-import { brandColor } from '../../../providers/components/provider-brand';
 import { WorkflowNodeRouting } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -127,7 +126,7 @@ describe('WorkflowNodeRouting', () => {
     );
     expect(section.textContent).toContain('Heavy work');
     expect(section.textContent).toContain('GPT-5.6 Sol');
-    expect(section.outerHTML).toContain(brandColor('codex'));
+    expect(section.outerHTML).toContain('var(--color-provider-codex)');
   });
 
   it('refuses to change a running node and offers a picker on a pending one', () => {

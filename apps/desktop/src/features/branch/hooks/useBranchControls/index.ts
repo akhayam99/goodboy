@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
@@ -21,7 +21,7 @@ import {
   type BranchReviewCounts,
 } from '../../branchPrimary';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
 
 type Params = {
   readonly sessionId: SessionId;

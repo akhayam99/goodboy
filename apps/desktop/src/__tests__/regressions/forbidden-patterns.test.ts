@@ -3,16 +3,18 @@ import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import {
-  BASELINE_FILES,
   collectSources,
   countStringifiedCaughtErrors,
   describeOffense,
+  describeSlack,
   FOOTER_CTA_BAR,
   grownOffenses,
+  ledgerPath,
   measure,
   readBaselines,
   REPO_ROOT,
   serializeLedger,
+  shrunkOffenses,
   TAURI_CORE_IMPORT,
 } from '../../../../../scripts/rules/forbiddenPatterns.mjs';
 
@@ -90,17 +92,26 @@ describe('forbidden code patterns only ever shrink', () => {
 
   it('adds no forbidden pattern to any file beyond its baseline', () => {
     if (IS_UPDATING) {
-      writeFileSync(
-        join(REPO_ROOT, BASELINE_FILES.core),
-        serializeLedger({ counts: current.core }),
-      );
-      writeFileSync(
-        join(REPO_ROOT, BASELINE_FILES.guards),
-        serializeLedger({ counts: current.guards }),
-      );
+      Object.entries(current).forEach(([ledger, counts]) => {
+        writeFileSync(join(REPO_ROOT, ledgerPath({ ledger })), serializeLedger({ counts }));
+      });
       return;
     }
-    const grown = grownOffenses({ counts: current, baselines: readBaselines() }).map((offense) =>
+    const baselines = readBaselines();
+    const slack = shrunkOffenses({ counts: current, baselines }).map((offense) =>
+      describeSlack({ offense }),
+    );
+    if (slack.length > 0) {
+      const note =
+        `${slack.length} baseline entr${slack.length === 1 ? 'y' : 'ies'} above the real count. ` +
+        `Lower them with GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest ` +
+        `run src/__tests__/regressions/forbidden-patterns.test.ts\n${slack.join('\n')}`;
+      if (process.env.GOODBOY_FAIL_ON_SLACK === '1') {
+        throw new Error(note);
+      }
+      process.stderr.write(`${note}\n`);
+    }
+    const grown = grownOffenses({ counts: current, baselines }).map((offense) =>
       describeOffense({ offense }),
     );
     if (grown.length > 0) {

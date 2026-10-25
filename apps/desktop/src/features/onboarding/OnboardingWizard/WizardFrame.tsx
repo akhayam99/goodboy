@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollFade, cn, useEscapeLayer } from '@goodboy/ui';
-import { enterWizardStep, finishWizard, markStepComplete, pauseWizard } from '../onboarding-store';
+import {
+  enterWizardStep,
+  finishWizard,
+  markStepComplete,
+  pauseWizard,
+} from '../onboardingSettings';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 import { useStepTransition } from './useStepTransition';
 import { StepTransition } from './StepTransition';

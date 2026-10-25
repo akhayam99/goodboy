@@ -4,6 +4,7 @@ import type {
   OpenQuestionId,
   PlanId,
   PrMergeMethod,
+  PrSeriesId,
   ProjectId,
   ProviderId,
   SessionEventId,
@@ -13,6 +14,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { CheckChainState } from '../../store/slices/agents/selectCheckChain';
+import type { TrackerMove } from '../../store/slices/tracker-moves/types';
 import type { CheckOutcome } from '../branch/checks/checkOutcomeOf';
 import type { AgentKind } from '../session/agent-kind';
 
@@ -32,8 +34,11 @@ export const SUGGESTION_KINDS = [
   'open-pr',
   'mark-ready',
   'merge-pr',
+  'merge-series',
   'check-changes',
+  'move-tracker-item',
   'close-worktree',
+  'archive-session',
   'continue-with-workflow',
 ] as const;
 
@@ -204,14 +209,30 @@ export type SessionSuggestion =
       };
     })
   | (SuggestionBase & {
+      readonly kind: 'merge-series';
+      readonly payload: {
+        readonly seriesId: PrSeriesId;
+        readonly name: string;
+        readonly labels: ReadonlyArray<string>;
+      };
+    })
+  | (SuggestionBase & {
       readonly kind: 'check-changes';
       readonly payload: { readonly agentId: AgentId };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'move-tracker-item';
+      readonly payload: { readonly move: TrackerMove };
     })
   | (SuggestionBase & {
       readonly kind: 'close-worktree';
       readonly payload: {
         readonly worktrees: ReadonlyArray<CleanupWorktree>;
       };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'archive-session';
+      readonly payload: { readonly branchCount: number };
     })
   | (SuggestionBase & {
       readonly kind: 'continue-with-workflow';

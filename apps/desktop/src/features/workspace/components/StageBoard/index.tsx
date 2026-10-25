@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Plus } from 'lucide-react';
-import { Button, cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import type {
   Session,
   SessionAttentionReason,
@@ -27,11 +26,14 @@ import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { attentionPlace } from '../../../session/attentionPlace';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { BlockedBoard } from './BlockedBoard';
+import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
 import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
+import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionsList } from './SessionsList';
 import { SessionsListSkeleton } from './SessionsListSkeleton';
@@ -39,11 +41,16 @@ import { listStageGroupsOf } from './SessionsList/listStageGroupsOf';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const SKELETON_CARDS = [3, 2, 2, 1, 2, 1];
 
-const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
+const SELECTION_VERB_IDS = [
+  'sessions.markRead',
+  'sessions.archive',
+  'sessions.restore',
+  'sessions.delete',
+];
 
 const WIDTH_BEFORE_MEASURE = Number.POSITIVE_INFINITY;
 
@@ -87,6 +94,7 @@ type Props = {
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const listModel = useSessionListModel(workspaceId, sessions);
+  const needsYouElsewhere = useNeedsYouElsewhere({ workspaceId, sessions });
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
   const navigate = useAppStore((s) => s.navigate);
@@ -204,9 +212,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     projectGitStatuses.length === 1
       ? 'Goodboy cannot reach this folder. Relink it in workspace settings.'
       : 'Goodboy cannot reach these folders. Relink them in workspace settings.';
+  const hasUnbornRepo = projectGitStatuses.some(({ status }) => status?.state === 'unborn');
   const blockedDescription = areAllRepoProjectsMissing
     ? unreachableDescription
-    : 'Sessions branch from the latest commit. Open the git pill on the folder and make the first commit, or add another folder in workspace settings.';
+    : hasUnbornRepo
+      ? 'Sessions branch from the latest commit, and this repository has none yet.'
+      : 'Sessions branch from the latest commit. Add another folder in workspace settings, or track this one with git there.';
   const boardShown = groups.reduce((count, group) => count + group.sessions.length, 0);
   const shownArchived = prefs.isArchivedShown ? projectArchived : EMPTY_ARRAY;
   const listGroups = listStageGroupsOf({
@@ -239,6 +250,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             archivedCount={archived.length}
             onArchivedShownChange={onArchivedShownChange}
             hiddenCount={pending || empty ? 0 : hiddenCount}
+            needsYouElsewhere={pending || empty ? 0 : needsYouElsewhere}
             onClearFilters={clearFilters}
           />
         ) : null}
@@ -258,50 +270,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           </ScrollFade>
         )}
 
-        {!pending && hasProjects && empty && hasUsableProject && (
-          <div data-slot="board-empty" className="flex min-w-0 flex-col">
-            <EmptyState
-              icon={CONCEPT_ICONS.sessions}
-              title="No sessions yet"
-              description="A session holds one goal, its worktrees and its agents."
-              action={
-                <Button
-                  size="md"
-                  onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
-                >
-                  <Plus size={ICON_SIZE.control} aria-hidden />
-                  New session
-                </Button>
-              }
-              size="page"
-              headingLevel={2}
-            />
-          </div>
-        )}
+        {!pending && hasProjects && empty && hasUsableProject && <BoardEmpty />}
 
         {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
-          <div data-slot="board-empty" className="flex min-w-0 flex-col">
-            <EmptyState
-              icon={CONCEPT_ICONS.projectRepo}
-              title={blockedReason}
-              description={blockedDescription}
-              action={
-                <Button
-                  size="md"
-                  variant="secondary"
-                  onClick={() =>
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
-                    )
-                  }
-                >
-                  Open workspace settings
-                </Button>
-              }
-              size="page"
-              headingLevel={2}
-            />
-          </div>
+          <BlockedBoard
+            entries={projectGitStatuses}
+            title={blockedReason}
+            description={blockedDescription}
+          />
         )}
 
         {!pending && !empty && view === 'board' && (

@@ -1,11 +1,11 @@
 import { ArrowUpCircle, Heart, Smartphone } from 'lucide-react';
-import { Divider, XIcon, type MenuEntry } from '@goodboy/ui';
+import { Divider, XIcon, type MenuEntry, FOCUS_RING, cn } from '@goodboy/ui';
 import { AppMenuList } from '../../../features/actions/AppMenuList';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { SetupSection } from '../../../features/onboarding/SetupChecklist/SetupSection';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { BrandLockup } from './BrandLockup';
 
 type RailUpdate = {
@@ -125,13 +125,16 @@ export const GoodboyMenu = ({
 
   return (
     <>
-      <header className="flex min-w-0 items-center gap-2 px-3 py-2 text-label">
+      <header className="flex min-w-0 items-center gap-2 px-3 py-2 text-meta">
         <BrandLockup version={version} hasMeta={false} />
         <button
           type="button"
           onClick={onOpenChangelog}
           aria-label={`Open ${NAMES.whatsNew}`}
-          className="min-w-0 truncate rounded-sm text-meta tabular-nums text-faint-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'min-w-0 truncate rounded-sm text-meta tabular-nums text-faint-foreground hover:text-foreground',
+            FOCUS_RING,
+          )}
         >
           {version === null ? 'Beta' : `${version} · Beta`}
         </button>

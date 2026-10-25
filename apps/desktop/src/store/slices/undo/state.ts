@@ -2,7 +2,7 @@ import type { ShowToastParams } from '../../../shared/components/Toast/toastCont
 
 export type UndoOperation = {
   readonly id: string;
-  readonly undo: () => Promise<boolean | void>;
+  readonly undo: () => Promise<boolean | number | void>;
   readonly conflictMessage: string;
   readonly isCurrent?: () => boolean;
 };

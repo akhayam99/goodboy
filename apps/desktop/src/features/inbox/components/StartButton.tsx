@@ -1,7 +1,7 @@
 import { Rocket } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
+import { Button, ICON_SIZE } from '@goodboy/ui';
+
+import { NAMES } from '../../../shared/utils/names';
 
 type Props = {
   readonly label: string;

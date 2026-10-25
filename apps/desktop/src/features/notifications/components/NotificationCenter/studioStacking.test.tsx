@@ -8,6 +8,11 @@ import type { Notification } from '@goodboy/db';
 import { AppShell } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 
+const defaults = vi.hoisted(() => {
+  const scope: 'workspace' | 'all' = 'workspace';
+  return { scope };
+});
+
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
@@ -27,13 +32,19 @@ const { state } = vi.hoisted(() => ({
     setCurrentWorkspace: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
+    workspaces: [{ id: 'ws-1' }],
+    notificationScope: defaults.scope,
+    setNotificationScope: vi.fn(async () => undefined),
   },
 }));
 
 vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
   (useAppStore as unknown as { getState: () => typeof state }).getState = () => state;
-  return { useAppStore };
+  return {
+    useAppStore,
+    useAttentionElsewhere: () => ({ count: 0, tone: null }),
+  };
 });
 
 import { NotificationCenter } from './index';

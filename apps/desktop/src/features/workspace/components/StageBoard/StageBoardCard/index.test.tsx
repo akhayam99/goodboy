@@ -65,6 +65,7 @@ vi.mock('../../../../../store', async () => ({
   useNonResolverStandaloneAgents: () => hooks.agents,
   useSessionCost: () => hooks.cost,
   useSessionPrFetchState: () => hooks.prFetchState,
+  useSessionRequestHost: () => 'github' as const,
   useSessionStageInfo: () => ({
     stage: hooks.stage,
     reason: hooks.reason,
@@ -179,18 +180,19 @@ const cardTitle = () => screen.getByRole('button', { name: session.goal });
 const signalSlot = () => screen.getByRole('article').querySelector('[data-slot="card-signal"]');
 
 describe('StageBoardCard layout', () => {
-  it('keeps a fixed 96px height with a two-line title and one bottom line', () => {
+  it('keeps a 96px floor with a two-line title and one bottom line', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    expect(card.className).toContain('h-24');
+    expect(card.className).toContain('min-h-24');
     expect(card.className).not.toContain('h-28');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBeNull();
     expect(cardTitle().closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(session.goal);
-    expect(card.querySelector('[data-slot="card-project"]')?.className).toContain('row-start-2');
-    expect(signalSlot()?.className).toContain('row-start-2');
+    const project = card.querySelector('[data-slot="card-project"]');
+    expect(project?.parentElement).toBe(signalSlot()?.parentElement);
+    expect(project?.parentElement?.parentElement).toBe(card);
   });
 
   it('says nothing under the title: no reason line, no progress, no chevron', () => {
@@ -218,7 +220,7 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const project = screen.getByText('payments-api');
     expect(project.className).toContain('text-muted-foreground');
-    expect(project.className).toContain('truncate');
+    expect(project.className).not.toContain('truncate');
 
     cleanup();
     state.sessionProjectMounts = {
@@ -305,7 +307,7 @@ describe('StageBoardCard one signal', () => {
     hooks.isRunning = true;
     state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByRole('img', { name: '2 open questions' })).toBeDefined();
+    expect(screen.getByRole('img', { name: '2 questions for you' })).toBeDefined();
     expect(signalSlot()?.querySelectorAll('[data-board-signal]')).toHaveLength(1);
   });
 
@@ -460,6 +462,67 @@ describe('StageBoardCard actions', () => {
     expect(onHoverEnter).toHaveBeenCalledWith({ sessionId: SESSION_ID, anchor: card });
     fireEvent.mouseLeave(card);
     expect(onHoverLeave).toHaveBeenCalled();
+  });
+
+  it('opens the hover card on keyboard focus of the title and closes it on blur', () => {
+    const onHoverEnter = vi.fn();
+    const onHoverLeave = vi.fn();
+    render(
+      <StageBoardCard
+        session={session}
+        nav={nav}
+        onHoverEnter={onHoverEnter}
+        onHoverLeave={onHoverLeave}
+      />,
+    );
+    fireEvent.focus(cardTitle());
+    expect(onHoverEnter).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      anchor: screen.getByRole('article'),
+    });
+    fireEvent.blur(cardTitle());
+    expect(onHoverLeave).toHaveBeenCalled();
+  });
+});
+
+describe('StageBoardCard in the Needs you lane', () => {
+  it('writes the reason in words and makes the round button the thing that clears it', () => {
+    hooks.stage = 'attention';
+    hooks.attention = 'changes-requested';
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    expect(screen.getByRole('img', { name: 'Changes requested' }).textContent).toBe(
+      'Changes requested',
+    );
+    fireEvent.click(screen.getByLabelText('Changes requested', { selector: 'button' }));
+    expect(state.navigate).toHaveBeenCalledTimes(1);
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('keeps the first dynamic action ahead of the reason button', () => {
+    hooks.stage = 'attention';
+    hooks.attention = 'open-question';
+    useDynamicActionsMock.mockReturnValue([
+      {
+        key: 'questions',
+        icon: HelpCircle,
+        tone: 'warning',
+        label: 'Answer now',
+        onClick: vi.fn(),
+      },
+    ]);
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    screen.getByLabelText('Answer now');
+    expect(screen.queryByLabelText('1 question for you', { selector: 'button' })).toBeNull();
+  });
+
+  it('draws no reason button outside the lane', () => {
+    hooks.stage = 'building';
+    hooks.attention = 'changes-requested';
+    render(<StageBoardCard session={session} nav={nav} />);
+
+    expect(screen.queryByLabelText('Changes requested', { selector: 'button' })).toBeNull();
   });
 });
 

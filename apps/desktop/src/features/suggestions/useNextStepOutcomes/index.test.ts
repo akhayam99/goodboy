@@ -109,6 +109,22 @@ describe('useNextStepOutcomes', () => {
     expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(false);
   });
 
+  it('names the session the loaded set belongs to, and none before the load', async () => {
+    let answer: (events: ReadonlyArray<NudgeEvent>) => void = () => undefined;
+    listNudgeEvents.mockImplementationOnce(
+      () =>
+        new Promise<ReadonlyArray<NudgeEvent>>((resolve) => {
+          answer = resolve;
+        }),
+    );
+
+    const view = renderHook(() => useNextStepOutcomes({ sessionId }));
+    expect(view.result.current.loadedFor).toBeNull();
+
+    answer([]);
+    await waitFor(() => expect(view.result.current.loadedFor).toBe(sessionId));
+  });
+
   it('fetches every event for the session, no time window', async () => {
     listNudgeEvents.mockResolvedValue([]);
     renderHook(() => useNextStepOutcomes({ sessionId }));

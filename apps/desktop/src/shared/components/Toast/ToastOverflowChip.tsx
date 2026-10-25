@@ -1,6 +1,5 @@
 import { Bell } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { cn, FLOATING_SURFACE, ICON_SIZE } from '@goodboy/ui';
 
 type ToastOverflowChipProps = {
   readonly count: number;
@@ -12,8 +11,9 @@ export const ToastOverflowChip = ({ count, onOpen }: ToastOverflowChipProps) => 
     type="button"
     onClick={onOpen}
     className={cn(
-      'pointer-events-auto inline-flex items-center gap-1 self-end rounded-full border border-border-soft',
-      'bg-floating px-3 py-1 text-chip text-muted-foreground shadow-lg',
+      FLOATING_SURFACE,
+      'pointer-events-auto inline-flex items-center gap-1 self-end rounded-full border-border-soft',
+      'px-3 py-1 text-chip text-muted-foreground',
       'hover:bg-hover hover:text-foreground motion-safe:transition-colors',
     )}
   >

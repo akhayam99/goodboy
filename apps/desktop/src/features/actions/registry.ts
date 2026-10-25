@@ -36,6 +36,7 @@ import { RECORD_KIND } from './kinds/record';
 import { SCRIPT_KIND } from './kinds/script';
 import { WORKTREE_KIND } from './kinds/worktree';
 import { SESSION_KIND } from './kinds/session';
+import { DONE_LANE_KIND } from './kinds/doneLane';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
 import { REVIEW_KIND } from './kinds/review';
@@ -125,6 +126,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: SESSION_KIND, state, target });
     case 'sessions':
       return bind({ definition: SESSIONS_KIND, state, target });
+    case 'doneLane':
+      return bind({ definition: DONE_LANE_KIND, state, target });
     case 'agent':
       return bind({ definition: AGENT_KIND, state, target });
     case 'workflowRun':

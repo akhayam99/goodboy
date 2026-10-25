@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { AGENT_GATE_REASON, wizardCta } from './wizardCta';
+import { wizardCta } from './wizardCta';
 import type { WizardStepId } from './wizardSteps';
 
 type Params = Partial<Parameters<typeof wizardCta>[0]> & {
@@ -28,12 +28,13 @@ describe('wizardCta', () => {
   });
 
   it('says why Continue is off with no ready agent', () => {
-    expect(ctaOf({ step: 'agents', readyCount: 0 }).reason).toBe(AGENT_GATE_REASON);
+    expect(ctaOf({ step: 'agents', readyCount: 0 }).reason).toBe(
+      'Get one agent ready to continue.',
+    );
   });
 
   it('relabels the primary Retry after a failure', () => {
     expect(ctaOf({ step: 'agents', hasFailed: true }).primary).toBe('Retry');
-    expect(ctaOf({ step: 'first-session', hasFailed: true }).primary).toBe('Retry');
   });
 
   it('drafts a brief when an issue is picked, and closes a single step with Done', () => {

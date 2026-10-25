@@ -1,13 +1,14 @@
 import { SlidersHorizontal } from 'lucide-react';
 import {
   Button,
+  cn,
+  ICON_SIZE,
   InteractiveRow,
+  tintClasses,
   Tooltip,
+  TruncatedText,
   WORK_META_COLUMN,
   WORK_ROW,
-  cn,
-  tintClasses,
-  TruncatedText,
 } from '@goodboy/ui';
 import type {
   EffortLevel,
@@ -40,7 +41,6 @@ import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
 import { rowSlotWidth } from './rowSlotWidth';
 import type { RunTreeDensity } from './runTreeDensity';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
@@ -222,7 +222,7 @@ export const RunTreeRow = ({
                         className={cn(
                           WORK_ROW.title,
                           'flex-1 truncate',
-                          density === 'rail' ? 'text-ui' : isNested ? 'text-label' : 'text-body',
+                          density === 'rail' ? 'text-ui' : isNested ? 'text-meta' : 'text-body',
                           item.rowState.phase === 'queued'
                             ? 'text-muted-foreground'
                             : item.rowState.phase === 'running' || item.hasUnread

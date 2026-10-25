@@ -3,13 +3,13 @@ import type { ResolvedFact } from '../../../detail-fields/factTypes';
 import { RecordFrameContext } from '../RecordFrameContext';
 import { RecordProperties } from '../RecordProperties';
 import { X } from 'lucide-react';
-import { Button, IconButton, StarToggle, useInheritedPaneActions } from '@goodboy/ui';
+import { Button, ICON_SIZE, IconButton, StarToggle, useInheritedPaneActions } from '@goodboy/ui';
 import {
   IntegrationGlyph,
-  integrationLabel,
   type IntegrationGlyphProvider,
 } from '../../../../features/integrations/components/IntegrationGlyph';
-import { ICON_SIZE } from '../../conceptIcons';
+import { integrationLabel } from '../../../utils/integrationLabel';
+
 import { RecordActions } from '../RecordActions';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';

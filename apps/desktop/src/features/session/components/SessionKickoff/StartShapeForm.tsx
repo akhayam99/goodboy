@@ -4,7 +4,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { StartShape } from '../../../../store/slices/sessionDraft/state';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { AGENT_KIND_META } from '../../agent-kind';
@@ -71,7 +71,7 @@ export const StartShapeForm = ({ workspaceId, shape, run, limit }: Props) => {
 
   return (
     <section aria-label={`${card.label} form`} className="flex flex-col gap-6">
-      <p className="text-label text-muted-foreground">{card.whileRuns}</p>
+      <p className="text-meta text-muted-foreground">{card.whileRuns}</p>
       {shape === 'preset' ? (
         <StartPresetFields workspaceId={workspaceId} isDisabled={run.isStarting} />
       ) : null}

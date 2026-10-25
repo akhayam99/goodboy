@@ -30,7 +30,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
   worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings' })),
 }));
 
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { useAppStore, type AppStore } from '../../store';
 import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
 import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
@@ -113,24 +113,9 @@ const harness = (): Harness => {
     fixBranchPushWithAgent: fixBranchPushWithAgent({ set, get }),
     settleBranchPushFix: settleBranchPushFix({ set, get }),
     prefillBranchPushTerminal: prefillBranchPushTerminal({ get }),
-    pushSessionBranch: async ({ sessionId, mountId, expectedWorktreePath }) => {
-      const { pushSessionBranch } = await import('../github/pushSessionBranch');
-      return pushSessionBranch({ get, sessionId, mountId, expectedWorktreePath });
-    },
-    forcePushSessionBranch: async ({
-      sessionId,
-      mountId,
-      confirmedOnlyOnline,
-      confirmedRemoteSha,
-    }) => {
-      const { forcePushSessionBranch } = await import('../github/forcePushSessionBranch');
-      return forcePushSessionBranch({
-        get,
-        sessionId,
-        mountId,
-        confirmedOnlyOnline,
-        confirmedRemoteSha,
-      });
+    pushBranch: async (params) => {
+      const { pushBranch } = await import('../github/pushBranch');
+      return pushBranch({ set, get })(params);
     },
   };
   const renameBranch = ({ branch }: RenameBranchParams) => {
@@ -406,6 +391,7 @@ describe('settleBranchPushFix', () => {
       expect.objectContaining({
         title: "Couldn't push the fix.",
         error: 'The online copy changed. Check again before force pushing.',
+        recovery: { clause: 'work-kept' },
       }),
     );
     expect(read().settledBranchPushes[MOUNT_ID]).toBeUndefined();
@@ -469,7 +455,16 @@ describe('settleBranchPushFix', () => {
     });
 
     expect(read().reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't push the fix.", error: 'hook declined' }),
+      expect.objectContaining({
+        title: "Couldn't push the fix.",
+        error: 'hook declined',
+        sessionId: SESSION_ID,
+        coalesceKey: `push-failed:${MOUNT_ID}`,
+        recovery: {
+          action: { kind: 'retry-push', sessionId: SESSION_ID, mountId: MOUNT_ID },
+          clause: 'work-kept',
+        },
+      }),
     );
     expect(read().branchPushFixes[AGENT_ID]).toBeUndefined();
   });
@@ -498,7 +493,10 @@ describe('settleBranchPushFix', () => {
     expect(h.gitPush).not.toHaveBeenCalled();
     expect(h.pushWithLease).not.toHaveBeenCalled();
     expect(read().reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't push the fix." }),
+      expect.objectContaining({
+        title: "Couldn't push the fix.",
+        recovery: { clause: 'work-kept' },
+      }),
     );
     expect(read().settledBranchPushes[MOUNT_ID]).toBeUndefined();
     expect(read().branchPushFixes[AGENT_ID]).toBeUndefined();

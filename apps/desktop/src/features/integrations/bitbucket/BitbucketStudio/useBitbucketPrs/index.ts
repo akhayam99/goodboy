@@ -36,7 +36,10 @@ type BucketParams = {
 };
 
 const bucketOf = ({ pullRequest }: BucketParams): string => {
-  const kind = bitbucketPrStateKind({ state: pullRequest.state });
+  const kind = bitbucketPrStateKind({
+    state: pullRequest.state,
+    requestState: pullRequest.requestState,
+  });
   if (kind === 'open') {
     return 'Open';
   }

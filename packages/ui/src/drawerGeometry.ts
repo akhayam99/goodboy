@@ -1,3 +1,5 @@
+import { DURATION_QUICK_MS } from './motionTimings';
+
 export const RIGHT_DRAWER_MIN = 384;
 export const RIGHT_DRAWER_MAX = 560;
 export const RIGHT_DRAWER_DEFAULT = 400;
@@ -7,7 +9,7 @@ export const READER_DRAWER_DEFAULT = 720;
 export const COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
-export const DRAWER_EXIT_MS = 160;
+export const DRAWER_EXIT_MS = DURATION_QUICK_MS;
 export const DRAWER_EXIT_MAX_ELEMENTS = 2000;
 
 export type DrawerSizing = 'side' | 'reader';

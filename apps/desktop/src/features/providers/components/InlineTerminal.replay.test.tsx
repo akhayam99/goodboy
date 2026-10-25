@@ -26,6 +26,13 @@ vi.mock('@xterm/xterm', () => ({
     loadAddon() {}
     open() {}
     attachCustomKeyEventHandler() {}
+    buffer = { active: { length: 0, getLine: () => undefined } };
+    hasSelection() {
+      return false;
+    }
+    onSelectionChange() {
+      return { dispose() {} };
+    }
     onData() {
       return { dispose() {} };
     }
@@ -124,7 +131,6 @@ const startRun = async (): Promise<void> => {
   await invokeProviderLifecycleRun({
     providerId: 'opencode',
     action: 'login',
-    command: 'opencode auth login',
     runId: RUN_ID,
     cols: 80,
     rows: 24,

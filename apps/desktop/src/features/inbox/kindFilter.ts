@@ -26,15 +26,6 @@ export const INBOX_KIND_PROVIDERS: Record<InboxTypeFacet, ReadonlyArray<InboxPro
 
 export type InboxView = 'all' | 'assigned' | 'starred' | 'in-progress' | 'with-session' | 'closed';
 
-export const INBOX_VIEWS: ReadonlyArray<InboxView> = [
-  'all',
-  'assigned',
-  'starred',
-  'in-progress',
-  'with-session',
-  'closed',
-];
-
 export type InboxFilters = {
   readonly view: InboxView;
   readonly kind: InboxKindFilter;

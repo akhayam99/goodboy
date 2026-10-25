@@ -58,9 +58,9 @@ const invokes = (command: string): ReadonlyArray<InvokeCall> =>
     .map(([name, args]) => ({ command: String(name), args }))
     .filter((call) => call.command === command);
 
-const savedOverrides = (): ReadonlyArray<OverrideSettings> =>
-  invokes('set_workspace_overrides').map(
-    (call) => (call.args as { readonly overrides: OverrideSettings }).overrides,
+const savedPatches = (): ReadonlyArray<Partial<OverrideSettings>> =>
+  invokes('patch_workspace_overrides').map(
+    (call) => (call.args as { readonly patch: Partial<OverrideSettings> }).patch,
   );
 
 const seed = ({
@@ -73,7 +73,7 @@ const seed = ({
   readonly settings?: Readonly<Record<string, string>>;
 } = {}) => {
   stubStoryInvoke({
-    set_workspace_overrides: null,
+    patch_workspace_overrides: null,
     get_workspace_overrides: (args: { readonly workspaceId: WorkspaceId }) =>
       args.workspaceId === NORTHWIND.id ? northwind : harborline,
   });
@@ -205,8 +205,8 @@ describe('WorkspaceScopePanel pages', () => {
 
     fireEvent.click(within(region).getByRole('switch'));
 
-    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
-    expect(savedOverrides()[0]).toEqual({ ...EMPTY_OVERRIDES, attributionFooter: false });
+    await waitFor(() => expect(savedPatches()).toHaveLength(1));
+    expect(savedPatches()[0]).toEqual({ attributionFooter: false });
   });
 });
 
@@ -275,8 +275,8 @@ describe('changed from default', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset Branch prefix to default' }));
 
-    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
-    expect(savedOverrides()[0]?.defaultBranchPrefix).toBeNull();
+    await waitFor(() => expect(savedPatches()).toHaveLength(1));
+    expect(savedPatches()[0]?.defaultBranchPrefix).toBeNull();
     expect(screen.queryByRole('button', { name: /^Reset .* to default$/ })).toBeNull();
   });
 });
@@ -299,17 +299,12 @@ describe('restore defaults', () => {
     expect(flow.textContent).toContain('Goes back to the default: 2 settings on 1 page.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Restore 2 settings' }));
 
-    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
-    expect(savedOverrides()[0]).toEqual({
-      ...EMPTY_OVERRIDES,
-      replyVoice: null,
-      resolveCommitStyle: null,
-      attributionFooter: false,
-    });
+    await waitFor(() => expect(savedPatches()).toHaveLength(1));
+    expect(savedPatches()[0]).toEqual({ replyVoice: null, resolveCommitStyle: null });
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    await waitFor(() => expect(savedOverrides()).toHaveLength(2));
-    expect(savedOverrides()[1]?.replyVoice).toBe('friendly');
+    await waitFor(() => expect(savedPatches()).toHaveLength(2));
+    expect(savedPatches()[1]?.replyVoice).toBe('friendly');
   });
 });
 
@@ -342,14 +337,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 
     await screen.findByText('Copied 3 settings from Northwind.');
-    expect(savedOverrides()).toEqual([
-      {
-        ...EMPTY_OVERRIDES,
-        replyVoice: 'formal',
-        resolveOnGithub: false,
-        defaultBranchPrefix: 'hl',
-      },
-    ]);
+    expect(savedPatches()).toEqual([{ replyVoice: 'formal', resolveOnGithub: false }]);
     const settingWrites = storySpies.setSetting.mock.calls.map((call: ReadonlyArray<unknown>) =>
       String(call[1]),
     );
@@ -378,16 +366,95 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 2 settings' }));
 
     await screen.findByText('Copied 2 settings from Northwind.');
-    expect(savedOverrides()).toEqual([
-      { ...EMPTY_OVERRIDES, defaultBranchPrefix: 'nw', replyVoice: 'formal' },
-    ]);
+    expect(savedPatches()).toEqual([{ defaultBranchPrefix: 'nw', replyVoice: 'formal' }]);
+  });
+});
+
+describe('folders that use their own value', () => {
+  const labelLine = (label: string) => screen.getByText(label).parentElement ?? document.body;
+
+  it('says how many folders hold their own value, on the rows they override and no other', () => {
+    useAppStore.setState({
+      projects: [
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'ledger-core',
+          rootPath: '/repos/ledger-core',
+          overrides: overrides({ defaultBranchPrefix: 'ledger' }),
+        }),
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'notify-relay',
+          rootPath: '/repos/notify-relay',
+          overrides: overrides({ defaultBranchPrefix: 'relay', defaultVerbosity: 'brief' }),
+        }),
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'payments-api',
+          rootPath: '/repos/payments-api',
+          overrides: overrides({ defaultBranchPrefix: 'old' }),
+          disconnectedAt: TEST_NOW,
+        }),
+        aProject({
+          workspaceId: NORTHWIND.id,
+          name: 'cascadia',
+          rootPath: '/repos/cascadia',
+          overrides: overrides({ parallelAgents: true }),
+        }),
+      ],
+    });
+    renderPage({ section: 'general' });
+
+    within(labelLine('Branch prefix')).getByText('2 folders use their own');
+    within(labelLine('Reply length')).getByText('1 folder uses its own');
+    expect(
+      within(labelLine('Parallel agents')).queryByText(/use their own|uses its own/),
+    ).toBeNull();
+    expect(
+      within(labelLine('Attribution line')).queryByText(/use their own|uses its own/),
+    ).toBeNull();
+    expect(screen.getAllByText(/folders? use[s]? (their|its) own/)).toHaveLength(2);
+  });
+
+  it('shows no chip while no folder holds a value of its own', () => {
+    useAppStore.setState({
+      projects: [
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'ledger-core',
+          rootPath: '/repos/ledger-core',
+        }),
+      ],
+    });
+    renderPage({ section: 'general' });
+
+    expect(screen.queryByText(/use their own|uses its own/)).toBeNull();
+  });
+
+  it('keeps the reset button beside the chip on a row that also changed', () => {
+    seed({ harborline: overrides({ defaultBranchPrefix: 'hl' }) });
+    useAppStore.setState({
+      projects: [
+        aProject({
+          workspaceId: HARBORLINE.id,
+          name: 'ledger-core',
+          rootPath: '/repos/ledger-core',
+          overrides: overrides({ defaultBranchPrefix: 'ledger' }),
+        }),
+      ],
+    });
+    renderPage({ section: 'general' });
+
+    const line = within(labelLine('Branch prefix'));
+    line.getByText('1 folder uses its own');
+    line.getByRole('button', { name: 'Reset Branch prefix to default' });
   });
 });
 
 describe('track with git', () => {
   it('opens the first commit review inline on Projects, never in a dialog', async () => {
     stubStoryInvoke({
-      set_workspace_overrides: null,
+      patch_workspace_overrides: null,
       get_workspace_overrides: () => EMPTY_OVERRIDES,
       file_versions_folder_size: ({
         args,

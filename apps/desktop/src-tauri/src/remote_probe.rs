@@ -3,8 +3,10 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use crate::github::{run_git_authenticated_within, GithubError};
-use crate::repo::{default_remote_name, is_repo_root};
+use crate::proc::git::GitError;
+use crate::remote::resolve;
+use crate::remote_auth::run_git_authenticated_within;
+use crate::repo::is_repo_root;
 use crate::worktree::{git, redact_credentials};
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
@@ -96,9 +98,9 @@ fn branch_of_matching_head(
     Ok(matching("main").or_else(|| matching("master")))
 }
 
-fn describe(error: &GithubError) -> String {
+fn describe(error: &GitError) -> String {
     match error {
-        GithubError::Timeout => "the remote did not answer in time".to_string(),
+        GitError::Timeout { .. } => "the remote did not answer in time".to_string(),
         other => other.to_string(),
     }
 }
@@ -107,7 +109,7 @@ pub(crate) fn probe_with(root: &Path, token: Option<&str>, timeout: Duration) ->
     if !root.is_dir() || !is_repo_root(root) {
         return RemoteProbe::NoRemote;
     }
-    let Some(remote) = default_remote_name(root) else {
+    let Some(remote) = resolve(root) else {
         return RemoteProbe::NoRemote;
     };
     let root_text = root.to_string_lossy().to_string();
@@ -168,7 +170,11 @@ pub async fn project_remote_probe(
     project_id: Option<String>,
 ) -> RemoteProbe {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = match crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())
+        {
+            Ok(token) => token,
+            Err(error) => return unreachable(error.to_string()),
+        };
         probe_with(
             Path::new(project_path.trim()),
             token.as_deref(),

@@ -200,7 +200,7 @@ const ChatListRowView = ({
               <>
                 <span
                   className={cn(
-                    'min-w-0 flex-1 truncate text-label',
+                    'min-w-0 flex-1 truncate text-meta',
                     isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
                   )}
                 >

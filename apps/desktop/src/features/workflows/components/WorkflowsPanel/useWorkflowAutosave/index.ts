@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from 'react';
 import type { WorkflowDraft } from '../../../engine';
 
-export const WORKFLOW_AUTOSAVE_DELAY_MS = 700;
+const WORKFLOW_AUTOSAVE_DELAY_MS = 700;
 
 type Params = {
   readonly form: WorkflowDraft;

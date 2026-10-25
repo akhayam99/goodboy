@@ -1,6 +1,6 @@
 import { useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { RunLimitFields } from './RunLimitFields';
 import type { RunSettingWords } from './runSettingsOf';
 import { SettingChip } from '../../../../shared/components/SettingChip';

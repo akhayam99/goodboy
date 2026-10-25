@@ -37,7 +37,7 @@ import { branchPlace } from '../../../../store/slices/navigation/place';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../../../shared/pullRequestPresentation';
+} from '../../../../shared/utils/pullRequestPresentation';
 import type { MountGithubState } from '../../../../store/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -312,7 +312,7 @@ describe('BranchHeader one row', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
 
-    expect(screen.getByText('Enter saves, Esc cancels')).toBeDefined();
+    screen.getByText('Enter saves, Esc cancels');
   });
 });
 
@@ -444,7 +444,7 @@ describe('BranchHeader actions by state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
 
-    expect(screen.getByRole('menuitem', { name: /Cancel auto-merge/ })).toBeDefined();
+    screen.getByRole('menuitem', { name: /Cancel auto-merge/ });
   });
 
   it('puts Push N as the secondary ahead of Publish and Retry, counting the accepted threads', () => {
@@ -470,14 +470,14 @@ describe('BranchHeader actions by state', () => {
       pr: PR,
       review: { accepted: 0, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
-    expect(screen.getByRole('button', { name: /Publish 2 replies/ })).toBeDefined();
+    screen.getByRole('button', { name: /Publish 2 replies/ });
     cleanup();
 
     renderHeader({
       pr: PR,
       review: { accepted: 0, replies: 0, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
-    expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
+    screen.getByRole('button', { name: 'Retry push' });
   });
 
   it('keeps the push next to the primary, secondary first', () => {
@@ -560,7 +560,7 @@ describe('BranchHeader blocked reason', () => {
 
     expect(screen.queryByRole('button', { name: /Force push/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
-    expect(screen.getByRole('menuitem', { name: /Force push 3 commits/ })).toBeDefined();
+    screen.getByRole('menuitem', { name: /Force push 3 commits/ });
   });
 });
 
@@ -655,7 +655,7 @@ describe('BranchHeader title editing', () => {
     renderHeader({ pr: PR, canEditTitle: true });
 
     fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
-    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Pull request title' });
 
     fireEvent.keyDown(window, { code: 'Escape', key: 'Escape' });
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
@@ -734,10 +734,10 @@ describe('BranchHeader push failure', () => {
       async () => {},
     );
     useAppStore.setState({
-      pushSessionBranch: vi.fn<StoreState['pushSessionBranch']>(async () => ({ ok: false, error })),
-      forcePushSessionBranch: vi.fn<StoreState['forcePushSessionBranch']>(async () => ({
+      pushBranch: vi.fn<StoreState['pushBranch']>(async () => ({
         ok: false,
         error,
+        reason: 'failed',
       })),
       fixBranchPushWithAgent,
       prefillBranchPushTerminal,
@@ -776,7 +776,7 @@ describe('BranchHeader push failure', () => {
         expect.objectContaining({ sessionId: SESSION_ID, mountId: MOUNT_ID, isForce: false }),
       ),
     );
-    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+    within(alert).getByRole('button', { name: 'Retry' });
   });
 
   it('sends the hint typed under a failed push to the agent', async () => {
@@ -852,7 +852,7 @@ describe('BranchHeader push feedback', () => {
     upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
   });
 
-  type PushResult = Awaited<ReturnType<StoreState['pushSessionBranch']>>;
+  type PushResult = Awaited<ReturnType<StoreState['pushBranch']>>;
   type Deferred = {
     readonly promise: Promise<PushResult>;
     readonly resolve: () => void;
@@ -871,14 +871,14 @@ describe('BranchHeader push feedback', () => {
     withRequest(open);
     status = pushStatus();
     const gate = deferredPush();
-    const pushSessionBranch = vi.fn<StoreState['pushSessionBranch']>(() => gate.promise);
-    useAppStore.setState({ pushSessionBranch });
+    const pushBranch = vi.fn<StoreState['pushBranch']>(() => gate.promise);
+    useAppStore.setState({ pushBranch });
     renderHeader({ pr: open });
-    return { gate, pushSessionBranch };
+    return { gate, pushBranch };
   };
 
   it('shows the busy word on the button while the push runs and ignores a second click', async () => {
-    const { gate, pushSessionBranch } = setup();
+    const { gate, pushBranch } = setup();
 
     const button = screen.getByRole('button', { name: 'Push 1 commit' });
     fireEvent.click(button);
@@ -888,7 +888,7 @@ describe('BranchHeader push feedback', () => {
     expect(busy.getAttribute('aria-busy')).toBe('true');
     expect(busy.hasAttribute('disabled')).toBe(true);
     fireEvent.click(busy);
-    expect(pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(pushBranch).toHaveBeenCalledTimes(1);
 
     await act(async () => gate.resolve());
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull());
@@ -902,7 +902,7 @@ describe('BranchHeader push feedback', () => {
 
     const line = await screen.findByRole('status');
     expect(line.textContent).toContain('Pushed 1 commit to origin.');
-    expect(screen.getByRole('button', { name: 'Push 1 commit' })).toBeDefined();
+    screen.getByRole('button', { name: 'Push 1 commit' });
     expect(screen.queryByRole('alert')).toBeNull();
 
     fireEvent.click(within(line).getByRole('button', { name: 'Dismiss' }));
@@ -910,20 +910,20 @@ describe('BranchHeader push feedback', () => {
   });
 
   it('clears the outcome line when the next action starts', async () => {
-    const { gate, pushSessionBranch } = setup();
+    const { gate, pushBranch } = setup();
 
     fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
     await act(async () => gate.resolve());
     await screen.findByRole('status');
 
     const second = deferredPush();
-    pushSessionBranch.mockImplementationOnce(() => second.promise);
+    pushBranch.mockImplementationOnce(() => second.promise);
     fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
 
     await screen.findByRole('button', { name: 'Pushing…' });
     expect(screen.queryByRole('status')).toBeNull();
     await act(async () => second.resolve());
-    await waitFor(() => expect(screen.getByRole('status')).toBeDefined());
+    await waitFor(() => screen.getByRole('status'));
   });
 
   it('shows the failure line with Retry and no outcome when the push fails', async () => {
@@ -931,9 +931,10 @@ describe('BranchHeader push feedback', () => {
     withRequest(open);
     status = pushStatus();
     useAppStore.setState({
-      pushSessionBranch: vi.fn<StoreState['pushSessionBranch']>(async () => ({
+      pushBranch: vi.fn<StoreState['pushBranch']>(async () => ({
         ok: false,
         error: 'pre-push hook declined',
+        reason: 'failed',
       })),
     });
     renderHeader({ pr: open });
@@ -942,7 +943,7 @@ describe('BranchHeader push feedback', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('pre-push hook declined');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    screen.getByRole('button', { name: 'Retry' });
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull();
   });

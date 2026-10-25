@@ -2,7 +2,7 @@ import { useEffect, useState, type RefObject } from 'react';
 import { canAnimate } from '../canAnimate';
 import { DRAWER_EXIT_MS, type DrawerMode } from '../drawerGeometry';
 import { exitSnapshotOf, type ExitSnapshot } from '../exitSnapshot';
-import { FOLD_MS } from '../motionTimings';
+import { DURATION_BASE_MS } from '../motionTimings';
 
 type OpenMode = Exclude<DrawerMode, 'closed'>;
 
@@ -75,7 +75,7 @@ export const useDrawerExit = ({ isOpen, layoutMode, cardRef, contentRef }: Param
     setState(next);
   }
   const isExiting = next.phase === 'exiting';
-  const exitMs = next.last === 'push' ? FOLD_MS : DRAWER_EXIT_MS;
+  const exitMs = next.last === 'push' ? DURATION_BASE_MS : DRAWER_EXIT_MS;
 
   useEffect(() => {
     if (!isExiting) {

@@ -6,7 +6,7 @@ import { fileSignature, writeReviewedMap } from '../../../../../features/diff/li
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
 import { BRAND_PEOPLE } from '../brand/canon';
-import { CTX_SESSION, CTX_SESSION_ID, minutesAgo, seedContextBase } from '../brand/contextBase';
+import { CTX_SESSION_ID, minutesAgo, seedContextBase } from '../brand/contextBase';
 import {
   APPLY_WEBHOOK_NOTE_LINE,
   APPLY_WEBHOOK_PATH,

@@ -1,8 +1,7 @@
-import { getSetting, listLiveSessionIds } from '@goodboy/db';
+import { getWorkspaceValue, listLiveSessionIds } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { parseSessionPins, pruneSessionPins } from './parseSessionPins';
-import { sessionPinsKey } from './sessionPinsKey';
 import type { SessionPin } from './state';
 
 type Params = {
@@ -16,7 +15,7 @@ export type StoredSessionPins = {
 
 export const readSessionPins = async ({ workspaceId }: Params): Promise<StoredSessionPins> => {
   const [raw, liveIds] = await Promise.all([
-    getSetting(tauriDatabase, sessionPinsKey({ workspaceId })),
+    getWorkspaceValue({ db: tauriDatabase, workspaceId, key: 'sessions.pinned' }),
     listLiveSessionIds({ db: tauriDatabase, workspaceId }),
   ]);
   return {

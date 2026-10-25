@@ -18,7 +18,10 @@ export const SUGGESTION_ICONS: Record<SuggestionKind, LucideIcon> = {
   'open-pr': CONCEPT_ICONS.pr,
   'mark-ready': CONCEPT_ICONS.checks,
   'merge-pr': CONCEPT_ICONS.merge,
+  'merge-series': CONCEPT_ICONS.merge,
   'check-changes': CONCEPT_ICONS.review,
+  'move-tracker-item': CONCEPT_ICONS.issues,
   'close-worktree': CONCEPT_ICONS.delete,
+  'archive-session': CONCEPT_ICONS.archive,
   'continue-with-workflow': CONCEPT_ICONS.workflows,
 };

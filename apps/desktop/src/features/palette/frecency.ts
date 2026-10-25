@@ -23,9 +23,9 @@ type RecentKeysParams = {
   readonly limit: number;
 };
 
-export const FRECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000;
-export const FRECENCY_MAX_USES = 10;
-export const FRECENCY_MAX_KEYS = 200;
+const FRECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000;
+const FRECENCY_MAX_USES = 10;
+const FRECENCY_MAX_KEYS = 200;
 
 export const EMPTY_FRECENCY: FrecencyState = {};
 

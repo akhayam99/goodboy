@@ -1,4 +1,5 @@
 import type { AgentRole } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { isAgentRole } from '../roles';
 import type { RunSummary } from './types';
 
@@ -19,9 +20,6 @@ const stringList = (value: unknown): ReadonlyArray<string> =>
 type ValueParams = {
   readonly value: unknown;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const leftEntryOf = ({ value }: ValueParams): LeftEntry | null => {
   if (typeof value === 'string') {

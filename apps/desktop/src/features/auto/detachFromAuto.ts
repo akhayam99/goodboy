@@ -2,7 +2,7 @@ import type { Database } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 import type { AppStore } from '../../store/store';
-import { detachAdopted, type DetachOutcome } from '../../store/slices/auto/detachAdopted';
+import { detachAdopted, type DetachOutcome } from '../../store/runtime/auto/detachAdopted';
 
 export type DetachFromAutoParams = Readonly<{
   getState: () => AppStore;

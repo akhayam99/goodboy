@@ -1,19 +1,28 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AlertTriangle, ExternalLink, Laptop, MapPin, Tag, Terminal, BellRing } from 'lucide-react';
+import {
+  TriangleAlert,
+  SquareArrowOutUpRight,
+  Laptop,
+  MapPin,
+  Tag,
+  Terminal,
+  BellRing,
+} from 'lucide-react';
 import type { GhRunner } from '@goodboy/core';
 import type { GhTokenStatus } from '@goodboy/types';
 import {
-  Listbox,
-  ReportSheet,
   copyToClipboard,
   formatError,
+  ICON_SIZE,
+  Listbox,
+  ReportSheet,
   type ReportSheetAttachment,
   type ReportSheetVariant,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
-import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../settings/reportIssueTypes';
+import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../reportIssueTypes';
 import {
   NEVER_SENT,
   buildReport,
@@ -63,7 +72,7 @@ const PART_ICONS: Readonly<Record<ReportPartId, ReactNode>> = {
   system: <Laptop size={ICON_SIZE.row} />,
   screen: <MapPin size={ICON_SIZE.row} />,
   cliVersions: <Terminal size={ICON_SIZE.row} />,
-  error: <AlertTriangle size={ICON_SIZE.row} />,
+  error: <TriangleAlert size={ICON_SIZE.row} />,
   notice: <BellRing size={ICON_SIZE.row} />,
 };
 
@@ -283,7 +292,9 @@ export const ReportComposer = ({
       destination={destinationText({ github, direct, overflows: link?.overflows ?? false })}
       submitLabel={direct || github == null ? 'Send' : 'Open on GitHub'}
       submitIcon={
-        direct || github == null ? undefined : <ExternalLink size={ICON_SIZE.row} aria-hidden />
+        direct || github == null ? undefined : (
+          <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
+        )
       }
       submitHint={shortcutGlyphs('composer.submit')}
       isSubmitting={sendState === 'sending'}

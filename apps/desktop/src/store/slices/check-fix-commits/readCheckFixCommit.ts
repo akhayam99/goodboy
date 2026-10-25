@@ -1,6 +1,6 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { listBranchCommits } from '../../../features/worktree/worktree';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { fixCommitOf } from './fixCommitOf';
 import type { CheckFixCommit, GetFn, SetFn } from './types';

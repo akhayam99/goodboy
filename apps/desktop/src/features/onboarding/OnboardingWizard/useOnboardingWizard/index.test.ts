@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProviderConnectionState } from '@goodboy/types';
-import type { WizardState } from '../../onboarding-store';
+import type { WizardState } from '../../onboardingSettings';
 import { useOnboardingWizard } from './index';
 
 const OPEN_EVENT = 'goodboy:open-onboarding-wizard';
@@ -15,7 +15,7 @@ const workspaces: Array<{ id: string }> = [];
 let currentWorkspaceId: string | null = null;
 let projects: Array<{ workspaceId: string }> = [];
 
-vi.mock('../../onboarding-store', () => ({
+vi.mock('../../onboardingSettings', () => ({
   OPEN_WIZARD_EVENT: 'goodboy:open-onboarding-wizard',
   ONBOARDING_PROGRESS_EVENT: 'goodboy:onboarding-progress',
   getWizardState: () => wizardState,

@@ -1,3 +1,4 @@
+import { dispatchWindowEvent } from '../../shared/lib/dispatchWindowEvent';
 export const requestNewSession = () => {
-  window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+  dispatchWindowEvent({ name: 'goodboy:new-session' });
 };

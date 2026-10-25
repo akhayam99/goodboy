@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  MountId,
   MountTargetSnapshot,
   PrComment,
   ProjectId,
@@ -16,7 +17,7 @@ import type {
   ResolveUncapturedWork,
   SessionId,
 } from '@goodboy/types';
-import type { PublishConversationsResult } from './publishConversations';
+import type { PublishConversationsResult } from './publication/publishConversations';
 import type { RecheckOutcome } from './recheckThread';
 import type { ResolveCandidateMode } from './resolveCandidateMode';
 import type { ResolveCheckPair } from './runResolveCheck';
@@ -25,6 +26,22 @@ import type { GetFn, SetFn } from '../../slice-types';
 export type { GetFn, SetFn } from '../../slice-types';
 export type SliceParams = { readonly set: SetFn; readonly get: GetFn };
 export type SessionParams = { readonly sessionId: SessionId };
+export type LaneSource = {
+  readonly mountId: MountId;
+  readonly kind?: Exclude<ResolveSourceKind, 'local'>;
+  readonly projectId?: ProjectId | null;
+  readonly prNumber?: number;
+};
+export type LaneParams = SessionParams & {
+  readonly source?: LaneSource;
+  readonly comments?: ReadonlyArray<PrComment>;
+};
+export type RetryLaneParams = SessionParams & {
+  readonly worktreePath: string;
+  readonly mountId: MountId;
+  readonly comments?: ReadonlyArray<PrComment>;
+};
+export type CurrentParams = { readonly isCurrent?: () => boolean };
 export type ItemParams = SessionParams & { readonly itemId: string };
 export type ItemRevisionParams = ItemParams & {
   readonly revision: number;
@@ -103,10 +120,15 @@ export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revi
 type ResolveUpdatesParams = { readonly rows: ReadonlyArray<ResolveThread> };
 export type BatchUpdateParams = SessionParams & {
   readonly keepsDraft?: boolean;
+  readonly isCurrent?: () => boolean;
   readonly updates: ResolveUpdates | ((params: ResolveUpdatesParams) => ResolveUpdates);
 };
 
+export type RetryPublicationParams = SessionParams & {
+  readonly mountId: MountId | null;
+};
 export type PreparePublicationParams = SessionParams & {
+  readonly mountId: MountId | null;
   readonly threadIds?: ReadonlyArray<string>;
   readonly scopeId?: string;
   readonly isolated?: boolean;
@@ -118,10 +140,11 @@ export type PublishParams = SessionParams & {
 };
 
 export type ThreadParams = SessionParams & { readonly threadId: string };
-export type SourceSnapshotsParams = SessionParams & {
-  readonly prNumber: number;
-  readonly comments: ReadonlyArray<PrComment>;
-};
+export type SourceSnapshotsParams = SessionParams &
+  CurrentParams & {
+    readonly prNumber: number;
+    readonly comments: ReadonlyArray<PrComment>;
+  };
 export type SettleSourceChangeParams = ThreadParams & { readonly keepDraft: boolean };
 
 export type EnsureReviewThreadParams = SessionParams & {
@@ -135,6 +158,7 @@ export type MaterializeParams = SessionParams & {
   readonly projectId: ProjectId | null;
   readonly comments: ReadonlyArray<PrComment>;
   readonly sourceKind?: ResolveSourceKind;
+  readonly isCurrent?: () => boolean;
 };
 
 export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'closed' | 'cancelled';
@@ -170,7 +194,7 @@ export type ResolveActions = {
     params: PreparePublicationParams,
   ) => Promise<ResolvePublicationPreview>;
   readonly publishConversations: (params: PublishParams) => Promise<PublishConversationsResult>;
-  readonly retryPublication: (params: SessionParams) => Promise<ResolvePublicationPreview>;
+  readonly retryPublication: (params: RetryPublicationParams) => Promise<ResolvePublicationPreview>;
   readonly cancelPublication: (params: PublishParams) => Promise<void>;
   readonly updateResolveThreads: (params: BatchUpdateParams) => Promise<void>;
   readonly loadResolveSession: (params: SessionParams) => Promise<void>;
@@ -179,7 +203,8 @@ export type ResolveActions = {
   readonly recordResolvePhase: (params: PhaseParams) => Promise<void>;
   readonly beginResolveCandidate: (params: CandidateBeginParams) => Promise<void>;
   readonly captureResolveCandidate: (params: CandidateCaptureParams) => Promise<string | null>;
-  readonly reconcileResolveLane: (params: SessionParams) => Promise<void>;
+  readonly reconcileResolveLane: (params: LaneParams) => Promise<void>;
+  readonly retryLaneRebuild: (params: RetryLaneParams) => Promise<void>;
   readonly stopResolveLane: (
     params: SessionParams & { readonly worktreePath: string },
   ) => Promise<void>;

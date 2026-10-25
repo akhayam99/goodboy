@@ -6,7 +6,7 @@ import {
   makeRuntimeWorld,
   userSays,
   type RuntimeWorld,
-} from '../../store/slices/auto/testing/runtimeWorld';
+} from '../../store/runtime/auto/testing/runtimeWorld';
 import { moveAutoRestingPhase } from './moveAutoRestingPhase';
 
 const treeOf = (world: RuntimeWorld) =>

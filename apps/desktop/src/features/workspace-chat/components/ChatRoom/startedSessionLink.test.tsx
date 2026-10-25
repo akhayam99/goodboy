@@ -34,7 +34,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { brandedId } from '../../../history/testing/brandedId';
 
 let useAppStore: StoryStore;

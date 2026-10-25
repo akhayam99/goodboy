@@ -1,0 +1,1427 @@
+{
+  "apps/desktop/src/App.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/__tests__/regressions/no-unstable-zustand-selectors.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/__tests__/sidebar.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/__tests__/store/permission-scope-cta.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/__tests__/surfaces/navigation-flows/harness.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/app/components/KeepAliveWorkSurface/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/app/components/MockScene/UnknownScene.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/app/components/MockScene/scenes/driveChatWork.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/app/components/MockScene/scenes/u24/p-plan-owner.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/app/components/MockScene/scenes/u25/c03-panes.test.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/actions/resolveActions.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/attachments/hooks/useAttachmentThumbnail/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/auto/autoChildLabelsOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/auto/autoGroupOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/branch/components/PullRequestTab/activityOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/budget/hooks/useWorkspaceSpend/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useAgentSelection/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useAttachments.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useChatPrefix/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useComposerDraft/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useComposerSend/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useComposerSuggestions/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useMessageQueue.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useScopeNudge.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/hooks/useTurnRouting.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 14
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/lib.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerDispatchError.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatInput/parts/SuggestionStack.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatView/ChatEmptyState.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatView/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 14
+    }
+  },
+  "apps/desktop/src/features/chat/components/ChatView/useScrollPin.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/features/chat/components/HandoffBlock/HandoffAlsoReceived.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/HandoffBlock/HandoffCard.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/NudgeCard/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 10
+    }
+  },
+  "apps/desktop/src/features/chat/components/PlanChip/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/RightSizeCard/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/components/RoutingIndicator/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/TranscriptCards/AssistantText.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/chat/components/TranscriptCards/FileEditBlock.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/TranscriptCards/UserText.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/components/TranscriptRowHeader/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/spawn-from-comment.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/chat/turn.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/chat/utils/chat-constants.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/chat/utils/transcript-items.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 8
+    }
+  },
+  "apps/desktop/src/features/companion/commandExecutor.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 37
+    }
+  },
+  "apps/desktop/src/features/companion/mobileConfinement.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/context/components/QuestionsTab/useOpenQuestions.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/features/diff/components/DiffView/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/features/diff/components/DiffViewSelector/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/diff/hooks/useDiffTokens/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/diff/lib/reviewedFiles.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/history/groupAppliedEdits.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/history/historyEdits.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/impact/utils/shippedSessions.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/inbox/kindFilterStorage.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/inbox/launchMountFor.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/inbox/orderInboxRecords.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/inbox/taskGroups.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/inbox/useInboxStars/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/github/comment-threads.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/integrations/github/github.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/integrations/gitlab/GitlabFormBody.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/gitlab/MergeRequest/useGitlabIssues.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/integrations/gitlab/useGitlabIssue.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/linear/LinearFormBody.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/features/integrations/linear/client.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/linear/client.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/sentry/SentryStudio/useSentryIssues.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/integrations/starred/placeholderRecordOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/notifications/components/NotificationCenter/studioStacking.test.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/notifications/components/NotificationToastBridge/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/onboarding/OnboardingWizard/hostFromRemote.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/palette/components/PaletteOverlay/studioStacking.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/palette/frecency.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/palette/rank.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/plans/planComments/planCommentAnchors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/plans/plans.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderBindingsSection.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/providers/providers.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/quick-actions/grammar.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/quick-actions/registry.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/resolve/resolveFixupTargets.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/search/relatedHitActions.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/agent-row-format.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/session/central/branches/branchStoryOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/components/SessionNavSidebar/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/linkWorkRows.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/AgentRowIdentity.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/hooks/useWorktreeStatuses/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/timeline/agentCreation.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/session/timeline/buildTimelineGroups.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/session/timeline/buildTimelineStream/jobState.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "apps/desktop/src/features/session/timeline/buildTimelineStream/ordering.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/session/timeline/buildTimelineStream/resolveState.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/features/session/timeline/historyBatchesOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/skills/skills.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/storage/groupStorageFolders.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/suggestions/deriveNextSteps.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/suggestions/nextStepGates.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/suggestions/openPrSuggestionOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/suggestions/useSuggestionActions/index.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/wireframes/flowLayout/buildFlowLayout.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/workTreeModel/railGeometry.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/workflows/components/WorkflowStudio/DragGhost.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workflows/presetEdits.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/workflows/savedSteps.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/workflows/uniqueWorkflowName.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/components/RepoEntry/repoGroupsOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/components/StageBoard/BoardLanes.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/WorkspaceTile.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/recent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/features/workspace/window.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/features/worktree/BranchSwitchPanel/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/main.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/shared/components/RoutingPicker/index.test.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/components/StudioDetail/RecordSections/orderRecordSections.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/hooks/useCommitLinkInterceptor/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/shared/hooks/useNow/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/hooks/usePendingAttachments/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/shared/hooks/useWindowShortcuts/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/shared/hooks/useWorkflowDrag/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/languages.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/theme.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/tokenize.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/storage-keys.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/utils/display-path.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/utils/findById.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/utils/remoteHost.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/shared/utils/starredProjectsFirst.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/runtime/auto/deliveryRows.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/runtime/worktreeStatuses/cache.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/store/slices/agents/markAgentViewed.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/agents/selectAgent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/agents/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/store/slices/agents/spawnAgent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 13
+    }
+  },
+  "apps/desktop/src/store/slices/attachments/removeGoalAttachment.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/boot/hydrate.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 12
+    }
+  },
+  "apps/desktop/src/store/slices/credentials/createCredential.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/credentials/credentialKey.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/github/buildResolutionReplyBody.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/github/createPrForSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 5
+    }
+  },
+  "apps/desktop/src/store/slices/github/pushSessionBranch.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/gitlab-mr/createMrForSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/issue-briefs/issueBriefKey.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/issue-briefs/requestIssueBrief.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/monitoring/mergePortSnapshot.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/monitoring/parseHiddenPorts.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/monitoring/selectPortRows.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/nudges/acceptSessionNudgeHandoff.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/nudges/dismissSessionNudge.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/open-questions/answerOpenQuestions.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/open-questions/resolveQuestionDelegate.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/open-questions/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/overrides/loadSessionOverrides.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/permissions/resolvePermissionRequest.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/plans/runPlan.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "apps/desktop/src/store/slices/plans/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/projects/addProject.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/resolve/continueResolveLaunch.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/review-drafts/publishPrReview.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/scripts/cancelScript.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/session-events/types.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/session-view/getSessionViewPrefs.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/session-view/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/session-view/splitInactiveSessions.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/session-view/stageInfoOf.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/archiveTask.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/createSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/deleteTask.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/renameTask.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/selectSessionById.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/sessionMutators.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/setAgentConfig.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 18
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/setSessionConfig.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/sidebar/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/slack-drafts/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/slots/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/summaries/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/terminal/closeTerminalTab.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/transcripts/selectors.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/turn/buildTurnPrompt.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/turn/completeResolvedAgent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/turn/finalizeTurnStream.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "apps/desktop/src/store/slices/turn/kickoff.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/turn/preamble.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/turn/prepareTurn.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "apps/desktop/src/store/slices/turn/recoverTurnFailure.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/turn/resolveSkillPrompt.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/turn/retrySummarizer.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/turn/routeTurn.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/turn/settleTurn.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/turn/startTurnRun.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/turn/turnHelpers.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 8
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/activateWorkflowAgent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/attachWorkflowToSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 10
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/detachWorkflowFromSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/discardWorkflow.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/finalizeWorkflowStep.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/handsFree.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/reprocessGoalForWorkflow.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/restoreWorkflow.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/scoutTree.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/workflows/startWorkflowRun.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "apps/desktop/src/store/slices/workspaces/disconnectWorkspace.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/store.idle-on-empty-stream.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "apps/desktop/src/store/store.plan-consumption-ordering.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/store.sendturn-agent-routing.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "apps/desktop/src/store/store.sqlite-step-conversation.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/budget/router.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/context/marker-parsing.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/dev-log.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/github/__tests__/cache.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/core/src/github/cache.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/core/src/github/details.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "packages/core/src/github/diff.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 11
+    }
+  },
+  "packages/core/src/github/mutations.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 6
+    }
+  },
+  "packages/core/src/github/resolver.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/core/src/github/reviews.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "packages/core/src/monitoring/attributePorts.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/planner/parser.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/planner/prompt.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/providers/codex/parser.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "packages/core/src/providers/shared/anthropic-envelope-parser.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/core/src/providers/turn-weight.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/core/src/review-source/bitbucketReviewSource.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/core/src/summarizer/client.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/core/src/workflows/seeder.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/core/src/workflows/sequencer.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/db/src/migrations/runner.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/db/src/migrations/rust-sql-schema.test.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/db/src/queries/agent.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "packages/db/src/queries/github-pr-cache.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/db/src/queries/notification.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/db/src/queries/open-question.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 9
+    }
+  },
+  "packages/db/src/queries/plan.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 4
+    }
+  },
+  "packages/db/src/queries/provider-run.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/db/src/queries/session.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "packages/db/src/queries/turn-event.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/db/src/queries/workflow.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 7
+    }
+  },
+  "packages/ui/src/components/Checkbox.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Dialog.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 10
+    }
+  },
+  "packages/ui/src/components/Eyebrow.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/ui/src/components/FieldRow.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Listbox/useListboxKeyboard/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Markdown/CodeBlockContent.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "packages/ui/src/components/Markdown/ctxTagStyle.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Markdown/parseInline.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 2
+    }
+  },
+  "packages/ui/src/components/Markdown/parseMarkdown.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 13
+    }
+  },
+  "packages/ui/src/components/StatCard.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 10
+    }
+  },
+  "packages/ui/src/components/StatusDot.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Switch.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Textarea.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "packages/ui/src/components/Tooltip.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "website/src/components/CardRow.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "website/src/components/NavMenu.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "website/src/components/mocks/kit/RunTree.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "website/src/components/mocks/kit/railGeometry.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
+  "website/src/hooks/useReveal/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  }
+}

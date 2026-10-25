@@ -3,6 +3,8 @@ use std::time::{Duration, Instant};
 
 use serde::Serialize;
 
+use crate::util::MessageError;
+
 const EXIT_WAIT: Duration = Duration::from_secs(3);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
@@ -100,25 +102,23 @@ fn stop_pid_within(pid: u32, force: bool, wait: Duration) -> StopResult {
 #[cfg(unix)]
 mod platform {
     use crate::proc::kernel;
+    use crate::proc::signal::{self, Signal};
 
     pub(super) fn is_alive(pid: u32) -> bool {
-        let reachable = unsafe { libc::kill(pid as libc::pid_t, 0) } == 0
-            || std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM);
-        if !reachable {
+        if !signal::is_reachable(pid) {
             return false;
         }
         !kernel::identity(pid).is_some_and(|identity| identity.is_zombie)
     }
 
     pub(super) fn signal(pid: u32, force: bool) -> Result<(), String> {
-        let mut signal = libc::SIGTERM;
-        if force {
-            signal = libc::SIGKILL;
-        }
-        if unsafe { libc::kill(pid as libc::pid_t, signal) } == 0 {
+        let which = match force {
+            true => Signal::Kill,
+            false => Signal::Terminate,
+        };
+        let Err(error) = signal::send(pid, which) else {
             return Ok(());
-        }
-        let error = std::io::Error::last_os_error();
+        };
         if error.raw_os_error() == Some(libc::ESRCH) {
             return Ok(());
         }
@@ -126,7 +126,7 @@ mod platform {
     }
 
     pub(super) fn current_uid() -> u32 {
-        unsafe { libc::geteuid() }
+        signal::effective_uid()
     }
 
     pub(super) fn ancestors() -> Vec<u32> {
@@ -197,13 +197,14 @@ pub(crate) fn context_from(snapshot: &super::MonitorSnapshot) -> Context {
 }
 
 #[tauri::command]
-pub(crate) async fn monitor_stop(pid: u32, force: bool) -> Result<StopResult, String> {
+pub(crate) async fn monitor_stop(pid: u32, force: bool) -> Result<StopResult, MessageError> {
     tauri::async_runtime::spawn_blocking(move || {
         let snapshot = super::snapshot()?;
         Ok(stop_pid(&context_from(&snapshot), pid, force))
     })
     .await
-    .map_err(|error| error.to_string())?
+    .map_err(|error| MessageError::Failed(error.to_string()))?
+    .map_err(MessageError::Failed)
 }
 
 #[cfg(all(test, unix))]

@@ -44,7 +44,7 @@ const rootTurnsOf = ({ state, isApproval }: TurnParams): ReadonlySet<string> => 
   );
 };
 
-type NewTurnParams = HintProbe & {
+type NewTurnParams = Pick<HintProbe, 'state' | 'start'> & {
   readonly isApproval: boolean;
 };
 
@@ -67,6 +67,11 @@ const hasApprovedRun = ({ state, start }: HintProbe): boolean => {
   return [...approvedRunsOf({ state })].some((runId) => !before.has(runId));
 };
 
+const hasOpenedStep = ({ state, start, isAnchorClicked }: HintProbe): boolean =>
+  state.drawer?.kind === 'run-step' ||
+  isAnchorClicked ||
+  JSON.stringify(state.selectedAgentId) !== JSON.stringify(start.selectedAgentId);
+
 const routingOf = ({ state }: StateParams): string =>
   JSON.stringify([state.agentModelOverride, state.agentProviderOverride]);
 
@@ -82,7 +87,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_START }),
-    doneWhen: (probe) => hasNewRootTurn({ ...probe, isApproval: false }),
+    doneWhen: ({ state, start }) => hasNewRootTurn({ state, start, isApproval: false }),
   },
   {
     id: 'auto-approve',
@@ -91,7 +96,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_APPROVE }),
-    doneWhen: (probe) => hasNewRootTurn({ ...probe, isApproval: true }),
+    doneWhen: ({ state, start }) => hasNewRootTurn({ state, start, isApproval: true }),
   },
   {
     id: 'auto-child',
@@ -120,11 +125,12 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     outcome: 'step-opened',
     anchor: RUN_STEP,
     side: 'left',
-    revealWhen: ({ state, root }) =>
+    revealWhen: ({ state, start, root, isAnchorClicked }) =>
       isRunSession({ state }) &&
-      state.drawer?.kind !== 'run-step' &&
+      !hasElement({ root, selector: RUN_APPROVE }) &&
+      !hasOpenedStep({ state, start, root, isAnchorClicked }) &&
       hasElement({ root, selector: RUN_STEP }),
-    doneWhen: ({ state }) => state.drawer?.kind === 'run-step',
+    doneWhen: hasOpenedStep,
   },
   {
     id: 'run-model',

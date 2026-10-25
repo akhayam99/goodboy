@@ -38,6 +38,16 @@ vi.mock('@xterm/xterm', () => ({
     loadAddon() {}
     open() {}
     attachCustomKeyEventHandler() {}
+    buffer = { active: { length: 0, getLine: () => undefined } };
+    hasSelection() {
+      return false;
+    }
+    onSelectionChange() {
+      return { dispose() {} };
+    }
+    registerLinkProvider() {
+      return { dispose() {} };
+    }
     onData() {
       return { dispose() {} };
     }

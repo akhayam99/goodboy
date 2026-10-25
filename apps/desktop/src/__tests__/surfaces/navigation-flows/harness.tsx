@@ -4,19 +4,32 @@ import { StrictMode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ErrorBoundary } from '@goodboy/ui';
-import type { BranchCommit, SessionId, WorktreeStatus } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type BranchCommit,
+  type Session,
+  type SessionId,
+  type WorktreeStatus,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   STORY_NOW,
   importStore,
+  openStorySqlite,
   resetStoryStore,
+  storySpies,
+  storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { App } from '../../../App';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
+import { NORTHWIND, workspaceRows } from './workspace-switch.fixtures';
+import { onboardingAnswer } from './onboarding.fixtures';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
   {
@@ -94,6 +107,8 @@ const INSERTED_AGENT = /^\s*INSERT INTO agents\s*\(([^)]+)\)\s*VALUES/;
 
 const AGENT_BY_ID = /^SELECT \* FROM agents WHERE id = \?$/;
 
+let isEmptyFallback = false;
+
 const insertedAgents = new Map<unknown, Readonly<Record<string, unknown>>>();
 
 const rememberAgent = ({
@@ -124,14 +139,47 @@ const answerSelect = ({
     const row = insertedAgents.get(params[0]);
     return Promise.resolve(row === undefined ? [] : [row]);
   }
+  const scoped = workspaceRows({ sql, params });
+  if (scoped !== null) {
+    return Promise.resolve(scoped);
+  }
   const known = SELECTS.find(([pattern]) => pattern.test(sql));
-  return known === undefined ? new Promise<never>(() => undefined) : Promise.resolve(known[1]);
+  if (known !== undefined) {
+    return Promise.resolve(known[1]);
+  }
+  return isEmptyFallback ? Promise.resolve([]) : new Promise<never>(() => undefined);
 };
 
 export type BridgeArgs = {
   readonly sql?: string;
   readonly params?: ReadonlyArray<unknown>;
   readonly worktreePath?: string;
+  readonly statements?: ReadonlyArray<{
+    readonly sql: string;
+    readonly params?: ReadonlyArray<unknown>;
+  }>;
+};
+
+let isOnEmptyDatabase = false;
+
+type DatabaseCommandParams = {
+  readonly command: string;
+  readonly args: BridgeArgs | undefined;
+};
+
+const databaseCommand = ({ command, args }: DatabaseCommandParams): Promise<unknown> | null => {
+  switch (command) {
+    case 'db_select':
+      return storySqlite().select(args?.sql ?? '', args?.params ?? []);
+    case 'db_execute':
+      return storySqlite().execute(args?.sql ?? '', args?.params ?? []);
+    case 'db_exec':
+      return storySqlite().exec(args?.sql ?? '');
+    case 'db_transaction':
+      return storySqlite().transaction({ statements: args?.statements ?? [] });
+    default:
+      return null;
+  }
 };
 
 const branchAt = (worktreePath: string | undefined): string | null =>
@@ -140,6 +188,16 @@ const branchAt = (worktreePath: string | undefined): string | null =>
     .find((mount) => mount.worktreePath === worktreePath)?.branch ?? null;
 
 export const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
+  if (isOnEmptyDatabase) {
+    const answered = databaseCommand({ command, args });
+    if (answered !== null) {
+      return answered;
+    }
+    const known = onboardingAnswer({ command, args });
+    if (known.isHandled) {
+      return Promise.resolve(known.value);
+    }
+  }
   if (command === 'db_select') {
     return answerSelect({ sql: args?.sql ?? '', params: args?.params ?? [] });
   }
@@ -150,12 +208,31 @@ export const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => 
   if (command === 'worktree_status') {
     return Promise.resolve({ ...STATUS, branch: branchAt(args?.worktreePath) });
   }
-  return command in BRIDGE ? Promise.resolve(BRIDGE[command]) : new Promise<never>(() => undefined);
+  if (command in BRIDGE) {
+    return Promise.resolve(BRIDGE[command]);
+  }
+  if (isEmptyFallback && command === 'turn_list_live') {
+    return Promise.resolve([]);
+  }
+  return new Promise<never>(() => undefined);
+};
+
+const isBridgeArgs = (value: unknown): value is BridgeArgs =>
+  typeof value === 'object' && value !== null;
+
+export const installStoryBridge = (): void => {
+  beforeEach(() => {
+    storySpies.tauriInvoke.mockImplementation((command?: unknown, args?: unknown) =>
+      typeof command === 'string'
+        ? bridge(command, isBridgeArgs(args) ? args : undefined)
+        : Promise.reject(new Error('A command name is a string')),
+    );
+  });
 };
 
 const LOOP_MARKERS = ['Maximum update depth', '#185', 'getSnapshot should be cached'];
 
-type Seed = 'pr' | 'issue';
+export type Seed = 'pr' | 'issue' | 'switch' | 'switch-idle' | 'empty';
 
 export type Ctx = {
   readonly sessionId: SessionId;
@@ -231,8 +308,69 @@ const traceActions = (): void => {
   useAppStore.setState(traced);
 };
 
+const renderApp = (): void => {
+  render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+};
+
+const NO_SESSION = brandId<SessionId>({ value: 'session-none' });
+
+const bootEmpty = async (): Promise<Ctx> => {
+  await openStorySqlite();
+  isOnEmptyDatabase = true;
+  isEmptyFallback = true;
+  useAppStore.setState({
+    hydrate: async () => undefined,
+    checkForUpdates: async () => undefined,
+    hydrated: true,
+    bootPhase: 'ready',
+  });
+  await hydrateOnboardingFromDb();
+  traceActions();
+  renderApp();
+  await waitFor(
+    () => expect(screen.getByRole('dialog', { name: 'Goodboy setup' })).toBeDefined(),
+    WAIT,
+  );
+  await settle(6);
+  calls = new Set();
+  return { sessionId: NO_SESSION };
+};
+
 export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
+  isOnEmptyDatabase = false;
+  if (seed === 'empty') {
+    return bootEmpty();
+  }
   const sessionId = seedSessionWithMounts({ useAppStore, hasPr: seed === 'pr' });
+  isEmptyFallback = seed === 'switch' || seed === 'switch-idle';
+  if (isEmptyFallback) {
+    const base = useAppStore.getState();
+    useAppStore.setState({
+      workspaces: [...base.workspaces, NORTHWIND],
+      ...(seed === 'switch-idle' && {
+        sessions: base.sessions.map((session): Session =>
+          session.state.kind === 'running' || session.state.kind === 'starting'
+            ? { ...session, state: { kind: 'idle', lastActivityAt: session.updatedAt } }
+            : session,
+        ),
+        sessionPhaseRuns: Object.fromEntries(
+          Object.entries(base.sessionPhaseRuns).map(([id, runs]) => [
+            id,
+            runs.map((run): Agent =>
+              run.status === 'running' ? { ...run, status: 'completed' } : run,
+            ),
+          ]),
+        ),
+        agentTurnState: {},
+      }),
+    });
+  }
   const seeded = useAppStore.getState();
   const mount = seeded.sessionProjectMounts[sessionId]?.[0] ?? null;
   const github = seeded.sessionGithub[sessionId] ?? null;
@@ -281,13 +419,7 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     bootPhase: 'ready',
   });
   traceActions();
-  render(
-    <StrictMode>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </StrictMode>,
-  );
+  renderApp();
   await waitFor(() => {
     expect(document.querySelector('[data-side-column]')).not.toBeNull();
     expect(screen.queryByTestId('boot-splash-exit')).toBeNull();
@@ -393,7 +525,7 @@ export const openWorktreeMenu = async (): Promise<void> => {
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
-  await clickButton(/^Search \(/);
+  await clickButton(/^Search or run \(/);
   if (query !== undefined) {
     const input = await screen.findByRole('combobox', { name: /search/i });
     fireEvent.change(input, { target: { value: query } });

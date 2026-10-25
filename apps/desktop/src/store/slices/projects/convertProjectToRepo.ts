@@ -30,7 +30,9 @@ export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
     if (project === undefined) {
       throw new Error(`project not found: ${projectId}`);
     }
-    if (project.kind !== 'folder') {
+    const isUnbornRepo =
+      project.kind === 'repo' && get().projectGitStatus[projectId]?.state === 'unborn';
+    if (project.kind !== 'folder' && !isUnbornRepo) {
       throw new Error(`${project.name} is already tracked with git`);
     }
     const holder = trackHolder({ projectId });
@@ -52,6 +54,10 @@ export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
           severity: 'warning',
         }),
       );
+    }
+    if (isUnbornRepo) {
+      await get().loadProjectGitStatus({ projectId });
+      return { project, commit };
     }
     const check = await validateGitRepo(commit.rootPath);
     if (check.isRepo === false) {

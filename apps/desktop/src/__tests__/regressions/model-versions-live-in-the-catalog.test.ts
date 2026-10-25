@@ -17,10 +17,7 @@ const VERSIONED_ID =
 const CATALOG_LAYER =
   /^packages\/core\/src\/providers\/([a-z]+\/(catalog|cost|agent-model-ids)|parseLegacyId|catalogDescriptor)\.ts$/;
 
-const ALLOWED_TODAY: ReadonlyArray<string> = [
-  'apps/desktop/src/features/workspace-chat/mockChatSeed.ts',
-  'packages/db/src/test-helpers/search-fixtures.ts',
-];
+const ALLOWED_TODAY: ReadonlyArray<string> = ['packages/db/src/test-helpers/search-fixtures.ts'];
 
 const isSource = (path: string): boolean =>
   /\.(ts|tsx)$/.test(path) &&

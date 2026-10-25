@@ -26,6 +26,7 @@ import { OverviewPanel } from './OverviewPanel';
 import { ShippedPanel } from './ShippedPanel';
 import { SpendPanel } from './SpendPanel';
 import { SpendRecordTrail } from './SpendRecordTrail';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -119,7 +120,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
             onSelectTab={selectTab}
             onOpenSession={openSession}
             onStartSession={() => {
-              window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+              dispatchWindowEvent({ name: 'goodboy:new-session' });
               requestClose();
             }}
           />
@@ -159,7 +160,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         );
       case 'provider':
         return (
-          <>
+          <div data-record-view="" className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SpendRecordTrail
               label={providerLabel({ provider: scope.provider })}
               onImpact={backToOverview}
@@ -183,11 +184,11 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
               onRetryTelemetry={() => spend.data.retry('telemetry')}
               onOpenSession={openSession}
             />
-          </>
+          </div>
         );
       case 'session':
         return selectedSession === null ? null : (
-          <>
+          <div data-record-view="" className="flex min-h-0 min-w-0 flex-1 flex-col">
             <SpendRecordTrail
               label={inlineMarkdownText({ text: selectedSession.goal })}
               onImpact={backToOverview}
@@ -207,7 +208,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
               onRetryBudget={() => spend.data.retry('sessionBudgets')}
               onOpenSession={openSession}
             />
-          </>
+          </div>
         );
       default: {
         const exhaustive: never = scope;

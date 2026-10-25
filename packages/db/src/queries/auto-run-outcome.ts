@@ -1,4 +1,5 @@
 import type { Database } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 import { readRunCostUsd } from './auto-cost';
 
 export type RunLedgerOutcome = Readonly<{
@@ -39,16 +40,16 @@ const exitOf = ({ row }: ExitParams): RunLedgerOutcome['exit'] | null => {
   if (row.status_kind !== 'failed') {
     return null;
   }
-  try {
-    const payload: unknown = JSON.parse(row.status_payload);
-    const error =
-      typeof payload === 'object' && payload !== null && 'error' in payload
-        ? payload.error
-        : undefined;
-    return error === CANCELLED_BY_USER ? 'cancelled' : 'error';
-  } catch {
-    return 'error';
-  }
+  const payload = parseJsonColumn<unknown>({
+    value: row.status_payload,
+    isValid: isJsonValue,
+    fallback: null,
+  });
+  const error =
+    typeof payload === 'object' && payload !== null && 'error' in payload
+      ? payload.error
+      : undefined;
+  return error === CANCELLED_BY_USER ? 'cancelled' : 'error';
 };
 
 export const readRunLedgerOutcome = async ({

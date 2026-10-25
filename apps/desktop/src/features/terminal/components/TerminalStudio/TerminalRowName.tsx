@@ -1,5 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { cn, useEscapeLayer } from '@goodboy/ui';
+import { eventMatches } from '../../../../shared/keyboard/dispatcher';
+import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly id?: string;
@@ -59,7 +61,7 @@ export const TerminalRowName = ({
         onKeyDown={handleKeyDown}
         onBlur={cancel}
         className={cn(
-          'h-6 min-w-0 flex-1 rounded-sm bg-background px-1 text-label text-foreground outline-none ring-1 ring-focus-ring',
+          'h-6 min-w-0 flex-1 rounded-sm bg-background px-1 text-meta text-foreground outline-none ring-1 ring-focus-ring',
           hasError && 'ring-danger',
         )}
       />
@@ -76,8 +78,15 @@ export const TerminalRowName = ({
       tabIndex={isTab && !isSelected ? -1 : undefined}
       onClick={onSelect}
       onDoubleClick={() => setDraft(name)}
+      onKeyDown={(event) => {
+        if (!eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['terminal.renameTab'] })) {
+          return;
+        }
+        event.preventDefault();
+        setDraft(name);
+      }}
       style={isTab ? { minWidth: 48 } : undefined}
-      className="min-w-0 flex-1 truncate text-left text-label focus-visible:outline-none"
+      className="min-w-0 flex-1 truncate text-left text-meta focus-visible:outline-none"
     >
       {name}
     </button>

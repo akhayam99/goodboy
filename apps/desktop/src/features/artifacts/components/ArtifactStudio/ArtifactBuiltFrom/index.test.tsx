@@ -112,7 +112,7 @@ describe('ArtifactBuiltFrom', () => {
   it('says plainly that an older artifact recorded nothing', async () => {
     await renderWith(null);
     expect(screen.getByTestId('built-from-missing').textContent).toContain(
-      'nothing was recorded for this generation',
+      'Nothing was recorded for this generation.',
     );
     expect(screen.queryByTestId('built-from')).toBeNull();
   });

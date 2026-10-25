@@ -19,7 +19,7 @@ const SENTENCE_PROPS: ReadonlySet<string> = new Set([
   'tooltip',
 ]);
 const POSITION_PHRASE =
-  /\b(shows? up here|lands? here|land here|moves? to the left|moves? to the right|above|below)\b/i;
+  /\b(shows? up here|lands? here|land here|appears? here|(?:is|are) (?:kept|listed|recorded|shown) here|moves? to the left|moves? to the right|above|below)\b/i;
 const FIRST_PERSON = /\b(I|I'm|I'll|I've|we|we're|we'll|our|let's)\b|\b(?:We|Our|Let's)\b/;
 const BRAND_LOWERCASE = ['pnpm', 'npm', 'gh', 'git'];
 
@@ -114,6 +114,26 @@ describe('on-screen copy stays short and plain', () => {
       );
     }
     expect(grown).toEqual([]);
+  });
+
+  it.each([
+    'Finished sessions appear here: what shipped.',
+    'Create the pull request, it appears here',
+    'Plans and reports are kept here.',
+    'Issues assigned to you are listed here.',
+    'Plans and pull requests are recorded here.',
+    'Pull requests are shown here.',
+    'The reply shows up here.',
+  ])('the position phrase knows "%s"', (text) => {
+    expect(POSITION_PHRASE.test(text)).toBe(true);
+  });
+
+  it.each([
+    'This file is too large to show here. Open it to see it.',
+    'Plans, reports and wireframes from this session become artifacts.',
+    'Files that differ from main are listed when they change.',
+  ])('the position phrase leaves "%s" alone', (text) => {
+    expect(POSITION_PHRASE.test(text)).toBe(false);
   });
 
   it.runIf(process.env.RATCHET_CLOSE === '1')(

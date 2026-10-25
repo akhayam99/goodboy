@@ -35,8 +35,19 @@ type SettleParams = {
   readonly promise: Promise<unknown>;
 };
 
-const settled = async ({ promise }: SettleParams): Promise<unknown> =>
-  Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve('PARKED'), 20))]);
+const settled = async ({ promise }: SettleParams): Promise<unknown> => {
+  vi.useFakeTimers({ toFake: ['setTimeout'] });
+  try {
+    const race = Promise.race([
+      promise,
+      new Promise((resolve) => setTimeout(() => resolve('PARKED'), 20)),
+    ]);
+    await vi.advanceTimersByTimeAsync(20);
+    return await race;
+  } finally {
+    vi.useRealTimers();
+  }
+};
 
 beforeAll(async () => {
   store = await importStore();

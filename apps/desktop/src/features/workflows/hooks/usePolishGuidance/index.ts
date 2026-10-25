@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectTaskModel } from '../../../../store/slices/models/selectTaskModel';
+import { selectTaskModel } from '../../../../store/runtime/models/selectTaskModel';
 import { polishWorkflowGuidanceText } from '../../workflows';
 
 type Params = {

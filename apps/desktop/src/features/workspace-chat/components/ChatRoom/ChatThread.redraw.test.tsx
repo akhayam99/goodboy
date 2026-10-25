@@ -36,7 +36,7 @@ import type {
   IsoDateTime,
 } from '@goodboy/types';
 import type { ChatBackend } from '../../chatBackend';
-import { createMemoryChatBackend } from '../../createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../../../test/createMemoryChatBackend';
 import { ChatThread } from './ChatThread';
 
 const CHAT = 'chat-images' as ChatId;

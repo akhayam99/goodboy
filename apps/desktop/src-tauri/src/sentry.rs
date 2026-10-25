@@ -3,9 +3,9 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::integration_credentials::{self, IntegrationCredentialError};
-use crate::integrations::http::{self, TransportFailure};
+use crate::integrations::http::{self, send_retrying, TransportFailure};
 use crate::secrets;
-use crate::util::now_ms;
+use crate::util::percent_encode;
 
 const PROVIDER: &str = "sentry";
 
@@ -103,11 +103,12 @@ pub struct SentryIssueProject {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SentryIssue {
     pub id: String,
     #[serde(default)]
     pub project: Option<SentryIssueProject>,
-    #[serde(rename = "shortId", default)]
+    #[serde(default)]
     pub short_id: Option<String>,
     pub title: String,
     #[serde(default)]
@@ -118,11 +119,11 @@ pub struct SentryIssue {
     pub status: Option<String>,
     #[serde(default)]
     pub count: Option<String>,
-    #[serde(rename = "userCount", default)]
+    #[serde(default)]
     pub user_count: Option<i64>,
-    #[serde(rename = "firstSeen", default)]
+    #[serde(default)]
     pub first_seen: Option<String>,
-    #[serde(rename = "lastSeen", default)]
+    #[serde(default)]
     pub last_seen: Option<String>,
     #[serde(default)]
     pub permalink: Option<String>,
@@ -182,7 +183,7 @@ fn read_config(
     cache: &SentryTokenCache,
 ) -> Result<SentryConfig, SentryError> {
     let raw =
-        integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+        integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
             .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
     let scope = integration_credentials::config_for_binding(PROVIDER, workspace_id, project_id)?
         .ok_or_else(|| SentryError::NoToken(workspace_id.to_string()))?;
@@ -192,86 +193,6 @@ fn read_config(
         org: scope.org,
         project: scope.project,
     })
-}
-
-const MAX_ATTEMPTS: u32 = 3;
-const BASE_BACKOFF_MS: u64 = 400;
-const MAX_RETRY_WAIT_MS: u64 = 5_000;
-
-fn is_transient_status(status: reqwest::StatusCode) -> bool {
-    matches!(status.as_u16(), 429 | 502 | 503 | 504)
-}
-
-const MONTHS: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
-    let y = if month <= 2 { year - 1 } else { year };
-    let era = y.div_euclid(400);
-    let yoe = y - era * 400;
-    let mp = (month + 9) % 12;
-    let doy = (153 * mp + 2) / 5 + day - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    era * 146_097 + doe - 719_468
-}
-
-fn parse_http_date_ms(value: &str) -> Option<i64> {
-    let parts: Vec<&str> = value.split_whitespace().collect();
-    if parts.len() != 6 || parts[5] != "GMT" {
-        return None;
-    }
-    let day: i64 = parts[1].parse().ok()?;
-    let month = MONTHS.iter().position(|m| *m == parts[2])? as i64 + 1;
-    let year: i64 = parts[3].parse().ok()?;
-    let clock: Vec<i64> = parts[4]
-        .split(':')
-        .map(|p| p.parse().ok())
-        .collect::<Option<_>>()?;
-    if clock.len() != 3 {
-        return None;
-    }
-    let days = days_from_civil(year, month, day);
-    Some(((days * 86_400) + clock[0] * 3_600 + clock[1] * 60 + clock[2]) * 1_000)
-}
-
-fn retry_after_ms(value: &str, now_ms: i64) -> Option<u64> {
-    let value = value.trim();
-    if let Ok(seconds) = value.parse::<f64>() {
-        return (seconds.is_finite() && seconds >= 0.0).then(|| (seconds * 1000.0).ceil() as u64);
-    }
-    parse_http_date_ms(value).map(|at| at.saturating_sub(now_ms).max(0) as u64)
-}
-
-fn retry_wait(attempt: u32, retry_after: Option<&str>) -> std::time::Duration {
-    let backoff = BASE_BACKOFF_MS.saturating_mul(1u64 << attempt.min(8));
-    let wait = retry_after
-        .and_then(|value| retry_after_ms(value, now_ms()))
-        .unwrap_or(backoff);
-    std::time::Duration::from_millis(wait.min(MAX_RETRY_WAIT_MS))
-}
-
-async fn send_retrying<F>(build: F) -> Result<reqwest::Response, SentryError>
-where
-    F: Fn() -> reqwest::RequestBuilder,
-{
-    let mut attempt = 0;
-    loop {
-        let is_last = attempt + 1 >= MAX_ATTEMPTS;
-        let wait = match build().send().await {
-            Ok(res) if !is_last && is_transient_status(res.status()) => retry_wait(
-                attempt,
-                res.headers()
-                    .get(reqwest::header::RETRY_AFTER)
-                    .and_then(|v| v.to_str().ok()),
-            ),
-            Ok(res) => return Ok(res),
-            Err(e) if !is_last && (e.is_connect() || e.is_timeout()) => retry_wait(attempt, None),
-            Err(e) => return Err(e.into()),
-        };
-        tokio::time::sleep(wait).await;
-        attempt += 1;
-    }
 }
 
 fn parse_next_cursor(link: &str) -> Option<String> {
@@ -396,9 +317,9 @@ pub async fn sentry_validate_connection(
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryProject, SentryError> {
     let secret =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)
             .map(|raw| token_from_secret(&raw))?;
-    let url = format!("{}/projects/{}/{}/", BASE_URL, org, project);
+    let url = project_url(&org, &project);
     let res = http::client().get(&url).bearer_auth(&secret).send().await?;
     let status = res.status();
     if !status.is_success() {
@@ -408,7 +329,7 @@ pub async fn sentry_validate_connection(
     Ok(res.json().await?)
 }
 
-const MAX_LIST_PAGES: u32 = 10;
+use crate::util::limits::MAX_PAGES;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SentryOrganizationSummary {
@@ -430,7 +351,7 @@ fn verified_secret(
     token: Option<String>,
     cache: &SentryTokenCache,
 ) -> Result<String, SentryError> {
-    integration_credentials::secret_to_verify(PROVIDER, credential_id, token, &cache.0)
+    integration_credentials::secret_to_verify(PROVIDER, credential_id, token, cache.0)
         .map(|raw| token_from_secret(&raw))
         .map_err(SentryError::from)
 }
@@ -441,7 +362,7 @@ async fn get_all_pages<T: serde::de::DeserializeOwned>(
 ) -> Result<Vec<T>, SentryError> {
     let mut items: Vec<T> = Vec::new();
     let mut cursor: Option<String> = None;
-    for _ in 0..MAX_LIST_PAGES {
+    for _ in 0..MAX_PAGES {
         let res = send_retrying(|| {
             let request = http::client().get(url).bearer_auth(secret);
             match cursor.as_deref() {
@@ -475,8 +396,29 @@ fn organizations_url() -> String {
     format!("{}/organizations/?member=1", BASE_URL)
 }
 
+fn segment(value: &str) -> String {
+    percent_encode(value.trim())
+}
+
+fn project_url(org: &str, project: &str) -> String {
+    format!(
+        "{}/projects/{}/{}/",
+        BASE_URL,
+        segment(org),
+        segment(project)
+    )
+}
+
+fn issue_url(issue_id: &str) -> String {
+    format!("{}/issues/{}/", BASE_URL, segment(issue_id))
+}
+
+fn latest_event_url(issue_id: &str) -> String {
+    format!("{}/issues/{}/events/latest/", BASE_URL, segment(issue_id))
+}
+
 fn organization_projects_url(org: &str) -> String {
-    format!("{}/organizations/{}/projects/", BASE_URL, org)
+    format!("{}/organizations/{}/projects/", BASE_URL, segment(org))
 }
 
 #[tauri::command]
@@ -505,23 +447,29 @@ fn issues_url(cfg: &SentryConfig, sentry_project: Option<&str>) -> String {
         .map(str::trim)
         .filter(|slug| !slug.is_empty())
         .unwrap_or(&cfg.project);
-    format!("{}/projects/{}/{}/issues/", BASE_URL, cfg.org, project)
+    format!(
+        "{}/projects/{}/{}/issues/",
+        BASE_URL,
+        segment(&cfg.org),
+        segment(project)
+    )
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct SentryCodeMapping {
-    #[serde(rename = "projectSlug", default)]
+    #[serde(default)]
     pub project_slug: Option<String>,
-    #[serde(rename = "repoName", default)]
+    #[serde(default)]
     pub repo_name: Option<String>,
-    #[serde(rename = "stackRoot", default)]
+    #[serde(default)]
     pub stack_root: Option<String>,
-    #[serde(rename = "sourceRoot", default)]
+    #[serde(default)]
     pub source_root: Option<String>,
 }
 
 fn code_mappings_url(org: &str) -> String {
-    format!("{}/organizations/{}/code-mappings/", BASE_URL, org)
+    format!("{}/organizations/{}/code-mappings/", BASE_URL, segment(org))
 }
 
 #[tauri::command]
@@ -540,9 +488,9 @@ pub async fn sentry_connect(
     cache: State<'_, SentryTokenCache>,
 ) -> Result<(), SentryError> {
     let secret =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)
             .map(|raw| token_from_secret(&raw))?;
-    integration_credentials::store_secret(&credential_id, &secret, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &secret, cache.0)?;
     Ok(())
 }
 
@@ -597,8 +545,8 @@ fn short_id_url(org: &str, short_id: &str) -> String {
     format!(
         "{}/organizations/{}/shortids/{}/",
         BASE_URL,
-        org,
-        short_id.trim().to_uppercase()
+        segment(org),
+        segment(&short_id.to_uppercase())
     )
 }
 
@@ -630,7 +578,7 @@ pub async fn sentry_fetch_issue(
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssue, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
-    let url = format!("{}/issues/{}/", BASE_URL, issue_id);
+    let url = issue_url(&issue_id);
     let res = send_retrying(|| http::client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
@@ -650,7 +598,7 @@ pub async fn sentry_fetch_issue_detail(
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssueDetail, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
-    let url = format!("{}/issues/{}/events/latest/", BASE_URL, issue_id);
+    let url = latest_event_url(&issue_id);
     let res = send_retrying(|| http::client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
@@ -674,6 +622,9 @@ pub async fn sentry_fetch_issue_detail(
         breadcrumbs: extract_breadcrumbs(&event),
     })
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -796,102 +747,6 @@ mod tests {
     }
 
     #[test]
-    fn a_rate_limit_or_a_gateway_error_is_transient_and_a_client_error_is_not() {
-        for code in [429u16, 502, 503, 504] {
-            assert!(is_transient_status(
-                reqwest::StatusCode::from_u16(code).unwrap()
-            ));
-        }
-        for code in [200u16, 400, 401, 403, 404, 500] {
-            assert!(!is_transient_status(
-                reqwest::StatusCode::from_u16(code).unwrap()
-            ));
-        }
-    }
-
-    #[test]
-    fn the_retry_wait_honors_retry_after_and_stays_capped() {
-        assert_eq!(retry_wait(0, Some("2")), std::time::Duration::from_secs(2));
-        assert_eq!(
-            retry_wait(0, Some("0.25")),
-            std::time::Duration::from_millis(250)
-        );
-        assert_eq!(
-            retry_wait(0, Some("600")),
-            std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
-        );
-        assert_eq!(
-            retry_wait(0, Some("soon")),
-            std::time::Duration::from_millis(BASE_BACKOFF_MS)
-        );
-        assert_eq!(
-            retry_wait(1, None),
-            std::time::Duration::from_millis(BASE_BACKOFF_MS * 2)
-        );
-        assert_eq!(
-            retry_wait(30, None),
-            std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
-        );
-    }
-
-    #[test]
-    fn the_retry_wait_reads_an_http_date() {
-        let at = parse_http_date_ms("Wed, 21 Oct 2026 07:28:00 GMT").unwrap();
-        assert_eq!(at, 1_792_567_680_000);
-        assert_eq!(
-            retry_after_ms("Wed, 21 Oct 2026 07:28:00 GMT", at - 3_000),
-            Some(3_000)
-        );
-        assert_eq!(
-            retry_after_ms("Wed, 21 Oct 2026 07:28:00 GMT", at + 10_000),
-            Some(0)
-        );
-        assert_eq!(retry_after_ms("Wed, 21 Oct 2026 07:28:00 CET", at), None);
-        assert_eq!(parse_http_date_ms("Thu, 01 Jan 1970 00:00:00 GMT"), Some(0));
-    }
-
-    async fn serve(responses: Vec<&'static str>) -> (String, tokio::task::JoinHandle<usize>) {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let url = format!("http://{}/issues/", listener.local_addr().unwrap());
-        let handle = tokio::spawn(async move {
-            let mut served = 0;
-            for response in responses {
-                let (mut socket, _) = listener.accept().await.unwrap();
-                let mut buf = [0u8; 4096];
-                let _ = socket.read(&mut buf).await.unwrap();
-                socket.write_all(response.as_bytes()).await.unwrap();
-                socket.shutdown().await.unwrap();
-                served += 1;
-            }
-            served
-        });
-        (url, handle)
-    }
-
-    const RATE_LIMITED: &str = "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 0\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-    const OK_EMPTY: &str =
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n[]";
-
-    #[tokio::test]
-    async fn a_rate_limited_first_call_is_retried_and_recovers() {
-        let (url, server) = serve(vec![RATE_LIMITED, OK_EMPTY]).await;
-        let client = reqwest::Client::new();
-        let res = send_retrying(|| client.get(&url)).await.unwrap();
-        assert_eq!(res.status(), reqwest::StatusCode::OK);
-        assert_eq!(server.await.unwrap(), 2);
-    }
-
-    #[tokio::test]
-    async fn a_rate_limit_that_never_clears_surfaces_after_the_last_attempt() {
-        let (url, server) = serve(vec![RATE_LIMITED; MAX_ATTEMPTS as usize]).await;
-        let client = reqwest::Client::new();
-        let res = send_retrying(|| client.get(&url)).await.unwrap();
-        assert_eq!(res.status(), reqwest::StatusCode::TOO_MANY_REQUESTS);
-        assert_eq!(server.await.unwrap(), MAX_ATTEMPTS as usize);
-    }
-
-    #[test]
     fn next_cursor_extracts_when_results_true() {
         let link = "<https://sentry.io/api/0/x/?cursor=0:0:1>; rel=\"previous\"; results=\"false\"; cursor=\"0:0:1\", <https://sentry.io/api/0/x/?cursor=0:100:0>; rel=\"next\"; results=\"true\"; cursor=\"0:100:0\"";
         assert_eq!(parse_next_cursor(link), Some("0:100:0".to_string()));
@@ -994,5 +849,60 @@ mod tests {
         assert_eq!(tags[0].key, "release");
         assert_eq!(breadcrumbs.len(), 1);
         assert_eq!(breadcrumbs[0].message.as_deref(), Some("GET /api/items"));
+    }
+
+    #[test]
+    fn every_path_segment_is_percent_encoded() {
+        let awkward = "a/b \"c d\"";
+        let encoded = "a%2Fb%20%22c%20d%22";
+        assert_eq!(
+            project_url(awkward, awkward),
+            format!("https://sentry.io/api/0/projects/{encoded}/{encoded}/")
+        );
+        assert_eq!(
+            organization_projects_url(awkward),
+            format!("https://sentry.io/api/0/organizations/{encoded}/projects/")
+        );
+        assert_eq!(
+            code_mappings_url(awkward),
+            format!("https://sentry.io/api/0/organizations/{encoded}/code-mappings/")
+        );
+        assert_eq!(
+            issue_url(awkward),
+            format!("https://sentry.io/api/0/issues/{encoded}/")
+        );
+        assert_eq!(
+            latest_event_url(awkward),
+            format!("https://sentry.io/api/0/issues/{encoded}/events/latest/")
+        );
+        let cfg = SentryConfig {
+            token: "t".to_string(),
+            org: awkward.to_string(),
+            project: awkward.to_string(),
+        };
+        assert_eq!(
+            issues_url(&cfg, None),
+            format!("https://sentry.io/api/0/projects/{encoded}/{encoded}/issues/")
+        );
+        assert_eq!(
+            issues_url(&cfg, Some(awkward)),
+            format!("https://sentry.io/api/0/projects/{encoded}/{encoded}/issues/")
+        );
+    }
+
+    #[test]
+    fn a_short_id_is_upper_cased_then_encoded() {
+        assert_eq!(
+            short_id_url("a/b", " x/y z "),
+            "https://sentry.io/api/0/organizations/a%2Fb/shortids/X%2FY%20Z/"
+        );
+    }
+
+    #[test]
+    fn a_plain_slug_is_left_as_it_was() {
+        assert_eq!(
+            project_url("northwind", "payments-api"),
+            "https://sentry.io/api/0/projects/northwind/payments-api/"
+        );
     }
 }

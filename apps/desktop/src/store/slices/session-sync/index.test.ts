@@ -10,6 +10,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { BranchRefSync } from '../../../features/worktree/worktree';
 
 type ListPrs = (
   runner: unknown,
@@ -30,7 +31,7 @@ const h = vi.hoisted(() => ({
   tasks: [] as Array<SessionExternalTask>,
   refreshWorktreeStatuses: vi.fn(async () => undefined),
   invalidateLocalBranchesCache: vi.fn(),
-  worktreeSyncBranchRef: vi.fn(async () => false),
+  worktreeSyncBranchRef: vi.fn(async (): Promise<BranchRefSync> => ({ kind: 'unchanged' })),
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -70,7 +71,7 @@ vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.ghRun },
 }));
 
-vi.mock('../worktreeStatuses/cache', () => ({
+vi.mock('../../runtime/worktreeStatuses/cache', () => ({
   refreshWorktreeStatuses: h.refreshWorktreeStatuses,
 }));
 
@@ -84,7 +85,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 import { buildMountRows } from '../project-mounts/mountRowModel';
 import { createPrForSession } from '../github/createPrForSession';
 import { refreshSessionPr } from '../github/refreshSessionPr';
-import { sweepGithub } from '../github/sweepGithub';
+import { sweepRequests } from '../review-source/sweepRequests';
 import { createSessionSyncSlice } from './index';
 import type { GetFn, SetFn } from './types';
 
@@ -224,8 +225,9 @@ const harness = ({
     recordSessionEventOnce: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     editPr: vi.fn(async () => undefined),
-    pushSessionBranch: vi.fn(async () => ({ ok: true })),
+    pushBranch: vi.fn(async () => ({ ok: true })),
     loadSessionMounts: vi.fn(async () => []),
+    reviewSourceThreads: {},
     refreshSessionMr: vi.fn(async () => undefined),
     refreshSessionBitbucketPr: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
@@ -238,6 +240,7 @@ const harness = ({
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
   state.refreshSessionPr = refreshSessionPr(set, get);
+  state.sweepRequests = vi.fn(sweepRequests({ set, get }));
   Object.assign(state, createSessionSyncSlice({ set, get }));
   const slice = state as unknown as ReturnType<typeof createSessionSyncSlice> & {
     readonly sessionSyncing: Record<string, true>;
@@ -260,7 +263,7 @@ beforeEach(() => {
   h.refreshWorktreeStatuses.mockClear();
   h.invalidateLocalBranchesCache.mockClear();
   h.worktreeSyncBranchRef.mockReset();
-  h.worktreeSyncBranchRef.mockResolvedValue(false);
+  h.worktreeSyncBranchRef.mockResolvedValue({ kind: 'unchanged' });
 });
 
 describe('owner case: a pull request opened for the session worktree', () => {
@@ -294,7 +297,7 @@ describe('owner case: a pull request opened for the session worktree', () => {
       branch === BRANCH ? [makePr({ number: 42, branch })] : [],
     );
 
-    sweepGithub(set, get)({ skipUnknownPr: true });
+    void sweepRequests({ set, get })({ shouldSkipUnknownRequest: true });
     await vi.waitFor(() => expect(h.listPrsForBranch).toHaveBeenCalledTimes(1));
 
     expect(h.listPrsForBranch).not.toHaveBeenCalledWith(
@@ -454,7 +457,7 @@ describe('recheckSessionMounts', () => {
     h.listPrsForBranch.mockImplementation(async (_runner, _repo, branch) =>
       branch === BRANCH ? [{ ...makePr({ number: 42, branch }), headSha: 'remote-head' }] : [],
     );
-    h.worktreeSyncBranchRef.mockResolvedValue(true);
+    h.worktreeSyncBranchRef.mockResolvedValue({ kind: 'updated' });
     const { slice } = harness();
 
     await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'focus' });
@@ -472,6 +475,24 @@ describe('recheckSessionMounts', () => {
         expectedSha: 'remote-head',
       }),
     );
+  });
+
+  it('keeps the git status as it was when the fetch of the branch ref failed', async () => {
+    h.listPrsForBranch.mockImplementation(async (_runner, _repo, branch) =>
+      branch === BRANCH ? [{ ...makePr({ number: 42, branch }), headSha: 'remote-head' }] : [],
+    );
+    h.worktreeSyncBranchRef.mockResolvedValue({
+      kind: 'failed',
+      message: 'fatal: unable to access the remote',
+    });
+    const { slice } = harness();
+
+    await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'focus' });
+    await vi.waitFor(() => expect(h.worktreeSyncBranchRef).toHaveBeenCalledTimes(1));
+
+    expect(h.refreshWorktreeStatuses).not.toHaveBeenCalledWith({
+      worktreePaths: [`/repo/.goodboy/worktrees/${WORKTREE_MOUNT}`],
+    });
   });
 
   it('leaves the ref alone when the pull request carries no head', async () => {
@@ -523,13 +544,25 @@ describe('resyncSession', () => {
         `/repo/.goodboy/worktrees/${OTHER_MOUNT}`,
       ],
     });
-    expect(state.refreshSessionMr).toHaveBeenCalledWith(SESSION_ID, { force: true });
-    expect(state.refreshSessionBitbucketPr).toHaveBeenCalledWith(SESSION_ID, { force: true });
+    expect(state.sweepRequests).toHaveBeenCalledWith({ sessionId: SESSION_ID, isForced: true });
     expect(h.listPrsForBranch).toHaveBeenCalledTimes(2);
     expect(rowRequest(state, WORKTREE_MOUNT)?.label).toBe('PR #42');
     expect((state.sessionExternalTasks as Record<string, unknown[]>)[SESSION_ID]).toHaveLength(1);
-    expect(state.refreshSessionPrDetail).toHaveBeenCalledWith(SESSION_ID, { force: true });
+    expect(state.refreshSessionPrDetail).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ force: true, mountId: WORKTREE_MOUNT }),
+    );
     expect(slice.sessionSyncing[SESSION_ID]).toBeUndefined();
+  });
+
+  it('asks the sweep for this session only and never calls the host refreshers by hand', async () => {
+    const { state, slice } = harness();
+
+    await slice.resyncSession({ sessionId: SESSION_ID });
+
+    expect(state.sweepRequests).toHaveBeenCalledTimes(1);
+    expect(state.refreshSessionMr).not.toHaveBeenCalled();
+    expect(state.refreshSessionBitbucketPr).not.toHaveBeenCalled();
   });
 
   it('runs once while a refresh is already in flight', async () => {

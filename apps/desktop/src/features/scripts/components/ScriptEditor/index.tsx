@@ -1,7 +1,7 @@
-import { AlertTriangle } from 'lucide-react';
-import { Button, FormActions, Input, Textarea } from '@goodboy/ui';
+import { TriangleAlert } from 'lucide-react';
+import { Button, FormActions, ICON_SIZE, Input, Textarea } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { ProjectSelect } from './ProjectSelect';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
@@ -71,7 +71,7 @@ export const ScriptEditor = ({
             onChange={onProjectChange}
           />
         ) : (
-          <span className="shrink-0 text-label text-muted-foreground">{projectName}</span>
+          <span className="shrink-0 text-meta text-muted-foreground">{projectName}</span>
         )}
       </div>
       <Textarea
@@ -94,8 +94,8 @@ export const ScriptEditor = ({
               Saved scripts run in any branch of {projectName}, in every session of this workspace.
             </p>
           ) : (
-            <p role="alert" className="flex min-w-0 items-center gap-1 text-label text-danger">
-              <AlertTriangle size={ICON_SIZE.row} aria-hidden />
+            <p role="alert" className="flex min-w-0 items-center gap-1 text-meta text-danger">
+              <TriangleAlert size={ICON_SIZE.row} aria-hidden />
               {error}
             </p>
           )

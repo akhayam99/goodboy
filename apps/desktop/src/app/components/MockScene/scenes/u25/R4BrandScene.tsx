@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { finish as finishOnboarding } from '../../../../../features/onboarding/onboarding-store';
+import { finish as finishOnboarding } from '../../../../../features/onboarding/onboardingSettings';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { BoardShellScene } from '../BoardShellScene';
 

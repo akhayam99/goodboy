@@ -65,10 +65,10 @@ export const buildBranchDecision = ({
       return null;
     case 'unavailable':
       return {
-        title: `${projectName}'s branch could not be read`,
+        title: `${projectName}'s branch couldn't be read`,
         expected: recorded,
         found: null,
-        note: 'Its directory could not be read.',
+        note: "Its directory couldn't be read.",
         confirm: recheck({ isDisabled: false }),
         alt: null,
       };

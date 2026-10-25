@@ -8,6 +8,7 @@ import {
   ROOT_DIRECTORY,
   VERSION_PATTERN,
 } from './lib/figures.mjs';
+import { staleFiguresOf } from './lib/staleFigures.mjs';
 
 const FIGURE_SRCSET = /(?:\/features\/|\/docs\/readme\/)([a-z0-9-]+)-dark\.webp$/;
 const CAPTION_LINE = /^<sub>Screenshot from Goodboy [^<]*<\/sub>$/;
@@ -121,6 +122,7 @@ export const writeCaptions = ({ markdown, figures }) => {
 const documentPaths = () => [
   'README.md',
   'FEATURES.md',
+  'docs/first-session.md',
   ...readdirSync(resolve(ROOT_DIRECTORY, 'docs/features'))
     .filter((name) => name.endsWith('.md'))
     .sort()
@@ -133,9 +135,30 @@ const readDocuments = () =>
     markdown: readFileSync(resolve(ROOT_DIRECTORY, path), 'utf8'),
   }));
 
+export const reportStale = ({ figures, documents, changelog }) => {
+  const pictureKeys = documents.map(({ path, markdown }) => ({
+    path,
+    keys: collectPictures({ markdown })
+      .map(({ key }) => key)
+      .filter((key) => key !== null),
+  }));
+  const stale = staleFiguresOf({ figures, pictureKeys, changelog });
+  const lines = stale.map(
+    ({ key, guide, version, area, newest }) =>
+      `${key} (${guide}.md) is ${version}, ${area} changed in ${newest}`,
+  );
+  lines.push(`${stale.length} of ${Object.keys(figures).length} figures older than their guide`);
+  return lines;
+};
+
 const main = () => {
   const figures = readFigures();
   const documents = readDocuments();
+  if (process.argv.includes('--report-stale')) {
+    const changelog = readFileSync(resolve(ROOT_DIRECTORY, 'CHANGELOG.md'), 'utf8');
+    reportStale({ figures, documents, changelog }).forEach((line) => console.log(line));
+    return;
+  }
   if (process.argv.includes('--write')) {
     for (const { path, markdown } of documents) {
       const next = writeCaptions({ markdown, figures });

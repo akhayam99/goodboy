@@ -1,5 +1,3 @@
-import type { ProviderId } from './provider-registry';
-
 export type ProviderConnectTier = 'one-click' | 'assisted' | 'manual';
 
 export type ProviderBrowserOwner = 'cli' | 'goodboy' | 'none';

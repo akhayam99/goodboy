@@ -1,5 +1,5 @@
-import { Chip } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { FolderGitRow } from './folderGitRowOf';
 
 type Props = {
@@ -29,17 +29,21 @@ export const FolderGitChips = ({ row, branch }: Props) => {
   const BranchIcon = CONCEPT_ICONS.branch;
   return (
     <span className="flex shrink-0 items-center gap-1">
-      {HAS_GIT.has(row) ? <Chip tone="neutral" shape="badge" size="xs" label="Git" /> : null}
+      {HAS_GIT.has(row) ? (
+        <Chip className="rounded-md" kind="state" tone="neutral" label="Git" />
+      ) : null}
       {HAS_GIT.has(row) && branch !== null ? (
         <Chip
+          className="rounded-md"
+          kind="state"
           tone="neutral"
-          shape="badge"
-          size="xs"
           icon={<BranchIcon size={ICON_SIZE.row} aria-hidden />}
           label={branch}
         />
       ) : null}
-      {label === null ? null : <Chip tone="neutral" shape="badge" size="xs" label={label} />}
+      {label === null ? null : (
+        <Chip className="rounded-md" kind="state" tone="neutral" label={label} />
+      )}
     </span>
   );
 };

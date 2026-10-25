@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { AlertTriangle, Folder, FolderGit2 } from 'lucide-react';
+import { TriangleAlert, Folder, FolderGit2 } from 'lucide-react';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
-import { ROW_INTERACTIVE, cn, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
-import { NAMES } from '../../names';
+import { cn, ICON_SIZE, ROW_INTERACTIVE, Tooltip } from '@goodboy/ui';
+
 import { ProjectRowEditor } from './ProjectRowEditor';
 import { PROJECT_ROW_GRID } from './projectRowGrid';
 import { ProjectStarToggle } from './ProjectStarToggle';
@@ -68,7 +67,7 @@ export const ProjectLinkCompactRow = ({
           </button>
         </Tooltip>
         <span className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 truncate text-label text-muted-foreground">
+          <span className="min-w-0 truncate text-meta text-muted-foreground">
             {description !== '' ? (
               description
             ) : (
@@ -87,8 +86,8 @@ export const ProjectLinkCompactRow = ({
           ) : null}
         </span>
         {isFolderMissing ? (
-          <span className="flex shrink-0 items-center gap-1 text-label text-warning">
-            <AlertTriangle size={ICON_SIZE.control} aria-hidden />
+          <span className="flex shrink-0 items-center gap-1 text-meta text-warning">
+            <TriangleAlert size={ICON_SIZE.control} aria-hidden />
             Folder not found
           </span>
         ) : (

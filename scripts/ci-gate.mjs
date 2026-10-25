@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
-const REQUIRED_JOBS = ['changes', 'checks', 'test-desktop', 'test-packages'];
-const SKIPPABLE_JOBS = ['test-desktop', 'test-packages'];
+const REQUIRED_JOBS = ['changes', 'checks', 'test-desktop', 'test-time-zones', 'test-packages'];
+const SKIPPABLE_JOBS = ['test-desktop', 'test-time-zones', 'test-packages'];
 
 export const evaluateGate = ({ needs }) => {
   const failures = [];

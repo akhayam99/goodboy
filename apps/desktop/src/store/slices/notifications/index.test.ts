@@ -9,6 +9,8 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import type { Notification } from '@goodboy/db';
+import { NOTHING_CHANGED, OPEN_APP_SETTINGS_GENERAL, WORK_KEPT } from './errorRecovery';
+import { isoDateTimeOf } from '../../../__tests__/helpers/brandedIds';
 import type {
   Agent,
   AgentId,
@@ -32,7 +34,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -176,6 +178,26 @@ let useAppStore: StoryStore;
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
+
+type ActedRowParams = {
+  readonly id: string;
+  readonly actedAt: IsoDateTime | null;
+};
+
+const actedRow = ({ id, actedAt }: ActedRowParams): Notification => ({
+  id,
+  ts: isoDateTimeOf({ value: '2026-10-02T08:00:00.000Z' }),
+  kind: 'error',
+  title: 'Handoff degraded',
+  body: null,
+  severity: 'error',
+  sessionId: null,
+  workspaceId: null,
+  read: actedAt !== null,
+  action: null,
+  coalesceKey: null,
+  actedAt,
+});
 
 describe('store contract', () => {
   beforeEach(async () => {
@@ -355,6 +377,54 @@ describe('store contract', () => {
       expect(row?.body?.endsWith('…')).toBe(true);
     });
 
+    it('reportError names what stayed untouched in one clause after the cause', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't save the default editor",
+        error: new Error('disk full'),
+        recovery: NOTHING_CHANGED,
+      });
+      const row = store.getState().notifications[0];
+      expect(row?.body).toBe('disk full\nNothing was changed.');
+      expect(row?.action).toBeNull();
+    });
+
+    it('reportError keeps the clause whole when the cause is cut at 600 characters', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't push the fix.",
+        error: 'x'.repeat(2000),
+        recovery: WORK_KEPT,
+      });
+      const body = store.getState().notifications[0]?.body ?? '';
+      expect(body.endsWith('\nYour work is still on the branch.')).toBe(true);
+      expect(body.split('\n')[0]).toHaveLength(600);
+    });
+
+    it('reportError says only the clause when the failure has no text', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't save the shortcut",
+        error: '',
+        recovery: NOTHING_CHANGED,
+      });
+      expect(store.getState().notifications[0]?.body).toBe('Nothing was changed.');
+    });
+
+    it('reportError stores the recovery action on the row', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't open the editor",
+        error: new Error('not found'),
+        recovery: OPEN_APP_SETTINGS_GENERAL,
+      });
+      expect(store.getState().notifications[0]?.action).toEqual({
+        kind: 'open-settings',
+        scope: 'app',
+        section: 'general',
+      });
+    });
+
     it('markNotificationsRead flips read=true on all entries', async () => {
       const store = useAppStore;
       store.setState({
@@ -376,6 +446,48 @@ describe('store contract', () => {
       expect(storySpies.markNotificationRead).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'n2' }) as never,
       );
+    });
+
+    it('markNotificationsActed stamps actedAt and read on the named entries after the write', async () => {
+      const store = useAppStore;
+      store.setState({
+        notifications: [
+          actedRow({ id: 'n1', actedAt: null }),
+          actedRow({ id: 'n2', actedAt: null }),
+        ],
+      });
+
+      await store.getState().markNotificationsActed({ ids: ['n2'] });
+
+      const ns = store.getState().notifications;
+      expect(ns.find((n) => n.id === 'n1')).toMatchObject({ read: false, actedAt: null });
+      expect(ns.find((n) => n.id === 'n2')?.read).toBe(true);
+      expect(ns.find((n) => n.id === 'n2')?.actedAt).not.toBeNull();
+      expect(storySpies.markNotificationsActed).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: ['n2'] }),
+      );
+    });
+
+    it('markNotificationsActed keeps the old state and says why when the write fails', async () => {
+      const store = useAppStore;
+      store.setState({ notifications: [actedRow({ id: 'n1', actedAt: null })] });
+      storySpies.markNotificationsActed.mockRejectedValueOnce(new Error('database is locked'));
+
+      await expect(store.getState().markNotificationsActed({ ids: ['n1'] })).rejects.toThrow(
+        'database is locked',
+      );
+
+      expect(store.getState().notifications[0]).toMatchObject({ read: false, actedAt: null });
+    });
+
+    it('markNotificationsActed leaves an entry that was already acted on alone', async () => {
+      const store = useAppStore;
+      const first = isoDateTimeOf({ value: '2026-10-02T09:00:00.000Z' });
+      store.setState({ notifications: [actedRow({ id: 'n1', actedAt: first })] });
+
+      await store.getState().markNotificationsActed({ ids: ['n1'] });
+
+      expect(store.getState().notifications[0]?.actedAt).toBe(first);
     });
 
     it('dismissNotification drops that entry alone', async () => {

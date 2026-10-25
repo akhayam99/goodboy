@@ -41,6 +41,7 @@ const AGENT_ID = brandId<AgentId>({ value: 'agent' });
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'ws-1' });
 
 const allowAndContinueMock = vi.fn(async () => undefined);
+const allowWithRuleMock = vi.fn(async () => undefined);
 const resolveMock = vi.fn(async () => undefined);
 const denyWithReasonMock = vi.fn(async () => undefined);
 const reportErrorMock = vi.fn(async () => undefined);
@@ -74,6 +75,7 @@ const makeItem = ({ over = {} }: ItemParams = {}): Extract<
 beforeEach(async () => {
   await resetStoryStore();
   allowAndContinueMock.mockReset().mockResolvedValue(undefined);
+  allowWithRuleMock.mockReset().mockResolvedValue(undefined);
   resolveMock.mockReset().mockResolvedValue(undefined);
   denyWithReasonMock.mockReset().mockResolvedValue(undefined);
   toastMock.mockReset();
@@ -87,6 +89,7 @@ beforeEach(async () => {
       ],
     },
     allowAndContinue: allowAndContinueMock,
+    allowWithRule: allowWithRuleMock,
     resolvePermissionRequest: resolveMock,
     denyWithReason: denyWithReasonMock,
     reportError: reportErrorMock,
@@ -135,37 +138,40 @@ describe('PermissionRequestCard', () => {
     );
   });
 
-  it('always-allow writes a workspace-scoped command-prefix rule', async () => {
+  it('always-allow writes a workspace-scoped command-prefix rule and resumes the blocked call', async () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Always allow "pnpm test"' }));
     });
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(allowWithRuleMock).toHaveBeenCalledWith(
       expect.objectContaining({
         scope: 'workspace',
+        toolUseId: 'tu-1',
         pattern: { tool: 'Bash', argsMatcher: 'pnpm test *' },
       }),
     );
+    expect(resolveMock).not.toHaveBeenCalled();
   });
 
-  it('deny holds for the rest of the session', async () => {
+  it('deny answers this call only: no rule, no session ban, no toast', async () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
     });
-    expect(resolveMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'deny' }));
-    expect(toastMock).toHaveBeenCalledWith({
-      kind: 'info',
-      message: 'Bash denied for the rest of this session',
-    });
+    expect(denyWithReasonMock).toHaveBeenCalledWith(
+      expect.objectContaining({ toolUseId: 'tu-1', reason: '' }),
+    );
+    expect(resolveMock).not.toHaveBeenCalled();
+    expect(toastMock).not.toHaveBeenCalled();
   });
 
-  it('the overflow menu offers the session-wide, everywhere and reasoned-deny escapes', () => {
+  it('the overflow menu offers the session-wide, everywhere, never and reasoned-deny escapes', () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Allow all commands in this session',
       'Always allow "pnpm test" everywhere',
+      'Never allow "pnpm test" in this session',
       'Deny and tell Implementer why…',
     ]);
     const menu = screen.getByRole('menu', { name: 'More permission actions' });
@@ -174,13 +180,35 @@ describe('PermissionRequestCard', () => {
     expect(document.activeElement?.textContent).toBe('Deny and tell Implementer why…');
   });
 
+  it('never allow bans the named command prefix for the session, not the whole tool', async () => {
+    render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('menuitem', { name: 'Never allow "pnpm test" in this session' }),
+      );
+    });
+    expect(resolveMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: 'deny',
+        pattern: { tool: 'Bash', argsMatcher: 'pnpm test *' },
+      }),
+    );
+    expect(toastMock).toHaveBeenCalledWith({
+      kind: 'info',
+      message: 'Blocked "pnpm test" for the rest of this session',
+    });
+  });
+
   it('allows all commands in this session from the overflow', async () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Allow all commands in this session' }));
     });
-    expect(resolveMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'session' }));
+    expect(allowWithRuleMock).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'session', pattern: { tool: 'Bash' } }),
+    );
   });
 
   it('writes the global prefix rule only after its popover confirm, anchored to the overflow', async () => {
@@ -188,7 +216,7 @@ describe('PermissionRequestCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Always allow "pnpm test" everywhere' }));
 
-    expect(resolveMock).not.toHaveBeenCalled();
+    expect(allowWithRuleMock).not.toHaveBeenCalled();
     const dialog = screen.getByRole('dialog', {
       name: 'Always allow "pnpm test" in every workspace?',
     });
@@ -197,7 +225,7 @@ describe('PermissionRequestCard', () => {
     await act(async () => {
       fireEvent.click(within(confirm).getByRole('button', { name: 'Allow everywhere' }));
     });
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(allowWithRuleMock).toHaveBeenCalledWith(
       expect.objectContaining({
         scope: 'global',
         pattern: { tool: 'Bash', argsMatcher: 'pnpm test *' },
@@ -209,7 +237,7 @@ describe('PermissionRequestCard', () => {
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);
     fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Deny and tell Implementer why…' }));
-    fireEvent.change(screen.getByPlaceholderText('Say why, so it does not try again this way'), {
+    fireEvent.change(screen.getByPlaceholderText("Say why, so it doesn't try again this way"), {
       target: { value: 'this touches production data' },
     });
     const dialog = screen.getByRole('dialog', { name: 'More permission actions' });

@@ -4,9 +4,10 @@ import type { Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
-import { createLatestOnly } from '../../../../../store/slices/state-writes/latestOnly';
-import { agentKindPalette, visibleAgentKinds } from '../../../agent-kind';
+import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
+import { agentKindPalette, visibleAgentKinds, type AgentKind } from '../../../agent-kind';
 import { useStartFromDraft } from '../../SessionKickoff/useStartFromDraft';
+import { roleRunOf } from '../../../startRun/roleRunOf';
 import { runRouteOf, type RunRouteFacts } from '../../../startRun/runRouteOf';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
@@ -23,6 +24,8 @@ type Params = {
   readonly sessionId: SessionId | null;
   readonly prepare: () => Promise<void>;
   readonly mount?: SessionDraftMount | null;
+  readonly role?: AgentKind | null;
+  readonly onStarted?: () => void;
 };
 
 export type StartRunModel = Readonly<{
@@ -99,6 +102,8 @@ export const useStartRun = ({
   sessionId,
   prepare,
   mount = null,
+  role = null,
+  onStarted,
 }: Params): StartRunModel => {
   const [localText, setLocalText] = useState('');
   const draftText = useAppStore((state) =>
@@ -183,15 +188,18 @@ export const useStartRun = ({
         sessionId === null
           ? selectSessionDraft({ state: useAppStore.getState(), workspaceId }).pickedIssues
           : NO_ISSUES;
-      const routed = runRouteOf({
-        facts: factsOf({
-          text: asked,
-          workspaceId,
-          session,
-          fileCount: file === null ? 0 : 1,
-          hasPickedTask: picked.length > 0,
-        }),
-      });
+      const routed =
+        role === null
+          ? runRouteOf({
+              facts: factsOf({
+                text: asked,
+                workspaceId,
+                session,
+                fileCount: file === null ? 0 : 1,
+                hasPickedTask: picked.length > 0,
+              }),
+            })
+          : roleRunOf({ text: asked, role });
       const result =
         file === null
           ? routed
@@ -218,6 +226,7 @@ export const useStartRun = ({
       if (claim.isCurrent()) {
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
+        onStarted?.();
       }
     } catch (cause) {
       if (claim.isCurrent()) {
@@ -229,7 +238,18 @@ export const useStartRun = ({
         setIsStarting(false);
       }
     }
-  }, [clearAsked, file, mount, prepare, sessionId, startFromDraft, text, workspaceId]);
+  }, [
+    clearAsked,
+    file,
+    mount,
+    onStarted,
+    prepare,
+    role,
+    sessionId,
+    startFromDraft,
+    text,
+    workspaceId,
+  ]);
 
   return { text, setText, discard, file, setFile, start, isStarting, error };
 };

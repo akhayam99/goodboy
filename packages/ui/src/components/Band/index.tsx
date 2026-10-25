@@ -60,7 +60,7 @@ export const Band = ({
     >
       {groupLabel != null ? (
         <div className="flex items-center justify-between gap-2 px-2 pb-1 pt-2">
-          <span className="text-label font-medium text-muted-foreground">{groupLabel}</span>
+          <span className="text-meta font-medium text-muted-foreground">{groupLabel}</span>
           {groupMeta != null ? (
             <span className="text-meta text-faint-foreground">{groupMeta}</span>
           ) : null}

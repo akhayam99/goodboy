@@ -8,6 +8,8 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
+import { isRecord } from '@goodboy/types/helpers';
 
 type HistoryPlanRow = {
   readonly id: string;
@@ -26,9 +28,6 @@ type HistoryPlanRow = {
   readonly updated_at: number;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
 const toStep = (value: unknown): HistoryStep | null => {
   if (!isRecord(value) || typeof value.sha !== 'string') {
     return null;
@@ -46,15 +45,8 @@ const toStep = (value: unknown): HistoryStep | null => {
 };
 
 const parseItems = ({ json }: { readonly json: string }): ReadonlyArray<HistoryStep> => {
-  try {
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.map(toStep).filter((step): step is HistoryStep => step !== null);
-  } catch {
-    return [];
-  }
+  const parsed = parseJsonColumn({ value: json, isValid: isJsonArray, fallback: [] });
+  return parsed.map(toStep).filter((step): step is HistoryStep => step !== null);
 };
 
 const toState = ({ state }: { readonly state: string }): HistoryPlanState =>

@@ -2,10 +2,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createBugReportDraftSlice } from './index';
-import { initialBugReportDraftState, type BugReportDraftState } from './state';
+import { bugReportDraftInitialState, type BugReportDraftState } from './state';
 
 const harness = () => {
-  let state: BugReportDraftState = { ...initialBugReportDraftState };
+  let state: BugReportDraftState = { ...bugReportDraftInitialState };
   const set = (
     p: Partial<BugReportDraftState> | ((s: BugReportDraftState) => Partial<BugReportDraftState>),
   ) => {
@@ -52,6 +52,6 @@ describe('bug report draft slice', () => {
     harnessed.slice.setBugReportDraft({ issueType: 'question', description: 'Where do plans go' });
     harnessed.slice.clearBugReportDraft();
 
-    expect(harnessed.getState().bugReportDraft).toEqual(initialBugReportDraftState.bugReportDraft);
+    expect(harnessed.getState().bugReportDraft).toEqual(bugReportDraftInitialState.bugReportDraft);
   });
 });

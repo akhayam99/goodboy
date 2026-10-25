@@ -1,6 +1,7 @@
 import { listWorktreesForSession } from '@goodboy/db';
 import type { MountId, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { createDedupeByKey } from '../../../shared/utils/createDedupeByKey';
 import type { AppState } from '../../types';
 import { commitWriteDestination } from './commitWriteDestination';
 import { createProjectMount, withWorktreeRecord } from './createProjectMount';
@@ -14,7 +15,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { projectById } from '../projects/projectIndex';
 import { FIRST_LAP_REFUSAL, isProjectInFirstLap } from '../bootstrap/firstLap';
 
-const inFlight = new Map<string, Promise<EnsureProjectMountedResult>>();
+const inFlight = createDedupeByKey<EnsureProjectMountedResult>();
 
 type SessionParams = {
   readonly get: GetFn;
@@ -167,14 +168,6 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
   };
   return async (input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult> => {
     const key = `${input.sessionId}:${input.projectId}`;
-    const pending = inFlight.get(key);
-    if (pending !== undefined) {
-      return pending;
-    }
-    const promise = run(input).finally(() => {
-      inFlight.delete(key);
-    });
-    inFlight.set(key, promise);
-    return promise;
+    return inFlight.run({ key, task: () => run(input) });
   };
 };

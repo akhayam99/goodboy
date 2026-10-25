@@ -1,7 +1,7 @@
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../shared/pullRequestPresentation';
+} from '../../shared/utils/pullRequestPresentation';
 
 type Params = {
   readonly state: PullRequestPresentationState;

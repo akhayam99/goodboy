@@ -191,13 +191,13 @@ describe('placeContextMenu', () => {
   });
 });
 
-describe('MenuItems keyboard', () => {
+describe('MenuList keyboard in an overflow menu', () => {
   it('moves through a ⋯ menu with the arrow keys', () => {
     render(
       <OverflowMenu
-        items={[
-          { kind: 'item', key: 'a', label: 'Open in editor', onClick: vi.fn() },
-          { kind: 'item', key: 'b', label: 'Copy path', onClick: vi.fn() },
+        entries={[
+          { kind: 'item', key: 'a', label: 'Open in editor', onSelect: vi.fn() },
+          { kind: 'item', key: 'b', label: 'Copy path', onSelect: vi.fn() },
         ]}
       />,
     );

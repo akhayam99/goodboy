@@ -14,9 +14,9 @@ export const REPORT_ALLOCATION_LIMITS = {
   olderAgentReserve: 600,
 } as const satisfies ContextAllocationLimits;
 
-export const ARTIFACT_SECTION_CUT_NOTE = 'cut at the end to fit the pack budget';
+const ARTIFACT_SECTION_CUT_NOTE = 'cut at the end to fit the pack budget';
 
-export const ARTIFACT_SECTION_REMOVED_NOTE = 'removed entirely to fit the pack budget';
+const ARTIFACT_SECTION_REMOVED_NOTE = 'removed entirely to fit the pack budget';
 
 type ReconcileSectionRowParams = Readonly<{
   row: ArtifactContextInventoryRow | null;

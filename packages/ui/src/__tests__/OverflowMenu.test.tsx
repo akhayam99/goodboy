@@ -3,8 +3,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { OverflowMenu } from '../components/OverflowMenu';
+import type { MenuEntry } from '../components/ContextMenu/menuTypes';
 import { MENU_MAX_WIDTH } from '../menuMaxWidth';
-import type { OverflowMenuItem } from '../components/MenuItems';
 
 afterEach(cleanup);
 
@@ -17,19 +17,19 @@ const hover = (button: HTMLElement): void => {
   vi.useRealTimers();
 };
 
-const TWO: OverflowMenuItem[] = [
-  { kind: 'item', key: 'one', label: 'One', onClick: vi.fn() },
-  { kind: 'item', key: 'two', label: 'Two', onClick: vi.fn() },
+const TWO: MenuEntry[] = [
+  { kind: 'item', key: 'one', label: 'One', onSelect: vi.fn() },
+  { kind: 'item', key: 'two', label: 'Two', onSelect: vi.fn() },
 ];
 
 describe('OverflowMenu', () => {
   it('renders a trigger button with the default label', () => {
-    render(<OverflowMenu items={TWO} />);
+    render(<OverflowMenu entries={TWO} />);
     expect(screen.getByRole('button', { name: /more actions/i })).toBeDefined();
   });
 
   it('explains the trigger through the shared tooltip, not a native title', () => {
-    render(<OverflowMenu items={TWO} />);
+    render(<OverflowMenu entries={TWO} />);
     const trigger = screen.getByRole('button', { name: /more actions/i });
     expect(trigger.getAttribute('title')).toBeNull();
     hover(trigger);
@@ -37,19 +37,19 @@ describe('OverflowMenu', () => {
   });
 
   it('always says More actions while the contextual name stays in the aria-label', () => {
-    render(<OverflowMenu items={TWO} label="Branch actions" />);
+    render(<OverflowMenu entries={TWO} label="Branch actions" />);
     const trigger = screen.getByRole('button', { name: 'Branch actions' });
     hover(trigger);
     expect(screen.getByRole('tooltip').textContent).toBe('More actions');
   });
 
   it('opens the menu on trigger click and shows item labels', () => {
-    const items: OverflowMenuItem[] = [
-      { kind: 'item', key: 'rename', label: 'Rename', onClick: vi.fn() },
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'rename', label: 'Rename', onSelect: vi.fn() },
       { kind: 'separator', key: 'sep1' },
-      { kind: 'item', key: 'delete', label: 'Delete', onClick: vi.fn(), destructive: true },
+      { kind: 'item', key: 'delete', label: 'Delete', onSelect: vi.fn(), isDestructive: true },
     ];
-    render(<OverflowMenu items={items} />);
+    render(<OverflowMenu entries={entries} />);
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     expect(screen.getByRole('menuitem', { name: /rename/i })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /delete/i })).toBeDefined();
@@ -57,47 +57,47 @@ describe('OverflowMenu', () => {
 
   it('fires onClick and closes the menu when an item is selected', () => {
     const onSelect = vi.fn();
-    const items: OverflowMenuItem[] = [
-      { kind: 'item', key: 'foo', label: 'Run foo', onClick: onSelect },
-      { kind: 'item', key: 'bar', label: 'Run bar', onClick: vi.fn() },
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'foo', label: 'Run foo', onSelect },
+      { kind: 'item', key: 'bar', label: 'Run bar', onSelect: vi.fn() },
     ];
-    render(<OverflowMenu items={items} />);
+    render(<OverflowMenu entries={entries} />);
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     fireEvent.click(screen.getByRole('menuitem', { name: /run foo/i }));
     expect(onSelect).toHaveBeenCalledOnce();
   });
 
   it('escapes clipping ancestors by rendering the menu in a fixed portal', () => {
-    const items: OverflowMenuItem[] = [
-      { kind: 'item', key: 'x', label: 'X', onClick: vi.fn() },
-      { kind: 'item', key: 'y', label: 'Y', onClick: vi.fn() },
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'x', label: 'X', onSelect: vi.fn() },
+      { kind: 'item', key: 'y', label: 'Y', onSelect: vi.fn() },
     ];
     render(
       <div className="overflow-x-auto">
-        <OverflowMenu items={items} />
+        <OverflowMenu entries={entries} />
       </div>,
     );
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     const menu = screen.getByRole('menu');
-    expect(menu.className).toContain('fixed');
+    expect(menu.parentElement?.className).toContain('fixed');
     expect(menu.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'X' })).toBeDefined();
   });
 
   it('draws a 24px compact trigger by default and a 28px centred square on request', () => {
-    const { rerender } = render(<OverflowMenu items={TWO} />);
+    const { rerender } = render(<OverflowMenu entries={TWO} />);
     const compact = screen.getByRole('button', { name: /more actions/i });
     expect(compact.getAttribute('data-size')).toBe('compact');
     expect(compact.className.split(' ')).toContain('size-6');
 
-    rerender(<OverflowMenu items={TWO} size="control" />);
+    rerender(<OverflowMenu entries={TWO} size="control" />);
     const control = screen.getByRole('button', { name: /more actions/i });
     expect(control.getAttribute('data-size')).toBe('control');
     expect(control.className.split(' ')).toContain('size-7');
   });
 
   it('draws the ellipsis glyph by default, never the vertical dots', () => {
-    render(<OverflowMenu items={TWO} />);
+    render(<OverflowMenu entries={TWO} />);
     const glyph = screen.getByRole('button', { name: /more actions/i }).querySelector('svg');
     expect(glyph?.getAttribute('class')).toContain('lucide-ellipsis');
     expect(glyph?.getAttribute('class')).not.toContain('lucide-ellipsis-vertical');
@@ -105,7 +105,7 @@ describe('OverflowMenu', () => {
 
   it('draws nothing and logs when it has no items', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const { container } = render(<OverflowMenu items={[]} />);
+    const { container } = render(<OverflowMenu entries={[]} />);
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
     expect(logged).toHaveBeenCalledWith('OverflowMenu needs two items');
@@ -115,7 +115,7 @@ describe('OverflowMenu', () => {
   it('draws nothing and logs when it holds a single item', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { container } = render(
-      <OverflowMenu items={[{ kind: 'item', key: 'one', label: 'One', onClick: vi.fn() }]} />,
+      <OverflowMenu entries={[{ kind: 'item', key: 'one', label: 'One', onSelect: vi.fn() }]} />,
     );
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
@@ -127,9 +127,9 @@ describe('OverflowMenu', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
       <OverflowMenu
-        items={[
+        entries={[
           { kind: 'header', key: 'head', label: 'Group' },
-          { kind: 'item', key: 'one', label: 'One', onClick: vi.fn() },
+          { kind: 'item', key: 'one', label: 'One', onSelect: vi.fn() },
           { kind: 'separator', key: 'sep' },
         ]}
       />,
@@ -141,20 +141,20 @@ describe('OverflowMenu', () => {
 
   it('draws a trigger and stays quiet with two items', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(<OverflowMenu items={TWO} />);
+    render(<OverflowMenu entries={TWO} />);
     expect(screen.getByRole('button', { name: /more actions/i })).toBeDefined();
     expect(logged).not.toHaveBeenCalled();
     logged.mockRestore();
   });
 
   it('does not open when disabled', () => {
-    render(<OverflowMenu items={TWO} disabled />);
+    render(<OverflowMenu entries={TWO} disabled />);
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
   it('caps its popup at the menu width so a long row never spreads across the window', () => {
-    render(<OverflowMenu items={TWO} />);
+    render(<OverflowMenu entries={TWO} />);
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     const popup = screen.getByRole('menu').closest<HTMLElement>('[class*="z-popover"]');
     expect(popup?.style.maxWidth).toBe(`${MENU_MAX_WIDTH}px`);

@@ -33,7 +33,7 @@ const info = (
   overrides: Partial<ProviderDisplayInfo> & Pick<ProviderDisplayInfo, 'id'>,
 ): ProviderDisplayInfo => ({
   binary: overrides.id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: null,
   identity: null,

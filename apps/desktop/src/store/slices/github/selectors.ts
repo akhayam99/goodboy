@@ -1,14 +1,13 @@
-import type { SessionId, SessionPrFetchState } from '@goodboy/types';
+import type { PullRequestHost, SessionId, SessionPrFetchState } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { isSessionPrFetchable } from './resolveSessionPrFetch';
-import { sessionPrFetchState } from './sessionPrFetchState';
+import { sessionRequestFetchOf } from '../review-source/sessionRequestFetchOf';
 
 export const useSessionPrFetchState = (sessionId: SessionId): SessionPrFetchState =>
-  useAppStore((s) =>
-    sessionPrFetchState({
-      githubAvailable: s.githubStatus?.available ?? null,
-      fetchedAt: s.sessionGithub[sessionId]?.fetchedAt ?? null,
-      failedAt: s.sessionGithub[sessionId]?.failedAt ?? null,
-      fetchable: isSessionPrFetchable({ state: s, sessionId }),
-    }),
-  );
+  useAppStore((s) => sessionRequestFetchOf({ state: s, sessionId }).state);
+
+type HostParams = {
+  readonly sessionId: SessionId;
+};
+
+export const useSessionRequestHost = ({ sessionId }: HostParams): PullRequestHost =>
+  useAppStore((s) => sessionRequestFetchOf({ state: s, sessionId }).host);

@@ -55,7 +55,7 @@ export const PinPortPopover = ({ align = 'end' }: Props) => {
     >
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="pin-port-number" className="text-label text-foreground">
+          <label htmlFor="pin-port-number" className="text-meta text-foreground">
             Port
           </label>
           <Input
@@ -77,7 +77,7 @@ export const PinPortPopover = ({ align = 'end' }: Props) => {
           ) : null}
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="pin-port-description" className="text-label text-foreground">
+          <label htmlFor="pin-port-description" className="text-meta text-foreground">
             Description
           </label>
           <Input

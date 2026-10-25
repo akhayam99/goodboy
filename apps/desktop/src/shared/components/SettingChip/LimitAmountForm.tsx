@@ -8,7 +8,11 @@ type Props = {
 };
 
 export const LimitAmountForm = ({ label, inputId, draft }: Props) => (
-  <form aria-label={label} onSubmit={draft.submit} className="flex flex-col gap-1">
+  <form
+    aria-label={label}
+    onSubmit={(event) => draft.submit({ event })}
+    className="flex flex-col gap-1"
+  >
     <label htmlFor={inputId} className="text-meta text-muted-foreground">
       Limit in dollars
     </label>

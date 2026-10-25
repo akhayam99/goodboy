@@ -24,6 +24,7 @@ describe('insertWorkspaceWithProjects', () => {
         aProject({ workspaceId: WORKSPACE_ID, rootPath: '/code/ledger-core', baseBranch: null }),
       ],
       settings: [{ key: 'bootstrap.phase.ledger', value: '{}' }],
+      projectValues: [],
     });
 
     const rows = await db.select<{ readonly root_path: string; readonly base_branch: string }>(
@@ -58,6 +59,7 @@ describe('insertWorkspaceWithProjects', () => {
           aProject({ workspaceId: WORKSPACE_ID, rootPath: '/code/notify-relay' }),
         ],
         settings: [{ key: 'bootstrap.phase.acme', value: '{}' }],
+        projectValues: [],
       }),
     ).rejects.toThrow();
 
@@ -87,7 +89,13 @@ describe('insertWorkspaceWithProjects', () => {
       rootPath: '/code/ledger-core',
     });
 
-    await insertWorkspaceWithProjects({ db, workspace: null, projects: [folder], settings: [] });
+    await insertWorkspaceWithProjects({
+      db,
+      workspace: null,
+      projects: [folder],
+      settings: [],
+      projectValues: [],
+    });
 
     const rows = await db.select<{ readonly id: string }>(
       'SELECT id FROM projects WHERE workspace_id = ?',

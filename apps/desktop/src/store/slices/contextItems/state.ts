@@ -5,7 +5,7 @@ export type ContextItemsState = {
   readonly workspaceLearnings: Readonly<Record<WorkspaceId, ReadonlyArray<SessionContextItem>>>;
 };
 
-export const initialContextItemsState: ContextItemsState = {
+export const contextItemsInitialState: ContextItemsState = {
   sessionContextItems: {},
   workspaceLearnings: {},
 };

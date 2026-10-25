@@ -178,10 +178,10 @@ export const ActionCard = ({
             {chip}
           </div>
           {card.detail === null ? null : (
-            <span className="truncate text-label text-muted-foreground">{card.detail}</span>
+            <span className="truncate text-meta text-muted-foreground">{card.detail}</span>
           )}
           {failure === null ? null : (
-            <span role="alert" className="flex items-center gap-1 text-label text-danger">
+            <span role="alert" className="flex items-center gap-1 text-meta text-danger">
               <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0" />
               <span className="min-w-0 truncate">{failure}</span>
             </span>

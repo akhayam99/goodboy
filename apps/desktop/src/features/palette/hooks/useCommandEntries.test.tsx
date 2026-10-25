@@ -35,9 +35,10 @@ import {
   OPEN_WIZARD_EVENT,
   finishWizard,
   hydrateOnboardingFromDb,
-} from '../../onboarding/onboarding-store';
+} from '../../onboarding/onboardingSettings';
 import { GUIDE_CHAPTERS } from '../../settings/components/GuideStudio/guideChapters';
 import { peekGuideChapter } from '../../settings/components/GuideStudio/guideChapterRequest';
+import { useThemeStore } from '../../../shared/lib/theme';
 import { useCommandEntries } from './useCommandEntries';
 
 const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -100,6 +101,26 @@ describe('the palette entries of the workspace doors', () => {
     expect(onNew).toHaveBeenCalledOnce();
   });
 
+  it('offers Theme: dark, light and system, each writing its own preference', () => {
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+    const entryOf = (choice: string) =>
+      result.current.find((entry) => entry.key === `action:theme-${choice}`);
+
+    expect(['dark', 'light', 'system'].map((choice) => entryOf(choice)?.label)).toEqual([
+      'Theme: dark',
+      'Theme: light',
+      'Theme: system',
+    ]);
+    entryOf('system')?.run();
+    expect(useThemeStore.getState().preference).toBe('system');
+    entryOf('dark')?.run();
+    expect(useThemeStore.getState().preference).toBe('dark');
+    expect(result.current.map((entry) => entry.key)).not.toContain('action:toggle-theme');
+    expect(entryOf('dark')?.secondary).toEqual(
+      expect.arrayContaining(['Switch to light mode', 'Switch to dark mode']),
+    );
+  });
+
   it('offers Resume setup while setup is unfinished and resumes it in the main window', () => {
     const onOpen = vi.fn();
     window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
@@ -130,7 +151,9 @@ describe('the palette groups', () => {
     expect(kindOf('action:new-chat')).toBe('create');
     expect(kindOf('action:new-terminal')).toBe('create');
     expect(kindOf('action:new-workspace')).toBe('create');
-    expect(kindOf('action:toggle-theme')).toBe('action');
+    expect(kindOf('action:theme-dark')).toBe('action');
+    expect(kindOf('action:theme-light')).toBe('action');
+    expect(kindOf('action:theme-system')).toBe('action');
     expect(kindOf('action:check-updates')).toBe('action');
     expect(kindOf('goto:changelog')).toBe('help');
     expect(kindOf('action:report-issue')).toBe('help');

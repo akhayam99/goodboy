@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Band, SectionHeader, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import {
+  Band,
+  ICON_SIZE,
+  SectionHeader,
+  SegmentedTabs,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import {
   isStorageFolderSuggested,
   storageFolderStatus,
 } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFilter, StorageScope } from '../../../../store/slices/storage/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { groupStorageFolders } from '../../groupStorageFolders';
-import { useStorageSummary } from '../../useStorageSummary';
+import { useStorageSummary } from '../../hooks/useStorageSummary';
 import { BulkRemoveBar } from './BulkRemoveBar';
 import { ScanRepositoryRow } from './ScanRepositoryRow';
 import { StorageOutcomeNotice } from './StorageOutcomeNotice';
@@ -21,7 +27,7 @@ import type { ToggleFolderParams } from './types';
 const EMPTY_COPY = {
   review: 'Nothing to review. Every folder Goodboy made is in use or kept.',
   'in-use': 'No worktree folder is in use right now.',
-  kept: 'You are not keeping any folder.',
+  kept: "You aren't keeping any folder.",
 } as const satisfies Record<StorageFilter, string>;
 
 const FolderIcon = CONCEPT_ICONS.worktree;
@@ -47,7 +53,7 @@ export const WorktreeSection = ({ scope }: Props) => {
     scope.kind === 'workspace'
       ? (workspaces.find((workspace) => workspace.id === scope.id)?.name ?? null)
       : null;
-  const { summary, suggestAfterDays, now } = useStorageSummary({ scope });
+  const { summary, suggestAfterDays, terminals, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageFilter>(focus?.filter ?? 'review');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [isConfirming, setIsConfirming] = useState(false);
@@ -73,15 +79,28 @@ export const WorktreeSection = ({ scope }: Props) => {
   ];
   const suggested = groups
     .flatMap((group) => group.folders)
-    .filter((folder) => isStorageFolderSuggested({ folder, now, suggestAfterDays }));
+    .filter((folder) =>
+      isStorageFolderSuggested({
+        folder,
+        now,
+        suggestAfterDays,
+        liveTerminals: terminals.get(folder.path)?.length ?? 0,
+      }),
+    );
 
   const selectable = useMemo(
     () =>
       groups
         .flatMap((group) => group.folders)
-        .filter((folder) => storageFolderStatus({ folder }) === 'safe')
+        .filter(
+          (folder) =>
+            storageFolderStatus({
+              folder,
+              liveTerminals: terminals.get(folder.path)?.length ?? 0,
+            }) === 'safe',
+        )
         .map((folder) => folder.path),
-    [groups],
+    [groups, terminals],
   );
 
   const clearSelection = useCallback(() => {
@@ -172,7 +191,7 @@ export const WorktreeSection = ({ scope }: Props) => {
       <StorageOutcomeNotice />
       <Band>
         {groups.length === 0 ? (
-          <p className="px-2 py-2 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
+          <p className="px-2 py-2 text-meta text-muted-foreground">{EMPTY_COPY[filter]}</p>
         ) : (
           <div className="@container flex flex-col">
             <WorktreeColumns />
@@ -183,6 +202,7 @@ export const WorktreeSection = ({ scope }: Props) => {
                 now={now}
                 suggestAfterDays={suggestAfterDays}
                 selected={selected}
+                terminals={terminals}
                 onToggle={onToggle}
               />
             ))}

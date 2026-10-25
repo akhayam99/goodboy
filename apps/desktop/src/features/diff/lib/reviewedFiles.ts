@@ -20,6 +20,8 @@ export const fileSignature = (file: FileDiff): string =>
     .map((hunk) => hunk.header)
     .join('§')}`;
 
+const LEGACY_REVIEWED_KEY_UNTIL = '0.30.0';
+
 const legacyKey = (sessionId: SessionId | null, view: DiffView): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
 

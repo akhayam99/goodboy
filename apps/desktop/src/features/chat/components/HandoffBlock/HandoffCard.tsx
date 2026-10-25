@@ -1,5 +1,5 @@
 import type { AgentHandoff, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { handoffSenderLabel } from '../../utils/handoffLabels';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
@@ -53,7 +53,7 @@ export const HandoffCard = ({ handoff, sessionId, at }: Props) => {
           <div className="flex min-w-0 flex-col gap-2 pb-2 pl-7 pr-2">
             <span className="truncate text-row text-foreground">{handoff.ask}</span>
             {handoff.why === null ? null : (
-              <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>
+              <span className="truncate text-meta text-muted-foreground">Why: {handoff.why}</span>
             )}
             <HandoffYourHint handoff={handoff} />
             {disclosure.open ? (

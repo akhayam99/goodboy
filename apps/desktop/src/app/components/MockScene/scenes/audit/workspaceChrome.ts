@@ -90,9 +90,6 @@ export const seedWorkspaceChrome = ({ session, siblings }: ChromeParams): void =
         binary: 'claude',
         capabilities: {
           models: [],
-          supportsTools: true,
-          supportsStream: true,
-          supportsCheapModel: true,
         },
         connection: 'connected',
         version: '1.0.0',

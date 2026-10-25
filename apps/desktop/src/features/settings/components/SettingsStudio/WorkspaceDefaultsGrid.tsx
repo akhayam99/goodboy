@@ -10,6 +10,7 @@ import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { BranchTemplateField } from './BranchTemplateField';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -77,7 +78,12 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
     } catch (err) {
-      void reportError({ title: "Couldn't save the branch prefix", error: err, workspaceId });
+      void reportError({
+        title: "Couldn't save the branch prefix",
+        error: err,
+        workspaceId,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setBusy(false);
     }

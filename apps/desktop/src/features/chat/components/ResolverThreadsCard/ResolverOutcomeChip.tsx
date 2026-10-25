@@ -1,8 +1,7 @@
 import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
-import { Chip, type Tone } from '@goodboy/ui';
+import { Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
 import type { ResolverThreadVerdictKind } from './resolverThreadVerdicts';
 import { RESOLVER_OUTCOME_LABEL, resolverOutcome } from './resolverOutcome';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly kind: ResolverThreadVerdictKind;
@@ -30,8 +29,8 @@ export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
 
   return (
     <Chip
+      kind="state"
       tone={isClosed ? CLOSED_TONE : TONE[kind]}
-      size="xs"
       width="md"
       emphasis="subtle"
       bordered={false}

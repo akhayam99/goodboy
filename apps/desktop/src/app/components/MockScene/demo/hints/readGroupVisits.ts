@@ -1,4 +1,4 @@
-import { isHintId } from '../director/isHintId';
+import { readHintId } from '../director/readHintId';
 import { GROUP_VISITS_KEY } from './groupVisitsKey';
 
 type Params = {
@@ -12,7 +12,12 @@ export const readGroupVisits = ({ fallback }: Params): ReadonlyArray<string> => 
       return [];
     }
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((entry) => isHintId(entry)) : [];
+    return Array.isArray(parsed)
+      ? parsed.flatMap((entry) => {
+          const id = readHintId({ value: entry });
+          return id === null ? [] : [id];
+        })
+      : [];
   } catch {
     return fallback;
   }

@@ -11,9 +11,9 @@ use crate::attachment::sanitize_segment;
 use crate::db::Db;
 
 const STORE_DIR: &str = "chat-attachments";
-const TURN_DIR: &str = "goodboy-chat";
+pub(crate) const TURN_DIR: &str = "goodboy-chat";
 
-pub(crate) const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+use crate::util::limits::MAX_IMAGE_BYTES;
 
 #[derive(Debug, Error)]
 pub enum ChatImageError {
@@ -155,7 +155,7 @@ pub(crate) fn write_image_in(
         Err(error) => return Err(error.into()),
     }
     fs::write(&target, bytes)?;
-    set_mode(&target, 0o444)?;
+    set_mode(&target, 0o400)?;
     Ok(bytes.len() as u64)
 }
 
@@ -255,7 +255,7 @@ fn link_or_copy(source: &Path, target: &Path) -> std::io::Result<()> {
         return Ok(());
     }
     fs::copy(source, target)?;
-    set_mode(target, 0o444)
+    set_mode(target, 0o400)
 }
 
 pub(crate) fn turn_root_in(temp: &Path, run_id: &str) -> PathBuf {
@@ -277,7 +277,28 @@ pub(crate) fn prepare_turn_images_in(
     }
     let root = turn_root_in(temp, run_id);
     remove_turn_root(&root);
-    fs::create_dir_all(&root)?;
+    let staged = stage_turn_images(store, &root, chat_id, images, current_message);
+    if staged.is_err() {
+        remove_turn_root(&root);
+    }
+    staged
+}
+
+pub(crate) fn create_private_root(base: &Path, root: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(base)?;
+    set_mode(base, 0o700)?;
+    fs::create_dir_all(root)?;
+    set_mode(root, 0o700)
+}
+
+fn stage_turn_images(
+    store: &Path,
+    root: &Path,
+    chat_id: &str,
+    images: &[ChatImage],
+    current_message: Option<&str>,
+) -> Result<Option<TurnImages>, ChatImageError> {
+    create_private_root(root.parent().unwrap_or(root), root)?;
     let mut linked: Vec<(String, TurnImage)> = Vec::with_capacity(images.len());
     for (index, image) in images.iter().enumerate() {
         if !is_safe_id(&image.id) || image_mime(&image.file_name).is_none() {
@@ -301,11 +322,11 @@ pub(crate) fn prepare_turn_images_in(
         ));
     }
     if linked.is_empty() {
-        remove_turn_root(&root);
+        remove_turn_root(root);
         return Ok(None);
     }
-    set_mode(&root, 0o555)?;
-    let canonical = fs::canonicalize(&root)?;
+    set_mode(root, 0o500)?;
+    let canonical = fs::canonicalize(root)?;
     let images = linked
         .into_iter()
         .map(|(name, image)| TurnImage {
@@ -323,8 +344,20 @@ pub(crate) fn remove_turn_root(root: &Path) {
     if !root.exists() {
         return;
     }
-    let _ = set_mode(root, 0o755);
+    unlock_tree(root);
     let _ = fs::remove_dir_all(root);
+}
+
+fn unlock_tree(path: &Path) {
+    let _ = set_mode(path, 0o700);
+    let Ok(entries) = fs::read_dir(path) else {
+        return;
+    };
+    for child in entries.flatten().map(|entry| entry.path()) {
+        if child.is_dir() {
+            unlock_tree(&child);
+        }
+    }
 }
 
 pub(crate) fn prepare_turn_images(

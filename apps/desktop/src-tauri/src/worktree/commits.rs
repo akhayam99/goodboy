@@ -1,6 +1,6 @@
 use super::base::resolve_branch_range;
 use super::error::WorktreeError;
-use super::git::{git, git_strs, rev_list_set};
+use super::git::{git, git_strs, rev_list_set, validated_rev};
 use super::status::{current_branch_name, in_progress_operation, resolve_upstream};
 use super::types::{BranchCommit, GitDistance, GitOperation};
 use crate::proc::git::Git;
@@ -97,7 +97,7 @@ pub async fn worktree_is_ancestor(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn worktree_is_ancestor_blocking(
+pub(super) fn worktree_is_ancestor_blocking(
     worktree_path: String,
     sha: String,
     head: String,
@@ -106,8 +106,10 @@ fn worktree_is_ancestor_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
+    let sha = validated_rev(&sha)?;
+    let head = validated_rev(&head)?;
     let output = Git::new()
-        .args(["merge-base", "--is-ancestor", &sha, &head])
+        .args(["merge-base", "--is-ancestor", sha, head])
         .cwd(p)
         .output()?;
     Ok(output.success())
@@ -375,7 +377,7 @@ fn worktree_commit_range_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let range = format!("{base}..{head}");
+    let range = format!("{}..{}", validated_rev(&base)?, validated_rev(&head)?);
     let raw = git(p, &["log", "--reverse", "--format=%H%x1f%s", &range])?;
     Ok(raw
         .lines()

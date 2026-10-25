@@ -10,7 +10,7 @@ const BASELINE_PATH = join(__dirname, 'popover-widths.baseline.json');
 const IS_UPDATING = process.env.GOODBOY_UPDATE_BASELINE === '1';
 
 const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set(['node_modules', 'dist', 'target', 'gen']);
-const SCALE_PX: ReadonlySet<number> = new Set([200, 240, 320, 360, 384, 420]);
+const SCALE_PX: ReadonlySet<number> = new Set([200, 240, 320, 360, 384, 420, 500]);
 const NAMED_PX: Readonly<Record<string, number>> = {
   xs: 320,
   sm: 384,
@@ -116,9 +116,9 @@ describe('floating surfaces use the width scale', () => {
     expect(floatingWidthsOf('<div className="w-72 rounded-lg">')).toEqual([]);
   });
 
-  it('keeps the scale: menus 240 (min 200), popovers 320 and 384, toast 360, switcher 420', () => {
+  it('keeps the scale: menus 240 (min 200), popovers 320 and 384, toast 360, switcher 420, studio 500', () => {
     expect([...SCALE_PX].sort((left, right) => left - right)).toEqual([
-      200, 240, 320, 360, 384, 420,
+      200, 240, 320, 360, 384, 420, 500,
     ]);
   });
 
@@ -140,7 +140,7 @@ describe('floating surfaces use the width scale', () => {
       const allowed = baseline[path] ?? 0;
       return count > allowed
         ? [
-            `${path}: ${count} off-scale widths, baseline ${allowed}. Use 200, 240, 320, 360, 384 or 420.`,
+            `${path}: ${count} off-scale widths, baseline ${allowed}. Use 200, 240, 320, 360, 384, 420 or 500.`,
           ]
         : [];
     });

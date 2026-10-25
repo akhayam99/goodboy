@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown } from 'lucide-react';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { taskIdentityKey } from '../../../../../../shared/utils/taskIdentityKey';
 import { ObjectChoiceMenu } from '../../../../../actions/ObjectChoiceMenu';
 import { taskMoveTargets, type TaskMoveChoice } from '../../../../../actions/kinds/taskMoveTargets';

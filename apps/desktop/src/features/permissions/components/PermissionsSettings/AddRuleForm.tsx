@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, Input, SegmentedTabs } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Input, SegmentedTabs } from '@goodboy/ui';
+
 import type { NewRule } from '../../hooks/usePermissionRules';
 
 type Props = {

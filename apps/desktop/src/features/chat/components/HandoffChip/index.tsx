@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
@@ -22,7 +22,7 @@ import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren'
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { autoMembershipOf } from '../../../auto/autoMembershipOf';
 import { AutoHandoffChip } from './AutoHandoffChip';
 
@@ -178,7 +178,8 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             onClick={onSpawn}
             className={cn(
               'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
-              'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'hover:text-foreground',
+              FOCUS_RING,
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
           >
@@ -215,7 +216,8 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               onClick={onOpen}
               className={cn(
                 'rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
-                'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'hover:text-foreground',
+                FOCUS_RING,
               )}
             >
               Go to chat

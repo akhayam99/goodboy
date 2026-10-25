@@ -1,19 +1,15 @@
 import { formatError } from '@goodboy/ui';
-import type {
-  ChatId,
-  ChatMessage,
-  ChatMessageAttachment,
-  ChatMessageId,
-  ChatMessageStatus,
-  EffortLevel,
-  IsoDateTime,
-  ProviderId,
-  ProviderRunId,
-} from '@goodboy/types';
+import type { ChatId, ChatMessageAttachment, ChatMessageId, ProviderRunId } from '@goodboy/types';
+import { addReplyRead } from '../../../features/conversation/addReplyRead';
+import { appendReplyText } from '../../../features/conversation/appendReplyText';
+import { draftChatMessage } from '../../../features/conversation/draftChatMessage';
+import { settleChatReply } from '../../../features/conversation/settleChatReply';
+import { STOPPED_BEFORE_LAUNCH } from '../../../features/conversation/stoppedBeforeLaunch';
+import { isoNow } from '@goodboy/types/helpers';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
-import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
+import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import { findChat } from './findChat';
 import { isChatImagesOn } from './isChatImagesOn';
@@ -26,49 +22,9 @@ import type { GetFn, SendChatMessageParams, SetFn } from './types';
 
 const PREVIEW_LENGTH = 240;
 
+const sendsInFlight = new Set<ChatId>();
+
 const IMAGE_ONLY_QUESTION = 'Look at the attached images.';
-
-const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-
-type MessageDraft = {
-  readonly chatId: ChatId;
-  readonly role: ChatMessage['role'];
-  readonly content: string;
-  readonly status: ChatMessageStatus;
-  readonly at: IsoDateTime;
-  readonly provider?: ProviderId;
-  readonly model?: string;
-  readonly effort?: EffortLevel | null;
-  readonly id?: ChatMessageId;
-  readonly attachments?: ReadonlyArray<ChatMessageAttachment>;
-};
-
-const draftMessage = ({
-  chatId,
-  role,
-  content,
-  status,
-  at,
-  provider,
-  model,
-  effort,
-  id,
-  attachments = [],
-}: MessageDraft): ChatMessage => ({
-  id: id ?? (crypto.randomUUID() as ChatMessageId),
-  chatId,
-  role,
-  content,
-  status,
-  reads: [],
-  attachments,
-  error: null,
-  provider: provider ?? null,
-  model: model ?? null,
-  effort: effort ?? null,
-  createdAt: at,
-  updatedAt: at,
-});
 
 type FinishParams = {
   readonly set: SetFn;
@@ -85,17 +41,8 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
     return;
   }
   const at = isoNow();
-  const status: ChatMessageStatus = isStopping
-    ? 'stopped'
-    : outcome.status === 'done'
-      ? 'done'
-      : 'failed';
-  const finished: ChatMessage = {
-    ...current,
-    status,
-    error: status === 'failed' && outcome.status === 'failed' ? outcome.error : null,
-    updatedAt: at,
-  };
+  const finished = settleChatReply({ reply: current, isStopping, outcome, at });
+  const status = finished.status;
   if (status !== 'done') {
     revealPacer.flushRun({ runId: messageId });
   }
@@ -133,7 +80,8 @@ export const sendChatMessage =
     if (
       (question === '' && wanted.length === 0) ||
       chat === null ||
-      get().chatStreams[chatId] !== undefined
+      get().chatStreams[chatId] !== undefined ||
+      sendsInFlight.has(chatId)
     ) {
       return false;
     }
@@ -142,12 +90,15 @@ export const sendChatMessage =
     const runId = crypto.randomUUID() as ProviderRunId;
     const askedId = crypto.randomUUID() as ChatMessageId;
     let images: ReadonlyArray<ChatMessageAttachment>;
+    sendsInFlight.add(chatId);
     try {
       images = await saveChatImages({ chatId, messageId: askedId, attachments: wanted, at });
     } catch {
       return false;
+    } finally {
+      sendsInFlight.delete(chatId);
     }
-    const asked = draftMessage({
+    const asked = draftChatMessage({
       chatId,
       role: 'user',
       content: question,
@@ -159,7 +110,7 @@ export const sendChatMessage =
     const hasImages =
       isImagesOn &&
       (images.length > 0 || history.some((message) => message.attachments.length > 0));
-    const reply = draftMessage({
+    const reply = draftChatMessage({
       chatId,
       role: 'assistant',
       content: '',
@@ -214,35 +165,41 @@ export const sendChatMessage =
           }),
         );
       }
+      const isStopping = (): boolean => get().chatStreams[chatId]?.isStopping === true;
       outcome =
         plan.kind === 'blocked'
           ? { status: 'failed', error: plan.error }
-          : await activeChatBackend.runTurn({
-              request: plan.request,
-              onText: (delta) => {
-                liveTextRegistry.mark({ runId: reply.id });
-                set((state) =>
-                  patchChatMessage({
-                    state,
-                    chatId,
-                    messageId: reply.id,
-                    update: (message) => ({ ...message, content: `${message.content}${delta}` }),
-                  }),
-                );
-              },
-              onRead: (path) =>
-                set((state) =>
-                  patchChatMessage({
-                    state,
-                    chatId,
-                    messageId: reply.id,
-                    update: (message) =>
-                      message.reads.includes(path)
-                        ? message
-                        : { ...message, reads: [...message.reads, path] },
-                  }),
-                ),
-            });
+          : isStopping()
+            ? STOPPED_BEFORE_LAUNCH
+            : await activeChatBackend.runTurn({
+                request: plan.request,
+                onStarted: () => {
+                  if (!isStopping()) {
+                    return;
+                  }
+                  void activeChatBackend.cancelTurn({ runId });
+                },
+                onText: (delta) => {
+                  liveTextRegistry.mark({ runId: reply.id });
+                  set((state) =>
+                    patchChatMessage({
+                      state,
+                      chatId,
+                      messageId: reply.id,
+                      update: (message) => appendReplyText({ message, delta }),
+                    }),
+                  );
+                },
+                onRead: (path) =>
+                  set((state) =>
+                    patchChatMessage({
+                      state,
+                      chatId,
+                      messageId: reply.id,
+                      update: (message) => addReplyRead({ message, path }),
+                    }),
+                  ),
+              });
     } catch (error) {
       outcome = { status: 'failed', error: formatError(error) };
     }

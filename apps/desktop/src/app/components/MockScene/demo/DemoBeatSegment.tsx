@@ -67,7 +67,7 @@ export const DemoBeatSegment = ({
       </span>
       <span
         className={cn(
-          'truncate text-label',
+          'truncate text-meta',
           isCurrent ? 'text-foreground' : 'text-muted-foreground',
         )}
       >

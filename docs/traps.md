@@ -9,7 +9,22 @@ Comments are forbidden in the whole repo. So a deliberate dead end (code that
 looks wrong but is right on purpose) cannot explain itself where it sits. This
 file holds those explanations. Everything below has been "fixed" at least once and had to be put back.
 
+## Rust facts that used to be comments
+
+The Rust files with the most comments lost them in one pass. What a reader would break without knowing it is here.
+
+- **A lifecycle exit ships the truth.** `provider_lifecycle_run` re-detects the binary and re-checks auth when the pty ends, on a non-zero exit too, and sends both with the exit code in `provider-lifecycle-exit`. A half-installed CLI or a partial logout still changes what is on disk, so the UI never guesses. Cancel and shutdown stop the whole pty session, not the leader alone.
+- **The bridge socket wire.** Server to client opcodes are 0x01 to 0x09, client read opcodes 0x80 to 0x82, and the write opcodes (0x83 to 0x86, plus 0x8C and 0x8D) decode through `MobileAction::from_opcode`, whose closed set lives in `bridge/commands.rs`. None of the first two groups may resolve to an action. The action strings are switched on in `commandExecutor.ts`: change both together. A read-only action (`QueryProviders`) answers with `OP_QUERY_RESULT` and a `data` field, every write answers with an ACK, and a command the frontend does not acknowledge in time is reported to the phone as failed. The phone may send a correlation id; the bridge mints one otherwise. It is the only phone-controlled field read there.
+- **The Noise XK handshake order.** msg1 carries the enrollment token (empty on a re-dial), msg2 answers, msg3 reveals the phone's static key. An enrollment adds the key to the allow list; a re-dial needs the key to be in it. A stop or a revoke trips one shared signal and every live connection leaves at once, so check it before entering the live loop as well as inside it.
+- **Live sync polls `data_version`.** The bridge keeps one read-only connection and pushes a snapshot only when SQLite's `data_version` moved, which a commit by the desktop writer does. At most one push per interval, even under a burst of writes. If that connection cannot open, the phone gets RESNAPSHOT only. A snapshot keeps the newest 500 events per session or 24 hours, restored to chronological order, and streams in chunks of 32 KiB raw, which stays under the 65535 byte frame cap once base64, the JSON envelope and the AEAD tag are added. The desktop table has no per-issue state for an external task, so `state` is omitted. A session without a budget sends a null cap and the phone draws spend without a ring.
+- **Credentials resolve in three tiers.** `integration_credentials.rs` resolves a scope's secret from the project override, then the workspace binding, then a credential no binding claims. Only the credential's own id reaches the keychain. A bound credential with no secret is an error, never a reason to reach for another one; only the unbound tier may skip a credential it cannot read. The per-scope configuration stays on the binding, because a shared credential that carried it would overwrite another scope's. The boot adoption is safe to run every time and never rewrites a secret, it moves keys. A credential no binding claims and no keychain entry backs is deleted by row so it cannot shadow a healthy one. The row goes before the secret, so the foreign key refuses while a binding still names it.
+- **A deleted workflow stays on its session.** `workflows_for_session` returns workflows soft-deleted from the preset list when `session_workflows` still names them, in addition to `workflow_list`, so the session that started one keeps seeing it. `origin` is `library`, `custom` or `orchestrated`, and absent on rows written before the column existed. The set of workspaces with an unviewed terminal turn exists so the sidebar can pulse a workspace dot for workspaces whose tasks are not loaded.
+- **Skill paths are checked after canonicalising.** `skills.rs` creates the parent folder first so the path can be canonicalised, and for a file that does not exist yet canonicalises the parent and appends the name. The frontmatter parser is a subset of the TypeScript one on purpose.
+- **A landed branch reads as clean.** `changed_files.rs` diffs the worktree against the merge-base so a push does not shrink the count. Once the base carries every file the branch touched (a squash or a rebase rewrites commits, so ancestry says nothing), it diffs against `HEAD` instead, and only uncommitted work counts. The numstat lines mirror git's own, with `-` for binary files and a synthesised line for an untracked one. Every list is read with `-z`, so a non-ASCII name is spelled as it is, and an untracked file over 1 MiB is not read (its line is `-\t-`). A git failure is returned as an error, never as "no changes".
+
 ## Deliberate dead ends
+
+- The Storage verdict for a worktree folder has two owners on purpose. Rust decides `safe`, `dirty`, `writing`, `operation`, `not-tracked` and `unavailable` (`folder_verdict`); the live terminals are the store's `terminalTabs`, which Rust cannot see, so `storageFolderStatus` turns a `safe` verdict into `terminal-open` when `terminalsInFolder` finds a live shell. Do not recompute the Rust half from `reasons` in TypeScript, and do not add the terminal half to Rust. Every count of safe folders goes through `summarizeStorage` with the same terminal map.
 
 - `navigate` closes the open drawer (only Ask survives, `keepAskDrawer`),
   because the drawer belongs to the history entry. A row of the Agents panel
@@ -122,16 +137,42 @@ file holds those explanations. Everything below has been "fixed" at least once a
   for a GitLab or Bitbucket host the Checks tab also picks its review entry with
   `selectedReviewEntryOf({ mountId })` (no fallback to another mount's entry) and reads
   `usePullRequestView({ mountId })`, so Analyze starts on the shown branch,
-  and so do the branch tabs (`branchScopeOf({ mountId })`) and the `pullRequest` action
+  and so do the branch tabs (`branchScopeOf({ mountId })`, which counts the notes and review
+  threads of that branch only, not the whole session's) and the `pullRequest` action
   target (`mountId`, carried into its facts). The lifecycle writes of that target (`markPrReady`,
   `mergePr`, `reopenPr`, `convertPrToDraft`, `closePr`) and their refresh take the same `mountId`
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
+- The verbs of a stopped rebase (Resolve with Auto, Resolve myself, Keep, Bring them in, Undo rebase, Retry rebase, Fix with agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
+  `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
+  (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
+  sha the caller saw: the history family, Auto and restore). A caller never calls `gitPush` or
+  `pushWithLease` itself. A lease push that lands on a mount whose history run is waiting for its
+  push (`applied`, or `stopped` on `push-failed` or `origin-moved`) also settles that run
+  (`settleHistoryPush`: run `pushed`, the plan, the edited replies, the `history_pushed` event and
+  the pull request description), so the header Push, the panel Push and Bring them in leave the
+  same trace. The result carries `reason: 'moved' | 'failed'`; `moved` is a stale lease. The two
+  Push actions (`mount.push`, `diff.push`) are one definition, `pushAction`.
+- `pullRequestViews` holds one entry per session and mount
+  (`pullRequestViews[sessionId][mountId]`, key `none` without a mount). Read it only through
+  `pullRequestViewOf({ state, sessionId, mountId, prNumber })` (or `pullRequestViewAt` when the
+  mount is known): a PR number alone is not an identity, `ledger-core` and `payments-api` can both
+  have a 12, and the readiness line, the merge word and the reviewers must never come from the
+  other repository's view. Each entry keeps its own `edits`.
+- The Branch page resolves one shown mount (`useBranchIdentity`) and passes its `mountId` to
+  everything it draws: `useBitbucketRemote({ mountId })` (new-request link and noun),
+  `useActiveReviewSource`, `useReviewEntries`, `useReviewPush`, `ReviewFlow` and `PushBanner`.
+  The host word is the shown request's host (`identity.host`), else the shown repository's
+  remote, never the write destination's source. A push of review fixes names its mount all the
+  way down (`preparePublication`, `retryPublication` take `mountId`; `publishConversations` reads
+  the frozen `mountTarget`), and its confirm names the repository when the session has more than one.
+  Back and a reload never move the write destination.
 - Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
   never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
-  picks the source of the active mount: its comments, PR or MR number, url,
-  head branch and capabilities. Replies and resolves go through
+  picks the source of the mount the caller names (`mountId`), the active mount when none: its
+  comments, PR or MR number, url, head branch and capabilities. Replies and resolves go through
   `reviewSourceFor`, keyed by `resolve_threads.source_kind` and
   `provider_thread_id`; a GitLab thread id is `gitlab:<discussionId>` and its
   `pr_number` is the MR iid, and a Bitbucket thread id is `bitbucket:<rootCommentId>`
@@ -221,8 +262,31 @@ file holds those explanations. Everything below has been "fixed" at least once a
   session, discards the broken fixes first and then has the lane rebuild their
   comments on top, with `LANE_REBUILD_HINT` and the model of the run that made
   them (a split fix is named after its run: `attemptOfCandidate`). When the
-  rebuild cannot start, the fixes stay discarded and the comments it took back
-  up are set aside again. That is also how fixes the old parallel runs left
+  rebuild cannot start, the comments it took back up are set aside again only
+  while their approval state is still `none`: the defer query takes
+  `expectedState`, so a refusal that committed in between is never turned into
+  `deferred`. A failure before `startBatch` writes anything (a comment that is
+  missing, `onWrite` not yet called) puts the fixes back to `ready`, so only
+  the next reconcile retries and nothing was spawned. Every other failure
+  leaves them `discarded` and records a
+  `sessionLaneRebuildFailures` entry (in memory, per session and worktree)
+  that the review shows with a Retry; `retryLaneRebuild` puts those fixes back
+  to `ready` and reconciles once, so a lane never relaunches on its own. After
+  a restart the entry is gone and the set-aside comments are fixed by hand.
+  A failure after the agent was spawned keeps the agent: a failed config write
+  is only logged. A source sync hands the lane its identity and the comments it
+  just fetched (`source` and `comments` on `reconcileResolveLane`), because
+  the UI cache only receives them after the sync ends. The lane rebuilds only
+  the fixes whose candidate mount is that source's mount and only threads of
+  that source, `startBatch` reads only those fetched comments (never merged with
+  the cache of another source), and `startBatch` and the spawn name the mount
+  (`mountId`), never the active one. The lane also snapshots the mount
+  revision when it decides to rebuild and hands it down as
+  `expectedMountRevision`; the spawn refuses with `StaleMountError` when the
+  mount moved on meanwhile (a branch switch while the batch was created), and
+  that refusal sets the fixes back to `ready` without a Retry entry. Only the
+  broken fixes that hold a comment of the source being refreshed are
+  discarded: a second pull request on the same mount keeps its own. That is also how fixes the old parallel runs left
   side by side migrate: the first ready one stays, the rest are rebuilt, with
   no schema migration. Refusing or deferring a link drops its candidate and
   rebuilds the ones after it; taking a deferred fix back up rebuilds it.
@@ -320,6 +384,17 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   payload; a multibyte sequence cut at the 8 KB edge still counts as text. Do
   not bring back an extension list, and do not widen the data URL list: a
   `.mts`, a `.jsonc` or a file with no extension must stay readable.
+- The PDF preview frames a `data:` URL that the app CSP `frame-src` does not
+  admit, so a release build shows it blank. Do not widen `frame-src` with
+  `data:` or `blob:` to fix it (`csp-img-src.test.ts` fails on both); the
+  lightbox frame carries an empty `sandbox`, and a working PDF needs binary
+  staging through `gbframe`, which stages text only today.
+- Links open on `http:` and `https:` only. `editor.rs` `is_openable_url`
+  refuses everything else, so `parseInline`, the link interceptor and the
+  native menu policy accept the same two schemes; a `mailto:` destination
+  renders as plain text. A failed `open_url` in the link interceptor is a
+  "Couldn't open the link" notification, never an unhandled rejection that
+  `crashReport` files as a crash.
 - The background repo check (`worktree/base_divergence.rs`) passes
   `--no-prune` to its fetch on purpose. A user's `fetch.prune=true` makes a
   plain `git fetch` prune, and a check that runs every few minutes must not
@@ -380,7 +455,7 @@ fails silently at runtime.
   would turn it into the Generalist.
 - Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
   ratchet bans `Sparkles` everywhere. Its color token `agent-auto` is its own
-  cyan and not `primary`, so it does not move if the primary color changes.
+  green-teal and not `primary`, so it does not move if the primary color changes.
 
 - Impact counts deleted sessions on purpose. Deleting a session is a soft
   delete: `purgeSessionForDelete` frees the transcript, file versions, slots,
@@ -560,7 +635,14 @@ fails silently at runtime.
   `marker_read` in `session_dir.rs` knows both shapes, and `file_versions.rs`
   must read the marker through it. A second reader that tests `.goodboy.is_file()`
   broke file versions in every plain-folder turn from #1533 until it was fixed. Build
-  test session folders with `session_dir_create_blocking`, never by hand.
+  test session folders with `session_dir_create_blocking`, never by hand. It
+  lives in `session_dir/testing.rs`, a module that only exists for tests, so no
+  creation code ships in the app.
+- `session_dir_remove` refuses a folder whose marker names another session or
+  that has no marker, so deleting a session whose legacy folder lost its marker
+  keeps the folder and shows the error instead of removing it. A test that
+  removes a session folder builds it with `session_dir_create_blocking` and
+  passes the same session id.
 - Saved versions of a plain folder keep their before copies where file
   versions always kept them, `file-versions/<session-id>/<version-id>-<name>`
   with a `file_versions` row. Everything new (the first copy, the index, staged
@@ -675,6 +757,10 @@ fails silently at runtime.
   streaming `TextDecoder` (`base64Bytes`, then `decode(bytes, { stream: true })`, and a last
   `decode()` at exit), never `atob` text per event. Script runs and the provider lifecycle
   runs do.
+  A script's text log keeps the last frame of a line a program redraws with `\r`
+  (`collapseCarriageReturns`, applied on every append and again in `splitLogLines`), so a
+  progress bar is one line and never fills the 64 KB cap. Keep a trailing `\r` in the
+  buffer until the next chunk: dropping it glues the next frame onto the old one.
 - `lsof` exits 1 when it finds nothing: no listener, or a pid that died between
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a
@@ -772,12 +858,14 @@ The hint a person types before a fix is plain text carried as a field, never re-
 ## Session overview cards
 
 - There is one overview: the cards of `CentralColumn`, in the order `overviewCardsOf` returns. An `overview.layout` row left by an older version is never read, so a stored Classic shows the cards; do not bring back a reader or a switch. The timeline of earlier versions lives in the Full log drawer (`LogPane`, view `all`).
+- `buildTimelineStream` is a folder (`features/session/timeline/buildTimelineStream/`), and its callers still import `from '.../buildTimelineStream'`. `index.ts` holds the entry points (`buildTimelineStream`, `buildRunTreeStream`) and re-exports the stream types, `countRowIdOf` and `liveFoldRootIds`; `streamTypes.ts` the items and drafts, `mergeRows.ts` the folding of consecutive decision, project, stopped and history rows, `agentRows.ts` the agent and subagent rows, `runRows.ts` the run row and its lane shape, `laneFolds.ts` the lane and run folds, `ordering.ts` the order (newest first, then the execution order of a run), and `decorate.ts` the count, day and more rows. The tests sit beside them. A new rule about one kind of row goes in its piece, never back into `index.ts`.
 - Three shared pieces keep their old defaults for the other callers: `buildTimelineStream` folds a batch of rebase events only with `shouldFoldHistoryBatches` (the Log drawer, view `all`), `deriveNextSteps` drops what a timeline row already offers only with `isActivityShown` (the cards pass `false` through `useNextCards`, so a Fix row offers **Push** and **Start fix**), and `useSessionSuggestionsFrom` takes the runs the column already holds. Do not flip those defaults to fix one surface.
 - `batchId` is a payload key and must also sit in the whitelist of `packages/db/src/queries/session-event.ts`, or it is dropped when events are read back. It is written only for `origin` rebase while the history run is a rebase of the same session. Events recorded before it existed fold by origin and a 2 minute gap (`HISTORY_BATCH_WINDOW_MS`).
 - The branch story has one reader of the facts: `branchStoryOf`. Never compute a step word, a tone or a rank in `BranchRow`. A row is named by the branch (`mount.branch`), never by the folder. The per branch card gate (`isMountBusyOf`) and the branch in card titles (`mountLabelOf`) are one rule for every overview; never add a second gate keyed on `isActivityShown`.
 - A null `checks` or `reviewDecision` does not mean "not needed": it also means not read or unreadable. `branchStoryOf` skips a step only from `isChecksAbsent` and `isReviewOptional` on a fresh read, projected per host in `mountRequestOf`. Do not skip on `checks === null` alone, and a new host must set the flags only when its data proves it (see docs/mounts.md).
 - `useBranchDetails` must not depend on `mountGithub` itself: `refreshSessionPrDetail` replaces the mount entry when a read starts and when it fails, so an effect keyed on that object reruns after its own read and a failing read (403, offline, the mock bridge in scenes) loops without end and pegs the page. The effect keys on mount id, PR number and PR `fetchedAt`; the store records a failed read in `mountDetailFailures` and waits 60 s per revision. Do not add a second TTL in the hook.
 - A row title is one sentence cut by `firstSentenceOf` (first sentence, first step before an arrow, first done line of an orchestrator recap parsed by `parseRunSummaryText`). Any other structured text yields null and the kind fallback, never raw JSON. The full text of an agent summary goes in `detail.fullText`. The model in the step card of a Running row comes from `agentRanModels` (through `agentModelLineOf`), never from `modelOverride` or `effort` directly. A Running run row reads its gate from `useRunView`, the same `primary` as the run page, and `cardsOutsideRunningOf` drops that run's gate card (`workflow-next-step`, a run owner) from Needs you so it shows once. Only one button in the column is filled: the first Needs you row, else the first waiting run (`runLeadOf`), else the first Next row.
+- The State sentence under the goal (`SummaryStateLine`, `summaryStateOf`) reads the first sentence of the **State** section of the `last_output_summary` slot and dates it from the newest slot history entry of that key, never from `summarizerStatus.lastUpdate`: a round that only changed the goal or a decision moves `lastUpdate` too and would make an old sentence read fresh. It is gray after a day and when `requestChangedAtOf` (the latest `updatedAt` or `mergedAt` of any pull or merge request of the session) is more than five minutes newer, so the Branches card wins a disagreement. An archived session does not draw it.
 - The Needs you and Next cards are one `NextStackView` each, filtered by `OVERVIEW_CARD_OF_GROUP`. Their counts come from `nextRowCountOf`, the same rows the cards draw; never count rows a second way. Only one button is filled across both cards (`canLead`).
 
 ## Auto gate and screens
@@ -791,7 +879,7 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - A composer in a drawer never reads the session's `selectedAgentId`. In an Auto session that id is the Auto root, so a `ChatInput` that reads it shows the root's draft, queue and "running" state in a child's drawer and sends the child's message to Auto. `ChatView` passes `agentId` down and `ChatInput` threads it through `useAgentSelection`, `useTurnRouting` and `cleanupSentAttachments`; any new hook in the composer takes the agent id from there, never from the store. The pin is `ChatInput/drawerComposer.test.tsx`, and the toolbar width at the drawer minimum is the `drawer-composer` probe of `validate:scenes`.
 - History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
 - An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`, or `agent_not_created: <the error>` when the child agent itself could not be created), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.
-- A bridge act that publishes work (push, open or merge a request, approve, decline) must join `ACT_VERBS` in `query_bridge/auto_child.rs`, or an Auto child can call it. The refusal keys on the socket peer's pid and its parent chain, never on the run id the request carries. Only `spawn_one` records turn pids (`spawn_turn`): a new spawn path that hands a process the bridge env without `spawn_turn` makes every act from it `caller_unknown`, and one that records an Auto child as `HandStarted` leaves the bridge open to it.
+- A bridge act that publishes work (push, open or merge a request, approve, decline) must be declared `Access::Publish` in its `VerbSpec` in `query_bridge/protocol.rs`, or an Auto child can call it; there is no second list, and a test in `query_bridge/auto_child.rs` names the 14 publishing verbs, so a new one fails it until it is added there on purpose. The refusal keys on the socket peer's pid and its parent chain, never on the run id the request carries. Only `spawn_one` records turn pids (`spawn_turn`, with the workspace and session the turn was started for): a new spawn path that hands a process the bridge env without `spawn_turn` makes every verb from it `caller_unknown`, and one that records an Auto child as `HandStarted` leaves the bridge open to it. A request whose `--workspace` or `--session` is not the turn's own is refused `scope_mismatch`, so a verb never takes its workspace from the caller's word.
 - An Auto writer attempt records its online branch sha in `baseline_json.remote` only at launch (`attemptToLaunch`); a new launch path that skips it gets no watch, and `result_json.verified.remote` stays absent, which reads as "not watched", never as "unchanged". A failed read must stay `unknown`.
 - A writer's changed files are the status snapshot diff plus the tree diff between its start head and its end head (`readCommittedFilesOf`). Compare trees, never commit ids: a rewrite to the same tree must list nothing, and a failed diff read must fall back to the status list, not to "no change".
 - An Auto check verdict is never green unless every ticked script exited 0 on a clean tree whose head did not move (`runAutoChecks`): `unknown`, `timed_out`, a dirty tree and a moved head all read `not_checked`. A rerun refused because the head moved or the tree is dirty must leave the old verdict untouched; overwriting it would swap a real result for a statement about newer code. The rerun waits 30 minutes on the Auto bridge (`longTimeoutMs`), not the 30 seconds of Stop and Retry. The scripts run in the main window's Scripts runner and stay in its run list; a new check path must go through `runAutoChecks` so the per worktree queue serializes it.
@@ -832,3 +920,19 @@ A session worktree keeps its index, `HEAD` and `rebase-merge` in `<repo>/.git/wo
 ## Hover card triggers
 
 - A `FactCard` or `Tooltip` trigger must be a DOM element that takes a ref, pointer handlers and `aria-describedby`. A component wrapper drops them silently and the card never opens; spread the span props onto the element (`TimelineRunGlyph`) or wrap a native element.
+
+## Theme switch is an instant swap
+
+A view transition repaints the whole window for every frame of a 420ms fade. Chrome measured 44 style recalcs, 22 paints and 225ms of main-thread work against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames with a 500ms freeze on a large diff, against 80 frames with the swap alone. A window that repaints for a fade reads as the UI flickering, worst on the busiest pages. A circular reveal and a cross-fade were tried and dropped for that reason. A fixed full-window cover (`opacity` only, 100ms in, 200ms out) was gated on a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30 sessions and a 3,000 line diff) that was never measured, so it did not ship.
+
+## Banner clicks reach every window, and the badge has one writer
+
+The notification plugin reports a click on a banner to the listeners of all windows, so each window filters on the workspace id the banner carried and only the window of that workspace opens the session. The dock badge is one number for the whole app, so only the `main` window writes it, and it clears it when its hook unmounts. A second writer would make the number flicker between two workspaces. A banner click only reaches the app on a notification shown after the first listener registered, which `useAwayAlerts` does on mount.
+
+## Two counts for one workspace, and the Rust count is a subset
+
+`workspaces_attention` (`attention.rs`) counts only what is saved: an open question, a fix run waiting for an answer, a failed push, failing checks and an errored session, with the stage rule of `deriveSessionStage` (a running session counts for a question or an error, not for a failed push or failing checks). A permission or plan that waits, a run that stopped, an Auto agent and a Slack reply live in memory, so a workspace nobody shows can read lower than its door would. The window that shows a workspace sends the exact count on `goodboy:attention`, and `attentionByWorkspaceOf` takes that report only while `windowPresence` says a window shows the workspace; an old report of a closed window never hides the database count. A report of zero from a window that shows the workspace does hide a database count that is behind. `src-tauri/src/attention/parity.json` is read by the Rust test and by `attentionParity.test.ts`: a reason added to `REASONS` in Rust needs a row there and a case in both, or the two counts drift. The dock badge is the count of this window plus `useAttentionElsewhere`, never the sum over the map, so the workspace of the main window is not counted twice.
+
+## Rust returns a kind and its numbers, never a sentence
+
+`AuthState.reason` (`AuthReason`), the connection test (`ConnectionOutcome`) and the chat refusal (`not_read_only`) reach the screen through one TypeScript function each: `authReasonSentence`, `outcomeSentenceOf` in `ConnectionTest` and `chatStartError`. A sentence written in Rust drifts from the words the app owns, and a duration typed into it drifts from the deadline the command used. A new failure adds a variant with its payload (the seconds, the code, the CLI text as `detail`) and a case in the TypeScript function; the `never` default makes the compiler list the missing case. The `message` of a `ChatError` is for logs only.

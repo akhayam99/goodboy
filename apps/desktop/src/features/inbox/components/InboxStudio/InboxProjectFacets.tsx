@@ -1,4 +1,4 @@
-import { FacetRow, FacetSection } from '@goodboy/ui';
+import { FacetRow, FacetSection, FOCUS_RING, cn } from '@goodboy/ui';
 import { useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -41,7 +41,10 @@ export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersC
           type="button"
           aria-expanded={isShowingEmpty}
           onClick={() => setIsShowingEmpty((current) => !current)}
-          className="self-start rounded-md px-2 py-1 text-meta text-faint-foreground hover:bg-hover hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'self-start rounded-md px-2 py-1 text-meta text-faint-foreground hover:bg-hover hover:text-muted-foreground',
+            FOCUS_RING,
+          )}
         >
           {isShowingEmpty ? 'Hide empty' : `Show ${hiddenCount} empty`}
         </button>

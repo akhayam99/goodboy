@@ -1,15 +1,24 @@
 import { useEffect, useRef } from 'react';
-import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  StatusDot,
+  Tooltip,
+  cn,
+  useDropdown,
+  FOCUS_RING,
+} from '@goodboy/ui';
 import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
 import { updatePillLabel } from '../../../features/updater/updateCardCopy';
 import { toggleUpdateCard } from '../../../features/updater/updateCardRequest';
 import { UpdatePill } from '../../../features/updater/components/UpdatePill';
-import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
+import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';
-import { useHasBugReportDraft } from '../../../features/settings/hooks/useHasBugReportDraft';
+import { useHasBugReportDraft } from '../../../features/bug-report/hooks/useHasBugReportDraft';
 import { openUrl } from '../../../shared/lib/editor';
 import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
@@ -29,14 +38,11 @@ type Props = {
   readonly isPrimary?: boolean;
 };
 
-const PANEL_WIDTH = 320;
-const PANEL_MAX_HEIGHT = 560;
-
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
 
 const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
   update: REST_LABEL,
-  setup: 'Goodboy: setup is not finished',
+  setup: "Goodboy: setup isn't finished",
   rest: REST_LABEL,
 };
 
@@ -58,9 +64,8 @@ export const GoodboyChip = ({
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
-    width: 'w-80',
-    expectedWidth: PANEL_WIDTH,
-    expectedHeight: PANEL_MAX_HEIGHT,
+    width: POPOVER_WIDTH_CLASS.standard,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
     ...(isPrimary && { openEvent: OPEN_GOODBOY_MENU_EVENT }),
   });
   const { open: isOpen, close, toggle } = dropdown;
@@ -138,7 +143,7 @@ export const GoodboyChip = ({
         data-goodboy-chip={variant}
         className={cn(
           'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          FOCUS_RING,
           TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
           isOpen ? 'bg-muted' : 'hover:bg-hover',
         )}

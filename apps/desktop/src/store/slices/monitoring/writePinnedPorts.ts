@@ -1,7 +1,7 @@
 import type { PinnedPort } from '@goodboy/core';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { commitAfterConfirm } from '../state-writes/commitAfterConfirm';
+import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';
 import { PINNED_PORTS_KEY } from './settingKeys';
 import type { GetFn, SetFn } from './types';
 

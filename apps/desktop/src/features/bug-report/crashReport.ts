@@ -1,14 +1,10 @@
 import { isActionName, recentActions, recordScreen } from '../../shared/utils/actionRing';
 import { redactReport } from '../../shared/utils/redactReport';
 import { useAppStore } from '../../store';
-import {
-  buildReportContext,
-  collectReportContext,
-  type ReportContext,
-} from '../settings/reportContext';
+import { buildReportContext, collectReportContext, type ReportContext } from './reportContext';
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { locationKey } from '../../store/slices/navigation/locationKey';
-import { screenLabel } from '../settings/reportContext/screenLabel';
+import { screenLabel } from './reportContext/screenLabel';
 import { writeLastCrash, type LastCrash, type LastCrashInput } from './lastCrash';
 import { errorPart, trimStack, type ReportPart } from './reportBody';
 import { reportNames } from './reportNames';
@@ -47,8 +43,17 @@ export const crashPart = ({ message, stack, componentStack }: CrashPartParams): 
   });
 };
 
-export const describeCrash = (error: Error): string =>
-  redactReport({ text: error.message, names: knownNames() });
+const MODULE_LOAD_FAILURE =
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i;
+
+const MODULE_LOAD_COPY = "A part of the app couldn't be loaded. Reload to fetch it again.";
+
+export const describeCrash = (error: Error): string => {
+  if (MODULE_LOAD_FAILURE.test(error.message)) {
+    return MODULE_LOAD_COPY;
+  }
+  return redactReport({ text: error.message, names: knownNames() });
+};
 
 const currentScreen = (): string | null => {
   try {

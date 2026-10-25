@@ -76,6 +76,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
           >
             <SpawnedTreeRow
               id={row.id}
+              agentId={row.agentId}
               level={row.level}
               hasChildren={row.hasChildren}
               rail={rowRail}
@@ -100,13 +101,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
                     }
               }
               onOpen={() =>
-                openSpawned({
-                  sessionId,
-                  target:
-                    row.level === 1
-                      ? { kind: 'auto-root', agentId: row.agentId }
-                      : { kind: 'auto-child', agentId: row.agentId },
-                })
+                openSpawned({ sessionId, target: { kind: 'agent', agentId: row.agentId } })
               }
             />
           </ObjectMenuArea>

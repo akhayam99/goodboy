@@ -4,8 +4,11 @@ import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
 import { forceCloseResolver } from './forceCloseResolver';
 import { markAgentSeen } from './markAgentSeen';
+import { markAgentUnviewed } from './markAgentUnviewed';
 import { markAgentViewed } from './markAgentViewed';
 import { markAllAgentsSeen } from './markAllAgentsSeen';
+import { markSessionUnread } from './markSessionUnread';
+import { markSessionsRead } from './markSessionsRead';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
 import { setAgentAttachments } from './setAgentAttachments';
@@ -27,7 +30,10 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     loadAgentTranscript: selectAgent(set, get),
     markAgentViewed: markAgentViewed(set, get),
     markAgentSeen: markAgentSeen(set, get),
+    markAgentUnviewed: markAgentUnviewed({ set, get }),
     markAllAgentsSeen: markAllAgentsSeen(set, get),
+    markSessionUnread: markSessionUnread({ get }),
+    markSessionsRead: markSessionsRead({ get }),
     setAgentDone: setAgentDone(set, get),
     clearAgentDone: clearAgentDone(set, get),
     renameAgent: renameAgent(set),

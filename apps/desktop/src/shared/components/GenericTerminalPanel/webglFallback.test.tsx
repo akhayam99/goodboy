@@ -17,6 +17,13 @@ vi.mock('@xterm/xterm', () => ({
     }
     open() {}
     attachCustomKeyEventHandler() {}
+    buffer = { active: { length: 0, getLine: () => undefined } };
+    hasSelection() {
+      return false;
+    }
+    onSelectionChange() {
+      return { dispose() {} };
+    }
     onData() {
       return { dispose() {} };
     }

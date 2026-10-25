@@ -1,3 +1,3 @@
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 
 export const historyDraftReads = createLatestOnly();

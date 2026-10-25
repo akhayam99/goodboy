@@ -20,6 +20,7 @@ import { sceneClock } from '../../sceneClock';
 import { installSceneDatabase } from '../sceneDatabase';
 import { installScenePlanEngine } from '../scenePlanEngine';
 import { RESOLVE_SCENE_PR } from '../resolveSeed';
+import { prViewsOf } from '../prViewsOf';
 
 type Props = { readonly mode: 'edited' | 'busy' | 'conflict' | 'stash' };
 
@@ -32,7 +33,7 @@ const commitsBefore = LEDGER_COMMITS.map((commit, index) => ({
 const rewriteIndex = commitsBefore.findIndex((commit) => commit.sha === LEDGER.c);
 type ShaParams = { readonly sha: string; readonly index: number };
 const rewrittenSha = ({ sha, index }: ShaParams): string =>
-  index === 0 ? 'edited-head' : index <= rewriteIndex ? `edited-${sha}` : sha;
+  index <= rewriteIndex ? `ed17${sha.slice(4)}` : sha;
 const commitsAfter = commitsBefore.map((commit, index) => ({
   ...commit,
   sha: rewrittenSha({ sha: commit.sha, index }),
@@ -58,7 +59,7 @@ export const LiveEditScene = ({ mode }: Props) => {
     let isEdited = false;
     let shouldPause = mode === 'stash';
     installSceneDatabase({
-      fallback: (command) => {
+      fallback: ({ command }) => {
         if (command === 'worktree_commits') {
           return isEdited ? editedCommits : commitsBefore;
         }
@@ -186,6 +187,7 @@ export const LiveEditScene = ({ mode }: Props) => {
             title: 'Guard the ledger export',
             headBranch: mount.branch,
             headSha: LEDGER.c,
+            author: 'nadia-p',
             updatedAt: now,
           },
           mountId: input.mountId,
@@ -198,6 +200,12 @@ export const LiveEditScene = ({ mode }: Props) => {
           links: [],
         },
       },
+      pullRequestViews: prViewsOf({
+        sessionId: input.sessionId,
+        mountId: input.mountId,
+        pr: { ...RESOLVE_SCENE_PR, author: 'nadia-p', headBranch: mount.branch },
+        commits: mode === 'stash' ? commitsBefore : commitsAfter,
+      }),
       refreshSessionPr: async () => undefined,
       refreshSessionPrDetail: async () => undefined,
       loadPullRequestView: async () => undefined,

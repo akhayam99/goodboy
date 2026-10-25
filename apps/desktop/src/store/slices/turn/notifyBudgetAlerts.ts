@@ -1,7 +1,7 @@
 import { formatUsd } from '@goodboy/ui';
 import type { BudgetAlert, BudgetAlertKind, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
-import { sessionTitle } from '../../../features/session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 

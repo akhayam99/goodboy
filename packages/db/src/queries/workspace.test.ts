@@ -144,6 +144,25 @@ describe('workspace queries', () => {
     expect((await getWorkspaceById({ db, id: workspace.id }))?.defaultPermissionMode).toBe('plan');
   });
 
+  it('stores Ask first for a workspace written without a permission default', async () => {
+    const db = await makeDb();
+    const { defaultPermissionMode: _omitted, ...rest } = makeWorkspace({});
+    await insertWorkspace({ db, workspace: rest });
+
+    expect((await getWorkspaceById({ db, id: rest.id }))?.defaultPermissionMode).toBe('default');
+  });
+
+  it('keeps the schema default for a workspace row that names no permission default', async () => {
+    const db = await makeDb();
+    const { id } = makeWorkspace({ id: 'workspace-cascadia' });
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+      [id, 'Cascadia', 'cascadia'],
+    );
+
+    expect((await getWorkspaceById({ db, id }))?.defaultPermissionMode).toBe('bypassPermissions');
+  });
+
   it('upserts a profile independently', async () => {
     const db = await makeDb();
     const workspace = makeWorkspace({});

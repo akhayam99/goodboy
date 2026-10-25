@@ -6,6 +6,7 @@ import { DefaultAutoLimitSetting } from './DefaultAutoLimitSetting';
 import { DefaultLimitSetting } from './DefaultLimitSetting';
 import { DefaultModelsSetting } from './DefaultModelsSetting';
 import { RulesGuidanceBand } from './RulesGuidanceBand';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -20,7 +21,12 @@ export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
   );
   const save = (next: Partial<WorkflowRules>) => {
     void patch(next).catch((error: unknown) => {
-      void reportError({ title: "Couldn't save the workflow rules", error, workspaceId });
+      void reportError({
+        title: "Couldn't save the run defaults",
+        error,
+        workspaceId,
+        recovery: NOTHING_CHANGED,
+      });
     });
   };
   return (

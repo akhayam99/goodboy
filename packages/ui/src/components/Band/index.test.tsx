@@ -54,7 +54,7 @@ describe('Band', () => {
 
     const band = bandOf('Scout');
     const label = within(band).getByText('Explore and plan');
-    expect(label.className).toContain('text-label');
+    expect(label.className).toContain('text-meta');
     expect(label.className).not.toContain('uppercase');
     expect(within(band).getByText('3 roles').className).toContain('text-faint-foreground');
   });

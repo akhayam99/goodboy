@@ -1,7 +1,8 @@
 import { Fragment, useMemo, type ReactNode } from 'react';
-import { cn, type DiffLayoutMode } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
+import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { DiffCommentSide, DiffHunkLine, FileDiff } from '@goodboy/types';
-import { pairDiffLines } from '../../../../shared/utils/diffLinePairs';
+import { pairDiffLines } from '../../lib/diffLinePairs';
 import { windowRows } from '../../lib/windowRows';
 import { GapRow } from './GapRow';
 import type { useFileSides } from '../../hooks/useFileSides';
@@ -15,7 +16,7 @@ import {
   SIGN_TEXT,
   WORD_FILL,
 } from '../../lib/lineTone';
-import { changedRanges, type CharRange } from '../../lib/wordDiff';
+import { changedRanges, type CharRange } from '../../lib/intraLineRange';
 import { SyntaxText } from '../SyntaxText';
 import { HunkHeader } from './HunkHeader';
 import { LineGutter } from './LineGutter';
@@ -53,7 +54,7 @@ const SPLIT_COLUMNS = 'grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]';
 
 const codeClass = (wrap: boolean): string =>
   cn(
-    'min-w-0 pr-3 font-mono text-label leading-5 text-foreground [tab-size:4]',
+    'min-w-0 pr-3 font-mono text-meta leading-5 text-foreground [tab-size:4]',
     wrap ? 'whitespace-pre-wrap [overflow-wrap:anywhere]' : 'whitespace-pre',
   );
 
@@ -227,7 +228,7 @@ export const DiffRows = ({
                   role="gridcell"
                   aria-hidden
                   className={cn(
-                    'select-none text-center font-mono text-label leading-5',
+                    'select-none text-center font-mono text-meta leading-5',
                     SIGN_TEXT[line.kind],
                   )}
                 >

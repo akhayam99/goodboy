@@ -1,7 +1,7 @@
-import { ListGridRow, StateDot, formatUsd } from '@goodboy/ui';
-import { NAMES } from '../../../../../../shared/names';
+import { formatUsd, ICON_SIZE, ListGridRow, StateDot } from '@goodboy/ui';
+import { NAMES } from '../../../../../../shared/utils/names';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
@@ -41,7 +41,7 @@ export const RunsGridRow = ({ sessionId, run, costUsd, now, onOpen }: Props) => 
   const Icon = SHAPE_ICON[run.shape];
   return (
     <ListGridRow
-      ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}`}
+      ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
       {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
       cells={[
@@ -51,7 +51,14 @@ export const RunsGridRow = ({ sessionId, run, costUsd, now, onOpen }: Props) => 
           aria-label={SHAPE_LABEL[run.shape]}
           className="text-muted-foreground"
         />,
-        run.title,
+        run.isUnread ? (
+          <>
+            <StateDot state="unread" label="Unread" />
+            <span className="min-w-0 truncate">{run.title}</span>
+          </>
+        ) : (
+          run.title
+        ),
         run.origin,
         run.stateWord,
         run.progress,

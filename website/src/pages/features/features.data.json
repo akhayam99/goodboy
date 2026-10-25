@@ -19,13 +19,13 @@
       "items": [
         {
           "title": "Welcome to Goodboy",
-          "text": "Four short steps take you from install to a first agent reading your code. Set up later pauses it, and the next launch picks up where you left.",
+          "text": "Four short steps take you from install to a first agent reading your code: Agents, Workspace, Tools, which is optional, and First session.",
           "group": "Set up",
           "main": true
         },
         {
           "title": "Your agents",
-          "text": "Goodboy finds the coding agents already on this Mac. Each one shows what it needs: a sign in, an install or a look at why it cannot start. One ready agent is enough.",
+          "text": "Goodboy runs the coding agents already on this Mac, and one ready agent is enough.",
           "group": "Set up",
           "main": true
         },
@@ -92,13 +92,13 @@
         },
         {
           "title": "The New session page",
-          "text": "Write the task or pick it from Tasks, then pick a Workflow or an Agent. Agents pick the folders unless you pin them.",
+          "text": "Start a session from your goal: write it or pick an issue, then choose the kind of run.",
           "group": "Start a task",
           "main": true
         },
         {
           "title": "Start on a task",
-          "text": "Start on an issue in Tasks opens New session with the issue linked and its goal written in. Pick from Tasks does the same.",
+          "text": "Start a session from an issue in Tasks, with the issue linked and its goal written in.",
           "group": "Start a task",
           "main": true
         },
@@ -193,7 +193,7 @@
       "items": [
         {
           "title": "Session overview",
-          "text": "The Overview shows the session name, renamed in one click, then the goal, what needs you, Next and Activity. Projects, branches and their pull request state sit in the session rail beside it.",
+          "text": "Read a session as one page: the goal, what needs you, what runs and where each branch stands.",
           "group": "Overview and activity",
           "main": true
         },
@@ -205,13 +205,13 @@
         },
         {
           "title": "Cards",
-          "text": "A session reads as one card per job, ordered by who acts: Needs you, Running, Next, Branches and Done. An empty card is not drawn.",
+          "text": "See what needs you, what runs, what is next, where each branch stands and what finished.",
           "group": "Overview and activity",
           "main": true
         },
         {
           "title": "Full log",
-          "text": "Every run, agent and fact of a session in one list, newest first. Each row shows its role, model, duration and cost. It opens in a drawer from the Done card.",
+          "text": "Follow what happened in a session in one list.",
           "group": "Overview and activity",
           "main": true
         },
@@ -236,7 +236,7 @@
         },
         {
           "title": "Session list",
-          "text": "The left column lists the sessions of the workspace, one line each. The ones that need you sit on top, and a card shows where any of them stands.",
+          "text": "The left column lists the sessions of the workspace, one line each.",
           "group": "Switch between tasks",
           "main": true
         },
@@ -269,7 +269,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Sessions, Tasks, Chat, Workflows, Terminal and your sessions, on every screen. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
+          "text": "One column on the left holds Sessions, Tasks, Workflows, Chat, Terminal and your sessions, on every screen. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },
@@ -301,7 +301,7 @@
         },
         {
           "title": "Stage board",
-          "text": "See where each session stands without moving cards. Each one sits in building, running, needs you, in review, done or archived.",
+          "text": "See where each task stands without moving cards around.",
           "group": "The board",
           "main": true
         },
@@ -354,7 +354,7 @@
       "items": [
         {
           "title": "Decisions",
-          "text": "Record a decision once and later agents read it. Replacing or withdrawing one needs a reason that stays next to it.",
+          "text": "Record a decision once and have the agents after it read it.",
           "group": "Shared context",
           "main": true
         },
@@ -367,7 +367,7 @@
         },
         {
           "title": "Running summary",
-          "text": "After each turn a summary of state, next steps, open questions and lessons is updated for the next agent. Your own edits are kept.",
+          "text": "Hand the next agent where things stand.",
           "group": "Shared context",
           "main": true
         },
@@ -418,7 +418,7 @@
         },
         {
           "title": "Workspace with several folders",
-          "text": "Keep your repos together and let one session work across several of them. A repo gets a branch only when an agent needs to edit it.",
+          "text": "Keep your repos together as one workspace, and let one session work across several of them.",
           "group": "Workspaces and folders",
           "main": true
         },
@@ -430,7 +430,7 @@
         },
         {
           "title": "Worktrees",
-          "text": "Each branch gets its own worktree, a separate folder next to your checkout. Agents edit in parallel without touching your own files.",
+          "text": "Let agents edit in parallel without touching your checkout.",
           "group": "Workspaces and folders",
           "main": true
         },
@@ -466,6 +466,12 @@
           "group": "Workspaces and folders",
           "also": "workspace switcher",
           "shown": true
+        },
+        {
+          "title": "New worktrees start usable",
+          "text": "Tick the git-ignored files a new worktree should start with, like your .env, and see the setup it needs, such as pnpm install. Nothing runs until you click Run.",
+          "group": "Workspaces and folders",
+          "also": "worktree setup"
         },
         {
           "title": "Repo status across folders",
@@ -511,13 +517,13 @@
       "items": [
         {
           "title": "Start a workflow",
-          "text": "A workflow run starts from Start a run like any other. Type ~ and a preset name to follow that preset, step by step.",
+          "text": "A workflow run starts from the New session page: pick Workflow, then Orchestrated or Preset, and press Start workflow.",
           "group": "Workflows",
           "main": true
         },
         {
           "title": "Orchestrated",
-          "text": "Give a goal and a model picks each next step with a role, a model and a reason. It stops when done or blocked.",
+          "text": "Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.",
           "group": "Workflows",
           "main": true
         },
@@ -569,7 +575,7 @@
         },
         {
           "title": "Limit",
-          "text": "Limit what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
+          "text": "Cap what a run or a session can spend, and choose Pause workflows or Warn only.",
           "group": "Workflows",
           "main": true
         },
@@ -588,15 +594,8 @@
           "shown": true
         },
         {
-          "title": "Chained starts",
-          "text": "Line work up behind work. A run can start now, wait for you, or start once another workflow completes.",
-          "group": "Workflows",
-          "also": "chained starts",
-          "shown": true
-        },
-        {
           "title": "Workflow run",
-          "text": "Follow a run from top to bottom, with sub-agents under their agent and one pinned next action. After a restart, one Resume all starts the stopped agents again.",
+          "text": "Follow a run step by step, with its sub-agents under their agent and one button that moves it on.",
           "group": "Workflows",
           "main": true
         },
@@ -660,13 +659,13 @@
       "items": [
         {
           "title": "Shape the history",
-          "text": "Clean up a branch in the Commits section. Reword, squash, fold, drop or reorder commits by hand, then apply.",
+          "text": "Clean up a branch by hand in the Commits section.",
           "group": "Commits and history",
           "main": true
         },
         {
           "title": "Safe edits",
-          "text": "Each edit is tried on a temporary copy first, and a backup is saved before the branch moves. Undo and Redo restore edits while the Commits page stays open.",
+          "text": "Undo and Redo, also ⌘Z and ⌘⇧Z, restore edits while the Commits page stays open.",
           "group": "Commits and history",
           "main": true
         },
@@ -725,7 +724,7 @@
         },
         {
           "title": "Resolve",
-          "text": "Turn review comments into commits without writing the fix yourself. Fix comments opens one drawer beside the page, and one agent works through the comments you check. Each ends in a fix to apply, a question, a reply or a retry.",
+          "text": "Turn review comments into commits without writing the fixes yourself.",
           "group": "Review and resolve on the Branch page",
           "main": true
         },
@@ -781,7 +780,7 @@
         },
         {
           "title": "Close on GitHub",
-          "text": "Finish a review with the one Push in the Branch header. A preview counts the fixes, replies and threads first, then Push sends them all.",
+          "text": "Finish a review with Push N fixes in the Branch header.",
           "group": "Review and resolve on the Branch page",
           "main": true
         },
@@ -900,7 +899,7 @@
         },
         {
           "title": "Tasks",
-          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together in groups of five that open on demand. It starts on what is yours, and one Filter menu narrows the rest.",
+          "text": "Work from one list instead of seven tabs.",
           "group": "Tasks and your tools",
           "main": true
         },
@@ -932,13 +931,13 @@
         },
         {
           "title": "Trackers",
-          "text": "Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy. Comment, assign, edit and move issues in Linear and Jira the same way.",
+          "text": "Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project.",
           "group": "Tasks and your tools",
           "main": true
         },
         {
           "title": "Code hosts",
-          "text": "Work on GitHub pull requests, GitLab merge requests and Bitbucket comments, approvals and merges without leaving Goodboy. GitHub and GitLab can work side by side.",
+          "text": "Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket comments, approvals and merges without leaving Goodboy.",
           "group": "Tasks and your tools",
           "main": true
         },
@@ -1020,7 +1019,7 @@
         },
         {
           "title": "Create a wireframe",
-          "text": "Describe the screen in a brief, add attachments, and choose the fidelity and the target: phone, desktop or both. See exactly what goes in the context pack.",
+          "text": "Describe the screen, add attachments, and choose how faithful it is and which device it targets.",
           "group": "Plans, reports and wireframes",
           "main": true
         },
@@ -1085,7 +1084,7 @@
       "items": [
         {
           "title": "Usage limits chip",
-          "text": "See how much of your Claude and Codex plans is left before a run stops. Two bars show the 5-hour window and the week.",
+          "text": "See how much of your Claude and Codex plans is left before a run stops.",
           "group": "Providers, limits and cost",
           "main": true
         },
@@ -1098,7 +1097,7 @@
         },
         {
           "title": "Fallback when a limit is hit",
-          "text": "When a provider runs out, a turn can move to another connected one. The conversation records where it went.",
+          "text": "Keep a task moving when a provider runs out.",
           "group": "Providers, limits and cost",
           "main": true
         },
@@ -1111,13 +1110,13 @@
         },
         {
           "title": "Model picker",
-          "text": "Pick a model with the reason next to it. The picker leads with Auto and shows what it resolves to right now. A model you turn off is left out of Auto.",
+          "text": "Pick a model with the reason next to it.",
           "group": "Providers, limits and cost",
           "main": true
         },
         {
           "title": "Impact",
-          "text": "See what Goodboy got done and what it cost over 7 days, 30 days or all time, deleted sessions included. Tiles compare each figure with the period before.",
+          "text": "See what Goodboy got done and what it cost over 7 days, 30 days or All time.",
           "group": "Providers, limits and cost",
           "main": true
         },
@@ -1149,7 +1148,7 @@
       "items": [
         {
           "title": "Workspace chat",
-          "text": "Ask about your repos without starting a session. The answer reads every project, writes in live and never changes a file. You can turn it into work later.",
+          "text": "Ask about the workspace without starting a session.",
           "group": "Agents",
           "main": true
         },
@@ -1168,7 +1167,7 @@
         },
         {
           "title": "Roles",
-          "text": "Nine roles come with the app, from Scout to Generalist. A role sets the agent's instructions, its default model and what it hands back. When one recommends the next, its reason and result travel with it.",
+          "text": "Give each agent the job it is good at.",
           "group": "Agents",
           "main": true
         },
@@ -1193,7 +1192,7 @@
         },
         {
           "title": "Agent transcript",
-          "text": "Follow one agent's work as one conversation. Each turn says in one line what it did, then its answer; View transcript shows every tool call.",
+          "text": "Follow one agent's work as one conversation you can write in.",
           "group": "Agents",
           "main": true
         },
@@ -1276,13 +1275,13 @@
         },
         {
           "title": "Terminal",
-          "text": "One studio lists every terminal of the workspace and its sessions. Open a login shell in the workspace folder or any worktree, and it survives a reload.",
+          "text": "Open a real login shell in the workspace folder or any linked worktree.",
           "group": "Keyboard and terminal",
           "main": true
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts. ⌘[ and ⌘] move through history, and ⌘↑ goes up the trail at the top of each page. The Mac menu bar carries the same keys.",
+          "text": "Move through Goodboy, change a shortcut and stop an agent without leaving the keyboard.",
           "group": "Keyboard and terminal",
           "main": true
         },
@@ -1331,13 +1330,13 @@
       "items": [
         {
           "title": "Worktree folders",
-          "text": "See the checkout folders of archived or deleted sessions with their size and whether they are safe to remove. One button clears the clean ones.",
+          "text": "Free disk space from the checkout folders of archived, deleted or gone sessions.",
           "group": "Storage",
           "main": true
         },
         {
           "title": "Branches",
-          "text": "Branches has its own page, sorted into safe to delete and needs a look. Recently deleted restores a branch for 14 days.",
+          "text": "Delete old branches with confidence.",
           "group": "Storage",
           "main": true
         },
@@ -1381,7 +1380,7 @@
         },
         {
           "title": "Export and import your setup",
-          "text": "Move your setup to another Mac or keep a copy, in groups you choose. Import shows what it adds before writing anything.",
+          "text": "Move your setup to another Mac, or keep a copy.",
           "group": "Security, backup and updates",
           "main": true
         },
@@ -1400,7 +1399,7 @@
         },
         {
           "title": "Updates",
-          "text": "Updates download in the background, then a card beside the Goodboy chip offers Restart now, Later and What's new. With agents running, it can wait until they finish.",
+          "text": "Get updates in the background, then see what is new.",
           "group": "Security, backup and updates",
           "main": true
         },

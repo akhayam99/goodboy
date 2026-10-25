@@ -35,22 +35,23 @@ export const restoreSessions = async ({
   sessions,
   bulkUnarchiveTask,
   showToast,
-}: LifecycleParams): Promise<void> => {
+}: LifecycleParams): Promise<number> => {
   if (sessions.length === 0) {
-    return;
+    return 0;
   }
   const { succeeded } = await bulkUnarchiveTask(sessions.map((session) => session.id));
   if (succeeded.length === 0) {
-    return;
+    return 0;
   }
   showToast({
     kind: 'success',
     message: RESTORE_KEPT_COPY,
     title: restoredTitle({ count: succeeded.length }),
   });
+  return succeeded.length;
 };
 
-type ArchiveOutcome = {
+export type ArchiveOutcome = {
   readonly archived: ReadonlyArray<Session>;
   readonly failed: ReadonlyArray<Session>;
 };

@@ -1,5 +1,6 @@
 import { isEffortLevel, PROVIDER_IDS } from './provider-registry';
 import type { WorkflowModelPick, WorkflowRoutingLock } from './workflow-routing';
+import { isRecord } from './helpers';
 
 export const PLAN_CHANGE_KINDS = ['added', 'skipped', 'reordered'] as const;
 
@@ -29,9 +30,6 @@ export type PlanChange = PlanChangeRequest &
   Readonly<{
     agentId: string | null;
   }>;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type ParseParams = {
   readonly value: unknown;

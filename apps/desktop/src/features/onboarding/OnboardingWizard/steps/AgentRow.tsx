@@ -1,8 +1,8 @@
 import { RotateCw } from 'lucide-react';
-import { Button, Chip, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
+
 import type { AgentRow as AgentRowModel, AgentRowState } from '../agentRowOf';
-import { AgentGlyph } from './AgentGlyph';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { AgentRowPanel } from './AgentRowPanel';
 import { StepListRow } from './StepListRow';
 import { StepStatus } from './StepStatus';
@@ -74,7 +74,7 @@ export const AgentRow = ({
     switch (row.state) {
       case 'ready':
         return isDefault ? (
-          <Chip tone="primary" size="sm" label="Default" shape="badge" />
+          <Chip className="rounded-md" kind="state" tone="primary" label="Default" />
         ) : (
           <Button
             size="xs"
@@ -164,7 +164,7 @@ export const AgentRow = ({
   return (
     <StepListRow
       rowId={row.id}
-      icon={<AgentGlyph providerId={row.id} size={ICON_SIZE.hero} />}
+      icon={<ProviderGlyph id={row.id} size={ICON_SIZE.hero} />}
       name={row.label}
       line={row.line}
       isDimmed={row.state === 'looking'}

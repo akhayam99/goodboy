@@ -10,7 +10,7 @@ import { unapproveBitbucketPr } from './unapproveBitbucketPr';
 import { withdrawBitbucketPrChanges } from './withdrawBitbucketPrChanges';
 import type { SliceDeps } from '../../slice-types';
 
-export { initialBitbucketPrState } from './state';
+export { bitbucketPrInitialState } from './state';
 export type { BitbucketPrWriteParams } from './types';
 
 export const createBitbucketPrSlice = ({ set, get }: SliceDeps) => ({

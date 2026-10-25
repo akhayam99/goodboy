@@ -12,7 +12,7 @@ import {
   resetStoryStore,
   stubStoryInvoke,
 } from '../../storyHarness';
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -284,7 +284,7 @@ describe('dirty rebase policy through the real store', () => {
         });
         return { kind: 'moved', head: 'new-head', backupRef: 'backup', carriedCount: 0 };
       },
-      history_push_lease: (args: unknown) => {
+      git_push_with_lease: (args: unknown) => {
         pushes.push(args);
         return { kind: 'pushed' };
       },

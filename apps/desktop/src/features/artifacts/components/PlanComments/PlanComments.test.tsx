@@ -421,7 +421,7 @@ describe('PlanCommentBar', () => {
     render(
       <PlanCommentBar
         count={1}
-        guard={{ canSend: false, reason: 'This plan already ran. Comments cannot change it.' }}
+        guard={{ canSend: false, reason: "This plan already ran. Comments can't change it." }}
         isSending={false}
         error={null}
         onSend={onSend}
@@ -429,7 +429,7 @@ describe('PlanCommentBar', () => {
       />,
     );
     expect(screen.getByText('1 comment')).toBeDefined();
-    expect(screen.getByText('This plan already ran. Comments cannot change it.')).toBeDefined();
+    expect(screen.getByText("This plan already ran. Comments can't change it.")).toBeDefined();
     const send = screen.getByRole('button', { name: 'Send to planner' });
     expect((send as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(send);

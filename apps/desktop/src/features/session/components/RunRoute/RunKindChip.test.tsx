@@ -169,7 +169,7 @@ describe('RunKindChip', () => {
   it('says the change applies to this run before its first step', () => {
     const popover = openChip({ hasStarted: false });
 
-    expect(within(popover).getByRole('group', { name: 'Change it to' })).toBeDefined();
+    within(popover).getByRole('group', { name: 'Change it to' });
     expect(popover.textContent).toContain('Changes this run before its first step.');
   });
 
@@ -217,6 +217,6 @@ describe('RunKindChip', () => {
     expect((await within(popover).findByRole('alert')).textContent).toBe(
       "Couldn't change the run: No provider is connected",
     );
-    expect(screen.getByRole('dialog', { name: 'Kind' })).toBeDefined();
+    screen.getByRole('dialog', { name: 'Kind' });
   });
 });

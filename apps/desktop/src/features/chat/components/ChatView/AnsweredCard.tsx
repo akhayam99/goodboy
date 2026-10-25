@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Bot, CheckCircle2 } from 'lucide-react';
-import { Markdown } from '@goodboy/ui';
+import { Bot, CircleCheck } from 'lucide-react';
+import { ICON_SIZE, Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -39,7 +39,7 @@ export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
             answeredByAgent ? (
               <Bot size={ICON_SIZE.row} aria-hidden />
             ) : (
-              <CheckCircle2 size={ICON_SIZE.row} aria-hidden />
+              <CircleCheck size={ICON_SIZE.row} aria-hidden />
             )
           }
           eyebrow="Answered"

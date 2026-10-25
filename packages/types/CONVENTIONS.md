@@ -6,7 +6,9 @@ TypeScript types, plus the smallest runtime a union needs. **No logic and no con
 
 ## Rules
 
+- No function body except a union guard (`isFoo(value): value is Foo`), the `helpers/` entry and `brandId`. A parser, a default object, a threshold or a sentence shown to the user goes to the package that uses it. `__tests__/regressions/types-package-has-no-logic.test.ts` counts the function bodies left, per file, in `types-function-bodies.baseline.json`; the parsers of `workflow-rules.ts`, `run-preset.ts` and `provider-policy.ts` are the debt, and `@goodboy/db` reads them, so they cannot go to `@goodboy/core` (which depends on db) until the owner picks their new home.
 - The only runtime allowed is an `as const` literal table (or literal constant) that exists to derive a type, plus the one-line guard for that union (`PROVIDER_IDS`, `WORKFLOW_ORIGINS` + `isWorkflowOrigin`, `CONFIG_BUNDLE_SCHEMA_VERSION`). A table that configures behavior (commands, tiers, env names, defaults, task lists) lives in `@goodboy/core`, even when it is keyed by a union from here.
+- The shared guards and the one mint helper live in `src/helpers/`, one file each, exported through the `@goodboy/types/helpers` subpath and never through `src/index.ts`: `isRecord` (a plain object, not an array), `isProviderId` and `isoNow` (the branded `IsoDateTime` of this instant). A file that needs one imports it from there; a private copy fails `duplicate-helper.test.ts`.
 - Types export with the `export type` syntax. Consumers use `import type` for them.
 - No external runtime dependencies. The only devDependency is `typescript`.
 - One public entry point: `src/index.ts` re-exports from the sub-modules. One file per domain. Don't mix unrelated types. The one other entry is the `@goodboy/types/testing` subpath (below).

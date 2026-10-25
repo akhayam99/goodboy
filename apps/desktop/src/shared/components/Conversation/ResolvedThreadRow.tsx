@@ -1,7 +1,6 @@
 import { ChevronRight, CircleCheck } from 'lucide-react';
-import { ROW_INTERACTIVE, FOCUS_RING, cn } from '@goodboy/ui';
+import { cn, FOCUS_RING, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { ConversationThread } from './types';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly thread: ConversationThread;

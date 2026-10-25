@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { SettingsGroup } from './components/SettingsStudio/settingsDirectory';
 import { REVIEW_REPLIES_SECTION_ID } from '../resolve/replySettingsCopy';
 import { workspacePageEntry } from './components/SettingsStudio/workspacePages';

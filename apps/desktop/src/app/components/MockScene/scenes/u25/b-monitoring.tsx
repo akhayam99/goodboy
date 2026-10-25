@@ -69,7 +69,7 @@ const BusyMonitoringScene = ({ variant }: Props) => {
   useEffect(() => {
     installSceneDatabase({
       settings: BUSY_SETTINGS,
-      fallback: (command, payload) => answerOf({ command, payload }),
+      fallback: ({ command, payload }) => answerOf({ command, payload }),
     });
     useAppStore.setState({
       workspaces: [WORKSPACE],

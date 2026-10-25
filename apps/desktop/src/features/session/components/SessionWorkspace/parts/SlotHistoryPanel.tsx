@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Markdown, EmptyState, Tooltip } from '@goodboy/ui';
+import { EmptyState, ICON_SIZE, Markdown, Tooltip } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import { useNow } from '../../../../../shared/hooks/useNow';
 
@@ -63,19 +59,19 @@ const HistoryEntry = ({
         aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
-          <div className="rounded-sm text-label text-foreground">
+          <div className="rounded-sm text-meta text-foreground">
             {renderAsMarkdown ? (
-              <Markdown text={entry.value} className="text-label" />
+              <Markdown text={entry.value} className="text-meta" />
             ) : (
               <p className="whitespace-pre-wrap">{entry.value}</p>
             )}
           </div>
         ) : renderAsMarkdown ? (
-          <div className="text-label text-foreground line-clamp-3">
-            <Markdown text={entry.value} className="text-label" />
+          <div className="text-meta text-foreground line-clamp-3">
+            <Markdown text={entry.value} className="text-meta" />
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-label text-foreground line-clamp-3">
+          <p className="whitespace-pre-wrap text-meta text-foreground line-clamp-3">
             {entry.value}
           </p>
         )}

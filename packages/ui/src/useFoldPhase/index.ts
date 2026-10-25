@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { canAnimate } from '../canAnimate';
-import { FOLD_MS } from '../motionTimings';
+import { DURATION_BASE_MS } from '../motionTimings';
 
 export type FoldPhase = 'open' | 'folding' | 'folded' | 'unfolding';
 
@@ -35,7 +35,7 @@ export const useFoldPhase = ({ isFolded, frameRef }: Params): FoldPhase => {
       return;
     }
     const settled: FoldPhase = next === 'folding' ? 'folded' : 'open';
-    const timer = window.setTimeout(() => setPhase(settled), FOLD_MS);
+    const timer = window.setTimeout(() => setPhase(settled), DURATION_BASE_MS);
     return () => window.clearTimeout(timer);
   }, [next]);
 

@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react';
-import {
-  IntegrationGlyph,
-  integrationLabel,
-  type IntegrationGlyphProvider,
-} from './IntegrationGlyph';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { IntegrationGlyph, type IntegrationGlyphProvider } from './IntegrationGlyph';
+import { integrationLabel } from '../../../shared/utils/integrationLabel';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -30,7 +27,7 @@ export const IntegrationConnectPanel = ({
           Connect {integrationLabel({ provider })}
         </Heading>
       </div>
-      <p className="text-label text-muted-foreground">{description}</p>
+      <p className="text-meta text-muted-foreground">{description}</p>
       {children}
     </section>
   );

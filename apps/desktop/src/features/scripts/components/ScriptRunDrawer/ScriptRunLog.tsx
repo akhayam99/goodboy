@@ -1,18 +1,20 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
-import { Button, ScrollFade } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, ScrollFade } from '@goodboy/ui';
+
+import { LinkedLogText, type LogFileLink } from './LinkedLogText';
 import { splitLogLines } from './splitLogLines';
 
 type Props = {
   readonly stdout: string;
   readonly stderr: string;
   readonly placeholder: string | null;
+  readonly onOpenFile?: ((link: LogFileLink) => void) | null;
 };
 
 const BOTTOM_SLACK_PX = 4;
 
-export const ScriptRunLog = ({ stdout, stderr, placeholder }: Props) => {
+export const ScriptRunLog = ({ stdout, stderr, placeholder, onOpenFile = null }: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [isFollowing, setIsFollowing] = useState(true);
   const lines = useMemo(() => splitLogLines({ stdout, stderr }), [stderr, stdout]);
@@ -69,10 +71,18 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder }: Props) => {
                   <span aria-hidden className="shrink-0 text-faint-foreground">
                     err
                   </span>
-                  <span className="min-w-0">{line.text}</span>
+                  <span className="min-w-0">
+                    <LinkedLogText text={line.text} onOpenFile={onOpenFile} />
+                  </span>
                 </span>
               ) : (
-                <span key={index}>{line.text === '' ? ' ' : line.text}</span>
+                <span key={index}>
+                  {line.text === '' ? (
+                    ' '
+                  ) : (
+                    <LinkedLogText text={line.text} onOpenFile={onOpenFile} />
+                  )}
+                </span>
               ),
             )}
           </pre>

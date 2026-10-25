@@ -13,6 +13,7 @@ export type WorkTimeSource = {
   readonly history: DurationHistory | null;
   readonly liveStartMs: ReadonlyMap<string, number>;
   readonly childrenOf: ReadonlyMap<string, ReadonlyArray<AgentId>>;
+  readonly quietMs?: ReadonlyMap<string, number>;
 };
 
 export const WorkTimeContext = createContext<WorkTimeSource | null>(null);

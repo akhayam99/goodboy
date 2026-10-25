@@ -25,7 +25,7 @@ export const StarToggle = ({ isStarred, label, tooltip, disabled, className, onT
         onToggle();
       }}
       className={cn(
-        'inline-flex size-6 items-center justify-center rounded-md hover:bg-hover disabled:opacity-50',
+        'inline-flex size-6 items-center justify-center rounded-md hover:bg-hover disabled:cursor-not-allowed disabled:text-disabled-foreground',
         isStarred ? 'text-warning' : 'text-faint-foreground hover:text-foreground',
         FOCUS_RING,
         className,

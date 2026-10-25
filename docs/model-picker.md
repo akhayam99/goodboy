@@ -48,7 +48,7 @@ The row above the provider chips is one component with two meanings.
   clean-up) and **Scribe** (the title and body of a pull or merge request)
 - **Launching popovers** (Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
-  decided (`suggestedRouting`): the role default on the default provider, a pin
+  decided (`resolveSlot`): the role default on the default provider, a pin
   from Models, a CLI too old for the first choice, or the next provider in the
   fallback order. It never guesses from the task content. **Last used here**
   follows when it differs from the suggestion

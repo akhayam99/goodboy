@@ -1,4 +1,5 @@
 import {
+  FAIL_CLOSED_PERMISSION_MODE,
   isClaudePermissionMode,
   type ClaudePermissionMode,
   type IsoDateTime,
@@ -8,6 +9,7 @@ import {
   type WorkspaceProfile,
 } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 import {
   REPLY_SETTING_COLUMNS,
   overridesFromRow,
@@ -48,18 +50,8 @@ type ProfileParams = {
 };
 
 const parseLabels = ({ json }: { readonly json: string | null }): ReadonlyArray<string> => {
-  if (json === null) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((entry): entry is string => typeof entry === 'string');
-  } catch {
-    return [];
-  }
+  const parsed = parseJsonColumn({ value: json, isValid: isJsonArray, fallback: [] });
+  return parsed.filter((entry): entry is string => typeof entry === 'string');
 };
 
 const profileFromRow = ({ row }: ProfileParams): WorkspaceProfile | undefined => {
@@ -169,7 +161,7 @@ export const insertWorkspaceStatement = ({
         : workspace.overrides.attributionFooter
           ? 1
           : 0,
-      workspace.defaultPermissionMode ?? 'bypassPermissions',
+      workspace.defaultPermissionMode ?? FAIL_CLOSED_PERMISSION_MODE,
       ...replySettingValues({ overrides: workspace.overrides }),
       workspace.overrides.defaultBranchTemplate,
     ],

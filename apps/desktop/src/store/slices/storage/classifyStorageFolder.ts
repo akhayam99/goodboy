@@ -1,51 +1,41 @@
-import type { WorktreeRemovalReason } from '@goodboy/types';
 import type { StorageBucket, StorageFolder, StorageFolderStatus } from './types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const CHANGE_REASONS: ReadonlyArray<WorktreeRemovalReason> = [
-  'staged-changes',
-  'unstaged-changes',
-  'untracked-files',
-];
-
 type FolderParams = {
   readonly folder: StorageFolder;
+};
+
+type StatusParams = FolderParams & {
+  readonly liveTerminals: number;
 };
 
 type FolderAtParams = FolderParams & {
   readonly now: number;
 };
 
-type SuggestParams = FolderAtParams & {
+type IdleParams = FolderAtParams & {
   readonly suggestAfterDays: number;
 };
 
-export const storageFolderStatus = ({ folder }: FolderParams): StorageFolderStatus => {
+type SuggestParams = IdleParams & {
+  readonly liveTerminals: number;
+};
+
+export const storageFolderStatus = ({
+  folder,
+  liveTerminals,
+}: StatusParams): StorageFolderStatus => {
   if (folder.origin === 'in-use') {
     return 'in-use';
   }
-  const facts = folder.facts;
-  if (facts === null) {
+  if (folder.facts === null) {
     return 'checking';
   }
-  const has = (reason: WorktreeRemovalReason): boolean => facts.reasons.includes(reason);
-  if (has('writer-lease-held')) {
-    return 'writing';
+  if (folder.facts.verdict === 'safe' && liveTerminals > 0) {
+    return 'terminal-open';
   }
-  if (has('operation-in-progress') || has('unmerged-conflicts')) {
-    return 'operation';
-  }
-  if (has('not-registered')) {
-    return 'not-tracked';
-  }
-  if (facts.changedFiles > 0 || CHANGE_REASONS.some(has)) {
-    return 'dirty';
-  }
-  if (facts.reasons.length > 0) {
-    return 'unavailable';
-  }
-  return 'safe';
+  return folder.facts.verdict;
 };
 
 const isStorageFolderKept = ({ folder, now }: FolderAtParams): boolean => {
@@ -74,7 +64,7 @@ export const storageFolderLastChange = ({ folder }: FolderParams): number | null
   return Math.max(commit, activity);
 };
 
-export const isStorageFolderIdle = ({ folder, now, suggestAfterDays }: SuggestParams): boolean => {
+export const isStorageFolderIdle = ({ folder, now, suggestAfterDays }: IdleParams): boolean => {
   const lastChange = storageFolderLastChange({ folder });
   if (lastChange === null) {
     return false;
@@ -86,9 +76,10 @@ export const isStorageFolderSuggested = ({
   folder,
   now,
   suggestAfterDays,
+  liveTerminals,
 }: SuggestParams): boolean =>
   storageFolderBucket({ folder, now }) === 'review' &&
-  storageFolderStatus({ folder }) === 'safe' &&
+  storageFolderStatus({ folder, liveTerminals }) === 'safe' &&
   isStorageFolderIdle({ folder, now, suggestAfterDays });
 
 export const STORAGE_DAY_MS = DAY_MS;

@@ -68,6 +68,7 @@ const facts = (overrides: Partial<WorktreeFolderFacts>): WorktreeFolderFacts => 
   changedFiles: 0,
   changedSample: null,
   reasons: [],
+  verdict: 'safe',
   ...overrides,
 });
 
@@ -147,17 +148,28 @@ describe('classifying storage folders', () => {
     }) satisfies StorageFolder;
 
   it('suggests only clean folders idle past the threshold and not kept', () => {
-    expect(isStorageFolderSuggested({ folder: base({}), now: NOW, suggestAfterDays: 30 })).toBe(
-      true,
-    );
-    expect(isStorageFolderSuggested({ folder: base({}), now: NOW, suggestAfterDays: 60 })).toBe(
-      false,
-    );
     expect(
       isStorageFolderSuggested({
-        folder: base({ changedFiles: 12, reasons: ['unstaged-changes'] }),
+        folder: base({}),
         now: NOW,
         suggestAfterDays: 30,
+        liveTerminals: 0,
+      }),
+    ).toBe(true);
+    expect(
+      isStorageFolderSuggested({
+        folder: base({}),
+        now: NOW,
+        suggestAfterDays: 60,
+        liveTerminals: 0,
+      }),
+    ).toBe(false);
+    expect(
+      isStorageFolderSuggested({
+        folder: base({ changedFiles: 12, reasons: ['unstaged-changes'], verdict: 'dirty' }),
+        now: NOW,
+        suggestAfterDays: 30,
+        liveTerminals: 0,
       }),
     ).toBe(false);
     expect(
@@ -165,6 +177,15 @@ describe('classifying storage folders', () => {
         folder: base({}, { keptAt: NOW - DAY, keptUntil: null }),
         now: NOW,
         suggestAfterDays: 30,
+        liveTerminals: 0,
+      }),
+    ).toBe(false);
+    expect(
+      isStorageFolderSuggested({
+        folder: base({}),
+        now: NOW,
+        suggestAfterDays: 30,
+        liveTerminals: 1,
       }),
     ).toBe(false);
   });
@@ -176,31 +197,38 @@ describe('classifying storage folders', () => {
     expect(storageFolderBucket({ folder: snoozed, now: NOW - 2 * DAY })).toBe('kept');
   });
 
-  it('names what blocks a folder, the lease and a git operation before the changes', () => {
-    expect(storageFolderStatus({ folder: base({ reasons: ['writer-lease-held'] }) })).toBe(
-      'writing',
+  it('reads the verdict Rust decided and never second-guesses it from the reasons', () => {
+    const status = (overrides: Partial<WorktreeFolderFacts>, liveTerminals = 0) =>
+      storageFolderStatus({ folder: base(overrides), liveTerminals });
+
+    expect(status({ verdict: 'writing', reasons: ['writer-lease-held'] })).toBe('writing');
+    expect(status({ verdict: 'operation', reasons: ['operation-in-progress'] })).toBe('operation');
+    expect(status({ verdict: 'not-tracked', reasons: ['not-registered'] })).toBe('not-tracked');
+    expect(status({ verdict: 'dirty', changedFiles: 2, reasons: ['untracked-files'] })).toBe(
+      'dirty',
     );
-    expect(
-      storageFolderStatus({
-        folder: base({ reasons: ['operation-in-progress', 'unstaged-changes'], changedFiles: 1 }),
-      }),
-    ).toBe('operation');
-    expect(storageFolderStatus({ folder: base({ reasons: ['not-registered'] }) })).toBe(
-      'not-tracked',
-    );
-    expect(
-      storageFolderStatus({ folder: base({ changedFiles: 2, reasons: ['untracked-files'] }) }),
-    ).toBe('dirty');
+    expect(status({ verdict: 'safe', reasons: ['untracked-files'] })).toBe('safe');
+    expect(status({ verdict: 'unavailable', reasons: ['status-unavailable'] })).toBe('unavailable');
+  });
+
+  it('names a live terminal on a folder that is otherwise safe, and only then', () => {
+    const status = (overrides: Partial<WorktreeFolderFacts>, liveTerminals: number) =>
+      storageFolderStatus({ folder: base(overrides), liveTerminals });
+
+    expect(status({}, 2)).toBe('terminal-open');
+    expect(status({}, 0)).toBe('safe');
+    expect(status({ verdict: 'dirty', changedFiles: 1 }, 2)).toBe('dirty');
   });
 
   it('keeps folders with commits never pushed in the safe bulk and counts them', () => {
     const summary = summarizeStorage({
       folders: [
         base({ localOnlyCommits: 2 }),
-        base({ changedFiles: 1, reasons: ['unstaged-changes'] }),
+        base({ changedFiles: 1, reasons: ['unstaged-changes'], verdict: 'dirty' }),
       ],
       now: NOW,
       suggestAfterDays: 30,
+      terminals: new Map(),
     });
 
     expect(summary.canGo).toEqual({ count: 1, bytes: 2048 });

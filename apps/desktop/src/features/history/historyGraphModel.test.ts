@@ -26,6 +26,21 @@ describe('history graph model', () => {
     expect(now.behind).toBe(3);
   });
 
+  it('never marks an unpushed commit as the online copy', () => {
+    const unpushed = LEDGER_COMMITS.map((commit) =>
+      commit.sha === LEDGER.c ? { ...commit, pushed: false } : commit,
+    );
+    const now = historyGraphModel({
+      commits: unpushed,
+      items: initialPlanItems({ commits: unpushed }),
+      original: LEDGER_ORIGINAL,
+      onto: null,
+      graph: LEDGER_GRAPH,
+      prHeadSha: LEDGER.c,
+    });
+    expect(now.remoteRowSha).toBeNull();
+  });
+
   it('rewrites nothing and touches nothing online while the plan is untouched', () => {
     const now = model(base);
     expect(now.rewritten.size).toBe(0);

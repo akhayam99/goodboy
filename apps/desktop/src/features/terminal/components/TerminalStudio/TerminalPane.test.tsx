@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode } from 'react';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { nextSessionId } from '@goodboy/types/testing';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
 
@@ -196,5 +196,63 @@ describe('TerminalPane prefill', () => {
 
     await waitFor(() => expect(h.open).toHaveBeenCalled());
     expect(h.write).not.toHaveBeenCalled();
+  });
+});
+
+describe('TerminalPane after a restart', () => {
+  const endedWith = (command: string) => ({
+    at: 1,
+    terminals: { [TAB_ID]: command },
+    scripts: [],
+  });
+
+  it('offers to run again what ended with the app, and types it with Enter when asked', async () => {
+    const tab = tabOf({ patch: { isRestored: true } });
+    store.setState({
+      terminalTabs: { [SESSION_ID]: [tab] },
+      endedWork: endedWith('pnpm dev'),
+    });
+
+    render(<TerminalPane tab={tab} isActive />);
+    await waitFor(() => expect(h.open).toHaveBeenCalled());
+
+    expect(screen.getAllByText('pnpm dev ended when Goodboy quit')).toHaveLength(1);
+    expect(h.write).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Run it again' }));
+
+    await waitFor(() => expect(h.write).toHaveBeenCalledTimes(1));
+    const [id, data = ''] = h.write.mock.calls[0] ?? [];
+    expect(id).toBe(TAB_ID);
+    expect(atob(data)).toBe('pnpm dev\r');
+    expect(screen.queryByText('pnpm dev ended when Goodboy quit')).toBeNull();
+    expect(store.getState().endedWork?.terminals).toEqual({});
+  });
+
+  it('writes nothing when the strip is dismissed', async () => {
+    const tab = tabOf({ patch: { isRestored: true } });
+    store.setState({
+      terminalTabs: { [SESSION_ID]: [tab] },
+      endedWork: endedWith('pnpm dev'),
+    });
+
+    render(<TerminalPane tab={tab} isActive />);
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+    expect(screen.queryByText('pnpm dev ended when Goodboy quit')).toBeNull();
+    expect(h.write).not.toHaveBeenCalled();
+    expect(store.getState().endedWork?.terminals).toEqual({});
+  });
+
+  it('shows no strip on a terminal that kept running through a reload', async () => {
+    const tab = tabOf({ patch: {} });
+    store.setState({
+      terminalTabs: { [SESSION_ID]: [tab] },
+      endedWork: endedWith('pnpm dev'),
+    });
+
+    render(<TerminalPane tab={tab} isActive />);
+    await waitFor(() => expect(h.open).toHaveBeenCalled());
+
+    expect(screen.queryByText('pnpm dev ended when Goodboy quit')).toBeNull();
   });
 });

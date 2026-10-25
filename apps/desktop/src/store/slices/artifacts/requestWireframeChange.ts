@@ -11,7 +11,7 @@ import {
   type WireframeDraft,
   type WireframeDraftRequest,
 } from '../../../features/wireframes/wireframeDraft';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { GetFn, SetFn } from './types';
 
 export type RequestWireframeChangeParams = WireframeDraftRequest & {

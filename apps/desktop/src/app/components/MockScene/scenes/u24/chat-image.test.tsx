@@ -6,13 +6,10 @@ vi.mock('@tauri-apps/api/core', async () => {
 });
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('../../../../../features/workspace-chat/activeChatBackend', async () => {
-  const { createMemoryChatBackend } =
-    await import('../../../../../features/workspace-chat/createMemoryChatBackend');
-  const { mockChatResponder } =
-    await import('../../../../../features/workspace-chat/mockChatResponder');
-  const { mockChatSeed } = await import('../../../../../features/workspace-chat/mockChatSeed');
-  const { mockWorkSummarizer } =
-    await import('../../../../../features/workspace-chat/mockWorkSummarizer');
+  const { createMemoryChatBackend } = await import('../../../../../test/createMemoryChatBackend');
+  const { mockChatResponder } = await import('../../backends/chat/mockChatResponder');
+  const { mockChatSeed } = await import('../../backends/chat/mockChatSeed');
+  const { mockWorkSummarizer } = await import('../../backends/chat/mockWorkSummarizer');
   return {
     activeChatBackend: createMemoryChatBackend({
       respond: mockChatResponder,

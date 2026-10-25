@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { EmptyLine, ScrollFade, SearchField, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, EmptyLine, ICON_SIZE, ScrollFade, SearchField, FOCUS_RING } from '@goodboy/ui';
+
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
 import type { SettingsFocus } from '../../settingsFocus';
@@ -44,7 +44,8 @@ export const SettingsColumnNav = ({ groups, rail, onBack, onOpen }: Props) => {
         onClick={onBack}
         className={cn(
           'group flex h-7 w-full shrink-0 items-center gap-2 rounded-md px-2 text-row text-muted-foreground motion-safe:transition-colors',
-          'hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          'hover:bg-hover hover:text-foreground',
+          FOCUS_RING,
         )}
       >
         <ChevronLeft size={ICON_SIZE.control} aria-hidden className="shrink-0" />

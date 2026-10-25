@@ -1,8 +1,8 @@
-use crate::config_export::apply::{apply_bundle, ImportResult};
-use crate::config_export::bundle::{is_supported_schema_version, ConfigBundle, SCHEMA_VERSION};
+use crate::config_export::apply::{apply_backup_file, ApplyFileRequest, ImportResult};
+use crate::config_export::bundle::{is_supported_schema_version, SCHEMA_VERSION};
 use crate::config_export::error::ConfigExportError;
 use crate::config_export::export::{build_bundle, open_findings_for_groups};
-use crate::config_export::file::write_config_file;
+use crate::config_export::file::{read_bundle_file, write_config_file};
 use crate::config_export::groups::{ExportCounts, ExportGroups, ExportPreview};
 use crate::config_export::preview::{build_import_preview, ImportPreview};
 use crate::db::Db;
@@ -66,9 +66,8 @@ pub async fn config_import_preview(
     #[allow(non_snake_case)] projectParent: Option<String>,
 ) -> Result<ImportPreview, ConfigExportError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let raw = std::fs::read_to_string(&path)
-            .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
-        let bundle: ConfigBundle = serde_json::from_str(&raw)?;
+        let file = read_bundle_file(&path)?;
+        let bundle = file.bundle;
         if !is_supported_schema_version(bundle.schema_version) {
             return Err(ConfigExportError::SchemaMismatch {
                 got: bundle.schema_version,
@@ -77,7 +76,7 @@ pub async fn config_import_preview(
         }
         let db = app.state::<Db>();
         let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-        build_import_preview(&conn, &bundle, projectParent.as_deref())
+        build_import_preview(&conn, &bundle, &file.sha256, projectParent.as_deref())
     })
     .await
     .map_err(|e| ConfigExportError::Validation(e.to_string()))?
@@ -89,14 +88,22 @@ pub async fn config_import_apply(
     path: String,
     #[allow(non_snake_case)] workspaceTargets: HashMap<String, String>,
     #[allow(non_snake_case)] resolvedProjectPaths: HashMap<String, String>,
+    #[allow(non_snake_case)] expectedSha256: String,
+    #[allow(non_snake_case)] acceptWildcardAllow: bool,
 ) -> Result<ImportResult, ConfigExportError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let raw = std::fs::read_to_string(&path)
-            .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
-        let bundle: ConfigBundle = serde_json::from_str(&raw)?;
         let db = app.state::<Db>();
         let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-        apply_bundle(&conn, bundle, &workspaceTargets, &resolvedProjectPaths)
+        apply_backup_file(
+            &conn,
+            ApplyFileRequest {
+                path: &path,
+                expected_sha256: &expectedSha256,
+                workspace_targets: &workspaceTargets,
+                resolved_project_paths: &resolvedProjectPaths,
+                accept_wildcard_allow: acceptWildcardAllow,
+            },
+        )
     })
     .await
     .map_err(|e| ConfigExportError::Validation(e.to_string()))?

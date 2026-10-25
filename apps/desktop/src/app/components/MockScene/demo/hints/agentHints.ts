@@ -87,7 +87,7 @@ const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
   );
 };
 
-const hasSent = ({ state, start }: HintProbe): boolean =>
+const hasSent = ({ state, start }: Pick<HintProbe, 'state' | 'start'>): boolean =>
   userTurnsOf({ state }) > userTurnsOf({ state: start });
 
 const OPERATIONS = 'button[aria-label^="Operations"]';
@@ -100,7 +100,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     anchor: 'button[aria-label="Send message"]',
     side: 'left',
     revealWhen: ({ state }) => hasDraft({ state }),
-    doneWhen: (probe) => hasSent(probe) && !isAgentBusy({ state: probe.state }),
+    doneWhen: ({ state, start }) => hasSent({ state, start }) && !isAgentBusy({ state }),
   },
   {
     id: 'agent-answer',

@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import {
   gitlabFetchIssue,
+  gitlabCreateMr,
   gitlabGetMr,
   gitlabListIssueDiscussions,
   gitlabMergeMr,
@@ -209,7 +210,12 @@ const PROJECT_TARGET = {
 describe('gitlabMergeMr', () => {
   it('sends no method when none is chosen, as the companion does', async () => {
     mockInvoke.mockResolvedValueOnce({});
-    await gitlabMergeMr('ws-1' as WorkspaceId, 'https://gitlab.com', 'harborline/payments-api', 42);
+    await gitlabMergeMr({
+      workspaceId: 'ws-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      mrIid: 42,
+    });
     expect(mockInvoke).toHaveBeenCalledWith('gitlab_merge_mr', {
       workspaceId: 'ws-1',
       host: 'https://gitlab.com',
@@ -220,14 +226,14 @@ describe('gitlabMergeMr', () => {
 
   it('sends the method and the project binding when given', async () => {
     mockInvoke.mockResolvedValueOnce({});
-    await gitlabMergeMr(
-      'ws-1' as WorkspaceId,
-      'https://gitlab.com',
-      'harborline/payments-api',
-      42,
-      'project-1' as ProjectId,
-      'squash',
-    );
+    await gitlabMergeMr({
+      workspaceId: 'ws-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      mrIid: 42,
+      projectId: 'project-1' as ProjectId,
+      method: 'squash',
+    });
     expect(mockInvoke).toHaveBeenCalledWith('gitlab_merge_mr', {
       workspaceId: 'ws-1',
       projectId: 'project-1',
@@ -236,6 +242,52 @@ describe('gitlabMergeMr', () => {
       mrIid: 42,
       method: 'squash',
     });
+  });
+});
+
+describe('gitlabMergeMr head pin', () => {
+  it('sends the head the user reviewed', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabMergeMr({ ...PROJECT_TARGET, mrIid: 42, expectedHeadSha: '6c20f48a9e1d' });
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_merge_mr', {
+      workspaceId: 'ws-1',
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      mrIid: 42,
+      expectedHeadSha: '6c20f48a9e1d',
+    });
+  });
+
+  it('sends no pin for a null head', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabMergeMr({ ...PROJECT_TARGET, mrIid: 42, expectedHeadSha: null });
+    expect(mockInvoke.mock.calls.at(-1)?.[1]).not.toHaveProperty('expectedHeadSha');
+  });
+});
+
+describe('gitlabCreateMr', () => {
+  const create = {
+    ...PROJECT_TARGET,
+    sourceBranch: 'ak/ledger',
+    targetBranch: 'main',
+    title: 'Ledger change',
+    description: 'why',
+    draft: false,
+  };
+
+  it('leaves the branch cleanup to the project when the caller does not say', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabCreateMr(create);
+    expect(mockInvoke.mock.calls.at(-1)?.[1]).not.toHaveProperty('shouldRemoveSourceBranch');
+  });
+
+  it('sends the cleanup choice the caller made', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabCreateMr({ ...create, shouldRemoveSourceBranch: false });
+    expect(mockInvoke).toHaveBeenLastCalledWith(
+      'gitlab_create_mr',
+      expect.objectContaining({ shouldRemoveSourceBranch: false }),
+    );
   });
 });
 

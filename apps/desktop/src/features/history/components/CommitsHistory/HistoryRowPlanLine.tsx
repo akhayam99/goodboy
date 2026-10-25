@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { cn, FactCard } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, FactCard, ICON_SIZE } from '@goodboy/ui';
+
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import { conflictCardOf } from './conflictCardOf';
 import type { HistoryRowLinePart } from './historyRowLine';
@@ -23,7 +23,7 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
     </span>
   );
   return (
-    <span className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-label text-muted-foreground">
+    <span className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-muted-foreground">
       {parts.map((part, index) => (
         <Fragment key={part.key}>
           {index > 0 ? (

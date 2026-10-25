@@ -2,13 +2,16 @@ import { useRef } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   AnchoredPopover,
-  TOP_BAR_CONTROL,
-  Tooltip,
   cn,
-  useDropdown,
+  DISABLED,
+  ICON_SIZE,
+  Tooltip,
+  TOP_BAR_CONTROL,
   type MenuEntry,
+  useDropdown,
+  FOCUS_RING,
 } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { AppMenuList } from '../../../../features/actions/AppMenuList';
 import type { HistoryItem } from './historyItem';
 import type { HistoryLabel } from './historyLabel';
@@ -117,8 +120,8 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
               TOP_BAR_CONTROL.square,
               TOP_BAR_CONTROL.radius,
               'flex shrink-0 items-center justify-center text-muted-foreground motion-safe:transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-              isDisabled ? 'cursor-default opacity-40' : 'hover:bg-hover hover:text-foreground',
+              FOCUS_RING,
+              isDisabled ? DISABLED : 'hover:bg-hover hover:text-foreground',
             )}
           >
             <Icon size={ICON_SIZE.control} aria-hidden />

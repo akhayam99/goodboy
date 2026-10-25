@@ -1,8 +1,8 @@
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
+import { ProviderGlyph } from './ProviderGlyph';
 import { TriggerSeparator } from './TriggerSeparator';
 import { routingNameText, type RoutingTriggerLabel } from './routingSummary';
-import { ICON_SIZE } from '../conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly provider: ProviderId;
@@ -11,15 +11,9 @@ type Props = {
 };
 
 export const TriggerLabel = ({ provider, label, prefix }: Props) => {
-  const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
     <>
-      <ProviderGlyph
-        size={ICON_SIZE.row}
-        className="shrink-0"
-        style={{ color: brandColor(provider) }}
-        aria-hidden
-      />
+      <ProviderGlyph id={provider} size={ICON_SIZE.row} />
       {prefix === undefined ? null : (
         <span className="flex shrink-0 items-center gap-2 @max-md:hidden">
           <span data-routing-prefix="" className="text-foreground">

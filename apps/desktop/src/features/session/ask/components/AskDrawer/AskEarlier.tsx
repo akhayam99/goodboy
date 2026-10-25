@@ -1,7 +1,7 @@
 import { History } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { AskThread, ChatId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { pluralize } from '../../../../../shared/utils/pluralize';
 
 type Props = {
@@ -21,7 +21,10 @@ export const AskEarlier = ({ threads, onShow }: Props) => {
           key={thread.id}
           type="button"
           onClick={() => onShow(thread.id)}
-          className="flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-meta text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+            FOCUS_RING,
+          )}
         >
           <History size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="min-w-0 flex-1 truncate text-left">{thread.title}</span>

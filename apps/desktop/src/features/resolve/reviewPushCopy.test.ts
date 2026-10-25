@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolvePublicationPreview } from '@goodboy/types';
-import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
+import type { PublicationOutcome } from '../../store/slices/resolve/publication/publicationOutcome';
 import {
   pushCommitCount,
   pushConfirmBody,
@@ -71,6 +71,18 @@ describe('the push confirm', () => {
     expect(pushStyleNote({ commitStyle: 'fixup' }).text).toContain('fixups');
     expect(pushStyleNote({ commitStyle: 'new' }).text).toContain('its own new commit');
     expect(pushStyleNote({ commitStyle: 'new' }).linkLabel).toBe('Replies and commits');
+  });
+
+  it('names the repository when the session has more than one', () => {
+    const commits = previewOf({});
+    const comments = previewOf({ requiresPush: false, commits: [] });
+
+    expect(pushConfirmTitle({ preview: commits, repoName: 'payments-api' })).toBe(
+      'Push 1 commit to hl/fix-duplicate-credit in payments-api?',
+    );
+    expect(pushConfirmTitle({ preview: comments, repoName: 'payments-api' })).toBe(
+      'Push 2 comments to #318 in payments-api?',
+    );
   });
 
   it('counts the earlier commits that go along in the title, once, from one function', () => {

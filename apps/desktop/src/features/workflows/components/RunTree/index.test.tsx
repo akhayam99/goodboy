@@ -23,7 +23,6 @@ import type {
 } from '@goodboy/types';
 import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../test/classTokens';
-import { brandColor } from '../../../providers/components/provider-brand';
 import { useAppStore } from '../../../../store';
 import { RunTree } from './index';
 import { useRunTree } from './useRunTree';
@@ -368,8 +367,8 @@ describe('RunTree', () => {
 
     const row = rowOf('agent-2').outerHTML;
 
-    expect(row).toContain(brandColor('cursor'));
-    expect(row).not.toContain(brandColor('codex'));
+    expect(row).toContain('var(--color-provider-cursor)');
+    expect(row).not.toContain('var(--color-provider-codex)');
   });
 
   it('shows the planned effort next to the model of each step', () => {

@@ -1,0 +1,11 @@
+cli-version: codex-cli 0.130.0
+exec
+--json
+--skip-git-repo-check
+-m
+fake-model
+--cd
+{work_dir}
+-s
+read-only
+-

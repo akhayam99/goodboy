@@ -6,7 +6,14 @@ import type {
   SessionViewPrefs,
   ArtifactId,
 } from '@goodboy/types';
-import type { LensKind, DiffFocus, SessionCreation, FocusedExternalTask } from './types';
+import type {
+  LensKind,
+  DiffFocus,
+  SessionCreation,
+  FocusedExternalTask,
+  ResolveQueueView,
+} from './types';
+import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { AgentPane, BranchTab } from '../navigation/types';
 import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 
@@ -20,7 +27,12 @@ export type SessionViewState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
+  readonly sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
+  readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
+  readonly resolveItemDrafts: Readonly<
+    Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
+  >;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;

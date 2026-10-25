@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowUp,
@@ -10,7 +10,7 @@ import {
   UserPlus,
   Wrench,
 } from 'lucide-react';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import type { ResolvedAction } from '../actions/types';
 import type { PullRequestNextStep } from './pullRequestNextStepOf';

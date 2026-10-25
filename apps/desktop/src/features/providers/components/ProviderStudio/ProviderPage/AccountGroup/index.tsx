@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { PROVIDER_API_KEY_ENV, isApiProvider } from '@goodboy/core';
-import { BAND_ROW_CLASS, Band, cn } from '@goodboy/ui';
+import { Band, BAND_ROW_CLASS, cn, ICON_SIZE } from '@goodboy/ui';
 import { ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../../../../../store';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+
 import { ProviderCredentialsSection } from '../../ProviderCredentialsSection';
 import { ProviderBindingsSection } from '../../ProviderBindingsSection';
 import { CliUpdateNotice } from '../../CliUpdateNotice';
@@ -34,7 +34,7 @@ export const AccountGroup = (props: AccountGroupProps) => {
             onClick={() => setIsKeyOpen(true)}
             className={cn(
               BAND_ROW_CLASS,
-              'gap-3 text-left text-label motion-safe:transition-colors hover:bg-hover',
+              'gap-3 text-left text-meta motion-safe:transition-colors hover:bg-hover',
             )}
           >
             <span className="w-28 shrink-0 text-muted-foreground">API key</span>

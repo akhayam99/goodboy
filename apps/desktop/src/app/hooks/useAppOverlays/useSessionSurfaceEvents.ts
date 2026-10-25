@@ -49,7 +49,7 @@ export const useSessionSurfaceEvents = ({
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-plan-studio', openPlanStudio],
       ['goodboy:reveal-chat', () => close()],
-      ['goodboy:open-workflow-builder', openStartRunField],
+      ['goodboy:open-start-run', openStartRunField],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>

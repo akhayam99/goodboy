@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { cn, Listbox, type ListboxOption } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
+
 import {
   AGENT_KIND_META,
   agentKindPalette,

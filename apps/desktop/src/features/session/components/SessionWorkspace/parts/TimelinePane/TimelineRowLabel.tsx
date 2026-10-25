@@ -1,7 +1,6 @@
-import { ValueToken, WORK_ROW, cn, tintClasses, Tooltip } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Tooltip, ValueToken, WORK_ROW } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
-import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import {
@@ -174,7 +173,7 @@ export const TimelineRowLabel = ({
         className={cn(
           'flex items-center overflow-hidden',
           isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
-          isStep ? 'text-label' : 'text-body',
+          isStep ? 'text-meta' : 'text-body',
           emphasis === 'muted' || isQueued || grade === 'fact' || isMutedJob
             ? 'text-muted-foreground'
             : item.rowState.phase === 'running' || item.hasUnread

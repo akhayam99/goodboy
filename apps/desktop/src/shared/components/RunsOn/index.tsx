@@ -1,12 +1,18 @@
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, PopoverBody, TruncatedText, cn, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  cn,
+  ICON_SIZE,
+  PopoverBody,
+  TruncatedText,
+  useDropdown,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
 import { RoutingPickerBody } from '../RoutingPicker/RoutingPickerBody';
 import { SUGGESTED_LABEL } from '../RoutingPicker/autoRecommendationCopy';
 import { routingLabelParts, routingNameText } from '../RoutingPicker/routingSummary';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly suggested: AgentKindRouting;
@@ -39,10 +45,7 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
   return (
     <div
       data-testid="runs-on"
-      className={cn(
-        'flex min-w-0 items-center gap-0.5 text-label text-muted-foreground',
-        className,
-      )}
+      className={cn('flex min-w-0 items-center gap-0.5 text-meta text-muted-foreground', className)}
     >
       <TruncatedText className="min-w-0" tooltip={`${RUNS_ON_LABEL} ${name}${detail}`}>
         {RUNS_ON_LABEL} <span className="text-foreground">{name}</span>
@@ -61,7 +64,7 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
             disabled={disabled}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
-            className="inline-flex items-center gap-0.5 rounded-md px-1 text-label text-foreground transition-colors hover:bg-hover disabled:opacity-60"
+            className="inline-flex items-center gap-0.5 rounded-md px-1 text-meta text-foreground transition-colors hover:bg-hover disabled:opacity-60"
           >
             Change
             <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />

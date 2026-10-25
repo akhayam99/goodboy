@@ -12,6 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { spendFigures } from '../../../features/budget/spendFigures';
+import { attentionWordsOf } from '../../../features/session/session-stage';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import { useAppStore } from '../../store';
 import { useProjectFilteredSessions } from '../sessionFilters/selectors';
@@ -21,12 +22,14 @@ import { useDormantSpend } from '../dormant-spend/selectors';
 import { spendSources } from '../../../shared/utils/spendSources';
 import { usePinnedSessionIds } from '../session-pins/selectors';
 import { filterSessionsByStatus, withExemptSessions } from './filterSessionList';
-import { sortAndGroupSessions } from './sortAndGroupSessions';
+import { sortAndGroupSessions, type AttentionSinceBySession } from './sortAndGroupSessions';
 import { layoutSessionColumn, type SessionColumnLayout } from './layoutSessionColumn';
 import { splitInactiveSessions } from './splitInactiveSessions';
 import { useSessionInactivity } from './useSessionInactivity';
 import { projectsBySession } from './projectOfSession';
 import { DEFAULT_PREFS, type GroupedSessions } from './types';
+import { attentionCountOf, type AttentionCount } from './attentionCountOf';
+import { integrationsByWorkspace } from './integrationsByWorkspace';
 import { stageInfoOf, type StageInfoState } from './stageInfoOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
@@ -109,21 +112,33 @@ const useStableStages = (
 
 const NO_EXEMPT_IDS: ReadonlySet<string> = new Set();
 
+type SinceParams = {
+  readonly infos: Readonly<Record<SessionId, SessionStageInfo>>;
+};
+
+const attentionSinceOfInfos = ({ infos }: SinceParams): AttentionSinceBySession =>
+  Object.fromEntries(Object.entries(infos).map(([id, info]) => [id, info.attentionSince]));
+
 type StageSourcesParams = {
   readonly workspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
   readonly exemptIds?: ReadonlySet<string>;
+  readonly isFilterIgnored?: boolean;
 };
 
 const useStageSources = ({
   workspaceId,
   sessions,
   exemptIds = NO_EXEMPT_IDS,
+  isFilterIgnored = false,
 }: StageSourcesParams) => {
   const projectMatched = useProjectFilteredSessions({ workspaceId, sessions });
   const filteredSessions = useMemo(
-    () => withExemptSessions({ sessions, matched: projectMatched, exemptIds }),
-    [sessions, projectMatched, exemptIds],
+    () =>
+      isFilterIgnored
+        ? sessions
+        : withExemptSessions({ sessions, matched: projectMatched, exemptIds }),
+    [isFilterIgnored, sessions, projectMatched, exemptIds],
   );
   const sessionGithub = useAppStore((s) => s.sessionGithub);
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
@@ -136,6 +151,14 @@ const useStageSources = ({
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const githubStatus = useAppStore((s) => s.githubStatus);
+  const hostReachability = useAppStore((s) => s.hostReachability);
+  const integrationBindings = useAppStore(
+    useShallow((s) => Object.values(s.workspaceIntegrations).flat()),
+  );
+  const workspaceIntegrations = useMemo(
+    () => integrationsByWorkspace({ bindings: integrationBindings }),
+    [integrationBindings],
+  );
   const sessionResolveThreads = useAppStore(
     useShallow((s) => pickBySessions({ map: s.sessionResolveThreads, sessions: filteredSessions })),
   );
@@ -143,6 +166,9 @@ const useStageSources = ({
     useShallow((s) =>
       pickBySessions({ map: s.sessionResolveAttempts, sessions: filteredSessions }),
     ),
+  );
+  const sessionArtifacts = useAppStore(
+    useShallow((s) => pickBySessions({ map: s.sessionArtifacts, sessions: filteredSessions })),
   );
   const workspaces = useAppStore((s) => s.workspaces);
   const projects = useAppStore((s) => s.projects);
@@ -156,6 +182,23 @@ const useStageSources = ({
   const mountGitlabMr = useAppStore((s) => s.mountGitlabMr);
   const mountBitbucketPr = useAppStore((s) => s.mountBitbucketPr);
   const prSeries = useAppStore((s) => s.prSeries);
+  const {
+    phaseTemplates,
+    sessionWorkflows,
+    agentKindOverride,
+    autoTreeViews,
+    sessionSlackDrafts,
+    sessionDismissedNextSteps,
+  } = useAppStore(
+    useShallow((s) => ({
+      phaseTemplates: s.phaseTemplates,
+      sessionWorkflows: s.sessionWorkflows,
+      agentKindOverride: s.agentKindOverride,
+      autoTreeViews: s.autoTreeViews,
+      sessionSlackDrafts: s.sessionSlackDrafts,
+      sessionDismissedNextSteps: s.sessionDismissedNextSteps,
+    })),
+  );
   const stages = useMemo(() => {
     const partial: StageInfoState = {
       sessions: filteredSessions,
@@ -180,8 +223,17 @@ const useStageSources = ({
       selectedAgentId,
       currentSessionId,
       githubStatus,
+      hostReachability,
+      workspaceIntegrations,
       sessionResolveThreads,
       sessionResolveAttempts,
+      phaseTemplates,
+      sessionWorkflows,
+      agentKindOverride,
+      autoTreeViews,
+      sessionSlackDrafts,
+      sessionDismissedNextSteps,
+      sessionArtifacts,
     };
     const stageMap: Record<SessionId, SessionStage> = {};
     const infoMap: Record<SessionId, SessionStageInfo> = {};
@@ -214,8 +266,17 @@ const useStageSources = ({
     selectedAgentId,
     currentSessionId,
     githubStatus,
+    hostReachability,
+    workspaceIntegrations,
     sessionResolveThreads,
     sessionResolveAttempts,
+    phaseTemplates,
+    sessionWorkflows,
+    agentKindOverride,
+    autoTreeViews,
+    sessionSlackDrafts,
+    sessionDismissedNextSteps,
+    sessionArtifacts,
   ]);
   return {
     filteredSessions,
@@ -283,6 +344,7 @@ export const useSessionListModel = (
     projects,
   } = useStageSources({ workspaceId, sessions, exemptIds });
   const lastTurnBySession = useLastTurnBySession(filteredSessions);
+  const attentionSinceBySession = useMemo(() => attentionSinceOfInfos({ infos }), [infos]);
   const inactivity = useSessionInactivity({
     sessions: filteredSessions,
     infos,
@@ -308,6 +370,7 @@ export const useSessionListModel = (
       githubState: sessionGithub,
       stageBySession: stages,
       lastTurnBySession,
+      attentionSinceBySession,
       projectBySession:
         prefs.group === 'project'
           ? projectsBySession({
@@ -333,6 +396,7 @@ export const useSessionListModel = (
     projects,
     exemptIds,
     lastTurnBySession,
+    attentionSinceBySession,
     inactivity,
   ]);
 };
@@ -415,8 +479,12 @@ export const useStageGroupedSessions = (
   sessions: ReadonlyArray<Session>,
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
-  const { filteredSessions, stages, sessionGithub } = useStageSources({ workspaceId, sessions });
+  const { filteredSessions, stages, infos, sessionGithub } = useStageSources({
+    workspaceId,
+    sessions,
+  });
   const lastTurnBySession = useLastTurnBySession(filteredSessions);
+  const attentionSinceBySession = useMemo(() => attentionSinceOfInfos({ infos }), [infos]);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(
     () =>
@@ -426,8 +494,9 @@ export const useStageGroupedSessions = (
         githubState: sessionGithub,
         stageBySession: stages,
         lastTurnBySession,
+        attentionSinceBySession,
       }),
-    [filteredSessions, prefs, sessionGithub, stages, lastTurnBySession],
+    [filteredSessions, prefs, sessionGithub, stages, lastTurnBySession, attentionSinceBySession],
   );
   if (previousRef.current !== null && groupedSessionsEqual(grouped, previousRef.current)) {
     return previousRef.current;
@@ -461,4 +530,55 @@ export const useWorkspaceRollup = (
       todaySpend: figures.today.usd,
     };
   }, [dormant, groups, sessionTelemetry, sessions]);
+};
+
+export type WorkspaceAttention = AttentionCount & {
+  readonly reasons: ReadonlyArray<string>;
+  readonly quietReasons: ReadonlyArray<string>;
+  readonly countedSessions: ReadonlyArray<Session>;
+};
+
+type WordsParams = {
+  readonly items: ReadonlyArray<{ readonly id: string; readonly info: SessionStageInfo }>;
+  readonly isCounted: boolean;
+  readonly counted: ReadonlySet<string>;
+};
+
+const reasonWordsOf = ({ items, isCounted, counted }: WordsParams): ReadonlyArray<string> => {
+  const words = items.flatMap(({ id, info }) =>
+    info.stage === 'attention' && info.attention !== null && counted.has(id) === isCounted
+      ? [attentionWordsOf({ reason: info.attention, counts: info })]
+      : [],
+  );
+  return [...new Set(words.filter((word) => word.trim() !== ''))];
+};
+
+type AttentionParams = {
+  readonly workspaceId: WorkspaceId | null;
+  readonly sessions: ReadonlyArray<Session>;
+};
+
+export const useWorkspaceAttention = ({
+  workspaceId,
+  sessions,
+}: AttentionParams): WorkspaceAttention => {
+  const { filteredSessions, infos } = useStageSources({
+    workspaceId,
+    sessions,
+    isFilterIgnored: true,
+  });
+  return useMemo(() => {
+    const items = filteredSessions.flatMap((session) => {
+      const info = infos[session.id];
+      return info === undefined ? [] : [{ id: session.id, info }];
+    });
+    const attention = attentionCountOf({ items });
+    const counted = new Set(attention.countedIds);
+    return {
+      ...attention,
+      reasons: reasonWordsOf({ items, isCounted: true, counted }),
+      quietReasons: reasonWordsOf({ items, isCounted: false, counted }),
+      countedSessions: filteredSessions.filter((session) => counted.has(session.id)),
+    };
+  }, [filteredSessions, infos]);
 };

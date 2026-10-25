@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import type {
   ProviderId,
   RoutingDecision,
@@ -10,9 +10,8 @@ import type {
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-import { tintClasses } from '@goodboy/ui';
+import { ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningAccent = tintClasses('warning');
 
@@ -56,9 +55,9 @@ export const RoutingIndicator = ({
       <TranscriptShell
         tone="warning"
         variant="boxed"
-        className={`flex items-center gap-2 text-label ${warningAccent.text}`}
+        className={`flex items-center gap-2 text-meta ${warningAccent.text}`}
       >
-        <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="flex-1">All provider budgets exceeded</span>
         {onSendAnyway !== undefined ? (
           <button
@@ -95,9 +94,9 @@ export const RoutingIndicator = ({
     <TranscriptShell
       tone="warning"
       variant="boxed"
-      className={`flex w-fit items-center gap-2 text-label ${warningAccent.text}`}
+      className={`flex w-fit items-center gap-2 text-meta ${warningAccent.text}`}
     >
-      <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+      <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="flex items-center gap-2">
         Fallback to
         <RoutingLabel provider={decision.selectedProvider} model={decision.selectedModel} />

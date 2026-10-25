@@ -21,9 +21,9 @@ import { useHistoryRunFlow } from '../components/CommitsHistory/useHistoryRunFlo
 import { rebaseConflictOf } from '../rebaseConflictOf';
 import { rebaseFileStatesOf, type RebaseFileStates } from '../rebaseFileStatesOf';
 import type { RebaseStop } from '../rebaseStopOf';
-import { useOriginCommits } from '../useOriginCommits';
-import { useRebaseConflictFiles } from '../useRebaseConflictFiles';
-import { useRebaseStop } from '../useRebaseStop';
+import { useOriginCommits } from '../hooks/useOriginCommits';
+import { useRebaseConflictFiles } from '../hooks/useRebaseConflictFiles';
+import { useRebaseStop } from '../hooks/useRebaseStop';
 import { rebaseJobOf, type RebaseJob } from '../rebaseJob';
 
 type Params = {

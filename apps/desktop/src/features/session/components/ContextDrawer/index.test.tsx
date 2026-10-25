@@ -273,7 +273,7 @@ describe('ContextDrawer', () => {
     ).toBe('P');
   });
 
-  it('hides Visible to when the role map is switched off', () => {
+  it('still shows Visible to when a retired context.roleMap value of false is stored', () => {
     store.settings = { 'context.roleMap': 'false' };
     renderDrawer('decisions');
 
@@ -281,7 +281,7 @@ describe('ContextDrawer', () => {
       within(screen.getByRole('region', { name: 'Decisions' })).queryByRole('button', {
         name: /^Visible to/,
       }),
-    ).toBeNull();
+    ).not.toBeNull();
   });
 
   it('shows the summary as State, Next and Learned, without Problem', () => {

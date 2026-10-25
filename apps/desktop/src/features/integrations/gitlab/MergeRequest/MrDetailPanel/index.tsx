@@ -5,16 +5,15 @@ import { RecordSections } from '../../../../../shared/components/StudioDetail/Re
 import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
-import { useEffect, useMemo, useState } from 'react';
-import { Notice, RefreshIconButton, PaneShell } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { useEffect, useState } from 'react';
+import { ICON_SIZE, Notice, PaneShell, RefreshIconButton } from '@goodboy/ui';
+
 import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
 import {
-  gitlabMergeMr,
   gitlabUpdateMrState,
   type GitlabMergeRequest,
   type GitlabMrApprovalState,
@@ -23,15 +22,16 @@ import {
 import { useGitlabMrApprovals } from '../../useGitlabMrApprovals';
 import { useGitlabMrDiscussions } from '../../useGitlabMrDiscussions';
 import { projectPathFromMrUrl } from '../useGitlabMrs';
+import { gitlabPullRequestTransport } from '../../gitlabPullRequestTransport';
+import { mergeGitlabMr } from '../../mergeGitlabMr';
 import { CreateMrForm } from './CreateMrForm';
 import { MrApprovals } from './MrApprovals';
 import { mrDraftTitle } from './mrDraftTitle';
+import { projectIdOfGitlabPath } from './projectIdOfGitlabPath';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
-import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
-import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';
-import { systemNoteFootnote } from '../../systemNoteFootnote';
+import { useMrConversationSource } from './useMrConversationSource';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
@@ -107,6 +107,15 @@ export const MrDetailPanel = ({
   const loading = mrState?.loading ?? false;
   const error = mrState?.error ?? null;
   const activeHost = host ?? integrationHost;
+  const projectId = useAppStore((s) =>
+    activeWorkspaceId == null || projectPath == null
+      ? undefined
+      : projectIdOfGitlabPath({
+          projects: s.projects ?? [],
+          workspaceId: activeWorkspaceId,
+          projectPath,
+        }),
+  );
   const canAct =
     activeWorkspaceId != null && activeHost != null && projectPath != null && mr != null;
 
@@ -123,55 +132,7 @@ export const MrDetailPanel = ({
     mrIid: canAct ? mr.iid : null,
   });
 
-  const {
-    discussions: discussionList,
-    isLoading: isDiscussionLoading,
-    error: discussionError,
-    reload: reloadDiscussions,
-    post: postNote,
-    reply: replyToDiscussion,
-    resolve: resolveDiscussion,
-    resolveError,
-  } = discussions;
-  const source = useMemo<ConversationSource>(() => {
-    const conversation = gitlabMrConversation({ discussions: discussionList });
-    return {
-      toolLabel: 'GitLab',
-      threads: conversation.threads,
-      capabilities: GITLAB_MR_CAPABILITIES,
-      isLoading: isDiscussionLoading,
-      error: discussionError,
-      onRetry: reloadDiscussions,
-      onPost:
-        postNote == null || replyToDiscussion == null
-          ? null
-          : ({ body, threadId }) =>
-              threadId == null
-                ? postNote({ body })
-                : replyToDiscussion({ discussionId: threadId, body }),
-      onResolve:
-        resolveDiscussion == null
-          ? null
-          : ({ threadId, isResolved }) =>
-              resolveDiscussion({ discussionId: threadId, resolved: isResolved }),
-      resolveError:
-        resolveError == null
-          ? null
-          : { threadId: resolveError.discussionId, message: resolveError.message },
-      footnote: systemNoteFootnote({ count: conversation.systemNoteCount }),
-      composerNote: null,
-      renderMessageFooter: null,
-    };
-  }, [
-    discussionList,
-    isDiscussionLoading,
-    discussionError,
-    reloadDiscussions,
-    postNote,
-    replyToDiscussion,
-    resolveDiscussion,
-    resolveError,
-  ]);
+  const source = useMrConversationSource({ discussions });
   const conversation = useConversationPane({
     source,
     resetKey: mr == null ? 'none' : mr.webUrl,
@@ -195,9 +156,19 @@ export const MrDetailPanel = ({
     setBusy('merge');
     try {
       if (sessionId != null) {
-        await mergeMrForSession({ sessionId });
+        await mergeMrForSession({
+          sessionId,
+          ...(mr?.sha == null ? {} : { expectedHeadSha: mr.sha }),
+        });
       } else if (mr != null && workspaceId != null && host != null && projectPath != null) {
-        await gitlabMergeMr(workspaceId, host, projectPath, mr.iid);
+        await mergeGitlabMr({
+          workspaceId,
+          ...(projectId === undefined ? {} : { projectId }),
+          host,
+          projectPath,
+          mrIid: mr.iid,
+          expectedHeadSha: mr.sha ?? null,
+        });
         onRefresh?.();
       }
       showToast({ kind: 'success', message: 'Merge request merged' });
@@ -222,15 +193,26 @@ export const MrDetailPanel = ({
     }
     setBusy(kind);
     try {
-      const updated = await gitlabUpdateMrState({
-        workspaceId: activeWorkspaceId,
-        host: activeHost,
-        projectPath,
-        mrIid: mr.iid,
-        ...(stateEvent !== undefined && { stateEvent }),
-        ...(title !== undefined && { title }),
-      });
-      setLocalMr(updated);
+      if (stateEvent !== undefined) {
+        await gitlabPullRequestTransport({
+          workspaceId: activeWorkspaceId,
+          ...(projectId === undefined ? {} : { projectId }),
+          host: activeHost,
+          projectPath,
+          mrIid: mr.iid,
+        }).setState({ stateEvent });
+        setLocalMr({ ...mr, state: stateEvent === 'close' ? 'closed' : 'opened' });
+      }
+      if (stateEvent === undefined) {
+        const updated = await gitlabUpdateMrState({
+          workspaceId: activeWorkspaceId,
+          host: activeHost,
+          projectPath,
+          mrIid: mr.iid,
+          ...(title !== undefined && { title }),
+        });
+        setLocalMr(updated);
+      }
       if (sessionId != null) {
         void refreshSessionMr(sessionId, { force: true });
       }

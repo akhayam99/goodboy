@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BitbucketPullRequestState } from './client';
 import { BITBUCKET_PR_PRESENTATION, describeBitbucketPrState } from './bitbucketPrPresentation';
-import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
 import { stateDescription } from '../../../shared/utils/statePresentation';
 
 const STATES = Object.keys(BITBUCKET_PR_PRESENTATION) as ReadonlyArray<BitbucketPullRequestState>;

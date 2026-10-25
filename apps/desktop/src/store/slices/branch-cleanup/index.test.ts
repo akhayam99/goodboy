@@ -246,6 +246,8 @@ describe('runAfterMergeCleanup', () => {
       branch: BRANCH,
       expectedSha: 'sha-tip',
       alsoOrigin: true,
+      workspaceId: WORKSPACE_ID,
+      projectId: PROJECT_ID,
       originLeaseSha: 'sha-merged',
     });
   });
@@ -260,6 +262,8 @@ describe('runAfterMergeCleanup', () => {
       branch: BRANCH,
       expectedSha: 'sha-tip',
       alsoOrigin: false,
+      workspaceId: WORKSPACE_ID,
+      projectId: PROJECT_ID,
     });
     expect(outcome.kind).toBe('deleted');
     expect(h.insertDeletedBranch).toHaveBeenCalled();
@@ -326,6 +330,8 @@ describe('restoreDeletedBranch', () => {
       sha: 'sha-tip',
       keepRef: `refs/goodboy/deleted/${BRANCH}`,
       pushToOrigin: true,
+      workspaceId: WORKSPACE_ID,
+      projectId: PROJECT_ID,
     });
     expect(h.markDeletedBranchRestored).toHaveBeenCalled();
     expect(context.store.state.recordSessionEvent).toHaveBeenCalledWith(

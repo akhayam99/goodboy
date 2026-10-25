@@ -1,4 +1,6 @@
-import { CHAT_IDLE_AFTER_MS, type Chat } from '@goodboy/types';
+import type { Chat } from '@goodboy/types';
+
+const CHAT_IDLE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 type Params = {
   readonly chat: Pick<Chat, 'lastActivityAt' | 'pinnedAt'>;

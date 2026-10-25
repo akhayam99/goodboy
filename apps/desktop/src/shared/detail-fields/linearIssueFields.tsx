@@ -4,15 +4,8 @@ import { LinearLabelChip } from '../../features/integrations/linear/LinearLabelC
 import { LinearPriority } from '../../features/integrations/linear/LinearPriority';
 import { LinkedPrChip } from '../../features/integrations/linear/LinkedPrChip';
 import { RecordState } from '../components/StudioDetail/RecordState';
-import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';
-
-type StateTypeParams = {
-  readonly type: string;
-};
-
-export const linearStateCategory = ({ type }: StateTypeParams): InboxState =>
-  type === 'completed' || type === 'canceled' ? 'done' : type === 'started' ? 'active' : 'open';
+import { linearStateCategory } from './linearStateCategory';
 
 export const linearEditableAssigneeFact: NonNullable<FactRegistry<LinearIssue>['person']> = ({
   entity,

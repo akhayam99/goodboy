@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import type { Session, SessionId } from '@goodboy/types';
 import type { BoardNavigation } from '../useBoardNavigation';
 
@@ -37,6 +39,8 @@ const makeSession = (id: string, goal: string): Session =>
 
 const noop = () => undefined;
 
+const archiveNothing = async () => ({ failed: [] });
+
 const makeSelection = (over: Partial<ColumnSelection> = {}): ColumnSelection => ({
   isSelected: () => false,
   getSelectedIds: () => [],
@@ -61,19 +65,24 @@ const renderColumn = ({
   isLoading,
 }: RenderParams = {}) =>
   render(
-    <StageColumn
-      spec={spec}
-      sessions={sessions}
-      nav={nav}
-      selection={selection}
-      onClearSelection={noop}
-      onRestore={noop}
-      placement={placement}
-      isLoading={isLoading}
-    />,
+    <ToastProvider>
+      <StageColumn
+        spec={spec}
+        sessions={sessions}
+        nav={nav}
+        selection={selection}
+        onClearSelection={noop}
+        onRestore={noop}
+        placement={placement}
+        isLoading={isLoading}
+      />
+    </ToastProvider>,
   );
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('StageColumn', () => {
   it('names an empty lane in one line inside it, without a sentence or a count', () => {
@@ -119,7 +128,7 @@ describe('StageColumn', () => {
     renderColumn({ spec: { kind: 'archived' }, isLoading: true });
     const lane = screen.getByRole('group', { name: 'archived' });
 
-    expect(within(lane).getByText('Loading')).toBeDefined();
+    expect(within(lane).getByRole('status', { name: 'Loading sessions' })).toBeDefined();
     expect(within(lane).queryByText('Nothing archived')).toBeNull();
     expect(lane.getAttribute('aria-busy')).toBe('true');
   });
@@ -128,7 +137,7 @@ describe('StageColumn', () => {
     renderColumn({ spec: { kind: 'archived' }, isLoading: false });
     const lane = screen.getByRole('group', { name: 'archived' });
 
-    expect(within(lane).queryByText('Loading')).toBeNull();
+    expect(within(lane).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
     expect(within(lane).getByText('Nothing archived')).toBeDefined();
     expect(lane.getAttribute('aria-busy')).toBe('false');
   });
@@ -150,7 +159,7 @@ describe('StageColumn', () => {
     });
     const filled = screen.getByRole('group', { name: 'done' });
     expect(within(filled).getByText('2')).toBeDefined();
-    expect(within(filled).getAllByRole('button')).toHaveLength(2);
+    expect(within(filled).getAllByRole('button', { name: /^card / })).toHaveLength(2);
   });
 
   it('marks the cards the board selection owns', () => {
@@ -177,5 +186,37 @@ describe('StageColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'card one' }), { altKey: true });
 
     expect(onItemClick).toHaveBeenCalledWith('s-1', expect.anything());
+  });
+
+  it('teaches the key to the next session that needs you in the tooltip of the Needs you lane', () => {
+    vi.useFakeTimers();
+    renderColumn({
+      spec: { kind: 'stage', stage: 'attention' },
+      sessions: [makeSession('s1', 'Pick the retry window')],
+    });
+
+    fireEvent.mouseEnter(screen.getByText('Needs you'));
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole('tooltip').querySelector('kbd')?.textContent).toBe(
+      shortcutGlyphs('session.nextNeedsYou'),
+    );
+  });
+
+  it('gives the other lanes no key in their tooltip', () => {
+    vi.useFakeTimers();
+    renderColumn({
+      spec: { kind: 'stage', stage: 'building' },
+      sessions: [makeSession('s1', 'Tune the limiter')],
+    });
+
+    fireEvent.mouseEnter(screen.getByText('Building'));
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole('tooltip').querySelector('kbd')).toBeNull();
   });
 });

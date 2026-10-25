@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { StatusDot } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE, StatusDot } from '@goodboy/ui';
+
 import type { CiFixStageStatus } from '../../../../../branch/checks/ciFixStages';
 
 type Props = {

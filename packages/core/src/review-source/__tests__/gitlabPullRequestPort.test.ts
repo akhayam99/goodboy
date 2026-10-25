@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gitlabDraftTitle, stripGitlabDraftPrefix } from '../gitlabDraftTitle';
 import {
+  gitlabDefaultMergeMethodOf,
   gitlabJobConclusion,
   gitlabMergeMethodsOf,
   gitlabMergeableOf,
@@ -46,6 +47,13 @@ describe('gitlab job conclusions', () => {
   ] as const)('reads %s as %s', (status, conclusion) => {
     expect(gitlabJobConclusion({ status })).toBe(conclusion);
   });
+
+  it.each(['__proto__', 'constructor', 'toString', 'hasOwnProperty'])(
+    'reads the inherited key %s as unknown',
+    (status) => {
+      expect(gitlabJobConclusion({ status })).toBe('unknown');
+    },
+  );
 
   it('does not count a failed job that is allowed to fail as a failure', () => {
     expect(gitlabJobConclusion({ status: 'failed', allowFailure: true })).toBe('neutral');
@@ -166,6 +174,27 @@ describe('gitlab merge methods', () => {
         },
       }).mergeMethods,
     ).toContain('squash');
+  });
+});
+
+describe('gitlab default merge method', () => {
+  it.each([
+    ['merge', 'default_off', 'merge'],
+    ['ff', 'default_off', 'rebase'],
+    ['merge', 'always', 'squash'],
+  ] as const)(
+    'picks the project preference for %s with squash %s: %s',
+    (mergeMethod, squashOption, expected) => {
+      expect(
+        gitlabDefaultMergeMethodOf({
+          settings: { mergeMethod, squashOption, onlyAllowMergeIfPipelineSucceeds: false },
+        }),
+      ).toBe(expected);
+    },
+  );
+
+  it('falls back to the host default when the settings cannot be read', () => {
+    expect(gitlabDefaultMergeMethodOf({ settings: null })).toBe('merge');
   });
 });
 
@@ -400,8 +429,8 @@ describe('gitlabPullRequestPort writes', () => {
 
   it('passes the merge method through', async () => {
     const { port, fake } = portOf();
-    await port.merge({ method: 'squash' });
-    await port.merge({ method: 'rebase' });
+    await port.merge({ method: 'squash', expectedHeadSha: null });
+    await port.merge({ method: 'rebase', expectedHeadSha: null });
     expect(fake.merges).toEqual(['squash', 'rebase']);
   });
 

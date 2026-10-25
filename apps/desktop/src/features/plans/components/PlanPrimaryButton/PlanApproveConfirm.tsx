@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ConfirmPopover } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { unsentCommentsQuestion } from '../../unsentCommentsQuestion';
 import type { PlanApproveConfirm as PlanApproveConfirmState } from '../../usePlanPrimaryAction';
 

@@ -40,9 +40,9 @@ describe('storageTotalBytes', () => {
     ).toBe(1 + 2 + 4 + 8 + 115 + 40 + 1000);
   });
 
-  it('leaves shared app data out of a scoped total', () => {
+  it('leaves shared app data and transcripts out of a scoped total', () => {
     expect(
       storageTotalBytes({ stats: STATS, artifacts: [], summary: SUMMARY, isScoped: true }),
-    ).toBe(1 + 2 + 4 + 8 + 40);
+    ).toBe(1 + 2 + 4 + 8);
   });
 });

@@ -11,6 +11,10 @@
     "./testing": {
       "types": "./src/testing/index.ts",
       "default": "./src/testing/index.ts"
+    },
+    "./helpers": {
+      "types": "./src/helpers/index.ts",
+      "default": "./src/helpers/index.ts"
     }
   },
   "scripts": {

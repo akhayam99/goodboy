@@ -234,7 +234,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: backToTheList,
   },
   {
-    name: 'the Agents panel follows the run, opens a step in a drawer and goes back to the tree',
+    name: 'the Agents panel follows the run and opens a step in the center with the tree kept open',
     covers: ['openDrawer'],
     open: async (ctx) => {
       await openRunPage(ctx);
@@ -247,17 +247,13 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
       }
       await click(first);
       await waitFor(() => {
-        const drawer = useAppStore.getState().drawer;
-        expect(drawer?.kind).toBe('run-step');
-        expect(drawer?.kind === 'run-step' ? drawer.payload.from : null).toBe('spawned');
+        expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).not.toBeNull();
       }, WAIT);
       expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
-      await click(screen.getByRole('button', { name: 'Back to agents' }));
     },
-    lands: async (ctx) => {
+    lands: async () => {
       await waitFor(() => {
         expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-        expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId]).toBe(RUN_ID);
       }, WAIT);
       expect(screen.getByRole('tree', { name: 'Run agents' })).toBeDefined();
     },

@@ -45,6 +45,7 @@ const facts = (overrides: Partial<MountFacts>): MountFacts => ({
 const TOOLS = [
   'mount.openTerminal menu',
   'mount.openInEditor menu',
+  'mount.openInTerminalApp menu',
   'mount.scripts menu',
   'mount.browseFiles menu',
 ];
@@ -84,6 +85,7 @@ const STATES: ReadonlyArray<{
     expected: [
       'mount.openDiff inline',
       ...TOOLS,
+      'mount.push menu',
       'mount.createPullRequest inline',
       ...HISTORY,
       ...COPIES,
@@ -163,6 +165,7 @@ const STATES: ReadonlyArray<{
       ...WITH_PR,
       'mount.openTerminal notice',
       'mount.openInEditor menu',
+      'mount.openInTerminalApp menu',
       'mount.scripts menu',
       'mount.browseFiles menu',
       'mount.abortRebase notice',

@@ -1,11 +1,11 @@
 import { ArrowLeft } from 'lucide-react';
-import { Button, EmptyState, Skeleton, SkeletonText, PaneShell } from '@goodboy/ui';
+import { Button, EmptyState, ICON_SIZE, PaneShell, Skeleton, SkeletonText } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;

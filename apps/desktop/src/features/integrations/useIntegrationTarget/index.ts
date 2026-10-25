@@ -2,10 +2,12 @@ import { useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { IntegrationActionTarget } from '../../actions/types';
-import { integrationLabel, type IntegrationGlyphProvider } from '../components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../components/IntegrationGlyph';
+import { integrationLabel } from '../../../shared/utils/integrationLabel';
 import { requestCredentialRecheck } from '../credentials';
 import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import type { GithubConnection } from '../github/useGithubConnection';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -38,7 +40,7 @@ export const useIntegrationTarget = ({
       };
     }
     const onOpenTasks = () =>
-      window.dispatchEvent(new CustomEvent('goodboy:open-inbox', { detail: { provider } }));
+      dispatchWindowEvent({ name: 'goodboy:open-inbox', detail: { provider } });
     if (provider === 'github') {
       return {
         kind: 'integration',

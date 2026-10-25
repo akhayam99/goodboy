@@ -43,7 +43,7 @@ pub(super) fn fetch_base_remote(
     remote: &str,
     token: Option<&str>,
 ) -> Result<(), String> {
-    let result = crate::github::run_git_authenticated_within(
+    let result = crate::remote_auth::run_git_authenticated_within(
         &["fetch", "--no-tags", "--no-prune", remote],
         project_path,
         token,
@@ -136,7 +136,7 @@ fn remote_of(p: &Path, base: &str) -> Option<String> {
         .ok()
         .map(|found| found.trim().to_string())
         .filter(|found| !found.is_empty() && found != ".")
-        .or_else(|| crate::repo::default_remote_name(p))
+        .or_else(|| crate::remote::resolve(p))
 }
 
 fn uncommitted_of(p: &Path) -> u32 {
@@ -227,7 +227,16 @@ pub async fn repo_base_divergence(
         let p = Path::new(project_path.trim());
         let key = coalesce_key(p, base_branch.as_deref());
         coalesced(&key, Duration::from_millis(max_age_ms), || {
-            let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+            let token =
+                match crate::github::read_token(workspace_id.as_deref(), project_id.as_deref()) {
+                    Ok(token) => token,
+                    Err(error) => {
+                        return BaseDivergence {
+                            message: Some(error.to_string()),
+                            ..blank(DivergenceState::FetchFailed)
+                        };
+                    }
+                };
             let mut fetch =
                 |remote: &str| fetch_base_remote(&project_path, remote, token.as_deref());
             base_divergence_with(p, base_branch, &mut fetch)

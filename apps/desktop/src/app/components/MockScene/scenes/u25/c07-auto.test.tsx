@@ -149,8 +149,25 @@ describe('c07 Auto scenes', () => {
     expect(last?.getAttribute('aria-label')).toMatch(/^Tester, /);
     fireEvent.keyDown(last ?? auto, { key: 'Enter' });
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
+    expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
     expect(await autoTree()).toBeDefined();
+  });
+
+  it('c07-auto-working opens a child on the same page as a top-level agent and keeps the tree', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    fireEvent.click(await treeRow(/^Implementer, /));
+
+    expect(
+      await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
+    ).toBeDefined();
+    screen.getByTestId('agent-header-title-row');
+    screen.getByText('Started by Auto. Auto sees what you tell it.');
+    expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
+    expect(levelStack().dataset.levelStack).toBe('session');
+    expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
@@ -199,8 +216,6 @@ describe('c07 Auto scenes', () => {
     expect(
       screen.getAllByText(/^Post one credit per retry in postCredit and applyCredit\.?$/).length,
     ).toBeGreaterThan(1);
-    expect(screen.getByRole('button', { name: 'Back to agents' })).toBeDefined();
-    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('a tree row and a delegation line open the child pane; the Auto row closes it', async () => {
@@ -222,7 +237,6 @@ describe('c07 Auto scenes', () => {
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
     ).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
     fireEvent.click(await treeRow(/^Auto agent, /));
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
     expect(await autoTree()).toBeDefined();

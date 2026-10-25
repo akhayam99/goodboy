@@ -209,10 +209,20 @@ describe('fact registries', () => {
     );
 
     expect(tags.map((fact) => nodeText(fact.node))).toEqual([
-      'release: desktop@1.2.3',
-      'environment: production',
-      'os: macOS',
+      'desktop@1.2.3',
+      'production',
+      'macOS',
     ]);
+    expect(tags.map((fact) => fact.label)).toEqual(['Release', 'Environment', 'OS']);
+  });
+
+  it('keeps the raw key for a sentry tag it does not know', () => {
+    const tags = resolveFacts({
+      registry: sentryIssueFields,
+      entity: { ...SENTRY_ISSUE, tags: [{ key: 'server_name', value: 'ledger-core-1' }] },
+    }).filter((fact) => fact.slot === 'labels');
+
+    expect(tags.map((fact) => fact.label)).toEqual(['server_name']);
   });
 
   it('shows time as a relative age with the absolute date in the hint', () => {

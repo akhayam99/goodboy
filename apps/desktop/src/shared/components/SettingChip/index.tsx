@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, cn, type DropdownController } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { AnchoredPopover, Button, cn, ICON_SIZE, type DropdownController } from '@goodboy/ui';
 import type { SettingWords } from './settingWords';
 
 type Props = {
@@ -46,10 +45,10 @@ export const SettingChip = ({ dropdown, label, words, help, error, children }: P
         <span className="text-meta text-faint-foreground">{words.source}</span>
       )}
     </div>
-    <p className="text-label text-muted-foreground">{help}</p>
+    <p className="text-meta text-muted-foreground">{help}</p>
     {children}
     {error === null ? null : (
-      <p role="alert" className="text-label text-danger">
+      <p role="alert" className="text-meta text-danger">
         {error}
       </p>
     )}

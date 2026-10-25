@@ -329,7 +329,7 @@ const cursorProvider: ProviderDisplayInfo = {
   connection: 'connected',
   version: '9.9.9',
   identity: 'mara@harborline.test',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
 };
 
 const connectCursor = () =>

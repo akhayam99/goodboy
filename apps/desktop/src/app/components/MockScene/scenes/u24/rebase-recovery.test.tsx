@@ -15,7 +15,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { U24_REBASE_RECOVERY_SCENES } from './rebase-recovery';
 import { RewriterTranscriptScene } from './RewriterTranscriptScene';
 

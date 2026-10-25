@@ -251,4 +251,79 @@ describe('SessionTools', () => {
 
     expect(drawerKind()).toBe('scripts');
   });
+
+  it('raises the Scripts dot for a failed run and clears it once that output is opened', async () => {
+    useAppStore.setState({
+      scriptRuns: {
+        [SESSION_ID]: {
+          'pnpm test': {
+            status: 'error',
+            result: { stdout: 'FAIL postings', stderr: '', exitCode: 1 },
+            runId: 'run-9',
+            startedAt: 1_000,
+            completedAt: 13_000,
+            name: 'test',
+          },
+        },
+      },
+      scriptRunsSeen: {},
+    });
+    renderCluster();
+    const signal = () => toggle('scripts').closest('.relative')?.querySelector('[data-signal]');
+    expect(signal()?.getAttribute('data-signal')).toBe('error');
+    expect(toggle('scripts').getAttribute('aria-label')).toBe(
+      'Scripts, test failed. Open its output.',
+    );
+
+    act(() => {
+      useAppStore.getState().openDrawer({
+        kind: 'scriptRun',
+        sessionId: SESSION_ID,
+        payload: { scriptKey: 'pnpm test', mountId: null, from: 'scripts' },
+      });
+    });
+    await settle();
+
+    expect(signal()).toBeNull();
+    expect(useAppStore.getState().scriptRunsSeen[SESSION_ID]?.['pnpm test']).toBe('run-9');
+  });
+
+  it('keeps the Scripts dot off for a run that failed before and is opened already', () => {
+    useAppStore.setState({
+      scriptRuns: {
+        [SESSION_ID]: {
+          'pnpm test': {
+            status: 'error',
+            result: { stdout: 'FAIL', stderr: '', exitCode: 1 },
+            runId: 'run-9',
+            startedAt: 1_000,
+            completedAt: 2_000,
+            name: 'test',
+          },
+        },
+      },
+      scriptRunsSeen: { [SESSION_ID]: { 'pnpm test': 'run-9' } },
+    });
+    renderCluster();
+
+    expect(toggle('scripts').closest('.relative')?.querySelector('[data-signal]')).toBeNull();
+  });
+
+  it('shows a running dot on Scripts while a script runs', () => {
+    useAppStore.setState({
+      scriptRuns: {
+        [SESSION_ID]: {
+          dev: { status: 'pending', result: null, runId: 'run-1', startedAt: 1_000, name: 'dev' },
+        },
+      },
+    });
+    renderCluster();
+
+    expect(
+      toggle('scripts')
+        .closest('.relative')
+        ?.querySelector('[data-signal]')
+        ?.getAttribute('data-signal'),
+    ).toBe('running');
+  });
 });

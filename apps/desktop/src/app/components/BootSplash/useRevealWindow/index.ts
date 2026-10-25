@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-
-const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+import { isTauriRuntime } from '../../../../shared/lib/isTauriRuntime';
 
 export const useRevealWindow = (): void => {
   useEffect(() => {
-    if (!inTauri()) {
+    if (!isTauriRuntime()) {
       return;
     }
     let secondFrame = 0;

@@ -119,6 +119,7 @@ pub struct BootstrapPrepared {
     pub snapshot_id: String,
     pub snapshot_ref: String,
     pub branch: String,
+    pub branch_tip: String,
     pub base_branch: String,
     pub files: Vec<MovedFile>,
     pub large_files: Vec<String>,
@@ -162,12 +163,60 @@ fn unmerged_count(root: &Path) -> usize {
         .unwrap_or(0)
 }
 
-fn remove_worktree(root: &Path, worktree_path: &Path, branch: &str) {
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum NotUndone {
+    BranchMoved { actual: String },
+    BranchTipUnknown,
+    WorktreeNotRemoved { message: String },
+    FolderNotRemoved { message: String },
+    PruneFailed { message: String },
+    BranchNotDeleted { message: String },
+}
+
+#[derive(Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RollbackReport {
+    pub not_undone: Vec<NotUndone>,
+}
+
+fn remove_worktree(root: &Path, worktree_path: &Path, left: &mut Vec<NotUndone>) {
     let path_text = worktree_path.to_string_lossy();
-    let _ = git(root, &["worktree", "remove", "--force", path_text.as_ref()]);
-    let _ = std::fs::remove_dir_all(worktree_path);
-    let _ = git(root, &["worktree", "prune"]);
-    let _ = git(root, &["branch", "-D", branch]);
+    if let Err(error) = git(root, &["worktree", "remove", "--force", path_text.as_ref()]) {
+        left.push(NotUndone::WorktreeNotRemoved {
+            message: error.to_string(),
+        });
+    }
+    if worktree_path.exists() {
+        if let Err(error) = std::fs::remove_dir_all(worktree_path) {
+            left.push(NotUndone::FolderNotRemoved {
+                message: error.to_string(),
+            });
+        }
+    }
+    if let Err(error) = git(root, &["worktree", "prune"]) {
+        left.push(NotUndone::PruneFailed {
+            message: error.to_string(),
+        });
+    }
+}
+
+enum BranchStanding {
+    Gone,
+    AtExpectedTip,
+    Moved(String),
+    Unchecked,
+}
+
+fn branch_standing(root: &Path, branch: &str, expected_tip: Option<&str>) -> BranchStanding {
+    let Some(actual) = rev(root, &format!("refs/heads/{branch}")) else {
+        return BranchStanding::Gone;
+    };
+    match expected_tip.map(str::trim).filter(|tip| !tip.is_empty()) {
+        None => BranchStanding::Unchecked,
+        Some(tip) if tip == actual => BranchStanding::AtExpectedTip,
+        Some(_) => BranchStanding::Moved(actual),
+    }
 }
 
 fn conflicted_paths(worktree: &Path) -> String {
@@ -287,10 +336,15 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
         ],
     )?;
     let at_risk = ignored_files_at_risk(&root);
+    let branch_tip =
+        rev(&root, &format!("refs/heads/{branch}")).ok_or_else(|| BootstrapError::Git {
+            message: format!("the branch {branch} was not created"),
+        })?;
     Ok(BootstrapPrepared {
         snapshot_id: snapshot.id,
         snapshot_ref,
         branch,
+        branch_tip,
         base_branch: args.base_branch,
         files,
         large_files,
@@ -349,25 +403,56 @@ pub(crate) fn rollback(
     project_path: &str,
     worktree_path: &str,
     branch: &str,
-) -> Result<(), BootstrapError> {
+    expected_tip: Option<&str>,
+) -> Result<RollbackReport, BootstrapError> {
     let root = repo_root(project_path)?;
     if !is_safe_branch(branch) {
         return Err(BootstrapError::InvalidInput(
             "the branch name has characters that are not allowed".to_string(),
         ));
     }
-    let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
-    if worktree_path.trim().is_empty() {
-        let _ = git(&root, &["branch", "-D", branch]);
-        return Ok(());
-    }
-    let Some(target) = worktree_under_goodboy(&root, Path::new(worktree_path)) else {
-        return Err(BootstrapError::InvalidInput(
-            "the worktree is not inside the project's worktree folder".to_string(),
-        ));
+    let target = match worktree_path.trim().is_empty() {
+        true => None,
+        false => Some(
+            worktree_under_goodboy(&root, Path::new(worktree_path)).ok_or_else(|| {
+                BootstrapError::InvalidInput(
+                    "the worktree is not inside the project's worktree folder".to_string(),
+                )
+            })?,
+        ),
     };
-    remove_worktree(&root, &target, branch);
-    Ok(())
+    let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
+    let mut left = Vec::new();
+    let standing = branch_standing(&root, branch, expected_tip);
+    match &standing {
+        BranchStanding::Moved(actual) => {
+            left.push(NotUndone::BranchMoved {
+                actual: actual.clone(),
+            });
+            return Ok(RollbackReport { not_undone: left });
+        }
+        BranchStanding::Unchecked => left.push(NotUndone::BranchTipUnknown),
+        BranchStanding::Gone | BranchStanding::AtExpectedTip => {}
+    }
+    if let Some(target) = &target {
+        remove_worktree(&root, target, &mut left);
+    }
+    let is_worktree_registered = left
+        .iter()
+        .any(|item| matches!(item, NotUndone::WorktreeNotRemoved { .. }));
+    let is_checkout_gone =
+        !is_worktree_registered && target.as_ref().is_none_or(|path| !path.exists());
+    if let (true, BranchStanding::AtExpectedTip, Some(tip)) =
+        (is_checkout_gone, &standing, expected_tip)
+    {
+        let reference = format!("refs/heads/{branch}");
+        if let Err(error) = git(&root, &["update-ref", "-d", &reference, tip.trim()]) {
+            left.push(NotUndone::BranchNotDeleted {
+                message: error.to_string(),
+            });
+        }
+    }
+    Ok(RollbackReport { not_undone: left })
 }
 
 async fn blocking<T, F>(work: F) -> Result<T, BootstrapError>
@@ -438,8 +523,17 @@ pub async fn bootstrap_rollback(
     project_path: String,
     worktree_path: String,
     branch: String,
-) -> Result<(), BootstrapError> {
-    blocking(move || rollback(&project_path, &worktree_path, &branch)).await
+    expected_tip: Option<String>,
+) -> Result<RollbackReport, BootstrapError> {
+    blocking(move || {
+        rollback(
+            &project_path,
+            &worktree_path,
+            &branch,
+            expected_tip.as_deref(),
+        )
+    })
+    .await
 }
 
 #[cfg(test)]

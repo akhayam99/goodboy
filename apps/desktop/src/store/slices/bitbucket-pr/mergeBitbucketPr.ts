@@ -3,7 +3,14 @@ import { runBitbucketPrWrite } from './runBitbucketPrWrite';
 import type { BitbucketPrMergeParams, GetFn, SetFn } from './types';
 
 export const mergeBitbucketPr = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId, repo, pullRequestId, strategy }: BitbucketPrMergeParams) => {
+  return async ({
+    sessionId,
+    mountId,
+    repo,
+    pullRequestId,
+    strategy,
+    expectedHeadSha,
+  }: BitbucketPrMergeParams) => {
     await runBitbucketPrWrite({
       set,
       get,
@@ -16,6 +23,7 @@ export const mergeBitbucketPr = (set: SetFn, get: GetFn) => {
           ...repo,
           pullRequestId,
           ...(strategy === undefined ? {} : { strategy }),
+          ...(expectedHeadSha == null ? {} : { expectedHeadSha }),
         });
       },
     });

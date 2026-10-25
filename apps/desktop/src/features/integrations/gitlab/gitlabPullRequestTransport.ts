@@ -1,10 +1,8 @@
-import {
-  PullRequestPortError,
-  type GitlabPullRequestTransport,
-  type PullRequestFailureKind,
-} from '@goodboy/core';
+import { PullRequestPortError, type GitlabPullRequestTransport } from '@goodboy/core';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { classifyGitlabFailure, gitlabFailureOf } from './classifyGitlabFailure';
+import { staleHeadErrorOf } from '../../../shared/lib/staleHeadErrorOf';
+import { pullRequestFailureKindOf } from '../../../shared/lib/pullRequestFailureKindOf';
+import { gitlabFailureOf } from './classifyGitlabFailure';
 import {
   gitlabGetMr,
   gitlabCancelAutoMerge,
@@ -27,24 +25,18 @@ type Params = {
   readonly mrIid: number;
 };
 
-const PORT_KIND = {
-  bad_credentials: 'denied',
-  denied: 'denied',
-  rate_limited: 'rate_limited',
-  network: 'network',
-  failed: 'failed',
-} as const satisfies Readonly<
-  Record<ReturnType<typeof classifyGitlabFailure>, PullRequestFailureKind>
->;
-
 const gitlabPortErrorOf = ({ error }: { readonly error: unknown }): PullRequestPortError => {
   if (error instanceof PullRequestPortError) {
     return error;
   }
+  const stale = staleHeadErrorOf({ error });
+  if (stale !== null) {
+    return stale;
+  }
   const failure = gitlabFailureOf({ error });
   const details = failure.body.trim();
   return new PullRequestPortError({
-    kind: PORT_KIND[classifyGitlabFailure(failure)],
+    kind: pullRequestFailureKindOf({ kind: failure.kind }),
     message: details === '' ? 'GitLab did not answer' : details,
     details,
   });
@@ -92,9 +84,9 @@ export const gitlabPullRequestTransport = ({
       guarded(async () => {
         await gitlabUpdateMrState({ ...target, stateEvent });
       }),
-    merge: ({ method }) =>
+    merge: ({ method, expectedHeadSha }) =>
       guarded(async () => {
-        await gitlabMergeMr(workspaceId, host, projectPath, mrIid, projectId, method);
+        await gitlabMergeMr({ ...target, method, expectedHeadSha });
       }),
     cancelAutoMerge: () => guarded(() => gitlabCancelAutoMerge(target)),
     projectMergeSettings: () => guarded(() => gitlabProjectMergeMethods(project)),

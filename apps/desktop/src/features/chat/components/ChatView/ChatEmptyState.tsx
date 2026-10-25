@@ -1,13 +1,14 @@
 import { useCallback, useMemo, type ReactNode } from 'react';
-import { Button, Eyebrow, cn } from '@goodboy/ui';
+import { Button, cn, Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ConceptTile } from '../../../../shared/components/ConceptTile';
 import { AgentFocusEmpty } from './AgentFocusEmpty';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 
 type NoAgentScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent';
 
@@ -86,9 +87,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     });
   }, [selectedAgent, agentKindOverride]);
   const openWorkflowBuilder = useCallback(() => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
-    );
+    dispatchWindowEvent({ name: 'goodboy:open-start-run', detail: { sessionId } });
   }, [sessionId]);
 
   if (selectedAgent && selectedKind) {

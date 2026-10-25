@@ -3,7 +3,7 @@ import {
   CircleCheck,
   CornerDownRight,
   Cpu,
-  ExternalLink,
+  SquareArrowOutUpRight,
   FileCode,
   Link,
   MessageCircleQuestion,
@@ -22,13 +22,9 @@ import {
   type ReviewSourceKind,
 } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { hostIconOf } from '../../../shared/hostIconOf';
+import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openUrl } from '../../../shared/lib/editor';
-import {
-  branchPlace,
-  fixRunTranscript,
-  sessionPlace,
-} from '../../../store/slices/navigation/place';
+import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
@@ -47,7 +43,7 @@ import type {
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 
 export type ReviewCommentFacts = {
   readonly sessionId: SessionId;
@@ -295,7 +291,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       id: 'reviewComment.openOnGithub',
       label: 'Open',
       ariaLabel: ({ facts }) => `Open on ${facts.provider}`,
-      icon: ExternalLink,
+      icon: SquareArrowOutUpRight,
       iconOf: ({ facts }) => hostIconOf({ host: facts.host }),
       group: 'open',
       when: ({ facts }) => facts.url !== null,
@@ -430,7 +426,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     {
       id: 'reviewComment.openCommit',
       label: REMOTE_LABEL.openCommit,
-      icon: ExternalLink,
+      icon: SquareArrowOutUpRight,
       group: 'open',
       when: ({ facts }) =>
         facts.remote === 'looks_fixed' &&

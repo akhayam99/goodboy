@@ -7,17 +7,15 @@ use super::frame::NOISE_MAX;
 use super::BridgeError;
 use crate::db;
 
-/// Snapshot transcript window (PROTOCOL §7): last ~500 events/session or 24 h.
 const TRANSCRIPT_MAX_EVENTS: usize = 500;
 const TRANSCRIPT_MAX_AGE_HOURS: i64 = 24;
+const MESSAGES_MAX_PER_SESSION: usize = 500;
+const ACTIVE_SESSION_IDS: &str =
+    "(SELECT id FROM sessions WHERE deleted_at IS NULL AND archived_at IS NULL)";
 
-/// Raw-byte chunk size before base64. base64 grows ~1.33x and we add the JSON
-/// envelope + AEAD tag, so 32 KiB raw stays comfortably under the 65535 cap.
 const CHUNK_RAW_BYTES: usize = 32 * 1024;
 const _: () = assert!(CHUNK_RAW_BYTES < NOISE_MAX);
 
-/// A serialized snapshot ready to stream: the canonical body bytes plus the
-/// metadata the BEGIN/END frames carry.
 pub struct Snapshot {
     pub snapshot_id: String,
     pub head_migration: String,
@@ -34,7 +32,6 @@ impl Snapshot {
         }
     }
 
-    /// base64 of chunk `index` (a raw-byte slice of the canonical body).
     pub fn chunk_b64(&self, index: usize) -> String {
         let start = index * CHUNK_RAW_BYTES;
         let end = (start + CHUNK_RAW_BYTES).min(self.body.len());
@@ -42,10 +39,6 @@ impl Snapshot {
     }
 }
 
-/// Cheap change detector for live sync. Holds one persistent read-only
-/// connection and watches SQLite's `data_version`, which bumps whenever ANOTHER
-/// connection (the desktop app's writer) commits. Lets the bridge push a fresh
-/// snapshot only when the DB actually changed, instead of polling full rebuilds.
 pub struct ChangeProbe {
     conn: Connection,
     last: i64,
@@ -58,7 +51,6 @@ impl ChangeProbe {
         Ok(Self { conn, last })
     }
 
-    /// True once per committed change by the writer connection since last call.
     pub fn changed(&mut self) -> bool {
         let v = read_data_version(&self.conn);
         if v != self.last {
@@ -84,8 +76,6 @@ fn open_ro() -> Result<Connection, BridgeError> {
     .map_err(|e| BridgeError::Db(e.to_string()))
 }
 
-/// Runs a SELECT and maps each row to a JSON object using the statement's
-/// column names, preserving SQLite types via `db::value_to_json`.
 fn rows(conn: &Connection, sql: &str) -> Result<Vec<Value>, BridgeError> {
     let mut stmt = conn
         .prepare(sql)
@@ -115,8 +105,6 @@ fn head_migration(conn: &Connection) -> String {
     }
 }
 
-/// Some columns store JSON as TEXT; embed the named column as a parsed value so
-/// the client receives a structured object instead of an escaped string.
 fn embed_json_column(mut rows: Vec<Value>, key: &str) -> Vec<Value> {
     for row in &mut rows {
         if let Some(obj) = row.as_object_mut() {
@@ -130,14 +118,46 @@ fn embed_json_column(mut rows: Vec<Value>, key: &str) -> Vec<Value> {
     rows
 }
 
-/// turn_events.payload is stored as JSON TEXT; embed it as a parsed object so
-/// the client receives a structured TurnEvent (PROTOCOL §6), not a string.
+fn messages_sql() -> String {
+    format!(
+        "SELECT id, session_id, agent_id, role, content, created_at FROM ( \
+           SELECT m.id, m.session_id, m.agent_id, m.role, m.content, m.created_at, \
+                  ROW_NUMBER() OVER (PARTITION BY m.session_id ORDER BY m.created_at DESC, m.id DESC) AS recency \
+           FROM messages m WHERE m.session_id IN {ACTIVE_SESSION_IDS} \
+         ) WHERE recency <= {MESSAGES_MAX_PER_SESSION} ORDER BY created_at ASC"
+    )
+}
+
+fn context_slots_sql() -> String {
+    format!(
+        "SELECT session_id, key, value, enabled FROM context_slots \
+         WHERE session_id IN {ACTIVE_SESSION_IDS}"
+    )
+}
+
+fn folder_names(mut workspaces: Vec<Value>) -> Vec<Value> {
+    for row in &mut workspaces {
+        let Some(obj) = row.as_object_mut() else {
+            continue;
+        };
+        let Some(Value::String(path)) = obj.get("root_path") else {
+            continue;
+        };
+        let folder = std::path::Path::new(path)
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned());
+        obj.insert(
+            "root_path".to_string(),
+            folder.map_or(Value::Null, Value::String),
+        );
+    }
+    workspaces
+}
+
 fn parse_turn_events(events: Vec<Value>) -> Vec<Value> {
     embed_json_column(events, "payload")
 }
 
-/// Caps transcript events at TRANSCRIPT_MAX_EVENTS per session (rows arrive
-/// ordered newest-first, so we keep the newest then restore chronological order).
 fn cap_per_session(events: Vec<Value>) -> Vec<Value> {
     use std::collections::HashMap;
     let mut counts: HashMap<String, usize> = HashMap::new();
@@ -174,6 +194,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
          ) \
          WHERE w.deleted_at IS NULL",
     )?;
+    let workspaces = folder_names(workspaces);
     let sessions = rows(
         &conn,
         "SELECT id, workspace_id, goal, state_kind, last_activity_at, \
@@ -183,33 +204,33 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     )?;
     let agents = rows(
         &conn,
-        "SELECT id, session_id, step_id, ordinal, name, kind, status, provider_run_id, output_summary, \
-         effort, model_override, provider_override, \
-         parent_agent_id, workflow_run_id, started_at, last_finished_at, deleted_at \
-         FROM agents WHERE deleted_at IS NULL",
+        &format!(
+            "SELECT id, session_id, step_id, ordinal, name, kind, status, provider_run_id, output_summary, \
+             effort, model_override, provider_override, \
+             parent_agent_id, workflow_run_id, started_at, last_finished_at, deleted_at \
+             FROM agents WHERE deleted_at IS NULL AND session_id IN {ACTIVE_SESSION_IDS}"
+        ),
     )?;
-    let messages = rows(
-        &conn,
-        "SELECT id, session_id, agent_id, role, content, created_at FROM messages ORDER BY created_at ASC",
-    )?;
+    let messages = rows(&conn, &messages_sql())?;
     let cutoff_ms = crate::util::now_ms() - TRANSCRIPT_MAX_AGE_HOURS * 3_600_000;
     let turn_events_raw = rows(
         &conn,
         &format!(
             "SELECT id, session_id, agent_id, created_at, payload FROM turn_events \
-             WHERE created_at >= {cutoff_ms} ORDER BY created_at DESC"
+             WHERE created_at >= {cutoff_ms} AND session_id IN {ACTIVE_SESSION_IDS} \
+             ORDER BY created_at DESC"
         ),
     )?;
     let turn_events = parse_turn_events(cap_per_session(turn_events_raw));
-    let context_slots = rows(
-        &conn,
-        "SELECT session_id, key, value, enabled FROM context_slots",
-    )?;
+    let context_slots = rows(&conn, &context_slots_sql())?;
     let session_plans = rows(
         &conn,
-        "SELECT id, session_id, agent_id, title, source_text AS body_md, status, \
-         json_extract(metadata_json, '$.clusters') AS clusters_json, workflow_run_id, \
-         created_at, updated_at FROM session_artifacts WHERE kind = 'plan'",
+        &format!(
+            "SELECT id, session_id, agent_id, title, source_text AS body_md, status, \
+             json_extract(metadata_json, '$.clusters') AS clusters_json, workflow_run_id, \
+             created_at, updated_at FROM session_artifacts \
+             WHERE kind = 'plan' AND session_id IN {ACTIVE_SESSION_IDS}"
+        ),
     )?;
     let workflows = rows(
         &conn,
@@ -223,18 +244,27 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     )?;
     let session_workflows = rows(
         &conn,
-        "SELECT workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, goal, \
-         trigger_mode, discarded_at, created_at FROM session_workflows WHERE discarded_at IS NULL",
+        &format!(
+            "SELECT workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, goal, \
+             trigger_mode, discarded_at, created_at FROM session_workflows \
+             WHERE discarded_at IS NULL AND session_id IN {ACTIVE_SESSION_IDS}"
+        ),
     )?;
     let session_worktrees = rows(
         &conn,
-        "SELECT id AS mount_id, session_id, project_id, branch, repo_slug, parallel_index, \
-         is_attached, disk_state FROM session_worktrees",
+        &format!(
+            "SELECT id AS mount_id, session_id, project_id, branch, repo_slug, parallel_index, \
+             is_attached, disk_state FROM session_worktrees \
+             WHERE session_id IN {ACTIVE_SESSION_IDS}"
+        ),
     )?;
     let mount_pr_links = rows(
         &conn,
-        "SELECT mount_id, provider, host, repo_slug, pr_number, head_branch, base_branch, state \
-         FROM mount_pr_links",
+        &format!(
+            "SELECT mount_id, provider, host, repo_slug, pr_number, head_branch, base_branch, state \
+             FROM mount_pr_links WHERE mount_id IN \
+             (SELECT id FROM session_worktrees WHERE session_id IN {ACTIVE_SESSION_IDS})"
+        ),
     )?;
     let github_pr_cache = embed_json_column(
         rows(
@@ -243,19 +273,13 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         )?,
         "pr_json",
     );
-    // External provider task linked to a session (Linear/Sentry/GitLab issue).
-    // Read-only mirror of session_external_tasks (m044, widened to sentry/gitlab
-    // by m064/m065). The phone renders an external-task chip that opens `url`.
-    // The desktop table has no per-issue state column, so `state` is omitted here
-    // and decodes to nil on the phone.
     let session_external_tasks = rows(
         &conn,
-        "SELECT session_id, provider, identifier, title, url FROM session_external_tasks",
+        &format!(
+            "SELECT session_id, provider, identifier, title, url FROM session_external_tasks \
+             WHERE session_id IN {ACTIVE_SESSION_IDS}"
+        ),
     )?;
-    // Per-session budget rollup for the mobile CostRing: aggregate spend from
-    // telemetry_records and the optional soft cap from session_budgets. Read-only
-    // mirror; the desktop owns budget enforcement. cap_usd is NULL when no budget
-    // is set (the phone renders spend without a ring).
     let session_costs = rows(
         &conn,
         "SELECT s.id AS session_id, \
@@ -340,8 +364,6 @@ mod tests {
 
     #[test]
     fn cap_per_session_restores_chronological_order() {
-        // Rows arrive newest-first (created_at DESC); the cap keeps that order
-        // then reverses, so the client receives oldest-first within the window.
         let newest_first = vec![ev("s1", 3), ev("s1", 2), ev("s1", 1)];
         let ns: Vec<i64> = cap_per_session(newest_first)
             .iter()
@@ -352,12 +374,10 @@ mod tests {
 
     #[test]
     fn cap_per_session_keeps_newest_window_and_drops_oldest() {
-        // 502 events newest-first: n = 502 (newest) .. 1 (oldest).
         let newest_first: Vec<Value> = (1..=502).rev().map(|n| ev("s1", n)).collect();
         let kept = cap_per_session(newest_first);
         assert_eq!(kept.len(), TRANSCRIPT_MAX_EVENTS);
         let ns: Vec<i64> = kept.iter().map(|e| e["n"].as_i64().unwrap()).collect();
-        // Oldest two (n=1,2) dropped; window is n=3..=502, chronological.
         assert_eq!(*ns.first().unwrap(), 3);
         assert_eq!(*ns.last().unwrap(), 502);
     }
@@ -421,6 +441,79 @@ mod tests {
             reassembled.extend(decoded);
         }
         assert_eq!(reassembled, body);
+    }
+
+    fn seeded() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE sessions (id TEXT PRIMARY KEY, deleted_at TEXT, archived_at TEXT);
+             CREATE TABLE messages (id TEXT PRIMARY KEY, session_id TEXT, agent_id TEXT, role TEXT, content TEXT, created_at INTEGER);
+             CREATE TABLE context_slots (session_id TEXT, key TEXT, value TEXT, enabled INTEGER);
+             INSERT INTO sessions VALUES ('live', NULL, NULL), ('gone', '2026-01-01', NULL), ('shelved', NULL, '2026-01-01');
+             INSERT INTO messages VALUES ('m1', 'live', 'a1', 'user', 'hello Harborline', 1);
+             INSERT INTO messages VALUES ('m2', 'gone', 'a2', 'user', 'secret Northwind', 2);
+             INSERT INTO messages VALUES ('m3', 'shelved', 'a3', 'user', 'old Acme', 3);
+             INSERT INTO context_slots VALUES ('live', 'repo', 'ledger-core', 1);
+             INSERT INTO context_slots VALUES ('gone', 'repo', 'payments-api', 1);",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn messages_of_deleted_and_archived_sessions_are_left_out() {
+        let conn = seeded();
+
+        let out = rows(&conn, &messages_sql()).unwrap();
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0]["session_id"], json!("live"));
+    }
+
+    #[test]
+    fn context_slots_of_deleted_sessions_are_left_out() {
+        let conn = seeded();
+
+        let out = rows(&conn, &context_slots_sql()).unwrap();
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0]["value"], json!("ledger-core"));
+    }
+
+    #[test]
+    fn messages_are_capped_per_session_keeping_the_newest_in_order() {
+        let conn = seeded();
+        for n in 10..(10 + MESSAGES_MAX_PER_SESSION as i64 + 5) {
+            conn.execute(
+                "INSERT INTO messages VALUES (?1, 'live', 'a1', 'user', 'x', ?2)",
+                rusqlite::params![format!("bulk{n}"), n],
+            )
+            .unwrap();
+        }
+
+        let out = rows(&conn, &messages_sql()).unwrap();
+
+        assert_eq!(out.len(), MESSAGES_MAX_PER_SESSION);
+        let times: Vec<i64> = out
+            .iter()
+            .map(|m| m["created_at"].as_i64().unwrap())
+            .collect();
+        assert!(times.windows(2).all(|pair| pair[0] <= pair[1]));
+        assert_eq!(
+            *times.last().unwrap(),
+            10 + MESSAGES_MAX_PER_SESSION as i64 + 4
+        );
+    }
+
+    #[test]
+    fn workspace_roots_are_sent_as_folder_names() {
+        let out = folder_names(vec![
+            json!({ "id": "w1", "root_path": "/Users/someone/code/harborline" }),
+            json!({ "id": "w2", "root_path": Value::Null }),
+        ]);
+
+        assert_eq!(out[0]["root_path"], json!("harborline"));
+        assert_eq!(out[1]["root_path"], Value::Null);
     }
 
     #[test]

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import type {
   TerminalOwner,
   TerminalSelection,
@@ -28,9 +28,11 @@ import {
 import { terminalWorktreeKeyIn } from '../../../../store/slices/terminal/terminalWorktree';
 import { changeDirectoryInput } from '../../changeDirectoryInput';
 import { forgetTerminalCommand, lastCommandOf } from '../../commandTracker';
+import { terminalCommandOf } from '../../terminalCommandOf';
+import { restartPrefillOf } from '../../restartPrefillOf';
 import { invokeTerminalWrite } from '../../terminal';
 import { stringToBase64 } from '../../terminalDriver';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { pickerClusters, type PickerCluster } from '../../terminalPickerClusters';
 import { terminalTargets, type TerminalTarget } from '../../terminalTargets';
 import { useTerminalLedger } from '../useTerminalLedger';
@@ -79,6 +81,7 @@ export type TerminalStudioModel = {
   readonly openAt: (target: TerminalTarget) => void;
   readonly openDefault: () => void;
   readonly closeTab: (tab: TerminalTab) => void;
+  readonly closeGroup: (group: TerminalGroup) => void;
   readonly restartTab: (tab: TerminalTab) => void;
   readonly renameTab: (params: RenameParams) => Promise<void>;
   readonly changeDirectory: (target: TerminalTarget) => void;
@@ -88,6 +91,8 @@ export type TerminalStudioModel = {
 const NO_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
 const NO_TABS: ReadonlyArray<TerminalTab> = [];
+
+const NO_SESSIONS: ReadonlyArray<Session> = [];
 
 const NO_CLUSTERS: ReadonlyArray<PickerCluster> = [];
 
@@ -104,9 +109,11 @@ export const useTerminalStudioModel = ({
   const worktreeActive = useAppStore((s) => s.terminalWorktreeActive);
   const storedSelection = useAppStore((s) => s.terminalSelection);
   const sessions = useAppStore((s) => s.sessions);
+  const archivedSessions = useAppStore((s) => s.archivedSessions[workspaceId] ?? NO_SESSIONS);
   const projects = useAppStore((s) => s.projects);
   const overrides = useAppStore((s) => s.terminalFolderOverrides);
   const addTerminalTab = useAppStore((s) => s.addTerminalTab);
+  const setTerminalPrefill = useAppStore((s) => s.setTerminalPrefill);
   const closeTerminalTab = useAppStore((s) => s.closeTerminalTab);
   const setActiveTerminalTab = useAppStore((s) => s.setActiveTerminalTab);
   const renameTerminalTab = useAppStore((s) => s.renameTerminalTab);
@@ -133,7 +140,7 @@ export const useTerminalStudioModel = ({
   const sessionMounts = useAppStore(
     useShallow((s) =>
       Object.fromEntries(
-        s.sessions
+        [...s.sessions, ...(s.archivedSessions[workspaceId] ?? NO_SESSIONS)]
           .filter((session) => session.workspaceId === workspaceId)
           .map((session) => [session.id, s.sessionProjectMounts[session.id] ?? NO_MOUNTS]),
       ),
@@ -146,10 +153,11 @@ export const useTerminalStudioModel = ({
         workspaceId,
         terminalTabs,
         sessions,
+        archivedSessions,
         mountsBySession: sessionMounts,
         projects,
       }),
-    [workspaceId, terminalTabs, sessions, sessionMounts, projects],
+    [workspaceId, terminalTabs, sessions, archivedSessions, sessionMounts, projects],
   );
   const hasPlaceSelection = selectedId !== null || selectedWorktreeKey !== null;
   const selection: TerminalSelection = useMemo(
@@ -179,7 +187,9 @@ export const useTerminalStudioModel = ({
     () => allWorktrees({ groups }).flatMap((candidate) => candidate.tabs),
     [groups],
   );
-  const busyIds = useTerminalLedger({ isEnabled: allTabs.length > 0 });
+  const { busy: busyIds, commands: foregroundCommands } = useTerminalLedger({
+    isEnabled: allTabs.length > 0,
+  });
 
   const folder = selectTerminalWorkspaceFolder({
     state: { projects, terminalFolderOverrides: overrides },
@@ -344,16 +354,50 @@ export const useTerminalStudioModel = ({
     [closeTerminalTab, selected, worktree, groups, worktreeActive, onSelect, contextSessionId],
   );
 
+  const closeGroup = useCallback(
+    (group: TerminalGroup) => {
+      const closing = group.worktrees.flatMap((candidate) => candidate.tabs);
+      for (const tab of closing) {
+        forgetTerminalCommand({ terminalId: tab.id });
+        closeTerminalTab({ owner: tab.owner, tabId: tab.id });
+      }
+      if (
+        worktree === null ||
+        !group.worktrees.some((candidate) => candidate.key === worktree.key)
+      ) {
+        return;
+      }
+      const fallback =
+        allWorktrees({ groups }).find(
+          (candidate) => !group.worktrees.some((closed) => closed.key === candidate.key),
+        ) ?? null;
+      const fallbackTab =
+        fallback === null
+          ? null
+          : activeTabOf({ worktree: fallback, active: worktreeActive, terminalId: null });
+      onSelect({
+        id: fallbackTab?.id ?? null,
+        sessionId: fallback?.sessionId ?? contextSessionId,
+        worktree: fallback?.key ?? null,
+      });
+    },
+    [closeTerminalTab, worktree, groups, worktreeActive, onSelect, contextSessionId],
+  );
+
   const restartTab = useCallback(
     (tab: TerminalTab) => {
       const hasCustomName = !isDefaultTerminalTitle({ title: tab.title, cwd: tab.cwd });
       const id = addTerminalTab({ owner: tab.owner, cwd: tab.cwd });
+      const prefill = restartPrefillOf({ tab, command: lastCommandOf({ terminalId: tab.id }) });
+      if (prefill !== null) {
+        setTerminalPrefill({ owner: tab.owner, tabId: id, prefill });
+      }
       forgetTerminalCommand({ terminalId: tab.id });
       closeTerminalTab({ owner: tab.owner, tabId: tab.id });
       if (hasCustomName) {
         void renameTerminalTab({ owner: tab.owner, tabId: id, title: tab.title }).catch((error) =>
           reportError({
-            title: 'Could not keep the terminal name',
+            title: "Couldn't keep the terminal name",
             error,
             workspaceId,
           }),
@@ -368,6 +412,7 @@ export const useTerminalStudioModel = ({
     [
       closeTerminalTab,
       addTerminalTab,
+      setTerminalPrefill,
       renameTerminalTab,
       reportError,
       workspaceId,
@@ -390,13 +435,16 @@ export const useTerminalStudioModel = ({
         selected.id,
         stringToBase64({ value: changeDirectoryInput({ path: target.path }) }),
       ).catch((error) =>
-        reportError({ title: 'Could not change the terminal folder', error, workspaceId }),
+        reportError({ title: "Couldn't change the terminal folder", error, workspaceId }),
       );
     },
     [selected, busyIds, reportError, workspaceId],
   );
 
-  const commandOf = useCallback((tab: TerminalTab) => lastCommandOf({ terminalId: tab.id }), []);
+  const commandOf = useCallback(
+    (tab: TerminalTab) => terminalCommandOf({ terminalId: tab.id, foregroundCommands }),
+    [foregroundCommands],
+  );
 
   return {
     groups,
@@ -415,6 +463,7 @@ export const useTerminalStudioModel = ({
     openAt,
     openDefault,
     closeTab,
+    closeGroup,
     restartTab,
     renameTab,
     changeDirectory,

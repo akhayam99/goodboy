@@ -9,9 +9,12 @@ import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';
 import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
 import { openStorage } from '../../../storage/openStorage';
+import { mapRecoveryAction } from './mapRecoveryAction';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { openLens } from '../../../session/openLens';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
+import { markPointersActed } from '../../markPointersActed';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -47,7 +50,7 @@ export const notificationContext = (
   }
   const session = n.sessionId ? sessionById(sessions, n.sessionId) : undefined;
   if (session) {
-    parts.push(inlineMarkdownText({ text: session.goal }).trim() || 'untitled session');
+    parts.push(inlineMarkdownText({ text: sessionTitle({ session }) }).trim());
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };
@@ -124,7 +127,7 @@ export const mapNotificationAction = (
       label: 'Check and retry',
       onClick: () => {
         void (async () => {
-          const preview = await store.retryPublication({ sessionId });
+          const preview = await store.retryPublication({ sessionId, mountId: null });
           if (preview.publicationId === null) {
             return;
           }
@@ -188,6 +191,13 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (
+    action.kind === 'open-settings' ||
+    action.kind === 'reveal-path' ||
+    action.kind === 'retry-push'
+  ) {
+    return mapRecoveryAction({ action, store });
+  }
   const _exhaustive: never = action;
   return undefined;
 };
@@ -211,7 +221,16 @@ export const NotificationToastBridge = () => {
         message: n.body ?? '',
         context: notificationContext(n, sessions, workspaces),
         persist: n.severity === 'error',
-        action: toastAction,
+        action:
+          toastAction === undefined
+            ? undefined
+            : {
+                ...toastAction,
+                onClick: () => {
+                  toastAction.onClick();
+                  markPointersActed({ notifications: [n] });
+                },
+              },
       });
     }
   }, [notifications, sessions, workspaces, previewNotification]);

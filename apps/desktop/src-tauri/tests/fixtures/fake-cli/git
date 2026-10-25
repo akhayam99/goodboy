@@ -5,7 +5,7 @@ case "$fake_mode" in
     printf '%s\n' "$@" > "$PWD/fake-git-argv.txt"
     {
       printf 'cwd=%s\n' "$PWD"
-      for key in GIT_TERMINAL_PROMPT GIT_ASKPASS SSH_ASKPASS GIT_SSH_COMMAND GIT_EDITOR GIT_SEQUENCE_EDITOR GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GH_TOKEN GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0; do
+      for key in GIT_TERMINAL_PROMPT GIT_ASKPASS SSH_ASKPASS GIT_SSH_COMMAND GIT_EDITOR GIT_SEQUENCE_EDITOR GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GH_TOKEN GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 LC_ALL; do
         eval "value=\${$key-__unset__}"
         printf '%s=%s\n' "$key" "$value"
       done

@@ -6,7 +6,7 @@ import {
   readWorktreeStatus,
   subscribe,
   worktreeStatusKey,
-} from '../../../../store/slices/worktreeStatuses/cache';
+} from '../../../../store/runtime/worktreeStatuses/cache';
 
 type Params = {
   readonly targets: ReadonlyArray<{

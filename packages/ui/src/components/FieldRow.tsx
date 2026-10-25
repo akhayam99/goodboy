@@ -54,11 +54,11 @@ export const FieldRow = ({
   const associate = labelable && children.props.id === undefined;
 
   const labelText = associate ? (
-    <label htmlFor={controlId} className="text-label font-medium text-foreground">
+    <label htmlFor={controlId} className="text-meta font-medium text-foreground">
       {label}
     </label>
   ) : (
-    <span className="text-label font-medium text-foreground">{label}</span>
+    <span className="text-meta font-medium text-foreground">{label}</span>
   );
 
   const labelBlock = (

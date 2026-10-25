@@ -11,9 +11,9 @@ import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
 import type { DemoTimeline } from '../directorTypes';
 import type { DemoHintReport, DemoReport } from '../demoProtocol';
-import { isDemoCommand } from '../isDemoCommand';
-import { isDemoHintsCommand } from '../isDemoHintsCommand';
-import { isDemoRevealCommand } from '../isDemoRevealCommand';
+import { readDemoCommand } from '../readDemoCommand';
+import { readDemoHintsCommand } from '../readDemoHintsCommand';
+import { readDemoRevealCommand } from '../readDemoRevealCommand';
 import { waitForPaint } from '../waitForPaint';
 
 type Params = {
@@ -113,57 +113,65 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       }
     };
 
-    const onMessage = (event: MessageEvent): void => {
-      if (event.origin !== window.location.origin || event.source !== window.parent) {
-        return;
-      }
-      if (director === null) {
-        return;
-      }
-      if (isDemoRevealCommand(event.data)) {
-        if (event.data.generation === director.generation()) {
-          hints?.reveal({ hintId: event.data.hintId });
+    const listeners = new AbortController();
+    window.addEventListener(
+      'message',
+      (event) => {
+        if (event.origin !== window.location.origin || event.source !== window.parent) {
+          return;
         }
-        return;
-      }
-      if (isDemoHintsCommand(event.data)) {
-        if (event.data.generation === director.generation()) {
-          hints?.setTrack({ chapterId: event.data.chapterId, settledIds: event.data.settledIds });
+        if (director === null) {
+          return;
         }
-        return;
-      }
-      if (!isDemoCommand(event.data)) {
-        return;
-      }
-      const command = event.data;
-      if (command.type === 'restart') {
-        if (command.generation > director.generation()) {
-          runs.cancel();
-          director.restart({ generation: command.generation });
-          hints?.reset();
+        const reveal = readDemoRevealCommand({ data: event.data });
+        if (reveal !== null) {
+          if (reveal.generation === director.generation()) {
+            hints?.reveal({ hintId: reveal.hintId });
+          }
+          return;
         }
-        return;
-      }
-      if (command.generation !== director.generation()) {
-        return;
-      }
-      if (command.type === 'play') {
-        director.play();
-        return;
-      }
-      director.pause();
-    };
+        const track = readDemoHintsCommand({ data: event.data });
+        if (track !== null) {
+          if (track.generation === director.generation()) {
+            hints?.setTrack({ chapterId: track.chapterId, settledIds: track.settledIds });
+          }
+          return;
+        }
+        const command = readDemoCommand({ data: event.data });
+        if (command === null) {
+          return;
+        }
+        if (command.type === 'restart') {
+          if (command.generation > director.generation()) {
+            runs.cancel();
+            director.restart({ generation: command.generation });
+            hints?.reset();
+          }
+          return;
+        }
+        if (command.generation !== director.generation()) {
+          return;
+        }
+        if (command.type === 'play') {
+          director.play();
+          return;
+        }
+        director.pause();
+      },
+      { signal: listeners.signal },
+    );
 
-    const onInput = (event: Event): void => {
-      if (!event.isTrusted) {
-        return;
-      }
-      director?.settle();
-    };
-
-    window.addEventListener('message', onMessage);
     for (const type of INPUT_EVENTS) {
-      window.addEventListener(type, onInput, { capture: true, passive: true });
+      window.addEventListener(
+        type,
+        (event) => {
+          if (!event.isTrusted) {
+            return;
+          }
+          director?.settle();
+        },
+        { capture: true, passive: true, signal: listeners.signal },
+      );
     }
     void boot();
     return () => {
@@ -171,10 +179,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       runs.dispose();
       director?.dispose();
       hints?.dispose();
-      window.removeEventListener('message', onMessage);
-      for (const type of INPUT_EVENTS) {
-        window.removeEventListener(type, onInput, { capture: true });
-      }
+      listeners.abort();
     };
   }, [sceneName]);
 };

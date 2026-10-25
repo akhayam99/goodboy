@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollFade, useEscapeLayer, EmptyState, Eyebrow } from '@goodboy/ui';
+import { FLOATING_SURFACE, ScrollFade, useEscapeLayer, EmptyState, Eyebrow, cn } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
@@ -47,7 +47,12 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   }, [activeIndex]);
 
   return (
-    <div className="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg">
+    <div
+      className={cn(
+        FLOATING_SURFACE,
+        'absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden',
+      )}
+    >
       {items.length === 0 ? (
         <EmptyState
           size="section"
@@ -71,7 +76,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                 }}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-label font-medium text-foreground">
+                  <span className="truncate text-meta font-medium text-foreground">
                     {item.label}
                   </span>
                   {item.sublabel ? (

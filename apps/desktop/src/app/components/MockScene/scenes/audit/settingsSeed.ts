@@ -10,6 +10,10 @@ import type {
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
+import {
+  mergeWorkspaceOverrides,
+  type WorkspaceOverridesPatch,
+} from '../../../../../store/slices/overrides/patchWorkspaceOverrides';
 import type { StorageFolder } from '../../../../../store/slices/storage/types';
 import { sceneClock } from '../../sceneClock';
 import { sceneParam } from './sceneParams';
@@ -37,6 +41,26 @@ const SETTINGS_OVERRIDES: OverrideSettings = {
   providerPool: null,
   attributionFooter: true,
   replyVoice: 'friendly',
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
+  afterMerge: null,
+  defaultBranchTemplate: null,
+};
+
+const NO_FOLDER_OVERRIDES: OverrideSettings = {
+  defaultProviderId: null,
+  defaultBranchPrefix: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+  replyVoice: null,
   replyStyleNote: null,
   replyTemplateFixed: null,
   replyTemplateNoChange: null,
@@ -115,6 +139,7 @@ type ProjectParams = {
   readonly kind: Project['kind'];
   readonly description?: string;
   readonly isStarred?: boolean;
+  readonly overrides?: OverrideSettings;
 };
 
 const makeProject = ({
@@ -124,6 +149,7 @@ const makeProject = ({
   kind,
   description,
   isStarred = false,
+  overrides = NO_FOLDER_OVERRIDES,
 }: ProjectParams): Project => ({
   id: id as ProjectId,
   workspaceId: SETTINGS_WORKSPACE_ID,
@@ -133,7 +159,7 @@ const makeProject = ({
   baseBranch: kind === 'repo' ? 'main' : null,
   description: description ?? null,
   ...(isStarred ? { starredAt: SETTINGS_NOW } : {}),
-  overrides: SETTINGS_OVERRIDES,
+  overrides,
   createdAt: SETTINGS_NOW,
   updatedAt: SETTINGS_NOW,
 });
@@ -146,12 +172,14 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
     kind: 'repo',
     description: 'Settles payments and writes the ledger',
     isStarred: true,
+    overrides: { ...NO_FOLDER_OVERRIDES, defaultBranchPrefix: 'ledger' },
   }),
   makeProject({
     id: 'mock-settings-relay',
     name: 'notify-relay',
     rootPath: '/mock/harborline/notify-relay',
     kind: 'repo',
+    overrides: { ...NO_FOLDER_OVERRIDES, defaultBranchPrefix: 'relay', defaultVerbosity: 'brief' },
   }),
   makeProject({
     id: 'mock-settings-payments',
@@ -172,9 +200,6 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 export const SETTINGS_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
@@ -250,6 +275,7 @@ export const SETTINGS_STORAGE_FOLDERS: ReadonlyArray<StorageFolder> = [
       changedFiles: 0,
       changedSample: null,
       reasons: [],
+      verdict: 'safe',
     },
     keptAt: null,
     keptUntil: null,
@@ -279,6 +305,7 @@ export const SETTINGS_STORAGE_FOLDERS: ReadonlyArray<StorageFolder> = [
       changedFiles: 0,
       changedSample: null,
       reasons: ['not-registered'],
+      verdict: 'not-tracked',
     },
     keptAt: null,
     keptUntil: null,
@@ -308,9 +335,21 @@ export const seedSettingsBase = (): void => {
         workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
       }));
     },
-    setWorkspaceOverrides: async (workspaceId: WorkspaceId, overrides: OverrideSettings) => {
+    patchWorkspaceOverrides: async ({
+      workspaceId,
+      patch,
+    }: {
+      readonly workspaceId: WorkspaceId;
+      readonly patch: WorkspaceOverridesPatch;
+    }) => {
       useAppStore.setState((state) => ({
-        workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
+        workspaceOverrides: {
+          ...state.workspaceOverrides,
+          [workspaceId]: mergeWorkspaceOverrides({
+            base: state.workspaceOverrides[workspaceId],
+            patch,
+          }),
+        },
       }));
     },
     setWorkspacePermissionDefault: async ({
@@ -350,8 +389,18 @@ export const seedSettingsBase = (): void => {
       { id: 'arc', label: 'Arc' },
     ],
     loadDetectedBrowsers: async () => undefined,
-    loadSetting: async (key: string) =>
-      key === 'browser.app' ? (sceneParam({ key: 'browser' }) ?? 'system') : 'code',
+    detectedTerminals: [
+      { id: 'terminal', label: 'Terminal.app', canRunCommand: true },
+      { id: 'iterm', label: 'iTerm', canRunCommand: true },
+      { id: 'ghostty', label: 'Ghostty', canRunCommand: false },
+    ],
+    loadDetectedTerminals: async () => undefined,
+    loadSetting: async (key: string) => {
+      if (key === 'terminal.app') {
+        return 'terminal';
+      }
+      return key === 'browser.app' ? (sceneParam({ key: 'browser' }) ?? 'system') : 'code';
+    },
     saveSetting: async () => undefined,
     githubStatus: { mode: 'pat', available: true, user: 'harborline-bot', scopes: ['repo'] },
     refreshGithubStatus: async () => undefined,

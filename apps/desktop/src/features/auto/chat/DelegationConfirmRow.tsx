@@ -11,7 +11,7 @@ export const DelegationConfirmRow = ({ line, isBusy, onConfirm, onCancel }: Prop
   <div
     role="group"
     aria-label="Confirm this work"
-    className="flex min-w-0 items-center gap-3 text-label text-foreground"
+    className="flex min-w-0 items-center gap-3 text-meta text-foreground"
   >
     <p className="min-w-0 flex-1">{line}</p>
     <Button variant="ghost" size="sm" disabled={isBusy} onClick={onCancel}>

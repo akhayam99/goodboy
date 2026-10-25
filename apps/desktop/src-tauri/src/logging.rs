@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
@@ -10,6 +11,7 @@ pub(crate) const KEPT_LOG_FILES: usize = 3;
 const MAX_DETAIL_CHARS: usize = 200;
 const MAX_EARLY_LINES: usize = 16;
 const BACKUP_SUFFIX: &str = ".log.bak";
+pub(crate) const SLOW_THRESHOLD: Duration = Duration::from_millis(250);
 
 pub(crate) struct EarlyLines(Mutex<Vec<String>>);
 
@@ -150,6 +152,26 @@ pub(crate) fn note_kill_failure(step: &str, result: std::io::Result<()>) {
             log::warn!("[teardown] {step} failed: {}", detail(&error));
         }
     }
+}
+
+pub(crate) fn slow_line(label: &str, elapsed: Duration, threshold: Duration) -> Option<String> {
+    if elapsed < threshold {
+        return None;
+    }
+    Some(format!("[slow] {label} took {}ms", elapsed.as_millis()))
+}
+
+pub(crate) fn slow(label: &str, started: Instant) {
+    if let Some(line) = slow_line(label, started.elapsed(), SLOW_THRESHOLD) {
+        log::info!("{line}");
+    }
+}
+
+pub(crate) fn timed<T>(label: &str, run: impl FnOnce() -> T) -> T {
+    let started = Instant::now();
+    let outcome = run();
+    slow(label, started);
+    outcome
 }
 
 pub(crate) fn early(line: String) {

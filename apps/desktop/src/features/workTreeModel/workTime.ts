@@ -2,6 +2,7 @@ import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core';
 import { formatUsd, type Fact } from '@goodboy/ui';
 import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
+import { quietSentence } from './rowStateCopy';
 
 export type WorkEstimate = {
   readonly lowMs: number;
@@ -20,6 +21,7 @@ export type WorkTime = {
   readonly headline: string;
   readonly note: string | null;
   readonly isMuchLonger: boolean;
+  readonly isQuiet?: boolean;
 };
 
 const MINUTE_MS = 60_000;
@@ -27,6 +29,7 @@ const NARROW_BAND = 1.3;
 const MACHINE_TIME_NOTE = 'Waiting on you is not counted.';
 const LONGER_THAN_USUAL = 'Longer than usual';
 const MUCH_LONGER_FACTOR = 2;
+export const QUIET_TURN_AFTER_MS = 5 * MINUTE_MS;
 
 type MsParams = {
   readonly ms: number;
@@ -94,7 +97,7 @@ const FALLBACK_TIERS: ReadonlySet<EstimateTier> = new Set<EstimateTier>([
   'role',
 ]);
 
-export const isFallbackTier = ({ tier }: { readonly tier: EstimateTier }): boolean =>
+const isFallbackTier = ({ tier }: { readonly tier: EstimateTier }): boolean =>
   FALLBACK_TIERS.has(tier);
 
 type EstimateParams = {
@@ -109,15 +112,6 @@ export const workEstimateOf = ({ estimate, basis }: EstimateParams): WorkEstimat
   isFallback: isFallbackTier({ tier: estimate.tier }),
   basis,
 });
-
-type LabelParams = {
-  readonly estimate: WorkEstimate;
-};
-
-export const estimateRangeLabel = ({ estimate }: LabelParams): string => {
-  const range = formatEstimateRange(estimate);
-  return estimate.isFallback && !range.startsWith('≈') ? `~${range}` : range;
-};
 
 type PlainParams = {
   readonly label: string;
@@ -142,6 +136,7 @@ export const plainWorkTime = ({
   headline: label,
   note: null,
   isMuchLonger: false,
+  isQuiet: false,
 });
 
 const approxRangeLabel = ({ lowMs, midMs, highMs }: RangeParams): string => {
@@ -179,9 +174,15 @@ type Params = {
   readonly hasStarted: boolean;
   readonly estimate: WorkEstimate | null;
   readonly unknownBasis: string | null;
+  readonly quietMs?: number | null;
 };
 
-type ActiveParams = Omit<Params, 'phase' | 'hasStarted'>;
+type ActiveParams = Omit<Params, 'phase' | 'hasStarted' | 'quietMs'>;
+
+type QuietTimeParams = {
+  readonly time: WorkTime;
+  readonly quietMs: number;
+};
 
 type LongerParams = {
   readonly lead: string;
@@ -229,6 +230,7 @@ const runningTime = ({ activeMs, estimate, unknownBasis }: ActiveParams): WorkTi
       headline: `${elapsed} · ${LONGER_THAN_USUAL.toLowerCase()}`,
       note: LONGER_THAN_USUAL,
       isMuchLonger: activeMs >= MUCH_LONGER_FACTOR * estimate.highMs,
+      isQuiet: false,
     };
   }
   const left = timeLeftLabel({
@@ -247,6 +249,21 @@ const runningTime = ({ activeMs, estimate, unknownBasis }: ActiveParams): WorkTi
     headline: `${elapsed} · ${left}`,
     note: null,
     isMuchLonger: false,
+    isQuiet: false,
+  };
+};
+
+const quietTime = ({ time, quietMs }: QuietTimeParams): WorkTime => {
+  const sentence = quietSentence({ quietMs });
+  return {
+    ...time,
+    label: time.headline.split(' · ')[0] ?? time.label,
+    detail: `${time.detail} ${sentence}: no output and no CPU in the process tree. It keeps running until you stop it.`,
+    facts: [...time.facts, { label: 'Quiet', value: sentence.replace('Quiet for ', '') }],
+    progress: null,
+    headline: `${time.headline.split(' · ')[0] ?? time.label} · ${sentence.toLowerCase()}`,
+    note: sentence,
+    isQuiet: true,
   };
 };
 
@@ -280,6 +297,7 @@ const doneTime = ({ activeMs, estimate }: Omit<ActiveParams, 'unknownBasis'>): W
     headline: `${duration} · ${LONGER_THAN_USUAL.toLowerCase()}`,
     note: LONGER_THAN_USUAL,
     isMuchLonger: false,
+    isQuiet: false,
   };
 };
 
@@ -302,12 +320,17 @@ export const workTime = ({
   hasStarted,
   estimate,
   unknownBasis,
+  quietMs = null,
 }: Params): WorkTime | null => {
   switch (phase) {
     case 'queued':
       return queuedTime({ estimate });
-    case 'running':
-      return runningTime({ activeMs, estimate, unknownBasis });
+    case 'running': {
+      const time = runningTime({ activeMs, estimate, unknownBasis });
+      return quietMs !== null && quietMs >= QUIET_TURN_AFTER_MS
+        ? quietTime({ time, quietMs })
+        : time;
+    }
     case 'waiting':
       return hasStarted ? pausedTime({ activeMs, estimate }) : queuedTime({ estimate });
     case 'failed':

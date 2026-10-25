@@ -31,3 +31,39 @@ describe('run summary planned roles', () => {
     });
   });
 });
+
+describe('run recap: reading the text a finished run keeps', () => {
+  it('reads what is done and what is left from the saved recap', () => {
+    const text = serializeRunSummary({
+      kind: 'structured',
+      done: ['retried the failed payment in ledger-core'],
+      left: ['notify-relay still needs the new template'],
+      leftRoles: {},
+    });
+
+    expect(parseRunSummaryText(text)).toEqual({
+      kind: 'structured',
+      done: ['retried the failed payment in ledger-core'],
+      left: ['notify-relay still needs the new template'],
+      leftRoles: {},
+    });
+  });
+
+  it('returns null for a plain sentence so the recap shows as written', () => {
+    expect(parseRunSummaryText('Retried the payment and updated the docs.')).toBeNull();
+  });
+
+  it('returns null for text that looks like JSON but is not', () => {
+    expect(parseRunSummaryText('{"done": [')).toBeNull();
+    expect(parseRunSummaryText('{"unrelated": true}')).toBeNull();
+  });
+
+  it('drops blank entries from the saved recap', () => {
+    expect(parseRunSummaryText('{"done":["  ","wrote the notes"],"left":[""]}')).toEqual({
+      kind: 'structured',
+      done: ['wrote the notes'],
+      left: [],
+      leftRoles: {},
+    });
+  });
+});

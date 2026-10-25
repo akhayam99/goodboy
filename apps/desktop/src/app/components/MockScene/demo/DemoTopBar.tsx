@@ -19,7 +19,7 @@ export const DemoTopBar = ({ theme, onToggleTheme }: Props) => {
       <div className="flex min-w-0 items-center gap-3">
         <BrandTile size={BRAND_TILE_PX} className="ring-1 ring-inset ring-frame-edge" />
         <span className="text-heading text-foreground">Goodboy</span>
-        <span className="hidden text-label text-muted-foreground sm:inline">Playground</span>
+        <span className="hidden text-meta text-muted-foreground sm:inline">Playground</span>
         <a
           href={DEMO_LINKS.changelog}
           target="_blank"

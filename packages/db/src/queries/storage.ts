@@ -19,7 +19,3 @@ export const getDatabaseSizeBytes = async ({ db }: StorageParams): Promise<numbe
   const pageSize = pageSizeRows[0]?.page_size ?? 0;
   return pageCount * pageSize;
 };
-
-export const vacuumDatabase = async ({ db }: StorageParams): Promise<void> => {
-  await db.exec('VACUUM');
-};

@@ -7,8 +7,11 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+use folder_store::copy_atomic;
+
 pub(crate) mod folder_commands;
 mod folder_prune;
+mod folder_rekey;
 mod folder_restore;
 mod folder_store;
 #[cfg(test)]
@@ -66,6 +69,8 @@ pub enum FileVersionsError {
     TurnMissing,
     #[error("the first copy was cancelled")]
     Cancelled,
+    #[error("saved versions already exist for the destination folder")]
+    FolderVersionsExist,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
@@ -98,6 +103,7 @@ impl FileVersionsError {
             FileVersionsError::FolderBusy => "folder_busy",
             FileVersionsError::TurnMissing => "turn_missing",
             FileVersionsError::Cancelled => "cancelled",
+            FileVersionsError::FolderVersionsExist => "folder_versions_exist",
             FileVersionsError::Io(_) => "io",
             FileVersionsError::Json(_) => "json",
         }
@@ -295,29 +301,45 @@ fn begin_snapshot_with_root(
     let session_root = ensure_session_root(&args.session_dir, &args.session_id)?;
     let run_dir = run_staging_dir(root, &args.session_id, &args.run_id);
     if run_dir.exists() {
-        return Err(FileVersionsError::StagingAlreadyExists);
+        if run_dir.join(MANIFEST_FILE).is_file() {
+            return Err(FileVersionsError::StagingAlreadyExists);
+        }
+        fs::remove_dir_all(&run_dir)?;
     }
     let size_cap = args.size_cap_bytes.unwrap_or(DEFAULT_SIZE_CAP_BYTES);
     let (manifest, skipped) = collect_manifest(&session_root, size_cap)?;
     fs::create_dir_all(&run_dir)?;
-    for entry in &manifest {
-        let source = resolve_session_path(&session_root, &entry.relative_path, false)?;
-        if !source.is_file() {
-            return Err(FileVersionsError::MissingStagedCopy(
-                entry.relative_path.clone(),
-            ));
+    cleaned_on_error(&run_dir, || {
+        for entry in &manifest {
+            let source = resolve_session_path(&session_root, &entry.relative_path, false)?;
+            if !source.is_file() {
+                return Err(FileVersionsError::MissingStagedCopy(
+                    entry.relative_path.clone(),
+                ));
+            }
+            copy_atomic(&source, &staged_path(&run_dir, &entry.relative_path))?;
         }
-        let staged = staged_path(&run_dir, &entry.relative_path);
-        fs::copy(source, staged)?;
-    }
-    let metadata = SnapshotManifestDocument {
-        session_dir: session_root.to_string_lossy().to_string(),
-        session_id: args.session_id,
-        run_id: args.run_id,
-        manifest: manifest.clone(),
-    };
-    fs::write(run_dir.join(MANIFEST_FILE), serde_json::to_vec(&metadata)?)?;
+        let metadata = SnapshotManifestDocument {
+            session_dir: session_root.to_string_lossy().to_string(),
+            session_id: args.session_id.clone(),
+            run_id: args.run_id.clone(),
+            manifest: manifest.clone(),
+        };
+        fs::write(run_dir.join(MANIFEST_FILE), serde_json::to_vec(&metadata)?)?;
+        Ok(())
+    })?;
     Ok(BeginSnapshotResult { manifest, skipped })
+}
+
+fn cleaned_on_error<T>(
+    run_dir: &Path,
+    work: impl FnOnce() -> Result<T, FileVersionsError>,
+) -> Result<T, FileVersionsError> {
+    let result = work();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(run_dir);
+    }
+    result
 }
 
 fn finalize_snapshot_with_root(
@@ -399,7 +421,7 @@ fn restore_version_with_root(
         return Err(FileVersionsError::StoredCopyMissing);
     }
     let target = resolve_session_path(&session_root, &args.relative_path, true)?;
-    fs::copy(source, target)?;
+    copy_atomic(&source, &target)?;
     Ok(())
 }
 
@@ -517,9 +539,14 @@ fn list_staged_snapshots_with_root(
     Ok(ListStagedSnapshotsResult { runs, skipped })
 }
 
+pub(crate) fn rekey_folder_versions(from: &str, to: &str) -> Result<bool, FileVersionsError> {
+    let store = folder_store::Store::from_home()?;
+    folder_rekey::rekey_folder(&store, Path::new(from), Path::new(to))
+}
+
 fn file_versions_root() -> Result<PathBuf, FileVersionsError> {
-    let home = dirs::home_dir().ok_or(FileVersionsError::HomeUnavailable)?;
-    Ok(home.join(".goodboy").join(FILE_VERSIONS_DIR))
+    let dir = crate::app_paths::data_dir().map_err(|_| FileVersionsError::HomeUnavailable)?;
+    Ok(dir.join(FILE_VERSIONS_DIR))
 }
 
 fn session_store_dir(root: &Path, session_id: &str) -> PathBuf {
@@ -1387,6 +1414,113 @@ mod tests {
             again,
             Err(FileVersionsError::StagingAlreadyExists)
         ));
+    }
+
+    #[test]
+    fn begin_sweeps_a_staging_folder_left_without_a_manifest() {
+        let fx = Fixture::new("begin-sweep");
+        fx.write("small.txt", b"ok");
+        let leaked = run_staging_dir(&fx.store, SESSION_ID, RUN_ID);
+        fs::create_dir_all(&leaked).unwrap();
+        fs::write(leaked.join("stray.bin"), b"half a copy").unwrap();
+
+        let begin = fx.begin(RUN_ID);
+
+        assert_eq!(begin.manifest.len(), 1);
+        assert!(leaked.join(MANIFEST_FILE).is_file());
+        assert!(!leaked.join("stray.bin").exists());
+    }
+
+    #[test]
+    fn a_failed_staging_leaves_no_run_folder_to_block_the_retry() {
+        let fx = Fixture::new("begin-clean");
+        let run_dir = run_staging_dir(&fx.store, SESSION_ID, RUN_ID);
+        fs::create_dir_all(&run_dir).unwrap();
+        fs::write(run_dir.join("half.bin"), b"half a copy").unwrap();
+
+        let failed: Result<(), FileVersionsError> = cleaned_on_error(&run_dir, || {
+            Err(FileVersionsError::MissingStagedCopy(
+                "small.txt".to_string(),
+            ))
+        });
+
+        assert!(matches!(
+            failed,
+            Err(FileVersionsError::MissingStagedCopy(_))
+        ));
+        assert!(!run_dir.exists());
+        fx.write("small.txt", b"ok");
+        assert_eq!(fx.begin(RUN_ID).manifest.len(), 1);
+    }
+
+    #[test]
+    fn a_staging_that_succeeded_keeps_its_run_folder() {
+        let fx = Fixture::new("begin-keep");
+        let run_dir = run_staging_dir(&fx.store, SESSION_ID, RUN_ID);
+        fs::create_dir_all(&run_dir).unwrap();
+
+        let kept: Result<u8, FileVersionsError> = cleaned_on_error(&run_dir, || Ok(1));
+
+        assert!(matches!(kept, Ok(1)));
+        assert!(run_dir.is_dir());
+    }
+
+    fn temp_copies_in(dir: &Path) -> Vec<String> {
+        fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".tmp"))
+            .collect()
+    }
+
+    #[test]
+    fn a_restore_replaces_the_file_whole_and_leaves_no_temp_copy_behind() {
+        let fx = Fixture::new("restore-atomic");
+        fx.write("memo.txt", b"after");
+        let session_store = session_store_dir(&fx.store, SESSION_ID);
+        fs::create_dir_all(&session_store).unwrap();
+        fs::write(session_store.join("copy.bin"), b"before").unwrap();
+
+        restore_version_with_root(
+            &fx.store,
+            RestoreVersionArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                relative_path: "memo.txt".to_string(),
+                stored_name: "copy.bin".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(fs::read(fx.session.join("memo.txt")).unwrap(), b"before");
+        assert!(temp_copies_in(&fx.session).is_empty());
+    }
+
+    #[test]
+    fn a_restore_onto_a_folder_fails_and_leaves_the_folder_and_no_temp_copy() {
+        let fx = Fixture::new("restore-onto-folder");
+        fx.write("memo/inner.txt", b"keep");
+        let session_store = session_store_dir(&fx.store, SESSION_ID);
+        fs::create_dir_all(&session_store).unwrap();
+        fs::write(session_store.join("copy.bin"), b"before").unwrap();
+
+        let result = restore_version_with_root(
+            &fx.store,
+            RestoreVersionArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                relative_path: "memo".to_string(),
+                stored_name: "copy.bin".to_string(),
+            },
+        );
+
+        assert!(result.is_err());
+        assert_eq!(
+            fs::read(fx.session.join("memo/inner.txt")).unwrap(),
+            b"keep"
+        );
+        assert!(temp_copies_in(&fx.session).is_empty());
     }
 
     #[test]

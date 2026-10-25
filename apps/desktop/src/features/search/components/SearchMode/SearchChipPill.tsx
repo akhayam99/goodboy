@@ -1,6 +1,5 @@
 import { X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 
 type Props = {
   readonly eyebrow: string;

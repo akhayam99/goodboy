@@ -6,13 +6,21 @@ import { createRequire } from 'node:module';
 import { describe, it } from 'node:test';
 
 import {
+  ANNOTATION_LIMIT,
   DevToolsTimeoutError,
+  SceneNotReadyError,
+  annotationLines,
   failingScenes,
   failureLines,
+  inboxAgeFailures,
   measureScene,
+  notReadyFailure,
   parseDevToolsPort,
   readDevToolsPort,
   summaryLine,
+  summaryMarkdown,
+  timeCellFailures,
+  unmeasuredFailures,
 } from './validateScenesBrowser.mjs';
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
@@ -29,6 +37,7 @@ import {
   frameSceneVariants,
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
+import { LAYER_SCENES, layerFailures, layerScrollMoves } from './validateScenesLayers.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 import { chatMeasureFailures } from './validateScenesChatMeasure.mjs';
 
@@ -166,6 +175,134 @@ describe('summaryLine', () => {
     assert.equal(
       summaryLine({ scenes: failingScenes({ failures: [], error }) }),
       'scene measures: failed in activity-run',
+    );
+  });
+});
+
+describe('a scene that measured nothing', () => {
+  it('prints crashed when a probe threw and no scene is named', () => {
+    const crash = new Error('{"text":"Uncaught"}');
+    assert.equal(
+      summaryLine({ scenes: failingScenes({ failures: [], error: crash }), crash }),
+      'scene measures: crashed',
+    );
+  });
+
+  it('keeps naming the scene when the crash carries one', () => {
+    const crash = new Error('scene activity-run: Runtime.evaluate timed out after 60s');
+    assert.equal(
+      summaryLine({ scenes: failingScenes({ failures: [], error: crash }), crash }),
+      'scene measures: failed in activity-run',
+    );
+  });
+
+  it('names a scene that never became ready, in the shape failingScenes reads', () => {
+    const error = new SceneNotReadyError({ scene: 'confirmpopover&v=rich' });
+    assert.equal(error.message, 'scene confirmpopover&v=rich: did not become ready');
+    assert.deepEqual(failingScenes({ failures: [], error }), ['confirmpopover&v=rich']);
+    assert.deepEqual(notReadyFailure({ error }), {
+      scene: 'confirmpopover&v=rich',
+      check: 'scene did not become ready',
+    });
+  });
+
+  it('fails a subject count of zero and passes any other count', () => {
+    assert.deepEqual(
+      unmeasuredFailures({ scene: 'inbox', width: 880, subject: 'task ages', count: 0 }),
+      [{ scene: 'inbox', width: 880, check: 'measured 0 task ages' }],
+    );
+    assert.deepEqual(unmeasuredFailures({ scene: 'inbox', subject: 'task ages', count: 3 }), []);
+    assert.deepEqual(unmeasuredFailures({ scene: 'menus', subject: 'menu triggers', count: 0 }), [
+      { scene: 'menus', check: 'measured 0 menu triggers' },
+    ]);
+  });
+
+  it('fails an inbox with no task age, and a feed with no time cell', () => {
+    assert.deepEqual(
+      inboxAgeFailures({ width: 880, ages: { measured: 0, wrapped: [] } }).map((f) => f.check),
+      ['measured 0 task ages'],
+    );
+    assert.deepEqual(
+      timeCellFailures({
+        scene: 'activity-run',
+        width: 760,
+        times: { measured: 0, clipped: [] },
+      }).map((f) => f.check),
+      ['measured 0 time cells'],
+    );
+  });
+
+  it('still reports a real overlap, wrap or clip next to a measured subject', () => {
+    assert.deepEqual(
+      inboxAgeFailures({ width: 880, ages: { measured: 4, wrapped: [{ key: 'a' }] } }).map(
+        (f) => f.check,
+      ),
+      ['task age wraps'],
+    );
+    assert.deepEqual(
+      timeCellFailures({
+        scene: 'activity-run',
+        width: 760,
+        times: { measured: 2, clipped: [{ row: 'r1' }] },
+      }).map((f) => f.check),
+      ['time wider than its column'],
+    );
+    assert.deepEqual(inboxAgeFailures({ width: 880, ages: { measured: 4, wrapped: [] } }), []);
+  });
+});
+
+describe('annotationLines', () => {
+  it('prints one error annotation per failure with the scene in the title', () => {
+    const lines = annotationLines({
+      failures: [{ scene: 'inbox', check: 'task age wraps', width: 880 }],
+    });
+    assert.deepEqual(lines, [
+      '::error title=scene measures%3A inbox::task age wraps {"width":880}',
+    ]);
+  });
+
+  it('escapes percent signs and newlines in the message', () => {
+    const [line] = annotationLines({ failures: [{ scene: 'a', check: '100%\nwide' }] });
+    assert.ok(line.includes('100%25%0Awide'));
+    assert.ok(!line.includes('\n'));
+  });
+
+  it('caps the annotations and says how many more there are', () => {
+    const failures = Array.from({ length: ANNOTATION_LIMIT + 3 }, (_, index) => ({
+      scene: `scene-${index}`,
+      check: 'x',
+    }));
+    const lines = annotationLines({ failures });
+    assert.equal(lines.length, ANNOTATION_LIMIT + 1);
+    assert.ok(lines.at(-1).includes('3 more failures'));
+  });
+
+  it('adds a crash annotation', () => {
+    const lines = annotationLines({ failures: [], crash: new Error('Chrome did not open') });
+    assert.deepEqual(lines, ['::error title=scene measures crashed::Chrome did not open']);
+  });
+});
+
+describe('summaryMarkdown', () => {
+  it('lists the failing scene ids and the duration', () => {
+    const text = summaryMarkdown({ scenes: ['inbox', 'frame'], durationMs: 61_400 });
+    assert.equal(
+      text,
+      'scene measures: failed in inbox, frame\n\nduration: 61s\n\nfailing scenes:\n- inbox\n- frame\n',
+    );
+  });
+
+  it('says ok with the duration alone', () => {
+    assert.equal(
+      summaryMarkdown({ scenes: [], durationMs: 2000 }),
+      'scene measures: ok\n\nduration: 2s\n',
+    );
+  });
+
+  it('says crashed with the message', () => {
+    assert.equal(
+      summaryMarkdown({ scenes: [], crash: new Error('boom'), durationMs: 1000 }),
+      'scene measures: crashed\n\nduration: 1s\n\ncrash: boom\n',
     );
   });
 });
@@ -864,6 +1001,151 @@ describe('drawerComposerFailures', () => {
     assert.equal(
       drawerComposerFailures({ scene: 'fixture', width: 1440, measured: null })[0]?.check,
       'the drawer shows a composer toolbar',
+    );
+  });
+});
+
+const lightboxEntry = LAYER_SCENES.find((entry) => entry.scene === 'image-lightbox');
+
+const onTop = ({ focusables = 2 } = {}) => ({
+  rect: { left: 0, top: 0, width: 1100, height: 1000 },
+  isHit: true,
+  hitTag: 'img',
+  focusables,
+  backdrop: { x: 4, y: 4 },
+  scrollers: [],
+});
+
+const stayed = { isInside: true, tag: 'button', name: 'Close' };
+
+describe('the layer probe scene list', () => {
+  it('covers the drawer, the notifications popover, the palette and the lightbox', () => {
+    assert.deepEqual(
+      LAYER_SCENES.map((entry) => entry.label),
+      ['drawer over the page', 'notifications popover', 'command palette', 'image lightbox'],
+    );
+  });
+
+  it('finds every listed scene in scenes.txt', () => {
+    const ids = readFileSync(
+      new URL('../apps/desktop/src/app/components/MockScene/scenes.txt', import.meta.url),
+      'utf8',
+    ).split('\n');
+    assert.deepEqual(
+      LAYER_SCENES.map((entry) => entry.scene.split('&')[0]).filter((id) => !ids.includes(id)),
+      [],
+    );
+  });
+});
+
+describe('layerScrollMoves', () => {
+  it('names each scroller whose top changed', () => {
+    assert.deepEqual(
+      layerScrollMoves({
+        before: [
+          { index: -1, top: 0 },
+          { index: 4, top: 30 },
+        ],
+        after: [
+          { index: -1, top: 0 },
+          { index: 4, top: 630 },
+        ],
+      }),
+      [{ index: 4, from: 30, to: 630 }],
+    );
+  });
+
+  it('ignores a scroller that did not move or was not there before', () => {
+    assert.deepEqual(
+      layerScrollMoves({
+        before: [{ index: 2, top: 10 }],
+        after: [
+          { index: 2, top: 10 },
+          { index: 9, top: 50 },
+        ],
+      }),
+      [],
+    );
+  });
+});
+
+describe('layerFailures', () => {
+  it('passes a layer on top, with Tab kept inside and nothing scrolled behind', () => {
+    assert.deepEqual(
+      layerFailures({
+        entry: lightboxEntry,
+        measured: { layer: onTop(), tabs: [stayed, stayed, stayed], moves: [] },
+      }),
+      [],
+    );
+  });
+
+  it('fails a layer that is not on screen', () => {
+    assert.deepEqual(
+      layerFailures({
+        entry: lightboxEntry,
+        measured: { layer: null, tabs: [], moves: [] },
+      }).map((failure) => failure.check),
+      ['the image lightbox is on screen'],
+    );
+  });
+
+  it('fails when something else is on top at the centre of the layer', () => {
+    const [failure] = layerFailures({
+      entry: lightboxEntry,
+      measured: { layer: { ...onTop(), isHit: false, hitTag: 'main' }, tabs: [stayed], moves: [] },
+    });
+    assert.equal(failure.check, 'the image lightbox is the topmost thing at its centre');
+    assert.equal(failure.hit, 'main');
+  });
+
+  it('fails when Tab reaches the page, naming the press', () => {
+    const [failure] = layerFailures({
+      entry: lightboxEntry,
+      measured: {
+        layer: onTop(),
+        tabs: [stayed, { isInside: false, tag: 'button', name: 'Open preview' }],
+        moves: [],
+      },
+    });
+    assert.equal(failure.check, 'Tab stays inside the image lightbox');
+    assert.equal(failure.press, 2);
+  });
+
+  it('fails a modal layer with nothing to focus', () => {
+    assert.deepEqual(
+      layerFailures({
+        entry: lightboxEntry,
+        measured: { layer: onTop({ focusables: 0 }), tabs: [], moves: [] },
+      }).map((failure) => failure.check),
+      ['the image lightbox holds something to focus'],
+    );
+  });
+
+  it('fails when a wheel on the backdrop scrolls the page behind', () => {
+    const [failure] = layerFailures({
+      entry: lightboxEntry,
+      measured: {
+        layer: onTop(),
+        tabs: [stayed],
+        moves: [{ index: -1, from: 0, to: 600 }],
+      },
+    });
+    assert.equal(failure.check, 'a wheel on the image lightbox backdrop scrolls nothing behind it');
+  });
+
+  it('does not hold a popover to Tab containment or the wheel rule', () => {
+    const popover = LAYER_SCENES.find((entry) => entry.scene.startsWith('notifications'));
+    assert.deepEqual(
+      layerFailures({
+        entry: popover,
+        measured: {
+          layer: onTop({ focusables: 0 }),
+          tabs: [{ isInside: false, tag: 'button', name: 'Bell' }],
+          moves: [{ index: -1, from: 0, to: 600 }],
+        },
+      }),
+      [],
     );
   });
 });

@@ -9,7 +9,7 @@ import {
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isFanOutRejected } from '../auto/isFanOutRejected';
+import { isFanOutRejected } from '../../runtime/auto/isFanOutRejected';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';

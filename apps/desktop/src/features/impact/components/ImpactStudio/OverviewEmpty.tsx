@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
-import { Button, EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onStartSession: () => void;
@@ -11,7 +11,7 @@ export const OverviewEmpty = ({ onStartSession }: Props) => (
     icon={CONCEPT_ICONS.impact}
     tone={CONCEPT_TONE.impact}
     title="Nothing finished yet"
-    description="Finished sessions appear here: what shipped, how long it took, what it cost."
+    description="Each finished session shows what shipped, how long it took and its cost."
     action={
       <Button variant="secondary" size="sm" onClick={onStartSession}>
         <Plus size={ICON_SIZE.control} aria-hidden />

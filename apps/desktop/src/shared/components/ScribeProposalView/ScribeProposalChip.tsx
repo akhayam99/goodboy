@@ -1,5 +1,5 @@
-import { AlertTriangle, Check } from 'lucide-react';
-import { ICON_SIZE } from '../conceptIcons';
+import { TriangleAlert, Check } from 'lucide-react';
+import { ICON_SIZE } from '@goodboy/ui';
 import { openUrl } from '../../lib/editor';
 import type { ScribeProposalState } from '../../hooks/useScribeProposal';
 
@@ -33,7 +33,7 @@ export const ScribeProposalChip = ({ state }: Props) => {
   if (state.kind === 'failed') {
     return (
       <span className="inline-flex items-center gap-1 text-meta text-danger">
-        <AlertTriangle size={ICON_SIZE.row} aria-hidden />
+        <TriangleAlert size={ICON_SIZE.row} aria-hidden />
         Failed
       </span>
     );

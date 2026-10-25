@@ -31,11 +31,6 @@ const oldestOf = ({ candidates }: OldestParams): RunOpenQuestion | null =>
     null,
   );
 
-export const oldestAgentOpenQuestion = ({ entry }: AgentParams): OpenQuestion | null =>
-  oldestOf({
-    candidates: entry.openQuestions.map((question) => ({ question, stepLabel: entry.stepLabel })),
-  })?.question ?? null;
-
 type RunParams = {
   readonly entry: TimelineRunEntry;
   readonly shownQuestionIds?: ReadonlySet<string>;

@@ -1,8 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const appStylesPath = resolve(new URL('../../apps/desktop/src/styles.css', import.meta.url).pathname);
-const outputPath = resolve(new URL('../src/components/mocks/app-tokens.css', import.meta.url).pathname);
+const appStylesPath = resolve(
+  new URL('../../apps/desktop/src/styles.css', import.meta.url).pathname,
+);
+const outputPath = resolve(
+  new URL('../src/components/mocks/app-tokens.css', import.meta.url).pathname,
+);
 const checkOnly = process.argv.includes('--check');
 
 const AGENT_TOKEN_NAMES = [
@@ -107,7 +111,8 @@ const renderTheme = ({ selector, theme }) => {
   return lines.join('\n');
 };
 
-const render = ({ themes }) => `${renderTheme({ selector: ':root', theme: themes.light })}\n\n${renderTheme({ selector: ":root[data-theme='dark']", theme: themes.dark })}\n`;
+const render = ({ themes }) =>
+  `${renderTheme({ selector: ':root', theme: themes.light })}\n\n${renderTheme({ selector: ":root[data-theme='dark']", theme: themes.dark })}\n`;
 
 const main = async () => {
   const source = await readFile(appStylesPath, 'utf8');
@@ -116,7 +121,9 @@ const main = async () => {
   const current = await readFile(outputPath, 'utf8').catch(() => '');
   if (checkOnly) {
     if (current !== expected) {
-      throw new Error('website/src/components/mocks/app-tokens.css is out of sync with apps/desktop/src/styles.css');
+      throw new Error(
+        'website/src/components/mocks/app-tokens.css is out of sync with apps/desktop/src/styles.css',
+      );
     }
     return;
   }

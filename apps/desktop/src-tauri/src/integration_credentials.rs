@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 
 use rusqlite::{Connection, OptionalExtension};
 use thiserror::Error;
@@ -10,13 +10,19 @@ use crate::util::now_ms;
 
 pub type SecretCache = Mutex<HashMap<String, String>>;
 
+static SHARED_CACHE: LazyLock<SecretCache> = LazyLock::new(|| Mutex::new(HashMap::new()));
+
+pub fn shared_cache() -> &'static SecretCache {
+    &SHARED_CACHE
+}
+
 macro_rules! token_cache {
     ($name:ident) => {
-        pub struct $name($crate::integration_credentials::SecretCache);
+        pub struct $name(pub(crate) &'static $crate::integration_credentials::SecretCache);
 
         impl $name {
             pub fn new() -> Self {
-                Self(std::sync::Mutex::new(std::collections::HashMap::new()))
+                Self($crate::integration_credentials::shared_cache())
             }
         }
 
@@ -43,6 +49,8 @@ pub enum IntegrationCredentialError {
         provider: String,
         credential_id: String,
     },
+    #[error("the {field} sent for {provider} is not the one this connection is bound to")]
+    UnboundValue { provider: String, field: String },
     #[error("credential store error: {0}")]
     Store(String),
     #[error("secret store error: {0}")]
@@ -60,6 +68,7 @@ impl IntegrationCredentialError {
             IntegrationCredentialError::MissingWorkspace => "missing_workspace",
             IntegrationCredentialError::MissingCredential => "missing_credential",
             IntegrationCredentialError::MissingSecret { .. } => "missing_secret",
+            IntegrationCredentialError::UnboundValue { .. } => "unbound_value",
             IntegrationCredentialError::Store(_) => "store",
             IntegrationCredentialError::Secret(_) => "secret",
             IntegrationCredentialError::Io(_) => "io",
@@ -86,8 +95,6 @@ pub(crate) fn secret_key(credential_id: &str) -> String {
     format!("goodboy.credential.{}", credential_id)
 }
 
-/// The pre-m114 slot, where a credential was pinned to the workspace that
-/// pasted it. Nothing writes here any more; `adopt_with` empties it.
 fn legacy_key(provider: &str, workspace_id: &str) -> Option<String> {
     PROVIDERS
         .contains(&provider)
@@ -108,7 +115,7 @@ pub struct LegacyBinding {
 fn open_db() -> Result<Connection, IntegrationCredentialError> {
     let path =
         db::resolve_db_path().map_err(|e| IntegrationCredentialError::Store(e.to_string()))?;
-    Connection::open(&path).map_err(|e| IntegrationCredentialError::Store(e.to_string()))
+    db::open_connection(&path).map_err(|e| IntegrationCredentialError::Store(e.to_string()))
 }
 
 fn store_err(e: rusqlite::Error) -> IntegrationCredentialError {
@@ -120,8 +127,6 @@ fn new_id(conn: &Connection) -> Result<String, IntegrationCredentialError> {
         .map_err(store_err)
 }
 
-/// The binding a scope resolves to: the project override when one exists,
-/// the workspace-level row otherwise.
 fn credential_id_for_binding(
     conn: &Connection,
     provider: &str,
@@ -141,7 +146,6 @@ fn credential_id_for_binding(
     .map_err(store_err)
 }
 
-/// A credential no binding references: the global fallback of its provider.
 fn global_credential_id(
     conn: &Connection,
     provider: &str,
@@ -149,7 +153,6 @@ fn global_credential_id(
     Ok(global_credential_ids(conn, provider)?.into_iter().next())
 }
 
-/// Every credential no binding references, newest first.
 fn global_credential_ids(
     conn: &Connection,
     provider: &str,
@@ -187,9 +190,6 @@ fn config_for_binding_in(
     .map_err(store_err)
 }
 
-/// The per-scope half of a connection: everything that is not the secret.
-/// A shared credential must never carry it, or one scope would overwrite
-/// another scope's configuration.
 pub(crate) fn config_for_binding(
     provider: &str,
     workspace_id: &str,
@@ -197,6 +197,49 @@ pub(crate) fn config_for_binding(
 ) -> Result<Option<String>, IntegrationCredentialError> {
     let conn = open_db()?;
     config_for_binding_in(&conn, provider, workspace_id, project_id)
+}
+
+pub(crate) struct BoundValue<'a> {
+    pub key: &'a str,
+    pub supplied: &'a str,
+}
+
+fn normalize_bound(value: &str) -> String {
+    value.trim().trim_end_matches('/').to_ascii_lowercase()
+}
+
+fn check_bound(
+    provider: &str,
+    config: Option<&str>,
+    values: &[BoundValue],
+) -> Result<(), IntegrationCredentialError> {
+    let parsed: Option<serde_json::Value> = config.and_then(|raw| serde_json::from_str(raw).ok());
+    for value in values {
+        let bound = parsed
+            .as_ref()
+            .and_then(|config| config.get(value.key))
+            .and_then(|held| held.as_str());
+        let matches = bound
+            .map(|held| normalize_bound(held) == normalize_bound(value.supplied))
+            .unwrap_or(false);
+        if !matches {
+            return Err(IntegrationCredentialError::UnboundValue {
+                provider: provider.to_string(),
+                field: value.key.to_string(),
+            });
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn require_bound(
+    provider: &str,
+    workspace_id: &str,
+    project_id: Option<&str>,
+    values: &[BoundValue],
+) -> Result<(), IntegrationCredentialError> {
+    let config = config_for_binding(provider, workspace_id, project_id)?;
+    check_bound(provider, config.as_deref(), values)
 }
 
 fn legacy_bindings_in_db() -> Result<Vec<LegacyBinding>, IntegrationCredentialError> {
@@ -226,6 +269,12 @@ fn cached(cache: &SecretCache, credential_id: &str) -> Option<String> {
     cache.lock().ok()?.get(credential_id).cloned()
 }
 
+fn evict(cache: &SecretCache, credential_id: &str) {
+    if let Ok(mut entries) = cache.lock() {
+        entries.remove(credential_id);
+    }
+}
+
 fn remember(cache: &SecretCache, credential_id: &str, secret: &str) {
     if let Ok(mut entries) = cache.lock() {
         entries.insert(credential_id.to_string(), secret.to_string());
@@ -250,10 +299,6 @@ fn read_for_credential(
     Ok(secret)
 }
 
-/// The secret a scope's connection resolves to. The scope names a provider,
-/// the binding names the credential, and only the credential's own id ever
-/// reaches the keychain. Resolution is project override, then the workspace
-/// binding, then a credential no binding claims.
 pub(crate) fn read_for_binding(
     provider: &str,
     workspace_id: &str,
@@ -287,9 +332,6 @@ pub(crate) fn read_for_binding(
     )
 }
 
-/// A bound credential is the scope's declared account, so a missing secret is
-/// an error rather than a reason to reach for another one. Only the unbound
-/// tier, where no scope declared anything, may skip a credential it cannot read.
 fn resolve_and_read<F>(
     conn: &Connection,
     provider: &str,
@@ -319,7 +361,6 @@ where
     Ok(None)
 }
 
-/// The provider-wide fallback alone, for callers that hold no workspace.
 pub(crate) fn read_global(
     provider: &str,
     cache: &SecretCache,
@@ -331,9 +372,6 @@ pub(crate) fn read_global(
     read_for_credential(provider, &credential_id, cache).map(Some)
 }
 
-/// The token a connect attempt should verify: the one just typed, or the one
-/// the chosen credential already holds. A reused credential never sends its
-/// secret across the IPC boundary to get here.
 pub(crate) fn secret_to_verify(
     provider: &str,
     credential_id: &str,
@@ -411,41 +449,56 @@ fn github_binding_exists(
     .map(|hit| hit.is_some())
 }
 
-/// Stores a validated github token: under the container's workspace-level
-/// binding when a workspace is named, under the global credential otherwise.
-/// Either scope is created on first use.
 pub(crate) fn github_store_token(
     workspace_id: Option<&str>,
     token: &str,
 ) -> Result<(), IntegrationCredentialError> {
     let conn = open_db()?;
+    github_store_token_with(&conn, workspace_id, token, shared_cache(), secrets::set)
+}
+
+fn github_store_token_with<S>(
+    conn: &Connection,
+    workspace_id: Option<&str>,
+    token: &str,
+    cache: &SecretCache,
+    set: S,
+) -> Result<(), IntegrationCredentialError>
+where
+    S: FnOnce(&str, &str) -> Result<(), secrets::SecretError>,
+{
     let credential_id = match workspace_id.filter(|id| !id.is_empty()) {
-        Some(ws) => match credential_id_for_binding(&conn, GITHUB_PROVIDER, ws, None)? {
+        Some(ws) => match credential_id_for_binding(conn, GITHUB_PROVIDER, ws, None)? {
             Some(id) => id,
             None => {
-                let id = new_id(&conn)?;
-                insert_github_credential(&conn, &id)?;
-                insert_github_binding(&conn, ws, None, &id)?;
+                let id = new_id(conn)?;
+                insert_github_credential(conn, &id)?;
+                insert_github_binding(conn, ws, None, &id)?;
                 id
             }
         },
-        None => match global_credential_id(&conn, GITHUB_PROVIDER)? {
+        None => match global_credential_id(conn, GITHUB_PROVIDER)? {
             Some(id) => id,
             None => {
-                let id = new_id(&conn)?;
-                insert_github_credential(&conn, &id)?;
+                let id = new_id(conn)?;
+                insert_github_credential(conn, &id)?;
                 id
             }
         },
     };
-    secrets::set(&secret_key(&credential_id), token)?;
+    set(&secret_key(&credential_id), token)?;
+    remember(cache, &credential_id, token);
     Ok(())
 }
 
-fn delete_credential_if_unbound(
+fn delete_credential_if_unbound<C>(
     conn: &Connection,
     credential_id: &str,
-) -> Result<(), IntegrationCredentialError> {
+    clear: &mut C,
+) -> Result<(), IntegrationCredentialError>
+where
+    C: FnMut(&str) -> Result<(), secrets::SecretError>,
+{
     let bound: Option<i64> = conn
         .query_row(
             "SELECT 1 FROM integration_bindings WHERE credential_id = ?1 LIMIT 1",
@@ -462,7 +515,7 @@ fn delete_credential_if_unbound(
         rusqlite::params![credential_id],
     )
     .map_err(store_err)?;
-    secrets::clear(&secret_key(credential_id))?;
+    clear(&secret_key(credential_id))?;
     Ok(())
 }
 
@@ -470,32 +523,46 @@ pub(crate) fn github_clear_token(
     workspace_id: Option<&str>,
 ) -> Result<(), IntegrationCredentialError> {
     let conn = open_db()?;
+    github_clear_token_with(&conn, workspace_id, shared_cache(), secrets::clear)
+}
+
+fn github_clear_token_with<C>(
+    conn: &Connection,
+    workspace_id: Option<&str>,
+    cache: &SecretCache,
+    mut clear: C,
+) -> Result<(), IntegrationCredentialError>
+where
+    C: FnMut(&str) -> Result<(), secrets::SecretError>,
+{
     match workspace_id.filter(|id| !id.is_empty()) {
         Some(ws) => {
-            let Some(credential_id) = credential_id_for_binding(&conn, GITHUB_PROVIDER, ws, None)?
+            let Some(credential_id) = credential_id_for_binding(conn, GITHUB_PROVIDER, ws, None)?
             else {
-                secrets::clear(&github_legacy_key(ws))?;
+                clear(&github_legacy_key(ws))?;
                 return Ok(());
             };
+            evict(cache, &credential_id);
             conn.execute(
                 "DELETE FROM integration_bindings
                  WHERE workspace_id = ?1 AND provider = 'github'",
                 rusqlite::params![ws],
             )
             .map_err(store_err)?;
-            delete_credential_if_unbound(&conn, &credential_id)?;
-            secrets::clear(&github_legacy_key(ws))?;
+            delete_credential_if_unbound(conn, &credential_id, &mut clear)?;
+            clear(&github_legacy_key(ws))?;
         }
         None => {
-            if let Some(credential_id) = global_credential_id(&conn, GITHUB_PROVIDER)? {
+            if let Some(credential_id) = global_credential_id(conn, GITHUB_PROVIDER)? {
+                evict(cache, &credential_id);
                 conn.execute(
                     "DELETE FROM integration_credentials WHERE id = ?1",
                     rusqlite::params![credential_id],
                 )
                 .map_err(store_err)?;
-                secrets::clear(&secret_key(&credential_id))?;
+                clear(&secret_key(&credential_id))?;
             }
-            secrets::clear(GITHUB_LEGACY_KEY)?;
+            clear(GITHUB_LEGACY_KEY)?;
         }
     }
     Ok(())
@@ -541,10 +608,6 @@ where
     Ok(adopted)
 }
 
-/// Moves the legacy github PATs into the credential system: the plain
-/// `github.pat` becomes a global github credential, and every
-/// `github.pat.<ex-workspace>` becomes a credential bound to the container
-/// that ex-workspace id now maps to. Secrets move keys; none is rewritten.
 fn adopt_github_with<R, W, C>(
     conn: &Connection,
     mut read: R,
@@ -607,10 +670,6 @@ where
     Ok(adopted)
 }
 
-/// Moves every pre-m114 keychain entry onto the credential id its binding now
-/// carries, and adopts the legacy github PAT cascade into the same system.
-/// Safe to run on every boot: a credential already in place is left alone, so
-/// no working connection is disturbed and none is lost.
 #[tauri::command(async)]
 pub fn integration_credentials_adopt() -> Result<usize, IntegrationCredentialError> {
     let bindings = legacy_bindings_in_db()?;
@@ -621,9 +680,6 @@ pub fn integration_credentials_adopt() -> Result<usize, IntegrationCredentialErr
     Ok(legacy + github)
 }
 
-/// A credential no binding claims and no keychain entry backs can never resolve
-/// to anything, and it would shadow a healthy one in the unbound tier. Only the
-/// row goes: a credential a scope still names stays, broken and visible.
 fn sweep_orphan_credentials<R>(
     conn: &Connection,
     mut read_secret: R,
@@ -656,8 +712,6 @@ where
     Ok(swept)
 }
 
-/// Whether the keychain still holds the secret a credential claims to own.
-/// A binding whose credential answers false is connected on paper only.
 #[tauri::command]
 pub async fn integration_credential_has_secret(
     credential_id: String,
@@ -678,8 +732,6 @@ fn integration_credential_has_secret_blocking(
     Ok(secrets::read(&secret_key(&credential_id))?.is_some())
 }
 
-/// Removes the secret itself. The row is deleted first on the database side,
-/// where a foreign key refuses while any binding still references it.
 #[tauri::command]
 pub async fn integration_credential_forget(
     credential_id: String,
@@ -697,7 +749,19 @@ fn integration_credential_forget_blocking(
     if credential_id.is_empty() {
         return Err(IntegrationCredentialError::MissingCredential);
     }
-    secrets::clear(&secret_key(&credential_id))?;
+    forget_with(&credential_id, shared_cache(), secrets::clear)
+}
+
+fn forget_with<C>(
+    credential_id: &str,
+    cache: &SecretCache,
+    clear: C,
+) -> Result<(), IntegrationCredentialError>
+where
+    C: FnOnce(&str) -> Result<(), secrets::SecretError>,
+{
+    evict(cache, credential_id);
+    clear(&secret_key(credential_id))?;
     Ok(())
 }
 
@@ -706,24 +770,118 @@ mod tests {
     use super::*;
 
     #[test]
-    fn token_caches_stay_distinct_state_types() {
-        use std::any::TypeId;
-        let ids = [
-            TypeId::of::<crate::bitbucket::BitbucketTokenCache>(),
-            TypeId::of::<crate::gitlab::GitlabTokenCache>(),
-            TypeId::of::<crate::jira::JiraTokenCache>(),
-            TypeId::of::<crate::linear::LinearTokenCache>(),
-            TypeId::of::<crate::sentry::SentryTokenCache>(),
-            TypeId::of::<crate::slack::SlackTokenCache>(),
+    fn every_provider_cache_is_the_one_shared_store() {
+        let caches = [
+            crate::bitbucket::BitbucketTokenCache::new().0,
+            crate::gitlab::GitlabTokenCache::new().0,
+            crate::jira::JiraTokenCache::new().0,
+            crate::linear::LinearTokenCache::new().0,
+            crate::sentry::SentryTokenCache::new().0,
+            crate::slack::SlackTokenCache::new().0,
         ];
-        let unique: std::collections::HashSet<TypeId> = ids.iter().copied().collect();
-        assert_eq!(unique.len(), ids.len());
+        for held in caches {
+            assert!(std::ptr::eq(held, shared_cache()));
+        }
+    }
+
+    #[test]
+    fn forgetting_evicts_even_when_the_keychain_clear_fails() {
+        let cache = cache();
+        remember(&cache, "cred-1", "lin_api_stored");
+
+        let outcome = forget_with("cred-1", &cache, |_| Err(secrets::SecretError::InvalidKey));
+
+        assert!(outcome.is_err());
+        assert!(cached(&cache, "cred-1").is_none());
     }
 
     use std::cell::RefCell;
 
     fn cache() -> SecretCache {
         Mutex::new(HashMap::new())
+    }
+
+    #[test]
+    fn storing_a_github_token_twice_serves_the_new_token() {
+        let conn = test_conn();
+        let cache = cache();
+        let keychain = RefCell::new(HashMap::<String, String>::new());
+        let set = |key: &str, value: &str| {
+            keychain
+                .borrow_mut()
+                .insert(key.to_string(), value.to_string());
+            Ok(())
+        };
+
+        github_store_token_with(&conn, Some("w1"), "ghp_old_harborline", &cache, set).unwrap();
+        let credential_id = credential_id_for_binding(&conn, GITHUB_PROVIDER, "w1", None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            cached(&cache, &credential_id).as_deref(),
+            Some("ghp_old_harborline")
+        );
+
+        github_store_token_with(&conn, Some("w1"), "ghp_new_harborline", &cache, set).unwrap();
+        assert_eq!(
+            cached(&cache, &credential_id).as_deref(),
+            Some("ghp_new_harborline")
+        );
+        assert_eq!(
+            keychain.borrow().get(&secret_key(&credential_id)).cloned(),
+            Some("ghp_new_harborline".to_string())
+        );
+    }
+
+    #[test]
+    fn a_failed_keychain_write_keeps_the_old_cached_token() {
+        let conn = test_conn();
+        let cache = cache();
+        github_store_token_with(&conn, None, "ghp_old_harborline", &cache, |_, _| Ok(())).unwrap();
+        let credential_id = global_credential_id(&conn, GITHUB_PROVIDER)
+            .unwrap()
+            .unwrap();
+
+        let outcome = github_store_token_with(&conn, None, "ghp_new_harborline", &cache, |_, _| {
+            Err(secrets::SecretError::InvalidKey)
+        });
+
+        assert!(outcome.is_err());
+        assert_eq!(
+            cached(&cache, &credential_id).as_deref(),
+            Some("ghp_old_harborline")
+        );
+    }
+
+    #[test]
+    fn clearing_a_github_token_evicts_the_cached_secret() {
+        let conn = test_conn();
+        let cache = cache();
+        github_store_token_with(&conn, Some("w1"), "ghp_old_harborline", &cache, |_, _| {
+            Ok(())
+        })
+        .unwrap();
+        let credential_id = credential_id_for_binding(&conn, GITHUB_PROVIDER, "w1", None)
+            .unwrap()
+            .unwrap();
+
+        github_clear_token_with(&conn, Some("w1"), &cache, |_| Ok(())).unwrap();
+
+        assert!(cached(&cache, &credential_id).is_none());
+    }
+
+    #[test]
+    fn clearing_the_global_github_token_evicts_the_cached_secret() {
+        let conn = test_conn();
+        let cache = cache();
+        github_store_token_with(&conn, None, "ghp_old_harborline", &cache, |_, _| Ok(())).unwrap();
+        let credential_id = global_credential_id(&conn, GITHUB_PROVIDER)
+            .unwrap()
+            .unwrap();
+
+        github_clear_token_with(&conn, None, &cache, |_| Ok(())).unwrap();
+
+        assert!(cached(&cache, &credential_id).is_none());
     }
 
     fn test_conn() -> Connection {
@@ -777,6 +935,94 @@ mod tests {
             rusqlite::params![id, workspace, project, provider, credential],
         )
         .expect("binding");
+    }
+
+    fn keyed_conn(name: &str) -> (Connection, std::path::PathBuf) {
+        let dir =
+            std::env::temp_dir().join(format!("goodboy-credentials-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let conn = db::open_connection(&dir.join("data.db")).expect("connection");
+        conn.execute_batch(
+            "CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT);
+             CREATE TABLE integration_credentials (
+               id TEXT PRIMARY KEY,
+               provider TEXT NOT NULL,
+               label TEXT NOT NULL,
+               account TEXT NOT NULL DEFAULT '',
+               created_at INTEGER NOT NULL,
+               updated_at INTEGER NOT NULL
+             );
+             CREATE TABLE integration_bindings (
+               id TEXT PRIMARY KEY,
+               workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+               project_id TEXT,
+               provider TEXT NOT NULL,
+               credential_id TEXT NOT NULL REFERENCES integration_credentials(id) ON DELETE RESTRICT,
+               config TEXT NOT NULL DEFAULT '{}',
+               created_at INTEGER NOT NULL,
+               updated_at INTEGER NOT NULL
+             );
+             INSERT INTO workspaces (id, name) VALUES ('ws-1', 'Harborline');",
+        )
+        .expect("schema");
+        (conn, dir)
+    }
+
+    #[test]
+    fn a_bound_credential_is_refused_by_the_database_not_orphaned() {
+        let (conn, dir) = keyed_conn("bound");
+        seed_credential(&conn, "cred-1", "linear");
+        seed_binding(&conn, "bind-1", "ws-1", None, "linear", "cred-1");
+
+        let refused = conn.execute(
+            "DELETE FROM integration_credentials WHERE id = 'cred-1'",
+            [],
+        );
+
+        assert!(refused.is_err());
+        let bindings: i64 = conn
+            .query_row("SELECT COUNT(*) FROM integration_bindings", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(bindings, 1);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn dropping_the_bindings_first_lets_the_credential_go_and_a_shared_one_stays() {
+        let (conn, dir) = keyed_conn("unbound");
+        seed_credential(&conn, "cred-1", "linear");
+        seed_credential(&conn, "cred-2", "linear");
+        seed_binding(&conn, "bind-1", "ws-1", None, "linear", "cred-1");
+        seed_binding(&conn, "bind-2", "ws-1", Some("proj-1"), "linear", "cred-2");
+        seed_binding(&conn, "bind-3", "ws-1", Some("proj-2"), "linear", "cred-2");
+
+        conn.execute("DELETE FROM integration_bindings WHERE id = 'bind-1'", [])
+            .unwrap();
+        conn.execute(
+            "DELETE FROM integration_credentials WHERE id = 'cred-1'",
+            [],
+        )
+        .unwrap();
+        conn.execute("DELETE FROM integration_bindings WHERE id = 'bind-2'", [])
+            .unwrap();
+        let shared = conn.execute(
+            "DELETE FROM integration_credentials WHERE id = 'cred-2'",
+            [],
+        );
+
+        assert!(shared.is_err());
+        let left: Vec<String> = conn
+            .prepare("SELECT id FROM integration_credentials")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(left, vec!["cred-2"]);
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]
@@ -874,6 +1120,41 @@ mod tests {
 
         assert!(matches!(
             resolved,
+            Err(IntegrationCredentialError::MissingSecret { .. })
+        ));
+    }
+
+    #[test]
+    fn store_then_forget_then_read_is_a_missing_secret() {
+        let cache = cache();
+        let keychain = RefCell::new(HashMap::new());
+        let conn = test_conn();
+        seed_credential(&conn, "cred-1", "linear");
+        seed_binding(&conn, "b-ws", "container-1", None, "linear", "cred-1");
+        keychain
+            .borrow_mut()
+            .insert(secret_key("cred-1"), "lin_api_stored".to_string());
+        let read = |id: &str| -> Result<Option<String>, secrets::SecretError> {
+            if let Some(hit) = cached(&cache, id) {
+                return Ok(Some(hit));
+            }
+            let found = keychain.borrow().get(&secret_key(id)).cloned();
+            if let Some(secret) = found.as_deref() {
+                remember(&cache, id, secret);
+            }
+            Ok(found)
+        };
+        let before = resolve_and_read(&conn, "linear", "container-1", None, read).expect("reads");
+        assert_eq!(before.as_deref(), Some("lin_api_stored"));
+
+        forget_with("cred-1", &cache, |key| {
+            keychain.borrow_mut().remove(key);
+            Ok(())
+        })
+        .expect("forgets");
+
+        assert!(matches!(
+            resolve_and_read(&conn, "linear", "container-1", None, read),
             Err(IntegrationCredentialError::MissingSecret { .. })
         ));
     }
@@ -981,6 +1262,57 @@ mod tests {
 
         assert_eq!(own.as_deref(), Some("{\"host\":\"own\"}"));
         assert_eq!(shared.as_deref(), Some("{\"host\":\"shared\"}"));
+    }
+
+    #[test]
+    fn a_caller_value_equal_to_the_binding_is_accepted() {
+        let config = "{\"siteUrl\":\"https://acme.atlassian.net\",\"email\":\"Dev@Acme.test\"}";
+        let result = check_bound(
+            "jira",
+            Some(config),
+            &[
+                BoundValue {
+                    key: "siteUrl",
+                    supplied: " https://ACME.atlassian.net/ ",
+                },
+                BoundValue {
+                    key: "email",
+                    supplied: "dev@acme.test",
+                },
+            ],
+        );
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn a_caller_host_different_from_the_binding_is_rejected() {
+        let config = "{\"host\":\"https://gitlab.acme.test\"}";
+        let result = check_bound(
+            "gitlab",
+            Some(config),
+            &[BoundValue {
+                key: "host",
+                supplied: "https://collector.example.test",
+            }],
+        );
+
+        assert!(matches!(
+            result,
+            Err(IntegrationCredentialError::UnboundValue { .. })
+        ));
+    }
+
+    #[test]
+    fn a_value_is_rejected_when_the_binding_holds_no_config_or_key() {
+        let value = [BoundValue {
+            key: "workspaceSlug",
+            supplied: "acme",
+        }];
+
+        assert!(check_bound("bitbucket", None, &value).is_err());
+        assert!(check_bound("bitbucket", Some("{}"), &value).is_err());
+        assert!(check_bound("bitbucket", Some("not json"), &value).is_err());
     }
 
     #[test]

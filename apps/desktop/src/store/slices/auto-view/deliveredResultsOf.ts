@@ -2,6 +2,7 @@ import { isResultsPayload } from '@goodboy/core';
 import { AUTO_OUTCOMES, type AutoOutboxRow } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredResult } from './state';
+import { isRecord } from '@goodboy/types/helpers';
 
 type Params = {
   readonly accepted: ReadonlyArray<AutoOutboxRow>;
@@ -11,9 +12,6 @@ type FieldParams = {
   readonly source: unknown;
   readonly key: string;
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const textOf = ({ source, key }: FieldParams): string | null => {
   if (!isRecord(source)) {

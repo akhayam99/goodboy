@@ -13,7 +13,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { agentIdOf } from '../../../../shared/lib/brandedIds';
+import { agentIdOf } from '../../../../__tests__/helpers/brandedIds';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import {

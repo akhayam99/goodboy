@@ -3,16 +3,16 @@ import {
   AnchoredPopover,
   Avatar,
   EmptyState,
+  ICON_SIZE,
   IconButton,
-  ROW_INTERACTIVE,
   ScrollFade,
-  cn,
+  SelectableRow,
   Skeleton,
   useDropdown,
 } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import type { PullRequestPerson } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from './conceptIcons';
+import { CONCEPT_ICONS } from './conceptIcons';
 
 type Props = {
   readonly search: (query: string) => Promise<ReadonlyArray<PullRequestPerson>>;
@@ -80,7 +80,7 @@ export const ReviewerPicker = ({ search, exclude, openEventName, onAdd }: Props)
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="filter collaborators"
-          className="w-full bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
+          className="w-full bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
         />
       </div>
       {isLoading ? (
@@ -99,21 +99,18 @@ export const ReviewerPicker = ({ search, exclude, openEventName, onAdd }: Props)
           <ul>
             {candidates.map((person) => (
               <li key={person.login}>
-                <button
-                  type="button"
+                <SelectableRow
+                  selected={false}
                   onClick={() => {
                     onAdd([person.login]);
                     close();
                     setQuery('');
                   }}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-label text-foreground',
-                    ROW_INTERACTIVE,
-                  )}
+                  className="items-center gap-2 px-2 py-1 text-meta text-foreground"
                 >
                   <Avatar url={person.avatarUrl} alt={person.login} size="xs" />
                   <span className="min-w-0 flex-1 truncate">{person.login}</span>
-                </button>
+                </SelectableRow>
               </li>
             ))}
           </ul>

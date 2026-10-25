@@ -19,11 +19,14 @@ type Compare = (a: Session, b: Session) => number;
 
 type LastTurnBySession = Readonly<Record<string, string>>;
 
+export type AttentionSinceBySession = Readonly<Record<string, number | null | undefined>>;
+
 type SortParams = {
   readonly sessions: ReadonlyArray<Session>;
   readonly sort: SessionSortKey;
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
   readonly lastTurnBySession: LastTurnBySession;
+  readonly attentionSinceBySession: AttentionSinceBySession;
 };
 
 type Params = {
@@ -33,6 +36,7 @@ type Params = {
   readonly stageBySession?: Readonly<Record<SessionId, SessionStage>>;
   readonly projectBySession?: Readonly<Record<SessionId, SessionProjectRef | null>>;
   readonly lastTurnBySession?: LastTurnBySession;
+  readonly attentionSinceBySession?: AttentionSinceBySession;
 };
 
 type ActivityKeyParams = {
@@ -84,14 +88,32 @@ const byActivityDesc =
       ],
     });
 
-const byWaitingSinceAsc: Compare = (a, b) =>
-  firstDifference({
-    results: [
-      compareIso(a.updatedAt, b.updatedAt),
-      compareIso(a.createdAt, b.createdAt),
-      byId(a, b),
-    ],
-  });
+type WaitingSinceParams = {
+  readonly session: Session;
+  readonly attentionSinceBySession: AttentionSinceBySession;
+};
+
+const waitingSinceOf = ({ session, attentionSinceBySession }: WaitingSinceParams): number => {
+  const since = attentionSinceBySession[session.id];
+  return since ?? Date.parse(session.updatedAt);
+};
+
+type WaitingCompareParams = {
+  readonly attentionSinceBySession: AttentionSinceBySession;
+};
+
+const byWaitingSinceAsc =
+  ({ attentionSinceBySession }: WaitingCompareParams): Compare =>
+  (a, b) =>
+    firstDifference({
+      results: [
+        waitingSinceOf({ session: a, attentionSinceBySession }) -
+          waitingSinceOf({ session: b, attentionSinceBySession }),
+        compareIso(a.updatedAt, b.updatedAt),
+        compareIso(a.createdAt, b.createdAt),
+        byId(a, b),
+      ],
+    });
 
 const byUpdatedDesc: Compare = (a, b) =>
   firstDifference({
@@ -117,10 +139,14 @@ const sortNeedsYouFirst = ({
   sessions,
   stageBySession,
   lastTurnBySession,
+  attentionSinceBySession,
 }: Omit<SortParams, 'sort'>): Session[] => {
   const needs = sessions.filter((session) => stageBySession[session.id] === 'attention');
   const rest = sessions.filter((session) => stageBySession[session.id] !== 'attention');
-  return [...needs.sort(byWaitingSinceAsc), ...rest.sort(byActivityDesc({ lastTurnBySession }))];
+  return [
+    ...needs.sort(byWaitingSinceAsc({ attentionSinceBySession })),
+    ...rest.sort(byActivityDesc({ lastTurnBySession })),
+  ];
 };
 
 const sortSessions = ({
@@ -128,10 +154,16 @@ const sortSessions = ({
   sort,
   stageBySession,
   lastTurnBySession,
+  attentionSinceBySession,
 }: SortParams): Session[] => {
   switch (sort) {
     case 'needsYou':
-      return sortNeedsYouFirst({ sessions, stageBySession, lastTurnBySession });
+      return sortNeedsYouFirst({
+        sessions,
+        stageBySession,
+        lastTurnBySession,
+        attentionSinceBySession,
+      });
     case 'updatedAt':
       return [...sessions].sort(byUpdatedDesc);
     case 'goal':
@@ -208,8 +240,15 @@ export const sortAndGroupSessions = ({
   stageBySession = {},
   projectBySession = {},
   lastTurnBySession = {},
+  attentionSinceBySession = {},
 }: Params): ReadonlyArray<GroupedSessions> => {
-  const sorted = sortSessions({ sessions, sort: prefs.sort, stageBySession, lastTurnBySession });
+  const sorted = sortSessions({
+    sessions,
+    sort: prefs.sort,
+    stageBySession,
+    lastTurnBySession,
+    attentionSinceBySession,
+  });
 
   switch (prefs.group) {
     case 'none':

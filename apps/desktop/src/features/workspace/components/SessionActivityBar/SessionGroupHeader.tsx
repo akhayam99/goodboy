@@ -1,6 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { Eyebrow, cn, type Tone, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, Eyebrow, ICON_SIZE, Tooltip, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;

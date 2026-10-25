@@ -180,7 +180,7 @@ export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
             size="page"
             icon={CONCEPT_ICONS.explore}
             title={`No changes against ${baseBranch}`}
-            description={`Files that differ from ${baseBranch} appear here.`}
+            description={`Files that differ from ${baseBranch} are listed when they change.`}
           />
         );
       }

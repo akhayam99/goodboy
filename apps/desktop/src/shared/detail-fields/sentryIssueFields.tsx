@@ -4,6 +4,7 @@ import { stateWord } from '../../features/inbox/stateWord';
 import type { InboxState } from '../../features/inbox/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import type { FactRegistry } from './factTypes';
+import { sentryTagLabel } from './sentryTagLabel';
 
 export type SentryIssueProperties = {
   readonly status: string | null;
@@ -67,9 +68,9 @@ export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
   labels: ({ entity }) =>
     entity.tags.slice(0, MAX_TAGS).map((tag) => ({
       key: `tag-${tag.key}`,
-      label: tag.key,
+      label: sentryTagLabel({ key: tag.key }),
       icon: Tag,
-      node: `${tag.key}: ${tag.value}`,
+      node: tag.value,
     })),
   measure: ({ entity }) => ({
     key: 'events',

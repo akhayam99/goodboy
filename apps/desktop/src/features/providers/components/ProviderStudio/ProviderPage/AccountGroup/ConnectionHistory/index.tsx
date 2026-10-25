@@ -52,7 +52,7 @@ export const ConnectionHistory = ({ providerId, label, onClose }: Props) => {
       className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3"
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-label text-foreground">History of changes</h2>
+        <h2 className="text-meta text-foreground">History of changes</h2>
         <IconButton icon={X} label="Hide history" onClick={onClose} />
       </div>
       {events.length === 0 ? (
@@ -64,7 +64,7 @@ export const ConnectionHistory = ({ providerId, label, onClose }: Props) => {
               .slice(-20)
               .reverse()
               .map((event, index) => (
-                <li key={`${event.at}-${index}`} className="flex flex-col gap-1 text-label">
+                <li key={`${event.at}-${index}`} className="flex flex-col gap-1 text-meta">
                   <div className="flex items-center justify-between gap-3 text-muted-foreground">
                     <span>
                       {event.from.replaceAll('_', ' ')} → {event.to.replaceAll('_', ' ')}

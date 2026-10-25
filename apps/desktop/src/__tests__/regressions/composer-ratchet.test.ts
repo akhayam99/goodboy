@@ -23,16 +23,13 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/context/components/QuestionsTab/CustomAnswerField/index.tsx': ['message'],
   'features/context/components/QuestionsTab/QuestionCard/QuestionAnswerInput.tsx': ['message'],
   'features/context/components/QuestionsTab/DelegateAnswerRow/index.tsx': ['document'],
-  'features/diff/components/DiffView/CommentComposer.tsx': ['document'],
-  'features/resolve/components/ReviewFlow/ReviewComment.tsx': ['document', 'document'],
   'features/resolve/components/FixCommentsDrawer/OutcomeQuestion.tsx': ['document'],
   'features/resolve/components/FixCommentsDrawer/OutcomeReply.tsx': ['document'],
-  'features/workflows/components/WorkflowBuilderView/parts/GoalField.tsx': ['document'],
-  'features/workflows/components/WorkflowBuilderView/parts/RunGuidance.tsx': ['document'],
+  'features/workflows/components/WorkflowStudio/WorkflowEditor/GoalField.tsx': ['document'],
   'features/workflows/components/WorkflowRulesPanel/RulesGuidanceBand.tsx': ['document'],
   'features/workflows/components/StepTree/StepEditorFields.tsx': ['document', 'document'],
   'features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx': ['document'],
-  'features/artifacts/components/PlanComments/CommentComposer.tsx': ['document'],
+  'shared/components/CommentComposer/index.tsx': ['document'],
   'features/wireframes/components/WireframeViewer/ChangeComposer.tsx': ['document'],
   'features/workspace-chat/components/TurnIntoWorkPanel/index.tsx': ['document'],
   'features/auto/adopt/MoveToAutoPanel.tsx': ['document'],
@@ -40,16 +37,13 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/AgentTranscriptDrawer/index.tsx': ['message'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],
-  'features/onboarding/OnboardingWizard/steps/FirstSessionStep.tsx': ['document'],
 };
 
 const NOT_AGENT: Readonly<Record<string, string>> = {
   'shared/components/PromptField/index.tsx': 'the shared field itself',
   'shared/components/Conversation/ConversationComposer.tsx':
     'issue and MR comments, read by people',
-  'features/review/components/ReviewPane/WriteReview/LineComment.tsx':
-    'a review comment on GitHub, read by people',
-  'features/review/components/ReviewPane/WriteReview/WriteReviewForm.tsx':
+  'features/review/components/WriteReview/WriteReviewForm.tsx':
     'a review on GitHub, read by people',
   'features/branch/components/PullRequestTab/PullRequestDescription.tsx':
     'the pull request body, read by people',
@@ -69,7 +63,7 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'a proposed title and saved session goal, edited before applying',
   'features/session/components/ContextDrawer/BlockEditor.tsx':
     'saved session context, edited in place',
-  'features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx': 'a title',
+  'features/workflows/components/WorkflowStudio/WorkflowEditor/BuilderTitleField.tsx': 'a title',
   'shared/components/DescriptionSection/index.tsx': 'a description edited in place',
   'shared/components/ProfileForm/index.tsx': 'a profile form',
 };

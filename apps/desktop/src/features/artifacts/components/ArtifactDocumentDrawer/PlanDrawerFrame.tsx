@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ArrowUpRight, Copy } from 'lucide-react';
-import { DrawerFrame, IconButton, PageColumn, cn } from '@goodboy/ui';
+import { cn, DrawerFrame, ICON_SIZE, IconButton, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { agentPlace, sessionPlace, useAppStore, useSessionOpenQuestions } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ArtifactActionTarget } from '../../../actions/types';

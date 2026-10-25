@@ -1,7 +1,18 @@
 import { ChevronRight } from 'lucide-react';
-import { Button, Checkbox, FactCard, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import {
+  Button,
+  Checkbox,
+  cn,
+  FactCard,
+  ICON_SIZE,
+  IconButton,
+  tintClasses,
+  Tooltip,
+  FOCUS_RING,
+  StatusDot,
+} from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import { fileCardOf } from '../../lib/fileCardOf';
 import type { ViewedState } from '../../lib/reviewedFiles';
@@ -62,7 +73,10 @@ export const FileHeader = ({
         onClick={onToggleCollapsed}
         aria-expanded={!isCollapsed}
         aria-label={isCollapsed ? `Expand ${file.path}` : `Collapse ${file.path}`}
-        className="flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md pl-1 pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md pl-1 pr-2 text-left',
+          FOCUS_RING,
+        )}
       >
         <ChevronRight
           size={ICON_SIZE.row}
@@ -105,12 +119,10 @@ export const FileHeader = ({
               label={
                 <>
                   Viewed
-                  {isStale ? (
-                    <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warning" />
-                  ) : null}
+                  {isStale ? <StatusDot size="sm" tone="warning" /> : null}
                 </>
               }
-              className="h-7 shrink-0 rounded-md pl-0.5 pr-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground"
+              className="h-7 shrink-0 rounded-md pl-0.5 pr-2 text-meta text-muted-foreground hover:bg-hover hover:text-foreground"
             />
           </span>
         </Tooltip>

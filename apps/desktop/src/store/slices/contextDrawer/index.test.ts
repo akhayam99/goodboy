@@ -20,7 +20,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { nowIso } from '../project-mounts/nowIso';
 import { createContextDrawerSlice } from './index';
-import { initialContextDrawerState } from './state';
+import { contextDrawerInitialState } from './state';
 import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
 import { selectHasContextChange } from './selectHasContextChange';
 
@@ -33,7 +33,7 @@ type HarnessState = Record<string, unknown>;
 
 const harness = () => {
   let state: HarnessState = {
-    ...initialContextDrawerState,
+    ...contextDrawerInitialState,
     sessionDecisionsBaseline: {},
     drawer: null,
     currentSessionId: SESSION_ID,

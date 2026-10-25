@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { OUTLINE_ASIDE_MIN_WIDTH, useOutlinePlacement } from './index';
+import { useOutlinePlacement } from './index';
 
 type Callback = (
   entries: ReadonlyArray<{ readonly contentRect: { readonly width: number } }>,
@@ -31,13 +31,13 @@ afterEach(() => {
 describe('useOutlinePlacement', () => {
   it('keeps the aside while the container is wide enough', () => {
     vi.stubGlobal('ResizeObserver', FakeResizeObserver);
-    const { result } = renderPlacement({ width: OUTLINE_ASIDE_MIN_WIDTH });
+    const { result } = renderPlacement({ width: 900 });
     expect(result.current).toBe('aside');
   });
 
   it('moves the outline inline once the container is narrow', () => {
     vi.stubGlobal('ResizeObserver', FakeResizeObserver);
-    const { result } = renderPlacement({ width: OUTLINE_ASIDE_MIN_WIDTH - 1 });
+    const { result } = renderPlacement({ width: 900 - 1 });
     expect(result.current).toBe('inline');
   });
 

@@ -35,6 +35,7 @@ import { SCRIPT_KIND } from './kinds/script';
 import { WORKTREE_KIND } from './kinds/worktree';
 import { RECORD_KIND } from './kinds/record';
 import { SESSION_KIND } from './kinds/session';
+import { DONE_LANE_KIND } from './kinds/doneLane';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
 import { REVIEW_KIND } from './kinds/review';
@@ -50,6 +51,7 @@ type AnyDefinition = ActionDefinition<never>;
 const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['session', SESSION_KIND.actions],
   ['sessions', SESSIONS_KIND.actions],
+  ['doneLane', DONE_LANE_KIND.actions],
   ['agent', AGENT_KIND.actions],
   ['workflowRun', WORKFLOW_RUN_KIND.actions],
   ['planPart', PLAN_PART_KIND.actions],

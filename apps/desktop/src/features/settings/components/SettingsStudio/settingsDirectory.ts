@@ -1,7 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { ToolHealth } from '../../../integrations/toolHealthOf';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';

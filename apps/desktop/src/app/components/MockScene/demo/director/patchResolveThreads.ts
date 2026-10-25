@@ -1,11 +1,15 @@
 import type { ResolveThread, SessionId } from '@goodboy/types';
 import type { DirectorStore } from './directorTypes';
 
+type ThreadParams = {
+  readonly thread: ResolveThread;
+};
+
 type Params = {
   readonly store: DirectorStore;
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
-  readonly patch: (thread: ResolveThread) => ResolveThread;
+  readonly patch: (params: ThreadParams) => ResolveThread;
 };
 
 export const patchResolveThreads = ({ store, sessionId, threadIds, patch }: Params): void => {
@@ -14,7 +18,9 @@ export const patchResolveThreads = ({ store, sessionId, threadIds, patch }: Para
     sessionResolveQueueItems: {
       ...state.sessionResolveQueueItems,
       [sessionId]: (state.sessionResolveQueueItems[sessionId] ?? []).map((entry) =>
-        wanted.has(entry.thread.threadId) ? { ...entry, thread: patch(entry.thread) } : entry,
+        wanted.has(entry.thread.threadId)
+          ? { ...entry, thread: patch({ thread: entry.thread }) }
+          : entry,
       ),
     },
   }));

@@ -156,7 +156,7 @@ describe('navigation flow table ratchet', () => {
         const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
         return `crumb:${known?.label ?? text}`;
       });
-    await clickButton(/^Search \(/);
+    await clickButton(/^Search or run \(/);
     const sessionGoals = new Set(useAppStore.getState().sessions.map((session) => session.goal));
     const workspaceNames = new Set(useAppStore.getState().workspaces.map((ws) => ws.name));
     const agentNames = new Set(
@@ -172,7 +172,7 @@ describe('navigation flow table ratchet', () => {
           ![...sessionGoals, ...workspaceNames, ...agentNames].some((name) =>
             label.startsWith(name),
           ) &&
-          !/^Switch to (light|dark) mode/.test(label) &&
+          !/^Theme: (dark|light|system)$/.test(label) &&
           !/^Use the (new|classic) session overview/.test(label),
       )
       .map((label) => `palette:${label.replace(/(Ctrl|⌘).*$/, '').trim()}`);

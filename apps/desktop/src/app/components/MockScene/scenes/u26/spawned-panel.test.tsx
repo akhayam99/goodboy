@@ -81,13 +81,15 @@ describe('the u26 Agents panel scenes', () => {
   );
 
   it.each(['u26-spawned-transcript-light', 'u26-spawned-transcript-dark'])(
-    '%s opens a child transcript with a way back to the tree',
+    '%s opens a child in the center with the tree kept open',
     async (id) => {
       mount({ id });
       expect(
         await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
       ).toBeDefined();
-      expect(screen.getByRole('button', { name: 'Back to agents' })).toBeDefined();
+      const panel = screen.getByRole('region', { name: 'Agents' });
+      expect(within(panel).getByRole('tree', { name: 'Auto agents' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Back to agents' })).toBeNull();
     },
   );
 });

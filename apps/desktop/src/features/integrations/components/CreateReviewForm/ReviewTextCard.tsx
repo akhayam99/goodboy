@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button, Notice, Skeleton, Textarea } from '@goodboy/ui';
+import { Button, ICON_SIZE, Notice, Skeleton, Textarea } from '@goodboy/ui';
 import { RotateCw } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly title: string;

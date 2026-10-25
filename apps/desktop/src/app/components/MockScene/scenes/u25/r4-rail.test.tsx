@@ -129,8 +129,8 @@ describe('r4 session rail scenes', () => {
     expect(within(rail()).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(6);
     const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
-    expect(top.getByRole('button', { name: 'More session actions' })).toBeDefined();
-    expect(top.getByRole('button', { name: 'Refresh session' })).toBeDefined();
+    top.getByRole('button', { name: 'More session actions' });
+    top.getByRole('button', { name: 'Refresh session' });
     expect(rail().querySelector('[data-session-foot]')).toBeNull();
   });
 
@@ -270,6 +270,6 @@ describe('r4 session rail scenes', () => {
     });
 
     const dialog = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
-    expect(within(dialog).getByRole('button', { name: /^Delete/ })).toBeDefined();
+    within(dialog).getByRole('button', { name: /^Delete/ });
   });
 });

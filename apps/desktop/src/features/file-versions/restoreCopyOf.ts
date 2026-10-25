@@ -6,7 +6,10 @@ type ListParams = Readonly<{ paths: ReadonlyArray<string> }>;
 
 type TargetParams = Readonly<{ target: RestoreTarget }>;
 
-type AskParams = TargetParams & Readonly<{ changedSince: ReadonlyArray<string> }>;
+type AskParams = TargetParams &
+  Readonly<{ changedSince: ReadonlyArray<string>; otherWriters: ReadonlyArray<string> }>;
+
+type WritersParams = Readonly<{ names: ReadonlyArray<string>; turnNumber: number | null }>;
 
 export type RestoreCopy = Readonly<{
   title: string;
@@ -26,31 +29,46 @@ const listOf = ({ paths }: ListParams): string => {
   return `${paths.slice(0, -1).join(', ')} and ${paths.at(-1) ?? ''}`;
 };
 
-const askOf = ({ target, changedSince }: AskParams): RestoreCopy => {
+const writersLineOf = ({ names, turnNumber }: WritersParams): string => {
+  if (names.length === 0) {
+    return '';
+  }
+  const who =
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+  return turnNumber === null
+    ? `${who} wrote there since. `
+    : `${who} wrote there after turn ${turnNumber}. `;
+};
+
+const askOf = ({ target, changedSince, otherWriters }: AskParams): RestoreCopy => {
+  const writers = writersLineOf({
+    names: otherWriters,
+    turnNumber: target.scope === 'turn' || target.scope === 'file' ? target.turnNumber : null,
+  });
   if (target.scope === 'turn') {
     return {
       title: `${listOf({ paths: changedSince })} changed after turn ${target.turnNumber}.`,
-      body: 'Your current text is saved as a version before the turn goes back.',
+      body: `${writers}Your current text is saved as a version before the turn goes back.`,
       confirm: 'Restore anyway',
     };
   }
   if (target.scope === 'undo') {
     return {
       title: `${listOf({ paths: changedSince })} changed after the restore.`,
-      body: 'Your current text is saved as a version before the undo.',
+      body: `${writers}Your current text is saved as a version before the undo.`,
       confirm: 'Undo anyway',
     };
   }
   if (target.isNewFile) {
     return {
       title: `${target.subject} changed after this turn.`,
-      body: 'Removing it saves its current text as a version first.',
+      body: `${writers}Removing it saves its current text as a version first.`,
       confirm: 'Remove anyway',
     };
   }
   return {
     title: `${target.subject} changed after this turn.`,
-    body: 'Your current text is saved as a version before it goes back.',
+    body: `${writers}Your current text is saved as a version before it goes back.`,
     confirm: 'Restore anyway',
   };
 };
@@ -111,7 +129,11 @@ const failedOf = ({ target }: TargetParams): RestoreCopy => {
 export const restoreCopyOf = ({ outcome }: Params): RestoreCopy => {
   switch (outcome.kind) {
     case 'ask':
-      return askOf({ target: outcome.target, changedSince: outcome.changedSince });
+      return askOf({
+        target: outcome.target,
+        changedSince: outcome.changedSince,
+        otherWriters: outcome.otherWriters,
+      });
     case 'done':
       return doneOf({ target: outcome.target });
     case 'nothing':

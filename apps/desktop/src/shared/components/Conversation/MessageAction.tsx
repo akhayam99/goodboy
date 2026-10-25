@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { FOCUS_RING, OptionalTooltip, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { cn, FOCUS_RING, ICON_SIZE, OptionalTooltip } from '@goodboy/ui';
 
 type Props = {
   readonly icon: LucideIcon;

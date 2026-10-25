@@ -79,7 +79,7 @@ export const SessionRail = ({ session }: Props) => {
       }}
       className={cn(
         'relative flex h-full min-h-0 shrink-0 flex-col gap-1 bg-background pb-2',
-        'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-out',
+        'motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out',
       )}
     >
       <div data-rail-top="" className={cn('flex min-w-0 shrink-0 pr-2', PANE_RHYTHM.headerInset)}>

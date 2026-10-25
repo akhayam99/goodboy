@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Button } from '@goodboy/ui';
 
 type Props = {
   elapsedMs: number;
@@ -15,18 +16,14 @@ export const BootSlowNotice = ({ elapsedMs, onRetry }: Props) => {
 
   return (
     <div className="flex flex-col items-center gap-1 text-meta text-muted-foreground">
-      <span>this is taking longer than usual</span>
+      <span>This is taking longer than usual</span>
       <span>{`${Math.floor(elapsedMs / 1_000)}s in this step`}</span>
       {onRetry !== undefined && !hasRequestedRestart ? (
-        <button
-          type="button"
-          onClick={requestRestart}
-          className="rounded-sm border border-border-soft bg-background px-3 py-2 text-foreground motion-safe:transition-colors hover:bg-subtle"
-        >
-          restart
-        </button>
+        <Button variant="secondary" size="sm" onClick={requestRestart}>
+          Restart
+        </Button>
       ) : null}
-      {hasRequestedRestart ? <span>still working, give it a moment</span> : null}
+      {hasRequestedRestart ? <span>Still working, give it a moment</span> : null}
     </div>
   );
 };

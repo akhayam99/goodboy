@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CopyButton, Markdown } from '@goodboy/ui';
+import { CodeBlockActionsContext, CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { HandoffChip } from '../HandoffChip';
@@ -9,6 +9,8 @@ import { ScribeTextCard } from '../ScribeTextCard';
 import { carriesPullRequestText } from '../../../../shared/utils/scribeProposal';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRevealedMarkdown } from '../../reveal/useRevealedMarkdown';
+import { AssistantCodeActions } from './AssistantCodeActions';
+import { CodeActionTargetContext } from './codeActionTarget';
 
 type Props = {
   text: string;
@@ -17,6 +19,7 @@ type Props = {
   runId?: string | null;
   itemKey?: string;
   isComplete?: boolean;
+  workingDir?: string | null;
 };
 
 const NO_RUN = '';
@@ -28,6 +31,7 @@ export const AssistantText = ({
   runId = null,
   itemKey = '',
   isComplete = true,
+  workingDir = null,
 }: Props) => {
   const displayText = stripControlMarkers(text);
   const reveal = useRevealedMarkdown({
@@ -40,6 +44,7 @@ export const AssistantText = ({
   const hasCommentResolvedMarker = extractAllCommentResolved(text).some(({ threadId }) =>
     isReviewThreadId(threadId),
   );
+  const codeTarget = useMemo(() => ({ sessionId, workingDir }), [sessionId, workingDir]);
   const menu = useObjectMenuTrigger({
     target: { kind: 'message', text: displayText, sessionId, agentId },
     anchorKey: null,
@@ -52,7 +57,13 @@ export const AssistantText = ({
       data-reveal-answer={reveal.isRevealing ? reveal.revealKey : undefined}
       onContextMenu={menu.onContextMenu}
     >
-      {reveal.text.length > 0 ? <Markdown text={reveal.text} fresh={reveal.fresh} /> : null}
+      {reveal.text.length > 0 ? (
+        <CodeActionTargetContext.Provider value={codeTarget}>
+          <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
+            <Markdown text={reveal.text} fresh={reveal.fresh} />
+          </CodeBlockActionsContext.Provider>
+        </CodeActionTargetContext.Provider>
+      ) : null}
       {reveal.isRevealing ? null : (
         <>
           {sessionId && agentId && hasScribeText ? (

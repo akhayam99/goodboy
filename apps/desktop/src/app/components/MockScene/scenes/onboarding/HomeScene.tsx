@@ -13,7 +13,7 @@ import {
   hydrateOnboardingFromDb,
   markStepComplete,
   pauseWizard,
-} from '../../../../../features/onboarding/onboarding-store';
+} from '../../../../../features/onboarding/onboardingSettings';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -116,14 +116,16 @@ const FOLDERS: ReadonlyArray<Project> = [
   ),
 ];
 
-const answer = (command: string): unknown => {
-  switch (command) {
-    case 'plugin:path|resolve_directory':
-      return HOME;
-    default:
-      return null;
-  }
-};
+const homeAnswer =
+  () =>
+  (command: string): unknown => {
+    switch (command) {
+      case 'plugin:path|resolve_directory':
+        return HOME;
+      default:
+        return null;
+    }
+  };
 
 type SeedParams = {
   readonly state: HomeSceneState;
@@ -137,7 +139,7 @@ const pauseAtWorkspace = async (): Promise<void> => {
 };
 
 const seed = ({ state }: SeedParams): void => {
-  mockSceneIpc(answer);
+  mockSceneIpc(homeAnswer());
   const isEmpty = state === 'empty';
   useAppStore.setState({
     hydrated: true,

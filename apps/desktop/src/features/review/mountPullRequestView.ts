@@ -1,4 +1,5 @@
 import type { MountId, PullRequestView, SessionId } from '@goodboy/types';
+import { pullRequestViewAt } from '../../store/slices/pull-request-view/pullRequestViewAt';
 import type { AppState } from '../../store/types';
 
 type Params = {
@@ -14,9 +15,5 @@ export const mountPullRequestView = ({
   mountId,
   prNumber,
 }: Params): PullRequestView | null => {
-  const entry = state.pullRequestViews[sessionId];
-  if (entry === undefined || prNumber === null || entry.prNumber !== prNumber) {
-    return null;
-  }
-  return entry.mountId === null || entry.mountId === mountId ? entry.view : null;
+  return pullRequestViewAt({ state, sessionId, mountId, prNumber })?.view ?? null;
 };

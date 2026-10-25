@@ -1,4 +1,4 @@
-import { CheckAnalysisDrawer } from '../../features/branch/components/CheckAnalysisDrawer';
+import type { ReactNode } from 'react';
 import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
@@ -7,16 +7,10 @@ import { ExplorePane } from '../../features/explore/components/ExplorePane';
 import { SessionScriptsDrawer } from '../../features/scripts/components/SessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
-import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
-import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawer';
-import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
-import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
-import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
 import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
-import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
 import { AutoChildPane } from './AutoChildPane';
@@ -29,38 +23,21 @@ import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
+import type { DrawerRequest } from '../../store/slices/drawer/state';
+import { PanelBoundary } from './PanelBoundary';
+import { renderRegisteredDrawer } from './renderRegisteredDrawer';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 
-export const DrawerHost = () => {
-  const drawer = useAppStore(selectDrawerPanel);
-  const closeDrawer = useAppStore((s) => s.closeDrawer);
-  const openDrawer = useAppStore((s) => s.openDrawer);
-  const isReading = useAppStore((s) => {
-    const open = selectDrawerPanel(s);
-    return (
-      open?.kind === 'artifact-document' &&
-      readingArtifactOf({
-        state: s,
-        sessionId: open.sessionId,
-        artifactId: open.payload.artifactId,
-      }) !== null
-    );
-  });
+type RenderParams = {
+  readonly drawer: DrawerRequest;
+  readonly isReading: boolean;
+  readonly closeDrawer: () => void;
+  readonly openDrawer: (request: DrawerRequest) => void;
+};
 
-  if (drawer === null) {
-    return null;
-  }
+const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderParams): ReactNode => {
   switch (drawer.kind) {
-    case 'check-analysis':
-      return (
-        <CheckAnalysisDrawer
-          sessionId={drawer.payload.sessionId}
-          mountId={drawer.payload.mountId}
-          checkUrl={drawer.payload.checkUrl}
-          onClose={closeDrawer}
-        />
-      );
     case 'context':
       return (
         <ContextDrawer
@@ -119,15 +96,6 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
-    case 'plan-part':
-      return (
-        <PlanPartDrawer
-          sessionId={drawer.sessionId}
-          planId={drawer.payload.planId}
-          index={drawer.payload.index}
-          onClose={closeDrawer}
-        />
-      );
     case 'scriptRun':
       return (
         <ScriptRunDrawer
@@ -162,8 +130,6 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
-    case 'ask':
-      return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'question':
       return (
         <QuestionDrawer
@@ -199,13 +165,6 @@ export const DrawerHost = () => {
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
-          {...(drawer.payload.from === 'spawned' && {
-            back: {
-              label: 'Back to agents',
-              onBack: () =>
-                openDrawer({ kind: 'spawned', sessionId: drawer.sessionId, payload: null }),
-            },
-          })}
           onClose={closeDrawer}
         />
       );
@@ -229,13 +188,6 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           runId={drawer.payload.runId}
           agentId={drawer.payload.agentId}
-          {...(drawer.payload.from === 'spawned' && {
-            back: {
-              label: 'Back to agents',
-              onBack: () =>
-                openDrawer({ kind: 'spawned', sessionId: drawer.sessionId, payload: null }),
-            },
-          })}
           onClose={closeDrawer}
         />
       );
@@ -252,48 +204,42 @@ export const DrawerHost = () => {
       );
     case 'conversation':
       return <ReviewCommentDrawerHost />;
-    case 'history-versions':
-      return (
-        <HistoryVersionsDrawer
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          mountId={drawer.payload.mountId}
-          worktreePath={drawer.payload.worktreePath}
-          onClose={closeDrawer}
-        />
-      );
+    case 'ask':
+    case 'check-analysis':
     case 'file-diff':
-      if (drawer.payload.whole !== undefined && drawer.payload.source.kind === 'worktree') {
-        return (
-          <FileWholeDrawer
-            key={drawerKey(drawer)}
-            worktreePath={drawer.payload.source.worktreePath}
-            whole={drawer.payload.whole}
-            onClose={closeDrawer}
-          />
-        );
-      }
-      return (
-        <FileDiffDrawer
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          source={drawer.payload.source}
-          path={drawer.payload.path}
-          onClose={closeDrawer}
-        />
-      );
+    case 'history-versions':
+    case 'plan-part':
     case 'terminal':
-      return (
-        <TerminalDrawer
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          terminalId={drawer.payload.terminalId}
-          onClose={closeDrawer}
-        />
-      );
+      return renderRegisteredDrawer({ drawer, closeDrawer, openDrawer });
     default: {
       const exhaustive: never = drawer;
       throw new Error(`unknown drawer kind: ${String(exhaustive)}`);
     }
   }
+};
+
+export const DrawerHost = () => {
+  const drawer = useAppStore(selectDrawerPanel);
+  const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const openDrawer = useAppStore((s) => s.openDrawer);
+  const isReading = useAppStore((s) => {
+    const open = selectDrawerPanel(s);
+    return (
+      open?.kind === 'artifact-document' &&
+      readingArtifactOf({
+        state: s,
+        sessionId: open.sessionId,
+        artifactId: open.payload.artifactId,
+      }) !== null
+    );
+  });
+
+  if (drawer === null) {
+    return null;
+  }
+  return (
+    <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
+      {renderDrawer({ drawer, isReading, closeDrawer, openDrawer })}
+    </PanelBoundary>
+  );
 };

@@ -1,8 +1,7 @@
 import { RotateCcw, TriangleAlert } from 'lucide-react';
-import { Button, EmptyState, PAGE_MEASURE, PANE_RHYTHM, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, ICON_SIZE, PAGE_MEASURE, PageColumn, PANE_RHYTHM } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const OVERVIEW_SETTLE_MS = 10_000;
 

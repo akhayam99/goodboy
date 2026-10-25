@@ -28,6 +28,7 @@ vi.mock('../sessions/sessionMutators', () => ({
 }));
 
 import { cancelCurrentTurn, type CancelTurnReason } from './cancelCurrentTurn';
+import { stopRequests } from './stopRequests';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -94,6 +95,26 @@ describe('cancelCurrentTurn', () => {
       error: new Error('the process did not exit'),
       sessionId: SESSION_ID,
     });
+  });
+
+  it('keeps the stop on record while the process refuses to exit, so the tail can say Still stopping', async () => {
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
+    listLiveRunIds.mockResolvedValue(new Set(['run-1']));
+    const { cancel } = harness();
+
+    await cancel(SESSION_ID, AGENT_ID, 'user');
+
+    expect(stopRequests.of({ agentId: AGENT_ID })).toMatchObject({ runId: 'run-1' });
+    stopRequests.settle({ agentId: AGENT_ID });
+  });
+
+  it('clears the stop on record once the process is gone', async () => {
+    listLiveRunIds.mockResolvedValue(new Set<string>());
+    const { cancel } = harness();
+
+    await cancel(SESSION_ID, AGENT_ID, 'user');
+
+    expect(stopRequests.of({ agentId: AGENT_ID })).toBeNull();
   });
 
   it('stays quiet when a teardown cancel fails', async () => {

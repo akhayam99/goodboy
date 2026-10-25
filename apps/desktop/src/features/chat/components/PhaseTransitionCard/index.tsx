@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Milestone } from 'lucide-react';
-import { Button, Markdown, Notice, tintClasses, Eyebrow } from '@goodboy/ui';
+import { Button, Eyebrow, ICON_SIZE, Markdown, Notice, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
@@ -10,7 +10,6 @@ import { landingLiveKey } from '../../reveal/landingLiveKey';
 import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const warningTint = tintClasses('warning');
 
@@ -94,7 +93,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             tone="warning"
             placement="inline"
             title="The step summary failed"
-            body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but cannot replace context already sent to this step."
+            body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but can't replace context already sent to this step."
             actions={
               <Button
                 variant="secondary"
@@ -108,7 +107,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           />
         ) : null}
         <Eyebrow label="carried forward" />
-        <div className="overflow-x-auto text-label text-foreground">
+        <div className="overflow-x-auto text-meta text-foreground">
           <Markdown text={context} />
         </div>
       </TranscriptDisclosure>

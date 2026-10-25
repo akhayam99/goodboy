@@ -3,12 +3,14 @@ import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react'
 import { cn } from '../../cn';
 import { EYEBROW_CLASS, Eyebrow } from '../Eyebrow';
 import { RemoteImage } from '../RemoteImage';
+import { IMAGE_CLASS } from '../RemoteImage/imageClass';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
 import { parseInline, type InlineNode } from './parseInline';
 import { type Block, type CellAlign, type KitEntry, type TaskState } from './parseMarkdown';
 import { parseStableMarkdown, type BlockCache } from './parseStableMarkdown';
 import { CodeBlockContent } from './CodeBlockContent';
+import { CodeBlockFrame } from './CodeBlockFrame';
 import { freshenNode, type FreshTail } from './freshenNode';
 import { ICON_SIZE } from '../../iconSize';
 
@@ -40,14 +42,7 @@ const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
     return alt;
   }
   if (/^data:image\//i.test(url)) {
-    return (
-      <img
-        key={key}
-        src={url}
-        alt={alt}
-        className="my-2 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
-      />
-    );
+    return <img key={key} src={url} alt={alt} className={IMAGE_CLASS} />;
   }
   if (/^data:/i.test(url)) {
     return alt;
@@ -273,14 +268,22 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         );
       }
       return (
-        <pre
+        <CodeBlockFrame
           key={key}
-          className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-code text-foreground"
+          content={block.content}
+          lang={block.lang}
+          isClosed={block.isClosed}
         >
-          <code>
-            <CodeBlockContent content={block.content} lang={block.lang} isOpen={!block.isClosed} />
-          </code>
-        </pre>
+          <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-code text-foreground">
+            <code>
+              <CodeBlockContent
+                content={block.content}
+                lang={block.lang}
+                isOpen={!block.isClosed}
+              />
+            </code>
+          </pre>
+        </CodeBlockFrame>
       );
     }
     case 'heading': {
@@ -499,7 +502,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                 {renderInline(entry.value, `${key}-m${ei}-v`, variant)}
               </span>
               {entry.hint !== null && (
-                <span className="text-label text-muted-foreground">
+                <span className="text-meta text-muted-foreground">
                   {renderInline(entry.hint, `${key}-m${ei}-h`, variant)}
                 </span>
               )}
@@ -683,35 +686,40 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
     cache: new Map(),
   });
   const content = useMemo(() => {
-    const { document, cache } = parseStableMarkdown({ text, previous: blockCacheRef.current });
-    blockCacheRef.current = cache;
-    const previous =
-      renderedRef.current.variant === variant ? renderedRef.current.cache : new Map();
-    const next = new Map<string, RenderedBlock>();
-    const rendered =
-      variant === 'preview'
-        ? document.blocks.map((block, idx) =>
-            renderCachedBlock({ block, id: `b-${idx}`, variant, previous, next }),
-          )
-        : document.sections.map((section, si) => (
-            <div key={`s-${si}`} className="flex flex-col gap-3">
-              {section.map((block, bi) =>
-                renderCachedBlock({
-                  block,
-                  id: `b-${si}-${bi}`,
-                  variant,
-                  previous,
-                  next,
-                  fresh:
-                    si === document.sections.length - 1 && bi === section.length - 1
-                      ? fresh
-                      : undefined,
-                }),
-              )}
-            </div>
-          ));
-    renderedRef.current = { variant, cache: next };
-    return rendered;
+    try {
+      const { document, cache } = parseStableMarkdown({ text, previous: blockCacheRef.current });
+      const previous =
+        renderedRef.current.variant === variant ? renderedRef.current.cache : new Map();
+      const next = new Map<string, RenderedBlock>();
+      const rendered =
+        variant === 'preview'
+          ? document.blocks.map((block, idx) =>
+              renderCachedBlock({ block, id: `b-${idx}`, variant, previous, next }),
+            )
+          : document.sections.map((section, si) => (
+              <div key={`s-${si}`} className="flex flex-col gap-3">
+                {section.map((block, bi) =>
+                  renderCachedBlock({
+                    block,
+                    id: `b-${si}-${bi}`,
+                    variant,
+                    previous,
+                    next,
+                    fresh:
+                      si === document.sections.length - 1 && bi === section.length - 1
+                        ? fresh
+                        : undefined,
+                  }),
+                )}
+              </div>
+            ));
+      blockCacheRef.current = cache;
+      renderedRef.current = { variant, cache: next };
+      return rendered;
+    } catch (error) {
+      console.error('[markdown-fallback]', error);
+      return <pre className="whitespace-pre-wrap break-words">{text}</pre>;
+    }
   }, [text, variant, fresh]);
 
   if (variant === 'preview') {

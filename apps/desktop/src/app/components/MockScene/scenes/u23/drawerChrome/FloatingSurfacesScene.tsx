@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CircleUser, Copy, GitBranch, Pencil } from 'lucide-react';
-import { FLOATING_SURFACE, Popover, cn, type MenuEntry } from '@goodboy/ui';
+import { cn, FLOATING_SURFACE, ICON_SIZE, Popover, type MenuEntry } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+
 import { AppMenuList } from '../../../../../../features/actions/AppMenuList';
 import { SessionHoverCardBody } from '../../../../../../features/workspace/components/SessionHoverCard/SessionHoverCardBody';
 import { SwitcherPanel } from '../../../../../../features/workspace/components/SessionSwitcher/SwitcherPanel';
@@ -48,14 +48,14 @@ export const FloatingSurfacesScene = () => {
         />
       </Popover>
       <Popover role="dialog" ariaLabel="Assignee" className="w-80 gap-2 p-3">
-        <p className="text-label text-foreground">Assign to</p>
-        <div className="flex items-center gap-2 text-label text-muted-foreground">
+        <p className="text-meta text-foreground">Assign to</p>
+        <div className="flex items-center gap-2 text-meta text-muted-foreground">
           <CircleUser size={ICON_SIZE.row} aria-hidden />
           Robin Vale
         </div>
         <p className="text-meta text-faint-foreground">Robin reviews payments-api changes.</p>
       </Popover>
-      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-label')}>
+      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-meta')}>
         <SessionHoverCardBody
           session={SESSION}
           isArchived={false}

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { AlertCircle, Bot, Check, MessageSquare, Pencil, XCircle } from 'lucide-react';
-import { ClampedProse, ROW_INTERACTIVE, SectionHeader, cn } from '@goodboy/ui';
+import { CircleAlert, Bot, Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
+import { ClampedProse, ICON_SIZE, SectionHeader, SelectableRow } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { ActivityItem } from './activityOf';
@@ -86,7 +86,7 @@ const rowOf = ({
           item.verdict === 'approved' ? (
             <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
           ) : item.verdict === 'changes_requested' ? (
-            <AlertCircle size={GLYPH_SIZE} aria-hidden className="text-danger" />
+            <CircleAlert size={GLYPH_SIZE} aria-hidden className="text-danger" />
           ) : (
             <MessageSquare size={GLYPH_SIZE} aria-hidden />
           ),
@@ -135,7 +135,7 @@ const rowOf = ({
     case 'checks':
       return {
         glyph: item.isFailing ? (
-          <XCircle size={GLYPH_SIZE} aria-hidden className="text-danger" />
+          <CircleX size={GLYPH_SIZE} aria-hidden className="text-danger" />
         ) : item.isRunning ? (
           <CONCEPT_ICONS.checks size={GLYPH_SIZE} aria-hidden className="text-info" />
         ) : (
@@ -170,7 +170,7 @@ const rowOf = ({
       };
     case 'closed':
       return {
-        glyph: <XCircle size={GLYPH_SIZE} aria-hidden />,
+        glyph: <CircleX size={GLYPH_SIZE} aria-hidden />,
         line: <>This {nouns.long} was closed</>,
         comments: [],
         open: null,
@@ -203,7 +203,7 @@ export const PullRequestActivity = ({
                 {row.glyph}
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
+                <span className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
                   <span className="min-w-0 flex-1">{row.line}</span>
                   {row.open !== null && (
                     <span className="shrink-0 text-meta text-faint-foreground">
@@ -229,7 +229,7 @@ export const PullRequestActivity = ({
                         {comment.who === null ? null : (
                           <span className="text-meta text-muted-foreground">{comment.who}</span>
                         )}
-                        <span className="min-w-0 text-label text-foreground">
+                        <span className="min-w-0 text-meta text-foreground">
                           <ClampedProse text={comment.text} lines={2} />
                         </span>
                       </li>
@@ -251,16 +251,13 @@ export const PullRequestActivity = ({
               {row.open === null ? (
                 <div className="flex min-h-8 min-w-0 items-start gap-2 px-2 py-1">{content}</div>
               ) : (
-                <button
-                  type="button"
+                <SelectableRow
+                  selected={false}
                   onClick={row.open.run}
-                  className={cn(
-                    'flex min-h-8 w-full min-w-0 items-start gap-2 rounded-md px-2 py-1 text-left',
-                    ROW_INTERACTIVE,
-                  )}
+                  className="min-h-8 min-w-0 items-start gap-2 px-2 py-1"
                 >
                   {content}
-                </button>
+                </SelectableRow>
               )}
             </li>
           );

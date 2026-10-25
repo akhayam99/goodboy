@@ -353,7 +353,10 @@ describe('executeMountRequest', () => {
 
     await executeMountRequest(request({ verb: 'inspect' }));
 
-    expect(worktreeStatus).toHaveBeenCalledWith({ worktreePath: '/wt/mount-1', baseBranch: null });
+    expect(worktreeStatus).toHaveBeenCalledWith({
+      worktreePath: '/wt/mount-1',
+      baseBranch: undefined,
+    });
   });
 
   it('returns the pull request a retry already created instead of opening a second one', async () => {

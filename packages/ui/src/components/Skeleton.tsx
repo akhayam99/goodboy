@@ -9,7 +9,7 @@ type Props = {
 export const Skeleton = ({ className, style }: Props) => {
   return (
     <span
-      className={cn('block motion-safe:animate-pulse rounded-sm bg-fill', className)}
+      className={cn('block motion-safe:animate-pulse rounded-sm bg-skeleton', className)}
       style={style}
       aria-hidden
     />

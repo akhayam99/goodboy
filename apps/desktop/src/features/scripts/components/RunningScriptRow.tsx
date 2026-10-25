@@ -19,9 +19,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
       className="min-w-0 flex-1 text-left"
       aria-label={`Show ${run.scriptName} output from ${run.sessionGoal}`}
     >
-      <span className="block truncate text-label font-medium text-foreground">
-        {run.scriptName}
-      </span>
+      <span className="block truncate text-meta font-medium text-foreground">{run.scriptName}</span>
       <span className="block truncate text-meta text-muted-foreground">{run.sessionGoal}</span>
     </button>
     <span className="shrink-0 text-meta tabular-nums text-muted-foreground">

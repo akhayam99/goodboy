@@ -288,7 +288,7 @@ export const DrawerColumn = ({
           isFloating
             ? cn('pointer-events-none absolute bottom-0 right-0 z-20', isSheet ? 'top-px' : 'top-0')
             : 'relative overflow-clip motion-safe:transition-[width]',
-          'duration-220 ease-out',
+          'duration-200 ease-enter',
         )}
       >
         {isOpen || isExiting ? (

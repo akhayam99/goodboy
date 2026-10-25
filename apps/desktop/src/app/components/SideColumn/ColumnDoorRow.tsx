@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
 import { DoorCreateButton } from './DoorCreateButton';
 import { DoorSignalMark } from './DoorSignalMark';
@@ -20,6 +20,7 @@ type Props = {
   readonly label: string;
   readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;
+  readonly isQuiet?: boolean;
   readonly signal?: DoorSignal | undefined;
   readonly create?: DoorCreate;
   readonly action?: ReactNode;
@@ -32,6 +33,7 @@ export const ColumnDoorRow = ({
   label,
   shortcut,
   isCurrent,
+  isQuiet = false,
   signal,
   create,
   action,
@@ -53,10 +55,13 @@ export const ColumnDoorRow = ({
       className={cn(
         PANE_RHYTHM.navRail.door,
         'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md text-ui motion-safe:transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        FOCUS_RING,
         isCurrent
           ? 'cursor-default bg-selected text-foreground'
-          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+          : cn(
+              isQuiet ? 'text-faint-foreground' : 'text-muted-foreground',
+              'hover:bg-hover hover:text-foreground',
+            ),
       )}
     >
       <span

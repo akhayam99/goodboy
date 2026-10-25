@@ -13,7 +13,6 @@ import type {
   SessionMountView,
   SessionProjectMount,
   WorkspaceId,
-  WorktreeStatus,
 } from '@goodboy/types';
 import { bitbucketPrStateKind } from '@goodboy/core';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
@@ -195,7 +194,10 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   if (bitbucketPr === null || bitbucketPr === undefined) {
     return null;
   }
-  const bitbucketState = bitbucketPrStateKind({ state: bitbucketPr.state });
+  const bitbucketState = bitbucketPrStateKind({
+    state: bitbucketPr.state,
+    requestState: bitbucketPr.requestState,
+  });
   return {
     provider: 'bitbucket',
     identity:

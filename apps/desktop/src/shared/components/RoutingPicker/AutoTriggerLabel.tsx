@@ -1,4 +1,5 @@
-import { CONCEPT_ICONS, ICON_SIZE } from '../conceptIcons';
+import { CONCEPT_ICONS } from '../conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 export const AUTO_LABEL = 'Auto';
 

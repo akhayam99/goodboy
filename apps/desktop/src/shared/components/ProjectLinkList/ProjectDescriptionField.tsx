@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly project: Project;
@@ -31,7 +32,11 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
       setShowSaved(true);
       window.setTimeout(() => setShowSaved(false), SAVED_FEEDBACK_MS);
     } catch (error) {
-      void reportError({ title: `Couldn't save the description of ${project.name}`, error });
+      void reportError({
+        title: `Couldn't save the description of ${project.name}`,
+        error,
+        recovery: NOTHING_CHANGED,
+      });
     }
   };
 
@@ -62,7 +67,7 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
         onKeyDown={onKeyDown}
         className="h-8 min-w-0 rounded-md border border-border-soft bg-background px-2 text-row text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
       />
-      <div className="flex items-center gap-2 text-label text-faint-foreground">
+      <div className="flex items-center gap-2 text-meta text-faint-foreground">
         <span className="flex-1">Every agent reads this next to the folder name.</span>
         {showSaved ? <span className="text-success">Saved</span> : null}
         {remaining <= COUNTER_THRESHOLD ? <span>{remaining}</span> : null}

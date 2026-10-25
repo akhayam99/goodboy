@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, ConfirmPopover, FieldRow } from '@goodboy/ui';
+import { Button, ConfirmPopover, FieldRow, ICON_SIZE } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { selectLiveWork } from '../../../../store/slices/live-work/selectLiveWork';
+
+import { selectLiveWork } from '../../../../store/runtime/live-work/selectLiveWork';
 
 const DISCONNECT_NOTE =
   'Files stay on disk. Open the folder again to restore it with its sessions.';

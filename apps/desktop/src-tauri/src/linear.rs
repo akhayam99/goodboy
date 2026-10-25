@@ -3,6 +3,7 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::failure::{self, HostFailure, HostFailureKind};
 use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
@@ -14,8 +15,13 @@ const API_URL: &str = "https://api.linear.app/graphql";
 
 #[derive(Debug, Error)]
 pub enum LinearError {
-    #[error("http error: {0}")]
-    Http(String),
+    #[error("http error {status}: {body}")]
+    Http { status: u16, body: String },
+    #[error("http error 429: {body}")]
+    RateLimited {
+        retry_after_seconds: Option<u64>,
+        body: String,
+    },
     #[error("request timed out: {0}")]
     Timeout(String),
     #[error("graphql error: {0}")]
@@ -30,12 +36,13 @@ pub enum LinearError {
     Secret(#[from] secrets::SecretError),
 }
 
-crate::util::impl_error_serialize!(LinearError);
+crate::util::impl_error_serialize!(LinearError, failure);
 
 impl LinearError {
     fn kind(&self) -> &'static str {
         match self {
-            LinearError::Http(_) => "http",
+            LinearError::Http { .. } => "http",
+            LinearError::RateLimited { .. } => "rate_limited",
             LinearError::Timeout(_) => "timeout",
             LinearError::GraphQl(_) => "graphql",
             LinearError::InvalidShape(_) => "shape",
@@ -44,13 +51,46 @@ impl LinearError {
             LinearError::Secret(_) => "secret",
         }
     }
+
+    fn failure(&self) -> Option<HostFailure> {
+        match self {
+            LinearError::Http { status, body } => {
+                Some(failure::failure_of_status(*status, None, body))
+            }
+            LinearError::RateLimited {
+                retry_after_seconds,
+                body,
+            } => Some(failure::failure_of_status(429, *retry_after_seconds, body)),
+            LinearError::Timeout(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Timeout, message))
+            }
+            LinearError::NoToken(_) => Some(HostFailure::of_kind(
+                HostFailureKind::BadCredentials,
+                &self.to_string(),
+            )),
+            LinearError::GraphQl(_)
+            | LinearError::InvalidShape(_)
+            | LinearError::Credential(_)
+            | LinearError::Secret(_) => None,
+        }
+    }
+}
+
+fn http_failure(status: u16, retry_after_seconds: Option<u64>, body: String) -> LinearError {
+    match status {
+        429 => LinearError::RateLimited {
+            retry_after_seconds,
+            body,
+        },
+        _ => LinearError::Http { status, body },
+    }
 }
 
 impl From<reqwest::Error> for LinearError {
     fn from(e: reqwest::Error) -> Self {
         match TransportFailure::from(&e) {
             TransportFailure::Timeout(message) => LinearError::Timeout(message),
-            TransportFailure::Network(message) => LinearError::Http(message),
+            TransportFailure::Network(body) => LinearError::Http { status: 0, body },
         }
     }
 }
@@ -84,10 +124,13 @@ async fn graphql_at<T: serde::de::DeserializeOwned>(
         .send()
         .await?;
     let status = res.status();
-    let body: serde_json::Value = res.json().await?;
+    let retry_after = failure::retry_after_of(res.headers());
+    let text = res.text().await?;
     if !status.is_success() {
-        return Err(LinearError::Http(format!("status {}: {}", status, body)));
+        return Err(http_failure(status.as_u16(), retry_after, text));
     }
+    let body: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| LinearError::InvalidShape(e.to_string()))?;
     if let Some(errors) = body.get("errors") {
         return Err(LinearError::GraphQl(errors.to_string()));
     }
@@ -103,13 +146,13 @@ pub(crate) fn read_token(
     project_id: Option<&str>,
     cache: &LinearTokenCache,
 ) -> Result<String, LinearError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
         .ok_or_else(|| LinearError::NoToken(workspace_id.to_string()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinearOrganization {
-    #[serde(rename = "urlKey")]
     pub url_key: String,
     pub name: String,
 }
@@ -162,11 +205,11 @@ pub struct LinearIssueLabel {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinearAttachment {
     pub id: String,
     pub title: Option<String>,
     pub url: String,
-    #[serde(rename = "sourceType")]
     pub source_type: Option<String>,
     pub metadata: Option<serde_json::Value>,
 }
@@ -182,6 +225,7 @@ pub struct LinearIssueLabelNodes {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinearIssue {
     pub id: String,
     pub identifier: String,
@@ -191,16 +235,13 @@ pub struct LinearIssue {
     pub state: LinearIssueState,
     pub team: LinearIssueTeam,
     pub priority: Option<i64>,
-    #[serde(rename = "priorityLabel")]
     pub priority_label: Option<String>,
     pub assignee: Option<LinearIssuePerson>,
     #[serde(default)]
     pub creator: Option<LinearIssuePerson>,
     pub project: Option<LinearIssueProject>,
     pub labels: LinearIssueLabelNodes,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
-    #[serde(rename = "branchName")]
     pub branch_name: String,
     pub attachments: LinearAttachmentNodes,
 }
@@ -293,9 +334,10 @@ query Issue($issueId: String!) {
 "#;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinearCommentUser {
     pub name: String,
-    #[serde(rename = "avatarUrl", default)]
+    #[serde(default)]
     pub avatar_url: Option<String>,
 }
 
@@ -305,10 +347,10 @@ pub struct LinearCommentParent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinearIssueComment {
     pub id: String,
     pub body: String,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
     pub user: Option<LinearCommentUser>,
     #[serde(default)]
@@ -491,7 +533,7 @@ pub async fn linear_validate_connection(
     cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearViewer, LinearError> {
     let token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)?;
     let viewer: ViewerResponse = graphql(&token, VIEWER_QUERY, None).await?;
     Ok(viewer.viewer)
 }
@@ -503,8 +545,8 @@ pub async fn linear_connect(
     cache: State<'_, LinearTokenCache>,
 ) -> Result<(), LinearError> {
     let token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)?;
+    integration_credentials::store_secret(&credential_id, &token, cache.0)?;
     Ok(())
 }
 
@@ -795,8 +837,8 @@ struct IssueAssigneeUpdatePayload {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct IssueAssigneeUpdateResponse {
-    #[serde(rename = "issueUpdate")]
     issue_update: IssueAssigneeUpdatePayload,
 }
 
@@ -827,8 +869,8 @@ struct IssueStateUpdatePayload {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct IssueStateUpdateResponse {
-    #[serde(rename = "issueUpdate")]
     issue_update: IssueStateUpdatePayload,
 }
 
@@ -863,17 +905,18 @@ struct IssueResponse {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct LinearPageInfo {
-    #[serde(rename = "hasNextPage", default)]
+    #[serde(default)]
     has_next_page: bool,
-    #[serde(rename = "endCursor", default)]
+    #[serde(default)]
     end_cursor: Option<String>,
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CommentPage {
     nodes: Vec<LinearIssueComment>,
-    #[serde(rename = "pageInfo")]
     page_info: LinearPageInfo,
 }
 
@@ -899,8 +942,8 @@ struct IssueUpdatePayload {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct IssueUpdateResponse {
-    #[serde(rename = "issueUpdate")]
     issue_update: IssueUpdatePayload,
 }
 
@@ -911,10 +954,13 @@ struct CommentCreatePayload {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CommentCreateResponse {
-    #[serde(rename = "commentCreate")]
     comment_create: CommentCreatePayload,
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -1110,5 +1156,93 @@ mod tests {
         .await
         .unwrap_err();
         assert_error_shape(&error, "http");
+    }
+
+    #[test]
+    fn every_http_status_reads_as_one_failure_kind_on_the_wire() {
+        for (status, kind) in [
+            (0u16, "network"),
+            (401, "bad_credentials"),
+            (403, "denied"),
+            (404, "not_found"),
+            (500, "failed"),
+            (502, "failed"),
+        ] {
+            let wire = serde_json::to_value(http_failure(status, None, "body".into())).unwrap();
+            assert_eq!(wire["failureKind"], kind, "status {status}");
+            assert_eq!(wire["status"], status, "status {status}");
+        }
+        let limited = serde_json::to_value(http_failure(429, Some(9), "slow".into())).unwrap();
+        assert_eq!(limited["kind"], "rate_limited");
+        assert_eq!(limited["retryAfterSeconds"], 9);
+        let graphql = serde_json::to_value(LinearError::GraphQl("x".into())).unwrap();
+        assert!(graphql.get("failureKind").is_none());
+    }
+
+    #[tokio::test]
+    async fn a_gateway_error_page_is_an_http_error_not_a_decode_error() {
+        use crate::integrations::http::test_support::{http_response, serve_once, within_bound};
+        let base = serve_once(http_response(
+            "502 Bad Gateway",
+            &[("Content-Type", "text/html")],
+            "<html>bad gateway</html>",
+        ))
+        .await;
+        let error = within_bound(graphql_at::<serde_json::Value>(
+            &base,
+            "token",
+            "query { viewer { id } }",
+            None,
+        ))
+        .await
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            LinearError::Http { status: 502, ref body } if body.contains("bad gateway")
+        ));
+        let wire = serde_json::to_value(&error).unwrap();
+        assert_eq!(wire["failureKind"], "failed");
+        assert_eq!(wire["status"], 502);
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_answer_keeps_the_retry_hint() {
+        use crate::integrations::http::test_support::{http_response, serve_once, within_bound};
+        let base = serve_once(http_response(
+            "429 Too Many Requests",
+            &[("Retry-After", "9")],
+            "{}",
+        ))
+        .await;
+        let error = within_bound(graphql_at::<serde_json::Value>(
+            &base,
+            "token",
+            "query { viewer { id } }",
+            None,
+        ))
+        .await
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            LinearError::RateLimited {
+                retry_after_seconds: Some(9),
+                ..
+            }
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_good_answer_that_is_not_json_is_a_shape_error() {
+        use crate::integrations::http::test_support::{http_response, serve_once, within_bound};
+        let base = serve_once(http_response("200 OK", &[], "not json")).await;
+        let error = within_bound(graphql_at::<serde_json::Value>(
+            &base,
+            "token",
+            "query { viewer { id } }",
+            None,
+        ))
+        .await
+        .unwrap_err();
+        assert!(matches!(error, LinearError::InvalidShape(_)));
     }
 }

@@ -1,7 +1,7 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveCommitStyle, ResolvePublicationPreview } from '@goodboy/types';
-import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
-import { NAMES } from '../../shared/names';
+import type { PublicationOutcome } from '../../store/slices/resolve/publication/publicationOutcome';
+import { NAMES } from '../../shared/utils/names';
 import { openSettings } from '../settings/openSettings';
 import { closingThreadCount } from './closingThreadCount';
 
@@ -22,15 +22,18 @@ export const pushCommitCount = ({
 
 export const pushConfirmTitle = ({
   preview,
+  repoName = null,
 }: {
   readonly preview: ResolvePublicationPreview;
+  readonly repoName?: string | null;
 }): string => {
+  const where = repoName === null ? '' : ` in ${repoName}`;
   const commits = pushCommitCount({ preview });
   if (commits > 0 && preview.requiresPush && preview.branch !== '') {
-    return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}?`;
+    return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}${where}?`;
   }
   const threads = pushedCount({ preview });
-  return `Push ${plural(threads, 'comment', 'comments')} to #${preview.prNumber}?`;
+  return `Push ${plural(threads, 'comment', 'comments')} to #${preview.prNumber}${where}?`;
 };
 
 const fixesPart = ({

@@ -24,7 +24,7 @@ export const LeftOutFindings = ({ findings, leaveOut, onChange }: Props) => {
             return (
               <li
                 key={finding.fingerprint}
-                className="flex items-center justify-between gap-2 text-label"
+                className="flex items-center justify-between gap-2 text-meta"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-mono text-foreground">{finding.subjectId}</span>

@@ -2,15 +2,17 @@ import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   AnchoredPopover,
-  StatusDot,
-  FOCUS_RING,
-  TOP_BAR_CONTROL,
-  Tooltip,
   cn,
+  FOCUS_RING,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  StatusDot,
   tintClasses,
+  Tooltip,
+  TOP_BAR_CONTROL,
   useDropdown,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useProvidersConnection } from '../../../hooks/useProvidersConnection';
 import { ProvidersMenuPanel } from '../../ProvidersMenu/ProvidersMenuPanel';
 import {
@@ -29,7 +31,7 @@ export const LimitsProvidersMenu = ({ workspaceId, chips, nowMs }: Props) => {
   const { hasNoProvider, isKnown } = useProvidersConnection();
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-[500px]',
+    width: POPOVER_WIDTH_CLASS.studio,
     expectedWidth: PROVIDERS_PANEL_WIDTH,
     expectedHeight: PROVIDERS_PANEL_HEIGHT,
   });

@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE } from '@goodboy/ui';
+
 import {
   NUMBERED_WIZARD_STEPS,
   OPTIONAL_WIZARD_STEPS,
@@ -84,7 +84,7 @@ export const Stepper = ({ current }: Props) => {
                   position + 1
                 )}
               </span>
-              <span className={cn('truncate text-label', LABEL_CLASS[state])}>
+              <span className={cn('truncate text-meta', LABEL_CLASS[state])}>
                 {WIZARD_STEP_LABEL[step]}
               </span>
               {OPTIONAL_WIZARD_STEPS.has(step) ? (

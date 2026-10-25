@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Resolution, ResolvePins, ResolveSlot } from '@goodboy/core';
 import type { AgentRole, AuxTaskId, StepSize } from '@goodboy/types';
-import { resolutionOf } from '../../../../store/slices/models/selectResolution';
+import { resolutionOf } from '../../../../store/runtime/models/selectResolution';
 import { useModelScope, type ScopeProps } from '../useModelScope';
 
 type SlotProps =

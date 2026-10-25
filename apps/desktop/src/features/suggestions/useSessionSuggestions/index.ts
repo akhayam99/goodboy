@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
@@ -13,7 +13,10 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestart';
-import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
+import {
+  isMountCompleted,
+  isMountRequestMerged,
+} from '../../../store/slices/project-mounts/mountRowModel';
 import {
   changedCount,
   distanceAhead,
@@ -55,6 +58,9 @@ import { scribeRequestStateOf } from '../scribeRequestStateOf';
 import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { askingAutoRootOf } from '../../auto/askingAutoRootOf';
+import type { TrackerMove } from '../../../store/slices/tracker-moves/types';
+import { useTrackerMoveCheck } from '../hooks/useTrackerMoveCheck';
+import { useSeriesStrips } from '../../../shared/hooks/useSeriesStrips';
 
 type Params = {
   readonly session: Session;
@@ -70,6 +76,8 @@ type FromParams = Params & {
 };
 
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
+
+const NO_TRACKER_MOVES: ReadonlyArray<TrackerMove> = [];
 
 type LatestRebaseRequestsParams = {
   readonly events: ReadonlyArray<SessionEvent>;
@@ -194,6 +202,9 @@ export const useSessionSuggestionsFrom = ({
   const cleanupProposals = useAppStore(
     (state) => state.mountCleanupProposals[sessionId] ?? EMPTY_ARRAY,
   );
+  const trackerMoves = useAppStore((state) => state.trackerMoves[sessionId] ?? NO_TRACKER_MOVES);
+  useTrackerMoveCheck({ sessionId });
+  const seriesStrips = useSeriesStrips({ sessionId });
   const completedMountIds = useAppStore(
     useShallow((state) =>
       mounts.flatMap((mount) =>
@@ -204,6 +215,17 @@ export const useSessionSuggestionsFrom = ({
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
     [completedMountIds, mounts],
+  );
+  const mergedMountCount = useAppStore(
+    (state) =>
+      completedMountIds.filter((mountId) => isMountRequestMerged({ state, mountId })).length,
+  );
+  const settledBranches = useMemo(
+    () =>
+      rebaseMounts.length > 0
+        ? { merged: 0, closed: 0 }
+        : { merged: mergedMountCount, closed: completedMountIds.length - mergedMountCount },
+    [completedMountIds.length, mergedMountCount, rebaseMounts.length],
   );
   const chainRowsJson = useAppStore((state) =>
     JSON.stringify(
@@ -304,7 +326,13 @@ export const useSessionSuggestionsFrom = ({
     [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
-  const { outcomes, dismissedFingerprints } = useNextStepOutcomes({ sessionId });
+  const { outcomes, dismissedFingerprints, loadedFor } = useNextStepOutcomes({ sessionId });
+  const setSessionDismissedNextSteps = useAppStore((state) => state.setSessionDismissedNextSteps);
+  useEffect(() => {
+    if (loadedFor === sessionId) {
+      setSessionDismissedNextSteps({ sessionId, fingerprints: dismissedFingerprints });
+    }
+  }, [dismissedFingerprints, loadedFor, sessionId, setSessionDismissedNextSteps]);
   const demotedKinds = useMemo(() => {
     const now = () => Date.now();
     const demoted = new Set<SuggestionKind>();
@@ -462,6 +490,7 @@ export const useSessionSuggestionsFrom = ({
           })
         : [],
       checkChains,
+      settledBranches,
       cleanupProposals: cleanupProposals.map((proposal) => ({
         requestId: proposal.requestId,
         mountId: proposal.mountId,
@@ -471,6 +500,8 @@ export const useSessionSuggestionsFrom = ({
         sizeBytes: proposal.sizeBytes,
         isArchived: proposal.reason === 'archive',
       })),
+      trackerMoves,
+      seriesStrips,
       isActivityShown,
       hasGoal: session.goal.trim() !== '',
       hasEverAttachedWorkflow: attachedRuns.some(({ run }) => run.discardedAt == null),
@@ -489,6 +520,9 @@ export const useSessionSuggestionsFrom = ({
     blockedTranscripts,
     checkChains,
     cleanupProposals,
+    trackerMoves,
+    seriesStrips,
+    settledBranches,
     demotedKinds,
     effectiveAgents,
     events,

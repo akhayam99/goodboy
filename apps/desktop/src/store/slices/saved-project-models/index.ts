@@ -1,4 +1,4 @@
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { applySavedProjectModels } from './applySavedProjectModels';
 import { discardSavedProjectModels } from './discardSavedProjectModels';
 import { loadSavedProjectModels } from './loadSavedProjectModels';

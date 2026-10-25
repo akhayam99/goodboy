@@ -46,7 +46,7 @@ const renderTerminal = async (): Promise<void> => {
 
 const grid = (): HTMLElement => screen.getByRole('list', { name: 'Terminals' });
 
-describe('SPEC3 9.8 Terminal page rows stay reachable from the new list', () => {
+describe('Terminal page rows stay reachable from the new list', () => {
   it('keeps Open session for a session group in the tab strip menu, not on the label', async () => {
     await renderTerminal();
 

@@ -1,9 +1,7 @@
 import type { ImplementationCluster } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { ArtifactRevision } from '@goodboy/db';
 import type { PlanVersion } from './settlePlanComments';
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const textList = ({ value }: { readonly value: unknown }): ReadonlyArray<string> =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];

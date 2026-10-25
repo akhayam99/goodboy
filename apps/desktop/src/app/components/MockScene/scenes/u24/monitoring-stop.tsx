@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
 import { MonitoringStudio } from '../../../../../features/monitoring/components/MonitoringStudio';
-import { RemoveWorktreeAction } from '../../../../../features/session/components/SessionOverviewPane/ProjectMountRows/RemoveWorktreeAction';
-import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
-import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
 import { mockSceneIpc } from '../mockSceneIpc';
@@ -21,7 +18,7 @@ import {
   WORKSPACE_ID,
 } from './monitoringSeed';
 
-type Variant = 'leftovers' | 'stopconfirm' | 'forcestop' | 'cleanup';
+type Variant = 'leftovers' | 'stopconfirm' | 'forcestop';
 
 type Props = {
   readonly variant: Variant;
@@ -91,34 +88,6 @@ const LEFTOVER_SNAPSHOT: MonitorSnapshot = {
   processes: [...SNAPSHOT.processes, ...LEFTOVER_PROCESSES],
 };
 
-const CURRENT_MOUNT = SESSION_MOUNTS[SESSION_ID]?.[0];
-
-const mountRow = (): MountRowView | null =>
-  CURRENT_MOUNT === undefined
-    ? null
-    : {
-        mountId: CURRENT_MOUNT.id,
-        projectId: CURRENT_MOUNT.projectId,
-        projectName: 'payments-api',
-        projectKind: 'repo',
-        mountName: CURRENT_MOUNT.mountName,
-        branch: CURRENT_MOUNT.branch,
-        baseBranch: 'main',
-        worktreePath: CURRENT_MOUNT.worktreePath,
-        lastWorktreePath: CURRENT_MOUNT.lastWorktreePath,
-        repoRoot: CURRENT_MOUNT.repoRoot,
-        isAttached: true,
-        isMainCheckout: false,
-        isOnDisk: true,
-        revision: 1,
-        parallelIndex: 0,
-        request: null,
-        series: null,
-        observation: null,
-        observedBranchHolder: null,
-        isFinished: false,
-      };
-
 const answerOf =
   ({ variant }: Props) =>
   (command: string, payload: unknown) => {
@@ -146,14 +115,12 @@ const CLICKS: Readonly<Record<Variant, ReadonlyArray<string>>> = {
   leftovers: [],
   stopconfirm: ['Stop node'],
   forcestop: ['Stop node'],
-  cleanup: ['Close branch'],
 };
 
 const CONFIRM_CLICKS: Readonly<Record<Variant, ReadonlyArray<string>>> = {
   leftovers: [],
   stopconfirm: [],
   forcestop: ['Stop'],
-  cleanup: [],
 };
 
 const MonitoringStopScene = ({ variant }: Props) => {
@@ -178,12 +145,7 @@ const MonitoringStopScene = ({ variant }: Props) => {
       monitorStopping: {},
       monitorSweptCount: variant === 'leftovers' ? 3 : 0,
     });
-    if (variant === 'cleanup') {
-      useAppStore.setState({ monitorSnapshot: SNAPSHOT, monitorLedger: [...LEDGER] });
-    }
-    if (variant !== 'cleanup') {
-      useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
-    }
+    useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
     setIsReady(true);
   }, [variant]);
 
@@ -202,24 +164,8 @@ const MonitoringStopScene = ({ variant }: Props) => {
     intervalMs: CLICK_MS * 4,
   });
 
-  const row = mountRow();
-
   if (!isReady) {
     return null;
-  }
-  if (variant === 'cleanup') {
-    return (
-      <ToastProvider>
-        <main className="flex h-screen items-start justify-center bg-background p-12 text-foreground">
-          {row === null ? null : (
-            <div className="flex w-96 items-center justify-between gap-3 text-label">
-              <span className="min-w-0 truncate">{row.branch}</span>
-              <RemoveWorktreeAction sessionId={SESSION_ID} row={row} label="payments-api" />
-            </div>
-          )}
-        </main>
-      </ToastProvider>
-    );
   }
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
@@ -232,5 +178,4 @@ export const U24_MONITORING_STOP_SCENES = {
   'monitoring-leftovers': () => <MonitoringStopScene variant="leftovers" />,
   'monitoring-stopconfirm': () => <MonitoringStopScene variant="stopconfirm" />,
   'monitoring-forcestop': () => <MonitoringStopScene variant="forcestop" />,
-  'cleanup-process-blocked': () => <MonitoringStopScene variant="cleanup" />,
 };

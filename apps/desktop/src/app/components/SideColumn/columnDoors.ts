@@ -1,5 +1,5 @@
-import { NAMES } from '../../../shared/names';
-import { SquareKanban, type LucideIcon } from 'lucide-react';
+import { NAMES } from '../../../shared/utils/names';
+import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import type { ColumnDoorId } from './columnPlace';
@@ -9,21 +9,22 @@ export type ColumnDoor = {
   readonly label: string;
   readonly icon: LucideIcon;
   readonly shortcutId?: ShortcutId;
+  readonly isReference?: boolean;
 };
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
-  { id: 'board', label: 'Sessions', icon: SquareKanban, shortcutId: 'session.board' },
+  { id: 'board', label: 'Sessions', icon: CONCEPT_ICONS.sessions, shortcutId: 'session.board' },
   { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
-  { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
   { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
+  { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
   {
     id: 'terminal',
     label: 'Terminal',
     icon: CONCEPT_ICONS.terminal,
     shortcutId: 'terminal.studio',
   },
-  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact },
-  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring },
+  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact, isReference: true },
+  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring, isReference: true },
 ];
 
 export type ColumnActions = {

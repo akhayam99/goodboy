@@ -28,7 +28,7 @@ import {
 } from '../drawerGeometry';
 import { registerEscapeLayer } from '../escape';
 import { DrawerEdgeContext } from '../drawerEdgeContext';
-import { FOLD_MS } from '../motionTimings';
+import { DURATION_QUICK_MS, DURATION_BASE_MS } from '../motionTimings';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -852,7 +852,7 @@ describe('DrawerColumn closing', () => {
   });
 
   it('runs the exit for 160ms, as long as the entry', () => {
-    expect(DRAWER_EXIT_MS).toBe(160);
+    expect(DRAWER_EXIT_MS).toBe(DURATION_QUICK_MS);
   });
 
   it.each([0, 16, 200])(
@@ -1010,7 +1010,7 @@ describe('DrawerColumn closing', () => {
       expect(content()?.className).toContain('motion-safe:animate-drawer-content-out');
       expect(page().hasAttribute('inert')).toBe(false);
 
-      advance(FOLD_MS - 1);
+      advance(DURATION_BASE_MS - 1);
       expect(card()).not.toBeNull();
 
       advance(1);

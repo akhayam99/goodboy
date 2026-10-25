@@ -1,8 +1,8 @@
 import { useEffect, useMemo, type KeyboardEvent } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { DrawerFrame, IconButton } from '@goodboy/ui';
+import { DrawerFrame, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -17,6 +17,7 @@ import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import { allWorktrees } from '../../terminalWorktrees';
 import { TerminalPane } from '../TerminalStudio/TerminalPane';
+import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalScopePicker } from './TerminalScopePicker';
 
@@ -145,9 +146,25 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           onRestart={model.restartTab}
           onRename={model.renameTab}
           onNew={model.newTab}
+          onCloseLastIdle={onClose}
+          actions={
+            <TerminalStripActions
+              worktree={worktree}
+              tab={selected}
+              handoffSessionId={sessionId}
+              canOpenSession={false}
+            />
+          }
         />
         <div className="flex min-h-0 flex-1 flex-col px-2">
-          <TerminalPane key={selected.id} tab={selected} isActive />
+          <TerminalPane
+            key={selected.id}
+            tab={selected}
+            isActive
+            sessionId={sessionId}
+            projectName={worktree.projectName}
+            branch={worktree.branch}
+          />
         </div>
       </div>
     </DrawerFrame>

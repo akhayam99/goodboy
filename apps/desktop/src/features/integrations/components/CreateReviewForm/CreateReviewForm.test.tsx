@@ -21,7 +21,7 @@ import { mockSceneIpc } from '../../../../app/components/MockScene/scenes/mockSc
 import { clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { CreatePrPanel } from '../../github/components/PullRequest/CreatePrPanel';
 import { CreateReviewForm } from './CreateReviewForm';
-import type { CreatedReview, CreateReviewNouns } from './types';
+import type { CreatedReview, CreateReviewInput, CreateReviewNouns } from './types';
 
 let store: StoryStore;
 
@@ -459,7 +459,10 @@ describe('the create form', () => {
     it('creates the merge request with the typed text, the target and Ready by default', async () => {
       renderScene({ name: 'branch-create-gitlab', state: 'empty' });
       await screen.findByRole('textbox', { name: 'Merge request title' });
-      const createMrForSession = vi.fn(async () => undefined);
+      const createMrForSession = vi.fn(async () => ({
+        number: 51,
+        url: 'https://gitlab.com/northwind/ledger-core/-/merge_requests/51',
+      }));
       act(() => store.setState({ createMrForSession }));
 
       typeInto({ name: 'Merge request title', value: 'Ship the GitLab release' });
@@ -481,7 +484,10 @@ describe('the create form', () => {
     it('opens it as a draft when Draft is picked', async () => {
       renderScene({ name: 'branch-create-gitlab', state: 'empty' });
       await screen.findByRole('textbox', { name: 'Merge request title' });
-      const createMrForSession = vi.fn(async () => undefined);
+      const createMrForSession = vi.fn(async () => ({
+        number: 51,
+        url: 'https://gitlab.com/northwind/ledger-core/-/merge_requests/51',
+      }));
       act(() => store.setState({ createMrForSession }));
 
       fireEvent.click(screen.getByRole('tab', { name: 'Draft' }));
@@ -515,7 +521,10 @@ describe('the create form', () => {
       renderScene({ name: 'branch-create-gitlab', state: 'empty' });
       await screen.findByRole('textbox', { name: 'Merge request title' });
       const requestScribe = vi.fn(async () => 'pr:mount');
-      const createMrForSession = vi.fn(async () => undefined);
+      const createMrForSession = vi.fn(async () => ({
+        number: 51,
+        url: 'https://gitlab.com/northwind/ledger-core/-/merge_requests/51',
+      }));
       act(() => store.setState({ requestScribe, createMrForSession }));
 
       fireEvent.click(screen.getByRole('button', { name: 'Write with Scribe' }));
@@ -527,5 +536,153 @@ describe('the create form', () => {
       );
       expect(createMrForSession).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('the create form on a diverged branch', () => {
+  const DIVERGED = {
+    branch: 'hl/relay-retry',
+    head: 'c0ffee123456',
+    headSubject: 'Retry the relay',
+    upstream: 'origin/hl/relay-retry',
+    upstreamDistance: { kind: 'known', ahead: 2, behind: 1 },
+    mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    inProgress: null,
+  };
+
+  const ORIGIN = {
+    remoteSha: 'a1',
+    knownRemoteSha: 'a1',
+    commits: [],
+    onlyOnline: [{ sha: 'b2c3d4e', subject: 'Hotfix the relay timeout' }],
+    fetchError: null,
+  };
+
+  const renderDiverged = async () => {
+    const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    seeded.unmount();
+    const sessionId = firstSessionId();
+    const first = store.getState().sessionProjectMounts[sessionId]?.[0];
+    const firstView = store.getState().sessionMounts[sessionId]?.[0];
+    if (first === undefined || firstView === undefined) {
+      throw new Error('the scene seeds a mount and its view');
+    }
+    const shown = {
+      ...first,
+      mountId: brandId<MountId>({ value: 'mount-notify-relay' }),
+      repoRoot: '/repos/notify-relay',
+      worktreePath: '/worktrees/notify-relay-force',
+      lastWorktreePath: '/worktrees/notify-relay-force',
+      branch: 'hl/relay-retry',
+      parallelIndex: 1,
+    };
+    act(() =>
+      store.setState({
+        sessionProjectMounts: { [sessionId]: [first, shown] },
+        sessionMounts: {
+          [sessionId]: [
+            firstView,
+            {
+              ...firstView,
+              id: shown.mountId,
+              repoRoot: shown.repoRoot,
+              worktreePath: shown.worktreePath,
+              lastWorktreePath: shown.lastWorktreePath,
+              branch: shown.branch,
+              parallelIndex: 1,
+            },
+          ],
+        },
+      }),
+    );
+    mockSceneIpc((command) => {
+      if (command === 'worktree_status') {
+        return DIVERGED;
+      }
+      return command === 'history_origin_ahead' ? ORIGIN : null;
+    });
+    const create = vi.fn(async (_input: CreateReviewInput): Promise<CreatedReview> => ({
+      number: 318,
+      url: null,
+    }));
+    const onCreated = vi.fn();
+    render(
+      <ToastProvider>
+        <CreateReviewForm
+          sessionId={sessionId}
+          mountId={shown.mountId}
+          defaultTitle="Goal"
+          nouns={NOUNS}
+          canSetDraft
+          loadBases={null}
+          searchReviewers={null}
+          hasPushStep
+          hasCloses
+          create={create}
+          requestReviewers={async () => undefined}
+          onCreated={onCreated}
+        />
+      </ToastProvider>,
+    );
+    await titleField();
+    return { create, onCreated };
+  };
+
+  it('offers Force push and create instead of a plain push that origin would refuse', async () => {
+    await renderDiverged();
+
+    await screen.findByRole('button', { name: 'Force push and create pull request' });
+
+    expect(screen.queryByRole('button', { name: 'Push and create pull request' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
+  });
+
+  it('asks the force push confirm first and creates nothing until it is confirmed', async () => {
+    const { create } = await renderDiverged();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Force push and create pull request' }),
+    );
+
+    const confirm = await screen.findByRole('group', {
+      name: 'Replace the online copy and drop 1 commit?',
+    });
+    within(confirm).getByText('Hotfix the relay timeout');
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('creates with the force push and the online commits the person saw', async () => {
+    const { create, onCreated } = await renderDiverged();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Force push and create pull request' }),
+    );
+    const confirm = await screen.findByRole('group', {
+      name: 'Replace the online copy and drop 1 commit?',
+    });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Force push anyway' }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledWith({ number: 318, url: null }));
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ forcePush: { confirmedOnlyOnline: ['b2c3d4e'] } }),
+    );
+  });
+
+  it('leaves the branch and the text alone when the confirm is cancelled', async () => {
+    const { create } = await renderDiverged();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Force push and create pull request' }),
+    );
+    const confirm = await screen.findByRole('group', {
+      name: 'Replace the online copy and drop 1 commit?',
+    });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('group', { name: /Replace the online copy/ })).toBeNull();
+    expect(create).not.toHaveBeenCalled();
+    expect(valueOf(await titleField())).toBe('Goal');
   });
 });

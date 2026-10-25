@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
-import {
-  brandId,
-  type AgentId,
-  type IsoDateTime,
-  type ProviderRunId,
-  type TurnState,
-} from '@goodboy/types';
+import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { aDelegation, aPlanRow, aView } from '../../auto/testing/autoViewFixtures';
 import { agentTurnLive } from './agentTurnLive';
 import { autoChildLive } from './autoChildLive';
 import { autoTreeLive } from './autoTreeLive';
-import { checkFixLive } from './checkFixLive';
-import { cleanupLive } from './cleanupLive';
-import { draftStartLive } from './draftStartLive';
-import { fixRunLive } from './fixRunLive';
-import { historyRewriteLive } from './historyRewriteLive';
-import { processStopLive } from './processStopLive';
-import { workflowRunLive } from './workflowRunLive';
 import type { TailFacts } from '../tailFacts';
 
 const STARTED = brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' });
@@ -346,22 +333,6 @@ describe('autoChildLive', () => {
 });
 
 describe('operation adapters', () => {
-  it('names the run step and its role, and clocks the step from its active time', () => {
-    const stepAgentId = brandId<AgentId>({ value: 'agent-tester' });
-    const facts = workflowRunLive({
-      status: 'running',
-      stepNumber: 3,
-      stepCount: 4,
-      roleNoun: 'Tester',
-      stepAgentId,
-      failure: null,
-    });
-    expect(facts?.phrase).toBe('Step 3 of 4 · Tester is working');
-    expect(facts?.startedAt).toBeNull();
-    expect(facts?.stepAgentId).toBe(stepAgentId);
-    expect(idsOf(facts)).toEqual(['stopStep']);
-  });
-
   it('runs no clock while a turn waits for your answer', () => {
     const facts = agentTurnLive({
       turn: { kind: 'blocked', runId: RUN, blockedAt: STARTED },
@@ -372,76 +343,5 @@ describe('operation adapters', () => {
     });
     expect(facts?.phrase).toBe('Waiting for your answer');
     expect(facts?.startedAt).toBeNull();
-  });
-
-  it('runs no clock while a run step waits for your answer', () => {
-    const facts = workflowRunLive({
-      status: 'waiting',
-      stepNumber: 3,
-      stepCount: 4,
-      roleNoun: 'Tester',
-      stepAgentId: brandId<AgentId>({ value: 'agent-tester' }),
-      failure: null,
-    });
-    expect(facts?.startedAt).toBeNull();
-    expect(facts?.stepAgentId ?? null).toBeNull();
-  });
-
-  it('names the check a CI fix works on', () => {
-    const facts = checkFixLive({
-      checkName: 'test (payments-api)',
-      turn: RUNNING,
-      agent: IDLE_AGENT,
-      lastTool: BASH,
-      project: 'payments-api',
-    });
-    expect(facts?.phrase).toBe('Fixing test (payments-api): running pnpm in payments-api');
-  });
-
-  it('keeps the fix run lane line and drops the done words', () => {
-    expect(
-      fixRunLive({ word: 'working', laneLine: 'Fixing 1 of 2', startedAt: STARTED })?.phrase,
-    ).toBe('Fixing 1 of 2');
-    expect(fixRunLive({ word: 'done', laneLine: null, startedAt: null })).toBeNull();
-  });
-
-  it('shows one pending state for a worktree close, then the reason and Retry', () => {
-    expect(
-      cleanupLive({ project: 'payments-api', isClosing: true, startedAt: null, failure: null }),
-    ).toMatchObject({ phrase: 'Closing the payments-api worktree', actions: [] });
-    const failed = cleanupLive({
-      project: 'payments-api',
-      isClosing: false,
-      startedAt: null,
-      failure: '2 uncommitted files.',
-    });
-    expect(failed?.phrase).toBe('Could not close: 2 uncommitted files.');
-    expect(idsOf(failed)).toEqual(['retry']);
-  });
-
-  it('keeps the draft and offers Retry when the start fails', () => {
-    expect(
-      idsOf(draftStartLive({ isStarting: false, startError: 'no provider connected' })),
-    ).toEqual(['retry']);
-    expect(draftStartLive({ isStarting: false, startError: null })).toBeNull();
-  });
-
-  it('offers Force stop only after a stop timed out', () => {
-    expect(
-      processStopLive({ name: 'pnpm dev', isStopping: true, hasTimedOut: false, failure: null })
-        ?.phrase,
-    ).toBe('Stopping pnpm dev');
-    expect(
-      idsOf(
-        processStopLive({ name: 'pnpm dev', isStopping: false, hasTimedOut: true, failure: null }),
-      ),
-    ).toEqual(['forceStop']);
-  });
-
-  it('reads the history rewrite phase', () => {
-    expect(
-      historyRewriteLive({ phase: 'applying', startedAt: STARTED, failure: null })?.phrase,
-    ).toBe('Rewriting the history');
-    expect(historyRewriteLive({ phase: 'idle', startedAt: null, failure: null })).toBeNull();
   });
 });

@@ -1,4 +1,9 @@
-import { cleanCliVersion } from '@goodboy/core';
+import {
+  cleanCliVersion,
+  providerFlags,
+  providersOnSameBinary,
+  type ProviderStatusSlot,
+} from '@goodboy/core';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { cliUpdateResultOf } from '../../../features/providers/cliUpdateResult';
@@ -17,18 +22,12 @@ import {
 import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { detectAuthUrl } from './detectAuthUrl';
 import { base64Bytes } from '../../../shared/utils/base64Bytes';
-import { stripAnsi } from './stripAnsi';
+import { stripAnsi } from '../../../shared/utils/stripAnsi';
 import type { GetFn, SetFn } from './types';
 import { ACTIVE_LIFECYCLE_PHASES, IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
 
 const OUTPUT_TAIL_CAP = 4 * 1024;
 const ERROR_TAIL_CAP = 500;
-
-const OPENCODE_BINARY_PROVIDERS: ReadonlySet<ProviderId> = new Set<ProviderId>([
-  'opencode',
-  'openrouter',
-  'moonshot',
-]);
 
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
   switch (action) {
@@ -74,29 +73,49 @@ function restingPhase(
   return connected ? 'error' : 'installed';
 }
 
-function statusSlotPatch(
-  providerId: ProviderId,
-  status: ProviderStatus,
-): {
-  providerStatus?: ProviderStatus;
-  cursorStatus?: ProviderStatus;
-  codexStatus?: ProviderStatus;
-  geminiStatus?: ProviderStatus;
-} {
-  if (providerId === 'anthropic') {
-    return { providerStatus: status };
-  }
-  if (providerId === 'cursor') {
-    return { cursorStatus: status };
-  }
-  if (providerId === 'codex') {
-    return { codexStatus: status };
-  }
-  if (providerId === 'gemini') {
-    return { geminiStatus: status };
-  }
-  return {};
-}
+type SlotPatchParams = {
+  readonly providerId: ProviderId;
+  readonly status: ProviderStatus;
+};
+
+const statusSlotPatch = ({
+  providerId,
+  status,
+}: SlotPatchParams): Partial<Record<ProviderStatusSlot, ProviderStatus>> => {
+  const { statusSlot } = providerFlags({ id: providerId });
+  return statusSlot === null ? {} : { [statusSlot]: status };
+};
+
+type StatusesParams = {
+  readonly providerId: ProviderId;
+  readonly status: ProviderStatus;
+  readonly state: ReturnType<GetFn>;
+};
+
+const statusesAfterExit = ({ providerId, status, state }: StatusesParams): ProviderStatuses => {
+  const sameBinary = providersOnSameBinary({ id: providerId });
+  const statusOf = (id: ProviderId): ProviderStatus | null => {
+    if (id === providerId) {
+      return status;
+    }
+    if (sameBinary.includes(id)) {
+      return { ...status, id };
+    }
+    const { statusSlot } = providerFlags({ id });
+    return statusSlot === null
+      ? storedStatus({ providerId: id, providers: state.providers })
+      : state[statusSlot];
+  };
+  return {
+    anthropic: statusOf('anthropic'),
+    cursor: statusOf('cursor'),
+    codex: statusOf('codex'),
+    gemini: statusOf('gemini'),
+    opencode: statusOf('opencode'),
+    openrouter: statusOf('openrouter'),
+    moonshot: statusOf('moonshot'),
+  };
+};
 
 type StoredStatusParams = {
   readonly providerId: ProviderId;
@@ -166,102 +185,85 @@ export const runLifecycle = async (
   let unlistenOutput: () => void = () => undefined;
   let unlistenExit: () => void = () => undefined;
 
-  unlistenOutput = await listenLifecycleOutput((payload) => {
-    if (payload.runId !== runId) {
-      return;
-    }
-    const chunk = decoder.decode(base64Bytes({ data: payload.data }), { stream: true });
-    outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
-    const match = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
-    if (match === null || match.score <= authScore) {
-      return;
-    }
-    authScore = match.score;
-    set((state) => {
-      const curr = state.providerLifecycle[providerId];
-      if (curr.runId !== runId) {
-        return {};
+  try {
+    unlistenOutput = await listenLifecycleOutput((payload) => {
+      if (payload.runId !== runId) {
+        return;
       }
-      return {
+      const chunk = decoder.decode(base64Bytes({ data: payload.data }), { stream: true });
+      outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
+      const match = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
+      if (match === null || match.score <= authScore) {
+        return;
+      }
+      authScore = match.score;
+      set((state) => {
+        const curr = state.providerLifecycle[providerId];
+        if (curr.runId !== runId) {
+          return {};
+        }
+        return {
+          providerLifecycle: {
+            ...state.providerLifecycle,
+            [providerId]: { ...curr, detectedAuthUrl: match.url },
+          },
+        };
+      });
+    });
+
+    unlistenExit = await listenLifecycleExit((payload) => {
+      if (payload.runId !== runId) {
+        return;
+      }
+      unlistenExit();
+      unlistenOutput();
+
+      const curr = get().providerLifecycle[providerId];
+      const finalPhase: ProviderLifecyclePhase =
+        curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
+      const errorTail =
+        finalPhase === 'error' ? stripAnsi({ text: outputTail }).slice(-ERROR_TAIL_CAP) : null;
+      const update =
+        action === 'update' && finalPhase === 'installed'
+          ? cliUpdateResultOf({ before: versionBefore, status: payload.status })
+          : null;
+
+      const state = get();
+      const statuses = statusesAfterExit({ providerId, status: payload.status, state });
+      const authResults: ProviderAuthResults = {
+        ...(state.authResults ?? {}),
+        [providerId]: payload.auth,
+      };
+      const exitPatch = {
+        ...statusSlotPatch({ providerId, status: payload.status }),
         providerLifecycle: {
           ...state.providerLifecycle,
-          [providerId]: { ...curr, detectedAuthUrl: match.url },
+          [providerId]: {
+            ...curr,
+            phase: finalPhase,
+            exitCode: payload.exitCode,
+            errorTail,
+            update,
+          },
         },
       };
+      applyProviderProbe({
+        set,
+        get,
+        seq: takeProbeSeq(),
+        statuses,
+        authResults,
+        only: providersOnSameBinary({ id: providerId }),
+        isImmediate: true,
+        patch: exitPatch,
+      });
+      onExit?.(payload);
+      void get().refreshProviders({ isFresh: true });
     });
-  });
 
-  unlistenExit = await listenLifecycleExit((payload) => {
-    if (payload.runId !== runId) {
-      return;
-    }
-    unlistenExit();
-    unlistenOutput();
-
-    const curr = get().providerLifecycle[providerId];
-    const finalPhase: ProviderLifecyclePhase =
-      curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
-    const errorTail =
-      finalPhase === 'error' ? stripAnsi({ text: outputTail }).slice(-ERROR_TAIL_CAP) : null;
-    const update =
-      action === 'update' && finalPhase === 'installed'
-        ? cliUpdateResultOf({ before: versionBefore, status: payload.status })
-        : null;
-
-    const sharesOpencodeBinary = OPENCODE_BINARY_PROVIDERS.has(providerId);
-
-    const state = get();
-    const statuses: ProviderStatuses = {
-      anthropic: providerId === 'anthropic' ? payload.status : state.providerStatus,
-      cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
-      codex: providerId === 'codex' ? payload.status : state.codexStatus,
-      gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
-      opencode: sharesOpencodeBinary
-        ? { ...payload.status, id: 'opencode' }
-        : storedStatus({ providerId: 'opencode', providers: state.providers }),
-      openrouter: sharesOpencodeBinary
-        ? { ...payload.status, id: 'openrouter' }
-        : storedStatus({ providerId: 'openrouter', providers: state.providers }),
-      moonshot: sharesOpencodeBinary
-        ? { ...payload.status, id: 'moonshot' }
-        : storedStatus({ providerId: 'moonshot', providers: state.providers }),
-    };
-    const authResults: ProviderAuthResults = {
-      ...(state.authResults ?? {}),
-      [providerId]: payload.auth,
-    };
-    const exitPatch = {
-      ...statusSlotPatch(providerId, payload.status),
-      providerLifecycle: {
-        ...state.providerLifecycle,
-        [providerId]: {
-          ...curr,
-          phase: finalPhase,
-          exitCode: payload.exitCode,
-          errorTail,
-          update,
-        },
-      },
-    };
-    applyProviderProbe({
-      set,
-      get,
-      seq: takeProbeSeq(),
-      statuses,
-      authResults,
-      only: sharesOpencodeBinary ? [...OPENCODE_BINARY_PROVIDERS] : [providerId],
-      isImmediate: true,
-      patch: exitPatch,
-    });
-    onExit?.(payload);
-    void get().refreshProviders({ isFresh: true });
-  });
-
-  try {
     await invokeProviderLifecycleRun({
       providerId,
       action,
-      command,
       runId,
       cols,
       rows,

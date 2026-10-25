@@ -1,6 +1,6 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 

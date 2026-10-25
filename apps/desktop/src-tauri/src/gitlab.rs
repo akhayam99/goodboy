@@ -2,8 +2,12 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
-use crate::integrations::http::{self, TransportFailure};
+use crate::integration_credentials::{self, BoundValue, IntegrationCredentialError};
+use crate::integrations::failure::{self, HostFailure, HostFailureKind};
+use crate::integrations::http::{
+    self, require_secure_scheme, send_retrying, Paged, SchemeRefusal, TransportFailure,
+};
+use crate::integrations::request_state::RequestState;
 use crate::secrets;
 use crate::util::percent_encode;
 
@@ -15,30 +19,82 @@ integration_credentials::token_cache!(GitlabTokenCache);
 pub enum GitlabError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("http error 429: {body}")]
+    RateLimited {
+        retry_after_seconds: Option<u64>,
+        body: String,
+    },
     #[error("request timed out: {0}")]
     Timeout(String),
+    #[error("invalid request: {0}")]
+    InvalidInput(String),
+    #[error("{0}")]
+    InsecureHost(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("the branch changed after it was reviewed: {0}")]
+    StaleHead(String),
     #[error("credential store error: {0}")]
     Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
 
-crate::util::impl_error_serialize!(GitlabError);
+crate::util::impl_error_serialize!(GitlabError, failure);
 
 impl GitlabError {
     fn kind(&self) -> &'static str {
         match self {
             GitlabError::Http { .. } => "http",
+            GitlabError::RateLimited { .. } => "rate_limited",
             GitlabError::Timeout(_) => "timeout",
+            GitlabError::InvalidInput(_) => "invalid_input",
+            GitlabError::InsecureHost(_) => "insecure_host",
             GitlabError::InvalidShape(_) => "shape",
             GitlabError::NoToken(_) => "no_token",
+            GitlabError::StaleHead(_) => "stale_head",
             GitlabError::Credential(_) => "credential",
             GitlabError::Secret(_) => "secret",
         }
+    }
+
+    fn failure(&self) -> Option<HostFailure> {
+        match self {
+            GitlabError::Http { status, body } => {
+                Some(failure::failure_of_status(*status, None, body))
+            }
+            GitlabError::RateLimited {
+                retry_after_seconds,
+                body,
+            } => Some(failure::failure_of_status(429, *retry_after_seconds, body)),
+            GitlabError::Timeout(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Timeout, message))
+            }
+            GitlabError::InsecureHost(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Failed, message))
+            }
+            GitlabError::NoToken(_) => Some(HostFailure::of_kind(
+                HostFailureKind::BadCredentials,
+                &self.to_string(),
+            )),
+            GitlabError::StaleHead(_)
+            | GitlabError::InvalidInput(_)
+            | GitlabError::InvalidShape(_)
+            | GitlabError::Credential(_)
+            | GitlabError::Secret(_) => None,
+        }
+    }
+}
+
+fn http_failure(status: u16, retry_after_seconds: Option<u64>, body: String) -> GitlabError {
+    match status {
+        429 => GitlabError::RateLimited {
+            retry_after_seconds,
+            body,
+        },
+        _ => GitlabError::Http { status, body },
     }
 }
 
@@ -53,9 +109,10 @@ impl From<reqwest::Error> for GitlabError {
 
 fn api_base(host: &str) -> Result<String, GitlabError> {
     let trimmed = host.trim().trim_end_matches('/');
-    if !(trimmed.starts_with("http://") || trimmed.starts_with("https://")) {
-        return Err(GitlabError::InvalidShape(format!("invalid host: {}", host)));
-    }
+    require_secure_scheme(trimmed).map_err(|refusal| match refusal {
+        SchemeRefusal::Insecure(message) => GitlabError::InsecureHost(message),
+        SchemeRefusal::Invalid(message) => GitlabError::InvalidInput(message),
+    })?;
     Ok(format!("{}/api/v4", trimmed))
 }
 
@@ -65,23 +122,17 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     path: &str,
 ) -> Result<T, GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http::client()
-        .get(&url)
-        .header("PRIVATE-TOKEN", token)
-        .send()
-        .await?;
+    let res = send_retrying(|| http::client().get(&url).header("PRIVATE-TOKEN", token)).await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if !status.is_success() {
-        return Err(GitlabError::Http {
-            status: status.as_u16(),
-            body,
-        });
+        return Err(http_failure(status.as_u16(), retry_after, body));
     }
     serde_json::from_str(&body).map_err(|e| GitlabError::InvalidShape(e.to_string()))
 }
 
-const MAX_PAGES: u32 = 20;
+use crate::util::limits::MAX_PAGES;
 
 async fn get_json_optional<T: serde::de::DeserializeOwned>(
     host: &str,
@@ -89,25 +140,34 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
     path: &str,
 ) -> Result<Option<T>, GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http::client()
-        .get(&url)
-        .header("PRIVATE-TOKEN", token)
-        .send()
-        .await?;
+    let res = send_retrying(|| http::client().get(&url).header("PRIVATE-TOKEN", token)).await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::FORBIDDEN {
         return Ok(None);
     }
     if !status.is_success() {
-        return Err(GitlabError::Http {
-            status: status.as_u16(),
-            body,
-        });
+        return Err(http_failure(status.as_u16(), retry_after, body));
     }
     serde_json::from_str(&body)
         .map(Some)
         .map_err(|e| GitlabError::InvalidShape(e.to_string()))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum PageStep {
+    Done,
+    Next(u32),
+    Truncated,
+}
+
+fn page_step(page: u32, next_page: Option<u32>) -> PageStep {
+    match next_page {
+        Some(next) if next > page && page < MAX_PAGES => PageStep::Next(next),
+        Some(next) if next > page => PageStep::Truncated,
+        _ => PageStep::Done,
+    }
 }
 
 async fn get_json_paged<T: serde::de::DeserializeOwned>(
@@ -115,39 +175,51 @@ async fn get_json_paged<T: serde::de::DeserializeOwned>(
     token: &str,
     path: &str,
 ) -> Result<Vec<T>, GitlabError> {
+    Ok(get_json_paged_marked(host, token, path)
+        .await?
+        .into_items(path))
+}
+
+async fn get_json_paged_marked<T: serde::de::DeserializeOwned>(
+    host: &str,
+    token: &str,
+    path: &str,
+) -> Result<Paged<T>, GitlabError> {
     let base = api_base(host)?;
     let separator = if path.contains('?') { '&' } else { '?' };
     let mut collected: Vec<T> = Vec::new();
     let mut page: u32 = 1;
+    let mut is_truncated = false;
     loop {
         let url = format!("{base}{path}{separator}per_page=100&page={page}");
-        let res = http::client()
-            .get(&url)
-            .header("PRIVATE-TOKEN", token)
-            .send()
-            .await?;
+        let res = send_retrying(|| http::client().get(&url).header("PRIVATE-TOKEN", token)).await?;
         let status = res.status();
         let next_page = res
             .headers()
             .get("x-next-page")
             .and_then(|value| value.to_str().ok())
             .and_then(|value| value.trim().parse::<u32>().ok());
+        let retry_after = failure::retry_after_of(res.headers());
         let body = res.text().await?;
         if !status.is_success() {
-            return Err(GitlabError::Http {
-                status: status.as_u16(),
-                body,
-            });
+            return Err(http_failure(status.as_u16(), retry_after, body));
         }
         let batch: Vec<T> =
             serde_json::from_str(&body).map_err(|e| GitlabError::InvalidShape(e.to_string()))?;
         collected.extend(batch);
-        match next_page {
-            Some(next) if next > page && page < MAX_PAGES => page = next,
-            _ => break,
+        match page_step(page, next_page) {
+            PageStep::Next(next) => page = next,
+            PageStep::Truncated => {
+                is_truncated = true;
+                break;
+            }
+            PageStep::Done => break,
         }
     }
-    Ok(collected)
+    Ok(Paged {
+        items: collected,
+        is_truncated,
+    })
 }
 
 async fn send_no_content(
@@ -165,12 +237,10 @@ async fn send_no_content(
         .send()
         .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(GitlabError::Http {
-            status: status.as_u16(),
-            body: text,
-        });
+        return Err(http_failure(status.as_u16(), retry_after, text));
     }
     Ok(())
 }
@@ -190,12 +260,10 @@ async fn send_json<T: serde::de::DeserializeOwned>(
         .send()
         .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(GitlabError::Http {
-            status: status.as_u16(),
-            body: text,
-        });
+        return Err(http_failure(status.as_u16(), retry_after, text));
     }
     serde_json::from_str(&text).map_err(|e| GitlabError::InvalidShape(e.to_string()))
 }
@@ -209,16 +277,35 @@ fn read_token(
     project_id: Option<&str>,
     cache: &GitlabTokenCache,
 ) -> Result<String, GitlabError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
         .ok_or_else(|| GitlabError::NoToken(workspace_id.to_string()))
 }
 
+fn read_bound_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    host: &str,
+    cache: &GitlabTokenCache,
+) -> Result<String, GitlabError> {
+    integration_credentials::require_bound(
+        PROVIDER,
+        workspace_id,
+        project_id,
+        &[BoundValue {
+            key: "host",
+            supplied: host,
+        }],
+    )?;
+    read_token(workspace_id, project_id, cache)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabUser {
     pub id: i64,
     pub username: String,
     pub name: String,
-    #[serde(rename = "avatarUrl", alias = "avatar_url", default)]
+    #[serde(alias = "avatar_url", default)]
     pub avatar_url: Option<String>,
 }
 
@@ -233,18 +320,19 @@ pub struct GitlabMilestone {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabIssue {
     pub id: i64,
     pub iid: i64,
-    #[serde(rename = "projectId", alias = "project_id")]
+    #[serde(alias = "project_id")]
     pub project_id: i64,
     pub title: String,
     pub description: Option<String>,
     pub state: String,
-    #[serde(rename = "webUrl", alias = "web_url")]
+    #[serde(alias = "web_url")]
     pub web_url: String,
     pub references: GitlabReferences,
-    #[serde(rename = "updatedAt", alias = "updated_at")]
+    #[serde(alias = "updated_at")]
     pub updated_at: String,
     pub milestone: Option<GitlabMilestone>,
     pub labels: Vec<String>,
@@ -258,7 +346,7 @@ pub async fn gitlab_validate_connection(
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabUser, GitlabError> {
     let token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)?;
     get_json(&host, &token, "/user").await
 }
 
@@ -269,8 +357,8 @@ pub async fn gitlab_connect(
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<(), GitlabError> {
     let token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, cache.0)?;
+    integration_credentials::store_secret(&credential_id, &token, cache.0)?;
     Ok(())
 }
 
@@ -281,7 +369,7 @@ pub async fn gitlab_fetch_assigned_issues(
     host: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabIssue>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     get_json(
         &host,
         &token,
@@ -299,7 +387,7 @@ pub async fn gitlab_fetch_issue(
     issue_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabIssue, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     get_json(
         &host,
         &token,
@@ -333,7 +421,7 @@ pub async fn gitlab_fetch_issues(
     if issue_iids.is_empty() {
         return Ok(Vec::new());
     }
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let path = issues_by_iids_path(&project_path, &issue_iids);
     get_json_paged(&host, &token, &path).await
 }
@@ -348,7 +436,7 @@ pub async fn gitlab_update_issue(
     description: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let body = serde_json::json!({ "description": description });
     let issue: GitlabIssue = send_json(
@@ -363,29 +451,31 @@ pub async fn gitlab_update_issue(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMrAuthor {
     #[serde(default)]
     pub id: Option<i64>,
     pub username: String,
     pub name: String,
-    #[serde(rename = "avatarUrl", alias = "avatar_url", default)]
+    #[serde(alias = "avatar_url", default)]
     pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GitlabMergeRequest {
+#[serde(rename_all = "camelCase")]
+pub struct GitlabMergeRequestFields {
     pub id: i64,
     pub iid: i64,
-    #[serde(rename = "projectId", alias = "project_id")]
+    #[serde(alias = "project_id")]
     pub project_id: i64,
     pub title: String,
     pub description: Option<String>,
     pub state: String,
-    #[serde(rename = "webUrl", alias = "web_url")]
+    #[serde(alias = "web_url")]
     pub web_url: String,
-    #[serde(rename = "sourceBranch", alias = "source_branch")]
+    #[serde(alias = "source_branch")]
     pub source_branch: String,
-    #[serde(rename = "targetBranch", alias = "target_branch")]
+    #[serde(alias = "target_branch")]
     pub target_branch: String,
     #[serde(default)]
     pub draft: bool,
@@ -395,39 +485,76 @@ pub struct GitlabMergeRequest {
         default
     )]
     pub merge_when_pipeline_succeeds: bool,
-    #[serde(rename = "hasConflicts", alias = "has_conflicts", default)]
+    #[serde(alias = "has_conflicts", default)]
     pub has_conflicts: bool,
-    #[serde(rename = "mergeStatus", alias = "merge_status", default)]
+    #[serde(alias = "merge_status", default)]
     pub merge_status: Option<String>,
-    #[serde(rename = "updatedAt", alias = "updated_at", default)]
+    #[serde(alias = "updated_at", default)]
     pub updated_at: String,
     #[serde(default)]
     pub sha: Option<String>,
-    #[serde(rename = "mergedAt", alias = "merged_at", default)]
+    #[serde(alias = "merged_at", default)]
     pub merged_at: Option<String>,
     #[serde(default)]
     pub author: Option<GitlabMrAuthor>,
     #[serde(default)]
     pub reviewers: Option<Vec<GitlabMrAuthor>>,
-    #[serde(rename = "createdAt", alias = "created_at", default)]
+    #[serde(alias = "created_at", default)]
     pub created_at: Option<String>,
-    #[serde(
-        rename = "detailedMergeStatus",
-        alias = "detailed_merge_status",
-        default
-    )]
+    #[serde(alias = "detailed_merge_status", default)]
     pub detailed_merge_status: Option<String>,
-    #[serde(rename = "headPipeline", alias = "head_pipeline", default)]
+    #[serde(alias = "head_pipeline", default)]
     pub head_pipeline: Option<GitlabHeadPipeline>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitlabMergeRequest {
+    #[serde(flatten)]
+    fields: GitlabMergeRequestFields,
+    pub request_state: RequestState,
+}
+
+impl std::ops::Deref for GitlabMergeRequest {
+    type Target = GitlabMergeRequestFields;
+
+    fn deref(&self) -> &Self::Target {
+        &self.fields
+    }
+}
+
+impl<'de> Deserialize<'de> for GitlabMergeRequest {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let fields = GitlabMergeRequestFields::deserialize(deserializer)?;
+        let request_state = request_state_of(&fields.state, fields.draft);
+        Ok(GitlabMergeRequest {
+            fields,
+            request_state,
+        })
+    }
+}
+
+fn request_state_of(host_state: &str, is_draft: bool) -> RequestState {
+    match host_state {
+        "opened" if is_draft => RequestState::Draft,
+        "opened" | "locked" => RequestState::Open,
+        "merged" => RequestState::Merged,
+        "closed" => RequestState::Closed,
+        _ => RequestState::Unknown,
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabHeadPipeline {
     pub id: i64,
     pub status: String,
-    #[serde(rename = "webUrl", alias = "web_url", default)]
+    #[serde(alias = "web_url", default)]
     pub web_url: Option<String>,
 }
+
+const ASSIGNED_MRS_PATH: &str =
+    "/merge_requests?scope=assigned_to_me&state=opened&order_by=updated_at";
 
 #[tauri::command]
 pub async fn gitlab_fetch_assigned_mrs(
@@ -436,13 +563,8 @@ pub async fn gitlab_fetch_assigned_mrs(
     host: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
-    get_json(
-        &host,
-        &token,
-        "/merge_requests?scope=assigned_to_me&state=opened&order_by=updated_at&per_page=50",
-    )
-    .await
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
+    get_json_paged(&host, &token, ASSIGNED_MRS_PATH).await
 }
 
 pub async fn gitlab_fetch_project_mrs(
@@ -452,7 +574,7 @@ pub async fn gitlab_fetch_project_mrs(
     project_path: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json(
         &host,
@@ -471,14 +593,61 @@ pub async fn gitlab_mr_for_branch(
     source_branch: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMergeRequest>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let branch = percent_encode(&source_branch);
-    let path = format!(
-        "/projects/{encoded}/merge_requests?source_branch={branch}&state=all&order_by=updated_at&per_page=1"
-    );
+    let path =
+        format!("/projects/{encoded}/merge_requests?source_branch={branch}&{MR_FOR_BRANCH_QUERY}");
     let mrs: Vec<GitlabMergeRequest> = get_json(&host, &token, &path).await?;
-    Ok(mrs.into_iter().next())
+    Ok(pick_request_for_branch(mrs))
+}
+
+const MR_FOR_BRANCH_QUERY: &str = "state=all&order_by=updated_at&per_page=20";
+
+fn is_open(mr: &GitlabMergeRequest) -> bool {
+    matches!(mr.request_state, RequestState::Open | RequestState::Draft)
+}
+
+fn pick_request_for_branch(mrs: Vec<GitlabMergeRequest>) -> Option<GitlabMergeRequest> {
+    mrs.into_iter()
+        .max_by_key(|mr| (is_open(mr), mr.updated_at.clone()))
+}
+
+const DRAFT_PREFIXES: [&str; 3] = ["draft:", "[draft]", "(draft)"];
+
+fn draft_title(title: &str, is_draft: bool) -> String {
+    if !is_draft {
+        return title.to_string();
+    }
+    let trimmed = title.trim();
+    let lowered = trimmed.to_lowercase();
+    let rest = DRAFT_PREFIXES
+        .iter()
+        .find(|prefix| lowered.starts_with(**prefix))
+        .map_or(trimmed, |prefix| trimmed[prefix.len()..].trim_start());
+    format!("Draft: {rest}")
+}
+
+fn create_mr_body(
+    source_branch: &str,
+    target_branch: &str,
+    title: &str,
+    description: &str,
+    should_remove_source_branch: Option<bool>,
+) -> serde_json::Value {
+    let mut body = serde_json::json!({
+        "source_branch": source_branch,
+        "target_branch": target_branch,
+        "title": title,
+        "description": description,
+    });
+    if let (Some(flag), Some(fields)) = (should_remove_source_branch, body.as_object_mut()) {
+        fields.insert(
+            "remove_source_branch".to_string(),
+            serde_json::Value::Bool(flag),
+        );
+    }
+    body
 }
 
 #[tauri::command]
@@ -493,22 +662,18 @@ pub async fn gitlab_create_mr(
     title: String,
     description: String,
     draft: bool,
+    should_remove_source_branch: Option<bool>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
-    let mr_title = if draft {
-        format!("Draft: {title}")
-    } else {
-        title
-    };
-    let body = serde_json::json!({
-        "source_branch": source_branch,
-        "target_branch": target_branch,
-        "title": mr_title,
-        "description": description,
-        "remove_source_branch": true,
-    });
+    let body = create_mr_body(
+        &source_branch,
+        &target_branch,
+        &draft_title(&title, draft),
+        &description,
+        should_remove_source_branch,
+    );
     send_json(
         reqwest::Method::POST,
         &host,
@@ -529,12 +694,20 @@ pub struct GitlabMrChange {
     pub new_file: bool,
     #[serde(default)]
     pub deleted_file: bool,
+    #[serde(default)]
+    pub renamed_file: bool,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct GitlabMrChanges {
     #[serde(default)]
     pub changes: Vec<GitlabMrChange>,
+}
+
+fn is_rename(change: &GitlabMrChange) -> bool {
+    !change.new_file
+        && !change.deleted_file
+        && (change.renamed_file || change.old_path != change.new_path)
 }
 
 fn assemble_mr_diff(changes: &[GitlabMrChange]) -> String {
@@ -544,6 +717,16 @@ fn assemble_mr_diff(changes: &[GitlabMrChange]) -> String {
             "diff --git a/{} b/{}\n",
             change.old_path, change.new_path
         ));
+        if is_rename(change) {
+            if change.diff.is_empty() {
+                out.push_str("similarity index 100%\n");
+            }
+            out.push_str(&format!("rename from {}\n", change.old_path));
+            out.push_str(&format!("rename to {}\n", change.new_path));
+            if change.diff.is_empty() {
+                continue;
+            }
+        }
         if change.new_file {
             out.push_str("--- /dev/null\n");
         } else {
@@ -571,7 +754,7 @@ pub async fn gitlab_mr_diff(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload: GitlabMrChanges = get_json(
         &host,
@@ -583,12 +766,13 @@ pub async fn gitlab_mr_diff(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabDiffRefs {
-    #[serde(rename = "baseSha", alias = "base_sha")]
+    #[serde(alias = "base_sha")]
     pub base_sha: String,
-    #[serde(rename = "headSha", alias = "head_sha")]
+    #[serde(alias = "head_sha")]
     pub head_sha: String,
-    #[serde(rename = "startSha", alias = "start_sha")]
+    #[serde(alias = "start_sha")]
     pub start_sha: String,
 }
 
@@ -607,7 +791,7 @@ pub async fn gitlab_mr_diff_refs(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabDiffRefs, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload: GitlabMrRefsPayload = get_json(
         &host,
@@ -676,7 +860,7 @@ pub async fn gitlab_create_mr_discussion(
     position: GitlabDiscussionPosition,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<String, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload = discussion_payload(&body, &position);
     let discussion: GitlabDiscussion = send_json(
@@ -705,7 +889,7 @@ pub async fn gitlab_create_mr_note(
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let note: GitlabNote = send_json(
         reqwest::Method::POST,
@@ -719,18 +903,20 @@ pub async fn gitlab_create_mr_note(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabNotePosition {
-    #[serde(rename = "newPath", alias = "new_path", default)]
+    #[serde(alias = "new_path", default)]
     pub new_path: Option<String>,
-    #[serde(rename = "oldPath", alias = "old_path", default)]
+    #[serde(alias = "old_path", default)]
     pub old_path: Option<String>,
-    #[serde(rename = "newLine", alias = "new_line", default)]
+    #[serde(alias = "new_line", default)]
     pub new_line: Option<i64>,
-    #[serde(rename = "oldLine", alias = "old_line", default)]
+    #[serde(alias = "old_line", default)]
     pub old_line: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMrNote {
     pub id: i64,
     #[serde(default)]
@@ -739,7 +925,7 @@ pub struct GitlabMrNote {
     pub system: bool,
     #[serde(default)]
     pub author: Option<GitlabMrAuthor>,
-    #[serde(rename = "createdAt", alias = "created_at", default)]
+    #[serde(alias = "created_at", default)]
     pub created_at: String,
     #[serde(default)]
     pub resolvable: bool,
@@ -750,9 +936,10 @@ pub struct GitlabMrNote {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMrDiscussion {
     pub id: String,
-    #[serde(rename = "individualNote", alias = "individual_note", default)]
+    #[serde(alias = "individual_note", default)]
     pub individual_note: bool,
     #[serde(default)]
     pub notes: Vec<GitlabMrNote>,
@@ -767,7 +954,7 @@ pub async fn gitlab_list_mr_discussions(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMrDiscussion>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json_paged(
         &host,
@@ -789,7 +976,7 @@ pub async fn gitlab_reply_to_mr_discussion(
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let discussion = percent_encode(&discussion_id);
     let note: GitlabNote = send_json(
@@ -828,7 +1015,7 @@ pub async fn gitlab_resolve_mr_discussion(
     resolved: bool,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMrDiscussion, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     send_json(
         reqwest::Method::PUT,
         &host,
@@ -840,6 +1027,7 @@ pub async fn gitlab_resolve_mr_discussion(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabIssueNote {
     pub id: i64,
     #[serde(default)]
@@ -848,7 +1036,7 @@ pub struct GitlabIssueNote {
     pub system: bool,
     #[serde(default)]
     pub author: Option<GitlabMrAuthor>,
-    #[serde(rename = "createdAt", alias = "created_at", default)]
+    #[serde(alias = "created_at", default)]
     pub created_at: String,
 }
 
@@ -861,7 +1049,7 @@ pub async fn gitlab_list_issue_notes(
     issue_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabIssueNote>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json_paged(
         &host,
@@ -881,7 +1069,7 @@ pub async fn gitlab_create_issue_note(
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let note: GitlabNote = send_json(
         reqwest::Method::POST,
@@ -916,7 +1104,7 @@ pub async fn gitlab_list_issue_discussions(
     issue_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMrDiscussion>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     get_json_paged(
         &host,
         &token,
@@ -937,7 +1125,7 @@ pub async fn gitlab_reply_to_issue_discussion(
     body: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<i64, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let note: GitlabNote = send_json(
         reqwest::Method::POST,
         &host,
@@ -955,16 +1143,17 @@ pub struct GitlabApproval {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMrApprovalState {
-    #[serde(rename = "approvalsRequired", alias = "approvals_required", default)]
+    #[serde(alias = "approvals_required", default)]
     pub approvals_required: i64,
-    #[serde(rename = "approvalsLeft", alias = "approvals_left", default)]
+    #[serde(alias = "approvals_left", default)]
     pub approvals_left: i64,
-    #[serde(rename = "userHasApproved", alias = "user_has_approved", default)]
+    #[serde(alias = "user_has_approved", default)]
     pub user_has_approved: bool,
-    #[serde(rename = "userCanApprove", alias = "user_can_approve", default)]
+    #[serde(alias = "user_can_approve", default)]
     pub user_can_approve: bool,
-    #[serde(rename = "approvedBy", alias = "approved_by", default)]
+    #[serde(alias = "approved_by", default)]
     pub approved_by: Vec<GitlabApproval>,
 }
 
@@ -991,7 +1180,7 @@ pub async fn gitlab_mr_approval_state(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     read_approval_state(&host, &token, &encoded, mr_iid).await
 }
@@ -1005,7 +1194,7 @@ pub async fn gitlab_approve_mr(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     send_no_content(
         reqwest::Method::POST,
@@ -1027,7 +1216,7 @@ pub async fn gitlab_unapprove_mr(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     send_no_content(
         reqwest::Method::POST,
@@ -1082,11 +1271,11 @@ pub async fn gitlab_update_mr_state(
     title: Option<String>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload = mr_update_payload(state_event.as_deref(), title.as_deref(), None, None);
     if is_empty_payload(&payload) {
-        return Err(GitlabError::InvalidShape(
+        return Err(GitlabError::InvalidInput(
             "merge request update needs a state event or a title".to_string(),
         ));
     }
@@ -1113,7 +1302,7 @@ pub async fn gitlab_update_mr(
     reviewer_ids: Option<Vec<i64>>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let payload = mr_update_payload(
         None,
@@ -1122,7 +1311,7 @@ pub async fn gitlab_update_mr(
         reviewer_ids.as_deref(),
     );
     if is_empty_payload(&payload) {
-        return Err(GitlabError::InvalidShape(
+        return Err(GitlabError::InvalidInput(
             "merge request update needs a title, a description or reviewers".to_string(),
         ));
     }
@@ -1145,7 +1334,7 @@ pub async fn gitlab_get_mr(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json(&host, &token, &mr_path(&encoded, mr_iid)).await
 }
@@ -1162,16 +1351,38 @@ fn merge_strategy(method: Option<&str>) -> Result<MergeStrategy, GitlabError> {
         None | Some("merge") => Ok(MergeStrategy::Merge),
         Some("squash") => Ok(MergeStrategy::Squash),
         Some("rebase") => Ok(MergeStrategy::Rebase),
-        Some(other) => Err(GitlabError::InvalidShape(format!(
+        Some(other) => Err(GitlabError::InvalidInput(format!(
             "unknown merge method: {other}"
         ))),
     }
 }
 
-fn merge_body(strategy: MergeStrategy) -> serde_json::Value {
-    match strategy {
+fn pinned_head(expected_head_sha: Option<&str>) -> Option<&str> {
+    expected_head_sha
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn merge_body(strategy: MergeStrategy, expected_head_sha: Option<&str>) -> serde_json::Value {
+    let mut body = match strategy {
         MergeStrategy::Squash => serde_json::json!({ "squash": true }),
         MergeStrategy::Merge | MergeStrategy::Rebase => serde_json::json!({ "squash": false }),
+    };
+    if let (Some(sha), Some(fields)) = (pinned_head(expected_head_sha), body.as_object_mut()) {
+        fields.insert(
+            "sha".to_string(),
+            serde_json::Value::String(sha.to_string()),
+        );
+    }
+    body
+}
+
+fn merge_failure(error: GitlabError, expected_head_sha: Option<&str>) -> GitlabError {
+    match error {
+        GitlabError::Http { status: 409, body } if pinned_head(expected_head_sha).is_some() => {
+            GitlabError::StaleHead(body)
+        }
+        other => other,
     }
 }
 
@@ -1197,7 +1408,7 @@ pub async fn gitlab_cancel_auto_merge(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     send_json(
         reqwest::Method::POST,
@@ -1218,10 +1429,11 @@ pub async fn gitlab_merge_mr(
     project_path: String,
     mr_iid: i64,
     method: Option<String>,
+    expected_head_sha: Option<String>,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeRequest, GitlabError> {
     let strategy = merge_strategy(method.as_deref())?;
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     if strategy == MergeStrategy::Rebase {
         let settings: GitlabMergeSettings =
@@ -1232,7 +1444,7 @@ pub async fn gitlab_merge_mr(
             &settings.merge_method,
             current.detailed_merge_status.as_deref(),
         ) {
-            return Err(GitlabError::InvalidShape(reason.to_string()));
+            return Err(GitlabError::InvalidInput(reason.to_string()));
         }
     }
     send_json(
@@ -1240,26 +1452,20 @@ pub async fn gitlab_merge_mr(
         &host,
         &token,
         &format!("{}/merge", mr_path(&encoded, mr_iid)),
-        &merge_body(strategy),
+        &merge_body(strategy, expected_head_sha.as_deref()),
     )
     .await
+    .map_err(|error| merge_failure(error, expected_head_sha.as_deref()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMergeSettings {
-    #[serde(
-        rename = "mergeMethod",
-        alias = "merge_method",
-        default = "default_merge_method"
-    )]
+    #[serde(alias = "merge_method", default = "default_merge_method")]
     pub merge_method: String,
-    #[serde(rename = "squashOption", alias = "squash_option", default)]
+    #[serde(alias = "squash_option", default)]
     pub squash_option: Option<String>,
-    #[serde(
-        rename = "onlyAllowMergeIfPipelineSucceeds",
-        alias = "only_allow_merge_if_pipeline_succeeds",
-        default
-    )]
+    #[serde(alias = "only_allow_merge_if_pipeline_succeeds", default)]
     pub only_allow_merge_if_pipeline_succeeds: bool,
 }
 
@@ -1279,7 +1485,7 @@ pub async fn gitlab_project_merge_methods(
     project_path: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<GitlabMergeSettings, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json(&host, &token, &project_settings_path(&encoded)).await
 }
@@ -1300,33 +1506,35 @@ pub async fn gitlab_search_project_users(
     query: String,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabUser>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json(&host, &token, &project_users_path(&encoded, &query)).await
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabPipeline {
     pub id: i64,
     pub status: String,
-    #[serde(rename = "webUrl", alias = "web_url", default)]
+    #[serde(alias = "web_url", default)]
     pub web_url: Option<String>,
     #[serde(default)]
     pub sha: Option<String>,
-    #[serde(rename = "projectId", alias = "project_id", default)]
+    #[serde(alias = "project_id", default)]
     pub project_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabJob {
     pub id: i64,
     pub name: String,
     #[serde(default)]
     pub stage: Option<String>,
     pub status: String,
-    #[serde(rename = "webUrl", alias = "web_url", default)]
+    #[serde(alias = "web_url", default)]
     pub web_url: Option<String>,
-    #[serde(rename = "allowFailure", alias = "allow_failure", default)]
+    #[serde(alias = "allow_failure", default)]
     pub allow_failure: bool,
     #[serde(default)]
     pub duration: Option<f64>,
@@ -1365,7 +1573,7 @@ pub async fn gitlab_mr_pipeline_jobs(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Option<GitlabMrChecks>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     let Some(pipelines) = get_json_optional::<Vec<GitlabPipeline>>(
         &host,
@@ -1400,14 +1608,15 @@ pub async fn gitlab_mr_pipeline_jobs(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitlabMrCommit {
     pub id: String,
-    #[serde(rename = "shortId", alias = "short_id", default)]
+    #[serde(alias = "short_id", default)]
     pub short_id: String,
     pub title: String,
-    #[serde(rename = "authorName", alias = "author_name", default)]
+    #[serde(alias = "author_name", default)]
     pub author_name: Option<String>,
-    #[serde(rename = "committedDate", alias = "committed_date", default)]
+    #[serde(alias = "committed_date", default)]
     pub committed_date: Option<String>,
 }
 
@@ -1424,10 +1633,13 @@ pub async fn gitlab_mr_commits(
     mr_iid: i64,
     cache: State<'_, GitlabTokenCache>,
 ) -> Result<Vec<GitlabMrCommit>, GitlabError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(&workspace_id, project_id.as_deref(), &host, &cache)?;
     let encoded = encode_project_path(&project_path);
     get_json_paged(&host, &token, &mr_commits_path(&encoded, mr_iid)).await
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -1450,11 +1662,26 @@ mod tests {
     }
 
     #[test]
-    fn api_base_supports_self_hosted_http_host() {
+    fn api_base_allows_plain_http_only_on_localhost() {
         assert_eq!(
-            api_base("http://gitlab.internal:8080").unwrap(),
-            "http://gitlab.internal:8080/api/v4"
+            api_base("http://localhost:8080").unwrap(),
+            "http://localhost:8080/api/v4"
         );
+        assert_eq!(
+            api_base("http://127.0.0.1:8080/").unwrap(),
+            "http://127.0.0.1:8080/api/v4"
+        );
+        for refused in [
+            "http://gitlab.internal:8080",
+            "http://192.168.1.20",
+            "http://gitlab.example.com",
+        ] {
+            let error = api_base(refused).unwrap_err();
+            assert!(
+                matches!(&error, GitlabError::InsecureHost(message) if message.contains("https")),
+                "{refused}"
+            );
+        }
     }
 
     #[test]
@@ -1476,7 +1703,7 @@ mod tests {
     #[test]
     fn api_base_rejects_a_host_without_scheme() {
         let err = api_base("gitlab.com").unwrap_err();
-        assert!(matches!(err, GitlabError::InvalidShape(_)));
+        assert!(matches!(err, GitlabError::InvalidInput(_)));
     }
 
     #[test]
@@ -1593,13 +1820,13 @@ mod tests {
             "reviewers": [{ "username": "bob", "name": "Bob" }]
         }"#;
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
-        let author = mr.author.unwrap();
+        let author = mr.author.as_ref().unwrap();
         assert_eq!(author.username, "alice");
         assert_eq!(
             author.avatar_url.as_deref(),
             Some("https://gitlab.com/a.png")
         );
-        let reviewers = mr.reviewers.unwrap();
+        let reviewers = mr.reviewers.as_ref().unwrap();
         assert_eq!(reviewers[0].username, "bob");
         assert!(reviewers[0].avatar_url.is_none());
         assert!(reviewers[0].id.is_none());
@@ -1614,7 +1841,7 @@ mod tests {
             "reviewers": [{ "id": 7, "username": "kenji-w", "name": "Kenji Watanabe" }]
         }"#;
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
-        let reviewers = mr.reviewers.unwrap();
+        let reviewers = mr.reviewers.as_ref().unwrap();
         assert_eq!(reviewers[0].id, Some(7));
         let value = serde_json::to_value(&reviewers[0]).unwrap();
         assert_eq!(value["id"], 7);
@@ -1647,6 +1874,7 @@ mod tests {
                 diff: "@@ -1 +1 @@\n-old\n+new\n".into(),
                 new_file: false,
                 deleted_file: false,
+                renamed_file: false,
             },
             GitlabMrChange {
                 old_path: "src/b.ts".into(),
@@ -1654,6 +1882,7 @@ mod tests {
                 diff: "@@ -0,0 +1 @@\n+created".into(),
                 new_file: true,
                 deleted_file: false,
+                renamed_file: false,
             },
             GitlabMrChange {
                 old_path: "src/c.ts".into(),
@@ -1661,6 +1890,7 @@ mod tests {
                 diff: "@@ -1 +0,0 @@\n-gone\n".into(),
                 new_file: false,
                 deleted_file: true,
+                renamed_file: false,
             },
         ];
         let out = assemble_mr_diff(&changes);
@@ -1919,24 +2149,72 @@ mod tests {
         );
         let error = merge_strategy(Some("fast-forward")).unwrap_err();
         assert!(
-            matches!(error, GitlabError::InvalidShape(message) if message.contains("fast-forward"))
+            matches!(error, GitlabError::InvalidInput(message) if message.contains("fast-forward"))
         );
     }
 
     #[test]
     fn merge_body_asks_for_squash_only_for_the_squash_method() {
         assert_eq!(
-            merge_body(MergeStrategy::Merge),
+            merge_body(MergeStrategy::Merge, None),
             serde_json::json!({ "squash": false })
         );
         assert_eq!(
-            merge_body(MergeStrategy::Squash),
+            merge_body(MergeStrategy::Squash, None),
             serde_json::json!({ "squash": true })
         );
         assert_eq!(
-            merge_body(MergeStrategy::Rebase),
+            merge_body(MergeStrategy::Rebase, None),
             serde_json::json!({ "squash": false })
         );
+    }
+
+    #[test]
+    fn merge_body_pins_the_head_the_user_reviewed() {
+        assert_eq!(
+            merge_body(MergeStrategy::Squash, Some("6c20f48a9e1")),
+            serde_json::json!({ "squash": true, "sha": "6c20f48a9e1" })
+        );
+        assert_eq!(
+            merge_body(MergeStrategy::Merge, Some("  6c20f48a9e1 ")),
+            serde_json::json!({ "squash": false, "sha": "6c20f48a9e1" })
+        );
+        assert_eq!(
+            merge_body(MergeStrategy::Merge, Some("  ")),
+            serde_json::json!({ "squash": false })
+        );
+    }
+
+    #[test]
+    fn a_moved_head_reads_as_stale_head_only_when_the_merge_was_pinned() {
+        let conflict = || GitlabError::Http {
+            status: 409,
+            body: "SHA does not match HEAD of source branch".to_string(),
+        };
+        assert!(matches!(
+            merge_failure(conflict(), Some("6c20f48a9e1")),
+            GitlabError::StaleHead(body) if body.contains("does not match HEAD")
+        ));
+        assert!(matches!(
+            merge_failure(conflict(), None),
+            GitlabError::Http { status: 409, .. }
+        ));
+        assert!(matches!(
+            merge_failure(
+                GitlabError::Http {
+                    status: 405,
+                    body: "branch cannot be merged".to_string()
+                },
+                Some("6c20f48a9e1")
+            ),
+            GitlabError::Http { status: 405, .. }
+        ));
+    }
+
+    #[test]
+    fn a_stale_head_reaches_the_frontend_under_its_own_kind() {
+        let value = serde_json::to_value(GitlabError::StaleHead("moved".to_string())).unwrap();
+        assert_eq!(value["kind"], "stale_head");
     }
 
     #[test]
@@ -2055,7 +2333,7 @@ mod tests {
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
         assert_eq!(mr.created_at.as_deref(), Some("2026-09-26T08:00:00Z"));
         assert_eq!(mr.detailed_merge_status.as_deref(), Some("need_rebase"));
-        let pipeline = mr.head_pipeline.unwrap();
+        let pipeline = mr.head_pipeline.as_ref().unwrap();
         assert_eq!(pipeline.id, 9001);
         assert_eq!(pipeline.status, "failed");
     }
@@ -2243,6 +2521,7 @@ mod tests {
         );
         assert_eq!(GitlabError::InvalidShape("x".into()).kind(), "shape");
         assert_eq!(GitlabError::NoToken("ws".into()).kind(), "no_token");
+        assert_eq!(GitlabError::StaleHead("x".into()).kind(), "stale_head");
     }
 
     #[test]
@@ -2397,5 +2676,338 @@ mod tests {
             .await
             .unwrap_err();
         assert_error_shape(&error, "http");
+    }
+
+    #[test]
+    fn every_http_status_reads_as_one_failure_kind_on_the_wire() {
+        for (status, kind) in [
+            (0u16, "network"),
+            (401, "bad_credentials"),
+            (403, "denied"),
+            (404, "not_found"),
+            (409, "failed"),
+            (422, "failed"),
+            (500, "failed"),
+            (502, "failed"),
+        ] {
+            let wire = serde_json::to_value(http_failure(status, None, "body".into())).unwrap();
+            assert_eq!(wire["failureKind"], kind, "status {status}");
+            assert_eq!(wire["status"], status, "status {status}");
+            assert_eq!(wire["detail"], "body");
+        }
+        let limited = serde_json::to_value(http_failure(429, Some(9), "slow".into())).unwrap();
+        assert_eq!(limited["kind"], "rate_limited");
+        assert_eq!(limited["failureKind"], "rate_limited");
+        assert_eq!(limited["retryAfterSeconds"], 9);
+    }
+
+    #[test]
+    fn local_failures_carry_a_failure_kind_and_input_errors_carry_none() {
+        let timeout = serde_json::to_value(GitlabError::Timeout("deadline".into())).unwrap();
+        assert_eq!(timeout["failureKind"], "timeout");
+        let no_token = serde_json::to_value(GitlabError::NoToken("ws".into())).unwrap();
+        assert_eq!(no_token["failureKind"], "bad_credentials");
+        let input = serde_json::to_value(GitlabError::InvalidInput("x".into())).unwrap();
+        assert_eq!(input["kind"], "invalid_input");
+        assert!(input.get("failureKind").is_none());
+        let insecure = api_base("http://gitlab.internal:8080").unwrap_err();
+        let wire = serde_json::to_value(insecure).unwrap();
+        assert_eq!(wire["kind"], "insecure_host");
+        assert_eq!(wire["failureKind"], "failed");
+        assert!(wire["detail"].as_str().unwrap().contains("use https"));
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_read_is_retried_and_keeps_the_retry_hint() {
+        use crate::integrations::http::test_support::{
+            http_response, serve_sequence, within_bound,
+        };
+        use crate::integrations::http::MAX_ATTEMPTS;
+        let answer = http_response(
+            "429 Too Many Requests",
+            &[("Retry-After", "0")],
+            "slow down",
+        );
+        let (base, server) = serve_sequence(vec![answer; MAX_ATTEMPTS as usize]).await;
+        let error = within_bound(get_json::<serde_json::Value>(&base, "token", "/user"))
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            GitlabError::RateLimited { retry_after_seconds: Some(0), ref body } if body == "slow down"
+        ));
+        assert_eq!(server.await.unwrap().len(), MAX_ATTEMPTS as usize);
+    }
+
+    #[test]
+    fn every_host_state_maps_to_one_request_state() {
+        for (host_state, is_draft, expected) in [
+            ("opened", false, RequestState::Open),
+            ("opened", true, RequestState::Draft),
+            ("locked", false, RequestState::Open),
+            ("merged", false, RequestState::Merged),
+            ("merged", true, RequestState::Merged),
+            ("closed", false, RequestState::Closed),
+            ("closed", true, RequestState::Closed),
+        ] {
+            assert_eq!(
+                request_state_of(host_state, is_draft),
+                expected,
+                "{host_state} draft={is_draft}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_state_the_adapter_does_not_know_stays_visible_as_unknown() {
+        assert_eq!(request_state_of("", false), RequestState::Unknown);
+        assert_eq!(request_state_of("all", false), RequestState::Unknown);
+        assert_eq!(request_state_of("Opened", false), RequestState::Unknown);
+    }
+
+    #[test]
+    fn a_merge_request_serializes_its_request_state_beside_the_raw_host_state() {
+        let raw = r#"{
+            "id": 1, "iid": 4, "project_id": 3, "title": "Ledger change",
+            "description": null, "state": "opened", "web_url": "https://gitlab.com/acme/web/-/merge_requests/4",
+            "source_branch": "ak/ledger", "target_branch": "main", "draft": true,
+            "updated_at": "2026-09-01T00:00:00Z"
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert_eq!(mr.request_state, RequestState::Draft);
+        assert_eq!(mr.iid, 4);
+        let wire = serde_json::to_value(&mr).unwrap();
+        assert_eq!(wire["requestState"], "draft");
+        assert_eq!(wire["state"], "opened");
+        assert_eq!(wire["iid"], 4);
+        assert_eq!(
+            wire["webUrl"],
+            "https://gitlab.com/acme/web/-/merge_requests/4"
+        );
+    }
+
+    #[test]
+    fn a_merge_request_in_a_state_nobody_mapped_reaches_the_app_as_unknown() {
+        let raw = r#"{
+            "id": 1, "iid": 4, "project_id": 3, "title": "t", "description": null,
+            "state": "archived", "web_url": "u", "source_branch": "a", "target_branch": "b"
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert_eq!(mr.request_state, RequestState::Unknown);
+        let wire = serde_json::to_value(&mr).unwrap();
+        assert_eq!(wire["requestState"], "unknown");
+        assert_eq!(wire["state"], "archived");
+    }
+
+    #[test]
+    fn the_page_cap_marks_a_list_that_has_more_as_truncated() {
+        assert_eq!(page_step(1, Some(2)), PageStep::Next(2));
+        assert_eq!(
+            page_step(MAX_PAGES - 1, Some(MAX_PAGES)),
+            PageStep::Next(MAX_PAGES)
+        );
+        assert_eq!(
+            page_step(MAX_PAGES, Some(MAX_PAGES + 1)),
+            PageStep::Truncated
+        );
+        assert_eq!(page_step(MAX_PAGES, None), PageStep::Done);
+        assert_eq!(page_step(3, None), PageStep::Done);
+        assert_eq!(page_step(3, Some(3)), PageStep::Done);
+        assert_eq!(page_step(3, Some(2)), PageStep::Done);
+    }
+
+    #[tokio::test]
+    async fn a_list_cut_at_the_cap_reaches_the_caller_marked_truncated() {
+        use crate::integrations::http::test_support::{
+            http_response, serve_sequence, within_bound,
+        };
+        let pages: Vec<String> = (1..=MAX_PAGES)
+            .map(|page| {
+                http_response(
+                    "200 OK",
+                    &[("x-next-page", &(page + 1).to_string())],
+                    &format!("[{page}]"),
+                )
+            })
+            .collect();
+        let (base, server) = serve_sequence(pages).await;
+        let paged = within_bound(get_json_paged_marked::<u32>(&base, "token", "/things")).await;
+        let paged = paged.unwrap();
+        assert!(paged.is_truncated);
+        assert_eq!(paged.items.len() as u32, MAX_PAGES);
+        assert_eq!(server.await.unwrap().len() as u32, MAX_PAGES);
+    }
+
+    #[tokio::test]
+    async fn a_list_that_ends_before_the_cap_is_complete() {
+        use crate::integrations::http::test_support::{
+            http_response, serve_sequence, within_bound,
+        };
+        let (base, _server) = serve_sequence(vec![
+            http_response("200 OK", &[("x-next-page", "2")], "[1]"),
+            http_response("200 OK", &[("x-next-page", "")], "[2]"),
+        ])
+        .await;
+        let paged = within_bound(get_json_paged_marked::<u32>(&base, "token", "/things"))
+            .await
+            .unwrap();
+        assert!(!paged.is_truncated);
+        assert_eq!(paged.items, vec![1, 2]);
+    }
+    #[test]
+    fn the_assigned_request_list_is_paged_not_cut_at_fifty() {
+        assert!(!ASSIGNED_MRS_PATH.contains("per_page"));
+        assert!(ASSIGNED_MRS_PATH.contains('?'));
+    }
+
+    #[test]
+    fn a_draft_request_gets_one_draft_prefix_even_when_the_title_has_one() {
+        assert_eq!(draft_title("Ledger change", true), "Draft: Ledger change");
+        assert_eq!(
+            draft_title("Draft: Ledger change", true),
+            "Draft: Ledger change"
+        );
+        assert_eq!(
+            draft_title("draft: Ledger change", true),
+            "Draft: Ledger change"
+        );
+        assert_eq!(
+            draft_title("[Draft] Ledger change", true),
+            "Draft: Ledger change"
+        );
+        assert_eq!(
+            draft_title("(Draft) Ledger change", true),
+            "Draft: Ledger change"
+        );
+        assert_eq!(
+            draft_title("  Draft:   Ledger change ", true),
+            "Draft: Ledger change"
+        );
+        assert_eq!(
+            draft_title("Draft: Draft: twice", true),
+            "Draft: Draft: twice"
+        );
+    }
+
+    #[test]
+    fn a_ready_request_keeps_the_title_it_was_given() {
+        assert_eq!(draft_title("Ledger change", false), "Ledger change");
+        assert_eq!(
+            draft_title("Draft: kept as typed", false),
+            "Draft: kept as typed"
+        );
+    }
+
+    #[test]
+    fn the_create_body_leaves_the_branch_cleanup_to_the_project_unless_told() {
+        let body = create_mr_body("ak/ledger", "main", "Ledger change", "why", None);
+        assert!(body.get("remove_source_branch").is_none());
+        let removing = create_mr_body("ak/ledger", "main", "Ledger change", "why", Some(true));
+        assert_eq!(removing["remove_source_branch"], true);
+        let keeping = create_mr_body("ak/ledger", "main", "Ledger change", "why", Some(false));
+        assert_eq!(keeping["remove_source_branch"], false);
+        assert_eq!(keeping["source_branch"], "ak/ledger");
+        assert_eq!(keeping["target_branch"], "main");
+    }
+
+    fn found(iid: i64, state: &str, updated_at: &str) -> GitlabMergeRequest {
+        let raw = format!(
+            r#"{{"id": {iid}, "iid": {iid}, "project_id": 3, "title": "t", "description": null,
+                "state": "{state}", "web_url": "u", "source_branch": "ak/x", "target_branch": "main",
+                "updated_at": "{updated_at}"}}"#
+        );
+        serde_json::from_str(&raw).unwrap()
+    }
+
+    #[test]
+    fn the_request_for_a_branch_prefers_an_open_one_then_the_newest() {
+        let merged_new = found(3, "merged", "2026-09-03T00:00:00Z");
+        let open_old = found(2, "opened", "2026-09-01T00:00:00Z");
+        let closed_mid = found(1, "closed", "2026-09-02T00:00:00Z");
+        let picked = pick_request_for_branch(vec![merged_new, open_old, closed_mid]).unwrap();
+        assert_eq!(picked.iid, 2);
+    }
+
+    #[test]
+    fn with_no_open_request_the_newest_of_any_state_wins() {
+        let merged_new = found(3, "merged", "2026-09-03T00:00:00Z");
+        let closed_old = found(1, "closed", "2026-09-01T00:00:00Z");
+        let picked = pick_request_for_branch(vec![closed_old, merged_new]).unwrap();
+        assert_eq!(picked.iid, 3);
+        assert!(pick_request_for_branch(Vec::new()).is_none());
+    }
+
+    #[test]
+    fn two_open_requests_resolve_to_the_most_recently_updated() {
+        let older = found(1, "opened", "2026-09-01T00:00:00Z");
+        let newer = found(2, "opened", "2026-09-02T00:00:00Z");
+        assert_eq!(pick_request_for_branch(vec![older, newer]).unwrap().iid, 2);
+    }
+
+    #[test]
+    fn the_branch_lookup_asks_for_every_state() {
+        assert!(MR_FOR_BRANCH_QUERY.contains("state=all"));
+        assert!(MR_FOR_BRANCH_QUERY.contains("order_by=updated_at"));
+        assert!(
+            !MR_FOR_BRANCH_QUERY.contains("per_page=1&")
+                && !MR_FOR_BRANCH_QUERY.ends_with("per_page=1")
+        );
+    }
+
+    fn change(old_path: &str, new_path: &str, diff: &str) -> GitlabMrChange {
+        GitlabMrChange {
+            old_path: old_path.to_string(),
+            new_path: new_path.to_string(),
+            diff: diff.to_string(),
+            new_file: false,
+            deleted_file: false,
+            renamed_file: old_path != new_path,
+        }
+    }
+
+    #[test]
+    fn a_pure_rename_names_both_paths_and_says_nothing_changed() {
+        let out = assemble_mr_diff(&[change("src/old.ts", "src/new.ts", "")]);
+        assert_eq!(
+            out,
+            "diff --git a/src/old.ts b/src/new.ts\nsimilarity index 100%\nrename from src/old.ts\nrename to src/new.ts\n"
+        );
+    }
+
+    #[test]
+    fn a_rename_with_edits_keeps_its_hunks_after_the_rename_headers() {
+        let diff = "@@ -1 +1 @@\n-a\n+b\n";
+        let out = assemble_mr_diff(&[change("src/old.ts", "src/new.ts", diff)]);
+        assert_eq!(
+            out,
+            "diff --git a/src/old.ts b/src/new.ts\nrename from src/old.ts\nrename to src/new.ts\n--- a/src/old.ts\n+++ b/src/new.ts\n@@ -1 +1 @@\n-a\n+b\n"
+        );
+    }
+
+    #[test]
+    fn a_plain_edit_a_new_file_and_a_deleted_file_keep_their_headers() {
+        let edit = assemble_mr_diff(&[change("a.ts", "a.ts", "@@ -1 +1 @@\n-a\n+b\n")]);
+        assert_eq!(
+            edit,
+            "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n"
+        );
+        let mut added = change("n.ts", "n.ts", "@@ -0,0 +1 @@\n+x\n");
+        added.new_file = true;
+        assert!(assemble_mr_diff(&[added]).contains("--- /dev/null\n+++ b/n.ts\n"));
+        let mut removed = change("d.ts", "d.ts", "@@ -1 +0,0 @@\n-x\n");
+        removed.deleted_file = true;
+        assert!(assemble_mr_diff(&[removed]).contains("--- a/d.ts\n+++ /dev/null\n"));
+    }
+
+    #[test]
+    fn the_changes_payload_reads_the_rename_flag_and_survives_its_absence() {
+        let with_flag: GitlabMrChange = serde_json::from_str(
+            r#"{"old_path":"a","new_path":"b","diff":"","renamed_file":true}"#,
+        )
+        .unwrap();
+        assert!(with_flag.renamed_file);
+        let without: GitlabMrChange =
+            serde_json::from_str(r#"{"old_path":"a","new_path":"a","diff":""}"#).unwrap();
+        assert!(!without.renamed_file);
     }
 }

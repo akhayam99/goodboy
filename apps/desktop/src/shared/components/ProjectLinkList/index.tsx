@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
-import { ICON_SIZE } from '../conceptIcons';
+
 import { NewWorkspaceForm } from '../NewWorkspaceForm';
 import { ProjectGroups } from './ProjectGroups';
 
@@ -45,7 +45,7 @@ export const ProjectLinkList = ({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Filter folders"
             aria-label="Filter folders"
-            className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-label text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
+            className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
           />
         ) : null}
         <Button
@@ -94,7 +94,7 @@ export const ProjectLinkList = ({
         />
       ) : null}
       {linking.error !== null && (
-        <p role="alert" className="text-label text-danger">
+        <p role="alert" className="text-meta text-danger">
           {linking.error}
         </p>
       )}

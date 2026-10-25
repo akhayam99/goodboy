@@ -62,7 +62,7 @@ export const ToastsFirer = ({ variant }: Props) => {
       title: 'Agent started',
       action: { label: 'Follow', onClick: noop },
     });
-    showToast({ kind: 'info', message: 'Bash is denied for the rest of this session.' });
+    showToast({ kind: 'info', message: 'Blocked "pnpm test" for the rest of this session' });
     previewNotification({
       severity: 'error',
       message: 'The summarizer timed out after 90s.',

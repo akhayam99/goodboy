@@ -121,6 +121,8 @@ describe('AgentRow', () => {
     await waitFor(() => expect(codexRow().getByText('Not signed in')).toBeDefined());
     expect(codexRow().queryByText('codex login')).toBeNull();
     expect(codexRow().queryByText('Ready')).toBeNull();
+    expect(codexRow().getByText('Codex 0.62.0 found')).toBeDefined();
+    expect(codexRow().getAllByText(/not signed in/i)).toHaveLength(1);
   });
 
   it("shows why an agent can't start and checks it again", async () => {

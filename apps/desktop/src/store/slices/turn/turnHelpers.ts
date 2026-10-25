@@ -1,4 +1,4 @@
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
@@ -15,10 +15,8 @@ import {
   type ArtifactCaptureError,
   type ExtractedHandoff,
   type ParsedArtifact,
-  type SlotKey,
 } from '@goodboy/core';
 import {
-  insertNudgeEvent,
   insertProviderRun,
   insertTelemetry,
   countContextSlotHistoryForSession,
@@ -31,8 +29,6 @@ import {
   updateProviderRunStatus,
   updateAgentDomains,
   upsertContextSlot,
-  type NudgeEvent,
-  type NudgeKind,
 } from '@goodboy/db';
 import type {
   AgentId,
@@ -54,6 +50,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { recordNudgeShown } from '../nudges/recordNudgeShown';
 import {
   appendArtifactProvenanceOmission,
   completeArtifactRun,
@@ -88,12 +85,11 @@ import { selectMountById } from '../project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './mountContinuations';
 import { summarizerFailureNotice, summarizerNoticeKey } from './summarizerFailureNotice';
 import { runHelperTask } from '../providerLimits/runHelperTask';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
-import { sessionReads } from '../state-writes/sessionReads';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -1083,37 +1079,6 @@ export const captureMaterializeRequestsFromTurn = async ({
       }
     },
   });
-};
-
-type RecordNudgeShownParams = {
-  readonly kind: NudgeKind;
-  readonly sessionId: SessionId;
-  readonly context: Record<string, unknown>;
-};
-
-const recordNudgeShown = async ({
-  kind,
-  sessionId,
-  context,
-}: RecordNudgeShownParams): Promise<string> => {
-  const id = crypto.randomUUID();
-  const event = {
-    id,
-    sessionId,
-    ts: new Date().toISOString() as IsoDateTime,
-    kind,
-    contextJson: JSON.stringify(context),
-    outcome: null,
-    outcomeTs: null,
-  } satisfies NudgeEvent;
-  try {
-    await insertNudgeEvent(tauriDatabase, event);
-  } catch (err) {
-    if (import.meta.env.DEV) {
-      console.warn(`[nudge-event] insert failed: ${formatError(err)}`);
-    }
-  }
-  return id;
 };
 
 export const emitTurnNudges = async (

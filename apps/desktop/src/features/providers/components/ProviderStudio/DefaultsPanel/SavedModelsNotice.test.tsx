@@ -224,7 +224,7 @@ describe('SavedModelsNotice', () => {
   it('keeps the saved value and shows the reason when the write to the page fails', async () => {
     await seed({ projects: [PAYMENTS], saved: { [PAYMENTS.id]: PAYMENTS_SAVED } });
     stubStoryInvoke({
-      set_workspace_overrides: () => {
+      patch_workspace_overrides: () => {
         throw new Error('settings file is locked');
       },
     });

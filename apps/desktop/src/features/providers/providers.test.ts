@@ -204,7 +204,9 @@ describe('a probe that gave no answer', () => {
           error: null,
         },
       },
-      { cursor: { state: 'unknown', identity: null, reason: 'the CLI exited with code 2' } },
+      {
+        cursor: { state: 'unknown', identity: null, reason: { kind: 'exited_with_code', code: 2 } },
+      },
     );
     expect(providers.find((provider) => provider.id === 'cursor')?.connection).toBe('unknown');
   });

@@ -1,7 +1,7 @@
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, useWorkspaces } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { PreviewFacts } from './PreviewFacts';

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,9 +16,11 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
+import { sceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C08_PRESET_RUN_SCENES } from '../../scenes/u25/c08-preset-run';
 import { U25_C07_AUTO_SCENES } from '../../scenes/u25/c07-auto';
 import { BoardShellScene } from '../../scenes/BoardShellScene';
@@ -48,6 +51,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   vi.useFakeTimers({
     toFake: [
       'setTimeout',
@@ -223,7 +229,7 @@ describe('the Orchestrate hints', () => {
     await settle({ ms: 500 });
     expect(tried()).toEqual(['run-approve']);
     await click({ target: element({ selector: '[role="treeitem"][data-tree-id]' }) });
-    expect(store.getState().drawer?.kind).toBe('run-step');
+    expect(store.getState().drawer?.kind).toBe('spawned');
     expect(tried()).toEqual(['run-approve', 'run-step']);
     await click({ target: element({ selector: 'button[aria-label^="Model routing"]' }) });
     await click({ target: button({ name: 'Opus' }) });

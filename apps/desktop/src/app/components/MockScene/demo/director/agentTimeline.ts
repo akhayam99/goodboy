@@ -24,8 +24,6 @@ const REPLY =
 
 type FileEdit = Extract<TurnEvent, { kind: 'file_edit' }>;
 
-const isFileEdit = (event: TurnEvent): event is FileEdit => event.kind === 'file_edit';
-
 type SplitParams = {
   readonly text: string;
 };
@@ -59,7 +57,7 @@ const targetOf = ({ state }: TimelineParams): Target | null => {
     return null;
   }
   const transcript = state.transcripts[agentId] ?? [];
-  const firstEdit = transcript.findIndex(isFileEdit);
+  const firstEdit = transcript.findIndex((event) => event.kind === 'file_edit');
   const question = (state.sessionOpenQuestions[sessionId] ?? []).find(
     (entry) => entry.isBlocking && entry.status === 'open',
   );
@@ -77,7 +75,7 @@ const targetOf = ({ state }: TimelineParams): Target | null => {
     agentId,
     runId: first.runId,
     opening: transcript.slice(0, firstEdit),
-    edits: rest.filter(isFileEdit),
+    edits: rest.flatMap((event) => (event.kind === 'file_edit' ? [event] : [])),
     closing,
     question,
     delegateIds: new Set(

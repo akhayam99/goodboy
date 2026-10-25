@@ -13,7 +13,7 @@ import {
   markStepComplete,
   type OnboardingStepId,
   type WizardState,
-} from '../../onboarding-store';
+} from '../../onboardingSettings';
 import { setupProgress, type SetupItemId, type SetupProgress } from '../../setupProgress';
 
 export type OnboardingProgress = {

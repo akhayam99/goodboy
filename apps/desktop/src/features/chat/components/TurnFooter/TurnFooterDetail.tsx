@@ -54,7 +54,7 @@ export const TurnFooterDetail = ({
   });
 
   return (
-    <div className="flex min-w-60 flex-col gap-2 p-2 text-label">
+    <div className="flex min-w-60 flex-col gap-2 p-2 text-meta">
       <div className="break-words text-row text-foreground">{heading}</div>
       <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5">
         {rows.map((row) => (

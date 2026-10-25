@@ -84,6 +84,25 @@ describe('startFixAttempt', () => {
     expect(takeLaunchTurn({ launchId: started.launchId })).toBeNull();
   });
 
+  it('keeps the spawned agent and reports the run when only the config write fails', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+    setAgentConfig.mockRejectedValueOnce(new Error('config write failed'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const started = await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(started.agentId).toBe('agent-1');
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
   it('bounds every turn of a large pull request by the model context window', async () => {
     const { spawnAgent, setAgentConfig } = harness();
     const contextWindow = 40_000;

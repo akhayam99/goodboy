@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePoll } from '../../../shared/lib/usePoll';
 import { useAppStore } from '../../../store';
-import { createLatestOnly } from '../../../store/slices/state-writes/latestOnly';
+import { createLatestOnly } from '../../../store/runtime/state-writes/latestOnly';
 import { invokeTerminalListLive } from '../../terminal/terminal';
 import { portsOfProcessTree } from '../portsOfProcessTree';
-import { useMonitorPolling } from '../hooks/useMonitorPolling';
+import { useMonitorPolling } from '../../../shared/hooks/useMonitorPolling';
 
 const POLL_MS = 5000;
 const LIVE_KEY = 'terminal-ports-live';
@@ -19,41 +20,40 @@ export const useTerminalPorts = (): ReadonlyMap<string, ReadonlyArray<number>> =
   const [roots, setRoots] = useState<Roots>(NO_ROOTS);
   const hasReported = useRef(false);
 
-  useEffect(() => {
-    const latest = createLatestOnly();
-    const poll = (): void => {
-      latest
-        .run({
-          key: LIVE_KEY,
-          request: invokeTerminalListLive,
-          apply: (live) =>
-            setRoots(
-              new Map(
-                live.flatMap((terminal) =>
-                  terminal.pid === null ? [] : [[terminal.id, terminal.pid] as const],
-                ),
+  const latest = useMemo(() => createLatestOnly(), []);
+
+  const poll = (): void => {
+    latest
+      .run({
+        key: LIVE_KEY,
+        request: invokeTerminalListLive,
+        apply: (live) =>
+          setRoots(
+            new Map(
+              live.flatMap((terminal) =>
+                terminal.pid === null ? [] : [[terminal.id, terminal.pid] as const],
               ),
             ),
-        })
-        .catch((error) => {
-          if (hasReported.current) {
-            return;
-          }
-          hasReported.current = true;
-          void useAppStore.getState().reportError({
-            title: "Couldn't read which terminals listen on a port",
-            error,
-            severity: 'warning',
-          });
+          ),
+      })
+      .catch((error) => {
+        if (hasReported.current) {
+          return;
+        }
+        hasReported.current = true;
+        void useAppStore.getState().reportError({
+          title: "Couldn't read which terminals listen on a port",
+          error,
+          severity: 'warning',
         });
-    };
-    poll();
-    const timer = window.setInterval(poll, POLL_MS);
-    return () => {
-      window.clearInterval(timer);
-      latest.cancel({ key: LIVE_KEY });
-    };
-  }, []);
+      });
+  };
+
+  usePoll({ run: poll, everyMs: POLL_MS });
+
+  useEffect(() => {
+    return () => latest.cancel({ key: LIVE_KEY });
+  }, [latest]);
 
   return useMemo(() => {
     if (snapshot === null || roots.size === 0) {

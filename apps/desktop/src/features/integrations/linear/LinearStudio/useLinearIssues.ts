@@ -8,105 +8,55 @@ import {
   prRepoFromUrl,
   type LinearIssue,
 } from '../client';
-import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
-import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
+import { useLatestFetch } from '../../hooks/useLatestFetch';
+import { useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { sessionByExternalId } from '../../shared/sessionByExternalId';
+import { buildIssueGroups, type LinearIssueGroup } from './buildIssueGroups';
 
 const LINEAR_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['linear'];
-
-type LinearGroupKey = 'started' | 'unstarted' | 'backlog' | 'triage' | 'other';
-
-const GROUP_ORDER: ReadonlyArray<LinearGroupKey> = [
-  'started',
-  'unstarted',
-  'backlog',
-  'triage',
-  'other',
-];
-
-const GROUP_LABEL: Record<LinearGroupKey, string> = {
-  started: 'In Progress',
-  unstarted: 'Todo',
-  backlog: 'Backlog',
-  triage: 'Triage',
-  other: 'Other',
-};
-
-function groupKeyForStateType(type: string): LinearGroupKey {
-  switch (type) {
-    case 'started':
-      return 'started';
-    case 'unstarted':
-      return 'unstarted';
-    case 'backlog':
-      return 'backlog';
-    case 'triage':
-      return 'triage';
-    default:
-      return 'other';
-  }
-}
-
-type LinearIssueRow = {
-  readonly issue: LinearIssue;
-  readonly sessionId: SessionId | null;
-};
-
-export type LinearIssueGroup = {
-  readonly key: LinearGroupKey;
-  readonly label: string;
-  readonly rows: ReadonlyArray<LinearIssueRow>;
-};
-
-export const buildIssueGroups = (
-  issues: ReadonlyArray<LinearIssue>,
-  sessionIdByExternalId: ReadonlyMap<string, SessionId>,
-): ReadonlyArray<LinearIssueGroup> => {
-  const buckets = new Map<LinearGroupKey, LinearIssueRow[]>();
-  for (const issue of issues) {
-    const key = groupKeyForStateType(issue.state.type);
-    const row: LinearIssueRow = {
-      issue,
-      sessionId: sessionIdByExternalId.get(issue.id) ?? null,
-    };
-    const arr = buckets.get(key);
-    if (arr) {
-      arr.push(row);
-    } else {
-      buckets.set(key, [row]);
-    }
-  }
-  const sortRows = (rows: LinearIssueRow[]): LinearIssueRow[] =>
-    rows.sort((a, b) => compareIsoDesc({ left: a.issue.updatedAt, right: b.issue.updatedAt }));
-  return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
-    key,
-    label: GROUP_LABEL[key],
-    rows: sortRows(buckets.get(key)!),
-  }));
-};
 
 export type SessionPrRef = {
   readonly number: number;
   readonly repo: string | null;
 };
 
-const sessionPrRefFromUrl = (number: number, url: string): SessionPrRef => {
+type PrRefParams = {
+  readonly number: number;
+  readonly url: string;
+};
+
+const sessionPrRefFromUrl = ({ number, url }: PrRefParams): SessionPrRef => {
   return { number, repo: prRepoFromUrl(url) };
 };
 
-function sameRepo(a: string | null, b: string | null): boolean {
-  return !a || !b ? true : a.toLowerCase() === b.toLowerCase();
-}
+type SameRepoParams = {
+  readonly left: string | null;
+  readonly right: string | null;
+};
 
-function sessionMatchesIssue(
-  session: Session,
-  issue: LinearIssue,
-  sessionBranches: Readonly<Record<string, string>>,
-  sessionPr: ReadonlyMap<string, SessionPrRef>,
-): boolean {
+const sameRepo = ({ left, right }: SameRepoParams): boolean =>
+  !left || !right ? true : left.toLowerCase() === right.toLowerCase();
+
+type MatchParams = {
+  readonly session: Session;
+  readonly issue: LinearIssue;
+  readonly sessionBranches: Readonly<Record<string, string>>;
+  readonly sessionPr: ReadonlyMap<string, SessionPrRef>;
+};
+
+const sessionMatchesIssue = ({
+  session,
+  issue,
+  sessionBranches,
+  sessionPr,
+}: MatchParams): boolean => {
   const pr = sessionPr.get(session.id);
   if (
     pr &&
-    issuePullRequests(issue).some((p) => p.number === pr.number && sameRepo(p.repo, pr.repo))
+    issuePullRequests(issue).some(
+      (candidate) =>
+        candidate.number === pr.number && sameRepo({ left: candidate.repo, right: pr.repo }),
+    )
   ) {
     return true;
   }
@@ -114,29 +64,32 @@ function sessionMatchesIssue(
   return Boolean(
     branch && issue.branchName && branch.toLowerCase() === issue.branchName.toLowerCase(),
   );
-}
-
-export const resolveIssueSessions = (
-  issues: ReadonlyArray<LinearIssue>,
-  sessions: ReadonlyArray<Session>,
-  sessionBranches: Readonly<Record<string, string>>,
-  linkedSessions: ReadonlyMap<string, SessionId>,
-  sessionPr: ReadonlyMap<string, SessionPrRef>,
-): Map<string, SessionId> => {
-  const byIssue = new Map<string, SessionId>();
-  for (const issue of issues) {
-    const linked = linkedSessions.get(linkedTaskKey({ provider: 'linear', externalId: issue.id }));
-    if (linked !== undefined) {
-      byIssue.set(issue.id, linked);
-      continue;
-    }
-    const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches, sessionPr));
-    if (match) {
-      byIssue.set(issue.id, match.id);
-    }
-  }
-  return byIssue;
 };
+
+type ResolveParams = {
+  readonly issues: ReadonlyArray<LinearIssue>;
+  readonly sessions: ReadonlyArray<Session>;
+  readonly sessionBranches: Readonly<Record<string, string>>;
+  readonly linkedSessions: ReadonlyMap<string, SessionId>;
+  readonly sessionPr: ReadonlyMap<string, SessionPrRef>;
+};
+
+export const resolveIssueSessions = ({
+  issues,
+  sessions,
+  sessionBranches,
+  linkedSessions,
+  sessionPr,
+}: ResolveParams): Map<string, SessionId> =>
+  sessionByExternalId({
+    issues,
+    sessions,
+    linkedSessions,
+    provider: 'linear',
+    externalIdOf: ({ issue }) => issue.id,
+    isSessionOfIssue: ({ issue, session }) =>
+      sessionMatchesIssue({ session, issue, sessionBranches, sessionPr }),
+  });
 
 export type UseLinearIssues = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
@@ -153,8 +106,10 @@ export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
   const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const beginFetch = useLatestFetch();
 
   const fetchIssues = useCallback(async () => {
+    const isStale = beginFetch();
     if (!isEnabled) {
       setIssues([]);
       setLoading(false);
@@ -165,13 +120,21 @@ export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
     setError(null);
     try {
       const rows = await linearFetchAssignedIssues(workspaceId);
+      if (isStale()) {
+        return;
+      }
       setIssues(rows);
     } catch (err) {
+      if (isStale()) {
+        return;
+      }
       setError(formatError(err));
     } finally {
-      setLoading(false);
+      if (!isStale()) {
+        setLoading(false);
+      }
     }
-  }, [isEnabled, workspaceId]);
+  }, [beginFetch, isEnabled, workspaceId]);
 
   useEffect(() => {
     void fetchIssues();
@@ -182,19 +145,19 @@ export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
     for (const [sessionId, gh] of Object.entries(sessionGithub)) {
       const pr = gh?.pr;
       if (pr) {
-        map.set(sessionId, sessionPrRefFromUrl(pr.number, pr.url));
+        map.set(sessionId, sessionPrRefFromUrl({ number: pr.number, url: pr.url }));
       }
     }
     return map;
   }, [sessionGithub]);
 
   const sessionIdByIssueId = useMemo(
-    () => resolveIssueSessions(issues, sessions, sessionBranches, linkedSessions, sessionPr),
+    () => resolveIssueSessions({ issues, sessions, sessionBranches, linkedSessions, sessionPr }),
     [issues, sessions, sessionBranches, linkedSessions, sessionPr],
   );
 
   const groups = useMemo(
-    () => buildIssueGroups(issues, sessionIdByIssueId),
+    () => buildIssueGroups({ issues, sessionIdByExternalId: sessionIdByIssueId }),
     [issues, sessionIdByIssueId],
   );
 

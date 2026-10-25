@@ -28,6 +28,7 @@ const FOLDER: StorageFolder = {
     changedFiles: 3,
     changedSample: 'ledger.ts',
     reasons: [],
+    verdict: 'dirty',
   },
   keptAt: null,
   keptUntil: null,

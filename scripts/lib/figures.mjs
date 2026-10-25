@@ -3,7 +3,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const FIGURES_PATH = resolve(ROOT_DIRECTORY, 'docs/figures.json');
+const FIGURES_PATH =
+  process.env.GOODBOY_FIGURES_PATH ?? resolve(ROOT_DIRECTORY, 'docs/figures.json');
+const DEFAULT_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+export const DEFAULT_SHOT_URL = 'http://localhost:5230';
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const SHELL_SAFE_PATTERN = /^[\w.,:=/%@-]+$/;
 const RECIPE_SKIPPED = new Set(['out', 'base', 'version']);
@@ -47,4 +50,48 @@ export const recipeOf = ({ argv }) => {
     }
   }
   return parts.join(' ');
+};
+
+export const chromePathOf = () => process.env.GOODBOY_CHROME ?? DEFAULT_CHROME;
+
+export const shellSplitOf = ({ value }) => {
+  const words = [];
+  let word = null;
+  let isQuoted = false;
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (isQuoted) {
+      if (char === "'") {
+        isQuoted = false;
+        continue;
+      }
+      word += char;
+      continue;
+    }
+    if (char === "'") {
+      isQuoted = true;
+      word ??= '';
+      continue;
+    }
+    if (char === '\\') {
+      index += 1;
+      word = (word ?? '') + (value[index] ?? '');
+      continue;
+    }
+    if (/\s/.test(char)) {
+      if (word !== null) {
+        words.push(word);
+        word = null;
+      }
+      continue;
+    }
+    word = (word ?? '') + char;
+  }
+  if (isQuoted) {
+    throw new Error(`unclosed quote in recipe: ${value}`);
+  }
+  if (word !== null) {
+    words.push(word);
+  }
+  return words;
 };

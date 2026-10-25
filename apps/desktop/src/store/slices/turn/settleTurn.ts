@@ -24,6 +24,7 @@ import type { TurnContext } from './turnContext';
 import { enqueueLearnings } from './learningQueue';
 import { activePlanOf } from './activePlanOf';
 import { unchangedPlanNote } from './unchangedPlanNote';
+import { WORK_KEPT } from '../notifications/errorRecovery';
 
 type Params = Readonly<{
   set: SetFn;
@@ -83,7 +84,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       hasFailed: lastError !== null || turnWasCancelled,
     })
     .catch((error: unknown) =>
-      get().reportError({ title: "Couldn't push the fix.", error, sessionId }),
+      get().reportError({ title: "Couldn't push the fix.", error, sessionId, recovery: WORK_KEPT }),
     );
 
   void get()
@@ -93,7 +94,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       hasFailed: lastError !== null || turnWasCancelled,
     })
     .catch((error: unknown) =>
-      get().reportError({ title: "Couldn't push the fix.", error, sessionId }),
+      get().reportError({ title: "Couldn't push the fix.", error, sessionId, recovery: WORK_KEPT }),
     );
 
   if (assistantText.length > 0 && !purgedAgentIds.has(activeAgentId)) {

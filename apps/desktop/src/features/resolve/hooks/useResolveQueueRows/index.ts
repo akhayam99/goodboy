@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type {
+  MountId,
   PrComment,
   ResolveAttempt,
   ResolvePublication,
@@ -21,16 +22,18 @@ type Params = {
   readonly sessionId: SessionId;
   readonly isEnabled?: boolean;
   readonly scope?: 'active' | 'displayed';
+  readonly mountId?: MountId | null;
 };
 
 export const useResolveQueueRows = ({
   sessionId,
   isEnabled = true,
   scope = 'active',
+  mountId = null,
 }: Params): ReadonlyArray<ResolveQueueRow> => {
-  const { source } = useActiveReviewSource({ sessionId });
+  const { source } = useActiveReviewSource({ sessionId, mountId });
   const comments = source?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>);
-  const { all: notes, onBranch } = useBranchNotes({ sessionId, scope });
+  const { all: notes, onBranch } = useBranchNotes({ sessionId, scope, mountId });
   const hiddenNoteIds = useMemo(() => {
     const visible = new Set(onBranch.map((note) => note.id));
     return new Set(notes.filter((note) => !visible.has(note.id)).map((note) => note.id));

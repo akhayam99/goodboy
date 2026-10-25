@@ -1,4 +1,4 @@
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
 import type { GetFn, RecheckReason, RecheckSessionMountsParams } from './types';
 import { sessionById } from '../sessions/sessionIndex';

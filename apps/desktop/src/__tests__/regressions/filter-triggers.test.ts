@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
-const FILTER_BUTTON = 'shared/components/FilterButton/index.tsx';
+const FILTER_BUTTON = 'shared/components/FilterButton.tsx';
 
 const LUCIDE_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'lucide-react'/g;
 

@@ -9,31 +9,86 @@ export type ToolMatcher = {
   readonly matches: (params: MatchParams) => boolean;
 };
 
-const REGEX_METACHARS = /[.+?()[\]{}\^$|\\]/g;
+const SEGMENT_STOPS: ReadonlySet<string> = new Set([':', '/', ';', '&', '|', '`', '\n', '\r']);
+
+type GlobToken =
+  | { readonly kind: 'literal'; readonly ch: string }
+  | { readonly kind: 'segment' }
+  | { readonly kind: 'any' };
 
 type GlobParams = {
   readonly glob: string;
 };
 
-const globToRegex = ({ glob }: GlobParams): RegExp => {
-  let pattern = '';
+const tokenizeGlob = ({ glob }: GlobParams): ReadonlyArray<GlobToken> => {
+  const tokens: Array<GlobToken> = [];
   let i = 0;
   while (i < glob.length) {
     const ch = glob[i] ?? '';
     if (ch === '*' && glob[i + 1] === '*') {
-      pattern += '.*';
+      tokens.push({ kind: 'any' });
       i += 2;
       continue;
     }
     if (ch === '*') {
-      pattern += '[^:/]*';
+      tokens.push({ kind: 'segment' });
       i += 1;
       continue;
     }
-    pattern += ch.replace(REGEX_METACHARS, '\\$&');
+    tokens.push({ kind: 'literal', ch });
     i += 1;
   }
-  return new RegExp(`^${pattern}$`);
+  return tokens;
+};
+
+type StepParams = {
+  readonly reach: Uint8Array;
+  readonly text: string;
+};
+
+type LiteralStepParams = StepParams & {
+  readonly ch: string;
+};
+
+const stepLiteral = ({ reach, text, ch }: LiteralStepParams): Uint8Array => {
+  const next = new Uint8Array(text.length + 1);
+  for (let i = 0; i < text.length; i += 1) {
+    if (reach[i] === 1 && text[i] === ch) {
+      next[i + 1] = 1;
+    }
+  }
+  return next;
+};
+
+type StarStepParams = StepParams & {
+  readonly isDeep: boolean;
+};
+
+const stepStar = ({ reach, text, isDeep }: StarStepParams): Uint8Array => {
+  const next = new Uint8Array(text.length + 1);
+  next[0] = reach[0] ?? 0;
+  for (let i = 1; i <= text.length; i += 1) {
+    const canCross = isDeep || !SEGMENT_STOPS.has(text[i - 1] ?? '');
+    next[i] = reach[i] === 1 || (next[i - 1] === 1 && canCross) ? 1 : 0;
+  }
+  return next;
+};
+
+type GlobTestParams = {
+  readonly tokens: ReadonlyArray<GlobToken>;
+  readonly text: string;
+};
+
+const globTest = ({ tokens, text }: GlobTestParams): boolean => {
+  let reach: Uint8Array = new Uint8Array(text.length + 1);
+  reach[0] = 1;
+  for (const token of tokens) {
+    reach =
+      token.kind === 'literal'
+        ? stepLiteral({ reach, text, ch: token.ch })
+        : stepStar({ reach, text, isDeep: token.kind === 'any' });
+  }
+  return reach[text.length] === 1;
 };
 
 const FILE_PATH_TOOLS: ReadonlySet<string> = new Set([
@@ -86,10 +141,10 @@ export const parseToolPattern = ({ pattern }: PatternTextParams): ToolMatcher =>
     return { matches: ({ toolName }) => toolName === tool };
   }
   const tool = pattern.slice(0, parenIdx).trim();
-  const argsRe = globToRegex({ glob: pattern.slice(parenIdx + 1, pattern.lastIndexOf(')')) });
+  const tokens = tokenizeGlob({ glob: pattern.slice(parenIdx + 1, pattern.lastIndexOf(')')) });
   return {
     matches: ({ toolName, input }) =>
-      toolName === tool && argsRe.test(stringifyInput({ toolName, input })),
+      toolName === tool && globTest({ tokens, text: stringifyInput({ toolName, input }) }),
   };
 };
 

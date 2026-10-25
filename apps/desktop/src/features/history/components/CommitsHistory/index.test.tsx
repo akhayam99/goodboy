@@ -17,6 +17,7 @@ import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import { historyBackupRef } from '../../historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
 vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
@@ -246,6 +247,18 @@ describe('CommitsHistory toolbar', () => {
     const cells = document.querySelectorAll('[data-slot="commit-row-actions"]');
 
     expect(cells.length).toBeGreaterThan(0);
+    slot.remove();
+  });
+
+  it('names the other ways to the same verbs in the tooltip of the row menu', () => {
+    const slot = mountWithSlot();
+
+    const [menu] = screen.getAllByRole('button', { name: /^More for / });
+    if (menu === undefined) {
+      throw new Error('the commit rows draw no menu');
+    }
+
+    expect(tooltipTextOf({ element: menu })).toBe('More actions. Right click or Shift+F10');
     slot.remove();
   });
 

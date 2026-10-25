@@ -18,7 +18,9 @@ export type PullRequestViewEntry = Readonly<{
 }>;
 
 export type PullRequestViewState = {
-  readonly pullRequestViews: Readonly<Record<SessionId, PullRequestViewEntry>>;
+  readonly pullRequestViews: Readonly<
+    Record<SessionId, Readonly<Record<string, PullRequestViewEntry>>>
+  >;
 };
 
 export const pullRequestViewInitialState: PullRequestViewState = {

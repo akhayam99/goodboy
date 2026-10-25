@@ -1,3 +1,5 @@
+import { isRecord } from './helpers';
+
 export type RunRouteShape = 'plan' | 'lead';
 
 export type RunRouteCloseness = 'follow' | 'adapt';
@@ -13,9 +15,6 @@ export type RunRoute = Readonly<{
   ask?: string;
   changedTo?: RunRouteShape;
 }>;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const textOrNull = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 

@@ -7,7 +7,7 @@ import {
   makeRuntimeWorld,
   userSays,
   type RuntimeWorld,
-} from '../auto/testing/runtimeWorld';
+} from '../../runtime/auto/testing/runtimeWorld';
 import { readAutoTreeViews } from './readAutoTreeViews';
 import { sameAutoTreeViews } from './sameAutoTreeViews';
 

@@ -81,6 +81,7 @@ export const relocateProjects = (set: SetFn, get: GetFn) => {
           toRoot,
           restoredSessionFolders: result.restoredSessionFolders,
           repairedGitLinks: result.repairedGitLinks,
+          repairError: result.repairError,
         });
       }
       set({ projectRelocationCompleted: completed, projectRelocationPhase: 'success' });

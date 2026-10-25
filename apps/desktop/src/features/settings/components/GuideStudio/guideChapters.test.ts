@@ -4,7 +4,9 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
+import { RETIRED_NAMES } from '../../../../__tests__/regressions/retiredNames';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { COLUMN_DOORS } from '../../../../app/components/SideColumn/columnDoors';
 import { columnPagesOf } from '../../../session/pageRegistry';
 import { NEW_DRAWER_FORMS } from '../../../session/newDrawerForms';
@@ -60,8 +62,10 @@ describe('the word budget', () => {
     expect(long).toEqual([]);
   });
 
-  it('keeps every chapter to 7 points', () => {
-    const crowded = GUIDE_CHAPTERS.filter((chapter) => chapter.points.length > 7);
+  it('keeps every chapter to 7 points, the Words glossary to 12', () => {
+    const crowded = GUIDE_CHAPTERS.filter(
+      (chapter) => chapter.points.length > (chapter.id === 'words' ? 12 : 7),
+    );
     expect(crowded.map((chapter) => chapter.id)).toEqual([]);
   });
 
@@ -80,7 +84,7 @@ describe('the word budget', () => {
       wordsIn(words?.lead ?? '') +
       (words?.points ?? []).reduce((sum, point) => sum + wordsIn(point.desc), 0);
     expect(words === undefined ? null : chapterStatsOf({ chapter: words })).toEqual({
-      points: 7,
+      points: 12,
       words: expected,
     });
   });
@@ -206,9 +210,41 @@ describe('what the Guide may name', () => {
     expect(text).not.toMatch(/\bcap\b/i);
   });
 
+  it('names no marker the session pages no longer draw', () => {
+    expect(allText()).not.toMatch(/\b(?:Experimental|Deprecated)\b/);
+  });
+
   it('writes no em dash and no en dash in any chapter', () => {
     const dashes = [8211, 8212].map((code) => String.fromCharCode(code));
     expect(dashes.filter((dash) => allText().includes(dash))).toEqual([]);
+  });
+});
+
+describe('the labels the Guide cites', () => {
+  const studioLinkLabel = ({ kind }: { readonly kind: string }): string | undefined =>
+    GUIDE_CHAPTERS.flatMap((chapter) => chapter.links).find(
+      (link) => link.target.kind === 'studio' && link.target.studio.kind === kind,
+    )?.label;
+
+  it('names the links to Tasks and What is new from names.ts', () => {
+    expect(studioLinkLabel({ kind: 'inbox' })).toBe(`Open ${NAMES.tasks}`);
+    expect(studioLinkLabel({ kind: 'changelog' })).toBe(`Open ${NAMES.whatsNew}`);
+  });
+
+  it('cites the button on an issue as it is drawn', () => {
+    expect(pointOf('kickoff', 'Start from Tasks')).toContain(NAMES.startSession);
+    expect(pointOf('tasks', 'Start from anything')).toContain(NAMES.startSession);
+  });
+
+  it('cites no name that the retired names guard flags', () => {
+    const flagged = RETIRED_NAMES.filter((retired) => retired.pattern.test(allText()));
+    expect(flagged.map((retired) => retired.id)).toEqual([]);
+  });
+
+  it('calls a session a session and keeps task for the work of other tools', () => {
+    const text = allText();
+    expect(text).not.toMatch(/\b(?:a session is one task|each task is a session|one task with)\b/i);
+    expect(text).not.toMatch(/\bunblock the task\b|\bnext to the task\b/);
   });
 });
 
@@ -237,7 +273,9 @@ describe('the shell chapter', () => {
 
   it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
     const agents = pointOf('shell', 'Agents panel');
-    ['⌘⌥L', 'run or Auto', 'Back to agents'].forEach((entry) => expect(agents).toContain(entry));
+    [shortcutGlyphs('session.spawned'), 'run or Auto', 'j and k hop'].forEach((entry) =>
+      expect(agents).toContain(entry),
+    );
     expect(agents).not.toContain('‹ Runs');
   });
 
@@ -262,7 +300,7 @@ describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
     expect(pointOf('kickoff', 'What kind of run?')).toContain('Workflow or Agent');
     expect(pointOf('kickoff', NAMES.startARun)).toContain('Auto picks a workflow or an agent');
-    expect(pointOf('kickoff', 'Start on a task')).toContain('Pick from Tasks');
+    expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Where')).toContain('Auto picks');
     expect(pointOf('kickoff', 'Where')).toContain('Suggested');
     expect(pointOf('kickoff', 'Where')).toContain('All folders');
@@ -284,7 +322,7 @@ describe('the start, agent and workflow chapters', () => {
     expect(auto).toContain('child agents');
     const both = pointOf('workflows', 'Orchestrated or Auto');
     expect(both).toContain('Orchestrated is not Auto');
-    expect(both).toContain('Experimental marker');
+    expect(both).not.toContain('Experimental');
   });
 
   it('says a rebase conflict asks, and Rebase all hands the conflicts to one Auto', () => {
@@ -338,6 +376,11 @@ describe('the Words chapter', () => {
       'Folder',
       'Session',
       'Agent',
+      'Run',
+      'Plan',
+      'Preset',
+      'Auto',
+      'Scout',
       'Turn',
       'Worktree and branch',
       'Limit',
@@ -354,6 +397,16 @@ describe('the Words chapter', () => {
       .flatMap((point) => point.term.split(' and '))
       .filter((term) => !KNOWN.has(stem(term)));
     expect(unknown).toEqual([]);
+  });
+
+  it('defines Run, Plan, Preset, Auto and Scout in one sentence each', () => {
+    ['Run', 'Plan', 'Preset', 'Auto', 'Scout'].forEach((term) => {
+      const desc = words?.points.find((point) => point.term === term)?.desc ?? '';
+      expect(desc).not.toBe('');
+      expect(desc.split(/(?<=[.?!])\s+/)).toHaveLength(1);
+    });
+    expect(pointOf('words', 'Preset')).toContain('workflow');
+    expect(pointOf('words', 'Session')).not.toMatch(/\btask\b/);
   });
 
   it('writes no first person', () => {

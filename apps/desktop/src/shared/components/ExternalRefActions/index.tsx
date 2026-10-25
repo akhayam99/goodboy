@@ -1,8 +1,7 @@
 import type { MouseEvent } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { SquareArrowOutUpRight } from 'lucide-react';
 import { openUrl } from '../../lib/editor';
-import { CopyButton, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { CopyButton, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 type Props = {
   readonly url: string;
@@ -27,7 +26,7 @@ export const ExternalRefActions = ({ url, label, hostLabel }: Props) => {
           aria-label={`Open in ${hostLabel}`}
           className="inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
         </a>
       </Tooltip>
       <CopyButton

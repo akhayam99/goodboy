@@ -4,8 +4,8 @@ import { useStageScale } from './useStageScale';
 import { DemoStageLoading } from './DemoStageLoading';
 import { STAGE_BACKDROP } from './stageBackdrop';
 import { DEMO_PROTOCOL, type DemoReport } from './director/demoProtocol';
-import { isDemoReport } from './director/isDemoReport';
-import { isDemoHintReport } from './director/isDemoHintReport';
+import { readDemoReport } from './director/readDemoReport';
+import { readDemoHintReport } from './director/readDemoHintReport';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
@@ -122,55 +122,60 @@ export const DemoStage = ({
   );
 
   useEffect(() => {
-    const onMessage = (event: MessageEvent): void => {
-      if (event.origin !== window.location.origin) {
-        return;
-      }
-      const entry = [...elements.current].find(
-        ([, element]) => element.contentWindow !== null && element.contentWindow === event.source,
-      );
-      if (entry === undefined) {
-        return;
-      }
-      const [key] = entry;
-      if (isDemoHintReport(event.data)) {
-        const isCurrent = key === currentKeyRef.current;
-        if (isCurrent && event.data.generation === sent.current.get(key)?.generation) {
-          onHintReport({ key, report: event.data });
+    const listener = new AbortController();
+    window.addEventListener(
+      'message',
+      (event) => {
+        if (event.origin !== window.location.origin) {
+          return;
         }
-        return;
-      }
-      if (!isDemoReport(event.data)) {
-        return;
-      }
-      const report = event.data;
-      if (report.type === 'ready') {
-        const isReload = sent.current.has(key);
-        sent.current.set(key, { generation: report.generation, type: null });
-        markMounted({ key });
-        if (isReload) {
-          hintsSent.current.delete(key);
-          setLoadEpoch((epoch) => epoch + 1);
+        const entry = [...elements.current].find(
+          ([, element]) => element.contentWindow !== null && element.contentWindow === event.source,
+        );
+        if (entry === undefined) {
+          return;
         }
-        if (isReload && key === currentKeyRef.current) {
-          onHintReport({
-            key,
-            report: {
-              channel: DEMO_PROTOCOL.channel,
-              version: DEMO_PROTOCOL.version,
-              generation: report.generation,
-              type: 'anchor',
-              hintId: null,
-              rect: null,
-              isOffscreen: false,
-            },
-          });
+        const [key] = entry;
+        const hintReport = readDemoHintReport({ data: event.data });
+        if (hintReport !== null) {
+          const isCurrent = key === currentKeyRef.current;
+          if (isCurrent && hintReport.generation === sent.current.get(key)?.generation) {
+            onHintReport({ key, report: hintReport });
+          }
+          return;
         }
-      }
-      onReport({ key, report });
-    };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+        const report = readDemoReport({ data: event.data });
+        if (report === null) {
+          return;
+        }
+        if (report.type === 'ready') {
+          const isReload = sent.current.has(key);
+          sent.current.set(key, { generation: report.generation, type: null });
+          markMounted({ key });
+          if (isReload) {
+            hintsSent.current.delete(key);
+            setLoadEpoch((epoch) => epoch + 1);
+          }
+          if (isReload && key === currentKeyRef.current) {
+            onHintReport({
+              key,
+              report: {
+                channel: DEMO_PROTOCOL.channel,
+                version: DEMO_PROTOCOL.version,
+                generation: report.generation,
+                type: 'anchor',
+                hintId: null,
+                rect: null,
+                isOffscreen: false,
+              },
+            });
+          }
+        }
+        onReport({ key, report });
+      },
+      { signal: listener.signal },
+    );
+    return () => listener.abort();
   }, [markMounted, onReport, onHintReport]);
 
   useEffect(() => {

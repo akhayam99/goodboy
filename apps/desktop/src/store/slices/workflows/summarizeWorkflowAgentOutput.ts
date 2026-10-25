@@ -1,6 +1,6 @@
 import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
@@ -8,11 +8,10 @@ import { summarizeAgentOutput } from './summarizeAgentOutput';
 import { notifyStepSummaryFailed, resolveStepSummaryNotice } from './stepSummaryNotice';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 type Params = {
   readonly set: SetFn;

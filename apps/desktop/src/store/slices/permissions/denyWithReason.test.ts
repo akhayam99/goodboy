@@ -59,32 +59,37 @@ const deny = (params: { readonly toolUseId: string; readonly reason: string }) =
     ...params,
   });
 
-const denialsOf = (): ReadonlyArray<string> =>
+const denialsOf = (): ReadonlyArray<{ readonly toolUseId: string; readonly scope?: string }> =>
   (useAppStore.getState().transcripts[AGENT_ID] ?? [])
     .filter(
       (event): event is Extract<TurnEvent, { kind: 'permission_decision' }> =>
         event.kind === 'permission_decision' && event.decision === 'deny',
     )
-    .map((event) => event.toolUseId);
+    .map((event) => ({ toolUseId: event.toolUseId, scope: event.scope }));
 
 describe('denyWithReason', () => {
-  it('denies the request and tells the agent why in the same session', async () => {
+  it('denies this call only and tells the agent why in the same session', async () => {
     await deny({ toolUseId: 'tu-1', reason: 'this would touch production data' });
 
-    expect(denialsOf()).toEqual(['tu-1']);
-    expect(storySpies.invokePermissionRuleUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: 'session', sessionId: SESSION_ID, decision: 'deny' }),
-    );
+    expect(denialsOf()).toEqual([{ toolUseId: 'tu-1', scope: 'once' }]);
+    expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
     expect(followUps).toEqual([
       { agentId: AGENT_ID, content: 'Denied Bash. this would touch production data' },
     ]);
   });
 
-  it('denies without sending a follow-up turn when no reason is given', async () => {
+  it('writes no rule and tells the agent the denial covers one call when no reason is given', async () => {
     await deny({ toolUseId: 'tu-2', reason: '   ' });
 
-    expect(denialsOf()).toEqual(['tu-2']);
-    expect(followUps).toEqual([]);
+    expect(denialsOf()).toEqual([{ toolUseId: 'tu-2', scope: 'once' }]);
+    expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
+    expect(followUps).toEqual([
+      {
+        agentId: AGENT_ID,
+        content:
+          'Denied Bash for this one call. Do not run it; carry on another way, or say what you need.',
+      },
+    ]);
   });
 
   it('does not pile a second turn onto one already running', async () => {
@@ -94,7 +99,14 @@ describe('denyWithReason', () => {
 
     await deny({ toolUseId: 'tu-3', reason: 'wait for the tests first' });
 
-    expect(denialsOf()).toEqual(['tu-3']);
+    expect(denialsOf()).toEqual([{ toolUseId: 'tu-3', scope: 'once' }]);
     expect(followUps).toEqual([]);
+  });
+
+  it('leaves the next call of the same tool free to ask again', async () => {
+    await deny({ toolUseId: 'tu-4', reason: '' });
+
+    expect(useAppStore.getState().volatilePermissionAllows.size).toBe(0);
+    expect(storySpies.invokePermissionRuleUpsert).not.toHaveBeenCalled();
   });
 });

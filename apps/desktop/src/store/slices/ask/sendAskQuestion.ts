@@ -4,11 +4,16 @@ import type {
   ChatId,
   ChatMessage,
   ChatMessageId,
-  ChatMessageStatus,
   IsoDateTime,
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
+import { addReplyRead } from '../../../features/conversation/addReplyRead';
+import { appendReplyText } from '../../../features/conversation/appendReplyText';
+import { draftChatMessage } from '../../../features/conversation/draftChatMessage';
+import { settleChatReply } from '../../../features/conversation/settleChatReply';
+import { STOPPED_BEFORE_LAUNCH } from '../../../features/conversation/stoppedBeforeLaunch';
+import { isoNow } from '@goodboy/types/helpers';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeAskBackend } from '../../../features/session/ask/activeAskBackend';
@@ -17,7 +22,7 @@ import { buildAskSystemPrompt } from '../../../features/session/ask/buildAskSyst
 import { buildAskTurnPrompt } from '../../../features/session/ask/buildAskTurnPrompt';
 import { collectAskPackInput } from '../../../features/session/ask/collectAskPackInput';
 import { stabilizeAskAnswer } from '../../../features/session/ask/parseAskAnswer';
-import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
+import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
 import { chatTitleFromQuestion } from '../chats/chatTitleFromQuestion';
 import { sessionById } from '../sessions/sessionIndex';
 import { askRoutingOf } from './askRoutingOf';
@@ -25,15 +30,7 @@ import { settleAskRoutingWrite } from './askRoutingWrites';
 import { advanceAskThread } from './askThreadOrder';
 import { isAskStreaming } from './isAskStreaming';
 import { recordAskUsage } from './recordAskUsage';
-import type { AskRouting } from './state';
 import type { GetFn, SendAskQuestionParams, SetFn } from './types';
-
-const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-
-const STOPPED_BEFORE_LAUNCH: ChatTurnOutcome = {
-  status: 'failed',
-  error: 'Stopped before the provider started.',
-};
 
 type PatchParams = {
   readonly set: SetFn;
@@ -116,23 +113,16 @@ const finishReply = async ({ set, get, threadId, messageId, outcome }: FinishPar
   if (current === undefined) {
     return;
   }
-  const status: ChatMessageStatus = isStopping
-    ? 'stopped'
-    : outcome.status === 'done'
-      ? 'done'
-      : 'failed';
-  if (status !== 'done') {
+  const settled = settleChatReply({ reply: current, isStopping, outcome, at: isoNow() });
+  if (settled.status !== 'done') {
     revealPacer.flushRun({ runId: messageId });
   }
   const finished: ChatMessage = {
-    ...current,
+    ...settled,
     content: stabilizeAskAnswer({
       text: current.content,
       handles: get().askHandles[messageId] ?? [],
     }),
-    status,
-    error: status === 'failed' && outcome.status === 'failed' ? outcome.error : null,
-    updatedAt: isoNow(),
   };
   set((state) => {
     const { [threadId]: _finished, ...streams } = state.askStreams;
@@ -141,31 +131,6 @@ const finishReply = async ({ set, get, threadId, messageId, outcome }: FinishPar
   patchMessage({ set, threadId, messageId, update: () => finished });
   await activeAskBackend.finishMessage({ message: finished });
 };
-
-type DraftParams = {
-  readonly threadId: ChatId;
-  readonly role: ChatMessage['role'];
-  readonly content: string;
-  readonly status: ChatMessageStatus;
-  readonly at: IsoDateTime;
-  readonly routing: AskRouting | null;
-};
-
-const draft = ({ threadId, role, content, status, at, routing }: DraftParams): ChatMessage => ({
-  id: crypto.randomUUID() as ChatMessageId,
-  chatId: threadId,
-  role,
-  content,
-  status,
-  reads: [],
-  attachments: [],
-  error: null,
-  provider: routing?.provider ?? null,
-  model: routing?.model ?? null,
-  effort: routing?.effort ?? null,
-  createdAt: at,
-  updatedAt: at,
-});
 
 export const sendAskQuestion =
   (set: SetFn, get: GetFn) =>
@@ -181,21 +146,22 @@ export const sendAskQuestion =
     }
     const routing = askRoutingOf({ state: get(), sessionId });
     const history = get().askMessages[thread.id] ?? [];
-    const asked = draft({
-      threadId: thread.id,
+    const asked = draftChatMessage({
+      chatId: thread.id,
       role: 'user',
       content: text,
       status: 'done',
       at,
-      routing: null,
     });
-    const reply = draft({
-      threadId: thread.id,
+    const reply = draftChatMessage({
+      chatId: thread.id,
       role: 'assistant',
       content: '',
       status: 'streaming',
       at,
-      routing,
+      provider: routing.provider,
+      model: routing.model,
+      effort: routing.effort,
     });
     const runId = crypto.randomUUID() as ProviderRunId;
     const state = get();
@@ -254,7 +220,7 @@ export const sendAskQuestion =
             set,
             threadId: thread.id,
             messageId: reply.id,
-            update: (message) => ({ ...message, content: `${message.content}${delta}` }),
+            update: (message) => appendReplyText({ message, delta }),
           });
         },
         onRead: (path) =>
@@ -262,10 +228,7 @@ export const sendAskQuestion =
             set,
             threadId: thread.id,
             messageId: reply.id,
-            update: (message) =>
-              message.reads.includes(path)
-                ? message
-                : { ...message, reads: [...message.reads, path] },
+            update: (message) => addReplyRead({ message, path }),
           }),
         onUsage: (usage) => {
           void recordAskUsage({

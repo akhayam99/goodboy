@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 
 use crate::worktree::{git, rev_list_left_right, GitDistance, GitUnknownReason, WorktreeError};
@@ -8,6 +9,14 @@ const DEFAULT_REMOTE: &str = "origin";
 pub(crate) struct ConfiguredUpstream<'a> {
     pub name: &'a str,
     pub distance: Option<(u32, u32)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum SyncOutcome {
+    Updated,
+    Unchanged,
+    Failed { message: String },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -102,7 +111,7 @@ pub(crate) fn fetch_branch_ref(
 ) -> Option<String> {
     let refspec = format!("+refs/heads/{branch}:refs/remotes/{remote}/{branch}");
     let cwd_text = cwd.to_string_lossy().to_string();
-    match crate::github::run_git_authenticated(
+    match crate::remote_auth::run_git_authenticated(
         &["fetch", "--quiet", "--no-tags", remote, &refspec],
         &cwd_text,
         token,
@@ -118,18 +127,23 @@ pub(crate) fn sync_branch_ref(
     branch: &str,
     expected_sha: &str,
     token: Option<&str>,
-) -> bool {
+) -> SyncOutcome {
     let configured = crate::worktree::resolve_upstream(cwd);
     let remote = remote_of(configured.as_deref()).to_string();
     let own = format!("{remote}/{branch}");
     let before = tracking_sha(cwd, &own);
     if before.as_deref() == Some(expected_sha.trim()) {
-        return false;
+        return SyncOutcome::Unchanged;
     }
-    if fetch_branch_ref(cwd, &remote, branch, token).is_some() {
-        return false;
+    if let Some(message) = fetch_branch_ref(cwd, &remote, branch, token) {
+        return SyncOutcome::Failed {
+            message: crate::worktree::redact_credentials(&message),
+        };
     }
-    tracking_sha(cwd, &own) != before
+    match tracking_sha(cwd, &own) != before {
+        true => SyncOutcome::Updated,
+        false => SyncOutcome::Unchanged,
+    }
 }
 
 #[tauri::command]
@@ -139,7 +153,7 @@ pub async fn worktree_sync_branch_ref(
     expected_sha: String,
     workspace_id: Option<String>,
     project_id: Option<String>,
-) -> Result<bool, WorktreeError> {
+) -> Result<SyncOutcome, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
         let cwd = PathBuf::from(&worktree_path);
         if !cwd.exists() {
@@ -148,9 +162,9 @@ pub async fn worktree_sync_branch_ref(
         let branch = branch.trim().to_string();
         let expected = expected_sha.trim().to_string();
         if branch.is_empty() || expected.is_empty() {
-            return Ok(false);
+            return Ok(SyncOutcome::Unchanged);
         }
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         Ok(sync_branch_ref(&cwd, &branch, &expected, token.as_deref()))
     })
     .await
@@ -159,7 +173,7 @@ pub async fn worktree_sync_branch_ref(
 
 #[cfg(test)]
 mod tests {
-    use super::{branch_remote, sync_branch_ref, BranchRemote, ConfiguredUpstream};
+    use super::{branch_remote, sync_branch_ref, BranchRemote, ConfiguredUpstream, SyncOutcome};
     use crate::worktree::resolve_upstream;
     use crate::worktree::{GitDistance, GitUnknownReason};
     use std::path::{Path, PathBuf};
@@ -389,12 +403,10 @@ mod tests {
                 behind: 0
             }
         );
-        assert!(sync_branch_ref(
-            &fixture.session,
-            "feature",
-            &remote_head,
-            None
-        ));
+        assert_eq!(
+            sync_branch_ref(&fixture.session, "feature", &remote_head, None),
+            SyncOutcome::Updated
+        );
         assert_eq!(
             read(&fixture).distance,
             GitDistance::Known {
@@ -402,12 +414,10 @@ mod tests {
                 behind: 2
             }
         );
-        assert!(!sync_branch_ref(
-            &fixture.session,
-            "feature",
-            &remote_head,
-            None
-        ));
+        assert_eq!(
+            sync_branch_ref(&fixture.session, "feature", &remote_head, None),
+            SyncOutcome::Unchanged
+        );
         std::fs::remove_dir_all(&fixture.root).unwrap();
     }
 
@@ -422,7 +432,10 @@ mod tests {
         );
         assert_eq!(read(&fixture).tracking, None);
 
-        assert!(sync_branch_ref(&fixture.session, "feature", &pushed, None));
+        assert_eq!(
+            sync_branch_ref(&fixture.session, "feature", &pushed, None),
+            SyncOutcome::Updated
+        );
         assert_eq!(
             read(&fixture).distance,
             GitDistance::Known {
@@ -430,6 +443,57 @@ mod tests {
                 behind: 0
             }
         );
+        std::fs::remove_dir_all(&fixture.root).unwrap();
+    }
+
+    #[test]
+    fn a_wrong_remote_reads_as_failed_and_never_as_nothing_new() {
+        let fixture = session_branch("wrong-remote");
+        let pushed = commit(&fixture.session, "one");
+        git_ok(&fixture.session, &["push", "--quiet", "origin", "feature"]);
+        git_ok(
+            &fixture.session,
+            &["update-ref", "-d", "refs/remotes/origin/feature"],
+        );
+        let missing = fixture.root.join("no-such-remote.git");
+        git_ok(
+            &fixture.session,
+            &["remote", "set-url", "origin", missing.to_str().unwrap()],
+        );
+
+        let outcome = sync_branch_ref(&fixture.session, "feature", &pushed, None);
+
+        let SyncOutcome::Failed { message } = outcome else {
+            panic!("expected a failed sync, found {outcome:?}");
+        };
+        assert!(!message.is_empty());
+        assert_eq!(read(&fixture).tracking, None);
+        std::fs::remove_dir_all(&fixture.root).unwrap();
+    }
+
+    #[test]
+    fn a_failed_sync_hides_the_credentials_of_the_remote_url() {
+        let fixture = session_branch("failed-redacted");
+        git_ok(
+            &fixture.session,
+            &["update-ref", "-d", "refs/remotes/origin/feature"],
+        );
+        git_ok(
+            &fixture.session,
+            &[
+                "remote",
+                "set-url",
+                "origin",
+                "https://ci-user:s3cret@127.0.0.1:1/harborline/ledger-core.git",
+            ],
+        );
+
+        let outcome = sync_branch_ref(&fixture.session, "feature", "deadbeef", None);
+
+        let SyncOutcome::Failed { message } = outcome else {
+            panic!("expected a failed sync, found {outcome:?}");
+        };
+        assert!(!message.contains("s3cret"));
         std::fs::remove_dir_all(&fixture.root).unwrap();
     }
 

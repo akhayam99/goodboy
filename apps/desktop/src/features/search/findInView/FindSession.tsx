@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { IconButton, useEscapeLayer } from '@goodboy/ui';
+import { FLOATING_SURFACE, IconButton, cn, useEscapeLayer } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { ViewFind } from '../../../store/slices/search-index/state';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
@@ -123,9 +123,12 @@ export const FindSession = ({ viewFind }: Props) => {
       data-testid="find-in-view"
       role="status"
       aria-live="polite"
-      className="fixed right-4 top-12 z-popover flex items-center gap-2 rounded-lg border border-border bg-floating py-1 pl-3 pr-1 shadow-lg motion-safe:animate-popover-in"
+      className={cn(
+        FLOATING_SURFACE,
+        'fixed right-4 top-12 z-popover flex items-center gap-2 py-1 pl-3 pr-1 motion-safe:animate-popover-in',
+      )}
     >
-      <span className="max-w-48 truncate text-label text-foreground">“{query}”</span>
+      <span className="max-w-48 truncate text-meta text-foreground">“{query}”</span>
       <span className="text-meta text-faint-foreground">{summary}</span>
       <IconButton
         icon={ChevronUp}

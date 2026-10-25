@@ -8,7 +8,6 @@ import {
 import type {
   AgentId,
   AgentRole,
-  IsoDateTime,
   ProviderRunId,
   SessionContextItemDraft,
   SessionContextItemId,
@@ -16,7 +15,8 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { isoNow } from '@goodboy/types/helpers';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isLearningsOn } from '../../../features/context/contextSwitches';
@@ -27,7 +27,7 @@ import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { scheduleIdle } from './turnHelpers';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn, SetFn } from './types';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 type LearningEntry = Readonly<{
   role: AgentRole;
@@ -81,8 +81,6 @@ type RunParams = {
   readonly entries: readonly [LearningEntry, ...ReadonlyArray<LearningEntry>];
 };
 
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-
 const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams) => {
   const session = sessionById(get().sessions, sessionId);
   if (session === undefined) {
@@ -108,7 +106,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
     ...(merged.latest.workingDir !== null && { workingDir: merged.latest.workingDir }),
     invokeFn: invokeCommand,
   });
-  const startedAt = nowIso();
+  const startedAt = isoNow();
   const result = await extractor.extract({
     topics: merged.latest.topics,
     turnInput: merged.turnInput,
@@ -123,7 +121,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
     status: { kind: 'streaming', startedAt },
     createdAt: startedAt,
   });
-  const finishedAt = nowIso();
+  const finishedAt = isoNow();
   await updateProviderRunStatus(tauriDatabase, runId, { kind: 'succeeded', finishedAt });
   const telemetry: TelemetryRecord = {
     id: crypto.randomUUID() as TelemetryRecordId,

@@ -1,4 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
+import { isTauriRuntime } from '../../shared/lib/isTauriRuntime';
 import { useAppStore } from '../../store';
 import { isMainWindow } from '../workspace/window';
 
@@ -12,10 +13,8 @@ const isPayload = (value: unknown): value is Payload =>
   'count' in value &&
   typeof value.count === 'number';
 
-const isInTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-
 export const listenOrphansSwept = async (): Promise<() => void> => {
-  if (!isInTauri() || !isMainWindow()) {
+  if (!isTauriRuntime() || !isMainWindow()) {
     return () => undefined;
   }
   return listen<unknown>('orphans-swept', (event) => {

@@ -22,6 +22,10 @@ vi.mock('../../../../../../../store', () => ({
 import { ResetCreditRow } from './index';
 
 const NOW = Date.parse('2026-09-26T14:00:00.000Z');
+const EXPIRES_AT = '2026-10-03T12:00:00.000Z';
+const EXPIRY_DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(
+  new Date(EXPIRES_AT),
+);
 
 const at = (hours: number): IsoDateTime =>
   new Date(NOW + hours * 60 * 60 * 1000).toISOString() as IsoDateTime;
@@ -41,7 +45,7 @@ beforeEach(() => {
   state.codexResetCredits = {
     availableCount: 1,
     creditId: 'credit-1',
-    expiresAt: '2026-10-03T12:00:00.000Z' as IsoDateTime,
+    expiresAt: EXPIRES_AT as IsoDateTime,
     observedAt: at(0),
   };
   state.providerLimits = { codex: codexLimits({ week: 0.96 }) };
@@ -58,7 +62,7 @@ describe('ResetCreditRow', () => {
 
     expect(screen.getByText('1 free reset')).toBeDefined();
     expect(
-      screen.getByText('Puts the 5-hour window and the week back to 0%. Expires Oct 3.'),
+      screen.getByText(`Puts the 5-hour window and the week back to 0%. Expires ${EXPIRY_DAY}.`),
     ).toBeDefined();
   });
 

@@ -1,12 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import {
-  NO_REVIEW_REPLIES,
-  NO_STYLE_NOTE,
-  NO_WORKSPACE_REPO,
-  learnWorkspaceReplyStyle,
-} from './learnWorkspaceReplyStyle';
+import { learnWorkspaceReplyStyle } from './learnWorkspaceReplyStyle';
 
 const h = vi.hoisted(() => ({
   detectRepoSlug: vi.fn(),
@@ -58,14 +53,18 @@ describe('learnWorkspaceReplyStyle', () => {
 
   it('says what is missing at each step', async () => {
     h.detectRepoSlug.mockResolvedValue(null);
-    await expect(learn()).rejects.toThrow(NO_WORKSPACE_REPO);
+    await expect(learn()).rejects.toThrow('No folder in this workspace is a GitHub repository.');
 
     h.detectRepoSlug.mockResolvedValue('acme/ledger-core');
     h.listMyReviewReplies.mockResolvedValue([]);
-    await expect(learn()).rejects.toThrow(NO_REVIEW_REPLIES);
+    await expect(learn()).rejects.toThrow(
+      "Couldn't find review replies you wrote in this workspace.",
+    );
 
     h.listMyReviewReplies.mockResolvedValue([{ body: 'ok', createdAt: '' }]);
     h.learnReplyStyle.mockResolvedValue(null);
-    await expect(learn()).rejects.toThrow(NO_STYLE_NOTE);
+    await expect(learn()).rejects.toThrow(
+      "Couldn't write a style note from your replies. Try again.",
+    );
   });
 });

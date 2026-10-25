@@ -9,7 +9,7 @@ type Props<T extends string> = {
 
 export const SlackPolicyRow = <T extends string>({ label, value, options, onChange }: Props<T>) => (
   <div className="flex min-w-0 items-center justify-between gap-3">
-    <span className="text-label text-foreground">{label}</span>
+    <span className="text-meta text-foreground">{label}</span>
     <SegmentedTabs
       ariaLabel={label}
       options={options}

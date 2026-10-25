@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { cn, tintClasses, Tooltip, WorkNode, type WorkNodeState, Eyebrow } from '@goodboy/ui';
 import { toolActOf } from '../../utils/toolActOf';
-import type { ProviderRunId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { toolStatus, type PermissionState, type ToolStatus } from '../../utils/toolStatus';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { commandToolOf } from '../../utils/commandToolOf';
+import { CommandToolBody } from './CommandToolBody';
 import { StructuredData } from './StructuredData';
 import { hasImagePath } from './hasImagePath';
 import { Section } from './Section';
@@ -16,6 +18,9 @@ type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>;
   readonly activeRunId?: ProviderRunId | null;
   readonly permission?: PermissionState;
+  readonly sessionId?: SessionId | null;
+  readonly agentId?: AgentId | null;
+  readonly workingDir?: string | null;
 };
 
 const dangerTint = tintClasses('danger');
@@ -38,7 +43,15 @@ const NODE_LABEL_FOR: Record<ToolStatus, string> = {
   denied: 'Denied',
 };
 
-export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
+export const ToolCallCard = ({
+  item,
+  activeRunId,
+  permission,
+  sessionId = null,
+  agentId = null,
+  workingDir = null,
+}: Props) => {
+  const commandTool = useMemo(() => commandToolOf({ item }), [item]);
   const hasInputImages = useMemo(() => hasImagePath({ data: item.input }), [item.input]);
   const hasOutputImages = useMemo(() => hasImagePath({ data: item.output }), [item.output]);
   const [open, setOpen] = useState(false);
@@ -113,16 +126,33 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
             </Section>
           ) : null}
         </>
+      ) : commandTool !== null && !hasInputImages ? (
+        <>
+          <CommandToolBody
+            tool={commandTool}
+            isError={item.isError}
+            sessionId={sessionId}
+            agentId={agentId}
+            workingDir={workingDir}
+          />
+          {item.ended && commandTool.output === null ? (
+            <Section label="output">
+              <div className="min-w-0 text-meta">
+                <StructuredData data={item.output} label="output" hasImages={hasOutputImages} />
+              </div>
+            </Section>
+          ) : null}
+        </>
       ) : (
         <>
           <Section label="input">
-            <div className="min-w-0 text-label">
+            <div className="min-w-0 text-meta">
               <StructuredData data={item.input} label="input" hasImages={hasInputImages} />
             </div>
           </Section>
           {item.ended ? (
             <Section label="output">
-              <div className="min-w-0 text-label">
+              <div className="min-w-0 text-meta">
                 <StructuredData data={item.output} label="output" hasImages={hasOutputImages} />
               </div>
             </Section>

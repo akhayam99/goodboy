@@ -26,7 +26,7 @@ export const RuleRow = ({ rule, activeProviders, onRemove }: Props) => {
     <div className="flex min-w-0 items-center gap-3 px-3 py-2">
       <span
         className={cn(
-          'inline-flex w-14 shrink-0 items-center gap-1 text-label',
+          'inline-flex w-14 shrink-0 items-center gap-1 text-meta',
           tintClasses(decision.tone).text,
         )}
       >
@@ -34,7 +34,7 @@ export const RuleRow = ({ rule, activeProviders, onRemove }: Props) => {
         {decision.word}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-label text-foreground">{what}</span>
+        <span className="truncate text-meta text-foreground">{what}</span>
         <RuleProviderChips rule={rule} activeProviders={activeProviders} />
       </span>
       <span className="shrink-0 text-meta text-muted-foreground">{where}</span>

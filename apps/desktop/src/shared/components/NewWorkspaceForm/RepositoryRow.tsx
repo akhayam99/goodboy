@@ -1,5 +1,5 @@
 import { GitBranch } from 'lucide-react';
-import { Chip, ICON_SIZE } from '@goodboy/ui';
+import { Chip, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { ConflictNotice } from './ConflictNotice';
@@ -50,25 +50,27 @@ export const RepositoryRow = ({
     <FolderRowFrame
       name={folder.name}
       path={tildePath({ path: folder.path, home })}
-      icon={<RepoIcon size={ICON_SIZE.hero} strokeWidth={1.6} aria-hidden />}
+      icon={<RepoIcon size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />}
       isDimmed={!folder.isIncluded}
       lead={lead}
       trailing={trailing}
       meta={
         isOnlyFolder ? (
           <Chip
+            className="rounded-md"
+            kind="state"
             tone="neutral"
-            shape="badge"
             bordered={false}
             label={FOLDER_FACE_COPY.documents.chip}
           />
         ) : (
           <>
-            <Chip tone="neutral" shape="badge" bordered={false} label="Git" />
+            <Chip className="rounded-md" kind="state" tone="neutral" bordered={false} label="Git" />
             {folder.defaultBranch === null ? null : (
               <Chip
+                className="rounded-md"
+                kind="state"
                 tone="neutral"
-                shape="badge"
                 bordered={false}
                 icon={<GitBranch size={ICON_SIZE.row} aria-hidden />}
                 label={folder.defaultBranch}

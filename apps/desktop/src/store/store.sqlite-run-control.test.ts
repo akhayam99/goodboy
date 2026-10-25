@@ -344,6 +344,46 @@ describe('store on sqlite: pausing a run', () => {
   });
 });
 
+describe('store on sqlite: pause and resume guards', () => {
+  it('pause: a run you already stopped stays stopped', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+
+    await useAppStore.getState().pauseWorkflowRun(sessionId, workflowRunId);
+
+    expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('operator');
+  });
+
+  it('pause: pausing twice keeps the first pause', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    await useAppStore.getState().pauseWorkflowRun(sessionId, workflowRunId);
+    const first = runOf(workflowRunId)?.orchestrationStop;
+
+    await useAppStore.getState().pauseWorkflowRun(sessionId, workflowRunId);
+
+    expect(first?.kind).toBe('paused');
+    expect(runOf(workflowRunId)?.orchestrationStop).toBe(first);
+  });
+
+  it('resume: a run that is not paused starts nothing', async () => {
+    const workflowRunId = await attachRun({ autoRun: false });
+
+    await useAppStore.getState().resumeWorkflowRun(sessionId, workflowRunId);
+
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+  });
+
+  it('resume: a run you stopped stays stopped', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+
+    await useAppStore.getState().resumeWorkflowRun(sessionId, workflowRunId);
+
+    expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('operator');
+  });
+});
+
 describe('store on sqlite: skipping a live step', () => {
   it('cancels only that turn, marks it skipped and starts the next step once', async () => {
     const workflowRunId = await attachRun({ autoRun: true });

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type ProviderId, type SessionId } from '@goodboy/types';
 import {
   NO_NOTIFICATION_FILTERS,
   countNotificationFacets,
@@ -21,6 +21,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   read: false,
   action: null,
   coalesceKey: null,
+  actedAt: null,
   ...overrides,
 });
 
@@ -29,6 +30,8 @@ const bucket = (overrides: Partial<NotificationCountBucket> = {}): NotificationC
   kind: 'error',
   hasSession: false,
   hasAction: false,
+  actionKind: null,
+  isActed: false,
   read: true,
   inWorkspace: true,
   count: 1,
@@ -68,6 +71,42 @@ describe('notification facets', () => {
         filters: { view: 'action', severity: 'info', source: null },
       }),
     ).toEqual([[success]]);
+  });
+
+  it('keeps a retry or an update under needs action and drops a pointer, acted or not', () => {
+    const retry = buildNotification({ id: 'retry', action: { kind: 'retry-update' } });
+    const open = buildNotification({
+      id: 'open',
+      action: { kind: 'open-budget', sessionId: null },
+    });
+    const update = buildNotification({
+      id: 'update',
+      action: { kind: 'update-provider-cli', providerId: brandId<ProviderId>({ value: 'codex' }) },
+    });
+    const filters = { ...NO_NOTIFICATION_FILTERS, view: 'action' } as const;
+
+    expect(filterNotificationGroups({ groups: [[retry], [open], [update]], filters })).toEqual([
+      [retry],
+      [update],
+    ]);
+  });
+
+  it('counts only debts that were not acted on in the needs action view', () => {
+    const buckets = [
+      bucket({ count: 2, hasAction: true, actionKind: 'retry-publication' }),
+      bucket({ count: 3, hasAction: true, actionKind: 'open-activity' }),
+      bucket({ count: 4, hasAction: true, actionKind: 'open-activity', isActed: true }),
+      bucket({ count: 5, hasAction: true, actionKind: 'retry-update', isActed: true }),
+    ];
+
+    const counts = countNotificationFacets({
+      buckets,
+      filters: NO_NOTIFICATION_FILTERS,
+      isWorkspaceScoped: false,
+    });
+
+    expect(counts.view.action).toBe(2);
+    expect(counts.view.all).toBe(14);
   });
 
   it('counts each facet under the other active filters, inside the workspace scope', () => {

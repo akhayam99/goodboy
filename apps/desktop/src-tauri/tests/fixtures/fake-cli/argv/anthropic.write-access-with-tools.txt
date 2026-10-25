@@ -1,0 +1,20 @@
+cli-version: 2.1.4 (Claude Code)
+-p
+--output-format
+stream-json
+--verbose
+--model
+fake-model
+--permission-mode
+bypassPermissions
+--setting-sources
+project,local
+--append-system-prompt
+you review the Harborline queue
+--effort
+high
+--allowedTools
+Read,Edit
+--disallowedTools
+WebFetch,mcp__*
+--include-partial-messages

@@ -44,7 +44,7 @@ export const WorkspaceLearnings = ({ workspaceId, topics }: Props) => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex h-7 items-center gap-2 px-0.5 text-label text-faint-foreground">
+      <div className="flex h-7 items-center gap-2 px-0.5 text-meta text-faint-foreground">
         <BookOpen size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
         <span className="text-muted-foreground">Explanations</span>
         <span aria-hidden>·</span>

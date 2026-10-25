@@ -41,7 +41,7 @@ const FIELD_KINDS: ReadonlyArray<{
 export const ListensExtra = () => (
   <div className="grid grid-cols-2 gap-4">
     <Band inset="content" label="One verb per intent" headingLevel={3}>
-      <dl className="flex flex-col gap-2 text-label">
+      <dl className="flex flex-col gap-2 text-meta">
         {ACTION_VERBS.map((entry) => (
           <div key={entry.verb} className="grid grid-cols-[6rem_minmax(0,1fr)] gap-3">
             <dt className="text-row text-foreground">{entry.verb}</dt>
@@ -52,7 +52,7 @@ export const ListensExtra = () => (
     </Band>
 
     <Band inset="content" label="Choosing a value" headingLevel={3}>
-      <dl className="flex flex-col gap-2 text-label">
+      <dl className="flex flex-col gap-2 text-meta">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
           <dt className="text-muted-foreground">{`Up to ${CHOICE_SEGMENT_LIMIT}, fits the row`}</dt>
           <dd className="text-foreground">Segmented control</dd>
@@ -68,7 +68,7 @@ export const ListensExtra = () => (
     </Band>
 
     <Band inset="content" label="Two kinds of field" headingLevel={3}>
-      <dl className="flex flex-col gap-2 text-label">
+      <dl className="flex flex-col gap-2 text-meta">
         {FIELD_KINDS.map((kind) => (
           <div key={kind.name} className="flex flex-col gap-1">
             <dt className="text-row text-foreground">{kind.name}</dt>
@@ -91,7 +91,7 @@ export const ListensExtra = () => (
     <Band inset="content" label="In Tasks and Notifications" headingLevel={3}>
       <ul className="flex flex-col gap-2">
         {shortcutRows({ group: 'lists' }).map((row) => (
-          <li key={row.key} className="flex items-center justify-between gap-3 text-label">
+          <li key={row.key} className="flex items-center justify-between gap-3 text-meta">
             <span className="truncate text-muted-foreground">{row.label}</span>
             <span className="shrink-0">
               <KeyHint keys={shortcutRangeGlyphs({ first: row.first, last: row.last })} />

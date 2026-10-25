@@ -100,7 +100,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
         set((current) => ({
           undoStack: current.undoStack.filter((candidate) => candidate.id !== operation.id),
         }));
-        if (result === false) {
+        if (result === false || result === 0) {
           if (shouldAnnounce) {
             announce({ toast: { kind: 'info', message: operation.conflictMessage } });
           }

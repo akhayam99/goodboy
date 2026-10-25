@@ -2,9 +2,9 @@ import { useEffect, useId, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { REVIEW_REPLY_SAMPLE_SIZE } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, Textarea, formatError } from '@goodboy/ui';
+import { Button, formatError, ICON_SIZE, Textarea } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
@@ -56,7 +56,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-label font-medium text-foreground">
+      <label htmlFor={id} className="text-meta font-medium text-foreground">
         Style note
       </label>
       <div className="flex flex-wrap items-center gap-2">

@@ -28,8 +28,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type { ChatId } from '@goodboy/types';
 import { aProject, aWorkspace } from '@goodboy/types/testing';
 import type { ChatBackend } from '../../../features/workspace-chat/chatBackend';
-import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
-import { createMemoryChatBackend } from '../../../features/workspace-chat/createMemoryChatBackend';
+import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
+import { createMemoryChatBackend } from '../../../test/createMemoryChatBackend';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import {

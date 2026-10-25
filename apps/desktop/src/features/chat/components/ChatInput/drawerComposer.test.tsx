@@ -99,7 +99,7 @@ const setChildTurn = ({ isRunning }: { readonly isRunning: boolean }) => {
 };
 
 const enabledSend = async (): Promise<HTMLElement> => {
-  const buttons = await screen.findAllByRole('button', { name: 'Send message' });
+  const buttons = await screen.findAllByRole('button', { name: 'Send' });
   const enabled = buttons.filter(
     (button) => button instanceof HTMLButtonElement && !button.disabled,
   );

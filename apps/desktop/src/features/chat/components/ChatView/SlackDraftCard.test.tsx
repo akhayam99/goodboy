@@ -85,7 +85,7 @@ const renderTranscript = (slackDrafts: ReadonlyArray<IntegrationDraft>) =>
         onRefreshAuth={() => undefined}
         onOpenDiff={() => undefined}
         isThinking={false}
-        thinkingContext="think"
+        thinkingPhrase="Thinking"
         onRetryRun={() => undefined}
         retryingRunId={null}
       />

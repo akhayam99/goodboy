@@ -47,7 +47,7 @@ type ProviderParams = {
 const providerRow = ({ id, connection }: ProviderParams): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection,
   version: '1.0.0',
   identity: null,

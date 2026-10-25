@@ -1,9 +1,9 @@
 import { X } from 'lucide-react';
-import { DrawerBackLink, IconButton, PANE_RHYTHM, cn, type DrawerBack } from '@goodboy/ui';
+import { cn, ICON_SIZE, IconButton, PANE_RHYTHM } from '@goodboy/ui';
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { RunStepMenu } from '../../actions/RunStepMenu';
 import { decisionEntries } from '../../workflows/decisionEntries';
 import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
@@ -18,11 +18,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly agentId: AgentId;
-  readonly back?: DrawerBack;
   readonly onClose: () => void;
 };
 
-export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Props) => {
+export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => {
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const workflows = useAppStore((state) => state.sessionWorkflows[sessionId] ?? EMPTY_ARRAY);
@@ -40,7 +39,6 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
       onClick={onClose}
     />
   );
-  const backLink = back === undefined ? null : <DrawerBackLink back={back} />;
 
   if (session === null || agent === null || run === null || workflow === null) {
     return (
@@ -49,7 +47,6 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
         data-run-step-pane=""
         className="flex flex-col"
       >
-        {backLink}
         <div className={cn('flex items-center gap-2', PANE_RHYTHM.body)}>
           <p className="min-w-0 flex-1 text-ui text-muted-foreground">
             {ORCHESTRATED_COPY.stepGone}
@@ -76,7 +73,6 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
         data-run-step-pane={agent.id}
         className="flex h-full min-h-0 min-w-0 flex-col"
       >
-        {backLink}
         <AgentDetailPane
           session={session}
           agent={agent}

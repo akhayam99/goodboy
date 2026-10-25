@@ -1,8 +1,11 @@
 import type { FolderPurpose, ProjectId } from '@goodboy/types';
-import { getSetting, insertSettingIfAbsent, replaceSettingIfUnchanged } from '@goodboy/db';
+import {
+  getProjectValue,
+  insertProjectValueIfAbsent,
+  replaceProjectValueIfUnchanged,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectById } from '../projects/projectIndex';
-import { folderPurposeKey } from './folderPurposeKey';
 import { FOLDER_PURPOSE_QUEUE_KEY, storeFolderPurpose } from './storeFolderPurpose';
 import type { FolderPurposeDeps, SetFolderPurposeParams } from './types';
 
@@ -14,15 +17,16 @@ type AttemptParams = {
 };
 
 const attempt = async ({ projectId, purpose }: AttemptParams): Promise<boolean> => {
-  const key = folderPurposeKey({ projectId });
-  const raw = await getSetting(tauriDatabase, key);
+  const db = tauriDatabase;
+  const key = 'folder.purpose';
+  const raw = await getProjectValue({ db, projectId, key });
   if (raw === purpose) {
     return true;
   }
   if (raw === null) {
-    return insertSettingIfAbsent({ db: tauriDatabase, key, value: purpose });
+    return insertProjectValueIfAbsent({ db, projectId, key, value: purpose });
   }
-  return replaceSettingIfUnchanged(tauriDatabase, { key, expected: raw, value: purpose });
+  return replaceProjectValueIfUnchanged({ db, projectId, key, expected: raw, value: purpose });
 };
 
 export const setFolderPurpose = ({ set, get, queue }: FolderPurposeDeps) => {

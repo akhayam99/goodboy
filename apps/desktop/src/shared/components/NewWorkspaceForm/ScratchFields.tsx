@@ -23,7 +23,7 @@ export const ScratchFields = ({ scratch, isBusy }: Props) => {
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-subtle p-4 ring-1 ring-inset ring-border-soft">
       <div className="flex flex-col gap-2">
-        <label htmlFor={nameId} className="text-label text-muted-foreground">
+        <label htmlFor={nameId} className="text-meta text-muted-foreground">
           Folder name
         </label>
         <Input
@@ -46,7 +46,7 @@ export const ScratchFields = ({ scratch, isBusy }: Props) => {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <span id={locationId} className="text-label text-muted-foreground">
+        <span id={locationId} className="text-meta text-muted-foreground">
           Location
         </span>
         <div

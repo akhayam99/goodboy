@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
 type RailTreeNodeKind = 'project' | 'branch' | 'finished';
@@ -25,9 +26,6 @@ type SessionChoices = Readonly<Record<string, boolean>>;
 type TreeChoices = Readonly<Record<string, SessionChoices>>;
 
 const KEPT_SESSIONS = 50;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const choicesOf = (value: unknown): SessionChoices | undefined => {
   if (!isRecord(value)) {

@@ -130,7 +130,7 @@ const renderKickoff = () =>
     </ToastProvider>,
   );
 
-const field = () => screen.getByRole('textbox', { name: 'Task' });
+const field = () => screen.getByRole('textbox', { name: 'Goal' });
 
 const autoPicks = () =>
   fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));

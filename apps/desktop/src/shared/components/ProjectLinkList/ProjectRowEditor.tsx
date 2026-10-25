@@ -1,17 +1,18 @@
 import type { ReactNode } from 'react';
-import { ExternalLink, FolderOpen, Unplug } from 'lucide-react';
+import { SquareArrowOutUpRight, FolderOpen, Unplug } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { Button, CopyButton } from '@goodboy/ui';
+import { Button, CopyButton, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { openInEditor } from '../../lib/editor';
 import { resolveEditorBinary } from '../../lib/editorSettings';
 import { revealInFileManager } from '../../lib/reveal';
-import { ICON_SIZE } from '../conceptIcons';
-import { NAMES } from '../../names';
+
+import { NAMES } from '../../utils/names';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
+import { OPEN_APP_SETTINGS_GENERAL } from '../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly project: Project;
@@ -31,7 +32,11 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
     try {
       await openInEditor({ path: project.rootPath, editor });
     } catch (error) {
-      void reportError({ title: `Couldn't open ${project.name}`, error });
+      void reportError({
+        title: `Couldn't open ${project.name}`,
+        error,
+        recovery: OPEN_APP_SETTINGS_GENERAL,
+      });
     }
   };
 
@@ -59,12 +64,12 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-subtle p-3">
       <div className="flex flex-col gap-1">
-        <span className="text-label text-muted-foreground">Description</span>
+        <span className="text-meta text-muted-foreground">Description</span>
         <ProjectDescriptionField project={project} busy={busy} />
       </div>
       {isRepo ? (
         <div className="flex flex-col gap-1">
-          <span className="text-label text-muted-foreground">Base branch</span>
+          <span className="text-meta text-muted-foreground">Base branch</span>
           <BaseBranchSelect
             repoPath={project.rootPath}
             value={project.baseBranch ?? null}
@@ -75,7 +80,7 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
       ) : null}
       {isRepo ? <ProjectAfterMergeField project={project} busy={busy} /> : null}
       <div className="flex flex-col gap-1">
-        <span className="text-label text-muted-foreground">Folder</span>
+        <span className="text-meta text-muted-foreground">Folder</span>
         <span className="min-w-0 truncate text-code text-meta">{project.rootPath}</span>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => void reveal()} disabled={busy}>
@@ -89,7 +94,7 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
       {scriptsField}
       <div className="flex items-center justify-between">
         <Button variant="secondary" size="sm" onClick={() => void openProject()} disabled={busy}>
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
           Open in editor
         </Button>
         <Button variant="ghost" size="sm" onClick={onUnlink} disabled={busy}>

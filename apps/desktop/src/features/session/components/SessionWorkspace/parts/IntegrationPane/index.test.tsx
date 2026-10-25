@@ -516,7 +516,7 @@ describe('IntegrationPane', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
     fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Unlink from session/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
     await act(async () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
@@ -547,7 +547,7 @@ describe('IntegrationPane', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
     fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Unlink from session/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
     await waitFor(() => expect(h.replaceTaskLinks).toHaveBeenCalledOnce());
     act(() => {

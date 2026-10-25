@@ -11,6 +11,10 @@ import type {
 } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import {
+  lastAssistantMessage,
+  type AssistantMessage,
+} from '../../shared/utils/lastAssistantMessage';
+import {
   allocateReportContext,
   clipToBoundary,
   fitWithinBudget,
@@ -112,32 +116,6 @@ export type ReportContext = Readonly<{
   truncations: ReadonlyArray<string>;
   inventory: ReadonlyArray<ArtifactContextInventoryRow>;
 }>;
-
-const isAssistantTextEvent = (
-  event: TurnEvent,
-): event is Extract<TurnEvent, { kind: 'assistant_text' }> => event.kind === 'assistant_text';
-
-type AssistantMessage = Readonly<{ text: string; at: IsoDateTime }>;
-
-const lastAssistantMessage = ({
-  events,
-}: {
-  readonly events: ReadonlyArray<TurnEvent>;
-}): AssistantMessage | null => {
-  const assistantEvents = events.filter(isAssistantTextEvent);
-  const lastEvent = assistantEvents[assistantEvents.length - 1];
-  if (lastEvent === undefined) {
-    return null;
-  }
-  const grouped = assistantEvents.filter((event) => event.runId === lastEvent.runId);
-  const joined = grouped.map((event) => event.delta).join('');
-  const trimmed = joined.trim();
-  if (trimmed.length === 0) {
-    return null;
-  }
-  const last = grouped[grouped.length - 1];
-  return { text: trimmed, at: last === undefined ? lastEvent.at : last.at };
-};
 
 const scopedAgents = ({
   agents,

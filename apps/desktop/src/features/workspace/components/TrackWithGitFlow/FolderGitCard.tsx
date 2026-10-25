@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
-import { Button, Notice, formatError } from '@goodboy/ui';
+import { Button, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { ICON_SIZE, projectGlyph } from '../../../../shared/components/conceptIcons';
+import { projectGlyph } from '../../../../shared/components/conceptIcons';
 import { PublishPanel } from '../../../bootstrap/PublishPanel';
 import { FolderGitChips } from './FolderGitChips';
 import { FolderGitNotice } from '../../../../shared/components/FolderGitNotice';
@@ -130,7 +130,7 @@ export const FolderGitCard = ({ projectId, isInitiallyOpen }: Props) => {
         </div>
       )}
       {error === null ? null : (
-        <span role="alert" className="text-label text-danger">
+        <span role="alert" className="text-meta text-danger">
           {error}
         </span>
       )}

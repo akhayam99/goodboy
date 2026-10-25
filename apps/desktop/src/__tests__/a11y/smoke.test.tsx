@@ -10,8 +10,10 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
 
 const storeSeed = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 
-vi.mock('../../store', () => {
+vi.mock('../../store', async () => {
+  const { sliceInitialStates } = await import('../../test/storyHarness/sliceStates');
   const buildState = () => ({
+    ...sliceInitialStates(),
     notifications: [],
     skills: {},
     budgetAlerts: [],
@@ -25,6 +27,7 @@ vi.mock('../../store', () => {
     sessions: [],
     detectedEditors: [],
     detectedBrowsers: [],
+    detectedTerminals: [],
     sessionPhaseRuns: {},
     sessionPlans: {},
     workspaceSummary: null,
@@ -75,6 +78,7 @@ vi.mock('../../store', () => {
     reconcileOrphanWorktrees: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     loadDetectedBrowsers: vi.fn(async () => undefined),
+    loadDetectedTerminals: vi.fn(async () => undefined),
     reportError: vi.fn(),
     storageStats: null,
     storageFolders: [],
@@ -91,6 +95,7 @@ vi.mock('../../store', () => {
     useCurrentSession: vi.fn().mockReturnValue(null),
     useCurrentWorkspace: vi.fn().mockReturnValue(null),
     useWorkspaces: vi.fn().mockReturnValue([]),
+    useAttentionElsewhere: vi.fn().mockReturnValue({ count: 0, tone: null }),
     useSessions: vi.fn().mockReturnValue([]),
     useSessionSlots: vi.fn().mockReturnValue([]),
     EMPTY_ARRAY: [] as never[],
@@ -118,7 +123,8 @@ import { NotificationCenter } from '../../features/notifications/components/Noti
 import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
+import { QuickActionsPopover } from '../../features/quick-actions/QuickActionsPopover';
+import type { QuickActionItem } from '../../features/quick-actions/types';
 import { ToastProvider } from '../../shared/components/Toast';
 
 afterEach(() => {
@@ -142,6 +148,7 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
     read: false,
     action: null,
     coalesceKey: null,
+    actedAt: null,
   },
   {
     id: 'notification-2',
@@ -155,6 +162,7 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
     read: true,
     action: null,
     coalesceKey: null,
+    actedAt: null,
   },
 ];
 

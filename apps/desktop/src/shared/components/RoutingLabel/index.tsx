@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { FactCard, ICON_SIZE, cn } from '@goodboy/ui';
-import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
+import { ProviderGlyph } from '../RoutingPicker/ProviderGlyph';
 import { TriggerSeparator } from '../RoutingPicker/TriggerSeparator';
 import { routingNameText } from '../RoutingPicker/routingSummary';
 import { routingLabelModel, type PlannedRouting } from './routingLabelModel';
@@ -33,16 +33,8 @@ export const RoutingLabel = ({
   className,
 }: Props) => {
   const shown = routingLabelModel({ provider, model, effort, planned, isEffortObserved });
-  const Glyph = shown.provider != null ? PROVIDER_BRAND[shown.provider].icon : null;
   const glyph =
-    Glyph != null && shown.provider != null ? (
-      <Glyph
-        size={ICON_SIZE.row}
-        className="shrink-0"
-        style={{ color: brandColor(shown.provider) }}
-        aria-hidden
-      />
-    ) : null;
+    shown.provider != null ? <ProviderGlyph id={shown.provider} size={ICON_SIZE.row} /> : null;
 
   if (shown.label == null || shown.card === null) {
     return (

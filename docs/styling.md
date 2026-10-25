@@ -38,6 +38,13 @@ name.
 <div className="space-y-4">...</div>
 ```
 
+A `packages/ui` primitive follows this first, because every author copies it:
+no outer margin on a primitive, and a block that can sit in any column (an
+image, a loading block) carries none, so a `gap-3` column gives it 12px and not 20. The `ui` rows of the sibling-margin ledger fall first. A one or two pixel
+margin that aligns an icon with its text line (`mt-0.5`, `-mt-px`) is not a
+spacer: `optical-nudge` counts it apart from `sibling-margin`, and it only
+falls too.
+
 The semantic scale picks which `gap` to use, not the component. The mapping
 lives in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md)'s gap table.
 Never an arbitrary value.
@@ -79,15 +86,15 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
-Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta`,
+Type takes a role (`text-row`, `text-body`, `text-meta`,
 `text-chip` and the rest), never a size, a weight, a leading and a tracking
 written one by one. Spacing takes whole steps of the 4px grid, never a half
 step. The roles and the ratchets that count the raw classes and the half steps
 are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 
 Four more scales are ratcheted to zero by `scale-rules.test.ts` and
-`row-heights-on-the-scale.test.ts`: an icon is `ICON_SIZE.mark`, `row`, `control`
-or `hero` (10, 12, 14, 18), never a number; a gap is 4, 8, 12, 16, 24 or 32px
+`row-heights-on-the-scale.test.ts`: an icon is `ICON_SIZE.mark`, `row`, `control`,
+`notice` or `hero` (10, 12, 14, 16, 18), never a number; a gap is 4, 8, 12, 16, 24 or 32px
 (`gap-1`, `gap-2`, `gap-3`, `gap-4`, `gap-6`, `gap-8`, plus `gap-0.5`), never
 `gap-5`, `gap-7` or `gap-10`; a one-line row is 24, 28, 32, 36, 40 or 48px high;
 `font-mono` is code (a branch, a path, a command, a sha), and a number is sans
@@ -194,7 +201,7 @@ field focused while it opens cannot scroll the track), the card follows it with
 its border and corners in view, and the content keeps its final width
 (`--goodboy-drawer-track` minus the 18px of handle gutter, inset and border)
 pinned to the right edge and fades in once there is room (`drawer-content-in`).
-Closing, the card keeps a copy of its content for `FOLD_MS` (220ms) while the
+Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (220ms) while the
 width eases to 0 and the copy fades (`drawer-content-out`). `drawer-overlay-in`
 slides at most the 8px inset; the overlay card starts that far outside the
 sheet and is clipped by it. `drawer-overlay-out` and `drawer-fade-out` run
@@ -203,7 +210,7 @@ after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the
 containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
 overlay container's `rounded-l-frame` and `border-l`, the overlay track's min
 width, the push track variable).
-[navigation.md](navigation.md#the-right-drawer) owns what goes in it.
+[navigation/home-and-drawer.md](navigation/home-and-drawer.md#the-right-drawer) owns what goes in it.
 
 **A fold never re-centres an icon.** The main sidebar (⌘B) and the session
 rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
@@ -276,7 +283,7 @@ body start where the page will: `STUDIO_META[kind].skeleton` names the body shap
 of each studio (`rows`, `prose`, `room`, `terminal`, `cards`) and whether it has a
 rail, and the Sessions list loads on list rows, the board on lanes. A page empty
 state sits on the page column at the top left, at the title's left edge (the
-empty chat stage stays centred). `shared/layout/pageLayout.test.ts` fails when a
+empty chat stage stays centred). `app/components/StudioFrame/pageLayout.test.ts` fails when a
 door or session page skips the primitive, sets its own header padding, picks a
 width beside its kind, borrows another page's skeleton or puts its empty state off
 the column.
@@ -352,14 +359,14 @@ centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
 the column minimum (560px plus gutters); under that the drawer lies over the
 page. Closing the drawer slides the column back. It is one 220ms
-ease-out width transition on the drawer's track (`FOLD_MS`), so the column's centre follows
+ease-out width transition on the drawer's track (`DURATION_BASE_MS`), so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
 
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
-Overview to Review to a chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
+Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts` fails under `features/` on any
 `max-w-[Nch]`, any `max-w-[Npx]` (the palette, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
@@ -509,20 +516,27 @@ centred overlay for a menu that clearly belongs to something on screen is a
 bug, not a style choice. A hand-rolled version gets two things wrong without
 any error. First, paint nothing until the first measurement, or the panel
 flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
-scroll in any ancestor moves the trigger.
+scroll in any ancestor moves the trigger. A card that sits beside its anchor
+instead of under it (the rail flyout, the session hover card) takes both from
+`useFloatingPlace` in `@goodboy/ui`, never from a copy of the clamp. A popover
+width comes from `POPOVER_WIDTH_CLASS` and `POPOVER_WIDTH_PX`, and its height is
+measured, not written down.
 
 **Confirmations never open a dialog.** A destructive action confirms through
 `ConfirmPopover`, one placement anchored to its trigger, and a restorable one
 acts at once with Undo. That way the thing being destroyed stays visible while
 the user decides and the page under it never moves. Its behaviour and trigger
 styling belong to
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#action-zones).
+[layout.md](../packages/ui/design/layout.md#action-zones).
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
 prompt. Everything else is a popover or inline. A centred `Dialog` sits on
 `bg-floating`, like popovers, toasts and the command palette; the full-screen
-viewer passes `surface="screen"` to stay on the content surface. Any line that
+viewer passes `size="full"` and `surface="screen"` to stay on the content surface.
+`ImageLightbox` is that viewer: the native dialog traps Tab, focuses Close on open and returns
+focus to the opener on close. The command palette and the session switcher are not dialogs; they
+share `Scrim` from `@goodboy/ui` for their backdrop. Any line that
 sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
 `bg-floating`, and `no-token-bypass.test.ts` holds that.
 
@@ -535,7 +549,7 @@ what is open under it. These use named tokens from the `@theme` block in
 `z-<name>` utility. The values and their order are the table in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#z-index-tokens), with a
 native `<dialog>` above all of them in the browser's top layer.
-`no-token-bypass.test.ts` rejects `z-[N]`. A new global layer gets a named
+`no-token-bypass.test.ts` rejects `z-[N]` and a bare `z-N` above 40. A new global layer gets a named
 token and a row in the table.
 
 That order is a precedence chain, not taste. Each step must sit above the one
@@ -554,7 +568,10 @@ the shared popover, and raising it would raise all of them at once.
 Interactive controls compose `FOCUS_RING` from `@goodboy/ui`. It draws a
 two-pixel `focus-ring` token and removes the native outline. A control clipped
 inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
-the shared ring.
+the shared ring. A ring written by hand (`focus-visible:ring-2` outside
+`focusRing.ts`) is counted by `own-focus-ring.test.ts`; the only copy left is
+the `group-focus-visible` ring of a history commit row, whose ring sits on a
+child of the focused element.
 
 The global `:focus-visible` outline lives in `@layer base`, so `outline-none` on a utility wins
 and a field draws one ring: the container with `focus-within:ring-2`, the inner input with no
@@ -566,13 +583,38 @@ draws it. Every control in the top bar, every switch and every checkbox composes
 and checks the ring by the constant, not by a class written in a test. A
 selected card is a fill plus a check, never a ring, a border and a wash together.
 
+## A clickable control comes from a primitive
+
+A raw `<button>` carries none of the focus ring, the busy state or the tooltip
+rule, so a control you click is a primitive from `@goodboy/ui`:
+
+| Family  | Primitive                                                                   |
+| ------- | --------------------------------------------------------------------------- |
+| row     | `SelectableRow` (one button), `InteractiveRow` (a row with its own buttons) |
+| tab     | `SegmentedTabs`, `ChoiceCards`                                              |
+| chip    | `Chip`                                                                      |
+| link    | a link, or the link style of the surface                                    |
+| icon    | `IconButton`                                                                |
+| control | `Button`, `GhostActionButton`, `MenuTriggerButton`                          |
+
+`raw-button.test.ts` sorts every raw `<button>` into those families from its
+class string and counts it per file (`raw-button.baseline.json`). It also counts
+the row family alone (`raw-row-button.baseline.json`), the one with a primitive
+that fits today. At the audit, 357 raw buttons stood: 230 control, 57 row, 39
+link, 14 tab, 9 icon, 8 chip. Both counts only fall. A raw row button that sits
+beside the hover layer is the first to move to `SelectableRow`.
+
 ## Row actions rest quiet
 
 A row that carries verbs keeps them in one fixed cell and draws them with
 `row-actions` (`styles.css`), on a row that is a `group/row`. The cell is empty
 at rest and fills on hover, on focus inside the row, while a menu or confirm
 opened from it is open (`aria-expanded`), and while the row's right click menu
-is open (`data-menu-open`). The verbs stay in the tab order, so the keyboard
+is open (`data-menu-open`). Once per install it also fills on every row of the
+first list the pointer enters, while the pointer stays in that list: the
+`RowActionsCueBridge` sets `data-row-actions-cue` on the list. The `⋯` of a row
+that opens the same menu on right click passes `ROW_MENU_TOOLTIP`
+("More actions. Right click or Shift+F10"). The verbs stay in the tab order, so the keyboard
 reaches them without a hover. Every verb is also in the row's registry menu on
 right click and Shift+F10. Write the reveal as `row-actions`, never as
 `opacity-0` with `group-hover:opacity-100`: `no-hover-only-actions.test.ts`

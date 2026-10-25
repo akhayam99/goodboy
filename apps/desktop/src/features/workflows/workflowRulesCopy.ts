@@ -1,5 +1,5 @@
 import type { WorkflowRules } from '@goodboy/types';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { RUN_AUTONOMY_OPTIONS } from './runAutonomy';
 
 const capAmount = ({ usd }: { readonly usd: number }): string =>

@@ -58,7 +58,7 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
                 });
                 void pending.run({
                   key: 'rewriter',
-                  failureTitle: 'Could not start the Rewriter',
+                  failureTitle: "Couldn't start the Rewriter",
                   task: () =>
                     startHistoryRewriter({
                       sessionId,

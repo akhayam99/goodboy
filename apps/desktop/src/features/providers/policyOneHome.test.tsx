@@ -42,7 +42,7 @@ const SPREAD_LABEL = 'Send new steps to the provider with the most room';
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected' satisfies ProviderConnectionState,
   version: null,
   identity: null,
@@ -87,8 +87,8 @@ const seed = ({ policy, rules }: SeedParams) => {
 
 const writtenRules = (): ReadonlyArray<WorkflowRules | null | undefined> =>
   storySpies.tauriInvoke.mock.calls
-    .filter(([name]) => name === 'set_workspace_overrides')
-    .map(([, args]) => (args as { readonly overrides: OverrideSettings }).overrides.workflowRules);
+    .filter(([name]) => name === 'patch_workspace_overrides')
+    .map(([, args]) => (args as { readonly patch: Partial<OverrideSettings> }).patch.workflowRules);
 
 const openPopover = () => {
   render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
@@ -98,7 +98,7 @@ const openPopover = () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ set_workspace_overrides: null });
+  stubStoryInvoke({ patch_workspace_overrides: null });
   useAppStore.setState({ loadSetting: vi.fn(async (): Promise<string | null> => null) });
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
@@ -7,6 +7,7 @@ import { worktreeRemoteUrl } from '../../../worktree/worktree';
 type Params = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
+  readonly mountId: MountId | null;
   readonly repoRoot: string | null;
 };
 
@@ -42,6 +43,7 @@ const remoteOf = ({ url }: { readonly url: string | null }): Remote => {
 export const useBitbucketRemote = ({
   sessionId,
   workspaceId,
+  mountId: shownMountId,
   repoRoot,
 }: Params): BitbucketRemote => {
   const hasIntegration = useAppStore((state) =>
@@ -54,12 +56,14 @@ export const useBitbucketRemote = ({
     repoRoot === null ? NOT_BITBUCKET : (remoteCache.get(repoRoot) ?? NOT_BITBUCKET),
   );
   const isBitbucket = remote.isBitbucket;
-  const hasResolved = useAppStore(
-    (state) => state.sessionBitbucketPr[sessionId]?.fetchedAt != null,
+  const hasResolved = useAppStore((state) =>
+    shownMountId === null
+      ? state.sessionBitbucketPr[sessionId]?.fetchedAt != null
+      : state.mountBitbucketPr?.[shownMountId]?.fetchedAt != null,
   );
   const remotePath = remote.path;
   const target = useAppStore((state) => {
-    const mountId = selectActiveMountId({ state, sessionId });
+    const mountId = shownMountId ?? selectActiveMountId({ state, sessionId });
     const entry = mountId === null ? undefined : state.mountBitbucketPr?.[mountId];
     if (entry?.repo != null) {
       return `https://bitbucket.org/${entry.repo.workspaceSlug}/${entry.repo.repoSlug}/pull-requests/new?source=${encodeURIComponent(entry.branch)}`;
@@ -105,8 +109,18 @@ export const useBitbucketRemote = ({
     if (!isBitbucket || !hasIntegration || hasResolved) {
       return;
     }
-    void refreshSessionBitbucketPr(sessionId, { silent: true });
-  }, [hasIntegration, hasResolved, isBitbucket, refreshSessionBitbucketPr, sessionId]);
+    void refreshSessionBitbucketPr(sessionId, {
+      silent: true,
+      ...(shownMountId === null ? {} : { mountId: shownMountId }),
+    });
+  }, [
+    hasIntegration,
+    hasResolved,
+    isBitbucket,
+    refreshSessionBitbucketPr,
+    sessionId,
+    shownMountId,
+  ]);
 
   return {
     isBitbucket,

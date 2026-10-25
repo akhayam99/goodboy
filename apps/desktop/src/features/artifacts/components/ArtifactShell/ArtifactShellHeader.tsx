@@ -1,4 +1,4 @@
-import { TruncatedText } from '@goodboy/ui';
+import { ICON_SIZE, TruncatedText } from '@goodboy/ui';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
@@ -9,7 +9,6 @@ import {
   artifactViewingOf,
 } from './artifactHeaderMenu';
 import { ArtifactKindGlyph } from '../ArtifactList/ArtifactKindGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly kind: ArtifactKind;

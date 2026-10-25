@@ -1,13 +1,12 @@
 import { Bot, FolderOpen } from 'lucide-react';
-import { IconButton, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE, IconButton, Tooltip } from '@goodboy/ui';
 
 export const TooltipShortcutStage = () => (
   <div
     data-testid="tooltip-shortcut"
     className="flex w-80 flex-col gap-6 rounded-lg border border-border-soft bg-subtle p-6 pb-14"
   >
-    <span className="text-label text-muted-foreground">rounding.ts</span>
+    <span className="text-meta text-muted-foreground">rounding.ts</span>
     <div className="flex items-center gap-2">
       <Tooltip content="Start an agent" shortcut="ask.open" side="bottom" isOpen>
         <button

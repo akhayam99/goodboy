@@ -20,7 +20,3 @@ export const createReviewDraftsSlice = ({ set, get }: SliceDeps) => {
     discardReview: discardReview(set, get),
   };
 };
-
-export type { AddReviewDraftInput } from './addReviewDraft';
-export type { PublishPrReviewOpts, PublishPrReviewResult } from './types';
-export type { ReviewSubmission } from './reviewSubmission';

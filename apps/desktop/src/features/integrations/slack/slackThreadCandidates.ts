@@ -8,7 +8,7 @@ import {
   type SlackChannel,
   type SlackMessage,
 } from './client';
-import { goalFromThread } from './goal-from-thread';
+import { goalFromThread } from './goalFromThread';
 import { slackUserNames } from './nameMaps';
 import {
   slackThreadBranchSlug,

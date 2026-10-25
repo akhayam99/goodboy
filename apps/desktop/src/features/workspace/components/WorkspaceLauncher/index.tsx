@@ -2,23 +2,24 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import {
   Button,
+  cn,
   EmptyLine,
   Eyebrow,
+  ICON_SIZE,
   IconButton,
   KeyHint,
   ScrollFade,
   SearchField,
   Switch,
-  cn,
   useEscapeLayer,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { BrandTile } from '../../../../shared/components/BrandTile';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { APP_VERSION } from '../../../../shared/lib/appVersion';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
@@ -31,6 +32,7 @@ import { useIsMainWindow } from '../../useIsMainWindow';
 import { LauncherEmpty } from './LauncherEmpty';
 import { WorkspaceRow } from './WorkspaceRow';
 import { useHomeFolder } from './useHomeFolder';
+import { openSettings } from '../../../settings/openSettings';
 
 type Props = {
   readonly isCreating: boolean;
@@ -41,8 +43,7 @@ const SEARCH_FROM = 5;
 
 const LOCKUP_TILE_PX = 40;
 
-const openSettingsHome = () =>
-  window.dispatchEvent(new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }));
+const openSettingsHome = () => openSettings({ scope: 'home' });
 
 export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
   const workspaces = useWorkspaces();

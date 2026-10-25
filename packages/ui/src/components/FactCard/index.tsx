@@ -254,7 +254,7 @@ export const FactCard = ({
               }}
               className={cn(
                 FLOATING_SURFACE,
-                'pointer-events-none z-tooltip w-80 p-3 text-label',
+                'pointer-events-none z-tooltip w-80 p-3 text-meta',
                 coords !== null && 'motion-safe:animate-popover-in',
               )}
             >

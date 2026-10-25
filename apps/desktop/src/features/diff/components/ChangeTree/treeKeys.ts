@@ -1,3 +1,4 @@
+import { treeKeyMove, type TreeKeyRow } from '../../../../shared/utils/treeKeyMove';
 import type { TreeRow } from '../../lib/changeTree';
 
 export type TreeKeyAction =
@@ -13,54 +14,55 @@ type Params = {
   readonly collapsed: ReadonlySet<string>;
 };
 
+type EdgeParams = {
+  readonly rows: ReadonlyArray<TreeRow>;
+  readonly index: number;
+};
+
+type KeyRowParams = {
+  readonly row: TreeRow;
+  readonly collapsed: ReadonlySet<string>;
+};
+
+const keyRowOf = ({ row, collapsed }: KeyRowParams): TreeKeyRow => ({
+  id: row.id,
+  parentId: row.parentId,
+  isBranch: row.kind === 'folder',
+  isOpen: row.kind === 'folder' && !collapsed.has(row.id),
+});
+
+const cursorAt = ({ rows, index }: EdgeParams): TreeKeyAction | null => {
+  const row = rows[Math.max(0, Math.min(rows.length - 1, index))];
+  return row === undefined ? null : { kind: 'cursor', id: row.id };
+};
+
 export const treeKeyAction = ({ key, rows, cursorId, collapsed }: Params): TreeKeyAction | null => {
   if (rows.length === 0) {
     return null;
   }
   const index = rows.findIndex((row) => row.id === cursorId);
-  const current = rows[index];
-  const at = (next: number): TreeKeyAction | null => {
-    const row = rows[Math.max(0, Math.min(rows.length - 1, next))];
-    return row === undefined ? null : { kind: 'cursor', id: row.id };
-  };
-  switch (key) {
-    case 'ArrowDown':
-      return at(index < 0 ? 0 : index + 1);
-    case 'ArrowUp':
-      return at(index < 0 ? rows.length - 1 : index - 1);
-    case 'Home':
-      return at(0);
-    case 'End':
-      return at(rows.length - 1);
-    case 'ArrowRight':
-      if (current === undefined || current.kind !== 'folder') {
-        return null;
-      }
-      return collapsed.has(current.id) ? { kind: 'fold', id: current.id } : at(index + 1);
-    case 'ArrowLeft': {
-      if (current === undefined) {
-        return null;
-      }
-      if (current.kind === 'folder' && !collapsed.has(current.id)) {
-        return { kind: 'fold', id: current.id };
-      }
-      return current.parentId === null ? null : { kind: 'cursor', id: current.parentId };
-    }
-    case 'Enter':
-      if (current === undefined) {
-        return null;
-      }
-      return current.kind === 'folder'
-        ? { kind: 'fold', id: current.id }
-        : { kind: 'pick', id: current.id };
-    case ' ':
-      if (current === undefined) {
-        return null;
-      }
-      return current.kind === 'folder'
-        ? { kind: 'fold', id: current.id }
-        : { kind: 'viewed', id: current.id };
-    default:
-      return null;
+  if (index < 0 && key === 'ArrowDown') {
+    return cursorAt({ rows, index: 0 });
   }
+  if (index < 0 && key === 'ArrowUp') {
+    return cursorAt({ rows, index: rows.length - 1 });
+  }
+  const move = treeKeyMove({
+    key,
+    rows: rows.map((row) => keyRowOf({ row, collapsed })),
+    activeId: cursorId,
+  });
+  if (move === null) {
+    return key === 'ArrowDown' || key === 'ArrowUp' ? cursorAt({ rows, index }) : null;
+  }
+  if (move.kind === 'focus') {
+    return { kind: 'cursor', id: move.id };
+  }
+  if (move.kind === 'open' || move.kind === 'close') {
+    return { kind: 'fold', id: move.id };
+  }
+  if (rows[index]?.kind === 'folder') {
+    return { kind: 'fold', id: move.id };
+  }
+  return key === ' ' ? { kind: 'viewed', id: move.id } : { kind: 'pick', id: move.id };
 };

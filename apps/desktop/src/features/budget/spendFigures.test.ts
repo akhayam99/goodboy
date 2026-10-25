@@ -60,7 +60,7 @@ describe('spendFigures', () => {
     expect(figures.limit).toMatchObject({
       limitUsd: 170,
       pctUsed: 90,
-      warnFraction: 0.8,
+      tone: 'warning',
       resetsAtMs: budget.windowEndMs + 1,
     });
     expect(figures.limit?.leftUsd).toBeCloseTo(17.63, 2);

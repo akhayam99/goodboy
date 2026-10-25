@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 
 type RetiredName = {
   readonly id: string;
@@ -82,6 +82,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bWipe (?:local database|every workspace)\b|\bLocal data wiped\b/,
     use: NAMES.deleteAllData,
   },
+  { id: 'send-message', pattern: /^Send message$/, use: NAMES.send },
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/i, use: NAMES.yourJob },
   { id: 'pair-device', pattern: /\bPair (?:a |another )?device\b/, use: NAMES.pairIphone },
@@ -133,5 +134,41 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     id: 'turn-into-work',
     pattern: /^(?:Turn into work|Start work(?: from here)?)$/,
     use: NAMES.startWorkFromChat,
+  },
+  {
+    id: 'session-is-a-task',
+    pattern:
+      /\b(?:[Ee]ach task (?:is a session|gets its own)|[Aa] session is one task|[Oo]ne task with one goal|Give it a first task)\b/,
+    use: NAMES.session,
+  },
+  { id: 'write-the-task', pattern: /\bWrite the task first\b/, use: NAMES.goal },
+  { id: 'describe-a-task', pattern: /\bDescribe a task\b/, use: NAMES.goal },
+  { id: 'scripts-tasks-band', pattern: /\bTasks of [\w@]/, use: NAMES.commands },
+  { id: 'start-on-a-task', pattern: /\bStart on a task\b/, use: NAMES.startSession },
+  { id: 'stop-the-answer', pattern: /\bStop the answer\b/, use: NAMES.stop },
+  { id: 'workflow-rules', pattern: /\bWorkflow rules\b/i, use: NAMES.runDefaults },
+  { id: 'default-cap', pattern: /\bDefault cap\b/i, use: NAMES.spendCap },
+  { id: 'provider-defaults', pattern: /\bProvider defaults\b/i, use: NAMES.models },
+  { id: 'add-another-project', pattern: /\bAdd another project\b/i, use: NAMES.addFolder },
+  { id: 'link-a-project', pattern: /\bLink a (?:project|repository)\b/i, use: NAMES.addFolder },
+  { id: 'workspace-projects', pattern: /\bWorkspace projects\b/i, use: NAMES.folders },
+  {
+    id: 'providers-and-models-amp',
+    pattern: /\bProviders & models\b/,
+    use: NAMES.providersAndModels,
+  },
+  { id: 'pair-your-iphone', pattern: /\bPair your iPhone\b/i, use: NAMES.pairIphone },
+  {
+    id: 'unlink-from-session',
+    pattern: /\bUnlink from (?:this )?session\b/i,
+    use: NAMES.removeLinkFromSession,
+  },
+  { id: 'open-a-folder', pattern: /\bOpen a folder\b/, use: NAMES.newWorkspace },
+  { id: 'start-a-new-project', pattern: /\bStart a new project\b/, use: NAMES.newWorkspace },
+  { id: 'add-workspace', pattern: /\bAdd workspace\b/, use: NAMES.newWorkspace },
+  {
+    id: 'switch-theme-mode',
+    pattern: /\bSwitch to (?:light|dark) mode\b/i,
+    use: NAMES.theme,
   },
 ];

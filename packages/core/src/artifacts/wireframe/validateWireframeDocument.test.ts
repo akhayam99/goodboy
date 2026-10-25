@@ -377,6 +377,26 @@ describe('validateWireframeDocument', () => {
     expect(invalidOf(doc)).toContain('expected 2 cells');
   });
 
+  it.each(['constructor', '__proto__', 'toString', 'hasOwnProperty'])(
+    'coerces the inherited key %s on a presentation enum to the default',
+    (inherited) => {
+      const base = validDocument();
+      const first = base.screens[0];
+      const doc = {
+        ...base,
+        screens: [
+          { ...first, root: { ...first?.root, gap: inherited, direction: inherited } },
+          ...base.screens.slice(1),
+        ],
+      };
+      const result = validOf(doc);
+      const home = result.document.screens[0]?.root;
+      expect(home?.kind === 'stack' && home.gap).toBe('md');
+      expect(home?.kind === 'stack' && ['row', 'column'].includes(home.direction)).toBe(true);
+      expect(typeof (home?.kind === 'stack' && home.gap)).toBe('string');
+    },
+  );
+
   it('coerces a spacing outside the enum at every depth and still returns a document', () => {
     const doc = validDocument();
     const root = doc.screens[0]?.root as Record<string, unknown>;

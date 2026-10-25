@@ -40,6 +40,7 @@ const row = ({ overrides }: RowParams): Notification => ({
   read: false,
   action: null,
   coalesceKey: 'error:webhook',
+  actedAt: null,
   ...overrides,
 });
 

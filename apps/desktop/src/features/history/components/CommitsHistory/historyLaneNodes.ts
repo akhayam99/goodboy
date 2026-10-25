@@ -1,6 +1,6 @@
 import type { BranchCommit } from '@goodboy/types';
 import type { HistoryRowMark } from '../../historyRowMarks';
-import type { RowPositions } from '../../useRowPositions';
+import type { RowPositions } from '../../hooks/useRowPositions';
 import type { HistoryApplied } from '../../../../store/slices/history/types';
 import type { LaneNode } from './HistoryLaneSvg';
 

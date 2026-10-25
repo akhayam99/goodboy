@@ -1,0 +1,13 @@
+cli-version: 2026.09.17-fake
+-p
+{prompt}
+--output-format
+stream-json
+--workspace
+{work_dir}
+--model
+fake-model
+--mode
+plan
+--stream-partial-output
+--trust

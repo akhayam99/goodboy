@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
-import { INLINE_CHANGE_LINE_LIMIT, inlineChangePlan } from './inlineChangePlan';
+import { inlineChangePlan } from './inlineChangePlan';
 
 const fileDiff = ({
   path,
@@ -52,7 +52,7 @@ describe('inline change plan', () => {
 
   it('never truncates a change that sits exactly on the threshold', () => {
     const plan = inlineChangePlan({
-      files: [fileDiff({ path: 'src/retry.ts', additions: INLINE_CHANGE_LINE_LIMIT })],
+      files: [fileDiff({ path: 'src/retry.ts', additions: 40 })],
     });
 
     expect(plan.kind).toBe('whole');

@@ -279,7 +279,7 @@ describe('one Push at a time', () => {
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
-    expect(prepare).toHaveBeenLastCalledWith({ sessionId: SESSION.id });
+    expect(prepare).toHaveBeenLastCalledWith({ sessionId: SESSION.id, mountId: null });
   });
 
   it('pushes only the selected comment from its own detail', async () => {
@@ -293,6 +293,7 @@ describe('one Push at a time', () => {
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenLastCalledWith({
       sessionId: SESSION.id,
+      mountId: null,
       threadIds: [threadId],
       isolated: true,
     });

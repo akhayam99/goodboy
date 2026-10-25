@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { ImageOff, X } from 'lucide-react';
-import { IconButton, Skeleton, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, Skeleton, Tooltip } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import type { PendingAttachment } from '../../pendingAttachment';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type AttachmentThumbnail =
   | { readonly status: 'ready'; readonly src: string }
@@ -137,7 +136,7 @@ export const AttachmentChip = ({
   const body = (
     <>
       <Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="truncate text-label text-foreground">{fileName}</span>
+      <span className="truncate text-meta text-foreground">{fileName}</span>
     </>
   );
 

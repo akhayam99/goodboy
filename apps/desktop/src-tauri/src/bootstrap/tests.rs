@@ -1,7 +1,8 @@
 use super::clear::{align_main, clear_root, recover, AlignOutcome, RecoverState};
 use super::lock::MoveLock;
 use super::{
-    apply, prepare, rollback, ApplyArgs, BootstrapError, BootstrapPrepared, FileChange, PrepareArgs,
+    apply, prepare, rollback, ApplyArgs, BootstrapError, BootstrapPrepared, FileChange, NotUndone,
+    PrepareArgs, RollbackReport,
 };
 use crate::project_folder::create_project_folder;
 use crate::worktree::{git, git_argv_log};
@@ -438,6 +439,7 @@ fn a_clash_with_the_remote_fails_the_apply_and_rolls_back_without_touching_the_f
         fixture.root.to_str().unwrap(),
         worktree.to_str().unwrap(),
         &prepared.branch,
+        Some(&prepared.branch_tip),
     )
     .unwrap();
     assert_eq!(
@@ -606,6 +608,7 @@ fn rolling_back_removes_the_worktree_and_branch_but_keeps_the_snapshot() {
         fixture.root.to_str().unwrap(),
         worktree.to_str().unwrap(),
         &prepared.branch,
+        Some(&prepared.branch_tip),
     )
     .unwrap();
 
@@ -623,12 +626,153 @@ fn rolling_back_removes_the_worktree_and_branch_but_keeps_the_snapshot() {
 }
 
 #[test]
+fn a_clean_rollback_reports_nothing_left_behind() {
+    let fixture = fixture("rollback-report");
+    first_lap_work(&fixture.root);
+    let (prepared, worktree) = moved(&fixture);
+
+    let report = rollback(
+        fixture.root.to_str().unwrap(),
+        worktree.to_str().unwrap(),
+        &prepared.branch,
+        Some(&prepared.branch_tip),
+    )
+    .unwrap();
+
+    assert_eq!(report, RollbackReport::default());
+    finish(&fixture);
+}
+
+#[test]
+fn a_branch_that_moved_since_the_move_began_is_never_deleted() {
+    let fixture = fixture("rollback-moved");
+    first_lap_work(&fixture.root);
+    let (prepared, worktree) = moved(&fixture);
+    write(&worktree, "chapter.txt", "real work\n");
+    git_ok(&worktree, &["add", "chapter.txt"]);
+    git_ok(&worktree, &["commit", "-q", "-m", "chapter one"]);
+    let moved_tip = git_ok(&fixture.root, &["rev-parse", &prepared.branch]);
+    assert_ne!(moved_tip, prepared.branch_tip);
+
+    let report = rollback(
+        fixture.root.to_str().unwrap(),
+        worktree.to_str().unwrap(),
+        &prepared.branch,
+        Some(&prepared.branch_tip),
+    )
+    .unwrap();
+
+    assert_eq!(
+        report.not_undone,
+        vec![NotUndone::BranchMoved {
+            actual: moved_tip.clone()
+        }]
+    );
+    assert_eq!(
+        git_ok(&fixture.root, &["rev-parse", &prepared.branch]),
+        moved_tip
+    );
+    assert!(worktree.join("chapter.txt").exists());
+    finish(&fixture);
+}
+
+#[test]
+fn a_rollback_without_the_expected_tip_keeps_the_branch_and_says_so() {
+    let fixture = fixture("rollback-unknown");
+    first_lap_work(&fixture.root);
+    let (prepared, worktree) = moved(&fixture);
+
+    let report = rollback(
+        fixture.root.to_str().unwrap(),
+        worktree.to_str().unwrap(),
+        &prepared.branch,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(report.not_undone, vec![NotUndone::BranchTipUnknown]);
+    assert!(!worktree.exists());
+    assert_eq!(
+        git_ok(&fixture.root, &["rev-parse", &prepared.branch]),
+        prepared.branch_tip
+    );
+    finish(&fixture);
+}
+
+#[test]
+fn a_branch_only_rollback_deletes_nothing_when_the_branch_moved() {
+    let fixture = fixture("rollback-branch-moved");
+    first_lap_work(&fixture.root);
+    let prepared = prepare(args(&fixture)).unwrap();
+
+    let report = rollback(
+        fixture.root.to_str().unwrap(),
+        "",
+        &prepared.branch,
+        Some("0123456789abcdef0123456789abcdef01234567"),
+    )
+    .unwrap();
+
+    assert_eq!(report.not_undone.len(), 1);
+    assert!(matches!(
+        report.not_undone[0],
+        NotUndone::BranchMoved { .. }
+    ));
+    assert_eq!(
+        git_ok(&fixture.root, &["rev-parse", &prepared.branch]),
+        prepared.branch_tip
+    );
+    finish(&fixture);
+}
+
+#[test]
+fn a_locked_worktree_that_cannot_go_is_listed_and_its_branch_stays() {
+    let fixture = fixture("rollback-locked");
+    first_lap_work(&fixture.root);
+    let (prepared, worktree) = moved(&fixture);
+    git_ok(
+        &fixture.root,
+        &[
+            "worktree",
+            "lock",
+            "--reason",
+            "busy",
+            worktree.to_str().unwrap(),
+        ],
+    );
+
+    let report = rollback(
+        fixture.root.to_str().unwrap(),
+        worktree.to_str().unwrap(),
+        &prepared.branch,
+        Some(&prepared.branch_tip),
+    )
+    .unwrap();
+
+    assert!(report
+        .not_undone
+        .iter()
+        .any(|left| matches!(left, NotUndone::WorktreeNotRemoved { .. })));
+    assert_eq!(
+        git_ok(&fixture.root, &["rev-parse", &prepared.branch]),
+        prepared.branch_tip
+    );
+    finish(&fixture);
+}
+
+#[test]
 fn rolling_back_before_a_worktree_exists_only_drops_the_branch() {
     let fixture = fixture("branchonly");
     first_lap_work(&fixture.root);
     let prepared = prepare(args(&fixture)).unwrap();
 
-    rollback(fixture.root.to_str().unwrap(), "", &prepared.branch).unwrap();
+    rollback(
+        fixture.root.to_str().unwrap(),
+        "",
+        &prepared.branch,
+        Some(&prepared.branch_tip),
+    )
+    .unwrap();
 
     assert_eq!(
         git_ok(&fixture.root, &["branch", "--list", "ak/bootstrap"]),
@@ -667,6 +811,7 @@ fn rolling_back_refuses_a_path_outside_the_worktree_folder() {
         fixture.root.to_str().unwrap(),
         outside.to_str().unwrap(),
         "ak/bootstrap",
+        None,
     );
 
     assert!(matches!(result, Err(BootstrapError::InvalidInput(_))));

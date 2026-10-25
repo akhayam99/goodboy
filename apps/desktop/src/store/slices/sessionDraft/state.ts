@@ -63,7 +63,7 @@ export type SessionDraftState = {
   readonly goodboyNamedSessionId: SessionId | null;
 };
 
-export const initialSessionDraftState: SessionDraftState = {
+export const sessionDraftInitialState: SessionDraftState = {
   sessionDrafts: {},
   openSessionDraftWorkspaceId: null,
   goodboyNamedSessionId: null,

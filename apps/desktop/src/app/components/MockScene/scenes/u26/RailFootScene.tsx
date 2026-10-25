@@ -21,7 +21,7 @@ const seed = (): void => {
   useAppStore.setState((state) => ({
     sessionBudgets: {
       ...state.sessionBudgets,
-      [sessionId]: { sessionId, softCapUsd: 10, onExceed: 'pause' },
+      [sessionId]: { sessionId, softCapUsd: 10, onExceed: 'pause', warnRatio: 0.8 },
     },
   }));
 };

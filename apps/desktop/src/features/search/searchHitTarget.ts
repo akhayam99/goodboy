@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { AgentPane } from '../../store/slices/navigation/types';
 import {
   isSessionExternalTaskProvider,

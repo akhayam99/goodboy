@@ -65,7 +65,7 @@ export const NextStepRebasePicker = ({ sessionId, targets, onClose }: Props) => 
               label={
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span className="truncate text-row text-foreground">{target.projectName}</span>
-                  <span className="truncate text-label text-muted-foreground">
+                  <span className="truncate text-meta text-muted-foreground">
                     {target.branch}, {target.behind} behind {target.baseBranch}
                   </span>
                 </span>

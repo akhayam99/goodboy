@@ -1,5 +1,6 @@
 import type { ProviderBudgetStatus, TelemetryRecord } from '@goodboy/types';
-import { budgetPctUsed, budgetRingFraction, budgetWarnFraction } from './providerBudgetView';
+import type { Tone } from '@goodboy/ui';
+import { budgetPctUsed, budgetRingFraction, budgetTone } from './providerBudgetView';
 
 type SpendWindow = 'today' | 'range' | 'month';
 
@@ -29,7 +30,7 @@ type LimitFigures = {
   readonly leftUsd: number;
   readonly pctUsed: number;
   readonly ringFraction: number;
-  readonly warnFraction: number | undefined;
+  readonly tone: Tone;
   readonly resetsAtMs: number;
 };
 
@@ -58,7 +59,7 @@ const limitOf = ({ budget }: LimitParams): LimitFigures | null => {
     leftUsd: Math.max(budget.capUsd - budget.spentUsd, 0),
     pctUsed: budgetPctUsed({ status: budget }),
     ringFraction: budgetRingFraction({ status: budget }),
-    warnFraction: budgetWarnFraction({ status: budget }),
+    tone: budgetTone({ status: budget }),
     resetsAtMs: budget.windowEndMs + 1,
   };
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '../../lib/editor';
+import { useAppStore } from '../../../store';
 
 export type CommitDiffTarget = { repo: string; sha: string };
 
@@ -23,9 +24,11 @@ export const useCommitLinkInterceptor = () => {
         setCommitDiff({ repo: commit[1] as string, sha: commit[2] as string });
         return;
       }
-      if (/^(https?:|mailto:)/i.test(href)) {
+      if (/^https?:/i.test(href)) {
         e.preventDefault();
-        void openUrl(href);
+        openUrl(href).catch((error: unknown) => {
+          void useAppStore.getState().reportError({ title: "Couldn't open the link", error });
+        });
       }
     };
     document.addEventListener('click', onClick);

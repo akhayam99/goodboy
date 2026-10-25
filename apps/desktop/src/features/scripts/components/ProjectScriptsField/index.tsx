@@ -61,7 +61,7 @@ export const ProjectScriptsField = ({ project }: Props) => {
 
   return (
     <div role="group" aria-label={`Scripts of ${project.name}`} className="flex flex-col gap-1">
-      <span className="text-label text-muted-foreground">{labelOf({ pinned: pins.length })}</span>
+      <span className="text-meta text-muted-foreground">{labelOf({ pinned: pins.length })}</span>
       {scan === undefined || scan.status === 'loading' ? (
         <p className="text-meta text-faint-foreground">Reading scripts on {base}…</p>
       ) : null}

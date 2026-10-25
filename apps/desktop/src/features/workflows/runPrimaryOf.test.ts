@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
-import type { OrchestratorPhase } from './components/OrchestratorStrip/orchestratorState';
+import type { OrchestratorPhase } from './orchestratorState';
 import { runPrimaryOf, type RunFlow, type RunPlanHold, type RunPrimaryKind } from './runPrimaryOf';
 
 type Live = {

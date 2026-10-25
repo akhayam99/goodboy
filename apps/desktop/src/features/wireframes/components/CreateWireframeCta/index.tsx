@@ -1,7 +1,7 @@
-import { Button, cn } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { wireframeCreationAdapter } from '../../wireframeCreationAdapter';
 
 type Props = {

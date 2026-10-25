@@ -32,7 +32,7 @@ export const ReleaseBody = ({
     <div className="flex flex-col gap-6">
       {isMetaShown && (metaLine !== '' || showPrInMeta) ? (
         <div className="flex items-center gap-2">
-          <span className="text-label text-muted-foreground">{metaLine}</span>
+          <span className="text-meta text-muted-foreground">{metaLine}</span>
           {showPrInMeta ? <PrRef prs={prs} /> : null}
         </div>
       ) : null}

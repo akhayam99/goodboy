@@ -21,6 +21,7 @@ const FOREIGN_KEY_CHECK_PRAGMA = /^[\t ]*PRAGMA[\t ]+foreign_key_check[\t ]*(\([
 const INTEGRITY_CHECK_PRAGMA = /^[\t ]*PRAGMA[\t ]+integrity_check[\t ]*(\([^)]*\))?[\t ]*$/im;
 
 const ENFORCED_POST_CONDITION_MIN_VERSION = 157;
+export const ALREADY_EXISTS_TOLERATED_THROUGH_VERSION = 234;
 
 type MigrationPart =
   | {
@@ -228,7 +229,7 @@ const executeStatement = async ({
   try {
     await db.exec(statement);
   } catch (error) {
-    if (isAlreadyExistsError({ error })) {
+    if (version <= ALREADY_EXISTS_TOLERATED_THROUGH_VERSION && isAlreadyExistsError({ error })) {
       console.warn(
         `[migrations] v${version}: skipping idempotent statement (already applied): ${truncate({ value: statement })}`,
       );

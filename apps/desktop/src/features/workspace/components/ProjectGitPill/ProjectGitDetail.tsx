@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  AlertTriangle,
+  TriangleAlert,
   ArrowDown,
   ArrowUp,
   Check,
@@ -9,7 +9,7 @@ import {
   Pencil,
   Upload,
 } from 'lucide-react';
-import { Button, SkeletonRow, formatError } from '@goodboy/ui';
+import { Button, formatError, ICON_SIZE, SkeletonRow } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
@@ -31,7 +31,6 @@ import {
   hasReadFailure,
   projectUpdateBlockReasonOf,
 } from '../../../../shared/lib/projectGitPresentation';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly project: Project;
@@ -171,8 +170,8 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
       {status == null ? (
         <SkeletonRow label="Reading git status" className="m-2" />
       ) : status.state === 'missing' ? (
-        <div className="flex items-start gap-2 p-3 text-label text-danger">
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        <div className="flex items-start gap-2 p-3 text-meta text-danger">
+          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>
             Goodboy cannot reach <span className="font-mono text-meta">{project.rootPath}</span>.
             Reconnect the workspace once the folder is back.
@@ -184,7 +183,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
         <div className="flex flex-col gap-2 p-3">
           <div className="flex flex-col gap-2">
             {details.length === 0 && notes.length === 0 ? (
-              <span className="flex items-center gap-1 text-label text-muted-foreground">
+              <span className="flex items-center gap-1 text-meta text-muted-foreground">
                 <Check size={ICON_SIZE.mark} aria-hidden />
                 {status.upstream != null ? 'In sync and clean' : 'Clean, no upstream yet'}
               </span>
@@ -192,15 +191,15 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             {details.map((detail) => (
               <span
                 key={detail.key}
-                className="flex items-center gap-2 text-label text-muted-foreground"
+                className="flex items-center gap-2 text-meta text-muted-foreground"
               >
                 <detail.icon size={ICON_SIZE.mark} aria-hidden />
                 {detail.label}
               </span>
             ))}
             {readFailure ? (
-              <span className="flex items-center gap-1 text-label text-warning">
-                <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
+              <span className="flex items-center gap-1 text-meta text-warning">
+                <TriangleAlert size={ICON_SIZE.mark} aria-hidden />
                 Goodboy cannot read this checkout
               </span>
             ) : null}

@@ -102,6 +102,7 @@ const TranscriptCardImpl = ({
           runId={item.runId ?? null}
           itemKey={item.key}
           isComplete={item.runId == null || item.runId !== activeRunId}
+          workingDir={workingDir}
         />
       );
     case 'artifact_block':
@@ -114,7 +115,16 @@ const TranscriptCardImpl = ({
         />
       );
     case 'tool_call':
-      return <ToolCallCard item={item} activeRunId={activeRunId} permission={permission} />;
+      return (
+        <ToolCallCard
+          item={item}
+          activeRunId={activeRunId}
+          permission={permission}
+          sessionId={sessionId}
+          agentId={agentId}
+          workingDir={workingDir}
+        />
+      );
     case 'file_edit':
       return (
         <FileEditBlock
@@ -142,6 +152,7 @@ const TranscriptCardImpl = ({
       return (
         <TranscriptErrorRow
           message={item.message}
+          runId={errorRunId ?? null}
           onRetry={
             item.retryable === true && errorRunId != null && onRetryRun != null
               ? () => onRetryRun({ runId: errorRunId, model: null })

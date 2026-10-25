@@ -1,3 +1,4 @@
+import { providerFlags } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 
 type Params = {
@@ -5,4 +6,4 @@ type Params = {
 };
 
 export const canTestConnection = ({ providerId }: Params): boolean =>
-  providerId === 'anthropic' || providerId === 'codex' || providerId === 'cursor';
+  providerFlags({ id: providerId }).hasAccountTest;

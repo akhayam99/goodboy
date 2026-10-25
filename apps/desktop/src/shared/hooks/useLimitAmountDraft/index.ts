@@ -22,6 +22,10 @@ type CommitParams = {
   readonly isClosing: boolean;
 };
 
+type SubmitParams = {
+  readonly event: FormEvent<HTMLFormElement>;
+};
+
 type AmountParams = {
   readonly amount: string;
 };
@@ -91,7 +95,7 @@ export const useLimitAmountDraft = ({
     isInvalid,
     error: isInvalid ? INVALID : failure,
     setAmount: ({ amount: next }: AmountParams) => setAmountState(next),
-    submit: (event: FormEvent<HTMLFormElement>) => {
+    submit: ({ event }: SubmitParams) => {
       event.preventDefault();
       if (isDirty && !isInvalid) {
         void commit({ amount, isClosing: false });

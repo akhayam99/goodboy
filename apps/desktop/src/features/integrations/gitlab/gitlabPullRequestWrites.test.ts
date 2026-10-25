@@ -231,7 +231,13 @@ describe('pull request writes on GitLab, through the store, the port and the com
     serve({
       command: 'gitlab_update_mr',
       answer: () => {
-        throw { kind: 'http', message: 'http error 403: {"message":"403 Forbidden"}' };
+        throw {
+          kind: 'http',
+          message: 'http error 403: {"message":"403 Forbidden"}',
+          failureKind: 'denied',
+          status: 403,
+          detail: '{"message":"403 Forbidden"}',
+        };
       },
     });
 

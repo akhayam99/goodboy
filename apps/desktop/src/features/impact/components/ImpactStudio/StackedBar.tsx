@@ -1,4 +1,4 @@
-import { FactCard, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { FactCard, METER_TRACK, cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type StackedSegment = {
   readonly key: string;
@@ -17,7 +17,7 @@ type Props = {
 export const StackedBar = ({ heading, segments, className }: Props) => {
   const visible = segments.filter((segment) => segment.share > 0);
   if (visible.length === 0) {
-    return <div className={cn('h-2 w-full rounded-full bg-muted', className)} aria-hidden />;
+    return <div className={cn('h-2 w-full', METER_TRACK, className)} aria-hidden />;
   }
 
   return (
@@ -31,7 +31,7 @@ export const StackedBar = ({ heading, segments, className }: Props) => {
         })),
       }}
     >
-      <div className={cn('flex h-2 w-full overflow-hidden rounded-full bg-muted', className)}>
+      <div className={cn('flex h-2 w-full', METER_TRACK, className)}>
         {visible.map((segment) => (
           <div
             key={segment.key}

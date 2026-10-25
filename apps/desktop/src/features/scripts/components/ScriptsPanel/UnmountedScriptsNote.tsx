@@ -1,5 +1,6 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 
 export type UnmountedScriptsEntry = {
@@ -25,7 +26,7 @@ export const UnmountedScriptsNote = ({ sessionId, workspaceId, entries, hasActio
   const total = entries.reduce((sum, entry) => sum + entry.count, 0);
   const FolderIcon = CONCEPT_ICONS.projectFolder;
   return (
-    <div className="flex items-center gap-2 px-1 text-label text-muted-foreground">
+    <div className="flex items-center gap-2 px-1 text-meta text-muted-foreground">
       <FolderIcon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       <p className="min-w-0 flex-1">
         {total} saved {total === 1 ? 'script' : 'scripts'} in{' '}

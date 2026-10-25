@@ -359,7 +359,7 @@ describe('Scripts page live state', () => {
   it('runs an idle selected row with R', async () => {
     stubMonitor({ snapshot: HELD_SNAPSHOT });
     renderLens();
-    await screen.findByRole('region', { name: /^Tasks of /u });
+    await screen.findByRole('region', { name: /^Commands of /u });
 
     press({ code: 'KeyJ' });
     press({ code: 'KeyJ' });

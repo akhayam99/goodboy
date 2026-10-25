@@ -11,7 +11,7 @@ import {
   resetStoryStore,
   stubStoryInvoke,
 } from '../../storyHarness';
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),

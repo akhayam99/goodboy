@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { Button, Divider, EmptyState, Kbd, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, EmptyState, ICON_SIZE, Kbd, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -10,7 +10,7 @@ import {
 } from '../../../../store';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { openSettings } from '../../../settings/openSettings';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { WORKSPACE_DIGIT_IDS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
@@ -18,7 +18,7 @@ import { DisconnectedWorkspaceRow } from './DisconnectedWorkspaceRow';
 import { useAddFolderHere } from './useAddFolderHere';
 import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { openNewWorkspace } from '../../openNewWorkspace';
 
 type Props = {
@@ -162,7 +162,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           onKeyDown={handleKeyDown}
           placeholder="Find a workspace or folder"
           aria-label="Find a workspace or folder"
-          className="flex-1 bg-transparent text-label focus-visible:outline-none"
+          className="flex-1 bg-transparent text-meta focus-visible:outline-none"
         />
         <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
       </div>

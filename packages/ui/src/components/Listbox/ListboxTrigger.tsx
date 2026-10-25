@@ -26,12 +26,12 @@ export type ListboxTriggerProps = {
 };
 
 const FIELD_SIZE: Record<ListboxSize, string> = {
-  sm: 'h-7 px-2 text-label',
-  md: 'h-8 px-3 text-label',
+  sm: 'h-7 px-2 text-ui',
+  md: 'h-8 px-3 text-ui',
 };
 
 const QUIET_SIZE: Record<ListboxSize, string> = {
-  sm: 'h-6 px-2 text-label',
+  sm: 'h-6 px-2 text-meta',
   md: 'h-7 px-2 text-body',
 };
 
@@ -42,10 +42,7 @@ const variantClasses = ({
   disabled,
 }: Pick<ListboxTriggerProps, 'variant' | 'size' | 'isOpen' | 'disabled'>): string => {
   if (variant === 'chip') {
-    return cn(
-      chipClasses({ tone: 'neutral', size: 'control', shape: 'badge', isInteractive: true }),
-      'max-w-72',
-    );
+    return cn(chipClasses({ tone: 'neutral', isInteractive: true, kind: 'reference' }), 'max-w-72');
   }
   if (variant === 'quiet') {
     return cn(

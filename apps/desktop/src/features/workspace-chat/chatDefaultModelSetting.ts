@@ -6,7 +6,7 @@ import {
   type EffortLevel,
   type WorkspaceId,
 } from '@goodboy/types';
-import type { ChatRouting } from './chatRouting';
+import type { ChatRouting } from '../conversation/chatRouting';
 
 type KeyParams = {
   readonly workspaceId: WorkspaceId;

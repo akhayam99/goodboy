@@ -1,9 +1,8 @@
 import { X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
 import { useObjectUrl } from '../../../features/attachments/hooks/useObjectUrl';
 import { attachmentKindFor, fileIconFor } from '../../../features/chat/attachment-kinds';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly attachment: PendingAttachment;

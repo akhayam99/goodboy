@@ -9,11 +9,11 @@ import type { PrNouns } from '../../../features/review/prLifecycle';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
-export const PR_WRITE_NO_PULL_REQUEST = 'This session has no pull request to update';
-export const PR_WRITE_NO_SESSION = 'This session no longer exists';
-export const PR_WRITE_NO_WORKSPACE = "This session's workspace is missing";
-export const PR_WRITE_NO_REPO = 'No repository is mounted for this pull request';
-export const PR_WRITE_NO_PORT = 'Goodboy cannot change this pull request on its host yet';
+const PR_WRITE_NO_PULL_REQUEST = 'This session has no pull request to update';
+const PR_WRITE_NO_SESSION = 'This session no longer exists';
+const PR_WRITE_NO_WORKSPACE = "This session's workspace is missing";
+const PR_WRITE_NO_REPO = 'No repository is mounted for this pull request';
+const PR_WRITE_NO_PORT = 'Goodboy cannot change this pull request on its host yet';
 
 type Params = {
   readonly get: GetFn;

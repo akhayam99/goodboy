@@ -417,7 +417,8 @@ describe('WireframeViewer', () => {
     expect(badges.map((badge) => badge.textContent)).toEqual(['~ Changed', '= Same']);
     const list = screen.getByTestId('wireframe-change-list');
     expect(list.textContent).toContain('Batches: text changed');
-    expect(list.textContent).toContain('Legacy filter: removed');
+    expect(list.textContent).toContain('Legacy filter');
+    expect(list.textContent).not.toContain(': removed');
     await waitFor(() => expect(frame.staged.length).toBeGreaterThanOrEqual(3));
     const staged = frame.staged
       .flat()

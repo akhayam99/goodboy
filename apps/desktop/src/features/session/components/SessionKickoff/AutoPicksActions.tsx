@@ -1,7 +1,7 @@
 import { Button, FormActions } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
@@ -20,7 +20,7 @@ export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
 
   return (
     <section aria-label={RUN_ROUTE_COPY.label} className="flex flex-col gap-6">
-      <p className="text-label text-muted-foreground">{RUN_ROUTE_COPY.hint}</p>
+      <p className="text-meta text-muted-foreground">{RUN_ROUTE_COPY.hint}</p>
       <FormActions
         leading={
           <div className="flex flex-wrap items-center gap-2">

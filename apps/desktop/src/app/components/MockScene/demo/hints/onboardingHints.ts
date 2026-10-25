@@ -81,9 +81,9 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     outcome: null,
     anchor: '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]',
     revealWhen: isOnStep({ step: 'workspace' }),
-    doneWhen: (probe) =>
-      probe.root.querySelector(WORKSPACE_CREATE) !== null ||
-      isPastStep({ step: 'workspace' })(probe),
+    doneWhen: ({ root }) =>
+      root.querySelector(WORKSPACE_CREATE) !== null ||
+      stepIndexOf({ root }) > WIZARD_STEPS.indexOf('workspace'),
   },
   {
     id: 'setup-create',

@@ -20,7 +20,7 @@ export type ListGridRowProps = {
   readonly isSelected?: boolean;
   readonly ariaLabel?: string;
   readonly tooltip?: ReactNode;
-  readonly rowHeight?: 28 | 32;
+  readonly rowHeight?: 28 | 32 | 'stack';
   readonly isOption?: boolean;
   readonly isCursor?: boolean;
   readonly optionId?: string;
@@ -59,7 +59,7 @@ const cellClass = ({ column, cell, isFirst }: CellParams) =>
     toneClass({ column }),
   );
 
-const HEIGHT_CLASS = { 28: 'h-7', 32: 'h-8' } as const;
+const HEIGHT_CLASS = { 28: 'h-7', 32: 'h-8', stack: 'min-h-12 py-1' } as const;
 
 const isFilledCell = (cell: ReactNode): boolean =>
   cell !== null && cell !== undefined && cell !== false && cell !== '';
@@ -75,6 +75,40 @@ const filledHideableKeyOf = ({ cells, columns }: FilledParams): string =>
       column.shouldHideWhenEmpty === true && isFilledCell(cells[index]) ? [column.key] : [],
     )
     .join('\n');
+
+type VisibleCell = {
+  readonly cell: ReactNode;
+  readonly column: ListGridColumn | undefined;
+  readonly index: number;
+};
+
+type SpannedParams = {
+  readonly visible: ReadonlyArray<VisibleCell>;
+};
+
+const spannedOf = ({ visible }: SpannedParams): ReadonlyArray<VisibleCell & { span: number }> => {
+  const spanned: Array<VisibleCell & { span: number }> = [];
+  let position = 0;
+  while (position < visible.length) {
+    const current = visible[position];
+    if (current === undefined) {
+      break;
+    }
+    let span = 1;
+    if (current.column?.canSpanEmpty === true) {
+      while (
+        position + span < visible.length &&
+        !isFilledCell(visible[position + span]?.cell) &&
+        visible[position + span]?.column?.canSpanEmpty !== true
+      ) {
+        span += 1;
+      }
+    }
+    spanned.push({ ...current, span });
+    position += span;
+  }
+  return spanned;
+};
 
 export const ListGridRow = ({
   cells,
@@ -100,14 +134,16 @@ export const ListGridRow = ({
     reportFilled({ rowId, keys: filledKey === '' ? [] : filledKey.split('\n') });
     return () => reportFilled({ rowId, keys: null });
   }, [hasHideable, filledKey, reportFilled, rowId]);
-  const shown = cells.flatMap((cell, index) => {
+  const visible = cells.flatMap((cell, index) => {
     const column = columns[index];
     return column !== undefined && hiddenKeys.has(column.key) ? [] : [{ cell, column, index }];
   });
-  const body = shown.map(({ cell, column, index }, position) => (
+  const shown = spannedOf({ visible });
+  const body = shown.map(({ cell, column, index, span }, position) => (
     <span
       key={column?.key ?? index}
       data-list-grid-cell={column?.key}
+      style={span > 1 ? { gridColumnEnd: `span ${span}` } : undefined}
       className={cellClass({ column, cell, isFirst: position === 0 })}
     >
       {cell}

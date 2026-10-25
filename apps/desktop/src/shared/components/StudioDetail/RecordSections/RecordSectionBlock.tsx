@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { ROW_INTERACTIVE, Eyebrow, FOCUS_RING, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../conceptIcons';
+import { cn, Eyebrow, FOCUS_RING, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
+
 import type { RecordSection } from './types';
 
 type Props = {

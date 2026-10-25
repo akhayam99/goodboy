@@ -1,11 +1,10 @@
 import { Paperclip, X } from 'lucide-react';
-import { Button, IconButton, StatusDot, cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, IconButton, StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import type {
   AgentQueuedStatus,
   AgentQueuedTurn,
 } from '../../../../../store/slices/agentQueue/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type QueuedItem = Pick<AgentQueuedTurn, 'id' | 'content' | 'attachments' | 'override' | 'status'>;
 
@@ -66,7 +65,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
                 type="button"
                 disabled={!canEdit || isSending}
                 onClick={() => onEdit(item.id)}
-                className="min-w-0 flex-1 truncate text-left text-label leading-relaxed text-foreground disabled:cursor-default"
+                className="min-w-0 flex-1 truncate text-left text-meta leading-relaxed text-foreground disabled:cursor-default"
               >
                 {previewOf({ item })}
               </button>

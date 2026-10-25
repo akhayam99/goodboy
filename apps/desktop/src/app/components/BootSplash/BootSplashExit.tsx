@@ -30,7 +30,7 @@ export const BootSplashExit = ({ onDone }: Props) => {
     <BootCover
       data-testid="boot-splash-exit"
       aria-hidden="true"
-      className="fixed inset-0 z-50 ease-out"
+      className="fixed inset-0 z-boot ease-out"
       style={{
         opacity: isFading ? 0 : 1,
         pointerEvents: 'none',

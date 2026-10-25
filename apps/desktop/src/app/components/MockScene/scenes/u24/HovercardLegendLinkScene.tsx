@@ -19,7 +19,7 @@ export const HovercardLegendLinkScene = () => {
 
   return (
     <main className="bg-background p-6 text-foreground" style={{ width: 360 }}>
-      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-label')}>
+      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-meta')}>
         <SessionHoverCardBody
           session={SESSION}
           isArchived={false}

@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { useSessionArchive } from '../../hooks/useSessionArchive';
-import { ConfirmPopover, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
+import { ConfirmPopover, ICON_SIZE, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { sessionTitle } from '../../sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { DELETE_CANNOT_UNDO, DELETE_REMOVED_LINE, deleteKeptLine } from '../../deleteSessionCopy';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;

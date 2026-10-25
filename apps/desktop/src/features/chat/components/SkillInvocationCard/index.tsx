@@ -1,7 +1,8 @@
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;
@@ -20,7 +21,7 @@ export const SkillInvocationCard = ({ item }: Props) => {
           eyebrow="skill"
           preview={
             <span className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="text-label font-medium text-foreground">{item.skillName}</span>
+              <span className="text-meta font-medium text-foreground">{item.skillName}</span>
               {item.args.map((arg, index) => (
                 <span
                   key={index}

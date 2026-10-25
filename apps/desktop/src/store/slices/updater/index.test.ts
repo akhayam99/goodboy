@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: relaunchMock }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
 import { createUpdaterSlice } from './index';
-import { initialUpdaterState, type UpdaterState } from './state';
+import { updaterInitialState, type UpdaterState } from './state';
 import { setPendingUpdate } from './pendingUpdate';
 
 type HarnessOptions = {
@@ -20,7 +20,7 @@ type HarnessOptions = {
 };
 
 function harness({ autoDownload = 'false' }: HarnessOptions = {}) {
-  let state: UpdaterState = { ...initialUpdaterState };
+  let state: UpdaterState = { ...updaterInitialState };
   const set = (p: Partial<UpdaterState> | ((s: UpdaterState) => Partial<UpdaterState>)) => {
     state = { ...state, ...(typeof p === 'function' ? p(state) : p) };
   };
@@ -252,7 +252,7 @@ describe('updater slice', () => {
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Couldn't install 0.2.0",
-        action: { kind: 'retry-update' },
+        recovery: { action: { kind: 'retry-update' } },
       }),
     );
     await slice.applyUpdate();

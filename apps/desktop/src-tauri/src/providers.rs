@@ -3,11 +3,17 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
+
 use crate::path_env;
 use crate::proc::probe::{self, Budget, ProbeOutput};
+use auth_reason::AuthReason;
 
+pub(crate) mod auth_reason;
 pub(crate) mod cli_args;
 pub(crate) mod cli_probe;
+pub(crate) mod spec;
 pub mod test_connection;
 
 #[derive(Debug, Error)]
@@ -65,6 +71,7 @@ impl ProbeErrorKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProviderStatus {
     pub id: String,
     pub binary: String,
@@ -72,7 +79,6 @@ pub struct ProviderStatus {
     pub version: Option<String>,
     pub error: Option<String>,
     pub path: Option<String>,
-    #[serde(rename = "errorKind")]
     pub error_kind: Option<ProbeErrorKind>,
 }
 
@@ -116,7 +122,7 @@ pub struct AuthState {
     pub identity: Option<String>,
     pub plan: Option<String>,
     pub verified: bool,
-    pub reason: Option<String>,
+    pub reason: Option<AuthReason>,
 }
 
 impl AuthState {
@@ -130,7 +136,7 @@ impl AuthState {
         }
     }
 
-    fn connected_unverified(reason: String) -> Self {
+    fn connected_unverified(reason: AuthReason) -> Self {
         Self {
             state: AuthStateKind::Connected,
             identity: None,
@@ -150,35 +156,30 @@ impl AuthState {
         }
     }
 
-    fn unknown(reason: impl Into<String>) -> Self {
+    fn unknown(reason: AuthReason) -> Self {
         Self {
             state: AuthStateKind::Unknown,
             identity: None,
             plan: None,
             verified: false,
-            reason: Some(reason.into()),
+            reason: Some(reason),
         }
     }
 }
 
-pub fn detect_claude() -> ProviderStatus {
-    detect_binary("anthropic", "claude")
-}
-
-pub fn detect_cursor() -> ProviderStatus {
-    detect_binary("cursor", "cursor-agent")
-}
-
-pub fn detect_codex() -> ProviderStatus {
-    detect_binary("codex", "codex")
-}
-
-pub fn detect_gemini() -> ProviderStatus {
-    detect_binary("gemini", "agy")
-}
-
-pub fn detect_opencode() -> ProviderStatus {
-    detect_binary("opencode", "opencode")
+pub(crate) fn detect_provider(provider_id: &str) -> ProviderStatus {
+    let Some(spec) = spec::spec_of(provider_id) else {
+        return ProviderStatus {
+            id: provider_id.to_string(),
+            binary: provider_id.to_string(),
+            available: false,
+            version: None,
+            error: Some(format!("unknown provider: {}", provider_id)),
+            path: None,
+            error_kind: None,
+        };
+    };
+    detect_binary(spec.id, spec.binary)
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
@@ -250,26 +251,30 @@ fn exit_failure_reason(out: &ProbeOutput) -> String {
     format!("{said} ({code})")
 }
 
-fn spawn_failure_reason(err: &std::io::Error) -> String {
+fn spawn_failure_reason(err: &std::io::Error) -> AuthReason {
     if err.kind() == std::io::ErrorKind::NotFound {
-        return "the CLI is not installed".to_string();
+        return AuthReason::NotInstalled;
     }
-    err.to_string()
+    AuthReason::SpawnFailed {
+        detail: err.to_string(),
+    }
 }
 
-fn output_reason(out: &ProbeOutput) -> String {
+fn output_reason(out: &ProbeOutput) -> AuthReason {
     let line = out
         .primary_text()
         .lines()
         .map(str::trim)
         .find(|line| !line.is_empty());
     if let Some(line) = line {
-        return line.chars().take(REASON_LIMIT).collect();
+        return AuthReason::CliSaid {
+            detail: line.chars().take(REASON_LIMIT).collect(),
+        };
     }
     match out.code {
-        Some(0) => "the CLI printed nothing".to_string(),
-        Some(code) => format!("the CLI exited with code {code}"),
-        None => "the CLI ended without an exit code".to_string(),
+        Some(0) => AuthReason::PrintedNothing,
+        Some(code) => AuthReason::ExitedWithCode { code },
+        None => AuthReason::NoExitCode,
     }
 }
 
@@ -282,7 +287,7 @@ fn unrecognized(provider: &str, out: &ProbeOutput) -> AuthState {
 
 fn run_auth(provider: &str, args: &[&str], budget: Budget) -> Result<ProbeOutput, AuthState> {
     let Some((binary, rest)) = args.split_first() else {
-        return Err(AuthState::unknown("empty command"));
+        return Err(AuthState::unknown(AuthReason::EmptyCommand));
     };
     let started = Instant::now();
     let result = probe::run_retrying(
@@ -303,7 +308,9 @@ fn run_auth(provider: &str, args: &[&str], budget: Budget) -> Result<ProbeOutput
     };
     if out.timed_out {
         log_probe_failure(provider, ProbeErrorKind::Timeout, out.elapsed.as_millis());
-        return Err(AuthState::unknown("the CLI did not answer in time"));
+        return Err(AuthState::unknown(AuthReason::TimedOut {
+            secs: budget.timeout.as_secs(),
+        }));
     }
     Ok(out)
 }
@@ -327,23 +334,14 @@ fn strip_ansi(s: &str) -> String {
     out
 }
 
-fn extract_json_string(json: &str, key: &str) -> Option<String> {
-    let needle = format!("\"{}\"", key);
-    let pos = json.find(&needle)?;
-    let after_key = &json[pos + needle.len()..];
-    let colon = after_key.find(':')? + 1;
-    let after_colon = after_key[colon..].trim_start();
-    if !after_colon.starts_with('"') {
+fn extract_json_string(text: &str, key: &str) -> Option<String> {
+    let start = text.find('{')?;
+    let end = text.rfind('}')?;
+    if end < start {
         return None;
     }
-    let inner = &after_colon[1..];
-    let end = inner.find('"')?;
-    let value = &inner[..end];
-    if value.is_empty() {
-        None
-    } else {
-        Some(value.to_string())
-    }
+    let value: serde_json::Value = serde_json::from_str(&text[start..=end]).ok()?;
+    json_text(&value, key)
 }
 
 fn extract_email(text: &str) -> Option<String> {
@@ -356,41 +354,13 @@ fn extract_email(text: &str) -> Option<String> {
     None
 }
 
-/// base64url decoder (no padding, URL-safe alphabet). std-only.
-fn base64url_decode(s: &str) -> Option<Vec<u8>> {
-    let lookup = |c: u8| -> Option<u32> {
-        match c {
-            b'A'..=b'Z' => Some((c - b'A') as u32),
-            b'a'..=b'z' => Some((c - b'a' + 26) as u32),
-            b'0'..=b'9' => Some((c - b'0' + 52) as u32),
-            b'-' => Some(62),
-            b'_' => Some(63),
-            _ => None,
-        }
-    };
-    let mut out = Vec::with_capacity(s.len() * 3 / 4);
-    let mut buf: u32 = 0;
-    let mut bits: u32 = 0;
-    for c in s.bytes() {
-        let v = lookup(c)?;
-        buf = (buf << 6) | v;
-        bits += 6;
-        if bits >= 8 {
-            bits -= 8;
-            out.push((buf >> bits) as u8);
-            buf &= (1 << bits) - 1;
-        }
-    }
-    Some(out)
-}
-
 /// Decode a JWT payload (`header.payload.signature`) and return the `email`
 /// claim. Codex stores its ChatGPT-login id_token in `~/.codex/auth.json`,
 /// which is the only carrier of the user's email when `codex login status`
 /// outputs a generic "Logged in using ChatGPT" line.
 fn extract_email_from_id_token(token: &str) -> Option<String> {
     let payload_b64 = token.split('.').nth(1)?;
-    let payload_bytes = base64url_decode(payload_b64)?;
+    let payload_bytes = URL_SAFE_NO_PAD.decode(payload_b64).ok()?;
     let payload: serde_json::Value = serde_json::from_slice(&payload_bytes).ok()?;
     payload
         .get("email")
@@ -399,8 +369,11 @@ fn extract_email_from_id_token(token: &str) -> Option<String> {
 }
 
 fn extract_codex_identity_from_auth_json() -> Option<String> {
-    let path = dirs::home_dir()?.join(".codex/auth.json");
-    let content = std::fs::read_to_string(path).ok()?;
+    codex_identity_in(&crate::codex_rollout::codex_home()?)
+}
+
+fn codex_identity_in(home: &std::path::Path) -> Option<String> {
+    let content = std::fs::read_to_string(home.join("auth.json")).ok()?;
     let root: serde_json::Value = serde_json::from_str(&content).ok()?;
     let id_token = root.get("tokens")?.get("id_token")?.as_str()?;
     extract_email_from_id_token(id_token)
@@ -480,7 +453,7 @@ fn parse_cursor_status_json(out: &ProbeOutput) -> Option<AuthState> {
         return Some(AuthState::disconnected());
     }
     if value.get("hasAccessToken").and_then(|v| v.as_bool()) == Some(false) {
-        return Some(AuthState::unknown("Cursor holds no access token"));
+        return Some(AuthState::unknown(AuthReason::NoAccessToken));
     }
     let message = json_text(&value, "message");
     let identity = json_text(&value, "email")
@@ -493,9 +466,10 @@ fn parse_cursor_status_json(out: &ProbeOutput) -> Option<AuthState> {
     if let Some(identity) = identity {
         return Some(AuthState::connected(Some(identity), None));
     }
-    Some(AuthState::connected_unverified(message.unwrap_or_else(
-        || "Cursor did not confirm the account with its server".to_string(),
-    )))
+    Some(AuthState::connected_unverified(match message {
+        Some(detail) => AuthReason::CliSaid { detail },
+        None => AuthReason::NotConfirmedByServer,
+    }))
 }
 
 fn parse_cursor_auth_output(out: &ProbeOutput) -> AuthState {
@@ -525,7 +499,9 @@ fn parse_cursor_auth_output(out: &ProbeOutput) -> AuthState {
         return unrecognized("cursor", out);
     }
     let first_line = text.lines().next().unwrap_or(text);
-    AuthState::connected_unverified(first_line.chars().take(REASON_LIMIT).collect())
+    AuthState::connected_unverified(AuthReason::CliSaid {
+        detail: first_line.chars().take(REASON_LIMIT).collect(),
+    })
 }
 
 fn check_codex_auth() -> AuthState {
@@ -534,7 +510,7 @@ fn check_codex_auth() -> AuthState {
 
 fn check_codex_auth_with(binary: &str, budget: Budget) -> AuthState {
     let candidates: [&[&str]; 2] = [&[binary, "login", "status"], &[binary, "status"]];
-    let mut last = AuthState::unknown("the CLI gave no status");
+    let mut last = AuthState::unknown(AuthReason::NoStatus);
     for args in candidates {
         let out = match run_auth("codex", args, budget) {
             Ok(out) => out,
@@ -706,47 +682,41 @@ fn parse_codex_auth_output(out: &ProbeOutput) -> AuthState {
 
 #[tauri::command]
 pub async fn refresh_provider_status() -> Result<ProviderStatus, ProviderStatusError> {
-    refresh_status(detect_claude).await
+    refresh_status("anthropic").await
 }
 
 #[tauri::command]
 pub async fn refresh_cursor_status() -> Result<ProviderStatus, ProviderStatusError> {
-    refresh_status(detect_cursor).await
+    refresh_status("cursor").await
 }
 
 #[tauri::command]
 pub async fn refresh_codex_status() -> Result<ProviderStatus, ProviderStatusError> {
-    refresh_status(detect_codex).await
+    refresh_status("codex").await
 }
 
 #[tauri::command]
 pub async fn refresh_gemini_status() -> Result<ProviderStatus, ProviderStatusError> {
-    refresh_status(detect_gemini).await
+    refresh_status("gemini").await
 }
 
 #[tauri::command]
 pub async fn refresh_openrouter_status() -> Result<ProviderStatus, ProviderStatusError> {
-    let mut status = refresh_status(detect_opencode).await?;
-    status.id = "openrouter".to_string();
-    Ok(status)
+    refresh_status("openrouter").await
 }
 
 #[tauri::command]
 pub async fn refresh_moonshot_status() -> Result<ProviderStatus, ProviderStatusError> {
-    let mut status = refresh_status(detect_opencode).await?;
-    status.id = "moonshot".to_string();
-    Ok(status)
+    refresh_status("moonshot").await
 }
 
 #[tauri::command]
 pub async fn refresh_opencode_status() -> Result<ProviderStatus, ProviderStatusError> {
-    refresh_status(detect_opencode).await
+    refresh_status("opencode").await
 }
 
-async fn refresh_status(
-    detect: fn() -> ProviderStatus,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    tauri::async_runtime::spawn_blocking(detect)
+async fn refresh_status(provider_id: &'static str) -> Result<ProviderStatus, ProviderStatusError> {
+    tauri::async_runtime::spawn_blocking(move || detect_provider(provider_id))
         .await
         .map_err(|err| ProviderStatusError::JoinFailed(err.to_string()))
 }
@@ -755,15 +725,9 @@ async fn refresh_status(
 // the lifecycle PTY exit handler in provider_lifecycle.rs). Kept private so
 // only the async Tauri command shape leaks into the JS surface.
 pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
-    match provider_id {
-        "anthropic" => check_claude_auth(),
-        "cursor" => check_cursor_auth(),
-        "codex" => check_codex_auth(),
-        "gemini" => check_gemini_auth(),
-        "opencode" => check_opencode_auth(),
-        "openrouter" => check_openrouter_auth(),
-        "moonshot" => check_moonshot_auth(),
-        _ => AuthState::unknown("unknown provider"),
+    match spec::spec_of(provider_id) {
+        Some(spec) => (spec.check_auth)(),
+        None => AuthState::unknown(AuthReason::UnknownProvider),
     }
 }
 
@@ -775,11 +739,14 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
 pub async fn check_provider_auth(provider_id: String) -> AuthState {
     tauri::async_runtime::spawn_blocking(move || check_provider_auth_blocking(&provider_id))
         .await
-        .unwrap_or_else(|_| AuthState::unknown("the check did not finish"))
+        .unwrap_or_else(|_| AuthState::unknown(AuthReason::CheckUnfinished))
 }
 
 #[cfg(all(test, unix))]
 mod fake_cli_tests;
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -915,11 +882,38 @@ mod tests {
     }
 
     #[test]
-    fn base64url_decode_roundtrip() {
-        let payload = b"{\"email\":\"a@b.com\"}";
-        let encoded = base64url_encode(payload);
-        let decoded = super::base64url_decode(&encoded).unwrap();
-        assert_eq!(decoded, payload);
+    fn the_codex_identity_comes_from_the_directory_it_is_given() {
+        let dir = std::env::temp_dir().join(format!("goodboy-codex-home-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let payload = base64url_encode(b"{\"email\":\"mia@harborline.example\"}");
+        let token = format!("h.{payload}.s");
+        std::fs::write(
+            dir.join("auth.json"),
+            format!("{{\"tokens\":{{\"id_token\":\"{token}\"}}}}"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            super::codex_identity_in(&dir),
+            Some("mia@harborline.example".to_string())
+        );
+        assert_eq!(super::codex_identity_in(&dir.join("missing")), None);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_json_string_is_read_by_a_parser_not_by_substring() {
+        let out = "Logged in\n{\"note\":\"\\\"email\\\": x\",\"email\":\"mia@harborline.example\"}";
+        assert_eq!(
+            super::extract_json_string(out, "email"),
+            Some("mia@harborline.example".to_string())
+        );
+        assert_eq!(
+            super::extract_json_string("{\"email\":\"\"}", "email"),
+            None
+        );
+        assert_eq!(super::extract_json_string("email: a@b.c", "email"), None);
+        assert_eq!(super::extract_json_string("{\"email\": 5}", "email"), None);
     }
 
     #[test]
@@ -1127,7 +1121,7 @@ mod tests {
     fn claude_empty_output_is_unknown_with_the_exit_code_as_reason() {
         let s = parse_claude_auth_output(&out(Some(2), ""));
         assert_eq!(s.state, AuthStateKind::Unknown);
-        assert_eq!(s.reason.as_deref(), Some("the CLI exited with code 2"));
+        assert_eq!(s.reason, Some(AuthReason::ExitedWithCode { code: 2 }));
     }
 
     #[test]
@@ -1139,7 +1133,12 @@ mod tests {
     #[test]
     fn codex_unrecognized_output_keeps_the_first_line_as_reason() {
         let s = parse_codex_auth_output(&out(Some(0), "whatever new wording\nsecond line\n"));
-        assert_eq!(s.reason.as_deref(), Some("whatever new wording"));
+        assert_eq!(
+            s.reason,
+            Some(AuthReason::CliSaid {
+                detail: "whatever new wording".into()
+            })
+        );
     }
 
     #[test]
@@ -1166,9 +1165,18 @@ mod tests {
         assert_eq!(s.state, AuthStateKind::Connected);
         assert!(!s.verified);
         assert_eq!(
-            s.reason.as_deref(),
-            Some("Logged in (unable to fetch user details)")
+            s.reason,
+            Some(AuthReason::CliSaid {
+                detail: "Logged in (unable to fetch user details)".into()
+            })
         );
+    }
+
+    #[test]
+    fn cursor_json_without_a_message_or_email_says_the_server_did_not_confirm() {
+        let json = r#"{"isAuthenticated":true,"hasAccessToken":true}"#;
+        let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
+        assert_eq!(s.reason, Some(AuthReason::NotConfirmedByServer));
     }
 
     #[test]
@@ -1183,6 +1191,7 @@ mod tests {
         let json = r#"{"isAuthenticated":true,"hasAccessToken":false,"message":"Logged in"}"#;
         let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
         assert_eq!(s.state, AuthStateKind::Unknown);
+        assert_eq!(s.reason, Some(AuthReason::NoAccessToken));
     }
 
     #[test]
@@ -1218,8 +1227,10 @@ mod tests {
         assert_eq!(s.state, AuthStateKind::Connected);
         assert!(!s.verified);
         assert_eq!(
-            s.reason.as_deref(),
-            Some("Logged in (unable to fetch user details)")
+            s.reason,
+            Some(AuthReason::CliSaid {
+                detail: "Logged in (unable to fetch user details)".into()
+            })
         );
     }
 
@@ -1227,7 +1238,12 @@ mod tests {
     fn cursor_unrecognized_text_keeps_a_reason() {
         let s = parse_cursor_auth_output(&out(Some(1), "some unexpected banner line\n"));
         assert_eq!(s.state, AuthStateKind::Unknown);
-        assert_eq!(s.reason.as_deref(), Some("some unexpected banner line"));
+        assert_eq!(
+            s.reason,
+            Some(AuthReason::CliSaid {
+                detail: "some unexpected banner line".into()
+            })
+        );
     }
 
     #[test]
@@ -1253,10 +1269,52 @@ mod tests {
 
     #[test]
     fn auth_state_serializes_verified_and_reason() {
-        let value = serde_json::to_value(AuthState::connected_unverified("local only".into()))
-            .expect("serializes");
+        let value = serde_json::to_value(AuthState::connected_unverified(AuthReason::CliSaid {
+            detail: "local only".into(),
+        }))
+        .expect("serializes");
         assert_eq!(value["state"], "connected");
         assert_eq!(value["verified"], false);
-        assert_eq!(value["reason"], "local only");
+        assert_eq!(
+            value["reason"],
+            serde_json::json!({ "kind": "cli_said", "detail": "local only" })
+        );
+    }
+
+    #[test]
+    fn a_spawn_that_is_not_a_missing_binary_keeps_the_os_detail() {
+        let err = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
+        assert_eq!(
+            spawn_failure_reason(&err),
+            AuthReason::SpawnFailed {
+                detail: err.to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn a_missing_binary_is_not_installed() {
+        let err = std::io::Error::from(std::io::ErrorKind::NotFound);
+        assert_eq!(spawn_failure_reason(&err), AuthReason::NotInstalled);
+    }
+
+    #[test]
+    fn output_with_no_text_names_the_exit() {
+        assert_eq!(output_reason(&out(Some(0), "")), AuthReason::PrintedNothing);
+        assert_eq!(output_reason(&out(None, "")), AuthReason::NoExitCode);
+    }
+
+    #[test]
+    fn an_unknown_provider_has_its_own_reason() {
+        assert_eq!(
+            check_provider_auth_blocking("nope").reason,
+            Some(AuthReason::UnknownProvider)
+        );
+    }
+
+    #[test]
+    fn an_empty_command_has_its_own_reason() {
+        let state = run_auth("codex", &[], AUTH_BUDGET).expect_err("no command");
+        assert_eq!(state.reason, Some(AuthReason::EmptyCommand));
     }
 }

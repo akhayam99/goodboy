@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
-import { Button, ConfirmPopover, Notice, formatError } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
+
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { useNow } from '../../../../shared/hooks/useNow';
 

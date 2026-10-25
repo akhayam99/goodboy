@@ -8,10 +8,10 @@ fn export_excludes_workspace_owned_rows_from_a_disconnected_workspace() {
     let conn = export_conn();
     conn.execute_batch(
         "INSERT INTO workspaces
-           (id, name, created_at, updated_at, disconnected_at)
+           (id, name, slug, created_at, updated_at, disconnected_at)
          VALUES
-           ('active', 'Active', 1, 1, NULL),
-           ('gone', 'Gone', 1, 1, 1);
+           ('active', 'Active', 'active', 1, 1, NULL),
+           ('gone', 'Gone', 'gone', 1, 1, 1);
          INSERT INTO skills
            (id, workspace_id, name, description, file_path, body, frontmatter_json,
             created_at, updated_at)
@@ -63,7 +63,7 @@ fn export_excludes_workspace_owned_rows_from_a_disconnected_workspace() {
 fn folder_paths_group_off_by_default_omits_project_root_path() {
     let conn = export_conn();
     conn.execute_batch(
-        "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);
          INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
          VALUES ('p', 'w', 'ledger-core', '/nerd/ledger-core', 'repo', 1, 1);",
     )
@@ -87,7 +87,7 @@ fn folder_paths_group_off_by_default_omits_project_root_path() {
 fn orchestrated_workflows_stay_out_unless_selected() {
     let conn = export_conn();
     conn.execute_batch(
-        "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);
          INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, origin)
          VALUES
            ('yours', 'w', 'Mine', 'd', 1, 1, NULL),
@@ -123,7 +123,7 @@ fn orchestrated_workflows_stay_out_unless_selected() {
 fn preview_reports_open_findings_the_writer_can_leave_out() {
     let conn = export_conn();
     conn.execute_batch(
-        "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('w', 'W', 'w', 1, 1);
          INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
          VALUES ('p', 'w', 'ledger-core', '/repo/ledger-core', 'repo', 1, 1);
          INSERT INTO project_scripts (id, project_id, name, body, created_at, updated_at)

@@ -83,7 +83,7 @@ const SLOW_TIME = workTime({
 });
 
 const TRIGGER_CLASSES =
-  'inline-flex h-7 items-center justify-center rounded-md border border-border-soft px-2 text-label text-muted-foreground';
+  'inline-flex h-7 items-center justify-center rounded-md border border-border-soft px-2 text-meta text-muted-foreground';
 
 export const RailChatCardsStage = () => (
   <div

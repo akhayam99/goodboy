@@ -1,4 +1,5 @@
 import { CommandError, invokeCommand } from '../../shared/lib/invokeCommand';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { BranchMergeState } from './worktree';
 
 export type BranchCleanupError =
@@ -26,6 +27,8 @@ type BranchDeleteArgs = {
   readonly expectedSha: string;
   readonly alsoOrigin: boolean;
   readonly originLeaseSha?: string;
+  readonly workspaceId?: WorkspaceId;
+  readonly projectId?: ProjectId;
 };
 
 export const deleteBranchChecked = async (args: BranchDeleteArgs): Promise<BranchDeleteOutcome> =>
@@ -37,6 +40,8 @@ type BranchRestoreArgs = {
   readonly sha: string;
   readonly keepRef: string;
   readonly pushToOrigin: boolean;
+  readonly workspaceId?: WorkspaceId;
+  readonly projectId?: ProjectId;
 };
 
 export const restoreDeletedBranch = async (
@@ -86,11 +91,6 @@ export const asBranchCleanupError = (error: unknown): BranchCleanupError | null 
     : null;
 };
 
-export const isMergedState = (state: BranchMergeState): boolean =>
-  state.kind === 'merged-via-merge' ||
-  state.kind === 'merged-via-rebase' ||
-  state.kind === 'merged-via-pr';
-
 export type BranchLocation = 'on-origin' | 'local-only' | 'gone-on-origin';
 
 export type ProjectBranch = {
@@ -100,6 +100,7 @@ export type ProjectBranch = {
   readonly lastCommitAt: number | null;
   readonly location: BranchLocation;
   readonly mergeState: BranchMergeState;
+  readonly isSafeToDelete: boolean;
   readonly behind: number | null;
 };
 

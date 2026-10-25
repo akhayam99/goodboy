@@ -7,13 +7,9 @@
     "notices": 1,
     "emptyLines": 0
   },
-  "apps/desktop/src/features/review/components/ReviewPane/WriteReview/LineComment.tsx": {
+  "apps/desktop/src/features/review/components/WriteReview/LineComment.tsx": {
     "notices": 1,
     "emptyLines": 0
-  },
-  "apps/desktop/src/features/session/components/SessionKickoff/TaskStart.tsx": {
-    "notices": 0,
-    "emptyLines": 1
   },
   "packages/ui/src/components/StatCard.tsx": {
     "notices": 1,

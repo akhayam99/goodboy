@@ -40,7 +40,7 @@ return `turnReady` with their values. Side effects run in the order below.
 7. `readTurnStream`: one loop over the CLI events.
 8. `finalizeTurnStream`: span, run status, workflow completion, context refresh.
 9. `recoverTurnFailure`: failure class, cooldown, fallback rerun, usage-limit
-   retry, error state.
+   stop, error state.
 10. `closeTurnCapture` (always) and `settleTurn`: assistant message, summary,
     artifacts, nudges, drift, resolve phase, then the stored error is thrown.
 
@@ -185,6 +185,18 @@ record a live turn already wrote wins.
 
 ## What the prompt carries
 
+- **History for a provider that keeps none.** Cursor, Codex and Gemini get the
+  conversation as a block of prior turns (`buildPriorTurnsBlock`), capped at
+  `PRIOR_TURNS_BUDGET_TOKENS` (8,000 estimated tokens, `preamble.ts`). It walks
+  newest first. The original request (the first user message) is always
+  carried, shortened to a quarter of the budget when it is longer. A newest
+  message that alone is over the budget is carried cut, ending with
+  `[shortened: n characters left out]`. A gap in the middle reads
+  `[n older turns left out]`. The function returns `{ text, carried, leftOut,
+isShortened }`, never an empty block with nothing said. When a turn moves to
+  another provider, or starts a handoff agent, and something was left out, the
+  transcript gets a note: "Carried over: 6 turns, the plan, 2 notes; left out:
+  14 older turns." (`handoffNoticeMessage`).
 - The system prompt is the guards (write scope, session language, connected
   integrations, workspace profile) followed by the agent kind's own prompt.
   Claude receives it as an appended system prompt; every other CLI receives it
@@ -204,13 +216,13 @@ record a live turn already wrote wins.
   turn does not emit it again, and the transcript shows one row for a
   transition repeated with nothing between but failure notices.
 - The session's context slots are prepended, filtered by what the turn's role
-  reads (`ROLE_SLOTS` in `slot-routing.ts`, one entry per role, so a new role
+  reads (`ROLE_SLOTS` in `slotRouting.ts`, one entry per role, so a new role
   does not compile without one). The role is the step's role, or the one the
   agent kind maps to; the same role picks the profile fields. Active
   `session_context_items` whose audience names the role follow the slots as
   "notes for your role". Both are resolved once per turn, before the prompt is
-  built. Setting `context.roleMap` to `false` goes back to the per-kind map and
-  sends no items. An Auto child of brief version 2 (`briefVersion` in the
+  built. A stored `context.roleMap` value is ignored: the role map is the
+  only map (see [versioning.md](versioning.md), Retired state). An Auto child of brief version 2 (`briefVersion` in the
   turn input, from `request_json.briefVersion` of its delegation, see
   `docs/auto.md`) reads only the goal slot: `briefSlotsOf` replaces the role's
   slots, so the decisions, open questions, files touched and session summary
@@ -385,7 +397,8 @@ continuation never resumes, because it runs in another directory.
   the keychain into the one variable its provider expects; the workspace's
   GitHub connection becomes `GH_TOKEN` and `GITHUB_TOKEN`; the bridge variables
   are injected per [query-bridge.md](query-bridge.md).
-- **The child is a clean process.** It takes PATH only
+- **The child is its own process, not a clean one.** It inherits the app's
+  environment with the resolved PATH on top
   ([architecture.md](architecture.md#subprocess-environment)), the variables a
   parent Claude session would leak are removed, and it runs in its own process
   group, so cancelling a turn stops everything it started.
@@ -398,7 +411,12 @@ continuation never resumes, because it runs in another directory.
   (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
   live list cannot be read, the turn and the agent stay running with nothing
   marked stopped, the error shows, the queue drains again when the turn ends,
-  and pressing Stop again retries. A refused cancel for a run that is already
+  and pressing Stop again retries. Every user Stop is also recorded in
+  `stopRequests.ts` (agent, run, instant) until the exit is confirmed, and
+  `useAgentStop` (`shared/hooks/`) turns it into the phase the square, the
+  header chip and the tail read: `stopping` at once, `stalled` after 5 s
+  (**Still stopping** with **Force stop**, the same call again). A request for
+  an earlier run never counts. A refused cancel for a run that is already
   gone counts as `exited`. `cancelCurrentTurn` with
   reason `user` calls it; `handoff` and `teardown` keep the old fire-and-idle
   path.
@@ -416,9 +434,12 @@ continuation never resumes, because it runs in another directory.
   Gemini and opencode lose their bypass flags. For `implementer`, `tester` and
   `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
   role is read-only. Before the spawn, `providers/cli_probe.rs` reads
-  `--version` and `--help` of the binary once per version and role access, and
+  `--version` and `--help` of the binary once per file (resolved path, size and
+  modification time, so an update is read again) and role access, and
   a CLI whose help does not list the flags the role depends on is refused with
-  `confinement_unproven`. Nothing sends `confinedRole` for today's agents; the
+  `confinement_unproven`. `turn_spawn`, `chat_turn` and `ask_turn` run the
+  probe, the keychain read and the spawn on the blocking pool, never on the
+  async runtime. Nothing sends `confinedRole` for today's agents; the
   Auto children do, and so does every turn of an Auto agent
   (`confinedRoleOf.ts`: the role `auto`). `auto` is in the same read-only list
   as `scout`, `planner`, `investigator` and `reviewer`: Auto runs read-only like
@@ -456,6 +477,27 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
   produced events but no response and exited non-zero fails the same way.
 - A turn that ends with no assistant text and no error appends a
   non-retryable "exited without a response" error.
+- **One listener per window.** Every envelope arrives on the `turn_event`
+  channel of the window; `features/chat/createRunEventRouter.ts` holds the one
+  listener and hands the envelope to the handler of its run
+  ([event-bus.md](event-bus.md) → Cross-window events).
+- **The store flush is coalesced and bounded.** `store/slices/transcripts/buffer.ts`
+  buffers events per agent and writes `assistant_text` deltas at most once per
+  window: 16 ms up to 1,000 rows in the agent's transcript, widening
+  linearly to 100 ms at 5,000 rows and beyond, because each write copies the
+  agent's array. Any other event kind flushes at once. The numbers the path is
+  held to are in `store/slices/transcripts/streamBudgets.ts`
+  ([testing.md](testing.md) → No stopwatch in the gate).
+- **Opening an agent reads twice and merges by id.** `selectAgent` shows the
+  last 50 stored events first (`STREAM_BUDGETS.initialTranscriptRows`), then
+  reads the whole history. Every event that goes through `appendTurnEvent`
+  carries the id of the `turn_events` row that stores it (`turnEventIds`; the
+  streamed deltas held by `queueTurnEventInsert` share the id of the row that
+  absorbs them). The full answer is `mergeTranscript`: the stored events, then
+  the live events whose id is not stored yet. So a live event is never dropped
+  and never shown twice, and an agent opened while it streams gets its history
+  back. One claim per agent (`createLatestOnly`) drops the answer of an older
+  open once a newer one started.
 
 ## Text reveal
 
@@ -568,7 +610,7 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
 - Partial output: a turn of Claude or Cursor spawns with
   `--include-partial-messages` or `--stream-partial-output` when
   `cli_probe::partial_output_args` finds the flag in the CLI's `--help` (once
-  per binary and version, in `spawn_one`; side jobs keep their argv). The
+  per file, in `spawn_one`; side jobs keep their argv). The
   workspace chat and Ask (`chat.rs` `spawn_chat_turn`) add the same flag after
   their read only argv is checked, just before the single `--`, so a Claude
   chat or Ask answer streams too; Codex has no flag there. An old CLI, a failed
@@ -598,12 +640,22 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   A spawn that fails gives the id back. `turn_delivery_lookup(deliveryId)`
   (`lookupDeliveryRun`) answers the run and whether it is still live, for as
   long as the app process lives; the newest 2048 deliveries are remembered and
-  a live run is never forgotten. Only Auto sends one, and Auto is switched off.
+  a live run is never forgotten. Every hand-sent turn passes one too:
+  `sendTurn` mints `hand:<uuid>` for a turn the caller gave none (and for
+  every fallback retry, which is a new attempt), and a caller that sends the
+  same message twice gives the same id (the queue sends `queue:<id>`). A second
+  send of a known id never starts a run: `sendTurn` first asks
+  `turn_delivery_lookup` and keeps the ids it is sending in this window, and
+  answers `isAlreadySent` without a second user message. When the backend
+  still refuses the spawn with `delivery_duplicate` (another window won), the
+  transcript says "This message was already sent." and no fallback starts. No
+  outbox table: a crash ends as "Stopped by restart" with Resume. Auto sends
+  its own ids, and Auto is switched off.
   A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
   planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
   attempt id of a child), and `onSettled`, which
   `settleTurn` calls once with the text, the failure or cancel flag and the files
-  the turn touched. `store/slices/auto/startAutoTurn.ts` waits for the delivery
+  the turn touched. `store/runtime/auto/startAutoTurn.ts` waits for the delivery
   to appear in `turn_delivery_lookup` before it calls the turn accepted.
 - **The window that streams a turn owns it.** `runTurn` and `attachTurn`
   share one stream core (`features/chat/turn.ts`). After every event it hands
@@ -676,18 +728,11 @@ glyph, the phrase, the clock and the actions. Each operation has one adapter in
 truth, and a header word or a rail row of the same host reads the same
 adapter.
 
-| Adapter              | Operation                               |
-| -------------------- | --------------------------------------- |
-| `agentTurnLive`      | a plain agent or chat turn              |
-| `autoTreeLive`       | Auto's tree phase and its root turn     |
-| `autoChildLive`      | a child Auto started                    |
-| `checkFixLive`       | a CI fix on one check                   |
-| `workflowRunLive`    | a preset run step                       |
-| `fixRunLive`         | a fix run on review comments            |
-| `cleanupLive`        | closing a merged worktree               |
-| `draftStartLive`     | starting a session from a draft         |
-| `processStopLive`    | stopping a process from Monitoring      |
-| `historyRewriteLive` | planning and applying a history rewrite |
+| Adapter         | Operation                           |
+| --------------- | ----------------------------------- |
+| `agentTurnLive` | a plain agent or chat turn          |
+| `autoTreeLive`  | Auto's tree phase and its root turn |
+| `autoChildLive` | a child Auto started                |
 
 Rules the adapters hold, each with a test in `adapters.test.ts`:
 
@@ -695,7 +740,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   never the command text: "Running pnpm in payments-api", "Reading export.ts",
   "Searching the code", "Writing the answer" (`workingPhraseOf`).
 - The clock shows execution time, never the time spent waiting on you. A run
-  step tail (`workflowRunLive`, `runTailOf`, `orchestratedTailOf`) names the
+  step tail (`runTailOf`, `orchestratedTailOf`) names the
   step in `stepAgentId`, and `TailLine` reads the step's active time from the
   `WorkTimeContext` source through `agentActiveClock`, the function the step
   row reads too, so the two always show one value; without that source it
@@ -716,8 +761,11 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   running node (the ring with a pulsing dot the run tree uses), `waiting` an
   info ring, `needsYou` the question node, `paused`, `failed` and `stopped`
   their nodes, `idle` a gray dot.
-- Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
-  step (a run step), Stop Auto and its agents. Stopping offers no Stop.
+- Stop is one word for the open agent: Stop (a turn, a child or a fix). The
+  scope stays in the label only where the object is not the open agent: Stop
+  step (a run step), Stop Auto and its agents. `stopping` is its own tail
+  state (a ring, a clock that keeps counting, no shimmer): the phrase reads
+  Stopping with a busy Stop, then Still stopping with Force stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.
 - An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline, one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
 - A finished turn draws no tail: it is read from its summary line.
@@ -895,6 +943,22 @@ latest" or a manual scroll to the bottom during the reveal goes back to
 following the bottom until the reveal ends. The old rule, always stick to the
 bottom while pinned, still holds for everything that is not a revealing answer.
 
+"Jump to latest" (`JumpToLatest`) is mounted all the time. While you are at the
+bottom, or a question waits and its pill shows instead, it is `inert`,
+`aria-hidden` and at zero opacity; when you scroll up it fades in over
+`--duration-quick` on `--ease-enter` (nothing under reduced motion) instead of
+mounting, so it never pops in during streaming. It is an `IconButton`, so it
+has the shared focus ring and tooltip.
+
+A hairline with the word **New** (`NewRowsDivider`) marks where the unseen rows
+begin when you open an agent that has a reply you have not read. `selectAgent`
+keeps the agent's previous `lastViewedAt` in `agentUnseenSince` before it stamps
+the agent as viewed (`unseenBoundariesOf`: kept while the same agent stays
+selected, dropped when you select another agent, never set for an agent never
+viewed, where every row is new), and `firstUnseenRowKeyOf` puts the divider
+before the row after the last row dated at or before that moment, only when a
+later dated row exists.
+
 Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
 `auto <px>`: the height last measured for that agent, mode and row key
 (`ChatView/rowHeightCache.ts`, written by the anchor hook from each row's
@@ -940,8 +1004,12 @@ repeats; the transcript keeps the first error banner with its notice and drops
 a later pair that is identical (same provider, same move). A different move
 shows again. A usage limit
 with no fallback notifies, and when the provider names its reset time it
-schedules one retry on the same model at that time. Any other failure leaves
-the agent in `error` with a retryable error event.
+records a limit stop (`store/slices/limitStops/`) holding the request. The
+error row then offers **Continue at** that time next to **Retry**. Nothing is
+scheduled until the person clicks: `continueAfterLimit` starts one timer, the
+timer sends the stored request once on the same model, and `cancelLimitContinue`
+stops it. A new message to the same agent, or a newer stop, drops the offer.
+Any other failure leaves the agent in `error` with a retryable error event.
 
 ## Turn spans
 
@@ -952,6 +1020,7 @@ the agent in `error` with a retryable error event.
 - Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace.
 - m184 rebuilt spans once for the succeeded runs from before spans existed, so estimates start from real history. It ties a run to its agent through the run's `done` turn event, or the agent's last `provider_run_id` when the events were pruned, and takes the provider run's own `created_at` to `finishedAt`, the machine time of that run. A backfilled span has `effort` null, because runs never stored the effort flag, so its row shows the planned effort in faint and it only counts toward the tiers without effort. The migration fills a helper table in one pass over `turn_events`, then inserts in 17 chunks by the last character of the run id, each committed on its own, and never overwrites a span the app recorded.
 - `touched_mount_ids` lists the session mounts the turn changed, as a JSON array (null on spans from before it was recorded). `collectTouchedMounts` joins two signals. Every `file_edit` path the CLI reported maps to the innermost mount that holds it. On top of that, `snapshotMountChanges` reads each writable mount's numstat (`worktreeChangedFiles`) right before the CLI starts and again at the end, and a mount whose numstat moved counts too, which catches edits made through the shell. The numstat signal is dropped when another agent of the session was running at the end of the turn or closed a turn during it (`hasOtherSessionTurnSince`), because the change could be theirs. Gemini reports no `file_edit`, so its turns rely on the numstat signal alone. A failure never fails the turn; it falls back to the reported edits.
+- `turn_file_sets` holds the files a turn wrote, one row per run and mount (migration 237), kept for a Done row to say what a turn did on a branch once those rows are mounted. `beginTurnFileSets` reads `worktree_snapshot` (head and the hash of every dirty file) of each writable mount right before the CLI starts, and `recordTurnFileSets` asks `worktree_turn_files` for the set when the turn ends, in the finished and the failed path, without holding the turn back. The set is the files committed or edited since that snapshot, minus the ones only the base branch changed (the branch's own diff from its merge base decides), plus any file whose hash moved while it was dirty; a file that was dirty and unchanged is left out. Counts come from the numstat against the head at the start. Files that only the base changed are kept as `fromBase`, so a row can say how many it hid. Nothing is recorded for a turn that ran beside another agent (`isTurnShared`), and a failure is reported, never fatal.
 - The activity feed shows these mounts on an agent row (`useAgentTouchedWorktrees`, union over the agent's spans) only when the session has two or more mounts. The row shows the worktree icon and a count, never a name that the title would have to share space with; the tooltip and accessible name list the mounts. A mount that left the session drops out of the row.
 - After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.
 - `listAgentTurnSpanRoutes` reads a session's spans back as routes (run, agent, provider, model, effort) when the session opens. That is where the observed effort in the activity meta, the run tree and the agent header comes from after a reload.
@@ -1051,7 +1120,7 @@ budget`).
   it a Cursor quota or sign-in failure read as a bare exit code.
 - **Summarizer failed** raises only when every allowed model failed. It names
   the cause in plain words (`Cursor reached the usage limit for this account.`,
-  `Cursor is not signed in.`, a generic line for anything unclassified), never
+  `Cursor isn't signed in.`, a generic line for anything unclassified), never
   the raw CLI line. The raw message stays in the session's summarizer status. It
   raises once per session (`summarizer-failed:<sessionId>`): while one is unread
   the same session adds no second one. A later successful pass clears it.
@@ -1142,10 +1211,19 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   session's selected agent, with it (a drawer) every hook uses that agent.
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
-  same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
+  shared `SendStopControl` (`shared/components/SendStopControl`, named **Send**,
+  28px, the `composer.send` shortcut in its tooltip) while idle, the same button
+  the Ask and Chat composers use, and Send now/Queue
   (Queue primary, both disabled until there is something to deliver) for as
-  long as a turn runs. Stop is not in the composer: it is the conversation
-  tail (`ConversationTail`) under the last turn.
+  long as a turn runs. The same `SendStopControl` sits before them as the Stop square
+  (`stop={{ isStopping, isStalled, isArmed, shortcut, onStop }}`), busy
+  as Stopping while the process exits and Force stop once it stalls; Esc
+  twice does the same (`useEscapeStop`, id `agent.stop`): the first press
+  shows "Esc again to stop" for 3 s, the second stops, and any open menu,
+  drawer or dialog (`transientEscapeLayerCount`, `isOverlayOpen`) takes the
+  key first. The page level layer that goes up is a base layer and does not
+  count. The conversation tail (`ConversationTail`) and a live chip in the
+  agent header (`AgentLiveChip`) carry the same Stop.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft
@@ -1255,7 +1333,7 @@ the run moves on.
 A workspace chat asks the provider a question without a session, an agent or a
 worktree. It has its own pipeline next to the session turn:
 `apps/desktop/src/store/slices/chats/` drives it,
-`apps/desktop/src/features/workspace-chat/runChatTurn.ts` reads the stream,
+`apps/desktop/src/features/conversation/streamChatTurn.ts` reads the stream,
 and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 
 - **Always read-only, Claude or Codex only.** `chat_turn` reuses the session
@@ -1274,7 +1352,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
     stays text.
   - Codex runs with `--ignore-user-config`, `--ignore-rules`, `--ephemeral`
     and `-c mcp_servers={}`, and Rust picks the sandbox from
-    `codex --version` on every turn:
+    the `codex --version` that `cli_probe::version_cached` keeps per file:
     - 0.160.0 and newer: no `-s` flag, a permission profile instead,
       `-c default_permissions="goodboy-ask"` and one inline table
       `-c permissions.goodboy-ask.filesystem={":minimal"="read","<root>"="read",...}`
@@ -1313,7 +1391,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   images back in the box. The frontend sends only `images: true` and the new
   message id, never a path: Rust reads the chat's image rows and hard links
   (or copies) them into a fresh temporary root, `goodboy-chat/<run id>/` in
-  the system temp folder, read-only, which it removes when the turn ends.
+  the system temp folder, owner-only and read-only (folder `0500`, files
+  `0400`, the `goodboy-chat` folder above it `0700`), which it removes when the
+  turn ends or staging fails. A root a crash left behind is swept at startup
+  (`proc::reap::sweep_stale_turn_dirs`, six hours old).
   `~/.goodboy` stays on Claude's deny list, so the agent never reads the
   store itself. Claude gets the root as one more `--add-dir`, never as the
   working folder and never when it sits inside a project, and the prompt ends
@@ -1443,7 +1524,7 @@ stream reader) with a session scope: `ask_turn` in
   the home folder and its parents are dropped, as for Chat.
 - **The session files.** The frontend stages at most 40 Markdown files and
   512 KiB (agent transcript tails). Names are one or two plain segments
-  ending in `.md`, never hidden, never `..`. Rust writes them read-only into
+  ending in `.md`, never hidden, never `..`. Rust writes them owner-only and read-only into
   `goodboy-ask/<run id>/` in the system temp folder and removes the folder
   when the turn ends or fails to start. The prompt ends with the list of
   staged files and the worktree paths.

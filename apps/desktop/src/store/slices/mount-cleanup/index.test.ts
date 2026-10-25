@@ -413,31 +413,35 @@ describe('the directory cleanup policy', () => {
   });
 });
 
-describe('what a running fix holds', () => {
-  type AttemptFixture = {
-    readonly phase: string;
-    readonly mountTarget: { readonly mountId: MountId; readonly worktreePath: string } | null;
-  };
+type AttemptFixture = {
+  readonly phase: string;
+  readonly mountTarget: { readonly mountId: MountId; readonly worktreePath: string } | null;
+};
 
-  const blockersFor = ({
+type BlockersParams = {
+  readonly mountId: MountId;
+  readonly worktreePath: string;
+  readonly attempt?: AttemptFixture;
+  readonly tabs?: ReadonlyArray<Record<string, unknown>>;
+};
+
+const blockersFor = ({ mountId, worktreePath, attempt, tabs }: BlockersParams) => {
+  const state = makeState();
+  if (attempt !== undefined) {
+    state['sessionResolveAttempts'] = { [SESSION_ID]: [attempt] };
+  }
+  if (tabs !== undefined) {
+    state['terminalTabs'] = { [SESSION_ID]: tabs };
+  }
+  return mountCleanupBlockers({
+    state: state as never,
+    sessionId: SESSION_ID,
     mountId,
     worktreePath,
-    attempt,
-  }: {
-    readonly mountId: MountId;
-    readonly worktreePath: string;
-    readonly attempt: AttemptFixture;
-  }) => {
-    const state = makeState();
-    state['sessionResolveAttempts'] = { [SESSION_ID]: [attempt] };
-    return mountCleanupBlockers({
-      state: state as never,
-      sessionId: SESSION_ID,
-      mountId,
-      worktreePath,
-    });
-  };
+  });
+};
 
+describe('what a running fix holds', () => {
   const runningOn = ({
     mountId,
     worktreePath,
@@ -477,5 +481,36 @@ describe('what a running fix holds', () => {
         attempt: { phase: 'running', mountTarget: null },
       }),
     ).toEqual(['agent-running']);
+  });
+});
+
+describe('what an open terminal holds', () => {
+  const tab = (patch: Record<string, unknown>) => ({
+    id: 'terminal-1',
+    owner: { kind: 'session', sessionId: SESSION_ID },
+    title: 'shell',
+    cwd: WORKTREE_PATH,
+    status: 'running',
+    createdAt: 1,
+    ...patch,
+  });
+
+  const blockersWith = (tabs: ReadonlyArray<Record<string, unknown>>) =>
+    blockersFor({ mountId: MOUNT_ID, worktreePath: WORKTREE_PATH, tabs });
+
+  it('holds a folder a live shell sits in', () => {
+    expect(blockersWith([tab({})])).toEqual(['terminal-open']);
+  });
+
+  it('lets a folder go whose shell already exited', () => {
+    expect(blockersWith([tab({ status: 'exited' })])).toEqual([]);
+  });
+
+  it('holds a folder a shell moved into a subfolder of', () => {
+    expect(blockersWith([tab({ cwd: `${WORKTREE_PATH}/src` })])).toEqual(['terminal-open']);
+  });
+
+  it('lets a folder go when the shell sits in a sibling with a similar name', () => {
+    expect(blockersWith([tab({ cwd: `${WORKTREE_PATH}-two` })])).toEqual([]);
   });
 });

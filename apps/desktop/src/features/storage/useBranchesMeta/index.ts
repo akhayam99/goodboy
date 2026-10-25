@@ -5,7 +5,7 @@ import { branchesMetaOf } from '../branches/branchesMetaOf';
 import type { BranchScope } from '../branches/branchScope';
 import { classifyBranchScan } from '../branches/classifyBranchScan';
 import { isListedBranch } from '../branches/classifyBranch';
-import { useBranchProjects } from '../useBranchProjects';
+import { useBranchProjects } from '../hooks/useBranchProjects';
 
 type Params = {
   readonly workspaceId: WorkspaceId;

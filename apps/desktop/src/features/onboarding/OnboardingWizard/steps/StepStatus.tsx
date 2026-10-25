@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const StepStatus = ({ tone, label, isPulsing = false }: Props) => (
-  <span className="flex shrink-0 items-center gap-2 text-label whitespace-nowrap text-muted-foreground">
+  <span className="flex shrink-0 items-center gap-2 text-meta whitespace-nowrap text-muted-foreground">
     <StatusDot
       tone={tone}
       size="sm"

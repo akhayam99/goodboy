@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { EmptyLine, Button, Collapsible, Notice } from '@goodboy/ui';
+import { Button, Collapsible, EmptyLine, ICON_SIZE, Notice, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -21,7 +21,6 @@ import {
   roundUsage,
   type ContextUpdatePhase,
 } from './contextUpdateCopy';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,7 +35,7 @@ const BUTTON_LABEL: Readonly<Record<ContextUpdatePhase, string>> = {
 };
 
 const TERM = 'text-meta text-faint-foreground';
-const VALUE = 'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-label text-foreground';
+const VALUE = 'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-foreground';
 
 export const ContextUpdates = ({ sessionId }: Props) => {
   const now = useNow(30_000);
@@ -132,7 +131,10 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                           <button
                             type="button"
                             onClick={() => openContextDrawer({ sessionId, tab: change.tab })}
-                            className="rounded-sm text-label text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                            className={cn(
+                              'rounded-sm text-meta text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground',
+                              FOCUS_RING,
+                            )}
                           >
                             {change.label}
                           </button>

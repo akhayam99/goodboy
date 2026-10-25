@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkflowDraft } from '../../../engine';
-import { WORKFLOW_AUTOSAVE_DELAY_MS, useWorkflowAutosave } from './index';
+import { useWorkflowAutosave } from './index';
 
 const draft = (name: string): WorkflowDraft =>
   ({ name, description: '', steps: [{ name: 'Plan' }] }) as unknown as WorkflowDraft;
@@ -42,9 +42,9 @@ describe('useWorkflowAutosave', () => {
     const form = draft('Release');
     const { rerender } = renderAutosave({ form, flush: first });
 
-    vi.advanceTimersByTime(WORKFLOW_AUTOSAVE_DELAY_MS / 2);
+    vi.advanceTimersByTime(700 / 2);
     rerender({ form, flush: latest });
-    vi.advanceTimersByTime(WORKFLOW_AUTOSAVE_DELAY_MS);
+    vi.advanceTimersByTime(700);
 
     expect(first).not.toHaveBeenCalled();
     expect(latest).toHaveBeenCalledTimes(1);
@@ -54,9 +54,9 @@ describe('useWorkflowAutosave', () => {
     const flush = vi.fn(async () => true);
     const { rerender } = renderAutosave({ form: draft('R'), flush });
 
-    vi.advanceTimersByTime(WORKFLOW_AUTOSAVE_DELAY_MS - 100);
+    vi.advanceTimersByTime(700 - 100);
     rerender({ form: draft('Re'), flush });
-    vi.advanceTimersByTime(WORKFLOW_AUTOSAVE_DELAY_MS - 100);
+    vi.advanceTimersByTime(700 - 100);
     expect(flush).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(100);
@@ -71,7 +71,7 @@ describe('useWorkflowAutosave', () => {
     rerender({ form: draft('  '), flush });
     rerender({ form: draft('Hotfix'), flush, isEditing: false });
 
-    vi.advanceTimersByTime(WORKFLOW_AUTOSAVE_DELAY_MS * 2);
+    vi.advanceTimersByTime(700 * 2);
 
     expect(flush).not.toHaveBeenCalled();
   });

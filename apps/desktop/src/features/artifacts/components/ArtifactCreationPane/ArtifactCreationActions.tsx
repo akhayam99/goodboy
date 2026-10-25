@@ -1,8 +1,8 @@
 import { Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover, FormActions, cn } from '@goodboy/ui';
+import { Button, cn, ConfirmPopover, FormActions, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+
+import { NAMES } from '../../../../shared/utils/names';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 import type { ArtifactCreationGate } from '../../artifactCreationGate';
 import { ArtifactRoutingControl } from './ArtifactRoutingControl';

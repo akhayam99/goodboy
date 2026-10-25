@@ -1,12 +1,9 @@
 import type { AutoPhase } from '@goodboy/db';
-import type { Agent, AgentId, MountId, Step } from '@goodboy/types';
+import type { Agent, AgentId, MountId, Step, TurnState } from '@goodboy/types';
 import { autoGroupOf, type AutoGroup } from '../../../auto/autoGroupOf';
 import { classifyStep, type AgentKind } from '../../agent-kind';
-import {
-  resolveAgentRowState,
-  type RowPhase,
-  type RowState,
-} from '../../../workTreeModel/rowState';
+import { agentStateOf } from '../../../workTreeModel/agentStateOf';
+import type { RowPhase, RowState } from '../../../workTreeModel/rowState';
 import { runWorkflowKind } from '../../timeline/runWorkflowKind';
 import {
   runStepCounts,
@@ -150,32 +147,37 @@ const stateOfPhase = ({ phase }: PhaseParams): LiveGroupState | null => {
   }
 };
 
-type ChildParams = {
+type TurnsParams = {
+  readonly turnByAgentId: ReadonlyMap<string, TurnState>;
+};
+
+type ChildParams = TurnsParams & {
   readonly entry: TimelineAgentEntry;
 };
 
-const childOf = ({ entry }: ChildParams): LiveChild => ({
+const childOf = ({ entry, turnByAgentId }: ChildParams): LiveChild => ({
   agentId: entry.agent.id,
   agentKind: entry.agentKind,
   title: entry.agent.name,
-  phase: resolveAgentRowState({
+  phase: agentStateOf({
     agent: entry.agent,
-    isAsking: entry.openQuestions.length > 0,
-    question: null,
-    isReadyStep: false,
-  }).phase,
+    turn: turnByAgentId.get(entry.agent.id) ?? null,
+    openQuestions: entry.openQuestions,
+  }).row.phase,
 });
 
-type LiveChildrenParams = {
+type WithDescendantsParams = {
   readonly entries: ReadonlyArray<TimelineAgentEntry>;
 };
 
-const withDescendantsOf = ({ entries }: LiveChildrenParams): ReadonlyArray<TimelineAgentEntry> =>
+type LiveChildrenParams = TurnsParams & WithDescendantsParams;
+
+const withDescendantsOf = ({ entries }: WithDescendantsParams): ReadonlyArray<TimelineAgentEntry> =>
   entries.flatMap((entry) => [entry, ...withDescendantsOf({ entries: entry.children })]);
 
-const liveChildrenOf = ({ entries }: LiveChildrenParams): ReadonlyArray<LiveChild> =>
+const liveChildrenOf = ({ entries, turnByAgentId }: LiveChildrenParams): ReadonlyArray<LiveChild> =>
   withDescendantsOf({ entries })
-    .map((entry) => childOf({ entry }))
+    .map((entry) => childOf({ entry, turnByAgentId }))
     .filter(
       (child) => child.phase === 'running' || child.phase === 'waiting' || child.phase === 'failed',
     );
@@ -239,16 +241,16 @@ const runGroupOf = ({ entry, rowState, model }: RunParams): LiveRunGroup | null 
     waitingStepNumber: waitingIndex === -1 ? null : waitingIndex + 1,
     failedStep: failedIndex === -1 ? null : stepOf({ steps, index: failedIndex }),
     isDeciding,
-    children: liveChildrenOf({ entries: runningEntries }),
+    children: liveChildrenOf({ entries: runningEntries, turnByAgentId: model.turnByAgentId }),
   };
 };
 
-type AgentParams = {
+type AgentParams = TurnsParams & {
   readonly entry: TimelineAgentEntry;
   readonly rowState: RowState;
 };
 
-const agentGroupOf = ({ entry, rowState }: AgentParams): LiveAgentGroup | null => {
+const agentGroupOf = ({ entry, rowState, turnByAgentId }: AgentParams): LiveAgentGroup | null => {
   const state = stateOfPhase({ phase: rowState.phase });
   if (state === null) {
     return null;
@@ -263,7 +265,7 @@ const agentGroupOf = ({ entry, rowState }: AgentParams): LiveAgentGroup | null =
     entry,
     rowState,
     counts: null,
-    children: liveChildrenOf({ entries: entry.children }),
+    children: liveChildrenOf({ entries: entry.children, turnByAgentId }),
   };
 };
 
@@ -325,6 +327,7 @@ const rowStatesOf = ({ model }: RowStatesParams): ReadonlyMap<string, RowState> 
     resolveFactsByAgentId: model.resolveFactsByAgentId,
     jobFactsByAgentId: model.jobFactsByAgentId,
     autoFactsByAgentId: model.autoFactsByAgentId,
+    turnByAgentId: model.turnByAgentId,
   });
   for (const item of stream.items) {
     if (item.kind === 'row' && !states.has(item.entry.id)) {
@@ -345,7 +348,7 @@ const groupOfEntry = ({ entry, rowState, model }: EntryParams): LiveGroupModel |
     return runGroupOf({ entry, rowState, model });
   }
   if (entry.kind === 'agent') {
-    return agentGroupOf({ entry, rowState });
+    return agentGroupOf({ entry, rowState, turnByAgentId: model.turnByAgentId });
   }
   return null;
 };
@@ -357,8 +360,13 @@ const STATE_RANK: Readonly<Record<LiveGroupState, number>> = {
   working: 3,
 };
 
-const compareGroups = (first: LiveGroupModel, second: LiveGroupModel): number =>
-  STATE_RANK[first.state] - STATE_RANK[second.state] || first.startedAt - second.startedAt;
+const compareGroups = (first: LiveGroupModel, second: LiveGroupModel): number => {
+  const byState = STATE_RANK[first.state] - STATE_RANK[second.state];
+  if (byState !== 0) {
+    return byState;
+  }
+  return first.startedAt - second.startedAt;
+};
 
 export const liveGroupsOf = ({ model, agents, now }: Params): ReadonlyArray<LiveGroupModel> => {
   const rowStates = rowStatesOf({ model });

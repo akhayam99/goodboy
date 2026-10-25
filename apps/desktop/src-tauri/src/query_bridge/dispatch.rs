@@ -272,14 +272,19 @@ fn named_project_id(app: &AppHandle, workspace_id: &str, name: &str) -> Result<S
 pub async fn dispatch(
     app: &AppHandle,
     request: &QueryRequest,
-    caller: super::auto_child::Caller,
+    peer: &super::auto_child::Peer,
 ) -> Result<Value, BridgeError> {
     if request.workspace_id.is_empty() {
         return Err("no workspace: pass --workspace <id>".into());
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
-    super::auto_child::refuse_act(&request.provider, &request.verb, caller)?;
+    super::auto_child::refuse_caller(spec, peer.caller)?;
+    super::auto_child::refuse_scope(
+        peer.scope.as_ref(),
+        &request.workspace_id,
+        &request.session_id,
+    )?;
     if request.provider == "project" {
         return super::project::materialize(app, request).await;
     }
@@ -318,9 +323,11 @@ pub async fn dispatch(
         Access::Read => run_read(app, &request.provider, &request.verb, &scope, args)
             .await
             .map_err(BridgeError::from),
-        Access::Write => run_write(app, &request.provider, &request.verb, &scope, args)
-            .await
-            .map_err(BridgeError::from),
+        Access::Write | Access::Publish => {
+            run_write(app, &request.provider, &request.verb, &scope, args)
+                .await
+                .map_err(BridgeError::from)
+        }
     }
 }
 
@@ -916,6 +923,7 @@ async fn run_write(
                 text(args, "project")?,
                 number(args, "iid")?,
                 optional_text(args, "method"),
+                None,
                 app.state(),
             )
             .await
@@ -1052,6 +1060,7 @@ async fn run_write(
                 None,
                 optional_text(args, "message"),
                 optional_text(args, "strategy"),
+                None,
                 app.state(),
             )
             .await
@@ -1269,7 +1278,9 @@ mod tests {
         for spec in CATALOG {
             let routed = match spec.access {
                 Access::Read => READ_VERBS.contains(&(spec.provider, spec.verb)),
-                Access::Write => WRITE_VERBS.contains(&(spec.provider, spec.verb)),
+                Access::Write | Access::Publish => {
+                    WRITE_VERBS.contains(&(spec.provider, spec.verb))
+                }
             };
             assert!(
                 routed,

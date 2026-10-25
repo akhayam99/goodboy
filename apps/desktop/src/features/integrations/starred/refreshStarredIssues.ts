@@ -7,9 +7,9 @@ import { gitlabFetchIssues } from '../gitlab/client';
 import { lookupIssueByCode, type LookupDeps } from '../issueCode/lookupIssueByCode';
 import type { LookupTarget } from '../issueCode/routeIssueCode';
 import { jiraGetIssues } from '../jira/client';
-import { buildIssueGroups as buildJiraGroups } from '../jira/JiraStudio/useJiraIssues';
+import { buildIssueGroups as buildJiraGroups } from '../jira/JiraStudio/buildIssueGroups';
 import { linearFetchIssuesByIds } from '../linear/client';
-import { buildIssueGroups as buildLinearGroups } from '../linear/LinearStudio/useLinearIssues';
+import { buildIssueGroups as buildLinearGroups } from '../linear/LinearStudio/buildIssueGroups';
 import { lookupTargetOf, starKey } from './starredIssueOf';
 
 export type StarredRefresh = {
@@ -74,7 +74,9 @@ const refreshLinear = async (
   if (issues === null) {
     return;
   }
-  const records = adaptLinearIssues({ groups: buildLinearGroups(issues, EMPTY_SESSIONS) });
+  const records = adaptLinearIssues({
+    groups: buildLinearGroups({ issues, sessionIdByExternalId: EMPTY_SESSIONS }),
+  });
   const byIdentifier = new Map(records.map((record) => [record.identifier, record]));
   for (const pair of linearPaired) {
     markReached(outcome, pair.issue, byIdentifier.get(pair.target.identifier));

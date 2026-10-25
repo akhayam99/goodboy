@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 
-export type InstantTool = 'gitlab' | 'bitbucket' | 'linear' | 'jira';
+type InstantTool = 'gitlab' | 'bitbucket' | 'linear' | 'jira';
 
 type InstantConnectParams = {
   readonly workspaceId: WorkspaceId;

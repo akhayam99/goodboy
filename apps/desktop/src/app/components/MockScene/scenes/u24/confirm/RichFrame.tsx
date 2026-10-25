@@ -1,6 +1,6 @@
 import { Archive, Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import { ConfirmFrame } from './ConfirmFrame';
 import { ConfirmRow } from './ConfirmRow';
 import { settle } from './variants';

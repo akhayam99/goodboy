@@ -1,7 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabIntegrationBinding, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import type { RemoteHostKind } from '../../shared/utils/remoteHost';
 import { useRootRemoteHostKind } from './useRootRemoteHostKind';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 

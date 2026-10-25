@@ -105,6 +105,33 @@ export const deriveGithubProjection = ({
   };
 };
 
+type NextMountParams = {
+  readonly current: Readonly<Record<MountId, MountGithubState>>;
+  readonly mountId: MountId;
+  readonly github?: MountGithubState | null;
+};
+
+const nextMountGithub = ({
+  current,
+  mountId,
+  github,
+}: NextMountParams): Readonly<Record<MountId, MountGithubState>> => {
+  if (github === undefined) {
+    return current;
+  }
+  if (github === null) {
+    if (!(mountId in current)) {
+      return current;
+    }
+    const { [mountId]: _removed, ...rest } = current;
+    return rest;
+  }
+  if (current[mountId] === github) {
+    return current;
+  }
+  return { ...current, [mountId]: github };
+};
+
 type ApplyParams = {
   readonly state: ProjectionState & GithubProjection;
   readonly sessionId: SessionId;
@@ -120,14 +147,9 @@ export const applyMountGithub = ({
   github,
   selected,
 }: ApplyParams): GithubWrite => {
-  const mountGithub = { ...state.mountGithub };
-  if (github === null) {
-    delete mountGithub[mountId];
-  } else if (github !== undefined) {
-    mountGithub[mountId] = github;
-  }
+  const mountGithub = nextMountGithub({ current: state.mountGithub, mountId, github });
   const mountSelectedPr =
-    selected === undefined
+    selected === undefined || state.mountSelectedPr[mountId] === selected
       ? state.mountSelectedPr
       : { ...state.mountSelectedPr, [mountId]: selected };
   const projected = { ...state, mountGithub, mountSelectedPr };

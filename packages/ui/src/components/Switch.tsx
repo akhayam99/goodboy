@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
+import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
 
 export type SwitchProps = {
@@ -27,17 +28,20 @@ export const Switch = ({
     disabled={disabled}
     onClick={() => onChange(!checked)}
     className={cn(
-      'inline-flex min-h-6 items-center gap-2 rounded-full px-2 py-1 text-label transition-colors',
+      'inline-flex min-h-6 items-center gap-2 rounded-full px-2 py-1 text-meta transition-colors',
       FOCUS_RING,
       checked ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-      disabled && 'cursor-not-allowed opacity-50',
+      disabled && cn(DISABLED, 'hover:text-disabled-foreground'),
       className,
     )}
   >
     <span
       className={cn(
         'relative h-4 w-7 shrink-0 rounded-full transition-colors',
-        checked ? 'bg-primary' : 'bg-idle',
+        disabled !== true && checked && 'bg-primary',
+        disabled !== true && !checked && 'bg-idle',
+        disabled === true && checked && 'bg-disabled-foreground',
+        disabled === true && !checked && 'bg-fill',
       )}
       aria-hidden
     >

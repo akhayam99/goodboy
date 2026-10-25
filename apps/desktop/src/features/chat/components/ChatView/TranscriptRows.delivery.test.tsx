@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import {
   brandId,
@@ -24,9 +24,19 @@ vi.mock('./OpenQuestionCluster', () => ({ OpenQuestionCluster: () => <div data-t
 
 import { TranscriptRows } from './TranscriptRows';
 
-afterEach(cleanup);
+const NOW = new Date(2026, 9, 20, 12, 0, 0);
 
-const AT = brandId<IsoDateTime>({ value: new Date().toISOString() });
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW);
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
+
+const AT = brandId<IsoDateTime>({ value: NOW.toISOString() });
 
 const itemRow = (item: TranscriptItem): TranscriptRow => ({ kind: 'item', key: item.key, item });
 
@@ -42,7 +52,7 @@ const renderRows = ({ rows }: { readonly rows: ReadonlyArray<TranscriptRow> }) =
         onRefreshAuth={() => undefined}
         onOpenDiff={() => undefined}
         isThinking={false}
-        thinkingContext="think"
+        thinkingPhrase="Thinking"
         onRetryRun={() => undefined}
         retryingRunId={null}
       />

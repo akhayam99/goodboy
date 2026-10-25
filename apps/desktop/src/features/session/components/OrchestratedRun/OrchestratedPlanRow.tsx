@@ -1,8 +1,8 @@
 import { CircleDashed, MessageSquareText } from 'lucide-react';
 import type { AgentRole } from '@goodboy/types';
-import { WORK_META_COLUMN, cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, WORK_META_COLUMN } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { railColumnX } from '../../../workTreeModel/railGeometry';
 import { agentKindPalette, kindForRole } from '../../agent-kind';
 

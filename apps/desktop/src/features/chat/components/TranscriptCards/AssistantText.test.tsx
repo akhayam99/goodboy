@@ -51,7 +51,7 @@ describe('AssistantText', () => {
     const root = container.firstElementChild!;
 
     expect(root.className).toContain('text-prose');
-    expect(root.className).not.toContain('text-label');
+    expect(root.className).not.toContain('text-meta');
   });
 
   it('hides copy when a non-first resolved marker belongs to a review thread', () => {

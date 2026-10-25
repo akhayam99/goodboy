@@ -1,9 +1,9 @@
 import { useRef } from 'react';
 import { PanelRight } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import type { ArtifactDrawerTab } from '../../../../store/slices/drawer/state';
 

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { MenuPoint } from '@goodboy/ui';
 import { keepsNativeMenu } from './keepsNativeMenu';
 
-const EXTERNAL_LINK = /^(https?:|mailto:)/i;
+const EXTERNAL_LINK = /^https?:/i;
 
 type Params = {
   readonly onLink: (params: {

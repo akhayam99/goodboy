@@ -158,11 +158,14 @@ pub struct RestoreArgs {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum MoveOutcome {
     NeedsStash {
         files: Vec<String>,
-        #[serde(rename = "dirtyCount")]
         dirty_count: usize,
     },
     SetAside {
@@ -171,7 +174,7 @@ pub enum MoveOutcome {
     },
     FilesRestored {
         stash: String,
-        #[serde(rename = "cleanupError", skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         cleanup_error: Option<String>,
     },
     Forgotten {
@@ -181,16 +184,13 @@ pub enum MoveOutcome {
         stash: String,
         files: Vec<String>,
         head: String,
-        #[serde(rename = "backupRef")]
         backup_ref: String,
     },
     Moved {
-        #[serde(rename = "cleanupError", skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         cleanup_error: Option<String>,
-        #[serde(rename = "carriedCount")]
         carried_count: usize,
         head: String,
-        #[serde(rename = "backupRef")]
         backup_ref: String,
     },
     Busy {
@@ -231,3 +231,6 @@ pub struct HistoryBackupFacts {
     pub additions_vs_now: u32,
     pub deletions_vs_now: u32,
 }
+
+#[cfg(test)]
+mod wire_shape;

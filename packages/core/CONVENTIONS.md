@@ -6,7 +6,7 @@ Pure TypeScript logic that the desktop webview imports directly. **No React. No 
 
 ## Boundaries
 
-What goes here: stream-json parsers for each provider CLI, model catalogs, prices and routing, budget and permission decisions, building and parsing orchestrator and planner prompts, type guards, pure utilities. What does not: starting agent CLIs (turns run in Rust, in `apps/desktop/src-tauri/src/turn.rs`, and core only parses their output), React components (`@goodboy/ui`), SQLite queries (`@goodboy/db`), Tauri bindings (`apps/desktop`), and any side effect tied to one runtime.
+What goes here: stream-json parsers for each provider CLI, model catalogs, prices and routing, budget and permission decisions, building and parsing orchestrator and planner prompts, type guards, pure utilities. What does not: starting agent CLIs (turns run in Rust, in `apps/desktop/src-tauri/src/turn.rs`, and core only parses their output), React components (`@goodboy/ui`), SQL text (it lives in `@goodboy/db`; the `context/` and `auto/` modules may orchestrate over a `Database` they are passed by calling its queries, and never write SQL themselves), Tauri bindings (`apps/desktop`), and any side effect tied to one runtime.
 
 ## Architecture rules
 
@@ -20,7 +20,7 @@ What goes here: stream-json parsers for each provider CLI, model catalogs, price
 - Pure functions wherever possible. Side effects move out to the boundary.
 - No singletons that keep state longer than one call. The only exception is a memo cache keyed by immutable input (compiled permission matchers).
 - No `console.*` in production code paths. Use `devWarn` from `src/dev-log.ts`.
-- No `Date.now()` or `Math.random()` in business logic. Pass in a clock and an RNG.
+- No `Date.now()` or `Math.random()` in business logic. Pass in a clock and an RNG. An id comes from a `newId` the caller passes (`autoPopulateContext` takes an optional one); the default is `globalThis.crypto.randomUUID()`, never `Math.random()`.
 - An expected failure at a boundary throws a typed error class (`GhCliError`, `GhJsonParseError`, `OrchestratorProviderError`). Callers match it with `instanceof`.
 - `null` means "not found" or "unknown" (`getProviderModelPrice`, `getModelDescriptor`). Never return `0` or an empty string for an unknown value.
 

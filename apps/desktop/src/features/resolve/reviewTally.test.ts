@@ -152,7 +152,6 @@ const SURFACES = [
   'features/suggestions/useSessionSuggestions/index.ts',
   'features/suggestions/useSuggestionActions/index.ts',
   'features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.ts',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock.tsx',
 ];
 
 describe('one selector for every count of comments', () => {

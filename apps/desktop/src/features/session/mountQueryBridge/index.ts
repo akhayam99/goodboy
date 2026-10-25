@@ -1,5 +1,4 @@
-import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listMountPullRequestLinks } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type {
@@ -9,11 +8,8 @@ import type {
   SessionId,
   SessionMountView,
 } from '@goodboy/types';
-import {
-  worktreeDirectorySize,
-  worktreeStatus,
-  worktreeWriterStatus,
-} from '../../worktree/worktree';
+import { worktreeDirectorySize, worktreeWriterStatus } from '../../worktree/worktree';
+import { readWorktreeStatusNow } from '../../../store/runtime/worktreeStatuses/cache';
 import {
   MOUNT_CLEANUP_BLOCKER_REASON,
   mountCleanupBlockers,
@@ -31,8 +27,8 @@ import { selectProjectById } from '../../../store/slices/projects/selectProjectB
 import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
 import { resolveRequestedBranchName } from '../../../store/slices/project-mounts/resolveMountNaming';
 import { useAppStore } from '../../../store/store';
-import { isMainWindow } from '../../workspace/window';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
+import { serveHandoff } from '../../../shared/lib/serveHandoff';
 
 const MOUNT_EVENT = 'query-bridge://mount-command';
 
@@ -70,8 +66,6 @@ const BRIDGE_CODE: Readonly<Record<string, string>> = {
   'repository-unavailable': 'mount_unavailable',
   'revision-conflict': 'request_conflict',
 };
-
-const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 const text = ({ args, key }: { readonly args: BridgeArgs; readonly key: string }): string => {
   const value = args[key];
@@ -152,10 +146,10 @@ const inspect = async ({ request }: InspectParams): Promise<MountBridgeOutcome> 
   const status =
     path === null
       ? null
-      : await worktreeStatus({
+      : await readWorktreeStatusNow({
           worktreePath: path,
           baseBranch: resolveMountBaseBranch({ mount, projects: get().projects }),
-        }).catch(() => null);
+        });
   const lease = path === null ? null : await worktreeWriterStatus({ path });
   const blockers =
     path === null
@@ -542,22 +536,17 @@ export const executeMountRequest = async (request: BridgeRequest): Promise<Mount
   }
 };
 
-export const listenMountCommands = async (): Promise<UnlistenFn> => {
-  if (!inTauri() || !isMainWindow()) {
-    return () => undefined;
-  }
-  return listen<BridgeRequest>(MOUNT_EVENT, (event) => {
-    const request = event.payload;
-    void executeMountRequest(request)
-      .then((result) =>
-        invokeCommand('mount_command_result', {
-          id: request.id,
-          ok: result.ok,
-          error: result.error ?? null,
-          code: result.code ?? null,
-          data: result.data ?? null,
-        }),
-      )
-      .catch((error) => console.error('[query-bridge] mount result dispatch failed', error));
+export const listenMountCommands = (): Promise<UnlistenFn> =>
+  serveHandoff<BridgeRequest, MountBridgeOutcome>({
+    event: MOUNT_EVENT,
+    command: 'mount_command_result',
+    label: 'mount',
+    execute: executeMountRequest,
+    replyOf: ({ request, result }) => ({
+      id: request.id,
+      ok: result.ok,
+      error: result.error ?? null,
+      code: result.code ?? null,
+      data: result.data ?? null,
+    }),
   });
-};

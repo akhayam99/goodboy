@@ -20,9 +20,6 @@ const clock = sceneClock({ anchor: '2026-10-10T10:00:00.000Z' });
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 const LAST_GOOD_AT = clock.ms({ at: '2026-10-10T09:58:00.000Z' });

@@ -42,6 +42,7 @@ const decision = (toolUseId: string, value: 'allow' | 'deny'): TranscriptItem =>
   key: `perm-dec-${toolUseId}`,
   toolUseId,
   toolName: 'bash',
+  subject: null,
   runId: RUN_1,
   decision: value,
   ruleId: null,

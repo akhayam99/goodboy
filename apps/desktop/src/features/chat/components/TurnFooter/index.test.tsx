@@ -28,7 +28,7 @@ import {
   resetStoryStore,
 } from '../../../../store/storyHarness';
 import type { TranscriptItem } from '../../utils/transcript-items';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { TurnFooter } from './index';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });

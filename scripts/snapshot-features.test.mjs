@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import {
   buildSnapshot,
@@ -191,6 +191,9 @@ describe('feature doc contract', () => {
     const directory = mkdtempSync(resolve(tmpdir(), 'goodboy-feature-docs-'));
     cpSync(resolve(root, 'FEATURES.md'), resolve(directory, 'FEATURES.md'));
     cpSync(resolve(root, 'docs'), resolve(directory, 'docs'), { recursive: true });
+    const cards = 'website/src/pages/features/features.data.json';
+    mkdirSync(dirname(resolve(directory, cards)), { recursive: true });
+    cpSync(resolve(root, cards), resolve(directory, cards));
     try {
       change({ directory });
       verify({ directory });

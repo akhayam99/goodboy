@@ -34,7 +34,7 @@ vi.mock('../../../features/history/historyEngine', () => ({
 }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
 
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { forcePushSessionBranch } from './forcePushSessionBranch';
 import { useAppStore, type AppStore } from '../../store';
 

@@ -22,7 +22,7 @@ export const ProjectLinkRow = ({ project, links, sentryProjects, isBusy, onChang
     ...linked.filter((slug) => !known.has(slug)).map((slug) => ({ value: slug, label: slug })),
   ];
   return (
-    <li className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
+    <li className={cn(BAND_ROW_CLASS, 'gap-3 text-meta')}>
       <span className="w-40 shrink-0 truncate text-foreground">{project.name}</span>
       <span className="min-w-0 flex-1 truncate text-muted-foreground">
         {linked.length === 0 ? 'No Sentry project' : linked.join(', ')}

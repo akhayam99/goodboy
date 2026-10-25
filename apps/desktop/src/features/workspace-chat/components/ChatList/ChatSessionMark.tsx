@@ -1,6 +1,6 @@
-import { FactCard } from '@goodboy/ui';
+import { FactCard, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ChatSessionMarker } from '../../hooks/useChatSessionMarker';
 import { chatSessionCardOf } from './chatSessionCardOf';
 
@@ -22,7 +22,10 @@ export const ChatSessionMark = ({ marker, onOpen }: Props) => {
             onOpen(first.sessionId);
           }
         }}
-        className="pointer-events-auto flex shrink-0 items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'pointer-events-auto flex shrink-0 items-center gap-1 rounded-sm hover:text-foreground',
+          FOCUS_RING,
+        )}
       >
         <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden />
         {marker.count === 1 ? null : <span className="tabular-nums">{marker.count}</span>}

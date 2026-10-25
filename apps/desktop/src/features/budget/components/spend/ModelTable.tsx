@@ -35,7 +35,7 @@ export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
   const isStriped = entries.length >= STRIPED_MIN_ROWS;
 
   return (
-    <table className={cn('w-full text-left text-label', STRIPED_TABLE)}>
+    <table className={cn('w-full text-left text-meta', STRIPED_TABLE)}>
       <thead className="text-eyebrow text-faint-foreground">
         <tr>
           <th className="px-3 py-2">Model</th>

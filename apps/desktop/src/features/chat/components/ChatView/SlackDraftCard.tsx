@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { IntegrationDraft, SessionId } from '@goodboy/types';
-import { Button, cn, Textarea, tintClasses } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, Textarea, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { slackUserNames } from '../../../integrations/slack/nameMaps';
 import { slackThreadFirstLine } from '../../../integrations/slack/threadFormulas';
 import { useSlackThread } from '../../../integrations/slack/useSlackThread';
@@ -59,7 +59,7 @@ export const SlackDraftCard = ({ draft, sessionId }: Props) => {
       tone="info"
       variant="boxed"
       data-testid="slack-draft-card"
-      className="flex flex-col gap-2 text-label"
+      className="flex flex-col gap-2 text-meta"
     >
       <div className="flex items-center gap-2">
         <span className={cn('flex shrink-0 items-center', tint.icon)} aria-hidden>
@@ -81,10 +81,10 @@ export const SlackDraftCard = ({ draft, sessionId }: Props) => {
           aria-label="Edit reply"
         />
       ) : (
-        <p className="text-label text-foreground">{body}</p>
+        <p className="text-meta text-foreground">{body}</p>
       )}
       {threadActions.error == null ? null : (
-        <p className="text-label text-danger">{threadActions.error}</p>
+        <p className="text-meta text-danger">{threadActions.error}</p>
       )}
       <div className="flex items-center gap-2">
         <Button

@@ -1,6 +1,6 @@
 import { FileText, X } from 'lucide-react';
-import { Chip, IconButton } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
+
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import type { StartRunFile } from '../../startRun/startRunFileOf';
 

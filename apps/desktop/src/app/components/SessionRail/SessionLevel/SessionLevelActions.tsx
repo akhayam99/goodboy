@@ -7,7 +7,7 @@ import type { ObjectTarget } from '../../../../features/actions/types';
 import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { ActionControls } from '../../../../features/actions/useActionControls';
 import { useSessionRefresh } from '../../../../features/session/hooks/useSessionRefresh';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';

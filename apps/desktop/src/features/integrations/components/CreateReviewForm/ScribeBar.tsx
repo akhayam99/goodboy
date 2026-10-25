@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react';
-import { Button, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
 import type { ScribeJob } from './useScribeJob';
@@ -57,7 +57,7 @@ export const ScribeBar = ({
     return (
       <ul
         aria-label={`Opening the ${noun}`}
-        className="flex min-w-0 flex-col gap-1 text-label text-muted-foreground"
+        className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground"
       >
         {hasPushStep && (
           <li className="flex min-w-0 items-center gap-2">
@@ -85,7 +85,7 @@ export const ScribeBar = ({
     return (
       <div
         role="status"
-        className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
+        className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
       >
         <StatusDot tone="primary" size="sm" pulsing />
         <span className="min-w-0 truncate">{readingWord({ commitCount })}</span>

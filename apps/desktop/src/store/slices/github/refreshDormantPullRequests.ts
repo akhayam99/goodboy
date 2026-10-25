@@ -9,7 +9,7 @@ import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import { toMountPullRequestLink } from './mountPrLink';
-import { REVIEW_REFRESH_CONCURRENCY } from './sweepGithub';
+import { REVIEW_REFRESH_CONCURRENCY } from '../review-source/requestRefreshConcurrency';
 import type { GetFn } from './types';
 
 const DORMANT_PULL_REQUEST_CAP = 20;

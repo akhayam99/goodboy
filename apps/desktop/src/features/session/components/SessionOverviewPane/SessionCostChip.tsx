@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Pause } from 'lucide-react';
+import { TriangleAlert, Pause } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
   cn,
   formatUsdPrecise,
+  ICON_SIZE,
   tintClasses,
-  useDropdown,
   Tooltip,
+  useDropdown,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
@@ -24,7 +25,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 import { pickKeys } from '../../../../shared/utils/pickKeys';
 import { sessionSpendLines } from '../../sessionSpendLines';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -169,7 +169,7 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
   const glyph = presentation.isPaused ? (
     <Pause size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
   ) : presentation.level === 'near' || presentation.level === 'over' ? (
-    <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
+    <TriangleAlert size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
   ) : null;
 
   return (

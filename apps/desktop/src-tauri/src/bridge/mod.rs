@@ -1,9 +1,12 @@
 mod commands;
 mod frame;
+mod gate;
 mod identity;
 mod server;
 mod snapshot;
 mod tokens;
+#[cfg(test)]
+mod wire_shape;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -147,37 +150,34 @@ pub struct Endpoint {
 
 /// The compact JSON encoded into the QR (PROTOCOL §4).
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct QrPayload {
     v: u8,
-    #[serde(rename = "deviceName")]
     device_name: String,
-    #[serde(rename = "staticPub")]
     static_pub: String,
     token: String,
     endpoints: Vec<Endpoint>,
-    #[serde(rename = "serviceName")]
     service_name: String,
 }
 
 /// What the hidden modal renders: the QR (as inline SVG) plus diagnostics.
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QrInfo {
     /// Compact JSON payload that the SVG encodes (also handy for debugging).
     payload: String,
     /// Inline SVG markup of the QR code.
     svg: String,
-    #[serde(rename = "deviceName")]
     device_name: String,
     port: u16,
-    #[serde(rename = "expiresInSecs")]
     expires_in_secs: u16,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BridgeStatus {
     running: bool,
     port: Option<u16>,
-    #[serde(rename = "enrolledCount")]
     enrolled_count: usize,
 }
 

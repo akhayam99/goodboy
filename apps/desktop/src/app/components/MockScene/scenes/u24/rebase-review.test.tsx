@@ -13,7 +13,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { RebaseReviewScene } from './RebaseReviewScene';
 import { U24_REBASE_REVIEW_SCENES } from './rebase-review';

@@ -3,11 +3,18 @@ import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ObjectKindDefinition, TerminalTabActionTarget } from '../types';
 
+type TerminalSendOutputFacts = {
+  readonly label: string;
+  readonly blockedReason: string | null;
+  readonly onSend: () => void;
+};
+
 export type TerminalTabFacts = {
   readonly path: string | null;
   readonly isWorkspace: boolean;
   readonly sessionId: SessionId | null;
   readonly onOpenSession: () => void;
+  readonly sendOutput?: TerminalSendOutputFacts;
 };
 
 export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, TerminalTabFacts> = {
@@ -21,6 +28,15 @@ export const TERMINAL_TAB_KIND: ObjectKindDefinition<TerminalTabActionTarget, Te
       group: 'open',
       when: ({ facts }) => facts.sessionId !== null,
       run: ({ facts }) => facts.onOpenSession(),
+    },
+    {
+      id: 'terminalTab.sendLastOutput',
+      label: ({ facts }) => facts.sendOutput?.label ?? 'Send last output',
+      icon: CONCEPT_ICONS.agents,
+      group: 'act',
+      when: ({ facts }) => facts.sendOutput !== undefined,
+      blockedReason: ({ facts }) => facts.sendOutput?.blockedReason ?? null,
+      run: ({ facts }) => facts.sendOutput?.onSend(),
     },
     {
       id: 'terminalTab.copyPath',

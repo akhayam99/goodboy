@@ -9,6 +9,7 @@ import type { CancelTurnReason } from './cancelCurrentTurn';
 import { nowIso } from '../project-mounts/nowIso';
 import { markStoppedByUser } from './markStoppedByUser';
 import { clearAgentStopping, markAgentStopping } from './stoppingAgents';
+import { stopRequests } from './stopRequests';
 import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
@@ -35,6 +36,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       return { outcome: 'exited', exitedAt: now() };
     }
     const { runId } = agentState;
+    stopRequests.request({ agentId, runId, at: Date.now() });
     cancelledRunIds.add(runId);
     revealPacer.flushRun({ runId, agentId });
     try {
@@ -76,6 +78,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       }
       return { outcome: 'still_running', exitedAt: null };
     }
+    stopRequests.settle({ agentId });
     const exitedAt = now();
     const idleState: TurnState = { kind: 'idle', lastActivityAt: exitedAt };
     const derived = applyAgentTurnState(set, sessionId, agentId, idleState, exitedAt);

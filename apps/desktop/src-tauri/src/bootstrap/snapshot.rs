@@ -71,10 +71,7 @@ pub(crate) fn take_snapshot(
     snapshot_ref: &str,
 ) -> Result<Option<Snapshot>, BootstrapError> {
     let git_dir = absolute_git_dir(root)?;
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_nanos())
-        .unwrap_or_default();
+    let nanos = crate::util::now_nanos();
     let index = IndexFile(git_dir.join(format!(
         "goodboy-bootstrap-{}-{nanos}.index",
         std::process::id()

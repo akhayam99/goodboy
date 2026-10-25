@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { JiraIssue } from '../../integrations/jira/client';
-import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
+import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/buildIssueGroups';
 import { adaptJiraIssues } from './jira';
 
 const issue = (overrides: Partial<JiraIssue> = {}): JiraIssue => ({

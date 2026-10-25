@@ -1,6 +1,6 @@
 import { listSettingsWithPrefix } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { parseSavedProjectModels } from './parseSavedProjectModels';
 import { SAVED_PROJECT_MODELS_PREFIX, projectIdOfSavedKey } from './savedProjectModelsKey';
 import type { SavedProjectModels } from './state';

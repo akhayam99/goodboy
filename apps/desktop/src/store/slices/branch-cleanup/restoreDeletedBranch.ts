@@ -16,6 +16,8 @@ export const restoreDeletedBranch = (set: SetFn, get: GetFn) => {
       sha: entry.sha,
       keepRef: entry.keepRef,
       pushToOrigin: entry.onOrigin,
+      workspaceId: entry.workspaceId,
+      projectId: entry.projectId,
     });
     const restoredAt = new Date().toISOString() as IsoDateTime;
     await markDeletedBranchRestored({ db: tauriDatabase, id, restoredAt });

@@ -1,10 +1,10 @@
 import { Pencil } from 'lucide-react';
-import { Notice } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Notice } from '@goodboy/ui';
+
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { REVIEW_FLOW_LABEL, sourceChangeLine } from '../../reviewFlowCopy';
 import type { ReviewSourceChange } from '../../sourceChangeOf';
-import { wordDiff } from '../../wordDiff';
+import { wordDiff } from '../../wordSegments';
 import { SourceChangeLine } from './SourceChangeLine';
 
 type Props = {

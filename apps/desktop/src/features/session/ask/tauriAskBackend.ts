@@ -7,7 +7,7 @@ import {
   setChatModel,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelChatTurn } from '../../workspace-chat/cancelChatTurn';
+import { cancelChatTurn } from '../../conversation/cancelChatTurn';
 import type { AskBackend } from './askBackend';
 import { runAskTurn } from './runAskTurn';
 

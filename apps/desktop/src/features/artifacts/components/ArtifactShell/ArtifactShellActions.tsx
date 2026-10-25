@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { Button, HeaderActions } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
+
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';

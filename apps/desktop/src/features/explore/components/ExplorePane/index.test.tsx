@@ -927,7 +927,7 @@ describe('ExplorePane folders outside a repository', () => {
 
     const labels = await openRowMenu({ row });
 
-    expect(labels.some((label) => label.startsWith('Open'))).toBe(false);
+    expect(labels.filter((label) => label.startsWith('Open'))).toEqual(['Open in terminal app']);
     expect(labels).toContain('Show in Finder');
   });
 });
@@ -960,7 +960,12 @@ describe('ExplorePane context menu', () => {
 
     fireEvent.contextMenu(await rowNamed('apps'));
 
-    expect(menuLabels()).toEqual(['Open in editor', 'Show in Finder', 'Copy path']);
+    expect(menuLabels()).toEqual([
+      'Open in editor',
+      'Open in terminal app',
+      'Show in Finder',
+      'Copy path',
+    ]);
   });
 
   it('runs a menu verb on the row it was opened on', async () => {
@@ -1075,7 +1080,9 @@ describe('ExplorePane changed files', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh the files' }));
 
     expect(await screen.findByText('No changes against main')).toBeDefined();
-    expect(screen.getByText('Files that differ from main appear here.')).toBeDefined();
+    expect(
+      screen.getByText('Files that differ from main are listed when they change.'),
+    ).toBeDefined();
     expect(screen.getByRole('tab', { name: 'All files' })).toBeDefined();
   });
 

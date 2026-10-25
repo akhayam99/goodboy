@@ -1,6 +1,6 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SettingsPageScope } from '../../settingsFocus';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type NestedScope = 'providers' | 'tools';
 

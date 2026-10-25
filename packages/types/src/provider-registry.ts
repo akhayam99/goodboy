@@ -70,9 +70,6 @@ export type ModelDescriptor = {
 
 export type ProviderRegistryCapabilities = {
   readonly models: ReadonlyArray<ModelDescriptor>;
-  readonly supportsTools: boolean;
-  readonly supportsStream: boolean;
-  readonly supportsCheapModel: boolean;
 };
 
 export type ProviderInfo = {

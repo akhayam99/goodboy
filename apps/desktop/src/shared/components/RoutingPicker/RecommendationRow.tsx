@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { CONCEPT_ICONS, ICON_SIZE } from '../conceptIcons';
-import { cn } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../conceptIcons';
+import { cn, ICON_SIZE } from '@goodboy/ui';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { AUTO_LABEL } from './AutoTriggerLabel';
@@ -39,7 +39,7 @@ export const RecommendationRow = ({
         aria-pressed={active}
         aria-label={isAuto ? `${AUTO_LABEL}, now ${summary}` : `${label} ${summary}`}
         className={cn(
-          'flex w-full items-center justify-between gap-2 px-3 py-2 text-label transition-colors',
+          'flex w-full items-center justify-between gap-2 px-3 py-2 text-meta transition-colors',
           active
             ? 'bg-background font-medium text-foreground'
             : 'text-muted-foreground hover:bg-background hover:text-foreground',

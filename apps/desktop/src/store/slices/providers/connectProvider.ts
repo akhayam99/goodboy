@@ -21,7 +21,7 @@ import type { ConnectRun } from './connectRuns';
 import { detectAuthUrl } from './detectAuthUrl';
 import { recordProviderSignedIn } from './recordProviderSignedIn';
 import { base64Bytes } from '../../../shared/utils/base64Bytes';
-import { stripAnsi } from './stripAnsi';
+import { stripAnsi } from '../../../shared/utils/stripAnsi';
 import {
   ACTIVE_CONNECT_PHASES,
   IDLE_CONNECT,
@@ -88,7 +88,6 @@ const failedPatch = ({ err }: FailedPatchParams): Partial<ProviderConnectState> 
 type AttachParams = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
-  readonly command: string;
   readonly env: Readonly<Record<string, string>>;
   readonly run: ConnectRun;
   readonly onOutput: (chunk: string) => void;
@@ -98,7 +97,6 @@ type AttachParams = {
 const attachRun = async ({
   providerId,
   action,
-  command,
   env,
   run,
   onOutput,
@@ -127,7 +125,6 @@ const attachRun = async ({
   await invokeProviderLifecycleRun({
     providerId,
     action,
-    command,
     runId,
     cols: PTY_COLS,
     rows: PTY_ROWS,
@@ -173,7 +170,6 @@ const runInstall = async ({ set, get, providerId, run }: StepParams): Promise<bo
     const runId = await attachRun({
       providerId,
       action: 'install',
-      command,
       env: {},
       run,
       onOutput: (chunk) => {
@@ -415,7 +411,6 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     const runId = await attachRun({
       providerId,
       action: 'login',
-      command,
       env: capability.loginEnv,
       run,
       onOutput,

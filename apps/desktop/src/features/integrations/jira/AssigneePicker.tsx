@@ -1,22 +1,23 @@
 import { useMemo, useState } from 'react';
 import { UserRound } from 'lucide-react';
 import {
-  EmptyLine,
   AnchoredPopover,
   Button,
   cn,
   Divider,
+  EmptyLine,
   formatError,
+  ICON_SIZE,
   Input,
   ScrollFade,
-  useDropdown,
-  type MenuEntry,
   Tooltip,
+  type MenuEntry,
+  useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import type { JiraUser } from './client';
 import { useJiraAssignableUsers } from './useJiraAssignableUsers';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { AppMenuList } from '../../actions/AppMenuList';
 
 type Props = {
@@ -132,7 +133,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           aria-label="Filter assignable people"
           placeholder="Filter by name"
           onChange={(event) => setQuery(event.target.value)}
-          className="h-7 text-label"
+          className="h-7 text-meta"
         />
       </div>
       <Divider />

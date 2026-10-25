@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { AnchoredPopover, Chip, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { LevelAddTrigger } from '../../../../shared/components/LevelAddTrigger';
 import { LinkWorkPanel } from './LinkWorkPanel';
 
@@ -89,7 +89,6 @@ export const LinkIssueAction = ({
             <Chip
               as="button"
               tone="neutral"
-              shape="badge"
               kind="reference"
               ariaLabel={LABEL}
               hasPopup="dialog"

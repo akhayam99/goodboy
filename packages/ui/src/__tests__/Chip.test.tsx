@@ -41,19 +41,12 @@ describe('Chip', () => {
     expect(classesOf('two')).toContain('min-w-24');
   });
 
-  it('maps the old sizes onto the kinds, so a small size is a state pill and a large one a reference badge', () => {
-    render(
-      <>
-        <Chip tone="neutral" label="tiny" size="3xs" />
-        <Chip tone="neutral" label="small" size="xs" />
-        <Chip tone="neutral" label="medium" size="md" />
-      </>,
-    );
+  it('draws a state pill when no kind is named', () => {
+    render(<Chip tone="neutral" label="plain" />);
 
-    expect(classesOf('tiny')).toContain('h-5');
-    expect(classesOf('small')).toContain('rounded-full');
-    expect(classesOf('medium')).toContain('h-6');
-    expect(classesOf('medium')).toContain('rounded-md');
+    expect(classesOf('plain').split(' ')).toEqual(
+      expect.arrayContaining(['h-5', 'rounded-full', 'text-chip']),
+    );
   });
 
   it('draws each kind at its own height and radius', () => {
@@ -78,13 +71,6 @@ describe('Chip', () => {
     expect(classesOf('3').split(' ')).toEqual(
       expect.arrayContaining(['h-4', 'min-w-4', 'rounded-full', 'tabular-nums']),
     );
-  });
-
-  it('ignores a legacy shape once the kind is named', () => {
-    render(<Chip tone="neutral" kind="state" shape="badge" label="state" />);
-
-    expect(classesOf('state')).toContain('rounded-full');
-    expect(classesOf('state')).not.toContain('rounded-md');
   });
 
   it('makes StateBadge the state kind', () => {
@@ -127,7 +113,7 @@ describe('Chip', () => {
   });
 
   it('frames a control chip at the h-6 control height', () => {
-    render(<Chip as="button" tone="neutral" shape="badge" size="control" label="Context" />);
+    render(<Chip kind="reference" as="button" tone="neutral" label="Context" />);
 
     const chip = screen.getByRole('button', { name: 'Context' });
     expect(chip.className).toContain('h-6');

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Smartphone, Unplug } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 type Props = {

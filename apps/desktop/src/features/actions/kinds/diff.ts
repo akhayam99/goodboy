@@ -1,5 +1,4 @@
 import {
-  ArrowUpToLine,
   ArchiveRestore,
   Copy,
   FileCode,
@@ -17,21 +16,10 @@ import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritin
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
-import {
-  abortRebase,
-  plural,
-  pushDescription,
-  pushDoneLabel,
-  pushLabel,
-  pushMount,
-  rebaseMount,
-  settleRequest,
-  canForcePush,
-  pushBlockedReason,
-  pushConfirm,
-} from './gitRuns';
+import { abortRebase, plural, rebaseMount, settleRequest } from './gitRuns';
 import { mountFactsFor } from './mount';
 import type { MountFacts } from './mountFacts';
+import { pushAction } from './pushAction';
 
 export type DiffFacts = MountFacts & {
   readonly patch: string;
@@ -123,29 +111,11 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
         ...statusParams({ facts }),
       }),
   },
-  {
+  pushAction({
     id: 'diff.push',
-    label: pushLabel,
-    description: pushDescription,
-    icon: ArrowUpToLine,
-    group: 'act',
-    when: ({ facts }) => facts.unpushed > 0 && facts.pr !== 'merged' && !facts.isRebasing,
-    blockedReason: pushBlockedReason,
-    confirm: pushConfirm,
     slot: ({ facts }) =>
       hasPr({ facts }) && facts.behind === 0 && !facts.isDiverged ? 'primary' : 'menu',
-    pendingLabel: () => 'Pushing…',
-    doneLabel: pushDoneLabel,
-    run: ({ facts, env }) =>
-      pushMount({
-        env,
-        sessionId: facts.sessionId,
-        mountId: facts.mountId,
-        isForce: canForcePush({ facts }),
-        confirmedOnlyOnline: facts.onlyOnline,
-        ...statusParams({ facts }),
-      }),
-  },
+  }),
   {
     id: 'diff.createPullRequest',
     label: ({ facts }) => (facts.createProvider === 'gitlab' ? 'Create MR' : 'Create PR'),

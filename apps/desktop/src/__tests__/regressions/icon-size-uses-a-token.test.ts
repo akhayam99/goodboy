@@ -4,11 +4,25 @@ import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 
 const DESKTOP_SRC = join(__dirname, '..', '..');
-const SCANNED_ROOTS = ['features', 'app'];
+const UI_SRC = join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src');
+const SCANNED_ROOTS = [
+  { base: DESKTOP_SRC, prefix: 'apps/desktop/src', dirs: ['features', 'app', 'shared'] },
+  { base: UI_SRC, prefix: 'packages/ui/src', dirs: ['.'] },
+];
 const SKIP_SEGMENTS = new Set(['node_modules', 'dist']);
 
-const TOKENIZED_SIZE = /size=\{(1[2-8])\}/;
-const TOKENIZED_RANGE = '12 to 18';
+const LITERAL = '(?:1[0-8])';
+const TOKENIZED_SIZE = new RegExp(
+  [
+    `\\bsize=\\{${LITERAL}\\}`,
+    `\\b[iI]conSize\\s*=\\s*${LITERAL}\\b`,
+    `\\bsize\\s*=\\s*${LITERAL}\\b`,
+    `\\b(?:[iI]conSize|size)\\s*\\?\\?\\s*${LITERAL}\\b`,
+    `\\bsize=\\{[^}]*[?:]\\s*${LITERAL}\\b`,
+    `\\bsize === [^?]+\\? ${LITERAL} : ${LITERAL}\\b`,
+  ].join('|'),
+);
+const TOKENIZED_RANGE = '10 to 18';
 
 type Exception = {
   readonly path: string;
@@ -17,61 +31,72 @@ type Exception = {
 
 const ALLOWLIST: ReadonlyArray<Exception> = [
   {
-    path: 'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',
+    path: 'apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',
     reason: 'the literal is the HTML input size attribute in characters, not an icon size',
   },
 ];
 
-const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
+type ListParams = {
+  readonly dir: string;
+  readonly acc?: string[];
+};
+
+const listSourceFiles = ({ dir, acc = [] }: ListParams): string[] => {
   for (const entry of readdirSync(dir)) {
     if (SKIP_SEGMENTS.has(entry)) {
       continue;
     }
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      listSourceFiles(full, acc);
+      listSourceFiles({ dir: full, acc });
       continue;
     }
-    if (entry.endsWith('.tsx') || entry.endsWith('.ts')) {
+    const isSource = entry.endsWith('.tsx') || entry.endsWith('.ts');
+    if (isSource && !entry.includes('.test.') && !entry.includes('.stories.')) {
       acc.push(full);
     }
   }
   return acc;
 };
 
-const isAllowed = (relativePath: string): boolean =>
-  ALLOWLIST.some(
-    (entry) => relativePath === entry.path || relativePath.startsWith(`${entry.path}/`),
-  );
+type AllowedParams = {
+  readonly path: string;
+};
+
+const isAllowed = ({ path }: AllowedParams): boolean =>
+  ALLOWLIST.some((entry) => path === entry.path || path.startsWith(`${entry.path}/`));
 
 describe('icon sizing', () => {
-  it('sizes glyphs in the token range (12 to 18) from ICON_SIZE, never a literal', () => {
+  it('sizes glyphs in the token range from ICON_SIZE, never a literal, default or ternary', () => {
     const offenders: string[] = [];
     for (const root of SCANNED_ROOTS) {
-      for (const file of listSourceFiles(join(DESKTOP_SRC, root))) {
-        const relativePath = relative(DESKTOP_SRC, file).split(sep).join('/');
-        if (isAllowed(relativePath)) {
-          continue;
+      for (const dir of root.dirs) {
+        for (const file of listSourceFiles({ dir: join(root.base, dir) })) {
+          const path = `${root.prefix}/${relative(root.base, file).split(sep).join('/')}`;
+          if (isAllowed({ path })) {
+            continue;
+          }
+          readFileSync(file, 'utf8')
+            .split('\n')
+            .forEach((line, idx) => {
+              if (TOKENIZED_SIZE.test(line)) {
+                offenders.push(`${path}:${idx + 1} ${line.trim()}`);
+              }
+            });
         }
-        readFileSync(file, 'utf8')
-          .split('\n')
-          .forEach((line, idx) => {
-            if (TOKENIZED_SIZE.test(line)) {
-              offenders.push(`${relativePath}:${idx + 1} ${line.trim()}`);
-            }
-          });
       }
     }
     expect(
       offenders,
-      `Icon sizes ${TOKENIZED_RANGE} come from ICON_SIZE (mark, row, control, hero) in shared/components/conceptIcons.ts, and scale-rules.test.ts holds the smaller sizes. Replace the literal in:\n${offenders.join('\n')}`,
+      `Icon sizes ${TOKENIZED_RANGE} come from ICON_SIZE (mark, row, control, notice, hero) in packages/ui/src/iconSize.ts, and scale-rules.test.ts holds the smaller sizes. Replace the literal in:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 
   it('keeps every allowlisted exception pointed at a path that still exists', () => {
+    const repoRoot = join(DESKTOP_SRC, '..', '..', '..');
     const missing = ALLOWLIST.filter((entry) => {
       try {
-        statSync(join(DESKTOP_SRC, entry.path));
+        statSync(join(repoRoot, entry.path));
         return false;
       } catch {
         return true;

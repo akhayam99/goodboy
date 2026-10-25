@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Notification } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { useAppStore } from '../../../../../store';
 import { seedBoardScene, WORKSPACE_ID } from '../BoardScene';
 import { AppFrame } from '../audit/AppFrame';
@@ -50,6 +51,7 @@ const notice = ({
   read: false,
   action,
   coalesceKey,
+  actedAt: null,
 });
 
 const NOTIFICATIONS: ReadonlyArray<Notification> = [
@@ -103,6 +105,8 @@ const seedSummarizerFailures = (): void => {
       kind: notification.kind,
       hasSession: true,
       hasAction: true,
+      actionKind: notification.action?.kind ?? null,
+      isActed: false,
       read: false,
       inWorkspace: true,
       count: 1,
@@ -141,7 +145,7 @@ export const SummarizerFailedScene = () => {
       return;
     }
     const timer = window.setTimeout(
-      () => window.dispatchEvent(new CustomEvent('goodboy:open-notifications')),
+      () => dispatchWindowEvent({ name: 'goodboy:open-notifications' }),
       300,
     );
     return () => window.clearTimeout(timer);

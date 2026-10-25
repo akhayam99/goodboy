@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -10,6 +10,7 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
+use crate::proc::pty::{InputError, PtyChild, PtyInput};
 use crate::pty_ring::{
     empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
     SharedRing,
@@ -18,24 +19,22 @@ use crate::terminal_scrollback;
 
 struct TerminalSession {
     spawn_id: String,
-    writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
-    child: Box<dyn portable_pty::Child + Send + Sync>,
+    child: PtyChild,
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct TerminalOutputPayload {
-    #[serde(rename = "sessionId")]
     session_id: String,
     data: String,
     offset: u64,
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct TerminalExitPayload {
-    #[serde(rename = "sessionId")]
     session_id: String,
-    #[serde(rename = "exitCode")]
     exit_code: i32,
 }
 
@@ -43,6 +42,7 @@ type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 
 struct TerminalEntry {
     slot: SessionSlot,
+    input: PtyInput,
     cwd: String,
     pid: Option<u32>,
     ring: SharedRing,
@@ -65,8 +65,34 @@ impl TerminalRegistry {
                 cwd: entry.cwd.clone(),
                 pid: entry.pid,
                 foreground_pid: foreground_leader(&entry.slot),
+                foreground_command: None,
             })
             .collect())
+    }
+}
+
+impl TerminalRegistry {
+    pub(crate) fn ended_terminals(&self) -> Vec<crate::ended_work::EndedTerminal> {
+        let Ok(live) = self.list_live() else {
+            return Vec::new();
+        };
+        let busy: Vec<(String, u32)> = live
+            .into_iter()
+            .filter_map(|terminal| match (terminal.pid, terminal.foreground_pid) {
+                (Some(shell), Some(foreground)) if shell != foreground => {
+                    Some((terminal.id, foreground))
+                }
+                _ => None,
+            })
+            .collect();
+        let pids: Vec<u32> = busy.iter().map(|(_, pid)| *pid).collect();
+        let commands = crate::terminal_foreground::commands_of(&pids);
+        busy.into_iter()
+            .filter_map(|(id, pid)| {
+                let command = commands.get(&pid)?.clone();
+                Some(crate::ended_work::EndedTerminal { id, command })
+            })
+            .collect()
     }
 }
 
@@ -94,12 +120,13 @@ pub struct LiveTerminal {
     cwd: String,
     pid: Option<u32>,
     foreground_pid: Option<u32>,
+    foreground_command: Option<String>,
 }
 
 /// Drains every live terminal, killing the whole pty session behind each
 /// leader. Killing the leader alone leaves grandchildren holding ports.
 pub fn shutdown(registry: &TerminalRegistry, scrollback_dir: Option<&Path>) {
-    let slots: Vec<SessionSlot> = match registry.0.lock() {
+    let slots: Vec<(SessionSlot, PtyInput)> = match registry.0.lock() {
         Ok(mut map) => map
             .drain()
             .map(|(id, entry)| {
@@ -113,20 +140,23 @@ pub fn shutdown(registry: &TerminalRegistry, scrollback_dir: Option<&Path>) {
                         log::warn!("[teardown] terminal scrollback save failed: {error}");
                     }
                 }
-                entry.slot
+                (entry.slot, entry.input)
             })
             .collect(),
         Err(_) => return,
     };
-    for slot in slots {
+    for (slot, _input) in slots {
         let Ok(mut guard) = slot.lock() else {
             continue;
         };
         let Some(mut session) = guard.take() else {
             continue;
         };
-        reap_pty_session(session.child.process_id(), &session.spawn_id);
-        crate::logging::note_kill_failure("terminal session kill", session.child.kill());
+        crate::proc::pty::stop(
+            &mut session.child,
+            &session.spawn_id,
+            "terminal session kill",
+        );
     }
 }
 
@@ -136,6 +166,10 @@ pub enum TerminalError {
     Poisoned,
     #[error("io error: {0}")]
     Io(String),
+    #[error("the terminal is not accepting input")]
+    Backlogged,
+    #[error("the terminal input is closed")]
+    InputClosed,
 }
 
 crate::util::impl_error_serialize!(TerminalError);
@@ -145,78 +179,14 @@ impl TerminalError {
         match self {
             TerminalError::Poisoned => "poisoned",
             TerminalError::Io(_) => "io",
+            TerminalError::Backlogged => "backlogged",
+            TerminalError::InputClosed => "input_closed",
         }
     }
 }
 
 fn login_shell() -> String {
     crate::path_env::login_shell()
-}
-
-#[cfg(unix)]
-const SESSION_DRAIN_POLLS: usize = 6;
-
-#[cfg(unix)]
-const SESSION_DRAIN_INTERVAL: std::time::Duration = std::time::Duration::from_millis(50);
-
-#[cfg(unix)]
-fn session_descendants(sid: libc::pid_t) -> Vec<libc::pid_t> {
-    let Ok(output) = crate::path_env::command("ps")
-        .args(["-Ao", "pid="])
-        .output()
-    else {
-        return Vec::new();
-    };
-    let Ok(text) = String::from_utf8(output.stdout) else {
-        return Vec::new();
-    };
-    text.split_whitespace()
-        .filter_map(|token| token.parse::<libc::pid_t>().ok())
-        .filter(|pid| *pid != sid && *pid > 1)
-        .filter(|pid| unsafe { libc::getsid(*pid) } == sid)
-        .collect()
-}
-
-#[cfg(unix)]
-fn signal_pty_session(sid: libc::pid_t, signal: libc::c_int) {
-    for pid in session_descendants(sid) {
-        unsafe { libc::kill(pid, signal) };
-    }
-    unsafe { libc::kill(sid, signal) };
-}
-
-#[cfg(unix)]
-pub(crate) fn terminate_pty_session(leader_pid: u32) -> usize {
-    let sid = leader_pid as libc::pid_t;
-    let signalled = session_descendants(sid).len();
-    if signalled == 0 {
-        return 0;
-    }
-    signal_pty_session(sid, libc::SIGTERM);
-    for _ in 0..SESSION_DRAIN_POLLS {
-        thread::sleep(SESSION_DRAIN_INTERVAL);
-        if session_descendants(sid).is_empty() {
-            return signalled;
-        }
-    }
-    signal_pty_session(sid, libc::SIGKILL);
-    signalled
-}
-
-#[cfg(not(unix))]
-pub(crate) fn terminate_pty_session(_leader_pid: u32) -> usize {
-    0
-}
-
-pub(crate) fn reap_pty_session(leader_pid: Option<u32>, spawn_id: &str) -> usize {
-    crate::proc::ledger::forget(spawn_id);
-    let signalled = leader_pid.map(terminate_pty_session).unwrap_or(0);
-    let report = crate::proc::reap::reap(crate::proc::reap::ReapParams {
-        leader_pid,
-        is_leader_exited: true,
-        spawn_id: Some(spawn_id),
-    });
-    signalled + report.stopped.len()
 }
 
 #[tauri::command]
@@ -348,9 +318,9 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     }
     let spawn_id = tag.id.clone();
 
+    let input = PtyInput::spawn(writer);
     let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
         spawn_id: tag.id,
-        writer,
         master: pair.master,
         child,
     })));
@@ -370,6 +340,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
             session_id_clone.clone(),
             TerminalEntry {
                 slot: Arc::clone(&slot),
+                input,
                 cwd: effective_cwd,
                 pid,
                 ring: Arc::clone(&ring),
@@ -410,12 +381,10 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                     .map(|entry| Arc::clone(&entry.slot))
             };
             if let Some(slot) = slot {
-                let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
-                let code = g
-                    .as_mut()
-                    .and_then(|r| r.child.wait().ok())
-                    .map(|s| s.exit_code() as i32)
-                    .unwrap_or(-1);
+                let code = crate::proc::pty::exit_code_of(crate::proc::pty::wait_for_exit(
+                    &slot,
+                    |session| &mut session.child,
+                ));
                 (code, false)
             } else {
                 (-1, true)
@@ -445,7 +414,28 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
 pub async fn terminal_list_live(
     registry: State<'_, TerminalRegistry>,
 ) -> Result<Vec<LiveTerminal>, TerminalError> {
-    registry.list_live()
+    let mut live = registry.list_live()?;
+    let busy: Vec<u32> = live
+        .iter()
+        .filter(|terminal| terminal.pid != terminal.foreground_pid)
+        .filter_map(|terminal| terminal.foreground_pid)
+        .collect();
+    if busy.is_empty() {
+        return Ok(live);
+    }
+    let commands = tauri::async_runtime::spawn_blocking(move || {
+        crate::terminal_foreground::commands_of(&busy)
+    })
+    .await
+    .unwrap_or_default();
+    for terminal in &mut live {
+        if terminal.pid != terminal.foreground_pid {
+            terminal.foreground_command = terminal
+                .foreground_pid
+                .and_then(|pid| commands.get(&pid).cloned());
+        }
+    }
+    Ok(live)
 }
 
 #[tauri::command]
@@ -482,20 +472,25 @@ pub fn terminal_write(
     let bytes = STANDARD
         .decode(&data)
         .map_err(|e| TerminalError::Io(e.to_string()))?;
+    write_session(&registry, &session_id, bytes)
+}
 
-    let slot = {
+fn write_session(
+    registry: &TerminalRegistry,
+    session_id: &str,
+    bytes: Vec<u8>,
+) -> Result<(), TerminalError> {
+    let input = {
         let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.get(&session_id).map(|entry| Arc::clone(&entry.slot))
+        map.get(session_id).map(|entry| entry.input.clone())
     };
-
-    if let Some(slot) = slot {
-        if let Ok(mut guard) = slot.lock() {
-            if let Some(session) = guard.as_mut() {
-                let _ = session.writer.write_all(&bytes);
-            }
-        }
-    }
-    Ok(())
+    let Some(input) = input else {
+        return Ok(());
+    };
+    input.send(bytes).map_err(|error| match error {
+        InputError::Backlogged => TerminalError::Backlogged,
+        InputError::Closed => TerminalError::InputClosed,
+    })
 }
 
 #[tauri::command]
@@ -544,20 +539,27 @@ fn close_session(
     session_id: &str,
 ) -> Result<(), TerminalError> {
     exited.forget(session_id);
-    let slot = {
+    let removed = {
         let mut map = registry.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.remove(session_id).map(|entry| entry.slot)
+        map.remove(session_id)
+            .map(|entry| (entry.slot, entry.input))
     };
-    if let Some(slot) = slot {
+    if let Some((slot, _input)) = removed {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
-                reap_pty_session(session.child.process_id(), &session.spawn_id);
-                crate::logging::note_kill_failure("terminal session kill", session.child.kill());
+                crate::proc::pty::stop(
+                    &mut session.child,
+                    &session.spawn_id,
+                    "terminal session kill",
+                );
             }
         }
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -582,6 +584,7 @@ mod tests {
             "session-1::t1".to_string(),
             TerminalEntry {
                 slot,
+                input: PtyInput::spawn(Box::new(std::io::sink())),
                 cwd: "/worktrees/api".to_string(),
                 pid: Some(4321),
                 ring: new_shared_ring(),
@@ -595,6 +598,7 @@ mod tests {
                 cwd: "/worktrees/api".to_string(),
                 pid: Some(4321),
                 foreground_pid: None,
+                foreground_command: None,
             }]
         );
     }
@@ -623,12 +627,12 @@ mod tests {
 
     #[cfg(unix)]
     fn is_alive(pid: libc::pid_t) -> bool {
-        unsafe { libc::kill(pid, 0) == 0 }
+        crate::proc::signal::exists(pid as u32)
     }
 
     #[cfg(unix)]
     #[test]
-    fn terminate_pty_session_kills_backgrounded_descendant() {
+    fn terminate_session_kills_backgrounded_descendant() {
         let pair = native_pty_system()
             .openpty(PtySize {
                 rows: 24,
@@ -652,7 +656,7 @@ mod tests {
             "the backgrounded process must share the pty session"
         );
 
-        terminate_pty_session(leader_pid);
+        crate::proc::pty::terminate_session(leader_pid);
         crate::logging::note_kill_failure("terminal probe kill", child.kill());
         let _ = child.wait();
 
@@ -696,10 +700,10 @@ mod tests {
             TerminalEntry {
                 slot: Arc::new(Mutex::new(Some(TerminalSession {
                     spawn_id: String::new(),
-                    writer,
                     master: pair.master,
                     child,
                 }))),
+                input: PtyInput::spawn(writer),
                 cwd: "/".to_string(),
                 pid: None,
                 ring: new_shared_ring(),
@@ -751,6 +755,7 @@ mod tests {
         assert_eq!(live.len(), 1);
         assert_eq!(live[0].pid, Some(row.pid));
         assert!(live[0].foreground_pid.is_some());
+        assert!(registry.ended_terminals().is_empty());
 
         close_session(&registry.0, &registry.1, "session-7::t1").expect("close");
 
@@ -777,19 +782,9 @@ mod tests {
             rows: 24,
         })
         .expect("open the terminal");
-        let slot = {
-            let map = registry.0.lock().unwrap();
-            Arc::clone(&map.get("session-9::t1").unwrap().slot)
-        };
         let command =
             "i=1; while [ $i -le 600 ]; do printf 'chunk-%04d-%0600d\\n' $i 0; i=$((i+1)); done; echo FINAL-LINE\nexit 7\n";
-        slot.lock()
-            .unwrap()
-            .as_mut()
-            .unwrap()
-            .writer
-            .write_all(command.as_bytes())
-            .unwrap();
+        write_session(&registry, "session-9::t1", command.as_bytes().to_vec()).unwrap();
         let mut snapshot = snapshot_session(&registry, "session-9::t1").unwrap();
         for _ in 0..200 {
             if snapshot.exit_code.is_some() {
@@ -857,6 +852,113 @@ mod tests {
             .map(|error| error.to_string())
             .unwrap_or_default();
         assert!(message.contains("no longer exists"), "got: {message}");
+        assert!(registry.0.lock().unwrap().is_empty());
+    }
+
+    #[cfg(unix)]
+    fn register_session_that_never_reads(registry: &TerminalRegistry, session_id: &str) {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("/bin/sh");
+        cmd.arg("-c");
+        cmd.arg("stty raw -echo; sleep 120");
+        let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
+        let child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+        let writer = pair.master.take_writer().unwrap();
+        let pid = child.process_id();
+        registry.0.lock().unwrap().insert(
+            session_id.to_string(),
+            TerminalEntry {
+                slot: Arc::new(Mutex::new(Some(TerminalSession {
+                    spawn_id: tag.id,
+                    master: pair.master,
+                    child,
+                }))),
+                input: PtyInput::spawn(writer),
+                cwd: "/".to_string(),
+                pid,
+                ring: new_shared_ring(),
+            },
+        );
+    }
+
+    #[test]
+    fn writing_to_a_session_that_is_gone_is_a_quiet_no_op() {
+        let registry = TerminalRegistry::new();
+        assert!(write_session(&registry, "session-4::t1", b"ls\n".to_vec()).is_ok());
+    }
+
+    #[test]
+    fn a_session_whose_input_closed_reports_it() {
+        let registry = TerminalRegistry::new();
+        let input = PtyInput::spawn(Box::new(FailingWriter));
+        registry.0.lock().unwrap().insert(
+            "session-5::t1".to_string(),
+            TerminalEntry {
+                slot: Arc::new(Mutex::new(None)),
+                input,
+                cwd: "/".to_string(),
+                pid: None,
+                ring: new_shared_ring(),
+            },
+        );
+        let mut closed = false;
+        for _ in 0..200 {
+            if matches!(
+                write_session(&registry, "session-5::t1", b"x".to_vec()),
+                Err(TerminalError::InputClosed)
+            ) {
+                closed = true;
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(closed, "a dead writer must surface as InputClosed");
+    }
+
+    struct FailingWriter;
+
+    impl std::io::Write for FailingWriter {
+        fn write(&mut self, _bytes: &[u8]) -> std::io::Result<usize> {
+            Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, "gone"))
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_child_that_never_reads_neither_blocks_writes_nor_close() {
+        let registry = TerminalRegistry::new();
+        register_session_that_never_reads(&registry, "session-6::t1");
+        let started = std::time::Instant::now();
+        let mut refusal = None;
+        for _ in 0..20_000 {
+            let call = std::time::Instant::now();
+            let result = write_session(&registry, "session-6::t1", vec![b'a'; 4096]);
+            assert!(
+                call.elapsed() < std::time::Duration::from_secs(1),
+                "terminal_write must return at once"
+            );
+            if let Err(error) = result {
+                refusal = Some(error);
+                break;
+            }
+        }
+        assert!(matches!(refusal, Some(TerminalError::Backlogged)));
+
+        close_session(&registry.0, &registry.1, "session-6::t1").expect("close");
+
+        assert!(started.elapsed() < std::time::Duration::from_secs(10));
         assert!(registry.0.lock().unwrap().is_empty());
     }
 

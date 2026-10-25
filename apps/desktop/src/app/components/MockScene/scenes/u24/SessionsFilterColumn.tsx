@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionStage, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';

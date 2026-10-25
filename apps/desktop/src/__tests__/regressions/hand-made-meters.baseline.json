@@ -1,0 +1,11 @@
+{
+  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsBars.tsx": 1,
+  "apps/desktop/src/app/components/BootSplash/BootProgress.tsx": 1,
+  "apps/desktop/src/features/budget/components/SessionSpendPopover/AgentSpendList.tsx": 1,
+  "apps/desktop/src/features/budget/components/spend/SpendBar.tsx": 1,
+  "apps/desktop/src/features/companion/components/IphonePage/PairingCode.tsx": 1,
+  "apps/desktop/src/features/history/components/CommitsHistory/HistoryRunStatus.tsx": 1,
+  "apps/desktop/src/features/onboarding/SetupChecklist/SetupSection.tsx": 1,
+  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/UsageWindowRow.tsx": 1,
+  "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx": 1
+}

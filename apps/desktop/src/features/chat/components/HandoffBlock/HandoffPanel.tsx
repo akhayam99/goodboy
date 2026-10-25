@@ -47,7 +47,7 @@ export const HandoffPanel = ({
     className="flex min-w-0 flex-col gap-2 rounded-md bg-subtle p-3"
   >
     <div className="flex min-w-0 items-center gap-2">
-      <span className="shrink-0 text-label text-foreground">
+      <span className="shrink-0 text-meta text-foreground">
         {HANDOFF_SECTION_LABEL[section.kind]}
       </span>
       {isSummaryVisible ? (

@@ -1,10 +1,14 @@
-import type { SessionBudget, SessionBudgetOnExceed, SessionId } from '@goodboy/types';
+import type { SessionBudgetOnExceed, SessionId } from '@goodboy/types';
 import { invokeSessionBudgetSet } from '../../../features/budget/budget';
 import { currentAutoDrivePort } from '../../../features/auto/autoDrivePort';
 import { pausingSessionCapOf } from '../../../features/budget/pausingSessionCapOf';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { lowerAutoLimitsToSession } from '../auto/lowerAutoLimitsToSession';
+import { lowerAutoLimitsToSession } from '../../runtime/auto/lowerAutoLimitsToSession';
 import type { GetFn, SetFn } from '../../slice-types';
+
+type FailureParams = {
+  readonly error: unknown;
+};
 
 const LOWER_FAILED = 'The session limit is set, but a running Auto kept its larger limit';
 
@@ -14,8 +18,7 @@ export const setSessionBudget = (set: SetFn, get: GetFn) => {
     softCapUsd: number,
     onExceed: SessionBudgetOnExceed = 'pause',
   ) => {
-    await invokeSessionBudgetSet(sessionId, softCapUsd, onExceed);
-    const budget: SessionBudget = { sessionId, softCapUsd, onExceed };
+    const budget = await invokeSessionBudgetSet(sessionId, softCapUsd, onExceed);
     set((state) => ({
       sessionBudgets: { ...state.sessionBudgets, [sessionId]: budget },
     }));
@@ -23,7 +26,7 @@ export const setSessionBudget = (set: SetFn, get: GetFn) => {
     if (capUsd === null) {
       return;
     }
-    const reportError = (error: unknown) => {
+    const reportError = ({ error }: FailureParams) => {
       void get().reportError({ title: LOWER_FAILED, error, sessionId });
     };
     try {
@@ -39,7 +42,7 @@ export const setSessionBudget = (set: SetFn, get: GetFn) => {
         await get().loadAutoTrees({ sessionId });
       }
     } catch (error) {
-      reportError(error);
+      reportError({ error });
     }
   };
 };

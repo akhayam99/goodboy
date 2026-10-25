@@ -1,4 +1,4 @@
-import { isApiProvider } from '@goodboy/core';
+import { isApiProvider, providerFlags } from '@goodboy/core';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { PROVIDER_LABEL } from './providerLabel';
 import type {
@@ -12,12 +12,27 @@ type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
 type ProbeErrorKind = 'notFound' | 'timeout' | 'exit';
 
+export type AuthReason =
+  | { readonly kind: 'timed_out'; readonly secs: number }
+  | { readonly kind: 'not_installed' }
+  | { readonly kind: 'spawn_failed'; readonly detail: string }
+  | { readonly kind: 'cli_said'; readonly detail: string }
+  | { readonly kind: 'printed_nothing' }
+  | { readonly kind: 'exited_with_code'; readonly code: number }
+  | { readonly kind: 'no_exit_code' }
+  | { readonly kind: 'empty_command' }
+  | { readonly kind: 'no_access_token' }
+  | { readonly kind: 'not_confirmed_by_server' }
+  | { readonly kind: 'no_status' }
+  | { readonly kind: 'unknown_provider' }
+  | { readonly kind: 'check_unfinished' };
+
 export type AuthState = {
   readonly state: AuthStateKind;
   readonly identity: string | null;
   readonly plan?: string | null;
   readonly verified?: boolean;
-  readonly reason?: string | null;
+  readonly reason?: AuthReason | null;
 };
 
 export type { ProviderId };
@@ -50,16 +65,6 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   moonshot: 'https://platform.moonshot.ai/docs',
 };
 
-const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor-agent',
-  codex: 'codex',
-  gemini: 'agy',
-  opencode: 'opencode',
-  openrouter: 'opencode',
-  moonshot: 'opencode',
-};
-
 const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   anthropic: 'refresh_provider_status',
   cursor: 'refresh_cursor_status',
@@ -72,9 +77,6 @@ const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   models: [],
-  supportsTools: false,
-  supportsStream: false,
-  supportsCheapModel: false,
 };
 
 type RefreshParams = {
@@ -142,7 +144,7 @@ function providerInfoFromStatus(
   const base = {
     id,
     label: PROVIDER_LABEL[id],
-    binary: status?.binary ?? PROVIDER_DEFAULT_BINARY[id],
+    binary: status?.binary ?? providerFlags({ id }).binary,
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
@@ -197,7 +199,7 @@ const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): Provider
   return {
     id,
     label: PROVIDER_LABEL[id],
-    binary: PROVIDER_DEFAULT_BINARY[id],
+    binary: providerFlags({ id }).binary,
     capabilities: EMPTY_CAPABILITIES,
     identity: null,
     docsUrl: PROVIDER_DOCS[id],

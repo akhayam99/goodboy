@@ -2,6 +2,7 @@ import { deleteWorktreeLedgerEntries, updateSessionMountLifecycle } from '@goodb
 import type { IsoDateTime, WorktreeRemovalMode } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { terminalsInFolder } from '../../../features/terminal/terminalsInFolder';
 import { removeWorktreeFolder } from '../../../features/worktree/worktree';
 import { MOUNT_CLEANUP_BLOCKER_REASON, processesInWorktree } from '../mount-cleanup/cleanupPolicy';
 import { runMountRemoval } from '../project-mounts/runMountRemoval';
@@ -12,6 +13,7 @@ import type {
   StorageFolder,
   StorageRemoval,
   StorageRemovalSummary,
+  StorageRestoreTarget,
 } from './types';
 
 type FolderRemovalParams = {
@@ -19,6 +21,32 @@ type FolderRemovalParams = {
   readonly folder: StorageFolder;
   readonly mode: WorktreeRemovalMode;
 };
+
+type RestoreTargetParams = {
+  readonly folder: StorageFolder;
+};
+
+const restoreTargetOf = ({ folder }: RestoreTargetParams): StorageRestoreTarget | null => {
+  if (folder.branch === '' || folder.origin === 'in-use') {
+    return null;
+  }
+  return {
+    path: folder.path,
+    repoRoot: folder.repoRoot,
+    branch: folder.branch,
+    origin: folder.origin,
+    sessionId: folder.sessionId,
+    mountId: folder.mountId,
+    revision: folder.revision === null ? null : folder.revision + 1,
+  };
+};
+
+const removedOutcome = ({ folder }: RestoreTargetParams): StorageRemoval => ({
+  kind: 'removed',
+  path: folder.path,
+  sizeBytes: folder.sizeBytes ?? 0,
+  restore: restoreTargetOf({ folder }),
+});
 
 const removeArchived = async ({
   get,
@@ -65,7 +93,7 @@ const removeArchived = async ({
   switch (decision.kind) {
     case 'removed':
     case 'missing':
-      return { kind: 'removed', path: folder.path, sizeBytes: folder.sizeBytes ?? 0 };
+      return removedOutcome({ folder });
     case 'kept':
       return { kind: 'kept', path: folder.path, reasons: [], message: decision.reason };
     case 'failed':
@@ -92,7 +120,7 @@ const removeLedger = async ({ folder, mode }: FolderRemovalParams): Promise<Stor
       () => undefined,
     );
   }
-  return { kind: 'removed', path: folder.path, sizeBytes: folder.sizeBytes ?? 0 };
+  return removedOutcome({ folder });
 };
 
 const MONITOR_UNREADABLE_REASON = 'Could not check for running processes, so this folder was kept';
@@ -117,6 +145,14 @@ const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<St
   }
   if (processesInWorktree({ snapshot: monitorSnapshot, worktreePath: folder.path }).length > 0) {
     return keptFor({ folder, message: MOUNT_CLEANUP_BLOCKER_REASON['process-running'] });
+  }
+  const terminals = terminalsInFolder({
+    tabs: get().terminalTabs,
+    path: folder.path,
+    mountId: folder.mountId,
+  });
+  if (terminals.length > 0) {
+    return keptFor({ folder, message: MOUNT_CLEANUP_BLOCKER_REASON['terminal-open'] });
   }
   try {
     if (folder.origin === 'archived') {
@@ -163,6 +199,11 @@ export const removeStorageFolders = (set: SetFn, get: GetFn) => {
         0,
       ),
       kept: outcomes.filter((outcome) => outcome.kind !== 'removed'),
+      restorable: removed.flatMap((outcome) =>
+        outcome.kind === 'removed' && outcome.restore !== null ? [outcome.restore] : [],
+      ),
+      undo: null,
+      isUndoing: false,
     };
     set({ storageOutcome: summary });
     await get()

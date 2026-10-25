@@ -1,12 +1,11 @@
 import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
+import { applyHistoryPlan } from '../../../features/history/historyEngine';
 import { ORIGIN_MOVED_MESSAGE } from '../../../features/history/originMovedMessage';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange } from './historyIdentity';
-import { editPostedReplies } from '../resolve/editPostedReplies';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { historyThreadSnapshots } from './historyThreadSnapshots';
@@ -332,64 +331,29 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       return 'stopped';
     }
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushing', planId } });
-    const pushed = await pushWithLease({
-      worktreePath: identity?.worktreePath ?? target.worktreePath,
-      branch: identity?.branch ?? target.branch,
-      expectedRemoteSha,
-      workspaceId: target.workspaceId,
-      projectId: target.projectId,
-    }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
-    if (pushed.kind === 'pushed') {
-      get().recordLocalCheck({ mountId, answer: { error: null }, at: Date.now() });
-      setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
-      await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(
-        () => undefined,
-      );
-      if (planId !== null) {
-        await markHistoryPlan({
-          db: tauriDatabase,
-          id: planId,
-          state: 'pushed',
-          at: Date.now(),
-        }).catch(() => undefined);
-      }
-      await editPostedReplies({ set, get, sessionId }).catch(() => 0);
-      const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
-      const agentId = get().historyRuns[mountId]?.agentId ?? null;
-      await recordHistoryEvent({
-        get,
-        kind: 'history_pushed',
-        target,
-        origin,
-        planId,
-        extra: {
-          ...(prNumber !== null && { prNumber }),
-          ...(agentId !== null && { agentId }),
-        },
-      });
-      void get()
-        .refreshPrDescription({ sessionId, mountId })
-        .catch(() => false);
-      void refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] });
-      void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
+    const pushed = await get().pushBranch({
+      sessionId,
+      mountId,
+      mode: 'lease',
+      guard: {
+        kind: 'expected',
+        expectedRemoteSha,
+        worktreePath: identity?.worktreePath ?? target.worktreePath,
+        branch: identity?.branch ?? target.branch,
+      },
+    });
+    if (pushed.ok) {
       return 'pushed';
     }
     const stop: HistoryStop =
-      pushed.kind === 'stale'
+      pushed.reason === 'moved'
         ? {
             reason: 'origin-moved',
             message: ORIGIN_MOVED_MESSAGE,
             files: [],
             sha: null,
           }
-        : { reason: 'push-failed', message: pushed.message, files: [], sha: null };
-    if (pushed.kind === 'failed') {
-      get().recordLocalCheck({
-        mountId,
-        answer: { error: pushed.message },
-        at: Date.now(),
-      });
-    }
+        : { reason: 'push-failed', message: pushed.error, files: [], sha: null };
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
     await reportHistoryStop({ get, set, target, origin, stop, planId });
     return 'stopped';

@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::branch_remote::{branch_remote, ConfiguredUpstream};
-use crate::worktree::{git, resolve_base, resolve_upstream, GitDistance, WorktreeError};
+use crate::worktree::{
+    git, git_plain_paths, resolve_base, resolve_upstream, GitDistance, WorktreeError,
+};
 
 const MAIN_COMMIT_LIMIT: usize = 50;
 const COMMIT_FORMAT: &str = "--format=%H%x1f%s%x1f%an%x1f%ct";
@@ -84,7 +86,7 @@ fn remote_sha_of(cwd: &Path, branch: &str) -> Option<String> {
 }
 
 fn files_per_commit(cwd: &Path, range: &str) -> Vec<CommitFiles> {
-    let Ok(raw) = git(cwd, &["log", "--format=%x1e%H", "--name-only", range]) else {
+    let Ok(raw) = git_plain_paths(cwd, &["log", "--format=%x1e%H", "--name-only", range]) else {
         return Vec::new();
     };
     raw.split('\u{1e}')

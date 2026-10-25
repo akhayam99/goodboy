@@ -27,10 +27,14 @@ export const useAttachmentThumbnail = ({
     setThumbnail({ status: 'loading' });
     readAttachment(workingDir, relPath)
       .then((src) => {
-        if (alive) setThumbnail({ status: 'ready', src });
+        if (alive) {
+          setThumbnail({ status: 'ready', src });
+        }
       })
       .catch(() => {
-        if (alive) setThumbnail({ status: 'failed' });
+        if (alive) {
+          setThumbnail({ status: 'failed' });
+        }
       });
     return () => {
       alive = false;

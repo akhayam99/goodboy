@@ -33,7 +33,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -275,7 +275,30 @@ describe('store contract', () => {
         sessionId: SESSION_ID,
         softCapUsd: 42,
         onExceed: 'warn',
+        warnRatio: 0.8,
       });
+    });
+
+    it('setSessionBudget keeps what the backend answered, warn ratio included', async () => {
+      const store = useAppStore;
+      storySpies.invokeSessionBudgetSet.mockResolvedValueOnce({
+        sessionId: SESSION_ID,
+        softCapUsd: 42,
+        onExceed: 'warn',
+        warnRatio: 0.75,
+      });
+      await store.getState().setSessionBudget(SESSION_ID, 42, 'warn');
+      expect(store.getState().sessionBudgets[SESSION_ID]?.warnRatio).toBe(0.75);
+    });
+
+    it('setSessionBudget leaves the old limit in place when the write fails', async () => {
+      const store = useAppStore;
+      await store.getState().setSessionBudget(SESSION_ID, 42, 'warn');
+      storySpies.invokeSessionBudgetSet.mockRejectedValueOnce(new Error('disk full'));
+      await expect(store.getState().setSessionBudget(SESSION_ID, 99, 'pause')).rejects.toThrow(
+        'disk full',
+      );
+      expect(store.getState().sessionBudgets[SESSION_ID]?.softCapUsd).toBe(42);
     });
 
     it('clearSessionBudget drops the limit and its open alerts', async () => {

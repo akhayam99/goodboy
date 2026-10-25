@@ -8,39 +8,41 @@ type Params = {
   readonly store: DirectorStore;
 };
 
+type NotesParams = {
+  readonly notes: ReadonlyArray<DiffComment>;
+};
+
 type PatchParams = {
   readonly store: DirectorStore;
   readonly sessionId: SessionId;
-  readonly patch: (notes: ReadonlyArray<DiffComment>) => ReadonlyArray<DiffComment>;
+  readonly patch: (params: NotesParams) => ReadonlyArray<DiffComment>;
 };
 
 const patchNotes = ({ store, sessionId, patch }: PatchParams): void => {
   store.setState((state) => ({
     diffComments: {
       ...state.diffComments,
-      [sessionId]: patch(state.diffComments[sessionId] ?? []),
+      [sessionId]: patch({ notes: state.diffComments[sessionId] ?? [] }),
     },
   }));
 };
 
+type NoteParams = {
+  readonly note: DiffComment;
+};
+
 type MapParams = {
   readonly id: string;
-  readonly change: (note: DiffComment) => DiffComment;
+  readonly change: (params: NoteParams) => DiffComment;
 };
 
 const mapNote =
   ({ id, change }: MapParams) =>
-  (notes: ReadonlyArray<DiffComment>): ReadonlyArray<DiffComment> =>
-    notes.map((note) => (note.id === id ? change(note) : note));
+  ({ notes }: NotesParams): ReadonlyArray<DiffComment> =>
+    notes.map((note) => (note.id === id ? change({ note }) : note));
 
 export const installDiffNotes = ({ store }: Params): void => {
-  const addDiffComment: AppStore['addDiffComment'] = async (
-    sessionId,
-    filePath,
-    body,
-    anchor,
-    author,
-  ) => {
+  const addDiffComment = (async (sessionId, filePath, body, anchor, author) => {
     const mount = selectDisplayedMount({ state: store.getState(), sessionId });
     const note: DiffComment = {
       id: crypto.randomUUID(),
@@ -53,39 +55,39 @@ export const installDiffNotes = ({ store }: Params): void => {
       ...(anchor === undefined ? {} : { anchor }),
       ...(mount === null ? {} : { projectId: mount.projectId, branch: mount.branch }),
     };
-    patchNotes({ store, sessionId, patch: (notes) => [...notes, note] });
-  };
-  const editDiffComment: AppStore['editDiffComment'] = async (sessionId, commentId, body) => {
+    patchNotes({ store, sessionId, patch: ({ notes }) => [...notes, note] });
+  }) satisfies AppStore['addDiffComment'];
+  const editDiffComment = (async (sessionId, commentId, body) => {
     patchNotes({
       store,
       sessionId,
-      patch: mapNote({ id: commentId, change: (note) => ({ ...note, body }) }),
+      patch: mapNote({ id: commentId, change: ({ note }) => ({ ...note, body }) }),
     });
-  };
-  const deleteDiffComment: AppStore['deleteDiffComment'] = async (sessionId, commentId) => {
+  }) satisfies AppStore['editDiffComment'];
+  const deleteDiffComment = (async (sessionId, commentId) => {
     patchNotes({
       store,
       sessionId,
-      patch: (notes) => notes.filter((note) => note.id !== commentId),
+      patch: ({ notes }) => notes.filter((note) => note.id !== commentId),
     });
-  };
+  }) satisfies AppStore['deleteDiffComment'];
   const restoreDiffComment: AppStore['restoreDiffComment'] = async ({ note }) => {
     patchNotes({
       store,
       sessionId: note.sessionId,
-      patch: (notes) => [...notes.filter((entry) => entry.id !== note.id), note],
+      patch: ({ notes }) => [...notes.filter((entry) => entry.id !== note.id), note],
     });
   };
-  const reopenDiffComment: AppStore['reopenDiffComment'] = async (sessionId, commentId) => {
+  const reopenDiffComment = (async (sessionId, commentId) => {
     patchNotes({
       store,
       sessionId,
       patch: mapNote({
         id: commentId,
-        change: ({ resolvedAt: _resolvedAt, ...note }) => ({ ...note, status: 'open' }),
+        change: ({ note: { resolvedAt: _resolvedAt, ...note } }) => ({ ...note, status: 'open' }),
       }),
     });
-  };
+  }) satisfies AppStore['reopenDiffComment'];
   const discardDiffComments: AppStore['discardDiffComments'] = async ({ sessionId, ids }) => {
     const wanted = new Set(ids);
     const removed = (store.getState().diffComments[sessionId] ?? []).filter((note) =>
@@ -97,7 +99,7 @@ export const installDiffNotes = ({ store }: Params): void => {
     patchNotes({
       store,
       sessionId,
-      patch: (notes) => notes.filter((note) => !wanted.has(note.id)),
+      patch: ({ notes }) => notes.filter((note) => !wanted.has(note.id)),
     });
     store.getState().undoable({
       message: removed.length === 1 ? 'Note discarded' : `${removed.length} notes discarded`,
@@ -106,7 +108,7 @@ export const installDiffNotes = ({ store }: Params): void => {
         patchNotes({
           store,
           sessionId,
-          patch: (notes) => [
+          patch: ({ notes }) => [
             ...notes,
             ...removed.filter((note) => !notes.some((entry) => entry.id === note.id)),
           ],

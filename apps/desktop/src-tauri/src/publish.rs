@@ -3,13 +3,14 @@ use std::path::Path;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::github::{read_token, run_git_authenticated};
+use crate::github::read_token;
+use crate::remote::REMOTE_NAME;
+use crate::remote_auth::run_git_authenticated;
 use crate::remote_probe::{probe_with, RemoteProbe};
 use crate::repo::{is_repo_root, is_supported_remote_url};
 use crate::worktree::{git, redact_credentials};
 
 const PUBLISH_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
-const REMOTE_NAME: &str = "origin";
 
 #[derive(Debug, Error)]
 pub enum PublishError {
@@ -26,6 +27,14 @@ pub enum PublishError {
 }
 
 crate::util::impl_error_serialize!(PublishError);
+
+impl From<crate::github::GithubError> for PublishError {
+    fn from(error: crate::github::GithubError) -> Self {
+        PublishError::Git {
+            message: error.to_string(),
+        }
+    }
+}
 
 impl PublishError {
     fn kind(&self) -> &'static str {
@@ -194,7 +203,7 @@ pub async fn project_publish_main(
     project_id: Option<String>,
 ) -> Result<PublishOutcome, PublishError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         publish_main(&project_path, token.as_deref(), PUBLISH_PROBE_TIMEOUT)
     })
     .await

@@ -1,4 +1,5 @@
-import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { formatError } from '@goodboy/ui';
 import {
   classifyWorkflowChain,
@@ -13,8 +14,6 @@ import { notifyWorkflowGateBlock } from './notifyWorkflowGateBlock';
 import { WorkflowGateError } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 export type SkipStepOptions = {
   readonly onlyWhenBlocked?: boolean;
@@ -109,7 +108,7 @@ const runSkipAndAdvance = async (params: SkipParams): Promise<void> => {
   if (isLive) {
     await get().cancelCurrentTurn(sessionId, agent.id);
   }
-  await invokeAgentUpdateStatus(agent.id, { status: 'skipped', completedAt: nowIso() });
+  await invokeAgentUpdateStatus(agent.id, { status: 'skipped', completedAt: isoNow() });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   void get().refreshUnreadWorkspaces();

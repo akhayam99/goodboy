@@ -1,5 +1,5 @@
-import { ExternalLink } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SquareArrowOutUpRight } from 'lucide-react';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly reason: string;
@@ -10,7 +10,7 @@ type Props = {
 export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4">
-      <p className="max-w-prose text-label text-muted-foreground">{reason}</p>
+      <p className="max-w-prose text-meta text-muted-foreground">{reason}</p>
       <a
         href={docsUrl}
         target="_blank"
@@ -18,7 +18,7 @@ export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
         className="inline-flex items-center gap-1 text-meta text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{docsLabel}</span>
-        <ExternalLink size={ICON_SIZE.mark} aria-hidden />
+        <SquareArrowOutUpRight size={ICON_SIZE.mark} aria-hidden />
       </a>
     </div>
   );

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
-import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
+import { Eyebrow, FOCUS_RING, cn } from '@goodboy/ui';
+import type { ChatId } from '@goodboy/types';
 import { ChatListRow, type ChatRowSelection } from './ChatListRow';
 
 export type ChatListGroupRow = {
@@ -55,7 +55,10 @@ export const ChatListGroup = ({
           <button
             type="button"
             onClick={action.onClick}
-            className="rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+              FOCUS_RING,
+            )}
           >
             {action.label}
           </button>

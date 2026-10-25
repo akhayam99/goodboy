@@ -24,7 +24,11 @@ const PR: PullRequestState = {
   body: '',
   updatedAt: '2026-09-20T10:00:00Z',
   author: 'nadia-p',
+  headSha: '6c20f48a9e1d',
 };
+
+const PINNED = { expectedHeadSha: '6c20f48a9e1d' };
+const MOUNT_PINNED = { mountId: SHOWN_MOUNT, ...PINNED };
 
 const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => ({
   sessionId: SESSION,
@@ -159,25 +163,42 @@ describe('the merge confirm choice', () => {
   };
 
   it('sends the chosen method to the merge', async () => {
-    expect(await runMerge('rebase')).toHaveBeenCalledWith(SESSION, 318, 'rebase', {
-      mountId: SHOWN_MOUNT,
-    });
-    expect(await runMerge('merge')).toHaveBeenCalledWith(SESSION, 318, 'merge', {
-      mountId: SHOWN_MOUNT,
-    });
+    expect(await runMerge('rebase')).toHaveBeenCalledWith(SESSION, 318, 'rebase', MOUNT_PINNED);
+    expect(await runMerge('merge')).toHaveBeenCalledWith(SESSION, 318, 'merge', MOUNT_PINNED);
   });
 
   it('falls back to the default method when nothing was chosen', async () => {
-    expect(await runMerge(null)).toHaveBeenCalledWith(SESSION, 318, 'squash', {
+    expect(await runMerge(null)).toHaveBeenCalledWith(SESSION, 318, 'squash', MOUNT_PINNED);
+    expect(await runMerge('fast-forward')).toHaveBeenCalledWith(
+      SESSION,
+      318,
+      'squash',
+      MOUNT_PINNED,
+    );
+  });
+
+  it('pins the merge to the head the confirm dialog showed', async () => {
+    const mergePr = await runMerge(
+      'squash',
+      facts({ mountId: SHOWN_MOUNT, pr: { ...PR, headSha: '9f3e2d1c0b8a' } }),
+    );
+    expect(mergePr).toHaveBeenCalledWith(SESSION, 318, 'squash', {
       mountId: SHOWN_MOUNT,
+      expectedHeadSha: '9f3e2d1c0b8a',
     });
-    expect(await runMerge('fast-forward')).toHaveBeenCalledWith(SESSION, 318, 'squash', {
+  });
+
+  it('merges without a pin when the host sent no head', async () => {
+    const { headSha: _omitted, ...withoutHead } = PR;
+    const mergePr = await runMerge('squash', facts({ mountId: SHOWN_MOUNT, pr: withoutHead }));
+    expect(mergePr).toHaveBeenCalledWith(SESSION, 318, 'squash', {
       mountId: SHOWN_MOUNT,
+      expectedHeadSha: null,
     });
   });
 
   it('names no mount when the facts carry none', async () => {
-    expect(await runMerge('squash', facts())).toHaveBeenCalledWith(SESSION, 318, 'squash', {});
+    expect(await runMerge('squash', facts())).toHaveBeenCalledWith(SESSION, 318, 'squash', PINNED);
   });
 
   it('reads the activity again once the merge is done', async () => {

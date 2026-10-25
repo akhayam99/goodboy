@@ -391,6 +391,160 @@ const ROWS: ReadonlyArray<Row> = [
     before: { stage: 'running', attention: null, reason: 'agent running' },
     after: { stage: 'running', attention: null, reason: 'agent running', isRunning: true },
   },
+  {
+    name: 'a Scout answer with no mount',
+    params: { ...base, isBranchless: true, settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'done',
+      attention: null,
+      reason: 'answered',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a report with no mount',
+    params: { ...base, isBranchless: true, settledOutcome: 'report-ready' },
+    before: null,
+    after: {
+      stage: 'done',
+      attention: null,
+      reason: 'report ready',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a plan with no mount',
+    params: { ...base, isBranchless: true, settledOutcome: 'plan-ready' },
+    before: null,
+    after: {
+      stage: 'done',
+      attention: null,
+      reason: 'plan ready',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a Documents folder edit that finished',
+    params: { ...base, isBranchless: true, settledOutcome: 'finished' },
+    before: null,
+    after: {
+      stage: 'done',
+      attention: null,
+      reason: 'finished',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a read-only answer on a mounted project with no pull request',
+    params: { ...base, settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'done',
+      attention: null,
+      reason: 'answered',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'the same answer while the host has not answered',
+    params: { ...base, settledOutcome: 'answered', prFetchState: 'unknown' },
+    before: null,
+    after: {
+      stage: 'building',
+      attention: null,
+      reason: 'checking GitHub',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a GitLab mount with no merge request while GitLab has not answered',
+    params: { ...base, settledOutcome: 'answered', prFetchState: 'unknown', requestHost: 'gitlab' },
+    before: null,
+    after: {
+      stage: 'building',
+      attention: null,
+      reason: 'checking GitLab',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a GitLab mount with no merge request while GitLab is unreachable',
+    params: { ...base, prFetchState: 'unreachable', requestHost: 'gitlab' },
+    before: null,
+    after: {
+      stage: 'building',
+      attention: null,
+      reason: 'GitLab unreachable',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a GitLab mount with no merge request once GitLab answered',
+    params: { ...base, prFetchState: 'known', requestHost: 'gitlab' },
+    before: null,
+    after: {
+      stage: 'building',
+      attention: null,
+      reason: 'no MR yet',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a Bitbucket mount with no pull request while Bitbucket is unreachable',
+    params: { ...base, prFetchState: 'unreachable', requestHost: 'bitbucket' },
+    before: null,
+    after: {
+      stage: 'building',
+      attention: null,
+      reason: 'Bitbucket unreachable',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'an answer with an unread reply',
+    params: { ...base, hasUnread: true, isBranchless: true, settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'attention',
+      attention: 'unread-reply',
+      reason: 'unread agent reply',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'an answer with an open question',
+    params: { ...base, openQuestionCount: 1, isBranchless: true, settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'attention',
+      attention: 'open-question',
+      reason: '1 open question',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'an answer when the person writes again',
+    params: { ...base, hasRunningAgent: true, isBranchless: true, settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'running',
+      attention: null,
+      reason: 'agent running',
+      isRunning: true,
+    },
+  },
+  {
+    name: 'an answer next to an open pull request',
+    params: { ...base, pr: livePr(), settledOutcome: 'answered' },
+    before: null,
+    after: {
+      stage: 'review',
+      attention: null,
+      reason: 'PR #318 awaiting review',
+      isRunning: false,
+    },
+  },
 ];
 
 const CHANGED_ROWS: ReadonlyArray<string> = [

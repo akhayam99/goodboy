@@ -9,18 +9,8 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowDown } from 'lucide-react';
-import type {
-  AgentId,
-  MessageAttachment,
-  OpenQuestion,
-  ProviderId,
-  ProviderRunId,
-  Session,
-  TurnEvent,
-  TurnProviderOverride,
-} from '@goodboy/types';
-import { Button, cn, Divider, PageColumn, ScrollFade, Tooltip } from '@goodboy/ui';
+import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
+import { Button, cn, PageColumn, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -34,7 +24,8 @@ import {
 import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { conversationRows } from '../../utils/conversationRows';
-import { classifyThinkingContext } from '../../utils/thinking-context';
+import { useAgentStop } from '../../../../shared/hooks/useAgentStop';
+import { livePhraseOf } from '../../utils/livePhraseOf';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -48,9 +39,13 @@ import { mountProposalsByRun } from '../../../suggestions/transcriptMountProposa
 import { ChatEmptyState } from './ChatEmptyState';
 import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
+import { JumpToLatest } from './JumpToLatest';
+import { firstUnseenRowKeyOf } from './firstUnseenRowKeyOf';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { revealPacer } from '../../reveal/revealPacer';
 import { USER_SCROLL_EVENTS, useScrollPin } from './useScrollPin';
+import { findRetrySource } from './findRetrySource';
+import { buildRetryOverride } from './buildRetryOverride';
 import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
 import { rowHeightCache } from './rowHeightCache';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
@@ -59,11 +54,12 @@ import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
 import { useToast } from '../../../../shared/components/Toast';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { isTurnThinking } from '../../utils/isTurnThinking';
 import { turnStateOf } from './turnStateOf';
 import { waitingForOf } from './waitingForOf';
+import { useTurnEndAnnouncement } from './useTurnEndAnnouncement';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import type { ComposerControlSlots } from '../ChatInput/composerControlSlots';
 
@@ -89,55 +85,6 @@ type Props = {
 type ChatViewMode = 'conversation' | 'record' | 'steps';
 
 const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li';
-
-type RetrySource = {
-  readonly content: string;
-  readonly attachments: ReadonlyArray<MessageAttachment>;
-  readonly provider?: ProviderId;
-  readonly model?: string;
-};
-
-type RetrySourceParams = {
-  readonly events: ReadonlyArray<TurnEvent>;
-  readonly runId: ProviderRunId;
-};
-
-type RetryOverrideParams = {
-  readonly provider?: ProviderId;
-  readonly model?: string;
-};
-
-const findRetrySource = ({ events, runId }: RetrySourceParams): RetrySource | null => {
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const event = events[i];
-    if (event?.kind !== 'user_text') {
-      continue;
-    }
-    if (event.runId !== runId) {
-      continue;
-    }
-    return {
-      content: event.text,
-      attachments: event.attachments ?? [],
-      provider: event.provider,
-      model: event.model,
-    };
-  }
-  return null;
-};
-
-const buildRetryOverride = ({
-  provider,
-  model,
-}: RetryOverrideParams): TurnProviderOverride | undefined => {
-  if (provider == null) {
-    return undefined;
-  }
-  return {
-    providerId: provider,
-    ...(model != null ? { model } : {}),
-  };
-};
 
 export const ChatView = ({
   session,
@@ -275,6 +222,18 @@ export const ChatView = ({
         : clusterOperations(deferredItems),
     [deferredItems, isConversation, isTurnLive],
   );
+  const unseenSince = useAppStore((state) =>
+    selectedAgentId == null ? null : (state.agentUnseenSince[selectedAgentId] ?? null),
+  );
+  const newFromKey = useMemo(
+    () =>
+      firstUnseenRowKeyOf({
+        rows,
+        sinceMs: unseenSince === null ? null : Date.parse(unseenSince),
+      }),
+    [rows, unseenSince],
+  );
+  useTurnEndAnnouncement({ isTurnLive, rows });
   const lastItem = items[items.length - 1];
   const lastRow = rows[rows.length - 1];
   const lastClusterRunning =
@@ -289,7 +248,7 @@ export const ChatView = ({
           permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
         }) === 'running',
     );
-  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const agentStop = useAgentStop({ sessionId: session.id, agentId: selectedAgentId });
   const canStop = hasComposer && !isEnded && selectedAgentId != null;
   const isThinking =
     isConversation || canStop
@@ -300,9 +259,19 @@ export const ChatView = ({
           isLastClusterRunning: lastClusterRunning,
         });
   const thinkingStartedAt = turnStateForRun.kind === 'running' ? turnStateForRun.startedAt : null;
-  const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
-
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const selectedMountId = phaseRuns.find((agent) => agent.id === selectedAgentId)?.mountId;
+  const projectName = useAppStore((s) =>
+    selectedMountId === undefined
+      ? null
+      : ((s.sessionProjectMounts[session.id] ?? []).find(
+          (mount) => mount.mountId === selectedMountId,
+        )?.mountName ?? null),
+  );
+  const thinkingPhrase = useMemo(
+    () => livePhraseOf({ lastItem, project: projectName }),
+    [lastItem, projectName],
+  );
   const waitingFor = useMemo(
     () => waitingForOf({ agents: phaseRuns, parentId: selectedAgentId }),
     [phaseRuns, selectedAgentId],
@@ -602,16 +571,11 @@ export const ChatView = ({
                 />
               </div>
             ) : (
-              <ul
-                data-find-root
-                data-scroll-content=""
-                className="flex flex-col gap-3"
-                aria-live="polite"
-                aria-relevant="additions"
-              >
+              <ul data-find-root data-scroll-content="" className="flex flex-col gap-3">
                 <ChatImageLoaderProvider key={session.id} sessionId={session.id}>
                   <TranscriptRows
                     rows={rows}
+                    newFromKey={newFromKey}
                     oqByTurnOrdinal={oqByTurnOrdinal}
                     slackDrafts={slackDrafts}
                     sessionId={session.id}
@@ -620,7 +584,7 @@ export const ChatView = ({
                     onRefreshAuth={handleRefreshAuth}
                     onOpenDiff={handleOpenDiff}
                     isThinking={isThinking}
-                    thinkingContext={thinkingContext}
+                    thinkingPhrase={thinkingPhrase}
                     thinkingStartedAt={thinkingStartedAt}
                     onRetryRun={(params) => void handleRetryRun(params)}
                     retryingRunId={retryingRunId}
@@ -634,10 +598,8 @@ export const ChatView = ({
                     waitingFor={waitingFor}
                     {...(stopLabel !== undefined && { stopLabel })}
                     {...(clockStepAgentId !== undefined && { clockStepAgentId })}
-                    {...(canStop && {
-                      onStop: () =>
-                        void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user'),
-                    })}
+                    stopPhase={agentStop.phase}
+                    {...(canStop && { onStop: agentStop.stop })}
                   />
                 </ChatImageLoaderProvider>
               </ul>
@@ -647,21 +609,13 @@ export const ChatView = ({
         {!pinned && waitingHere[0] !== undefined && (
           <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
         )}
-        {!pinned && waitingHere.length === 0 && (
-          <Tooltip content="Jump to latest">
-            <button
-              type="button"
-              aria-label="Jump to latest"
-              className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background ring-1 ring-border-soft transition-colors hover:bg-hover"
-              onClick={() => {
-                suspendAnchor();
-                jumpToLatest();
-              }}
-            >
-              <ArrowDown size={ICON_SIZE.control} aria-hidden />
-            </button>
-          </Tooltip>
-        )}
+        <JumpToLatest
+          isVisible={!pinned && waitingHere.length === 0}
+          onJump={() => {
+            suspendAnchor();
+            jumpToLatest();
+          }}
+        />
       </div>
       {hasComposer &&
       selectedAgentId != null &&
@@ -698,7 +652,7 @@ export const ChatView = ({
         )
       ) : isEnded ? (
         agentQuestionCount > 0 ? null : (
-          <PageColumn className="py-3 text-label text-muted-foreground">
+          <PageColumn className="py-3 text-meta text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
           </PageColumn>
         )

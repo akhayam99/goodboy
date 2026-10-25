@@ -1,15 +1,14 @@
-use std::process::Stdio;
 use std::sync::Arc;
-use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
+use crate::aux_spawn::SpawnKind;
 use crate::live_child::{
-    drain_lossy_active, run_to_exit, LiveChild, LiveChildRegistry, SIDE_JOB_IDLE,
+    run_side_job, LiveChildRegistry, RunSideJobParams, MAX_SIDE_JOB_STDOUT_BYTES, SIDE_JOB_IDLE,
 };
-use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
+use crate::providers::cli_args::{side_job_args, side_job_stdin, ArgsError, Job, SideJob};
 
 #[derive(Debug, Error)]
 pub enum PlannerError {
@@ -69,6 +68,8 @@ pub struct PlannerArgs {
     pub tools_disabled: bool,
     #[serde(default)]
     pub effort: Option<String>,
+    #[serde(default)]
+    pub run_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -91,6 +92,19 @@ pub async fn planner_run(
         .map_err(|e| PlannerError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[tauri::command]
+pub fn planner_cancel(
+    state: State<'_, PlannerRegistry>,
+    run_id: String,
+) -> Result<(), PlannerError> {
+    cancel_run(&state.0, &run_id);
+    Ok(())
+}
+
+fn cancel_run(registry: &LiveChildRegistry, run_id: &str) -> bool {
+    crate::live_child::kill_one(registry, run_id)
+}
+
 pub(crate) fn run_planner(
     registry: &LiveChildRegistry,
     args: PlannerArgs,
@@ -98,61 +112,27 @@ pub(crate) fn run_planner(
     let mut cli_args = build_cli_args(&args)?;
     let trust = crate::providers::cli_probe::workspace_trust_args(&args.binary, &cli_args);
     cli_args.extend(trust);
-
-    let mut command = crate::path_env::command(&args.binary);
-    crate::aux_spawn::scrub_nested_session_env(&mut command);
-    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Planner);
-    crate::process_group::isolate(&mut command);
-    if let Some(dir) = args.working_dir.as_deref() {
-        if !dir.is_empty() {
-            command.current_dir(dir);
-        }
-    }
-
-    let mut child = command
-        .args(&cli_args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stderr")))?;
-
-    let key = crate::live_child::anonymous_key("planner");
-    let live = LiveChild::tagged(
-        child,
-        &tag,
-        crate::proc::ledger::LedgerContext::from_command(&command),
-    );
-    crate::live_child::register(registry, &key, &live);
-
-    let stdout_activity = live.activity.clone();
-    let stderr_activity = live.activity.clone();
-    let stdout_handle = thread::spawn(move || drain_lossy_active(stdout, &stdout_activity));
-    let stderr_handle = thread::spawn(move || drain_lossy_active(stderr, &stderr_activity));
-    let ((stdout_buf, stderr_buf), exited) =
-        run_to_exit(&live, registry, &key, Some(SIDE_JOB_IDLE), || {
-            (
-                stdout_handle.join().unwrap_or_default(),
-                stderr_handle.join().unwrap_or_default(),
-            )
-        });
-
+    let output = run_side_job(RunSideJobParams {
+        registry,
+        kind: SpawnKind::Planner,
+        binary: &args.binary,
+        cli_args: &cli_args,
+        working_dir: args.working_dir.as_deref(),
+        prompt: side_job_stdin(&side_job_of(&args)),
+        run_id: args.run_id.as_deref(),
+        idle: SIDE_JOB_IDLE,
+        max_stdout_bytes: MAX_SIDE_JOB_STDOUT_BYTES,
+    })?;
     Ok(PlannerResult {
-        stdout: stdout_buf,
-        stderr: stderr_buf,
-        exit_code: exited.code,
-        is_timed_out: exited.is_timed_out,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        exit_code: output.exit_code,
+        is_timed_out: output.is_timed_out,
     })
 }
 
-fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
-    side_job_args(&SideJob {
+fn side_job_of(args: &PlannerArgs) -> SideJob<'_> {
+    SideJob {
         job: Job::Planner,
         provider_id: &args.provider_id,
         model: &args.model,
@@ -161,8 +141,11 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
         working_dir: args.working_dir.as_deref(),
         tools_disabled: args.tools_disabled,
         effort: args.effort.as_deref(),
-    })
-    .map_err(PlannerError::from)
+    }
+}
+
+fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
+    side_job_args(&side_job_of(args)).map_err(PlannerError::from)
 }
 
 #[cfg(test)]
@@ -179,6 +162,7 @@ mod tests {
             working_dir: None,
             tools_disabled: false,
             effort: None,
+            run_id: None,
         }
     }
 
@@ -208,7 +192,7 @@ mod tests {
             .iter()
             .position(|a| a == "model_reasoning_effort=\"low\"")
             .expect("effort config");
-        let sep_idx = cli.iter().position(|a| a == "--").expect("separator");
+        let sep_idx = cli.iter().position(|a| a == "-").expect("stdin marker");
         assert!(effort_idx < sep_idx);
     }
 
@@ -252,7 +236,7 @@ mod tests {
     #[test]
     fn codex_args_run_outside_git_repositories() {
         let cli = build_cli_args(&make_args("codex")).expect("codex args");
-        let sep_idx = cli.iter().position(|a| a == "--").expect("separator");
+        let sep_idx = cli.iter().position(|a| a == "-").expect("stdin marker");
         let skip_idx = cli
             .iter()
             .position(|a| a == "--skip-git-repo-check")
@@ -301,6 +285,33 @@ mod tests {
     fn unknown_provider_is_rejected() {
         let err = build_cli_args(&make_args("nonexistent")).expect_err("unknown provider");
         assert_eq!(err.kind(), "unknown_provider");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancel_stops_the_planner_run_with_that_run_id() {
+        use crate::live_child::test_support::{
+            assert_waiter_returns, register_sleeping, spawn_waiter,
+        };
+        let registry = PlannerRegistry::new();
+        let live = register_sleeping(&registry.0, "plan-acme");
+        let bystander = register_sleeping(&registry.0, "plan-northwind");
+        let waiter = spawn_waiter(&registry.0, "plan-acme", &live);
+
+        assert!(cancel_run(&registry.0, "plan-acme"));
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "cancel left the planner running",
+        );
+        assert!(!cancel_run(&registry.0, "plan-acme"));
+        assert!(registry
+            .0
+            .lock()
+            .expect("registry")
+            .contains_key("plan-northwind"));
+        bystander.kill();
     }
 
     #[cfg(unix)]

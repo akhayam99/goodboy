@@ -1,43 +1,59 @@
 import type { WorkspaceId } from '@goodboy/types';
 
-type EnqueueParams<Payload> = {
+type PersistParams<Row> = {
+  readonly confirmed: Row | undefined;
+};
+
+type EnqueueParams<Row> = {
   readonly workspaceId: WorkspaceId;
-  readonly payload: Payload;
-  readonly previous: Payload | undefined;
-  readonly persist: (payload: Payload) => Promise<void>;
+  readonly previous: Row | undefined;
+  readonly persist: (params: PersistParams<Row>) => Promise<Row>;
 };
 
-type WorkspaceWriteOutcome<Payload> =
-  | { readonly ok: true }
-  | { readonly ok: false; readonly error: unknown; readonly rollback: Payload | undefined };
+type WorkspaceWriteOutcome<Row> =
+  | { readonly ok: true; readonly stored: Row; readonly isLast: boolean }
+  | {
+      readonly ok: false;
+      readonly error: unknown;
+      readonly confirmed: Row | undefined;
+      readonly isLast: boolean;
+    };
 
-export type WorkspaceWriteQueue<Payload> = (
-  params: EnqueueParams<Payload>,
-) => Promise<WorkspaceWriteOutcome<Payload>>;
+export type WorkspaceWriteQueue<Row> = (
+  params: EnqueueParams<Row>,
+) => Promise<WorkspaceWriteOutcome<Row>>;
 
-type Lane<Payload> = {
+type Lane<Row> = {
   tail: Promise<void>;
-  confirmed: Payload | undefined;
+  confirmed: Row | undefined;
+  pending: number;
 };
 
-export const createWorkspaceWriteQueue = <Payload>(): WorkspaceWriteQueue<Payload> => {
-  const lanes = new Map<WorkspaceId, Lane<Payload>>();
-  return ({ workspaceId, payload, previous, persist }) => {
-    const lane = lanes.get(workspaceId) ?? { tail: Promise.resolve(), confirmed: previous };
+export const createWorkspaceWriteQueue = <Row>(): WorkspaceWriteQueue<Row> => {
+  const lanes = new Map<WorkspaceId, Lane<Row>>();
+  return ({ workspaceId, previous, persist }) => {
+    const lane = lanes.get(workspaceId) ?? {
+      tail: Promise.resolve(),
+      confirmed: previous,
+      pending: 0,
+    };
     lanes.set(workspaceId, lane);
-    const run = lane.tail.then(async (): Promise<WorkspaceWriteOutcome<Payload>> => {
+    lane.pending += 1;
+    const run = lane.tail.then(async (): Promise<WorkspaceWriteOutcome<Row>> => {
       try {
-        await persist(payload);
-        lane.confirmed = payload;
-        return { ok: true };
+        const stored = await persist({ confirmed: lane.confirmed });
+        lane.confirmed = stored;
+        lane.pending -= 1;
+        return { ok: true, stored, isLast: lane.pending === 0 };
       } catch (error) {
-        return { ok: false, error, rollback: lane.confirmed };
+        lane.pending -= 1;
+        return { ok: false, error, confirmed: lane.confirmed, isLast: lane.pending === 0 };
       }
     });
     const tail = run.then(() => undefined);
     lane.tail = tail;
     void tail.then(() => {
-      if (lanes.get(workspaceId) === lane && lane.tail === tail) {
+      if (lanes.get(workspaceId) === lane && lane.pending === 0) {
         lanes.delete(workspaceId);
       }
     });

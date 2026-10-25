@@ -3,12 +3,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { appVersionOf, recordFigure } from './lib/figures.mjs';
+import { appVersionOf, chromePathOf, DEFAULT_SHOT_URL, recordFigure } from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/readme');
 const SITE_DIRECTORY = resolve(ROOT_DIRECTORY, 'website/public/hero');
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
 const THEMES = ['dark', 'light'];
 const WIDTH = 1920;
 const HEIGHT = 1200;
@@ -18,8 +18,7 @@ const SITE_WIDTH = 1208;
 const SITE_CROP_HEIGHT = 840;
 const SITE_DENSITIES = [1, 2, 3];
 const SCENE = 'readme-hero&brand=1';
-const APP =
-  process.argv[2]?.startsWith('http') === true ? process.argv[2] : 'http://localhost:5230';
+const APP = process.argv[2]?.startsWith('http') === true ? process.argv[2] : DEFAULT_SHOT_URL;
 const VERSION_ARGUMENT = process.argv.indexOf('--version');
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
@@ -65,7 +64,7 @@ const openBrowser = async () => {
   const port = 9300 + Math.floor(Math.random() * 300);
   const profile = mkdtempSync(join(tmpdir(), 'readme-hero-'));
   const chrome = spawn(
-    CHROME,
+    chromePathOf(),
     [
       '--headless=new',
       '--disable-gpu',

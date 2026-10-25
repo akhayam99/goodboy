@@ -3,6 +3,7 @@ import type { ProjectId } from '@goodboy/types';
 import { Band, Button, FieldRow, Listbox } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
 
 type SizeParams = {
@@ -74,12 +75,12 @@ export const SearchIndexBand = () => {
     <Band
       inset="content"
       label="Search"
-      hint="What ⌘F finds. The index never leaves this Mac."
+      hint={`What ${shortcutGlyphs('search.open')} finds. The index never leaves this Mac.`}
       headingLevel={2}
     >
       <div className="flex flex-col">
         <FieldRow label="Index" help={progress ?? 'Kept up to date as you work.'}>
-          <span className="text-label text-muted-foreground">{size}</span>
+          <span className="text-meta text-muted-foreground">{size}</span>
         </FieldRow>
         <FieldRow
           label="Rebuild"

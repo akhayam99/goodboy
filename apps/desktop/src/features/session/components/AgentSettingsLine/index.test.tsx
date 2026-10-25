@@ -67,7 +67,12 @@ type BudgetParams = {
 const withSessionBudget = ({ onExceed }: BudgetParams) => {
   useAppStore.setState({
     sessionBudgets: {
-      [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 2, onExceed },
+      [AUTO_SEED_SESSION]: {
+        sessionId: AUTO_SEED_SESSION,
+        softCapUsd: 2,
+        onExceed,
+        warnRatio: 0.8,
+      },
     },
   });
 };

@@ -5,8 +5,8 @@ import type { GithubIssueGroup } from '../../integrations/github/components/Pull
 import type { GithubPrGroup } from '../../integrations/github/components/PullRequest/useGithubPrs';
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
-import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
-import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/useLinearIssues';
+import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/buildIssueGroups';
+import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/buildIssueGroups';
 import type { SentryIssueRow } from '../../integrations/sentry/SentryStudio/useSentryIssues';
 import type { SlackThreadGroup } from '../../integrations/slack/SlackStudio/useSlackThreads';
 import type { BitbucketPrGroup } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
@@ -49,6 +49,7 @@ const h = vi.hoisted(() => ({
 }));
 
 const loadProjectSentryLinks = vi.fn(async () => undefined);
+const noteTaskRecords = vi.fn();
 
 vi.mock('../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
@@ -58,6 +59,7 @@ vi.mock('../../../store', () => ({
       projects: ReadonlyArray<never>;
       projectSentryLinks: Record<string, never>;
       loadProjectSentryLinks: typeof loadProjectSentryLinks;
+      noteTaskRecords: typeof noteTaskRecords;
     }) => T,
   ) =>
     selector({
@@ -65,6 +67,7 @@ vi.mock('../../../store', () => ({
       projects: [],
       projectSentryLinks: {},
       loadProjectSentryLinks,
+      noteTaskRecords,
     }),
 }));
 
@@ -223,6 +226,26 @@ describe('useInboxRecords', () => {
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
 
     expect(result.current.records.map((record) => record.provider)).toEqual(['jira', 'github']);
+  });
+
+  it('notes every loaded record for the arrivals ledger, with who it is for', () => {
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
+    h.jira = { groups: jiraGroups('2026-08-03T10:00:00Z'), isLoading: false, error: null };
+
+    renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
+
+    expect(noteTaskRecords).toHaveBeenCalledWith({
+      workspaceId,
+      records: [
+        { key: expect.stringContaining('jira'), isForMe: false },
+        { key: expect.stringContaining('github'), isForMe: true },
+      ],
+    });
   });
 
   it('orders a Jira offset and a GitHub Z by the real instant', () => {

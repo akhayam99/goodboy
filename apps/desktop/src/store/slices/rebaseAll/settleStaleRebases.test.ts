@@ -31,7 +31,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
-import { ensure, resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { ensure, resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import type { HistoryRun } from '../history/types';
 import type { RebaseAllBranchState } from './types';
 
@@ -324,6 +324,53 @@ describe('a rebase stop is settled from the real git state', () => {
     expect(store.getState().historyRuns[mount.mountId]?.rebaseConflict?.autoAgentId).toBe(
       'agent-auto',
     );
+    expect(store.getState().settledRebaseStops[sessionId]).toEqual([STOP_ID]);
+  });
+});
+
+describe('settling a rebase stop touches the store only when something settled', () => {
+  it('does not notify a single subscriber while the worktree still sits at the stop', async () => {
+    git = statusAt({ head: OLD_HEAD, behind: 3 });
+    seed();
+    seedStop({ at: PAST() });
+    await readGit();
+    const listener = vi.fn();
+    const stop = store.subscribe(listener);
+
+    store.getState().settleStaleRebases({ sessionId });
+    store.getState().settleStaleRebases({ sessionId });
+
+    stop();
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('keeps the same state object when there is nothing to settle', async () => {
+    git = statusAt({ head: OLD_HEAD, behind: 3 });
+    seed();
+    seedStop({ at: PAST() });
+    await readGit();
+    const before = store.getState();
+
+    store.getState().settleStaleRebases({ sessionId });
+
+    expect(store.getState()).toBe(before);
+  });
+
+  it('drops the settled ids whose events left the session when a new stop settles', async () => {
+    git = statusAt({ head: OLD_HEAD, behind: 3 });
+    seed();
+    seedStop({ at: PAST() });
+    store.setState((state) => ({
+      settledRebaseStops: {
+        ...state.settledRebaseStops,
+        [sessionId]: [brandId<SessionEventId>({ value: 'event-long-gone' })],
+      },
+    }));
+    await readGit();
+
+    git = statusAt({ head: NEW_HEAD, behind: 0 });
+    await turnEnds();
+
     expect(store.getState().settledRebaseStops[sessionId]).toEqual([STOP_ID]);
   });
 });

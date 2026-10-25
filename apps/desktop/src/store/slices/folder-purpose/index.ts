@@ -1,5 +1,5 @@
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { dismissFolderGitNotice } from './dismissFolderGitNotice';
 import { hydrateFolderPurposes } from './hydrateFolderPurposes';
 import { keepFolderInPlace } from './keepFolderInPlace';

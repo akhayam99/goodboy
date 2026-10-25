@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '../../cn';
+import { DISABLED } from '../../disabledStyle';
 import type { ListboxMatch } from './filterOptions';
 import { HighlightedLabel } from './HighlightedLabel';
-import { ICON_SIZE } from '../../iconSize';
+import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
 
 export type ListboxOptionRowProps = {
   readonly id: string;
@@ -69,9 +70,7 @@ export const ListboxOptionRow = ({
       className={cn(
         'flex min-h-8 w-full min-w-0 shrink-0 gap-2 rounded-sm px-2 text-left',
         hasSecondLine ? 'items-start py-2' : 'items-center',
-        isDisabled
-          ? 'cursor-not-allowed text-disabled-foreground'
-          : 'cursor-pointer text-foreground',
+        isDisabled ? DISABLED : 'cursor-pointer text-foreground',
         isActive && 'bg-selected',
       )}
     >
@@ -83,7 +82,7 @@ export const ListboxOptionRow = ({
               isSelected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-background',
             )}
           >
-            {isSelected ? <Check size={ICON_SIZE.mark} strokeWidth={3} /> : null}
+            {isSelected ? <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} /> : null}
           </span>
         </span>
       ) : null}
@@ -93,7 +92,7 @@ export const ListboxOptionRow = ({
           className={cn(
             'flex size-4 shrink-0 items-center justify-center',
             hasSecondLine && 'mt-0.5',
-            isDisabled && 'opacity-50',
+            isDisabled && 'text-disabled-foreground',
           )}
         >
           {leading}

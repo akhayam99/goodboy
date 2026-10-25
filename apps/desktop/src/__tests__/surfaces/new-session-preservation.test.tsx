@@ -76,7 +76,7 @@ const env: ActionEnv = {
   viewing: null,
 };
 
-describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5', () => {
+describe('New session draft and the New forms', () => {
   it('starts from the task, asks the kind, and has no Folders field', async () => {
     await mountScene({ name: 'c10-start-workflow' });
 
@@ -84,7 +84,7 @@ describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5',
     const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
     expect(kickoff.queryByRole('region', { name: 'Folders' })).toBeNull();
     kickoff.getByRole('tablist', { name: 'What kind of run?' });
-    expect(kickoff.getByRole('textbox', { name: 'Task' })).toHaveProperty(
+    expect(kickoff.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
@@ -127,21 +127,6 @@ describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5',
     screen.getByText(/Named by Goodboy/);
   });
 
-  it('opens Start a run on Runs from the Overview New menu, with no drawer form', async () => {
-    await mountScene({ name: 'c10-new-menu' });
-
-    const menu = within(screen.getByRole('menu', { name: 'New' }));
-    expect(menu.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Start a run',
-      'Write a report',
-      'Draw a wireframe',
-    ]);
-    fireEvent.click(menu.getByRole('menuitem', { name: 'Start a run' }));
-    await settle();
-
-    expect(useAppStore.getState().drawer).toBeNull();
-  });
-
   it('keeps the Overview New button filled only while Next holds no primary', async () => {
     await mountScene({ name: 'c05-overview-blank' });
 
@@ -182,14 +167,5 @@ describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5',
 
     expect(useAppStore.getState().drawer).toBeNull();
     expect(useAppStore.getState().activeLens[session.id]).toBe('workflows');
-  });
-
-  it('moves the Write tab to the Report and Wireframe drawer forms', async () => {
-    await mountScene({ name: 'c10-new-report' });
-    screen.getByRole('region', { name: 'Write a report' });
-    cleanup();
-
-    await mountScene({ name: 'c10-new-wireframe' });
-    screen.getByRole('region', { name: 'Draw a wireframe' });
   });
 });

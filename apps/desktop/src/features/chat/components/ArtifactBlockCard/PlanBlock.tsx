@@ -1,8 +1,8 @@
 import { CircleDot } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import {
   resolveArtifactForBlock,
   resolveReplacedPlan,
@@ -68,7 +68,10 @@ export const PlanBlock = ({ item, sessionId, agentId, planVersion }: Props) => {
             payload: { artifactId: replaced.artifact.id, revision: replaced.version },
           })
         }
-        className="-ml-2 flex min-h-7 w-[calc(100%+0.5rem)] min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          '-ml-2 flex min-h-7 w-[calc(100%+0.5rem)] min-w-0 items-center gap-2 rounded-md px-2 text-left text-meta text-muted-foreground transition-colors hover:bg-hover hover:text-foreground',
+          FOCUS_RING,
+        )}
       >
         <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="min-w-0 truncate">

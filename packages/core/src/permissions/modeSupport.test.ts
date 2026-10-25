@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLAUDE_PERMISSION_MODES, PROVIDER_IDS } from '@goodboy/types';
+import { CLAUDE_PERMISSION_MODES, FAIL_CLOSED_PERMISSION_MODE, PROVIDER_IDS } from '@goodboy/types';
 import { MODE_STRICTNESS, modeSupportFor, resolveModeFor } from './modeSupport';
 
 const CELLS = PROVIDER_IDS.flatMap((provider) =>
@@ -52,5 +52,12 @@ describe('modeSupportFor', () => {
     expect(resolveModeFor({ provider: 'gemini', mode: 'acceptEdits' })).toBe('acceptEdits');
     expect(resolveModeFor({ provider: 'cursor', mode: 'acceptEdits' })).toBe('plan');
     expect(resolveModeFor({ provider: 'opencode', mode: 'acceptEdits' })).toBe('plan');
+  });
+
+  it('resolves the fail closed fallback to no wider than Ask first on every provider', () => {
+    for (const provider of PROVIDER_IDS) {
+      const resolved = resolveModeFor({ provider, mode: FAIL_CLOSED_PERMISSION_MODE });
+      expect(MODE_STRICTNESS[resolved]).toBeLessThanOrEqual(MODE_STRICTNESS.default);
+    }
   });
 });

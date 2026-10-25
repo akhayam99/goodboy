@@ -69,7 +69,7 @@ describe('the u26 branches scenes, units 1 and 2', () => {
   });
 
   it.each(['u26-sessions-base-dark', 'u26-sessions-base-light'] as const)(
-    '%s draws the main sidebar rows as title, space, state, with no checkbox and the hint line',
+    '%s draws the main sidebar rows as title, space, state, with no checkbox and no hint',
     async (name) => {
       await mount({ name });
 
@@ -77,7 +77,7 @@ describe('the u26 branches scenes, units 1 and 2', () => {
       const [first] = rows();
       expect(first?.lastElementChild?.hasAttribute('data-row-state')).toBe(true);
       expect(first?.getAttribute('aria-selected')).toBe('false');
-      expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
+      expect(screen.queryByText('Shift click for a range, Option click to add one')).toBeNull();
     },
   );
 
@@ -89,7 +89,7 @@ describe('the u26 branches scenes, units 1 and 2', () => {
       expect(screen.queryByRole('checkbox')).toBeNull();
       expect(rows().filter((row) => row.getAttribute('aria-selected') === 'true')).toHaveLength(3);
       expect(within(screen.getByRole('toolbar')).getByText('3 selected')).toBeDefined();
-      expect(screen.queryByText('Shift click for a range, Option click to add one')).toBeNull();
+      expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
     },
   );
 

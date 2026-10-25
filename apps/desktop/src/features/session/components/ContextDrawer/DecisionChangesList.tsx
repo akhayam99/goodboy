@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Minus, Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { Button, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { IsoDateTime, SessionDecision } from '@goodboy/types';
 import type { DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { nowIso } from '../../../../store/slices/project-mounts/nowIso';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import { ContextBlock } from './ContextBlock';
 
@@ -113,7 +113,7 @@ export const DecisionChangesList = ({ changes, onJump, onRead }: Props) => {
                   </span>
                   <span
                     className={cn(
-                      'min-w-0 flex-1 truncate text-label',
+                      'min-w-0 flex-1 truncate text-meta',
                       row.kind === 'removed'
                         ? 'text-faint-foreground line-through'
                         : 'text-foreground',

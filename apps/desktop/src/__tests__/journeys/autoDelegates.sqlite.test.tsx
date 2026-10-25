@@ -29,10 +29,10 @@ import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
 import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { stubProviderRouting } from '../helpers/journeyHarness';
-import { makeAutoRuntime } from '../../store/slices/auto/makeAutoRuntime';
-import { runAutoCommand } from '../../store/slices/auto/runAutoCommand';
-import { startAutoTree } from '../../store/slices/auto/startAutoTrees';
-import type { AutoRuntime } from '../../store/slices/auto/createAutoRuntime';
+import { makeAutoRuntime } from '../../store/runtime/auto/makeAutoRuntime';
+import { runAutoCommand } from '../../store/runtime/auto/runAutoCommand';
+import { startAutoTree } from '../../store/runtime/auto/startAutoTrees';
+import type { AutoRuntime } from '../../store/runtime/auto/createAutoRuntime';
 import {
   buildStoryProject,
   buildStoryWorkspace,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SegmentedTabs, formatError, formatUsd, useDropdown } from '@goodboy/ui';
 import type { WorkflowRules, WorkflowSpendLimitMode, WorkspaceId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { LimitAmountForm } from '../../../../shared/components/SettingChip/LimitAmountForm';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 import { useLimitAmountDraft } from '../../../../shared/hooks/useLimitAmountDraft';

@@ -1,25 +1,33 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
-import type { Project, ProjectId, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
-const h = vi.hoisted(() => ({
-  store: {
-    projects: [] as ReadonlyArray<Project>,
-    projectGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
-    loadProjectGitStatus: vi.fn(async () => undefined),
-  },
-}));
-
-vi.mock('zustand/react/shallow', () => ({ useShallow: <T>(selector: T) => selector }));
-vi.mock('../../../../store', () => ({
-  useAppStore: <T>(selector: (state: typeof h.store) => T) => selector(h.store),
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { aProject } from '@goodboy/types/testing';
+import type { WorkspaceGitStatus } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { harborline, ledgerCore, paymentsApi } from '../../testing/sessionColumn';
 import { useProjectGitStatuses } from './index';
 
-const WS_ID = 'ws-1' as WorkspaceId;
+let useAppStore: StoryStore;
+
 const ready: WorkspaceGitStatus = {
   state: 'ready',
   branch: 'main',
@@ -30,50 +38,75 @@ const ready: WorkspaceGitStatus = {
   inProgress: null,
 };
 
-const projectOf = ({
-  id,
-  kind,
-}: {
-  readonly id: string;
-  readonly kind: Project['kind'];
-}): Project =>
-  ({ id: id as ProjectId, workspaceId: WS_ID, name: id, rootPath: `/repo/${id}`, kind }) as Project;
+const apiRepo = { ...paymentsApi, rootPath: '/tmp/payments-api' };
+const notesFolder = aProject({ workspaceId: harborline.id, name: 'notes', kind: 'folder' });
 
-beforeEach(() => {
+const statusCalls = (): ReadonlyArray<unknown> =>
+  storySpies.tauriInvoke.mock.calls
+    .filter(([command]) => command === 'project_git_status')
+    .map(([, args]) => args);
+
+const settle = async (milliseconds: number): Promise<void> => {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(milliseconds);
+  });
+};
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ project_git_status: ready, repo_identity: null });
   vi.useFakeTimers();
-  h.store.projects = [
-    projectOf({ id: 'repo-1', kind: 'repo' }),
-    projectOf({ id: 'folder-1', kind: 'folder' }),
-    projectOf({ id: 'repo-2', kind: 'repo' }),
-  ];
-  h.store.projectGitStatus = { 'repo-1': ready };
-  h.store.loadProjectGitStatus.mockClear();
+  useAppStore.setState({
+    projects: [ledgerCore, notesFolder, apiRepo],
+    projectGitStatus: {},
+  });
 });
 
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
 });
 
 describe('useProjectGitStatuses', () => {
-  it('returns one entry per repo project and loads each status', () => {
-    const { result } = renderHook(() => useProjectGitStatuses({ workspaceId: WS_ID }));
+  it('lists repo projects only and loads each status into the store', async () => {
+    const { result } = renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    await settle(0);
 
     expect(result.current).toEqual([
-      { project: h.store.projects[0], status: ready },
-      { project: h.store.projects[2], status: null },
+      { project: ledgerCore, status: ready },
+      { project: apiRepo, status: ready },
     ]);
-    expect(h.store.loadProjectGitStatus).toHaveBeenCalledWith({ projectId: 'repo-1' });
-    expect(h.store.loadProjectGitStatus).toHaveBeenCalledWith({ projectId: 'repo-2' });
+    expect(useAppStore.getState().projectGitStatus[notesFolder.id]).toBeUndefined();
+    expect(statusCalls()).toEqual([
+      { projectPath: ledgerCore.rootPath },
+      { projectPath: apiRepo.rootPath },
+    ]);
   });
 
-  it('polls every repo project while the document is visible', () => {
-    renderHook(() => useProjectGitStatuses({ workspaceId: WS_ID }));
-    h.store.loadProjectGitStatus.mockClear();
+  it('polls every repo project while the document is visible', async () => {
+    renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    await settle(0);
+    const before = statusCalls().length;
 
-    act(() => vi.advanceTimersByTime(30_000));
+    await settle(30_000);
 
-    expect(h.store.loadProjectGitStatus).toHaveBeenCalledTimes(2);
-    expect(h.store.loadProjectGitStatus).toHaveBeenCalledWith({ projectId: 'repo-1' });
-    expect(h.store.loadProjectGitStatus).toHaveBeenCalledWith({ projectId: 'repo-2' });
+    expect(statusCalls().length - before).toBe(2);
+  });
+
+  it('shows a missing status when the read fails', async () => {
+    stubStoryInvoke({
+      repo_identity: null,
+      project_git_status: () => {
+        throw new Error('git unreachable');
+      },
+    });
+    const { result } = renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    await settle(0);
+
+    expect(result.current.map((entry) => entry.status?.state)).toEqual(['missing', 'missing']);
   });
 });

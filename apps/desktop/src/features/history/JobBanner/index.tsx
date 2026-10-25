@@ -3,7 +3,9 @@ import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { RebaseJobState, RebaseJobTone } from '../rebaseJob';
 import { useJobBannerActions } from '../hooks/useJobBannerActions';
+import { useGitRebaseInProgress } from '../hooks/useGitRebaseInProgress';
 import { useRebaseJob } from '../useRebaseJob';
+import { GitRebaseRow } from './GitRebaseRow';
 import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
@@ -15,6 +17,8 @@ type Props = {
   readonly sessionId: SessionId;
   readonly worktreePath: string | null;
 };
+
+const NO_MOUNT = 'none';
 
 const TONE_OF: Readonly<Record<RebaseJobTone, Tone>> = {
   info: 'info',
@@ -39,7 +43,13 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
     worktreePath,
     agentId: controls?.agentId ?? null,
   });
-  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const isGitRebasing = useGitRebaseInProgress({ sessionId, worktreePath });
+  const noteMountKey = actions.mountId ?? NO_MOUNT;
+  const [noteOpenFor, setNoteOpenFor] = useState<string | null>(null);
+  const isNoteOpen = noteOpenFor === noteMountKey;
+  if (controls === null && isGitRebasing && worktreePath !== null) {
+    return <GitRebaseRow sessionId={sessionId} worktreePath={worktreePath} actions={actions} />;
+  }
   if (controls === null || RAIL_ONLY.has(controls.job.state)) {
     return null;
   }
@@ -81,7 +91,9 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
             controls={controls}
             actions={actions}
             isNoteOpen={isNoteShown}
-            onToggleNote={() => setIsNoteOpen((isOpen) => !isOpen)}
+            onToggleNote={() =>
+              setNoteOpenFor((current) => (current === noteMountKey ? null : noteMountKey))
+            }
           />
         </div>
       </div>
@@ -94,9 +106,9 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
           isPending={actions.pendingKeys.has('retry-note')}
           onSubmit={({ note }) => {
             actions.retryWithNote({ note });
-            setIsNoteOpen(false);
+            setNoteOpenFor(null);
           }}
-          onCollapse={() => setIsNoteOpen(false)}
+          onCollapse={() => setNoteOpenFor(null)}
         />
       ) : null}
     </section>

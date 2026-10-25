@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ProviderHealthStanding } from '@goodboy/types';
+import type { AuthReason } from '../../../features/providers/providers';
 import {
   INITIAL_HEALTH,
   connectionOfHealth,
@@ -391,7 +392,7 @@ describe('probeOutcomeOf', () => {
       state: 'connected' | 'disconnected' | 'unknown';
       identity: string | null;
       verified?: boolean;
-      reason?: string | null;
+      reason?: AuthReason | null;
     } | null;
     readonly id?: 'cursor' | 'opencode' | 'gemini' | 'openrouter';
     readonly hasCredential?: boolean;
@@ -433,12 +434,31 @@ describe('probeOutcomeOf', () => {
 
   it('reads an unknown auth as no answer and keeps its reason', () => {
     expect(
-      outcome({ status: status({}), auth: { state: 'unknown', identity: null, reason: 'exit 2' } }),
-    ).toEqual({ kind: 'no_answer', reason: 'exit 2' });
+      outcome({
+        status: status({}),
+        auth: { state: 'unknown', identity: null, reason: { kind: 'exited_with_code', code: 2 } },
+      }),
+    ).toEqual({ kind: 'no_answer', reason: 'The CLI exited with code 2' });
   });
 
   it('reads a missing auth as no answer', () => {
     expect(outcome({ status: status({}) })?.kind).toBe('no_answer');
+  });
+
+  it('writes the auth reason as the sentence the health event shows, seconds from the payload', () => {
+    expect(
+      outcome({
+        status: status({}),
+        auth: { state: 'unknown', identity: null, reason: { kind: 'timed_out', secs: 15 } },
+      }),
+    ).toEqual({ kind: 'no_answer', reason: "The CLI didn't answer in 15 s" });
+  });
+
+  it('keeps an auth with no reason as a no answer without a sentence', () => {
+    expect(outcome({ status: status({}), auth: { state: 'unknown', identity: null } })).toEqual({
+      kind: 'no_answer',
+      reason: null,
+    });
   });
 
   it('reads a disconnected auth as signed out', () => {

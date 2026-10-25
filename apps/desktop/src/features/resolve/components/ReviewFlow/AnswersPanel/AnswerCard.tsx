@@ -1,4 +1,4 @@
-import { Button, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Button, Chip, cn, inlineMarkdownText, FOCUS_RING } from '@goodboy/ui';
 import { landingLiveKey } from '../../../../chat/reveal/landingLiveKey';
 import { useFreshLanding } from '../../../../chat/reveal/useFreshLanding';
 import { REVIEW_BULK_LABEL } from '../../../reviewBulkCopy';
@@ -78,7 +78,8 @@ export const AnswerCard = ({
               onClick={() => onChoose(option.answer)}
               className={cn(
                 'flex min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left motion-safe:transition-colors',
-                'hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'hover:bg-hover',
+                FOCUS_RING,
                 isChecked && 'bg-selected',
               )}
             >
@@ -91,7 +92,7 @@ export const AnswerCard = ({
               >
                 {isChecked ? <span className="size-2 rounded-full bg-primary" /> : null}
               </span>
-              <span className="min-w-0 flex-1 text-label text-foreground">{option.answer}</span>
+              <span className="min-w-0 flex-1 text-meta text-foreground">{option.answer}</span>
               {option.isRecommended && (
                 <Chip tone="primary" kind="state" label={REVIEW_BULK_LABEL.recommended} />
               )}

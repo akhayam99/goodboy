@@ -29,10 +29,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { ToastProvider } from '../../shared/components/Toast';
-import { selectResolution } from '../../store/slices/models/selectResolution';
+import { selectResolution } from '../../store/runtime/models/selectResolution';
 import { OrchestratorRoutingRow } from '../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
-import { WorkflowBuilderView } from '../workflows/components/WorkflowBuilderView';
 import { ROLE_LABEL } from '../session/agent-kind';
 import { DefaultsPanel } from './components/ProviderStudio/DefaultsPanel';
 import { modelNameOf } from './components/ProviderStudio/DefaultsPanel/modelNameOf';
@@ -60,7 +58,7 @@ const ANTHROPIC_ON: ProviderPolicy = [
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected' satisfies ProviderConnectionState,
   version: null,
   identity: null,
@@ -147,7 +145,7 @@ describe.each([
   ['Codex only, pins on Anthropic', CODEX_ONLY],
   ['Anthropic on, pins run', ANTHROPIC_ON],
 ] as const)('one resolution: %s', (_name, policy) => {
-  it('prints the same orchestrator model on the Models page, the run pill and the builder pill', () => {
+  it('prints the same orchestrator model on the Models page and the run pill', () => {
     seed({ policy });
     const expected = nameOf({ task: 'workflow_orchestrator' });
 
@@ -158,15 +156,6 @@ describe.each([
 
     render(<DefaultsPanel workspaceId={WORKSPACE.id} />);
     expect(taskRow({ task: 'workflow_orchestrator' })).toContain(expected);
-    cleanup();
-
-    render(
-      <ToastProvider>
-        <WorkflowBuilderView mode="dynamic" session={SESSION} onClose={vi.fn()} />
-      </ToastProvider>,
-    );
-    const builder = screen.getByRole('button', { name: /^Orchestrator routing:/ });
-    expect(builder.getAttribute('aria-label')).toContain(expected);
   });
 
   it('prints the resolved model on every role row and task row of the Models page', () => {

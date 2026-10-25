@@ -1,17 +1,22 @@
 import { Code } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore, sessionPlace } from '../../../../store';
+import type { TerminalTab } from '../../../../shared/types/terminal';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CloseFolderTerminals } from './CloseFolderTerminals';
 
 type Props = {
   readonly folder: StorageFolder;
   readonly status: StorageFolderStatus;
+  readonly terminals: ReadonlyArray<TerminalTab>;
   readonly onEditor: () => void;
 };
 
-export const RowPrimaryAction = ({ folder, status, onEditor }: Props) => {
+export const RowPrimaryAction = ({ folder, status, terminals, onEditor }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
+  if (status === 'terminal-open') {
+    return <CloseFolderTerminals terminals={terminals} />;
+  }
   if (status === 'dirty' || status === 'operation') {
     return (
       <Button variant="secondary" size="sm" onClick={onEditor}>

@@ -1,12 +1,12 @@
-import { ExternalLink, MessageSquare } from 'lucide-react';
-import { Avatar, Chip, IconButton } from '@goodboy/ui';
+import { SquareArrowOutUpRight, MessageSquare } from 'lucide-react';
+import { Avatar, Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { isBot } from '../../../integrations/github/comment-threads';
-import { ThreadBody } from '../../../integrations/github/components/PullRequest/ThreadBody';
+import { ThreadBody } from '../../../../shared/components/ThreadBody';
 import { ThreadPathChip } from '../../../integrations/github/components/PullRequest/ThreadPathChip';
-import { ThreadReplies } from '../../../integrations/github/components/PullRequest/ThreadReplies';
+import { ThreadReplies } from '../../../../shared/components/ThreadReplies';
+import { threadReplyItemsOf } from '../../../integrations/github/threadReplyItemsOf';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly thread: CommentThread;
@@ -25,31 +25,33 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
         <Avatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="min-w-0 truncate font-medium text-foreground">{head.author}</span>
-        {isBot(head.author) && <Chip tone="info" size="xs" label="Bot" />}
+        {isBot(head.author) && <Chip kind="state" tone="info" label="Bot" />}
         <span className="shrink-0 opacity-50">·</span>
         <span className="shrink-0">
           <RelativeTime iso={head.createdAt} />
         </span>
-        {isReview && head.resolved === false && <Chip tone="warning" size="xs" label="Open" />}
-        {isReview && head.resolved === true && <Chip tone="success" size="xs" label="Resolved" />}
+        {isReview && head.resolved === false && <Chip kind="state" tone="warning" label="Open" />}
+        {isReview && head.resolved === true && (
+          <Chip kind="state" tone="success" label="Resolved" />
+        )}
         {isNote && (
           <Chip
+            kind="state"
             tone="neutral"
-            size="xs"
             icon={<MessageSquare size={ICON_SIZE.row} aria-hidden />}
             label={NOTE_LABEL}
           />
         )}
         {head.outdated === true && (
-          <Chip tone="neutral" size="xs" label="Outdated" title={OUTDATED_HINT} />
+          <Chip kind="state" tone="neutral" label="Outdated" title={OUTDATED_HINT} />
         )}
         {!isNote && (
           <span className="ml-auto inline-flex shrink-0 items-center">
             <IconButton
-              icon={ExternalLink}
+              icon={SquareArrowOutUpRight}
               label="Open in browser"
               size="xs"
               onClick={() => onOpenUrl(head.url)}
@@ -61,9 +63,9 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
         <ThreadPathChip path={path} line={head.line ?? null} onOpen={() => onOpenUrl(head.url)} />
       )}
       <div className="[overflow-wrap:anywhere]">
-        <ThreadBody body={head.body} clamped={isBot(head.author)} />
+        <ThreadBody body={head.body} isClamped={isBot(head.author)} />
       </div>
-      <ThreadReplies replies={replies} />
+      <ThreadReplies replies={threadReplyItemsOf({ replies })} />
     </div>
   );
 };

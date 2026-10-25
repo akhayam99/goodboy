@@ -78,7 +78,17 @@ describe('findSimilarIssue', () => {
       line: 'push fails with ghp_AbCdEfGhIjKlMnOpQrSt1234',
     });
 
-    expect(gh.run.mock.calls[0]?.[0][2]).not.toContain('ghp_AbCd');
+    expect(gh.run.mock.calls[0]?.[0].join(' ')).not.toContain('ghp_AbCd');
+  });
+
+  it('puts a query that starts with a dash after the end of options', async () => {
+    const gh = runner('[]');
+
+    await findSimilarIssue({ runner: gh.value, line: '-crash on startup of the board' });
+
+    const args = gh.run.mock.calls[0]?.[0] ?? [];
+    expect(args.slice(-2)).toEqual(['--', '-crash on startup of the board']);
+    expect(args.indexOf('--')).toBe(args.length - 2);
   });
 
   it('treats unreadable output as no match', async () => {

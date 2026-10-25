@@ -44,9 +44,9 @@ export const bitbucketPullRequestTransport = ({
           ...(reviewerUuids === undefined ? {} : { reviewerUuids }),
         });
       }),
-    merge: ({ strategy }) =>
+    merge: ({ strategy, expectedHeadSha }) =>
       guarded(async () => {
-        await bitbucketMergePullRequest({ ...target, strategy });
+        await bitbucketMergePullRequest({ ...target, strategy, expectedHeadSha });
       }),
     decline: () =>
       guarded(async () => {

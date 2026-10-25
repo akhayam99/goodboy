@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
-import { IconButton, Band } from '@goodboy/ui';
+import { Band, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { useAppStore } from '../../../../store/store';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { WorkflowNodeRoutingRow } from './WorkflowNodeRoutingRow';
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];

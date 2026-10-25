@@ -59,27 +59,28 @@ type HoldParams = {
   readonly at: IsoDateTime;
 };
 
-const holdText = ({ insert, runId, delta, at }: HoldParams): void => {
+const holdText = ({ insert, runId, delta, at }: HoldParams): string => {
   const held = heldText.get(insert.agentId);
   if (held !== undefined && held.event.kind === 'assistant_text' && held.event.runId === runId) {
     heldText.set(insert.agentId, {
       ...held,
       event: { ...held.event, delta: `${held.event.delta}${delta}` },
     });
-    return;
+    return held.id;
   }
   releaseHeldText({ agentId: insert.agentId });
   heldText.set(insert.agentId, { ...insert, event: { kind: 'assistant_text', runId, delta, at } });
   heldTextTimer ??= setTimeout(releaseAllHeldText, TEXT_HOLD_MS);
+  return insert.id;
 };
 
-export const queueTurnEventInsert = (insert: PendingTurnEventInsert): void => {
+export const queueTurnEventInsert = (insert: PendingTurnEventInsert): string => {
   const { event } = insert;
   if (event.kind === 'assistant_text' && event.isPartial === true) {
-    holdText({ insert, runId: event.runId, delta: event.delta, at: event.at });
-    return;
+    return holdText({ insert, runId: event.runId, delta: event.delta, at: event.at });
   }
   releaseHeldText({ agentId: insert.agentId });
   pendingTurnEventInserts.push(insert);
   scheduleTurnEventFlush();
+  return insert.id;
 };

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
+import { usePoll } from '../../../../shared/lib/usePoll';
 import { useAppStore } from '../../../../store';
 import { SETTING_REPO_CHECK_MINUTES } from '../../../settings/settings';
 import { repoCheckMinutesOf } from '../../repoCheckMinutesOf';
@@ -35,24 +36,13 @@ export const useRepoDivergenceCheck = ({ workspaceId }: Params): void => {
     );
   }, [raw, loadSetting, reportError]);
 
-  useEffect(() => {
-    if (minutes === 0 || !hasRepos) {
-      return;
-    }
-    const intervalMs = minutes * MINUTE_MS;
-    const maxAgeMs = Math.round(intervalMs * FRESH_SHARE);
-    const tick = (): void => {
-      if (document.visibilityState !== 'visible') {
-        return;
-      }
-      void checkRepoDivergence({ workspaceId, maxAgeMs });
-    };
-    tick();
-    const intervalId = window.setInterval(tick, intervalMs);
-    document.addEventListener('visibilitychange', tick);
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', tick);
-    };
-  }, [checkRepoDivergence, hasRepos, minutes, workspaceId]);
+  const intervalMs = minutes * MINUTE_MS;
+  const maxAgeMs = Math.round(intervalMs * FRESH_SHARE);
+
+  usePoll({
+    run: () => void checkRepoDivergence({ workspaceId, maxAgeMs }),
+    everyMs: intervalMs,
+    isEnabled: minutes !== 0 && hasRepos,
+    restartKey: workspaceId,
+  });
 };

@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react';
 import { cn } from '../../cn';
+import { ICON_SIZE } from '../../iconSize';
 import { WORK_META_COLUMN } from './workMetaSpec';
 
-const GLYPH_SIZE = 14;
 const GLYPH_STEP = 8;
 const GLYPH_CELL_MIN = 24;
 const MAX_GLYPHS = 3;
@@ -30,7 +30,7 @@ export const ModelBlock = ({
   ...rest
 }: Props) => {
   const shown = glyphs.slice(0, MAX_GLYPHS);
-  const spread = GLYPH_SIZE + Math.max(shown.length - 1, 0) * GLYPH_STEP;
+  const spread = ICON_SIZE.control + Math.max(shown.length - 1, 0) * GLYPH_STEP;
   const cellWidth = Math.max(spread, GLYPH_CELL_MIN);
   const offset = (cellWidth - spread) / 2;
   const isInline = layout === 'inline';

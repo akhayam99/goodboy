@@ -221,7 +221,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                           <button
                             type="button"
                             onClick={clearFilters}
-                            className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
+                            className="rounded-md px-2 py-1 text-meta font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
                           >
                             Clear filters
                           </button>

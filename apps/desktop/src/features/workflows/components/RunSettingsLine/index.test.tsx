@@ -134,7 +134,7 @@ describe('the run settings line', () => {
     });
     useAppStore.setState({
       sessionBudgets: {
-        [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause' },
+        [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
       },
       sessionPhaseRuns: {
         [SESSION.id]: [
@@ -270,5 +270,42 @@ describe('the run settings line', () => {
 
     expect(pools).toEqual([['anthropic'], null]);
     expect(runNow().providerPool).toBeUndefined();
+  });
+
+  it('ignores a second toggle while the first write is pending, so Undo stays right', async () => {
+    const pools: Array<unknown> = [];
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    useAppStore.setState({
+      setWorkflowRunProviderPool: vi.fn(async ({ pool }) => {
+        pools.push(pool);
+        await gate;
+        useAppStore.setState((state) => ({
+          sessions: state.sessions.map((session) => ({
+            ...session,
+            workflowRuns: session.workflowRuns.map((run) => ({ ...run, providerPool: pool })),
+          })),
+        }));
+        return 'applied' as const;
+      }),
+    });
+    show();
+
+    fireEvent.click(chip('Models'));
+    const popover = screen.getByRole('dialog', { name: 'Models' });
+    await act(async () => {
+      fireEvent.click(within(popover).getByRole('switch', { name: 'Codex' }));
+      fireEvent.click(within(popover).getByRole('switch', { name: 'Claude' }));
+    });
+    await act(async () => {
+      release();
+      await gate;
+    });
+    await settle();
+
+    expect(pools).toEqual([['anthropic']]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
   });
 });

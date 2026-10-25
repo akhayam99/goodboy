@@ -49,7 +49,7 @@ export const RunKindChoices = ({
       )}
       {choices.length === 0 ? null : (
         <div role="group" aria-label={heading} className="flex min-w-0 flex-col gap-1">
-          <span aria-hidden className="text-label text-muted-foreground">
+          <span aria-hidden className="text-meta text-muted-foreground">
             {heading}
           </span>
           <ul className="flex min-w-0 flex-col">

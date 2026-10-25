@@ -7,11 +7,11 @@ import type {
   TurnEvent,
 } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
-import { pullRequestKindOf } from '../../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../../shared/utils/pullRequestKind';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { WORKFLOW_RUN_KIND } from '../../actions/kinds/workflowRun';
 import { classifyAgent } from '../agent-kind';
-import { sessionTitle } from '../sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import { resolveWordOfState } from '../../resolve/commentProjection';
 import { isPushFailure } from '../../resolve/reviewCommentState';

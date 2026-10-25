@@ -20,7 +20,7 @@ export const InsideRepositoryChoice = ({ folder, snappedFrom, draft, isBusy }: P
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 text-label text-muted-foreground motion-safe:animate-fade-in">
+    <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 text-meta text-muted-foreground motion-safe:animate-fade-in">
       <p className="flex items-start gap-2">
         <span className="flex h-5 shrink-0 items-center">
           <Info size={ICON_SIZE.row} aria-hidden className={tintClasses('info').icon} />

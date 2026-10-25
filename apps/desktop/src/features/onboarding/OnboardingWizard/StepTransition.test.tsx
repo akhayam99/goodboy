@@ -3,7 +3,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StepTransition } from './StepTransition';
-import { OUTGOING_FALLBACK_MS, STEP_TRANSITION_MS, useStepTransition } from './useStepTransition';
+import { useStepTransition } from './useStepTransition';
 
 const ORDER = ['one', 'two', 'three'] as const;
 type Step = (typeof ORDER)[number];
@@ -62,7 +62,7 @@ describe('StepTransition', () => {
     rerender(<Harness step="two" />);
     expect(screen.getByTestId('busy').textContent).toBe('busy');
     act(() => {
-      vi.advanceTimersByTime(STEP_TRANSITION_MS);
+      vi.advanceTimersByTime(240);
     });
     expect(screen.getByTestId('busy').textContent).toBe('idle');
   });
@@ -78,7 +78,7 @@ describe('StepTransition', () => {
     const { rerender } = render(<Harness step="one" />);
     rerender(<Harness step="two" />);
     act(() => {
-      vi.advanceTimersByTime(OUTGOING_FALLBACK_MS);
+      vi.advanceTimersByTime(300);
     });
     expect(screen.queryByTestId('wizard-step-outgoing')).toBeNull();
   });
@@ -93,7 +93,7 @@ describe('StepTransition', () => {
     const { rerender } = render(<Harness step="one" />);
     rerender(<Harness step="two" />);
     act(() => {
-      vi.advanceTimersByTime(STEP_TRANSITION_MS);
+      vi.advanceTimersByTime(240);
     });
     expect(document.activeElement?.textContent).toBe('page two');
   });

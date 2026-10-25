@@ -4,11 +4,8 @@ import { getCapabilities, getDefaultTurnModel } from './capabilities';
 import { defaultModelSelection } from './defaultModelSelection';
 
 describe('getCapabilities', () => {
-  it('returns anthropic capabilities with correct flags', () => {
+  it('returns anthropic capabilities with its models', () => {
     const caps = getCapabilities({ id: 'anthropic' });
-    expect(caps.supportsTools).toBe(true);
-    expect(caps.supportsStream).toBe(true);
-    expect(caps.supportsCheapModel).toBe(true);
     expect(caps.models.length).toBeGreaterThan(0);
   });
 

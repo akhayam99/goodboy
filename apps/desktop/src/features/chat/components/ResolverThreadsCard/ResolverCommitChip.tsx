@@ -1,6 +1,5 @@
 import { GitCommit } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 type Props = {
   readonly sha: string;

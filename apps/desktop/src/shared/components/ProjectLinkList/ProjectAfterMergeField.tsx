@@ -2,10 +2,8 @@ import { AFTER_MERGE_RULES, type AfterMergeRule, type Project } from '@goodboy/t
 import { Listbox, type ListboxOption } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../store/slices/branch-cleanup';
-import {
-  AFTER_MERGE_LABEL,
-  AFTER_MERGE_SHORT_LABEL,
-} from '../../../features/settings/components/SettingsStudio/afterMergeCopy';
+import { AFTER_MERGE_LABEL, AFTER_MERGE_SHORT_LABEL } from '../../utils/afterMergeCopy';
+import { ProjectAfterMergeChip } from '../../../features/settings/components/SettingsStudio/ProjectAfterMergeChip';
 
 const INHERIT = 'inherit';
 
@@ -45,7 +43,10 @@ export const ProjectAfterMergeField = ({ project, busy }: Props) => {
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-label text-muted-foreground">After merge</span>
+      <span className="flex items-center gap-2">
+        <span className="text-meta text-muted-foreground">After merge</span>
+        <ProjectAfterMergeChip project={project} />
+      </span>
       <Listbox
         ariaLabel={`After merge in ${project.name}`}
         size="sm"

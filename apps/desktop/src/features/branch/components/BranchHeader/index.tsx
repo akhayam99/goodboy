@@ -1,11 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
+import { Button, HeaderActions, HeaderBand, ICON_SIZE, Notice, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';

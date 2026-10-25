@@ -224,6 +224,6 @@ pub(super) fn run_ok(l: &Ledger, steps: Vec<HistoryStep>, name: &str) -> TrialRe
     assert!(check.is_passed, "{:?}", check.problems);
     assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
     assert_eq!(worktree_count(&l.root), 1);
-    assert!(!copy_path_of(&slug(name)).exists());
+    assert!(!copy_path_of(&slug(name)).unwrap().exists());
     result
 }

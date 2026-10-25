@@ -86,7 +86,32 @@ describe('the Agents panel', () => {
     expect(useAppStore.getState().focusedWorkflowRunId[C08_SESSION_ID]).not.toBeNull();
   });
 
-  it('opens a step transcript from the tree and comes back to the same run', async () => {
+  it('opens a step in the center and keeps the run tree open beside it', async () => {
+    await mount('c08-run-working');
+
+    const tree = within(panel()).getByRole('tree', { name: 'Run agents' });
+    const [first, second] = within(tree).getAllByRole('treeitem');
+    if (first === undefined || second === undefined) {
+      throw new Error('the run has fewer than two steps');
+    }
+    act(() => first.focus());
+    fireEvent.keyDown(first, { key: 'Enter' });
+    await settle();
+
+    expect(useAppStore.getState().drawer?.kind).toBe('spawned');
+    expect(screen.getByRole('region', { name: 'Agents' })).toBeDefined();
+    expect(panelMode()).toBe('run');
+    expect(document.querySelector('[data-run-step-heading]')).not.toBeNull();
+    const firstSelected = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
+
+    fireEvent.click(second);
+    await settle();
+
+    expect(useAppStore.getState().drawer?.kind).toBe('spawned');
+    expect(useAppStore.getState().selectedAgentId[C08_SESSION_ID]).not.toBe(firstSelected);
+  });
+
+  it('hops to the next and the previous agent with j and k from the tree', async () => {
     await mount('c08-run-working');
 
     const tree = within(panel()).getByRole('tree', { name: 'Run agents' });
@@ -97,19 +122,17 @@ describe('the Agents panel', () => {
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'Enter' });
     await settle();
+    const start = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
 
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind).toBe('run-step');
-    expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
-
-    const back = screen.getByRole('button', { name: 'Back to agents' });
-    expect(back.closest('[data-drawer-back]')).not.toBeNull();
-    fireEvent.click(back);
+    fireEvent.keyDown(document.activeElement ?? first, { key: 'k', code: 'KeyK' });
     await settle();
+    const above = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
+    expect(above).not.toBe(start);
 
+    fireEvent.keyDown(document.activeElement ?? first, { key: 'j', code: 'KeyJ' });
+    await settle();
+    expect(useAppStore.getState().selectedAgentId[C08_SESSION_ID]).toBe(start);
     expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-    expect(screen.getByRole('region', { name: 'Agents' })).toBeDefined();
-    expect(panelMode()).toBe('run');
   });
 
   it('closes on Close and leaves the run page as it was', async () => {

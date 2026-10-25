@@ -4,11 +4,11 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ### Security findings
 
-Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings**, **App**, **Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
+Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings › App › Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-light.webp" alt="Settings, App, Security findings: 1 saved script looks like it contains a token, seed-sandbox in payments-api, Token ending 9f2c, with Details and the Not a secret button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-light.webp" alt="Settings › App › Security findings: 1 saved script looks like it contains a token, seed-sandbox in payments-api, Token ending 9f2c, with Details and the Not a secret button">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -19,11 +19,11 @@ Move your setup to a new machine without carrying a flagged token: an export lea
 
 ### Export and import your setup
 
-Move your setup to another Mac, or keep a copy. **Backup** exports in groups such as workspaces, workflows and saved scripts, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing and never deletes.
+Move your setup to another Mac, or keep a copy. **Backup** exports in groups such as workspaces, workflows and saved scripts, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing and never deletes. The preview lists every allow rule and the first line of every script, and it carries the file's SHA-256. Import refuses a file that changed after the preview. A rule that allows anything needs its own checkbox, and imported scripts arrive disabled until you open one and save it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings, App, Backup, Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Limits, Linked integrations and App preferences, a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications, and the Export button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings › App › Backup › Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Limits, Linked integrations and App preferences, a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications, and the Export button">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -43,6 +43,8 @@ Update without worrying about your data. Before an update changes it, Goodboy ma
 
 Open an older Goodboy on newer data without damage. It stops before touching anything and offers **Restore backup** or **Quit**, and your current data stays in a copy next to the database.
 
+When the database cannot be opened at all, the start screen offers **Retry** first, because a locked file is often temporary. **Move aside and restart** asks once, moves the file and its journals next to it as `data.db.unopened-<time>`, and starts with an empty database. Nothing is deleted.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-newer-data-light.webp" alt="The screen an older Goodboy shows on newer data: This database was upgraded by a newer Goodboy, with the buttons Restore backup and Quit">
@@ -52,7 +54,7 @@ Open an older Goodboy on newer data without damage. It stops before touching any
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them. **Settings > App > Updates** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">

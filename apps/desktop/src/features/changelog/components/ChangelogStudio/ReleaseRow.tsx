@@ -1,6 +1,6 @@
 import { DoorClosedLocked, Milestone, type LucideIcon } from 'lucide-react';
-import { SelectableRow, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, SelectableRow, Tooltip } from '@goodboy/ui';
+
 import { isInstalledRelease } from '../../isInstalledRelease';
 import { isNewerRelease } from '../../isNewerRelease';
 import { releaseKindOf } from '../../releaseKind';

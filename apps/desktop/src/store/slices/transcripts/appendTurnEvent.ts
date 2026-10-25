@@ -4,6 +4,7 @@ import { invokeAgentSetProviderSessionId } from '../../../features/workflows/wor
 import { purgedAgentIds } from '../sessions/sessionMutators';
 import { bufferTurnEvent } from './buffer';
 import { queueTurnEventInsert } from './queue';
+import { turnEventIds } from './turnEventIds';
 import type { SetFn } from './types';
 
 export const appendTurnEvent = (set: SetFn) => {
@@ -11,14 +12,14 @@ export const appendTurnEvent = (set: SetFn) => {
     if (purgedAgentIds.has(agentId)) {
       return;
     }
-    bufferTurnEvent({ set, agentId, sessionId, event });
-
-    queueTurnEventInsert({
+    const storedId = queueTurnEventInsert({
       id: crypto.randomUUID(),
       sessionId,
       agentId,
       event,
     });
+    turnEventIds.set(event, storedId);
+    bufferTurnEvent({ set, agentId, sessionId, event });
 
     if (event.kind === 'provider_session_init' && event.provider !== undefined) {
       void invokeAgentSetProviderSessionId({

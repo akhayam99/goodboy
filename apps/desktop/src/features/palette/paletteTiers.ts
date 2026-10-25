@@ -31,13 +31,14 @@ const SHIP_KINDS: ReadonlySet<SuggestionKind> = new Set<SuggestionKind>([
 
 const RECIPES: Readonly<Record<PaletteTier, ReadonlyArray<string>>> = {
   live: [
-    'agent.interrupt',
+    'agent.stop',
     'agent.message',
     'session.diff',
     'session.openWorktreeTerminal',
     'session.startRun',
     'session.rename',
     'session.editor',
+    'session.stopAll',
   ],
   needs: [
     'agent.message',

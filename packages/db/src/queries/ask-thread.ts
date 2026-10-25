@@ -1,14 +1,13 @@
 import {
-  PROVIDER_IDS,
   isEffortLevel,
   type AskThread,
   type ChatId,
   type IsoDateTime,
-  type ProviderId,
   type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isProviderId } from '@goodboy/types/helpers';
 
 type AskThreadRow = {
   readonly id: string;
@@ -24,9 +23,6 @@ type AskThreadRow = {
 };
 
 const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
-
-const isProviderId = (value: string): value is ProviderId =>
-  PROVIDER_IDS.some((provider) => provider === value);
 
 const toThread = (row: AskThreadRow): AskThread | null => {
   if (!isProviderId(row.provider)) {

@@ -1,7 +1,7 @@
 import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
 import { useEffect, useRef } from 'react';
-import { Button, Collapsible, cn } from '@goodboy/ui';
-import { CheckCircle2 } from 'lucide-react';
+import { Button, cn, Collapsible, ICON_SIZE } from '@goodboy/ui';
+import { CircleCheck } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -9,12 +9,12 @@ import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { guideFor } from './guides';
 import { ConnectDetails } from './ConnectDetails';
+import { EscapeHatch } from './EscapeHatch';
 import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';
 import { connectView, type ProviderConnectChrome } from './connectView';
 import { useConnectDetails } from './useConnectDetails';
 import { AUTH_LINK_REVEAL_MS, useDelayedReveal } from './useDelayedReveal';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -100,11 +100,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         )}
       >
         {view.isSuccess ? (
-          <CheckCircle2
-            size={ICON_SIZE.hero}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-success"
-          />
+          <CircleCheck size={ICON_SIZE.hero} aria-hidden className="mt-0.5 shrink-0 text-success" />
         ) : (
           <Mark
             size={ICON_SIZE.hero}
@@ -119,7 +115,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
             {chrome === 'inline' ? `Connect ${label}` : label}
           </span>
           {view.status !== null && (
-            <span className="max-w-prose text-label text-muted-foreground">{view.status}</span>
+            <span className="max-w-prose text-meta text-muted-foreground">{view.status}</span>
           )}
           {view.note !== null && (
             <span className="max-w-prose text-meta text-muted-foreground">{view.note}</span>
@@ -149,11 +145,16 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
       </div>
 
       {view.showTerminalHint && connect.command !== null && (
-        <p className="max-w-prose text-meta text-muted-foreground">
-          If this keeps failing, run{' '}
-          <span className="font-mono text-foreground">{connect.command}</span> in your terminal,
-          then come back.
-        </p>
+        <div className="flex max-w-prose flex-col gap-2">
+          <p className="text-meta text-muted-foreground">
+            If this keeps failing, run{' '}
+            <span className="font-mono text-foreground">{connect.command}</span> in your terminal,
+            then come back.
+          </p>
+          {connect.step !== null && (
+            <EscapeHatch command={connect.command} providerId={providerId} action={connect.step} />
+          )}
+        </div>
       )}
 
       {showDetails && (
@@ -161,7 +162,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
           open={details.open}
           onOpenChange={details.setOpen}
           trigger={
-            <span className="text-label">{details.open ? 'Hide details' : 'Show details'}</span>
+            <span className="text-meta">{details.open ? 'Hide details' : 'Show details'}</span>
           }
         >
           <div ref={details.regionRef} onFocus={details.onFocus} onBlur={details.onBlur}>
@@ -169,6 +170,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
               providerId={providerId}
               runId={connect.runId}
               command={connect.command}
+              action={connect.step}
               guide={guide}
             />
           </div>

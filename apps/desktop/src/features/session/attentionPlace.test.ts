@@ -1,23 +1,38 @@
 // @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  ProviderRunId,
-  SessionAttentionReason,
-  SessionId,
-  TurnState,
-  WorkflowRunId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionAttentionReason,
+  type SessionId,
+  type StepId,
+  type TurnState,
+  type Workflow,
+  type WorkflowId,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
+import { aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
 
 const SESSION_ID = 'session-now' as SessionId;
 const EARLIER = 'agent-earlier' as AgentId;
 const LATEST = 'agent-latest' as AgentId;
 const AT = '2026-10-04T08:00:00.000Z' as IsoDateTime;
+
+type BlockedViewParams = {
+  readonly rootAgentId: AgentId;
+};
+
+const blockedViewOf = ({ rootAgentId }: BlockedViewParams) => {
+  const view = aView({ phase: 'blocked' });
+  return { ...view, tree: { ...view.tree, sessionId: SESSION_ID, rootAgentId } };
+};
 
 type AgentParams = Pick<Agent, 'id' | 'ordinal' | 'status'>;
 
@@ -125,4 +140,98 @@ describe('attentionPlace', () => {
       });
     },
   );
+});
+
+describe('attentionPlace and the waits of a run', () => {
+  const WORKFLOW_ID = brandId<WorkflowId>({ value: 'workflow-release' });
+  const workflow = (): Workflow => ({
+    id: WORKFLOW_ID,
+    workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+    name: 'Release checklist',
+    description: '',
+    steps: [],
+    createdAt: AT,
+    updatedAt: AT,
+  });
+  const stopped = aWorkflowRun({
+    id: brandId<WorkflowRunId>({ value: 'run-stopped' }),
+    workflowId: WORKFLOW_ID,
+    executionMode: 'dynamic',
+    orchestrationStop: { kind: 'failure', message: 'Failed.' },
+  });
+  const limited = aWorkflowRun({
+    id: brandId<WorkflowRunId>({ value: 'run-limited' }),
+    workflowId: WORKFLOW_ID,
+    executionMode: 'dynamic',
+    orchestrationStop: { kind: 'budget', message: 'Limit.' },
+  });
+  const waiting = aWorkflowRun({
+    id: brandId<WorkflowRunId>({ value: 'run-waiting' }),
+    workflowId: WORKFLOW_ID,
+    executionMode: 'dynamic',
+  });
+  const stepAgent: Agent = {
+    ...agent({ id: brandId<AgentId>({ value: 'agent-step' }), ordinal: 3, status: 'completed' }),
+    workflowRunId: brandId<WorkflowRunId>({ value: 'run-waiting' }),
+    stepId: brandId<StepId>({ value: 'step-1' }),
+  };
+  const runsState = {
+    ...state,
+    sessions: [aSession({ id: SESSION_ID, workflowRuns: [stopped, limited, waiting] })],
+    sessionPhaseRuns: { [SESSION_ID]: [...AGENTS, stepAgent] },
+    sessionWorkflows: { [SESSION_ID]: [workflow()] },
+  };
+
+  it.each([
+    ['run-stopped', 'run-stopped'],
+    ['run-paused-at-limit', 'run-limited'],
+    ['run-waits-for-go', 'run-waiting'],
+  ] satisfies ReadonlyArray<readonly [SessionAttentionReason, string]>)(
+    'opens the page of the run behind %s',
+    (reason, runId) => {
+      expect(attentionPlace({ state: runsState, sessionId: SESSION_ID, reason })).toMatchObject({
+        at: 'session',
+        sessionId: SESSION_ID,
+        view: { lens: 'workflows', target: { kind: 'run', runId } },
+      });
+    },
+  );
+
+  it('opens the runs list when the run no longer waits', () => {
+    expect(attentionPlace({ state, sessionId: SESSION_ID, reason: 'run-stopped' })).toMatchObject({
+      at: 'session',
+      view: { lens: 'workflows', target: null },
+    });
+  });
+});
+
+describe('attentionPlace and Auto or Slack', () => {
+  const root = {
+    ...agent({ id: brandId<AgentId>({ value: 'agent-auto-root' }), ordinal: 0, status: 'running' }),
+    kind: 'auto',
+    name: 'Auto',
+  } satisfies Agent;
+  const autoState = {
+    ...state,
+    sessionPhaseRuns: { [SESSION_ID]: [...AGENTS, root] },
+    autoTreeViews: { [SESSION_ID]: [blockedViewOf({ rootAgentId: root.id })] },
+  };
+
+  it('opens the Auto agent that waits for you', () => {
+    expect(
+      attentionPlace({ state: autoState, sessionId: SESSION_ID, reason: 'auto-needs-you' }),
+    ).toEqual({ at: 'agent', sessionId: SESSION_ID, agentId: root.id });
+  });
+
+  it('opens the session when the Auto tree no longer waits', () => {
+    expect(
+      attentionPlace({ state, sessionId: SESSION_ID, reason: 'auto-needs-you' }),
+    ).toMatchObject({ at: 'session', sessionId: SESSION_ID });
+  });
+
+  it('opens the latest agent, where the Slack draft card sits', () => {
+    expect(attentionPlace({ state, sessionId: SESSION_ID, reason: 'slack-reply-waiting' })).toEqual(
+      { at: 'agent', sessionId: SESSION_ID, agentId: LATEST },
+    );
+  });
 });

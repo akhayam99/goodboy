@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover, Eyebrow, FieldRow } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, Eyebrow, FieldRow, ICON_SIZE } from '@goodboy/ui';
 
 export const ResetAppScene = () => {
   const [isDone, setIsDone] = useState(false);
@@ -19,13 +18,13 @@ export const ResetAppScene = () => {
         help="Every workspace, session, transcript and rule. Keychain keys are untouched."
       >
         {isDone ? (
-          <span className="text-label text-muted-foreground">Local data deleted.</span>
+          <span className="text-meta text-muted-foreground">Local data deleted.</span>
         ) : (
           <ConfirmPopover
             role="danger"
             icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
             title="Delete every workspace, session and rule?"
-            description="This cannot be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
+            description="This can't be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
             confirmLabel="Delete"
             isOpen={isOpen}
             onConfirm={async () => {

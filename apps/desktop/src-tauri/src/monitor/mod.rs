@@ -6,11 +6,11 @@ pub(crate) mod stop;
 pub(crate) mod watched;
 
 use std::collections::{BTreeSet, HashMap};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
 use crate::proc::ledger::LedgerEntry;
+use crate::util::MessageError;
 
 #[cfg(target_os = "macos")]
 use std::process::Command;
@@ -52,13 +52,6 @@ pub(crate) struct MonitorSnapshot {
     pub(crate) taken_at: u64,
     #[serde(rename = "isPlatformSupported")]
     pub(crate) platform_supported: bool,
-}
-
-fn now_millis() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
 }
 
 struct Scope {
@@ -175,7 +168,7 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
         .collect();
     let list = csv(rows.iter().map(|row| row.pid));
     let (cwds, args) = details(&list)?;
-    let now = now_millis();
+    let now = crate::util::now_millis_u64();
     let alive: BTreeSet<u32> = rows.iter().map(|row| row.pid).collect();
     Ok(MonitorSnapshot {
         listeners: to_listeners(raw_listeners, &alive),
@@ -218,7 +211,7 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
         })
         .collect();
     let scope = ledger_scope(ledger, &raw_listeners);
-    let now = now_millis();
+    let now = crate::util::now_millis_u64();
     let mut rows = Vec::new();
     let mut cwds = HashMap::new();
     let mut args = HashMap::new();
@@ -249,7 +242,7 @@ fn collect(_ledger: &[LedgerEntry], _ports: &[u16]) -> Result<MonitorSnapshot, S
     Ok(MonitorSnapshot {
         listeners: Vec::new(),
         processes: Vec::new(),
-        taken_at: now_millis(),
+        taken_at: crate::util::now_millis_u64(),
         platform_supported: false,
     })
 }
@@ -384,20 +377,38 @@ pub(crate) fn snapshot() -> Result<MonitorSnapshot, String> {
 }
 
 #[tauri::command]
-pub(crate) async fn monitor_snapshot(ports: Option<Vec<u16>>) -> Result<MonitorSnapshot, String> {
+pub(crate) async fn monitor_snapshot(
+    ports: Option<Vec<u16>>,
+) -> Result<MonitorSnapshot, MessageError> {
     let ports = ports.unwrap_or_default();
     tauri::async_runtime::spawn_blocking(move || {
         collect(&crate::proc::ledger::global().list(), &ports)
     })
     .await
-    .map_err(|error| error.to_string())?
+    .map_err(|error| MessageError::Failed(error.to_string()))?
+    .map_err(MessageError::Failed)
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
     use std::net::TcpListener;
 
     use super::*;
+
+    fn rejects_with_message_error<T>(
+        _: impl std::future::Future<Output = Result<T, MessageError>>,
+    ) {
+    }
+
+    #[test]
+    fn the_monitor_commands_reject_with_a_message_error() {
+        rejects_with_message_error(monitor_snapshot(None));
+        rejects_with_message_error(stop::monitor_stop(1, false));
+        rejects_with_message_error(watched::monitor_watched_ports(String::new()));
+    }
 
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[test]

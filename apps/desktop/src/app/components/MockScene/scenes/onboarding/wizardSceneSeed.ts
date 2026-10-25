@@ -20,8 +20,9 @@ import type { LinearIssue } from '../../../../../features/integrations/linear/cl
 import { SETTING_NEW_PROJECT_PARENT } from '../../../../../features/settings/settings';
 import { IDLE_CONNECT, INITIAL_CONNECT_MAP } from '../../../../../store/slices/providers/types';
 import { useAppStore } from '../../../../../store';
+import type { AppStore } from '../../../../../store/store';
 import { sceneClock } from '../../sceneClock';
-import { mockSceneIpc } from '../mockSceneIpc';
+import { installSceneDatabase } from '../sceneDatabase';
 import { setupSceneAnswer } from './setupSceneAnswer';
 import { startSampleScout } from './startSampleScout';
 import { sampleScoutRuns } from './sampleScoutRuns';
@@ -247,15 +248,17 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
   const detected = agentsFor({ agents });
   const seeded = SEEDED[ws];
   const { workspace } = seeded;
-  mockSceneIpc((command, payload) => {
-    switch (command) {
-      case 'worktree_remote_url':
-        return 'git@github.com:acme/acme-web.git';
-      case 'linear_fetch_assigned_issues':
-        return LINEAR_ISSUES;
-      default:
-        return setupSceneAnswer({ command, payload });
-    }
+  installSceneDatabase({
+    fallback: ({ command, payload }) => {
+      switch (command) {
+        case 'worktree_remote_url':
+          return 'git@github.com:acme/acme-web.git';
+        case 'linear_fetch_assigned_issues':
+          return LINEAR_ISSUES;
+        default:
+          return setupSceneAnswer({ command, payload });
+      }
+    },
   });
   mockWindows('main');
   useAppStore.setState({
@@ -289,7 +292,7 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
         : INITIAL_CONNECT_MAP,
     probeAgent: async () => undefined,
     refreshProviders: async () => undefined,
-    connectProvider: async (providerId) => {
+    connectProvider: (async (providerId) => {
       if (detected.statuses[providerId]?.available !== true) {
         return;
       }
@@ -298,10 +301,11 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
         authResults,
         providers: buildProviderList(detected.statuses, authResults, new Set()),
       });
-    },
+    }) satisfies AppStore['connectProvider'],
     cancelProviderConnect: async () => undefined,
     refreshGithubStatus: async () => undefined,
-    setCurrentWorkspace: async (id) => useAppStore.setState({ currentWorkspaceId: id }),
+    setCurrentWorkspace: (async (id) =>
+      useAppStore.setState({ currentWorkspaceId: id })) satisfies AppStore['setCurrentWorkspace'],
     startSessionFromDraft: startSampleScout,
   });
   return seeded;

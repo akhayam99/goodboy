@@ -1,8 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { MAX_ISSUE_URL_BYTES } from '../settings/issueUrl';
 import {
-  STACK_FRAME_LIMIT,
   buildReport,
   buildReportLink,
   contextParts,
@@ -22,6 +20,41 @@ const CONTEXT = {
 };
 
 const NONE: ReadonlySet<ReportPartId> = new Set();
+
+describe('contextParts', () => {
+  it('shows no chip for a version or a system it could not read', () => {
+    const parts = contextParts({
+      context: { ...CONTEXT, version: 'unknown', build: 'unknown', system: 'unknown' },
+    });
+
+    expect(parts.map((part) => part.id)).toEqual(['screen', 'cliVersions']);
+  });
+
+  it('keeps a known build on its own chip when the version is unknown', () => {
+    const parts = contextParts({ context: { ...CONTEXT, version: 'unknown' } });
+
+    expect(parts[0]).toMatchObject({
+      id: 'version',
+      chip: 'build 7f3a2c1',
+      text: 'Build: 7f3a2c1',
+    });
+  });
+
+  it('keeps a known version alone when the build is unknown', () => {
+    const parts = contextParts({ context: { ...CONTEXT, build: 'unknown' } });
+
+    expect(parts[0]).toMatchObject({ id: 'version', chip: '0.12.0', text: 'Version: 0.12.0' });
+  });
+
+  it('keeps every chip when the version and the system are known', () => {
+    expect(contextParts({ context: CONTEXT }).map((part) => part.id)).toEqual([
+      'version',
+      'system',
+      'screen',
+      'cliVersions',
+    ]);
+  });
+});
 
 describe('buildReport', () => {
   it('makes the one line the title and lists every attached fact under the type', () => {
@@ -105,7 +138,7 @@ describe('trimStack', () => {
 
     const trimmed = trimStack({ stack }).split('\n');
 
-    expect(trimmed).toHaveLength(STACK_FRAME_LIMIT);
+    expect(trimmed).toHaveLength(8);
     expect(trimmed[0]).toBe('at Row0 (/src/Row.tsx:0)');
     expect(trimmed.join('\n')).not.toContain('node_modules');
   });
@@ -142,7 +175,7 @@ describe('buildReportLink', () => {
     const link = buildReportLink({ title: 'Board jumps', body: 'steps '.repeat(2000) });
 
     expect(link.overflows).toBe(true);
-    expect(link.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
+    expect(link.url.length).toBeLessThanOrEqual(4096);
     expect(decodeURIComponent(link.url)).toContain('It is on your clipboard');
   });
 });

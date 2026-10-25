@@ -1,6 +1,6 @@
 import { Checkbox } from '@goodboy/ui';
 import type { ExportCounts, ExportGroups } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type GroupKey = keyof ExportGroups;
 
@@ -90,7 +90,7 @@ export const ExportGroupsSection = ({ groups, counts, disabled, onChange }: Prop
         <Checkbox
           label={
             <span className="flex flex-col gap-0.5">
-              <span className="text-label text-foreground">{row.label}</span>
+              <span className="text-meta text-foreground">{row.label}</span>
               <span className="text-meta text-muted-foreground">{row.help}</span>
             </span>
           }
@@ -99,7 +99,7 @@ export const ExportGroupsSection = ({ groups, counts, disabled, onChange }: Prop
           onChange={(value) => onChange({ group: row.key, value })}
         />
         {row.count !== undefined && counts !== null && (
-          <span className="shrink-0 text-label tabular-nums text-faint-foreground">
+          <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
             {row.count(counts)}
           </span>
         )}

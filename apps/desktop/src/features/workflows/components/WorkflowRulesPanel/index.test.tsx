@@ -36,8 +36,8 @@ const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline
 
 const savedRules = (): ReadonlyArray<WorkflowRules | null | undefined> =>
   storySpies.tauriInvoke.mock.calls
-    .filter(([name]) => name === 'set_workspace_overrides')
-    .map(([, args]) => (args as { readonly overrides: OverrideSettings }).overrides.workflowRules);
+    .filter(([name]) => name === 'patch_workspace_overrides')
+    .map(([, args]) => (args as { readonly patch: Partial<OverrideSettings> }).patch.workflowRules);
 
 const installed = (id: string): ProviderStatus => ({
   id,
@@ -93,11 +93,12 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ set_workspace_overrides: null });
+  stubStoryInvoke({ patch_workspace_overrides: null });
   useAppStore.setState({
     workspaces: [HARBORLINE],
     currentWorkspaceId: HARBORLINE.id,
     loadSetting: vi.fn(async (): Promise<string | null> => null),
+    loadWorkspaceValue: vi.fn(async (): Promise<string | null> => null),
     ...connectedProviders(),
     workspaceOverrides: {
       [HARBORLINE.id]: {
@@ -250,7 +251,7 @@ describe('WorkflowRulesPanel', () => {
   it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {
     const polished = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
     stubStoryInvoke({
-      set_workspace_overrides: null,
+      patch_workspace_overrides: null,
       summarize_session: {
         stdout: JSON.stringify({ result: `<<guidance>>\n${polished}\n<</guidance>>` }),
         stderr: '',

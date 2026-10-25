@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
+
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 
@@ -21,8 +21,8 @@ export const AgentFollowUpMove = ({ kind, label, hint, isBusy, isDisabled, onCon
     disabled={isDisabled}
     onClick={onContinue}
     className={cn(
-      'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-label transition-colors hover:border-border',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+      'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-meta transition-colors hover:border-border',
+      FOCUS_RING,
     )}
   >
     <AgentKindChip kind={kind} title={label} />

@@ -22,7 +22,7 @@ const pressed = async (id: ShortcutId, target?: Element): Promise<void> => {
 };
 
 const openScripts = async ({ sessionId }: Ctx): Promise<string> => {
-  const anchor = await screen.findByRole('button', { name: /^Search \(/ });
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
   anchor.focus();
   await pressed('lens.scripts');
   const mount = useAppStore.getState().sessionProjectMounts[sessionId]?.[0];

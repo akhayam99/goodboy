@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { FLOATING_SURFACE, IconButton, cn } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 
 export type TerminalFindResults = {
@@ -104,7 +104,10 @@ export const TerminalFindBar = ({ controller, step, onClose }: Props) => {
     <div
       role="search"
       aria-label="Find in terminal"
-      className="absolute right-2 top-2 z-10 flex items-center gap-2 rounded-lg border border-border bg-floating py-1 pl-2 pr-1 shadow-lg"
+      className={cn(
+        FLOATING_SURFACE,
+        'absolute right-2 top-2 z-10 flex items-center gap-2 py-1 pl-2 pr-1',
+      )}
     >
       <input
         ref={inputRef}
@@ -115,7 +118,7 @@ export const TerminalFindBar = ({ controller, step, onClose }: Props) => {
         spellCheck={false}
         onChange={(event) => setTerm(event.target.value)}
         onKeyDown={handleKeyDown}
-        className="w-44 bg-transparent text-label text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
+        className="w-44 bg-transparent text-meta text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
       />
       <span role="status" className="min-w-14 text-meta text-faint-foreground">
         {summary}

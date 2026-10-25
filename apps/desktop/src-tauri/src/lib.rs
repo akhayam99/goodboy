@@ -1,8 +1,10 @@
+mod app_paths;
 mod app_platform;
 mod artifact_folder;
 mod artifact_mirror;
 mod artifacts;
 mod attachment;
+mod attention;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
@@ -19,7 +21,10 @@ mod codex_rollout;
 mod config_export;
 mod cursor_config;
 mod db;
+mod db_recovery;
+mod dropped_paths;
 mod editor;
+mod ended_work;
 mod explore;
 mod external_terminal;
 #[cfg(all(test, unix))]
@@ -33,6 +38,7 @@ mod gitlab;
 mod goodboy_ignore;
 mod history;
 mod history_graph;
+mod ignore_file;
 mod integration_credentials;
 mod integrations;
 mod jira;
@@ -50,6 +56,7 @@ mod process_group;
 mod project_folder;
 mod project_relocation;
 mod project_scripts;
+mod provider_commands;
 mod provider_credentials;
 mod provider_lifecycle;
 mod provider_standing_log;
@@ -59,9 +66,13 @@ mod publish;
 mod qa_preview;
 mod query_bridge;
 mod releases;
+mod remote;
+mod remote_auth;
 mod remote_image;
 mod remote_probe;
 mod repo;
+mod repo_clone;
+mod reproducible_dirs;
 mod restart_marker;
 mod scratch_dir;
 mod scripts;
@@ -75,19 +86,25 @@ mod slack;
 mod storage;
 mod summarize;
 mod terminal;
+mod terminal_foreground;
 mod terminal_scrollback;
 mod thread_git;
 mod turn;
 mod turn_backlog;
 mod turn_delivery;
+mod turn_quiet;
 mod usage_probe;
 mod util;
+mod window_heartbeat;
 mod workflows;
 mod worktree;
 mod worktree_writer;
 
 #[cfg(test)]
 mod command_threading;
+
+#[cfg(test)]
+mod test_support;
 
 #[cfg(target_os = "macos")]
 mod app_menu;
@@ -117,6 +134,7 @@ pub(crate) fn drain_child_processes(app: &tauri::AppHandle, is_app_exit: bool) {
         turn::mark_exiting();
     }
     restart_marker::persist(app, &turn::live_run_ids(&app.state::<turn::TurnRegistry>()));
+    ended_work::persist(app);
     stop_running_work(app);
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
     query_bridge::shutdown();
@@ -128,6 +146,7 @@ pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
     chat::shutdown(&app.state::<chat::ChatRegistry>());
     summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
     planner::shutdown(&app.state::<planner::PlannerRegistry>());
+    repo_clone::shutdown(&app.state::<repo_clone::CloneRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(
         &app.state::<terminal::TerminalRegistry>(),
@@ -190,12 +209,24 @@ pub fn run() {
                 drain_child_processes(app, false);
             }
         })
+        .on_webview_event(|webview, event| {
+            use tauri::Manager;
+            let tauri::WebviewEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event
+            else {
+                return;
+            };
+            webview
+                .app_handle()
+                .state::<dropped_paths::DroppedPaths>()
+                .record(paths);
+        })
         .register_asynchronous_uri_scheme_protocol(
             frame_protocol::FRAME_SCHEME,
             frame_protocol::handle,
         )
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_process::init());
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init());
 
     let builder = match database {
         Some(database) => builder.manage(database),
@@ -209,6 +240,7 @@ pub fn run() {
         .manage(writer_leases)
         .manage(summarize_registry)
         .manage(planner_registry)
+        .manage(repo_clone::CloneRegistry::new())
         .manage(script_registry)
         .manage(terminal_registry)
         .manage(provider_lifecycle_registry)
@@ -219,11 +251,26 @@ pub fn run() {
         .manage(bitbucket_token_cache)
         .manage(slack_token_cache)
         .manage(frame_protocol::FrameStages::default())
+        .manage(dropped_paths::DroppedPaths::default())
+        .manage(window_heartbeat::Heartbeats::default())
         .setup(move |app| {
             use tauri::Manager;
             logging::init(app.handle());
             query_bridge::start(app.handle().clone());
+            if !cfg!(debug_assertions) {
+                window_heartbeat::start(
+                    app.handle().clone(),
+                    app.state::<window_heartbeat::Heartbeats>().inner().clone(),
+                );
+            }
             std::thread::spawn(history::clean_stale_copies);
+            std::thread::spawn(|| {
+                proc::reap::sweep_stale_turn_dirs(
+                    &std::env::temp_dir(),
+                    util::system_now(),
+                    proc::reap::STALE_TURN_DIR_AGE,
+                );
+            });
             let sweep_handle = app.handle().clone();
             std::thread::spawn(move || {
                 use tauri::Emitter;
@@ -279,11 +326,16 @@ pub fn run() {
             last_crash::last_crash_claim,
             last_crash::last_crash_delete,
             db::db_exec,
+            db_recovery::db_check_openable,
+            db_recovery::db_move_aside,
             db::db_execute,
+            db::db_create_migration_snapshot,
+            db::db_vacuum,
             db::db_list_migration_snapshots,
             db::db_path,
             db::db_remove_migration_snapshot,
             db::db_restore_migration_snapshot,
+            db::db_secure_files,
             db::db_select,
             db::db_transaction,
             db::db_wipe,
@@ -319,7 +371,10 @@ pub fn run() {
             goodboy_ignore::goodboy_ignore_status,
             goodboy_ignore::goodboy_ignore_apply,
             worktree::worktree_orphans,
+            worktree::worktree_carry_candidates,
+            worktree::worktree_carry_into,
             worktree::worktree_folder_remove,
+            worktree::worktree_folder_restore,
             storage::worktree_folder_facts,
             storage::disk_free,
             storage::app_data_usage,
@@ -332,7 +387,9 @@ pub fn run() {
             worktree::worktree_file_sides,
             worktree::worktree_grep_word,
             worktree::worktree_changed_files,
+            worktree::worktree_setup_proposal,
             worktree::worktree_snapshot,
+            worktree::worktree_turn_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
             worktree::worktree_abort_rebase,
@@ -409,6 +466,8 @@ pub fn run() {
             provider_lifecycle::provider_lifecycle_resize,
             provider_lifecycle::provider_lifecycle_cancel,
             external_terminal::open_command_in_external_terminal,
+            external_terminal::open_in_external_terminal,
+            external_terminal::detect_terminals,
             turn::turn_spawn,
             turn::turn_cancel,
             turn::turn_attach,
@@ -416,6 +475,8 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            turn::turn_quiet,
+            window_heartbeat::window_heartbeat,
             turn::turn_delivery_lookup,
             chat::chat_turn,
             chat::chat_cancel,
@@ -462,6 +523,7 @@ pub fn run() {
             summarize::summarize_session,
             summarize::summarize_cancel,
             planner::planner_run,
+            planner::planner_cancel,
             codex_rollout::codex_rollout_context,
             codex_rollout::codex_rate_limits_latest,
             usage_probe::claude_usage_probe,
@@ -482,6 +544,10 @@ pub fn run() {
             repo::repo_init,
             project_folder::project_folder_create,
             repo::scan_child_repos,
+            repo_clone::clone_probe,
+            repo_clone::clone_repository,
+            repo_clone::clone_cancel,
+            repo_clone::clone_free_destination,
             folder_git::folder_git_first_commit_plan,
             folder_git::folder_git_make_first_commit,
             folder_git::folder_git_probe,
@@ -529,6 +595,7 @@ pub fn run() {
             workflows::step_def_upsert,
             workflows::step_def_delete,
             workflows::workspaces_with_unread,
+            attention::workspaces_attention,
             permissions::permission_rule_list,
             permissions::permission_rule_upsert,
             permissions::permission_rule_delete,
@@ -539,7 +606,7 @@ pub fn run() {
             permissions::permission_audit_retry_update,
             permissions::permission_audit_retry_delete,
             settings_overrides::get_workspace_overrides,
-            settings_overrides::set_workspace_overrides,
+            settings_overrides::patch_workspace_overrides,
             settings_overrides::get_session_overrides,
             scroller_style::system_scroller_style,
             config_export::config_export_preview,

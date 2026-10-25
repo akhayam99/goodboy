@@ -3,7 +3,7 @@ import { setSetting } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { learnedPortsKey } from './settingKeys';
 import { mergePortSnapshot } from './mergePortSnapshot';
 import { selectPortRows } from './selectPortRows';

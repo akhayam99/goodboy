@@ -22,7 +22,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { MOCK_SCENES } from '../..';
 import { U25_R4_CONTENT_SCENES } from './r4-content';
 import { CHAT_SESSION_ID, LENS_QUESTIONS } from '../flow-audit/fixtures';
