@@ -22,6 +22,7 @@ export const foldedVerbActions = <F>({
   verbs.map((verb) => ({
     id: `${kind}.folded.${verb.id}`,
     label: verb.label,
+    description: () => verb.description ?? null,
     icon: SquareArrowOutUpRight,
     group: 'open',
     when: () => true,

@@ -369,7 +369,7 @@ export { KeyHint } from './components/KeyHint';
 export type { KeyHintProps } from './components/KeyHint';
 export { TOP_BAR_CONTROL } from './topBarControl';
 export { lastFocusedElement, useLastFocused } from './useLastFocused';
-export { FLOATING_SURFACE } from './floatingSurface';
+export { FLOATING_SURFACE, MENU_MAX_WIDTH } from './floatingSurface';
 
 export {
   FRAME_BAND_PX,

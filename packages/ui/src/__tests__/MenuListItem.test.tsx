@@ -76,4 +76,31 @@ describe('an item in MenuList', () => {
     fireEvent.mouseEnter(active);
     expect((await screen.findByRole('tooltip')).textContent).toBe('/work/payments-api');
   });
+
+  it('clamps a long description to three lines under a one-line title', () => {
+    render(
+      <MenuList
+        label="Stopped rebases"
+        isAutoFocus={false}
+        entries={[
+          {
+            kind: 'item',
+            key: 'stop',
+            label: 'Rebase of hl/feat-ledger-postings stopped',
+            description: 'Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more',
+            onSelect: vi.fn(),
+          },
+        ]}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const row = screen.getByRole('menuitem', { name: /Rebase of hl/ });
+    expect(row.querySelector('.truncate')?.textContent).toBe(
+      'Rebase of hl/feat-ledger-postings stopped',
+    );
+    expect(
+      screen.getByText('Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more').className,
+    ).toContain('line-clamp-3');
+  });
 });

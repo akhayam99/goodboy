@@ -1516,7 +1516,10 @@ places it at the pointer, and an overflow trigger places it in an
 never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
 
 - **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `border`,
-  `rounded-lg`), 240px wide with a 200px floor,
+  `rounded-lg`), 240px wide with a 200px floor and a 384px ceiling
+  (`MENU_MAX_WIDTH`, passed as `maxWidth` to `useDropdown` because the inline
+  `max-width` the hook writes would beat a `max-w-*` class; a long row
+  truncates its label and clamps its description at three lines),
   padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
   `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
   at the pointer and flips left or up to stay 8px inside the window

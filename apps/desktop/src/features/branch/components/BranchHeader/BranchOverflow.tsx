@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   AnchoredPopover,
+  MENU_MAX_WIDTH,
   MenuList,
   MenuTriggerButton,
   useDropdown,
@@ -32,7 +33,8 @@ const MIN_DRAWN_ENTRIES = 2;
 export const BranchOverflow = ({ diffControls, pullRequestControls, shownIds }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
-    width: 'min-w-[200px] max-w-sm',
+    width: 'min-w-[200px]',
+    maxWidth: MENU_MAX_WIDTH,
     expectedHeight: 320,
     expectedWidth: 240,
   });

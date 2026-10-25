@@ -33,6 +33,7 @@ import type { NeedsYouOwner } from '../../../timeline/needsYou';
 import type { ActionCardModel, AutoActionTarget } from '../actionCardsOf';
 import { foldSecondVerb } from '../foldSecondVerb';
 import { foldVerbs } from '../foldVerbs';
+import { foldedVerbOf } from '../foldedVerbOf';
 import { suggestionPlaceOf } from '../suggestionPlaceOf';
 import { useOpenNeedsYou } from '../useOpenNeedsYou';
 
@@ -173,8 +174,6 @@ const messageOf = ({ error }: ErrorParams): string =>
 const RETRY_LABEL = 'Retry';
 
 const GONE_REASON = 'This agent is no longer in this session. It was deleted or moved.';
-
-const foldedLabelOf = ({ card }: CardParams): string => card.title;
 
 const CONFIRM_ROLE: Partial<Record<SessionSuggestion['kind'], ConfirmRole>> = {
   'close-worktree': 'danger',
@@ -576,15 +575,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       folds: baseActionsFor({ card: folded }),
     }));
     const verbs = inner.flatMap(({ folded, folds }): ReadonlyArray<FoldedVerb> =>
-      folds.main === null
-        ? []
-        : [
-            {
-              id: `folded:${folded.id}`,
-              label: foldedLabelOf({ card: folded }),
-              run: folds.main.run,
-            },
-          ],
+      folds.main === null ? [] : [foldedVerbOf({ card: folded, run: folds.main.run })],
     );
     const innerFailure = inner.find(({ folds }) => folds.failure !== null)?.folds.failure ?? null;
     return foldVerbs({

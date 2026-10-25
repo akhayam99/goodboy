@@ -11,7 +11,8 @@ import type {
 import type { TimelineRowItem, TimelineStreamItem } from './buildTimelineStream';
 import { runOpenQuestion } from './runOpenQuestion';
 import type { ResolveActivityFacts } from './resolveActivity';
-import { segmentsToText, sessionEventLabel } from './sessionEventPresentation';
+import { historyStopDetailOf } from '../../history/historyStopDetailOf';
+import { historyStopTitleOf, segmentsToText, sessionEventLabel } from './sessionEventPresentation';
 
 export type NeedsYouOwnerKind = 'fixRun' | 'run' | 'agent' | 'question' | 'rebase';
 
@@ -29,6 +30,11 @@ type FixRunOwed = {
   readonly target: FixRunTarget | null;
 };
 
+export type NeedsYouStopLines = {
+  readonly title: string;
+  readonly detail: string | null;
+};
+
 export type NeedsYouOwner = {
   readonly id: string;
   readonly kind: NeedsYouOwnerKind;
@@ -41,6 +47,7 @@ export type NeedsYouOwner = {
   readonly prNumber: number | null;
   readonly owed: FixRunOwed | null;
   readonly mountId: string | null;
+  readonly stopLines?: NeedsYouStopLines;
 };
 
 const plural = ({
@@ -316,6 +323,10 @@ const ownerOfRow = ({
       text: segmentsToText({
         segments: sessionEventLabel({ event: entry.event }),
       }),
+      stopLines: {
+        title: historyStopTitleOf({ event: entry.event }),
+        detail: historyStopDetailOf({ payload: entry.event.payload }),
+      },
     };
   }
   if (entry.kind === 'run') {

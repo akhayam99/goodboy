@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import {
   AnchoredPopover,
+  MENU_MAX_WIDTH,
   MenuList,
   MenuTriggerButton,
   useDropdown,
@@ -41,7 +42,8 @@ export const ObjectChoiceMenu = ({
   const { actions, run } = useObjectActions({ target, env });
   const dropdown = useDropdown({
     align: 'start',
-    width: 'min-w-[240px] max-w-sm',
+    width: 'min-w-[240px]',
+    maxWidth: MENU_MAX_WIDTH,
     expectedHeight: 280,
     expectedWidth: 280,
   });

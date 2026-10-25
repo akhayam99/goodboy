@@ -224,6 +224,43 @@ describe('needsYouOwners', () => {
     expect(settled).toEqual([]);
   });
 
+  it('splits a stopped rebase into a title and a short detail beside the full sentence', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-10-03T17:57:00.000Z',
+      payload: {
+        origin: 'rebase',
+        reason: 'conflict',
+        branch: 'hl/feat-ledger-postings',
+        files: [
+          'apps/web/src/domains/navigation/SideBarFooter.tsx',
+          'apps/web/src/domains/paths/components/PastDue.tsx',
+          'apps/web/src/domains/payments/A.tsx',
+          'apps/web/src/domains/payments/B.tsx',
+          'apps/web/src/domains/payments/C.tsx',
+        ],
+      },
+    });
+    const stopRow = row({
+      id: 'event:ev-1',
+      familyId: null,
+      rowState: DONE_ROW_STATE,
+      entry: { kind: 'event', id: 'event:ev-1', event: stopped },
+      at: stopped.createdAt,
+    });
+
+    const [owner] = needsYouOwners({ items: [stopRow], entries: [], events: [stopped] });
+
+    expect(owner?.stopLines).toEqual({
+      title: 'Rebase of hl/feat-ledger-postings stopped',
+      detail: 'Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more',
+    });
+    expect(owner?.text.startsWith('Rebase of hl/feat-ledger-postings stopped · conflict in ')).toBe(
+      true,
+    );
+  });
+
   it('names the branch of a stopped rebase by the mount of its event', () => {
     const stopped = event({
       id: 'ev-1',

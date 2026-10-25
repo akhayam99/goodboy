@@ -73,7 +73,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate">{entry.label}</span>
           {detail === null ? null : (
-            <span className="text-meta text-faint-foreground">{detail}</span>
+            <span className="line-clamp-3 text-meta text-faint-foreground">{detail}</span>
           )}
         </span>
         {entry.hint == null ? null : (

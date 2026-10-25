@@ -19,9 +19,11 @@ import {
 } from '../../../../../../features/auto/testing/autoViewFixtures';
 import type { NeedsYouOwner } from '../../../../../../features/session/timeline/needsYou';
 import {
+  historyStopTitleOf,
   segmentsToText,
   sessionEventLabel,
 } from '../../../../../../features/session/timeline/sessionEventPresentation';
+import { historyStopDetailOf } from '../../../../../../features/history/historyStopDetailOf';
 import { hiddenChildIdsOf } from '../../../../../../store/slices/auto-view/hiddenChildIdsOf';
 import { presentDelegationsOf } from '../../../../../../store/slices/auto-view/presentDelegationsOf';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
@@ -258,6 +260,10 @@ const rebaseStoppedOf = ({ mount, minute }: RebaseParams): NeedsYouOwner => {
     prNumber: null,
     owed: null,
     mountId: mount.mountId,
+    stopLines: {
+      title: historyStopTitleOf({ event }),
+      detail: historyStopDetailOf({ payload: event.payload }),
+    },
   };
 };
 
