@@ -93,7 +93,10 @@ const RULES = [
   },
   {
     pattern: /(?<![\w-])bg-surround(?![\w-])/,
-    allow: ['apps/desktop/src/app/components/MockScene/demo/DemoPlayground.tsx'],
+    allow: [
+      'apps/desktop/src/app/components/MockScene/demo/DemoPlayground.tsx',
+      'apps/desktop/src/app/components/MockScene/demo/DemoSpotlight.tsx',
+    ],
     why: 'the surround is the demo page around the app frame, darker than any app surface so the frame reads as a window',
   },
   {
