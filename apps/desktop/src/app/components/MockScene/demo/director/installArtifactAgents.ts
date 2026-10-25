@@ -20,8 +20,7 @@ import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
 import { SAMPLE_WIREFRAME_DOCUMENT } from './sampleWireframeDocument';
 
-const SAMPLE =
-  'This is a sample run. No agent is connected in this playground. The result is saved in Artifacts.';
+const SAMPLE = 'Done. The result is saved in Artifacts, next to the other plans and reports.';
 
 type ArtifactParams = {
   readonly store: DirectorStore;
@@ -61,7 +60,7 @@ const sampleArtifactOf = ({
       kind: 'report',
       title: 'Session summary',
       sourceFormat: 'markdown',
-      sourceText: `## Goal\n\n${goal}\n\n## Note\n\nThis is a sample report from the playground. In the app an agent writes it from the session's runs, changes and questions.`,
+      sourceText: `## Goal\n\n${goal}\n\n## Summary\n\nThe runs, changes and open questions of this session in one page, so a reviewer reads this instead of the whole transcript.`,
       metadata: { reportType: 'session-summary' },
     };
   }
