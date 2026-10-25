@@ -75,6 +75,7 @@ type ElementParams = {
 const CUT_TOLERANCE = 2;
 const DWELL_MS = 2500;
 const HOVER_GRACE_MS = 600;
+const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
@@ -167,6 +168,7 @@ export const createHintEngine = ({
   let pending: number | null = null;
   let isDisposed = false;
   let dwellUntil = 0;
+  let dwellStart = 0;
   let dwellTimer: number | null = null;
   const results = createResultTracker({ view, onChange: () => schedule() });
 
@@ -296,7 +298,7 @@ export const createHintEngine = ({
       return false;
     }
     const now = Date.now();
-    if (results.isHovered()) {
+    if (results.isHovered() && now < dwellStart + MAX_DWELL_MS) {
       dwellUntil = Math.max(dwellUntil, now + HOVER_GRACE_MS);
     }
     if (now >= dwellUntil) {
@@ -331,7 +333,8 @@ export const createHintEngine = ({
       }
       if (armed.has(hint.id) && hint.doneWhen(probe)) {
         done.add(hint.id);
-        dwellUntil = Date.now() + DWELL_MS;
+        dwellStart = Date.now();
+        dwellUntil = dwellStart + DWELL_MS;
         onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
       }
     }
