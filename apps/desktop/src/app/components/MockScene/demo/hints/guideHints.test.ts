@@ -29,7 +29,9 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   document.body.innerHTML = '';
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame'] });
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'Date', 'requestAnimationFrame'],
+  });
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
     new DOMRect(100, 200, 40, 24),
   );
@@ -142,6 +144,8 @@ describe('the guidance hints', () => {
     expect(shown().at(-1)).toBe('library-new');
     visitorClick({ selector: '[data-testid="artifact-new"]' });
     await frame();
+    await Promise.resolve();
+    vi.advanceTimersByTime(2700);
     expect(shown().at(-1)).toBe('report-details');
     visitorClick({ selector: '[data-testid="artifact-drawer-details"]' });
     await frame();
