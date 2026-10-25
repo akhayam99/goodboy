@@ -102,13 +102,36 @@ const elapse = async ({ ms }: ElapseParams): Promise<void> => {
   vi.advanceTimersByTime(ms);
 };
 
-const start = () => {
+const REPLACED: ReadonlyArray<DemoHint> = [
+  {
+    id: 'first',
+    copy: 'Open the first thing',
+    outcome: null,
+    anchor: '#first',
+    revealWhen: ({ root }) => root.querySelector('#first') !== null,
+    doneWhen: () => false,
+  },
+  {
+    id: 'second',
+    copy: 'Then the second thing',
+    outcome: null,
+    anchor: '#second',
+    revealWhen: () => true,
+    doneWhen: () => false,
+  },
+];
+
+type StartParams = {
+  readonly hints?: ReadonlyArray<DemoHint>;
+};
+
+const start = ({ hints = HINTS }: StartParams = {}) => {
   const reports: DemoHintReport[] = [];
   const engine = createHintEngine({
     store,
     view: window,
     generation: () => 0,
-    hintsOf: ({ chapterId }) => (chapterId === 'test' ? HINTS : []),
+    hintsOf: ({ chapterId }) => (chapterId === 'test' ? hints : []),
     placeOf: setupPlace,
     onReport: ({ report }) => reports.push(report),
   });
@@ -136,6 +159,19 @@ describe('the hint engine dwell', () => {
     await elapse({ ms: 2000 });
     expect(last()).toMatchObject({ hintId: null });
     await elapse({ ms: 600 });
+    expect(last()).toMatchObject({ hintId: 'second' });
+    engine.dispose();
+  });
+
+  it('holds the next hint too when the clicked hint is replaced rather than done', async () => {
+    const { engine, last } = start({ hints: REPLACED });
+    await elapse({ ms: 40 });
+    expect(last()).toMatchObject({ hintId: 'first' });
+    visitorClick({ selector: '#first' });
+    document.querySelector('#first')?.remove();
+    await elapse({ ms: 300 });
+    expect(last()).toMatchObject({ hintId: null });
+    await elapse({ ms: 2500 });
     expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });

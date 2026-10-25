@@ -10,6 +10,10 @@ type ReportParams = {
   readonly report: DemoHintReport;
 };
 
+type HintIdParams = {
+  readonly hintId: string;
+};
+
 type TrackParams = {
   readonly chapterId: string;
 };
@@ -160,6 +164,8 @@ export const createHintEngine = ({
   let hints: ReadonlyArray<DemoHint> = [];
   let settled: ReadonlySet<string> = new Set();
   const done = new Set<string>();
+  const dwelt = new Set<string>();
+  let shownId: string | null = null;
   const armed = new Set<string>();
   const clicked = new Set<string>();
   const scrolled = new Set<string>();
@@ -293,6 +299,12 @@ export const createHintEngine = ({
     return undefined;
   };
 
+  const startDwell = ({ hintId }: HintIdParams): void => {
+    dwelt.add(hintId);
+    dwellStart = Date.now();
+    dwellUntil = dwellStart + DWELL_MS;
+  };
+
   const isDwelling = (): boolean => {
     if (dwellUntil === 0) {
       return false;
@@ -333,12 +345,25 @@ export const createHintEngine = ({
       }
       if (armed.has(hint.id) && hint.doneWhen(probe)) {
         done.add(hint.id);
-        dwellStart = Date.now();
-        dwellUntil = dwellStart + DWELL_MS;
+        startDwell({ hintId: hint.id });
         onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
       }
     }
-    const current = isDwelling() ? undefined : currentOf({ state });
+    let current = isDwelling() ? undefined : currentOf({ state });
+    const previousId = shownId;
+    const isReplaced =
+      previousId !== null &&
+      current?.hint.id !== previousId &&
+      !dwelt.has(previousId) &&
+      clicked.has(previousId);
+    if (previousId !== null && isReplaced && dwellUntil === 0) {
+      startDwell({ hintId: previousId });
+      isDwelling();
+      current = undefined;
+    }
+    if (current !== undefined) {
+      shownId = current.hint.id;
+    }
     const rect = current?.placement.rect ?? null;
     const resultRects = current === undefined ? [] : results.rects();
     const focus =
@@ -396,6 +421,7 @@ export const createHintEngine = ({
       chapterId = track;
       hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
+      shownId = null;
       lastSignature = '';
       schedule();
     },
@@ -417,6 +443,8 @@ export const createHintEngine = ({
       lastSignature = '';
       lastPlace = null;
       dwellUntil = 0;
+      dwelt.clear();
+      shownId = null;
       results.reset();
       schedule();
     },
