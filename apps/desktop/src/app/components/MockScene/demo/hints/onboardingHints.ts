@@ -56,6 +56,8 @@ const isFirstTaskAnswered = ({ state }: StateParams): boolean => {
   );
 };
 
+const WIZARD_COLUMN = '[data-testid="wizard-column"]';
+const WELCOME = '[data-testid="welcome-cover"]';
 const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';
 
 export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
@@ -64,6 +66,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'See the agents ready to use',
     outcome: 'setup-opened',
     anchor: '[data-step="welcome"] [data-demo-anchor="setup-start"]',
+    focus: WELCOME,
     revealWhen: isOnStep({ step: 'welcome' }),
     doneWhen: isPastStep({ step: 'welcome' }),
   },
@@ -72,6 +75,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Continue with your ready agents',
     outcome: 'agents-ready',
     anchor: '[data-step="agents"] [data-demo-anchor="setup-continue"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'agents' }),
     doneWhen: isPastStep({ step: 'agents' }),
   },
@@ -80,6 +84,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Choose the sample Harborline folder',
     outcome: null,
     anchor: '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'workspace' }),
     doneWhen: (probe) =>
       probe.root.querySelector(WORKSPACE_CREATE) !== null ||
@@ -90,6 +95,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Create a workspace from these repositories',
     outcome: 'workspace-created',
     anchor: WORKSPACE_CREATE,
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'workspace' }),
     doneWhen: isPastStep({ step: 'workspace' }),
   },
@@ -98,6 +104,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Sample tools are ready. Continue',
     outcome: 'tools-tried',
     anchor: '[data-step="tools"] [data-demo-anchor="setup-continue"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'tools' }),
     doneWhen: isPastStep({ step: 'tools' }),
   },
@@ -106,6 +113,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Pick a starter task, then start it',
     outcome: 'first-task',
     anchor: '[data-step="first-session"] [data-demo-anchor="setup-first-start"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'first-session' }),
     doneWhen: ({ state }) => hasSession({ state }),
   },

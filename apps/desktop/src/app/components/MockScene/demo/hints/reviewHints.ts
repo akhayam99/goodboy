@@ -100,6 +100,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Open the webhook handler',
     outcome: null,
     anchor: `${HANDLER_ROW} > button`,
+    focus: 'nav[aria-label="Changed files"]',
     side: 'left',
     revealWhen: ({ root }) =>
       hasElement({ root, selector: HANDLER_ROW }) && !isHandlerOpen({ root }),
