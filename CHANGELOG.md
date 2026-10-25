@@ -12,6 +12,17 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.15
+
+Menus stay next to the button that opened them, and a long row wraps instead of stretching the menu across the window.
+
+### Improved
+
+#### The more menu on a Next card stays next to its button
+<!-- gb area=sessions image=next-menu -->
+
+Menus have a fixed maximum width and open under their button. A stopped rebase folded into an Update card reads as a title naming the branch that stopped, with a short detail under it, such as "Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more" or "Origin moved". A long detail wraps to three lines at most.
+
 ## Goodboy v0.27.14
 
 Auto runs on Cursor again, Codex agents can rebase in their worktree, and pull request writes act on the branch on screen.
