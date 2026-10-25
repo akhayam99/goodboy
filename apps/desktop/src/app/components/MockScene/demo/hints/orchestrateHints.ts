@@ -87,6 +87,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Describe a goal, then press Start',
     outcome: 'auto-started',
     anchor: AUTO_START,
+    focus: 'section[aria-label="Start a run"]',
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_START }),
@@ -117,6 +118,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Approve the plan to start the next step',
     outcome: 'run-approved',
     anchor: RUN_APPROVE,
+    focus: '[data-testid="agent-header-title-row"]',
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isRunSession({ state }) && hasElement({ root, selector: RUN_APPROVE }),
@@ -149,6 +151,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Create a report of the run',
     outcome: null,
     anchor: RUN_REPORT,
+    focus: 'div.flex-col.gap-6',
     side: 'top',
     revealWhen: ({ state, root }) =>
       isRunSession({ state }) && hasElement({ root, selector: RUN_REPORT }),
