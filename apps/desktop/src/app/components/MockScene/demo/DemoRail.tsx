@@ -4,6 +4,7 @@ import { DemoRailRow, type UpNext } from './DemoRailRow';
 import { DemoRailNote } from './DemoRailNote';
 import { DemoRailActions } from './DemoRailActions';
 import type { HintTally } from './hints/hintTally';
+import { quietClasses } from './quietClasses';
 
 type SelectParams = {
   readonly id: string;
@@ -33,6 +34,7 @@ type Props = {
   readonly isEveryGroupTried: boolean;
   readonly upNextId: string | undefined;
   readonly isUpNextReady: boolean;
+  readonly isQuiet: boolean;
 };
 
 export const DemoRail = ({
@@ -43,6 +45,7 @@ export const DemoRail = ({
   isEveryGroupTried,
   upNextId,
   isUpNextReady,
+  isQuiet,
 }: Props) => (
   <div className="hidden w-64 shrink-0 flex-col gap-3 pb-5 lg:flex">
     <nav aria-label="Playground groups" className="flex min-h-0 flex-1 flex-col">
@@ -52,20 +55,27 @@ export const DemoRail = ({
         edge="line"
       >
         {chapters.map((chapter, index) => (
-          <DemoRailRow
+          <div
             key={chapter.id}
-            chapter={chapter}
-            ordinal={index + 1}
-            isActive={chapter.id === activeId}
-            upNext={upNextOf({ isUpNext: chapter.id === upNextId, isReady: isUpNextReady })}
-            tally={tallyOf({ chapter })}
-            onSelect={() => onSelect({ id: chapter.id })}
-          />
+            data-quiet={isQuiet && chapter.id !== upNextId ? 'true' : 'false'}
+            className={quietClasses({ isQuiet: isQuiet && chapter.id !== upNextId })}
+          >
+            <DemoRailRow
+              chapter={chapter}
+              ordinal={index + 1}
+              isActive={chapter.id === activeId}
+              upNext={upNextOf({ isUpNext: chapter.id === upNextId, isReady: isUpNextReady })}
+              tally={tallyOf({ chapter })}
+              onSelect={() => onSelect({ id: chapter.id })}
+            />
+          </div>
         ))}
       </ScrollFade>
     </nav>
     <div className="flex flex-col gap-3 px-4">
-      <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
+      <div data-quiet={isQuiet ? 'true' : 'false'} className={quietClasses({ isQuiet })}>
+        <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
+      </div>
       <DemoRailActions />
     </div>
   </div>

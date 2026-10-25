@@ -4,6 +4,7 @@ import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from 
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
 import { placeCallout } from './hints/placeCallout';
+import { DemoSpotlight } from './DemoSpotlight';
 
 export type CoachMark = {
   readonly hintId: string;
@@ -12,6 +13,7 @@ export type CoachMark = {
   readonly total: number;
   readonly side: HintSide;
   readonly rect: DemoRect;
+  readonly isSpotlit: boolean;
   readonly next?: NextChapter;
 };
 
@@ -139,6 +141,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
 
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">
+      {coach.isSpotlit ? <DemoSpotlight target={target} bounds={bounds} /> : null}
       <div
         ref={ringRef}
         aria-hidden

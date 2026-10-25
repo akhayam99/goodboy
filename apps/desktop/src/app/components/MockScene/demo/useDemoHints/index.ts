@@ -31,6 +31,7 @@ type AnchorState = {
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
   readonly isOffscreen: boolean;
+  readonly isClicked: boolean;
 };
 
 export type OffscreenHint = {
@@ -100,6 +101,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
         hintId: report.hintId,
         rect: report.rect,
         isOffscreen: report.isOffscreen,
+        isClicked: report.isClicked === true,
       });
     },
     [hints, chapter.id, markTried],
@@ -131,6 +133,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       total: steps.length,
       side: hint.side ?? 'right',
       rect: current.rect,
+      isSpotlit: nextChapter === undefined && !current.isClicked,
       next:
         nextChapter === undefined ? undefined : { id: nextChapter.id, title: nextChapter.title },
     };
