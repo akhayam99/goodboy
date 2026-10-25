@@ -6,6 +6,7 @@ import { SetupSection } from '../../../features/onboarding/SetupChecklist/SetupS
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { NAMES } from '../../../shared/names';
+import { isDirectedScene } from '../MockScene/demo/director/isDirectedScene';
 import { BrandLockup } from './BrandLockup';
 
 type RailUpdate = {
@@ -46,7 +47,7 @@ export const GoodboyMenu = ({
   onSponsor,
   onFollowX,
 }: Props) => {
-  const showsSetup = !progress.isFinished && progress.hasProjects;
+  const showsSetup = !isDirectedScene() && !progress.isFinished && progress.hasProjects;
   const reportGlyph = shortcutGlyphs('report.open');
 
   const updateEntries: ReadonlyArray<MenuEntry> =
