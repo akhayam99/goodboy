@@ -1287,10 +1287,8 @@ const SELF_MARKER_ALT =
 
 const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^>"]){0,4000})?';
 const MARKER_OPEN = `<<(?:(?:${BLOCK_MARKER_ALT})${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`;
-const CONTROL_BLOCK_STRIP_RE = new RegExp(
-  `${MARKER_OPEN}[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
-  'g',
-);
+const CONTROL_BLOCK_OPEN_RE = new RegExp(MARKER_OPEN, 'g');
+const CONTROL_BLOCK_CLOSE_RE = new RegExp(`<<\\/(?:${BLOCK_MARKER_ALT})>>`, 'g');
 const CONTROL_STRAY_TAG_RE = new RegExp(
   `<<\\/?(?:(?:ctx-decision|ctx-resolved)${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`,
   'g',
@@ -1305,7 +1303,9 @@ type PairCursor = {
   next: number;
 };
 
-const indexUnquotedPairs = (text: string): ReadonlyArray<PairCursor> => {
+type IndexUnquotedPairsParams = { readonly text: string };
+
+const indexUnquotedPairs = ({ text }: IndexUnquotedPairsParams): ReadonlyArray<PairCursor> => {
   const byParity: [number[], number[]] = [[], []];
   let parity = 0;
   for (let i = 0; i < text.length - 1; i += 1) {
@@ -1326,7 +1326,7 @@ const stripSelfMarkers = (text: string): string => {
   if (match === null) {
     return text;
   }
-  const cursors = indexUnquotedPairs(text);
+  const cursors = indexUnquotedPairs({ text });
   let out = '';
   let cursor = 0;
   let scanned = 0;
@@ -1355,22 +1355,60 @@ const stripSelfMarkers = (text: string): string => {
   return out + text.slice(cursor);
 };
 
-const stripPartialTail = (text: string): string => {
+type StripControlBlocksParams = { readonly text: string };
+
+const stripControlBlocks = ({ text }: StripControlBlocksParams): string => {
+  CONTROL_BLOCK_CLOSE_RE.lastIndex = 0;
+  let lastCloseStart = -1;
+  let probe = CONTROL_BLOCK_CLOSE_RE.exec(text);
+  while (probe !== null) {
+    lastCloseStart = probe.index;
+    probe = CONTROL_BLOCK_CLOSE_RE.exec(text);
+  }
+  if (lastCloseStart === -1) {
+    return text;
+  }
+  CONTROL_BLOCK_OPEN_RE.lastIndex = 0;
+  let out = '';
+  let cursor = 0;
+  let open = CONTROL_BLOCK_OPEN_RE.exec(text);
+  while (open !== null) {
+    const openEnd = open.index + open[0].length;
+    if (openEnd > lastCloseStart) {
+      CONTROL_BLOCK_OPEN_RE.lastIndex = open.index + 1;
+      open = CONTROL_BLOCK_OPEN_RE.exec(text);
+      continue;
+    }
+    CONTROL_BLOCK_CLOSE_RE.lastIndex = openEnd;
+    const close = CONTROL_BLOCK_CLOSE_RE.exec(text);
+    if (close === null) {
+      break;
+    }
+    out += text.slice(cursor, open.index);
+    cursor = close.index + close[0].length;
+    CONTROL_BLOCK_OPEN_RE.lastIndex = cursor;
+    open = CONTROL_BLOCK_OPEN_RE.exec(text);
+  }
+  return out + text.slice(cursor);
+};
+
+type StripPartialTailParams = { readonly text: string };
+
+const stripPartialTail = ({ text }: StripPartialTailParams): string => {
   const start = text.lastIndexOf('>') + 1;
   return text.slice(0, start) + text.slice(start).replace(CONTROL_PARTIAL_TAIL_RE, '');
 };
 
 export const stripControlMarkers = (text: string): string => {
-  CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_STRAY_TAG_RE.lastIndex = 0;
   UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
   const hasClosingBracket = text.includes('>');
-  const withoutBlocks = hasClosingBracket ? text.replace(CONTROL_BLOCK_STRIP_RE, '') : text;
+  const withoutBlocks = hasClosingBracket ? stripControlBlocks({ text }) : text;
   const withoutSelf = stripSelfMarkers(withoutBlocks).replace(UNSUMMARIZED_STEP_OUTPUT_RE, '');
   const stripped = hasClosingBracket
     ? withoutSelf.replace(CONTROL_OPEN_TAIL_RE, '').replace(CONTROL_STRAY_TAG_RE, '')
     : withoutSelf;
-  return stripPartialTail(stripped)
+  return stripPartialTail({ text: stripped })
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };

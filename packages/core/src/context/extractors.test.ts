@@ -1467,6 +1467,17 @@ world`;
     );
   });
 
+  it('strips a later block when an earlier open spans past it and finds no close', () => {
+    const input =
+      '<<plan \n"<<plan>><</ctx-question>><<plan>>>>>><<plan>><<ctx-decision>><</ctx-question>>>><<handoff k="v>>"';
+    expect(stripControlMarkers(input)).toBe('<<plan \n">>"');
+  });
+
+  it('keeps nothing of repeated openers that never close', () => {
+    expect(stripControlMarkers('<<plan>>'.repeat(1000))).toBe('');
+    expect(stripControlMarkers(`keep ${'<<plan>>'.repeat(1000)}x<</plan>> end`)).toBe('keep  end');
+  });
+
   it('caps a tag at 4000 attribute characters and a quoted value at 2000', () => {
     expect(stripControlMarkers(`a <<plan ${'u'.repeat(4000)}>>x<</plan>> b`)).toBe('a  b');
     const longAttrs = `a <<plan ${'u'.repeat(4001)}>>x<</plan>> b`;
