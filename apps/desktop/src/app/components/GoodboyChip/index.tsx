@@ -12,6 +12,7 @@ import { openReportSheet } from '../../../features/bug-report/openReportSheet';
 import { useHasBugReportDraft } from '../../../features/settings/hooks/useHasBugReportDraft';
 import { openUrl } from '../../../shared/lib/editor';
 import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
+import { isDirectedScene } from '../MockScene/demo/director/isDirectedScene';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 import { GoodboyMenu } from './GoodboyMenu';
@@ -65,10 +66,13 @@ export const GoodboyChip = ({
   });
   const { open: isOpen, close, toggle } = dropdown;
   const hasUpdate = update.state !== null;
-  const isSetupOpen = !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
+  const isDemo = isDirectedScene();
+  const isSetupOpen =
+    !isDemo && !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
   const shouldAutoOpen =
     isPrimary &&
+    !isDemo &&
     !progress.isFinished &&
     progress.isWizardDone &&
     progress.completed.has('first-session') &&
