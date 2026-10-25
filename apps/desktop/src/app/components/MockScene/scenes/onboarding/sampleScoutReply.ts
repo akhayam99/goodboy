@@ -3,8 +3,6 @@ type Params = {
   readonly folder: string;
 };
 
-const SAMPLE_REPLY = 'This is a sample response. No agent is connected in this playground.';
-
 export const sampleScoutReply = ({ focus, folder }: Params): string => {
   const asked = focus.toLowerCase();
   if (asked.includes('organized')) {
@@ -16,5 +14,5 @@ export const sampleScoutReply = ({ focus, folder }: Params): string => {
   if (asked.includes('readme')) {
     return `The README of ${folder} covers install and tests. A new teammate would miss how to start the processor sandbox, which environment variables are required and how it reaches ledger-core. Nothing was changed.`;
   }
-  return SAMPLE_REPLY;
+  return `Read through ${folder}, starting with src/webhooks and the tests next to it. Nothing was changed. Tell me what to look at next.`;
 };

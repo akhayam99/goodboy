@@ -15,6 +15,7 @@ import { installDemoSearch } from '../installDemoSearch';
 import { installDemoMonitor } from '../installDemoMonitor';
 import { installDemoContext } from '../installDemoContext';
 import { createSimulatedSpawn } from '../createSimulatedSpawn';
+import { DEMO_REPLIES } from '../demoReplies';
 import { createHintEngine, type HintEngine } from '../createHintEngine';
 import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
@@ -48,11 +49,6 @@ type ChapterParams = {
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const INPUT_EVENTS = ['pointerdown', 'keydown'] as const;
 const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
-const GENERIC_REPLY =
-  'On it. In the app I would read the code this touches first, then report back here before anything is pushed.';
-const GENERIC_SPAWN_REPLY =
-  'Starting from the plan. In the app I would make the change, run the tests it touches and report back here before anything is pushed.';
-const GENERIC_ANSWER_REPLY = 'Thanks, that settles it. Carrying on with that choice.';
 
 const isReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
@@ -96,7 +92,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       store.setState({
         sendTurn: createSimulatedSend({
           store,
-          reply: timeline.reply ?? GENERIC_REPLY,
+          reply: timeline.reply ?? DEMO_REPLIES.generic,
           now,
           shouldClearDraft: true,
           runs,
@@ -105,7 +101,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
           store,
           send: createSimulatedSend({
             store,
-            reply: timeline.answerReply ?? GENERIC_ANSWER_REPLY,
+            reply: timeline.answerReply ?? DEMO_REPLIES.answer,
             now,
             shouldClearDraft: false,
             runs,
@@ -116,7 +112,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
           store,
           send: createSimulatedSend({
             store,
-            reply: GENERIC_SPAWN_REPLY,
+            reply: DEMO_REPLIES.spawn,
             now,
             shouldClearDraft: false,
             runs,

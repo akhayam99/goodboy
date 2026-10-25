@@ -17,7 +17,7 @@ const BRIEF = 'Rebased on main. Run the redelivery and postings suites again.';
 const BRIEF_REPLY =
   'Picked up the same brief on Codex. Both suites still pass after the rebase, and the redelivery test still posts one credit for evt_7Qm2.';
 const SAMPLE_REPLY =
-  'This is a sample response. No agent is connected in this playground. Codex picked up your message with the same brief after Claude hit its limit.';
+  'Picked that up on Codex with the same brief Claude had. Running the redelivery and postings suites again, then I will report back.';
 const SUITE_COMMAND = 'pnpm --filter payments-api test webhooks';
 const CODEX = BRAND_MODELS.implement;
 const CLAUDE = BRAND_MODELS.scout;
