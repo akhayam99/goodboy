@@ -454,6 +454,103 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).toBeNull();
   });
 
+  it('dims the app around the hinted control and lets the control and its note stay sharp', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    hint({ frame, hintId: 'agent-send' });
+    const spotlight = screen.getByTestId('demo-spotlight');
+    expect(spotlight.getAttribute('aria-hidden')).toBe('true');
+    expect(spotlight.children).toHaveLength(4);
+    expect(spotlight.querySelector('button, a, [tabindex]')).toBeNull();
+    expect(spotlight.contains(screen.getByRole('note'))).toBe(false);
+    expect(screen.getByTestId('demo-coach-mark').contains(spotlight)).toBe(true);
+  });
+
+  it('removes the spotlight once the control is clicked, hidden, skipped or done', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send' });
+    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            channel: DEMO_PROTOCOL.channel,
+            version: DEMO_PROTOCOL.version,
+            generation: 0,
+            type: 'anchor',
+            hintId: 'agent-send',
+            rect: { x: 900, y: 700, width: 28, height: 28 },
+            isOffscreen: false,
+            isClicked: true,
+          },
+          origin: window.location.origin,
+          source: frame.contentWindow,
+        }),
+      );
+    });
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    expect(screen.queryByRole('note')).not.toBeNull();
+    hint({ frame, hintId: 'agent-send' });
+    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
+    fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    fireEvent.keyDown(playgroundRoot(), { key: 'h' });
+    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Skip hint' }));
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    hint({ frame, hintId: 'agent-answer' });
+    tried({ frame, hintId: 'agent-answer' });
+    hint({ frame, hintId: null, rect: null });
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+  });
+
+  it('keeps the closing note of a group free of the spotlight', () => {
+    window.history.replaceState(null, '', '/?scene=demo#setup');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'setup-done' });
+    expect(screen.getByRole('note', { name: 'Group done' })).not.toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+  });
+
+  it('quiets the rail and the wrapper copy while the spotlight is on, never the calls to action', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const rowOf = ({ title }: { readonly title: string }): HTMLElement => {
+      const row = within(screen.getByRole('navigation', { name: 'Playground groups' }))
+        .getByText(title)
+        .closest('div');
+      if (row === null) {
+        throw new Error(`no row for ${title}`);
+      }
+      return row;
+    };
+    const summary = screen.getByText(DEMO_CHAPTERS[1]?.summary ?? '');
+    const note = screen.getByText(/The real Goodboy on sample projects/);
+    const download = screen.getAllByRole('link', { name: /Download for macOS/ });
+    expect(summary.getAttribute('data-quiet')).toBe('false');
+    hint({ frame, hintId: 'agent-send' });
+    expect(summary.getAttribute('data-quiet')).toBe('true');
+    expect(rowOf({ title: DEMO_GROUPS.setup.title }).getAttribute('data-quiet')).toBe('true');
+    expect(note.parentElement?.getAttribute('data-quiet')).toBe('true');
+    for (const link of download) {
+      expect(link.closest('[data-quiet="true"]')).toBeNull();
+    }
+    const upNext = document.querySelector('[data-up-next="soon"]');
+    expect(upNext?.parentElement?.getAttribute('data-quiet')).toBe('false');
+    fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
+    expect(summary.getAttribute('data-quiet')).toBe('false');
+  });
+
   it('tracks the hints again and drops a stale hint once the frame reloads', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);

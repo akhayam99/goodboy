@@ -218,12 +218,15 @@ export const createHintEngine = ({
     const rect = current?.placement.rect ?? null;
     const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
-    const signature = JSON.stringify({ hintId, rect, isOffscreen });
+    const isClicked = hintId !== null && clicked.has(hintId);
+    const signature = JSON.stringify({ hintId, rect, isOffscreen, isClicked });
     if (signature === lastSignature) {
       return;
     }
     lastSignature = signature;
-    onReport({ report: { ...envelope(), type: 'anchor', hintId, rect, isOffscreen } });
+    onReport({
+      report: { ...envelope(), type: 'anchor', hintId, rect, isOffscreen, isClicked },
+    });
   };
 
   const schedule = (): void => {

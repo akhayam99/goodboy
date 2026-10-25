@@ -52,9 +52,11 @@ export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
   if (data.type !== 'anchor') {
     return false;
   }
+  const isClicked: unknown = Reflect.get(data, 'isClicked');
   return (
     (hintId === null || isHintId(hintId)) &&
     isRect({ value: Reflect.get(data, 'rect') }) &&
-    typeof Reflect.get(data, 'isOffscreen') === 'boolean'
+    typeof Reflect.get(data, 'isOffscreen') === 'boolean' &&
+    (isClicked === undefined || typeof isClicked === 'boolean')
   );
 };

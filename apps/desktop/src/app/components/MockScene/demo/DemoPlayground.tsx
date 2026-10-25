@@ -114,6 +114,7 @@ export const DemoPlayground = () => {
   useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
+  const isSpotlit = hints.coach?.isSpotlit === true;
   const isLastBeat = player.beatIndex === chapter.beats.length - 1;
   const isGroupDone =
     hints.tally.total > 0
@@ -127,7 +128,7 @@ export const DemoPlayground = () => {
       onKeyDown={onKeyDown}
       className="flex h-screen min-h-0 flex-col bg-surround text-foreground outline-none"
     >
-      <DemoTopBar theme={theme} onToggleTheme={swapTheme} />
+      <DemoTopBar theme={theme} isQuiet={isSpotlit} onToggleTheme={swapTheme} />
       <div className="flex min-h-0 flex-1">
         <DemoRail
           chapters={DEMO_CHAPTERS}
@@ -136,6 +137,7 @@ export const DemoPlayground = () => {
           onSelect={goToChapter}
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
+          isQuiet={isSpotlit}
           isEveryGroupTried={isEveryGroupTried({
             chapters: DEMO_CHAPTERS,
             tallyOf: hints.tallyOf,
@@ -147,6 +149,7 @@ export const DemoPlayground = () => {
             chapter={chapter}
             tally={hints.tally}
             isHintHidden={hints.isHidden}
+            isQuiet={isSpotlit}
             onShowHint={hints.show}
           />
           <DemoStage

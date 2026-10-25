@@ -463,6 +463,34 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('says the visitor clicked the hinted control, so the shell can lift the spotlight', async () => {
+    seed();
+    document.body.innerHTML = CHAT_DOM;
+    const { engine, reports } = engineFor({ hints: AGENT_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'agent-send',
+      isClicked: false,
+    });
+    const target = document.querySelector('button[aria-label="Send message"]');
+    const untrusted = new MouseEvent('click', { bubbles: true });
+    target?.dispatchEvent(untrusted);
+    await frame();
+    expect(reports.at(-1)).toMatchObject({ hintId: 'agent-send', isClicked: false });
+    const trusted = new MouseEvent('click', { bubbles: true });
+    Object.defineProperty(trusted, 'isTrusted', { value: true });
+    target?.dispatchEvent(trusted);
+    await frame();
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'agent-send',
+      isClicked: true,
+    });
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = `
       <div aria-label="Goodboy setup" data-step="tools">
