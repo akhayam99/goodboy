@@ -7,6 +7,7 @@ import { frameKey } from '../frameKey';
 type Params = {
   readonly chapter: DemoChapter;
   readonly nextChapter: DemoChapter | undefined;
+  readonly intentChapter: DemoChapter | undefined;
   readonly theme: 'dark' | 'light';
   readonly shownKey: string | undefined;
 };
@@ -74,6 +75,7 @@ type NextFrameParams = {
   readonly beatIndex: number;
   readonly theme: 'dark' | 'light';
   readonly replayKey: number;
+  readonly isIntent: boolean;
 };
 
 const nextFrame = ({
@@ -82,9 +84,10 @@ const nextFrame = ({
   beatIndex,
   theme,
   replayKey,
+  isIntent,
 }: NextFrameParams): StageFrame | undefined => {
   const sameChapter = chapter.beats[beatIndex + 1];
-  if (sameChapter !== undefined) {
+  if (sameChapter !== undefined && !isIntent) {
     const src = beatSrc({ beat: sameChapter, theme });
     return { key: frameKey({ beat: sameChapter, replayKey }), src };
   }
@@ -121,7 +124,13 @@ const keepReports = ({ reports, keys }: KeepParams): ReadonlyMap<string, DemoRep
   return kept.length === reports.size ? reports : new Map(kept);
 };
 
-export const useBeatPlayer = ({ chapter, nextChapter, theme, shownKey }: Params): BeatPlayer => {
+export const useBeatPlayer = ({
+  chapter,
+  nextChapter,
+  intentChapter,
+  theme,
+  shownKey,
+}: Params): BeatPlayer => {
   const [state, setState] = useState<PlayerState>(() =>
     freshState({ chapter, reports: NO_REPORTS }),
   );
@@ -142,12 +151,13 @@ export const useBeatPlayer = ({ chapter, nextChapter, theme, shownKey }: Params)
     () =>
       nextFrame({
         chapter,
-        nextChapter,
+        nextChapter: intentChapter === undefined ? nextChapter : intentChapter,
         beatIndex: frameIndex,
         theme,
         replayKey: current.replayKey,
+        isIntent: intentChapter !== undefined,
       }),
-    [chapter, nextChapter, frameIndex, theme, current.replayKey],
+    [chapter, nextChapter, intentChapter, frameIndex, theme, current.replayKey],
   );
   const keysRef = useRef<ReadonlyArray<string>>([]);
   keysRef.current = preloadFrame === undefined ? [frame.key] : [frame.key, preloadFrame.key];

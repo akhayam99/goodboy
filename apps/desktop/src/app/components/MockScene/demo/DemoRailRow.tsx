@@ -12,11 +12,20 @@ type Props = {
   readonly upNext: UpNext;
   readonly tally: HintTally;
   readonly onSelect: () => void;
+  readonly onIntent: () => void;
 };
 
 const PULSE_MS = 700;
 
-export const DemoRailRow = ({ chapter, ordinal, isActive, upNext, tally, onSelect }: Props) => {
+export const DemoRailRow = ({
+  chapter,
+  ordinal,
+  isActive,
+  upNext,
+  tally,
+  onSelect,
+  onIntent,
+}: Props) => {
   const rowRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -36,6 +45,9 @@ export const DemoRailRow = ({ chapter, ordinal, isActive, upNext, tally, onSelec
       ref={rowRef}
       type="button"
       onClick={onSelect}
+      onPointerEnter={onIntent}
+      onPointerDown={onIntent}
+      onFocus={onIntent}
       aria-current={isActive ? 'page' : undefined}
       data-selected={isActive ? 'true' : 'false'}
       data-up-next={upNext}
