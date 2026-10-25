@@ -5,9 +5,8 @@ import { eventCue } from './eventCue';
 import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
+import { RESOLVE_REPLY_DRAFT } from './resolveReplyDraft';
 
-const REPLY_DRAFT =
-  'retryPolicy.ts now reads the shared MAX_RETRY_ATTEMPTS, so there is one cap to change. The give-up path also emits a metric.';
 const SUMMARY =
   'retryPolicy.ts now uses the shared MAX_RETRY_ATTEMPTS and emits a metric when it gives up. The retry suite passes, and a reply is drafted for the thread.';
 const TEST_COMMAND = 'pnpm vitest run retryPolicy';
@@ -43,7 +42,7 @@ const settleFix = ({ store, sessionId, agentId, attemptId, threadIds }: SettlePa
       state: 'fixed',
       stage: 'proposed',
       disposition: 'fix',
-      replyDraft: REPLY_DRAFT,
+      replyDraft: RESOLVE_REPLY_DRAFT,
       commitShas: [FIX_SHA],
       updatedAt: now,
     }),

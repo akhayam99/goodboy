@@ -2,6 +2,7 @@ import { isOpenQuestionAnswerText } from '@goodboy/core';
 import type { TurnEvent } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
+import { hasElement } from './hasElement';
 
 type StateParams = {
   readonly state: AppStore;
@@ -91,6 +92,8 @@ const hasSent = ({ state, start }: HintProbe): boolean =>
   userTurnsOf({ state }) > userTurnsOf({ state: start });
 
 const OPERATIONS = 'button[aria-label^="Operations"]';
+const CLAUDE_LIMITS = 'button[aria-label^="Claude limits"]';
+const MODEL = 'button[aria-label^="Model routing"]';
 
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
@@ -115,6 +118,16 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     doneWhen: ({ state, start }) => answeredOf({ state }) > answeredOf({ state: start }),
   },
   {
+    id: 'agent-limits-peek',
+    copy: 'Open the Claude limits',
+    outcome: null,
+    anchor: CLAUDE_LIMITS,
+    side: 'bottom',
+    revealWhen: ({ state, root }) =>
+      hasElement({ root, selector: CLAUDE_LIMITS }) && !hasHandoff({ state }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
+  },
+  {
     id: 'agent-limits',
     copy: 'Send a message and watch Codex take over from Claude',
     outcome: 'task-continued',
@@ -131,5 +144,16 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: ({ root, isAnchorClicked }) =>
       isAnchorClicked || root.querySelector(`${OPERATIONS}[aria-expanded="true"]`) !== null,
+  },
+  {
+    id: 'agent-model',
+    copy: 'Open the model picker',
+    outcome: null,
+    anchor: MODEL,
+    side: 'top',
+    revealWhen: ({ state, root }) =>
+      !isAgentBusy({ state }) && hasElement({ root, selector: MODEL }),
+    doneWhen: ({ root, isAnchorClicked }) =>
+      isAnchorClicked || root.querySelector(`${MODEL}[aria-expanded="true"]`) !== null,
   },
 ];

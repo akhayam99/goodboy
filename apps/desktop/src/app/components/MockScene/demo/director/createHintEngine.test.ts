@@ -25,6 +25,8 @@ import { ONBOARDING_HINTS } from '../hints/onboardingHints';
 import { ORCHESTRATE_HINTS } from '../hints/orchestrateHints';
 import type { DemoHint } from '../hints/demoHintTypes';
 import { setupPlace } from '../hints/setupPlace';
+import { hintTally } from '../hints/hintTally';
+import { DEMO_CHAPTERS } from '../demoChapters';
 import { createHintEngine } from './createHintEngine';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { createSimulatedSend } from './createSimulatedSend';
@@ -461,6 +463,108 @@ describe('the hint engine', () => {
     expect(tried()).toEqual(['agent-limits']);
     director.dispose();
     engine.dispose();
+  });
+
+  it('counts every outcome of Set up once the wizard is walked to its first task', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'setup');
+    if (chapter === undefined) {
+      throw new Error('no setup chapter');
+    }
+    document.body.innerHTML = `
+      <div aria-label="Goodboy setup" data-step="welcome">
+        <button type="button" data-demo-anchor="setup-start">Get started</button>
+      </div>
+    `;
+    const { engine, tried } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    const wizard = document.querySelector('[aria-label="Goodboy setup"]');
+    if (wizard === null) {
+      throw new Error('missing wizard');
+    }
+    const steps = [
+      '<button type="button" data-demo-anchor="setup-continue">Continue</button>',
+      '<button type="button" data-demo-anchor="setup-choose-folder">Choose folder</button>',
+      '<button type="submit" data-demo-anchor="setup-create">Create</button>',
+      '<button type="button" data-demo-anchor="setup-continue">Continue</button>',
+      '<button type="button" data-demo-anchor="setup-first-start">Start</button>',
+    ];
+    const names = ['agents', 'workspace', 'workspace', 'tools', 'first-session'];
+    for (const [index, html] of steps.entries()) {
+      wizard.setAttribute('data-step', names[index] ?? 'welcome');
+      wizard.innerHTML = html;
+      await frame();
+    }
+    seed();
+    await frame();
+    const progress = { setup: { tried: [...tried()], skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 5, total: 5 });
+    engine.dispose();
+  });
+
+  it('counts every outcome of Work with an agent across the chat and the limits handoff', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'agent');
+    if (chapter === undefined) {
+      throw new Error('no agent chapter');
+    }
+    seed();
+    document.body.innerHTML = CHAT_DOM;
+    const first = engineFor({ hints: AGENT_HINTS });
+    first.engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    await sendOf()({ sessionId: session.id, agentId: agent.id, content: DRAFT });
+    vi.advanceTimersByTime(10000);
+    await frame();
+    const answer = createSimulatedAnswer({
+      store,
+      send: createSimulatedSend({
+        store,
+        reply: 'Thanks.',
+        now: () => AT,
+        shouldClearDraft: false,
+        runs: createReplyRuns(),
+      }),
+      now: () => AT,
+    });
+    await answer(session.id, [{ id: QUESTION.id, text: QUESTION.text, answer: 'Badge' }], null);
+    vi.advanceTimersByTime(10000);
+    await frame();
+    document
+      .querySelector('button[aria-label^="Operations"]')
+      ?.setAttribute('aria-expanded', 'true');
+    await frame();
+    const triedIds = [...first.tried()];
+    first.engine.dispose();
+    store.setState({ sessionOpenQuestions: {}, agentDraft: {}, transcripts: { [agent.id]: [] } });
+    document.body.innerHTML = '<textarea aria-label="Message to the agent"></textarea>';
+    const timeline = limitsTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no limits timeline');
+    }
+    const director = createSceneDirector({
+      timeline,
+      store,
+      clock: createPlaybackClock({ now: () => Date.now() }),
+      isSettled: false,
+      now: () => AT,
+      onReport: () => undefined,
+    });
+    const second = engineFor({ hints: AGENT_HINTS });
+    second.engine.setTrack({ chapterId: 'test', settledIds: [] });
+    director.start();
+    director.play();
+    vi.advanceTimersByTime(60000);
+    await frame();
+    await store
+      .getState()
+      .sendTurn({ sessionId: session.id, agentId: agent.id, content: 'Run the postings suite.' });
+    vi.advanceTimersByTime(60000);
+    await frame();
+    triedIds.push(...second.tried());
+    director.dispose();
+    second.engine.dispose();
+    const progress = { agent: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 4, total: 4 });
   });
 
   it('says the visitor clicked the hinted control, so the shell can lift the spotlight', async () => {

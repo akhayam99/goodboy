@@ -18,6 +18,7 @@ const AUTO_CHILD =
 const RUN_APPROVE = '[data-demo-anchor="run-approve-plan"]';
 const RUN_STEP = '[role="treeitem"][data-tree-id]';
 const RUN_MODEL = 'button[aria-label^="Model routing"]';
+const RUN_REPORT = 'button[data-testid="create-report-cta"]';
 
 const isAutoSession = ({ state }: StateParams): boolean => {
   const sessionId = state.currentSessionId;
@@ -142,5 +143,15 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     revealWhen: ({ state, root }) =>
       isRunSession({ state }) && hasElement({ root, selector: RUN_MODEL }),
     doneWhen: hasPickedModel,
+  },
+  {
+    id: 'run-report',
+    copy: 'Create a report of the run',
+    outcome: null,
+    anchor: RUN_REPORT,
+    side: 'top',
+    revealWhen: ({ state, root }) =>
+      isRunSession({ state }) && hasElement({ root, selector: RUN_REPORT }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];

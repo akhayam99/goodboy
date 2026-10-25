@@ -510,6 +510,31 @@ handler, a line note, then one review comment fixed, ready with its drafted
 reply and applied). `data-demo-anchor` marks only controls with no stable name:
 the setup buttons, Auto's Approve plan, the run header action (`run-<kind>`) and
 Start fix.
+
+Guidance hints add steps without adding outcomes (`outcome: null`): the Claude
+limits chip and the model picker (Work with an agent), Create report on the
+finished run (Orchestrate), New and the report details (Find work and results).
+`resolve-read` shares the outcome `fix-ready` with `resolve-start`: a visitor
+who steps to the Fixing or Ready beat, where the fix is already running or
+finished and `resolve-start` can never see a new attempt, earns it by opening a
+comment that already holds a drafted reply. The Fixing beat drafts a reply too
+(`resolveReplyDraft.ts`), so its rows are readable. Every group is walked to
+its full count in a test (`groupHints.twin.test.tsx`, `createHintEngine.test.ts`);
+the orchestrate and find walks must run before the review ones in the file, as
+the resolve overlay stays installed once a review test has run.
+
+While a hint that asks for a click is shown, the stage dims and lightly blurs
+everything around the control (`DemoSpotlight`, four `bg-scrim` panels with
+`backdrop-blur-sm` around the control's box, drawn inside the coach layer, never
+taking a click, faded in only when `canAnimate` allows). The note and the
+control stay sharp. The frame reports `isClicked` on the anchor report once the
+visitor pressed the control, and the spotlight lifts then, and on Escape, Skip
+hint or when the hint is done. The closing note of a group never dims. While it
+is on, the rail rows other than the next group, the rail note, the group summary
+and the top bar links recede to 40 percent (`quietClasses`, `data-quiet`); the
+calls to action and the steps never do, and hover or focus brings a row back.
+In the demo the Goodboy menu never opens itself after the first task, the chip
+stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 

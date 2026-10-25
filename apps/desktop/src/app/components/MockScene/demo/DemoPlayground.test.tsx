@@ -399,7 +399,7 @@ describe('demo playground', () => {
     );
     hint({ frame, hintId: 'agent-send' });
     expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
-    expect(screen.getByRole('note', { name: 'Step 1 of 4' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
   });
 
   it('celebrates the end of setup and points to Work with an agent', () => {
@@ -447,7 +447,7 @@ describe('demo playground', () => {
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
-    const note = screen.getByRole('note', { name: 'Step 1 of 4' });
+    const note = screen.getByRole('note', { name: 'Step 1 of 6' });
     expect(note.textContent).toContain('Send this follow-up to the agent');
     expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
     fireEvent.click(within(note).getByRole('button', { name: 'Skip hint' }));
@@ -558,7 +558,7 @@ describe('demo playground', () => {
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
-    expect(screen.getByRole('note', { name: 'Step 1 of 4' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
     report({ frame, type: 'ready' });
     expect(screen.queryByRole('note')).toBeNull();
     const tracks = post.mock.calls.filter(
@@ -600,7 +600,7 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.getByRole('button', { name: /Show hint/ })).not.toBeNull();
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
-    expect(screen.getByRole('note', { name: 'Step 1 of 4' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
   });
 
   it('skips a hint, tells the frame and keeps that across a reload', () => {
