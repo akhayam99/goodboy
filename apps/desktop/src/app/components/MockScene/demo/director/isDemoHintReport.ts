@@ -56,6 +56,7 @@ export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
   return (
     (hintId === null || isHintId(hintId)) &&
     isRect({ value: Reflect.get(data, 'rect') }) &&
+    (!Reflect.has(data, 'focus') || isRect({ value: Reflect.get(data, 'focus') })) &&
     typeof Reflect.get(data, 'isOffscreen') === 'boolean' &&
     (isClicked === undefined || typeof isClicked === 'boolean')
   );

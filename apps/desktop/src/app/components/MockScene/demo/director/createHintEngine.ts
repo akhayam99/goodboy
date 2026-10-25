@@ -2,6 +2,7 @@ import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from '../hints/demoHintTypes';
 import { DEMO_PROTOCOL, type DemoHintReport, type DemoRect } from './demoProtocol';
 import type { DirectorStore } from './directorTypes';
+import { focusRegionOf } from './focusRegionOf';
 
 type ReportParams = {
   readonly report: DemoHintReport;
@@ -50,24 +51,66 @@ type AnchorParams = {
   readonly probe: HintProbe;
 };
 
+type RegionParams = {
+  readonly hint: DemoHint;
+  readonly probe: HintProbe;
+  readonly anchor: Element;
+};
+
+type RegionElementParams = {
+  readonly region: Element | null;
+};
+
+type StateParams = {
+  readonly state: AppStore;
+};
+
 type ElementParams = {
   readonly element: Element | null;
+  readonly region: Element | null;
 };
+
+const CUT_TOLERANCE = 2;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
 type Placement = {
   readonly rect: DemoRect | null;
+  readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
+  readonly isCut: boolean;
 };
 
-const MISSING: Placement = { rect: null, isOffscreen: false };
+type Current = {
+  readonly hint: DemoHint;
+  readonly placement: Placement;
+};
+
+const MISSING: Placement = { rect: null, focus: null, isOffscreen: false, isCut: false };
 
 type Box = {
   readonly top: number;
   readonly left: number;
   readonly bottom: number;
   readonly right: number;
+};
+
+type BoxParams = {
+  readonly box: Box;
+};
+
+const rectOfBox = ({ box }: BoxParams): DemoRect | null => {
+  const width = box.right - box.left;
+  const height = box.bottom - box.top;
+  if (width <= 0 || height <= 0) {
+    return null;
+  }
+  return {
+    x: Math.round(box.left),
+    y: Math.round(box.top),
+    width: Math.round(width),
+    height: Math.round(height),
+  };
 };
 
 type ClipParams = {
@@ -113,6 +156,7 @@ export const createHintEngine = ({
   const done = new Set<string>();
   const armed = new Set<string>();
   const clicked = new Set<string>();
+  const scrolled = new Set<string>();
   const baselines = new Map<string, AppStore>();
   let lastSignature = '';
   let pending: number | null = null;
@@ -139,7 +183,32 @@ export const createHintEngine = ({
     return root.querySelector(selector);
   };
 
-  const placementOf = ({ element }: ElementParams): Placement => {
+  const regionOf = ({ hint, probe, anchor }: RegionParams): Element | null => {
+    const selector = typeof hint.focus === 'function' ? hint.focus(probe) : (hint.focus ?? null);
+    const named = selector === null ? null : anchor.closest(selector);
+    if (named !== null) {
+      return named;
+    }
+    return focusRegionOf({ anchor, view });
+  };
+
+  const focusOf = ({ region }: RegionElementParams): DemoRect | null => {
+    if (region === null) {
+      return null;
+    }
+    const box = region.getBoundingClientRect();
+    const visible = visibleBoxOf({ element: region, view });
+    return rectOfBox({
+      box: {
+        top: Math.max(box.top, visible.top),
+        left: Math.max(box.left, visible.left),
+        bottom: Math.min(box.bottom, visible.bottom),
+        right: Math.min(box.right, visible.right),
+      },
+    });
+  };
+
+  const placementOf = ({ element, region }: ElementParams): Placement => {
     if (element === null) {
       return MISSING;
     }
@@ -156,16 +225,18 @@ export const createHintEngine = ({
       centerY >= visible.top &&
       centerY <= visible.bottom;
     if (!isShown) {
-      return { rect: null, isOffscreen: true };
+      return { rect: null, focus: null, isOffscreen: true, isCut: false };
     }
+    const isCut =
+      box.top < visible.top - CUT_TOLERANCE ||
+      box.bottom > visible.bottom + CUT_TOLERANCE ||
+      box.left < visible.left - CUT_TOLERANCE ||
+      box.right > visible.right + CUT_TOLERANCE;
     return {
-      rect: {
-        x: Math.round(box.left),
-        y: Math.round(box.top),
-        width: Math.round(box.width),
-        height: Math.round(box.height),
-      },
+      rect: rectOfBox({ box }),
+      focus: focusOf({ region }),
       isOffscreen: false,
+      isCut,
     };
   };
 
@@ -179,6 +250,36 @@ export const createHintEngine = ({
     }
     lastPlace = place;
     onReport({ report: { ...envelope(), type: 'place', place } });
+  };
+
+  const placeHint = ({ hint, state }: ProbeParams): Placement => {
+    const probe = probeOf({ hint, state });
+    const anchor = anchorOf({ hint, probe });
+    const place = (): Placement =>
+      placementOf({
+        element: anchor,
+        region: anchor === null ? null : regionOf({ hint, probe, anchor }),
+      });
+    const placement = place();
+    if (anchor === null || !(placement.isOffscreen || placement.isCut) || scrolled.has(hint.id)) {
+      return placement;
+    }
+    scrolled.add(hint.id);
+    anchor.scrollIntoView({ block: 'center', inline: 'nearest' });
+    return place();
+  };
+
+  const currentOf = ({ state }: StateParams): Current | undefined => {
+    for (const hint of hints) {
+      if (done.has(hint.id) || settled.has(hint.id) || !hint.revealWhen(probeOf({ hint, state }))) {
+        continue;
+      }
+      const placement = placeHint({ hint, state });
+      if (placement.rect !== null || placement.isOffscreen) {
+        return { hint, placement };
+      }
+    }
+    return undefined;
   };
 
   const evaluate = (): void => {
@@ -205,27 +306,19 @@ export const createHintEngine = ({
         onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
       }
     }
-    const current = hints
-      .filter(
-        (hint) =>
-          !done.has(hint.id) && !settled.has(hint.id) && hint.revealWhen(probeOf({ hint, state })),
-      )
-      .map((hint) => ({
-        hint,
-        placement: placementOf({ element: anchorOf({ hint, probe: probeOf({ hint, state }) }) }),
-      }))
-      .find((candidate) => candidate.placement.rect !== null || candidate.placement.isOffscreen);
+    const current = currentOf({ state });
     const rect = current?.placement.rect ?? null;
+    const focus = current?.placement.focus ?? null;
     const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
     const isClicked = hintId !== null && clicked.has(hintId);
-    const signature = JSON.stringify({ hintId, rect, isOffscreen, isClicked });
+    const signature = JSON.stringify({ hintId, rect, focus, isOffscreen, isClicked });
     if (signature === lastSignature) {
       return;
     }
     lastSignature = signature;
     onReport({
-      report: { ...envelope(), type: 'anchor', hintId, rect, isOffscreen, isClicked },
+      report: { ...envelope(), type: 'anchor', hintId, rect, focus, isOffscreen, isClicked },
     });
   };
 
@@ -261,6 +354,9 @@ export const createHintEngine = ({
 
   return {
     setTrack: ({ chapterId: track, settledIds }) => {
+      if (chapterId !== track) {
+        scrolled.clear();
+      }
       chapterId = track;
       hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
@@ -280,6 +376,7 @@ export const createHintEngine = ({
       done.clear();
       armed.clear();
       clicked.clear();
+      scrolled.clear();
       baselines.clear();
       lastSignature = '';
       lastPlace = null;

@@ -18,6 +18,7 @@ export type DemoHint = {
   readonly copy: string;
   readonly outcome: string | null;
   readonly anchor: HintAnchor;
+  readonly focus?: HintAnchor;
   readonly side?: HintSide;
   readonly nextChapterId?: string;
   readonly revealWhen: HintCheck;
