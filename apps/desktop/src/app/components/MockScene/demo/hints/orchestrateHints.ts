@@ -84,7 +84,7 @@ const hasPickedModel = ({ state, start }: HintProbe): boolean =>
 export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'auto-start',
-    copy: 'Describe a goal, then press Start',
+    copy: 'Describe a goal, then press Start. Auto plans it',
     outcome: 'auto-started',
     anchor: AUTO_START,
     focus: 'section[aria-label="Start a run"]',
@@ -95,7 +95,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-approve',
-    copy: 'Approve the plan to start the helpers',
+    copy: 'Press Approve plan so Auto starts its helper agents',
     outcome: 'auto-approved',
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
@@ -104,7 +104,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-child',
-    copy: 'Open a helper to follow its work',
+    copy: 'Open a helper agent to follow what it is doing',
     outcome: 'helper-opened',
     anchor: AUTO_CHILD,
     revealWhen: ({ state, root }) =>
@@ -115,7 +115,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-approve',
-    copy: 'Approve the plan to start the next step',
+    copy: 'Approve the plan so the run can start its next step',
     outcome: 'run-approved',
     anchor: RUN_APPROVE,
     focus: '[data-testid="agent-header-title-row"]',
@@ -126,7 +126,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-step',
-    copy: 'Open a step to read its agent',
+    copy: 'Open a step to read the agent that ran it',
     outcome: 'step-opened',
     anchor: RUN_STEP,
     side: 'left',
@@ -138,7 +138,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-model',
-    copy: 'Pick a model for this step',
+    copy: 'Pick which model runs this step',
     outcome: 'model-picked',
     anchor: RUN_MODEL,
     side: 'left',
@@ -148,7 +148,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-report',
-    copy: 'Create a report of the run',
+    copy: 'Create a report: a written summary of this run',
     outcome: null,
     anchor: RUN_REPORT,
     focus: 'div.flex-col.gap-6',

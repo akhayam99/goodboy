@@ -1,5 +1,7 @@
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
+import { DemoClosingNote } from './DemoClosingNote';
+import type { ClosingNote } from './useDemoHints';
 import { DemoRailRow, type UpNext } from './DemoRailRow';
 import { DemoRailNote } from './DemoRailNote';
 import { DemoRailActions } from './DemoRailActions';
@@ -36,6 +38,7 @@ type Props = {
   readonly upNextId: string | undefined;
   readonly isUpNextReady: boolean;
   readonly isQuiet: boolean;
+  readonly closing: ClosingNote | undefined;
 };
 
 export const DemoRail = ({
@@ -48,6 +51,7 @@ export const DemoRail = ({
   upNextId,
   isUpNextReady,
   isQuiet,
+  closing,
 }: Props) => (
   <div className="hidden w-64 shrink-0 flex-col gap-3 pb-5 lg:flex">
     <nav aria-label="Playground groups" className="flex min-h-0 flex-1 flex-col">
@@ -62,7 +66,7 @@ export const DemoRail = ({
             <div
               key={chapter.id}
               data-quiet={isRowQuiet ? 'true' : 'false'}
-              className={quietClasses({ isQuiet: isRowQuiet })}
+              className={cn('flex flex-col gap-2', quietClasses({ isQuiet: isRowQuiet }))}
             >
               <DemoRailRow
                 chapter={chapter}
@@ -73,6 +77,9 @@ export const DemoRail = ({
                 onSelect={() => onSelect({ id: chapter.id })}
                 onIntent={() => onIntent({ id: chapter.id })}
               />
+              {closing !== undefined && closing.next.id === chapter.id ? (
+                <DemoClosingNote note={closing} onGo={() => onSelect({ id: chapter.id })} />
+              ) : null}
             </div>
           );
         })}

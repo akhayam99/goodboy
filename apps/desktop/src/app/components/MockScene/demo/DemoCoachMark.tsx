@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
-import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
@@ -16,12 +16,6 @@ export type CoachMark = {
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
   readonly isSpotlit: boolean;
-  readonly next?: NextChapter;
-};
-
-type NextChapter = {
-  readonly id: string;
-  readonly title: string;
 };
 
 type Size = {
@@ -90,7 +84,6 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
 };
 
 export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
-  const { next } = coach;
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -174,7 +167,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
       <div
         ref={calloutRef}
         role="note"
-        aria-label={next === undefined ? `Step ${coach.step} of ${coach.total}` : 'Group done'}
+        aria-label={`Step ${coach.step} of ${coach.total}`}
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -204,23 +197,14 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
-        {next === undefined ? (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-meta text-faint-foreground">
-              Step {coach.step} of {coach.total}
-            </span>
-            <Button size="xs" variant="quiet" onClick={onSkip}>
-              Skip hint
-            </Button>
-          </div>
-        ) : (
-          <p className="flex items-center gap-2 text-ui text-muted-foreground">
-            <ArrowLeft size={ICON_SIZE.control} className="shrink-0 text-primary" aria-hidden />
-            <span>
-              Up next in the list: <span className="text-foreground">{next.title}</span>
-            </span>
-          </p>
-        )}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-meta text-faint-foreground">
+            Step {coach.step} of {coach.total}
+          </span>
+          <Button size="xs" variant="quiet" onClick={onSkip}>
+            Skip hint
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ const hasCommented = ({ state, start }: HintProbe): boolean =>
 export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'board-filter',
-    copy: 'Filter the board by folder',
+    copy: 'Filter the board to the sessions of one folder',
     outcome: 'board-filtered',
     anchor: FILTER,
     side: 'left',
@@ -49,7 +49,7 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'board-open',
-    copy: 'Open the card that needs you',
+    copy: 'Open the card that is waiting for you',
     outcome: 'session-opened',
     anchor: ({ state }) => waitingCardOf({ state }),
     revealWhen: ({ state, root }) =>
@@ -58,7 +58,7 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-open',
-    copy: 'Open a plan from the library',
+    copy: 'Open a plan to read what an agent proposed',
     outcome: null,
     anchor: PLAN_ROW,
     side: 'bottom',
@@ -67,7 +67,7 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-comment',
-    copy: 'Point at a line, then comment on it',
+    copy: 'Click a line of the plan and leave a comment',
     outcome: 'plan-commented',
     anchor: PLAN_PROSE,
     revealWhen: isPlanOpen,
@@ -75,7 +75,7 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'library-new',
-    copy: 'Open New to start a plan or a report',
+    copy: 'Open New to create a plan or a report',
     outcome: null,
     anchor: NEW_ARTIFACT,
     side: 'bottom',
@@ -85,7 +85,7 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'report-details',
-    copy: 'Open the report details',
+    copy: 'Open the report details to see what it is based on',
     outcome: null,
     anchor: REPORT_DETAILS,
     side: 'bottom',
