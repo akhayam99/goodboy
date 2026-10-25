@@ -40,6 +40,22 @@ const CASES: ReadonlyArray<Case> = [
     run: () => stripControlMarkers('<<plan '.repeat(8_000)),
   },
   {
+    name: 'stripControlMarkers on self markers whose quotes never pair',
+    run: () => stripControlMarkers('<<handoff "x>>"'.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on a partial tag tail behind many brackets',
+    run: () => stripControlMarkers(`${'<< x'.repeat(8_000)}>x`),
+  },
+  {
+    name: 'stripControlMarkers on many repeated closed blocks',
+    run: () => stripControlMarkers('a <<plan>>x<</plan>> b '.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on runs of closing brackets after self markers',
+    run: () => stripControlMarkers('<<handoff kind=a>>>>>'.repeat(8_000)),
+  },
+  {
     name: 'unwrapEdgeFence on tabs after an opening fence',
     run: () => unwrapEdgeFence({ text: `\`\`\`${'\t'.repeat(RUN)}x` }),
   },
