@@ -12,6 +12,7 @@ import { useChapterHash } from './useChapterHash';
 import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
 import { isEveryGroupTried } from './hints/isEveryGroupTried';
+import { headerInstruction } from './hints/headerInstruction';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
 import { useGroupVisits } from './useGroupVisits';
 
@@ -26,11 +27,10 @@ type ShownParams = {
 type AnnouncementParams = {
   readonly coach: DemoHints['coach'];
   readonly offscreen: DemoHints['offscreen'];
-  readonly closing: DemoHints['closing'];
 };
 
-const hintAnnouncement = ({ coach, offscreen, closing }: AnnouncementParams): string => {
-  const copy = coach?.copy ?? offscreen?.copy ?? closing?.copy;
+const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
+  const copy = coach?.copy ?? offscreen?.copy;
   return copy === undefined ? '' : `Hint: ${copy}`;
 };
 
@@ -58,7 +58,7 @@ export const DemoPlayground = () => {
       : DEMO_CHAPTERS.find((entry) => entry.id === intentId);
   const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
-  const hints = useDemoHints({ chapter, chapters: DEMO_CHAPTERS, frameKey: player.frame.key });
+  const hints = useDemoHints({ chapter, frameKey: player.frame.key });
   const visitedIds = useGroupVisits({ chapterId: chapter.id });
 
   const focusFrame = useCallback(() => {
@@ -148,7 +148,6 @@ export const DemoPlayground = () => {
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
           isQuiet={isSpotlit}
-          closing={hints.closing}
           isEveryGroupTried={isEveryGroupTried({
             chapters: DEMO_CHAPTERS,
             tallyOf: hints.tallyOf,
@@ -159,6 +158,13 @@ export const DemoPlayground = () => {
           <DemoChapterHeader
             chapter={chapter}
             tally={hints.tally}
+            instruction={headerInstruction({
+              chapter,
+              beatIndex: player.beatIndex,
+              hintInstruction: hints.instruction,
+              isGroupDone,
+              next: nextChapter,
+            })}
             isHintHidden={hints.isHidden}
             onShowHint={hints.show}
           />
@@ -185,7 +191,6 @@ export const DemoPlayground = () => {
             {hintAnnouncement({
               coach: hints.coach,
               offscreen: hints.offscreen,
-              closing: hints.closing,
             })}
           </p>
           <DemoTimeline

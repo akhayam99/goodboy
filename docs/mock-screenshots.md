@@ -359,8 +359,10 @@ Replay and the steps. The rail row is the way to move, and the arrow keys keep
 working. The row after the open group carries an "Up next" label and a soft
 ring (`DemoRailRow`, `data-up-next="soon"`). Once the open group counts all its
 outcomes tried (or, for a group without hints, its last step has completed) the
-ring turns solid and the row pulses once, motion-safe only
-(`data-up-next="ready"`). The last group has no row up next. The page behind the
+ring turns solid (`data-up-next="ready"`) and the row breathes a soft glow for
+three cycles, then rests (`data-pulsing` is `true` only in that window; with
+reduced motion the glow is skipped and the solid ring stays). There is no card
+or extra copy: the row is the way on. The last group has no row up next. The page behind the
 stage uses the `surround` surface, darker than any app surface, so the app frame
 reads as a window.
 
@@ -495,11 +497,14 @@ tries the other sides near an edge (below before the opposite side); only the
 callout takes clicks. A control scrolled out of view gets a note at the bottom
 of the stage with Show control, which sends `reveal` so the frame scrolls it
 into view once. Escape hides either note, H brings it back, Skip hint settles
-it. A hint with `nextChapterId` is the closing note of a group: it counts no
-outcome and is not drawn on the stage: no ring, no callout, no pointer into the
-app. `useDemoHints` returns it as `closing` and the rail shows it under the Up
-next row (`DemoClosingNote`) with a "Go to <group>" button. Hint copy is a short
-imperative that names the control and says why; simulated replies speak as the
+it. A group has no closing hint: when it is done the Up next row pulses and the
+header says so. Each hint has two texts, both in its definition: `copy`, a few
+words on the coach mark, and `instruction`, the line under the group title
+(what to do right now and why). The header line comes from
+`hints/headerInstruction.ts`: the group is done ("<group> is done. Go on with
+<next>, marked Up next on the left."), else the active hint's `instruction`
+(also while the coach mark is hidden), else the `shows` line of the current beat
+(`DemoBeat.shows`). The two texts never repeat each other. Simulated replies speak as the
 agent on the sample project and never mention the app or the demo. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
@@ -543,14 +548,13 @@ beside the hole, not the control, so it never covers what is lit, and it is
 never dimmed. A control below the fold or cut by an edge is scrolled to the
 centre of its pane once per hint (`scrolled` in `createHintEngine`) before it
 is lit, and the report follows scroll and resize, so the hole stays aligned.
-A hint with no visible anchor (a closing note, a control that could not be
+A hint with no visible anchor (a control that could not be
 scrolled in) never dims, and offers Show control. The frame reports `isClicked`
 once the visitor pressed the control, and the spotlight lifts then, and on
-Escape, Skip hint or when the hint is done. The closing note of a group never
-dims. While it is on, only the secondary chrome recedes to 65 percent
+Escape, Skip hint or when the hint is done. While it is on, only the secondary chrome recedes to 65 percent
 (`quietClasses`, `data-quiet`): the rail rows other than the open group and
 the next one, the version chip and the link back to the site. The group title,
-its summary or Try this line, the step counter, the rail note, Download, Star,
+its instruction or Try this line, the step counter, the rail note, Download, Star,
 Up next and the coach mark stay at full strength, and hover or focus brings a
 quiet row back.
 A step is done only once its result has been shown. When a hint is done, or the

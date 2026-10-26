@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ROW_INTERACTIVE, canAnimate, cn } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { HintTally } from './hints/hintTally';
@@ -15,7 +15,10 @@ type Props = {
   readonly onIntent: () => void;
 };
 
-const PULSE_MS = 700;
+const BREATH_MS = 2200;
+const BREATH_CYCLES = 3;
+const GLOW_FROM = '0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent)';
+const GLOW_TO = '0 0 0 6px color-mix(in srgb, var(--color-primary) 28%, transparent)';
 
 export const DemoRailRow = ({
   chapter,
@@ -27,17 +30,31 @@ export const DemoRailRow = ({
   onIntent,
 }: Props) => {
   const rowRef = useRef<HTMLButtonElement>(null);
+  const [isRested, setIsRested] = useState(false);
+  const isPulsing = upNext === 'ready' && !isRested;
 
   useEffect(() => {
-    const row = rowRef.current;
-    if (upNext !== 'ready' || row === null || !canAnimate({ element: row })) {
+    if (upNext !== 'ready') {
+      setIsRested(false);
       return;
     }
-    const pulse = row.animate(
-      [{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }],
-      { duration: PULSE_MS, easing: 'ease-in-out' },
-    );
-    return () => pulse.cancel();
+    const rest = window.setTimeout(() => setIsRested(true), BREATH_MS * BREATH_CYCLES);
+    const row = rowRef.current;
+    const breath =
+      row !== null && canAnimate({ element: row })
+        ? row.animate(
+            [{ boxShadow: GLOW_FROM }, { boxShadow: GLOW_TO }, { boxShadow: GLOW_FROM }],
+            {
+              duration: BREATH_MS,
+              iterations: BREATH_CYCLES,
+              easing: 'ease-in-out',
+            },
+          )
+        : undefined;
+    return () => {
+      window.clearTimeout(rest);
+      breath?.cancel();
+    };
   }, [upNext]);
 
   return (
@@ -51,6 +68,7 @@ export const DemoRailRow = ({
       aria-current={isActive ? 'page' : undefined}
       data-selected={isActive ? 'true' : 'false'}
       data-up-next={upNext}
+      data-pulsing={isPulsing ? 'true' : 'false'}
       className={cn(
         'grid w-full grid-cols-[20px_minmax(0,1fr)] items-baseline gap-3 rounded-lg px-3 py-2 text-left',
         ROW_INTERACTIVE,

@@ -338,7 +338,7 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
-  it('credits the first task when its session opens and points on once it answered', async () => {
+  it('credits the first task when its session opens', async () => {
     document.body.innerHTML = `
       <div aria-label="Goodboy setup" data-step="first-session">
         <button type="button" data-demo-anchor="setup-first-start">Start</button>
@@ -352,8 +352,6 @@ describe('the hint engine', () => {
     seed();
     await frame();
     expect(tried()).toEqual(['setup-first-start']);
-    await dwell();
-    expect(shown().at(-1)).toBe('setup-done');
     engine.dispose();
   });
 
@@ -637,6 +635,7 @@ describe('the hint engine', () => {
     const probeHint = (overrides: HintOverrides): DemoHint => ({
       id: 'probe',
       copy: 'Probe',
+      instruction: 'Probe the control.',
       outcome: null,
       anchor: '#go',
       revealWhen: () => true,

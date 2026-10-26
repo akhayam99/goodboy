@@ -9,7 +9,6 @@ import { useHintProgress } from '../useHintProgress';
 
 type Params = {
   readonly chapter: DemoChapter;
-  readonly chapters: ReadonlyArray<DemoChapter>;
   readonly frameKey: string;
 };
 
@@ -42,15 +41,6 @@ export type OffscreenHint = {
   readonly copy: string;
 };
 
-export type ClosingNote = {
-  readonly hintId: string;
-  readonly copy: string;
-  readonly next: {
-    readonly id: string;
-    readonly title: string;
-  };
-};
-
 export type HintReveal = {
   readonly hintId: string;
   readonly count: number;
@@ -60,7 +50,7 @@ export type DemoHints = {
   readonly track: HintTrack | undefined;
   readonly coach: CoachMark | undefined;
   readonly offscreen: OffscreenHint | undefined;
-  readonly closing: ClosingNote | undefined;
+  readonly instruction: string | undefined;
   readonly reveal: HintReveal | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
@@ -73,7 +63,7 @@ export type DemoHints = {
   readonly reset: () => void;
 };
 
-export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints => {
+export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
   const { progress, markTried, markSkipped, reset: resetProgress } = useHintProgress();
   const [anchor, setAnchor] = useState<AnchorState | null>(null);
   const [hiddenId, setHiddenId] = useState<string | null>(null);
@@ -125,32 +115,23 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
     anchor !== null && anchor.key === frameKey && anchor.chapterId === chapter.id ? anchor : null;
   const currentId = current?.hintId ?? null;
   const isSettled = track?.settledIds.includes(currentId ?? '') ?? false;
-  const steps = hints.filter((entry) => entry.nextChapterId === undefined);
-  const index = steps.findIndex((entry) => entry.id === currentId);
+  const index = hints.findIndex((entry) => entry.id === currentId);
   const hint = hints.find((entry) => entry.id === currentId);
   const isHidden = currentId !== null && !isSettled && hiddenId === currentId;
 
   const isOpen = hint !== undefined && current !== null && !isSettled && !isHidden;
-  const nextChapter =
-    hint?.nextChapterId === undefined
-      ? undefined
-      : chapters.find((entry) => entry.id === hint.nextChapterId);
+  const instruction =
+    hint !== undefined && current !== null && !isSettled ? hint.instruction : undefined;
 
   const coach = useMemo((): CoachMark | undefined => {
-    if (
-      !isOpen ||
-      hint === undefined ||
-      current === null ||
-      current.rect === null ||
-      nextChapter !== undefined
-    ) {
+    if (!isOpen || hint === undefined || current === null || current.rect === null) {
       return undefined;
     }
     return {
       hintId: hint.id,
       copy: hint.copy,
       step: index + 1,
-      total: steps.length,
+      total: hints.length,
       side: hint.side ?? 'right',
       rect: current.rect,
       focus: current.focus,
@@ -158,31 +139,14 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
         !current.isClicked &&
         !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
     };
-  }, [isOpen, hint, current, index, steps.length, nextChapter]);
-
-  const closing = useMemo((): ClosingNote | undefined => {
-    if (!isOpen || hint === undefined || nextChapter === undefined) {
-      return undefined;
-    }
-    return {
-      hintId: hint.id,
-      copy: hint.copy,
-      next: { id: nextChapter.id, title: nextChapter.title },
-    };
-  }, [isOpen, hint, nextChapter]);
+  }, [isOpen, hint, current, index, hints.length]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
-    if (
-      !isOpen ||
-      hint === undefined ||
-      current === null ||
-      !current.isOffscreen ||
-      nextChapter !== undefined
-    ) {
+    if (!isOpen || hint === undefined || current === null || !current.isOffscreen) {
       return undefined;
     }
     return { hintId: hint.id, copy: hint.copy };
-  }, [isOpen, hint, current, nextChapter]);
+  }, [isOpen, hint, current]);
 
   const skip = useCallback(() => {
     if (currentId === null) {
@@ -222,7 +186,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
     track,
     coach,
     offscreen,
-    closing,
+    instruction,
     reveal,
     tally: hintTally({ chapter, progress }),
     isHidden,

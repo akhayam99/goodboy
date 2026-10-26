@@ -98,7 +98,8 @@ const MODEL = 'button[aria-label^="Model routing"]';
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-send',
-    copy: 'Press Send to give the agent this follow-up',
+    copy: 'Send the follow-up',
+    instruction: 'Press Send to give the agent a follow-up while it works on the same task.',
     outcome: 'turn-replied',
     anchor: 'button[aria-label="Send message"]',
     side: 'left',
@@ -107,7 +108,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-answer',
-    copy: 'The agent paused to ask you. Pick an answer',
+    copy: 'The agent is waiting on you',
+    instruction: 'Pick an answer to the agent question so it can carry on with the task.',
     outcome: 'question-answered',
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
@@ -119,7 +121,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-limits-peek',
-    copy: 'Open the limits chip to see how much Claude you have left',
+    copy: 'Check what is left',
+    instruction: 'Open the limits chip to see how much of your Claude plan you have left.',
     outcome: null,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
@@ -129,7 +132,9 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-limits',
-    copy: 'Claude hit its limit. Send a message and Codex takes over',
+    copy: 'Codex takes over',
+    instruction:
+      'Claude hit its limit: send a message and watch Codex continue with the same brief.',
     outcome: 'task-continued',
     anchor: 'textarea[aria-label="Message to the agent"]',
     side: 'top',
@@ -138,7 +143,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-files',
-    copy: 'Open Operations to see the files the agent edited',
+    copy: 'Files it edited',
+    instruction: 'Open Operations to see which files the agent edited and what changed in them.',
     outcome: 'files-opened',
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
@@ -147,7 +153,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-model',
-    copy: 'Open the model picker to choose which model answers next',
+    copy: 'Choose the model',
+    instruction: 'Open the model picker to choose which model answers your next message.',
     outcome: null,
     anchor: MODEL,
     side: 'top',
