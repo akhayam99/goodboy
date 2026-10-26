@@ -18,7 +18,6 @@ import { DemoHintSlot } from './DemoHintSlot';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
-const STAGE_INSET = 4;
 const SILENT_LIMIT_MS = 20000;
 const FADE_MS = 320;
 
@@ -115,8 +114,8 @@ export const DemoStage = ({
   onHideHint,
   onRevealHint,
 }: Props) => {
-  const { ref, box, hasRoom } = useStageBox({ inset: STAGE_INSET });
-  const activeFit = stageFitOf({ box, size: activeFrame.size });
+  const { ref, box, hasRoom } = useStageBox();
+  const activeFit = stageFitOf({ box });
   const isSpotlit =
     coach !== undefined &&
     !isHoleTooBig({
@@ -403,7 +402,7 @@ export const DemoStage = ({
           {frames.map((frame) => {
             const isVisible = frame.key === visibleKey && shownKey !== undefined;
             const isFading = frame.key === fadingKey;
-            const fit = stageFitOf({ box, size: frame.size });
+            const fit = stageFitOf({ box });
             return (
               <iframe
                 key={frame.key}

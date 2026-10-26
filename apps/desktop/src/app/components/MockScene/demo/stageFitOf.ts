@@ -1,8 +1,4 @@
-export type StageSize = {
-  readonly minWidth: number;
-  readonly minHeight: number;
-  readonly maxScale: number;
-};
+import { APP_SIZE } from './appSize';
 
 export type StageBox = {
   readonly width: number;
@@ -15,15 +11,12 @@ export type StageFit = {
   readonly height: number;
 };
 
-export const DEFAULT_STAGE_SIZE: StageSize = { minWidth: 1280, minHeight: 780, maxScale: 1 };
-
 type Params = {
   readonly box: StageBox;
-  readonly size: StageSize;
 };
 
-export const stageFitOf = ({ box, size }: Params): StageFit => {
-  const scale = Math.min(size.maxScale, box.width / size.minWidth, box.height / size.minHeight);
+export const stageFitOf = ({ box }: Params): StageFit => {
+  const scale = Math.min(1, box.width / APP_SIZE.width, box.height / APP_SIZE.height);
   if (!(scale > 0)) {
     return { scale: 0, width: 0, height: 0 };
   }

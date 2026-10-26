@@ -5,16 +5,12 @@ import { ORCHESTRATE_HINTS } from './hints/orchestrateHints';
 import { FIND_HINTS } from './hints/findHints';
 import { REVIEW_HINTS } from './hints/reviewHints';
 import { DEMO_GROUPS, type DemoGroup } from './demoGroups';
-import type { StageSize } from './stageFitOf';
 
 export type DemoBeat = {
   readonly label: string;
   readonly scene: string;
   readonly params?: Readonly<Record<string, string>>;
-  readonly size?: StageSize;
 };
-
-const WIZARD_SIZE: StageSize = { minWidth: 880, minHeight: 580, maxScale: 1.5 };
 
 export type DemoChapter = DemoGroup & {
   readonly hints: ReadonlyArray<DemoHint>;
@@ -25,9 +21,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   {
     ...DEMO_GROUPS.setup,
     hints: ONBOARDING_HINTS,
-    beats: [
-      { label: 'Set up', scene: 'onboarding', params: { step: 'welcome' }, size: WIZARD_SIZE },
-    ],
+    beats: [{ label: 'Set up', scene: 'onboarding', params: { step: 'welcome' } }],
   },
   {
     ...DEMO_GROUPS.agent,
