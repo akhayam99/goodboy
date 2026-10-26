@@ -12,6 +12,179 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.0
+
+Needs you counts everywhere, agents stop and resume cleanly, terminals re-run what they ran, and set up, shortcuts and security get sturdier.
+
+This version updates your data in one direction. To go back to 0.27, restore the backup Goodboy made before updating.
+
+### New
+
+#### Needs you counts across sessions and workspaces
+<!-- gb area=sessions screen=notifications -->
+
+A card in Needs you says why, in the board and the list, and its round button goes where the reason clears. A run that stopped, paused at its limit or waits for you, an Auto agent that needs your OK and a Slack reply waiting for approval all count, longest wait first.
+
+The Sessions door shows how many sessions need you, red when one is broken, and the Now chip leads with the same count. The workspace picker, the launcher and the dock badge add up your other workspaces too.
+
+Goodboy shows a system banner and a number on the app icon when a session needs you while you are in another app, with two switches in Settings, General, Notifications. Mark a session as unread or read from its row or from several picked rows.
+
+#### Stop an agent from its message box
+<!-- gb area=agents -->
+
+A running agent has a Stop square in the message box and a Stop in its header. Esc pressed twice stops it, a slow stop reads Stopping and then offers Force stop, and Stop all running agents stops every running agent of a session in one action.
+
+Deny answers only the call in front of you. Never allow in the card's menu is the session-wide ban and names the command, and the always-allow buttons resume the blocked call without a Retry click.
+
+#### Copy, re-run and send back what an agent ran
+<!-- gb area=scripts -->
+
+Commands an agent ran can be copied, re-run in a terminal (typed, never run for you) or sent back to the agent from their card. Shell blocks in messages get Copy and Run in terminal. Ask the agent about a script's or terminal's output in one click: it lands as an attachment on the composer.
+
+Click a file path with a line number in the terminal or a script's output (Cmd-click in the terminal) to open your editor at that line. A busy terminal tab shows the process it runs, and the close question names it.
+
+#### Terminals and scripts survive a restart
+<!-- gb area=scripts -->
+
+After a restart, a terminal that ran a command shows "ended when Goodboy quit" with Run it again, Scripts offers to start the services that were running, and Restart on an exited terminal runs its last command again.
+
+Scripts and Terminal in the session tools column show a dot when a script runs or fails, and a script that ends in another session raises a toast with Open output. Start all services starts the whole stack. Open in terminal app is in the session, branch, worktree and Files folder menus, with a Terminal choice in Settings, Open with.
+
+#### Set up clones a repository and finds your folders
+<!-- gb area=app -->
+
+Set up can clone a repository from GitHub, GitLab or Bitbucket into a folder you choose. The first workspace step lists the folders where your code usually lives: tick them and press Look to find your repositories.
+
+The last step uses the same Start a run field as every session and opens on your first issue when a task tool is connected. An empty board over a repository with no commit offers Make the first commit in place.
+
+#### Branches shows a pull request series
+<!-- gb area=review -->
+
+Branches shows Part 2 of 3 and a series strip for pull requests an agent declared as a series, and Next offers Merge in order, which stops at the first part that cannot merge.
+
+A merge carries the commit you reviewed on GitHub, GitLab and Bitbucket: if the branch moved since, nothing merges and Goodboy asks you to refresh and review again. A branch whose online copy moved reads Diverged, and the new pull request form offers Force push and create behind the usual confirm.
+
+#### Keyboard shortcuts you can change
+<!-- gb area=settings screen=settings/app -->
+
+In Settings, Keyboard shortcuts, click a row's keys to give it another chord. Conflicts are refused and each row has a Reset. Every key hint in tooltips, the Guide and field hints comes from the same list, so a changed key shows everywhere.
+
+Terminal tabs get previous and next, tab N and F2 rename. On Linux and Windows the view shortcuts are Ctrl+Shift+Alt plus the same key, so the desktop no longer swallows them.
+
+#### New branches start with your ignored files and setup
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Settings can tick the git-ignored files (.env, local config) a new branch should start with, and proposes its setup (pnpm install) on the branch with a Run button. Nothing runs and no secret travels unless you choose it.
+
+#### Backup import shows what it brings
+<!-- gb area=storage screen=settings/app/storage -->
+
+Backup import lists every allow rule and script, refuses a file that changed after the preview, needs its own consent for allow-anything rules, and brings scripts in disabled. A restore brings back each workspace's After merge setting.
+
+Storage says when a terminal keeps a clean folder from going and closes it on a click, and offers Undo after a removal.
+
+#### Continue a stopped turn at a time you choose
+<!-- gb area=providers screen=settings/providers -->
+
+A usage limit with no other provider to move to offers Continue at 18:40 on the stopped turn. Nothing starts until you click it, and you can cancel it.
+
+Provider limits trip at the same point everywhere: spend that reaches the cap counts as over it, and the budget month follows your local calendar.
+
+### Improved
+
+#### Recover when the database cannot open
+<!-- gb area=app -->
+
+When Goodboy cannot open its database, the start screen offers Retry first, then Move aside and restart, which keeps the old file next to a new empty one. A crash in one page, drawer or studio shows a recoverable message in that panel instead of replacing the whole window.
+
+#### The overview states where the task stands
+<!-- gb area=sessions -->
+
+The overview shows the one-sentence State of the task under the goal, with when it was written, gray when it is old or when a pull request moved after it. The Done card lists the last three finished items with who did them, how long ago and a dot when the reply is unread.
+
+When every branch of a session is merged or closed, Next offers Archive this session, and the Done lane has a menu to archive everything in it or what is older than 7 days, each with Undo.
+
+#### One look for icons, forms, menus and motion
+<!-- gb area=app -->
+
+Icons share one size ladder and one stroke weight. Form fields type at 13px, disabled controls share one look, menus, bars and drag ghosts share one floating surface, and motion uses three durations and two curves. Looping working signs pause in a hidden window.
+
+The sidebar ranks Sessions and Tasks first, then Workflows, Chat and Terminal. The theme moved from the top bar to Settings and the palette, and the top bar says Search or run.
+
+#### Settings, General has a More contrast switch
+<!-- gb area=settings screen=settings/app -->
+
+More contrast is also on when your system asks for it. A screen reader hears one sentence per finished turn and when a session needs you, instead of every transcript row.
+
+### Fixed
+
+- Merge, mark ready, reopen, convert to draft and close act on the repository of the branch on screen, and GitLab and Bitbucket review comments refresh on their own. <!-- gb area=review -->
+- Sessions fall back to Ask first, never Full access, when a workspace or its saved permission mode is missing or unknown; new workspaces still start on Full access. <!-- gb area=settings -->
+- Permission globs match in linear time and a single `*` no longer crosses `;`, `&&` or `|`; issue and check text reaches agents inside an untrusted block. <!-- gb area=agents -->
+- A turn can no longer use another workspace's integration credentials through the bridge, and the bridge socket limits line size, users, connections and idle time. <!-- gb area=integrations -->
+- The phone connection limits idle and flooding connections, hides deleted sessions and absolute paths, and refuses an agent that is not in the session. <!-- gb area=app -->
+- A new iPhone asks for your OK before it pairs, each paired iPhone has a name and its own Revoke, and iPhone turns run at Edits allowed at most. <!-- gb area=app -->
+- A prompt with a pasted key no longer shows in the process list for Claude and Codex runs, and the monitor hides prompt text. <!-- gb area=agents -->
+- The app refuses raw database statements and git revisions that could write files outside its own folders. <!-- gb area=storage -->
+- Files the app reads or deletes for you are checked against the folder they belong to, so a bad link or a stray path can no longer reach other files. <!-- gb area=storage -->
+- Provider install and login, editor launch and file open run only from fixed lists; executable files are no longer opened from Open. <!-- gb area=providers -->
+- Connected GitLab, Jira and Bitbucket accounts send their token only to the host they were connected with, and GitLab and Jira connections need https. <!-- gb area=integrations -->
+- Goodboy's data folder and database files are readable only by you, and leftover temporary chat folders from a crash are cleaned up at start. <!-- gb area=storage -->
+- Bug reports, the process monitor and git errors hide the same set of keys, including Linear, Sentry, Atlassian and Slack app tokens and bearer values. <!-- gb area=app -->
+- Forgetting a key removes it at once, API key checks say valid, rejected or not checked and never print the key, and a failed save leaves no key behind. <!-- gb area=providers -->
+- GitHub actions stop with a clear error when the saved key cannot be read, instead of silently using the account signed in to gh. <!-- gb area=integrations -->
+- A message full of nested notes or hostile text no longer freezes or crashes the window; it shows as plain text. <!-- gb area=sessions -->
+- A link that cannot be opened shows a notification instead of reporting a crash, and mailto links are plain text. <!-- gb area=app -->
+- Remote images refuse more reserved network ranges, and unexpected keys in model output can no longer slip past validation. <!-- gb area=app -->
+- Undoing an archive whose sessions could not be restored says nothing changed instead of Undone. <!-- gb area=sessions -->
+- A broken artifact no longer hides the rest of a session's artifacts. <!-- gb area=artifacts -->
+- Saving a workspace setting writes only that setting, so a second window can no longer undo another one's change, and a refused value shows its name. <!-- gb area=settings -->
+- Pinned sessions, the Auto limit, the terminal folder and a folder's face go with the workspace or folder when you delete it, and nothing is left behind. <!-- gb area=settings -->
+- A setting that folders override says how many folders use their own value, and a folder's own After merge rule is marked From project. <!-- gb area=settings screen=settings/workspace/projects -->
+- A setting you save in one window shows in your other windows at once, and a reply is marked seen only when the window is in front. <!-- gb area=settings -->
+- Background screens stop checking terminals, ports and Auto agents while the window is hidden, and idle Auto sessions stop polling. <!-- gb area=app -->
+- Send looks and is named the same in the session, Ask and Chat composers, and a refused send never overwrites what you typed meanwhile. <!-- gb area=sessions -->
+- Every comment box saves with cmd+Enter, cancels with Esc one layer at a time and shows the same buttons; long reply threads fold the same way everywhere. <!-- gb area=review -->
+- Stopping a Chat answer before the provider has started stops it for good, as it already did in Ask. <!-- gb area=sessions -->
+- Image preview opens as a proper modal: focus lands on Close, Tab stays inside, and focus returns to where you were. <!-- gb area=app -->
+- Rail flyouts and session hover cards follow their anchor on scroll and resize, and the task drag ghost no longer slips under popovers. <!-- gb area=app -->
+- A session with no title reads Untitled session in the Now popover, toasts and the rail, and the switcher shows last seen as 5m ago. <!-- gb area=sessions -->
+- The Files tree indents each level by 12px, like the Changes tree. <!-- gb area=sessions -->
+- Auto agents and CI fixer have their own colors, and placeholders, integration chip labels and control borders keep consistent contrast on every surface. <!-- gb area=app -->
+- Chained starts (After another workflow) can no longer be created; runs saved by an older release with it keep working. <!-- gb area=workflows -->
+- The New session field reads Goal, the Scripts pane groups Services and Commands, and failed turns say The turn failed. <!-- gb area=app -->
+- Skills you write in Goodboy are saved in .goodboy/skills of your folder; skills already in .kay/skills keep working until 0.31.0. <!-- gb area=settings -->
+- Opening the bell marks only what you saw as read, and the bell scrolls past eight rows, counts every unread notification and shows the number on its icon. <!-- gb area=app screen=notifications -->
+- Needs action lists only what you still owe, and a link such as Open spend is marked Opened and leaves the list when you use it. <!-- gb area=inbox screen=notifications -->
+- Tasks marks what arrived since you last looked with a dot and a 2 new count, and the sidebar row shows a dot for something assigned to you. <!-- gb area=inbox screen=inbox -->
+- A list shows an agent that waits for a permission as Needs permission instead of Running, and the Runs page puts what needs you first. <!-- gb area=agents -->
+- A running agent that has been silent and idle for 5 minutes says Quiet for N min, and a window that stops answering leaves a report you can send. <!-- gb area=agents -->
+- The Agents tool lists every agent of the session, including the ones you started yourself; opening one shows it beside the tree, and j and k hop between agents. <!-- gb area=agents -->
+- Switching workspace quickly no longer shows the previous workspace's sessions, and a failed load keeps the workspace you were in. <!-- gb area=sessions -->
+- Moving a folder into the open workspace, or merging workspaces, no longer stops running agents. <!-- gb area=agents -->
+- Planner runs can be cancelled, and a stuck side job or a flood of blank agent lines no longer grows memory without bound. <!-- gb area=agents -->
+- Cancelling a provider login stops everything it started, and a terminal or script that stops reading can no longer freeze the window or Stop. <!-- gb area=providers -->
+- Starting a turn or a chat no longer re-runs the CLI version checks, and an agent that is still streaming keeps its history next to the live output. <!-- gb area=agents -->
+- Moving a conversation to another model carries your original request and says what was carried over and what was left out; a message sent twice no longer starts two runs. <!-- gb area=agents -->
+- A branch whose remote cannot be reached reports the failed fetch instead of looking up to date, and changed-file lists read non-English file names correctly. <!-- gb area=review -->
+- A project whose only remote is not called origin reads as having no remote everywhere instead of being probed on one remote and pushed to another. <!-- gb area=review -->
+- Moving a project's folder no longer touches a neighbor folder with a similar name, and undoing a bootstrap move keeps a branch that gained commits. <!-- gb area=storage -->
+- A branch whose name contains a pipe shows in branch cleanup, and Goodboy no longer overwrites a .gitignore it cannot read. <!-- gb area=review -->
+- A redirect to another host no longer receives your key, and rate-limited reads on GitLab, Bitbucket and Jira retry on their own. <!-- gb area=integrations -->
+- Merge requests Goodboy opens on GitLab no longer force delete source branch, a draft title is not prefixed twice, and a hung gh command no longer wedges a card. <!-- gb area=integrations -->
+- Merging a GitLab merge request from Tasks uses the merge method the project prefers, and task lists no longer show a slow answer for a workspace you left. <!-- gb area=inbox screen=inbox -->
+- When the work of a session ships, Next offers to move its linked Linear or Jira item to Done, with Undo. <!-- gb area=integrations -->
+- A failed push offers Retry push and says your work is still on the branch; a rejected Linear or Bitbucket sign-in offers Reconnect. <!-- gb area=app -->
+- When GitLab or Bitbucket stops answering, Goodboy shows one line under the top bar with Retry, and says when the host is back. <!-- gb area=integrations -->
+- An empty board shows the five lanes with one line each and a single New session; an empty Activity shows the steps a run takes. <!-- gb area=sessions -->
+- What was done lists the files a turn wrote, and the restore question names the other agent that wrote the same file. <!-- gb area=sessions -->
+- A rebase started in a terminal shows a banner with Continue, Open terminal and Abort, and a failed rebase action stays with its own branch. <!-- gb area=review -->
+- Pushing from the header, the panel or after a rebase leaves the same trace: the pull request description, the edited replies and the history entry are updated. <!-- gb area=review -->
+- If a pull request is opened but Goodboy cannot save its link, pressing create again links the existing request instead of opening a second. <!-- gb area=review -->
+- A hint typed under Fix with agent applies when you press the verb from the Next list, the same as in the banner. <!-- gb area=review -->
+- Cards on the overview, board and switcher keep their titles and actions whole at narrow widths, and long run step and card names wrap instead of being cut. <!-- gb area=sessions -->
+- A step whose name matches its role no longer shows the role twice, and a failed module load shows plain words instead of an error string. <!-- gb area=workflows screen=workflows/steps -->
+
 ## Goodboy v0.27.15
 
 Menus stay next to the button that opened them, and a long row wraps instead of stretching the menu across the window.

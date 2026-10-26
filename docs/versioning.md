@@ -58,7 +58,7 @@ read in the code, then delete the row.
 | State                                                     | Old shape                    | New shape written since | Old shape read until (excluded) |
 | --------------------------------------------------------- | ---------------------------- | ----------------------- | ------------------------------- |
 | local storage key `goodboy:diffReviewed:<session>:<view>` | no mount id in the key       | 0.18.1                  | 0.30.0                          |
-| skills folder of a project                                | `<project-root>/.kay/skills` | 0.29.0                  | 0.31.0                          |
+| skills folder of a project                                | `<project-root>/.kay/skills` | 0.28.0                  | 0.31.0                          |
 
 Gone already:
 
@@ -68,10 +68,10 @@ Gone already:
   the database untouched. `store.sqlite-context-items.test.ts` boots from that
   old value.
 
-The skills folder is also a one-way door: a build before 0.29.0 does not read
+The skills folder is also a one-way door: a build before 0.28.0 does not read
 `.goodboy/skills`, so a skill written there is invisible to it. The commit that
 made the change carries `One-way-door: new skills are written to
-.goodboy/skills`, and 0.29.0 is a minor release.
+.goodboy/skills`, and 0.28.0 is a minor release.
 
 A change to derived state that reshuffles what an existing user sees, such as a
 lane or a sort order computed on launch, carries one line in the changelog.
