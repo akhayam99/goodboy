@@ -73,8 +73,16 @@ export const BRAND_MODELS = {
 
 export const BRAND_TODAY_USD = 9.62;
 
+const CLAUDE_BACK_IN_MS = (2 * 60 + 20) * 60 * 1000;
+
 export const BRAND_LIMITS = {
-  claude: { fiveHour: 1, weekly: 0.84 },
+  claude: {
+    fiveHour: 1,
+    weekly: 0.84,
+    get backAt(): string {
+      return new Date(Date.now() + CLAUDE_BACK_IN_MS).toISOString();
+    },
+  },
   codex: { fiveHour: 0.41, weekly: 0.58 },
   resetExpiresAt: '2026-10-03T21:59:00.000Z',
 } as const;

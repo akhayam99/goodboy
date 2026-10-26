@@ -76,7 +76,7 @@ const claudeLimits = (): ProviderLimits => ({
       model: null,
       status: 'reached',
       usedFraction: BRAND_LIMITS.claude.fiveHour,
-      resetsAt: isoIn(2 * HOUR_MS + 20 * MINUTE_MS),
+      resetsAt: BRAND_LIMITS.claude.backAt as IsoDateTime,
     },
     {
       kind: 'weekly',

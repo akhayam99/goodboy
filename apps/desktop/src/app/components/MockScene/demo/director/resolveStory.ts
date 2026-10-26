@@ -30,12 +30,6 @@ export const STORY_COMMENTS: Readonly<Record<string, CommentCopy>> = {
   },
 };
 
-export const STORY_FIX_COMMITS: Readonly<Record<string, string>> = {
-  [STORY_THREAD_IDS.idempotency]: 'fix(webhooks): key the credit on the event id alone',
-  [STORY_THREAD_IDS.logging]: 'chore(webhooks): log the event id of a skipped duplicate',
-  [STORY_THREAD_IDS.retry]: 'fix(retry): send the original event id on every retry',
-};
-
 export const STORY_FIX_DIFF = [
   'diff --git a/src/webhooks/retryPolicy.ts b/src/webhooks/retryPolicy.ts',
   '--- a/src/webhooks/retryPolicy.ts',

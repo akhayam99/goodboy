@@ -7,7 +7,7 @@ export type HintProbe = {
   readonly isAnchorClicked: boolean;
 };
 
-export type SettleParams = {
+type SettleParams = {
   readonly root: Document;
 };
 
