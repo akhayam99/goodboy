@@ -6,6 +6,7 @@ import { hintTally, type HintTally } from '../hints/hintTally';
 import { isHoleTooBig } from '../hints/isHoleTooBig';
 import { APP_SIZE } from '../appSize';
 import { useHintProgress } from '../useHintProgress';
+import { useHintsEnabled } from '../useHintsEnabled';
 
 type Params = {
   readonly chapter: DemoChapter;
@@ -61,12 +62,20 @@ export type DemoHints = {
   readonly show: () => void;
   readonly revealHint: () => void;
   readonly reset: () => void;
+  readonly restart: () => void;
 };
 
 export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
-  const { progress, markTried, markSkipped, reset: resetProgress } = useHintProgress();
+  const {
+    progress,
+    markTried,
+    markSkipped,
+    reset: resetProgress,
+    resetAll: resetAllProgress,
+    unskip,
+  } = useHintProgress();
+  const { isEnabled, setEnabled } = useHintsEnabled();
   const [anchor, setAnchor] = useState<AnchorState | null>(null);
-  const [hiddenId, setHiddenId] = useState<string | null>(null);
   const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
 
   const hints = useMemo(() => chapter.hints ?? [], [chapter]);
@@ -117,11 +126,10 @@ export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
   const isSettled = track?.settledIds.includes(currentId ?? '') ?? false;
   const index = hints.findIndex((entry) => entry.id === currentId);
   const hint = hints.find((entry) => entry.id === currentId);
-  const isHidden = currentId !== null && !isSettled && hiddenId === currentId;
+  const isHidden = !isEnabled;
 
-  const isOpen = hint !== undefined && current !== null && !isSettled && !isHidden;
-  const instruction =
-    hint !== undefined && current !== null && !isSettled ? hint.instruction : undefined;
+  const isOpen = hint !== undefined && current !== null && !isSettled && isEnabled;
+  const instruction = isOpen ? hint.instruction : undefined;
 
   const coach = useMemo((): CoachMark | undefined => {
     if (!isOpen || hint === undefined || current === null || current.rect === null) {
@@ -155,14 +163,12 @@ export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
     markSkipped({ chapterId: chapter.id, hintId: currentId });
   }, [currentId, chapter.id, markSkipped]);
 
-  const hide = useCallback(() => {
-    if (currentId === null) {
-      return;
-    }
-    setHiddenId(currentId);
-  }, [currentId]);
+  const hide = useCallback(() => setEnabled({ isEnabled: false }), [setEnabled]);
 
-  const show = useCallback(() => setHiddenId(null), []);
+  const show = useCallback(() => {
+    unskip({ chapterId: chapter.id });
+    setEnabled({ isEnabled: true });
+  }, [unskip, chapter.id, setEnabled]);
 
   const revealHint = useCallback(() => {
     if (currentId === null) {
@@ -174,8 +180,12 @@ export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
   const reset = useCallback(() => {
     resetProgress({ chapterId: chapter.id });
     setAnchor(null);
-    setHiddenId(null);
   }, [resetProgress, chapter.id]);
+
+  const restart = useCallback(() => {
+    resetAllProgress();
+    setAnchor(null);
+  }, [resetAllProgress]);
 
   const tallyOf = useCallback(
     ({ chapter: target }: TallyParams) => hintTally({ chapter: target, progress }),
@@ -197,5 +207,6 @@ export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
     show,
     revealHint,
     reset,
+    restart,
   };
 };

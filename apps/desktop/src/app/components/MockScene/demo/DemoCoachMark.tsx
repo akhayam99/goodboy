@@ -195,7 +195,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
         )}
         <div className="flex items-start justify-between gap-2">
           <p className="text-row text-foreground">{coach.copy}</p>
-          <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
+          <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-meta text-faint-foreground">

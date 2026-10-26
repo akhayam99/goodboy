@@ -20,7 +20,6 @@ type PlaceParams = {
 };
 
 export type DemoChapter = DemoGroup & {
-  readonly tryThis: string;
   readonly hints?: ReadonlyArray<DemoHint>;
   readonly placeOf?: (params: PlaceParams) => string | null;
   readonly beats: ReadonlyArray<DemoBeat>;
@@ -29,7 +28,6 @@ export type DemoChapter = DemoGroup & {
 export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>] = [
   {
     ...DEMO_GROUPS.setup,
-    tryThis: 'Press Get started and walk the setup yourself.',
     hints: ONBOARDING_HINTS,
     placeOf: setupPlace,
     beats: [
@@ -72,7 +70,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   },
   {
     ...DEMO_GROUPS.agent,
-    tryThis: 'Send the message, then answer the blocking question.',
     hints: AGENT_HINTS,
     beats: [
       {
@@ -89,7 +86,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   },
   {
     ...DEMO_GROUPS.orchestrate,
-    tryThis: 'Read the plan, then follow a helper agent.',
     hints: ORCHESTRATE_HINTS,
     beats: [
       {
@@ -131,7 +127,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   },
   {
     ...DEMO_GROUPS.find,
-    tryThis: 'Open the card that needs you, then comment on a plan in the library.',
     hints: FIND_HINTS,
     beats: [
       {
@@ -153,7 +148,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   },
   {
     ...DEMO_GROUPS.review,
-    tryThis: 'Switch between files, then pick a comment and start a fix.',
     hints: REVIEW_HINTS,
     beats: [
       {

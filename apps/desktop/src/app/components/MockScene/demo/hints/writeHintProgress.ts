@@ -7,7 +7,7 @@ type Params = {
 
 export const writeHintProgress = ({ progress }: Params): void => {
   try {
-    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
+    window.sessionStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
   } catch {
     return;
   }

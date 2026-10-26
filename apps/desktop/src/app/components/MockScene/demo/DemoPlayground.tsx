@@ -11,10 +11,8 @@ import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
-import { isEveryGroupTried } from './hints/isEveryGroupTried';
 import { headerInstruction } from './hints/headerInstruction';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
-import { useGroupVisits } from './useGroupVisits';
 
 type ChapterParams = {
   readonly id: string;
@@ -22,6 +20,10 @@ type ChapterParams = {
 
 type ShownParams = {
   readonly key: string;
+};
+
+type ToggleHintsParams = {
+  readonly isEnabled: boolean;
 };
 
 type AnnouncementParams = {
@@ -59,7 +61,6 @@ export const DemoPlayground = () => {
   const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
   const hints = useDemoHints({ chapter, frameKey: player.frame.key });
-  const visitedIds = useGroupVisits({ chapterId: chapter.id });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -94,12 +95,38 @@ export const DemoPlayground = () => {
     goToChapter({ id: nextChapter.id });
   }, [nextChapter, goToChapter]);
 
-  const { reset: resetHints, onHintReport: onHintNote } = hints;
+  const {
+    reset: resetHints,
+    restart: restartHints,
+    show: showHints,
+    hide: hideHints,
+    onHintReport: onHintNote,
+  } = hints;
   const { replay, follow } = player;
   const onReplay = useCallback(() => {
     resetHints();
     replay();
   }, [resetHints, replay]);
+  const firstChapter = DEMO_CHAPTERS[0];
+  const onRestart = useCallback(() => {
+    restartHints();
+    if (chapter.id === firstChapter.id) {
+      replay();
+      focusFrame();
+      return;
+    }
+    goToChapter({ id: firstChapter.id });
+  }, [restartHints, chapter.id, firstChapter.id, replay, focusFrame, goToChapter]);
+  const onToggleHints = useCallback(
+    ({ isEnabled }: ToggleHintsParams) => {
+      if (isEnabled) {
+        showHints();
+        return;
+      }
+      hideHints();
+    },
+    [showHints, hideHints],
+  );
   const onHintReport = useCallback(
     ({ key, report }: HintReportParams) => {
       if (report.type === 'place') {
@@ -137,7 +164,14 @@ export const DemoPlayground = () => {
       onKeyDown={onKeyDown}
       className="flex h-screen min-h-0 flex-col bg-surround text-foreground outline-none"
     >
-      <DemoTopBar theme={theme} isQuiet={isSpotlit} onToggleTheme={swapTheme} />
+      <DemoTopBar
+        theme={theme}
+        isQuiet={isSpotlit}
+        isHintsEnabled={!hints.isHidden}
+        onToggleHints={onToggleHints}
+        onRestart={onRestart}
+        onToggleTheme={swapTheme}
+      />
       <div className="flex min-h-0 flex-1">
         <DemoRail
           chapters={DEMO_CHAPTERS}
@@ -148,11 +182,6 @@ export const DemoPlayground = () => {
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
           isQuiet={isSpotlit}
-          isEveryGroupTried={isEveryGroupTried({
-            chapters: DEMO_CHAPTERS,
-            tallyOf: hints.tallyOf,
-            visitedIds,
-          })}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
           <DemoChapterHeader
@@ -165,8 +194,6 @@ export const DemoPlayground = () => {
               isGroupDone,
               next: nextChapter,
             })}
-            isHintHidden={hints.isHidden}
-            onShowHint={hints.show}
           />
           <DemoStage
             theme={theme}

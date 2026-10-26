@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ChapterHintProgress, HintProgress } from '../hints/hintProgressTypes';
-import { HINT_PROGRESS_KEY } from '../hints/hintProgressKey';
 import { readHintProgress } from '../hints/readHintProgress';
 import { writeHintProgress } from '../hints/writeHintProgress';
 
@@ -18,6 +17,8 @@ export type HintProgressControls = {
   readonly markTried: (params: MarkParams) => void;
   readonly markSkipped: (params: MarkParams) => void;
   readonly reset: (params: ResetParams) => void;
+  readonly resetAll: () => void;
+  readonly unskip: (params: ResetParams) => void;
 };
 
 type AddParams = MarkParams & {
@@ -49,6 +50,22 @@ const withoutChapter = ({ progress, chapterId }: ChangeParams & ResetParams): Hi
   return { ...progress, [chapterId]: { tried: [], skipped: [], epoch } };
 };
 
+const withoutSkips = ({ progress, chapterId }: ChangeParams & ResetParams): HintProgress => {
+  const chapter = progress[chapterId];
+  if (chapter === undefined || chapter.skipped.length === 0) {
+    return progress;
+  }
+  return { ...progress, [chapterId]: { ...chapter, skipped: [] } };
+};
+
+const withoutAnyProgress = ({ progress }: ChangeParams): HintProgress =>
+  Object.fromEntries(
+    Object.entries(progress).map(([chapterId, chapter]) => [
+      chapterId,
+      { tried: [], skipped: [], epoch: chapter.epoch + 1 },
+    ]),
+  );
+
 const initial = (): HintProgress => readHintProgress({ fallback: {} });
 
 export const useHintProgress = (): HintProgressControls => {
@@ -71,17 +88,6 @@ export const useHintProgress = (): HintProgressControls => {
     },
     [adopt],
   );
-
-  useEffect(() => {
-    const onStorage = (event: StorageEvent): void => {
-      if (event.key !== null && event.key !== HINT_PROGRESS_KEY) {
-        return;
-      }
-      adopt({ progress: readHintProgress({ fallback: latest.current }) });
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [adopt]);
 
   const mark = useCallback(
     ({ chapterId, hintId, list }: MarkParams & Pick<AddParams, 'list'>) => {
@@ -111,5 +117,16 @@ export const useHintProgress = (): HintProgressControls => {
     [apply],
   );
 
-  return { progress, markTried, markSkipped, reset };
+  const resetAll = useCallback(() => {
+    apply({ change: ({ progress: stored }) => withoutAnyProgress({ progress: stored }) });
+  }, [apply]);
+
+  const unskip = useCallback(
+    ({ chapterId }: ResetParams) => {
+      apply({ change: ({ progress: stored }) => withoutSkips({ progress: stored, chapterId }) });
+    },
+    [apply],
+  );
+
+  return { progress, markTried, markSkipped, reset, resetAll, unskip };
 };

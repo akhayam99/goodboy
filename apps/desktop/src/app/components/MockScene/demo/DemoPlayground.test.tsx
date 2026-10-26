@@ -8,7 +8,6 @@ import { DEMO_CHAPTERS } from './demoChapters';
 import { DEMO_GROUPS } from './demoGroups';
 import { DEMO_PROTOCOL, type DemoRect, type DemoReportType } from './director/demoProtocol';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
-import { GROUP_VISITS_KEY } from './hints/groupVisitsKey';
 
 const visibleFrame = (): HTMLIFrameElement => {
   const frame = document.querySelector<HTMLIFrameElement>('iframe[data-shown="true"]');
@@ -154,11 +153,19 @@ const playgroundRoot = (): HTMLElement => {
   return root;
 };
 
+const topBar = (): HTMLElement => {
+  const bar = document.querySelector<HTMLElement>('body > div header, header');
+  if (bar === null) {
+    throw new Error('missing top bar');
+  }
+  return bar;
+};
+
 const currentStep = (): string =>
   document.querySelector('ol button[aria-current="step"]')?.textContent ?? '';
 
 beforeEach(() => {
-  window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
   window.history.replaceState(null, '', '/?scene=demo');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -266,56 +273,6 @@ describe('demo playground', () => {
     expect(downloads.filter((link) => link.className.includes('lg:hidden'))).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Back to the start' })).toBeNull();
     expect(document.querySelector('[data-up-next]:not([data-up-next="none"])')).toBeNull();
-  });
-
-  it('says the playground is mock data until every group is tried', () => {
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: ['agent-send', 'agent-answer', 'agent-files'], skipped: [], epoch: 0 },
-      }),
-    );
-    render(<DemoPlayground />);
-    expect(screen.getByText(/sample projects/).textContent).toBe(
-      'The real Goodboy on sample projects. Run it on your own code.',
-    );
-    expect(screen.queryByText(/You have tried every group/)).toBeNull();
-  });
-
-  it('closes the note on the download once every group is tried', () => {
-    const progress = Object.fromEntries(
-      DEMO_CHAPTERS.map((chapter) => [
-        chapter.id,
-        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      ]),
-    );
-    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
-    render(<DemoPlayground />);
-    expect(screen.getByText(/every group/).textContent).toBe(
-      'You have tried every group. Take Goodboy home.',
-    );
-  });
-
-  it('remembers every group the visitor opened', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
-    expect(JSON.parse(window.localStorage.getItem(GROUP_VISITS_KEY) ?? '[]')).toEqual([
-      'agent',
-      'orchestrate',
-    ]);
-  });
-
-  it('keeps the mock data line while one group is still untried', () => {
-    const progress = Object.fromEntries(
-      DEMO_CHAPTERS.filter((chapter) => chapter.id !== 'review').map((chapter) => [
-        chapter.id,
-        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      ]),
-    );
-    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
-    render(<DemoPlayground />);
-    expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
 
   it('shows the loading state until the frame reports ready', () => {
@@ -771,7 +728,6 @@ describe('demo playground', () => {
     const title = screen.getByRole('heading', { level: 1 });
     const summary = screen.getByText(DEMO_CHAPTERS[1]?.beats[0]?.shows ?? '');
     const counter = within(title.closest('header') ?? document.body).getByText(/0 of 4/);
-    const note = screen.getByText(/The real Goodboy on sample projects/);
     const download = screen.getAllByRole('link', { name: /Download for macOS/ });
     const star = screen.getByRole('link', { name: /Star on GitHub/ });
     const version = screen.getByRole('link', { name: /What is new in/ });
@@ -784,7 +740,6 @@ describe('demo playground', () => {
       title,
       summary,
       counter,
-      note,
       star,
       screen.getByRole('note', { name: 'Step 1 of 6' }),
       rowOf({ title: DEMO_GROUPS.agent.title }),
@@ -838,7 +793,7 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).toBeNull();
   });
 
-  it('hides the hint with Escape and brings it back with H', () => {
+  it('hides the hints with Escape and brings them back with H', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
@@ -846,7 +801,7 @@ describe('demo playground', () => {
     hint({ frame, hintId: 'agent-send' });
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
-    expect(screen.getByRole('button', { name: /Show hint/ })).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show hints' })).not.toBeNull();
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
     expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
   });
@@ -883,60 +838,14 @@ describe('demo playground', () => {
     tried({ frame, hintId: 'agent-answer' });
     tried({ frame, hintId: 'agent-answer' });
     expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
       agent: { tried: ['agent-answer'], skipped: [], epoch: 0 },
     });
   });
 
-  it('follows another tab and never overwrites its progress', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    const otherTab = JSON.stringify({
-      agent: { tried: ['agent-files'], skipped: [], epoch: 0 },
-      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
-    });
-    window.localStorage.setItem(HINT_PROGRESS_KEY, otherTab);
-    tried({ frame, hintId: 'agent-answer' });
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: ['agent-files', 'agent-answer'], skipped: [], epoch: 0 },
-      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
-    });
-    expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
-    act(() => {
-      window.localStorage.setItem(
-        HINT_PROGRESS_KEY,
-        JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
-      );
-      window.dispatchEvent(new StorageEvent('storage', { key: HINT_PROGRESS_KEY }));
-    });
-    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
-  });
-
-  it('does not bring back a group another tab replayed', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({ agent: { tried: ['agent-answer'], skipped: [], epoch: 0 } }),
-    );
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
-    );
-    tried({ frame, hintId: 'agent-files' });
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: [], skipped: [], epoch: 1 },
-    });
-    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
-  });
-
   it('starts with the stored progress and resets only this group on replay', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({
         agent: { tried: ['agent-answer', 'agent-files'], skipped: [] },
@@ -963,5 +872,87 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     tried({ frame, hintId: 'agent-answer' });
     expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
+  });
+
+  it('keeps progress in the tab and never in the shared storage', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    tried({ frame, hintId: 'agent-answer' });
+    expect(window.sessionStorage.getItem(HINT_PROGRESS_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(HINT_PROGRESS_KEY)).toBeNull();
+  });
+
+  it('starts a new tab with nothing tried', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    const view = render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    tried({ frame, hintId: 'agent-answer' });
+    expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
+    view.unmount();
+    window.sessionStorage.clear();
+    render(<DemoPlayground />);
+    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
+  });
+
+  it('restarts at the first step of Set up and clears every group', () => {
+    window.history.replaceState(null, '', '/?scene=demo#orchestrate');
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        agent: { tried: ['agent-answer'], skipped: [], epoch: 0 },
+        setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
+      }),
+    );
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
+    expect(window.location.hash).toBe('#setup');
+    expect(currentStep()).toBe('Welcome');
+    expect(screen.getAllByText(/0 of 5/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/1 of 4/)).toBeNull();
+  });
+
+  it('restarts Set up in a fresh frame when it is already open', () => {
+    render(<DemoPlayground />);
+    const before = visibleFrame();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    expect(Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== before)).toBe(
+      true,
+    );
+  });
+
+  it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    const view = render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send' });
+    expect(screen.getByRole('note')).not.toBeNull();
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Hide hints' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    view.unmount();
+    render(<DemoPlayground />);
+    report({ frame: visibleFrame(), type: 'ready' });
+    hint({ frame: visibleFrame(), hintId: 'agent-send' });
+    expect(screen.queryByRole('note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show hints' }));
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
+  });
+
+  it('brings back the hints a visitor skipped when hints are shown again', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send' });
+    fireEvent.click(screen.getByRole('button', { name: 'Skip hint' }));
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Hide hints' }));
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Show hints' }));
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      agent: { tried: [], skipped: [], epoch: 0 },
+    });
   });
 });

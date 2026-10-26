@@ -27,7 +27,7 @@ export const DemoHintSlot = ({ hint, onReveal, onSkip, onHide }: Props) => (
       <Button size="xs" variant="quiet" onClick={onSkip}>
         Skip hint
       </Button>
-      <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
+      <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
     </div>
   </div>
 );

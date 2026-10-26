@@ -1,5 +1,4 @@
-import { MousePointerClick } from 'lucide-react';
-import { Button, Eyebrow, ICON_SIZE, Kbd } from '@goodboy/ui';
+import { Eyebrow } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { HintTally } from './hints/hintTally';
 import { DemoHintDots } from './DemoHintDots';
@@ -8,17 +7,9 @@ type Props = {
   readonly chapter: DemoChapter;
   readonly tally: HintTally;
   readonly instruction: string;
-  readonly isHintHidden: boolean;
-  readonly onShowHint: () => void;
 };
 
-export const DemoChapterHeader = ({
-  chapter,
-  tally,
-  instruction,
-  isHintHidden,
-  onShowHint,
-}: Props) => (
+export const DemoChapterHeader = ({ chapter, tally, instruction }: Props) => (
   <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
     <div className="flex min-w-0 flex-col gap-1">
       <div className="flex flex-wrap items-baseline gap-x-3">
@@ -36,20 +27,7 @@ export const DemoChapterHeader = ({
           </span>{' '}
           tried
         </p>
-        {isHintHidden ? (
-          <Button size="sm" variant="secondary" onClick={onShowHint}>
-            Show hint
-            <Kbd>H</Kbd>
-          </Button>
-        ) : null}
       </div>
-    ) : (
-      <p className="flex max-w-sm items-center gap-2 text-ui text-muted-foreground">
-        <MousePointerClick size={ICON_SIZE.control} className="shrink-0 text-primary" aria-hidden />
-        <span>
-          <span className="text-foreground">Try this</span> {chapter.tryThis}
-        </span>
-      </p>
-    )}
+    ) : null}
   </header>
 );

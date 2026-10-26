@@ -227,7 +227,7 @@ describe('demo playground chrome', () => {
   it('marks the next group up next, brighter once the open group is tried, and the last one never', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     const agent = DEMO_CHAPTERS.find((chapter) => chapter.id === 'agent');
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({
         agent: { tried: (agent?.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },

@@ -29,7 +29,7 @@ const chapterOf = ({ value }: ValueParams): ChapterHintProgress => {
 
 export const readHintProgress = ({ fallback }: Params): HintProgress => {
   try {
-    const raw = window.localStorage.getItem(HINT_PROGRESS_KEY);
+    const raw = window.sessionStorage.getItem(HINT_PROGRESS_KEY);
     if (raw === null) {
       return {};
     }

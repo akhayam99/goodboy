@@ -1,7 +1,6 @@
 import { ScrollFade, cn } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import { DemoRailRow, type UpNext } from './DemoRailRow';
-import { DemoRailNote } from './DemoRailNote';
 import { DemoRailActions } from './DemoRailActions';
 import type { HintTally } from './hints/hintTally';
 import { quietClasses } from './quietClasses';
@@ -32,7 +31,6 @@ type Props = {
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onSelect: (params: SelectParams) => void;
   readonly onIntent: (params: SelectParams) => void;
-  readonly isEveryGroupTried: boolean;
   readonly upNextId: string | undefined;
   readonly isUpNextReady: boolean;
   readonly isQuiet: boolean;
@@ -44,7 +42,6 @@ export const DemoRail = ({
   tallyOf,
   onSelect,
   onIntent,
-  isEveryGroupTried,
   upNextId,
   isUpNextReady,
   isQuiet,
@@ -79,7 +76,6 @@ export const DemoRail = ({
       </ScrollFade>
     </nav>
     <div className="flex flex-col gap-3 px-4">
-      <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
       <DemoRailActions />
     </div>
   </div>
