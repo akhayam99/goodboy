@@ -193,6 +193,9 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
   }, [applyFollow]);
 
   const armHoldTimer = useCallback(() => {
+    if (isDraggingRef.current) {
+      return;
+    }
     if (holdTimerRef.current !== null) {
       clearTimeout(holdTimerRef.current);
     }
@@ -215,6 +218,10 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
         return;
       }
       stopSettling();
+      if (holdTimerRef.current !== null) {
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
       isDraggingRef.current = true;
       for (const name of POINTER_END_EVENTS) {
         window.addEventListener(name, releaseGesture);
@@ -257,8 +264,12 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     }
     const isClamp =
       lastHeight !== null && el.scrollHeight < lastHeight && distance <= CLAMP_DISTANCE_PX;
-    if (isUserInput && !isClamp && lastTop !== null && el.scrollTop < lastTop) {
+    const isUserMove = isUserInput && !isClamp && lastTop !== null && el.scrollTop !== lastTop;
+    if (isUserMove && isAnchoredRef.current) {
       isAnchoredRef.current = false;
+      setPinned(distance < PIN_TOLERANCE_PX);
+    }
+    if (isUserMove && lastTop !== null && el.scrollTop < lastTop) {
       stopSettling();
       setPinned(false);
       return;

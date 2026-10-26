@@ -9,6 +9,7 @@ type Box = {
   scrollTop: number;
   clientHeight: number;
   isInside?: boolean;
+  answerY?: number;
 };
 
 const scroller = (box: Box): HTMLDivElement =>
@@ -26,7 +27,19 @@ const scroller = (box: Box): HTMLDivElement =>
       return box.clientHeight;
     },
     contains: () => box.isInside === true,
-    querySelectorAll: () => [],
+    getBoundingClientRect: () => ({ top: 0, bottom: box.clientHeight }),
+    querySelectorAll: () =>
+      box.answerY === undefined
+        ? []
+        : [
+            {
+              dataset: { revealAnswer: 'a' },
+              getBoundingClientRect: () => {
+                const top = (box.answerY ?? 0) - box.scrollTop;
+                return { top, bottom: top + 100 };
+              },
+            },
+          ],
     querySelector: () => null,
   }) as unknown as HTMLDivElement;
 
@@ -256,5 +269,56 @@ describe('useScrollPin', () => {
       vi.advanceTimersByTime(1000);
     });
     expect(box.scrollTop).toBe(800);
+  });
+
+  it('keeps a thumb drag when a wheel hold timer was armed just before the grab', () => {
+    const box = { scrollHeight: 3000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    act(() => result.current.onUserScroll());
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => result.current.onPointerDown({ target: document.createElement('div') }));
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    box.scrollTop -= 1;
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(false);
+    box.scrollHeight += 120;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(box.scrollTop).toBe(2499);
+
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    expect(box.scrollTop).toBe(2499);
+  });
+
+  it('leaves a 1 px downward drag from an answer anchor where the reader put it', () => {
+    const box: Box = { scrollHeight: 2000, scrollTop: 0, clientHeight: 500, answerY: 600 };
+    const { result } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(544);
+
+    act(() => result.current.onPointerDown({ target: document.createElement('div') }));
+    box.scrollTop = 545;
+    act(() => result.current.onScroll());
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(545);
   });
 });
