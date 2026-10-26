@@ -17,6 +17,22 @@ type KindParams = {
   readonly kind: SearchHit['kind'];
 };
 
+type SessionRow = AppStore['sessions'][number];
+
+type SessionParams = {
+  readonly session: SessionRow;
+};
+
+type VisibleParams = SessionParams & {
+  readonly query: SearchQuery;
+};
+
+type DocParams = VisibleParams & {
+  readonly provider: string;
+  readonly status: string;
+  readonly occurredAt: string;
+};
+
 const SNIPPET_LENGTH = 180;
 
 const hasEveryToken = ({ text, tokens }: TextParams): boolean => {
@@ -28,6 +44,47 @@ const snippetOf = ({ text, tokens }: TextParams): string => {
   const first = tokens.map((token) => text.toLowerCase().indexOf(token)).find((at) => at >= 0) ?? 0;
   const start = Math.max(0, first - 40);
   return text.slice(start, start + SNIPPET_LENGTH).trim();
+};
+
+const isArchivedSession = ({ session }: SessionParams): boolean => session.archivedAt !== undefined;
+
+const isSessionVisible = ({ session, query }: VisibleParams): boolean => {
+  if (session.deletedAt !== undefined) {
+    return false;
+  }
+  if (query.archived === 'exclude' && isArchivedSession({ session })) {
+    return false;
+  }
+  if (query.archived === 'only' && !isArchivedSession({ session })) {
+    return false;
+  }
+  if (query.workspaceId !== null && query.workspaceId !== session.workspaceId) {
+    return false;
+  }
+  if (query.projectIds.length > 0) {
+    return (
+      session.activeProjectId !== undefined && query.projectIds.includes(session.activeProjectId)
+    );
+  }
+  return true;
+};
+
+const isDocMatching = ({ session, query, provider, status, occurredAt }: DocParams): boolean => {
+  if (!isSessionVisible({ session, query })) {
+    return false;
+  }
+  if (query.providers.length > 0 && !query.providers.includes(provider)) {
+    return false;
+  }
+  const statuses = query.statuses.filter((value) => value !== 'archived');
+  if (statuses.length > 0 && !statuses.includes(status)) {
+    return false;
+  }
+  const at = Date.parse(occurredAt);
+  if (query.after !== null && at < query.after) {
+    return false;
+  }
+  return query.before === null || at < query.before;
 };
 
 export const runDemoSearch = ({ state, query }: Params): ReadonlyArray<SearchHit> => {
@@ -42,7 +99,23 @@ export const runDemoSearch = ({ state, query }: Params): ReadonlyArray<SearchHit
     if (query.sessionId !== null && query.sessionId !== session.id) {
       continue;
     }
-    if (isKindAllowed({ kind: 'session' }) && hasEveryToken({ text: session.goal, tokens })) {
+    if (!isSessionVisible({ session, query })) {
+      continue;
+    }
+    const sessionProvider = session.providerOverride ?? session.providerPreference.defaultProvider;
+    const isArchived = isArchivedSession({ session });
+    const sessionStatus = isArchived ? 'archived' : session.state.kind;
+    const isSessionHit =
+      isKindAllowed({ kind: 'session' }) &&
+      hasEveryToken({ text: session.goal, tokens }) &&
+      isDocMatching({
+        session,
+        query,
+        provider: sessionProvider,
+        status: sessionStatus,
+        occurredAt: session.updatedAt,
+      });
+    if (isSessionHit) {
       hits.push({
         docId: `session:${session.id}`,
         kind: 'session',
@@ -53,12 +126,12 @@ export const runDemoSearch = ({ state, query }: Params): ReadonlyArray<SearchHit
         agentId: null,
         agentName: null,
         mountId: null,
-        provider: null,
+        provider: sessionProvider,
         container: null,
-        status: null,
+        status: sessionStatus,
         ordinal: null,
         url: null,
-        isArchived: false,
+        isArchived,
         occurredAt: session.updatedAt,
         title: markMatches({ text: session.goal, tokens }),
         snippet: [],
@@ -68,8 +141,19 @@ export const runDemoSearch = ({ state, query }: Params): ReadonlyArray<SearchHit
       continue;
     }
     for (const agent of state.sessionPhaseRuns[session.id] ?? []) {
+      const provider = agent.providerOverride ?? sessionProvider;
       for (const event of state.transcripts[agent.id] ?? []) {
         if (event.kind !== 'user_text' || !hasEveryToken({ text: event.text, tokens })) {
+          continue;
+        }
+        const isMatch = isDocMatching({
+          session,
+          query,
+          provider,
+          status: agent.status,
+          occurredAt: event.at,
+        });
+        if (!isMatch) {
           continue;
         }
         hits.push({
@@ -82,12 +166,12 @@ export const runDemoSearch = ({ state, query }: Params): ReadonlyArray<SearchHit
           agentId: agent.id,
           agentName: agent.name,
           mountId: null,
-          provider: null,
+          provider,
           container: null,
-          status: null,
+          status: agent.status,
           ordinal: null,
           url: null,
-          isArchived: false,
+          isArchived,
           occurredAt: event.at,
           title: markMatches({ text: session.goal, tokens }),
           snippet: markMatches({ text: snippetOf({ text: event.text, tokens }), tokens }),

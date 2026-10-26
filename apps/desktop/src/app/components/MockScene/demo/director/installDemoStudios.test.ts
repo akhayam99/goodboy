@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type IsoDateTime, type SearchQuery } from '@goodboy/types';
+import { brandId, type IsoDateTime, type SearchQuery, type WorkspaceId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -84,6 +84,43 @@ describe('the demo search', () => {
     expect(await store.getState().runSearch({ query: { ...QUERY, text: 'nothing here' } })).toEqual(
       [],
     );
+  });
+
+  it('honors the archive, workspace, project, provider, status and date filters', async () => {
+    const archived = aSession({
+      goal: 'Archived credit review',
+      archivedAt: AT,
+      workspaceId: brandId<WorkspaceId>({ value: 'ws-archived' }),
+    });
+    store.setState({ sessions: [session, archived] });
+    installDemoSearch({ store });
+    const ids = async (patch: Partial<SearchQuery>): Promise<ReadonlyArray<string>> =>
+      (await store.getState().runSearch({ query: { ...QUERY, ...patch } })).map(
+        (hit) => hit.sessionId ?? '',
+      );
+    expect(await ids({})).toEqual([session.id]);
+    expect(await ids({ archived: 'only' })).toEqual([archived.id]);
+    expect(await ids({ archived: 'include' })).toEqual([session.id, archived.id]);
+    expect(await ids({ archived: 'include', workspaceId: archived.workspaceId })).toEqual([
+      archived.id,
+    ]);
+    expect(await ids({ archived: 'include', statuses: ['archived'] })).toEqual([
+      session.id,
+      archived.id,
+    ]);
+    expect(await ids({ archived: 'include', statuses: ['running'] })).toEqual([]);
+    expect(
+      await ids({
+        archived: 'include',
+        providers: [session.providerPreference.defaultProvider],
+      }),
+    ).toEqual([session.id, archived.id]);
+    expect(await ids({ archived: 'include', providers: ['nobody'] })).toEqual([]);
+    expect(await ids({ archived: 'include', projectIds: [brandId({ value: 'p-none' })] })).toEqual(
+      [],
+    );
+    expect(await ids({ archived: 'include', after: Number.MAX_SAFE_INTEGER })).toEqual([]);
+    expect(await ids({ archived: 'include', before: 0 })).toEqual([]);
   });
 });
 
