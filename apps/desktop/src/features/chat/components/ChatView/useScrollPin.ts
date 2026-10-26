@@ -41,6 +41,16 @@ type AnswerTopParams = {
 const answerTopOf = ({ scroller, answer }: AnswerTopParams): number =>
   answer.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
 
+type ClampedTopParams = {
+  readonly scroller: HTMLElement;
+};
+
+const clampedTopOf = ({ scroller }: ClampedTopParams): number =>
+  Math.min(
+    Math.max(0, scroller.scrollHeight - scroller.clientHeight),
+    Math.max(0, scroller.scrollTop),
+  );
+
 type OverflowKeysParams = {
   readonly scroller: HTMLElement;
   readonly answers: ReadonlyArray<HTMLElement>;
@@ -204,7 +214,7 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     }
     const lastTop = lastTopRef.current ?? ownTopRef.current;
     const lastHeight = lastHeightRef.current;
-    const top = el.scrollTop;
+    const top = clampedTopOf({ scroller: el });
     const isClamp =
       lastHeight !== null &&
       el.scrollHeight < lastHeight &&
@@ -278,10 +288,11 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     if (!el) {
       return;
     }
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setAtTop(el.scrollTop < PIN_TOLERANCE_PX);
+    const top = clampedTopOf({ scroller: el });
+    const distance = el.scrollHeight - top - el.clientHeight;
+    setAtTop(top < PIN_TOLERANCE_PX);
     const lastTop = lastTopRef.current ?? ownTopRef.current;
-    lastTopRef.current = el.scrollTop;
+    lastTopRef.current = top;
     const lastHeight = lastHeightRef.current;
     lastHeightRef.current = el.scrollHeight;
     const isUserInput = isDraggingRef.current || holdTimerRef.current !== null;
@@ -290,19 +301,19 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     }
     const isClamp =
       lastHeight !== null && el.scrollHeight < lastHeight && distance <= CLAMP_DISTANCE_PX;
-    const isUserMove = isUserInput && !isClamp && lastTop !== null && el.scrollTop !== lastTop;
+    const isUserMove = isUserInput && !isClamp && lastTop !== null && top !== lastTop;
     if (isUserMove && isAnchoredRef.current) {
       isAnchoredRef.current = false;
       writePinned({ isPinned: distance < PIN_TOLERANCE_PX });
     }
-    const isUp = lastTop !== null && el.scrollTop < lastTop && !isClamp;
+    const isUp = lastTop !== null && top < lastTop && !isClamp;
     if (isUserMove && isUp) {
       stopSettling();
       writePinned({ isPinned: false });
       return;
     }
     const ownTop = ownTopRef.current;
-    const isOwn = ownTop !== null && Math.abs(el.scrollTop - ownTop) <= OWN_SCROLL_TOLERANCE_PX;
+    const isOwn = ownTop !== null && Math.abs(top - ownTop) <= OWN_SCROLL_TOLERANCE_PX;
     if (isOwn) {
       if (isAnchoredRef.current) {
         writePinned({ isPinned: false });

@@ -384,4 +384,50 @@ describe('useScrollPin', () => {
     });
     expect(box.scrollTop).toBe(545);
   });
+
+  it('reads a bounce past the bottom as no move and keeps following', () => {
+    const box: Box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(500);
+
+    act(() => result.current.onUserScroll());
+    for (const top of [520, 510, 500]) {
+      box.scrollTop = top;
+      act(() => result.current.onScroll());
+    }
+    expect(result.current.pinned).toBe(true);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    box.scrollHeight += 200;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.pinned).toBe(true);
+    expect(box.scrollTop).toBe(700);
+  });
+
+  it('reads a bounce past the top as no move', () => {
+    const box: Box = { scrollHeight: 500, scrollTop: 0, clientHeight: 500 };
+    const { result } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    act(() => result.current.onUserScroll());
+    for (const top of [-20, -10, 0]) {
+      box.scrollTop = top;
+      act(() => result.current.onScroll());
+    }
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.pinned).toBe(true);
+    expect(result.current.atTop).toBe(true);
+  });
 });
