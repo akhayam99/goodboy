@@ -19,7 +19,7 @@ type Params = {
 const AGENT_ID = brandId<AgentId>({ value: 'demo-board-story-agent' });
 const RUN_ID = brandId<ProviderRunId>({ value: 'demo-board-story-run' });
 
-export const BOARD_STORY_QUESTION = {
+const BOARD_STORY_QUESTION = {
   text: 'All three branches pass. Review the diff first, or push them now and open the pull request?',
   answers: ['Review the diff first', 'Push and open the pull request'],
 } as const;

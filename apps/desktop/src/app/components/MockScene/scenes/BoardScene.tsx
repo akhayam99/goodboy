@@ -232,7 +232,7 @@ const githubEntry = (pr: PullRequestState | null) => ({
 
 const BUILDING_RATE_LIMIT = 'mock-board-session-rate-limit' as SessionId;
 const BUILDING_ONBOARDING = 'mock-board-session-onboarding-copy' as SessionId;
-export const RUNNING_CHECKOUT_RETRY = 'mock-board-session-checkout-retry' as SessionId;
+const RUNNING_CHECKOUT_RETRY = 'mock-board-session-checkout-retry' as SessionId;
 const ATTENTION_BACKOFF = 'mock-board-session-notify-backoff' as SessionId;
 const ATTENTION_ERROR = 'mock-board-session-settlement-rounding' as SessionId;
 const REVIEW_PAGINATION = 'mock-board-session-admin-pagination' as SessionId;
