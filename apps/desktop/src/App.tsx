@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import { UndoToastBridge } from './app/components/UndoToastBridge';
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
@@ -268,6 +269,7 @@ export const App = () => {
           <Fragment key="layers">{layers}</Fragment>
         </ObjectMenuProvider>
         {splashExit}
+        <Analytics />
       </ToastProvider>
     );
   }
@@ -358,6 +360,7 @@ export const App = () => {
         <Fragment key="layers">{layers}</Fragment>
       </ObjectMenuProvider>
       {splashExit}
+      <Analytics />
     </ToastProvider>
   );
 };
