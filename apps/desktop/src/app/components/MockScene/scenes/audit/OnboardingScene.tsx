@@ -23,6 +23,7 @@ import {
 import { sampleScoutRuns } from '../onboarding/sampleScoutRuns';
 import { connectDemoTool } from '../onboarding/connectDemoTool';
 import { InstantToolConnectContext } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
+import { isDirectedScene } from '../../demo/director/isDirectedScene';
 import { sceneParam } from './sceneParams';
 
 type PickParams<T extends string> = {
@@ -64,6 +65,7 @@ const readSetup = (): SceneSetup => {
 };
 
 const OPEN_DELAY_MS = 100;
+const REOPEN_MS = 1200;
 
 export const OnboardingScene = () => {
   const [setup] = useState(readSetup);
@@ -87,6 +89,23 @@ export const OnboardingScene = () => {
     }, OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isReady, setup]);
+
+  useEffect(() => {
+    if (!isReady || !isDirectedScene()) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const state = useAppStore.getState();
+      const isWizardOpen = document.querySelector('[aria-label="Goodboy setup"]') !== null;
+      if (isWizardOpen || state.currentSessionId !== null) {
+        return;
+      }
+      const step: WizardStepId = state.workspaces.length > 0 ? 'first-session' : 'welcome';
+      const detail: OpenWizardDetail = { mode: 'full', step };
+      window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
+    }, REOPEN_MS);
+    return () => window.clearInterval(timer);
+  }, [isReady]);
 
   if (!isReady) {
     return null;

@@ -61,10 +61,7 @@ const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
       event.kind === 'user_text' && !before.has(event.runId) ? [event.runId] : [],
     ),
   );
-  return (
-    !isAgentBusy({ state }) &&
-    events.some((event) => event.kind === 'decision_note' && visitorRuns.has(event.runId))
-  );
+  return events.some((event) => event.kind === 'decision_note' && visitorRuns.has(event.runId));
 };
 
 const OPERATIONS = 'button[aria-label^="Operations"]';
@@ -76,8 +73,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     id: 'agent-answer',
     label: 'Answer its question',
     copy: 'The agent is waiting on you',
-    instruction: 'Pick an answer to the agent question so it can carry on with the task.',
-    result: 'The agent has your answer and carries on with the task.',
+    instruction: 'Answer the agent question: it is waiting and cannot go on without you.',
+    result: 'The agent has your answer: it updates ledger-core and reruns the redelivery test.',
     beat: 0,
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
@@ -91,9 +88,10 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     id: 'agent-limits-peek',
     label: 'Check the limits',
     copy: 'Check what is left',
-    instruction: 'Open the limits chip to see how much of your Claude plan you have left.',
-    result: 'Claude is at its weekly limit: it can run out in the middle of a task.',
-    beat: 1,
+    instruction: 'Open the Claude limits chip in the top bar to see how much of the plan is left.',
+    result:
+      'Claude used its whole 5-hour window and 84% of the week, Codex 58% of the week: Claude cannot take the next message.',
+    beat: 0,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
@@ -102,11 +100,10 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-limits',
     label: 'Continue on Codex',
-    copy: 'Codex takes over',
-    instruction:
-      'Claude hit its limit: send a message and watch Codex continue with the same brief.',
-    result: 'Codex took over with the same brief Claude had.',
-    beat: 1,
+    copy: 'Type a message, then Send',
+    instruction: 'Type a message and press Send: Claude is out of limit, so Codex picks it up.',
+    result: 'Claude hit its limit, so Codex took the same brief and is rerunning the suites.',
+    beat: 0,
     anchor: COMPOSER,
     side: 'top',
     revealWhen: ({ state }) => !isAgentBusy({ state }),
@@ -117,8 +114,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Open the edited files',
     copy: 'Files it edited',
     instruction: 'Open Operations to see which files the agent edited and what changed in them.',
-    result: 'The files the agent edited are listed with what changed in each.',
-    beat: 1,
+    result: 'The edited files are listed with what changed in each.',
+    beat: 0,
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: ({ root, isAnchorClicked }) =>

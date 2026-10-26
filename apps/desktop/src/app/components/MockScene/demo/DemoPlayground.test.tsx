@@ -480,9 +480,10 @@ describe('demo playground', () => {
   });
 
   it('changes the scene only when a step that lives in another scene becomes the next one', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedProgress({ ids: ['setup', 'agent', 'orchestrate'] });
+    window.history.replaceState(null, '', '/?scene=demo#find');
     render(<DemoPlayground />);
-    const { hints, beats } = chapterOf({ id: 'agent' });
+    const { hints, beats } = chapterOf({ id: 'find' });
     const crossing = hints.findIndex(
       (entry, index) => index > 0 && entry.beat !== (hints[index - 1]?.beat ?? 0),
     );

@@ -402,9 +402,9 @@ Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
 it, `MockScene` mounts `demo/DemoDirector`, which waits for fonts and two
 painted frames, then builds the scene's timeline from the seeded store
-(`demo/director/demoTimelines.ts`: `chat-shell`, the `c08-run-*` and `c07-auto-*`
-beats, `board-shell`, the artifact, diff and resolve beats and `brand-limits`; any
-other scene gets an empty one). A timeline rewinds the
+(`demo/director/demoTimelines.ts`: `chat-shell`, the `c07-auto-*` beats,
+`board-shell`, the artifact, diff and resolve beats; any other scene gets an
+empty one). A timeline rewinds the
 seeded state in `prepare` and replays it as cues `{ atMs, apply }` against the
 real `useAppStore`, on a playback clock that leaves pauses out. Assistant text
 marks the live text registry first, so it streams through the product's own
@@ -466,7 +466,8 @@ report and wireframe runs that always save a sample artifact (`installDemoWorld.
 drafted reply that stays ready to publish, and Keep the draft on an edited
 comment, which clears the change in place (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
-brief (`limitsTimeline.ts`). Push and publish first preview the approved fixes
+brief once the visitor sends a message (`agentTimeline.ts`,
+`limitsHandoffCues.ts`). Push and publish first preview the approved fixes
 and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
 say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
@@ -608,8 +609,15 @@ notify-relay) after a short delay, the git checks and a committed
 `seedWizardScene` signs in a detected agent on Sign in, keeps the new workspace
 on `setCurrentWorkspace` and starts the first task through
 `startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and
-streams a reply picked by `sampleScoutReply.ts`, and `OnboardingScene` shows
-that session in the app shell once the wizard closes. The reply runs on
+streams a reply picked by `sampleScoutReply.ts` (the bug starter finds the
+retried webhook that posts a second credit and names HBL-412, the issue the
+next group starts from), and `OnboardingScene` shows that session in the app
+shell once the wizard closes. The Linear issues the wizard lists are Harborline's
+(HBL-412 first); Draft the brief, which the app answers with a session draft,
+starts the same sample Scout on the issue (`openSessionDraft` in
+`seedWizardScene`). A directed `OnboardingScene` reopens the wizard on its
+first-session step when it is closed with no session (Skip, Set up later), so
+Set up never ends on an empty page. The reply runs on
 `sampleScoutRuns`: Stop cancels its timers and marks Scout stopped, so a
 stopped run never ends in the setup done note, and leaving or reseeding the
 scene cancels them too. On Your tools, Connect adds a mock account

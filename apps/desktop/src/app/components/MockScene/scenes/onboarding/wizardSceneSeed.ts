@@ -115,7 +115,11 @@ const LINEAR_BINDING: IntegrationBinding = {
   projectId: null,
   credentialId: brandId<IntegrationCredentialId>({ value: 'mock-credential-acme-linear' }),
   provider: 'linear',
-  config: { workspaceUrlKey: 'acme', viewerUserId: 'mock-linear-dana', viewerName: 'Dana K.' },
+  config: {
+    workspaceUrlKey: 'harborline',
+    viewerUserId: 'mock-linear-dana',
+    viewerName: 'Dana R.',
+  },
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -132,14 +136,14 @@ const linearIssue = ({ id, title }: IssueParams): LinearIssue => ({
   description: null,
   url: `https://example.invalid/linear/${id}`,
   state: { name: 'Todo', type: 'unstarted' },
-  team: { key: 'ACM' },
+  team: { key: 'HBL' },
   updatedAt: NOW,
 });
 
 const LINEAR_ISSUES: ReadonlyArray<LinearIssue> = [
-  linearIssue({ id: 'ACM-112', title: 'Checkout submits twice on a slow network' }),
-  linearIssue({ id: 'ACM-108', title: 'Dark mode loses the focus ring on inputs' }),
-  linearIssue({ id: 'ACM-97', title: 'Cache the pricing table for an hour' }),
+  linearIssue({ id: 'HBL-412', title: 'Retried webhooks post a second credit' }),
+  linearIssue({ id: 'HBL-409', title: 'Settlement export rounds a cent off' }),
+  linearIssue({ id: 'HBL-397', title: 'Rotate the processor signing secret' }),
 ];
 
 type StatusParams = {
@@ -174,7 +178,7 @@ type Agents = {
   readonly auth: Partial<Record<ProviderId, AuthState>>;
 };
 
-const SIGNED_IN: AuthState = { state: 'connected', identity: 'dana@northwind.dev' };
+const SIGNED_IN: AuthState = { state: 'connected', identity: 'dana@harborline.dev' };
 const SIGNED_OUT: AuthState = { state: 'disconnected', identity: null };
 
 const NO_API: Pick<ProviderStatuses, 'opencode' | 'openrouter' | 'moonshot'> = {
@@ -250,7 +254,7 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
   mockSceneIpc((command, payload) => {
     switch (command) {
       case 'worktree_remote_url':
-        return 'git@github.com:acme/acme-web.git';
+        return 'git@github.com:harborline/payments-api.git';
       case 'linear_fetch_assigned_issues':
         return LINEAR_ISSUES;
       default:
@@ -267,7 +271,7 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
       workspace === null ? {} : { [workspace.id]: hasLinear ? [LINEAR_BINDING] : [] },
     workspaceOverrides: {},
     settings: { ...useAppStore.getState().settings, [SETTING_NEW_PROJECT_PARENT]: CODE },
-    githubStatus: { mode: 'gh-cli', available: true, user: 'acme-bot', scopes: ['repo'] },
+    githubStatus: { mode: 'gh-cli', available: true, user: 'dana-r', scopes: ['repo'] },
     providerStatus: detected.statuses.anthropic,
     codexStatus: detected.statuses.codex,
     cursorStatus: detected.statuses.cursor,
@@ -303,6 +307,18 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
     refreshGithubStatus: async () => undefined,
     setCurrentWorkspace: async (id) => useAppStore.setState({ currentWorkspaceId: id }),
     startSessionFromDraft: startSampleScout,
+    openSessionDraft: () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        return;
+      }
+      const goal = state.sessionDrafts[workspaceId]?.workflowGoal ?? '';
+      void startSampleScout({
+        workspaceId,
+        start: { kind: 'scout', agentKind: 'scout', focus: goal, prompt: goal, routing: null },
+      });
+    },
   });
   return seeded;
 };
