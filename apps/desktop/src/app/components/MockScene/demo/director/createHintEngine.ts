@@ -1,6 +1,6 @@
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from '../hints/demoHintTypes';
-import { RESULT_DWELL_MS } from '../hints/resultDwellMs';
+import { dwellOf } from '../hints/dwellOf';
 import { DEMO_PROTOCOL, type DemoHintReport, type DemoRect } from './demoProtocol';
 import type { DirectorStore } from './directorTypes';
 import { createResultTracker } from './createResultTracker';
@@ -59,6 +59,10 @@ type RegionElementParams = {
   readonly region: Element | null;
 };
 
+type DwellParams = {
+  readonly hint: DemoHint;
+};
+
 type StateParams = {
   readonly state: AppStore;
 };
@@ -76,6 +80,7 @@ const DWELL_SLACK_MS = 30;
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
 type Placement = {
+  readonly element: Element | null;
   readonly rect: DemoRect | null;
   readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
@@ -87,7 +92,13 @@ type Current = {
   readonly placement: Placement;
 };
 
-const MISSING: Placement = { rect: null, focus: null, isOffscreen: false, isCut: false };
+const MISSING: Placement = {
+  element: null,
+  rect: null,
+  focus: null,
+  isOffscreen: false,
+  isCut: false,
+};
 
 type Box = {
   readonly top: number;
@@ -155,6 +166,8 @@ export const createHintEngine = ({
   const done = new Set<string>();
   const armed = new Set<string>();
   const clicked = new Set<string>();
+  const clickedElements = new Map<string, Element>();
+  let settling: ReadonlyArray<DemoHint> = [];
   const scrolled = new Set<string>();
   const baselines = new Map<string, AppStore>();
   let lastSignature = '';
@@ -228,7 +241,7 @@ export const createHintEngine = ({
       centerY >= visible.top &&
       centerY <= visible.bottom;
     if (!isShown) {
-      return { rect: null, focus: null, isOffscreen: true, isCut: false };
+      return { element, rect: null, focus: null, isOffscreen: true, isCut: false };
     }
     const isCut =
       box.top < visible.top - CUT_TOLERANCE ||
@@ -236,6 +249,7 @@ export const createHintEngine = ({
       box.left < visible.left - CUT_TOLERANCE ||
       box.right > visible.right + CUT_TOLERANCE;
     return {
+      element,
       rect: rectOfBox({ box }),
       focus: focusOf({ region }),
       isOffscreen: false,
@@ -276,9 +290,9 @@ export const createHintEngine = ({
     return undefined;
   };
 
-  const startDwell = (): void => {
+  const startDwell = ({ hint }: DwellParams): void => {
     dwellStart = Date.now();
-    dwellUntil = dwellStart + RESULT_DWELL_MS;
+    dwellUntil = dwellStart + dwellOf({ hint });
   };
 
   const isDwelling = (): boolean => {
@@ -319,10 +333,18 @@ export const createHintEngine = ({
         break;
       }
       done.add(hint.id);
-      startDwell();
+      startDwell({ hint });
+      settling = [...settling, hint];
       onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
     }
-    const current = isDwelling() ? undefined : currentOf({ state });
+    const isHeld = isDwelling();
+    if (!isHeld) {
+      for (const hint of settling) {
+        hint.settle?.({ root });
+      }
+      settling = [];
+    }
+    const current = isHeld ? undefined : currentOf({ state });
     const rect = current?.placement.rect ?? null;
     const resultRects = current === undefined ? [] : results.rects();
     const focus =
@@ -332,13 +354,36 @@ export const createHintEngine = ({
     const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
     const isClicked = hintId !== null && clicked.has(hintId);
-    const signature = JSON.stringify({ hintId, rect, focus, isOffscreen, isClicked });
+    const isPressed =
+      hintId !== null &&
+      current?.placement.element !== null &&
+      clickedElements.get(hintId) === current?.placement.element;
+    const opened = rect === null ? [] : resultRects;
+    const signature = JSON.stringify({
+      hintId,
+      rect,
+      focus,
+      opened,
+      isOffscreen,
+      isClicked,
+      isPressed,
+    });
     if (signature === lastSignature) {
       return;
     }
     lastSignature = signature;
     onReport({
-      report: { ...envelope(), type: 'anchor', hintId, rect, focus, isOffscreen, isClicked },
+      report: {
+        ...envelope(),
+        type: 'anchor',
+        hintId,
+        rect,
+        focus,
+        opened,
+        isOffscreen,
+        isClicked,
+        isPressed,
+      },
     });
   };
 
@@ -358,6 +403,7 @@ export const createHintEngine = ({
       const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
       if (anchor !== null && anchor.contains(event.target)) {
         clicked.add(hint.id);
+        clickedElements.set(hint.id, anchor);
       }
     }
     schedule();
@@ -395,6 +441,8 @@ export const createHintEngine = ({
       done.clear();
       armed.clear();
       clicked.clear();
+      clickedElements.clear();
+      settling = [];
       scrolled.clear();
       baselines.clear();
       lastSignature = '';

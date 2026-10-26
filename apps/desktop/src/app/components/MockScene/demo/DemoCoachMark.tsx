@@ -10,9 +10,11 @@ import { DemoSpotlight } from './DemoSpotlight';
 export type CoachMark = {
   readonly hintId: string;
   readonly copy: string;
-  readonly side: HintSide;
+  readonly side: HintSide | undefined;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
+  readonly opened: ReadonlyArray<DemoRect>;
+  readonly isDimmed: boolean;
 };
 
 type Size = {
@@ -30,7 +32,7 @@ type Props = {
 
 const RING_OUTSET = 4;
 const HOLE_PAD = 8;
-const GAP = 12;
+const GAP = 6;
 const MARGIN = 16;
 const CALLOUT_WIDTH = 240;
 const CARET = 8;
@@ -80,6 +82,18 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
+type ScaledParams = {
+  readonly rect: DemoRect;
+  readonly scale: number;
+};
+
+const scaledOf = ({ rect, scale }: ScaledParams): DemoRect => ({
+  x: rect.x * scale,
+  y: rect.y * scale,
+  width: rect.width * scale,
+  height: rect.height * scale,
+});
+
 export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
@@ -120,14 +134,16 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
     height === null
       ? null
       : placeCallout({
-          target: hole,
+          target,
+          avoid: coach.opened.map((rect) => scaledOf({ rect, scale })),
+          lit: hole,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
           gap: GAP,
           margin: MARGIN,
         });
-  const side = placement?.side ?? coach.side;
+  const side = placement?.side ?? coach.side ?? 'right';
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -192,7 +208,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
         )}
         <div className="flex items-start justify-between gap-2">
           <p className="text-row text-foreground">{coach.copy}</p>
-          <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
+          <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
       </div>
     </div>

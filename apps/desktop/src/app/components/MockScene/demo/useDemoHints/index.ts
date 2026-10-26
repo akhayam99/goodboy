@@ -5,6 +5,7 @@ import type { DemoHintReport, DemoRect } from '../director/demoProtocol';
 import type { DemoHint } from '../hints/demoHintTypes';
 import type { HintProgress } from '../hints/hintProgressTypes';
 import { hintTally, type HintTally } from '../hints/hintTally';
+import { dwellOf } from '../hints/dwellOf';
 import { RESULT_DWELL_MS } from '../hints/resultDwellMs';
 import { stepsOf, type Steps } from '../hints/stepsOf';
 import type { HintProgressControls } from '../useHintProgress';
@@ -34,8 +35,10 @@ type AnchorState = {
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
   readonly focus: DemoRect | null;
+  readonly opened: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
+  readonly isPressed: boolean;
 };
 
 type Hold = {
@@ -69,6 +72,7 @@ export type DemoHints = Steps & {
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly hide: () => void;
+  readonly dismiss: () => void;
   readonly show: () => void;
   readonly revealHint: () => void;
   readonly reset: () => void;
@@ -89,6 +93,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
   const [hold, setHold] = useState<Hold | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const { hints } = chapter;
   const steps = stepsOf({ chapter, progress });
@@ -115,6 +120,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       return;
     }
     const isShowing = hold.phase === 'show';
+    const heldHint = hints.find((hint) => hint.id === hold.hintId);
     const timer = window.setTimeout(
       () => {
         const isNextShown =
@@ -125,10 +131,14 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         }
         setHold((previous) => (previous === hold ? null : previous));
       },
-      isShowing ? RESULT_DWELL_MS : HOLD_WAIT_MS,
+      isShowing
+        ? heldHint === undefined
+          ? RESULT_DWELL_MS
+          : dwellOf({ hint: heldHint })
+        : HOLD_WAIT_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [hold]);
+  }, [hold, hints]);
 
   const onHintReport = useCallback(
     ({ report }: HintReportParams) => {
@@ -155,8 +165,10 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
         hintId: report.hintId,
         rect: report.rect,
         focus: report.focus ?? null,
+        opened: report.opened ?? [],
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
+        isPressed: report.isPressed === true,
       });
     },
     [hints, chapter.id, markTried],
@@ -182,23 +194,26 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
 
   const current = anchor !== null && anchor.chapterId === chapter.id ? anchor : null;
   const isActive = current !== null && current.hintId === activeHint?.id;
-  const isOpen = activeHint !== undefined && isActive && isEnabled;
+  const isDismissed = activeHint !== undefined && dismissedIds.has(activeHint.id);
+  const isOpen = activeHint !== undefined && isActive && isEnabled && !isDismissed;
 
   const coach = useMemo((): CoachMark | undefined => {
     if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
       return undefined;
     }
-    if (current.isClicked) {
+    if (current.isPressed) {
       return undefined;
     }
     return {
       hintId: activeHint.id,
-      copy: activeHint.copy,
-      side: activeHint.side ?? 'right',
+      copy: acting?.progressCopy ?? activeHint.copy,
+      side: activeHint.side,
       rect: current.rect,
       focus: current.focus,
+      opened: current.opened,
+      isDimmed: activeHint.isDimmed !== false,
     };
-  }, [isOpen, activeHint, current]);
+  }, [isOpen, activeHint, acting, current]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {
@@ -209,7 +224,18 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
 
   const hide = useCallback(() => setEnabled({ isEnabled: false }), [setEnabled]);
 
-  const show = useCallback(() => setEnabled({ isEnabled: true }), [setEnabled]);
+  const dismiss = useCallback(() => {
+    const id = activeIdRef.current;
+    if (id === undefined) {
+      return;
+    }
+    setDismissedIds((previous) => new Set([...previous, id]));
+  }, []);
+
+  const show = useCallback(() => {
+    setDismissedIds(new Set());
+    setEnabled({ isEnabled: true });
+  }, [setEnabled]);
 
   const revealHint = useCallback(() => {
     if (activeHint === undefined) {
@@ -223,6 +249,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setAnchor(null);
     setHold(null);
     setActingId(null);
+    setDismissedIds(new Set());
   }, [resetProgress, chapter.id]);
 
   const restart = useCallback(() => {
@@ -230,6 +257,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     setAnchor(null);
     setHold(null);
     setActingId(null);
+    setDismissedIds(new Set());
   }, [resetAllProgress]);
 
   const tallyOf = useCallback(
@@ -253,6 +281,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     tallyOf,
     onHintReport,
     hide,
+    dismiss,
     show,
     revealHint,
     reset,

@@ -118,6 +118,7 @@ export const DemoStage = ({
   const activeFit = stageFitOf({ box });
   const isSpotlit =
     coach !== undefined &&
+    coach.isDimmed &&
     !isHoleTooBig({
       anchor: coach.rect,
       focus: coach.focus,

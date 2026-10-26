@@ -38,6 +38,13 @@ const isRect = ({ value }: ValueParams): boolean => {
   );
 };
 
+const MAX_OPENED = 16;
+
+const isRectList = ({ value }: ValueParams): boolean =>
+  Array.isArray(value) &&
+  value.length <= MAX_OPENED &&
+  value.every((entry: unknown) => entry !== null && isRect({ value: entry }));
+
 export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
   if (!isDemoEnvelope(data)) {
     return false;
@@ -50,11 +57,14 @@ export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
     return false;
   }
   const isClicked: unknown = Reflect.get(data, 'isClicked');
+  const isPressed: unknown = Reflect.get(data, 'isPressed');
   return (
     (hintId === null || isHintId(hintId)) &&
     isRect({ value: Reflect.get(data, 'rect') }) &&
     (!Reflect.has(data, 'focus') || isRect({ value: Reflect.get(data, 'focus') })) &&
+    (!Reflect.has(data, 'opened') || isRectList({ value: Reflect.get(data, 'opened') })) &&
     typeof Reflect.get(data, 'isOffscreen') === 'boolean' &&
-    (isClicked === undefined || typeof isClicked === 'boolean')
+    (isClicked === undefined || typeof isClicked === 'boolean') &&
+    (isPressed === undefined || typeof isPressed === 'boolean')
   );
 };

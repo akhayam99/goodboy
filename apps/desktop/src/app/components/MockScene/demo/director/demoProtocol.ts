@@ -54,8 +54,10 @@ type DemoAnchorReport = {
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
   readonly focus?: DemoRect | null;
+  readonly opened?: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked?: boolean;
+  readonly isPressed?: boolean;
 };
 
 type DemoTriedReport = {

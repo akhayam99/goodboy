@@ -22,7 +22,16 @@ type PlaceParams = {
 };
 
 const place = ({ target }: PlaceParams) =>
-  placeCallout({ target, callout: CALLOUT, bounds: BOUNDS, side: 'right', gap: 12, margin: 16 });
+  placeCallout({
+    target,
+    avoid: [],
+    lit: null,
+    callout: CALLOUT,
+    bounds: BOUNDS,
+    side: 'right',
+    gap: 12,
+    margin: 16,
+  });
 
 describe('callout placement', () => {
   it('sits beside the target on the preferred side when there is room', () => {

@@ -23,7 +23,7 @@ export const DemoHintSlot = ({ hint, onReveal, onHide }: Props) => (
       <Button size="xs" variant="primary" onClick={onReveal}>
         Show control
       </Button>
-      <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
+      <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
     </div>
   </div>
 );

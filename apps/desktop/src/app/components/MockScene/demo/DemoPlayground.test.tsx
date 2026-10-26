@@ -8,6 +8,7 @@ import { DEMO_CHAPTERS } from './demoChapters';
 import { DEMO_GROUPS } from './demoGroups';
 import { DEMO_PROTOCOL, type DemoRect, type DemoReportType } from './director/demoProtocol';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
+import { dwellOf } from './hints/dwellOf';
 import { RESULT_DWELL_MS } from './hints/resultDwellMs';
 
 const visibleFrame = (): HTMLIFrameElement => {
@@ -68,6 +69,7 @@ type HintParams = {
   readonly focus?: DemoRect | null;
   readonly isOffscreen?: boolean;
   readonly isClicked?: boolean;
+  readonly isPressed?: boolean;
   readonly generation?: number;
   readonly source?: MessageEventSource | null;
 };
@@ -79,6 +81,7 @@ const hint = ({
   focus = null,
   isOffscreen = false,
   isClicked = false,
+  isPressed = false,
   generation = 0,
   source = frame.contentWindow,
 }: HintParams) => {
@@ -95,6 +98,7 @@ const hint = ({
           focus,
           isOffscreen,
           isClicked,
+          isPressed,
         },
         origin: window.location.origin,
         source,
@@ -489,7 +493,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     for (const entry of hints.slice(0, crossing - 1)) {
       tried({ frame, hintId: entry.id });
-      elapse({ ms: RESULT_DWELL_MS });
+      elapse({ ms: dwellOf({ hint: entry }) });
     }
     const before = visibleFrame();
     expect(before.getAttribute('src')).toContain(
@@ -497,7 +501,7 @@ describe('demo playground', () => {
     );
     tried({ frame: before, hintId: hints[crossing - 1]?.id ?? '' });
     expect(visibleFrame()).toBe(before);
-    elapse({ ms: RESULT_DWELL_MS });
+    elapse({ ms: dwellOf({ hint: hints[crossing - 1] ?? hints[0] }) });
     const next = frameOf({ scene: beats[hints[crossing]?.beat ?? 0]?.scene ?? '' });
     report({ frame: next, type: 'ready' });
     expect(visibleFrame()).toBe(next);
@@ -578,14 +582,23 @@ describe('demo playground', () => {
     expect(within(note).queryByRole('button', { name: 'Skip hint' })).toBeNull();
   });
 
-  it('lifts the coach once the visitor clicks the control, so it never covers what opens', () => {
+  it('keeps the coach when the visitor clicks a control that opens nothing new, as the composer', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'setup' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first, isClicked: true });
+    expect(screen.queryByRole('note')).not.toBeNull();
+  });
+
+  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const first = chapterOf({ id: 'setup' }).hints[0]?.id ?? '';
     hint({ frame, hintId: first });
     expect(screen.queryByRole('note')).not.toBeNull();
-    hint({ frame, hintId: first, isClicked: true });
+    hint({ frame, hintId: first, isClicked: true, isPressed: true });
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
     expect(instruction()).toBe(chapterOf({ id: 'setup' }).hints[0]?.instruction);
@@ -618,14 +631,21 @@ describe('demo playground', () => {
   });
 
   it('quiets only the secondary chrome while the spotlight is on', () => {
-    seedProgress({ ids: ['setup'] });
+    const agentHints = chapterOf({ id: 'agent' }).hints;
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        setup: { tried: idsOf({ id: 'setup' }), epoch: 0 },
+        agent: { tried: [agentHints[0]?.id], epoch: 0 },
+      }),
+    );
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const title = screen.getByRole('heading', { level: 1 });
     const back = screen.getAllByRole('link', { name: /goodboy-ai.dev/ });
-    hint({ frame, hintId: chapterOf({ id: 'agent' }).hints[0]?.id ?? '' });
+    hint({ frame, hintId: agentHints[1]?.id ?? '' });
     expect(rowOf({ title: 'Set up' }).closest('[data-quiet]')?.getAttribute('data-quiet')).toBe(
       'true',
     );
@@ -671,17 +691,34 @@ describe('demo playground', () => {
     expect(plays).toHaveLength(2);
   });
 
-  it('hides the hints with Escape and brings them back with H', () => {
+  it('dismisses only the open hint with Escape, leaves the hints on and brings it back with H', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     hint({ frame, hintId: chapterOf({ id: 'setup' }).hints[0]?.id ?? '' });
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Show hints' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
+    expect(within(topBar()).getByRole('button', { name: 'Hide hints' })).not.toBeNull();
     expect(instruction()).toBe(chapterOf({ id: 'setup' }).hints[0]?.instruction);
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
     expect(screen.queryByRole('note')).not.toBeNull();
+  });
+
+  it('dismisses only the open hint with the coach X and shows the next one', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const [first, second] = chapterOf({ id: 'setup' }).hints;
+    hint({ frame, hintId: first?.id ?? '' });
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(within(topBar()).getByRole('button', { name: 'Hide hints' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
+    tried({ frame, hintId: first?.id ?? '' });
+    elapse({ ms: RESULT_DWELL_MS });
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(screen.getByRole('note').textContent).toContain(second?.copy ?? '');
   });
 
   it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {

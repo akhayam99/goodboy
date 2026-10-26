@@ -170,7 +170,7 @@ export const DemoPlayground = () => {
     onShowHint: hints.show,
     onFrameShortcut,
   });
-  useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
+  useEscapeLayer(hints.dismiss, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
   const [isSpotlit, setIsSpotlit] = useState(false);
@@ -238,7 +238,7 @@ export const DemoPlayground = () => {
               reveal={hints.reveal}
               onHintReport={hints.onHintReport}
               onSpotlightChange={onSpotlightChange}
-              onHideHint={hints.hide}
+              onHideHint={hints.dismiss}
               onRevealHint={hints.revealHint}
             />
           )}
