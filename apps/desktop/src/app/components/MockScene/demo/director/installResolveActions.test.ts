@@ -123,7 +123,7 @@ describe('the simulated review fix', () => {
     await expect(
       store.getState().publishConversations({ sessionId: SESSION_ID, publicationId }),
     ).rejects.toThrow();
-    expect(store.getState().undoNotices.at(-1)?.toast.title).toBe('Demo playground');
+    expect(store.getState().undoNotices.at(-1)?.toast.title).toBe('In the app');
     expect(entryOf()?.thread.replyPostedAt).toBeNull();
   });
 
@@ -132,7 +132,7 @@ describe('the simulated review fix', () => {
       store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: THREAD }),
     ).rejects.toThrow();
     const notice = store.getState().undoNotices.at(-1);
-    expect(notice?.toast.title).toBe('Demo playground');
+    expect(notice?.toast.title).toBe('In the app');
     expect(entryOf()?.thread.replyPostedAt).toBeNull();
   });
 });

@@ -4,7 +4,7 @@ type Params = {
   readonly message: string;
 };
 
-const DEMO_NOTICE_TITLE = 'Demo playground';
+const DEMO_NOTICE_TITLE = 'In the app';
 
 export const showDemoNotice = ({ message }: Params): void => {
   useAppStore.setState((state) => ({
