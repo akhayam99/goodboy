@@ -8,7 +8,7 @@ A workflow run starts from the New session page: pick **Workflow**, then **Orche
 
 ### Orchestrated
 
-Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.
+Give a goal and a model picks each next step, with its role, model, effort and a reason. It stops when done or blocked.
 
 ### A preset as the plan a run starts from
 

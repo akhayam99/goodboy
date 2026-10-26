@@ -12,7 +12,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-- **Welcome to Goodboy**: Four short steps take you from install to a first agent reading your code: Agents, Workspace, Tools, which is optional, and First session.
+- **Welcome to Goodboy**: Four short steps take you from install to a first agent reading your code.
 - **Your agents**: Goodboy runs the coding agents already on this Mac, and one ready agent is enough.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
@@ -116,7 +116,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
 - **Start a workflow**: A workflow run starts from the New session page: pick Workflow, then Orchestrated or Preset, and press Start workflow.
-- **Orchestrated**: Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.
+- **Orchestrated**: Give a goal and a model picks each next step, with its role, model, effort and a reason.
 - **Run defaults**: Set what every new run starts with in the Run defaults tab.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.

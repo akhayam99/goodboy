@@ -19,7 +19,7 @@
       "items": [
         {
           "title": "Welcome to Goodboy",
-          "text": "Four short steps take you from install to a first agent reading your code: Agents, Workspace, Tools, which is optional, and First session.",
+          "text": "Four short steps take you from install to a first agent reading your code.",
           "group": "Set up",
           "main": true
         },
@@ -523,7 +523,7 @@
         },
         {
           "title": "Orchestrated",
-          "text": "Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.",
+          "text": "Give a goal and a model picks each next step, with its role, model, effort and a reason.",
           "group": "Workflows",
           "main": true
         },
@@ -1209,6 +1209,12 @@
           "group": "Agents",
           "also": "stop and continue",
           "shown": true
+        },
+        {
+          "title": "Quiet agents",
+          "text": "Tell a working agent from a stuck one: a running agent that wrote nothing for 5 minutes says how long it has been quiet.",
+          "group": "Agents",
+          "also": "quiet agents"
         },
         {
           "title": "Turn footer",

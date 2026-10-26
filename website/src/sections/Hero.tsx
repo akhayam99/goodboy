@@ -24,7 +24,7 @@ export const Hero = () => {
         <div className="heroCopy">
           <Eyebrow text="Free desktop ADE, built in public" kind="page" className="rise" />
           <h1 id="hero-title" className="display rise" style={rise(1)}>
-            Give your agents a structure to work in
+            Give every task a structure to work in
           </h1>
           <p className="lead rise" style={rise(2)}>
             Goodboy runs coding agents side by side on your own repositories, one session for each
