@@ -28,10 +28,13 @@ describe('the result each action shows before the scene moves on', () => {
 
   it('closes the limits popover once its result has been read', () => {
     const peek = hintOf({ id: 'agent-limits-peek' });
-    const outside = vi.fn();
-    document.body.addEventListener('pointerdown', outside);
+    const backdrop = document.createElement('div');
+    backdrop.className = 'fixed inset-0 z-popover-backdrop';
+    const closed = vi.fn();
+    backdrop.addEventListener('click', closed);
+    document.body.append(backdrop);
     peek.settle?.({ root: document });
-    document.body.removeEventListener('pointerdown', outside);
-    expect(outside).toHaveBeenCalledTimes(1);
+    backdrop.remove();
+    expect(closed).toHaveBeenCalledTimes(1);
   });
 });

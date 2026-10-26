@@ -130,7 +130,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
     settle: ({ root }) => {
-      root.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      root.querySelector<HTMLElement>('.z-popover-backdrop')?.click();
     },
     revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
