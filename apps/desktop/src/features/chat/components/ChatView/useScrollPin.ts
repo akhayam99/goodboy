@@ -189,8 +189,12 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     for (const name of POINTER_END_EVENTS) {
       window.removeEventListener(name, releaseGesture);
     }
-    applyFollow();
-  }, [applyFollow]);
+    const el = scrollerRef.current;
+    if (el === null || isAnchoredRef.current) {
+      return;
+    }
+    setPinned(el.scrollHeight - el.scrollTop - el.clientHeight < PIN_TOLERANCE_PX);
+  }, []);
 
   const armHoldTimer = useCallback(() => {
     if (isDraggingRef.current) {

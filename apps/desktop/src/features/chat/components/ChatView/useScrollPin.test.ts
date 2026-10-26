@@ -127,6 +127,9 @@ describe('useScrollPin', () => {
     box.scrollTop = 490;
     act(() => result.current.onScroll());
     expect(result.current.pinned).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
 
     box.scrollHeight = 1600;
     rerender({ items: 3 });
@@ -300,6 +303,30 @@ describe('useScrollPin', () => {
       window.dispatchEvent(new Event('pointerup'));
     });
     expect(box.scrollTop).toBe(2499);
+  });
+
+  it('keeps a drag released before its scroll event fires', () => {
+    const box: Box = { scrollHeight: 2000, scrollTop: 0, clientHeight: 500 };
+    const { result } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(1500);
+
+    act(() => result.current.onPointerDown({ target: document.createElement('div') }));
+    box.scrollTop = 1400;
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    expect(box.scrollTop).toBe(1400);
+    expect(result.current.pinned).toBe(false);
+
+    act(() => result.current.onScroll());
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(1400);
+    expect(result.current.pinned).toBe(false);
   });
 
   it('leaves a 1 px downward drag from an answer anchor where the reader put it', () => {
