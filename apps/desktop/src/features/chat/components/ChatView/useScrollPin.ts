@@ -50,6 +50,8 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
   const isAnchoredRef = useRef(false);
   const isLockedRef = useRef(false);
   const ownTopRef = useRef<number | null>(null);
+  const lastTopRef = useRef<number | null>(null);
+  const isUserInputRef = useRef(false);
   const observerRef = useRef<ResizeObserver | null>(null);
   const observedRef = useRef<Element | null>(null);
   const overflowRef = useRef(onRevealOverflow);
@@ -68,6 +70,8 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     if (!el || (!pinnedRef.current && !isAnchoredRef.current)) {
       return;
     }
+    isUserInputRef.current = false;
+    lastTopRef.current = null;
     const answers = [...el.querySelectorAll<HTMLElement>(ANSWER_SELECTOR)];
     const answer = answers[answers.length - 1];
     if (answer === undefined) {
@@ -169,6 +173,16 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     }
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
     setAtTop(el.scrollTop < PIN_TOLERANCE_PX);
+    const lastTop = lastTopRef.current ?? ownTopRef.current;
+    lastTopRef.current = el.scrollTop;
+    const isUserInput = isUserInputRef.current;
+    isUserInputRef.current = false;
+    if (isUserInput && lastTop !== null && el.scrollTop < lastTop) {
+      isAnchoredRef.current = false;
+      stopSettling();
+      setPinned(false);
+      return;
+    }
     const ownTop = ownTopRef.current;
     const isOwn = ownTop !== null && Math.abs(el.scrollTop - ownTop) <= OWN_SCROLL_TOLERANCE_PX;
     if (isOwn) {
@@ -193,6 +207,11 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     setPinned(false);
   };
 
+  const onUserScroll = useCallback(() => {
+    isUserInputRef.current = true;
+    stopSettling();
+  }, [stopSettling]);
+
   const jumpToLatest = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) {
@@ -211,7 +230,7 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     pinned,
     atTop,
     onScroll,
-    onUserScroll: stopSettling,
+    onUserScroll,
     jumpToLatest,
     isHolding,
   };

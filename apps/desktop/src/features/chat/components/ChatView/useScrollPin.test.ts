@@ -118,4 +118,46 @@ describe('useScrollPin', () => {
     });
     expect(box.scrollTop).toBe(1100);
   });
+
+  it('lets go on the first upward nudge, however small', () => {
+    const box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(500);
+
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 499;
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(false);
+
+    box.scrollHeight = 1400;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(499);
+  });
+
+  it('never moves an unpinned view toward the bottom while rows keep streaming', () => {
+    const box = { scrollHeight: 3000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    const tops: number[] = [];
+    for (let step = 0; step < 6; step += 1) {
+      act(() => result.current.onUserScroll());
+      box.scrollTop -= 1;
+      act(() => result.current.onScroll());
+      box.scrollHeight += 120;
+      rerender({ items: 2 + step });
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      tops.push(box.scrollTop);
+    }
+    expect(tops).toEqual([2499, 2498, 2497, 2496, 2495, 2494]);
+  });
 });

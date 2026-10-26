@@ -43,7 +43,8 @@ import { JumpToLatest } from './JumpToLatest';
 import { firstUnseenRowKeyOf } from './firstUnseenRowKeyOf';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { revealPacer } from '../../reveal/revealPacer';
-import { USER_SCROLL_EVENTS, useScrollPin } from './useScrollPin';
+import { useScrollPin } from './useScrollPin';
+import { listenUserInput } from './listenUserInput';
 import { findRetrySource } from './findRetrySource';
 import { buildRetryOverride } from './buildRetryOverride';
 import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
@@ -278,20 +279,17 @@ export const ChatView = ({
   );
 
   useLayoutEffect(() => {
-    const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
-    if (!viewport) {
+    const inputRoot = fadeHostRef.current;
+    const viewport = inputRoot?.querySelector<HTMLDivElement>('.overflow-y-auto');
+    if (inputRoot == null || viewport == null) {
       return;
     }
     scrollerRef.current = viewport;
     viewport.addEventListener('scroll', onScroll, { passive: true });
-    for (const name of USER_SCROLL_EVENTS) {
-      viewport.addEventListener(name, onUserScroll, { passive: true });
-    }
+    const stopInput = listenUserInput({ root: inputRoot, onInput: onUserScroll });
     return () => {
       viewport.removeEventListener('scroll', onScroll);
-      for (const name of USER_SCROLL_EVENTS) {
-        viewport.removeEventListener(name, onUserScroll);
-      }
+      stopInput();
     };
   }, [scrollerRef, onScroll, onUserScroll]);
 
