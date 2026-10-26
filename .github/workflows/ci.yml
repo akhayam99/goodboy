@@ -65,7 +65,7 @@ jobs:
         run: pnpm turbo run typecheck
 
       - name: website deps
-        run: pnpm --dir website install --frozen-lockfile
+        run: pnpm install --ignore-workspace --dir website --frozen-lockfile
 
       - name: typed lint
         run: pnpm run lint:ts
