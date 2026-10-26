@@ -26,6 +26,9 @@ const scroller = (box: Box): HTMLDivElement =>
     get clientHeight() {
       return box.clientHeight;
     },
+    scrollTo: () => {
+      box.scrollTop = box.scrollHeight - box.clientHeight;
+    },
     contains: () => box.isInside === true,
     getBoundingClientRect: () => ({ top: 0, bottom: box.clientHeight }),
     querySelectorAll: () =>
@@ -327,6 +330,39 @@ describe('useScrollPin', () => {
     });
     expect(box.scrollTop).toBe(1400);
     expect(result.current.pinned).toBe(false);
+  });
+
+  it('keeps following when content grows during a downward wheel hold at the bottom', () => {
+    const box: Box = { scrollHeight: 2000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    act(() => result.current.jumpToLatest());
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(true);
+
+    act(() => result.current.onUserScroll());
+    box.scrollHeight += 64;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => result.current.onScroll());
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(result.current.pinned).toBe(true);
+    expect(box.scrollTop).toBe(1564);
+
+    box.scrollHeight += 120;
+    rerender({ items: 3 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.pinned).toBe(true);
+    expect(box.scrollTop).toBe(1684);
   });
 
   it('leaves a 1 px downward drag from an answer anchor where the reader put it', () => {
