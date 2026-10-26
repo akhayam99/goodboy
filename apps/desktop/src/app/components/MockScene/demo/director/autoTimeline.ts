@@ -1,4 +1,10 @@
-import { brandId, type ProviderRunId, type TurnEvent, type WorkflowId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type TurnEvent,
+  type WorkflowId,
+} from '@goodboy/types';
 import { agentPlace } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
@@ -6,9 +12,11 @@ import {
   AUTO_ROOT_ID,
   AUTO_SESSION,
   IMPLEMENTER_ID,
-  autoSceneOf,
+  TESTER_ID,
 } from '../../scenes/u24/autoSceneSeed';
 import type { DemoCue, DemoTimeline, DirectorStore, TimelineParams } from './directorTypes';
+import { AUTO_STORY, LEDGER_ID } from './autoStory';
+import { installAutoWorld } from './installAutoWorld';
 import { installDemoWorld } from './installDemoWorld';
 import { appendTurnEvents } from './appendTurnEvents';
 import { applyAutoScene } from './applyAutoScene';
@@ -23,14 +31,8 @@ import { registerTreeStopPort } from '../../../../../features/auto/treeStopPort'
 import { registerTreeRetryPort } from '../../../../../features/auto/treeRetryPort';
 
 const APPROVAL_PREFIX = 'Approved plan v';
-const PLAN_AT_MS = 1400;
-const IMPLEMENTER_NOTE =
-  'Reading postCredit and applyCredit first. Then the key moves out of the retry loop and applyCredit learns to refuse a repeated key.';
-
-const repliesOf = (): ReadonlyArray<string> =>
-  autoSceneOf({ state: 'done' }).events.flatMap((event) =>
-    event.kind === 'assistant_text' ? [event.delta] : [],
-  );
+const PLAN_AT_MS = 500;
+const PLAN_GAP_MS = 500;
 
 type RunParams = {
   readonly label: string;
@@ -78,14 +80,15 @@ type CuesParams = {
 };
 
 const planCues = ({ runId }: CuesParams): ReadonlyArray<DemoCue> => {
-  const [first = '', second = ''] = repliesOf();
+  const { first, second } = AUTO_STORY;
   const planRun = runOf({ label: 'plan' });
-  const secondAt = textCuesEndMs({ atMs: PLAN_AT_MS, text: first }) + 1600;
-  const planAt = textCuesEndMs({ atMs: secondAt, text: second }) + 400;
+  const firstEndAt = textCuesEndMs({ atMs: PLAN_AT_MS, text: first });
+  const secondAt = firstEndAt + PLAN_GAP_MS;
+  const planAt = textCuesEndMs({ atMs: secondAt, text: second }) + 300;
   return [
     ...textCues({ atMs: PLAN_AT_MS, agentId: AUTO_ROOT_ID, runId, text: first }),
     {
-      atMs: secondAt - 1200,
+      atMs: firstEndAt,
       apply: ({ store, at }) => {
         applyAutoScene({ store, state: 'delegating', at, implementerRunId: runId });
         startAgentTurn({
@@ -119,14 +122,28 @@ type WorkParams = {
   readonly isApproval: boolean;
 };
 
+type NoteParams = {
+  readonly agentId: AgentId;
+  readonly runId: ProviderRunId;
+  readonly text: string;
+};
+
 const workCues = ({ runId, isApproval }: WorkParams): ReadonlyArray<DemoCue> => {
-  const replies = repliesOf();
-  const third = replies[2] ?? '';
-  const final = replies[3] ?? '';
+  const { third, final } = AUTO_STORY;
   const implementerRun = runOf({ label: 'implementer' });
+  const testerRun = runOf({ label: 'tester' });
+  const ledgerRun = runOf({ label: 'ledger' });
   const finalRun = runOf({ label: 'final' });
-  const noteAt = isApproval ? textCuesEndMs({ atMs: 1000, text: third }) + 600 : 1200;
-  const doneAt = textCuesEndMs({ atMs: noteAt, text: IMPLEMENTER_NOTE }) + 2200;
+  const noteAt = isApproval ? textCuesEndMs({ atMs: 600, text: third }) + 300 : 600;
+  const notes: ReadonlyArray<NoteParams> = [
+    { agentId: IMPLEMENTER_ID, runId: implementerRun, text: AUTO_STORY.implementerNote },
+    { agentId: TESTER_ID, runId: testerRun, text: AUTO_STORY.testerNote },
+    { agentId: LEDGER_ID, runId: ledgerRun, text: AUTO_STORY.ledgerNote },
+  ];
+  const doneAt =
+    Math.max(
+      ...notes.map((note, index) => textCuesEndMs({ atMs: noteAt + index * 500, text: note.text })),
+    ) + 1500;
   const start: ReadonlyArray<DemoCue> = isApproval
     ? [
         {
@@ -136,17 +153,19 @@ const workCues = ({ runId, isApproval }: WorkParams): ReadonlyArray<DemoCue> => 
             startAgentTurn({ store, sessionId: AUTO_SESSION.id, agentId: AUTO_ROOT_ID, runId, at });
           },
         },
-        ...textCues({ atMs: 1000, agentId: AUTO_ROOT_ID, runId, text: third }),
+        ...textCues({ atMs: 600, agentId: AUTO_ROOT_ID, runId, text: third }),
       ]
     : [];
   return [
     ...start,
-    ...textCues({
-      atMs: noteAt,
-      agentId: IMPLEMENTER_ID,
-      runId: implementerRun,
-      text: IMPLEMENTER_NOTE,
-    }),
+    ...notes.flatMap((note, index) =>
+      textCues({
+        atMs: noteAt + index * 500,
+        agentId: note.agentId,
+        runId: note.runId,
+        text: note.text,
+      }),
+    ),
     {
       atMs: doneAt,
       apply: ({ store, at }) => {
@@ -173,6 +192,7 @@ const workCues = ({ runId, isApproval }: WorkParams): ReadonlyArray<DemoCue> => 
 
 const installAutoActions = ({ store }: FlowParams): void => {
   installDemoWorld({ store });
+  installAutoWorld({ store });
   const simulatedSend = store.getState().sendTurn;
   const simulatedSpawn = store.getState().spawnAgent;
   const spawnAgent: AppStore['spawnAgent'] = async (sessionId, options) => {
@@ -239,7 +259,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
           })),
         },
       }));
-      for (const agentId of [AUTO_ROOT_ID, IMPLEMENTER_ID]) {
+      for (const agentId of [AUTO_ROOT_ID, IMPLEMENTER_ID, TESTER_ID, LEDGER_ID]) {
         if (store.getState().agentTurnState[agentId]?.kind !== 'running') {
           continue;
         }

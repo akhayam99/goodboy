@@ -345,7 +345,7 @@ an anchor, and two checks. A frame (`DemoBeat`) is another scene loaded in an
 iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`), so every
 frame gets a clean store and its own timers. The stage fills the space the page
 leaves it and the app fills the stage: a frame's viewport is the stage box
-divided by a scale that never goes below what keeps it at 1100 by 700 (the app
+divided by a scale that never goes below what keeps it at 1280 by 780 (the app
 itself runs from 1024 by 700) and never above 1, so the real layout adapts to
 the window and the text stays at its real size (`stageFitOf.ts`, measured by
 `useStageBox`). A frame can ask for a smaller floor and a larger scale
@@ -467,7 +467,15 @@ drafted reply that stays ready to publish, and Keep the draft on an edited
 comment, which clears the change in place (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
 brief once the visitor sends a message (`agentTimeline.ts`,
-`limitsHandoffCues.ts`). Push and publish first preview the approved fixes
+`limitsHandoffCues.ts`). The Auto frame tells the same Harborline story as the
+other groups: `installAutoWorld.ts` replaces what the seeded run world says
+(two payments-api branches, `hl/fix-duplicate-credit` and
+`hl/redelivery-tests`, and `ledger-core` on `hl/fix-duplicate-credit`, no pull
+request yet, HBL-412 and its Sentry issue as the only links, no earlier
+presets), `castAutoScene.ts` retells the delegations (Planner, Implementer,
+Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
+and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
+they are. Push and publish first preview the approved fixes
 and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
 say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never

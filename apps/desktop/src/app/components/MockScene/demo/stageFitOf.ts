@@ -15,7 +15,7 @@ export type StageFit = {
   readonly height: number;
 };
 
-export const DEFAULT_STAGE_SIZE: StageSize = { minWidth: 1100, minHeight: 700, maxScale: 1 };
+export const DEFAULT_STAGE_SIZE: StageSize = { minWidth: 1280, minHeight: 780, maxScale: 1 };
 
 type Params = {
   readonly box: StageBox;

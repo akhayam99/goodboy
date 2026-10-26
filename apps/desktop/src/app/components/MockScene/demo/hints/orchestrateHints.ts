@@ -13,8 +13,8 @@ type TurnParams = StateParams & {
 const APPROVAL_PREFIX = 'Approved plan';
 const AUTO_START = 'textarea[aria-label="Start a run"]';
 const AUTO_APPROVE = '[data-demo-anchor="auto-approve"]';
-const AUTO_CHILD =
-  'ul[aria-label="Delegations"] > li[data-delegation] > span > button[aria-label^="Open "]';
+const AUTO_LAST_CHILD =
+  'ul[aria-label="Delegations"] > li[data-delegation]:last-of-type > span > button[aria-label^="Open "]';
 
 const isAutoSession = ({ state }: StateParams): boolean => {
   const sessionId = state.currentSessionId;
@@ -58,8 +58,9 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Give Auto a goal',
     copy: 'Give Auto a goal',
     instruction:
-      'Describe a goal and press Start: Auto plans it and splits the work between agents.',
-    result: 'Auto is planning: a planner agent reads the code before anything is written.',
+      'Type a goal, for example "Stop retried webhooks posting a second credit", and press Start.',
+    result:
+      'Auto is planning: a Planner reads payments-api and ledger-core before anything is written.',
     beat: 0,
     anchor: AUTO_START,
     focus: 'section[aria-label="Start a run"]',
@@ -72,8 +73,8 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     id: 'auto-approve',
     label: 'Approve the plan',
     copy: 'Approve to go',
-    instruction: 'Press Approve plan: Auto then starts the helper agents that run each part.',
-    result: 'The plan is approved: Auto starts the helpers.',
+    instruction: 'Press Approve plan: Auto then starts three helpers, each on its own branch.',
+    result: 'Three helpers started: two on payments-api and one on ledger-core.',
     beat: 0,
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
@@ -84,14 +85,15 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     id: 'auto-child',
     label: 'Follow a helper',
     copy: 'Follow a helper',
-    instruction: 'Open a helper agent to follow what it is doing and what it has finished.',
-    result: 'The helper opened: you read its work next to the plan.',
+    instruction:
+      'Open a helper, for example the ledger-core one, to follow what it does on its branch.',
+    result: 'The helper opened: its brief, its work and its checks are next to Auto.',
     beat: 0,
-    anchor: AUTO_CHILD,
+    anchor: AUTO_LAST_CHILD,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) &&
       state.drawer?.kind !== 'auto-child' &&
-      hasElement({ root, selector: AUTO_CHILD }),
+      hasElement({ root, selector: AUTO_LAST_CHILD }),
     doneWhen: ({ state }) => state.drawer?.kind === 'auto-child',
   },
 ];

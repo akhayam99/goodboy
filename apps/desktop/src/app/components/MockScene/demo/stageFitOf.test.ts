@@ -12,11 +12,13 @@ describe('stageFitOf', () => {
 
   it('shrinks the scale just enough to keep the app at its minimum viewport', () => {
     const fit = stageFitOf({ box: { width: 1000, height: 600 }, size: DEFAULT_STAGE_SIZE });
-    expect(fit.scale).toBeCloseTo(600 / 700);
+    expect(fit.scale).toBeCloseTo(
+      Math.min(1000 / DEFAULT_STAGE_SIZE.minWidth, 600 / DEFAULT_STAGE_SIZE.minHeight),
+    );
     expect(fit.width * fit.scale).toBeCloseTo(1000);
     expect(fit.height * fit.scale).toBeCloseTo(600);
-    expect(fit.width).toBeGreaterThanOrEqual(DEFAULT_STAGE_SIZE.minWidth);
-    expect(fit.height).toBeGreaterThanOrEqual(DEFAULT_STAGE_SIZE.minHeight);
+    expect(fit.width).toBeGreaterThanOrEqual(DEFAULT_STAGE_SIZE.minWidth - 0.001);
+    expect(fit.height).toBeGreaterThanOrEqual(DEFAULT_STAGE_SIZE.minHeight - 0.001);
   });
 
   it('draws a small window larger when its size allows a scale above one', () => {
