@@ -15,7 +15,6 @@ export type CoachMark = {
   readonly side: HintSide;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
-  readonly isSpotlit: boolean;
 };
 
 type Size = {
@@ -27,6 +26,7 @@ type Props = {
   readonly coach: CoachMark;
   readonly scale: number;
   readonly bounds: Size;
+  readonly isSpotlit: boolean;
   readonly onHide: () => void;
 };
 
@@ -82,7 +82,7 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onHide }: Props) => {
+export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -122,7 +122,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onHide }: Props) => {
     height === null
       ? null
       : placeCallout({
-          target: coach.isSpotlit ? hole : target,
+          target: isSpotlit ? hole : target,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
@@ -156,7 +156,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onHide }: Props) => {
 
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">
-      {coach.isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
+      {isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
       <div
         ref={ringRef}
         aria-hidden

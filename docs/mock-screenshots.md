@@ -342,8 +342,16 @@ list of steps and a list of frames. A step is a hint (`hints/demoHintTypes.ts`):
 `label` for the rail, `copy` for the coach mark, `instruction` for the header,
 `result` for the line that follows the action, `beat` for the frame it lives in,
 an anchor, and two checks. A frame (`DemoBeat`) is another scene loaded in an
-iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by
-900 and scaled to fit, so every frame gets a clean store and its own timers.
+iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`), so every
+frame gets a clean store and its own timers. The stage fills the space the page
+leaves it and the app fills the stage: a frame's viewport is the stage box
+divided by a scale that never goes below what keeps it at 1100 by 700 (the app
+itself runs from 1024 by 700) and never above 1, so the real layout adapts to
+the window and the text stays at its real size (`stageFitOf.ts`, measured by
+`useStageBox`). A frame can ask for a smaller floor and a larger scale
+(`DemoBeat.size`): the Set up wizard, which is a small window in the app, is
+drawn at 880 by 580 and up to 1.5 times so it fills the stage like the real
+onboarding window.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
 opens Set up (`defaultGroupId.ts`).
 

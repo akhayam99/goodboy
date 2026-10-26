@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
-import { useStageScale } from './useStageScale';
-import { APP_SIZE } from './appSize';
+import { useStageBox } from './useStageBox';
+import { stageFitOf } from './stageFitOf';
+import { isHoleTooBig } from './hints/isHoleTooBig';
 import { DemoStageLoading } from './DemoStageLoading';
 import {
   DEMO_PROTOCOL,
@@ -17,9 +18,7 @@ import { DemoHintSlot } from './DemoHintSlot';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
-const APP_WIDTH = APP_SIZE.width;
-const APP_HEIGHT = APP_SIZE.height;
-const STAGE_INSET = 16;
+const STAGE_INSET = 4;
 const SILENT_LIMIT_MS = 20000;
 const FADE_MS = 320;
 
@@ -41,6 +40,10 @@ type ThemeParams = {
   readonly theme: DemoTheme;
 };
 
+type SpotlightParams = {
+  readonly isOn: boolean;
+};
+
 type Props = {
   readonly theme: DemoTheme;
   readonly onThemeChange: (params: ThemeParams) => void;
@@ -56,6 +59,7 @@ type Props = {
   readonly offscreen: OffscreenHint | undefined;
   readonly reveal: HintReveal | undefined;
   readonly onHintReport: (params: HintReportParams) => void;
+  readonly onSpotlightChange: (params: SpotlightParams) => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
 };
@@ -107,14 +111,22 @@ export const DemoStage = ({
   offscreen,
   reveal,
   onHintReport,
+  onSpotlightChange,
   onHideHint,
   onRevealHint,
 }: Props) => {
-  const { ref, scale, hasRoom } = useStageScale({
-    width: APP_WIDTH,
-    height: APP_HEIGHT,
-    inset: STAGE_INSET,
-  });
+  const { ref, box, hasRoom } = useStageBox({ inset: STAGE_INSET });
+  const activeFit = stageFitOf({ box, size: activeFrame.size });
+  const isSpotlit =
+    coach !== undefined &&
+    !isHoleTooBig({
+      anchor: coach.rect,
+      focus: coach.focus,
+      bounds: { width: activeFit.width, height: activeFit.height },
+    });
+  useEffect(() => {
+    onSpotlightChange({ isOn: isSpotlit && coach !== undefined });
+  }, [isSpotlit, coach, onSpotlightChange]);
   const [frames, setFrames] = useState<ReadonlyArray<StageFrame>>([]);
   const [mountedKeys, setMountedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [shownKey, setShownKey] = useState<string | undefined>(undefined);
@@ -371,55 +383,49 @@ export const DemoStage = ({
     <div ref={ref} className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center">
       {hasRoom ? (
         <div
-          className="flex items-center justify-center"
-          style={{
-            width: APP_WIDTH * scale + STAGE_INSET * 2,
-            height: APP_HEIGHT * scale + STAGE_INSET * 2,
-          }}
+          data-testid="demo-stage"
+          className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
+          style={{ width: box.width, height: box.height }}
         >
-          <div
-            data-testid="demo-stage"
-            className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
-            style={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
-          >
-            {mountedKeys.has(currentKey) ? null : <DemoStageLoading label={activeFrame.label} />}
-            {coach !== undefined && shownKey === currentKey ? (
-              <DemoCoachMark
-                coach={coach}
-                scale={scale}
-                bounds={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
-                onHide={onHideHint}
+          {mountedKeys.has(currentKey) ? null : <DemoStageLoading label={activeFrame.label} />}
+          {coach !== undefined && shownKey === currentKey ? (
+            <DemoCoachMark
+              coach={coach}
+              scale={activeFit.scale}
+              bounds={{ width: box.width, height: box.height }}
+              isSpotlit={isSpotlit}
+              onHide={onHideHint}
+            />
+          ) : null}
+          {offscreen !== undefined && shownKey === currentKey ? (
+            <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
+          ) : null}
+          {frames.map((frame) => {
+            const isVisible = frame.key === visibleKey && shownKey !== undefined;
+            const isFading = frame.key === fadingKey;
+            const fit = stageFitOf({ box, size: frame.size });
+            return (
+              <iframe
+                key={frame.key}
+                ref={bindFrame({ key: frame.key })}
+                title={isVisible ? 'Goodboy app' : 'Goodboy app, next step'}
+                src={frame.src}
+                tabIndex={isVisible ? 0 : -1}
+                aria-hidden={isVisible ? undefined : true}
+                data-shown={frame.key === visibleKey ? 'true' : 'false'}
+                onLoad={(event) => watch({ key: frame.key, frame: event.currentTarget })}
+                className={cn(
+                  'absolute left-0 top-0 origin-top-left border-0',
+                  isVisible
+                    ? 'z-10 opacity-100 motion-safe:transition-opacity motion-safe:duration-300'
+                    : 'pointer-events-none',
+                  isFading ? 'z-0 opacity-100' : '',
+                  !isVisible && !isFading ? 'opacity-0' : '',
+                )}
+                style={{ width: fit.width, height: fit.height, transform: `scale(${fit.scale})` }}
               />
-            ) : null}
-            {offscreen !== undefined && shownKey === currentKey ? (
-              <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
-            ) : null}
-            {frames.map((frame) => {
-              const isVisible = frame.key === visibleKey && shownKey !== undefined;
-              const isFading = frame.key === fadingKey;
-              return (
-                <iframe
-                  key={frame.key}
-                  ref={bindFrame({ key: frame.key })}
-                  title={isVisible ? 'Goodboy app' : 'Goodboy app, next step'}
-                  src={frame.src}
-                  tabIndex={isVisible ? 0 : -1}
-                  aria-hidden={isVisible ? undefined : true}
-                  data-shown={frame.key === visibleKey ? 'true' : 'false'}
-                  onLoad={(event) => watch({ key: frame.key, frame: event.currentTarget })}
-                  className={cn(
-                    'absolute left-0 top-0 origin-top-left border-0',
-                    isVisible
-                      ? 'z-10 opacity-100 motion-safe:transition-opacity motion-safe:duration-300'
-                      : 'pointer-events-none',
-                    isFading ? 'z-0 opacity-100' : '',
-                    !isVisible && !isFading ? 'opacity-0' : '',
-                  )}
-                  style={{ width: APP_WIDTH, height: APP_HEIGHT, transform: `scale(${scale})` }}
-                />
-              );
-            })}
-          </div>
+            );
+          })}
         </div>
       ) : null}
     </div>

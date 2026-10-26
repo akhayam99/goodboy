@@ -5,10 +5,8 @@ import type { DemoHintReport, DemoRect } from '../director/demoProtocol';
 import type { DemoHint } from '../hints/demoHintTypes';
 import type { HintProgress } from '../hints/hintProgressTypes';
 import { hintTally, type HintTally } from '../hints/hintTally';
-import { isHoleTooBig } from '../hints/isHoleTooBig';
 import { RESULT_DWELL_MS } from '../hints/resultDwellMs';
 import { stepsOf, type Steps } from '../hints/stepsOf';
-import { APP_SIZE } from '../appSize';
 import type { HintProgressControls } from '../useHintProgress';
 import { useHintsEnabled } from '../useHintsEnabled';
 
@@ -194,7 +192,6 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       side: activeHint.side ?? 'right',
       rect: current.rect,
       focus: current.focus,
-      isSpotlit: !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
     };
   }, [isOpen, activeHint, current, steps.activeIndex, hints.length]);
 

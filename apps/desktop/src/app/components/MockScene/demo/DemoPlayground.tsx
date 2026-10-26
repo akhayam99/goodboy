@@ -32,6 +32,10 @@ type ToggleHintsParams = {
   readonly isEnabled: boolean;
 };
 
+type SpotlightParams = {
+  readonly isOn: boolean;
+};
+
 type AnnouncementParams = {
   readonly coach: DemoHints['coach'];
   readonly offscreen: DemoHints['offscreen'];
@@ -172,7 +176,8 @@ export const DemoPlayground = () => {
   useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
-  const isSpotlit = hints.coach?.isSpotlit === true;
+  const [isSpotlit, setIsSpotlit] = useState(false);
+  const onSpotlightChange = useCallback(({ isOn }: SpotlightParams) => setIsSpotlit(isOn), []);
 
   return (
     <div
@@ -235,6 +240,7 @@ export const DemoPlayground = () => {
               offscreen={hints.offscreen}
               reveal={hints.reveal}
               onHintReport={hints.onHintReport}
+              onSpotlightChange={onSpotlightChange}
               onHideHint={hints.hide}
               onRevealHint={hints.revealHint}
             />

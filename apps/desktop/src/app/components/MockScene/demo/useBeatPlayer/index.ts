@@ -3,6 +3,7 @@ import type { DemoBeat, DemoChapter } from '../demoChapters';
 import type { DemoReport } from '../director/demoProtocol';
 import { beatSrc } from '../beatSrc';
 import { frameKey } from '../frameKey';
+import { DEFAULT_STAGE_SIZE, type StageSize } from '../stageFitOf';
 
 type Params = {
   readonly chapter: DemoChapter;
@@ -16,6 +17,7 @@ export type StageFrame = {
   readonly key: string;
   readonly src: string;
   readonly label: string;
+  readonly size: StageSize;
 };
 
 export type FrameCommand = {
@@ -87,7 +89,8 @@ export const useBeatPlayer = ({
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
   const key = beat === undefined ? '' : frameKey({ beat, replayKey: current.replayKey });
   const label = beat?.label ?? chapter.title;
-  const frame = useMemo(() => ({ key, src, label }), [key, src, label]);
+  const size = beat?.size ?? DEFAULT_STAGE_SIZE;
+  const frame = useMemo(() => ({ key, src, label, size }), [key, src, label, size]);
   const preloadFrame = useMemo((): StageFrame | undefined => {
     if (preloadBeat === undefined) {
       return undefined;
@@ -96,6 +99,7 @@ export const useBeatPlayer = ({
       key: frameKey({ beat: preloadBeat, replayKey: 0 }),
       src: beatSrc({ beat: preloadBeat, theme }),
       label: preloadBeat.label,
+      size: preloadBeat.size ?? DEFAULT_STAGE_SIZE,
     };
   }, [preloadBeat, theme]);
   const keysRef = useRef<ReadonlyArray<string>>([]);
