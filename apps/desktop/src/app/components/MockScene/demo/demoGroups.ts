@@ -30,6 +30,6 @@ export const DEMO_GROUPS = {
   review: {
     id: 'review',
     title: 'Review and ship',
-    line: 'Inspect a change and prepare a review fix to publish',
+    line: 'Inspect a change, prepare a review fix to publish and free the old folders',
   },
 } as const satisfies Readonly<Record<string, DemoGroup>>;

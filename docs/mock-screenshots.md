@@ -477,9 +477,16 @@ question, agent and transcript (`BOARD_STORY_SESSION` in `BoardScene.tsx`),
 `libraryTimeline.ts` casts the library session, and `installReviewStory.ts`
 renames the resolve session and sets its Linear and Sentry links. A step with a
 `progress` line shows it in the header between its press and its result (Add
-note, Start fix). Push and publish first preview the approved fixes
-and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
-say that publishing stays local, so a reply never leaves the page. `&theme=dark`
+note, Start fix, the second press of the storage cleanup). Push and publish
+first preview the approved fixes and drafted replies from the simulated store
+(`demoPublicationPreview.ts`) and then settle without a notice. Review and ship
+ends in Settings, Storage: `demo-storage` (`scenes/demo/DemoStorageScene.tsx`)
+is the real Storage page with the three safe worktree folders of the story's
+merged branches (`hl/fix-duplicate-credit` on payments-api and on ledger-core,
+`hl/redelivery-tests` on payments-api) and one folder in use. Its timeline
+(`storageTimeline.ts`, `installStorageActions.ts`) swaps `removeStorageFolders`
+for a timed local removal that drops the folders and sets the outcome notice, so
+the size in Storage falls. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 

@@ -19,6 +19,8 @@ const FIX = 'button[data-review-verb="reviewComment.draft"]';
 const START_FIX = '[data-demo-anchor="resolve-start"]';
 const KEEP = 'button[data-review-verb="reviewComment.accept"]';
 const PUSH = 'button[data-branch-secondary="review.push"]';
+const STORAGE_REMOVE = '[data-demo-anchor="storage-remove"]';
+const STORAGE_CONFIRM = 'button[data-confirm-action="true"]';
 
 const isHandlerOpen = ({ root }: RootParams): boolean =>
   root.querySelector(HANDLER_ROW)?.getAttribute('aria-selected') === 'true';
@@ -159,12 +161,28 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Push the fix',
     copy: 'Push the branch',
     instruction: 'Press Push: the fix goes to the pull request branch, so the reviewer sees it.',
-    result:
-      'The push is previewed: in the app it goes to your Git host, here nothing leaves this page.',
+    result: 'The fix is pushed to the pull request branch, so the reviewer sees it.',
     beat: 1,
     anchor: PUSH,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: PUSH }),
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
+  },
+  {
+    id: 'review-storage',
+    label: 'Free the worktree folders',
+    copy: 'Free the space',
+    instruction:
+      'In Settings, Storage, press Remove 3 safe folders: the merged branches of this story no longer need their folders.',
+    result: 'The 3 folders are removed and their space is back. The branches stay.',
+    progress: 'Press Remove to confirm: the branches stay and only the folders go.',
+    beat: 2,
+    anchor: ({ root }) =>
+      hasElement({ root, selector: STORAGE_CONFIRM }) ? STORAGE_CONFIRM : STORAGE_REMOVE,
+    side: 'bottom',
+    revealWhen: ({ root }) =>
+      hasElement({ root, selector: STORAGE_REMOVE }) ||
+      hasElement({ root, selector: STORAGE_CONFIRM }),
+    doneWhen: ({ state }) => (state.storageOutcome?.removed ?? 0) > 0,
   },
 ];

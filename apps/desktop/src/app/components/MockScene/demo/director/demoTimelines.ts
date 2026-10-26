@@ -5,6 +5,7 @@ import { autoTimeline } from './autoTimeline';
 import { libraryTimeline } from './libraryTimeline';
 import { worldTimeline } from './worldTimeline';
 import { resolveTimeline } from './resolveTimeline';
+import { storageTimeline } from './storageTimeline';
 
 export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => DemoTimeline | null> =
   new Map([
@@ -19,4 +20,5 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['brand-diff', worldTimeline],
     ['resolve-queue-shell', resolveTimeline],
     ['resolve-fix-ready', resolveTimeline],
+    ['demo-storage', storageTimeline],
   ]);

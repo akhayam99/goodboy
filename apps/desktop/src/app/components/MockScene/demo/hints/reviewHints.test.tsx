@@ -20,6 +20,7 @@ import {
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { U25_B_RESOLVE_FIX_SCENES } from '../../scenes/u25/b-resolve-fix';
 import { BrandDiffScene } from '../../scenes/brand/DiffScene';
+import { DemoStorageScene } from '../../scenes/demo/DemoStorageScene';
 import { createHintEngine } from '../director/createHintEngine';
 import { createReplyRuns } from '../director/createReplyRuns';
 import { createSimulatedSend } from '../director/createSimulatedSend';
@@ -27,6 +28,7 @@ import type { DemoHintReport } from '../director/demoProtocol';
 import { installDemoIpc } from '../director/installDemoIpc';
 import { installDemoWorld } from '../director/installDemoWorld';
 import { installResolveActions } from '../director/installResolveActions';
+import { installStorageActions } from '../director/installStorageActions';
 import { REVIEW_HINTS } from './reviewHints';
 
 let store: StoryStore;
@@ -169,6 +171,7 @@ const THREAD = '[data-thread-id="PRRT_thread_retry_constant"]';
 const DRAFT = 'button[data-review-verb="reviewComment.draft"]';
 const ACCEPT = 'button[data-review-verb="reviewComment.accept"]';
 const SETTLED: ReadonlyArray<string> = ['diff-file', 'diff-note'];
+const PUSHED: ReadonlyArray<string> = REVIEW_HINTS.slice(0, -1).map((hint) => hint.id);
 
 describe('the Review and ship steps', () => {
   it('lists the diff, the comment fix and the push in order', () => {
@@ -180,6 +183,7 @@ describe('the Review and ship steps', () => {
       'resolve-start',
       'resolve-keep',
       'review-push',
+      'review-storage',
     ]);
   });
 
@@ -187,7 +191,27 @@ describe('the Review and ship steps', () => {
     const progressIds = REVIEW_HINTS.filter((hint) => hint.progress !== undefined).map(
       (hint) => hint.id,
     );
-    expect(progressIds).toEqual(['diff-note', 'resolve-start']);
+    expect(progressIds).toEqual(['diff-note', 'resolve-start', 'review-storage']);
+  });
+
+  it('credits the storage cleanup only once the folders are removed, and shows the result', async () => {
+    await mount({ Scene: DemoStorageScene });
+    act(() => {
+      installStorageActions({ store });
+    });
+    const { engine, tried, shown } = track({ settledIds: PUSHED });
+    await settle({ ms: 300 });
+    expect(shown()).toBe('review-storage');
+    expect(store.getState().storageFolders).toHaveLength(4);
+    await visitorClick({ selector: '[data-demo-anchor="storage-remove"]' });
+    expect(tried()).toEqual([]);
+    await visitorClick({ selector: 'button[data-confirm-action="true"]' });
+    expect(tried()).toEqual([]);
+    await settle({ ms: 1500 });
+    expect(tried()).toEqual(['review-storage']);
+    expect(store.getState().storageFolders.map((folder) => folder.origin)).toEqual(['in-use']);
+    expect(screen.getByText(/Removed 3 folders/)).toBeDefined();
+    engine.dispose();
   });
 
   it('credits opening the handler and leaving a line note, one at a time', async () => {

@@ -47,6 +47,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     beats: [
       { label: 'Diff', scene: 'brand-diff' },
       { label: 'Review comments', scene: 'resolve-fix-ready' },
+      { label: 'Storage', scene: 'demo-storage' },
     ],
   },
 ];

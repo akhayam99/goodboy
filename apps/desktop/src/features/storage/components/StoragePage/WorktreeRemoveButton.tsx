@@ -12,7 +12,7 @@ type Props = {
 export const WorktreeRemoveButton = ({ suggested, onStart }: Props) => {
   const bytes = suggested.reduce((sum, folder) => sum + (folder.sizeBytes ?? 0), 0);
   return (
-    <Button variant="secondary" size="sm" onClick={onStart}>
+    <Button variant="secondary" size="sm" data-demo-anchor="storage-remove" onClick={onStart}>
       <Trash2 size={ICON_SIZE.row} aria-hidden />
       Remove {suggested.length} safe {suggested.length === 1 ? 'folder' : 'folders'} ·{' '}
       {formatBytes({ bytes })}
