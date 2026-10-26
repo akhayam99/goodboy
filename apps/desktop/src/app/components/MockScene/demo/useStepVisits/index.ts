@@ -8,9 +8,11 @@ type Params = {
   readonly beatIndex: number;
 };
 
+type RestartParams = Params;
+
 export type StepVisitControls = {
   readonly visits: StepVisits;
-  readonly clear: () => void;
+  readonly restart: (params: RestartParams) => void;
 };
 
 const initial = (): StepVisits => readStepVisits({ fallback: {} });
@@ -33,11 +35,15 @@ export const useStepVisits = ({ chapterId, beatIndex }: Params): StepVisitContro
     setVisits(next);
   }, [chapterId, beatIndex]);
 
-  const clear = useCallback(() => {
-    writeStepVisits({ visits: {} });
-    latest.current = {};
-    setVisits({});
-  }, []);
+  const restart = useCallback(
+    ({ chapterId: restartId, beatIndex: restartIndex }: RestartParams) => {
+      const next = { [restartId]: [restartIndex] };
+      writeStepVisits({ visits: next });
+      latest.current = next;
+      setVisits(next);
+    },
+    [],
+  );
 
-  return { visits, clear };
+  return { visits, restart };
 };

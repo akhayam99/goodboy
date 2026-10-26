@@ -11,6 +11,8 @@ type Params = {
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly onReplay: () => void;
+  readonly onPreviousStep: () => void;
+  readonly onNextStep: () => void;
   readonly onShowHint: () => void;
   readonly onFrameShortcut: (params: FrameShortcutParams) => void;
 };
@@ -38,6 +40,8 @@ export const useDemoKeys = ({
   onPrevious,
   onNext,
   onReplay,
+  onPreviousStep,
+  onNextStep,
   onShowHint,
   onFrameShortcut,
 }: Params) =>
@@ -65,6 +69,16 @@ export const useDemoKeys = ({
         onNext();
         return;
       }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        onPreviousStep();
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        onNextStep();
+        return;
+      }
       if (event.key === 'h' || event.key === 'H') {
         event.preventDefault();
         onShowHint();
@@ -75,5 +89,5 @@ export const useDemoKeys = ({
         onReplay();
       }
     },
-    [onPrevious, onNext, onReplay, onShowHint, onFrameShortcut],
+    [onPrevious, onNext, onReplay, onPreviousStep, onNextStep, onShowHint, onFrameShortcut],
   );

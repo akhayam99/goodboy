@@ -236,7 +236,7 @@ describe('demo playground chrome', () => {
     render(<DemoPlayground />);
     const rows = screen
       .getByRole('navigation', { name: 'Playground groups' })
-      .querySelectorAll('button');
+      .querySelectorAll('button[data-up-next]');
     expect(Array.from(rows).map((row) => row.getAttribute('data-up-next'))).toEqual([
       'none',
       'none',

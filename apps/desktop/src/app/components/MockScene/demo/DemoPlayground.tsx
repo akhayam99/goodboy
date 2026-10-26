@@ -6,13 +6,14 @@ import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
 import { DemoStage, type ShortcutRequest } from './DemoStage';
-import { DemoTimeline } from './DemoTimeline';
+import { DemoCompactNav } from './DemoCompactNav';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
 import { headerInstruction } from './hints/headerInstruction';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
+import { useStepVisits } from './useStepVisits';
 
 type ChapterParams = {
   readonly id: string;
@@ -61,6 +62,10 @@ export const DemoPlayground = () => {
   const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
   const hints = useDemoHints({ chapter, frameKey: player.frame.key });
+  const { visits, restart: restartVisits } = useStepVisits({
+    chapterId: chapter.id,
+    beatIndex: player.beatIndex,
+  });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -102,7 +107,7 @@ export const DemoPlayground = () => {
     hide: hideHints,
     onHintReport: onHintNote,
   } = hints;
-  const { replay, follow } = player;
+  const { replay, follow, goTo } = player;
   const onReplay = useCallback(() => {
     resetHints();
     replay();
@@ -110,13 +115,21 @@ export const DemoPlayground = () => {
   const firstChapter = DEMO_CHAPTERS[0];
   const onRestart = useCallback(() => {
     restartHints();
+    restartVisits({ chapterId: firstChapter.id, beatIndex: 0 });
     if (chapter.id === firstChapter.id) {
       replay();
       focusFrame();
       return;
     }
     goToChapter({ id: firstChapter.id });
-  }, [restartHints, chapter.id, firstChapter.id, replay, focusFrame, goToChapter]);
+  }, [restartHints, restartVisits, chapter.id, firstChapter.id, replay, focusFrame, goToChapter]);
+  const lastBeatIndex = chapter.beats.length - 1;
+  const onPreviousStep = useCallback(() => {
+    goTo({ index: Math.max(0, player.beatIndex - 1) });
+  }, [goTo, player.beatIndex]);
+  const onNextStep = useCallback(() => {
+    goTo({ index: Math.min(lastBeatIndex, player.beatIndex + 1) });
+  }, [goTo, player.beatIndex, lastBeatIndex]);
   const onToggleHints = useCallback(
     ({ isEnabled }: ToggleHintsParams) => {
       if (isEnabled) {
@@ -144,6 +157,8 @@ export const DemoPlayground = () => {
     onPrevious,
     onNext,
     onReplay,
+    onPreviousStep,
+    onNextStep,
     onShowHint: hints.show,
     onFrameShortcut,
   });
@@ -151,7 +166,7 @@ export const DemoPlayground = () => {
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
   const isSpotlit = hints.coach?.isSpotlit === true;
-  const isLastBeat = player.beatIndex === chapter.beats.length - 1;
+  const isLastBeat = player.beatIndex === lastBeatIndex;
   const isGroupDone =
     hints.tally.total > 0
       ? hints.tally.tried >= hints.tally.total
@@ -176,8 +191,11 @@ export const DemoPlayground = () => {
         <DemoRail
           chapters={DEMO_CHAPTERS}
           activeId={chapter.id}
+          beatIndex={player.beatIndex}
+          visits={visits}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
+          onSelectStep={goTo}
           onIntent={onIntent}
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
@@ -220,15 +238,18 @@ export const DemoPlayground = () => {
               offscreen: hints.offscreen,
             })}
           </p>
-          <DemoTimeline
+          <DemoCompactNav
             chapter={chapter}
-            player={player}
-            onReplay={onReplay}
+            groupNumber={chapterIndex + 1}
+            groupCount={DEMO_CHAPTERS.length}
+            beatIndex={player.beatIndex}
+            seen={visits[chapter.id] ?? []}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}
             next={nextChapter}
             isNextReady={isGroupDone}
             onNext={onNext}
+            onSelectStep={goTo}
           />
         </main>
       </div>

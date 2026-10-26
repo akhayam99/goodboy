@@ -33,11 +33,6 @@ type FollowParams = {
   readonly place: string;
 };
 
-export type BeatFill = {
-  readonly totalMs: number;
-  readonly startMs: number;
-};
-
 type GoToParams = {
   readonly index: number;
 };
@@ -57,10 +52,7 @@ type PlayerState = {
 
 export type BeatPlayer = {
   readonly beatIndex: number;
-  readonly isRunning: boolean;
   readonly isComplete: boolean;
-  readonly runKey: string;
-  readonly fill: BeatFill;
   readonly frame: StageFrame;
   readonly preloadFrame: StageFrame | undefined;
   readonly command: FrameCommand | undefined;
@@ -169,11 +161,6 @@ export const useBeatPlayer = ({
   const frameReport = current.reports.get(frame.key);
   const isShown = shownKey === frame.key;
   const isComplete = frameReport?.type === 'complete';
-  const isRunning = isShown && frameReport !== undefined && !isComplete;
-  const runKey = `${chapter.id}:${frameIndex}:${current.replayKey}`;
-  const totalMs = frameReport?.durationMs ?? 0;
-  const startMs = isComplete ? totalMs : (frameReport?.elapsedMs ?? 0);
-  const fill = useMemo(() => ({ totalMs, startMs }), [totalMs, startMs]);
   const isPlayable = isShown && frameReport !== undefined;
   const command = useMemo(
     (): FrameCommand | undefined => (isPlayable ? { key: frame.key, type: 'play' } : undefined),
@@ -246,10 +233,7 @@ export const useBeatPlayer = ({
 
   return {
     beatIndex,
-    isRunning,
     isComplete,
-    runKey,
-    fill,
     frame,
     preloadFrame,
     command,

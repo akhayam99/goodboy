@@ -161,6 +161,8 @@ const topBar = (): HTMLElement => {
   return bar;
 };
 
+const railOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Playground groups' });
+
 const currentStep = (): string =>
   document.querySelector('ol button[aria-current="step"]')?.textContent ?? '';
 
@@ -184,7 +186,7 @@ describe('demo playground', () => {
   it('keeps the rail on the same five groups as the phone page', () => {
     render(<DemoPlayground />);
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
-    const titles = Array.from(rail.querySelectorAll('button')).map(
+    const titles = Array.from(rail.querySelectorAll('button[data-up-next]')).map(
       (row) => row.querySelector('.text-row')?.textContent,
     );
     expect(titles).toEqual(Object.values(DEMO_GROUPS).map((group) => group.title));
@@ -203,7 +205,9 @@ describe('demo playground', () => {
     expect(visibleFrame().getAttribute('src')).toContain('scene=onboarding');
     expect(visibleFrame().getAttribute('src')).toContain('theme=dark');
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
-    expect(Array.from(rail.querySelectorAll('button')).map((row) => row.textContent)).toEqual([
+    expect(
+      Array.from(rail.querySelectorAll('button[data-up-next]')).map((row) => row.textContent),
+    ).toEqual([
       '01Set upOptional0 of 5 tried',
       '02Work with an agentUp next0 of 4 tried',
       '03Orchestrate0 of 6 tried',
@@ -240,7 +244,7 @@ describe('demo playground', () => {
   it('replays the group in a fresh frame', () => {
     render(<DemoPlayground />);
     const before = visibleFrame();
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
     const frames = document.querySelectorAll('iframe');
     expect(Array.from(frames).some((frame) => frame !== before)).toBe(true);
   });
@@ -253,10 +257,10 @@ describe('demo playground', () => {
     expect(currentStep()).toBe('Auto starts');
   });
 
-  it('jumps to a step from the timeline', () => {
+  it('jumps to a step from the rail', () => {
     window.history.replaceState(null, '', '/?scene=demo#orchestrate');
     render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: 'Run approval' }));
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Run approval' }));
     expect(currentStep()).toBe('Run approval');
   });
 
@@ -381,7 +385,7 @@ describe('demo playground', () => {
     render(<DemoPlayground />);
     const board = frameOf({ scene: 'board-shell' });
     report({ frame: board, type: 'ready' });
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
     report({ frame: board, type: 'complete' });
     const fresh = Array.from(document.querySelectorAll('iframe')).find(
       (entry) => entry !== board && (entry.getAttribute('src') ?? '').includes('board-shell'),
@@ -400,7 +404,7 @@ describe('demo playground', () => {
     expect(visibleFrame()).toBe(wizard);
     place({ frame: wizard, place: 'not-a-step' });
     expect(currentStep()).toBe('Tools');
-    fireEvent.click(screen.getByRole('button', { name: 'Welcome' }));
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Welcome' }));
     expect(currentStep()).toBe('Welcome');
     const welcome = Array.from(document.querySelectorAll('iframe')).filter((entry) =>
       (entry.getAttribute('src') ?? '').includes('step=welcome'),
@@ -854,7 +858,7 @@ describe('demo playground', () => {
     );
     render(<DemoPlayground />);
     expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
     expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
     expect(screen.getByText('1 of 5 tried').textContent).toBe('1 of 5 tried');
   });
