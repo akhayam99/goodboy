@@ -470,7 +470,15 @@ request yet, HBL-412 and its Sentry issue as the only links, no earlier
 presets), `castAutoScene.ts` retells the delegations (Planner, Implementer,
 Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
 and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
-they are. Find and Review tell the same story on the frames they already have:
+they are. The last Orchestrate step, Save it as a workflow, has a frame of its
+own: `demo-run` (`scenes/demo/DemoRunScene.tsx`, `demoRunSeed.ts`) is the real
+run page of an orchestrated run of the same goal, finished, with the Planner,
+the payments-api Implementer and Tester and the ledger-core Implementer, because
+Save as preset belongs to the run page of a workflow and an Auto run has none.
+Its timeline (`presetTimeline.ts`, `installPresetActions.ts`) swaps
+`savePhaseTemplate` for a local save that adds the preset to the workspace and
+opens the Workflows studio a moment later, where it lands first in the list.
+Find and Review tell the same story on the frames they already have:
 `installStoryWorld.ts` casts the current session (the HBL-412 goal, its mounts,
 tasks and pull request), `installBoardStory.ts` adds the board card's open
 question, agent and transcript (`BOARD_STORY_SESSION` in `BoardScene.tsx`),

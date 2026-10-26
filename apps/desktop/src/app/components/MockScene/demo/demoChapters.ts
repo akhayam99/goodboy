@@ -31,7 +31,10 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   {
     ...DEMO_GROUPS.orchestrate,
     hints: ORCHESTRATE_HINTS,
-    beats: [{ label: 'Auto run', scene: 'c07-auto-start' }],
+    beats: [
+      { label: 'Auto run', scene: 'c07-auto-start' },
+      { label: 'Finished run', scene: 'demo-run' },
+    ],
   },
   {
     ...DEMO_GROUPS.find,

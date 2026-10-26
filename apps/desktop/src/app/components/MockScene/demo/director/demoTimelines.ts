@@ -4,6 +4,7 @@ import { boardTimeline } from './boardTimeline';
 import { autoTimeline } from './autoTimeline';
 import { libraryTimeline } from './libraryTimeline';
 import { worldTimeline } from './worldTimeline';
+import { presetTimeline } from './presetTimeline';
 import { resolveTimeline } from './resolveTimeline';
 import { storageTimeline } from './storageTimeline';
 
@@ -20,5 +21,6 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['brand-diff', worldTimeline],
     ['resolve-queue-shell', resolveTimeline],
     ['resolve-fix-ready', resolveTimeline],
+    ['demo-run', presetTimeline],
     ['demo-storage', storageTimeline],
   ]);

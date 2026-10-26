@@ -20,7 +20,7 @@ export const DEMO_GROUPS = {
   orchestrate: {
     id: 'orchestrate',
     title: 'Orchestrate',
-    line: 'Plan with Auto or run a saved workflow',
+    line: 'Plan with Auto, follow its helpers and save the run as a workflow',
   },
   find: {
     id: 'find',

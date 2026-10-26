@@ -16,6 +16,14 @@ const AUTO_APPROVE = '[data-demo-anchor="auto-approve"]';
 const AUTO_LAST_CHILD =
   'ul[aria-label="Delegations"] > li[data-delegation]:last-of-type > span > button[aria-label^="Open "]';
 
+const RUN_MENU = 'button[aria-label$="run actions"]';
+const SAVE_PRESET = 'button[role="menuitem"][data-menu-label="Save as preset"]';
+
+const presetCountOf = ({ state }: StateParams): number =>
+  Object.values(state.phaseTemplates)
+    .flat()
+    .filter((workflow) => workflow.isPreset === true).length;
+
 const isAutoSession = ({ state }: StateParams): boolean => {
   const sessionId = state.currentSessionId;
   return sessionId !== null && state.autoTreeViews[sessionId] !== undefined;
@@ -95,5 +103,20 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
       state.drawer?.kind !== 'auto-child' &&
       hasElement({ root, selector: AUTO_LAST_CHILD }),
     doneWhen: ({ state }) => state.drawer?.kind === 'auto-child',
+  },
+  {
+    id: 'run-save',
+    label: 'Save it as a workflow',
+    copy: 'Keep this run',
+    instruction:
+      'The three helpers finished. Open the run menu and press Save as preset to start this run again later.',
+    result: 'The run is saved as a preset and sits in the Workflows studio.',
+    progress: 'Press Save as preset in the menu.',
+    beat: 1,
+    anchor: ({ root }) => (hasElement({ root, selector: SAVE_PRESET }) ? SAVE_PRESET : RUN_MENU),
+    side: 'bottom',
+    revealWhen: ({ root }) =>
+      hasElement({ root, selector: RUN_MENU }) || hasElement({ root, selector: SAVE_PRESET }),
+    doneWhen: ({ state, start }) => presetCountOf({ state }) > presetCountOf({ state: start }),
   },
 ];
