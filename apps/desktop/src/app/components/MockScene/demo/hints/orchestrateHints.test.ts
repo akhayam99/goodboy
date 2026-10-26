@@ -132,11 +132,9 @@ describe('the Orchestrate steps', () => {
     expect(tried()).toEqual([]);
     expect(shown()).toBe('auto-start');
 
-    await store
-      .getState()
-      .spawnAgent(AUTO_SESSION.id, {
-        initialPrompt: 'Stop retried webhooks posting a second credit',
-      });
+    await store.getState().spawnAgent(AUTO_SESSION.id, {
+      initialPrompt: 'Stop retried webhooks posting a second credit',
+    });
     await frame();
     expect(tried()).toEqual(['auto-start']);
 
