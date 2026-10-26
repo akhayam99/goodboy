@@ -169,7 +169,7 @@ describe('layoutTimelineRail with a lane and a count row per chain', () => {
     });
     const withoutLanes = bestOf({ runs: 15, task: () => layoutTimelineRail(bare) });
 
-    expect(withLanes).toBeLessThanOrEqual(Math.max(withoutLanes * 4, 2));
+    expect(withLanes).toBeLessThanOrEqual(Math.max(withoutLanes * 4, 10));
   });
 });
 

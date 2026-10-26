@@ -854,7 +854,7 @@ fn discarding_leaves_a_folder_that_is_no_longer_the_one_created() {
     let dest = root.join("ledger-core");
     let registry = CloneRegistry::new();
     let staged = stage(&registry, "req-id", &dest);
-    std::fs::remove_dir(&staged.path).unwrap();
+    std::fs::rename(&staged.path, root.join("moved-aside")).unwrap();
     std::fs::create_dir(&staged.path).unwrap();
     std::fs::write(staged.path.join("mine"), "keep").unwrap();
     assert!(!discard_staging(&staged));
