@@ -470,7 +470,18 @@ request yet, HBL-412 and its Sentry issue as the only links, no earlier
 presets), `castAutoScene.ts` retells the delegations (Planner, Implementer,
 Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
 and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
-they are. The last Orchestrate step, Save it as a workflow, has a frame of its
+they are. Work with an agent starts on a frame of its own, `demo-issue`
+(`scenes/demo/DemoIssueScene.tsx`, `demoIssueSeed.ts`): the real shell with the
+real Tasks studio open on HBL-412, fed by the Linear fixtures of the kickoff
+brand scene, with the story's own session left out so the row offers Start
+session. Pressing it runs the product's path: `pickIssue` fills the draft and
+`goodboy:new-session` opens the real New session page with HBL-412 picked and its
+description as the brief. Its timeline (`issueTimeline.ts`,
+`installIssueStart.ts`) swaps only `createSession` for a local one that adds the
+session with HBL-412 as its linked task and opens it; the agent start after it is
+the simulated spawn every directed frame has. The rest of the group continues on
+the `chat-shell` frame, where the same session is already linked to HBL-412. The
+last Orchestrate step, Save it as a workflow, has a frame of its
 own: `demo-run` (`scenes/demo/DemoRunScene.tsx`, `demoRunSeed.ts`) is the real
 run page of an orchestrated run of the same goal, finished, with the Planner,
 the payments-api Implementer and Tester and the ledger-core Implementer, because
@@ -571,7 +582,8 @@ group back. A `tried` report is accepted only for the step that is next, in
 `useDemoHints`, as well as in the engine. Every group has its data file:
 `onboardingHints.ts`, `agentHints.ts`, `orchestrateHints.ts`, `findHints.ts` and
 `reviewHints.ts`. `data-demo-anchor` marks only controls with no stable name:
-the setup buttons, Auto's Approve plan and Start fix. Every group is walked to
+the setup buttons, Start session on a task, the Start button of the New session
+page, Auto's Approve plan, Start fix and the storage Remove button. Every group is walked to
 its last step in a test.
 
 While a hint points at something on screen, the stage dims and lightly blurs

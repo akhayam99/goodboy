@@ -10,7 +10,13 @@ type Props = {
 };
 
 export const StartButton = ({ label, isBusy = false, onClick }: Props) => (
-  <Button size="sm" isBusy={isBusy} busyLabel={NAMES.starting} onClick={onClick}>
+  <Button
+    size="sm"
+    data-demo-anchor="task-start"
+    isBusy={isBusy}
+    busyLabel={NAMES.starting}
+    onClick={onClick}
+  >
     <Rocket size={ICON_SIZE.row} aria-hidden />
     {label}
   </Button>

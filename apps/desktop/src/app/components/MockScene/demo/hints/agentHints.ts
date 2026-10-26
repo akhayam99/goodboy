@@ -64,18 +64,49 @@ const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
   return events.some((event) => event.kind === 'decision_note' && visitorRuns.has(event.runId));
 };
 
+const TASK_START = '[data-demo-anchor="task-start"]';
+const DRAFT_START = '[data-demo-anchor="draft-start"]';
+
+const ISSUE = 'HBL-412';
+
+const sessionIdsOf = ({ state }: StateParams): ReadonlySet<string> =>
+  new Set(state.sessions.map((session) => session.id));
+
+const hasNewIssueSession = ({ state, start }: HintProbe): boolean => {
+  const known = sessionIdsOf({ state: start });
+  return state.sessions.some(
+    (session) =>
+      !known.has(session.id) &&
+      (state.sessionExternalTasks[session.id] ?? []).some((task) => task.identifier === ISSUE),
+  );
+};
+
 const OPERATIONS = 'button[aria-label^="Operations"]';
 const CLAUDE_LIMITS = 'button[aria-label^="Claude limits"]';
 const COMPOSER = 'textarea[aria-label="Message to the agent"]';
 
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
+    id: 'agent-issue',
+    label: 'Start from the issue',
+    copy: 'Start from HBL-412',
+    instruction: 'Press Start session on HBL-412: the agent takes the Linear issue as its brief.',
+    result: 'The session started from HBL-412 and the agent is working on its own branch.',
+    progress: 'HBL-412 is picked with its description as the brief. Press Start Implementer.',
+    beat: 0,
+    anchor: ({ root }) => (hasElement({ root, selector: DRAFT_START }) ? DRAFT_START : TASK_START),
+    side: 'bottom',
+    revealWhen: ({ root }) =>
+      hasElement({ root, selector: TASK_START }) || hasElement({ root, selector: DRAFT_START }),
+    doneWhen: hasNewIssueSession,
+  },
+  {
     id: 'agent-answer',
     label: 'Answer its question',
     copy: 'The agent is waiting on you',
     instruction: 'Answer the agent question: it is waiting and cannot go on without you.',
     result: 'The agent has your answer: it updates ledger-core and reruns the redelivery test.',
-    beat: 0,
+    beat: 1,
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
       return id === null ? null : `[data-oq-anchor="${CSS.escape(id)}"]`;
@@ -91,7 +122,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     instruction: 'Open the Claude limits chip in the top bar to see how much of the plan is left.',
     result:
       'Claude used its whole 5-hour window and 84% of the week, Codex 58% of the week: Claude cannot take the next message.',
-    beat: 0,
+    beat: 1,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
@@ -103,7 +134,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Type a message, then Send',
     instruction: 'Type a message and press Send: Claude is out of limit, so Codex picks it up.',
     result: 'Claude hit its limit, so Codex took the same brief and is rerunning the suites.',
-    beat: 0,
+    beat: 1,
     anchor: COMPOSER,
     side: 'top',
     revealWhen: ({ state }) => !isAgentBusy({ state }),
@@ -115,7 +146,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Files it edited',
     instruction: 'Open Operations to see which files the agent edited and what changed in them.',
     result: 'The edited files are listed with what changed in each.',
-    beat: 0,
+    beat: 1,
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: ({ root, isAnchorClicked }) =>

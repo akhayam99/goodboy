@@ -15,8 +15,8 @@ export const DemoClosing = () => (
   >
     <BrandTile size={BRAND_TILE_PX} className="ring-1 ring-inset ring-frame-edge" />
     <p className="max-w-md text-center text-heading text-foreground">
-      You took HBL-412 from a Linear issue to a fix ready to push, with agents doing the work and
-      you making every call.
+      You took HBL-412 from a Linear issue to a pushed fix and a clean disk, with agents doing the
+      work and you making every call.
     </p>
     <div className="flex flex-wrap items-center justify-center gap-3">
       <DemoLink href={DEMO_LINKS.download} variant="primary" size="md">

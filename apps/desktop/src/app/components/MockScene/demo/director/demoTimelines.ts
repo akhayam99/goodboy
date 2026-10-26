@@ -2,6 +2,7 @@ import type { DemoTimeline, TimelineParams } from './directorTypes';
 import { agentTimeline } from './agentTimeline';
 import { boardTimeline } from './boardTimeline';
 import { autoTimeline } from './autoTimeline';
+import { issueTimeline } from './issueTimeline';
 import { libraryTimeline } from './libraryTimeline';
 import { worldTimeline } from './worldTimeline';
 import { presetTimeline } from './presetTimeline';
@@ -21,6 +22,7 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['brand-diff', worldTimeline],
     ['resolve-queue-shell', resolveTimeline],
     ['resolve-fix-ready', resolveTimeline],
+    ['demo-issue', issueTimeline],
     ['demo-run', presetTimeline],
     ['demo-storage', storageTimeline],
   ]);

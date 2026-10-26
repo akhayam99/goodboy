@@ -15,7 +15,7 @@ export const DEMO_GROUPS = {
   agent: {
     id: 'agent',
     title: 'Work with an agent',
-    line: 'Send, answer a question and continue with another model',
+    line: 'Start from an issue, answer a question and continue with another model',
   },
   orchestrate: {
     id: 'orchestrate',

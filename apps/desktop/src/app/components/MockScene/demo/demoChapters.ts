@@ -26,7 +26,10 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   {
     ...DEMO_GROUPS.agent,
     hints: AGENT_HINTS,
-    beats: [{ label: 'Agent session', scene: 'chat-shell' }],
+    beats: [
+      { label: 'Tasks', scene: 'demo-issue' },
+      { label: 'Agent session', scene: 'chat-shell' },
+    ],
   },
   {
     ...DEMO_GROUPS.orchestrate,

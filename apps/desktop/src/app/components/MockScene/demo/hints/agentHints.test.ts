@@ -132,7 +132,7 @@ describe('the Work with an agent steps', () => {
       reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
     const shown = (): string | null =>
       reports.flatMap((report) => (report.type === 'anchor' ? [report.hintId] : [])).at(-1) ?? null;
-    engine.setTrack({ chapterId: 'agent', settledIds: [] });
+    engine.setTrack({ chapterId: 'agent', settledIds: ['agent-issue'] });
     await frame();
     expect(shown()).toBe('agent-answer');
 

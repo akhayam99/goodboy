@@ -352,6 +352,7 @@ debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
 demo
+demo-issue
 demo-run
 demo-storage
 design-comments
