@@ -18,7 +18,7 @@ export const headerInstruction = ({
   if (isGroupDone) {
     return next === undefined
       ? `${chapter.title} is done. That was every group.`
-      : `${chapter.title} is done. Go on with ${next.title}, marked Up next on the left.`;
+      : `${chapter.title} is done. Go on with ${next.title}, marked Up next.`;
   }
   if (hintInstruction !== undefined) {
     return hintInstruction;

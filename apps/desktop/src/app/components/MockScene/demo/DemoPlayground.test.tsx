@@ -216,8 +216,7 @@ describe('demo playground', () => {
   it('moves to another group from its rail row and writes it to the hash', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
-    expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^\d+\s*Orchestrate/ }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Orchestrate');
     expect(window.location.hash).toBe('#orchestrate');
   });
@@ -520,6 +519,32 @@ describe('demo playground', () => {
     fireEvent.click(upNextRow());
     expect(window.location.hash).toBe('#agent');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
+  });
+
+  it('offers a Next group control in the timeline that pulses once the group is done and goes there', () => {
+    window.history.replaceState(null, '', '/?scene=demo#setup');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const nextControl = () => screen.getByRole('button', { name: 'Next group' });
+    const marker = () => nextControl().closest('[data-up-next]');
+    expect(marker()?.getAttribute('data-up-next')).toBe('soon');
+    expect(marker()?.getAttribute('data-pulsing')).toBe('false');
+    finishSetup({ frame });
+    expect(marker()?.getAttribute('data-up-next')).toBe('ready');
+    expect(marker()?.getAttribute('data-pulsing')).toBe('true');
+    fireEvent.click(nextControl());
+    expect(window.location.hash).toBe('#agent');
+  });
+
+  it('never points the finished-group line at the left, where a narrow window has no rail', () => {
+    window.history.replaceState(null, '', '/?scene=demo#setup');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    finishSetup({ frame });
+    const line = screen.getByRole('heading', { level: 1 }).closest('header')?.querySelector('p');
+    expect(line?.textContent).not.toMatch(/left/i);
   });
 
   it('writes the live instruction under the title from the hint, the beat and the done state', () => {

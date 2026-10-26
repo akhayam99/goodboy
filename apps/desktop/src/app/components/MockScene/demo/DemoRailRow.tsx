@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { ROW_INTERACTIVE, canAnimate, cn } from '@goodboy/ui';
+import { useRef } from 'react';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { HintTally } from './hints/hintTally';
+import { useUpNextBreath } from './useUpNextBreath';
 
 export type UpNext = 'none' | 'soon' | 'ready';
 
@@ -15,11 +16,6 @@ type Props = {
   readonly onIntent: () => void;
 };
 
-const BREATH_MS = 2200;
-const BREATH_CYCLES = 3;
-const GLOW_FROM = '0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent)';
-const GLOW_TO = '0 0 0 6px color-mix(in srgb, var(--color-primary) 28%, transparent)';
-
 export const DemoRailRow = ({
   chapter,
   ordinal,
@@ -30,32 +26,7 @@ export const DemoRailRow = ({
   onIntent,
 }: Props) => {
   const rowRef = useRef<HTMLButtonElement>(null);
-  const [isRested, setIsRested] = useState(false);
-  const isPulsing = upNext === 'ready' && !isRested;
-
-  useEffect(() => {
-    if (upNext !== 'ready') {
-      setIsRested(false);
-      return;
-    }
-    const rest = window.setTimeout(() => setIsRested(true), BREATH_MS * BREATH_CYCLES);
-    const row = rowRef.current;
-    const breath =
-      row !== null && canAnimate({ element: row })
-        ? row.animate(
-            [{ boxShadow: GLOW_FROM }, { boxShadow: GLOW_TO }, { boxShadow: GLOW_FROM }],
-            {
-              duration: BREATH_MS,
-              iterations: BREATH_CYCLES,
-              easing: 'ease-in-out',
-            },
-          )
-        : undefined;
-    return () => {
-      window.clearTimeout(rest);
-      breath?.cancel();
-    };
-  }, [upNext]);
+  const isPulsing = useUpNextBreath({ targetRef: rowRef, isReady: upNext === 'ready' });
 
   return (
     <button
