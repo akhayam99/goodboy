@@ -2,7 +2,7 @@
 // @vitest-environment-options {"settings":{"navigation":{"disableChildFrameNavigation":true}}}
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { DemoPlayground } from './DemoPlayground';
 import { DEMO_THEME_KEY } from './demoThemeKey';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
@@ -84,12 +84,55 @@ describe('demo playground chrome', () => {
     );
   });
 
-  it('keeps the star and download calls to action in the rail, not the top bar', () => {
+  it('offers Download for macOS and Star on GitHub in exactly one place, the Get Goodboy screen', () => {
+    const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
+    for (const id of groupIds) {
+      window.history.replaceState(null, '', `/?scene=demo#${id}`);
+      const view = render(<DemoPlayground />);
+      expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
+      expect(screen.queryAllByRole('link', { name: /Star on GitHub/ })).toHaveLength(0);
+      view.unmount();
+    }
+    window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
-    const topBar = document.querySelector('header');
-    expect(topBar?.textContent).not.toContain('Star on GitHub');
+    expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
     expect(screen.getAllByRole('link', { name: /Star on GitHub/ })).toHaveLength(1);
-    expect(topBar?.contains(screen.getByRole('link', { name: /Star on GitHub/ }))).toBe(false);
+    expect(document.querySelector('header')?.querySelector('a[target="_blank"]')).toBeNull();
+  });
+
+  it('closes on a calm Get Goodboy screen with one line, the two calls to action and the version', () => {
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
+    const closing = screen.getByTestId('demo-closing');
+    expect(closing.querySelectorAll('p')).toHaveLength(1);
+    expect(
+      within(closing)
+        .getByRole('link', { name: /Download for macOS/ })
+        .getAttribute('href'),
+    ).toBe('https://goodboy-ai.dev');
+    expect(within(closing).getByRole('link', { name: /Star on GitHub/ })).not.toBeNull();
+    expect(within(closing).getByRole('link', { name: /What is new in/ }).textContent).toContain(
+      'Version',
+    );
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('keeps the Get Goodboy row out of the group count and below the groups', () => {
+    render(<DemoPlayground />);
+    const rail = screen.getByRole('navigation', { name: 'Playground groups' });
+    const rows = Array.from(rail.querySelectorAll('button[data-up-next]'));
+    expect(rows.at(-1)?.textContent).toBe('Get Goodboy');
+    expect(rows.at(-1)?.textContent).not.toMatch(/\d of \d/);
+    expect(rows).toHaveLength(DEMO_CHAPTERS.length + 1);
+  });
+
+  it('opens Get Goodboy from the rail and goes back to the last group', () => {
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: /Get Goodboy/ }));
+    expect(window.location.hash).toBe('#get');
+    fireEvent.keyDown(rootOf(), { key: 'ArrowLeft', code: 'ArrowLeft' });
+    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS.at(-1)?.id ?? ''}`);
   });
 
   it('opens in the theme named in the url, which beats the stored one, then drops it from the url', () => {
@@ -241,6 +284,7 @@ describe('demo playground chrome', () => {
       'none',
       'none',
       'ready',
+      'none',
       'none',
       'none',
     ]);

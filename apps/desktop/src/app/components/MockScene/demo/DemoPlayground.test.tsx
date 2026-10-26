@@ -189,7 +189,10 @@ describe('demo playground', () => {
     const titles = Array.from(rail.querySelectorAll('button[data-up-next]')).map(
       (row) => row.querySelector('.text-row')?.textContent,
     );
-    expect(titles).toEqual(Object.values(DEMO_GROUPS).map((group) => group.title));
+    expect(titles).toEqual([
+      ...Object.values(DEMO_GROUPS).map((group) => group.title),
+      'Get Goodboy',
+    ]);
     expect(DEMO_CHAPTERS.map((chapter) => chapter.id)).toEqual(Object.keys(DEMO_GROUPS));
   });
 
@@ -213,6 +216,7 @@ describe('demo playground', () => {
       '03Orchestrate0 of 6 tried',
       '04Find work and results0 of 3 tried',
       '05Review and ship0 of 3 tried',
+      'Get Goodboy',
     ]);
   });
 
@@ -264,19 +268,18 @@ describe('demo playground', () => {
     expect(currentStep()).toBe('Run approval');
   });
 
-  it('shows the download in the rail and again in the top bar only below the large breakpoint, with nothing up next after the last group', async () => {
+  it('puts Get Goodboy up next after the last group and nothing up next after it', () => {
     const last = DEMO_CHAPTERS.at(-1);
     window.history.replaceState(null, '', `/?scene=demo#${last?.id ?? ''}`);
     render(<DemoPlayground />);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
-    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
-    const downloads = screen.getAllByRole('link', { name: /Download for macOS/ });
-    expect(downloads).toHaveLength(2);
-    expect(downloads.filter((link) => link.className.includes('lg:hidden'))).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Back to the start' })).toBeNull();
+    const next = document.querySelector('nav [data-up-next="soon"]');
+    expect(next?.textContent).toContain('Get Goodboy');
+    fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
+    expect(window.location.hash).toBe('#get');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
     expect(document.querySelector('[data-up-next]:not([data-up-next="none"])')).toBeNull();
+    fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
+    expect(window.location.hash).toBe('#get');
   });
 
   it('shows the loading state until the frame reports ready', () => {
@@ -732,22 +735,16 @@ describe('demo playground', () => {
     const title = screen.getByRole('heading', { level: 1 });
     const summary = screen.getByText(DEMO_CHAPTERS[1]?.beats[0]?.shows ?? '');
     const counter = within(title.closest('header') ?? document.body).getByText(/0 of 4/);
-    const download = screen.getAllByRole('link', { name: /Download for macOS/ });
-    const star = screen.getByRole('link', { name: /Star on GitHub/ });
-    const version = screen.getByRole('link', { name: /What is new in/ });
     const back = screen.getAllByRole('link', { name: /goodboy-ai.dev/ });
     hint({ frame, hintId: 'agent-send' });
     expect(rowOf({ title: DEMO_GROUPS.setup.title }).getAttribute('data-quiet')).toBe('true');
-    expect(version.closest('[data-quiet="true"]')).not.toBeNull();
     expect(back.some((link) => link.closest('[data-quiet="true"]') !== null)).toBe(true);
     const full = [
       title,
       summary,
       counter,
-      star,
       screen.getByRole('note', { name: 'Step 1 of 6' }),
       rowOf({ title: DEMO_GROUPS.agent.title }),
-      ...download,
     ];
     for (const element of full) {
       expect(element.closest('[data-quiet="true"]')).toBeNull();

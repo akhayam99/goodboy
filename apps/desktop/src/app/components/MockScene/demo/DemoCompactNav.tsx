@@ -10,20 +10,22 @@ type StepParams = {
 };
 
 type Props = {
-  readonly chapter: DemoChapter;
+  readonly title: string;
+  readonly chapter: DemoChapter | undefined;
   readonly groupNumber: number;
   readonly groupCount: number;
   readonly beatIndex: number;
   readonly seen: ReadonlyArray<number>;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
-  readonly next: DemoChapter | undefined;
+  readonly nextTitle: string | undefined;
   readonly isNextReady: boolean;
   readonly onNext: () => void;
   readonly onSelectStep: (params: StepParams) => void;
 };
 
 export const DemoCompactNav = ({
+  title,
   chapter,
   groupNumber,
   groupCount,
@@ -31,7 +33,7 @@ export const DemoCompactNav = ({
   seen,
   hasPrevious,
   onPrevious,
-  next,
+  nextTitle,
   isNextReady,
   onNext,
   onSelectStep,
@@ -50,9 +52,10 @@ export const DemoCompactNav = ({
           onClick={onPrevious}
         />
         <p className="min-w-0 truncate text-ui text-muted-foreground">
-          <span className="text-foreground">{chapter.title}</span> {groupNumber} of {groupCount}
+          <span className="text-foreground">{title}</span>{' '}
+          {chapter === undefined ? null : `${groupNumber} of ${groupCount}`}
         </p>
-        {next === undefined ? null : (
+        {nextTitle === undefined ? null : (
           <span
             ref={nextRef}
             data-up-next={isNextReady ? 'ready' : 'soon'}
@@ -62,7 +65,7 @@ export const DemoCompactNav = ({
             <IconButton
               icon={ChevronRight}
               label="Next group"
-              tooltip={`Next group: ${next.title}`}
+              tooltip={`Next: ${nextTitle}`}
               shortcut="→"
               size="md"
               onClick={onNext}
@@ -70,35 +73,37 @@ export const DemoCompactNav = ({
           </span>
         )}
       </div>
-      <ScrollFade
-        className="min-w-0"
-        viewportClassName="flex gap-1"
-        orientation="horizontal"
-        edge="line"
-      >
-        <ol aria-label="Switch step" className="flex gap-1">
-          {chapter.beats.map((beat, index) => {
-            const state = stepStateOf({ index, current: beatIndex, seen });
-            return (
-              <li key={`${chapter.id}-${beat.label}`} className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onSelectStep({ index })}
-                  aria-current={state === 'current' ? 'step' : undefined}
-                  data-state={state}
-                  className={cn(
-                    'rounded-md px-3 py-2 text-label text-muted-foreground hover:bg-hover',
-                    FOCUS_RING,
-                    'data-[state=current]:bg-selected data-[state=current]:text-foreground',
-                  )}
-                >
-                  {beat.label}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </ScrollFade>
+      {chapter === undefined ? null : (
+        <ScrollFade
+          className="min-w-0"
+          viewportClassName="flex gap-1"
+          orientation="horizontal"
+          edge="line"
+        >
+          <ol aria-label="Switch step" className="flex gap-1">
+            {chapter.beats.map((beat, index) => {
+              const state = stepStateOf({ index, current: beatIndex, seen });
+              return (
+                <li key={`${chapter.id}-${beat.label}`} className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onSelectStep({ index })}
+                    aria-current={state === 'current' ? 'step' : undefined}
+                    data-state={state}
+                    className={cn(
+                      'rounded-md px-3 py-2 text-label text-muted-foreground hover:bg-hover',
+                      FOCUS_RING,
+                      'data-[state=current]:bg-selected data-[state=current]:text-foreground',
+                    )}
+                  >
+                    {beat.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </ScrollFade>
+      )}
     </nav>
   );
 };

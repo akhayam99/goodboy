@@ -5,7 +5,7 @@ type Params = {
   readonly beatIndex: number;
   readonly hintInstruction: string | undefined;
   readonly isGroupDone: boolean;
-  readonly next: DemoChapter | undefined;
+  readonly nextTitle: string;
 };
 
 export const headerInstruction = ({
@@ -13,12 +13,10 @@ export const headerInstruction = ({
   beatIndex,
   hintInstruction,
   isGroupDone,
-  next,
+  nextTitle,
 }: Params): string => {
   if (isGroupDone) {
-    return next === undefined
-      ? `${chapter.title} is done. That was every group.`
-      : `${chapter.title} is done. Go on with ${next.title}, marked Up next.`;
+    return `${chapter.title} is done. Go on with ${nextTitle}, marked Up next.`;
   }
   if (hintInstruction !== undefined) {
     return hintInstruction;

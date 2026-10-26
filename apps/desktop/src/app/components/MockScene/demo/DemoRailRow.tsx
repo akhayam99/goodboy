@@ -1,24 +1,25 @@
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import type { DemoChapter } from './demoChapters';
 import type { HintTally } from './hints/hintTally';
 import { useUpNextBreath } from './useUpNextBreath';
 
 export type UpNext = 'none' | 'soon' | 'ready';
 
 type Props = {
-  readonly chapter: DemoChapter;
-  readonly ordinal: number;
+  readonly title: string;
+  readonly lead: ReactNode;
+  readonly isOptional?: boolean;
   readonly isActive: boolean;
   readonly upNext: UpNext;
-  readonly tally: HintTally;
+  readonly tally?: HintTally;
   readonly onSelect: () => void;
   readonly onIntent: () => void;
 };
 
 export const DemoRailRow = ({
-  chapter,
-  ordinal,
+  title,
+  lead,
+  isOptional = false,
   isActive,
   upNext,
   tally,
@@ -48,8 +49,13 @@ export const DemoRailRow = ({
         'data-[up-next=ready]:bg-selected data-[up-next=ready]:ring-2 data-[up-next=ready]:ring-primary',
       )}
     >
-      <span className={cn('text-meta', isActive ? 'text-primary' : 'text-faint-foreground')}>
-        {String(ordinal).padStart(2, '0')}
+      <span
+        className={cn(
+          'flex items-center text-meta',
+          isActive ? 'text-primary' : 'text-faint-foreground',
+        )}
+      >
+        {lead}
       </span>
       <span className="flex min-w-0 flex-col">
         <span className="flex items-baseline justify-between gap-2">
@@ -57,17 +63,15 @@ export const DemoRailRow = ({
             <span
               className={cn('text-row', isActive ? 'text-foreground' : 'text-muted-foreground')}
             >
-              {chapter.title}
+              {title}
             </span>
-            {chapter.isOptional === true ? (
-              <span className="text-meta text-faint-foreground">Optional</span>
-            ) : null}
+            {isOptional ? <span className="text-meta text-faint-foreground">Optional</span> : null}
           </span>
           {upNext === 'none' ? null : (
             <span className="shrink-0 text-meta text-primary">Up next</span>
           )}
         </span>
-        {tally.total > 0 ? (
+        {tally !== undefined && tally.total > 0 ? (
           <span
             className={cn(
               'text-meta',

@@ -1,8 +1,6 @@
-import { ArrowLeft, Download, Lightbulb, LightbulbOff, Moon, RotateCcw, Sun } from 'lucide-react';
-import { Button, ICON_SIZE, IconButton, buttonClasses, chipClasses, cn } from '@goodboy/ui';
+import { ArrowLeft, Lightbulb, LightbulbOff, Moon, RotateCcw, Sun } from 'lucide-react';
+import { Button, ICON_SIZE, IconButton, buttonClasses, cn } from '@goodboy/ui';
 import { BrandTile } from '../../../../shared/components/BrandTile';
-import { APP_VERSION } from '../../../../shared/lib/appVersion';
-import { DemoLink } from './DemoLink';
 import { DEMO_LINKS } from './demoLinks';
 import type { DemoTheme } from './director/demoProtocol';
 import { quietClasses } from './quietClasses';
@@ -49,18 +47,6 @@ export const DemoTopBar = ({
           className={cn('flex min-w-0 items-center gap-3', quietClasses({ isQuiet }))}
         >
           <a
-            href={DEMO_LINKS.changelog}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`What is new in ${APP_VERSION}`}
-            className={cn(
-              chipClasses({ tone: 'neutral', kind: 'state', isInteractive: true }),
-              'max-sm:hidden',
-            )}
-          >
-            v{APP_VERSION}
-          </a>
-          <a
             href={siteHref}
             className={cn(buttonClasses({ variant: 'ghost', size: 'sm' }), 'max-md:hidden')}
           >
@@ -70,10 +56,6 @@ export const DemoTopBar = ({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <DemoLink href={DEMO_LINKS.download} variant="primary" className="lg:hidden">
-          <Download size={ICON_SIZE.control} />
-          Download for macOS
-        </DemoLink>
         <Button
           variant="quiet"
           size="sm"

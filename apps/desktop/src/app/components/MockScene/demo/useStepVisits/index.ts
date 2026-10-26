@@ -6,9 +6,10 @@ import type { StepVisits } from '../hints/stepVisitsTypes';
 type Params = {
   readonly chapterId: string;
   readonly beatIndex: number;
+  readonly isPaused: boolean;
 };
 
-type RestartParams = Params;
+type RestartParams = Pick<Params, 'chapterId' | 'beatIndex'>;
 
 export type StepVisitControls = {
   readonly visits: StepVisits;
@@ -17,11 +18,14 @@ export type StepVisitControls = {
 
 const initial = (): StepVisits => readStepVisits({ fallback: {} });
 
-export const useStepVisits = ({ chapterId, beatIndex }: Params): StepVisitControls => {
+export const useStepVisits = ({ chapterId, beatIndex, isPaused }: Params): StepVisitControls => {
   const [visits, setVisits] = useState<StepVisits>(initial);
   const latest = useRef(visits);
 
   useEffect(() => {
+    if (isPaused) {
+      return;
+    }
     const stored = readStepVisits({ fallback: latest.current });
     const seen = stored[chapterId] ?? [];
     if (seen.includes(beatIndex)) {
@@ -33,7 +37,7 @@ export const useStepVisits = ({ chapterId, beatIndex }: Params): StepVisitContro
     writeStepVisits({ visits: next });
     latest.current = next;
     setVisits(next);
-  }, [chapterId, beatIndex]);
+  }, [chapterId, beatIndex, isPaused]);
 
   const restart = useCallback(
     ({ chapterId: restartId, beatIndex: restartIndex }: RestartParams) => {
