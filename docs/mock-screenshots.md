@@ -461,13 +461,16 @@ report and wireframe runs that always save a sample artifact (`installDemoWorld.
 drafted reply that stays ready to publish, and Keep the draft on an edited
 comment, which clears the change in place (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
-brief once the visitor sends a message (`agentTimeline.ts`,
-`limitsHandoffCues.ts`). The Auto frame tells the same Harborline story as the
-other groups: `installAutoWorld.ts` replaces what the seeded run world says
-(two payments-api branches, `hl/fix-duplicate-credit` and
-`hl/redelivery-tests`, and `ledger-core` on `hl/fix-duplicate-credit`, no pull
-request yet, HBL-412 and its Sentry issue as the only links, no earlier
-presets), `castAutoScene.ts` retells the delegations (Planner, Implementer,
+brief once the visitor sends a message and the composer then shows the Codex
+model (`agentTimeline.ts`, `limitsHandoffCues.ts`). The Auto frame tells the next
+step of the same Harborline story: `autoStory.ts` fixes its goal (make every
+webhook consumer idempotent across payments-api and ledger-core, with a replay
+test), and `installAutoWorld.ts` replaces what the seeded run world says (two
+payments-api branches, `hl/event-guard` and `hl/replay-tests`, and `ledger-core`
+on `hl/event-guard`, no pull request yet, HBL-412 and its Sentry issue as the
+only links, no earlier presets). The saved preset carries the run it came from,
+so the Workflows studio lists 1 run (`installPresetActions.ts`). The limits
+popover shows the share of each window used (`policyRows.ts`). `castAutoScene.ts` retells the delegations (Planner, Implementer,
 Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
 and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
 they are. Work with an agent starts on a frame of its own, `demo-issue`
@@ -496,13 +499,20 @@ question, agent and transcript (`BOARD_STORY_SESSION` in `BoardScene.tsx`),
 `libraryTimeline.ts` casts the library session, and `installReviewStory.ts`
 renames the resolve session and sets its Linear and Sentry links. A step with a
 `progress` line shows it in the header between its press and its result (Add
-note, Start fix, the second press of the storage cleanup). Push and publish
+note, Start fix, the second press of the storage cleanup). The review step opens
+`brand-diff-unpushed` (the branch is not pushed yet: "Not pushed, 5 ahead" and
+Push 5 commits) and its comments are about this change, three of them (retry,
+idempotency key, event id logging; `director/resolveStory.ts`, patched in by
+`installReviewStory.ts`, with the diff the fix proposes). Push and publish
 first preview the approved fixes and drafted replies from the simulated store
-(`demoPublicationPreview.ts`) and then settle without a notice. Review and ship
+(`demoPublicationPreview.ts`) and then land: the replies are posted, the threads
+close and the panel says so. Review and ship
 ends in Settings, Storage: `demo-storage` (`scenes/demo/DemoStorageScene.tsx`)
-is the real Storage page with the three safe worktree folders of the story's
-merged branches (`hl/fix-duplicate-credit` on payments-api and on ledger-core,
-`hl/redelivery-tests` on payments-api) and one folder in use. Its timeline
+is the real Storage page with the three safe worktree folders of older merged
+Harborline branches (`hl/retry-credit-notes` 18 days and `hl/surface-retry-state`
+24 days on payments-api, `hl/refactor-rate-table` 31 days on ledger-core) and one
+folder in use; the story's own branches are not listed, as the pull request is
+only pushed. Its timeline
 (`storageTimeline.ts`, `installStorageActions.ts`) swaps `removeStorageFolders`
 for a timed local removal that drops the folders and sets the outcome notice, so
 the size in Storage falls. `&theme=dark`
@@ -556,17 +566,28 @@ loses its note, and the stage sends it `play` and `hints` again. The stage
 draws one note beside the anchor through the stage scale, a 2px outline and a
 callout on the side of the lit region with the most room, inside the stage
 (`hints/placeCallout.ts`; the hint's side only breaks a tie); only the callout
-takes clicks. The note goes away as soon as the visitor
-presses the control, so it never covers what the control opens. A control
+takes clicks. The callout touches the 4px outline with a 6px gap and never
+overlaps the control or the rects the last press opened (`opened` on the anchor
+report, `avoid` in `placeCallout`); `hints/coachPlacement.test.ts` measures the
+callout against the target for every hint of every group. The note goes away as
+soon as the visitor presses that control (`isPressed`, the press on the very
+element the hint anchors; a click that only focuses the composer keeps it), so
+it never covers what the control opens; a step with two presses names the
+second one in `progressCopy`. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
-which sends `reveal` so the frame scrolls it into view once. Escape hides the
-note and H brings it back (Hide hints and Show hints in the top bar do the same
-and are kept in the tab); there is no Skip, as a step the visitor did not do
-would break the story after it.
+which sends `reveal` so the frame scrolls it into view once. The coach X and
+Escape dismiss only the open hint (`dismiss` in `useDemoHints`; the next step
+shows as usual) and H brings it back. Only Hide hints and Show hints in the top
+bar turn every hint off, and the choice is kept in the tab. There is no Skip, as
+a step the visitor did not do would break the story after it.
 
 The header line (`hints/headerInstruction.ts`) is always what to do now: the
 step's `instruction`; once the step is done, its `result` for at least 2.5
-seconds (`hints/resultDwellMs.ts`, the engine's dwell) and until the control of
+seconds (`hints/resultDwellMs.ts`, the engine's dwell; a hint whose result needs
+reading sets `dwellMs`, 3.5 to 4.5 seconds, read through `hints/dwellOf.ts`:
+the waiting card, Follow a helper, Add note, Push; and its optional `settle`
+runs once after the dwell, as closing the limits popover so the composer takes
+the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction
 for a control the visitor cannot see yet; when the group is done, "<group> is
 done. Go on with <next>, marked Up next." The line never goes back to a

@@ -130,7 +130,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
     settle: ({ root }) => {
-      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      root.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     },
     revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,

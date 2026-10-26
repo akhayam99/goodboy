@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   AgentId,
@@ -113,6 +113,20 @@ export const useTurnRouting = ({ session, agentId }: Params) => {
   currentProviderRef.current = selectedProvider;
   const currentModelRef = useRef(selectedModel);
   currentModelRef.current = selectedModel;
+
+  const persistedProvider = asProvider(selectedAgent?.providerOverride);
+  const persistedModel = selectedAgent?.modelOverride ?? null;
+  useEffect(() => {
+    if (persistedProvider === null && persistedModel === null) {
+      return;
+    }
+    if (persistedProvider !== currentProviderRef.current) {
+      setSelectedProviderState(persistedProvider);
+    }
+    if (persistedModel !== currentModelRef.current) {
+      setSelectedModelState(persistedModel);
+    }
+  }, [persistedProvider, persistedModel]);
   const currentEffortRef = useRef(effort);
   currentEffortRef.current = effort;
 
