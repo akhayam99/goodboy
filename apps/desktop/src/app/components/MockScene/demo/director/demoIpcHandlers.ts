@@ -61,8 +61,9 @@ const EMPTY_LISTS: ReadonlyArray<string> = [
   'budget_rule_list',
   'budget_alerts_list',
   'step_def_list',
-  'worktree_changed_files',
 ];
+
+const EMPTY_CHANGED_FILES = { paths: [], entries: [], additions: 0, deletions: 0, numstat: '' };
 
 const SEARCH_INDEX_BYTES = 2_621_440;
 const DEFAULT_BRANCH_STDOUT = 'main\n';
@@ -150,6 +151,7 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
     }),
   ],
   ['session_budget_get', () => null],
+  ['worktree_changed_files', () => EMPTY_CHANGED_FILES],
   ...EMPTY_LISTS.map((command): readonly [string, Handler] => [command, () => []]),
   ['gh_status', () => ({ available: true, mode: 'gh-cli', scopes: [] })],
   ['app_platform', () => ({ os: 'macos', osVersion: null, arch: 'aarch64', buildSha: null })],
