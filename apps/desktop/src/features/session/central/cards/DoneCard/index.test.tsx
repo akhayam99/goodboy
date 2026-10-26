@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 vi.hoisted(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date(2026, 9, 18, 10, 31, 0));
+  vi.setSystemTime(new Date('2026-10-18T10:31:00.000Z'));
 });
 
 vi.mock('@tauri-apps/api/core', async () =>
