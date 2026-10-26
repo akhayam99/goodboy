@@ -15,9 +15,11 @@ export type HintSide = 'top' | 'bottom' | 'left' | 'right';
 
 export type DemoHint = {
   readonly id: string;
+  readonly label: string;
   readonly copy: string;
   readonly instruction: string;
-  readonly outcome: string | null;
+  readonly result: string;
+  readonly beat: number;
   readonly anchor: HintAnchor;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;

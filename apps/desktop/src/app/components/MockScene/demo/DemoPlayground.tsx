@@ -14,10 +14,11 @@ import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
+import { groupAccessOf } from './hints/groupAccessOf';
 import { headerInstruction } from './hints/headerInstruction';
 import type { HintTally } from './hints/hintTally';
-import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
-import { useStepVisits } from './useStepVisits';
+import { useDemoHints, type DemoHints } from './useDemoHints';
+import { useHintProgress } from './useHintProgress';
 
 type ChapterParams = {
   readonly id: string;
@@ -45,15 +46,22 @@ const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.i
 
 const NO_TALLY: HintTally = { tried: 0, total: 0 };
 
+const CLOSING_INSTRUCTION = 'Download Goodboy for macOS, or star it on GitHub.';
+
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const { theme, choose: chooseTheme, toggle: swapTheme } = useDemoTheme();
   const [shortcut, setShortcut] = useState<ShortcutRequest | undefined>(undefined);
-  const { chapterId, selectChapter } = useChapterHash({
+  const progressControls = useHintProgress();
+  const access = groupAccessOf({ chapters: DEMO_CHAPTERS, progress: progressControls.progress });
+  const { chapterId: requestedId, selectChapter } = useChapterHash({
     ids: RAIL_IDS,
     fallbackId: DEFAULT_GROUP_ID,
   });
 
+  const accessOf = ({ id }: ChapterParams) =>
+    id === CLOSING_ID ? access.closing : (access.groups.get(id) ?? 'locked');
+  const chapterId = accessOf({ id: requestedId }) === 'locked' ? DEFAULT_GROUP_ID : requestedId;
   const isClosing = chapterId === CLOSING_ID;
   const chapterIndex = isClosing
     ? DEMO_CHAPTERS.length - 1
@@ -73,13 +81,22 @@ export const DemoPlayground = () => {
     intentId === undefined || intentId === chapter.id
       ? undefined
       : DEMO_CHAPTERS.find((entry) => entry.id === intentId);
-  const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
-  const hints = useDemoHints({ chapter, frameKey: player.frame.key });
-  const { visits, restart: restartVisits } = useStepVisits({
-    chapterId: chapter.id,
-    beatIndex: player.beatIndex,
-    isPaused: isClosing,
+  const hints = useDemoHints({ chapter, progressControls });
+  const isGroupDone = !isClosing && hints.isDone;
+  const isNextOpen = nextId !== undefined && accessOf({ id: nextId }) === 'open';
+  const upNextId = isGroupDone && isNextOpen ? nextId : undefined;
+
+  const preloadBeat =
+    intentChapter?.beats[0] ??
+    (hints.nextBeatIndex === undefined ? undefined : chapter.beats[hints.nextBeatIndex]) ??
+    (isGroupDone && isNextOpen ? nextChapter?.beats[0] : undefined);
+  const player = useBeatPlayer({
+    chapter,
+    beatIndex: hints.beatIndex,
+    preloadBeat,
+    theme,
+    shownKey,
   });
 
   const focusFrame = useCallback(() => {
@@ -108,21 +125,16 @@ export const DemoPlayground = () => {
     goToChapter({ id: previousId });
   }, [previousId, goToChapter]);
 
+  const isNextLocked = nextId === undefined || accessOf({ id: nextId }) === 'locked';
   const onNext = useCallback(() => {
-    if (nextId === undefined) {
+    if (nextId === undefined || isNextLocked) {
       return;
     }
     goToChapter({ id: nextId });
-  }, [nextId, goToChapter]);
+  }, [nextId, isNextLocked, goToChapter]);
 
-  const {
-    reset: resetHints,
-    restart: restartHints,
-    show: showHints,
-    hide: hideHints,
-    onHintReport: onHintNote,
-  } = hints;
-  const { replay, follow, goTo } = player;
+  const { reset: resetHints, restart: restartHints, show: showHints, hide: hideHints } = hints;
+  const { replay } = player;
   const onReplay = useCallback(() => {
     resetHints();
     replay();
@@ -130,21 +142,13 @@ export const DemoPlayground = () => {
   const firstChapter = DEMO_CHAPTERS[0];
   const onRestart = useCallback(() => {
     restartHints();
-    restartVisits({ chapterId: firstChapter.id, beatIndex: 0 });
     if (chapterId === firstChapter.id) {
       replay();
       focusFrame();
       return;
     }
     goToChapter({ id: firstChapter.id });
-  }, [restartHints, restartVisits, chapterId, firstChapter.id, replay, focusFrame, goToChapter]);
-  const lastBeatIndex = chapter.beats.length - 1;
-  const onPreviousStep = useCallback(() => {
-    goTo({ index: Math.max(0, player.beatIndex - 1) });
-  }, [goTo, player.beatIndex]);
-  const onNextStep = useCallback(() => {
-    goTo({ index: Math.min(lastBeatIndex, player.beatIndex + 1) });
-  }, [goTo, player.beatIndex, lastBeatIndex]);
+  }, [restartHints, chapterId, firstChapter.id, replay, focusFrame, goToChapter]);
   const onToggleHints = useCallback(
     ({ isEnabled }: ToggleHintsParams) => {
       if (isEnabled) {
@@ -155,16 +159,6 @@ export const DemoPlayground = () => {
     },
     [showHints, hideHints],
   );
-  const onHintReport = useCallback(
-    ({ key, report }: HintReportParams) => {
-      if (report.type === 'place') {
-        follow({ key, place: report.place });
-        return;
-      }
-      onHintNote({ key, report });
-    },
-    [follow, onHintNote],
-  );
   const onFrameShortcut = useCallback(({ code }: FrameShortcutParams) => {
     setShortcut((previous) => ({ code, count: (previous?.count ?? 0) + 1 }));
   }, []);
@@ -172,8 +166,6 @@ export const DemoPlayground = () => {
     onPrevious,
     onNext,
     onReplay,
-    onPreviousStep,
-    onNextStep,
     onShowHint: hints.show,
     onFrameShortcut,
   });
@@ -181,12 +173,6 @@ export const DemoPlayground = () => {
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
   const isSpotlit = hints.coach?.isSpotlit === true;
-  const isLastBeat = player.beatIndex === lastBeatIndex;
-  const isGroupDone =
-    !isClosing &&
-    (hints.tally.total > 0
-      ? hints.tally.tried >= hints.tally.total
-      : isLastBeat && player.isComplete);
 
   return (
     <div
@@ -207,14 +193,12 @@ export const DemoPlayground = () => {
         <DemoRail
           chapters={DEMO_CHAPTERS}
           activeId={chapterId}
-          beatIndex={player.beatIndex}
-          visits={visits}
+          access={access}
+          steps={hints}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
-          onSelectStep={goTo}
           onIntent={onIntent}
-          upNextId={nextId}
-          isUpNextReady={isGroupDone}
+          upNextId={upNextId}
           isQuiet={isSpotlit}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
@@ -224,12 +208,11 @@ export const DemoPlayground = () => {
             tally={isClosing ? NO_TALLY : hints.tally}
             instruction={
               isClosing
-                ? undefined
+                ? CLOSING_INSTRUCTION
                 : headerInstruction({
                     chapter,
-                    beatIndex: player.beatIndex,
-                    hintInstruction: hints.instruction,
-                    isGroupDone,
+                    held: hints.held,
+                    active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
                   })
             }
@@ -251,8 +234,7 @@ export const DemoPlayground = () => {
               coach={hints.coach}
               offscreen={hints.offscreen}
               reveal={hints.reveal}
-              onHintReport={onHintReport}
-              onSkipHint={hints.skip}
+              onHintReport={hints.onHintReport}
               onHideHint={hints.hide}
               onRevealHint={hints.revealHint}
             />
@@ -268,14 +250,13 @@ export const DemoPlayground = () => {
             chapter={isClosing ? undefined : chapter}
             groupNumber={chapterIndex + 1}
             groupCount={DEMO_CHAPTERS.length}
-            beatIndex={player.beatIndex}
-            seen={visits[chapter.id] ?? []}
+            steps={hints}
             hasPrevious={previousId !== undefined}
             onPrevious={onPrevious}
             nextTitle={nextTitle}
-            isNextReady={isGroupDone}
+            isNextReady={upNextId !== undefined}
+            isNextLocked={isNextLocked}
             onNext={onNext}
-            onSelectStep={goTo}
           />
         </main>
       </div>

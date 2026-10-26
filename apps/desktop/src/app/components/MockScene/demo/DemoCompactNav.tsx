@@ -1,27 +1,22 @@
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { FOCUS_RING, IconButton, ScrollFade, cn } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
-import { stepStateOf } from './stepStateOf';
+import type { Steps } from './hints/stepsOf';
 import { useUpNextBreath } from './useUpNextBreath';
-
-type StepParams = {
-  readonly index: number;
-};
 
 type Props = {
   readonly title: string;
   readonly chapter: DemoChapter | undefined;
   readonly groupNumber: number;
   readonly groupCount: number;
-  readonly beatIndex: number;
-  readonly seen: ReadonlyArray<number>;
+  readonly steps: Steps;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
   readonly nextTitle: string | undefined;
   readonly isNextReady: boolean;
+  readonly isNextLocked: boolean;
   readonly onNext: () => void;
-  readonly onSelectStep: (params: StepParams) => void;
 };
 
 export const DemoCompactNav = ({
@@ -29,14 +24,13 @@ export const DemoCompactNav = ({
   chapter,
   groupNumber,
   groupCount,
-  beatIndex,
-  seen,
+  steps,
   hasPrevious,
   onPrevious,
   nextTitle,
   isNextReady,
+  isNextLocked,
   onNext,
-  onSelectStep,
 }: Props) => {
   const nextRef = useRef<HTMLSpanElement>(null);
   const isPulsing = useUpNextBreath({ targetRef: nextRef, isReady: isNextReady });
@@ -58,51 +52,28 @@ export const DemoCompactNav = ({
         {nextTitle === undefined ? null : (
           <span
             ref={nextRef}
-            data-up-next={isNextReady ? 'ready' : 'soon'}
+            data-up-next={isNextReady ? 'ready' : 'none'}
             data-pulsing={isPulsing ? 'true' : 'false'}
             className="shrink-0 rounded-md"
           >
             <IconButton
               icon={ChevronRight}
               label="Next group"
-              tooltip={`Next: ${nextTitle}`}
+              tooltip={
+                isNextLocked ? `${nextTitle} unlocks when this group is done` : `Next: ${nextTitle}`
+              }
               shortcut="→"
               size="md"
+              disabled={isNextLocked}
               onClick={onNext}
             />
           </span>
         )}
       </div>
-      {chapter === undefined ? null : (
-        <ScrollFade
-          className="min-w-0"
-          viewportClassName="flex gap-1"
-          orientation="horizontal"
-          edge="line"
-        >
-          <ol aria-label="Switch step" className="flex gap-1">
-            {chapter.beats.map((beat, index) => {
-              const state = stepStateOf({ index, current: beatIndex, seen });
-              return (
-                <li key={`${chapter.id}-${beat.label}`} className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => onSelectStep({ index })}
-                    aria-current={state === 'current' ? 'step' : undefined}
-                    data-state={state}
-                    className={cn(
-                      'rounded-md px-3 py-2 text-label text-muted-foreground hover:bg-hover',
-                      FOCUS_RING,
-                      'data-[state=current]:bg-selected data-[state=current]:text-foreground',
-                    )}
-                  >
-                    {beat.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </ScrollFade>
+      {chapter === undefined || steps.activeHint === undefined ? null : (
+        <p aria-label="Current step" className="text-label text-muted-foreground">
+          Step {steps.activeIndex + 1} of {chapter.hints.length}: {steps.activeHint.label}
+        </p>
       )}
     </nav>
   );

@@ -12,11 +12,9 @@ export type HintTally = {
 };
 
 export const hintTally = ({ chapter, progress }: Params): HintTally => {
-  const hints = chapter.hints ?? [];
   const tried = new Set(progress[chapter.id]?.tried ?? []);
-  const outcomes = new Set(hints.flatMap((hint) => (hint.outcome === null ? [] : [hint.outcome])));
-  const reached = new Set(
-    hints.flatMap((hint) => (hint.outcome !== null && tried.has(hint.id) ? [hint.outcome] : [])),
-  );
-  return { tried: reached.size, total: outcomes.size };
+  return {
+    tried: chapter.hints.filter((hint) => tried.has(hint.id)).length,
+    total: chapter.hints.length,
+  };
 };

@@ -58,8 +58,29 @@ const rootOf = (): HTMLElement => {
   return root;
 };
 
+type DoneParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+const seedDone = ({ ids }: DoneParams) => {
+  window.sessionStorage.setItem(
+    HINT_PROGRESS_KEY,
+    JSON.stringify(
+      Object.fromEntries(
+        DEMO_CHAPTERS.filter((chapter) => ids.includes(chapter.id)).map((chapter) => [
+          chapter.id,
+          { tried: chapter.hints.map((entry) => entry.id), epoch: 0 },
+        ]),
+      ),
+    ),
+  );
+};
+
+const ALL_IDS = DEMO_CHAPTERS.map((chapter) => chapter.id);
+
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
   window.history.replaceState(null, '', '/?scene=demo');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -85,6 +106,7 @@ describe('demo playground chrome', () => {
   });
 
   it('offers Download for macOS and Star on GitHub in exactly one place, the Get Goodboy screen', () => {
+    seedDone({ ids: ALL_IDS });
     const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
     for (const id of groupIds) {
       window.history.replaceState(null, '', `/?scene=demo#${id}`);
@@ -101,6 +123,7 @@ describe('demo playground chrome', () => {
   });
 
   it('closes on a calm Get Goodboy screen with one line, the two calls to action and the version', () => {
+    seedDone({ ids: ALL_IDS });
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
@@ -121,13 +144,14 @@ describe('demo playground chrome', () => {
   it('keeps the Get Goodboy row out of the group count and below the groups', () => {
     render(<DemoPlayground />);
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
-    const rows = Array.from(rail.querySelectorAll('button[data-up-next]'));
-    expect(rows.at(-1)?.textContent).toBe('Get Goodboy');
+    const rows = Array.from(rail.querySelectorAll('button[data-access]'));
+    expect(rows.at(-1)?.textContent).toContain('Get Goodboy');
     expect(rows.at(-1)?.textContent).not.toMatch(/\d of \d/);
     expect(rows).toHaveLength(DEMO_CHAPTERS.length + 1);
   });
 
   it('opens Get Goodboy from the rail and goes back to the last group', () => {
+    seedDone({ ids: ALL_IDS });
     render(<DemoPlayground />);
     fireEvent.click(screen.getByRole('button', { name: /Get Goodboy/ }));
     expect(window.location.hash).toBe('#get');
@@ -234,6 +258,7 @@ describe('demo playground chrome', () => {
   });
 
   it('drops a held shortcut when another group opens before its frame is ready', () => {
+    seedDone({ ids: ['agent'] });
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const first = visibleFrame();
@@ -267,30 +292,8 @@ describe('demo playground chrome', () => {
     expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
   });
 
-  it('marks the next group up next, brighter once the open group is tried, and the last one never', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    const agent = DEMO_CHAPTERS.find((chapter) => chapter.id === 'agent');
-    window.sessionStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: (agent?.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      }),
-    );
-    render(<DemoPlayground />);
-    const rows = screen
-      .getByRole('navigation', { name: 'Playground groups' })
-      .querySelectorAll('button[data-up-next]');
-    expect(Array.from(rows).map((row) => row.getAttribute('data-up-next'))).toEqual([
-      'none',
-      'none',
-      'ready',
-      'none',
-      'none',
-      'none',
-    ]);
-  });
-
   it('keeps the arrow keys moving between groups without a next button', () => {
+    seedDone({ ids: ['agent'] });
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     fireEvent.keyDown(rootOf(), { key: 'ArrowRight', code: 'ArrowRight' });

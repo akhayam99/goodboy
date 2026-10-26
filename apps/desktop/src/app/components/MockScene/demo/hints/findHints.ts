@@ -6,14 +6,8 @@ type StateParams = {
   readonly state: AppStore;
 };
 
-type RootParams = {
-  readonly root: Document;
-};
-
-const PLAN_PROSE = '[data-testid="plan-prose-comments"]';
 const CARD = 'article[data-select-id]';
 const FILTER = '[data-page="board"] button[aria-label="Filter sessions"]';
-const NEW_ARTIFACT = 'button[data-testid="artifact-new"]';
 const REPORT_DETAILS = 'button[data-testid="artifact-drawer-details"]';
 const PLAN_ROW = 'button[data-artifact-row][aria-label^="Plan "]';
 
@@ -29,20 +23,17 @@ const waitingCardOf = ({ state }: StateParams): string => {
 const filtersOf = ({ state }: StateParams): string =>
   JSON.stringify([state.selectedProjectIds, state.sessionViewPrefs]);
 
-const commentCountOf = ({ state }: StateParams): number =>
-  Object.values(state.artifactComments).flat().length;
-
-const isPlanOpen = ({ root }: RootParams): boolean => hasElement({ root, selector: PLAN_PROSE });
-
-const hasCommented = ({ state, start }: HintProbe): boolean =>
-  commentCountOf({ state }) > commentCountOf({ state: start });
+const isPlanOpen = ({ root }: Pick<HintProbe, 'root'>): boolean =>
+  hasElement({ root, selector: '[data-testid="plan-prose-comments"]' });
 
 export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'board-filter',
+    label: 'Filter the board',
     copy: 'Narrow the board',
     instruction: 'Filter the board by folder to see only the sessions of one project.',
-    outcome: 'board-filtered',
+    result: 'The board now shows one project only.',
+    beat: 0,
     anchor: FILTER,
     side: 'left',
     revealWhen: ({ root }) => hasElement({ root, selector: FILTER }),
@@ -50,9 +41,11 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'board-open',
+    label: 'Open the card that needs you',
     copy: 'This one needs you',
     instruction: 'Open the card marked as waiting: its session cannot go on without you.',
-    outcome: 'session-opened',
+    result: 'The session opened: it is waiting on your answer.',
+    beat: 0,
     anchor: ({ state }) => waitingCardOf({ state }),
     revealWhen: ({ state, root }) =>
       state.currentSessionId === null && hasElement({ root, selector: CARD }),
@@ -60,40 +53,23 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-open',
+    label: 'Open a plan',
     copy: 'Read the plan',
     instruction: 'Open a plan from the library to read what an agent proposed before it acts.',
-    outcome: null,
+    result: 'The plan opened: read it before the agent acts.',
+    beat: 1,
     anchor: PLAN_ROW,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: PLAN_ROW }) && !isPlanOpen({ root }),
     doneWhen: ({ root }) => isPlanOpen({ root }),
   },
   {
-    id: 'plan-comment',
-    copy: 'Comment on a line',
-    instruction:
-      'Click a line of the plan and leave a comment: the agent reads it on the next run.',
-    outcome: 'plan-commented',
-    anchor: PLAN_PROSE,
-    revealWhen: isPlanOpen,
-    doneWhen: hasCommented,
-  },
-  {
-    id: 'library-new',
-    copy: 'Start something new',
-    instruction: 'Open New to create a plan or a report from the library.',
-    outcome: null,
-    anchor: NEW_ARTIFACT,
-    side: 'bottom',
-    revealWhen: ({ root }) => hasElement({ root, selector: NEW_ARTIFACT }),
-    doneWhen: ({ root, isAnchorClicked }) =>
-      isAnchorClicked || root.querySelector(`${NEW_ARTIFACT}[aria-expanded="true"]`) !== null,
-  },
-  {
     id: 'report-details',
+    label: 'Open the report details',
     copy: 'Where it comes from',
     instruction: 'Open the report details to see which sessions and code the report is based on.',
-    outcome: null,
+    result: 'The report lists the sessions and the code it is based on.',
+    beat: 2,
     anchor: REPORT_DETAILS,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: REPORT_DETAILS }),

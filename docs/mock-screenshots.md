@@ -335,36 +335,47 @@ event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
 Acme docs; `none` up to Workspace, `repo` after it), and
 `onboarding-home&state=` shows Home in `list`, `new` or `empty`.
 
-`demo` is the playground: five open groups in the rail (Set up, which is
-optional, Work with an agent, Orchestrate, Find work and results, Review and
-ship), each a list of beats. A beat is another scene loaded in an iframe of the
-same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and
-scaled to fit, so every beat gets a clean store and its own timers. The group
-names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
-rail (through `demoChapters.ts`) and the phone page read, so the two never
-drift. `#<group id>` in the URL opens one, and a bare visit opens Set up
-(`defaultGroupId.ts`). The calls to action sit at the bottom of the rail
-(`DemoRailActions`: Download for macOS as the primary button, Star on GitHub
-under it) below one quiet line, `DemoRailNote`: that this is the real Goodboy on
-sample projects, and, once every group counts all its outcomes tried (a
-group without hints counts once it was opened, kept under `goodboy-demo-visits`
-by `useGroupVisits`; `hints/isEveryGroupTried.ts`), that the visitor has tried
-every group. The rail is hidden below the `lg` breakpoint, so the top bar shows
-a second Download button only there. The top bar's left side holds the logo and
-a goodboy-ai.dev link back to the website (both carry the current `?theme=`),
-its right side only the theme toggle.
+`demo` is the playground, a guided path and not a catalog. Its unit is the
+step: one action the visitor does in the app. A group (`demoChapters.ts`, names
+and one line in `demoGroups.ts`, which the phone page reads too) is an ordered
+list of steps and a list of frames. A step is a hint (`hints/demoHintTypes.ts`):
+`label` for the rail, `copy` for the coach mark, `instruction` for the header,
+`result` for the line that follows the action, `beat` for the frame it lives in,
+an anchor, and two checks. A frame (`DemoBeat`) is another scene loaded in an
+iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by
+900 and scaled to fit, so every frame gets a clean store and its own timers.
+`#<group id>` in the URL opens a group the visitor may open, and anything else
+opens Set up (`defaultGroupId.ts`).
 
-Nothing in the bottom bar moves to another group: it holds the previous chevron,
-Replay and the steps. The rail row is the way to move, and the arrow keys keep
-working. The row after the open group carries an "Up next" label and a soft
-ring (`DemoRailRow`, `data-up-next="soon"`). Once the open group counts all its
-outcomes tried (or, for a group without hints, its last step has completed) the
-ring turns solid (`data-up-next="ready"`) and the row breathes a soft glow for
-three cycles, then rests (`data-pulsing` is `true` only in that window; with
-reduced motion the glow is skipped and the solid ring stays). There is no card
-or extra copy: the row is the way on. The last group has no row up next. The page behind the
-stage uses the `surround` surface, darker than any app surface, so the app frame
-reads as a window.
+The rail is one vertical spine drawn with the app's own primitives: rows go
+through `layoutTimelineRail`, drawn by `TimelineRail` in a `SpawnedRailCell`,
+with `WorkNode` markers, the same ones as the Spawned panel (`demoRailOf.ts`,
+`DemoRail.tsx`, `DemoRailGroupRow.tsx`, `DemoRailStep.tsx`). Each group is a
+heading on the spine with its title, an "Optional" tag for Set up and a quiet
+"n of m" count. The open group lists its steps under it, indented on an elbow:
+a done step is a check, the step in progress is the live marker, the steps after
+it are dashed. A step is never a button: the path only moves forward. The
+header counter ("Step n of m"), the coach mark ("Step n of m") and the rail use
+the same n and m, the steps of the group. Get Goodboy closes the same spine.
+
+The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
+steps are, `locked` while a group before it that is not optional is not done,
+and `open` otherwise; Set up is optional, so it is always open and never holds
+the others back, and the first required group is open from the start. A locked
+group row is muted, disabled and has no hover state. A done group stays open to
+revisit, on its last frame with every step checked. A hash that names a locked
+group opens Set up. Get Goodboy is locked until every required group is done.
+"Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
+then rest) appears only on the group after the open one, and only once the open
+group has every step done; before that nothing glows. Restart clears every
+group and goes back to the first step of Set up. The rail is hidden below the
+`lg` breakpoint; `DemoCompactNav` then shows the group switcher (Next group is
+disabled while the next group is locked) and the current step. The top bar's
+left side holds the logo and a goodboy-ai.dev link back to the website (both
+carry the current `?theme=`). Download for macOS and Star on GitHub live only on
+the Get Goodboy screen (`DemoClosing`). The page behind the stage uses the
+`surround` surface, darker than any app surface, so the app frame reads as a
+window.
 
 The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
 wins on first load, then the choice kept under `goodboy-demo-theme` (every read
@@ -398,13 +409,14 @@ The frame still answers `pause` and `restart` (a restart carries a higher
 generation, restores the store it had before the first cue and drops every
 report from an older generation), but the shell no longer sends them. The
 stage shows a frame only once it reports `ready`, keeping the previous one on
-screen until then. Nothing moves on by itself: the visitor drives, and a beat
-changes only when they pick a step in the timeline or act in the app. A group
-can name a `placeOf` check and give its beats a `place`; the frame reports
-`place` when that check changes, and the timeline follows the step without
-reloading the frame (Set up follows the wizard screen this way). Picking the
-step the frame left reloads it fresh. Replay loads the group's first beat in a
-fresh frame and clears its hint progress. On the board the card that leaves Running travels once to Needs
+screen until then. Nothing moves on by itself: the visitor drives, and the
+frame changes only when the next step lives in another frame, after the result
+of the step before it was shown. The frame shown is the one named by the step in
+progress (`useDemoHints` returns `beatIndex`; `useBeatPlayer` only loads it), so
+a state earlier than one already reached is never shown again. Several steps can
+share a frame, and then the visitor's own actions in the app move the scene
+(Set up and Orchestrate are one frame each). Replay loads the group's frame in a
+fresh frame and clears its progress. On the board the card that leaves Running travels once to Needs
 you: `demo/director/travelCard.ts` flies a copy of the card from its old box to
 its new one over the columns (a column's `ScrollFade` would clip the real card)
 and fades the real card in as the copy lands. It runs only in the demo, since
@@ -476,61 +488,56 @@ the session, opens it and streams a short reply, and a timeline that has its
 own spawn (Auto) keeps it for its session.
 
 A group carries an ordered list of hints (`demo/hints/`, typed in
-`demoHintTypes.ts`): an id, the copy, the outcome it counts toward, an anchor,
-a preferred side and two checks, reveal when and done when. The anchor is a
+`demoHintTypes.ts`), and each one is a step: an id, a `label` (the rail), the
+`copy` (the coach mark), the `instruction` (the header), the `result` (what the
+header says once it is done), the `beat` (the frame it needs), an anchor, a
+preferred side and two checks, reveal when and done when. The anchor is a
 selector inside the frame (an existing `aria-label` or role, or a
 `data-demo-anchor` that only the demo reads), and the two checks read the real
-store and DOM of the frame. Once a frame is ready the stage sends
-it `hints` (the group id and the hint ids already tried or skipped); the frame's
+store and DOM of the frame. Once a frame is ready the stage sends it `hints`
+(the group id and the ids of the steps already done); the frame's
 `createHintEngine` re-measures on store changes, DOM mutations, scroll and
-resize in one animation frame and reports `anchor` (the first untried hint whose
-control exists, with its rect, or `isOffscreen` when a scroll container or the
-viewport hides it) and `tried` (a hint whose done check held after its reveal
-check did). The done check compares against the store as it was when the reveal
+resize in one animation frame and works on one step only, the first one not yet
+done, in the authored order: it reports `anchor` (that step, with its rect, or
+`isOffscreen` when a scroll container or the viewport hides it) and `tried`
+(its done check held after its reveal check did). A later step is never lit,
+never armed and never credited early, and a press on a later control counts for
+nothing. The done check compares against the store as it was when the reveal
 check first held, so data a scene seeds after the engine starts never counts as
-the visitor's action; a reveal check therefore waits for its control to render. Reports carry the frame's generation and the stage
-drops any from an older generation or another frame. A frame that reports
-`ready` again (it reloaded) loses its note, and the stage sends it `play` and
-`hints` again. The stage draws one note
-beside the anchor through the stage scale, a 2px outline and a callout that
-tries the other sides near an edge (below before the opposite side); only the
-callout takes clicks. A control scrolled out of view gets a note at the bottom
-of the stage with Show control, which sends `reveal` so the frame scrolls it
-into view once. Escape hides either note, H brings it back, Skip hint settles
-it. A group has no closing hint: when it is done the Up next row pulses and the
-header says so. Each hint has two texts, both in its definition: `copy`, a few
-words on the coach mark, and `instruction`, the line under the group title
-(what to do right now and why). The header line comes from
-`hints/headerInstruction.ts`: the group is done ("<group> is done. Go on with
-<next>, marked Up next on the left."), else the active hint's `instruction`
-(also while the coach mark is hidden), else the `shows` line of the current beat
-(`DemoBeat.shows`). The two texts never repeat each other. Simulated replies speak as the
-agent on the sample project and never mention the app or the demo. The rail and the header count distinct
-outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
-(every read and write survives blocked storage), and Replay clears the open
-group only. Every change reads the stored progress first and writes one
-group back, so two tabs never overwrite each other, and a `storage` event
-updates the other tab. Replay bumps the group's `epoch`; a mark made against
-an older epoch is dropped, so a stale tab cannot bring a replayed group back. Every group has its data file: `onboardingHints.ts`, `agentHints.ts` (with the
-limits handoff), `orchestrateHints.ts` (Auto start, plan approval and a helper,
-then the run approval, a step and a model), `findHints.ts` (board filter, the
-card that needs you, a plan and its comment) and `reviewHints.ts` (the webhook
-handler, a line note, then one review comment fixed, ready with its drafted
-reply and applied). `data-demo-anchor` marks only controls with no stable name:
-the setup buttons, Auto's Approve plan, the run header action (`run-<kind>`) and
-Start fix.
+the visitor's action; a reveal check therefore waits for its control to render.
+Reports carry the frame's generation and the stage drops any from an older
+generation or another frame. A frame that reports `ready` again (it reloaded)
+loses its note, and the stage sends it `play` and `hints` again. The stage
+draws one note beside the anchor through the stage scale, a 2px outline and a
+callout that tries the other sides near an edge (below before the opposite
+side); only the callout takes clicks. The note goes away as soon as the visitor
+presses the control, so it never covers what the control opens. A control
+scrolled out of view gets a note at the bottom of the stage with Show control,
+which sends `reveal` so the frame scrolls it into view once. Escape hides the
+note and H brings it back (Hide hints and Show hints in the top bar do the same
+and are kept in the tab); there is no Skip, as a step the visitor did not do
+would break the story after it.
 
-Guidance hints add steps without adding outcomes (`outcome: null`): the Claude
-limits chip and the model picker (Work with an agent), Create report on the
-finished run (Orchestrate), New and the report details (Find work and results).
-`resolve-read` shares the outcome `fix-ready` with `resolve-start`: a visitor
-who steps to the Fixing or Ready beat, where the fix is already running or
-finished and `resolve-start` can never see a new attempt, earns it by opening a
-comment that already holds a drafted reply. The Fixing beat drafts a reply too
-(`resolveReplyDraft.ts`), so its rows are readable. Every group is walked to
-its full count in a test (`groupHints.twin.test.tsx`, `createHintEngine.test.ts`);
-the orchestrate and find walks must run before the review ones in the file, as
-the resolve overlay stays installed once a review test has run.
+The header line (`hints/headerInstruction.ts`) is always what to do now: the
+step's `instruction`; once the step is done, its `result` for at least 2.5
+seconds (`hints/resultDwellMs.ts`, the engine's dwell) and until the control of
+the next step is on screen, so a result is never replaced by an instruction
+for a control the visitor cannot see yet; when the group is done, "<group> is
+done. Go on with <next>, marked Up next." The line never goes back to a
+description of the scene, and it never says a step is done before its result is
+visible. The frame shown changes after the result was held, and only if the
+next step lives in another frame. Simulated replies speak as the agent on the
+sample project and never mention the app or the demo. Progress is the list of
+done steps per group, kept in `sessionStorage` under `goodboy-demo-hints`
+(every read and write survives blocked storage), so a new tab starts fresh,
+and Replay clears the open group only. Replay bumps the group's `epoch`; a mark
+made against an older epoch is dropped, so a stale tab cannot bring a replayed
+group back. A `tried` report is accepted only for the step that is next, in
+`useDemoHints`, as well as in the engine. Every group has its data file:
+`onboardingHints.ts`, `agentHints.ts`, `orchestrateHints.ts`, `findHints.ts` and
+`reviewHints.ts`. `data-demo-anchor` marks only controls with no stable name:
+the setup buttons, Auto's Approve plan and Start fix. Every group is walked to
+its last step in a test.
 
 While a hint points at something on screen, the stage dims and lightly blurs
 everything except the context of the step (`DemoSpotlight`): one `bg-surround`
@@ -550,38 +557,37 @@ centre of its pane once per hint (`scrolled` in `createHintEngine`) before it
 is lit, and the report follows scroll and resize, so the hole stays aligned.
 A hint with no visible anchor (a control that could not be
 scrolled in) never dims, and offers Show control. The frame reports `isClicked`
-once the visitor pressed the control, and the spotlight lifts then, and on
-Escape, Skip hint or when the hint is done. While it is on, only the secondary chrome recedes to 65 percent
-(`quietClasses`, `data-quiet`): the rail rows other than the open group and
-the next one, the version chip and the link back to the site. The group title,
-its instruction or Try this line, the step counter, the rail note, Download, Star,
-Up next and the coach mark stay at full strength, and hover or focus brings a
-quiet row back.
-A step is done only once its result has been shown. When a hint is done, or the
-hint the visitor pressed gives way to another, `createHintEngine` holds the next
-one for 2.5 seconds (`DWELL_MS`) and reports no hint, so nothing dims and no
-callout moves while the result is read; the wait grows while the pointer keeps
-moving over the result, up to 8 seconds, and a pointer that stopped does not
-hold it. Skip hint and a reset never wait. `director/createResultTracker.ts`
+once the visitor pressed the control, and the spotlight and the note lift then,
+and on Escape or when the step is done. While it is on, only the secondary
+chrome recedes to 65 percent (`quietClasses`, `data-quiet`): the rail rows other
+than the open group and the next one, the version chip and the link back to the
+site. The group title, its instruction, the step counter, Up next and the coach
+mark stay at full strength, and hover or focus brings a quiet row back.
+A step is done only once its result has been shown. When a step is done,
+`createHintEngine` holds the next one for 2.5 seconds
+(`hints/resultDwellMs.ts`) and reports no hint, so nothing dims and no callout
+moves while the result is read; the wait grows while the pointer keeps moving
+over the result, up to 8 seconds, and a pointer that stopped does not hold it.
+A reset never waits. `director/createResultTracker.ts`
 finds the result: what appeared in the 450ms after a trusted press (a popover
 portal whose wrapper has no height counts through its visible children), kept
 until the visitor presses somewhere else or it closes. The next hint's hole is
 the control, its region and the open result (`director/unionOf.ts`); when that
 covers more than 60 percent of the stage (`hints/isHoleTooBig.ts`) the hint
 shows without a spotlight instead of dimming the result. The engine never
-scrolls to the next control while a result is open; Show control still does,
-and the hint in that state also offers Skip hint. Hints never take focus. After
+scrolls to the next control while a result is open; Show control still does.
+Hints never take focus. After
 a press, the demo frame ignores a programmatic `focus()` on the composer for
 3 seconds unless the press was inside the composer, so the opened view keeps
 focus (the real app focuses the composer on opening a helper; that stays in the
 app and is refused only in the demo frame).
 A group switch answers at once: the rail row is selected, and `DemoStageLoading`
 covers the stage until the new frame reports ready, whether it is the first one
-or a switch. It names what is loading ("Loading Work with an agent" for the
-opening beat of a group, "Loading Limits" for another beat; `StageFrame.label`).
-Hovering, focusing or pressing a rail row preloads that group's
-opening frame (`intentChapter` in `useBeatPlayer`), in place of the next group,
-so the wait is a few frames when the pointer lingered.
+or a switch. It names what is loading (the frame's `label`; `StageFrame.label`).
+The frame the next step needs is loaded in advance (`preloadBeat` in
+`useBeatPlayer`, from `nextBeatIndex` of `useDemoHints`), so a frame change after
+a result is a swap. Hovering, focusing or pressing an open group row preloads
+that group's opening frame instead, and a finished group preloads the next one.
 In the demo the Goodboy menu never opens itself after the first task, the chip
 stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the

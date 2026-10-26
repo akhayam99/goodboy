@@ -1,5 +1,6 @@
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from '../hints/demoHintTypes';
+import { RESULT_DWELL_MS } from '../hints/resultDwellMs';
 import { DEMO_PROTOCOL, type DemoHintReport, type DemoRect } from './demoProtocol';
 import type { DirectorStore } from './directorTypes';
 import { createResultTracker } from './createResultTracker';
@@ -10,16 +11,8 @@ type ReportParams = {
   readonly report: DemoHintReport;
 };
 
-type HintIdParams = {
-  readonly hintId: string;
-};
-
 type TrackParams = {
   readonly chapterId: string;
-};
-
-type PlaceParams = TrackParams & {
-  readonly root: Document;
 };
 
 type Params = {
@@ -27,7 +20,6 @@ type Params = {
   readonly view: Window;
   readonly generation: () => number;
   readonly hintsOf: (params: TrackParams) => ReadonlyArray<DemoHint>;
-  readonly placeOf: (params: PlaceParams) => string | null;
   readonly onReport: (params: ReportParams) => void;
 };
 
@@ -77,7 +69,6 @@ type ElementParams = {
 };
 
 const CUT_TOLERANCE = 2;
-const DWELL_MS = 2500;
 const HOVER_GRACE_MS = 600;
 const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
@@ -155,17 +146,13 @@ export const createHintEngine = ({
   view,
   generation,
   hintsOf,
-  placeOf,
   onReport,
 }: Params): HintEngine => {
   const root = view.document;
-  let chapterId: string | null = null;
-  let lastPlace: string | null = null;
+  let trackedId: string | null = null;
   let hints: ReadonlyArray<DemoHint> = [];
   let settled: ReadonlySet<string> = new Set();
   const done = new Set<string>();
-  const dwelt = new Set<string>();
-  let shownId: string | null = null;
   const armed = new Set<string>();
   const clicked = new Set<string>();
   const scrolled = new Set<string>();
@@ -256,17 +243,8 @@ export const createHintEngine = ({
     };
   };
 
-  const reportPlace = (): void => {
-    if (chapterId === null) {
-      return;
-    }
-    const place = placeOf({ chapterId, root });
-    if (place === null || place === lastPlace) {
-      return;
-    }
-    lastPlace = place;
-    onReport({ report: { ...envelope(), type: 'place', place } });
-  };
+  const activeOf = (): DemoHint | undefined =>
+    hints.find((hint) => !done.has(hint.id) && !settled.has(hint.id));
 
   const placeHint = ({ hint, state }: ProbeParams): Placement => {
     const probe = probeOf({ hint, state });
@@ -287,22 +265,20 @@ export const createHintEngine = ({
   };
 
   const currentOf = ({ state }: StateParams): Current | undefined => {
-    for (const hint of hints) {
-      if (done.has(hint.id) || settled.has(hint.id) || !hint.revealWhen(probeOf({ hint, state }))) {
-        continue;
-      }
-      const placement = placeHint({ hint, state });
-      if (placement.rect !== null || placement.isOffscreen) {
-        return { hint, placement };
-      }
+    const hint = activeOf();
+    if (hint === undefined || !hint.revealWhen(probeOf({ hint, state }))) {
+      return undefined;
+    }
+    const placement = placeHint({ hint, state });
+    if (placement.rect !== null || placement.isOffscreen) {
+      return { hint, placement };
     }
     return undefined;
   };
 
-  const startDwell = ({ hintId }: HintIdParams): void => {
-    dwelt.add(hintId);
+  const startDwell = (): void => {
     dwellStart = Date.now();
-    dwellUntil = dwellStart + DWELL_MS;
+    dwellUntil = dwellStart + RESULT_DWELL_MS;
   };
 
   const isDwelling = (): boolean => {
@@ -329,41 +305,24 @@ export const createHintEngine = ({
     if (isDisposed) {
       return;
     }
-    reportPlace();
     if (hints.length === 0) {
       return;
     }
     const state = store.getState();
-    for (const hint of hints) {
-      if (done.has(hint.id)) {
-        continue;
-      }
+    for (let hint = activeOf(); hint !== undefined; hint = activeOf()) {
       const probe = probeOf({ hint, state });
       if (!armed.has(hint.id) && hint.revealWhen(probe)) {
         armed.add(hint.id);
         baselines.set(hint.id, state);
       }
-      if (armed.has(hint.id) && hint.doneWhen(probe)) {
-        done.add(hint.id);
-        startDwell({ hintId: hint.id });
-        onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
+      if (!armed.has(hint.id) || !hint.doneWhen(probe)) {
+        break;
       }
+      done.add(hint.id);
+      startDwell();
+      onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
     }
-    let current = isDwelling() ? undefined : currentOf({ state });
-    const previousId = shownId;
-    const isReplaced =
-      previousId !== null &&
-      current?.hint.id !== previousId &&
-      !dwelt.has(previousId) &&
-      clicked.has(previousId);
-    if (previousId !== null && isReplaced && dwellUntil === 0) {
-      startDwell({ hintId: previousId });
-      isDwelling();
-      current = undefined;
-    }
-    if (current !== undefined) {
-      shownId = current.hint.id;
-    }
+    const current = isDwelling() ? undefined : currentOf({ state });
     const rect = current?.placement.rect ?? null;
     const resultRects = current === undefined ? [] : results.rects();
     const focus =
@@ -394,11 +353,10 @@ export const createHintEngine = ({
     if (!event.isTrusted || !(event.target instanceof Node)) {
       return;
     }
-    const target = event.target;
-    const state = store.getState();
-    for (const hint of hints) {
-      const anchor = anchorOf({ hint, probe: probeOf({ hint, state }) });
-      if (anchor !== null && anchor.contains(target)) {
+    const hint = activeOf();
+    if (hint !== undefined) {
+      const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
+      if (anchor !== null && anchor.contains(event.target)) {
         clicked.add(hint.id);
       }
     }
@@ -415,13 +373,12 @@ export const createHintEngine = ({
 
   return {
     setTrack: ({ chapterId: track, settledIds }) => {
-      if (chapterId !== track) {
+      if (trackedId !== track) {
         scrolled.clear();
       }
-      chapterId = track;
+      trackedId = track;
       hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
-      shownId = null;
       lastSignature = '';
       schedule();
     },
@@ -441,10 +398,7 @@ export const createHintEngine = ({
       scrolled.clear();
       baselines.clear();
       lastSignature = '';
-      lastPlace = null;
       dwellUntil = 0;
-      dwelt.clear();
-      shownId = null;
       results.reset();
       schedule();
     },

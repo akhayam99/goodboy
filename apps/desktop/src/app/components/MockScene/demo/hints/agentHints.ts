@@ -1,4 +1,3 @@
-import { isOpenQuestionAnswerText } from '@goodboy/core';
 import type { TurnEvent } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
@@ -7,11 +6,6 @@ import { hasElement } from './hasElement';
 type StateParams = {
   readonly state: AppStore;
 };
-
-const userTurnsOf = ({ state }: StateParams): number =>
-  Object.values(state.transcripts)
-    .flat()
-    .filter((event) => event.kind === 'user_text' && !isOpenQuestionAnswerText(event.text)).length;
 
 const answeredOf = ({ state }: StateParams): number => {
   const sessionId = state.currentSessionId;
@@ -34,18 +28,6 @@ const isAgentBusy = ({ state }: StateParams): boolean => {
     return false;
   }
   return state.agentTurnState[agentId]?.kind === 'running';
-};
-
-const hasDraft = ({ state }: StateParams): boolean => {
-  const sessionId = state.currentSessionId;
-  if (sessionId === null) {
-    return false;
-  }
-  const agentId = state.selectedAgentId[sessionId];
-  if (agentId === null || agentId === undefined) {
-    return false;
-  }
-  return (state.agentDraft[agentId] ?? '').trim().length > 0;
 };
 
 const blockingQuestionOf = ({ state }: StateParams): string | null => {
@@ -71,9 +53,6 @@ const transcriptOf = ({ state }: StateParams): ReadonlyArray<TurnEvent> => {
   return state.transcripts[agentId] ?? [];
 };
 
-const hasHandoff = ({ state }: StateParams): boolean =>
-  transcriptOf({ state }).some((event) => event.kind === 'decision_note');
-
 const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
   const before = new Set(transcriptOf({ state: start }).map((event) => event.runId));
   const events = transcriptOf({ state });
@@ -88,29 +67,18 @@ const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
   );
 };
 
-const hasSent = ({ state, start }: HintProbe): boolean =>
-  userTurnsOf({ state }) > userTurnsOf({ state: start });
-
 const OPERATIONS = 'button[aria-label^="Operations"]';
 const CLAUDE_LIMITS = 'button[aria-label^="Claude limits"]';
-const MODEL = 'button[aria-label^="Model routing"]';
+const COMPOSER = 'textarea[aria-label="Message to the agent"]';
 
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
-    id: 'agent-send',
-    copy: 'Send the follow-up',
-    instruction: 'Press Send to give the agent a follow-up while it works on the same task.',
-    outcome: 'turn-replied',
-    anchor: 'button[aria-label="Send message"]',
-    side: 'left',
-    revealWhen: ({ state }) => hasDraft({ state }),
-    doneWhen: (probe) => hasSent(probe) && !isAgentBusy({ state: probe.state }),
-  },
-  {
     id: 'agent-answer',
+    label: 'Answer its question',
     copy: 'The agent is waiting on you',
     instruction: 'Pick an answer to the agent question so it can carry on with the task.',
-    outcome: 'question-answered',
+    result: 'The agent has your answer and carries on with the task.',
+    beat: 0,
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
       return id === null ? null : `[data-oq-anchor="${CSS.escape(id)}"]`;
@@ -121,46 +89,39 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-limits-peek',
+    label: 'Check the limits',
     copy: 'Check what is left',
     instruction: 'Open the limits chip to see how much of your Claude plan you have left.',
-    outcome: null,
+    result: 'Claude is at its weekly limit: it can run out in the middle of a task.',
+    beat: 1,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
-    revealWhen: ({ state, root }) =>
-      hasElement({ root, selector: CLAUDE_LIMITS }) && !hasHandoff({ state }),
+    revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
   {
     id: 'agent-limits',
+    label: 'Continue on Codex',
     copy: 'Codex takes over',
     instruction:
       'Claude hit its limit: send a message and watch Codex continue with the same brief.',
-    outcome: 'task-continued',
-    anchor: 'textarea[aria-label="Message to the agent"]',
+    result: 'Codex took over with the same brief Claude had.',
+    beat: 1,
+    anchor: COMPOSER,
     side: 'top',
-    revealWhen: ({ state }) => hasHandoff({ state }) && !isAgentBusy({ state }),
+    revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: isVisitorHandoffDone,
   },
   {
     id: 'agent-files',
+    label: 'Open the edited files',
     copy: 'Files it edited',
     instruction: 'Open Operations to see which files the agent edited and what changed in them.',
-    outcome: 'files-opened',
+    result: 'The files the agent edited are listed with what changed in each.',
+    beat: 1,
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: ({ root, isAnchorClicked }) =>
       isAnchorClicked || root.querySelector(`${OPERATIONS}[aria-expanded="true"]`) !== null,
-  },
-  {
-    id: 'agent-model',
-    copy: 'Choose the model',
-    instruction: 'Open the model picker to choose which model answers your next message.',
-    outcome: null,
-    anchor: MODEL,
-    side: 'top',
-    revealWhen: ({ state, root }) =>
-      !isAgentBusy({ state }) && hasElement({ root, selector: MODEL }),
-    doneWhen: ({ root, isAnchorClicked }) =>
-      isAnchorClicked || root.querySelector(`${MODEL}[aria-expanded="true"]`) !== null,
   },
 ];

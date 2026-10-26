@@ -58,14 +58,6 @@ type DemoAnchorReport = {
   readonly isClicked?: boolean;
 };
 
-type DemoPlaceReport = {
-  readonly channel: typeof DEMO_PROTOCOL.channel;
-  readonly version: typeof DEMO_PROTOCOL.version;
-  readonly generation: number;
-  readonly type: 'place';
-  readonly place: string;
-};
-
 type DemoTriedReport = {
   readonly channel: typeof DEMO_PROTOCOL.channel;
   readonly version: typeof DEMO_PROTOCOL.version;
@@ -74,7 +66,7 @@ type DemoTriedReport = {
   readonly hintId: string;
 };
 
-export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoPlaceReport;
+export type DemoHintReport = DemoAnchorReport | DemoTriedReport;
 
 export type DemoTheme = 'dark' | 'light';
 

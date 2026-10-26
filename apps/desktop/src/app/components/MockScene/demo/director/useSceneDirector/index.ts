@@ -61,14 +61,6 @@ const chapterOf = ({ chapterId }: ChapterParams) =>
   DEMO_CHAPTERS.find((chapter) => chapter.id === chapterId);
 
 const hintsOf = ({ chapterId }: ChapterParams) => chapterOf({ chapterId })?.hints ?? [];
-
-type PlaceParams = ChapterParams & {
-  readonly root: Document;
-};
-
-const placeOf = ({ chapterId, root }: PlaceParams): string | null =>
-  chapterOf({ chapterId })?.placeOf?.({ root }) ?? null;
-
 export const useSceneDirector = ({ sceneName }: Params): void => {
   useEffect(() => {
     let director: SceneDirector | null = null;
@@ -134,7 +126,6 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         view: window,
         generation: () => started.generation(),
         hintsOf,
-        placeOf,
         onReport: post,
       });
       director.start();

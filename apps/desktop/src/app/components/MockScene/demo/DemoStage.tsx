@@ -56,7 +56,6 @@ type Props = {
   readonly offscreen: OffscreenHint | undefined;
   readonly reveal: HintReveal | undefined;
   readonly onHintReport: (params: HintReportParams) => void;
-  readonly onSkipHint: () => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
 };
@@ -108,7 +107,6 @@ export const DemoStage = ({
   offscreen,
   reveal,
   onHintReport,
-  onSkipHint,
   onHideHint,
   onRevealHint,
 }: Props) => {
@@ -390,17 +388,11 @@ export const DemoStage = ({
                 coach={coach}
                 scale={scale}
                 bounds={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
-                onSkip={onSkipHint}
                 onHide={onHideHint}
               />
             ) : null}
             {offscreen !== undefined && shownKey === currentKey ? (
-              <DemoHintSlot
-                hint={offscreen}
-                onReveal={onRevealHint}
-                onSkip={onSkipHint}
-                onHide={onHideHint}
-              />
+              <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
             ) : null}
             {frames.map((frame) => {
               const isVisible = frame.key === visibleKey && shownKey !== undefined;

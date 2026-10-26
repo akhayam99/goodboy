@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
@@ -27,7 +27,6 @@ type Props = {
   readonly coach: CoachMark;
   readonly scale: number;
   readonly bounds: Size;
-  readonly onSkip: () => void;
   readonly onHide: () => void;
 };
 
@@ -83,7 +82,7 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
+export const DemoCoachMark = ({ coach, scale, bounds, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -197,14 +196,9 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-meta text-faint-foreground">
-            Step {coach.step} of {coach.total}
-          </span>
-          <Button size="xs" variant="quiet" onClick={onSkip}>
-            Skip hint
-          </Button>
-        </div>
+        <span className="text-meta text-faint-foreground">
+          Step {coach.step} of {coach.total}
+        </span>
       </div>
     </div>
   );

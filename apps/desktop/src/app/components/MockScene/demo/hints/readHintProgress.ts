@@ -18,11 +18,10 @@ const epochOf = ({ value }: ValueParams): number =>
 
 const chapterOf = ({ value }: ValueParams): ChapterHintProgress => {
   if (typeof value !== 'object' || value === null) {
-    return { tried: [], skipped: [], epoch: 0 };
+    return { tried: [], epoch: 0 };
   }
   return {
     tried: idsOf({ value: Reflect.get(value, 'tried') }),
-    skipped: idsOf({ value: Reflect.get(value, 'skipped') }),
     epoch: epochOf({ value: Reflect.get(value, 'epoch') }),
   };
 };

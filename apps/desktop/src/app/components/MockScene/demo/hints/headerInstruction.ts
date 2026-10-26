@@ -1,25 +1,19 @@
 import type { DemoChapter } from '../demoChapters';
+import type { DemoHint } from './demoHintTypes';
 
 type Params = {
   readonly chapter: DemoChapter;
-  readonly beatIndex: number;
-  readonly hintInstruction: string | undefined;
-  readonly isGroupDone: boolean;
+  readonly held: DemoHint | undefined;
+  readonly active: DemoHint | undefined;
   readonly nextTitle: string;
 };
 
-export const headerInstruction = ({
-  chapter,
-  beatIndex,
-  hintInstruction,
-  isGroupDone,
-  nextTitle,
-}: Params): string => {
-  if (isGroupDone) {
+export const headerInstruction = ({ chapter, held, active, nextTitle }: Params): string => {
+  if (held !== undefined) {
+    return held.result;
+  }
+  if (active === undefined) {
     return `${chapter.title} is done. Go on with ${nextTitle}, marked Up next.`;
   }
-  if (hintInstruction !== undefined) {
-    return hintInstruction;
-  }
-  return chapter.beats[beatIndex]?.shows ?? chapter.title;
+  return active.instruction;
 };

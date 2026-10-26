@@ -1,39 +1,53 @@
-import { Check } from 'lucide-react';
-import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { WorkNode, cn } from '@goodboy/ui';
+import type { RailRow } from '../../../../features/workTreeModel/railGeometry';
+import { SpawnedRailCell } from '../../SpawnedPanel/SpawnedRailCell';
+import { STEP_ROW_HEIGHT } from './demoRailOf';
 
 export type StepState = 'done' | 'current' | 'todo';
 
 type Props = {
   readonly label: string;
   readonly state: StepState;
-  readonly onSelect: () => void;
+  readonly rail: RailRow;
+  readonly railWidth: number;
 };
 
-export const DemoRailStep = ({ label, state, onSelect }: Props) => (
-  <button
-    type="button"
-    onClick={onSelect}
+const NODE_STATE = {
+  done: 'done',
+  current: 'running',
+  todo: 'queued',
+} as const satisfies Record<StepState, 'done' | 'running' | 'queued'>;
+
+const WORD = {
+  done: 'done',
+  current: 'now',
+  todo: 'next',
+} as const satisfies Record<StepState, string>;
+
+export const DemoRailStep = ({ label, state, rail, railWidth }: Props) => (
+  <li
     aria-current={state === 'current' ? 'step' : undefined}
     data-state={state}
-    className={cn(
-      'grid w-full grid-cols-[14px_minmax(0,1fr)] items-center gap-2 rounded-md px-2 py-1 text-left',
-      ROW_INTERACTIVE,
-      'data-[state=current]:bg-selected data-[state=current]:hover:bg-selected',
-    )}
+    aria-label={`${label}, ${WORD[state]}`}
+    style={{ height: STEP_ROW_HEIGHT }}
+    className="flex min-w-0 items-center gap-2 pr-2 text-ui"
   >
-    <span className="flex items-center justify-center">
-      {state === 'done' ? (
-        <Check size={ICON_SIZE.row} className="text-faint-foreground" aria-hidden />
-      ) : null}
-      {state === 'current' ? <span className="size-2 rounded-full bg-primary" aria-hidden /> : null}
-    </span>
+    <SpawnedRailCell
+      rail={rail}
+      width={railWidth}
+      marker={
+        <WorkNode state={NODE_STATE[state]} label={WORD[state]} mark={{ kind: 'dot' }} size="sm" />
+      }
+    />
     <span
       className={cn(
-        'truncate text-label',
-        state === 'current' ? 'text-foreground' : 'text-muted-foreground',
+        'min-w-0 truncate',
+        state === 'current' ? 'text-foreground' : null,
+        state === 'done' ? 'text-muted-foreground' : null,
+        state === 'todo' ? 'text-faint-foreground' : null,
       )}
     >
       {label}
     </span>
-  </button>
+  </li>
 );

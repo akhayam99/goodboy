@@ -15,19 +15,10 @@ const AUTO_START = 'textarea[aria-label="Start a run"]';
 const AUTO_APPROVE = '[data-demo-anchor="auto-approve"]';
 const AUTO_CHILD =
   'ul[aria-label="Delegations"] > li[data-delegation] > span > button[aria-label^="Open "]';
-const RUN_APPROVE = '[data-demo-anchor="run-approve-plan"]';
-const RUN_STEP = '[role="treeitem"][data-tree-id]';
-const RUN_MODEL = 'button[aria-label^="Model routing"]';
-const RUN_REPORT = 'button[data-testid="create-report-cta"]';
 
 const isAutoSession = ({ state }: StateParams): boolean => {
   const sessionId = state.currentSessionId;
   return sessionId !== null && state.autoTreeViews[sessionId] !== undefined;
-};
-
-const isRunSession = ({ state }: StateParams): boolean => {
-  const sessionId = state.currentSessionId;
-  return sessionId !== null && (state.focusedWorkflowRunId[sessionId] ?? null) !== null;
 };
 
 const rootTurnsOf = ({ state, isApproval }: TurnParams): ReadonlySet<string> => {
@@ -61,33 +52,15 @@ const hasNewRootTurn = ({ state, start, isApproval }: NewTurnParams): boolean =>
   return [...rootTurnsOf({ state, isApproval })].some((runId) => !known.has(runId));
 };
 
-const approvedRunsOf = ({ state }: StateParams): ReadonlySet<string> =>
-  new Set(
-    state.sessions.flatMap((session) =>
-      session.workflowRuns.flatMap((run) =>
-        run.rulesSnapshot?.planApproved === true ? [run.id] : [],
-      ),
-    ),
-  );
-
-const hasApprovedRun = ({ state, start }: HintProbe): boolean => {
-  const before = approvedRunsOf({ state: start });
-  return [...approvedRunsOf({ state })].some((runId) => !before.has(runId));
-};
-
-const routingOf = ({ state }: StateParams): string =>
-  JSON.stringify([state.agentModelOverride, state.agentProviderOverride]);
-
-const hasPickedModel = ({ state, start }: HintProbe): boolean =>
-  routingOf({ state }) !== routingOf({ state: start });
-
 export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'auto-start',
+    label: 'Give Auto a goal',
     copy: 'Give Auto a goal',
     instruction:
       'Describe a goal and press Start: Auto plans it and splits the work between agents.',
-    outcome: 'auto-started',
+    result: 'Auto is planning: a planner agent reads the code before anything is written.',
+    beat: 0,
     anchor: AUTO_START,
     focus: 'section[aria-label="Start a run"]',
     side: 'bottom',
@@ -97,9 +70,11 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-approve',
+    label: 'Approve the plan',
     copy: 'Approve to go',
     instruction: 'Press Approve plan: Auto then starts the helper agents that run each part.',
-    outcome: 'auto-approved',
+    result: 'The plan is approved: Auto starts the helpers.',
+    beat: 0,
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_APPROVE }),
@@ -107,62 +82,16 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-child',
+    label: 'Follow a helper',
     copy: 'Follow a helper',
     instruction: 'Open a helper agent to follow what it is doing and what it has finished.',
-    outcome: 'helper-opened',
+    result: 'The helper opened: you read its work next to the plan.',
+    beat: 0,
     anchor: AUTO_CHILD,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) &&
       state.drawer?.kind !== 'auto-child' &&
       hasElement({ root, selector: AUTO_CHILD }),
     doneWhen: ({ state }) => state.drawer?.kind === 'auto-child',
-  },
-  {
-    id: 'run-approve',
-    copy: 'Approve the next step',
-    instruction: 'Approve the plan so the saved workflow can start its next step.',
-    outcome: 'run-approved',
-    anchor: RUN_APPROVE,
-    focus: '[data-testid="agent-header-title-row"]',
-    side: 'bottom',
-    revealWhen: ({ state, root }) =>
-      isRunSession({ state }) && hasElement({ root, selector: RUN_APPROVE }),
-    doneWhen: hasApprovedRun,
-  },
-  {
-    id: 'run-step',
-    copy: 'Read a step',
-    instruction: 'Open a step to read the agent that ran it and what it did.',
-    outcome: 'step-opened',
-    anchor: RUN_STEP,
-    side: 'left',
-    revealWhen: ({ state, root }) =>
-      isRunSession({ state }) &&
-      state.drawer?.kind !== 'run-step' &&
-      hasElement({ root, selector: RUN_STEP }),
-    doneWhen: ({ state }) => state.drawer?.kind === 'run-step',
-  },
-  {
-    id: 'run-model',
-    copy: 'Model per step',
-    instruction: 'Pick which model runs this step: each step can use a different one.',
-    outcome: 'model-picked',
-    anchor: RUN_MODEL,
-    side: 'left',
-    revealWhen: ({ state, root }) =>
-      isRunSession({ state }) && hasElement({ root, selector: RUN_MODEL }),
-    doneWhen: hasPickedModel,
-  },
-  {
-    id: 'run-report',
-    copy: 'Write it up',
-    instruction: 'Create a report: a written summary of this run you can share.',
-    outcome: null,
-    anchor: RUN_REPORT,
-    focus: 'div.flex-col.gap-6',
-    side: 'top',
-    revealWhen: ({ state, root }) =>
-      isRunSession({ state }) && hasElement({ root, selector: RUN_REPORT }),
-    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];
