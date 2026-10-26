@@ -345,13 +345,12 @@ an anchor, and two checks. A frame (`DemoBeat`) is another scene loaded in an
 iframe of the same server (`?scene=<id>&<params>&theme=<dark|light>`), so every
 frame gets a clean store and its own timers. The stage fills the space the page
 leaves it and the app fills the stage: a frame's viewport is the stage box
-divided by a scale that never goes below what keeps it at 1280 by 780 (the app
-itself runs from 1024 by 700) and never above 1, so the real layout adapts to
-the window and the text stays at its real size (`stageFitOf.ts`, measured by
-`useStageBox`). A frame can ask for a smaller floor and a larger scale
-(`DemoBeat.size`): the Set up wizard, which is a small window in the app, is
-drawn at 880 by 580 and up to 1.5 times so it fills the stage like the real
-onboarding window.
+divided by a scale that is the one of a 1440 by 900 app fitted to the box and
+never above 1 (`appSize.ts`, `stageFitOf.ts`, measured by `useStageBox`), so the
+app is never zoomed: a bigger stage shows more room, not bigger type. Every
+group, Set up included, uses the same scale. The stage has no inset and sits on
+the same grid as the top of the rail, with narrow gutters, so the app is a bit
+bigger only because its box is.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
 opens Set up (`defaultGroupId.ts`).
 
@@ -363,8 +362,9 @@ heading on the spine with its title, an "Optional" tag for Set up and a quiet
 "n of m" count. The open group lists its steps under it, indented on an elbow:
 a done step is a check, the step in progress is the live marker, the steps after
 it are dashed. A step is never a button: the path only moves forward. The
-header counter ("Step n of m"), the coach mark ("Step n of m") and the rail use
-the same n and m, the steps of the group. Get Goodboy closes the same spine.
+rail is the only place that shows the position: the header and the coach mark
+carry no dots and no "Step n of m" (the compact switcher, which replaces the
+rail on narrow windows, keeps its own). Get Goodboy closes the same spine.
 
 The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
 steps are, `locked` while a group before it that is not optional is not done,
@@ -382,8 +382,8 @@ disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
 carry the current `?theme=`). Download for macOS and Star on GitHub live only on
 the Get Goodboy screen (`DemoClosing`). The page behind the stage uses the
-`surround` surface, darker than any app surface, so the app frame reads as a
-window.
+`surround` surface, a touch darker than the app surfaces (lighter than the
+first cut in dark), so the app frame reads as a window.
 
 The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
 wins on first load, then the choice kept under `goodboy-demo-theme` (every read
@@ -528,8 +528,9 @@ Reports carry the frame's generation and the stage drops any from an older
 generation or another frame. A frame that reports `ready` again (it reloaded)
 loses its note, and the stage sends it `play` and `hints` again. The stage
 draws one note beside the anchor through the stage scale, a 2px outline and a
-callout that tries the other sides near an edge (below before the opposite
-side); only the callout takes clicks. The note goes away as soon as the visitor
+callout on the side of the lit region with the most room, inside the stage
+(`hints/placeCallout.ts`; the hint's side only breaks a tie); only the callout
+takes clicks. The note goes away as soon as the visitor
 presses the control, so it never covers what the control opens. A control
 scrolled out of view gets a note at the bottom of the stage with Show control,
 which sends `reveal` so the frame scrolls it into view once. Escape hides the
@@ -580,7 +581,7 @@ once the visitor pressed the control, and the spotlight and the note lift then,
 and on Escape or when the step is done. While it is on, only the secondary
 chrome recedes to 65 percent (`quietClasses`, `data-quiet`): the rail rows other
 than the open group and the next one, the version chip and the link back to the
-site. The group title, its instruction, the step counter, Up next and the coach
+site. The group title, its instruction, Up next and the coach
 mark stay at full strength, and hover or focus brings a quiet row back.
 A step is done only once its result has been shown. When a step is done,
 `createHintEngine` holds the next one for 2.5 seconds
