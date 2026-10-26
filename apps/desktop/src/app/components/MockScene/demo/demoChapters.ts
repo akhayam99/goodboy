@@ -45,7 +45,6 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     beats: [
       { label: 'Board', scene: 'board-shell' },
       { label: 'Library', scene: 'artifacts-lens-shell' },
-      { label: 'Report', scene: 'artifact-report' },
     ],
   },
   {
@@ -53,7 +52,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     hints: REVIEW_HINTS,
     beats: [
       { label: 'Diff', scene: 'brand-diff' },
-      { label: 'Review comments', scene: 'resolve-queue-shell' },
+      { label: 'Review comments', scene: 'resolve-fix-ready' },
     ],
   },
 ];

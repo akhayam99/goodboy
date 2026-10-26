@@ -18,9 +18,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
-import { U25_C08_PRESET_RUN_SCENES } from '../../scenes/u25/c08-preset-run';
 import { U25_C07_AUTO_SCENES } from '../../scenes/u25/c07-auto';
-import { C08_IMPLEMENTER_ID, C08_SESSION_ID } from '../../scenes/u25/c08RunSeed';
 import { AUTO_ROOT_ID, AUTO_SESSION } from '../../scenes/u24/autoSceneSeed';
 import { BoardShellScene } from '../../scenes/BoardShellScene';
 import { ResolveQueueShellScene } from '../../scenes/SurfaceAuditScenes';
@@ -31,7 +29,6 @@ import { createReplyRuns } from './createReplyRuns';
 import { installBoardActions } from './installBoardActions';
 import { installDemoIpc } from './installDemoIpc';
 import { installResolveActions } from './installResolveActions';
-import { installRunActions } from './runActions';
 
 const SETTLE_MS = 2_000;
 
@@ -104,24 +101,6 @@ const withSimulatedSend = (): void => {
     });
   });
 };
-
-describe('the workflow run in the demo', () => {
-  it('approves the plan and runs the next step to its end', async () => {
-    await mount({ Scene: U25_C08_PRESET_RUN_SCENES['c08-run-approval'] });
-    act(() => {
-      installRunActions({ store });
-    });
-    await click({ name: 'Approve plan' });
-    await settle({ ms: 500 });
-    expect(store.getState().agentTurnState[C08_IMPLEMENTER_ID]?.kind).toBe('running');
-    await settle({ ms: 8000 });
-    const implementer = store
-      .getState()
-      .sessionPhaseRuns[C08_SESSION_ID]?.find((agent) => agent.id === C08_IMPLEMENTER_ID);
-    expect(implementer?.status).toBe('completed');
-    expect(screen.getAllByRole('button', { name: /Start step 3/ }).length).toBeGreaterThan(0);
-  });
-});
 
 describe('Auto in the demo', () => {
   it('approves the plan from its card and finishes the helpers', async () => {

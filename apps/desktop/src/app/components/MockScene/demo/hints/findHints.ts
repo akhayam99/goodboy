@@ -1,75 +1,59 @@
-import type { AppStore } from '../../../../../store/store';
-import type { DemoHint, HintProbe } from './demoHintTypes';
+import { BOARD_STORY_SESSION } from '../../scenes/BoardScene';
+import type { DemoHint } from './demoHintTypes';
 import { hasElement } from './hasElement';
 
-type StateParams = {
-  readonly state: AppStore;
-};
-
-const CARD = 'article[data-select-id]';
-const FILTER = '[data-page="board"] button[aria-label="Filter sessions"]';
+const STORY_CARD = `article[data-select-id="${BOARD_STORY_SESSION}"] button`;
+const KIND_TABS = '[role="tablist"][aria-label="Artifact kind"]';
+const REPORTS_TAB = `${KIND_TABS} > button[role="tab"]:nth-of-type(3)`;
+const REPORT_ROW = 'button[data-artifact-row][aria-label^="Report Retried webhooks no longer"]';
 const REPORT_DETAILS = 'button[data-testid="artifact-drawer-details"]';
-const PLAN_ROW = 'button[data-artifact-row][aria-label^="Plan "]';
-
-const waitingCardOf = ({ state }: StateParams): string => {
-  const waiting = Object.entries(state.sessionOpenQuestions).find(([, questions]) =>
-    questions.some((question) => question.status === 'open'),
-  );
-  return waiting === undefined
-    ? `${CARD} button`
-    : `${CARD}[data-select-id="${CSS.escape(waiting[0])}"] button`;
-};
-
-const filtersOf = ({ state }: StateParams): string =>
-  JSON.stringify([state.selectedProjectIds, state.sessionViewPrefs]);
-
-const isPlanOpen = ({ root }: Pick<HintProbe, 'root'>): boolean =>
-  hasElement({ root, selector: '[data-testid="plan-prose-comments"]' });
 
 export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   {
-    id: 'board-filter',
-    label: 'Filter the board',
-    copy: 'Narrow the board',
-    instruction: 'Filter the board by folder to see only the sessions of one project.',
-    result: 'The board now shows one project only.',
-    beat: 0,
-    anchor: FILTER,
-    side: 'left',
-    revealWhen: ({ root }) => hasElement({ root, selector: FILTER }),
-    doneWhen: ({ state, start }) => filtersOf({ state }) !== filtersOf({ state: start }),
-  },
-  {
     id: 'board-open',
-    label: 'Open the card that needs you',
+    label: 'Open the waiting card',
     copy: 'This one needs you',
-    instruction: 'Open the card marked as waiting: its session cannot go on without you.',
-    result: 'The session opened: it is waiting on your answer.',
+    instruction:
+      'Open "Stop retried webhooks posting a second credit": Auto is done and it waits for you.',
+    result: 'The session opened: its three branches wait for your review.',
     beat: 0,
-    anchor: ({ state }) => waitingCardOf({ state }),
+    anchor: STORY_CARD,
     revealWhen: ({ state, root }) =>
-      state.currentSessionId === null && hasElement({ root, selector: CARD }),
-    doneWhen: ({ state }) => state.currentSessionId !== null,
+      state.currentSessionId === null && hasElement({ root, selector: STORY_CARD }),
+    doneWhen: ({ state }) => state.currentSessionId === BOARD_STORY_SESSION,
   },
   {
-    id: 'plan-open',
-    label: 'Open a plan',
-    copy: 'Read the plan',
-    instruction: 'Open a plan from the library to read what an agent proposed before it acts.',
-    result: 'The plan opened: read it before the agent acts.',
+    id: 'library-reports',
+    label: 'Open the reports',
+    copy: 'Find the report',
+    instruction: 'Open the Reports tab of the library: every agent writes its results there.',
+    result: 'Two reports are listed, the newest first.',
     beat: 1,
-    anchor: PLAN_ROW,
+    anchor: REPORTS_TAB,
     side: 'bottom',
-    revealWhen: ({ root }) => hasElement({ root, selector: PLAN_ROW }) && !isPlanOpen({ root }),
-    doneWhen: ({ root }) => isPlanOpen({ root }),
+    revealWhen: ({ root }) => hasElement({ root, selector: REPORTS_TAB }),
+    doneWhen: ({ root }) =>
+      root.querySelector(REPORTS_TAB)?.getAttribute('aria-selected') === 'true',
+  },
+  {
+    id: 'report-open',
+    label: 'Open the run report',
+    copy: 'Read the report',
+    instruction: 'Open "Retried webhooks no longer double credit": the report of this session.',
+    result: 'The report opened: what was wrong, what changed and the evidence.',
+    beat: 1,
+    anchor: REPORT_ROW,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: REPORT_ROW }),
+    doneWhen: ({ root }) => hasElement({ root, selector: REPORT_DETAILS }),
   },
   {
     id: 'report-details',
     label: 'Open the report details',
     copy: 'Where it comes from',
-    instruction: 'Open the report details to see which sessions and code the report is based on.',
+    instruction: 'Open Details to see which sessions and code the report is based on.',
     result: 'The report lists the sessions and the code it is based on.',
-    beat: 2,
+    beat: 1,
     anchor: REPORT_DETAILS,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: REPORT_DETAILS }),

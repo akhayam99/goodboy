@@ -60,6 +60,7 @@ export type DemoHints = Steps & {
   readonly offscreen: OffscreenHint | undefined;
   readonly progress: HintProgress;
   readonly held: DemoHint | undefined;
+  readonly acting: DemoHint | undefined;
   readonly beatIndex: number;
   readonly nextBeatIndex: number | undefined;
   readonly reveal: HintReveal | undefined;
@@ -87,6 +88,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const [anchor, setAnchor] = useState<AnchorState | null>(null);
   const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
   const [hold, setHold] = useState<Hold | null>(null);
+  const [actingId, setActingId] = useState<string | null>(null);
 
   const { hints } = chapter;
   const steps = stepsOf({ chapter, progress });
@@ -144,6 +146,9 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       anchorIdRef.current = report.hintId;
       if (report.hintId !== null && report.hintId === activeIdRef.current) {
         setHold((previous) => (previous?.phase === 'wait' ? null : previous));
+        if (report.isClicked === true) {
+          setActingId(report.hintId);
+        }
       }
       setAnchor({
         chapterId: chapter.id,
@@ -172,6 +177,8 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   useEffect(() => {
     setAnchor(null);
   }, [beatIndex, chapter.id]);
+
+  const acting = actingId !== null && actingId === activeHint?.id ? activeHint : undefined;
 
   const current = anchor !== null && anchor.chapterId === chapter.id ? anchor : null;
   const isActive = current !== null && current.hintId === activeHint?.id;
@@ -217,12 +224,14 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     resetProgress({ chapterId: chapter.id });
     setAnchor(null);
     setHold(null);
+    setActingId(null);
   }, [resetProgress, chapter.id]);
 
   const restart = useCallback(() => {
     resetAllProgress();
     setAnchor(null);
     setHold(null);
+    setActingId(null);
   }, [resetAllProgress]);
 
   const tallyOf = useCallback(
@@ -237,6 +246,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     coach,
     offscreen,
     held,
+    acting,
     beatIndex,
     nextBeatIndex,
     reveal,

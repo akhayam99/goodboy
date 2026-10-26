@@ -19,6 +19,7 @@ export type DemoHint = {
   readonly copy: string;
   readonly instruction: string;
   readonly result: string;
+  readonly progress?: string;
   readonly beat: number;
   readonly anchor: HintAnchor;
   readonly focus?: HintAnchor;

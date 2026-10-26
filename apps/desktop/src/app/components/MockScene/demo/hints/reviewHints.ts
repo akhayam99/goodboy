@@ -18,6 +18,7 @@ const LINE_NOTE = '[data-file-path="src/webhooks/applyWebhook.ts"] button[data-g
 const FIX = 'button[data-review-verb="reviewComment.draft"]';
 const START_FIX = '[data-demo-anchor="resolve-start"]';
 const KEEP = 'button[data-review-verb="reviewComment.accept"]';
+const PUSH = 'button[data-branch-secondary="review.push"]';
 
 const isHandlerOpen = ({ root }: RootParams): boolean =>
   root.querySelector(HANDLER_ROW)?.getAttribute('aria-selected') === 'true';
@@ -38,20 +39,6 @@ const isDrafted = ({ entry }: EntryParams): boolean =>
 const attemptsOf = ({ state }: StateParams): ReadonlyArray<ResolveAttempt> =>
   Object.values(state.sessionResolveAttempts).flat();
 
-type SinceParams = StateParams & {
-  readonly start: AppStore;
-};
-
-const isNewFixRunning = ({ state, start }: SinceParams): boolean => {
-  const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
-  return attemptsOf({ state }).some(
-    (attempt) => attempt.phase === 'running' && !before.has(attempt.id),
-  );
-};
-
-const hasFinishedFix = ({ state }: StateParams): boolean =>
-  attemptsOf({ state }).some((attempt) => attempt.phase === 'finished');
-
 const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
   const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
   const drafted = new Set(
@@ -62,14 +49,6 @@ const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
       !before.has(attempt.id) &&
       attempt.phase === 'finished' &&
       attempt.threadIds.some((threadId) => drafted.has(threadId)),
-  );
-};
-
-const isDraftedRowOpen = ({ state, root }: StateParams & RootParams): boolean => {
-  const open = root.querySelector(CURRENT_COMMENT)?.getAttribute('data-thread-id') ?? null;
-  return (
-    open !== null &&
-    itemsOf({ state }).some((entry) => entry.thread.threadId === open && isDrafted({ entry }))
   );
 };
 
@@ -114,7 +93,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Leave a note',
     copy: 'Leave a note',
     instruction: 'Click a line number to leave a note on that line of code.',
-    result: 'The note is saved on that line and goes to the review queue.',
+    result: 'The note is saved on line 13 of applyWebhook.ts.',
+    progress: 'Write your note, then press Add note.',
     beat: 0,
     anchor: LINE_NOTE,
     revealWhen: ({ root }) => hasElement({ root, selector: LINE_NOTE }),
@@ -124,7 +104,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     id: 'resolve-pick',
     label: 'Open a review comment',
     copy: 'Read it in context',
-    instruction: 'Open this review comment to read it next to the code it is about.',
+    instruction: 'Open the comment from nadia-p to read it next to the code it is about.',
     result: 'The comment opened next to the code it is about.',
     beat: 1,
     anchor: 'button[data-thread-id="PRRT_thread_retry_constant"]',
@@ -151,6 +131,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Let it work',
     instruction: 'Press Start fix: the agent changes the code and drafts a reply to the reviewer.',
     result: 'The fix is ready, with a reply drafted for the reviewer.',
+    progress: 'The agent is changing the code and drafting a reply for the reviewer.',
     beat: 1,
     anchor: START_FIX,
     side: 'top',
@@ -158,31 +139,12 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     doneWhen: hasDraftedFix,
   },
   {
-    id: 'resolve-read',
-    label: 'Read the drafted reply',
-    copy: 'A fix is ready',
-    instruction: 'Open a fixed comment to read the reply the agent drafted for the reviewer.',
-    result: 'The drafted reply is open: nothing goes to the reviewer until you keep it.',
-    beat: 1,
-    anchor: ({ state }) => readyRowOf({ state }),
-    side: 'right',
-    revealWhen: ({ state, start, root }) => {
-      const anchor = readyRowOf({ state });
-      return (
-        hasFinishedFix({ state }) &&
-        !isNewFixRunning({ state, start }) &&
-        anchor !== null &&
-        hasElement({ root, selector: anchor })
-      );
-    },
-    doneWhen: isDraftedRowOpen,
-  },
-  {
     id: 'resolve-keep',
-    label: 'Keep the fix',
+    label: 'Apply the fix',
     copy: 'Your call',
-    instruction: 'Read the drafted reply, then keep the fix if it looks right to you.',
-    result: 'The fix is kept and ready to push.',
+    instruction:
+      'Open the comment with the drafted reply, then press Apply fix if it looks right to you.',
+    result: 'The fix is applied to the branch and ready to push.',
     beat: 1,
     anchor: keepAnchorOf,
     side: 'top',
@@ -191,5 +153,18 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
       return anchor !== null && hasElement({ root, selector: anchor });
     },
     doneWhen: ({ state, start }) => acceptedCountOf({ state }) > acceptedCountOf({ state: start }),
+  },
+  {
+    id: 'review-push',
+    label: 'Push the fix',
+    copy: 'Push the branch',
+    instruction: 'Press Push: the fix goes to the pull request branch, so the reviewer sees it.',
+    result:
+      'The push is previewed: in the app it goes to your Git host, here nothing leaves this page.',
+    beat: 1,
+    anchor: PUSH,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: PUSH }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];

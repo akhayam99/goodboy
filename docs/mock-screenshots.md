@@ -424,12 +424,7 @@ progress (`useDemoHints` returns `beatIndex`; `useBeatPlayer` only loads it), so
 a state earlier than one already reached is never shown again. Several steps can
 share a frame, and then the visitor's own actions in the app move the scene
 (Set up and Orchestrate are one frame each). Replay loads the group's frame in a
-fresh frame and clears its progress. On the board the card that leaves Running travels once to Needs
-you: `demo/director/travelCard.ts` flies a copy of the card from its old box to
-its new one over the columns (a column's `ScrollFade` would clip the real card)
-and fades the real card in as the copy lands. It runs only in the demo, since
-the app's motion registry in `packages/ui/DESIGN-SYSTEM.md` is closed, and
-under reduced motion or with nothing laid out the card changes column in place. A pointer or key press inside
+fresh frame and clears its progress. A pointer or key press inside
 a frame settles its cues at once (`settle` in `createSceneDirector.ts` applies
 every cue left and reports `complete`), so the scene never writes over the
 visitor's changes and there is nothing to pause. Under reduced motion the
@@ -459,8 +454,8 @@ nothing throws. Commands that would leave the mock world (`git_push`, GitHub
 writes, links, editor and Finder opens, chat replies) show a calm Demo playground
 notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline's
 `setup` swaps the store actions a flow needs for local simulations that change
-the real store only as their simulated step lands: run steps
-(`runActions.ts`), Auto start, approval, stop and retry (`autoTimeline.ts`),
+the real store only as their simulated step lands: Auto start, approval, stop
+and retry (`autoTimeline.ts`),
 board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
 report and wireframe runs that always save a sample artifact (`installDemoWorld.ts`), review comment fixes from working to a
 drafted reply that stays ready to publish, and Keep the draft on an edited
@@ -475,7 +470,14 @@ request yet, HBL-412 and its Sentry issue as the only links, no earlier
 presets), `castAutoScene.ts` retells the delegations (Planner, Implementer,
 Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
 and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
-they are. Push and publish first preview the approved fixes
+they are. Find and Review tell the same story on the frames they already have:
+`installStoryWorld.ts` casts the current session (the HBL-412 goal, its mounts,
+tasks and pull request), `installBoardStory.ts` adds the board card's open
+question, agent and transcript (`BOARD_STORY_SESSION` in `BoardScene.tsx`),
+`libraryTimeline.ts` casts the library session, and `installReviewStory.ts`
+renames the resolve session and sets its Linear and Sentry links. A step with a
+`progress` line shows it in the header between its press and its result (Add
+note, Start fix). Push and publish first preview the approved fixes
 and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
 say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never

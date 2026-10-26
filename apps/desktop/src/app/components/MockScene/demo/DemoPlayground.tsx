@@ -217,6 +217,7 @@ export const DemoPlayground = () => {
                 : headerInstruction({
                     chapter,
                     held: hints.held,
+                    acting: hints.acting,
                     active: hints.activeHint,
                     nextTitle: nextTitle ?? CLOSING_TITLE,
                   })

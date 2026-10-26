@@ -13,19 +13,11 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { stageInfoOf } from '../../../../../store/slices/session-view/stageInfoOf';
-import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
-import { RUNNING_CHECKOUT_RETRY, seedBoardScene } from '../../scenes/BoardScene';
-import { C08_REVIEWER_ID, C08_RUN_ID, C08_SESSION_ID, seedC08 } from '../../scenes/u25/c08RunSeed';
 import { createPlaybackClock } from './createPlaybackClock';
 import { createSceneDirector } from './createSceneDirector';
 import type { DemoReport } from './demoProtocol';
 import type { DemoTimeline } from './directorTypes';
-import { boardTimeline } from './boardTimeline';
-import { runTimeline } from './runTimeline';
-import { installRunActions } from './runActions';
 import { installResolveActions } from './installResolveActions';
-import { demoRuns } from './demoRunRegistry';
 import { SESSION_ID as RESOLVE_SESSION_ID, seedResolveScene } from '../../scenes/resolveSeed';
 
 let store: StoryStore;
@@ -173,97 +165,9 @@ describe('the scene director', () => {
   });
 });
 
-describe('the demo timelines', () => {
-  it('moves one board card from running to needs you exactly once', () => {
-    seedBoardScene();
-    const timeline = boardTimeline({ state: store.getState() });
-    if (timeline === null) {
-      throw new Error('no board timeline');
-    }
-    const stageOf = (): string => {
-      const state = store.getState();
-      const session = sessionById(state.sessions, RUNNING_CHECKOUT_RETRY);
-      return session === undefined ? 'missing' : stageInfoOf(state, session).stage;
-    };
-    const stages: string[] = [stageOf()];
-    const stop = store.subscribe(() => {
-      const stage = stageOf();
-      if (stage !== stages.at(-1)) {
-        stages.push(stage);
-      }
-    });
-    const { director } = direct({ timeline });
-    director.start();
-    director.play();
-    vi.advanceTimersByTime(30000);
-    stop();
-    expect(stages).toEqual(['running', 'attention']);
-  });
-
-  it('finishes the implementer and runs the reviewer as the next step', () => {
-    seedC08({ state: 'working', selection: 'implementer' });
-    const timeline = runTimeline({ state: store.getState() });
-    if (timeline === null) {
-      throw new Error('no run timeline');
-    }
-    const { director } = direct({ timeline });
-    director.start();
-    director.play();
-    vi.advanceTimersByTime(30000);
-    const state = store.getState();
-    const run = state.sessions
-      .find((session) => session.id === C08_SESSION_ID)
-      ?.workflowRuns.find((entry) => entry.id === C08_RUN_ID);
-    const reviewer = state.sessionPhaseRuns[C08_SESSION_ID]?.find(
-      (agent) => agent.id === C08_REVIEWER_ID,
-    );
-    expect(run?.currentStep).toBe(2);
-    expect(reviewer?.status).toBe('completed');
-    expect(state.transcripts[C08_REVIEWER_ID]?.at(-1)?.kind).toBe('done');
-  });
-
-  it('finishes a working run without timers under reduced motion', () => {
-    seedC08({ state: 'working', selection: 'implementer' });
-    const timeline = runTimeline({ state: store.getState() });
-    if (timeline === null) {
-      throw new Error('no run timeline');
-    }
-    const { director, reports } = direct({ timeline, isSettled: true });
-    director.start();
-    director.play();
-    const state = store.getState();
-    const run = state.sessions
-      .find((session) => session.id === C08_SESSION_ID)
-      ?.workflowRuns.find((entry) => entry.id === C08_RUN_ID);
-    const reviewer = state.sessionPhaseRuns[C08_SESSION_ID]?.find(
-      (agent) => agent.id === C08_REVIEWER_ID,
-    );
-    expect(run?.currentStep).toBe(2);
-    expect(reviewer?.status).toBe('completed');
-    expect(reports.at(-1)?.type).toBe('complete');
-  });
-});
-
 const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
 
 describe('a replay during a simulation', () => {
-  it('drops a running workflow step instead of finishing it in the restored scene', async () => {
-    seedC08({ state: 'ready', selection: 'implementer' });
-    const { director } = direct({ timeline: { ...STILL, setup: installRunActions } });
-    director.start();
-    const seeded = store.getState();
-    await store
-      .getState()
-      .activateWorkflowAgent({ sessionId: C08_SESSION_ID, agentId: C08_REVIEWER_ID });
-    vi.advanceTimersByTime(2000);
-    director.restart({ generation: 1 });
-    vi.advanceTimersByTime(20000);
-    const state = store.getState();
-    expect(state.transcripts[C08_REVIEWER_ID]).toEqual(seeded.transcripts[C08_REVIEWER_ID]);
-    expect(state.sessionPhaseRuns[C08_SESSION_ID]).toEqual(seeded.sessionPhaseRuns[C08_SESSION_ID]);
-    expect(state.agentTurnState[C08_REVIEWER_ID]).toEqual(seeded.agentTurnState[C08_REVIEWER_ID]);
-  });
-
   it('drops a running review fix instead of drafting its reply in the restored scene', async () => {
     seedResolveScene({ expandedThreadId: null });
     const { director } = direct({ timeline: { ...STILL, setup: installResolveActions } });
@@ -288,18 +192,5 @@ describe('a replay during a simulation', () => {
     expect(state.sessionPhaseRuns[RESOLVE_SESSION_ID]).toEqual(
       seeded.sessionPhaseRuns[RESOLVE_SESSION_ID],
     );
-  });
-
-  it('forgets a simulation once its last cue lands', async () => {
-    seedC08({ state: 'ready', selection: 'implementer' });
-    const { director } = direct({ timeline: { ...STILL, setup: installRunActions } });
-    director.start();
-    const before = demoRuns.size();
-    await store
-      .getState()
-      .activateWorkflowAgent({ sessionId: C08_SESSION_ID, agentId: C08_REVIEWER_ID });
-    expect(demoRuns.size()).toBe(before + 1);
-    vi.advanceTimersByTime(20000);
-    expect(demoRuns.size()).toBe(before);
   });
 });
