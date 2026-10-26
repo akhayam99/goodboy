@@ -74,6 +74,13 @@ describe('the demo IPC boundary', () => {
     await expect(pending).resolves.toEqual({ ok: true });
   });
 
+  it('answers a worktree change read with an empty summary, not a list', async () => {
+    const { invoke } = internals();
+    await expect(
+      invoke('worktree_changed_files', { worktreePath: '/mock/payments-api' }),
+    ).resolves.toEqual({ paths: [], entries: [], additions: 0, deletions: 0, numstat: '' });
+  });
+
   it('keeps a push local and tells the visitor', async () => {
     const { invoke } = internals();
     await expect(invoke('git_push', { cwd: '/mock/payments-api' })).resolves.toMatchObject({
