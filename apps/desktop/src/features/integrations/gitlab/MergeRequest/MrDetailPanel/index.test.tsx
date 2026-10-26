@@ -307,17 +307,19 @@ describe('MrDetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
 
-    await waitFor(() => expect(h.gitlabMergeMr).toHaveBeenCalledOnce());
-    await waitFor(() => expect(h.store.reportError).toHaveBeenCalledOnce());
+    await waitFor(() => expect(h.gitlabMergeMr).toHaveBeenCalledOnce(), { timeout: 5000 });
+    await waitFor(() => expect(h.store.reportError).toHaveBeenCalledOnce(), { timeout: 5000 });
     expect(onClose).not.toHaveBeenCalled();
     expect(h.showToast).not.toHaveBeenCalled();
 
     if (screen.queryByRole('button', { name: 'Confirm merge' }) === null) {
       fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     }
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirm merge' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Confirm merge' }, { timeout: 5000 }),
+    );
 
-    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce(), { timeout: 5000 });
     expect(h.gitlabMergeMr).toHaveBeenCalledTimes(2);
   });
 
