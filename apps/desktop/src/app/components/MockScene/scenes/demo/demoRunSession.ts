@@ -1,5 +1,5 @@
 import type { Session, WorkflowRun } from '@goodboy/types';
-import { AUTO_STORY } from '../../demo/director/autoStory';
+import { AUTO_STORY, ORCHESTRATE_GOAL } from '../../demo/director/autoStory';
 import { DYNAMIC_RUN_ID, FLOW_SESSION } from '../flow-audit/fixtures';
 import { agoIso } from './agoIso';
 
@@ -15,10 +15,12 @@ const DEMO_RUN: WorkflowRun = {
   orchestratorHints: [],
   orchestrationOutcome: 'done',
   orchestratorSummary: AUTO_STORY.final,
+  goal: ORCHESTRATE_GOAL,
 };
 
 export const DEMO_RUN_SESSION: Session = {
   ...FLOW_SESSION,
+  goal: ORCHESTRATE_GOAL,
   state: { kind: 'idle', lastActivityAt: agoIso({ minutes: 18 }) },
   workflowRuns: [DEMO_RUN],
 };

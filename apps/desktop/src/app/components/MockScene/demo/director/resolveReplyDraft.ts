@@ -1,2 +1,2 @@
 export const RESOLVE_REPLY_DRAFT =
-  'retryPolicy.ts now reads the shared MAX_RETRY_ATTEMPTS, so there is one cap to change. The give-up path also emits a metric.';
+  'retryPolicy.ts now sends the original event id on every retry, so a retried delivery stays one credit. Each attempt also logs the event id.';

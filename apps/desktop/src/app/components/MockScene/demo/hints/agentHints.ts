@@ -66,6 +66,7 @@ const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
 
 const TASK_START = '[data-demo-anchor="task-start"]';
 const DRAFT_START = '[data-demo-anchor="draft-start"]';
+const TASK_PANE = 'aside[aria-label="Task"]';
 
 const ISSUE = 'HBL-412';
 
@@ -90,11 +91,14 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     id: 'agent-issue',
     label: 'Start from the issue',
     copy: 'Start from HBL-412',
+    progressCopy: 'Press Start Implementer',
     instruction: 'Press Start session on HBL-412: the agent takes the Linear issue as its brief.',
     result: 'The session started from HBL-412 and the agent is working on its own branch.',
     progress: 'HBL-412 is picked with its description as the brief. Press Start Implementer.',
     beat: 0,
+    isDimmed: false,
     anchor: ({ root }) => (hasElement({ root, selector: DRAFT_START }) ? DRAFT_START : TASK_START),
+    focus: ({ root }) => (hasElement({ root, selector: DRAFT_START }) ? null : TASK_PANE),
     side: 'bottom',
     revealWhen: ({ root }) =>
       hasElement({ root, selector: TASK_START }) || hasElement({ root, selector: DRAFT_START }),
@@ -103,7 +107,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-answer',
     label: 'Answer its question',
-    copy: 'The agent is waiting on you',
+    copy: 'Answer the agent here',
     instruction: 'Answer the agent question: it is waiting and cannot go on without you.',
     result: 'The agent has your answer: it updates ledger-core and reruns the redelivery test.',
     beat: 1,
@@ -118,13 +122,16 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-limits-peek',
     label: 'Check the limits',
-    copy: 'Check what is left',
+    copy: 'Open the Claude limits',
     instruction: 'Open the Claude limits chip in the top bar to see how much of the plan is left.',
     result:
       'Claude used its whole 5-hour window and 84% of the week, Codex 58% of the week: Claude cannot take the next message.',
     beat: 1,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
+    settle: ({ root }) => {
+      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    },
     revealWhen: ({ root }) => hasElement({ root, selector: CLAUDE_LIMITS }),
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
@@ -143,7 +150,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-files',
     label: 'Open the edited files',
-    copy: 'Files it edited',
+    copy: 'See the files it edited',
     instruction: 'Open Operations to see which files the agent edited and what changed in them.',
     result: 'The edited files are listed with what changed in each.',
     beat: 1,

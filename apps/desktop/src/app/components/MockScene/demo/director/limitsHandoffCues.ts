@@ -5,6 +5,7 @@ import type { DemoCue } from './directorTypes';
 import { appendTurnEvents } from './appendTurnEvents';
 import { eventCue } from './eventCue';
 import { finishAgentTurn } from './finishAgentTurn';
+import { patchAgent } from './patchAgent';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
@@ -77,6 +78,12 @@ export const limitsHandoffCues = ({
               at,
             },
           ],
+        });
+        patchAgent({
+          store,
+          sessionId,
+          agentId,
+          patch: { providerOverride: CODEX.provider, modelOverride: CODEX.model },
         });
         startAgentTurn({ store, sessionId, agentId, runId: codexRun, at });
       },

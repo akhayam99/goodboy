@@ -14,8 +14,12 @@ import type { DirectorStore } from './directorTypes';
 
 const SCENE_TURNS = 4;
 
-const STORY_PLAN = { ...AUTO_PLAN, bodyMd: AUTO_STORY.planBody };
-const STORY_PLAN_STORED = { ...AUTO_PLAN_STORED, sourceText: AUTO_STORY.planBody };
+const STORY_PLAN = { ...AUTO_PLAN, title: AUTO_STORY.planTitle, bodyMd: AUTO_STORY.planBody };
+const STORY_PLAN_STORED = {
+  ...AUTO_PLAN_STORED,
+  title: AUTO_STORY.planTitle,
+  sourceText: AUTO_STORY.planBody,
+};
 
 type Params = {
   readonly store: DirectorStore;

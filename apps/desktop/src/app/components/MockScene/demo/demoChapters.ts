@@ -51,7 +51,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     ...DEMO_GROUPS.review,
     hints: REVIEW_HINTS,
     beats: [
-      { label: 'Diff', scene: 'brand-diff' },
+      { label: 'Diff', scene: 'brand-diff-unpushed' },
       { label: 'Review comments', scene: 'resolve-fix-ready' },
       { label: 'Storage', scene: 'demo-storage' },
     ],

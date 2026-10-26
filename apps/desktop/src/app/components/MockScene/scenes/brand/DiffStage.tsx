@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { CTX_PAYMENTS_WORKTREE, CTX_SESSION } from './contextBase';
-import { CTX_COMMITS, CTX_STATUS } from './contextBranch';
+import {
+  CTX_COMMITS,
+  CTX_COMMITS_UNPUSHED,
+  CTX_STATUS,
+  CTX_STATUS_UNPUSHED,
+} from './contextBranch';
 import { BRANCH_FILES_PATCH } from './contextDiffPatch';
 import { useFakeTauri, type FakeHandlers } from './fakeTauri';
 
@@ -12,6 +17,12 @@ export const handlersFor = (patch: string): FakeHandlers => ({
 });
 
 const DEFAULT_HANDLERS = handlersFor(BRANCH_FILES_PATCH);
+
+export const UNPUSHED_HANDLERS: FakeHandlers = {
+  ...DEFAULT_HANDLERS,
+  worktree_commits: () => CTX_COMMITS_UNPUSHED,
+  worktree_status: () => CTX_STATUS_UNPUSHED,
+};
 
 const NOTE_PREFIX = 'Log the duplicate at info';
 

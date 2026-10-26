@@ -25,7 +25,7 @@ export const FormActions = ({
       {leading === null ? null : (
         <div className="flex min-w-0 flex-wrap items-center gap-2">{leading}</div>
       )}
-      <div className="ml-auto flex shrink-0 items-center gap-2">{children}</div>
+      <div className="ml-auto flex max-w-full shrink-0 items-center gap-2">{children}</div>
     </div>
     {error === null ? null : (
       <div

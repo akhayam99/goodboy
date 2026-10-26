@@ -2,14 +2,17 @@ import {
   brandId,
   type Agent,
   type AgentId,
+  type MountId,
   type OpenQuestion,
   type OpenQuestionId,
   type ProviderRunId,
+  type SessionProjectMount,
   type TurnEvent,
 } from '@goodboy/types';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { BOARD_STORY_SESSION } from '../../scenes/BoardScene';
-import { BRAND_SESSION } from '../../scenes/brand/canon';
+import { GUARD_BRANCH, ORCHESTRATE_GOAL, TESTS_BRANCH } from './autoStory';
+import { storyMountOf } from './storyMountOf';
 import type { DirectorStore } from './directorTypes';
 
 type Params = {
@@ -24,6 +27,27 @@ const BOARD_STORY_QUESTION = {
   answers: ['Review the diff first', 'Push and open the pull request'],
 } as const;
 
+type MountsParams = {
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+const mountsOf = ({ mounts }: MountsParams): ReadonlyArray<SessionProjectMount> => {
+  const [payments, ledger] = mounts;
+  if (payments === undefined || ledger === undefined) {
+    return mounts;
+  }
+  return [
+    storyMountOf({ mount: payments, name: 'payments-api', branch: GUARD_BRANCH, index: 0 }),
+    storyMountOf({
+      mount: { ...payments, mountId: brandId<MountId>({ value: 'demo-board-mount-tests' }) },
+      name: 'payments-api',
+      branch: TESTS_BRANCH,
+      index: 1,
+    }),
+    storyMountOf({ mount: ledger, name: 'ledger-core', branch: GUARD_BRANCH, index: 0 }),
+  ];
+};
+
 export const installBoardStory = ({ store }: Params): void => {
   const at = nowIso({});
   const sessionId = BOARD_STORY_SESSION;
@@ -31,7 +55,7 @@ export const installBoardStory = ({ store }: Params): void => {
     id: AGENT_ID,
     sessionId,
     ordinal: 1,
-    name: 'Credit once per event id',
+    name: 'Guard every consumer',
     kind: 'implementer',
     status: 'completed',
     startedAt: at,
@@ -41,12 +65,12 @@ export const installBoardStory = ({ store }: Params): void => {
     modelOverride: 'claude-opus-5-5',
   };
   const transcript: ReadonlyArray<TurnEvent> = [
-    { kind: 'user_text', runId: RUN_ID, text: BRAND_SESSION.goal, at },
+    { kind: 'user_text', runId: RUN_ID, text: ORCHESTRATE_GOAL, at },
     {
       kind: 'assistant_text',
       runId: RUN_ID,
       delta:
-        'Auto finished: payments-api posts one credit per event id and ledger-core keeps one posting per event id. The replay test posts one event three times against one credit.',
+        'Auto finished: every webhook consumer in payments-api and ledger-core skips an event id it already handled, and the replay test sends each event three times and sees one effect.',
       at,
     },
     { kind: 'done', runId: RUN_ID, at },
@@ -68,7 +92,12 @@ export const installBoardStory = ({ store }: Params): void => {
   store.setState((current) => ({
     sessions: current.sessions.map((session) =>
       session.id === sessionId
-        ? { ...session, state: { kind: 'idle', lastActivityAt: at }, updatedAt: at }
+        ? {
+            ...session,
+            goal: ORCHESTRATE_GOAL,
+            state: { kind: 'idle', lastActivityAt: at },
+            updatedAt: at,
+          }
         : session,
     ),
     sessionGithub: {
@@ -76,6 +105,10 @@ export const installBoardStory = ({ store }: Params): void => {
       ...(current.sessionGithub[sessionId] === undefined
         ? {}
         : { [sessionId]: { ...current.sessionGithub[sessionId], pr: null } }),
+    },
+    sessionProjectMounts: {
+      ...current.sessionProjectMounts,
+      [sessionId]: mountsOf({ mounts: current.sessionProjectMounts[sessionId] ?? [] }),
     },
     sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: [agent] },
     selectedAgentId: { ...current.selectedAgentId, [sessionId]: AGENT_ID },

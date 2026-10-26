@@ -1,7 +1,7 @@
 import { brandId, type ProviderRunId, type TurnEvent } from '@goodboy/types';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { AUTO_SESSION, IMPLEMENTER_ID, TESTER_ID } from '../../scenes/u24/autoSceneSeed';
-import { AUTO_STORY, LEDGER_ID } from './autoStory';
+import { AUTO_STORY, LEDGER_ID, ORCHESTRATE_GOAL } from './autoStory';
 import type { DirectorStore } from './directorTypes';
 import { installStoryWorld } from './installStoryWorld';
 
@@ -26,6 +26,9 @@ export const installAutoWorld = ({ store }: Params): void => {
   const sessionId = AUTO_SESSION.id;
   installStoryWorld({ store, sessionId });
   store.setState((current) => ({
+    sessions: current.sessions.map((session) =>
+      session.id === sessionId ? { ...session, goal: ORCHESTRATE_GOAL } : session,
+    ),
     sessionWorkflows: { ...current.sessionWorkflows, [sessionId]: [] },
     transcripts: {
       ...current.transcripts,

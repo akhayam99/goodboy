@@ -501,7 +501,11 @@ describe('demo playground', () => {
     );
     tried({ frame: before, hintId: hints[crossing - 1]?.id ?? '' });
     expect(visibleFrame()).toBe(before);
-    elapse({ ms: dwellOf({ hint: hints[crossing - 1] ?? hints[0] }) });
+    const crossed = hints[crossing - 1];
+    if (crossed === undefined) {
+      throw new Error('no crossing hint');
+    }
+    elapse({ ms: dwellOf({ hint: crossed }) });
     const next = frameOf({ scene: beats[hints[crossing]?.beat ?? 0]?.scene ?? '' });
     report({ frame: next, type: 'ready' });
     expect(visibleFrame()).toBe(next);

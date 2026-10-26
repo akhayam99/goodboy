@@ -85,7 +85,7 @@ const delegationsOf = ({ delegations }: DelegationsParams) =>
           delegation,
           task: AUTO_STORY.implementerTask,
           summary: AUTO_STORY.implementerSummary,
-          files: ['src/webhooks/applyWebhook.ts', 'src/ledger/postCredit.ts'],
+          files: ['src/webhooks/eventGuard.ts', 'src/webhooks/applyWebhook.ts'],
         }),
       ];
     }

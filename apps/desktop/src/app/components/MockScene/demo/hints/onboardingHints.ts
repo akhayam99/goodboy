@@ -137,7 +137,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'setup-tools',
     label: 'Keep the tools',
-    copy: 'Tools are set',
+    copy: 'Keep GitHub and Linear',
     instruction: 'Click Continue to keep GitHub and Linear for this workspace.',
     result: 'GitHub and Linear are set for this workspace.',
     beat: 0,
@@ -149,7 +149,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'setup-bug',
     label: 'Pick the bug starter',
-    copy: 'Look for a bug',
+    copy: 'Pick the bug starter',
     instruction: 'Pick Find one small bug: a read-only agent will look for it in payments-api.',
     result: 'The first task is set: a read-only agent takes it.',
     beat: 0,
@@ -162,7 +162,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'setup-first-start',
     label: 'Start the first task',
-    copy: 'Hand it to an agent',
+    copy: 'Start the first task',
     instruction: 'Press Start: the agent reads payments-api and answers in a new session.',
     result: 'Scout is reading payments-api in a new session. It changes nothing.',
     beat: 0,

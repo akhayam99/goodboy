@@ -12,10 +12,11 @@ import {
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { AUTO_STORY } from '../../demo/director/autoStory';
+import { AUTO_STORY, GUARD_BRANCH, ORCHESTRATE_GOAL } from '../../demo/director/autoStory';
 import {
   DYNAMIC_RUN_ID,
   DYNAMIC_WORKFLOW,
+  FLOW_MOUNTS,
   FLOW_SESSION_ID,
   NOW,
   SESSIONS,
@@ -47,10 +48,10 @@ const STEP_SPECS: ReadonlyArray<StepSpec> = [
   {
     key: 'plan',
     kind: 'planner',
-    name: 'Plan the fix for the double credit on a retried webhook',
+    name: 'Plan one event id guard for every webhook consumer',
     task: AUTO_STORY.plannerTask,
     why: 'The goal crosses payments-api and ledger-core, so a plan is written and agreed before any code moves.',
-    summary: 'Key the credit on the processor event id and check it inside the transaction.',
+    summary: 'One guard keyed on the event id sits in front of every consumer.',
     model: modelKeyOf({ label: 'Opus 5.5' }),
     startedMinutes: 58,
     doneMinutes: 49,
@@ -58,9 +59,9 @@ const STEP_SPECS: ReadonlyArray<StepSpec> = [
   {
     key: 'payments',
     kind: 'implementer',
-    name: 'Check the event id inside the credit transaction in payments-api',
+    name: 'Add one event id guard in front of every webhook consumer in payments-api',
     task: AUTO_STORY.implementerTask,
-    why: 'The plan is unambiguous and touches one handler, so one implementer is cheaper than splitting the edit.',
+    why: 'The plan names one guard for every consumer, so a single implementer keeps them consistent.',
     summary: AUTO_STORY.implementerSummary,
     model: modelKeyOf({ label: 'Sonnet 5.5' }),
     startedMinutes: 47,
@@ -69,9 +70,9 @@ const STEP_SPECS: ReadonlyArray<StepSpec> = [
   {
     key: 'tests',
     kind: 'tester',
-    name: 'Replay one event three times on a second payments-api branch',
+    name: 'Replay each event three times on a second payments-api branch',
     task: AUTO_STORY.testerTask,
-    why: 'The Sentry trace shows three deliveries of one event, so the run does not close until a test replays exactly that.',
+    why: 'The Sentry trace shows three deliveries of one event, so the run does not close until a test replays each event three times.',
     summary: AUTO_STORY.testerSummary,
     model: modelKeyOf({ label: 'Sonnet 5.5' }),
     startedMinutes: 46,
@@ -80,9 +81,9 @@ const STEP_SPECS: ReadonlyArray<StepSpec> = [
   {
     key: 'ledger',
     kind: 'implementer',
-    name: 'Keep one posting per event id in ledger-core',
+    name: 'Guard the ledger-core consumer on the event id',
     task: AUTO_STORY.ledgerTask,
-    why: 'ledger-core must still show one posting per event id, and that change is independent of the handler.',
+    why: 'ledger-core runs its own consumer, and that change is independent of the payments-api guard.',
     summary: AUTO_STORY.ledgerSummary,
     model: modelKeyOf({ label: 'Sonnet 5.5' }),
     startedMinutes: 45,
@@ -137,9 +138,10 @@ const agentOf = ({ spec, index }: SpecParams): Agent => {
 
 const DEMO_WORKFLOW: Workflow = {
   ...DYNAMIC_WORKFLOW,
-  name: 'Webhook credit fix',
+  goal: ORCHESTRATE_GOAL,
+  name: 'Idempotent webhook consumers',
   description:
-    'Plan the fix, change the credit handler in payments-api, replay one event three times and keep one posting per event id in ledger-core.',
+    'Plan one event id guard, put it in front of every webhook consumer in payments-api, replay each event three times and guard the ledger-core consumer the same way.',
   processText: AUTO_STORY.second,
   steps: STEP_SPECS.map((spec, index) => stepOf({ spec, index })),
 };
@@ -148,6 +150,20 @@ const PROVIDER: ProviderDisplayInfo['id'] = 'anthropic';
 
 export const seedDemoRun = (): void => {
   seedWorkflowRun();
+  useAppStore.setState((state) => ({
+    sessionProjectMounts: {
+      ...state.sessionProjectMounts,
+      [FLOW_SESSION_ID]: FLOW_MOUNTS.map((mount) => ({ ...mount, branch: GUARD_BRANCH })),
+    },
+    sessionBranches: { ...state.sessionBranches, [FLOW_SESSION_ID]: GUARD_BRANCH },
+    sessionWorktreeRecords: {
+      ...(state.sessionWorktreeRecords ?? {}),
+      [FLOW_SESSION_ID]: (state.sessionWorktreeRecords?.[FLOW_SESSION_ID] ?? []).map((record) => ({
+        ...record,
+        branch: GUARD_BRANCH,
+      })),
+    },
+  }));
   const agents = STEP_SPECS.map((spec, index) => agentOf({ spec, index }));
   useAppStore.setState({
     sessions: SESSIONS.map((session) =>

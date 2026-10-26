@@ -79,7 +79,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'diff-file',
     label: 'Open the handler diff',
-    copy: 'Start with this file',
+    copy: 'Open this file',
     instruction: 'Open applyWebhook.ts to read what changed before it is pushed.',
     result: 'applyWebhook.ts opened: the credit is now checked inside the transaction.',
     beat: 0,
@@ -93,11 +93,14 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'diff-note',
     label: 'Leave a note',
-    copy: 'Leave a note',
+    copy: 'Click a line number',
+    progressCopy: 'Write the note, then Add note',
     instruction: 'Click a line number to leave a note on that line of code.',
     result: 'The note is saved on line 13 of applyWebhook.ts.',
     progress: 'Write your note, then press Add note.',
     beat: 0,
+    dwellMs: 4500,
+    isDimmed: false,
     anchor: LINE_NOTE,
     revealWhen: ({ root }) => hasElement({ root, selector: LINE_NOTE }),
     doneWhen: ({ state, start }) => noteCountOf({ state }) > noteCountOf({ state: start }),
@@ -105,10 +108,11 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'resolve-pick',
     label: 'Open a review comment',
-    copy: 'Read it in context',
+    copy: 'Open the comment from nadia-p',
     instruction: 'Open the comment from nadia-p to read it next to the code it is about.',
     result: 'The comment opened next to the code it is about.',
     beat: 1,
+    isDimmed: false,
     anchor: 'button[data-thread-id="PRRT_thread_retry_constant"]',
     revealWhen: ({ root }) =>
       hasElement({ root, selector: COMMENT }) && !hasElement({ root, selector: CURRENT_COMMENT }),
@@ -117,7 +121,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'resolve-fix',
     label: 'Hand it to an agent',
-    copy: 'Hand it to an agent',
+    copy: 'Ask an agent to fix it',
     instruction: 'Ask an agent to draft a fix for this comment instead of editing by hand.',
     result: 'The fix drawer is open: an agent will change the code for this comment.',
     beat: 1,
@@ -130,7 +134,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'resolve-start',
     label: 'Start the fix',
-    copy: 'Let it work',
+    copy: 'Press Start fix',
     instruction: 'Press Start fix: the agent changes the code and drafts a reply to the reviewer.',
     result: 'The fix is ready, with a reply drafted for the reviewer.',
     progress: 'The agent is changing the code and drafting a reply for the reviewer.',
@@ -143,11 +147,12 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'resolve-keep',
     label: 'Apply the fix',
-    copy: 'Your call',
+    copy: 'Press Apply fix',
     instruction:
       'Open the comment with the drafted reply, then press Apply fix if it looks right to you.',
     result: 'The fix is applied to the branch and ready to push.',
     beat: 1,
+    isDimmed: false,
     anchor: keepAnchorOf,
     side: 'top',
     revealWhen: ({ state, root }) => {
@@ -159,10 +164,11 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'review-push',
     label: 'Push the fix',
-    copy: 'Push the branch',
+    copy: 'Press Push',
     instruction: 'Press Push: the fix goes to the pull request branch, so the reviewer sees it.',
     result: 'The fix is pushed to the pull request branch, so the reviewer sees it.',
     beat: 1,
+    dwellMs: 4500,
     anchor: PUSH,
     side: 'bottom',
     revealWhen: ({ root }) => hasElement({ root, selector: PUSH }),
@@ -171,9 +177,10 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'review-storage',
     label: 'Free the worktree folders',
-    copy: 'Free the space',
+    copy: 'Remove the 3 safe folders',
+    progressCopy: 'Confirm the removal',
     instruction:
-      'In Settings, Storage, press Remove 3 safe folders: the merged branches of this story no longer need their folders.',
+      'In Settings, Storage, press Remove 3 safe folders: three older Harborline branches are merged, so their folders are safe to free.',
     result: 'The 3 folders are removed and their space is back. The branches stay.',
     progress: 'Press Remove to confirm: the branches stay and only the folders go.',
     beat: 2,

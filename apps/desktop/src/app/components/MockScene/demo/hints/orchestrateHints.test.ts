@@ -53,7 +53,7 @@ const frame = async (): Promise<void> => {
 
 const dwell = async (): Promise<void> => {
   await Promise.resolve();
-  vi.advanceTimersByTime(2700);
+  vi.advanceTimersByTime(4600);
 };
 
 const engineFor = () => {
@@ -153,7 +153,7 @@ describe('the Orchestrate steps', () => {
     document.body.innerHTML = `
       <ul aria-label="Delegations">
         <li data-delegation><span><button aria-label="Open Planner">Open</button></span></li>
-        <li data-delegation><span><button aria-label="Open Ledger implementer">Open</button></span></li>
+        <li data-delegation="mock-auto-delegation-ledger"><span><button aria-label="Open Ledger implementer">Open</button></span></li>
       </ul>
     `;
     await dwell();

@@ -71,3 +71,14 @@ export const CTX_STATUS: WorktreeStatus = {
   upstream: `origin/${BRAND_SESSION.branch}`,
   inProgress: null,
 };
+
+export const CTX_COMMITS_UNPUSHED: ReadonlyArray<BranchCommit> = CTX_COMMITS.map((commit) => ({
+  ...commit,
+  pushed: false,
+}));
+
+export const CTX_STATUS_UNPUSHED: WorktreeStatus = {
+  ...CTX_STATUS,
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+  upstream: null,
+};

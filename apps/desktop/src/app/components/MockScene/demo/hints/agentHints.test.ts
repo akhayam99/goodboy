@@ -103,7 +103,7 @@ const frame = async (): Promise<void> => {
 
 const dwell = async (): Promise<void> => {
   await Promise.resolve();
-  vi.advanceTimersByTime(2700);
+  vi.advanceTimersByTime(4600);
 };
 
 const visitorClick = (selector: string): void => {

@@ -123,12 +123,12 @@ describe('the save-as-preset step', () => {
     expect(tried()).toEqual(['run-save']);
     const presets = Object.values(store.getState().phaseTemplates).flat();
     expect(presets).toHaveLength(before + 1);
-    expect(presets[0]?.name).toBe('Webhook credit fix');
+    expect(presets[0]?.name).toBe('Idempotent webhook consumers');
     expect(presets[0]?.steps).toHaveLength(4);
     expect(store.getState().appStudio).toBeNull();
     await settle({ ms: 1200 });
     expect(store.getState().appStudio?.kind).toBe('workflow');
-    expect(screen.getAllByText('Webhook credit fix').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Idempotent webhook consumers').length).toBeGreaterThan(0);
     engine.dispose();
   });
 });

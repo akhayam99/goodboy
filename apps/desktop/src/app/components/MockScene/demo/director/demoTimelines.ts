@@ -20,6 +20,7 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['artifacts-lens-shell', libraryTimeline],
     ['artifact-report', worldTimeline],
     ['brand-diff', worldTimeline],
+    ['brand-diff-unpushed', worldTimeline],
     ['resolve-queue-shell', resolveTimeline],
     ['resolve-fix-ready', resolveTimeline],
     ['demo-issue', issueTimeline],

@@ -6,9 +6,9 @@ import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
 import { RESOLVE_REPLY_DRAFT } from './resolveReplyDraft';
+import { RESOLVE_FIX_NARRATION, RESOLVE_FIX_SUMMARY } from './resolveStory';
 
-const SUMMARY =
-  'retryPolicy.ts now uses the shared MAX_RETRY_ATTEMPTS and emits a metric when it gives up. The retry suite passes, and a reply is drafted for the thread.';
+const SUMMARY = RESOLVE_FIX_SUMMARY;
 const TEST_COMMAND = 'pnpm vitest run retryPolicy';
 const FIX_SHA = 'a4c19e07d2b85f3e61c0d9a7b42e8f15c3d6a90b';
 
@@ -122,8 +122,7 @@ export const resolveFixCues = ({
         {
           kind: 'assistant_text',
           runId,
-          delta:
-            'retryPolicy.ts keeps its own copy of the cap. Pointing it at the shared constant.',
+          delta: RESOLVE_FIX_NARRATION,
           at,
         },
       ],
@@ -132,7 +131,7 @@ export const resolveFixCues = ({
       atMs: 2200,
       agentId,
       events: ({ at }) => [
-        { kind: 'file_edit', runId, path: 'src/webhooks/metrics.ts', editType: 'modify', at },
+        { kind: 'file_edit', runId, path: 'src/webhooks/applyWebhook.ts', editType: 'modify', at },
         { kind: 'file_edit', runId, path: 'src/webhooks/retryPolicy.ts', editType: 'modify', at },
       ],
     }),

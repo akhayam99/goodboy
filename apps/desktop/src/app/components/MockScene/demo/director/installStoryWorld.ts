@@ -1,5 +1,7 @@
 import { brandId, type MountId, type SessionId, type SessionProjectMount } from '@goodboy/types';
-import { BRAND_PROJECTS, BRAND_SESSION } from '../../scenes/brand/canon';
+import { BRAND_PROJECTS } from '../../scenes/brand/canon';
+import { GUARD_BRANCH, TESTS_BRANCH } from './autoStory';
+import { storyMountOf } from './storyMountOf';
 import type { DirectorStore } from './directorTypes';
 
 type Params = {
@@ -7,24 +9,7 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-const TESTS_BRANCH = 'hl/redelivery-tests';
 const RELAY = 'notify-relay';
-
-type MountParams = {
-  readonly mount: SessionProjectMount;
-  readonly name: string;
-  readonly branch: string;
-  readonly index: number;
-};
-
-const mountOf = ({ mount, name, branch, index }: MountParams): SessionProjectMount => ({
-  ...mount,
-  mountName: name,
-  branch,
-  parallelIndex: index,
-  worktreePath: `~/code/harborline/${name}-${branch.split('/').at(-1) ?? 'work'}`,
-  repoRoot: `~/code/harborline/${name}`,
-});
 
 export const installStoryWorld = ({ store, sessionId }: Params): void => {
   store.setState((current) => {
@@ -35,13 +20,13 @@ export const installStoryWorld = ({ store, sessionId }: Params): void => {
       return {};
     }
     const next: ReadonlyArray<SessionProjectMount> = [
-      mountOf({
+      storyMountOf({
         mount: payments,
         name: BRAND_PROJECTS.payments.name,
-        branch: BRAND_SESSION.branch,
+        branch: GUARD_BRANCH,
         index: 0,
       }),
-      mountOf({
+      storyMountOf({
         mount: {
           ...payments,
           mountId: brandId<MountId>({ value: `demo-mount-tests-${sessionId}` }),
@@ -50,10 +35,10 @@ export const installStoryWorld = ({ store, sessionId }: Params): void => {
         branch: TESTS_BRANCH,
         index: 1,
       }),
-      mountOf({
+      storyMountOf({
         mount: relay,
         name: BRAND_PROJECTS.ledger.name,
-        branch: BRAND_SESSION.branch,
+        branch: GUARD_BRANCH,
         index: 0,
       }),
     ];
