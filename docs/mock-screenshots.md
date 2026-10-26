@@ -99,8 +99,12 @@ other install script), `pnpm build:demo`, output `dist-demo`, clean URLs, a
 year of `immutable` cache on the hashed `/assets/`, revalidation on every
 other path, and headers that allow framing by the same origin only (the
 playground iframes its own beats). The file sits outside `dist/` and
-`src-tauri/`, so the Tauri build never reads it. The demo bundle carries no
-analytics, no telemetry and no cookie.
+`src-tauri/`, so the Tauri build never reads it. The demo bundle carries no telemetry and no cookie. Its one
+network call is Vercel Web Analytics, cookieless, added by the `demoPlugins` Vite plugin in
+`apps/desktop/vite/demoHtml.ts`: it runs only for `--mode demo` and only in a build, and adds
+`<script defer src="/_vercel/insights/script.js">` and an early theme script to `dist-demo/index.html`.
+The Tauri build, `pnpm dev` and the app's own `index.html` never carry either, and
+`apps/desktop/vite/demoHtml.test.ts` pins that.
 
 The website links it as Live demo from `SITE.demo` in `website/src/site.ts`:
 the yellow pill in the nav actions (a sheet link on narrow screens), the
@@ -123,8 +127,9 @@ The owner sets these by hand in the Vercel project, since `vercel.json` cannot:
 - Environment variable `ENABLE_EXPERIMENTAL_COREPACK=1`, so the build uses the
   `packageManager` pin in the root `package.json`.
 - Domain `demo.goodboy-ai.dev`, with the DNS record Vercel asks for.
-- Web Analytics and Speed Insights off. Leave every other environment
-  variable empty: anything named `VITE_*` would ship in the bundle.
+- Web Analytics on for this project, which serves `/_vercel/insights/script.js`,
+  and Speed Insights off. Leave every other environment variable empty:
+  anything named `VITE_*` would ship in the bundle.
 
 ## Reuse the real components, never rebuild the UI
 
@@ -340,12 +345,41 @@ scaled to fit, so every beat gets a clean store and its own timers. The group
 names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
 rail (through `demoChapters.ts`) and the phone page read, so the two never
 drift. `#<group id>` in the URL opens one, and a bare visit opens Set up
-(`defaultGroupId.ts`). The top bar holds the only calls to action
-(Star on GitHub, Download for macOS). The rail ends in one quiet line,
-`DemoRailNote`: that everything is mock data and nothing leaves the page, and,
-once every group counts all its outcomes tried (a group without hints counts
-once it was opened, kept under `goodboy-demo-visits` by `useGroupVisits`;
-`hints/isEveryGroupTried.ts`), that Download is top right.
+(`defaultGroupId.ts`). The calls to action sit at the bottom of the rail
+(`DemoRailActions`: Download for macOS as the primary button, Star on GitHub
+under it) below one quiet line, `DemoRailNote`: that this is the real Goodboy on
+sample projects, and, once every group counts all its outcomes tried (a
+group without hints counts once it was opened, kept under `goodboy-demo-visits`
+by `useGroupVisits`; `hints/isEveryGroupTried.ts`), that the visitor has tried
+every group. The rail is hidden below the `lg` breakpoint, so the top bar shows
+a second Download button only there. The top bar's left side holds the logo and
+a goodboy-ai.dev link back to the website (both carry the current `?theme=`),
+its right side only the theme toggle.
+
+Nothing in the bottom bar moves to another group: it holds the previous chevron,
+Replay and the steps. The rail row is the way to move, and the arrow keys keep
+working. The row after the open group carries an "Up next" label and a soft
+ring (`DemoRailRow`, `data-up-next="soon"`). Once the open group counts all its
+outcomes tried (or, for a group without hints, its last step has completed) the
+ring turns solid (`data-up-next="ready"`) and the row breathes a soft glow for
+three cycles, then rests (`data-pulsing` is `true` only in that window; with
+reduced motion the glow is skipped and the solid ring stays). There is no card
+or extra copy: the row is the way on. The last group has no row up next. The page behind the
+stage uses the `surround` surface, darker than any app surface, so the app frame
+reads as a window.
+
+The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
+wins on first load, then the choice kept under `goodboy-demo-theme` (every read
+and write survives blocked storage), then dark, and the param is stripped from
+the url right after. The website appends it at click time from its own theme
+(`website/src/theme/syncDemoLinks.ts`, one delegated listener, never read
+during render because the site prerenders). Toggling the theme never reloads a
+frame: frames are keyed by scene, params and replay (`frameKey.ts`), not by
+theme, the stage sends every ready frame a `theme` command, and the frame
+applies it live. The app's own theme control inside a frame reports `theme` to
+the playground (same envelope, origin and source checks, one report per change
+the frame did not receive from the playground), which switches the wrapper and
+sends it on to every other frame.
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
@@ -420,6 +454,29 @@ say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
+Keys inside a frame: a directed frame registers `palette.open` (Cmd+K),
+`search.open` (Cmd+F) and `column.toggle` (Cmd+B) itself, through
+`scenes/useSceneShortcuts` (palette) and `scenes/useSceneSidebar` (the fold
+state of the shell frames), since `App` and `useAppShortcuts` never mount in a
+scene. When the focus is on the playground and not in the frame, `useDemoKeys`
+hands those three chords to the stage, which focuses the frame and sends a
+`shortcut` command; the frame replays it as a keydown for the same shortcut.
+The wrapper's own keys (arrows, H, R) ignore a text field, and a frame that has
+the focus keeps its keys to itself. Search answers from the simulated store
+(`director/runDemoSearch.ts`: session goals and the visitor's messages), not
+from the search index.
+
+Studios outside the flows answer calmly instead of waiting: the demo boundary
+answers the Impact aggregates, the starred issues, GitHub issue and PR lists,
+the default branch, the monitor snapshot, the folder lookups and the search
+index size (`demoIpcHandlers.ts`, `isEmptyRead.ts`, which only matches the
+Impact queries and never a read that loads the sessions), and a directed frame
+seeds a loaded Context for each session (`installDemoContext.ts`) and a quiet
+Monitoring snapshot (`installDemoMonitor.ts`). Start on a plan, and any next
+step that spawns an agent, runs `createSimulatedSpawn.ts`: it adds the agent to
+the session, opens it and streams a short reply, and a timeline that has its
+own spawn (Auto) keeps it for its session.
+
 A group carries an ordered list of hints (`demo/hints/`, typed in
 `demoHintTypes.ts`): an id, the copy, the outcome it counts toward, an anchor,
 a preferred side and two checks, reveal when and done when. The anchor is a
@@ -442,8 +499,15 @@ tries the other sides near an edge (below before the opposite side); only the
 callout takes clicks. A control scrolled out of view gets a note at the bottom
 of the stage with Show control, which sends `reveal` so the frame scrolls it
 into view once. Escape hides either note, H brings it back, Skip hint settles
-it. A hint with `nextChapterId` is the closing note of a group: it counts no
-outcome and offers Next to that group instead of Skip. The rail and the header count distinct
+it. A group has no closing hint: when it is done the Up next row pulses and the
+header says so. Each hint has two texts, both in its definition: `copy`, a few
+words on the coach mark, and `instruction`, the line under the group title
+(what to do right now and why). The header line comes from
+`hints/headerInstruction.ts`: the group is done ("<group> is done. Go on with
+<next>, marked Up next on the left."), else the active hint's `instruction`
+(also while the coach mark is hidden), else the `shows` line of the current beat
+(`DemoBeat.shows`). The two texts never repeat each other. Simulated replies speak as the
+agent on the sample project and never mention the app or the demo. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
 group only. Every change reads the stored progress first and writes one
@@ -457,6 +521,71 @@ handler, a line note, then one review comment fixed, ready with its drafted
 reply and applied). `data-demo-anchor` marks only controls with no stable name:
 the setup buttons, Auto's Approve plan, the run header action (`run-<kind>`) and
 Start fix.
+
+Guidance hints add steps without adding outcomes (`outcome: null`): the Claude
+limits chip and the model picker (Work with an agent), Create report on the
+finished run (Orchestrate), New and the report details (Find work and results).
+`resolve-read` shares the outcome `fix-ready` with `resolve-start`: a visitor
+who steps to the Fixing or Ready beat, where the fix is already running or
+finished and `resolve-start` can never see a new attempt, earns it by opening a
+comment that already holds a drafted reply. The Fixing beat drafts a reply too
+(`resolveReplyDraft.ts`), so its rows are readable. Every group is walked to
+its full count in a test (`groupHints.twin.test.tsx`, `createHintEngine.test.ts`);
+the orchestrate and find walks must run before the review ones in the file, as
+the resolve overlay stays installed once a review test has run.
+
+While a hint points at something on screen, the stage dims and lightly blurs
+everything except the context of the step (`DemoSpotlight`): one `bg-surround`
+layer at 50 percent with `backdrop-blur-xs`, cut by a single rounded SVG mask,
+so there is no seam. The hole is the control plus its region, padded by 8px
+(`hints/holeOf.ts`), drawn inside the coach layer, never taking a click, faded
+in only when `canAnimate` allows. The frame reports the region as `focus` on
+the anchor report. A hint names it with an optional `focus` selector, resolved
+as `anchor.closest(focus)`; without one `director/focusRegionOf.ts` takes the
+nearest ancestor that is a form, section, list item, dialog, group or bordered
+and rounded surface, then, failing that, the nearest wide short band (a page
+header or toolbar), as long as it is bigger than the control and under 60
+percent of the screen. No region means the control alone. The callout is placed
+beside the hole, not the control, so it never covers what is lit, and it is
+never dimmed. A control below the fold or cut by an edge is scrolled to the
+centre of its pane once per hint (`scrolled` in `createHintEngine`) before it
+is lit, and the report follows scroll and resize, so the hole stays aligned.
+A hint with no visible anchor (a control that could not be
+scrolled in) never dims, and offers Show control. The frame reports `isClicked`
+once the visitor pressed the control, and the spotlight lifts then, and on
+Escape, Skip hint or when the hint is done. While it is on, only the secondary chrome recedes to 65 percent
+(`quietClasses`, `data-quiet`): the rail rows other than the open group and
+the next one, the version chip and the link back to the site. The group title,
+its instruction or Try this line, the step counter, the rail note, Download, Star,
+Up next and the coach mark stay at full strength, and hover or focus brings a
+quiet row back.
+A step is done only once its result has been shown. When a hint is done, or the
+hint the visitor pressed gives way to another, `createHintEngine` holds the next
+one for 2.5 seconds (`DWELL_MS`) and reports no hint, so nothing dims and no
+callout moves while the result is read; the wait grows while the pointer keeps
+moving over the result, up to 8 seconds, and a pointer that stopped does not
+hold it. Skip hint and a reset never wait. `director/createResultTracker.ts`
+finds the result: what appeared in the 450ms after a trusted press (a popover
+portal whose wrapper has no height counts through its visible children), kept
+until the visitor presses somewhere else or it closes. The next hint's hole is
+the control, its region and the open result (`director/unionOf.ts`); when that
+covers more than 60 percent of the stage (`hints/isHoleTooBig.ts`) the hint
+shows without a spotlight instead of dimming the result. The engine never
+scrolls to the next control while a result is open; Show control still does,
+and the hint in that state also offers Skip hint. Hints never take focus. After
+a press, the demo frame ignores a programmatic `focus()` on the composer for
+3 seconds unless the press was inside the composer, so the opened view keeps
+focus (the real app focuses the composer on opening a helper; that stays in the
+app and is refused only in the demo frame).
+A group switch answers at once: the rail row is selected, and `DemoStageLoading`
+covers the stage until the new frame reports ready, whether it is the first one
+or a switch. It names what is loading ("Loading Work with an agent" for the
+opening beat of a group, "Loading Limits" for another beat; `StageFrame.label`).
+Hovering, focusing or pressing a rail row preloads that group's
+opening frame (`intentChapter` in `useBeatPlayer`), in place of the next group,
+so the wait is a few frames when the pointer lingered.
+In the demo the Goodboy menu never opens itself after the first task, the chip
+stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 

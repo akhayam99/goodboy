@@ -23,6 +23,7 @@ import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { sceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C08_PRESET_RUN_SCENES } from '../../scenes/u25/c08-preset-run';
 import { U25_C07_AUTO_SCENES } from '../../scenes/u25/c07-auto';
+import { U25_B_RESOLVE_FIX_SCENES } from '../../scenes/u25/b-resolve-fix';
 import { BoardShellScene } from '../../scenes/BoardShellScene';
 import { ArtifactsLensShellScene, ResolveQueueShellScene } from '../../scenes/SurfaceAuditScenes';
 import { BrandDiffScene } from '../../scenes/brand/DiffScene';
@@ -40,6 +41,8 @@ import type { DemoHint } from './demoHintTypes';
 import { FIND_HINTS } from './findHints';
 import { ORCHESTRATE_HINTS } from './orchestrateHints';
 import { REVIEW_HINTS } from './reviewHints';
+import { DEMO_CHAPTERS } from '../demoChapters';
+import { hintTally } from './hintTally';
 
 let store: StoryStore;
 
@@ -49,11 +52,15 @@ beforeAll(async () => {
   installDemoIpc();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-beforeEach(async () => {
+const resetScene = async (): Promise<void> => {
   await resetStoryStore();
   storySpies.tauriInvoke.mockImplementation((command, args) =>
     sceneInvoke({ command: String(command), args }),
   );
+};
+
+beforeEach(async () => {
+  await resetScene();
   vi.useFakeTimers({
     toFake: [
       'setTimeout',
@@ -184,6 +191,7 @@ describe('the Orchestrate hints', () => {
       'run-approve',
       'run-step',
       'run-model',
+      'run-report',
     ]);
   });
 
@@ -305,6 +313,120 @@ describe('the Find work and results hints', () => {
   });
 });
 
+describe('walking Orchestrate and Find work and results', () => {
+  it('counts 6 of 6 across Auto and then the saved run', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'orchestrate');
+    if (chapter === undefined) {
+      throw new Error('no orchestrate chapter');
+    }
+    await mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
+    withSimulatedSend();
+    act(() => {
+      autoTimeline({ state: store.getState() })?.setup?.({ store });
+    });
+    const first = track({ hints: ORCHESTRATE_HINTS });
+    await settle({ ms: 100 });
+    await typeInto({
+      selector: 'textarea[aria-label="Start a run"]',
+      text: 'Check ledger-core for the same duplicate credit risk',
+    });
+    await click({ target: button({ name: 'Start' }) });
+    await settle({ ms: 500 });
+    await settle({ ms: 30000 });
+    await click({ target: element({ selector: '[data-demo-anchor="auto-approve"]' }) });
+    await settle({ ms: 1000 });
+    await click({
+      target: element({
+        selector: 'ul[aria-label="Delegations"] > li[data-delegation] > span > button',
+      }),
+    });
+    const triedIds = [...first.tried()];
+    first.engine.dispose();
+    cleanup();
+    await resetScene();
+    await mount({ Scene: U25_C08_PRESET_RUN_SCENES['c08-run-approval'] });
+    act(() => {
+      installRunActions({ store });
+    });
+    const second = track({ hints: ORCHESTRATE_HINTS });
+    await settle({ ms: 100 });
+    await click({ target: element({ selector: '[data-demo-anchor="run-approve-plan"]' }) });
+    await settle({ ms: 500 });
+    await click({ target: element({ selector: '[role="treeitem"][data-tree-id]' }) });
+    await click({ target: element({ selector: 'button[aria-label^="Model routing"]' }) });
+    await click({ target: button({ name: 'Opus' }) });
+    await settle({ ms: 500 });
+    triedIds.push(...second.tried());
+    second.engine.dispose();
+    const progress = { orchestrate: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 6, total: 6 });
+  });
+
+  it('counts 3 of 3 across the board and the library', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'find');
+    if (chapter === undefined) {
+      throw new Error('no find chapter');
+    }
+    await import('../../scenes/BoardSessionView');
+    await mount({ Scene: BoardShellScene });
+    act(() => {
+      installBoardActions({ store });
+    });
+    const first = track({ hints: FIND_HINTS });
+    await settle({ ms: 100 });
+    await click({
+      target: element({ selector: '[data-page="board"] button[aria-label="Filter sessions"]' }),
+    });
+    await click({
+      target: element({
+        selector: '[role="dialog"][aria-label="Filter sessions"] input[aria-label^="notify-relay"]',
+      }),
+    });
+    const card = screen
+      .getAllByRole('button', { name: /Warn merchants before a payout hold/ })
+      .at(-1);
+    if (card === undefined) {
+      throw new Error('no card');
+    }
+    await click({ target: card });
+    await settle({ ms: 1000 });
+    const triedIds = [...first.tried()];
+    first.engine.dispose();
+    cleanup();
+    await resetScene();
+    await mount({ Scene: ArtifactsLensShellScene });
+    act(() => {
+      installDemoWorld({ store });
+    });
+    const second = track({ hints: FIND_HINTS });
+    await settle({ ms: 100 });
+    await click({
+      target: element({ selector: 'button[data-artifact-row][aria-label^="Plan "]' }),
+    });
+    await settle({ ms: 500 });
+    const sessionId = store.getState().currentSessionId;
+    const plan =
+      sessionId === null ? undefined : (store.getState().sessionPlans[sessionId] ?? [])[0];
+    if (sessionId === null || plan === undefined) {
+      throw new Error('no plan');
+    }
+    await act(async () => {
+      await store.getState().addArtifactComment({
+        sessionId,
+        artifactId: plan.id,
+        revision: 1,
+        anchor: { kind: 'block', order: 0, text: 'Approach' },
+        body: 'Read the ledger-core cache first',
+      });
+    });
+    await settle({ ms: 100 });
+    triedIds.push(...second.tried());
+    second.engine.dispose();
+    const progress = { find: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 3, total: 3 });
+  });
+});
+
 describe('the Review and ship hints', () => {
   it('lists the diff first, then the review comment fix', () => {
     expect(REVIEW_HINTS.map((hint) => hint.id)).toEqual([
@@ -313,6 +435,7 @@ describe('the Review and ship hints', () => {
       'resolve-pick',
       'resolve-fix',
       'resolve-start',
+      'resolve-read',
       'resolve-keep',
     ]);
   });
@@ -366,13 +489,143 @@ describe('the Review and ship hints', () => {
     await settle({ ms: 500 });
     expect(tried()).toEqual(['resolve-pick', 'resolve-fix']);
     await settle({ ms: 8000 });
-    expect(tried()).toEqual(['resolve-pick', 'resolve-fix', 'resolve-start']);
+    expect(tried()).toEqual(['resolve-pick', 'resolve-fix', 'resolve-start', 'resolve-read']);
     await click({ target: element({ selector: row }) });
     await click({
       target: element({ selector: 'button[data-review-verb="reviewComment.accept"]' }),
     });
     await settle({ ms: 500 });
-    expect(tried()).toEqual(['resolve-pick', 'resolve-fix', 'resolve-start', 'resolve-keep']);
+    expect(tried()).toEqual([
+      'resolve-pick',
+      'resolve-fix',
+      'resolve-start',
+      'resolve-read',
+      'resolve-keep',
+    ]);
+    engine.dispose();
+  });
+
+  it('counts 3 of 3 after the diff then the comments', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'review');
+    if (chapter === undefined) {
+      throw new Error('no review chapter');
+    }
+    const triedIds: string[] = [];
+    await mount({ Scene: BrandDiffScene });
+    act(() => {
+      installDemoWorld({ store });
+    });
+    const first = track({ hints: REVIEW_HINTS });
+    await settle({ ms: 100 });
+    await click({
+      target: element({
+        selector: '[role="treeitem"][data-tree-row="src/webhooks/applyWebhook.ts"] > button',
+      }),
+    });
+    const gutter = element({
+      selector: '[data-file-path="src/webhooks/applyWebhook.ts"] button[data-gutter="new:13"]',
+    });
+    await act(async () => {
+      fireEvent.keyDown(gutter, { key: 'Enter' });
+    });
+    await typeInto({
+      selector: 'textarea[aria-label="Note on line 13"]',
+      text: 'Keep the credit and the event row in one transaction',
+    });
+    await click({ target: button({ name: 'Add note' }) });
+    triedIds.push(...first.tried());
+    first.engine.dispose();
+    cleanup();
+    await resetScene();
+    await mount({ Scene: ResolveQueueShellScene });
+    withSimulatedSend();
+    act(() => {
+      installResolveActions({ store });
+    });
+    const second = track({ hints: REVIEW_HINTS });
+    await settle({ ms: 100 });
+    const row = '[data-thread-id="PRRT_thread_retry_constant"]';
+    await click({ target: element({ selector: row }) });
+    await click({
+      target: element({ selector: 'button[data-review-verb="reviewComment.draft"]' }),
+    });
+    await click({ target: element({ selector: '[data-demo-anchor="resolve-start"]' }) });
+    await settle({ ms: 8500 });
+    await click({ target: element({ selector: row }) });
+    await click({
+      target: element({ selector: 'button[data-review-verb="reviewComment.accept"]' }),
+    });
+    await settle({ ms: 500 });
+    triedIds.push(...second.tried());
+    second.engine.dispose();
+    const progress = { review: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 3, total: 3 });
+  });
+
+  it('counts 3 of 3 for a visitor who steps to the Ready beat, where every fix is already drafted', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'review');
+    if (chapter === undefined) {
+      throw new Error('no review chapter');
+    }
+    const triedIds: string[] = [];
+    await mount({ Scene: BrandDiffScene });
+    act(() => {
+      installDemoWorld({ store });
+    });
+    const first = track({ hints: REVIEW_HINTS });
+    await settle({ ms: 100 });
+    await click({
+      target: element({
+        selector: '[role="treeitem"][data-tree-row="src/webhooks/applyWebhook.ts"] > button',
+      }),
+    });
+    await act(async () => {
+      fireEvent.keyDown(
+        element({
+          selector: '[data-file-path="src/webhooks/applyWebhook.ts"] button[data-gutter="new:13"]',
+        }),
+        { key: 'Enter' },
+      );
+    });
+    await typeInto({
+      selector: 'textarea[aria-label="Note on line 13"]',
+      text: 'Keep the credit and the event row in one transaction',
+    });
+    await click({ target: button({ name: 'Add note' }) });
+    triedIds.push(...first.tried());
+    first.engine.dispose();
+    cleanup();
+    await resetScene();
+    await mount({ Scene: U25_B_RESOLVE_FIX_SCENES['resolve-fix-ready'] });
+    withSimulatedSend();
+    act(() => {
+      installResolveActions({ store });
+    });
+    const second = track({ hints: REVIEW_HINTS });
+    await settle({ ms: 100 });
+    expect(second.tried()).toEqual([]);
+    await click({ target: element({ selector: '[data-thread-id="PRRT_thread_retry_backoff"]' }) });
+    expect(second.tried()).toEqual(['resolve-pick', 'resolve-read']);
+    await click({
+      target: element({ selector: 'button[data-review-verb="reviewComment.accept"]' }),
+    });
+    await settle({ ms: 500 });
+    expect(second.tried()).toEqual(['resolve-pick', 'resolve-read', 'resolve-keep']);
+    triedIds.push(...second.tried());
+    second.engine.dispose();
+    const progress = { review: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 3, total: 3 });
+  });
+
+  it('keeps a drafted reply from counting before a drafted comment is opened', async () => {
+    await mount({ Scene: ResolveQueueShellScene });
+    withSimulatedSend();
+    act(() => {
+      installResolveActions({ store });
+    });
+    const { engine, tried } = track({ hints: REVIEW_HINTS });
+    await settle({ ms: 500 });
+    expect(tried()).toEqual([]);
     engine.dispose();
   });
 });

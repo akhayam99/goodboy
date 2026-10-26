@@ -36,50 +36,38 @@ const hasSession = ({ state }: StateParams): boolean =>
   state.currentSessionId !== null &&
   state.sessions.some((session) => session.id === state.currentSessionId);
 
-const isFirstTaskAnswered = ({ state }: StateParams): boolean => {
-  const sessionId = state.currentSessionId;
-  if (sessionId === null || !hasSession({ state })) {
-    return false;
-  }
-  const agentId = state.selectedAgentId[sessionId];
-  if (agentId === null || agentId === undefined) {
-    return false;
-  }
-  const isBusy = state.agentTurnState[agentId]?.kind === 'running';
-  const isStopped = (state.sessionPhaseRuns[sessionId] ?? []).some(
-    (agent) => agent.id === agentId && agent.status === 'stopped',
-  );
-  return (
-    !isBusy &&
-    !isStopped &&
-    (state.transcripts[agentId] ?? []).some((event) => event.kind === 'done')
-  );
-};
-
+const WIZARD_COLUMN = '[data-testid="wizard-column"]';
+const WELCOME = '[data-testid="welcome-cover"]';
 const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';
 
 export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'setup-start',
-    copy: 'See the agents ready to use',
+    copy: 'Begin the setup here',
+    instruction: 'Click Get started to see which agents Goodboy found on your Mac.',
     outcome: 'setup-opened',
     anchor: '[data-step="welcome"] [data-demo-anchor="setup-start"]',
+    focus: WELCOME,
     revealWhen: isOnStep({ step: 'welcome' }),
     doneWhen: isPastStep({ step: 'welcome' }),
   },
   {
     id: 'setup-agents',
-    copy: 'Continue with your ready agents',
+    copy: 'Agents found, ready to use',
+    instruction: 'Click Continue to keep these agents and move on to your code.',
     outcome: 'agents-ready',
     anchor: '[data-step="agents"] [data-demo-anchor="setup-continue"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'agents' }),
     doneWhen: isPastStep({ step: 'agents' }),
   },
   {
     id: 'setup-workspace',
-    copy: 'Choose the sample Harborline folder',
+    copy: 'Add the sample code',
+    instruction: 'Click Choose folder to point Goodboy at the sample Harborline code.',
     outcome: null,
     anchor: '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'workspace' }),
     doneWhen: ({ root }) =>
       root.querySelector(WORKSPACE_CREATE) !== null ||
@@ -87,36 +75,32 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-create',
-    copy: 'Create a workspace from these repositories',
+    copy: 'One workspace for these repos',
+    instruction: 'Create the workspace so Goodboy can work on the repositories it found.',
     outcome: 'workspace-created',
     anchor: WORKSPACE_CREATE,
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'workspace' }),
     doneWhen: isPastStep({ step: 'workspace' }),
   },
   {
     id: 'setup-tools',
-    copy: 'Sample tools are ready. Continue',
+    copy: 'Sample tools connected',
+    instruction: 'Click Continue: the sample tools are connected, so agents can use them.',
     outcome: 'tools-tried',
     anchor: '[data-step="tools"] [data-demo-anchor="setup-continue"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'tools' }),
     doneWhen: isPastStep({ step: 'tools' }),
   },
   {
     id: 'setup-first-start',
-    copy: 'Pick a starter task, then start it',
+    copy: 'Hand it to an agent',
+    instruction: 'Pick a starter task and press Start: an agent takes it and answers in a session.',
     outcome: 'first-task',
     anchor: '[data-step="first-session"] [data-demo-anchor="setup-first-start"]',
+    focus: WIZARD_COLUMN,
     revealWhen: isOnStep({ step: 'first-session' }),
     doneWhen: ({ state }) => hasSession({ state }),
-  },
-  {
-    id: 'setup-done',
-    copy: 'Scout answered your first task. You are set up',
-    outcome: null,
-    anchor: 'textarea[aria-label="Message to the agent"]',
-    side: 'left',
-    nextChapterId: 'agent',
-    revealWhen: ({ state }) => isFirstTaskAnswered({ state }),
-    doneWhen: () => false,
   },
 ];

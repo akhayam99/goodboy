@@ -71,9 +71,28 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   }
   const rect = rectOf({ value: Reflect.get(envelope.data, 'rect') });
   const isOffscreen: unknown = Reflect.get(envelope.data, 'isOffscreen');
+  const isClicked: unknown = Reflect.get(envelope.data, 'isClicked');
+  const hasFocus = Reflect.has(envelope.data, 'focus');
+  const focus = hasFocus ? rectOf({ value: Reflect.get(envelope.data, 'focus') }) : undefined;
   const hasValidHint = hintValue === null || hintId !== null;
-  if (!hasValidHint || rect === undefined || typeof isOffscreen !== 'boolean') {
+  const hasValidFocus = !hasFocus || focus !== undefined;
+  const hasValidClick = isClicked === undefined || typeof isClicked === 'boolean';
+  if (
+    !hasValidHint ||
+    !hasValidFocus ||
+    !hasValidClick ||
+    rect === undefined ||
+    typeof isOffscreen !== 'boolean'
+  ) {
     return null;
   }
-  return { ...base, type: 'anchor', hintId, rect, isOffscreen };
+  return {
+    ...base,
+    type: 'anchor',
+    hintId,
+    rect,
+    isOffscreen,
+    ...(focus === undefined ? {} : { focus }),
+    ...(isClicked === undefined ? {} : { isClicked }),
+  };
 };

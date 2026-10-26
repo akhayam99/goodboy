@@ -5,12 +5,13 @@ import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useCurrentSession, useSessions } from '../../../../store';
-import { isDirectedScene } from '../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../shared/utils/isDirectedScene';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
 import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
+import { useSceneSidebar } from './useSceneSidebar';
 
 const noop = () => undefined;
 
@@ -59,11 +60,12 @@ const BoardShellSceneContent = () => {
   const sessions = useSessions();
   const current = useCurrentSession();
   const currentSession = isDirectedScene() ? current : null;
+  const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    isSidebarCollapsed: rail.isCollapsed,
   });
-  const shell = useSceneShell({ arrangement });
+  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
 
   return (
     <>
@@ -72,7 +74,7 @@ const BoardShellSceneContent = () => {
         studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
             onOpenSpend={noop}
             onOpenScript={noop}
           />

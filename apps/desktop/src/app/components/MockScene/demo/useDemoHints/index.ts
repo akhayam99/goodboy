@@ -3,11 +3,12 @@ import type { DemoChapter } from '../demoChapters';
 import type { CoachMark } from '../DemoCoachMark';
 import type { DemoHintReport, DemoRect } from '../director/demoProtocol';
 import { hintTally, type HintTally } from '../hints/hintTally';
+import { isHoleTooBig } from '../hints/isHoleTooBig';
+import { APP_SIZE } from '../appSize';
 import { useHintProgress } from '../useHintProgress';
 
 type Params = {
   readonly chapter: DemoChapter;
-  readonly chapters: ReadonlyArray<DemoChapter>;
   readonly frameKey: string;
 };
 
@@ -30,7 +31,9 @@ type AnchorState = {
   readonly chapterId: string;
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
+  readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
+  readonly isClicked: boolean;
 };
 
 export type OffscreenHint = {
@@ -47,6 +50,7 @@ export type DemoHints = {
   readonly track: HintTrack | undefined;
   readonly coach: CoachMark | undefined;
   readonly offscreen: OffscreenHint | undefined;
+  readonly instruction: string | undefined;
   readonly reveal: HintReveal | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
@@ -59,7 +63,7 @@ export type DemoHints = {
   readonly reset: () => void;
 };
 
-export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints => {
+export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
   const { progress, markTried, markSkipped, reset: resetProgress } = useHintProgress();
   const [anchor, setAnchor] = useState<AnchorState | null>(null);
   const [hiddenId, setHiddenId] = useState<string | null>(null);
@@ -99,7 +103,9 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
         chapterId: chapter.id,
         hintId: report.hintId,
         rect: report.rect,
+        focus: report.focus ?? null,
         isOffscreen: report.isOffscreen,
+        isClicked: report.isClicked === true,
       });
     },
     [hints, chapter.id, markTried],
@@ -109,16 +115,13 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
     anchor !== null && anchor.key === frameKey && anchor.chapterId === chapter.id ? anchor : null;
   const currentId = current?.hintId ?? null;
   const isSettled = track?.settledIds.includes(currentId ?? '') ?? false;
-  const steps = hints.filter((entry) => entry.nextChapterId === undefined);
-  const index = steps.findIndex((entry) => entry.id === currentId);
+  const index = hints.findIndex((entry) => entry.id === currentId);
   const hint = hints.find((entry) => entry.id === currentId);
   const isHidden = currentId !== null && !isSettled && hiddenId === currentId;
 
   const isOpen = hint !== undefined && current !== null && !isSettled && !isHidden;
-  const nextChapter =
-    hint?.nextChapterId === undefined
-      ? undefined
-      : chapters.find((entry) => entry.id === hint.nextChapterId);
+  const instruction =
+    hint !== undefined && current !== null && !isSettled ? hint.instruction : undefined;
 
   const coach = useMemo((): CoachMark | undefined => {
     if (!isOpen || hint === undefined || current === null || current.rect === null) {
@@ -128,13 +131,15 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       hintId: hint.id,
       copy: hint.copy,
       step: index + 1,
-      total: steps.length,
+      total: hints.length,
       side: hint.side ?? 'right',
       rect: current.rect,
-      next:
-        nextChapter === undefined ? undefined : { id: nextChapter.id, title: nextChapter.title },
+      focus: current.focus,
+      isSpotlit:
+        !current.isClicked &&
+        !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
     };
-  }, [isOpen, hint, current, index, steps.length, nextChapter]);
+  }, [isOpen, hint, current, index, hints.length]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || hint === undefined || current === null || !current.isOffscreen) {
@@ -181,6 +186,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
     track,
     coach,
     offscreen,
+    instruction,
     reveal,
     tally: hintTally({ chapter, progress }),
     isHidden,

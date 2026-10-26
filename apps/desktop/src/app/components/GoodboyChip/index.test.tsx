@@ -397,6 +397,23 @@ describe('GoodboyChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
+  it('never opens itself in the demo and keeps the setup checklist out of the menu', async () => {
+    window.history.replaceState({}, '', '/?scene=demo-twin&director=1');
+    mocks.progress.isCollapsed = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
+    await act(async () => {
+      renderChip();
+    });
+
+    expect(mocks.collapse).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(screen.getByTestId('goodboy-chip').getAttribute('aria-label')).toBe(REST_LABEL);
+    const menu = openMenu();
+    expect(within(menu).queryByRole('button', { name: 'Hide setup' })).toBeNull();
+    expect(within(menu).queryByRole('region', { name: 'Setup' })).toBeNull();
+    window.history.replaceState({}, '', '/');
+  });
+
   it('never opens itself over the setup wizard', async () => {
     mocks.progress.isCollapsed = false;
     mocks.progress.isWizardDone = false;

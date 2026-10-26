@@ -7,18 +7,25 @@ import { DemoHintDots } from './DemoHintDots';
 type Props = {
   readonly chapter: DemoChapter;
   readonly tally: HintTally;
+  readonly instruction: string;
   readonly isHintHidden: boolean;
   readonly onShowHint: () => void;
 };
 
-export const DemoChapterHeader = ({ chapter, tally, isHintHidden, onShowHint }: Props) => (
+export const DemoChapterHeader = ({
+  chapter,
+  tally,
+  instruction,
+  isHintHidden,
+  onShowHint,
+}: Props) => (
   <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
     <div className="flex min-w-0 flex-col gap-1">
       <div className="flex flex-wrap items-baseline gap-x-3">
         <h1 className="text-display text-foreground">{chapter.title}</h1>
         {chapter.isOptional === true ? <Eyebrow label="Optional" muted /> : null}
       </div>
-      <p className="text-ui text-muted-foreground">{chapter.summary}</p>
+      <p className="text-ui text-muted-foreground">{instruction}</p>
     </div>
     {tally.total > 0 ? (
       <div className="flex items-center gap-3">

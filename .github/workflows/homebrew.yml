@@ -8,6 +8,9 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+
 jobs:
   bump:
     name: bump cask

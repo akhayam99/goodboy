@@ -18,6 +18,7 @@ const AUTO_CHILD =
 const RUN_APPROVE = '[data-demo-anchor="run-approve-plan"]';
 const RUN_STEP = '[role="treeitem"][data-tree-id]';
 const RUN_MODEL = 'button[aria-label^="Model routing"]';
+const RUN_REPORT = 'button[data-testid="create-report-cta"]';
 
 const isAutoSession = ({ state }: StateParams): boolean => {
   const sessionId = state.currentSessionId;
@@ -48,9 +49,16 @@ type NewTurnParams = Pick<HintProbe, 'state' | 'start'> & {
   readonly isApproval: boolean;
 };
 
+const knownTurnsOf = ({ state }: StateParams): ReadonlySet<string> =>
+  new Set(
+    Object.values(state.transcripts).flatMap((events) =>
+      events.flatMap((event) => (event.kind === 'user_text' ? [event.runId] : [])),
+    ),
+  );
+
 const hasNewRootTurn = ({ state, start, isApproval }: NewTurnParams): boolean => {
-  const before = rootTurnsOf({ state: start, isApproval });
-  return [...rootTurnsOf({ state, isApproval })].some((runId) => !before.has(runId));
+  const known = knownTurnsOf({ state: start });
+  return [...rootTurnsOf({ state, isApproval })].some((runId) => !known.has(runId));
 };
 
 const approvedRunsOf = ({ state }: StateParams): ReadonlySet<string> =>
@@ -81,9 +89,12 @@ const hasPickedModel = ({ state, start }: HintProbe): boolean =>
 export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'auto-start',
-    copy: 'Describe a goal, then press Start',
+    copy: 'Give Auto a goal',
+    instruction:
+      'Describe a goal and press Start: Auto plans it and splits the work between agents.',
     outcome: 'auto-started',
     anchor: AUTO_START,
+    focus: 'section[aria-label="Start a run"]',
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_START }),
@@ -91,7 +102,8 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-approve',
-    copy: 'Approve the plan to start the helpers',
+    copy: 'Approve to go',
+    instruction: 'Press Approve plan: Auto then starts the helper agents that run each part.',
     outcome: 'auto-approved',
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
@@ -100,7 +112,8 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'auto-child',
-    copy: 'Open a helper to follow its work',
+    copy: 'Follow a helper',
+    instruction: 'Open a helper agent to follow what it is doing and what it has finished.',
     outcome: 'helper-opened',
     anchor: AUTO_CHILD,
     revealWhen: ({ state, root }) =>
@@ -111,9 +124,11 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-approve',
-    copy: 'Approve the plan to start the next step',
+    copy: 'Approve the next step',
+    instruction: 'Approve the plan so the saved workflow can start its next step.',
     outcome: 'run-approved',
     anchor: RUN_APPROVE,
+    focus: '[data-testid="agent-header-title-row"]',
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isRunSession({ state }) && hasElement({ root, selector: RUN_APPROVE }),
@@ -121,7 +136,8 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-step',
-    copy: 'Open a step to read its agent',
+    copy: 'Read a step',
+    instruction: 'Open a step to read the agent that ran it and what it did.',
     outcome: 'step-opened',
     anchor: RUN_STEP,
     side: 'left',
@@ -134,12 +150,25 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'run-model',
-    copy: 'Pick a model for this step',
+    copy: 'Model per step',
+    instruction: 'Pick which model runs this step: each step can use a different one.',
     outcome: 'model-picked',
     anchor: RUN_MODEL,
     side: 'left',
     revealWhen: ({ state, root }) =>
       isRunSession({ state }) && hasElement({ root, selector: RUN_MODEL }),
     doneWhen: hasPickedModel,
+  },
+  {
+    id: 'run-report',
+    copy: 'Write it up',
+    instruction: 'Create a report: a written summary of this run you can share.',
+    outcome: null,
+    anchor: RUN_REPORT,
+    focus: 'div.flex-col.gap-6',
+    side: 'top',
+    revealWhen: ({ state, root }) =>
+      isRunSession({ state }) && hasElement({ root, selector: RUN_REPORT }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];

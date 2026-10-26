@@ -1,19 +1,37 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../../../store';
+import {
+  applyDocumentTheme,
+  getAppliedTheme,
+  subscribeAppliedTheme,
+} from '../../../../../../shared/lib/theme';
 import { nowIso } from '../../../../../../store/slices/project-mounts/nowIso';
 import { createPlaybackClock } from '../createPlaybackClock';
 import { createSceneDirector, type SceneDirector } from '../createSceneDirector';
 import { createSimulatedSend } from '../createSimulatedSend';
 import { createSimulatedAnswer } from '../createSimulatedAnswer';
 import { createReplyRuns } from '../createReplyRuns';
+import { installDemoSearch } from '../installDemoSearch';
+import { installDemoMonitor } from '../installDemoMonitor';
+import { installDemoContext } from '../installDemoContext';
+import { createSimulatedSpawn } from '../createSimulatedSpawn';
+import { DEMO_REPLIES } from '../demoReplies';
 import { createHintEngine, type HintEngine } from '../createHintEngine';
 import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
 import type { DemoTimeline } from '../directorTypes';
-import type { DemoHintReport, DemoReport } from '../demoProtocol';
+import {
+  DEMO_PROTOCOL,
+  type DemoHintReport,
+  type DemoReport,
+  type DemoThemeMessage,
+} from '../demoProtocol';
 import { readDemoCommand } from '../readDemoCommand';
 import { readDemoHintsCommand } from '../readDemoHintsCommand';
 import { readDemoRevealCommand } from '../readDemoRevealCommand';
+import { readDemoThemeMessage } from '../readDemoThemeMessage';
+import { readDemoShortcutCommand } from '../readDemoShortcutCommand';
+import { dispatchDemoShortcut } from '../dispatchDemoShortcut';
 import { waitForPaint } from '../waitForPaint';
 
 type Params = {
@@ -21,7 +39,7 @@ type Params = {
 };
 
 type ReportParams = {
-  readonly report: DemoReport | DemoHintReport;
+  readonly report: DemoReport | DemoHintReport | DemoThemeMessage;
 };
 
 type ChapterParams = {
@@ -31,9 +49,6 @@ type ChapterParams = {
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const INPUT_EVENTS = ['pointerdown', 'keydown'] as const;
 const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
-const GENERIC_REPLY =
-  'On it. In the app I would read the code this touches first, then report back here before anything is pushed.';
-const GENERIC_ANSWER_REPLY = 'Thanks, that settles it. Carrying on with that choice.';
 
 const isReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
@@ -59,6 +74,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
     let director: SceneDirector | null = null;
     let hints: HintEngine | null = null;
     let isDisposed = false;
+    let expectedTheme = getAppliedTheme();
     const runs = createReplyRuns();
     const isStandalone = window.parent === window;
 
@@ -70,10 +86,13 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       const store = useAppStore;
       const timeline = DEMO_TIMELINES.get(sceneName)?.({ state: store.getState() }) ?? STILL;
       const now = () => nowIso({});
+      installDemoSearch({ store });
+      installDemoMonitor({ store });
+      installDemoContext({ store });
       store.setState({
         sendTurn: createSimulatedSend({
           store,
-          reply: timeline.reply ?? GENERIC_REPLY,
+          reply: timeline.reply ?? DEMO_REPLIES.generic,
           now,
           shouldClearDraft: true,
           runs,
@@ -82,7 +101,18 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
           store,
           send: createSimulatedSend({
             store,
-            reply: timeline.answerReply ?? GENERIC_ANSWER_REPLY,
+            reply: timeline.answerReply ?? DEMO_REPLIES.answer,
+            now,
+            shouldClearDraft: false,
+            runs,
+          }),
+          now,
+        }),
+        spawnAgent: createSimulatedSpawn({
+          store,
+          send: createSimulatedSend({
+            store,
+            reply: DEMO_REPLIES.spawn,
             now,
             shouldClearDraft: false,
             runs,
@@ -108,6 +138,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         onReport: post,
       });
       director.start();
+      expectedTheme = getAppliedTheme();
       if (isStandalone) {
         director.play();
       }
@@ -127,6 +158,21 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         if (reveal !== null) {
           if (reveal.generation === director.generation()) {
             hints?.reveal({ hintId: reveal.hintId });
+          }
+          return;
+        }
+        const themeMessage = readDemoThemeMessage({ data: event.data });
+        if (themeMessage !== null) {
+          if (themeMessage.generation === director.generation()) {
+            expectedTheme = themeMessage.theme;
+            applyDocumentTheme({ theme: themeMessage.theme });
+          }
+          return;
+        }
+        const shortcutCommand = readDemoShortcutCommand({ data: event.data });
+        if (shortcutCommand !== null) {
+          if (shortcutCommand.generation === director.generation()) {
+            dispatchDemoShortcut({ code: shortcutCommand.code });
           }
           return;
         }
@@ -161,6 +207,23 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       { signal: listeners.signal },
     );
 
+    const unwatchTheme = subscribeAppliedTheme(() => {
+      const applied = getAppliedTheme();
+      if (applied === expectedTheme || director === null) {
+        return;
+      }
+      expectedTheme = applied;
+      post({
+        report: {
+          channel: DEMO_PROTOCOL.channel,
+          version: DEMO_PROTOCOL.version,
+          generation: director.generation(),
+          type: 'theme',
+          theme: applied,
+        },
+      });
+    });
+
     for (const type of INPUT_EVENTS) {
       window.addEventListener(
         type,
@@ -179,6 +242,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       runs.dispose();
       director?.dispose();
       hints?.dispose();
+      unwatchTheme();
       listeners.abort();
     };
   }, [sceneName]);

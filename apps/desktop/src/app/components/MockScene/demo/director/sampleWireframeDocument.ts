@@ -20,7 +20,7 @@ export const SAMPLE_WIREFRAME_DOCUMENT: WireframeDocument = {
           {
             id: 'deliveries-note',
             kind: 'text',
-            text: 'A sample sketch from the playground.',
+            text: 'Low fidelity sketch of the deliveries screen.',
             variant: 'caption',
           },
           {

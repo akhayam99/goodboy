@@ -21,7 +21,7 @@ const readStored = (): Theme | null => {
 
 const systemTheme = (): Theme => (window.matchMedia(SYSTEM_DARK).matches ? 'dark' : 'light');
 
-const currentTheme = (): Theme => {
+export const currentTheme = (): Theme => {
   const value = document.documentElement.getAttribute('data-theme');
   return isTheme(value) ? value : systemTheme();
 };

@@ -27,6 +27,8 @@ import { ONBOARDING_HINTS } from '../hints/onboardingHints';
 import { ORCHESTRATE_HINTS } from '../hints/orchestrateHints';
 import type { DemoHint } from '../hints/demoHintTypes';
 import { setupPlace } from '../hints/setupPlace';
+import { hintTally } from '../hints/hintTally';
+import { DEMO_CHAPTERS } from '../demoChapters';
 import { createHintEngine } from './createHintEngine';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { createSimulatedSend } from './createSimulatedSend';
@@ -36,6 +38,8 @@ import { createPlaybackClock } from './createPlaybackClock';
 import { createSceneDirector } from './createSceneDirector';
 import { limitsTimeline } from './limitsTimeline';
 import { AUTO_ROOT_ID, AUTO_SESSION, autoSceneOf } from '../../scenes/u24/autoSceneSeed';
+import { seedC07 } from '../../scenes/u25/c07/c07AutoSeed';
+import { autoTimeline } from './autoTimeline';
 
 let store: StoryStore;
 
@@ -138,6 +142,11 @@ const engineFor = ({ hints }: EngineParams) => {
 const frame = async (): Promise<void> => {
   await Promise.resolve();
   vi.advanceTimersByTime(20);
+};
+
+const dwell = async (): Promise<void> => {
+  await Promise.resolve();
+  vi.advanceTimersByTime(2700);
 };
 
 const sendOf = () =>
@@ -322,6 +331,7 @@ describe('the hint engine', () => {
     }
     wizard.innerHTML = '<button type="submit" data-demo-anchor="setup-create">Create</button>';
     await frame();
+    await dwell();
     expect(shown().at(-1)).toBe('setup-create');
     expect(tried()).toEqual(['setup-workspace']);
     wizard.setAttribute('data-step', 'tools');
@@ -330,7 +340,7 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
-  it('credits the first task when its session opens and points on once it answered', async () => {
+  it('credits the first task when its session opens', async () => {
     document.body.innerHTML = `
       <div aria-label="Goodboy setup" data-step="first-session">
         <button type="button" data-demo-anchor="setup-first-start">Start</button>
@@ -344,7 +354,6 @@ describe('the hint engine', () => {
     seed();
     await frame();
     expect(tried()).toEqual(['setup-first-start']);
-    expect(shown().at(-1)).toBe('setup-done');
     engine.dispose();
   });
 
@@ -403,6 +412,33 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('credits nothing while the Auto start scene loads cold and plays its own cues', async () => {
+    seedC07({ state: 'working', place: 'start' });
+    document.body.innerHTML = '<textarea aria-label="Start a run"></textarea>';
+    const timeline = autoTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no Auto timeline');
+    }
+    const director = createSceneDirector({
+      timeline,
+      store,
+      clock: createPlaybackClock({ now: () => Date.now() }),
+      isSettled: false,
+      now: () => AT,
+      onReport: () => undefined,
+    });
+    const { engine, tried } = engineFor({ hints: ORCHESTRATE_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    director.start();
+    director.play();
+    await frame();
+    vi.advanceTimersByTime(60000);
+    await frame();
+    expect(tried()).toEqual([]);
+    director.dispose();
+    engine.dispose();
+  });
+
   it('credits the limits handoff for a visitor message, not for the scripted one', async () => {
     seed();
     store.setState({ sessionOpenQuestions: {}, agentDraft: {}, transcripts: { [agent.id]: [] } });
@@ -436,6 +472,136 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('counts every outcome of Set up once the wizard is walked to its first task', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'setup');
+    if (chapter === undefined) {
+      throw new Error('no setup chapter');
+    }
+    document.body.innerHTML = `
+      <div aria-label="Goodboy setup" data-step="welcome">
+        <button type="button" data-demo-anchor="setup-start">Get started</button>
+      </div>
+    `;
+    const { engine, tried } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    const wizard = document.querySelector('[aria-label="Goodboy setup"]');
+    if (wizard === null) {
+      throw new Error('missing wizard');
+    }
+    const steps = [
+      '<button type="button" data-demo-anchor="setup-continue">Continue</button>',
+      '<button type="button" data-demo-anchor="setup-choose-folder">Choose folder</button>',
+      '<button type="submit" data-demo-anchor="setup-create">Create</button>',
+      '<button type="button" data-demo-anchor="setup-continue">Continue</button>',
+      '<button type="button" data-demo-anchor="setup-first-start">Start</button>',
+    ];
+    const names = ['agents', 'workspace', 'workspace', 'tools', 'first-session'];
+    for (const [index, html] of steps.entries()) {
+      wizard.setAttribute('data-step', names[index] ?? 'welcome');
+      wizard.innerHTML = html;
+      await frame();
+    }
+    seed();
+    await frame();
+    const progress = { setup: { tried: [...tried()], skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 5, total: 5 });
+    engine.dispose();
+  });
+
+  it('counts every outcome of Work with an agent across the chat and the limits handoff', async () => {
+    const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'agent');
+    if (chapter === undefined) {
+      throw new Error('no agent chapter');
+    }
+    seed();
+    document.body.innerHTML = CHAT_DOM;
+    const first = engineFor({ hints: AGENT_HINTS });
+    first.engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    await sendOf()({ sessionId: session.id, agentId: agent.id, content: DRAFT });
+    vi.advanceTimersByTime(10000);
+    await frame();
+    const answer = createSimulatedAnswer({
+      store,
+      send: createSimulatedSend({
+        store,
+        reply: 'Thanks.',
+        now: () => AT,
+        shouldClearDraft: false,
+        runs: createReplyRuns(),
+      }),
+      now: () => AT,
+    });
+    await answer(session.id, [{ id: QUESTION.id, text: QUESTION.text, answer: 'Badge' }], null);
+    vi.advanceTimersByTime(10000);
+    await frame();
+    document
+      .querySelector('button[aria-label^="Operations"]')
+      ?.setAttribute('aria-expanded', 'true');
+    await frame();
+    const triedIds = [...first.tried()];
+    first.engine.dispose();
+    store.setState({ sessionOpenQuestions: {}, agentDraft: {}, transcripts: { [agent.id]: [] } });
+    document.body.innerHTML = '<textarea aria-label="Message to the agent"></textarea>';
+    const timeline = limitsTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no limits timeline');
+    }
+    const director = createSceneDirector({
+      timeline,
+      store,
+      clock: createPlaybackClock({ now: () => Date.now() }),
+      isSettled: false,
+      now: () => AT,
+      onReport: () => undefined,
+    });
+    const second = engineFor({ hints: AGENT_HINTS });
+    second.engine.setTrack({ chapterId: 'test', settledIds: [] });
+    director.start();
+    director.play();
+    vi.advanceTimersByTime(60000);
+    await frame();
+    await store
+      .getState()
+      .sendTurn({ sessionId: session.id, agentId: agent.id, content: 'Run the postings suite.' });
+    vi.advanceTimersByTime(60000);
+    await frame();
+    triedIds.push(...second.tried());
+    director.dispose();
+    second.engine.dispose();
+    const progress = { agent: { tried: triedIds, skipped: [], epoch: 0 } };
+    expect(hintTally({ chapter, progress })).toEqual({ tried: 4, total: 4 });
+  });
+
+  it('says the visitor clicked the hinted control, so the shell can lift the spotlight', async () => {
+    seed();
+    document.body.innerHTML = CHAT_DOM;
+    const { engine, reports } = engineFor({ hints: AGENT_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'agent-send',
+      isClicked: false,
+    });
+    const target = document.querySelector('button[aria-label="Send message"]');
+    const untrusted = new MouseEvent('click', { bubbles: true });
+    target?.dispatchEvent(untrusted);
+    await frame();
+    expect(reports.at(-1)).toMatchObject({ hintId: 'agent-send', isClicked: false });
+    const trusted = new MouseEvent('click', { bubbles: true });
+    Object.defineProperty(trusted, 'isTrusted', { value: true });
+    target?.dispatchEvent(trusted);
+    await frame();
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'agent-send',
+      isClicked: true,
+    });
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = `
       <div aria-label="Goodboy setup" data-step="tools">
@@ -463,5 +629,126 @@ describe('the hint engine', () => {
     engine.reveal({ hintId: 'setup-tools' });
     expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
     engine.dispose();
+  });
+
+  describe('focus region', () => {
+    type HintOverrides = Partial<DemoHint>;
+
+    const probeHint = (overrides: HintOverrides): DemoHint => ({
+      id: 'probe',
+      copy: 'Probe',
+      instruction: 'Probe the control.',
+      outcome: null,
+      anchor: '#go',
+      revealWhen: () => true,
+      doneWhen: () => false,
+      ...overrides,
+    });
+
+    const boxed = (): void => {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element,
+      ) {
+        const [x = 0, y = 0, width = 0, height = 0] = (this.getAttribute('data-box') ?? '')
+          .split(',')
+          .map(Number);
+        return this.hasAttribute('data-box')
+          ? new DOMRect(x, y, width, height)
+          : new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+      });
+    };
+
+    const lastAnchor = (reports: ReadonlyArray<DemoHintReport>) =>
+      reports.filter((report) => report.type === 'anchor').at(-1);
+
+    it('reports the region the hint names, found from the control outward', async () => {
+      document.body.innerHTML = `
+        <section data-box="40,40,700,500">
+          <div id="inner" data-box="60,80,400,200">
+            <button id="go" data-box="100,100,40,24"></button>
+          </div>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({ focus: '#inner' })] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({
+        hintId: 'probe',
+        rect: { x: 100, y: 100, width: 40, height: 24 },
+        focus: { x: 60, y: 80, width: 400, height: 200 },
+      });
+      engine.dispose();
+    });
+
+    it('falls back to the nearest container that holds more than the control', async () => {
+      document.body.innerHTML = `
+        <section data-box="40,40,600,300">
+          <span data-box="100,100,40,24"><button id="go" data-box="100,100,40,24"></button></span>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({
+        focus: { x: 40, y: 40, width: 600, height: 300 },
+      });
+      engine.dispose();
+    });
+
+    it('reports no region when the only container is most of the screen', async () => {
+      document.body.innerHTML = `
+        <section data-box="0,0,1000,760">
+          <button id="go" data-box="100,100,40,24"></button>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({ hintId: 'probe', focus: null });
+      engine.dispose();
+    });
+
+    it('reports nothing to light for a hint whose control is not on the page', async () => {
+      document.body.innerHTML = '<section data-box="0,0,300,300"></section>';
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({ hintId: null, rect: null, focus: null });
+      engine.dispose();
+    });
+
+    it('scrolls a control that is cut by the edge into view once, then leaves the scroll alone', async () => {
+      const edge = window.innerHeight - 20;
+      document.body.innerHTML = `<button id="go" data-box="100,${edge},40,24"></button>`;
+      const scrolled = vi.fn();
+      Element.prototype.scrollIntoView = scrolled;
+      boxed();
+      const { engine } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
+      document.body.dispatchEvent(new Event('scroll'));
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      engine.dispose();
+    });
+
+    it('scrolls a control below the fold in before offering Show control', async () => {
+      document.body.innerHTML = `<button id="go" data-box="100,${window.innerHeight + 400},40,24"></button>`;
+      const scrolled = vi.fn();
+      Element.prototype.scrollIntoView = scrolled;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      expect(lastAnchor(reports)).toMatchObject({ hintId: 'probe', rect: null, isOffscreen: true });
+      engine.dispose();
+    });
   });
 });

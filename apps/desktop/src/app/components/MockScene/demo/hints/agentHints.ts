@@ -2,6 +2,7 @@ import { isOpenQuestionAnswerText } from '@goodboy/core';
 import type { TurnEvent } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
+import { hasElement } from './hasElement';
 
 type StateParams = {
   readonly state: AppStore;
@@ -91,11 +92,14 @@ const hasSent = ({ state, start }: Pick<HintProbe, 'state' | 'start'>): boolean 
   userTurnsOf({ state }) > userTurnsOf({ state: start });
 
 const OPERATIONS = 'button[aria-label^="Operations"]';
+const CLAUDE_LIMITS = 'button[aria-label^="Claude limits"]';
+const MODEL = 'button[aria-label^="Model routing"]';
 
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-send',
-    copy: 'Send this follow-up to the agent',
+    copy: 'Send the follow-up',
+    instruction: 'Press Send to give the agent a follow-up while it works on the same task.',
     outcome: 'turn-replied',
     anchor: 'button[aria-label="Send message"]',
     side: 'left',
@@ -104,7 +108,8 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-answer',
-    copy: 'Answer the agent’s question',
+    copy: 'The agent is waiting on you',
+    instruction: 'Pick an answer to the agent question so it can carry on with the task.',
     outcome: 'question-answered',
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
@@ -115,8 +120,21 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     doneWhen: ({ state, start }) => answeredOf({ state }) > answeredOf({ state: start }),
   },
   {
+    id: 'agent-limits-peek',
+    copy: 'Check what is left',
+    instruction: 'Open the limits chip to see how much of your Claude plan you have left.',
+    outcome: null,
+    anchor: CLAUDE_LIMITS,
+    side: 'bottom',
+    revealWhen: ({ state, root }) =>
+      hasElement({ root, selector: CLAUDE_LIMITS }) && !hasHandoff({ state }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
+  },
+  {
     id: 'agent-limits',
-    copy: 'Send a message and watch Codex take over from Claude',
+    copy: 'Codex takes over',
+    instruction:
+      'Claude hit its limit: send a message and watch Codex continue with the same brief.',
     outcome: 'task-continued',
     anchor: 'textarea[aria-label="Message to the agent"]',
     side: 'top',
@@ -125,11 +143,24 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-files',
-    copy: 'Open the files it edited',
+    copy: 'Files it edited',
+    instruction: 'Open Operations to see which files the agent edited and what changed in them.',
     outcome: 'files-opened',
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
     doneWhen: ({ root, isAnchorClicked }) =>
       isAnchorClicked || root.querySelector(`${OPERATIONS}[aria-expanded="true"]`) !== null,
+  },
+  {
+    id: 'agent-model',
+    copy: 'Choose the model',
+    instruction: 'Open the model picker to choose which model answers your next message.',
+    outcome: null,
+    anchor: MODEL,
+    side: 'top',
+    revealWhen: ({ state, root }) =>
+      !isAgentBusy({ state }) && hasElement({ root, selector: MODEL }),
+    doneWhen: ({ root, isAnchorClicked }) =>
+      isAnchorClicked || root.querySelector(`${MODEL}[aria-expanded="true"]`) !== null,
   },
 ];

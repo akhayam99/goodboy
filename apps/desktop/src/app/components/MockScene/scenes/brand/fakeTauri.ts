@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect } from 'react';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 
 type FakeArgs = Readonly<Record<string, unknown>> | undefined;
 

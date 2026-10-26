@@ -182,8 +182,9 @@ it.
   and reading them out anywhere. They are never an input to a change.
 - Telemetry, analytics, tracking, crash reporting that phones home, or any
   network call that sends user data anywhere except the provider the user
-  chose, in the app or its packages. The website's cookieless visit counter is
-  the one exception, written down in SECURITY.md.
+  chose, in the app or its packages. The website's cookieless visit counter and
+  the public demo's cookieless Vercel Web Analytics, injected into the demo
+  build only, are the two exceptions, written down in SECURITY.md.
 - Absolute home paths, personal configuration, or any mention of a state
   directory outside the repository checkout in code, commits, PR bodies, or
   replies.

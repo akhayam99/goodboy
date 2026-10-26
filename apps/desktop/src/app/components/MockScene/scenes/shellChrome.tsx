@@ -21,7 +21,8 @@ import type { ProviderDisplayInfo } from '../../../../features/providers/provide
 import { sceneClock } from '../sceneClock';
 import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
-import { isDirectedScene } from '../demo/director/isDirectedScene';
+import { useSceneSidebar } from './useSceneSidebar';
+import { isDirectedScene } from '../../../../shared/utils/isDirectedScene';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -108,11 +109,12 @@ export const ShellFrame = ({
   hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const rail = useSceneSidebar({ isCollapsed: sidebar === 'collapsed' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sidebar === 'collapsed',
+    isSidebarCollapsed: rail.isCollapsed,
   });
-  const shell = useSceneShell({ arrangement });
+  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
 
   return (
     <ToastProvider>
@@ -121,7 +123,7 @@ export const ShellFrame = ({
         studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
             onOpenSpend={noop}
             onOpenScript={noop}
           />

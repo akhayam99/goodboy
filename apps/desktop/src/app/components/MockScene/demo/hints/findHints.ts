@@ -13,6 +13,8 @@ type RootParams = {
 const PLAN_PROSE = '[data-testid="plan-prose-comments"]';
 const CARD = 'article[data-select-id]';
 const FILTER = '[data-page="board"] button[aria-label="Filter sessions"]';
+const NEW_ARTIFACT = 'button[data-testid="artifact-new"]';
+const REPORT_DETAILS = 'button[data-testid="artifact-drawer-details"]';
 const PLAN_ROW = 'button[data-artifact-row][aria-label^="Plan "]';
 
 const waitingCardOf = ({ state }: StateParams): string => {
@@ -38,7 +40,8 @@ const hasCommented = ({ state, start }: HintProbe): boolean =>
 export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'board-filter',
-    copy: 'Filter the board by folder',
+    copy: 'Narrow the board',
+    instruction: 'Filter the board by folder to see only the sessions of one project.',
     outcome: 'board-filtered',
     anchor: FILTER,
     side: 'left',
@@ -47,7 +50,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'board-open',
-    copy: 'Open the card that needs you',
+    copy: 'This one needs you',
+    instruction: 'Open the card marked as waiting: its session cannot go on without you.',
     outcome: 'session-opened',
     anchor: ({ state }) => waitingCardOf({ state }),
     revealWhen: ({ state, root }) =>
@@ -56,7 +60,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-open',
-    copy: 'Open a plan from the library',
+    copy: 'Read the plan',
+    instruction: 'Open a plan from the library to read what an agent proposed before it acts.',
     outcome: null,
     anchor: PLAN_ROW,
     side: 'bottom',
@@ -65,10 +70,33 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-comment',
-    copy: 'Point at a line, then comment on it',
+    copy: 'Comment on a line',
+    instruction:
+      'Click a line of the plan and leave a comment: the agent reads it on the next run.',
     outcome: 'plan-commented',
     anchor: PLAN_PROSE,
     revealWhen: isPlanOpen,
     doneWhen: hasCommented,
+  },
+  {
+    id: 'library-new',
+    copy: 'Start something new',
+    instruction: 'Open New to create a plan or a report from the library.',
+    outcome: null,
+    anchor: NEW_ARTIFACT,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: NEW_ARTIFACT }),
+    doneWhen: ({ root, isAnchorClicked }) =>
+      isAnchorClicked || root.querySelector(`${NEW_ARTIFACT}[aria-expanded="true"]`) !== null,
+  },
+  {
+    id: 'report-details',
+    copy: 'Where it comes from',
+    instruction: 'Open the report details to see which sessions and code the report is based on.',
+    outcome: null,
+    anchor: REPORT_DETAILS,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: REPORT_DETAILS }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];

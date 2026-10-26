@@ -1,4 +1,4 @@
-import type { ResolveQueueItemWithThread } from '@goodboy/types';
+import type { ResolveAttempt, ResolveQueueItemWithThread } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
 import { hasElement } from './hasElement';
@@ -35,23 +35,42 @@ type EntryParams = {
 const isDrafted = ({ entry }: EntryParams): boolean =>
   entry.thread.stage === 'proposed' && (entry.thread.replyDraft ?? '').trim().length > 0;
 
-const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
-  const before = new Set(
-    Object.values(start.sessionResolveAttempts)
-      .flat()
-      .map((attempt) => attempt.id),
+const attemptsOf = ({ state }: StateParams): ReadonlyArray<ResolveAttempt> =>
+  Object.values(state.sessionResolveAttempts).flat();
+
+type SinceParams = StateParams & {
+  readonly start: AppStore;
+};
+
+const isNewFixRunning = ({ state, start }: SinceParams): boolean => {
+  const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
+  return attemptsOf({ state }).some(
+    (attempt) => attempt.phase === 'running' && !before.has(attempt.id),
   );
+};
+
+const hasFinishedFix = ({ state }: StateParams): boolean =>
+  attemptsOf({ state }).some((attempt) => attempt.phase === 'finished');
+
+const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
+  const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
   const drafted = new Set(
     itemsOf({ state }).flatMap((entry) => (isDrafted({ entry }) ? [entry.thread.threadId] : [])),
   );
-  return Object.values(state.sessionResolveAttempts)
-    .flat()
-    .some(
-      (attempt) =>
-        !before.has(attempt.id) &&
-        attempt.phase === 'finished' &&
-        attempt.threadIds.some((threadId) => drafted.has(threadId)),
-    );
+  return attemptsOf({ state }).some(
+    (attempt) =>
+      !before.has(attempt.id) &&
+      attempt.phase === 'finished' &&
+      attempt.threadIds.some((threadId) => drafted.has(threadId)),
+  );
+};
+
+const isDraftedRowOpen = ({ state, root }: StateParams & RootParams): boolean => {
+  const open = root.querySelector(CURRENT_COMMENT)?.getAttribute('data-thread-id') ?? null;
+  return (
+    open !== null &&
+    itemsOf({ state }).some((entry) => entry.thread.threadId === open && isDrafted({ entry }))
+  );
 };
 
 const readyRowOf = ({ state }: StateParams): string | null => {
@@ -78,9 +97,11 @@ const acceptedCountOf = ({ state }: StateParams): number =>
 export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'diff-file',
-    copy: 'Open the webhook handler',
+    copy: 'Start with this file',
+    instruction: 'Open applyWebhook.ts to read what changed before it is pushed.',
     outcome: null,
     anchor: `${HANDLER_ROW} > button`,
+    focus: 'nav[aria-label="Changed files"]',
     side: 'left',
     revealWhen: ({ root }) =>
       hasElement({ root, selector: HANDLER_ROW }) && !isHandlerOpen({ root }),
@@ -88,7 +109,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'diff-note',
-    copy: 'Click a line number to leave a note',
+    copy: 'Leave a note',
+    instruction: 'Click a line number to leave a note on that line of code.',
     outcome: 'note-left',
     anchor: LINE_NOTE,
     revealWhen: ({ root }) => hasElement({ root, selector: LINE_NOTE }),
@@ -96,7 +118,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-pick',
-    copy: 'Open the comment about the retry constant',
+    copy: 'Read it in context',
+    instruction: 'Open this review comment to read it next to the code it is about.',
     outcome: null,
     anchor: 'button[data-thread-id="PRRT_thread_retry_constant"]',
     revealWhen: ({ root }) =>
@@ -105,7 +128,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-fix',
-    copy: 'Ask an agent to fix this comment',
+    copy: 'Hand it to an agent',
+    instruction: 'Ask an agent to draft a fix for this comment instead of editing by hand.',
     outcome: null,
     anchor: FIX,
     side: 'top',
@@ -115,7 +139,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-start',
-    copy: 'Start the fix, then read its drafted reply',
+    copy: 'Let it work',
+    instruction: 'Press Start fix: the agent changes the code and drafts a reply to the reviewer.',
     outcome: 'fix-ready',
     anchor: START_FIX,
     side: 'top',
@@ -123,8 +148,27 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     doneWhen: hasDraftedFix,
   },
   {
+    id: 'resolve-read',
+    copy: 'A fix is ready',
+    instruction: 'Open a fixed comment to read the reply the agent drafted for the reviewer.',
+    outcome: 'fix-ready',
+    anchor: ({ state }) => readyRowOf({ state }),
+    side: 'right',
+    revealWhen: ({ state, start, root }) => {
+      const anchor = readyRowOf({ state });
+      return (
+        hasFinishedFix({ state }) &&
+        !isNewFixRunning({ state, start }) &&
+        anchor !== null &&
+        hasElement({ root, selector: anchor })
+      );
+    },
+    doneWhen: isDraftedRowOpen,
+  },
+  {
     id: 'resolve-keep',
-    copy: 'Read the drafted reply, then apply the fix',
+    copy: 'Your call',
+    instruction: 'Read the drafted reply, then keep the fix if it looks right to you.',
     outcome: 'fix-kept',
     anchor: keepAnchorOf,
     side: 'top',

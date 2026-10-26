@@ -7,7 +7,7 @@ import { SessionWorkspace } from '../../../../../features/session/components/Ses
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { useSceneRailFold } from '../useSceneRailFold';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {

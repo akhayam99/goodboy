@@ -107,6 +107,14 @@ const RULES = [
     why: 'the chrome surface frames the app: the shell under its top bar and sidebar column, the footer, a studio and its rail, and the scale scene that draws the frame',
   },
   {
+    pattern: /(?<![\w-])bg-surround(?![\w-])/,
+    allow: [
+      'apps/desktop/src/app/components/MockScene/demo/DemoPlayground.tsx',
+      'apps/desktop/src/app/components/MockScene/demo/DemoSpotlight.tsx',
+    ],
+    why: 'the surround is the demo page around the app frame, darker than any app surface so the frame reads as a window',
+  },
+  {
     pattern: /(?<![\w-])bg-backdrop(?![\w-])/,
     allow: [
       'packages/ui/src/components/AppShell.tsx',

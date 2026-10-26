@@ -89,7 +89,7 @@ describe('the limits handoff', () => {
     const replies = (store.getState().transcripts[tester.id] ?? []).flatMap((event) =>
       event.kind === 'assistant_text' ? [event.delta] : [],
     );
-    expect(replies.join('')).toContain('This is a sample response.');
+    expect(replies.join('')).toContain('Picked that up on Codex');
     expect(kindsOf()).toContain('decision_note');
   });
 });

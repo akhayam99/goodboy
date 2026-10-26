@@ -726,8 +726,7 @@ fn cursor_asks_for_workspace_trust_only_when_it_does_not_force() {
             .iter()
             .filter(|arg| arg.as_str() == "--trust")
             .count(),
-        1,
-        "{trusted:?}"
+        1
     );
     assert!(!trusted.contains(&"--force".to_string()));
     assert!(!argv_of(&full).contains(&"--trust".to_string()));

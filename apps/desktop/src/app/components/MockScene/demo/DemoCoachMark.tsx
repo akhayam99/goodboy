@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowRight, X } from 'lucide-react';
-import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
+import { holeOf } from './hints/holeOf';
 import { placeCallout } from './hints/placeCallout';
+import { DemoSpotlight } from './DemoSpotlight';
 
 export type CoachMark = {
   readonly hintId: string;
@@ -12,16 +14,8 @@ export type CoachMark = {
   readonly total: number;
   readonly side: HintSide;
   readonly rect: DemoRect;
-  readonly next?: NextChapter;
-};
-
-type NextChapter = {
-  readonly id: string;
-  readonly title: string;
-};
-
-type ChapterParams = {
-  readonly id: string;
+  readonly focus: DemoRect | null;
+  readonly isSpotlit: boolean;
 };
 
 type Size = {
@@ -35,10 +29,10 @@ type Props = {
   readonly bounds: Size;
   readonly onSkip: () => void;
   readonly onHide: () => void;
-  readonly onNext: (params: ChapterParams) => void;
 };
 
 const RING_OUTSET = 4;
+const HOLE_PAD = 8;
 const GAP = 12;
 const MARGIN = 16;
 const CALLOUT_WIDTH = 240;
@@ -89,8 +83,7 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: Props) => {
-  const { next } = coach;
+export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -102,6 +95,26 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
     height: coach.rect.height * scale + RING_OUTSET * 2,
   };
 
+  const hole = holeOf({
+    anchor: {
+      x: coach.rect.x * scale,
+      y: coach.rect.y * scale,
+      width: coach.rect.width * scale,
+      height: coach.rect.height * scale,
+    },
+    focus:
+      coach.focus === null
+        ? null
+        : {
+            x: coach.focus.x * scale,
+            y: coach.focus.y * scale,
+            width: coach.focus.width * scale,
+            height: coach.focus.height * scale,
+          },
+    bounds,
+    pad: HOLE_PAD,
+  });
+
   useLayoutEffect(() => {
     setHeight(calloutRef.current?.offsetHeight ?? null);
   }, [coach.hintId, coach.copy]);
@@ -110,7 +123,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
     height === null
       ? null
       : placeCallout({
-          target,
+          target: coach.isSpotlit ? hole : target,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
@@ -144,6 +157,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
 
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">
+      {coach.isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
       <div
         ref={ringRef}
         aria-hidden
@@ -153,7 +167,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
       <div
         ref={calloutRef}
         role="note"
-        aria-label={next === undefined ? `Hint ${coach.step} of ${coach.total}` : 'Group done'}
+        aria-label={`Step ${coach.step} of ${coach.total}`}
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -183,26 +197,14 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
-        {next === undefined ? (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-meta text-faint-foreground">
-              Hint {coach.step} of {coach.total}
-            </span>
-            <Button size="xs" variant="quiet" onClick={onSkip}>
-              Skip hint
-            </Button>
-          </div>
-        ) : (
-          <Button
-            size="xs"
-            variant="primary"
-            className="self-start"
-            onClick={() => onNext({ id: next.id })}
-          >
-            Next: {next.title}
-            <ArrowRight size={ICON_SIZE.control} />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-meta text-faint-foreground">
+            Step {coach.step} of {coach.total}
+          </span>
+          <Button size="xs" variant="quiet" onClick={onSkip}>
+            Skip hint
           </Button>
-        )}
+        </div>
       </div>
     </div>
   );

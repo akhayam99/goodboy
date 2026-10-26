@@ -16,10 +16,11 @@ export type HintSide = 'top' | 'bottom' | 'left' | 'right';
 export type DemoHint = {
   readonly id: string;
   readonly copy: string;
+  readonly instruction: string;
   readonly outcome: string | null;
   readonly anchor: HintAnchor;
+  readonly focus?: HintAnchor;
   readonly side?: HintSide;
-  readonly nextChapterId?: string;
   readonly revealWhen: HintCheck;
   readonly doneWhen: HintCheck;
 };

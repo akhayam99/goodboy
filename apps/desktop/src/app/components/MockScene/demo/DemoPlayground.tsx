@@ -1,21 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
-import { applyDocumentTheme } from '../../../../shared/lib/theme';
 import { DEMO_CHAPTERS } from './demoChapters';
 import { DEFAULT_GROUP_ID } from './defaultGroupId';
 import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
-import { DemoStage } from './DemoStage';
+import { DemoStage, type ShortcutRequest } from './DemoStage';
 import { DemoTimeline } from './DemoTimeline';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
-import { useDemoKeys } from './useDemoKeys';
+import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
+import { useDemoTheme } from './useDemoTheme';
 import { isEveryGroupTried } from './hints/isEveryGroupTried';
+import { headerInstruction } from './hints/headerInstruction';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
 import { useGroupVisits } from './useGroupVisits';
-
-type Theme = 'dark' | 'light';
 
 type ChapterParams = {
   readonly id: string;
@@ -24,9 +23,6 @@ type ChapterParams = {
 type ShownParams = {
   readonly key: string;
 };
-
-const initialTheme = (): Theme =>
-  new URLSearchParams(window.location.search).get('theme') === 'light' ? 'light' : 'dark';
 
 type AnnouncementParams = {
   readonly coach: DemoHints['coach'];
@@ -40,7 +36,8 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [theme, setTheme] = useState<Theme>(initialTheme);
+  const { theme, choose: chooseTheme, toggle: swapTheme } = useDemoTheme();
+  const [shortcut, setShortcut] = useState<ShortcutRequest | undefined>(undefined);
   const { chapterId, selectChapter } = useChapterHash({
     chapters: DEMO_CHAPTERS,
     fallbackId: DEFAULT_GROUP_ID,
@@ -54,9 +51,14 @@ export const DemoPlayground = () => {
   const chapter = DEMO_CHAPTERS[chapterIndex] ?? DEMO_CHAPTERS[0];
   const previousChapter = DEMO_CHAPTERS[chapterIndex - 1];
   const nextChapter = DEMO_CHAPTERS[chapterIndex + 1];
-  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey });
+  const [intentId, setIntentId] = useState<string | undefined>(undefined);
+  const intentChapter =
+    intentId === undefined || intentId === chapter.id
+      ? undefined
+      : DEMO_CHAPTERS.find((entry) => entry.id === intentId);
+  const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
-  const hints = useDemoHints({ chapter, chapters: DEMO_CHAPTERS, frameKey: player.frame.key });
+  const hints = useDemoHints({ chapter, frameKey: player.frame.key });
   const visitedIds = useGroupVisits({ chapterId: chapter.id });
 
   const focusFrame = useCallback(() => {
@@ -67,17 +69,16 @@ export const DemoPlayground = () => {
     focusFrame();
   }, [focusFrame]);
 
-  useEffect(() => {
-    applyDocumentTheme({ theme });
-  }, [theme]);
-
   const goToChapter = useCallback(
     ({ id }: ChapterParams) => {
       selectChapter({ id });
+      setIntentId(undefined);
       focusFrame();
     },
     [selectChapter, focusFrame],
   );
+
+  const onIntent = useCallback(({ id }: ChapterParams) => setIntentId(id), []);
 
   const onPrevious = useCallback(() => {
     if (previousChapter === undefined) {
@@ -109,15 +110,20 @@ export const DemoPlayground = () => {
     },
     [follow, onHintNote],
   );
+  const onFrameShortcut = useCallback(({ code }: FrameShortcutParams) => {
+    setShortcut((previous) => ({ code, count: (previous?.count ?? 0) + 1 }));
+  }, []);
   const onKeyDown = useDemoKeys({
     onPrevious,
     onNext,
     onReplay,
     onShowHint: hints.show,
+    onFrameShortcut,
   });
   useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
+  const isSpotlit = hints.coach?.isSpotlit === true;
   const isLastBeat = player.beatIndex === chapter.beats.length - 1;
   const isGroupDone =
     hints.tally.total > 0
@@ -129,18 +135,19 @@ export const DemoPlayground = () => {
       ref={rootRef}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="flex h-screen min-h-0 flex-col bg-background text-foreground outline-none"
+      className="flex h-screen min-h-0 flex-col bg-surround text-foreground outline-none"
     >
-      <DemoTopBar
-        theme={theme}
-        onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
-      />
+      <DemoTopBar theme={theme} isQuiet={isSpotlit} onToggleTheme={swapTheme} />
       <div className="flex min-h-0 flex-1">
         <DemoRail
           chapters={DEMO_CHAPTERS}
           activeId={chapter.id}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
+          onIntent={onIntent}
+          upNextId={nextChapter?.id}
+          isUpNextReady={isGroupDone}
+          isQuiet={isSpotlit}
           isEveryGroupTried={isEveryGroupTried({
             chapters: DEMO_CHAPTERS,
             tallyOf: hints.tallyOf,
@@ -151,10 +158,20 @@ export const DemoPlayground = () => {
           <DemoChapterHeader
             chapter={chapter}
             tally={hints.tally}
+            instruction={headerInstruction({
+              chapter,
+              beatIndex: player.beatIndex,
+              hintInstruction: hints.instruction,
+              isGroupDone,
+              next: nextChapter,
+            })}
             isHintHidden={hints.isHidden}
             onShowHint={hints.show}
           />
           <DemoStage
+            theme={theme}
+            onThemeChange={chooseTheme}
+            shortcut={shortcut}
             frame={player.frame}
             preloadFrame={player.preloadFrame}
             command={player.command}
@@ -169,21 +186,22 @@ export const DemoPlayground = () => {
             onSkipHint={hints.skip}
             onHideHint={hints.hide}
             onRevealHint={hints.revealHint}
-            onNextChapter={goToChapter}
           />
           <p className="sr-only" aria-live="polite">
-            {hintAnnouncement({ coach: hints.coach, offscreen: hints.offscreen })}
+            {hintAnnouncement({
+              coach: hints.coach,
+              offscreen: hints.offscreen,
+            })}
           </p>
           <DemoTimeline
             chapter={chapter}
             player={player}
             onReplay={onReplay}
-            isGroupDone={isGroupDone}
-            nextChapter={nextChapter}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}
+            next={nextChapter}
+            isNextReady={isGroupDone}
             onNext={onNext}
-            onRestart={() => goToChapter({ id: DEMO_CHAPTERS[0].id })}
           />
         </main>
       </div>
