@@ -199,6 +199,9 @@ export const DemoPlayground = () => {
             onReplay={onReplay}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}
+            next={nextChapter}
+            isNextReady={isGroupDone}
+            onNext={onNext}
           />
         </main>
       </div>
