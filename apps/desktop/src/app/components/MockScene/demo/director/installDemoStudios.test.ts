@@ -97,6 +97,17 @@ describe('the quiet studios', () => {
     ).toBe(true);
   });
 
+  it('answers the Impact context growth read with an empty read', () => {
+    const growth = `SELECT tr.recorded_at AS recorded_at, tr.context_tokens AS context_tokens
+       FROM telemetry_records tr
+       JOIN sessions s ON s.id = tr.session_id
+      WHERE s.workspace_id = ?
+        AND tr.kind = 'turn'
+      ORDER BY tr.recorded_at DESC
+      LIMIT 40`;
+    expect(isEmptyRead({ sql: growth })).toBe(true);
+  });
+
   it('never answers a read that loads the sessions themselves', () => {
     expect(isEmptyRead({ sql: 'SELECT * FROM sessions WHERE workspace_id = ?' })).toBe(false);
     expect(
