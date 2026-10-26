@@ -97,7 +97,8 @@ const acceptedCountOf = ({ state }: StateParams): number =>
 export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'diff-file',
-    copy: 'Open applyWebhook.ts to read what changed',
+    copy: 'Start with this file',
+    instruction: 'Open applyWebhook.ts to read what changed before it is pushed.',
     outcome: null,
     anchor: `${HANDLER_ROW} > button`,
     focus: 'nav[aria-label="Changed files"]',
@@ -108,7 +109,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'diff-note',
-    copy: 'Click a line number to leave a note on that code',
+    copy: 'Leave a note',
+    instruction: 'Click a line number to leave a note on that line of code.',
     outcome: 'note-left',
     anchor: LINE_NOTE,
     revealWhen: ({ root }) => hasElement({ root, selector: LINE_NOTE }),
@@ -116,7 +118,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-pick',
-    copy: 'Open this review comment to read it next to the code',
+    copy: 'Read it in context',
+    instruction: 'Open this review comment to read it next to the code it is about.',
     outcome: null,
     anchor: 'button[data-thread-id="PRRT_thread_retry_constant"]',
     revealWhen: ({ root }) =>
@@ -125,7 +128,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-fix',
-    copy: 'Ask an agent to draft a fix for this comment',
+    copy: 'Hand it to an agent',
+    instruction: 'Ask an agent to draft a fix for this comment instead of editing by hand.',
     outcome: null,
     anchor: FIX,
     side: 'top',
@@ -135,7 +139,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-start',
-    copy: 'Press Start fix: the agent changes the code and drafts a reply',
+    copy: 'Let it work',
+    instruction: 'Press Start fix: the agent changes the code and drafts a reply to the reviewer.',
     outcome: 'fix-ready',
     anchor: START_FIX,
     side: 'top',
@@ -144,7 +149,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-read',
-    copy: 'Open a fixed comment to read the reply the agent drafted',
+    copy: 'A fix is ready',
+    instruction: 'Open a fixed comment to read the reply the agent drafted for the reviewer.',
     outcome: 'fix-ready',
     anchor: ({ state }) => readyRowOf({ state }),
     side: 'right',
@@ -161,7 +167,8 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-keep',
-    copy: 'Read the drafted reply, then keep the fix if it looks right',
+    copy: 'Your call',
+    instruction: 'Read the drafted reply, then keep the fix if it looks right to you.',
     outcome: 'fix-kept',
     anchor: keepAnchorOf,
     side: 'top',

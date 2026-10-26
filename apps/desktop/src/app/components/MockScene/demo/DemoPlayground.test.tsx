@@ -462,7 +462,7 @@ describe('demo playground', () => {
     expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
     const slot = screen.getByRole('note', { name: 'Hint' });
-    expect(slot.textContent).toContain('Press Send to give the agent this follow-up');
+    expect(slot.textContent).toContain('Send the follow-up');
     fireEvent.click(screen.getByRole('button', { name: 'Show control' }));
     expect(post).toHaveBeenLastCalledWith(
       expect.objectContaining({ type: 'reveal', hintId: 'agent-send', generation: 0 }),
@@ -485,36 +485,74 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
   });
 
-  it('closes setup with a note by the rail, no ring and no pointer into the app', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'setup-done' });
-    const note = screen.getByRole('note', { name: 'Group done' });
-    expect(note.textContent).toContain('Scout answered your first task');
-    expect(screen.getByRole('navigation', { name: 'Playground groups' }).contains(note)).toBe(true);
-    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Skip hint' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Hide hint' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^02/ }).getAttribute('data-up-next')).toBe('soon');
-  });
+  const finishSetup = ({ frame }: { readonly frame: HTMLIFrameElement }) => {
+    for (const hintId of [
+      'setup-start',
+      'setup-agents',
+      'setup-create',
+      'setup-tools',
+      'setup-first-start',
+    ]) {
+      tried({ frame, hintId });
+    }
+  };
 
-  it('goes to the next group from the closing note', () => {
+  const upNextRow = () => screen.getByRole('button', { name: /^02/ });
+
+  it('closes a finished group with no card: Up next pulses, then rests, and a click goes there', () => {
     window.history.replaceState(null, '', '/?scene=demo#setup');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'setup-done' });
-    fireEvent.click(
-      within(screen.getByRole('note', { name: 'Group done' })).getByRole('button', {
-        name: 'Go to Work with an agent',
-      }),
-    );
+    expect(upNextRow().getAttribute('data-up-next')).toBe('soon');
+    expect(upNextRow().getAttribute('data-pulsing')).toBe('false');
+    finishSetup({ frame });
+    expect(upNextRow().getAttribute('data-up-next')).toBe('ready');
+    expect(upNextRow().getAttribute('data-pulsing')).toBe('true');
+    expect(screen.queryByRole('note', { name: 'Group done' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Go to/ })).toBeNull();
+    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+    expect(upNextRow().getAttribute('data-up-next')).toBe('ready');
+    expect(upNextRow().getAttribute('data-pulsing')).toBe('false');
+    fireEvent.click(upNextRow());
     expect(window.location.hash).toBe('#agent');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
-    expect(screen.queryByRole('note', { name: 'Group done' })).toBeNull();
+  });
+
+  it('writes the live instruction under the title from the hint, the beat and the done state', () => {
+    window.history.replaceState(null, '', '/?scene=demo#setup');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const instruction = () =>
+      screen.getByRole('heading', { level: 1 }).closest('header')?.querySelector('p')?.textContent;
+    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.beats[0]?.shows);
+    hint({ frame, hintId: 'setup-start' });
+    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.hints?.[0]?.instruction);
+    expect(instruction()).toBe('Click Get started to see which agents Goodboy found on your Mac.');
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' }).textContent).not.toContain(
+      instruction() ?? '',
+    );
+    hint({ frame, hintId: 'setup-agents' });
+    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.hints?.[1]?.instruction);
+    hint({ frame, hintId: null, rect: null });
+    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.beats[0]?.shows);
+    finishSetup({ frame });
+    expect(instruction()).toContain('Set up is done');
+    expect(instruction()).toContain('Work with an agent');
+  });
+
+  it('gives every hint a header instruction that never repeats its coach mark', () => {
+    for (const chapter of DEMO_CHAPTERS) {
+      for (const entry of chapter.hints ?? []) {
+        expect(entry.instruction.length).toBeGreaterThan(0);
+        expect(entry.instruction).not.toBe(entry.copy);
+        expect(entry.instruction).not.toContain(entry.copy);
+      }
+    }
   });
 
   it('switches the stage to the light theme and keeps the frame it shows', () => {
@@ -545,7 +583,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
     const note = screen.getByRole('note', { name: 'Step 1 of 6' });
-    expect(note.textContent).toContain('Press Send to give the agent this follow-up');
+    expect(note.textContent).toContain('Send the follow-up');
     expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
     fireEvent.click(within(note).getByRole('button', { name: 'Skip hint' }));
     expect(screen.queryByRole('note')).toBeNull();
@@ -691,16 +729,6 @@ describe('demo playground', () => {
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
   });
 
-  it('keeps the closing note of a group free of the spotlight', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'setup-done' });
-    expect(screen.getByRole('note', { name: 'Group done' })).not.toBeNull();
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-  });
-
   it('quiets only the secondary chrome while the spotlight is on and keeps what must be read at full strength', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
@@ -716,7 +744,7 @@ describe('demo playground', () => {
       return row;
     };
     const title = screen.getByRole('heading', { level: 1 });
-    const summary = screen.getByText(DEMO_CHAPTERS[1]?.summary ?? '');
+    const summary = screen.getByText(DEMO_CHAPTERS[1]?.beats[0]?.shows ?? '');
     const counter = within(title.closest('header') ?? document.body).getByText(/0 of 4/);
     const note = screen.getByText(/The real Goodboy on sample projects/);
     const download = screen.getAllByRole('link', { name: /Download for macOS/ });

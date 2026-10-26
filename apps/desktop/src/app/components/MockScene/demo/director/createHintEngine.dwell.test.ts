@@ -57,6 +57,7 @@ const HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'first',
     copy: 'Open the first thing',
+    instruction: 'Open the first thing to see its result.',
     outcome: null,
     anchor: '#first',
     revealWhen: () => true,
@@ -65,6 +66,7 @@ const HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'second',
     copy: 'Then the second thing',
+    instruction: 'Then open the second thing to see its result.',
     outcome: null,
     anchor: '#second',
     revealWhen: () => true,
@@ -106,6 +108,7 @@ const REPLACED: ReadonlyArray<DemoHint> = [
   {
     id: 'first',
     copy: 'Open the first thing',
+    instruction: 'Open the first thing to see its result.',
     outcome: null,
     anchor: '#first',
     revealWhen: ({ root }) => root.querySelector('#first') !== null,
@@ -114,6 +117,7 @@ const REPLACED: ReadonlyArray<DemoHint> = [
   {
     id: 'second',
     copy: 'Then the second thing',
+    instruction: 'Then open the second thing to see its result.',
     outcome: null,
     anchor: '#second',
     revealWhen: () => true,

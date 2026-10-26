@@ -15,7 +15,6 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { ONBOARDING_HINTS } from '../../demo/hints/onboardingHints';
 import { sampleScoutRuns } from './sampleScoutRuns';
 import { startSampleScout } from './startSampleScout';
 
@@ -63,21 +62,14 @@ type AgentParams = {
 const kindsOf = ({ agentId }: AgentParams) =>
   (store.getState().transcripts[agentId] ?? []).map((event) => event.kind);
 
-const isSetupDone = (): boolean => {
-  const hint = ONBOARDING_HINTS.find((entry) => entry.id === 'setup-done');
-  const state = store.getState();
-  return hint?.revealWhen({ state, start: state, root: document, isAnchorClicked: false }) ?? false;
-};
-
 describe('the sample scout', () => {
-  it('answers the first task and then marks setup done', async () => {
+  it('answers the first task', async () => {
     const { agentId } = await start();
     vi.advanceTimersByTime(30000);
     expect(kindsOf({ agentId }).at(-1)).toBe('done');
-    expect(isSetupDone()).toBe(true);
   });
 
-  it('writes nothing more once the visitor stops it, and never marks setup done', async () => {
+  it('writes nothing more once the visitor stops it', async () => {
     const { sessionId, agentId } = await start();
     vi.advanceTimersByTime(1500);
     await store.getState().cancelCurrentTurn(sessionId, agentId, 'user');
@@ -89,7 +81,6 @@ describe('the sample scout', () => {
     expect(
       store.getState().sessionPhaseRuns[sessionId]?.find((agent) => agent.id === agentId)?.status,
     ).toBe('stopped');
-    expect(isSetupDone()).toBe(false);
   });
 
   it('drops the pending reply when the scene tears down', async () => {

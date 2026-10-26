@@ -40,7 +40,8 @@ const hasCommented = ({ state, start }: HintProbe): boolean =>
 export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'board-filter',
-    copy: 'Filter the board to the sessions of one folder',
+    copy: 'Narrow the board',
+    instruction: 'Filter the board by folder to see only the sessions of one project.',
     outcome: 'board-filtered',
     anchor: FILTER,
     side: 'left',
@@ -49,7 +50,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'board-open',
-    copy: 'Open the card that is waiting for you',
+    copy: 'This one needs you',
+    instruction: 'Open the card marked as waiting: its session cannot go on without you.',
     outcome: 'session-opened',
     anchor: ({ state }) => waitingCardOf({ state }),
     revealWhen: ({ state, root }) =>
@@ -58,7 +60,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-open',
-    copy: 'Open a plan to read what an agent proposed',
+    copy: 'Read the plan',
+    instruction: 'Open a plan from the library to read what an agent proposed before it acts.',
     outcome: null,
     anchor: PLAN_ROW,
     side: 'bottom',
@@ -67,7 +70,9 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'plan-comment',
-    copy: 'Click a line of the plan and leave a comment',
+    copy: 'Comment on a line',
+    instruction:
+      'Click a line of the plan and leave a comment: the agent reads it on the next run.',
     outcome: 'plan-commented',
     anchor: PLAN_PROSE,
     revealWhen: isPlanOpen,
@@ -75,7 +80,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'library-new',
-    copy: 'Open New to create a plan or a report',
+    copy: 'Start something new',
+    instruction: 'Open New to create a plan or a report from the library.',
     outcome: null,
     anchor: NEW_ARTIFACT,
     side: 'bottom',
@@ -85,7 +91,8 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'report-details',
-    copy: 'Open the report details to see what it is based on',
+    copy: 'Where it comes from',
+    instruction: 'Open the report details to see which sessions and code the report is based on.',
     outcome: null,
     anchor: REPORT_DETAILS,
     side: 'bottom',
