@@ -194,13 +194,11 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     return {
       hintId: activeHint.id,
       copy: activeHint.copy,
-      step: steps.activeIndex + 1,
-      total: hints.length,
       side: activeHint.side ?? 'right',
       rect: current.rect,
       focus: current.focus,
     };
-  }, [isOpen, activeHint, current, steps.activeIndex, hints.length]);
+  }, [isOpen, activeHint, current]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {

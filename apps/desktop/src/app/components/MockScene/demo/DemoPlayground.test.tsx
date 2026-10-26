@@ -202,8 +202,6 @@ const stepStates = (): ReadonlyArray<string | null> =>
 
 const instruction = (): string => screen.getByTestId('demo-instruction').textContent ?? '';
 
-const counter = (): string => screen.getByTestId('demo-counter').textContent ?? '';
-
 beforeEach(() => {
   window.sessionStorage.clear();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
@@ -401,22 +399,21 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).toBeNull();
   });
 
-  it('keeps the rail, the header and the coach on one count', () => {
+  it('shows the position once, on the rail, and not in the header or the coach', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const { hints } = chapterOf({ id: 'setup' });
-    const total = hints.length;
     for (const [index, entry] of hints.entries()) {
       hint({ frame, hintId: entry.id });
-      expect(screen.getByRole('note', { name: `Step ${index + 1} of ${total}` })).not.toBeNull();
-      expect(counter()).toBe(`Step ${index + 1} of ${total}`);
+      expect(screen.getByRole('note').textContent).not.toMatch(/\bstep \d+ of\b/i);
+      expect(screen.queryByTestId('demo-counter')).toBeNull();
       expect(stepStates().filter((state) => state === 'done')).toHaveLength(index);
       expect(stepStates()[index]).toBe('current');
       tried({ frame, hintId: entry.id });
       elapse({ ms: RESULT_DWELL_MS });
     }
-    expect(counter()).toBe(`${total} of ${total} steps done`);
+    expect(screen.queryByTestId('demo-counter')).toBeNull();
     expect(stepStates().every((state) => state === 'done')).toBe(true);
   });
 
@@ -569,14 +566,13 @@ describe('demo playground', () => {
     );
   });
 
-  it('draws the hint over the stage beside its anchor, with the same step count as the header', () => {
+  it('draws the hint over the stage beside its anchor, without a step count', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     const first = chapterOf({ id: 'setup' }).hints[0];
     hint({ frame, hintId: first?.id ?? '' });
-    const total = chapterOf({ id: 'setup' }).hints.length;
-    const note = screen.getByRole('note', { name: `Step 1 of ${total}` });
+    const note = screen.getByRole('note');
     expect(note.textContent).toContain(first?.copy ?? '');
     expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
     expect(within(note).queryByRole('button', { name: 'Skip hint' })).toBeNull();
@@ -634,7 +630,11 @@ describe('demo playground', () => {
       'true',
     );
     expect(back.some((link) => link.closest('[data-quiet="true"]') !== null)).toBe(true);
-    for (const element of [title, screen.getByTestId('demo-counter'), screen.getByRole('note')]) {
+    for (const element of [
+      title,
+      screen.getByTestId('demo-instruction'),
+      screen.getByRole('note'),
+    ]) {
       expect(element.closest('[data-quiet="true"]')).toBeNull();
     }
     expect(

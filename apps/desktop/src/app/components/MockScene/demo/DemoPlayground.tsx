@@ -16,7 +16,6 @@ import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
 import { groupAccessOf } from './hints/groupAccessOf';
 import { headerInstruction } from './hints/headerInstruction';
-import type { HintTally } from './hints/hintTally';
 import { useDemoHints, type DemoHints } from './useDemoHints';
 import { useHintProgress } from './useHintProgress';
 
@@ -47,8 +46,6 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 };
 
 const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.id), CLOSING_ID];
-
-const NO_TALLY: HintTally = { tried: 0, total: 0 };
 
 const CLOSING_INSTRUCTION = 'Download Goodboy for macOS, or star it on GitHub.';
 
@@ -206,11 +203,10 @@ export const DemoPlayground = () => {
           upNextId={upNextId}
           isQuiet={isSpotlit}
         />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 lg:pl-2 lg:pr-5">
           <DemoChapterHeader
             title={isClosing ? CLOSING_TITLE : chapter.title}
             isOptional={!isClosing && chapter.isOptional === true}
-            tally={isClosing ? NO_TALLY : hints.tally}
             instruction={
               isClosing
                 ? CLOSING_INSTRUCTION

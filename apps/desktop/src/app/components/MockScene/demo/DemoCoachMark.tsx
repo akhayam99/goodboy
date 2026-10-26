@@ -10,8 +10,6 @@ import { DemoSpotlight } from './DemoSpotlight';
 export type CoachMark = {
   readonly hintId: string;
   readonly copy: string;
-  readonly step: number;
-  readonly total: number;
   readonly side: HintSide;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
@@ -122,7 +120,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
     height === null
       ? null
       : placeCallout({
-          target: isSpotlit ? hole : target,
+          target: hole,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
@@ -166,7 +164,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
       <div
         ref={calloutRef}
         role="note"
-        aria-label={`Step ${coach.step} of ${coach.total}`}
+        aria-label="Hint"
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -196,9 +194,6 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Hide hints" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
-        <span className="text-meta text-faint-foreground">
-          Step {coach.step} of {coach.total}
-        </span>
       </div>
     </div>
   );
