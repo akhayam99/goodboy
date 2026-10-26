@@ -30,10 +30,17 @@ describe('callout placement', () => {
     expect(place({ target })).toMatchObject({ side: 'right', x: 312 });
   });
 
-  it('drops below a control near the right edge, where a form keeps its free space', () => {
+  it('takes the side with the most room even when the preferred side fits', () => {
+    const target = { x: 600, y: 200, width: 100, height: 32 };
+    const placement = place({ target });
+    expect(placement.side).toBe('left');
+    expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
+  });
+
+  it('goes to the left of a control near the right edge, where the room is', () => {
     const target = { x: 900, y: 200, width: 80, height: 32 };
     const placement = place({ target });
-    expect(placement.side).toBe('bottom');
+    expect(placement.side).toBe('left');
     expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
   });
 

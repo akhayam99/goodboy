@@ -88,15 +88,14 @@ export const placeCallout = ({
 }: Params): CalloutPlacement => {
   const base = { target, callout, bounds, gap, margin };
   const order = [preferred, ...SIDE_ORDER.filter((side) => side !== preferred)];
-  const fitting = order.find((side) => roomOf({ ...base, side }) >= 0);
-  if (fitting !== undefined) {
-    return placeOn({ ...base, side: fitting });
-  }
   const side =
     [...order].sort(
       (left, right) => roomOf({ ...base, side: right }) - roomOf({ ...base, side: left }),
     )[0] ?? preferred;
   const placed = placeOn({ ...base, side });
+  if (roomOf({ ...base, side }) >= 0) {
+    return placed;
+  }
   return {
     side,
     x: clamp({ value: placed.x, low: margin, high: bounds.width - margin - callout.width }),
