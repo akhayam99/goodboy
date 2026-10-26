@@ -22,7 +22,7 @@ export const StepField = ({
   shouldAutoFocus = false,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-1">
-    <label htmlFor={id} className="text-label text-foreground">
+    <label htmlFor={id} className="text-meta text-foreground">
       {label}
     </label>
     <Input

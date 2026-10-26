@@ -76,7 +76,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
         }
       >
         {billing === 'token' ? (
-          <p className={cn(BAND_ROW_CLASS, 'text-label text-muted-foreground')}>
+          <p className={cn(BAND_ROW_CLASS, 'text-meta text-muted-foreground')}>
             Billed per token by your key. No usage windows.
           </p>
         ) : null}
@@ -109,7 +109,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
             })}
           />
         ) : isShareless ? (
-          <p className={cn(BAND_ROW_CLASS, 'text-label text-muted-foreground')}>
+          <p className={cn(BAND_ROW_CLASS, 'text-meta text-muted-foreground')}>
             {`${label} does not share usage.`}
           </p>
         ) : notice === null ? null : (

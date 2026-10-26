@@ -37,7 +37,7 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
             )}
           >
             <span className="truncate text-code text-foreground">{group.relativePath}</span>
-            <span className="text-label text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               {group.count} version{group.count === 1 ? '' : 's'} .{' '}
               {formatAge({ from: group.lastCapturedAt, now })}
             </span>

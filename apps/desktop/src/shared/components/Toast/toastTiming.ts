@@ -1,5 +1,5 @@
-export const TOAST_DURATION_MS = 5000;
-export const TOAST_ACTION_DURATION_MS = 10000;
+const TOAST_DURATION_MS = 5000;
+const TOAST_ACTION_DURATION_MS = 10000;
 
 type ToastDurationParams = {
   readonly persist: boolean;

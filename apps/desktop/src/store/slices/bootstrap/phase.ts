@@ -55,6 +55,7 @@ export const parseBootstrapPhase = (raw: string): BootstrapPhase | null => {
     snapshotId: nullableString(record.get('snapshotId')),
     worktreePath: nullableString(record.get('worktreePath')),
     branch: nullableString(record.get('branch')),
+    branchTip: nullableString(record.get('branchTip')),
     updatedAt: updatedAt as IsoDateTime,
   };
 };
@@ -68,6 +69,7 @@ export const freshBootstrapPhase = (at: IsoDateTime): BootstrapPhase => ({
   snapshotId: null,
   worktreePath: null,
   branch: null,
+  branchTip: null,
   updatedAt: at,
 });
 

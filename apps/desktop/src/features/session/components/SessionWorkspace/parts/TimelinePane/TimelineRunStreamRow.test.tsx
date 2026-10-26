@@ -21,7 +21,7 @@ import {
   resetStoryStore,
 } from '../../../../../../store/storyHarness';
 import { useAppStore } from '../../../../../../store';
-import { TimelinePane } from '.';
+import { LogPane } from '../../../../central/log/LogPane';
 
 beforeAll(async () => {
   await importStore();
@@ -40,7 +40,7 @@ const renderActivity = () =>
   render(
     <ToastProvider>
       <ObjectMenuProvider>
-        <TimelinePane session={SESSION} />
+        <LogPane session={SESSION} />
       </ObjectMenuProvider>
     </ToastProvider>,
   );

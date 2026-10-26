@@ -39,7 +39,7 @@ export const FilesPane = ({ sessionId, sessionDir, onClose }: Props) => {
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="Session folder missing"
-          description="This session's folder is not available, so its saved versions cannot be loaded."
+          description="This session's folder isn't available, so its saved versions can't be loaded."
         />
       </PaneShell>
     );

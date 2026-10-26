@@ -67,16 +67,22 @@ type ImportApplyParams = {
   readonly path: string;
   readonly workspaceTargets: Readonly<Record<string, string>>;
   readonly resolvedProjectPaths: Readonly<Record<string, string>>;
+  readonly expectedSha256: string;
+  readonly hasWildcardConsent: boolean;
 };
 
 export const configImportApply = async ({
   path,
   workspaceTargets,
   resolvedProjectPaths,
+  expectedSha256,
+  hasWildcardConsent,
 }: ImportApplyParams): Promise<ConfigBundleImportResult> => {
   return invokeCommand<ConfigBundleImportResult>('config_import_apply', {
     path,
     workspaceTargets,
     resolvedProjectPaths,
+    expectedSha256,
+    acceptWildcardAllow: hasWildcardConsent,
   });
 };

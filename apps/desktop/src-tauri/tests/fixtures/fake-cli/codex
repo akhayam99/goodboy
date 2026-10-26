@@ -5,6 +5,7 @@ case "$1" in
     fake_version "codex-cli 0.130.0"
     ;;
   exec)
+    fake_record_stdin "$@"
     fake_turn codex.jsonl "$@"
     ;;
   login)

@@ -13,8 +13,8 @@ export const SessionDropPill = () => {
       data-task-drop="session"
       aria-label="Drop to put on the session"
       className={cn(
-        'shrink-0 rounded-md text-label',
-        chipClasses({ tone: 'neutral', shape: 'badge', size: 'control' }),
+        'shrink-0 rounded-md text-meta',
+        chipClasses({ tone: 'neutral', kind: 'reference' }),
         dropState === 'over' && 'bg-selected',
       )}
     >

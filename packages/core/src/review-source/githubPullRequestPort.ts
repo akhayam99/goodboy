@@ -7,6 +7,7 @@ import type {
 } from '@goodboy/types';
 import { fetchMergeQueuePlacements } from '../github/merge-queue';
 import { classifyGhFailure } from '../github/classifyGhFailure';
+import { isGhStaleHead } from '../github/isGhStaleHead';
 import { fetchPrReadStates, type PrReadStates } from '../github/details';
 import type { GhResult, GhRunOptions, GhRunner } from '../github/gh';
 import { GhCliError, GhJsonParseError, runJson } from '../github/gh';
@@ -14,6 +15,7 @@ import { toPullRequestState, type RawPullRequest } from '../github/resolver';
 import {
   PULL_REQUEST_NOUNS,
   PullRequestPortError,
+  STALE_HEAD_MESSAGE,
   requirePullRequestCapability,
   type PullRequestFailureKind,
   type PullRequestPort,
@@ -116,6 +118,9 @@ const portError = ({
   readonly fallback: string;
 }): PullRequestPortError => {
   const details = stderr.trim();
+  if (isGhStaleHead({ stderr: details })) {
+    return new PullRequestPortError({ kind: 'stale_head', message: STALE_HEAD_MESSAGE, details });
+  }
   return new PullRequestPortError({
     kind: FAILURE_KIND[classifyGhFailure({ stderr: details })],
     message: details === '' ? fallback : details,
@@ -390,9 +395,15 @@ export const githubPullRequestPort = ({
         args: isDraft ? ['pr', 'ready', number, '--undo'] : ['pr', 'ready', number],
       });
     },
-    merge: async ({ method }) => {
+    merge: async ({ method, expectedHeadSha }) => {
       await write({
-        args: ['pr', 'merge', number, MERGE_FLAG[method]],
+        args: [
+          'pr',
+          'merge',
+          number,
+          MERGE_FLAG[method],
+          ...(expectedHeadSha === null ? [] : ['--match-head-commit', expectedHeadSha]),
+        ],
       });
     },
     cancelAutoMerge: async () => {

@@ -25,7 +25,6 @@ import { seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { seedLoadedSession } from '../u21/seedLoadedSession';
 import { sceneClock } from '../../sceneClock';
 import { installSceneDatabase } from '../sceneDatabase';
-import { sessionPinsKey } from '../../../../../store/slices/session-pins/sessionPinsKey';
 import { serializeSessionPins } from '../../../../../store/slices/session-pins/parseSessionPins';
 
 const clock = sceneClock({ anchor: '2026-10-16T12:00:00.000Z' });
@@ -215,9 +214,9 @@ const READY_STATUS: WorkspaceGitStatus = {
 const installPinsDatabase = (): void => {
   const pins = useAppStore.getState().sessionPins[WORKSPACE_ID] ?? [];
   installSceneDatabase({
-    settings: { [sessionPinsKey({ workspaceId: WORKSPACE_ID })]: serializeSessionPins({ pins }) },
+    workspaceValues: { [WORKSPACE_ID]: { 'sessions.pinned': serializeSessionPins({ pins }) } },
     liveSessionIds: () => useAppStore.getState().sessions.map((session) => session.id),
-    fallback: (command) =>
+    fallback: ({ command }) =>
       command === 'project_git_status' ? READY_STATUS : new Promise<never>(() => undefined),
   });
 };

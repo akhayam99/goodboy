@@ -25,6 +25,8 @@ vi.mock('../shared/lib/db', () => ({
 }));
 
 vi.mock('../features/worktree/worktree', () => ({
+  carryIntoWorktree: vi.fn(async () => []),
+  worktreeSetupProposal: vi.fn(async () => null),
   createWorktree: h.createWorktree,
   changeWorktreeBranch: h.changeWorktreeBranch,
   invalidateLocalBranchesCache: vi.fn(),

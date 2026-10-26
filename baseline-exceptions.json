@@ -12,5 +12,306 @@
     "count": 1,
     "reason": "owner-approved brand tile on Welcome, setup header and Home",
     "release": "0.27.2"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/disabled-opacity.baseline.json",
+    "count": 32,
+    "reason": "first measure of the guard that P16 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/forbidden-patterns.boolean-name.baseline.json",
+    "count": 807,
+    "reason": "first measure of the guard that P10.5 adds; the ledger only falls from here",
+    "release": "0.27.15"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/forbidden-patterns.param-shape.baseline.json",
+    "count": 6063,
+    "reason": "first measure of the guard that P10.5 adds; the ledger only falls from here",
+    "release": "0.27.15"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/hand-made-dots.baseline.json",
+    "count": 11,
+    "reason": "first measure of the guard that P17.2 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/hand-made-meters.baseline.json",
+    "count": 9,
+    "reason": "first measure of the guard that P17.2 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/hand-written-db-mocks.baseline.json",
+    "count": 122,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/hand-written-tauri-mocks.baseline.json",
+    "count": 404,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/loading-is-a-skeleton.baseline.json",
+    "count": 3,
+    "reason": "first measure of the guard that P16 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/no-layout-by-attribute.elsewhere.baseline.json",
+    "count": 19,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/no-real-wait.baseline.json",
+    "count": 100,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/no-wall-clock-in-unit.baseline.json",
+    "count": 4,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/own-focus-ring.baseline.json",
+    "count": 1,
+    "reason": "first measure of the guard that P17.1 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/provider-id-comparisons.baseline.json",
+    "count": 44,
+    "reason": "first measure of the guard that P12.3 adds; the ledger only falls from here",
+    "release": "0.27.19"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/raw-button.baseline.json",
+    "count": 341,
+    "reason": "first measure of the guard that P17.1 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/raw-row-button.baseline.json",
+    "count": 57,
+    "reason": "first measure of the guard that P17.1 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/static-store-imports.baseline.json",
+    "count": 168,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/truthy-queries.defined.baseline.json",
+    "count": 3231,
+    "reason": "first measure of the guard that P20 adds; the ledger only falls from here",
+    "release": "0.27.16"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/ui-exports-have-consumers.baseline.json",
+    "count": 27,
+    "reason": "first measure of the guard that P17.4 adds; the ledger only falls from here",
+    "release": "0.27.20"
+  },
+  {
+    "rule": "new",
+    "file": "eslint-suppressions-strict.json",
+    "count": 820,
+    "reason": "first measure of the strict lint pass that P10.5 adds; the ledger only falls from here",
+    "release": "0.27.15"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/ambient-target-session.baseline.json",
+    "count": 91,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/catch-return.baseline.json",
+    "count": 49,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/optional-mount-param.baseline.json",
+    "count": 45,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/set-before-await.baseline.json",
+    "count": 111,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/whole-record-selectors.baseline.json",
+    "count": 83,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/store-folders-stay-small.test.ts",
+    "count": 477,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/window-events-go-through-the-dispatcher.test.ts",
+    "count": 2,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/worktree-status-reads-go-through-the-cache.test.ts",
+    "count": 13,
+    "reason": "first measure of the guard that P14.x adds; the ledger only falls from here",
+    "release": "0.27.21"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/forbidden-patterns.entity-keyed-setting.baseline.json",
+    "count": 9,
+    "reason": "first measure of the entity-keyed-setting ledger that P13.4 adds; the ledger only falls from here",
+    "release": "0.28.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/file-lines.baseline.json",
+    "count": 53856,
+    "reason": "first measure of the guard that P15.1 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/test-file-lines.baseline.json",
+    "count": 40162,
+    "reason": "first measure of the guard that P15.1 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/duplicate-helper.baseline.json",
+    "count": 650,
+    "reason": "first measure of the guard that P15.1 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/cross-feature-hook-folders.baseline.json",
+    "count": 203,
+    "reason": "first measure of the guard that P15.2 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/shared-imports-features.baseline.json",
+    "count": 103,
+    "reason": "first measure of the guard that P15.2 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/flat-component-pairs.baseline.json",
+    "count": 254,
+    "reason": "first measure of the guard that P15.3 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/kebab-modules.baseline.json",
+    "count": 36,
+    "reason": "first measure of the guard that P15.3 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/hook-folders-under-hooks.baseline.json",
+    "count": 113,
+    "reason": "first measure of the guard that P15.3 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/types-function-bodies.baseline.json",
+    "count": 34,
+    "reason": "first measure of the guard that P15.5 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/drawer-host-imports.baseline.json",
+    "count": 14,
+    "reason": "first measure of the guard that P15.6 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/artifact-family-cycles.baseline.json",
+    "count": 146,
+    "reason": "first measure of the guard that P15.6 adds; the ledger only falls from here",
+    "release": "0.27.28"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/contractions-copy.baseline.json",
+    "count": 183,
+    "reason": "first measure of the guard that P28.5 adds; the ledger only falls from here",
+    "release": "0.29.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/former-names-guard.baseline.json",
+    "count": 22,
+    "reason": "first measure of the guard that P28.7 adds; the ledger only falls from here",
+    "release": "0.29.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/doc-budget.baseline.json",
+    "count": 231,
+    "reason": "first measure of the guard that P29 adds; the ledger only falls from here",
+    "release": "0.29.0"
+  },
+  {
+    "rule": "new",
+    "file": "website/scripts/site-copy.baseline.json",
+    "count": 8,
+    "reason": "first measure of the guard that P30.1 adds; the ledger only falls from here",
+    "release": "0.29.0"
   }
 ]

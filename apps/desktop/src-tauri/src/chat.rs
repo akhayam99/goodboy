@@ -1,25 +1,22 @@
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::process::{ChildStdout, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 
 use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use thiserror::Error;
 
 use crate::attachment::sanitize_segment;
 use crate::chat_images::{ChatImageError, TurnImages};
 use crate::db::Db;
 use crate::live_child::{
-    drain_tail_lossy, run_to_exit, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+    drain_tail_lossy, register, run_to_exit, spawn_tagged, LiveChildRegistry, SpawnTaggedParams,
+    Spawned, MAX_STDERR_BYTES,
 };
-use crate::providers::cli_args::{read_only_violations, turn_args, Cli, Job};
-use crate::turn::{
-    read_capped_line, CappedLine, SpawnOneArgs, TurnEventPayload, MAX_TURN_LINE_BYTES,
-};
+use crate::providers::cli_args::{read_only_violations, turn_args_with_prompt, Cli, Job};
+use crate::turn::{forward_lines, EventSink, SpawnOneArgs, TurnEventPayload};
 
 pub const EVENT_NAME: &str = "chat_event";
 
@@ -70,8 +67,6 @@ enum CodexSandbox {
     Profile,
 }
 
-const READ_ONLY_REFUSAL: &str = "Chat needs a provider that can run read-only: Claude or Codex";
-
 const WRITE_FLAGS: [&str; 13] = [
     "--dangerously-skip-permissions",
     "--allow-dangerously-skip-permissions",
@@ -96,7 +91,7 @@ pub enum ChatError {
     Database(#[from] rusqlite::Error),
     #[error("chat registry mutex poisoned")]
     Poisoned,
-    #[error("{READ_ONLY_REFUSAL}")]
+    #[error("chat cannot run read-only on {0}")]
     NotReadOnly(String),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
@@ -169,10 +164,9 @@ pub struct ChatTurnArgs {
 }
 
 #[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatEventEnvelope {
-    #[serde(rename = "runId")]
     pub run_id: String,
-    #[serde(rename = "chatId")]
     pub chat_id: String,
     pub seq: u64,
     #[serde(flatten)]
@@ -213,7 +207,7 @@ fn detect_codex_sandbox(provider: &str) -> CodexSandbox {
     if provider != "codex" {
         return CodexSandbox::ReadOnly;
     }
-    codex_sandbox_for(crate::providers::detect_codex().version.as_deref())
+    codex_sandbox_for(crate::providers::cli_probe::version_cached("codex").as_deref())
 }
 
 fn toml_string(value: &str) -> String {
@@ -251,14 +245,11 @@ fn codex_filesystem(roots: &[String]) -> String {
 }
 
 fn cli_shape_for(provider: &str) -> Result<&'static str, ChatError> {
-    match provider {
-        "anthropic" => Ok("claude"),
-        "codex" => Ok("codex"),
-        "cursor" | "gemini" | "opencode" | "openrouter" | "moonshot" => {
-            Err(ChatError::NotReadOnly(provider.to_string()))
-        }
-        other => Err(ChatError::UnknownProvider(other.to_string())),
-    }
+    let Some(spec) = crate::providers::spec::spec_of(provider) else {
+        return Err(ChatError::UnknownProvider(provider.to_string()));
+    };
+    spec.chat_shape
+        .ok_or_else(|| ChatError::NotReadOnly(provider.to_string()))
 }
 
 fn is_safe_value(value: &str) -> bool {
@@ -419,7 +410,7 @@ fn build_chat_cli_args(
         is_auto_child: false,
         excludes_tmp: true,
     };
-    let cli = turn_args(shape, &spawn);
+    let cli = turn_args_with_prompt(shape, &spawn);
     if shape == "codex" {
         let readable: Vec<String> = std::iter::once(roots.working_dir.clone())
             .chain(roots.read_roots.iter().cloned())
@@ -684,7 +675,7 @@ struct ChatSink {
     seq: AtomicU64,
 }
 
-impl ChatSink {
+impl EventSink for ChatSink {
     fn send(&self, event: TurnEventPayload) {
         let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
         let _ = self.app.emit(
@@ -696,33 +687,6 @@ impl ChatSink {
                 event,
             },
         );
-    }
-}
-
-fn forward_lines(sink: &ChatSink, live: &LiveChild, stdout: ChildStdout) {
-    let mut reader = BufReader::new(stdout);
-    let mut buf: Vec<u8> = Vec::new();
-    loop {
-        match read_capped_line(&mut reader, &mut buf, MAX_TURN_LINE_BYTES) {
-            Ok(CappedLine::Eof) => break,
-            Ok(CappedLine::Line) => {
-                let line = String::from_utf8_lossy(&buf).into_owned();
-                sink.send(TurnEventPayload::Line { line });
-            }
-            Ok(CappedLine::Overflow) => {
-                sink.send(TurnEventPayload::Error {
-                    message: "chat output line exceeded 64 MiB".to_string(),
-                });
-                crate::process_group::terminate(live.pid);
-                break;
-            }
-            Err(err) => {
-                sink.send(TurnEventPayload::Error {
-                    message: err.to_string(),
-                });
-                break;
-            }
-        }
     }
 }
 
@@ -754,30 +718,19 @@ fn spawn_chat_turn(
     let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Chat);
     crate::process_group::isolate(&mut command);
     crate::turn::apply_push_block(&mut command);
-    let mut child = command
-        .args(&cli)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| ChatError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| ChatError::Io(std::io::Error::other("no stderr")))?;
-
-    let live = LiveChild::tagged(
-        child,
-        &tag,
-        crate::proc::ledger::LedgerContext::from_command(&command),
-    );
-    registry
-        .lock()
-        .map_err(|_| ChatError::Poisoned)?
-        .insert(run_id.to_string(), live.clone());
+    command.args(&cli);
+    let Spawned {
+        live,
+        stdout,
+        stderr,
+    } = spawn_tagged(SpawnTaggedParams {
+        command: &mut command,
+        tag: &tag,
+        prompt: None,
+        session_id: None,
+        mount_path: None,
+    })?;
+    register(registry, run_id, &live);
 
     let sink = ChatSink {
         app: app.clone(),
@@ -789,7 +742,7 @@ fn spawn_chat_turn(
     let stderr_handle = thread::spawn(move || drain_tail_lossy(stderr, MAX_STDERR_BYTES));
     thread::spawn(move || {
         let ((), exited) = run_to_exit(&live, &registry_clone, &sink.run_id, None, || {
-            forward_lines(&sink, &live, stdout)
+            forward_lines(&sink, &live, stdout, "chat")
         });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         if let Some(root) = cleanup_root.as_deref() {
@@ -804,12 +757,15 @@ fn spawn_chat_turn(
 }
 
 #[tauri::command]
-pub async fn chat_turn(
-    app: AppHandle,
-    state: State<'_, ChatRegistry>,
-    db: State<'_, Db>,
-    args: ChatTurnArgs,
-) -> Result<String, ChatError> {
+pub async fn chat_turn(app: AppHandle, args: ChatTurnArgs) -> Result<String, ChatError> {
+    tauri::async_runtime::spawn_blocking(move || run_chat_turn(&app, args))
+        .await
+        .map_err(|error| ChatError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn run_chat_turn(app: &AppHandle, args: ChatTurnArgs) -> Result<String, ChatError> {
+    let state = app.state::<ChatRegistry>();
+    let db = app.state::<Db>();
     let (scope, images) = {
         let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
         let scope = load_chat_scope(&conn, &args.chat_id)?;
@@ -838,7 +794,7 @@ pub async fn chat_turn(
     let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref()).and_then(
         |prepared| {
             spawn_chat_turn(
-                &app,
+                app,
                 &state.0,
                 &args.run_id,
                 &args.chat_id,
@@ -863,7 +819,7 @@ pub async fn chat_cancel(state: State<'_, ChatRegistry>, run_id: String) -> Resu
     Err(ChatError::NotFound(run_id))
 }
 
-const ASK_DIR: &str = "goodboy-ask";
+pub(crate) const ASK_DIR: &str = "goodboy-ask";
 const ASK_MAX_FILES: usize = 40;
 const ASK_MAX_BYTES: usize = 512 * 1024;
 const ASK_FILES_HEADER: &str =
@@ -987,23 +943,31 @@ fn stage_ask_dossier_in(
     check_dossier(files)?;
     let root = temp.join(ASK_DIR).join(run_id);
     remove_staged_root(&root);
-    std::fs::create_dir_all(&root)?;
+    let staged = write_dossier(&root, files);
+    if staged.is_err() {
+        remove_staged_root(&root);
+    }
+    staged
+}
+
+fn write_dossier(root: &Path, files: &[AskDossierFile]) -> Result<PathBuf, ChatError> {
+    crate::chat_images::create_private_root(root.parent().unwrap_or(root), root)?;
     for file in files {
         let target = root.join(&file.name);
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(&target, file.content.as_bytes())?;
-        crate::chat_images::set_mode(&target, 0o444)?;
+        crate::chat_images::set_mode(&target, 0o400)?;
     }
-    for entry in std::fs::read_dir(&root)? {
+    for entry in std::fs::read_dir(root)? {
         let path = entry?.path();
         if path.is_dir() {
-            crate::chat_images::set_mode(&path, 0o555)?;
+            crate::chat_images::set_mode(&path, 0o500)?;
         }
     }
-    crate::chat_images::set_mode(&root, 0o555)?;
-    Ok(std::fs::canonicalize(&root)?)
+    crate::chat_images::set_mode(root, 0o500)?;
+    Ok(std::fs::canonicalize(root)?)
 }
 
 fn remove_staged_root(root: &Path) {
@@ -1096,12 +1060,15 @@ fn prepare_ask_turn(
 }
 
 #[tauri::command]
-pub async fn ask_turn(
-    app: AppHandle,
-    state: State<'_, ChatRegistry>,
-    db: State<'_, Db>,
-    args: AskTurnArgs,
-) -> Result<String, ChatError> {
+pub async fn ask_turn(app: AppHandle, args: AskTurnArgs) -> Result<String, ChatError> {
+    tauri::async_runtime::spawn_blocking(move || run_ask_turn(&app, args))
+        .await
+        .map_err(|error| ChatError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn run_ask_turn(app: &AppHandle, args: AskTurnArgs) -> Result<String, ChatError> {
+    let state = app.state::<ChatRegistry>();
+    let db = app.state::<Db>();
     let scope = {
         let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
         load_ask_scope(&conn, &args.thread_id, &args.session_id)?
@@ -1116,7 +1083,7 @@ pub async fn ask_turn(
     let dossier = dossier_root.to_string_lossy().into_owned();
     let spawned = prepare_ask_turn(&args, &scope, home.as_deref(), &dossier).and_then(|prepared| {
         spawn_chat_turn(
-            &app,
+            app,
             &state.0,
             &args.run_id,
             &args.thread_id,
@@ -1129,6 +1096,9 @@ pub async fn ask_turn(
     }
     spawned
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -1323,9 +1293,11 @@ mod tests {
         for provider in ["cursor", "gemini", "opencode", "openrouter", "moonshot"] {
             let error = prepare(&args_for(provider)).err().unwrap();
             assert!(matches!(error, ChatError::NotReadOnly(_)));
+            let wire = serde_json::to_value(&error).expect("serializes");
+            assert_eq!(wire["kind"], "not_read_only");
             assert_eq!(
-                error.to_string(),
-                "Chat needs a provider that can run read-only: Claude or Codex"
+                wire["message"],
+                format!("chat cannot run read-only on {provider}")
             );
         }
         let unknown = prepare(&args_for("mystery")).err().unwrap();
@@ -1604,9 +1576,7 @@ mod tests {
             run_id: "run-1".to_string(),
             chat_id: "chat-1".to_string(),
             seq: 1,
-            event: TurnEventPayload::Line {
-                line: "{}".to_string(),
-            },
+            event: TurnEventPayload::Line { line: "{}".into() },
         };
         let value = serde_json::to_value(envelope).unwrap();
         assert_eq!(value["chatId"], "chat-1");
@@ -1966,6 +1936,15 @@ mod tests {
             "Implementer"
         );
         assert!(std::fs::write(root.join("new.md"), "x").is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = |path: &Path| std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
+            assert_eq!(mode(&root), 0o500);
+            assert_eq!(mode(&root.join("agents")), 0o500);
+            assert_eq!(mode(&root.join("agents/A2.md")), 0o400);
+            assert_eq!(mode(root.parent().unwrap()), 0o700);
+        }
         remove_staged_root(&root);
         assert!(!root.exists());
         let _ = std::fs::remove_dir_all(&temp);
@@ -1973,6 +1952,24 @@ mod tests {
             stage_ask_dossier_in(&temp, "../run", &files),
             Err(ChatError::InvalidValue { .. })
         ));
+    }
+
+    #[test]
+    fn a_dossier_that_fails_midway_leaves_no_folder_behind() {
+        let temp = std::env::temp_dir().join(format!("goodboy-ask-fail-{}", std::process::id()));
+        let files = vec![
+            AskDossierFile {
+                name: "notes".to_string(),
+                content: "Harborline".to_string(),
+            },
+            AskDossierFile {
+                name: "notes/A2.md".to_string(),
+                content: "Implementer".to_string(),
+            },
+        ];
+        assert!(stage_ask_dossier_in(&temp, "run-9", &files).is_err());
+        assert!(!temp.join(ASK_DIR).join("run-9").exists());
+        let _ = std::fs::remove_dir_all(&temp);
     }
 
     #[test]

@@ -10,6 +10,7 @@
 3. Call it from one typed wrapper in the feature folder. A component or hook never calls `invoke` directly.
 4. Add the argument and result types to `packages/types` when both sides share them.
 5. Take a target (workspace, project, mount, session) as an argument; never read the current one.
+6. Return `Result<T, E>` with an error that has a `kind` and a `message`, never a bare `String` ([rust.md](../rust.md) R4).
 
 ## Test
 

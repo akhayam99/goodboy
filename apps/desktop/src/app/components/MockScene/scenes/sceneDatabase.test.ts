@@ -5,12 +5,16 @@ import {
   countLiveAutoTrees,
   deleteSetting,
   getSetting,
+  getWorkspaceValue,
   insertSettingIfAbsent,
+  insertWorkspaceValueIfAbsent,
   listLiveSessionIds,
   replaceSettingIfUnchanged,
+  replaceWorkspaceValueIfUnchanged,
   setSetting,
+  setWorkspaceValue,
 } from '@goodboy/db';
-import type { WorkspaceId } from '@goodboy/types';
+import { brandId, type WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { installSceneDatabase } from './sceneDatabase';
 
@@ -20,10 +24,56 @@ afterEach(() => {
 
 describe('the scene database', () => {
   it('starts from the seeded settings and reads them back', async () => {
-    installSceneDatabase({ settings: { 'sessions.pinned.w1': '[]' } });
+    installSceneDatabase({ settings: { 'editor.binary': 'code' } });
 
-    expect(await getSetting(tauriDatabase, 'sessions.pinned.w1')).toBe('[]');
-    expect(await getSetting(tauriDatabase, 'sessions.pinned.w2')).toBeNull();
+    expect(await getSetting(tauriDatabase, 'editor.binary')).toBe('code');
+    expect(await getSetting(tauriDatabase, 'terminal.names')).toBeNull();
+  });
+
+  it('starts from the seeded workspace values and keeps workspaces apart', async () => {
+    installSceneDatabase({ workspaceValues: { w1: { 'sessions.pinned': '[]' } } });
+    const w1 = brandId<WorkspaceId>({ value: 'w1' });
+    const w2 = brandId<WorkspaceId>({ value: 'w2' });
+
+    expect(
+      await getWorkspaceValue({ db: tauriDatabase, workspaceId: w1, key: 'sessions.pinned' }),
+    ).toBe('[]');
+    expect(
+      await getWorkspaceValue({ db: tauriDatabase, workspaceId: w2, key: 'sessions.pinned' }),
+    ).toBeNull();
+  });
+
+  it('inserts, replaces and upserts a workspace value with the same guards as the table', async () => {
+    installSceneDatabase();
+    const workspaceId = brandId<WorkspaceId>({ value: 'w1' });
+    const key = 'sessions.pinned';
+
+    expect(
+      await insertWorkspaceValueIfAbsent({ db: tauriDatabase, workspaceId, key, value: 'a' }),
+    ).toBe(true);
+    expect(
+      await insertWorkspaceValueIfAbsent({ db: tauriDatabase, workspaceId, key, value: 'b' }),
+    ).toBe(false);
+    expect(
+      await replaceWorkspaceValueIfUnchanged({
+        db: tauriDatabase,
+        workspaceId,
+        key,
+        expected: 'x',
+        value: 'c',
+      }),
+    ).toBe(false);
+    expect(
+      await replaceWorkspaceValueIfUnchanged({
+        db: tauriDatabase,
+        workspaceId,
+        key,
+        expected: 'a',
+        value: 'c',
+      }),
+    ).toBe(true);
+    await setWorkspaceValue({ db: tauriDatabase, workspaceId, key, value: 'd' });
+    expect(await getWorkspaceValue({ db: tauriDatabase, workspaceId, key })).toBe('d');
   });
 
   it('inserts a missing setting once and refuses a second insert', async () => {

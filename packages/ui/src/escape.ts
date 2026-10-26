@@ -1,5 +1,6 @@
 type Layer = {
   readonly handler: () => void;
+  readonly isBase: boolean;
 };
 
 const stack: Layer[] = [];
@@ -40,8 +41,8 @@ const stopListening = (): void => {
   listening = false;
 };
 
-export const registerEscapeLayer = (handler: () => void): (() => void) => {
-  const layer: Layer = { handler };
+export const registerEscapeLayer = (handler: () => void, isBase = false): (() => void) => {
+  const layer: Layer = { handler, isBase };
   stack.push(layer);
   startListening();
   return () => {
@@ -54,6 +55,9 @@ export const registerEscapeLayer = (handler: () => void): (() => void) => {
 };
 
 export const escapeLayerCount = (): number => stack.length;
+
+export const transientEscapeLayerCount = (): number =>
+  stack.filter((layer) => !layer.isBase).length;
 
 export const dismissTopEscapeLayer = (): void => {
   stack[stack.length - 1]?.handler();

@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { OnboardingStepId } from '../../../features/onboarding/onboarding-store';
+import type { OnboardingStepId } from '../../../features/onboarding/onboardingSettings';
 import { setupProgress } from '../../../features/onboarding/setupProgress';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -42,7 +42,7 @@ const { mocks } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../features/onboarding/onboarding-store', async (importOriginal) => ({
+vi.mock('../../../features/onboarding/onboardingSettings', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   collapse: mocks.collapse,
   finish: mocks.finish,
@@ -55,7 +55,7 @@ vi.mock('../../../features/onboarding/hooks/useOnboardingProgress', () => ({
   }),
 }));
 
-vi.mock('../../../features/settings/hooks/useHasBugReportDraft', () => ({
+vi.mock('../../../features/bug-report/hooks/useHasBugReportDraft', () => ({
   useHasBugReportDraft: () => mocks.hasDraft,
 }));
 
@@ -146,14 +146,14 @@ describe('GoodboyChip', () => {
     applyDocumentTheme({ theme: 'light' });
     renderChip();
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
     expect(chip.querySelector('[data-brand-chip]')).toBeNull();
   });
 
   it('says setup and its progress while setup is open', () => {
     renderChip();
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
     expect(chip.textContent).toBe('Setup2 of 4');
   });
 
@@ -228,7 +228,7 @@ describe('GoodboyChip', () => {
   it('counts the four steps in the menu and the chip from one function', () => {
     renderChip();
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
     const setup = within(openMenu()).getByRole('region', { name: 'Setup' });
     expect(chip.textContent).toContain('2 of 4');
     expect(within(setup).getByText('Setup · 2 of 4')).toBeDefined();
@@ -455,7 +455,7 @@ describe('GoodboyChip in the column and on the rail', () => {
       />,
     );
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
     expect(chip.textContent).toBe('');
     fireEvent.click(chip);
     expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();

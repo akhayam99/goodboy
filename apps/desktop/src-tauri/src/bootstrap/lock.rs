@@ -15,8 +15,10 @@ pub(crate) struct MoveLock {
 
 #[cfg(unix)]
 fn is_alive(pid: i32) -> bool {
-    let rc = unsafe { libc::kill(pid, 0) };
-    rc == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
+    match u32::try_from(pid) {
+        Ok(pid) if pid > 0 => crate::proc::signal::is_reachable(pid),
+        _ => false,
+    }
 }
 
 #[cfg(not(unix))]

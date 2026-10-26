@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
+
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 type Props = {
@@ -19,7 +19,10 @@ export const ChatReads = ({ reads }: Props) => {
         type="button"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="-ml-1 flex items-center gap-1 rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          '-ml-1 flex items-center gap-1 rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-muted-foreground',
+          FOCUS_RING,
+        )}
       >
         <BookOpen size={ICON_SIZE.row} aria-hidden />
         {`Read ${pluralize(reads.length, 'file')}`}

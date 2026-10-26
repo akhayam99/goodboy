@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
-import { AnchoredPopover, Button, Kbd, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, Kbd, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { LaunchSessionPanel } from '../../integrations/components/LaunchSessionPanel';
 import type { LaunchMount } from '../launchMountFor';
 import type { LaunchSpec } from '../launchSpecFor';

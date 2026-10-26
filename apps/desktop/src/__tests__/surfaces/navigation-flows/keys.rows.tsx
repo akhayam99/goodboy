@@ -5,7 +5,16 @@ import { clearMocks } from '@tauri-apps/api/mocks';
 import { ErrorBoundary } from '@goodboy/ui';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ChatId,
+  type ProviderRunId,
+  type SessionId,
+  type StarredIssue,
+  type Workspace,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -43,7 +52,7 @@ const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
   at: '2099-01-01T00:00:00.000Z',
 });
 
-const ANCHOR = /^Search \(/;
+const ANCHOR = /^Search or run \(/;
 
 const undoRuns: Array<number> = [];
 
@@ -205,6 +214,15 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'report.open',
     lands: () => visible('dialog', /report|bug/i),
+  }),
+  keyRow({
+    id: 'overlay.close',
+    open: async () => {
+      await press('report.open')();
+      await visible('dialog', /report|bug/i);
+      await pressed('overlay.close', document.body);
+    },
+    lands: async () => waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), WAIT),
   }),
   keyRow({
     id: 'app.reload',
@@ -1295,6 +1313,8 @@ const standaloneAgent = (ctx: Ctx): string => {
 
 const composerKeys: { last: KeyboardEvent | null } = { last: null };
 
+const stopRequested: Array<string> = [];
+
 const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
   hydrateBranches();
   useAppStore.getState().navigate({
@@ -1435,7 +1455,102 @@ const terminalRows = (): ReadonlyArray<Element> => [
   ...document.querySelectorAll('[data-terminal-tab]'),
 ];
 
+const tabButtons = (): ReadonlyArray<HTMLElement> =>
+  terminalRows().flatMap((row) => {
+    const tab = row.querySelector<HTMLElement>('[role="tab"]');
+    return tab === null ? [] : [tab];
+  });
+
+const selectedTabIndex = (): number =>
+  tabButtons().findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
+
+const focusSelectedTab = (): HTMLElement => {
+  const tab = tabButtons()[selectedTabIndex()];
+  if (tab === undefined) {
+    throw new Error('The terminal strip has no selected tab');
+  }
+  tab.focus();
+  return tab;
+};
+
+const openTwoTerminalTabs = async (): Promise<void> => {
+  await press('terminal.studio')();
+  await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+  await pressed('terminal.newHere', document.body);
+  await waitFor(() => expect(terminalRows().length).toBe(1), WAIT);
+  const first = tabButtons()[0];
+  if (first === undefined) {
+    throw new Error('The first terminal has no tab');
+  }
+  first.focus();
+  await pressed('terminal.newTab', first);
+  await waitFor(() => expect(terminalRows().length).toBe(2), WAIT);
+};
+
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
+  keyRow({
+    id: 'terminal.prevTab',
+    note: 'with focus in the tab strip the session chord moves between terminal tabs instead',
+    open: async () => {
+      await openTwoTerminalTabs();
+      await pressed('terminal.prevTab', focusSelectedTab());
+    },
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT),
+  }),
+  keyRow({
+    id: 'terminal.nextTab',
+    open: async () => {
+      await openTwoTerminalTabs();
+      await pressed('terminal.prevTab', focusSelectedTab());
+      await waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT);
+      await pressed('terminal.nextTab', focusSelectedTab());
+    },
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(1), WAIT),
+  }),
+  keyRow({
+    id: 'terminal.tab1',
+    also: [
+      'terminal.tab2',
+      'terminal.tab3',
+      'terminal.tab4',
+      'terminal.tab5',
+      'terminal.tab6',
+      'terminal.tab7',
+      'terminal.tab8',
+      'terminal.tab9',
+    ],
+    note: 'a digit past the last tab leaves the selection where it is',
+    open: async () => {
+      await openTwoTerminalTabs();
+      await pressed('terminal.tab1', document.body);
+      await waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT);
+      await pressed('terminal.tab2', document.body);
+      await waitFor(() => expect(selectedTabIndex()).toBe(1), WAIT);
+      for (const id of [
+        'terminal.tab3',
+        'terminal.tab4',
+        'terminal.tab5',
+        'terminal.tab6',
+        'terminal.tab7',
+        'terminal.tab8',
+        'terminal.tab9',
+      ] as const) {
+        await pressed(id, document.body);
+      }
+      await pressed('terminal.tab1', document.body);
+    },
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT),
+  }),
+  keyRow({
+    id: 'terminal.renameTab',
+    open: async () => {
+      await openTwoTerminalTabs();
+      await pressed('terminal.renameTab', focusSelectedTab());
+    },
+    lands: async () => {
+      expect(await screen.findByRole('textbox', { name: /^Rename / }, WAIT)).toBeDefined();
+    },
+  }),
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
@@ -1617,6 +1732,37 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
           .getAttribute('data-prompt-kind'),
       ).toBe('message');
     },
+  }),
+  keyRow({
+    id: 'agent.stop',
+    note: 'the first press arms, the second stops',
+    open: async (ctx) => {
+      const composer = await openAgentChat(ctx);
+      const agentId = brandId<AgentId>({ value: standaloneAgent(ctx) });
+      stopRequested.length = 0;
+      useAppStore.setState({
+        agentTurnState: {
+          ...useAppStore.getState().agentTurnState,
+          [agentId]: {
+            kind: 'running',
+            runId: brandId<ProviderRunId>({ value: 'run-keys-stop' }),
+            startedAt: LATEST_ACTIVITY,
+          },
+        },
+        cancelCurrentTurn: vi.fn(async (_sessionId: unknown, stoppedId: unknown) => {
+          stopRequested.push(String(stoppedId));
+        }),
+      });
+      await settle();
+      const armed = pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+      expect(armed.defaultPrevented).toBe(true);
+      expect(stopRequested).toEqual([]);
+      await screen.findByText('Esc again to stop', undefined, WAIT);
+      pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+    },
+    lands: async (ctx) => expect(stopRequested).toEqual([standaloneAgent(ctx)]),
   }),
   keyRow({
     id: 'menu.open',

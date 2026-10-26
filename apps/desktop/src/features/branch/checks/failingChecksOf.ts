@@ -5,6 +5,7 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
+import { pullRequestViewAt } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import type { AppState } from '../../../store/types';
 
 type Params = {
@@ -29,8 +30,7 @@ export const failingChecksOf = ({
   prNumber,
 }: Params): FailingChecks | null => {
   const github = state.mountGithub[mountId];
-  const port = state.pullRequestViews[sessionId];
-  const portView = port?.mountId === mountId ? port.view : null;
+  const portView = pullRequestViewAt({ state, sessionId, mountId, prNumber })?.view ?? null;
   const pullRequest = github?.pr ?? portView;
   const detail = github?.detail;
   const checks =

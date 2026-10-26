@@ -1,5 +1,5 @@
 import { isStorageFolderSuggested, storageFolderBucket } from './classifyStorageFolder';
-import type { StorageFolder } from './types';
+import type { StorageFolder, StorageFolderTerminals } from './types';
 
 type StorageTally = {
   readonly count: number;
@@ -20,6 +20,7 @@ type Params = {
   readonly folders: ReadonlyArray<StorageFolder>;
   readonly now: number;
   readonly suggestAfterDays: number;
+  readonly terminals: StorageFolderTerminals;
 };
 
 type AddParams = {
@@ -34,7 +35,12 @@ const add = ({ tally, folder }: AddParams): StorageTally => ({
   bytes: tally.bytes + (folder.sizeBytes ?? 0),
 });
 
-export const summarizeStorage = ({ folders, now, suggestAfterDays }: Params): StorageSummary => {
+export const summarizeStorage = ({
+  folders,
+  now,
+  suggestAfterDays,
+  terminals,
+}: Params): StorageSummary => {
   let inUse = EMPTY;
   let canGo = EMPTY;
   let reviewFirst = EMPTY;
@@ -54,7 +60,8 @@ export const summarizeStorage = ({ folders, now, suggestAfterDays }: Params): St
       kept = add({ tally: kept, folder });
       continue;
     }
-    if (isStorageFolderSuggested({ folder, now, suggestAfterDays })) {
+    const liveTerminals = terminals.get(folder.path)?.length ?? 0;
+    if (isStorageFolderSuggested({ folder, now, suggestAfterDays, liveTerminals })) {
       canGo = add({ tally: canGo, folder });
       localCommitFolders += (folder.facts?.localOnlyCommits ?? 0) > 0 ? 1 : 0;
       continue;

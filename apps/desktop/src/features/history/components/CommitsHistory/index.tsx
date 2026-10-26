@@ -23,7 +23,7 @@ import { useHistoryRowCallbacks } from './useHistoryRowCallbacks';
 import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
-import { useHistoryBackupCount } from '../../useHistoryBackupCount';
+import { useHistoryBackupCount } from '../../hooks/useHistoryBackupCount';
 import { useHistoryLiveSession } from './useHistoryLiveSession';
 import { HistoryLiveNotice } from './HistoryLiveNotice';
 import { TabActions } from '../../../../shared/components/TabActions';
@@ -132,7 +132,7 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
           size="section"
           tone={CONCEPT_TONE.history}
           icon={CONCEPT_ICONS.history}
-          title="This branch is not in the session"
+          title="This branch isn't in the session"
           description="Pick a branch from the trail to see its commits."
         />
       </PageColumn>
@@ -207,7 +207,7 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
         tone="danger"
         placement="inline"
         role="alert"
-        title="Could not load commits"
+        title="Couldn't load commits"
         detail={draft?.loadError}
         actions={
           <Button size="sm" onClick={flow.refresh}>

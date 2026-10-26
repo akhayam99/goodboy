@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { EmptyLine, AnchoredPopover, Input, Kbd, useDropdown } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AnchoredPopover, EmptyLine, ICON_SIZE, Input, Kbd, useDropdown } from '@goodboy/ui';
+
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { savedStepNote, type SavedStep, type SavedStepGroups } from '../../savedSteps';
@@ -129,7 +129,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           disabled={disabled}
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
-          className="flex h-8 min-w-0 flex-1 items-center rounded-md pl-2 text-left text-label text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-8 min-w-0 flex-1 items-center rounded-md pl-2 text-left text-meta text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add step
         </button>
@@ -152,7 +152,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           aria-expanded
           aria-controls={listId}
           aria-activedescendant={activeId}
-          className="h-7 pl-7 text-label"
+          className="h-7 pl-7 text-meta"
         />
       </label>
       <ul

@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, Eyebrow, useDropdown } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AnchoredPopover, Button, Eyebrow, ICON_SIZE, useDropdown } from '@goodboy/ui';
+
 import { wireframeVersionLabel, type WireframeVersion } from '../../wireframeVersion';
 import { VersionRow } from './VersionRow';
 

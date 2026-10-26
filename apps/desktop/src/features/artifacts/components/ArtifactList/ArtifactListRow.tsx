@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, InteractiveRow, Tooltip, TruncatedText, cn } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, InteractiveRow, Tooltip, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactState } from '../../artifactStateOf';
@@ -8,7 +8,7 @@ import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { ActionControls } from '../../../actions/useActionControls';
 import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';

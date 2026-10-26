@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { isJsonRecord, isStringArray, parseJsonColumn } from './parseJsonColumn';
+import { isJsonRecord, isStringArray, parseJsonColumn, parseJsonStrict } from './parseJsonColumn';
+
+describe('parseJsonStrict', () => {
+  it('returns the parsed value when it passes the guard', () => {
+    expect(parseJsonStrict({ value: '["a"]', isValid: isStringArray, label: 'labels' })).toEqual([
+      'a',
+    ]);
+  });
+
+  it('throws on malformed json and on a wrong shape', () => {
+    expect(() => parseJsonStrict({ value: '{"a":', isValid: isJsonRecord, label: 'meta' })).toThrow(
+      'Invalid meta',
+    );
+    expect(() => parseJsonStrict({ value: '[]', isValid: isJsonRecord, label: 'meta' })).toThrow(
+      'Invalid meta',
+    );
+  });
+});
 
 describe('parseJsonColumn', () => {
   it('returns the parsed value when it passes the guard', () => {

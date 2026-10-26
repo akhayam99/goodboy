@@ -390,20 +390,7 @@ export const createHintEngine = ({
     pending = view.requestAnimationFrame(evaluate);
   };
 
-  const onClick = (event: MouseEvent): void => {
-    if (!event.isTrusted || !(event.target instanceof Node)) {
-      return;
-    }
-    const target = event.target;
-    const state = store.getState();
-    for (const hint of hints) {
-      const anchor = anchorOf({ hint, probe: probeOf({ hint, state }) });
-      if (anchor !== null && anchor.contains(target)) {
-        clicked.add(hint.id);
-      }
-    }
-    schedule();
-  };
+  const clickListener = new AbortController();
 
   const unsubscribe = store.subscribe(schedule);
   const mutations = new MutationObserver(schedule);
@@ -411,7 +398,24 @@ export const createHintEngine = ({
   for (const type of WATCHED_EVENTS) {
     view.addEventListener(type, schedule, { capture: true, passive: true });
   }
-  view.addEventListener('click', onClick, { capture: true });
+  view.addEventListener(
+    'click',
+    (event) => {
+      if (!event.isTrusted || !(event.target instanceof Node)) {
+        return;
+      }
+      const target = event.target;
+      const state = store.getState();
+      for (const hint of hints) {
+        const anchor = anchorOf({ hint, probe: probeOf({ hint, state }) });
+        if (anchor !== null && anchor.contains(target)) {
+          clicked.add(hint.id);
+        }
+      }
+      schedule();
+    },
+    { capture: true, signal: clickListener.signal },
+  );
 
   return {
     setTrack: ({ chapterId: track, settledIds }) => {
@@ -462,7 +466,7 @@ export const createHintEngine = ({
       for (const type of WATCHED_EVENTS) {
         view.removeEventListener(type, schedule, { capture: true });
       }
-      view.removeEventListener('click', onClick, { capture: true });
+      clickListener.abort();
     },
   };
 };

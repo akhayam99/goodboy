@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { AGENT_KIND_META, visibleAgentKinds } from '../session/agent-kind';
 
 describe('the Generalist while Auto is an experiment', () => {

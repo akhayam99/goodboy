@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
-import { cn, StatusDot } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, StatusDot, FOCUS_RING } from '@goodboy/ui';
+
 import { QUESTION_DELEGATE_COPY } from '../../questionDelegate';
 
 type Props = {
@@ -20,7 +20,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
         'text-left text-row text-muted-foreground',
         'transition-[color,background-color,border-color] duration-150',
         'enabled:hover:border-border enabled:hover:bg-hover enabled:hover:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        FOCUS_RING,
       )}
     >
       <StatusDot tone="info" size="sm" pulsing />
@@ -44,7 +44,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
           'shrink-0 rounded-md px-2 py-1 text-chip text-muted-foreground',
           'transition-[color,background-color] duration-150',
           'hover:bg-hover hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          FOCUS_RING,
         )}
       >
         {QUESTION_DELEGATE_COPY.back}

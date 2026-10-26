@@ -22,7 +22,7 @@ export const TranscriptFeed = () => (
           onRefreshAuth={noop}
           onOpenDiff={noop}
           isThinking={false}
-          thinkingContext="think"
+          thinkingPhrase="Thinking"
           onRetryRun={noop}
           retryingRunId={null}
         />

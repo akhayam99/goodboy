@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import type { RunDefaultScope } from '../../../session/startRun/runDefaultSetting';
 import { RUN_ROUTE_COPY } from '../../../session/startRun/runRouteCopy';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { RunDefaultRow } from './RunDefaultRow';
 
 type Props = {

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type SessionId } from '@goodboy/types';
 import type { SlackChannel, SlackMessage } from '../../integrations/slack/client';
 import type { SlackThreadGroup } from '../../integrations/slack/SlackStudio/useSlackThreads';
 import { adaptSlackThreads } from './slack';
@@ -32,11 +32,16 @@ const head = (overrides: Partial<SlackMessage> = {}): SlackMessage => ({
 describe('adaptSlackThreads', () => {
   it('maps a thread row into a normalized inbox record', () => {
     const sessionId = 'session-1' as SessionId;
+    const repliedAt = brandId<IsoDateTime>({ value: new Date(2026, 7, 1, 10, 0).toISOString() });
     const groups: ReadonlyArray<SlackThreadGroup> = [
-      { key: 'C1', label: '#eng-alerts', rows: [{ channel: channel(), head: head(), sessionId }] },
+      {
+        key: 'C1',
+        label: '#eng-alerts',
+        rows: [{ channel: channel(), head: head({ latestReplyAt: repliedAt }), sessionId }],
+      },
     ];
 
-    const [record] = adaptSlackThreads({ groups, now: new Date('2026-08-01T12:00:00Z') });
+    const [record] = adaptSlackThreads({ groups, now: new Date(2026, 7, 1, 12, 0) });
 
     expect(record).toEqual({
       key: 'slack:thread:C1:1723456789.000100',
@@ -46,10 +51,16 @@ describe('adaptSlackThreads', () => {
       title: 'the billing webhook is failing',
       state: 'active',
       stateLabel: 'Active',
-      updatedAt: '2026-08-01T10:00:00Z',
+      updatedAt: repliedAt,
       url: '',
       context: '3 replies',
-      payload: { provider: 'slack', kind: 'thread', channel: channel(), head: head(), sessionId },
+      payload: {
+        provider: 'slack',
+        kind: 'thread',
+        channel: channel(),
+        head: head({ latestReplyAt: repliedAt }),
+        sessionId,
+      },
     });
   });
 

@@ -1,6 +1,7 @@
 import { Button, EmptyLine, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { ActivityView } from '../../../../timeline/activityView';
+import { TimelineGhostRun } from './TimelineGhostRun';
 
 type Props = {
   readonly view: ActivityView;
@@ -29,9 +30,14 @@ export const TimelineEmpty = ({ view, isSearching, onClearSearch }: Props) => {
         className="px-3"
         icon={CONCEPT_ICONS.timeline}
         title="No log entries yet"
-        description="Plans, branch events and pull requests are recorded here."
+        description="The log records plans, branch events and pull requests."
       />
     );
   }
-  return <EmptyLine>Nothing ran yet</EmptyLine>;
+  return (
+    <>
+      <EmptyLine>Nothing ran yet</EmptyLine>
+      <TimelineGhostRun />
+    </>
+  );
 };

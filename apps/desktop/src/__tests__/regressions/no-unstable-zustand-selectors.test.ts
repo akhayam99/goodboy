@@ -2,11 +2,14 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
-import { AGENTS_HOT_KEYS } from '../../store/slices/agents/hotKeys';
-import { PROJECT_MOUNTS_HOT_KEYS } from '../../store/slices/project-mounts/hotKeys';
-import { SCRIPTS_HOT_KEYS } from '../../store/slices/scripts/hotKeys';
-import { SESSIONS_HOT_KEYS } from '../../store/slices/sessions/hotKeys';
-import { TRANSCRIPTS_HOT_KEYS } from '../../store/slices/transcripts/hotKeys';
+import { HOT_SLICE_KEYS } from './hotSliceKeys';
+import {
+  IS_UPDATING,
+  grownEntries,
+  readBaseline,
+  writeBaseline,
+  type FileCounts,
+} from './scanControls';
 
 const SRC_ROOT = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
@@ -33,7 +36,8 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
 }
 
 const USE_APP_STORE_CALL = /useAppStore\s*\(/g;
-const SAFE_OPT_OUT_COMMENT = /useShallow not needed/;
+const RECORD_KEY_DECLARATION = /readonly\s+(\w+)\s*:\s*Readonly<\s*Record</g;
+const WHOLE_RECORD_BASELINE = 'whole-record-selectors.baseline.json';
 
 function extractCallBody(
   source: string,
@@ -62,13 +66,28 @@ const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
   /\{\s*\.\.\.[^}]*\}\s*$/,
 ];
 
-const HOT_SLICE_KEYS: ReadonlySet<string> = new Set<string>([
-  ...TRANSCRIPTS_HOT_KEYS,
-  ...AGENTS_HOT_KEYS,
-  ...PROJECT_MOUNTS_HOT_KEYS,
-  ...SESSIONS_HOT_KEYS,
-  ...SCRIPTS_HOT_KEYS,
-]);
+const stateSources = (dir: string, acc: string[] = []): string[] => {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      stateSources(full, acc);
+    } else if (
+      /(?:^|[A-Za-z])(?:state|types|State)\.ts$/.test(entry) &&
+      !entry.endsWith('.test.ts')
+    ) {
+      acc.push(full);
+    }
+  }
+  return acc;
+};
+
+const RECORD_KEYS: ReadonlySet<string> = new Set(
+  stateSources(join(SRC_ROOT, 'store')).flatMap((file) =>
+    [...readFileSync(file, 'utf-8').matchAll(RECORD_KEY_DECLARATION)].map(
+      (match) => match[1] ?? '',
+    ),
+  ),
+);
 
 const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;
 
@@ -175,6 +194,7 @@ type BadCall = {
 type FileReport = {
   readonly unstable: ReadonlyArray<BadCall>;
   readonly wholeSlice: ReadonlyArray<BadCall>;
+  readonly wholeRecord: ReadonlyArray<BadCall>;
 };
 
 function lineOf(content: string, idx: number): number {
@@ -186,6 +206,12 @@ function selectorTail(body: string): string {
   const arrowMatch = trimmed.match(/=>\s*([\s\S]*)$/);
   const expr = arrowMatch?.[1] ?? trimmed;
   return expr.replace(/[;,]\s*$/, '').trim();
+}
+
+function recordKey(body: string): string | null {
+  const tail = selectorTail(body).replace(/\)+$/, '').trim();
+  const key = tail.match(WHOLE_SLICE_TAIL)?.[1] ?? null;
+  return key !== null && RECORD_KEYS.has(key) ? key : null;
 }
 
 function hotSliceKey(body: string): string | null {
@@ -201,6 +227,7 @@ function checkFile(path: string): FileReport {
   const content = readFileSync(path, 'utf-8');
   const unstable: BadCall[] = [];
   const wholeSlice: BadCall[] = [];
+  const wholeRecord: BadCall[] = [];
   let match: RegExpExecArray | null;
   while ((match = USE_APP_STORE_CALL.exec(content)) !== null) {
     const openParen = match.index + match[0].length - 1;
@@ -209,15 +236,16 @@ function checkFile(path: string): FileReport {
       continue;
     }
     const { body } = extracted;
-    if (SAFE_OPT_OUT_COMMENT.test(body)) {
-      continue;
-    }
     const at = {
       file: relative(SRC_ROOT, path).split(sep).join('/'),
       line: lineOf(content, match.index),
     };
     if (hotSliceKey(body) !== null) {
       wholeSlice.push({ ...at, snippet: selectorTail(body).replace(/\s+/g, ' ').slice(0, 140) });
+      continue;
+    }
+    if (recordKey(body) !== null) {
+      wholeRecord.push({ ...at, snippet: selectorTail(body).replace(/\s+/g, ' ').slice(0, 140) });
       continue;
     }
     if (body.includes('useShallow(')) {
@@ -231,7 +259,7 @@ function checkFile(path: string): FileReport {
     }
     unstable.push({ ...at, snippet: tail.replace(/\s+/g, ' ').slice(0, 140) });
   }
-  return { unstable, wholeSlice };
+  return { unstable, wholeSlice, wholeRecord };
 }
 
 describe('the literal selector detector', () => {
@@ -270,11 +298,46 @@ describe('no unstable useAppStore selectors without useShallow', () => {
         `Found ${bad.length} useAppStore selector(s) subscribing to a whole slice that is ` +
           `rewritten while a turn streams (${[...HOT_SLICE_KEYS].join(', ')}). Every consumer ` +
           `then re-renders for every agent of every session. Select the keys the component ` +
-          `needs instead, or add a "useShallow not needed: ..." comment if you have proof the ` +
-          `component really needs the whole map.\n\n${lines.join('\n')}`,
+          `needs instead (docs/typescript/selectors.md).\n\n${lines.join('\n')}`,
       );
     }
     expect(bad).toEqual([]);
+  });
+
+  it('reads the record keys from the state types, never an empty list', () => {
+    expect(RECORD_KEYS.size).toBeGreaterThan(150);
+    expect(RECORD_KEYS.has('sessionBranches')).toBe(true);
+    expect(RECORD_KEYS.has('sessionMounts')).toBe(true);
+    expect(RECORD_KEYS.has('currentSessionId')).toBe(false);
+  });
+
+  it('adds no subscription to a whole record keyed by an id beyond the baseline', () => {
+    const current: FileCounts = Object.fromEntries(
+      files
+        .map(
+          (file, index) =>
+            [
+              `apps/desktop/src/${relative(SRC_ROOT, file).split(sep).join('/')}`,
+              reports[index]?.wholeRecord.length ?? 0,
+            ] as const,
+        )
+        .filter(([, count]) => count > 0),
+    );
+    if (IS_UPDATING) {
+      writeBaseline({ file: WHOLE_RECORD_BASELINE, counts: current });
+      return;
+    }
+    const grown = grownEntries({
+      current,
+      baseline: readBaseline({ file: WHOLE_RECORD_BASELINE }),
+    });
+    expect(
+      grown,
+      `A state key typed as a record keyed by an id changes for every session, agent or mount. ` +
+        `Subscribe to the one entry you read, or wrap the keys you need in useShallow ` +
+        `(docs/typescript/selectors.md). A cleanup that lowers a count regenerates the baseline ` +
+        `with GOODBOY_UPDATE_BASELINE=1.\n${grown.join('\n')}`,
+    ).toEqual([]);
   });
 
   it('every useAppStore call that derives a non-primitive uses useShallow', () => {
@@ -285,8 +348,7 @@ describe('no unstable useAppStore selectors without useShallow', () => {
         `Found ${bad.length} useAppStore selector(s) that derive fresh references ` +
           `without useShallow. React 19 useSyncExternalStore will detect a snapshot ` +
           `mismatch and bail into an infinite render loop. Wrap each selector in ` +
-          `useShallow from zustand/react/shallow, or add a "useShallow not needed: ..." ` +
-          `comment if you have proof the selector is stable.\n\n${lines.join('\n')}`,
+          `useShallow from zustand/react/shallow (docs/typescript/selectors.md).\n\n${lines.join('\n')}`,
       );
     }
     expect(bad).toEqual([]);

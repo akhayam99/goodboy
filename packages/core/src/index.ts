@@ -21,6 +21,7 @@ export {
   type BranchValues,
 } from './slug';
 export { sha256Hex } from './slug/sha256';
+export { untrustedBlock } from './untrustedBlock';
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
@@ -614,6 +615,14 @@ export {
 } from './providers/capabilities';
 
 export {
+  PROVIDER_FLAGS,
+  providerFlags,
+  providersOnSameBinary,
+  type ProviderFlags,
+  type ProviderStatusSlot,
+} from './providers/providerFlags';
+
+export {
   autoModelForRole,
   recommendedModelForRole,
   type AutoModelChoice,
@@ -955,6 +964,7 @@ export {
   PULL_REQUEST_CAPABILITY_METHODS,
   PULL_REQUEST_NOUNS,
   PullRequestPortError,
+  STALE_HEAD_MESSAGE,
   PullRequestPortUnsupported,
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
@@ -972,6 +982,7 @@ export {
   githubReviewSource,
   gitlabDiscussionId,
   gitlabDraftTitle,
+  gitlabDefaultMergeMethodOf,
   gitlabMergeableOf,
   gitlabPullRequestPort,
   gitlabReviewDecisionOf,

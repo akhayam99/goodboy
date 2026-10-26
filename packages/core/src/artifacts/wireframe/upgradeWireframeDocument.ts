@@ -1,9 +1,5 @@
 import { WIREFRAME_LIMITS, WIREFRAME_SCHEMA_VERSION } from './schema';
-
-type RawRecord = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RawRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+import { isRecord } from '@goodboy/types/helpers';
 
 const toggleKeys = ({ value, into }: { readonly value: unknown; readonly into: Set<string> }) => {
   if (Array.isArray(value)) {

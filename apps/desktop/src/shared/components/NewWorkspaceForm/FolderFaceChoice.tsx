@@ -33,7 +33,7 @@ export const FolderFaceChoice = ({ folder, draft, isBusy }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 text-label text-muted-foreground motion-safe:animate-fade-in">
+    <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 text-meta text-muted-foreground motion-safe:animate-fade-in">
       {folder.signals !== null ? (
         <p className="flex items-center gap-2">
           <SignalsIcon size={ICON_SIZE.row} aria-hidden className={tintClasses('primary').icon} />

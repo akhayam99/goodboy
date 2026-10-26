@@ -153,7 +153,12 @@ fn claude_auth_keeps_an_unrecognised_answer_unknown_with_its_reason() {
     let auth = check_claude_auth_with(&fake.binary("claude"), AUTH_BUDGET);
 
     assert_eq!(auth.state, AuthStateKind::Unknown);
-    assert_eq!(auth.reason.as_deref(), Some("something new and unexpected"));
+    assert_eq!(
+        auth.reason,
+        Some(AuthReason::CliSaid {
+            detail: "something new and unexpected".into()
+        })
+    );
 }
 
 #[test]
@@ -166,8 +171,10 @@ fn claude_auth_is_unknown_when_the_cli_hangs_and_the_probe_is_reaped() {
 
     assert_eq!(auth.state, AuthStateKind::Unknown);
     assert_eq!(
-        auth.reason.as_deref(),
-        Some("the CLI did not answer in time")
+        auth.reason,
+        Some(AuthReason::TimedOut {
+            secs: QUICK.timeout.as_secs()
+        })
     );
     assert_every_probe_was_reaped(&path);
 }
@@ -179,7 +186,7 @@ fn claude_auth_is_unknown_when_the_binary_is_missing() {
     let auth = check_claude_auth_with(&fake.binary("no-such-cli"), AUTH_BUDGET);
 
     assert_eq!(auth.state, AuthStateKind::Unknown);
-    assert_eq!(auth.reason.as_deref(), Some("the CLI is not installed"));
+    assert_eq!(auth.reason, Some(AuthReason::NotInstalled));
 }
 
 #[test]
@@ -204,8 +211,10 @@ fn cursor_auth_with_local_tokens_only_is_connected_but_not_verified() {
     assert_eq!(auth.identity, None);
     assert!(!auth.verified);
     assert_eq!(
-        auth.reason.as_deref(),
-        Some("Logged in (unable to fetch user details)")
+        auth.reason,
+        Some(AuthReason::CliSaid {
+            detail: "Logged in (unable to fetch user details)".into()
+        })
     );
 }
 

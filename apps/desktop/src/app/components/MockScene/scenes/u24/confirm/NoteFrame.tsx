@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { ConfirmPopover, IconButton } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE, IconButton } from '@goodboy/ui';
+
 import { ConfirmFrame } from './ConfirmFrame';
 import { ConfirmRow } from './ConfirmRow';
 import { settle } from './variants';

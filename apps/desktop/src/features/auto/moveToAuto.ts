@@ -10,7 +10,7 @@ import {
 import { tauriDatabase } from '../../shared/lib/db';
 import { pausingSessionCapOf } from '../budget/pausingSessionCapOf';
 import { useAppStore } from '../../store';
-import { adoptAgent, type AdoptOutcome } from '../../store/slices/auto/adoptAgent';
+import { adoptAgent, type AdoptOutcome } from '../../store/runtime/auto/adoptAgent';
 import { scopedKindRouting } from '../../store/slices/agents/scopedKindRouting';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';

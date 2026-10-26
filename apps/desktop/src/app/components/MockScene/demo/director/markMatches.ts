@@ -5,13 +5,18 @@ type Params = {
   readonly tokens: ReadonlyArray<string>;
 };
 
-const escapeToken = (token: string): string => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+type TokenParams = {
+  readonly token: string;
+};
+
+const escapeToken = ({ token }: TokenParams): string =>
+  token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const markMatches = ({ text, tokens }: Params): ReadonlyArray<MarkedSegment> => {
   if (tokens.length === 0) {
     return text.length === 0 ? [] : [{ text, isMatch: false }];
   }
-  const pattern = new RegExp(`(${tokens.map((token) => escapeToken(token)).join('|')})`, 'giu');
+  const pattern = new RegExp(`(${tokens.map((token) => escapeToken({ token })).join('|')})`, 'giu');
   const segments: MarkedSegment[] = [];
   let last = 0;
   for (const match of text.matchAll(pattern)) {

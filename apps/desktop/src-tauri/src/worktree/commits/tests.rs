@@ -1,7 +1,8 @@
 use super::{
     worktree_blame_line_blocking, worktree_commit_range_blocking,
-    worktree_continue_rebase_blocking, worktree_rebase_conflicts_blocking,
-    worktree_start_rebase_blocking, RangeCommit, RebaseConflictFile, RebaseStep,
+    worktree_continue_rebase_blocking, worktree_is_ancestor_blocking,
+    worktree_rebase_conflicts_blocking, worktree_start_rebase_blocking, RangeCommit,
+    RebaseConflictFile, RebaseStep,
 };
 use crate::worktree::git::git;
 use crate::worktree::status::in_progress_operation;
@@ -68,6 +69,36 @@ fn the_commit_range_lists_subjects_oldest_first() {
             },
         ]
     );
+}
+
+#[test]
+fn the_commit_range_refuses_a_revision_that_starts_with_a_dash() {
+    let root = init_repo("commit-range-dash");
+    let base = commit(&root, "base.txt", "base", "base");
+    let path = path_of(&root);
+
+    assert!(worktree_commit_range_blocking(
+        path.clone(),
+        "--output=leak.txt".to_string(),
+        base.clone()
+    )
+    .is_err());
+    assert!(worktree_commit_range_blocking(path, base, "--output=leak.txt".to_string()).is_err());
+    assert!(!root.join("leak.txt").exists());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn is_ancestor_refuses_a_revision_that_starts_with_a_dash() {
+    let root = init_repo("ancestor-dash");
+    let base = commit(&root, "base.txt", "base", "base");
+    let path = path_of(&root);
+
+    assert!(
+        worktree_is_ancestor_blocking(path.clone(), "--help".to_string(), base.clone()).is_err()
+    );
+    assert!(worktree_is_ancestor_blocking(path, base, "--help".to_string()).is_err());
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

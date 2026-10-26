@@ -1,8 +1,8 @@
 import { ArrowUpRight } from 'lucide-react';
-import { DrawerFrame, IconButton } from '@goodboy/ui';
+import { DrawerFrame, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { ReportStudio } from '../../../features/reports/components/ReportStudio';
 import { WireframeViewer } from '../../../features/wireframes/components/WireframeViewer';
 import { readingArtifactOf } from './readingArtifact';

@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
-import { Chip, EmptyLine, IconButton } from '@goodboy/ui';
+import { Chip, EmptyLine, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
 import type { SearchReviewers } from './types';
 
@@ -26,9 +26,9 @@ export const ReviewerChips = ({ sessionId, logins, search, onChange }: Props) =>
       {logins.length === 0 && <EmptyLine>None requested</EmptyLine>}
       {logins.map((login) => (
         <Chip
+          kind="reference"
           key={login}
           tone="neutral"
-          size="md"
           label={login}
           trailing={
             <IconButton

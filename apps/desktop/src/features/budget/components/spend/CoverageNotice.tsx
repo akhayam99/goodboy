@@ -15,7 +15,7 @@ export const CoverageNotice = ({ counts }: Props) => {
       tone="warning"
       placement="banner"
       title="Some turns have no price"
-      body={`No price for ${counts.unpriced} of ${counts.total} turns, so a limit cannot include them`}
+      body={`No price for ${counts.unpriced} of ${counts.total} turns, so a limit can't include them`}
     />
   );
 };

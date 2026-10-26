@@ -1,11 +1,11 @@
 use rusqlite::{params, Connection, Transaction};
 use serde::{Deserialize, Serialize};
-use tauri::State;
 use thiserror::Error;
 
 use crate::db::Db;
 use crate::proc::git::Git;
-use crate::worktree_writer::{acquire_lease, release_lease, WriterLeases};
+use crate::worktree_writer::{acquire_lease, release_lease, WriterLeaseRegistry, WriterLeases};
+use tauri::Manager;
 
 #[derive(Debug, Error)]
 pub enum ProjectRelocationError {
@@ -23,6 +23,10 @@ pub enum ProjectRelocationError {
     RelocationNotFound,
     #[error("database unavailable")]
     DatabaseUnavailable,
+    #[error("the destination is not a folder")]
+    DestinationMissing,
+    #[error("the destination holds a different repository")]
+    DestinationDiffers,
     #[error("sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),
 }
@@ -39,6 +43,8 @@ impl ProjectRelocationError {
             Self::ProjectNotFound => "project_not_found",
             Self::RelocationNotFound => "relocation_not_found",
             Self::DatabaseUnavailable => "database_unavailable",
+            Self::DestinationMissing => "destination_missing",
+            Self::DestinationDiffers => "destination_differs",
             Self::Sqlite(_) => "sqlite",
         }
     }
@@ -64,6 +70,7 @@ pub struct ProjectRelocationUndoArgs {
 pub struct ProjectRelocationResult {
     pub relocation_id: String,
     pub repaired_git_links: bool,
+    pub repair_error: Option<String>,
     pub restored_session_folders: usize,
 }
 
@@ -150,25 +157,93 @@ fn verify_move(
     Ok(())
 }
 
-fn update_path_column(
+fn at_or_under(column: &str) -> String {
+    format!("({column} = ?1 OR substr({column}, 1, length(?1) + 1) = ?1 || '/')")
+}
+
+fn update_scoped_path_column(
     tx: &Transaction<'_>,
     table: &str,
     column: &str,
-    from_root: &str,
-    to_root: &str,
+    scope: &str,
+    paths: &MovedPaths<'_>,
 ) -> Result<(), ProjectRelocationError> {
     let sql = format!(
-        "UPDATE {table} SET {column} = ? || substr({column}, ? + 1) WHERE {column} = ? OR {column} LIKE ?"
+        "UPDATE {table} SET {column} = ?2 || substr({column}, length(?1) + 1) WHERE {} AND ({scope})",
+        at_or_under(column)
     );
     tx.execute(
         &sql,
-        params![
-            to_root,
-            from_root.len() as i64,
-            from_root,
-            format!("{from_root}/%")
-        ],
+        params![paths.from_root, paths.to_root, paths.project_id],
     )?;
+    Ok(())
+}
+
+struct MovedPaths<'a> {
+    project_id: &'a str,
+    from_root: &'a str,
+    to_root: &'a str,
+}
+
+fn rewrite_json_paths(value: &mut serde_json::Value, from_root: &str, to_root: &str) -> bool {
+    match value {
+        serde_json::Value::String(text) => {
+            if !has_prefix(text, from_root) {
+                return false;
+            }
+            *text = replace_prefix(text, from_root, to_root);
+            true
+        }
+        serde_json::Value::Array(items) => {
+            let mut changed = false;
+            for item in items.iter_mut() {
+                changed |= rewrite_json_paths(item, from_root, to_root);
+            }
+            changed
+        }
+        serde_json::Value::Object(map) => {
+            let mut changed = false;
+            for item in map.values_mut() {
+                changed |= rewrite_json_paths(item, from_root, to_root);
+            }
+            changed
+        }
+        _ => false,
+    }
+}
+
+fn rewritten_json(raw: &str, from_root: &str, to_root: &str) -> Option<String> {
+    let mut value: serde_json::Value = serde_json::from_str(raw).ok()?;
+    rewrite_json_paths(&mut value, from_root, to_root).then(|| value.to_string())
+}
+
+fn update_operation_paths(
+    tx: &Transaction<'_>,
+    paths: &MovedPaths<'_>,
+) -> Result<(), ProjectRelocationError> {
+    let rows: Vec<(String, String, Option<String>)> = {
+        let mut statement = tx.prepare(
+            "SELECT id, input_json, result_json FROM mount_operations
+             WHERE session_id IN (SELECT session_id FROM session_worktrees WHERE project_id = ?1)",
+        )?;
+        let found = statement.query_map([paths.project_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })?;
+        found.collect::<Result<_, _>>()?
+    };
+    for (id, input, result) in rows {
+        let next_input = rewritten_json(&input, paths.from_root, paths.to_root);
+        let next_result = result
+            .as_deref()
+            .and_then(|raw| rewritten_json(raw, paths.from_root, paths.to_root));
+        if next_input.is_none() && next_result.is_none() {
+            continue;
+        }
+        tx.execute(
+            "UPDATE mount_operations SET input_json = ?1, result_json = ?2 WHERE id = ?3",
+            params![next_input.unwrap_or(input), next_result.or(result), id],
+        )?;
+    }
     Ok(())
 }
 
@@ -179,37 +254,40 @@ fn update_paths(
     to_root: &str,
     now: i64,
 ) -> Result<(), ProjectRelocationError> {
+    let paths = MovedPaths {
+        project_id,
+        from_root,
+        to_root,
+    };
     tx.execute(
         "UPDATE projects SET root_path = ?, updated_at = ? WHERE id = ?",
         params![to_root, now, project_id],
     )?;
+    let own_mount = "mount_id IN (SELECT id FROM session_worktrees WHERE project_id = ?3)";
+    let unowned_mount = "mount_id IS NULL";
+    let own_or_unowned = format!("{own_mount} OR {unowned_mount}");
+    let own_project = "project_id = ?3";
+    let own_or_orphan = "project_id = ?3 OR project_id IS NULL";
+    let own_workspace = "workspace_id = (SELECT workspace_id FROM projects WHERE id = ?3)";
     for column in ["worktree_path", "last_worktree_path"] {
-        update_path_column(tx, "session_worktrees", column, from_root, to_root)?;
+        update_scoped_path_column(tx, "session_worktrees", column, own_project, &paths)?;
     }
     for column in ["repo_root", "worktree_path"] {
-        update_path_column(tx, "retained_worktree_paths", column, from_root, to_root)?;
+        update_scoped_path_column(tx, "retained_worktree_paths", column, own_or_orphan, &paths)?;
     }
-    update_path_column(tx, "worktree_roots", "repo_root", from_root, to_root)?;
-    update_path_column(
-        tx,
-        "resolve_candidates",
-        "worktree_path",
-        from_root,
-        to_root,
-    )?;
-    update_path_column(tx, "resolve_attempts", "worktree_path", from_root, to_root)?;
-    update_path_column(
-        tx,
-        "resolve_publications",
-        "worktree_path",
-        from_root,
-        to_root,
-    )?;
-    update_path_column(tx, "skills", "file_path", from_root, to_root)?;
     tx.execute(
-        "UPDATE mount_operations SET input_json = replace(input_json, ?, ?), result_json = replace(result_json, ?, ?) WHERE input_json LIKE ? OR result_json LIKE ?",
-        params![from_root, to_root, from_root, to_root, format!("%{from_root}%"), format!("%{from_root}%")],
+        "UPDATE worktree_roots SET repo_root = ?2 WHERE repo_root = ?1",
+        params![from_root, to_root],
     )?;
+    for table in [
+        "resolve_candidates",
+        "resolve_attempts",
+        "resolve_publications",
+    ] {
+        update_scoped_path_column(tx, table, "worktree_path", &own_or_unowned, &paths)?;
+    }
+    update_scoped_path_column(tx, "skills", "file_path", own_workspace, &paths)?;
+    update_operation_paths(tx, &paths)?;
     tx.execute(
         "UPDATE session_worktrees SET disk_state = 'unchecked', updated_at = ? WHERE project_id = ?",
         params![now, project_id],
@@ -217,14 +295,61 @@ fn update_paths(
     Ok(())
 }
 
-fn repair_git_links(to_root: &str, worktree_paths: &[String]) -> bool {
-    Git::new()
+fn repair_git_links(to_root: &str, worktree_paths: &[String]) -> Result<(), String> {
+    let output = Git::new()
         .cwd(to_root)
         .args(["worktree", "repair"])
         .args(worktree_paths)
         .output()
-        .map(|output| output.success())
-        .unwrap_or(false)
+        .map_err(|error| error.to_string())?;
+    match output.success() {
+        true => Ok(()),
+        false => Err(output.stderr_redacted().trim().to_string()),
+    }
+}
+
+enum Expected {
+    AnyFolder,
+    RepoWithRootCommit(String),
+}
+
+fn destination_expectation(
+    connection: &Connection,
+    project_id: &str,
+) -> Result<Expected, ProjectRelocationError> {
+    let known: Option<(String, Option<String>)> = connection
+        .query_row(
+            "SELECT kind, root_commit FROM projects WHERE id = ?",
+            [project_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()?;
+    Ok(match known {
+        Some((kind, Some(root_commit))) if kind == "repo" => {
+            Expected::RepoWithRootCommit(root_commit)
+        }
+        _ => Expected::AnyFolder,
+    })
+}
+
+fn destination_verified(
+    destination: &str,
+    expected: &Expected,
+) -> Result<(), ProjectRelocationError> {
+    let path = std::path::Path::new(destination);
+    if !path.is_dir() {
+        return Err(ProjectRelocationError::DestinationMissing);
+    }
+    let Expected::RepoWithRootCommit(root_commit) = expected else {
+        return Ok(());
+    };
+    let found = crate::repo::repo_identity_blocking(path)
+        .map(|identity| identity.root_commits.contains(root_commit))
+        .unwrap_or(false);
+    match found {
+        true => Ok(()),
+        false => Err(ProjectRelocationError::DestinationDiffers),
+    }
 }
 
 fn relocate_with_connection(
@@ -282,65 +407,144 @@ fn undo_with_connection(
     ))
 }
 
-#[tauri::command]
-pub async fn project_relocate(
-    args: ProjectRelocateArgs,
-    db: State<'_, Db>,
-    leases: State<'_, WriterLeases>,
+fn carried_over(
+    from_root: &str,
+    to_root: &str,
+    worktree_paths: &[String],
+) -> ProjectRelocationOutcome {
+    let mut problems = Vec::new();
+    if let Err(message) = repair_git_links(to_root, worktree_paths) {
+        problems.push(format!("git links: {message}"));
+    }
+    if let Err(error) = crate::file_versions::rekey_folder_versions(from_root, to_root) {
+        problems.push(format!("saved versions: {error}"));
+    }
+    ProjectRelocationOutcome {
+        repair_error: match problems.is_empty() {
+            true => None,
+            false => Some(problems.join("; ")),
+        },
+    }
+}
+
+struct ProjectRelocationOutcome {
+    repair_error: Option<String>,
+}
+
+fn expectation_of(db: &Db, project_id: &str) -> Result<Expected, ProjectRelocationError> {
+    let connection =
+        db.0.lock()
+            .map_err(|_| ProjectRelocationError::DatabaseUnavailable)?;
+    destination_expectation(&connection, project_id)
+}
+
+fn relocate_blocking(
+    db: &Db,
+    leases: &WriterLeaseRegistry,
+    args: &ProjectRelocateArgs,
 ) -> Result<ProjectRelocationResult, ProjectRelocationError> {
     let from_root = normalized_root(&args.from_root);
+    let to_root = normalized_root(&args.to_root);
     let holder = format!("project-relocation:{}", args.relocation_id);
-    let lease = acquire_lease(&leases.0, &from_root, &holder, None);
+    let lease = acquire_lease(leases, &from_root, &holder, None);
     if !lease.is_granted {
         return Err(ProjectRelocationError::WriterActive);
     }
-    let result =
-        db.0.lock()
-            .map_err(|_| ProjectRelocationError::DatabaseUnavailable)
-            .and_then(|mut connection| {
-                relocate_with_connection(&mut connection, &args, crate::util::now_ms())
-            });
-    release_lease(&leases.0, &from_root, &holder, lease.token.as_deref());
+    let result = expectation_of(db, &args.project_id)
+        .and_then(|expected| destination_verified(&to_root, &expected))
+        .and_then(|()| {
+            db.0.lock()
+                .map_err(|_| ProjectRelocationError::DatabaseUnavailable)
+                .and_then(|mut connection| {
+                    relocate_with_connection(&mut connection, args, crate::util::now_ms())
+                })
+        });
+    release_lease(leases, &from_root, &holder, lease.token.as_deref());
     let worktree_paths = result?;
-    let repaired_git_links = repair_git_links(&args.to_root, &worktree_paths);
+    let outcome = carried_over(&from_root, &to_root, &worktree_paths);
     Ok(ProjectRelocationResult {
-        relocation_id: args.relocation_id,
-        repaired_git_links,
+        relocation_id: args.relocation_id.clone(),
+        repaired_git_links: outcome.repair_error.is_none(),
+        repair_error: outcome.repair_error,
         restored_session_folders: worktree_paths.len(),
     })
+}
+
+fn undo_blocking(
+    db: &Db,
+    leases: &WriterLeaseRegistry,
+    args: &ProjectRelocationUndoArgs,
+) -> Result<ProjectRelocationResult, ProjectRelocationError> {
+    let (project_id, current_root, restored_root) = {
+        let connection =
+            db.0.lock()
+                .map_err(|_| ProjectRelocationError::DatabaseUnavailable)?;
+        connection
+            .query_row(
+                "SELECT project_id, to_root, from_root FROM project_relocations WHERE id = ? AND undone_at IS NULL",
+                [&args.relocation_id],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?)),
+            )
+            .optional()?
+            .ok_or(ProjectRelocationError::RelocationNotFound)?
+    };
+    let holder = format!("project-relocation-undo:{}", args.relocation_id);
+    let lease = acquire_lease(leases, &current_root, &holder, None);
+    if !lease.is_granted {
+        return Err(ProjectRelocationError::WriterActive);
+    }
+    let result = expectation_of(db, &project_id)
+        .and_then(|expected| destination_verified(&restored_root, &expected))
+        .and_then(|()| {
+            db.0.lock()
+                .map_err(|_| ProjectRelocationError::DatabaseUnavailable)
+                .and_then(|mut connection| {
+                    undo_with_connection(
+                        &mut connection,
+                        &args.relocation_id,
+                        crate::util::now_ms(),
+                    )
+                })
+        });
+    release_lease(leases, &current_root, &holder, lease.token.as_deref());
+    let (restored_root, worktree_paths) = result?;
+    let outcome = carried_over(&current_root, &restored_root, &worktree_paths);
+    Ok(ProjectRelocationResult {
+        relocation_id: args.relocation_id.clone(),
+        repaired_git_links: outcome.repair_error.is_none(),
+        repair_error: outcome.repair_error,
+        restored_session_folders: worktree_paths.len(),
+    })
+}
+
+fn join_failure(error: tauri::Error) -> ProjectRelocationError {
+    ProjectRelocationError::Sqlite(rusqlite::Error::ToSqlConversionFailure(Box::new(
+        std::io::Error::other(error.to_string()),
+    )))
+}
+
+#[tauri::command]
+pub async fn project_relocate(
+    args: ProjectRelocateArgs,
+    app: tauri::AppHandle,
+) -> Result<ProjectRelocationResult, ProjectRelocationError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        relocate_blocking(&app.state::<Db>(), &app.state::<WriterLeases>().0, &args)
+    })
+    .await
+    .map_err(join_failure)?
 }
 
 #[tauri::command]
 pub async fn project_relocation_undo(
     args: ProjectRelocationUndoArgs,
-    db: State<'_, Db>,
-    leases: State<'_, WriterLeases>,
+    app: tauri::AppHandle,
 ) -> Result<ProjectRelocationResult, ProjectRelocationError> {
-    let mut connection =
-        db.0.lock()
-            .map_err(|_| ProjectRelocationError::DatabaseUnavailable)?;
-    let current_root = connection
-        .query_row(
-            "SELECT to_root FROM project_relocations WHERE id = ? AND undone_at IS NULL",
-            [&args.relocation_id],
-            |row| row.get::<_, String>(0),
-        )
-        .optional()?
-        .ok_or(ProjectRelocationError::RelocationNotFound)?;
-    let holder = format!("project-relocation-undo:{}", args.relocation_id);
-    let lease = acquire_lease(&leases.0, &current_root, &holder, None);
-    if !lease.is_granted {
-        return Err(ProjectRelocationError::WriterActive);
-    }
-    let result = undo_with_connection(&mut connection, &args.relocation_id, crate::util::now_ms());
-    release_lease(&leases.0, &current_root, &holder, lease.token.as_deref());
-    let (restored_root, worktree_paths) = result?;
-    let repaired_git_links = repair_git_links(&restored_root, &worktree_paths);
-    Ok(ProjectRelocationResult {
-        relocation_id: args.relocation_id,
-        repaired_git_links,
-        restored_session_folders: worktree_paths.len(),
+    tauri::async_runtime::spawn_blocking(move || {
+        undo_blocking(&app.state::<Db>(), &app.state::<WriterLeases>().0, &args)
     })
+    .await
+    .map_err(join_failure)?
 }
 
 trait OptionalRow<T> {
@@ -383,49 +587,53 @@ mod tests {
     }
 
     fn database() -> Connection {
-        let connection = Connection::open_in_memory().expect("database opens");
-        connection
-            .execute_batch(
-                "CREATE TABLE projects (id TEXT PRIMARY KEY, root_path TEXT UNIQUE, updated_at INTEGER);\
-                 CREATE TABLE session_worktrees (id TEXT PRIMARY KEY, project_id TEXT, worktree_path TEXT UNIQUE, last_worktree_path TEXT, disk_state TEXT, updated_at INTEGER);\
-                 CREATE TABLE retained_worktree_paths (id TEXT PRIMARY KEY, repo_root TEXT, worktree_path TEXT);\
-                 CREATE TABLE worktree_roots (repo_root TEXT PRIMARY KEY);\
-                 CREATE TABLE resolve_candidates (id TEXT PRIMARY KEY, worktree_path TEXT);\
-                 CREATE TABLE resolve_attempts (id TEXT PRIMARY KEY, worktree_path TEXT);\
-                 CREATE TABLE resolve_publications (id TEXT PRIMARY KEY, worktree_path TEXT);\
-                 CREATE TABLE skills (id TEXT PRIMARY KEY, file_path TEXT);\
-                 CREATE TABLE mount_operations (id TEXT PRIMARY KEY, input_json TEXT, result_json TEXT);\
-                 CREATE TABLE project_relocations (id TEXT PRIMARY KEY, project_id TEXT, from_root TEXT, to_root TEXT, moved_at INTEGER, undone_at INTEGER, created_at INTEGER, updated_at INTEGER);",
-            )
-            .expect("schema applies");
-        connection
+        crate::test_support::migrated_connection()
     }
 
     fn seed(connection: &Connection) {
         connection
+            .execute_batch(
+                "INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+                 VALUES ('workspace', 'Acme', 'acme', 1, 1);
+                 INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+                 VALUES ('session', 'workspace', 'Goal', 'idle', 1, 1);",
+            )
+            .expect("workspace and session insert");
+        connection
             .execute(
-                "INSERT INTO projects VALUES ('project', '/old/repo', 1)",
+                "INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                 VALUES ('project', 'workspace', 'payments-api', '/old/repo', 'repo', 1, 1)",
                 [],
             )
             .expect("project inserts");
         connection
             .execute(
-                "INSERT INTO session_worktrees VALUES ('mount', 'project', '/old/repo/.goodboy/worktrees/task', '/old/repo/.goodboy/worktrees/task', 'missing', 1)",
+                "INSERT INTO session_worktrees
+                   (id, session_id, worktree_path, branch, created_at, project_id, last_worktree_path, disk_state, updated_at)
+                 VALUES ('mount', 'session', '/old/repo/.goodboy/worktrees/task', 'task', 1, 'project',
+                         '/old/repo/.goodboy/worktrees/task', 'missing', 1)",
                 [],
             )
             .expect("mount inserts");
         connection
             .execute(
-                "INSERT INTO retained_worktree_paths VALUES ('kept', '/old/repo', '/old/repo/.goodboy/worktrees/kept')",
+                "INSERT INTO retained_worktree_paths
+                   (id, repo_root, worktree_path, branch, reason, first_seen_at, created_at, updated_at)
+                 VALUES ('kept', '/old/repo', '/old/repo/.goodboy/worktrees/kept', 'kept', 'unmount', 1, 1, 1)",
                 [],
             )
             .expect("kept path inserts");
         connection
-            .execute("INSERT INTO worktree_roots VALUES ('/old/repo')", [])
+            .execute(
+                "INSERT INTO worktree_roots (repo_root, first_seen_at, added_by)
+                 VALUES ('/old/repo', 1, 'project')",
+                [],
+            )
             .expect("root inserts");
         connection
             .execute(
-                "INSERT INTO skills VALUES ('skill', '/old/repo/.goodboy/skills/review/SKILL.md')",
+                "INSERT INTO skills (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at)
+                 VALUES ('skill', 'workspace', 'review', 'Review', '/old/repo/.goodboy/skills/review/SKILL.md', 'body', '{}', 1, 1)",
                 [],
             )
             .expect("skill inserts");
@@ -481,7 +689,11 @@ mod tests {
         let mut connection = database();
         seed(&connection);
         connection
-            .execute("INSERT INTO projects VALUES ('other', '/new/repo', 1)", [])
+            .execute(
+                "INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                 VALUES ('other', 'workspace', 'notify-relay', '/new/repo', 'repo', 1, 1)",
+                [],
+            )
             .expect("other project inserts");
 
         let error = relocate_with_connection(&mut connection, &args(), 2).expect_err("move fails");
@@ -573,7 +785,8 @@ mod tests {
         assert!(repair_git_links(
             moved_repo.to_string_lossy().as_ref(),
             &[moved_worktree.to_string_lossy().into_owned()],
-        ));
+        )
+        .is_ok());
         let moved_list = git(&moved_repo, &["worktree", "list", "--porcelain"]);
         assert!(String::from_utf8_lossy(&moved_list.stdout)
             .contains(moved_worktree.to_string_lossy().as_ref()));
@@ -582,10 +795,430 @@ mod tests {
         assert!(repair_git_links(
             original_repo.to_string_lossy().as_ref(),
             &[original_worktree.to_string_lossy().into_owned()],
-        ));
+        )
+        .is_ok());
         let restored_list = git(&original_repo, &["worktree", "list", "--porcelain"]);
         assert!(String::from_utf8_lossy(&restored_list.stdout)
             .contains(original_worktree.to_string_lossy().as_ref()));
         std::fs::remove_dir_all(root).expect("test root removes");
+    }
+
+    fn insert_project(connection: &Connection, id: &str, root: &str) {
+        connection
+            .execute(
+                "INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                 VALUES (?, 'workspace', ?, ?, 'repo', 1, 1)",
+                params![id, id, root],
+            )
+            .expect("project inserts");
+    }
+
+    fn insert_mount(connection: &Connection, id: &str, project_id: &str, path: &str) {
+        connection
+            .execute(
+                "INSERT INTO session_worktrees
+                   (id, session_id, worktree_path, branch, created_at, project_id, last_worktree_path, disk_state, updated_at)
+                 VALUES (?, 'session', ?, ?, 1, ?, ?, 'missing', 1)",
+                params![id, path, id, project_id, path],
+            )
+            .expect("mount inserts");
+    }
+
+    fn insert_retained(connection: &Connection, id: &str, project_id: Option<&str>, root: &str) {
+        connection
+            .execute(
+                "INSERT INTO retained_worktree_paths
+                   (id, project_id, repo_root, worktree_path, branch, reason, first_seen_at, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'kept', 'unmount', 1, 1, 1)",
+                params![id, project_id, root, format!("{root}/.goodboy/worktrees/{id}")],
+            )
+            .expect("retained inserts");
+    }
+
+    fn text(connection: &Connection, sql: &str) -> String {
+        connection
+            .query_row(sql, [], |row| row.get::<_, String>(0))
+            .expect("text reads")
+    }
+
+    fn move_args(project_id: &str, from_root: &str, to_root: &str) -> ProjectRelocateArgs {
+        ProjectRelocateArgs {
+            relocation_id: "relocation".to_string(),
+            project_id: project_id.to_string(),
+            from_root: from_root.to_string(),
+            to_root: to_root.to_string(),
+        }
+    }
+
+    #[test]
+    fn a_sibling_folder_with_a_similar_name_keeps_every_path() {
+        let mut connection = database();
+        seed(&connection);
+        insert_project(&connection, "web", "/old/repo-web");
+        insert_mount(
+            &connection,
+            "web-mount",
+            "web",
+            "/old/repo-web/.goodboy/worktrees/task",
+        );
+        insert_retained(&connection, "web-kept", Some("web"), "/old/repo-web");
+        insert_retained(&connection, "web-orphan", None, "/old/repo-web");
+        connection
+            .execute(
+                "INSERT INTO worktree_roots (repo_root, first_seen_at, added_by) VALUES ('/old/repo-web', 1, 'project')",
+                [],
+            )
+            .expect("sibling root inserts");
+
+        relocate_with_connection(&mut connection, &args(), 2).expect("move succeeds");
+
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'web-mount'"
+            ),
+            "/old/repo-web/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'web-kept'"
+            ),
+            "/old/repo-web"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'web-orphan'"
+            ),
+            "/old/repo-web"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM worktree_roots WHERE repo_root LIKE '%-web'"
+            ),
+            "/old/repo-web"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'kept'"
+            ),
+            "/new/repo"
+        );
+    }
+
+    #[test]
+    fn an_underscore_or_a_percent_in_the_path_is_not_a_wildcard() {
+        let mut connection = database();
+        seed(&connection);
+        connection
+            .execute("UPDATE projects SET root_path = '/old/ledger_core'", [])
+            .expect("root renames");
+        connection
+            .execute(
+                "UPDATE session_worktrees SET worktree_path = '/old/ledger_core/.goodboy/worktrees/task', last_worktree_path = '/old/ledger_core/.goodboy/worktrees/task'",
+                [],
+            )
+            .expect("mount renames");
+        insert_project(&connection, "lookalike", "/old/ledgerXcore");
+        insert_mount(
+            &connection,
+            "lookalike-mount",
+            "lookalike",
+            "/old/ledgerXcore/.goodboy/worktrees/task",
+        );
+        insert_retained(&connection, "lookalike-orphan", None, "/old/ledgerXcore");
+        insert_project(&connection, "percent", "/old/100%/repo");
+        insert_mount(
+            &connection,
+            "percent-mount",
+            "percent",
+            "/old/100%/repo/.goodboy/worktrees/task",
+        );
+        insert_project(&connection, "digits", "/old/1005/repo");
+        insert_mount(
+            &connection,
+            "digits-mount",
+            "digits",
+            "/old/1005/repo/.goodboy/worktrees/task",
+        );
+        insert_retained(&connection, "digits-orphan", None, "/old/1005/repo");
+
+        relocate_with_connection(
+            &mut connection,
+            &move_args("project", "/old/ledger_core", "/new/ledger_core"),
+            2,
+        )
+        .expect("move succeeds");
+        relocate_with_connection(
+            &mut connection,
+            &ProjectRelocateArgs {
+                relocation_id: "relocation-percent".to_string(),
+                ..move_args("percent", "/old/100%/repo", "/new/100%/repo")
+            },
+            3,
+        )
+        .expect("move succeeds");
+
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'lookalike-mount'"
+            ),
+            "/old/ledgerXcore/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'lookalike-orphan'"
+            ),
+            "/old/ledgerXcore"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'digits-mount'"
+            ),
+            "/old/1005/repo/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'digits-orphan'"
+            ),
+            "/old/1005/repo"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'percent-mount'"
+            ),
+            "/new/100%/repo/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'mount'"
+            ),
+            "/new/ledger_core/.goodboy/worktrees/task"
+        );
+    }
+
+    #[test]
+    fn a_nested_project_keeps_its_own_paths_when_the_outer_one_moves() {
+        let mut connection = database();
+        seed(&connection);
+        insert_project(&connection, "inner", "/old/repo/inner");
+        insert_mount(
+            &connection,
+            "inner-mount",
+            "inner",
+            "/old/repo/inner/.goodboy/worktrees/task",
+        );
+        insert_retained(&connection, "inner-kept", Some("inner"), "/old/repo/inner");
+
+        relocate_with_connection(&mut connection, &args(), 2).expect("move succeeds");
+
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'inner-mount'"
+            ),
+            "/old/repo/inner/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT repo_root FROM retained_worktree_paths WHERE id = 'inner-kept'"
+            ),
+            "/old/repo/inner"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'mount'"
+            ),
+            "/new/repo/.goodboy/worktrees/task"
+        );
+    }
+
+    #[test]
+    fn a_path_with_non_ascii_letters_moves_by_characters_not_bytes() {
+        let mut connection = database();
+        seed(&connection);
+        connection
+            .execute("UPDATE projects SET root_path = '/old/citt\u{e0}'", [])
+            .expect("root renames");
+        connection
+            .execute(
+                "UPDATE session_worktrees SET worktree_path = '/old/citt\u{e0}/.goodboy/worktrees/task'",
+                [],
+            )
+            .expect("mount renames");
+
+        relocate_with_connection(
+            &mut connection,
+            &move_args("project", "/old/citt\u{e0}", "/new/citt\u{e0}"),
+            2,
+        )
+        .expect("move succeeds");
+
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'mount'"
+            ),
+            "/new/citt\u{e0}/.goodboy/worktrees/task"
+        );
+    }
+
+    #[test]
+    fn operation_json_is_rewritten_by_value_and_only_for_paths_inside_the_folder() {
+        let mut connection = database();
+        seed(&connection);
+        connection
+            .execute(
+                "INSERT INTO mount_operations
+                   (id, session_id, mount_id, request_id, kind, status, expected_revision, input_json, result_json, created_at, updated_at)
+                 VALUES ('operation', 'session', 'mount', 'request', 'attach', 'succeeded', 0, ?, ?, 1, 1)",
+                params![
+                    r#"{"path":"/old/repo/.goodboy/worktrees/task","sibling":"/old/repo-web/x","note":"see /old/repo for details","list":["/old/repo/a","/old/other","/old/repo/b"]}"#,
+                    r#"{"worktreePath":"/old/repo","count":2}"#,
+                ],
+            )
+            .expect("operation inserts");
+
+        relocate_with_connection(&mut connection, &args(), 2).expect("move succeeds");
+
+        let input: serde_json::Value = serde_json::from_str(&text(
+            &connection,
+            "SELECT input_json FROM mount_operations",
+        ))
+        .expect("input stays json");
+        assert_eq!(input["path"], "/new/repo/.goodboy/worktrees/task");
+        assert_eq!(input["sibling"], "/old/repo-web/x");
+        assert_eq!(input["note"], "see /old/repo for details");
+        assert_eq!(input["list"][0], "/new/repo/a");
+        assert_eq!(input["list"][1], "/old/other");
+        assert_eq!(input["list"][2], "/new/repo/b");
+        let result: serde_json::Value = serde_json::from_str(&text(
+            &connection,
+            "SELECT result_json FROM mount_operations",
+        ))
+        .expect("result stays json");
+        assert_eq!(result["worktreePath"], "/new/repo");
+        assert_eq!(result["count"], 2);
+    }
+
+    #[test]
+    fn undo_puts_a_scoped_move_back_without_touching_siblings() {
+        let mut connection = database();
+        seed(&connection);
+        insert_project(&connection, "web", "/old/repo-web");
+        insert_mount(
+            &connection,
+            "web-mount",
+            "web",
+            "/old/repo-web/.goodboy/worktrees/task",
+        );
+
+        relocate_with_connection(&mut connection, &args(), 2).expect("move succeeds");
+        undo_with_connection(&mut connection, "relocation", 3).expect("undo succeeds");
+
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'mount'"
+            ),
+            "/old/repo/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(
+                &connection,
+                "SELECT worktree_path FROM session_worktrees WHERE id = 'web-mount'"
+            ),
+            "/old/repo-web/.goodboy/worktrees/task"
+        );
+        assert_eq!(
+            text(&connection, "SELECT repo_root FROM worktree_roots"),
+            "/old/repo"
+        );
+    }
+
+    fn destination_checked(
+        connection: &Connection,
+        project_id: &str,
+        destination: &str,
+    ) -> Result<(), ProjectRelocationError> {
+        destination_verified(
+            destination,
+            &destination_expectation(connection, project_id)?,
+        )
+    }
+
+    fn real_repo(name: &str) -> (std::path::PathBuf, String) {
+        let root = test_root(name);
+        assert!(git(&root, &["init", "-b", "main"]).status.success());
+        assert!(git(&root, &["config", "user.name", "Goodboy Test"])
+            .status
+            .success());
+        assert!(git(&root, &["config", "user.email", "goodboy@localhost"])
+            .status
+            .success());
+        assert!(git(&root, &["config", "commit.gpgsign", "false"])
+            .status
+            .success());
+        assert!(git(&root, &["commit", "--allow-empty", "-m", name])
+            .status
+            .success());
+        let roots = git(&root, &["rev-list", "--max-parents=0", "HEAD"]);
+        let first = String::from_utf8_lossy(&roots.stdout).trim().to_string();
+        (root, first)
+    }
+
+    #[test]
+    fn the_destination_must_be_a_folder_holding_the_same_repository() {
+        let connection = database();
+        seed(&connection);
+        let (repo, root_commit) = real_repo("destination");
+        let (other, _) = real_repo("destination-other");
+        connection
+            .execute("UPDATE projects SET root_commit = ?", [&root_commit])
+            .expect("root commit saves");
+
+        assert!(destination_checked(&connection, "project", &repo.to_string_lossy()).is_ok());
+        assert!(matches!(
+            destination_checked(&connection, "project", &other.to_string_lossy()),
+            Err(ProjectRelocationError::DestinationDiffers)
+        ));
+        assert!(matches!(
+            destination_checked(&connection, "project", "/does/not/exist/ledger-core"),
+            Err(ProjectRelocationError::DestinationMissing)
+        ));
+        let plain = test_root("destination-plain");
+        assert!(matches!(
+            destination_checked(&connection, "project", &plain.to_string_lossy()),
+            Err(ProjectRelocationError::DestinationDiffers)
+        ));
+        connection
+            .execute("UPDATE projects SET root_commit = NULL", [])
+            .expect("root commit clears");
+        assert!(destination_checked(&connection, "project", &plain.to_string_lossy()).is_ok());
+        for path in [repo, other, plain] {
+            std::fs::remove_dir_all(path).expect("test root removes");
+        }
+    }
+
+    #[test]
+    fn a_failed_repair_comes_back_as_text_for_the_screen() {
+        let plain = test_root("repair-failure");
+
+        let outcome = repair_git_links(&plain.to_string_lossy(), &[]);
+
+        let message = outcome.expect_err("a folder that is not a repository cannot be repaired");
+        assert!(!message.is_empty());
+        std::fs::remove_dir_all(plain).expect("test root removes");
     }
 }

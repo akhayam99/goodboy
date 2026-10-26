@@ -1,6 +1,6 @@
 import type { SessionGroupKey, SessionPrGroup, SessionStage } from '@goodboy/types';
 import { SESSION_STAGE_META, describeStageBucket } from '../../../session/session-stage';
-import { PR_GROUP_PRESENTATION } from '../../../../shared/pullRequestPresentation';
+import { PR_GROUP_PRESENTATION } from '../../../../shared/utils/pullRequestPresentation';
 import { stageWord } from '../SessionHoverCard/stageWord';
 import type { StatePresentation } from '../../../../shared/utils/statePresentation';
 

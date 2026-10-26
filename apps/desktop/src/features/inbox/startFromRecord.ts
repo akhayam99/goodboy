@@ -1,7 +1,7 @@
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import type { IssueCandidate } from '../integrations/fetchIssueCandidates';
 import { candidateOfRecord } from '../integrations/starred/candidateOfRecord';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { startFromLabel } from '../../shared/lib/startCopy';
 import { launchSpecFor, type LaunchSpec } from './launchSpecFor';
 import { recordSessionId } from './recordSessionId';

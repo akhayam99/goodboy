@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { serveHandoffCommandNames } from './serveHandoffCommandNames.mjs';
+import { stubCommandNames } from './tauriStubNames.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUST_SOURCE_PATH = resolve(ROOT_DIRECTORY, 'apps/desktop/src-tauri/src/lib.rs');
@@ -82,11 +84,20 @@ if (registeredCommands.size === 0) {
 }
 
 const invokedCommands = new Set();
+const stubbedCommands = new Set();
 for (const directory of FRONTEND_SOURCE_DIRECTORIES) {
   for (const path of collectSourceFiles({ directory })) {
-    const commands = collectLiteralInvocations({ source: readFileSync(path, 'utf8') });
-    for (const command of commands) {
+    const source = readFileSync(path, 'utf8');
+    for (const command of collectLiteralInvocations({ source })) {
       invokedCommands.add(command);
+    }
+    for (const command of stubCommandNames({ source })) {
+      stubbedCommands.add(command);
+    }
+    if (!/\.test\.tsx?$/.test(path)) {
+      for (const command of serveHandoffCommandNames({ source })) {
+        invokedCommands.add(command);
+      }
     }
   }
 }
@@ -101,8 +112,18 @@ for (const mapName of ['TAURI_REFRESH_CMD']) {
 
 const unregisteredCommands = difference({ left: invokedCommands, right: registeredCommands });
 const uninvokedCommands = difference({ left: registeredCommands, right: invokedCommands });
+const unregisteredStubs = difference({ left: stubbedCommands, right: registeredCommands });
 
-if (unregisteredCommands.length > 0 || uninvokedCommands.length > 0) {
+if (
+  unregisteredCommands.length > 0 ||
+  uninvokedCommands.length > 0 ||
+  unregisteredStubs.length > 0
+) {
+  if (unregisteredStubs.length > 0) {
+    console.error(
+      `Stubbed in a test double but not registered:\n${unregisteredStubs.sort().join('\n')}`,
+    );
+  }
   if (unregisteredCommands.length > 0) {
     console.error(`Invoked but not registered:\n${unregisteredCommands.sort().join('\n')}`);
   }
@@ -112,6 +133,6 @@ if (unregisteredCommands.length > 0 || uninvokedCommands.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `Tauri command parity OK: ${registeredCommands.size} registered, ${invokedCommands.size} invoked`,
+    `Tauri command parity OK: ${registeredCommands.size} registered, ${invokedCommands.size} invoked, ${stubbedCommands.size} stubbed`,
   );
 }

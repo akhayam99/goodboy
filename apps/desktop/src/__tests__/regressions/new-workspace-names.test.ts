@@ -2,7 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { NAMES, formerNamesOf } from '../../shared/names';
+import { NAMES, formerNamesOf } from '../../shared/utils/names';
 import {
   DESKTOP_SRC,
   desktopSources,
@@ -43,7 +43,7 @@ const RETIRED_LABELS: ReadonlyArray<RegExp> = [
   /\blinked projects?\b/,
 ];
 
-const NAME_OWNERS: ReadonlySet<string> = new Set(['shared/names.ts']);
+const NAME_OWNERS: ReadonlySet<string> = new Set(['shared/utils/names.ts']);
 
 const sourceOf = (path: string): string => readFileSync(join(DESKTOP_SRC, path), 'utf8');
 

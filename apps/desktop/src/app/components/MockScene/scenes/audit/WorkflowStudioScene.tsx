@@ -3,8 +3,8 @@ import { WORKFLOW_LIBRARY, normalizeAgentRole } from '@goodboy/core';
 import type { StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
 import { useAppStore } from '../../../../../store';
-import { WorkflowBuilderScene } from '../flow-audit/WorkflowBuilderScene';
 import { NOW, OVERRIDES, WORKSPACE_ID } from '../flow-audit/fixtures';
+import { seedFlowSession } from '../flow-audit/seeds';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 import { RULES_PROVIDERS, rulesProviderLimits } from './workflowRulesSeed';
@@ -79,6 +79,9 @@ const seedRules = (): void => {
 };
 
 const seedStudio = (): void => {
+  if (!IS_RULES) {
+    seedFlowSession();
+  }
   useAppStore.setState({
     loadPhaseTemplates: async () => undefined,
     loadStepLibrary: async () => undefined,
@@ -131,10 +134,9 @@ export const WorkflowStudioScene = () => {
     intervalMs: 200,
   });
 
-  return (
-    <>
-      {IS_RULES ? null : <WorkflowBuilderScene />}
-      {isReady && <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />}
-    </>
-  );
+  if (!isReady) {
+    return null;
+  }
+
+  return <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />;
 };

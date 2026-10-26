@@ -469,7 +469,7 @@ describe('demo playground', () => {
     );
     hint({ frame, hintId: 'agent-send' });
     expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
-    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
+    screen.getByRole('note', { name: 'Step 1 of 6' });
   });
 
   it('lets the visitor skip a hint whose control is scrolled away', () => {
@@ -710,7 +710,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send', focus: { x: 0, y: 0, width: 1400, height: 880 } });
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
+    screen.getByRole('note', { name: 'Step 1 of 6' });
   });
 
   it('removes the spotlight once the control is clicked, hidden, skipped or done', () => {
@@ -806,7 +806,7 @@ describe('demo playground', () => {
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
-    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
+    screen.getByRole('note', { name: 'Step 1 of 6' });
     report({ frame, type: 'ready' });
     expect(screen.queryByRole('note')).toBeNull();
     const tracks = post.mock.calls.filter(
@@ -846,9 +846,9 @@ describe('demo playground', () => {
     hint({ frame, hintId: 'agent-send' });
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
-    expect(screen.getByRole('button', { name: /Show hint/ })).not.toBeNull();
+    screen.getByRole('button', { name: /Show hint/ });
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
-    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
+    screen.getByRole('note', { name: 'Step 1 of 6' });
   });
 
   it('skips a hint, tells the frame and keeps that across a reload', () => {

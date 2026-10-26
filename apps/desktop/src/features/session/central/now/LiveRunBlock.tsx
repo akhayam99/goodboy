@@ -1,8 +1,9 @@
 import { useContext } from 'react';
 import type { MeasuredTurnSpan, Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import type { RowPhase } from '../../../workTreeModel/rowState';
 import { WorkTimeContext } from '../../../workTreeModel/workTimeSource';
 import { runWorkTime } from '../../timeline/runWorkTime';

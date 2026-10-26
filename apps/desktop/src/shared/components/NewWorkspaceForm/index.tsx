@@ -1,16 +1,21 @@
 import { useId, type FormEvent, type KeyboardEvent } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, FormActions, KeyHint } from '@goodboy/ui';
+import { Button, FormActions, KeyHint, FOCUS_RING, cn } from '@goodboy/ui';
 import { formatCombo, shortcutGlyphs } from '../../keyboard/registry';
 import { isSubmitChord } from '../../keyboard/isSubmitChord';
 import { folderName } from '../../../store/slices/terminal/terminalOwner';
 import { pluralize } from '../../utils/pluralize';
+import { copyOf } from './newWorkspaceCopy';
+import { CloneRepository } from './CloneRepository';
 import { DropZone } from './DropZone';
 import { FolderRows } from './FolderRows';
+import { LikelyFolders } from './LikelyFolders';
 import { NameField } from './NameField';
 import type { NewWorkspaceMode } from './newWorkspaceMode';
 import { ReconnectNotice } from './ReconnectNotice';
 import { ScratchFields } from './ScratchFields';
+import { useCloneRepository } from './useCloneRepository';
+import { useLikelyFolders } from './useLikelyFolders';
 import { useWorkspaceDraft, type DraftStart } from './useWorkspaceDraft';
 
 type NewWorkspaceTitleRole = 'display' | 'title' | 'heading';
@@ -27,6 +32,7 @@ type Props = {
   readonly onCreated?: (params: CreatedParams) => void;
   readonly onCancel?: () => void;
   readonly backLabel?: string;
+  readonly error?: string | null;
 };
 
 const CHOOSE_COMBO = 'cmd+KeyO';
@@ -43,35 +49,6 @@ const DEFAULT_ROLE = {
   add: 'title',
 } as const satisfies Record<NewWorkspaceMode, NewWorkspaceTitleRole>;
 
-type CopyParams = {
-  readonly mode: NewWorkspaceMode;
-  readonly targetName: string;
-};
-
-const copyOf = ({ mode, targetName }: CopyParams) => {
-  switch (mode) {
-    case 'first-run':
-      return {
-        title: 'Your first workspace',
-        lede: 'A workspace is what you work on: a repository, a folder of repositories, or a folder of documents. Agents read and edit files only inside its folders.',
-      };
-    case 'new':
-      return {
-        title: 'New workspace',
-        lede: 'Pick the folder you work in. A folder that holds several repositories works too.',
-      };
-    case 'add':
-      return {
-        title: 'Add a folder',
-        lede: `Agents read and edit files only inside the folders of ${targetName === '' ? 'this workspace' : targetName}.`,
-      };
-    default: {
-      const unreachable: never = mode;
-      return unreachable;
-    }
-  }
-};
-
 const isChooseChord = (event: KeyboardEvent): boolean =>
   event.code === 'KeyO' && (event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey;
 
@@ -83,14 +60,18 @@ export const NewWorkspaceForm = ({
   onCreated,
   onCancel,
   backLabel = 'Back',
+  error = null,
 }: Props) => {
   const draft = useWorkspaceDraft({ mode, workspaceId, start, onCreated });
+  const likely = useLikelyFolders({ isEnabled: mode === 'first-run' });
+  const clone = useCloneRepository({ onCloned: ({ path }) => void draft.drop({ paths: [path] }) });
   const reasonId = useId();
   const copy = copyOf({ mode, targetName: mode === 'add' ? draft.name : '' });
   const isReading = draft.readingPath !== null || draft.isPicking;
-  const isBusy = isReading || draft.isCreating;
+  const isBusy = isReading || draft.isCreating || clone.status !== 'idle';
   const isAdding = mode === 'add';
   const isOpenStage = draft.stage === 'folders' || draft.stage === 'scratch';
+  const hasTicks = draft.stage === 'empty' && likely.ticked.length > 0;
   const createLabel = isAdding
     ? `Add ${pluralize(draft.folderCount, 'folder')}`
     : 'Create workspace';
@@ -137,9 +118,20 @@ export const NewWorkspaceForm = ({
       {draft.error === null ? createLabel : 'Retry'}
       <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
     </Button>
+  ) : hasTicks ? (
+    <Button
+      size="md"
+      disabled={clone.status !== 'idle'}
+      isBusy={isReading}
+      busyLabel="Reading folders"
+      onClick={() => void draft.drop({ paths: likely.ticked }).then(likely.clear)}
+    >
+      {`Look in ${pluralize(likely.ticked.length, 'folder')}`}
+    </Button>
   ) : (
     <Button
       size="md"
+      disabled={clone.status !== 'idle'}
       isBusy={isReading}
       busyLabel="Reading folder"
       onClick={() => void draft.choose()}
@@ -181,14 +173,18 @@ export const NewWorkspaceForm = ({
             onChoose={() => void draft.choose()}
             onDrop={({ paths }) => void draft.drop({ paths })}
           />
+          {mode === 'first-run' ? <LikelyFolders likely={likely} isBusy={isBusy} /> : null}
+          {mode === 'first-run' ? (
+            <CloneRepository clone={clone} isBusy={isReading || draft.isCreating} />
+          ) : null}
           {isAdding ? null : (
-            <p className="text-label text-faint-foreground">
+            <p className="text-meta text-faint-foreground">
               Want a new folder?{' '}
               <button
                 type="button"
                 disabled={isBusy}
                 onClick={draft.startScratch}
-                className="text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn('text-primary underline-offset-2 hover:underline', FOCUS_RING)}
               >
                 Start from scratch
               </button>{' '}
@@ -201,13 +197,13 @@ export const NewWorkspaceForm = ({
       {draft.stage === 'scratch' ? (
         <div className="flex flex-col gap-3">
           <ScratchFields scratch={draft.scratch} isBusy={isBusy} />
-          <p className="text-label text-faint-foreground">
+          <p className="text-meta text-faint-foreground">
             Have a folder already?{' '}
             <button
               type="button"
               disabled={isBusy}
               onClick={draft.backToEmpty}
-              className="text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className={cn('text-primary underline-offset-2 hover:underline', FOCUS_RING)}
             >
               Choose a folder
             </button>
@@ -251,7 +247,7 @@ export const NewWorkspaceForm = ({
             </span>
           ) : null
         }
-        error={draft.error}
+        error={draft.error ?? error}
         reason={reason}
         reasonId={reasonId}
       >

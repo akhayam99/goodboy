@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { SquareArrowOutUpRight } from 'lucide-react';
 import type { GhTokenStatus } from '@goodboy/types';
-import { Button, Notice } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
+
 import { openUrl } from '../../../shared/lib/editor';
 import { ghStatus, tauriGhRunner } from '../../integrations/github/github';
-import { DEFAULT_ISSUE_TYPE } from '../../settings/reportIssueTypes';
+import { DEFAULT_ISSUE_TYPE } from '../reportIssueTypes';
 import { collectCrashContext } from '../crashReport';
 import { contextParts, type ReportPart } from '../reportBody';
 import type { ReportFiled } from '../reportDestination';
@@ -73,7 +73,7 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
           url == null ? undefined : (
             <Button variant="secondary" size="sm" onClick={() => void openUrl(url)}>
               View issue
-              <ExternalLink size={ICON_SIZE.row} aria-hidden />
+              <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
             </Button>
           )
         }

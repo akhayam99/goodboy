@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getSetting, setSetting } from '@goodboy/db';
+import { getSetting, insertWorkspace, setSetting } from '@goodboy/db';
 import {
   brandId,
   type AgentId,
@@ -110,7 +110,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  await openStorySqlite();
+  const db = await openStorySqlite();
+  await insertWorkspace({ db, workspace: WORKSPACE });
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,

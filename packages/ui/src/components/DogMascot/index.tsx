@@ -1,13 +1,14 @@
 import type { CSSProperties } from 'react';
 import mascot from '../../assets/mascot.png';
 import { cn } from '../../cn';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   size?: number;
   className?: string;
 };
 
-export const DogMascot = ({ size = 16, className }: Props) => {
+export const DogMascot = ({ size = ICON_SIZE.notice, className }: Props) => {
   const style: CSSProperties = {
     width: size,
     height: size,

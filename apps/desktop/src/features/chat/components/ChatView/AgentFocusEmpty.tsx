@@ -14,7 +14,7 @@ export const AgentFocusEmpty = ({ kind }: Props) => {
         <AgentKindChip kind={kind} label={meta.noun} />
         <span>{meta.hint}.</span>
       </p>
-      <p className="text-label text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         It shares the session brief with every other agent.
       </p>
     </div>

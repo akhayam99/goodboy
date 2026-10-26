@@ -6,7 +6,7 @@ import { refreshSlackUsers } from './refreshSlackUsers';
 import { replyToSlackThread } from './replyToSlackThread';
 import type { SliceDeps } from '../../slice-types';
 
-export { initialSlackThreadsState, slackChannelKey, slackThreadKey } from './state';
+export { slackThreadsInitialState, slackChannelKey, slackThreadKey } from './state';
 
 export const createSlackThreadsSlice = ({ set, get }: SliceDeps) => ({
   refreshSlackChannels: refreshSlackChannels(set, get),

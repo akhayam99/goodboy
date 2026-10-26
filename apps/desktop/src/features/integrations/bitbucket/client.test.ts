@@ -138,6 +138,7 @@ describe('bitbucket client', () => {
       closeSourceBranch: null,
       message: null,
       mergeStrategy: null,
+      expectedHeadSha: null,
     });
   });
 
@@ -151,6 +152,7 @@ describe('bitbucket client', () => {
       closeSourceBranch: true,
       message: 'ship it',
       mergeStrategy: null,
+      expectedHeadSha: null,
     });
   });
 
@@ -166,9 +168,24 @@ describe('bitbucket client', () => {
         closeSourceBranch: null,
         message: null,
         mergeStrategy: strategy,
+        expectedHeadSha: null,
       });
     },
   );
+
+  it('sends the head the user reviewed so the host can refuse a moved branch', async () => {
+    mockInvoke.mockResolvedValue({});
+
+    await bitbucketMergePullRequest({ ...target, expectedHeadSha: '6c20f48a9e1d' });
+
+    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_merge_pull_request', {
+      ...target,
+      closeSourceBranch: null,
+      message: null,
+      mergeStrategy: null,
+      expectedHeadSha: '6c20f48a9e1d',
+    });
+  });
 
   it('sends only the fields of an update and nulls the rest', async () => {
     mockInvoke.mockResolvedValue({});

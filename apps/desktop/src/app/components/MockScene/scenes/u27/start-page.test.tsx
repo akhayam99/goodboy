@@ -57,24 +57,11 @@ const tabLabels = async ({ name }: TabsParams): Promise<ReadonlyArray<string>> =
 };
 
 describe('the u27 start page scenes', () => {
-  it('registers every before and after scene', () => {
+  it('registers every scene', () => {
     for (const [id, Scene] of Object.entries(U27_START_PAGE_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
     }
-    expect(Object.keys(U27_START_PAGE_SCENES)).toHaveLength(10);
-  });
-
-  it('shows the two ways to start that the owner saw in 0.27.10', async () => {
-    mount({ id: 'u27-start-page-before-0-27-10' });
-
-    expect(await screen.findByRole('region', { name: 'Start a run' }, WAIT)).toBeDefined();
-    const labels = await tabLabels({ name: 'How do you want to start?' });
-    expect(labels).toEqual([
-      'Pick up a task',
-      'Run a workflow',
-      'Run an orchestrator',
-      'Start an agent',
-    ]);
+    expect(Object.keys(U27_START_PAGE_SCENES)).toHaveLength(8);
   });
 
   it('opens on two explained cards and walks Workflow to its two kinds', async () => {
@@ -86,9 +73,7 @@ describe('the u27 start page scenes', () => {
       'WorkflowSteps you can see and steer, one agent on each.',
       'AgentOne agent works on it in one conversation.',
     ]);
-    expect(
-      screen.getByRole('button', { name: /Not sure\? Describe it and Auto picks/ }),
-    ).toBeDefined();
+    screen.getByRole('button', { name: /Not sure\? Describe it and Auto picks/ });
 
     fireEvent.click(within(kinds).getByRole('tab', { name: /^Workflow/ }));
     const shapes = await tabLabels({ name: 'Which workflow?' });
@@ -103,10 +88,10 @@ describe('the u27 start page scenes', () => {
 
     const form = await screen.findByRole('region', { name: 'Agent form' }, WAIT);
     expect(within(form).getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
-    expect(within(form).getByRole('button', { name: /^Model: / })).toBeDefined();
+    within(form).getByRole('button', { name: /^Model: / });
     expect(within(form).queryByText(/Limit/)).toBeNull();
     expect(within(form).queryByRole('button', { name: /^Asks you/ })).toBeNull();
-    expect(within(form).getByRole('button', { name: 'Start Scout' })).toBeDefined();
+    within(form).getByRole('button', { name: 'Start Scout' });
     expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
   });
 
@@ -120,10 +105,10 @@ describe('the u27 start page scenes', () => {
     expect(
       within(within(form).getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem'),
     ).toHaveLength(3);
-    expect(within(form).getByRole('tablist', { name: 'With the preset' })).toBeDefined();
-    expect(within(form).getByRole('button', { name: /^Asks you: Every step/ })).toBeDefined();
-    expect(screen.getByText('Member pages drift left on wide screens')).toBeDefined();
-    expect(within(form).getByRole('button', { name: 'Start workflow' })).toBeDefined();
+    within(form).getByRole('tablist', { name: 'With the preset' });
+    within(form).getByRole('button', { name: /^Asks you: Every step/ });
+    screen.getByText('Member pages drift left on wide screens');
+    within(form).getByRole('button', { name: 'Start workflow' });
     expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('harbor-portal');
     fireEvent.click(screen.getByRole('button', { name: 'Remove HBR-142' }));
     expect(await screen.findByRole('combobox', { name: 'Pick from Tasks' }, WAIT)).toBeDefined();

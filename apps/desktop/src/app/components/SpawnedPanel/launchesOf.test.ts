@@ -1,74 +1,119 @@
 import { describe, expect, it } from 'vitest';
-import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type Workflow,
+  type WorkflowRun,
+  type WorkflowRunId,
+} from '@goodboy/types';
+import type { SessionRun } from '../../../features/session/sessionRunsOf';
 import { launchesOf } from './launchesOf';
 
 const workflow: Workflow = JSON.parse(JSON.stringify({ id: 'workflow-ship', name: 'Ship a fix' }));
 
-type RunParams = {
+type IdParams = {
   readonly id: string;
-  readonly createdAt: string;
-  readonly mode?: 'static' | 'dynamic';
-  readonly discardedAt?: string;
 };
 
-const runOf = ({ id, createdAt, mode = 'static', discardedAt }: RunParams): WorkflowRun =>
-  JSON.parse(
-    JSON.stringify({
-      id,
-      createdAt,
-      executionMode: mode,
-      ...(discardedAt !== undefined && { discardedAt }),
-    }),
-  );
+const openRun = ({ id }: IdParams): SessionRun['open'] => ({
+  kind: 'run',
+  runId: brandId<WorkflowRunId>({ value: id }),
+});
 
-type RootParams = {
-  readonly id: string;
-  readonly startedAt: string;
+const openAgent = ({ id }: IdParams): SessionRun['open'] => ({
+  kind: 'agent',
+  agentId: brandId<AgentId>({ value: id }),
+});
+
+const openAuto = ({ id }: IdParams): SessionRun['open'] => ({
+  kind: 'auto',
+  agentId: brandId<AgentId>({ value: id }),
+});
+
+type EntryParams = {
+  readonly open: SessionRun['open'];
+  readonly startedAt: number;
+  readonly isFinished?: boolean;
+  readonly isArchived?: boolean;
 };
 
-const rootOf = ({ id, startedAt }: RootParams): Agent =>
-  JSON.parse(JSON.stringify({ id, startedAt }));
+const entryOf = ({
+  open,
+  startedAt,
+  isFinished = false,
+  isArchived = false,
+}: EntryParams): SessionRun =>
+  JSON.parse(JSON.stringify({ id: JSON.stringify(open), open, startedAt, isFinished, isArchived }));
+
+const runOf = ({ id }: { readonly id: string }): WorkflowRun => JSON.parse(JSON.stringify({ id }));
+
+const attachedOf = ({ id }: { readonly id: string }) => ({ run: runOf({ id }), workflow });
+
+const idsOf = (launches: ReturnType<typeof launchesOf>) => launches.map((launch) => launch.id);
 
 describe('launchesOf', () => {
-  it('lists runs and Auto roots newest first', () => {
+  it('lists runs, Auto roots and loose agents newest first', () => {
     const launches = launchesOf({
-      attached: [
-        { run: runOf({ id: 'run-old', createdAt: '2026-10-18T08:00:00.000Z' }), workflow },
-        { run: runOf({ id: 'run-new', createdAt: '2026-10-19T09:00:00.000Z' }), workflow },
+      runs: [
+        entryOf({ open: openRun({ id: 'run-old' }), startedAt: 1 }),
+        entryOf({ open: openAgent({ id: 'agent-loose' }), startedAt: 4 }),
+        entryOf({ open: openAuto({ id: 'auto-mid' }), startedAt: 3 }),
+        entryOf({ open: openRun({ id: 'run-new' }), startedAt: 5 }),
       ],
-      roots: [rootOf({ id: 'auto-mid', startedAt: '2026-10-19T08:00:00.000Z' })],
+      attached: [attachedOf({ id: 'run-old' }), attachedOf({ id: 'run-new' })],
     });
 
-    expect(launches.map((launch) => launch.id)).toEqual([
+    expect(idsOf(launches)).toEqual([
       'run:run-new',
+      'agent:agent-loose',
       'auto:auto-mid',
       'run:run-old',
     ]);
   });
 
-  it('leaves out archived runs and orchestrated runs', () => {
+  it('keeps an orchestrated run, which is a run like any other', () => {
     const launches = launchesOf({
-      attached: [
-        {
-          run: runOf({
-            id: 'run-archived',
-            createdAt: '2026-10-19T09:00:00.000Z',
-            discardedAt: '2026-10-19T10:00:00.000Z',
-          }),
-          workflow,
-        },
-        {
-          run: runOf({
-            id: 'run-orchestrated',
-            createdAt: '2026-10-19T09:00:00.000Z',
-            mode: 'dynamic',
-          }),
-          workflow,
-        },
+      runs: [entryOf({ open: openRun({ id: 'run-plan' }), startedAt: 2 })],
+      attached: [attachedOf({ id: 'run-plan' })],
+    });
+
+    expect(idsOf(launches)).toEqual(['run:run-plan']);
+  });
+
+  it('leaves out archived runs and runs that are no longer attached', () => {
+    const launches = launchesOf({
+      runs: [
+        entryOf({
+          open: openRun({ id: 'run-archived' }),
+          startedAt: 2,
+          isArchived: true,
+        }),
+        entryOf({ open: openRun({ id: 'run-gone' }), startedAt: 3 }),
       ],
-      roots: [],
+      attached: [attachedOf({ id: 'run-archived' })],
     });
 
     expect(launches).toEqual([]);
+  });
+
+  it('shows the 30 newest finished launches and every one still in progress', () => {
+    const finished = Array.from({ length: 33 }, (_, index) =>
+      entryOf({
+        open: openAgent({ id: `agent-done-${index}` }),
+        startedAt: 100 + index,
+        isFinished: true,
+      }),
+    );
+    const live = entryOf({
+      open: openAgent({ id: 'agent-live' }),
+      startedAt: 1,
+    });
+
+    const ids = idsOf(launchesOf({ runs: [...finished, live], attached: [] }));
+
+    expect(ids).toHaveLength(31);
+    expect(ids).toContain('agent:agent-live');
+    expect(ids).toContain('agent:agent-done-32');
+    expect(ids).not.toContain('agent:agent-done-2');
   });
 });

@@ -137,6 +137,8 @@ pub struct WorkspaceOverridesBundle {
     #[serde(default)]
     pub resolve_commit_style: Option<String>,
     #[serde(default)]
+    pub after_merge: Option<String>,
+    #[serde(default)]
     pub default_branch_template: Option<String>,
     #[serde(default, deserialize_with = "deserialize_json_ish")]
     pub workflow_rules: Option<serde_json::Value>,

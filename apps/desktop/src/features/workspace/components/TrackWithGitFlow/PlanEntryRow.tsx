@@ -20,7 +20,7 @@ export const PlanEntryRow = ({ entry, isIncluded, isDisabled, onToggle }: Props)
   return (
     <li
       className={cn(
-        'flex min-h-7 items-center gap-2 px-2 text-label',
+        'flex min-h-7 items-center gap-2 px-2 text-meta',
         isGoing ? 'text-muted-foreground' : 'text-faint-foreground',
       )}
     >

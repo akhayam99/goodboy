@@ -1,3 +1,4 @@
+import { isProviderId, isRecord } from './helpers';
 import { PROVIDER_IDS, type ProviderId } from './provider-registry';
 
 export const PROVIDER_POLICY_STATES = ['on', 'backup', 'off'] as const;
@@ -13,17 +14,10 @@ export type ProviderPolicyEntry = Readonly<{
 
 export type ProviderPolicy = ReadonlyArray<ProviderPolicyEntry>;
 
-const PROVIDER_ID_SET: ReadonlySet<string> = new Set(PROVIDER_IDS);
 const STATE_SET: ReadonlySet<string> = new Set(PROVIDER_POLICY_STATES);
-
-const isProviderId = (value: unknown): value is ProviderId =>
-  typeof value === 'string' && PROVIDER_ID_SET.has(value);
 
 const isPolicyState = (value: unknown): value is ProviderPolicyState =>
   typeof value === 'string' && STATE_SET.has(value);
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type NamesParams = {
   readonly names: ReadonlyArray<unknown>;

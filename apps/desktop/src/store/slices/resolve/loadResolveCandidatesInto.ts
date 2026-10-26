@@ -5,11 +5,15 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { ResolveCandidateWithItems } from './state';
-import type { SessionParams, SetFn } from './types';
+import type { CurrentParams, SessionParams, SetFn } from './types';
 
-type Params = { readonly set: SetFn } & SessionParams;
+type Params = { readonly set: SetFn } & SessionParams & CurrentParams;
 
-export const loadResolveCandidatesInto = async ({ set, sessionId }: Params): Promise<void> => {
+export const loadResolveCandidatesInto = async ({
+  set,
+  sessionId,
+  isCurrent = () => true,
+}: Params): Promise<void> => {
   const db = tauriDatabase;
   const candidates = await listResolveCandidates({ db, sessionId });
   const withItems: ReadonlyArray<ResolveCandidateWithItems> = await Promise.all(
@@ -19,6 +23,9 @@ export const loadResolveCandidatesInto = async ({ set, sessionId }: Params): Pro
     })),
   );
   const checkRuns = await listResolveCheckRuns({ db, sessionId });
+  if (!isCurrent()) {
+    return;
+  }
   set((state) => ({
     sessionResolveCandidates: { ...state.sessionResolveCandidates, [sessionId]: withItems },
     sessionResolveCheckRuns: { ...state.sessionResolveCheckRuns, [sessionId]: checkRuns },

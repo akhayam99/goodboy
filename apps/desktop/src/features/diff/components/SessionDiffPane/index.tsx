@@ -3,22 +3,21 @@ import { createPortal } from 'react-dom';
 import { PanelRightOpen } from 'lucide-react';
 import {
   Button,
-  ErrorStrip,
   EmptyState,
+  ErrorStrip,
+  ICON_SIZE,
   PageColumn,
   Skeleton,
   Tooltip,
-  formatError,
 } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openFileInWorkspace } from '../../../../shared/lib/editor';
-import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
-import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { DiffViewSelector } from '../DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
 import { useFileRail } from '../../hooks/useFileRail';
+import { useOpenDiffFileInEditor } from '../../hooks/useOpenDiffFileInEditor';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreeFocus } from '../../hooks/useTreeFocus';
@@ -49,8 +48,6 @@ export const SessionDiffPane = ({
   toolbarEnd,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
-  const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
-  const emitNotification = useAppStore((s) => s.emitNotification);
   const baseBranch = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
@@ -113,26 +110,7 @@ export const SessionDiffPane = ({
     [panel, review],
   );
 
-  const openInEditor = useCallback(
-    async (filePath: string) => {
-      if (workingDir === null) {
-        return;
-      }
-      const root = workingDir.replace(/\/$/, '');
-      try {
-        await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
-      } catch (err) {
-        void emitNotification({
-          kind: 'error',
-          severity: 'error',
-          title: "Couldn't open the file in your editor",
-          body: formatError(err),
-          sessionId,
-        });
-      }
-    },
-    [editorBinary, emitNotification, sessionId, workingDir],
-  );
+  const openInEditor = useOpenDiffFileInEditor({ sessionId, workingDir });
   const isCommitView = diff.view.kind === 'commit';
   const identifierPeek = useMemo(
     () =>

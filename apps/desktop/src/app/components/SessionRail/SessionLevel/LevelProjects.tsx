@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';

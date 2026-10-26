@@ -36,7 +36,8 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
-import { stopLiveWork } from '../live-work/stopLiveWork';
+import { stopLiveWork } from '../../runtime/live-work/stopLiveWork';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import {
   reattachableTurn,
@@ -49,6 +50,7 @@ import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMount
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
+import { switchEpoch } from './switchEpoch';
 import type { GetFn, SetFn } from './types';
 
 type RepairedDestination = {
@@ -56,60 +58,62 @@ type RepairedDestination = {
   readonly projectId: ProjectId;
 };
 
-export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
-  return async (id: WorkspaceId | null) => {
-    await stopLiveWork({ get });
+const SWITCH_KEY = 'workspace-switch';
 
-    clearPendingTurnEvents();
-    set({
-      currentWorkspaceId: id,
-      currentSessionId: null,
-      appStudio: null,
-      sessions: [],
-      archivedSessions: {},
-      sessionSummary: null,
-      workspaceSummary: null,
-      transcripts: {},
-      messages: {},
-      sessionTelemetry: {},
-      sessionSlots: {},
-      slotHistory: {},
-      slotHistoryCounts: {},
-      sessionSlotsLoad: {},
-      sessionWorktrees: {},
-      sessionProjectMounts: {},
-      sessionActiveProject: {},
-      sessionActiveMount: {},
-      sessionBranches: {},
-      sessionExternalTasks: {},
-      sessionPhaseRuns: {},
-      selectedAgentId: {},
-      agentRunHistory: {},
-      runRouting: {},
-      agentTurnState: {},
-      sessionBudgets: {},
-      summarizerStatus: {},
-      budgetAlerts: [],
-      unknownPayloadCounts: {},
-      sessionLoading: {},
-      boardReady: false,
-    });
+const clearedWorkspaceState = () => ({
+  currentSessionId: null,
+  appStudio: null,
+  sessions: [],
+  archivedSessions: {},
+  sessionSummary: null,
+  workspaceSummary: null,
+  transcripts: {},
+  messages: {},
+  sessionTelemetry: {},
+  sessionSlots: {},
+  slotHistory: {},
+  slotHistoryCounts: {},
+  sessionSlotsLoad: {},
+  sessionWorktrees: {},
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
+  sessionActiveMount: {},
+  sessionBranches: {},
+  sessionExternalTasks: {},
+  sessionPhaseRuns: {},
+  selectedAgentId: {},
+  agentRunHistory: {},
+  runRouting: {},
+  agentTurnState: {},
+  sessionBudgets: {},
+  summarizerStatus: {},
+  budgetAlerts: [],
+  unknownPayloadCounts: {},
+  sessionLoading: {},
+  boardReady: false,
+});
+
+export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
+  const latest = createLatestOnly();
+  return async (id: WorkspaceId | null) => {
+    const claimed = latest.claim({ key: SWITCH_KEY });
+    switchEpoch.value += 1;
+    await stopLiveWork({ get });
+    if (!claimed.isCurrent()) {
+      return;
+    }
+
     if (id != null) {
       const touchNow = new Date().toISOString() as IsoDateTime;
-      set((state) => ({
-        workspaces: state.workspaces.map((w) =>
-          w.id === id ? { ...w, lastAccessedAt: touchNow } : w,
-        ),
-      }));
       touchWorkspaceLastAccessed({ db: tauriDatabase, id }).catch(() => undefined);
 
       const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId: id });
-      set((state) => ({
-        projects: [...state.projects.filter((project) => project.workspaceId !== id), ...projects],
-      }));
       await get()
         .loadIntegrations(id)
         .catch(() => undefined);
+      if (!claimed.isCurrent()) {
+        return;
+      }
 
       const tWsLoad = performance.now();
       const loadedSessions = await listSessionsForWorkspace(tauriDatabase, id);
@@ -126,6 +130,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         listAgentsForSessions(tauriDatabase, sessionIds),
         listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
       ]);
+      if (!claimed.isCurrent()) {
+        return;
+      }
       const worktreesBySession = loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
@@ -221,7 +228,17 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       for (const s of sessions) {
         externalTasksMap[s.id] = externalTasksMap[s.id] ?? [];
       }
+      if (!claimed.isCurrent()) {
+        return;
+      }
+      clearPendingTurnEvents();
       set((state) => ({
+        ...clearedWorkspaceState(),
+        currentWorkspaceId: id,
+        workspaces: state.workspaces.map((w) =>
+          w.id === id ? { ...w, lastAccessedAt: touchNow } : w,
+        ),
+        projects: [...state.projects.filter((project) => project.workspaceId !== id), ...projects],
         sessions: sessionsWithValidActiveMounts,
         sessionWorktrees,
         sessionWorktreeRecords,
@@ -231,7 +248,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
-        sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
+        sessionExternalTasks: externalTasksMap,
+        boardReady: Object.keys(sessionWorktrees).length === 0,
       }));
       for (const runs of Object.values(sessionPhaseRuns)) {
         for (const agent of runs) {
@@ -242,9 +260,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             );
           }
         }
-      }
-      if (get().currentWorkspaceId === id && Object.keys(sessionWorktrees).length === 0) {
-        set({ boardReady: true });
       }
       if (import.meta.env.DEV) {
         console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
@@ -272,7 +287,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           invokeWorkflowList(id).catch(() => []),
           invokeStepDefList(id).catch(() => []),
         ]);
-        if (get().currentWorkspaceId !== id) {
+        if (!claimed.isCurrent()) {
           return;
         }
         const workflowById = new Map(phaseTemplates.map((t) => [t.id, t]));
@@ -329,7 +344,13 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       })();
       void get().loadWorkspaceOverrides(id);
     } else {
-      set({ providerSpendBreakdown: [], providerBudgetStatus: {} });
+      clearPendingTurnEvents();
+      set({
+        ...clearedWorkspaceState(),
+        currentWorkspaceId: null,
+        providerSpendBreakdown: [],
+        providerBudgetStatus: {},
+      });
     }
     if (isMainWindow()) {
       void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');

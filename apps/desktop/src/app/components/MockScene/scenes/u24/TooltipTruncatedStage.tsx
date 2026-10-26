@@ -25,11 +25,11 @@ export const TooltipTruncatedStage = () => {
       className="flex w-60 flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4 pb-14"
     >
       <span className="text-meta text-faint-foreground">Cut name</span>
-      <TruncatedText ref={nameRef} className="text-label text-foreground">
+      <TruncatedText ref={nameRef} className="text-meta text-foreground">
         {FILE_NAME}
       </TruncatedText>
       <span className="text-meta text-faint-foreground">Whole name</span>
-      <TruncatedText className="text-label text-foreground">rounding.ts</TruncatedText>
+      <TruncatedText className="text-meta text-foreground">rounding.ts</TruncatedText>
     </div>
   );
 };

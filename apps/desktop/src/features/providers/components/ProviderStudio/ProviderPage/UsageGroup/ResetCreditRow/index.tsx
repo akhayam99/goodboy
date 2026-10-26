@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { resetAdvice } from '@goodboy/core';
-import { BAND_ROW_CLASS, Button, cn } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Button, cn, ICON_SIZE } from '@goodboy/ui';
 import { Gift } from 'lucide-react';
 import { useAppStore } from '../../../../../../../store';
-import { ICON_SIZE } from '../../../../../../../shared/components/conceptIcons';
+
 import { countLabel, expiryLine } from './resetCopy';
 import { ResetConfirm } from './ResetConfirm';
 import { ResetOutcomeNotice, type ResetOutcomeKind } from './ResetOutcomeNotice';
@@ -83,7 +83,7 @@ export const ResetCreditRow = ({ nowMs }: Props) => {
     <>
       {notice}
       {count > 0 ? (
-        <div className={cn(BAND_ROW_CLASS, 'gap-3 bg-selected text-label')}>
+        <div className={cn(BAND_ROW_CLASS, 'gap-3 bg-selected text-meta')}>
           <Gift size={ICON_SIZE.control} aria-hidden className="shrink-0 text-primary" />
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-foreground">{countLabel({ count })}</span>

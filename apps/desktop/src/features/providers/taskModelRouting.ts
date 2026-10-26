@@ -3,9 +3,9 @@ import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import type { ProviderErrorClassification } from '../chat/classifyProviderError';
 import type { ProviderCooldowns } from './routing';
 
-export const USAGE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
-export const RATE_LIMIT_COOLDOWN_MS = 60 * 1000;
-export const AUTHENTICATION_COOLDOWN_MS = 5 * 60 * 1000;
+const USAGE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
+const RATE_LIMIT_COOLDOWN_MS = 60 * 1000;
+const AUTHENTICATION_COOLDOWN_MS = 5 * 60 * 1000;
 
 type CoolingDownParams = {
   readonly cooldowns: ProviderCooldowns;

@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import { FileText } from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
+import { cn, ICON_SIZE, Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { AnswerSubmitButton } from '../AnswerSubmitButton';

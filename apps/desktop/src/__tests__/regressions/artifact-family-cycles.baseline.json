@@ -1,0 +1,10 @@
+{
+  "artifacts -> plans": 53,
+  "artifacts -> reports": 17,
+  "artifacts -> wireframes": 41,
+  "plans -> artifacts": 2,
+  "reports -> artifacts": 9,
+  "reports -> wireframes": 1,
+  "wireframes -> artifacts": 22,
+  "wireframes -> reports": 1
+}

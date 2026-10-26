@@ -28,7 +28,7 @@ export const ProcessRowView = ({ row, idleCounts, now }: Props) => {
       data-started-row={row.spawnId}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
-      className={cn('group/row relative rounded-md', PORT_GRID, 'min-h-8 text-label')}
+      className={cn('group/row relative rounded-md', PORT_GRID, 'min-h-8 text-meta')}
     >
       <span aria-hidden />
       <span className="min-w-0 truncate text-faint-foreground">no port</span>

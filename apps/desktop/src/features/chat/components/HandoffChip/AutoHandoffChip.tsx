@@ -1,11 +1,11 @@
 import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../../auto/adopt/moveToAutoEvent';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { HandoffCardShell } from './HandoffCardShell';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly reason: string;
@@ -31,7 +31,8 @@ export const AutoHandoffChip = ({ reason, agentId }: Props) => {
           }
           className={cn(
             'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
-            'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'hover:text-foreground',
+            FOCUS_RING,
           )}
         >
           <ArrowRight size={ICON_SIZE.mark} aria-hidden />

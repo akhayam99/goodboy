@@ -100,11 +100,12 @@ describe('describeStageBucket', () => {
 });
 
 describe('the reason table', () => {
-  it('draws red only for an agent error, a push that failed and failing checks', () => {
+  it('draws red only for an agent error, a run that stopped, a push that failed and failing checks', () => {
     expect(REASONS.filter((reason) => ATTENTION_REASON_META[reason].tone === 'danger')).toEqual([
       'agent-error',
       'push-failed',
       'ci-failed',
+      'run-stopped',
     ]);
   });
 
@@ -120,6 +121,11 @@ describe('the reason table', () => {
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
     ['pr-approved', 'approved', 'success', 'Approved, ready to merge'],
     ['unread-reply', 'none', 'info', 'New reply'],
+    ['run-stopped', '!', 'danger', 'A run stopped'],
+    ['run-paused-at-limit', '!', 'warning', 'A run paused at its limit'],
+    ['run-waits-for-go', 'approval', 'warning', 'A run waits for you to continue'],
+    ['auto-needs-you', 'approval', 'warning', 'Auto waits for you'],
+    ['slack-reply-waiting', 'approval', 'warning', 'A Slack reply waits for your OK'],
   ])('gives %s the mark %s in %s with the words "%s"', (reason, mark, tone, words) => {
     expect(ATTENTION_REASON_META[reason]).toMatchObject({ mark, tone, words, reason: words });
   });

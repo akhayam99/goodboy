@@ -41,45 +41,18 @@ impl SessionDirError {
     }
 }
 
-#[cfg(test)]
 #[derive(Debug, Deserialize)]
-pub struct CreateArgs {
-    #[serde(rename = "basePath")]
-    pub base_path: String,
-    pub slug: String,
-    #[serde(rename = "directoryName")]
-    pub directory_name: Option<String>,
-    #[serde(rename = "sessionId")]
-    pub session_id: String,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: String,
-}
-
-#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RemoveArgs {
-    #[serde(rename = "basePath")]
-    pub base_path: String,
+    pub session_id: String,
     pub path: String,
 }
 
-#[cfg(test)]
-#[derive(Debug, Serialize)]
-pub struct CreatedSessionDir {
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    #[serde(rename = "branchName")]
-    pub branch_name: String,
-    pub slug: String,
-    pub reused: bool,
-}
-
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct SessionMarker {
-    #[serde(rename = "sessionId")]
     pub(crate) session_id: String,
-    #[serde(rename = "workspaceId")]
     workspace_id: String,
-    #[serde(rename = "createdAt")]
     created_at: String,
 }
 
@@ -106,13 +79,6 @@ fn absolute_path(path: PathBuf) -> Result<PathBuf, SessionDirError> {
     Ok(std::env::current_dir()?.join(path))
 }
 
-#[cfg(test)]
-fn create_absolute_dir(path: PathBuf) -> Result<PathBuf, SessionDirError> {
-    let absolute = absolute_path(path)?;
-    std::fs::create_dir_all(&absolute)?;
-    Ok(std::fs::canonicalize(absolute)?)
-}
-
 const MARKER_DIR: &str = ".goodboy";
 const MARKER_FILE: &str = "session.json";
 
@@ -132,23 +98,6 @@ pub fn migrate_legacy_marker(path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
-fn marker_write(
-    path: &Path,
-    session_id: String,
-    workspace_id: String,
-) -> Result<(), SessionDirError> {
-    let marker = SessionMarker {
-        session_id,
-        workspace_id,
-        created_at: crate::util::iso_now(),
-    };
-    migrate_legacy_marker(path)?;
-    std::fs::create_dir_all(path.join(MARKER_DIR))?;
-    std::fs::write(marker_path(path), serde_json::to_vec(&marker)?)?;
-    Ok(())
-}
-
 pub(crate) fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
     let modern = marker_path(path);
     let marker = if modern.is_file() {
@@ -159,88 +108,6 @@ pub(crate) fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError>
     Ok(serde_json::from_slice::<SessionMarker>(&marker)?)
 }
 
-#[cfg(test)]
-fn validate_directory_name(name: &str) -> Result<(), SessionDirError> {
-    if name.is_empty() {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.chars().count() > 60 {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.contains('/') || name.contains('\\') {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.contains("..") {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.starts_with('.') {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.ends_with('.') || name.ends_with(' ') {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name.chars().any(|ch| ch.is_control()) {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    if name
-        .chars()
-        .any(|ch| matches!(ch, ':' | '*' | '?' | '"' | '<' | '>' | '|'))
-    {
-        return Err(SessionDirError::InvalidDirectoryName);
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> {
-    let Some(name) = args.directory_name.as_deref() else {
-        return Ok(crate::worktree::sanitize_slug(&args.slug));
-    };
-    validate_directory_name(name)?;
-    Ok(name.to_string())
-}
-
-#[cfg(test)]
-pub(crate) fn session_dir_create_blocking(
-    args: CreateArgs,
-) -> Result<CreatedSessionDir, SessionDirError> {
-    let base = expand_home(&args.base_path)?;
-    let slug = resolve_directory_name(&args)?;
-    let target = absolute_path(base)?.join("sessions").join(&slug);
-    if target.exists() {
-        let metadata = std::fs::symlink_metadata(&target)?;
-        if !metadata.is_dir() {
-            return Err(SessionDirError::SessionDirectoryConflict);
-        }
-        let marker = match marker_read(&target) {
-            Ok(marker) => marker,
-            Err(SessionDirError::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
-                return Err(SessionDirError::SessionDirectoryConflict);
-            }
-            Err(SessionDirError::Json(_)) => return Err(SessionDirError::SessionDirectoryConflict),
-            Err(error) => return Err(error),
-        };
-        if marker.session_id != args.session_id {
-            return Err(SessionDirError::SessionDirectoryConflict);
-        }
-        let resolved = std::fs::canonicalize(target)?;
-        return Ok(CreatedSessionDir {
-            worktree_path: resolved.to_string_lossy().into_owned(),
-            branch_name: String::new(),
-            slug,
-            reused: true,
-        });
-    }
-    let resolved = create_absolute_dir(target)?;
-    marker_write(&resolved, args.session_id, args.workspace_id)?;
-    Ok(CreatedSessionDir {
-        worktree_path: resolved.to_string_lossy().into_owned(),
-        branch_name: String::new(),
-        slug,
-        reused: false,
-    })
-}
-
 #[tauri::command]
 pub async fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
     tauri::async_runtime::spawn_blocking(move || session_dir_remove_blocking(args))
@@ -249,22 +116,42 @@ pub async fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError>
 }
 
 fn session_dir_remove_blocking(args: RemoveArgs) -> Result<(), SessionDirError> {
-    let base = absolute_path(expand_home(&args.base_path)?)?;
     let target = absolute_path(expand_home(&args.path)?)?;
-    let is_contained = match (std::fs::canonicalize(&base), std::fs::canonicalize(&target)) {
-        (Ok(resolved_base), Ok(resolved_target)) => {
-            resolved_target.starts_with(&resolved_base) && resolved_target != resolved_base
-        }
-        _ => target.starts_with(&base) && target != base,
+    let (Some(parent), Some(name)) = (target.parent(), target.file_name()) else {
+        return Err(SessionDirError::OutsideWorkspace);
     };
-    if !is_contained {
+    let parent = match std::fs::canonicalize(parent) {
+        Ok(parent) => parent,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    let resolved = parent.join(name);
+    match std::fs::symlink_metadata(&resolved) {
+        Ok(metadata) if metadata.is_dir() => {}
+        Ok(_) => return Err(SessionDirError::OutsideWorkspace),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    }
+    if !is_owned_session_dir(&resolved, &args.session_id)
+        && !is_owned_session_dir(&parent, &args.session_id)
+    {
         return Err(SessionDirError::OutsideWorkspace);
     }
-    match std::fs::remove_dir_all(target) {
+    match std::fs::remove_dir_all(resolved) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error.into()),
     }
+}
+
+fn is_owned_session_dir(dir: &Path, session_id: &str) -> bool {
+    let Some(parent) = dir.parent() else {
+        return false;
+    };
+    if parent.file_name() != Some(std::ffi::OsStr::new("sessions")) {
+        return false;
+    }
+    matches!(marker_read(dir), Ok(marker) if marker.session_id == session_id)
 }
 
 #[tauri::command]
@@ -277,6 +164,15 @@ pub async fn session_dir_exists(path: String) -> Result<bool, SessionDirError> {
 fn session_dir_exists_blocking(path: String) -> Result<bool, SessionDirError> {
     Ok(absolute_path(expand_home(&path)?)?.is_dir())
 }
+
+#[cfg(test)]
+mod wire_shape;
+
+#[cfg(test)]
+pub(crate) mod testing;
+
+#[cfg(test)]
+pub(crate) use testing::{session_dir_create_blocking, CreateArgs, CreatedSessionDir};
 
 #[cfg(test)]
 mod tests {
@@ -370,27 +266,130 @@ mod tests {
         })
         .unwrap();
 
-        super::session_dir_remove_blocking(super::RemoveArgs {
-            base_path: root.to_string_lossy().into_owned(),
-            path: created.worktree_path.clone(),
-        })
-        .unwrap();
+        super::session_dir_remove_blocking(remove_args("session-1", &created.worktree_path))
+            .unwrap();
         assert!(!Path::new(&created.worktree_path).exists());
 
-        let outside = super::session_dir_remove_blocking(super::RemoveArgs {
-            base_path: root.to_string_lossy().into_owned(),
-            path: std::env::temp_dir().to_string_lossy().into_owned(),
-        });
-        assert!(matches!(outside, Err(SessionDirError::OutsideWorkspace)));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
-        let base_itself = super::session_dir_remove_blocking(super::RemoveArgs {
+    fn remove_args(session_id: &str, path: &str) -> super::RemoveArgs {
+        super::RemoveArgs {
+            session_id: session_id.to_string(),
+            path: path.to_string(),
+        }
+    }
+
+    fn created_session(root: &Path, session_id: &str) -> super::CreatedSessionDir {
+        session_dir_create_blocking(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
-            path: root.to_string_lossy().into_owned(),
-        });
-        assert!(matches!(
-            base_itself,
-            Err(SessionDirError::OutsideWorkspace)
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: session_id.to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn refuses_a_root_a_home_and_a_project_folder() {
+        let root = test_root("simple-session-remove-refuse");
+        let created = created_session(&root, "session-1");
+        let project = root.join("projects").join("harborline");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("keep.txt"), "keep").unwrap();
+
+        for path in [
+            "/".to_string(),
+            std::env::temp_dir().to_string_lossy().into_owned(),
+            root.to_string_lossy().into_owned(),
+            root.join("sessions").to_string_lossy().into_owned(),
+            project.to_string_lossy().into_owned(),
+            dirs::home_dir().unwrap().to_string_lossy().into_owned(),
+        ] {
+            let result = super::session_dir_remove_blocking(remove_args("session-1", &path));
+            assert!(
+                matches!(result, Err(SessionDirError::OutsideWorkspace)),
+                "{path} must be refused"
+            );
+        }
+        assert!(project.join("keep.txt").exists());
+        assert!(Path::new(&created.worktree_path).exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_a_session_directory_owned_by_another_session() {
+        let root = test_root("simple-session-remove-other");
+        let created = created_session(&root, "session-1");
+
+        let result =
+            super::session_dir_remove_blocking(remove_args("session-2", &created.worktree_path));
+
+        assert!(matches!(result, Err(SessionDirError::OutsideWorkspace)));
+        assert!(Path::new(&created.worktree_path).exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_a_sessions_child_without_a_marker() {
+        let root = test_root("simple-session-remove-unmarked");
+        let unmarked = root.join("sessions").join("notes");
+        std::fs::create_dir_all(&unmarked).unwrap();
+
+        let result = super::session_dir_remove_blocking(remove_args(
+            "session-1",
+            &unmarked.to_string_lossy(),
         ));
+
+        assert!(matches!(result, Err(SessionDirError::OutsideWorkspace)));
+        assert!(unmarked.exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn removes_a_mount_directory_inside_an_owned_session_directory() {
+        let root = test_root("simple-session-remove-mount");
+        let created = created_session(&root, "session-1");
+        let mount = Path::new(&created.worktree_path).join("northwind");
+        std::fs::create_dir_all(&mount).unwrap();
+
+        super::session_dir_remove_blocking(remove_args("session-1", &mount.to_string_lossy()))
+            .unwrap();
+
+        assert!(!mount.exists());
+        assert!(Path::new(&created.worktree_path).exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn removing_a_missing_session_directory_succeeds() {
+        let root = test_root("simple-session-remove-missing");
+        let missing = root.join("sessions").join("gone");
+
+        let result = super::session_dir_remove_blocking(remove_args(
+            "session-1",
+            &missing.to_string_lossy(),
+        ));
+
+        assert!(result.is_ok());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_a_session_directory_replaced_by_a_symlink() {
+        let root = test_root("simple-session-remove-link");
+        let created = created_session(&root, "session-1");
+        let victim = root.join("projects").join("harborline");
+        std::fs::create_dir_all(&victim).unwrap();
+        std::fs::remove_dir_all(&created.worktree_path).unwrap();
+        std::os::unix::fs::symlink(&victim, &created.worktree_path).unwrap();
+
+        let result =
+            super::session_dir_remove_blocking(remove_args("session-1", &created.worktree_path));
+
+        assert!(matches!(result, Err(SessionDirError::OutsideWorkspace)));
+        assert!(victim.exists());
         std::fs::remove_dir_all(root).unwrap();
     }
 

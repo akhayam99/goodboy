@@ -1,5 +1,5 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type AppSection = 'general' | 'updates' | 'shortcuts' | 'storage' | 'backup' | 'iphone';
 

@@ -1,6 +1,7 @@
 import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
-import { NAMES } from '../names';
+import { NAMES } from '../utils/names';
+import { overrideState } from './overrides/overrideState';
 
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
 
@@ -35,7 +36,8 @@ export type ShortcutScope =
   | 'activityRow'
   | 'scripts'
   | 'workspace'
-  | 'codeSession';
+  | 'codeSession'
+  | 'overlay';
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Tasks and Notifications lists',
@@ -57,9 +59,10 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   scripts: 'On the Scripts page',
   workspace: 'With a workspace open',
   codeSession: 'In a session with a branch',
+  overlay: 'In a dialog or a preview',
 };
 
-export type ShortcutFamily = 'workspace-digit';
+export type ShortcutFamily = 'workspace-digit' | 'terminal-tab-digit';
 
 export type ShortcutEntry = {
   readonly combo: string;
@@ -217,6 +220,7 @@ export const SHORTCUTS = {
   },
   'innerColumn.toggle': {
     combo: 'cmd+alt+KeyB',
+    offMacCombo: 'ctrl+shift+alt+KeyB',
     label: 'Show or hide the inner column',
     plane: 'lens',
     group: 'navigate',
@@ -261,6 +265,7 @@ export const SHORTCUTS = {
   },
   'session.nextNeedsYou': {
     combo: 'cmd+alt+ArrowDown',
+    offMacCombo: 'ctrl+shift+alt+ArrowDown',
     label: 'Next session that needs you',
     plane: 'lens',
     group: 'navigate',
@@ -301,6 +306,20 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'composer',
   },
+  'agent.stop': {
+    combo: 'Escape',
+    label: 'Stop the running agent, press twice',
+    plane: 'pane',
+    group: 'session',
+    scope: 'composer',
+  },
+  'overlay.close': {
+    combo: 'Escape',
+    label: 'Close the dialog or preview',
+    plane: 'pane',
+    group: 'general',
+    scope: 'overlay',
+  },
   'menu.open': {
     combo: 'shift+F10',
     label: 'Open the menu of the focused row',
@@ -323,14 +342,118 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'terminal',
   },
+  'terminal.prevTab': {
+    combo: 'cmd+shift+BracketLeft',
+    label: 'Previous terminal tab',
+    plane: 'session',
+    group: 'session',
+    scope: 'terminalPage',
+  },
+  'terminal.nextTab': {
+    combo: 'cmd+shift+BracketRight',
+    label: 'Next terminal tab',
+    plane: 'session',
+    group: 'session',
+    scope: 'terminalPage',
+  },
+  'terminal.renameTab': {
+    combo: 'F2',
+    label: 'Rename the terminal tab',
+    plane: 'pane',
+    group: 'session',
+    scope: 'terminalPage',
+  },
+  'terminal.tab1': {
+    combo: 'ctrl+Digit1',
+    offMacCombo: 'ctrl+shift+Digit1',
+    label: 'Terminal tab 1',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab2': {
+    combo: 'ctrl+Digit2',
+    offMacCombo: 'ctrl+shift+Digit2',
+    label: 'Terminal tab 2',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab3': {
+    combo: 'ctrl+Digit3',
+    offMacCombo: 'ctrl+shift+Digit3',
+    label: 'Terminal tab 3',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab4': {
+    combo: 'ctrl+Digit4',
+    offMacCombo: 'ctrl+shift+Digit4',
+    label: 'Terminal tab 4',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab5': {
+    combo: 'ctrl+Digit5',
+    offMacCombo: 'ctrl+shift+Digit5',
+    label: 'Terminal tab 5',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab6': {
+    combo: 'ctrl+Digit6',
+    offMacCombo: 'ctrl+shift+Digit6',
+    label: 'Terminal tab 6',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab7': {
+    combo: 'ctrl+Digit7',
+    offMacCombo: 'ctrl+shift+Digit7',
+    label: 'Terminal tab 7',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab8': {
+    combo: 'ctrl+Digit8',
+    offMacCombo: 'ctrl+shift+Digit8',
+    label: 'Terminal tab 8',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
+  'terminal.tab9': {
+    combo: 'ctrl+Digit9',
+    offMacCombo: 'ctrl+shift+Digit9',
+    label: 'Terminal tab 9',
+    plane: 'app',
+    group: 'session',
+    family: 'terminal-tab-digit',
+    scope: 'terminalPage',
+  },
   'session.terminal': {
     combo: 'cmd+alt+KeyT',
+    offMacCombo: 'ctrl+shift+alt+KeyT',
     label: 'Session terminal',
     plane: 'lens',
     group: 'session',
   },
   'session.spawned': {
     combo: 'cmd+alt+KeyL',
+    offMacCombo: 'ctrl+shift+alt+KeyL',
     label: 'Agents',
     plane: 'lens',
     group: 'session',
@@ -375,32 +498,72 @@ export const SHORTCUTS = {
     scope: 'ask',
   },
 
-  'lens.overview': { combo: 'cmd+alt+KeyO', label: NAMES.overview, plane: 'lens', group: 'views' },
-  'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },
-  'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Context: Goal', plane: 'lens', group: 'views' },
+  'lens.overview': {
+    combo: 'cmd+alt+KeyO',
+    offMacCombo: 'ctrl+shift+alt+KeyO',
+    label: NAMES.overview,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.context': {
+    combo: 'cmd+alt+KeyC',
+    offMacCombo: 'ctrl+shift+alt+KeyC',
+    label: 'Show context',
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.goal': {
+    combo: 'cmd+alt+KeyG',
+    offMacCombo: 'ctrl+shift+alt+KeyG',
+    label: 'Context: Goal',
+    plane: 'lens',
+    group: 'views',
+  },
   'lens.decisions': {
     combo: 'cmd+alt+KeyE',
+    offMacCombo: 'ctrl+shift+alt+KeyE',
     label: 'Context: Decisions',
     plane: 'lens',
     group: 'views',
   },
   'lens.summary': {
     combo: 'cmd+alt+KeyU',
+    offMacCombo: 'ctrl+shift+alt+KeyU',
     label: 'Context: Summary',
     plane: 'lens',
     group: 'views',
   },
-  'lens.workflows': { combo: 'cmd+alt+KeyW', label: NAMES.runs, plane: 'lens', group: 'views' },
-  'lens.agents': { combo: 'cmd+alt+KeyA', label: NAMES.agents, plane: 'lens', group: 'views' },
-  'lens.review': { combo: 'cmd+alt+KeyR', label: NAMES.comments, plane: 'lens', group: 'views' },
+  'lens.workflows': {
+    combo: 'cmd+alt+KeyW',
+    offMacCombo: 'ctrl+shift+alt+KeyW',
+    label: NAMES.runs,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.agents': {
+    combo: 'cmd+alt+KeyA',
+    offMacCombo: 'ctrl+shift+alt+KeyA',
+    label: NAMES.agents,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.review': {
+    combo: 'cmd+alt+KeyR',
+    offMacCombo: 'ctrl+shift+alt+KeyR',
+    label: NAMES.comments,
+    plane: 'lens',
+    group: 'views',
+  },
   'lens.questions': {
     combo: 'cmd+alt+KeyQ',
+    offMacCombo: 'ctrl+shift+alt+KeyQ',
     label: NAMES.questions,
     plane: 'lens',
     group: 'views',
   },
   'lens.files': {
     combo: 'cmd+alt+KeyF',
+    offMacCombo: 'ctrl+shift+alt+KeyF',
     label: NAMES.files,
     plane: 'lens',
     group: 'views',
@@ -408,28 +571,56 @@ export const SHORTCUTS = {
   },
   'lens.explore': {
     combo: 'cmd+alt+KeyX',
+    offMacCombo: 'ctrl+shift+alt+KeyX',
     label: 'Explore',
     plane: 'lens',
     group: 'views',
   },
-  'lens.plans': { combo: 'cmd+alt+KeyP', label: NAMES.artifacts, plane: 'lens', group: 'views' },
-  'lens.scripts': { combo: 'cmd+alt+KeyS', label: NAMES.scripts, plane: 'lens', group: 'views' },
-  'lens.pr': { combo: 'cmd+alt+Digit1', label: NAMES.pullRequest, plane: 'lens', group: 'views' },
-  'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens', group: 'views' },
+  'lens.plans': {
+    combo: 'cmd+alt+KeyP',
+    offMacCombo: 'ctrl+shift+alt+KeyP',
+    label: NAMES.artifacts,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.scripts': {
+    combo: 'cmd+alt+KeyS',
+    offMacCombo: 'ctrl+shift+alt+KeyS',
+    label: NAMES.scripts,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.pr': {
+    combo: 'cmd+alt+Digit1',
+    offMacCombo: 'ctrl+shift+alt+Digit1',
+    label: NAMES.pullRequest,
+    plane: 'lens',
+    group: 'views',
+  },
+  'lens.linear': {
+    combo: 'cmd+alt+Digit2',
+    offMacCombo: 'ctrl+shift+alt+Digit2',
+    label: 'Linear',
+    plane: 'lens',
+    group: 'views',
+  },
   'lens.gitlab_issues': {
     combo: 'cmd+alt+Digit4',
+    offMacCombo: 'ctrl+shift+alt+Digit4',
     label: 'GitLab issues',
     plane: 'lens',
     group: 'views',
   },
   'lens.jira_issues': {
     combo: 'cmd+alt+Digit5',
+    offMacCombo: 'ctrl+shift+alt+Digit5',
     label: 'Jira issues',
     plane: 'lens',
     group: 'views',
   },
   'lens.slack_threads': {
     combo: 'cmd+alt+Digit6',
+    offMacCombo: 'ctrl+shift+alt+Digit6',
     label: 'Slack threads',
     plane: 'lens',
     group: 'views',
@@ -740,8 +931,23 @@ export const WORKSPACE_DIGIT_IDS: ReadonlyArray<ShortcutId> = (
   Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>
 ).filter((id) => (SHORTCUTS[id] as ShortcutEntry).family === 'workspace-digit');
 
+export const TERMINAL_TAB_IDS = [
+  'terminal.prevTab',
+  'terminal.nextTab',
+  'terminal.tab1',
+  'terminal.tab2',
+  'terminal.tab3',
+  'terminal.tab4',
+  'terminal.tab5',
+  'terminal.tab6',
+  'terminal.tab7',
+  'terminal.tab8',
+  'terminal.tab9',
+] as const satisfies ReadonlyArray<ShortcutId>;
+
 export const SHORTCUT_FAMILY_LABEL: Readonly<Record<ShortcutFamily, string>> = {
   'workspace-digit': 'Go to workspace 1 to 9',
+  'terminal-tab-digit': 'Go to terminal tab 1 to 9',
 };
 
 const MAC_GLYPH: Record<string, string> = {
@@ -762,6 +968,9 @@ const MAC_GLYPH: Record<string, string> = {
   Space: '␣',
   Backquote: '`',
   ArrowDown: '↓',
+  ArrowUp: '↑',
+  ArrowLeft: '←',
+  ArrowRight: '→',
 };
 
 const KEY_LABEL: Record<string, string> = {
@@ -783,6 +992,9 @@ const KEY_LABEL: Record<string, string> = {
   Space: 'Space',
   Backquote: '`',
   ArrowDown: 'Down',
+  ArrowUp: 'Up',
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right',
 };
 
 const codeGlyph = ({ code, glyphs }: { code: string; glyphs: Record<string, string> }): string => {
@@ -813,8 +1025,18 @@ type EntryParams = {
   readonly entry: ShortcutEntry;
 };
 
-export const platformCombo = ({ entry }: EntryParams): string =>
-  currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+const ID_BY_ENTRY = new Map<ShortcutEntry, string>(
+  Object.entries(SHORTCUTS).map(([id, entry]) => [entry, id]),
+);
+
+export const platformCombo = ({ entry }: EntryParams): string => {
+  const id = ID_BY_ENTRY.get(entry);
+  const override = id === undefined ? undefined : overrideState.overrides[id];
+  if (override !== undefined) {
+    return override;
+  }
+  return currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+};
 
 export const shortcutGlyphs = (id: ShortcutId): string =>
   formatCombo(platformCombo({ entry: SHORTCUTS[id] }));

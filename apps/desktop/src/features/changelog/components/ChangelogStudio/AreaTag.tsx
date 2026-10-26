@@ -1,4 +1,4 @@
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { changelogAreaIcon, changelogAreaLabel } from '../../changelogAreas';
 import type { ChangelogArea } from '../../changelogAreas';
 

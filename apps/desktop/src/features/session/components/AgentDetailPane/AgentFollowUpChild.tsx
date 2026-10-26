@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, cn, FOCUS_RING } from '@goodboy/ui';
 import type { AgentStatus, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
@@ -45,7 +45,7 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-label">
+    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-meta">
       <AgentKindChip kind={kind} />
       <span className="min-w-0 flex-1 truncate text-foreground">{agent.name}</span>
       {hasQuestion ? (
@@ -59,7 +59,8 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
         onClick={onOpen}
         className={cn(
           'shrink-0 rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
-          'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          'hover:text-foreground',
+          FOCUS_RING,
         )}
       >
         Go to chat

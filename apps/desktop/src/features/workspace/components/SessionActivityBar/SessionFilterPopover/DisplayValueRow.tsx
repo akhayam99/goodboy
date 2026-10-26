@@ -14,7 +14,7 @@ export const DisplayValueRow = <T extends string>({
   onChange,
 }: Props<T>) => (
   <div data-display-row={label} className="flex min-h-7 items-center gap-2 pl-2">
-    <span aria-hidden className="min-w-0 flex-1 truncate text-label text-muted-foreground">
+    <span aria-hidden className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
       {label}
     </span>
     <Listbox

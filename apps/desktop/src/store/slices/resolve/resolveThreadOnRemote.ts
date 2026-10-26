@@ -1,6 +1,6 @@
 import { listResolveQueueItems } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { publishThreadNow } from './publishThreadNow';
+import { publishThreadNow } from './publication/publishThreadNow';
 import { handledByLine } from './threadGitState';
 import type { SliceParams, ThreadParams } from './types';
 

@@ -78,6 +78,7 @@ export const PrDetailPanel = ({
     sessionId,
     repo,
     pullRequestId: pullRequest?.id ?? null,
+    expectedHeadSha: pullRequest?.sourceCommit ?? null,
     onWritten: () => {
       detail.reload();
       onRefresh();

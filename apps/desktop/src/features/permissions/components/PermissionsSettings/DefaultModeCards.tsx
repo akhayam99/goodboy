@@ -1,5 +1,5 @@
-import { cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
+
 import { DEFAULT_PERMISSION_MODE, MODE_COPY, PICKER_MODES, type PickerMode } from '../../modeCopy';
 
 type Props = {
@@ -34,7 +34,7 @@ export const DefaultModeCards = ({ value, isBusy, onChange }: Props) => (
           >
             <span className="flex w-full items-center gap-2">
               <Icon size={ICON_SIZE.control} aria-hidden className={tintClasses(copy.tone).icon} />
-              <span className="text-label text-foreground">{copy.label}</span>
+              <span className="text-meta text-foreground">{copy.label}</span>
               {mode === DEFAULT_PERMISSION_MODE ? (
                 <span className="rounded-sm bg-muted px-1 text-chip text-muted-foreground">
                   Default

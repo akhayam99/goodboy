@@ -82,7 +82,7 @@ export const Reveal = ({ open, children, id, className, onClosed }: RevealProps)
         }
       }}
       className={cn(
-        'grid motion-safe:transition-[grid-template-rows] motion-safe:duration-200 motion-safe:ease-out',
+        'grid motion-safe:transition-[grid-template-rows] motion-safe:duration-200 motion-safe:ease-enter',
         isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
       )}
     >

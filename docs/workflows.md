@@ -3,14 +3,14 @@
 > **Read this when** you want to know how workflows, the orchestrator and
 > hands-free runs work, or you are changing the workflow tables, the code that
 > moves a run to its next step, or the summarizer that runs after each step.
-> **Not for** the workflow header and breadcrumbs ([navigation.md](navigation.md)).
+> **Not for** the workflow header and breadcrumbs ([navigation/session-rail.md](navigation/session-rail.md)).
 
 A workflow splits a task into steps and runs each step as its own agent. This
 page covers how you pick or build one, what the orchestrator does and how a
 run moves from step to step. The code details come at the end.
 
 Each object in Goodboy is explained in [concepts.md](concepts.md). The
-header and breadcrumbs are covered in [navigation.md](navigation.md).
+header and breadcrumbs are covered in [navigation/session-rail.md](navigation/session-rail.md).
 
 ## What a workflow is
 
@@ -93,7 +93,7 @@ back to **Orchestrated** once the workspace has no presets left.
 
 Each run also gets a title of its own, at most six words, written from the run
 goal by the `agent_naming` task model when the run starts. The activity feed,
-the workflow detail, the breadcrumb and the **Starts** picker show that title, so
+the workflow detail and the breadcrumb show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
 name generated for its workflow and gets no second title. You rename a run
@@ -136,11 +136,7 @@ or move to another row, never on every field.
 
 ### When a run starts
 
-The **Starts** chip in the launch bar picks one:
-
-- **Now**, as soon as you start it. This is the default
-- **Manually**, when you press start
-- **After** another run that is still going, and then it carries on by itself
+A run starts as soon as you add it. A run can also be queued to wait for your go: **Start run** on it starts it, and the phone queues runs this way. A run an older release saved with **After** another run keeps working: it starts by itself once the run it follows completes, its tail reads "Starts after" that run, and **Start run** starts it by hand. Nothing in the desktop creates a new one.
 
 **Asks you** (it was Autonomy) comes from the workspace rules, **Every step**
 until you change them: the run waits for your go after each step so you can
@@ -523,7 +519,7 @@ A preset run is a recipe the user advances: the center shows the selected
 entry (`PresetRunPage`, in `features/session/components/PresetRun`) and the
 Agents panel of the session tools holds the run's identity row, its agents as
 a tree, **Add step** and the limit foot
-([The session tools](navigation.md#the-session-tools)). A row there opens the
+([The session tools](navigation/session-rail.md#the-session-tools)). A row there opens the
 step's transcript in the drawer (`run-step`); hovering it opens a fact card
 with the name and the state (`runHeadCardOf` for the run, `runAgentCardOf` for
 an agent, with its role glyph), never a joined tooltip line.
@@ -820,7 +816,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
 - `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to. The run pool wins; outside a run, or for a run with none, a caller may pass the workspace pool (`features/auto/workspaceProviderPool.ts`: the providers the workspace policy does not turn off). Only Auto trees pass it today, through `autoChildPool`, which keeps Claude and Codex and never Cursor or Gemini
-- `apps/desktop/src/features/workflows/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
+- `apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/`: the Studio editor. It draws the plan with the shared step tree; `GoalField`, `BuilderTitleField` and `PlanDraftingBanner` sit beside it. `presetEdits.ts` marks the steps edited from their preset and `providerPool.ts` toggles the provider pool of a run, both in `features/workflows/`
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
 - `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
 - `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name

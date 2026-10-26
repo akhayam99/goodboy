@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { tintClasses, type Tone } from '@goodboy/ui';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 
 type Params = {
   readonly state: PullRequestPresentationState;

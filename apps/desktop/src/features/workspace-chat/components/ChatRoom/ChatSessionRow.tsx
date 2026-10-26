@@ -2,7 +2,7 @@ import { Button, StatusDot } from '@goodboy/ui';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../session/session-stage';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 
 type Props = {
@@ -27,7 +27,7 @@ export const ChatSessionRow = ({ entry, onOpen }: Props) => {
         ariaLabel={SESSION_STAGE_META[entry.stage].label}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-label text-foreground">{title}</span>
+        <span className="truncate text-meta text-foreground">{title}</span>
         <span className="truncate text-meta text-faint-foreground">
           {[SESSION_STAGE_META[entry.stage].label, `${ORIGIN[entry.link.kind]} ${age}`.trim()].join(
             ' · ',

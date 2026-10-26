@@ -58,7 +58,7 @@ const historyKeyRow = ({ direction }: Params): Row => ({
         };
       });
     });
-    const anchor = await screen.findByRole('button', { name: /^Search \(/ });
+    const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
     anchor.focus();
     pressShortcut({ id: direction === 'undo' ? 'history.undo' : 'history.redo', target: anchor });
     await settle();

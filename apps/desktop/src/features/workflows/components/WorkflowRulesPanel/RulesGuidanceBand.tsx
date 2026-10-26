@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Undo2 } from 'lucide-react';
 import type { WorkflowRules, WorkspaceId } from '@goodboy/types';
-import { Band, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Band, cn, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePolishGuidance } from '../../hooks/usePolishGuidance';
 import { AlsoSentLine } from '../WorkflowGuidance/AlsoSentLine';

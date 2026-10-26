@@ -1,5 +1,5 @@
 import { useAppStore } from '../../../../store';
-import { selectLiveWork, type LiveWork } from '../../../../store/slices/live-work/selectLiveWork';
+import { selectLiveWork, type LiveWork } from '../../../../store/runtime/live-work/selectLiveWork';
 
 type CountParams = {
   readonly liveWork: LiveWork;

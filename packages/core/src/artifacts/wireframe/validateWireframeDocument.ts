@@ -1,3 +1,4 @@
+import { ownValue } from '../../ownValue';
 import { expandWireframePatterns } from './expandWireframePatterns';
 import { upgradeWireframeDocument } from './upgradeWireframeDocument';
 import {
@@ -30,7 +31,6 @@ import {
   type WireframeButtonVariant,
   type WireframeDevice,
   type WireframeDirection,
-  type WireframeDocument,
   type WireframeImageRatio,
   type WireframeInputType,
   type WireframeIssue,
@@ -50,6 +50,7 @@ import {
   type WireframeVariant,
   type WireframeViewport,
 } from './schema';
+import { isRecord } from '@goodboy/types/helpers';
 
 type RawAdjustment = Readonly<{
   change: WireframeAdjustmentChange;
@@ -111,9 +112,6 @@ const clipText = ({ value, max }: { readonly value: string; readonly max: number
   const cut = lastSpace > 0 && reachedBack ? lastSpace : head.length;
   return `${head.slice(0, cut).trimEnd()}${CLIP_MARK}`;
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const fail = ({ ctx, path, message }: { ctx: Ctx; path: string; message: string }): null => {
   ctx.issues.push({ path, message });
@@ -481,12 +479,13 @@ const nearestOf = <T extends string>({
     return null;
   }
   return (
-    near[
-      value
+    ownValue({
+      table: near,
+      key: value
         .trim()
         .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-    ] ?? null
+        .replace(/[\s_]+/g, '-'),
+    }) ?? null
   );
 };
 

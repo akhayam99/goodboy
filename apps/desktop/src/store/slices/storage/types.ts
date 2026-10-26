@@ -7,6 +7,7 @@ import type {
   WorktreeRemovalMode,
   WorktreeRemovalReason,
 } from '@goodboy/types';
+import type { TerminalTab } from '../../../shared/types/terminal';
 import type { WorktreeFolderFacts } from '../../../features/worktree/worktree';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -16,10 +17,13 @@ type StorageFolderOrigin = 'in-use' | 'archived' | 'ledger';
 export type StorageFolderWhy =
   'active-session' | 'archived-session' | 'deleted-session' | 'no-session' | 'kept-by-goodboy';
 
+export type StorageFolderTerminals = ReadonlyMap<string, ReadonlyArray<TerminalTab>>;
+
 export type StorageFolderStatus =
   | 'in-use'
   | 'checking'
   | 'safe'
+  | 'terminal-open'
   | 'dirty'
   | 'writing'
   | 'operation'
@@ -80,8 +84,23 @@ export type StorageScope =
   | { readonly kind: 'removed' }
   | { readonly kind: 'all' };
 
+export type StorageRestoreTarget = {
+  readonly path: string;
+  readonly repoRoot: string;
+  readonly branch: string;
+  readonly origin: 'archived' | 'ledger';
+  readonly sessionId: SessionId | null;
+  readonly mountId: MountId | null;
+  readonly revision: number | null;
+};
+
 export type StorageRemoval =
-  | { readonly kind: 'removed'; readonly path: string; readonly sizeBytes: number }
+  | {
+      readonly kind: 'removed';
+      readonly path: string;
+      readonly sizeBytes: number;
+      readonly restore: StorageRestoreTarget | null;
+    }
   | {
       readonly kind: 'kept';
       readonly path: string;
@@ -90,10 +109,18 @@ export type StorageRemoval =
     }
   | { readonly kind: 'failed'; readonly path: string; readonly message: string };
 
+type StorageUndoOutcome = {
+  readonly restored: number;
+  readonly failed: ReadonlyArray<{ readonly path: string; readonly message: string }>;
+};
+
 export type StorageRemovalSummary = {
   readonly removed: number;
   readonly freedBytes: number;
   readonly kept: ReadonlyArray<StorageRemoval>;
+  readonly restorable: ReadonlyArray<StorageRestoreTarget>;
+  readonly undo: StorageUndoOutcome | null;
+  readonly isUndoing: boolean;
 };
 
 export type RemoveStorageFoldersParams = {

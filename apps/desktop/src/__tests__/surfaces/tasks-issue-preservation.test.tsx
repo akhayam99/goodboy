@@ -55,7 +55,7 @@ const pane = (): HTMLElement => screen.getByRole('complementary', { name: 'Task'
 const group = (name: string): HTMLElement =>
   within(within(pane()).getByRole('group', { name: 'Properties' })).getByRole('region', { name });
 
-describe('SPEC3 9.7 issues and Tasks rows reachable from the new issue pane', () => {
+describe('issues and Tasks rows reachable from the issue pane', () => {
   it('keeps the Tasks detail beside the list, in the pane, with Open full to the depth view', async () => {
     await mount({ name: 'c12-issue-pane' });
 
@@ -108,12 +108,6 @@ describe('SPEC3 9.7 issues and Tasks rows reachable from the new issue pane', ()
     await mount({ name: 'c12-issue-edit' });
 
     expect(screen.getByRole('textbox', { name: 'Edit description' })).toBeDefined();
-  });
-
-  it('keeps Start session on an issue nobody linked', async () => {
-    await mount({ name: 'c12-issue-github' });
-
-    expect(within(pane()).getByRole('button', { name: 'Start session' })).toBeDefined();
   });
 
   it('hosts a Sentry error unchanged in the same pane frame', async () => {

@@ -40,7 +40,7 @@ export const AdoptedNotice = ({ sessionId, agentId, isTurnLive, onOpenAuto }: Pr
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center gap-3 text-label text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-3 text-meta text-muted-foreground">
         <p className="min-w-0 flex-1">
           Moved to Auto. Auto decides what happens next, so you can read this chat but not write in
           it. Detach it to take it back.

@@ -58,7 +58,14 @@ export type RefreshReviewSourceParams = Readonly<{
   silent?: boolean;
 }>;
 
+export type SweepRequestsParams = Readonly<{
+  shouldSkipUnknownRequest?: boolean;
+  sessionId?: SessionId;
+  isForced?: boolean;
+}>;
+
 export type ReviewSourceSlice = Readonly<{
   selectReviewSource: (params: SelectReviewSourceParams) => Promise<void>;
   refreshReviewSource: (params: RefreshReviewSourceParams) => Promise<void>;
+  sweepRequests: (opts?: SweepRequestsParams) => Promise<void>;
 }>;

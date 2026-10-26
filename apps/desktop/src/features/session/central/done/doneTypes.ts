@@ -1,8 +1,6 @@
-import type { ReactNode } from 'react';
-import type { Agent, AgentId, SessionEvent } from '@goodboy/types';
+import type { Agent, AgentId, SessionEvent, TurnFile } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AutoGroup } from '../../../auto/autoGroupOf';
-import type { WorkTimeSource } from '../../../workTreeModel/workTimeSource';
 import type {
   TimelineAgentEntry,
   TimelineEventEntry,
@@ -12,12 +10,18 @@ import type {
 
 export type DoneSource = TimelineRunEntry | TimelineAgentEntry | TimelineEventEntry;
 
+export type DoneFiles = {
+  readonly own: ReadonlyArray<TurnFile>;
+  readonly fromBase: ReadonlyArray<string>;
+};
+
 export type DoneModel = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly autoTrees: ReadonlyArray<AutoTreeView>;
   readonly agents: ReadonlyArray<Agent>;
   readonly checkNameByAgentId: ReadonlyMap<string, string>;
+  readonly turnFiles: ReadonlyMap<string, DoneFiles>;
   readonly now: number;
 };
 
@@ -51,6 +55,7 @@ export type DoneDetail = {
   readonly steps: ReadonlyArray<DoneStepLine>;
   readonly auto: AutoGroup | null;
   readonly branches: ReadonlyArray<DoneBranchLine>;
+  readonly files: DoneFiles | null;
 };
 
 export type DoneRowModel = {
@@ -61,6 +66,7 @@ export type DoneRowModel = {
   readonly at: string;
   readonly mountId: string | null;
   readonly retryAgentId: AgentId | null;
+  readonly agentIds: ReadonlyArray<AgentId>;
   readonly detail: DoneDetail;
 };
 
@@ -70,8 +76,6 @@ export type DoneDay = {
   readonly rows: ReadonlyArray<DoneRowModel>;
 };
 
-export type DoneRowParams = {
+type DoneRowParams = {
   readonly row: DoneRowModel;
 };
-
-export type DoneChipFor = (params: DoneRowParams) => ReactNode;

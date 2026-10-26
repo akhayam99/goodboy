@@ -1,7 +1,6 @@
 import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Reveal, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Reveal } from '@goodboy/ui';
 
 type Props = {
   readonly command: string;

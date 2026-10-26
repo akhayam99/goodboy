@@ -33,7 +33,7 @@
   line-height: var(--text-row--line-height);
 }
 .artifact-prose :where(pre) {
-  font-size: var(--text-label);
+  font-size: var(--text-meta);
   line-height: 20px;
 }
 .artifact-prose :where([data-tone='summary'], [data-tone='goal']) [data-block='callout-body'] {

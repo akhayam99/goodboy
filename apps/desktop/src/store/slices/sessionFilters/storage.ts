@@ -1,4 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
 
 type PersistedFilters = {
@@ -13,9 +14,6 @@ type Params = {
 type WriteParams = Params & {
   readonly selectedProjectIds: ReadonlyArray<string>;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
 
 const storageKey = ({ workspaceId }: Params): string =>
   `${STORAGE_PREFIXES.sessionFilters}${workspaceId}`;

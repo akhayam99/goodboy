@@ -1,5 +1,5 @@
 import { Button, EmptyState, StatusDot } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { SetupResume } from '../../../onboarding/useSetupResume';
 
 type Props = {

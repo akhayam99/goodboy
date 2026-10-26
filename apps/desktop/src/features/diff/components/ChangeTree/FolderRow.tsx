@@ -1,12 +1,11 @@
 import { ChevronRight } from 'lucide-react';
-import { ROW_INTERACTIVE, Tooltip, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ViewedRing } from '../../../../shared/components/ViewedRing';
+import { cn, ICON_SIZE, ROW_INTERACTIVE, StatusDot, Tooltip, treeIndentPx } from '@goodboy/ui';
+
+import { ViewedRing } from '../ViewedRing';
 import type { TreeRow } from '../../lib/changeTree';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { Delta } from './Delta';
-import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
 type FolderTreeRow = Extract<TreeRow, { readonly kind: 'folder' }>;
 
@@ -58,7 +57,7 @@ export const FolderRow = ({
         type="button"
         tabIndex={-1}
         onClick={onToggle}
-        style={{ paddingLeft: TREE_BASE_PX + row.depth * TREE_INDENT_PX, height: rowHeightOf(row) }}
+        style={{ paddingLeft: treeIndentPx({ depth: row.depth }), height: rowHeightOf(row) }}
         className={cn(
           'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row',
           ROW_INTERACTIVE,
@@ -80,11 +79,7 @@ export const FolderRow = ({
           <span className="block min-w-0 truncate">{row.label}</span>
         </Tooltip>
         {isMarked ? (
-          <span
-            role="img"
-            aria-label="contains the file in view"
-            className="size-1.5 shrink-0 rounded-full bg-primary"
-          />
+          <StatusDot size="sm" tone="primary" ariaLabel="contains the file in view" />
         ) : null}
         {isOpen || !hasDelta ? null : (
           <>

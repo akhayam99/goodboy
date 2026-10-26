@@ -38,5 +38,5 @@ export const PreviewHints = ({ entry, isActionsLevel, allLabel, hasOtherModes }:
     ...(isActionsLevel ? ['← Back'] : []),
     ...(hasOtherModes && !isActionsLevel ? ['⇥ Search'] : []),
   ];
-  return <p className="truncate text-label text-faint-foreground">{hints.join(' · ')}</p>;
+  return <p className="truncate text-meta text-faint-foreground">{hints.join(' · ')}</p>;
 };

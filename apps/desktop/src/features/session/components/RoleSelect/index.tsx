@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { ROLE_REGISTRY } from '@goodboy/core';
-import { cn, Listbox, type ListboxOption } from '@goodboy/ui';
+import { cn, ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { agentKindPalette, kindForRole, ROLE_LABEL, visibleWorkflowRoles } from '../../agent-kind';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   value: AgentRole;

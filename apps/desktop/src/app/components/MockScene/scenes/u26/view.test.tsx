@@ -15,7 +15,7 @@ import {
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
@@ -80,7 +80,7 @@ describe('the view switch scenes', () => {
   it('draws the cards with no overview toggle beside New', async () => {
     await show({ name: 'u26-view-new-light' });
 
-    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
+    screen.getByRole('button', { name: 'New' });
     expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
     expect(document.querySelector('[data-central-column]')).not.toBeNull();
@@ -90,7 +90,7 @@ describe('the view switch scenes', () => {
     await show({ name: 'u26-view-archived-light' });
 
     expect(screen.queryByRole('button', { name: 'New' })).toBeNull();
-    expect(screen.getByRole('button', { name: /Restore/ })).toBeDefined();
+    screen.getByRole('button', { name: /Restore/ });
     expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
   });
 

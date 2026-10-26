@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 
-export const FOCUS_RECHECK_DEBOUNCE_MS = 400;
+const FOCUS_RECHECK_DEBOUNCE_MS = 400;
 
 export const useSessionFocusRecheck = (): void => {
   const recheckSessionMounts = useAppStore((s) => s.recheckSessionMounts);

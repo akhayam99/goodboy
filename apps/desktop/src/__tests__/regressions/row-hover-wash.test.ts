@@ -78,9 +78,9 @@ describe('the hover layer', () => {
     );
   });
 
-  it('is declared for both themes and the brand chip', () => {
+  it('is declared for both themes, the brand chip and the two more-contrast blocks', () => {
     const css = readFileSync(STYLES, 'utf8');
 
-    expect(css.match(/--color-overlay-hover:/g)).toHaveLength(3);
+    expect(css.match(/--color-overlay-hover:/g)).toHaveLength(5);
   });
 });

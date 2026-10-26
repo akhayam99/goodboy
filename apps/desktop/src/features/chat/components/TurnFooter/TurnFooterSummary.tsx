@@ -1,8 +1,8 @@
-import { WorkNode, type WorkNodeState } from '@goodboy/ui';
+import { ICON_SIZE, type WorkNodeState, WorkNode } from '@goodboy/ui';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { modelLabel } from '../../utils/chat-constants';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { TurnFooterData } from './useTurnFooter';
 
 type Outcome = Readonly<{

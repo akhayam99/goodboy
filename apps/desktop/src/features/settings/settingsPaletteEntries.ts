@@ -1,5 +1,5 @@
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
-import { formerNamesOf } from '../../shared/names';
+import { formerNamesOf } from '../../shared/utils/names';
 import type { PaletteEntry } from '../palette/types';
 import type { SettingsGroup } from './components/SettingsStudio/settingsDirectory';
 import type { SettingsFlow, SettingsFocus } from './settingsFocus';

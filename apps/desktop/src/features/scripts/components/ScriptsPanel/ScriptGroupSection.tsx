@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { ChevronRight, RefreshCw } from 'lucide-react';
-import { IconButton, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, IconButton, FOCUS_RING } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SessionScriptGroup } from '../../buildSessionScripts';
 
 type Props = {
@@ -38,7 +38,7 @@ export const ScriptGroupSection = ({
           aria-expanded={!isCollapsed}
           aria-controls={bodyId}
           onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left', FOCUS_RING)}
         >
           <ChevronRight
             size={ICON_SIZE.row}

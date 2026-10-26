@@ -2,12 +2,12 @@ import { computeProviderCostUsd } from '@goodboy/core';
 import { insertProviderRun, updateProviderRunStatus } from '@goodboy/db';
 import type {
   ChatMessageId,
-  IsoDateTime,
   ProviderId,
   ProviderRunId,
   ProviderUsage,
   SessionId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { recordUsageTelemetry } from '../turn/recordUsageTelemetry';
 import type { GetFn, SetFn } from './types';
@@ -21,8 +21,6 @@ type Params = {
   readonly model: string;
   readonly usage: ProviderUsage;
 };
-
-const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 export const recordAskUsage = async ({
   set,

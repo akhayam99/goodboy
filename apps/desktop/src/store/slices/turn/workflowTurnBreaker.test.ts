@@ -6,7 +6,6 @@ import {
   clearWorkflowTurns,
   MAX_UNATTENDED_TURNS_PER_AGENT,
   resetWorkflowTurnBreaker,
-  UNATTENDED_WINDOW_MS,
 } from './workflowTurnBreaker';
 
 const AGENT_ID = 'agent-1' as AgentId;
@@ -49,7 +48,7 @@ describe('workflowTurnBreaker', () => {
     expect(
       claimWorkflowTurn({
         agentId: AGENT_ID,
-        nowMs: T0 + MAX_UNATTENDED_TURNS_PER_AGENT + UNATTENDED_WINDOW_MS,
+        nowMs: T0 + MAX_UNATTENDED_TURNS_PER_AGENT + 60 * 60 * 1000,
       }),
     ).toBe('granted');
   });

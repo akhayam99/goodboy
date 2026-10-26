@@ -58,7 +58,7 @@ export const TrailFold = ({ segments }: Props) => {
                     close();
                     segment.onSelect?.();
                   }}
-                  className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
+                  className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-meta text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
                 >
                   <Icon
                     size={ICON_SIZE.row}

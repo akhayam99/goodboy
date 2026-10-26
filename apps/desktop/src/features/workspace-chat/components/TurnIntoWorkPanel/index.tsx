@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import {
   Button,
   FormActions,
@@ -24,11 +23,9 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { PromptField } from '../../../../shared/components/PromptField';
-import { resolveScopedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import { kindRouting } from '../../../session/agent-kind';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { useAppStore } from '../../../../store';
 import { activeChatBackend } from '../../activeChatBackend';
 import type { ChatHandoff } from '../../chatHandoff';
@@ -66,7 +63,7 @@ const MODE_OPTIONS = [
 
 const MODE_COPY = {
   new: {
-    action: 'Start session',
+    action: NAMES.startSession,
     hint: 'Creates a session and opens Start a run with this brief.',
   },
   add: {
@@ -315,7 +312,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
       <ScrollFade className="flex-1">
         <div className="flex flex-col gap-3 px-4 pb-3 pt-3">
           <div className="flex flex-col gap-2">
-            <span className="text-label text-muted-foreground">Start as</span>
+            <span className="text-meta text-muted-foreground">Start as</span>
             <SegmentedTabs
               ariaLabel="Start as"
               options={MODE_OPTIONS}
@@ -344,14 +341,14 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
           ) : (
             <>
               <label className="flex flex-col gap-2">
-                <span className="text-label text-muted-foreground">Title</span>
+                <span className="text-meta text-muted-foreground">Title</span>
                 <Input
                   value={brief.title}
                   onChange={(event) => patch({ title: event.target.value })}
                 />
               </label>
               <div className="flex flex-col gap-2">
-                <span className="text-label text-muted-foreground">Goal</span>
+                <span className="text-meta text-muted-foreground">Goal</span>
                 <PromptField
                   kind="document"
                   label="Goal"
@@ -380,7 +377,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               {mode === 'new' ? (
                 <>
                   <div className="flex flex-col gap-2">
-                    <span className="text-label text-muted-foreground">Folder</span>
+                    <span className="text-meta text-muted-foreground">Folder</span>
                     <ProjectPicker
                       projects={projects}
                       value={projectIds}

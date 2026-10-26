@@ -4,8 +4,11 @@ use std::sync::{Arc, Mutex};
 use serde::Serialize;
 
 use crate::turn::TurnEventPayload;
+use crate::util::lock_or_recover;
 
 pub const MAX_RUN_BACKLOG_BYTES: usize = 16 * 1024 * 1024;
+pub const MAX_RUN_BACKLOG_EVENTS: usize = 50_000;
+pub const EVENT_OVERHEAD_BYTES: usize = 64;
 pub const MAX_ENDED_RUNS: usize = 16;
 
 #[derive(Debug, Serialize, Clone, PartialEq)]
@@ -42,14 +45,15 @@ struct BacklogState {
 pub struct TurnBacklog(Arc<Mutex<BacklogState>>);
 
 fn event_bytes(event: &TurnEventPayload) -> usize {
-    match event {
+    let payload: usize = match event {
         TurnEventPayload::Line { line } => line.len(),
         TurnEventPayload::End { stderr, .. } => stderr.len(),
         TurnEventPayload::Error { message } => message.len(),
         TurnEventPayload::Reaped { stopped } => {
             stopped.iter().map(|process| process.name.len()).sum()
         }
-    }
+    };
+    EVENT_OVERHEAD_BYTES + payload
 }
 
 impl RunBacklog {
@@ -58,7 +62,9 @@ impl RunBacklog {
         let seq = self.next_seq;
         self.bytes += event_bytes(&event);
         self.events.push_back(SequencedEvent { seq, event });
-        while self.bytes > MAX_RUN_BACKLOG_BYTES && self.events.len() > 1 {
+        while (self.bytes > MAX_RUN_BACKLOG_BYTES || self.events.len() > MAX_RUN_BACKLOG_EVENTS)
+            && self.events.len() > 1
+        {
             let Some(oldest) = self.events.pop_front() else {
                 break;
             };
@@ -71,17 +77,13 @@ impl RunBacklog {
 
 impl TurnBacklog {
     pub fn open(&self, run_id: &str) {
-        if let Ok(mut state) = self.0.lock() {
-            state.runs.insert(run_id.to_string(), RunBacklog::default());
-            state.ended.retain(|id| id != run_id);
-        }
+        let mut state = lock_or_recover(&self.0);
+        state.runs.insert(run_id.to_string(), RunBacklog::default());
+        state.ended.retain(|id| id != run_id);
     }
 
     pub fn record(&self, run_id: &str, event: TurnEventPayload) -> u64 {
-        let Ok(mut state) = self.0.lock() else {
-            return 0;
-        };
-        state
+        lock_or_recover(&self.0)
             .runs
             .entry(run_id.to_string())
             .or_default()
@@ -89,9 +91,7 @@ impl TurnBacklog {
     }
 
     pub fn finish(&self, run_id: &str) {
-        let Ok(mut state) = self.0.lock() else {
-            return;
-        };
+        let mut state = lock_or_recover(&self.0);
         let Some(run) = state.runs.get_mut(run_id) else {
             return;
         };
@@ -105,9 +105,7 @@ impl TurnBacklog {
     }
 
     pub fn release(&self, run_id: &str) {
-        let Ok(mut state) = self.0.lock() else {
-            return;
-        };
+        let mut state = lock_or_recover(&self.0);
         let is_ended = state.runs.get(run_id).is_some_and(|run| run.has_ended);
         if !is_ended {
             return;
@@ -117,7 +115,7 @@ impl TurnBacklog {
     }
 
     pub fn snapshot(&self, run_id: &str, after_seq: u64) -> Option<AttachSnapshot> {
-        let state = self.0.lock().ok()?;
+        let state = lock_or_recover(&self.0);
         let run = state.runs.get(run_id)?;
         let events = run
             .events
@@ -141,8 +139,69 @@ mod tests {
 
     fn line(text: &str) -> TurnEventPayload {
         TurnEventPayload::Line {
-            line: text.to_string(),
+            line: Arc::from(text),
         }
+    }
+
+    #[test]
+    fn blank_lines_are_bounded_by_count() {
+        let backlog = TurnBacklog::default();
+        backlog.open("run-1");
+        for _ in 0..MAX_RUN_BACKLOG_EVENTS + 10 {
+            backlog.record("run-1", line(""));
+        }
+
+        let snapshot = backlog.snapshot("run-1", 0).expect("snapshot");
+
+        assert_eq!(snapshot.events.len(), MAX_RUN_BACKLOG_EVENTS);
+        assert!(snapshot.has_gap);
+        assert_eq!(snapshot.events.first().map(|event| event.seq), Some(11));
+    }
+
+    #[test]
+    fn every_event_weighs_its_overhead() {
+        assert_eq!(event_bytes(&line("")), EVENT_OVERHEAD_BYTES);
+        assert_eq!(event_bytes(&line("abc")), EVENT_OVERHEAD_BYTES + 3);
+    }
+
+    #[test]
+    fn a_poisoned_backlog_keeps_recording() {
+        let backlog = TurnBacklog::default();
+        backlog.open("run-1");
+        let held = backlog.clone();
+        let _ = std::thread::spawn(move || {
+            let _guard = held.0.lock().expect("lock");
+            panic!("poison the backlog");
+        })
+        .join();
+        assert!(backlog.0.is_poisoned());
+
+        assert_eq!(backlog.record("run-1", line("a")), 1);
+        assert_eq!(backlog.record("run-1", line("b")), 2);
+        assert_eq!(
+            backlog.snapshot("run-1", 0).expect("snapshot").events.len(),
+            2
+        );
+    }
+
+    #[test]
+    fn a_recorded_line_is_shared_not_copied() {
+        let backlog = TurnBacklog::default();
+        backlog.open("run-1");
+        let text: Arc<str> = Arc::from("shared");
+        backlog.record(
+            "run-1",
+            TurnEventPayload::Line {
+                line: Arc::clone(&text),
+            },
+        );
+
+        let snapshot = backlog.snapshot("run-1", 0).expect("snapshot");
+
+        let TurnEventPayload::Line { line: stored } = &snapshot.events[0].event else {
+            panic!("expected a line");
+        };
+        assert!(Arc::ptr_eq(stored, &text));
     }
 
     #[test]

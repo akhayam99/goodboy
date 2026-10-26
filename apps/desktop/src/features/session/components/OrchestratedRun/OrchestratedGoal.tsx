@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClampedProse, EmptyLine, Markdown } from '@goodboy/ui';
+import { ClampedProse, EmptyLine, Markdown, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
@@ -12,8 +12,10 @@ type Props = {
   readonly view: RunView;
 };
 
-const QUIET_TOGGLE =
-  'inline-flex h-6 items-center self-start rounded-md text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const QUIET_TOGGLE = cn(
+  'inline-flex h-6 items-center self-start rounded-md text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const OrchestratedGoal = ({ session, view }: Props) => {
   const { run, workflow } = view;

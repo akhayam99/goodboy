@@ -2,6 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import { changeTurnsOf } from '../changeTurnsOf';
+import { otherWritersOf } from '../otherWritersOf';
+import { turnWritersOf } from '../turnWritersOf';
 
 type RestoreStep = Readonly<{
   folderPath: string;
@@ -23,7 +26,12 @@ export type RestoreTarget = Readonly<{
 type Restored = Readonly<{ folderPath: string; restoreRunId: string }>;
 
 export type RestoreOutcome =
-  | Readonly<{ kind: 'ask'; target: RestoreTarget; changedSince: ReadonlyArray<string> }>
+  | Readonly<{
+      kind: 'ask';
+      target: RestoreTarget;
+      changedSince: ReadonlyArray<string>;
+      otherWriters: ReadonlyArray<string>;
+    }>
   | Readonly<{ kind: 'done'; target: RestoreTarget; restored: ReadonlyArray<Restored> }>
   | Readonly<{ kind: 'nothing'; target: RestoreTarget }>
   | Readonly<{ kind: 'failed'; target: RestoreTarget; message: string }>;
@@ -70,10 +78,24 @@ export const useChangesRestore = ({ sessionId }: Params): ChangesRestore => {
                   ...paths,
                 });
           if (result.status === 'changedSince') {
+            const state = useAppStore.getState();
             setOutcome({
               kind: 'ask',
               target: { ...target, steps: target.steps.slice(index) },
               changedSince: result.changedSince,
+              otherWriters: otherWritersOf({
+                runId: target.runId,
+                changedSince: result.changedSince,
+                turns: changeTurnsOf({
+                  turns: state.sessionFolderTurns[sessionId] ?? [],
+                  restored: {},
+                  titles: {},
+                }),
+                writers: turnWritersOf({
+                  agents: state.sessionPhaseRuns[sessionId] ?? [],
+                  transcripts: state.transcripts,
+                }),
+              }),
             });
             return;
           }

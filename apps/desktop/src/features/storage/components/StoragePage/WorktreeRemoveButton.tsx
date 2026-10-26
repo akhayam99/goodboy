@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 type Props = {

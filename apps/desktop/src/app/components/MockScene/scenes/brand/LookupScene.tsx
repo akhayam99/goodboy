@@ -14,7 +14,7 @@ import { adaptGithubIssues } from '../../../../../features/inbox/adapters/github
 import { NO_INBOX_FILTERS, filterInboxRecords } from '../../../../../features/inbox/kindFilter';
 import type { InboxProvider, InboxRecord } from '../../../../../features/inbox/types';
 import type { StarredRow } from '../../../../../features/inbox/useInboxStars';
-import { buildIssueGroups as buildLinearGroups } from '../../../../../features/integrations/linear/LinearStudio/useLinearIssues';
+import { buildIssueGroups as buildLinearGroups } from '../../../../../features/integrations/linear/LinearStudio/buildIssueGroups';
 import type {
   LinearIssue,
   LinearIssueComment,
@@ -39,7 +39,9 @@ const ORG = BRAND_WORKSPACE_NAME.toLowerCase();
 
 const LOOKUP_ISSUE: LinearIssue = HBL_412;
 
-const [LOOKUP_RECORD] = adaptLinearIssues({ groups: buildLinearGroups([LOOKUP_ISSUE], new Map()) });
+const [LOOKUP_RECORD] = adaptLinearIssues({
+  groups: buildLinearGroups({ issues: [LOOKUP_ISSUE], sessionIdByExternalId: new Map() }),
+});
 
 const LOOKUP: WorkspaceIssueLookup = {
   code: QUERY,
@@ -181,8 +183,12 @@ const STARRED_ALL: ReadonlyArray<StarredRow> = [
       ]),
 ];
 
-const [HBL_414_RECORD] = adaptLinearIssues({ groups: buildLinearGroups([HBL_414], new Map()) });
-const [HBL_398_RECORD] = adaptLinearIssues({ groups: buildLinearGroups([HBL_398], new Map()) });
+const [HBL_414_RECORD] = adaptLinearIssues({
+  groups: buildLinearGroups({ issues: [HBL_414], sessionIdByExternalId: new Map() }),
+});
+const [HBL_398_RECORD] = adaptLinearIssues({
+  groups: buildLinearGroups({ issues: [HBL_398], sessionIdByExternalId: new Map() }),
+});
 
 type OtherParams = {
   readonly provider: InboxProvider;

@@ -1,12 +1,7 @@
-import { parseProviderPolicy, parseWorkflowRules } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
+import { overridesFromWire, type WireOverrides } from './overridesFromWire';
+import type { WorkspaceId } from '@goodboy/types';
 import type { SetFn } from './types';
-
-type WireOverrides = Omit<OverrideSettings, 'providerPool' | 'workflowRules'> & {
-  readonly providerPool?: unknown;
-  readonly workflowRules?: unknown;
-};
 
 export const loadWorkspaceOverrides = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
@@ -16,14 +11,7 @@ export const loadWorkspaceOverrides = (set: SetFn) => {
     if (wire == null) {
       return;
     }
-    const overrides: OverrideSettings = {
-      ...wire,
-      providerPool: parseProviderPolicy({
-        value: wire.providerPool,
-        defaultProviderId: wire.defaultProviderId,
-      }),
-      workflowRules: parseWorkflowRules({ value: wire.workflowRules }),
-    };
+    const overrides = overridesFromWire({ wire });
     set((state) => ({
       workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
     }));

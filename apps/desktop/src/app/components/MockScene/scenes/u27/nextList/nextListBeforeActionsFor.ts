@@ -16,6 +16,8 @@ const SUGGESTION_VERB: Partial<Record<SessionSuggestion['kind'], string>> = {
   'push-branch': 'Push',
   'open-pr': 'Open PR',
   'mark-ready': 'Mark ready',
+  'merge-series': 'Merge in order',
+  'move-tracker-item': 'Move',
   'close-worktree': 'Remove',
 };
 

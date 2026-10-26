@@ -5,9 +5,7 @@ import { runPlace } from '../workflows/runPlace';
 
 type SpawnedTarget =
   | { readonly kind: 'run'; readonly runId: WorkflowRunId }
-  | { readonly kind: 'run-agent'; readonly runId: WorkflowRunId; readonly agentId: AgentId }
-  | { readonly kind: 'auto-root'; readonly agentId: AgentId }
-  | { readonly kind: 'auto-child'; readonly agentId: AgentId };
+  | { readonly kind: 'agent'; readonly agentId: AgentId };
 
 type Params = {
   readonly sessionId: SessionId;
@@ -21,22 +19,8 @@ export const openSpawned = ({ sessionId, target }: Params): void => {
     case 'run':
       state.navigate({ to: runPlace({ sessionId, runId: target.runId }), drawer: panel });
       return;
-    case 'auto-root':
+    case 'agent':
       state.navigate({ to: agentPlace({ sessionId, agentId: target.agentId }), drawer: panel });
-      return;
-    case 'run-agent':
-      state.openDrawer({
-        kind: 'run-step',
-        sessionId,
-        payload: { runId: target.runId, agentId: target.agentId, from: 'spawned' },
-      });
-      return;
-    case 'auto-child':
-      state.openDrawer({
-        kind: 'auto-child',
-        sessionId,
-        payload: { agentId: target.agentId, from: 'spawned' },
-      });
       return;
     default: {
       const exhaustive: never = target;

@@ -265,6 +265,8 @@ const aNote = (): DiffComment => ({
   status: 'open',
   createdAt: clock.iso({ at: '2026-10-09T10:00:00.000Z' }),
   authorKind: 'user',
+  projectId: PROJECT_ID,
+  branch: MOUNT.branch,
 });
 
 describe('Branch page header and sections', () => {

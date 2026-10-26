@@ -1,8 +1,8 @@
 import type { PullRequestEntry } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { cn, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, formatUsd, formatUsdPrecise, ICON_SIZE, Tooltip } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 
 type Props = {
@@ -10,7 +10,7 @@ type Props = {
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-const ROW = 'flex items-center gap-2 rounded-md px-2 py-2 text-left text-label';
+const ROW = 'flex items-center gap-2 rounded-md px-2 py-2 text-left text-meta';
 
 export const PullRequestRow = ({ entry, onOpenSession }: Props) => {
   const content = (

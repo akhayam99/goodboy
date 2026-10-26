@@ -9,7 +9,7 @@ import {
   resetStoryStore,
   stubStoryInvoke,
 } from '../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { ToastProvider } from '../../shared/components/Toast';
 import { useSuggestionActions } from './useSuggestionActions';
 import { deriveNextSteps } from './deriveNextSteps';

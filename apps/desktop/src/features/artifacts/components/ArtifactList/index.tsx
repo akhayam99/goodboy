@@ -120,7 +120,7 @@ export const ArtifactList = ({
             tone="danger"
             placement="inline"
             role="alert"
-            title="Could not load artifacts"
+            title="Couldn't load artifacts"
             detail={error}
             actions={
               <Button size="sm" onClick={() => void loadSessionArtifacts(sessionId)}>
@@ -133,7 +133,7 @@ export const ArtifactList = ({
             size="page"
             icon={CONCEPT_ICONS.artifacts}
             title="No artifacts yet"
-            description="Plans, reports and wireframes made in this session are kept here."
+            description="Plans, reports and wireframes from this session become artifacts."
           />
         ) : rows.length === 0 ? (
           <EmptyLine

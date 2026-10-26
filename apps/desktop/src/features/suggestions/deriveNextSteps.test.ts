@@ -1141,4 +1141,89 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(rows[0]?.detail).toBe('web #612, payments-api #418 · 1.0 GB');
     expect(rows[0]?.kind === 'close-worktree' ? rows[0].payload.worktrees.length : 0).toBe(2);
   });
+
+  describe('archiving a finished session', () => {
+    const MERGED = { merged: 1, closed: 0 };
+
+    it('offers Archive this session as the last Ship row when every branch is merged', () => {
+      const suggestions = deriveNextSteps({
+        ...BASE_PARAMS,
+        settledBranches: MERGED,
+        cleanupProposals: [cleanupProposal()],
+      });
+
+      expect(suggestions.map((candidate) => candidate.kind)).toEqual([
+        'close-worktree',
+        'archive-session',
+      ]);
+      const archive = suggestions.find((candidate) => candidate.kind === 'archive-session');
+      expect(archive?.title).toBe('Archive this session');
+      expect(archive?.detail).toBe('All branches merged');
+      expect(archive?.kind === 'archive-session' ? archive.payload.branchCount : 0).toBe(1);
+    });
+
+    it('says closed, or merged or closed, when the branches ended differently', () => {
+      const reasonOf = (settledBranches: { merged: number; closed: number }) =>
+        deriveNextSteps({ ...BASE_PARAMS, settledBranches }).find(
+          (candidate) => candidate.kind === 'archive-session',
+        )?.detail;
+
+      expect(reasonOf({ merged: 0, closed: 2 })).toBe('All branches closed');
+      expect(reasonOf({ merged: 1, closed: 1 })).toBe('All branches merged or closed');
+    });
+
+    it('offers nothing while a branch is still live, which the caller reports as none settled', () => {
+      expect(
+        deriveNextSteps({ ...BASE_PARAMS, settledBranches: { merged: 0, closed: 0 } }).some(
+          (candidate) => candidate.kind === 'archive-session',
+        ),
+      ).toBe(false);
+    });
+
+    it.each([
+      ['a question is open', { openQuestionCount: 1 }],
+      ['an agent runs', { agents: [agent({ status: 'running' })] }],
+      ['an agent waits to start', { agents: [agent({ status: 'pending' })] }],
+      ['an agent is blocked', { agents: [agent({ status: 'blocked' })] }],
+      [
+        'a run is working',
+        {
+          workflowRuns: [
+            {
+              id: brandId<WorkflowRunId>({ value: 'run-1' }),
+              title: 'Build',
+              advanceState: { kind: 'running' },
+              isRunning: true,
+            },
+          ],
+        },
+      ],
+    ])('offers nothing while %s', (_name, over) => {
+      const suggestions = deriveNextSteps({ ...BASE_PARAMS, settledBranches: MERGED, ...over });
+
+      expect(suggestions.some((candidate) => candidate.kind === 'archive-session')).toBe(false);
+    });
+
+    it('goes away with Not now, by fingerprint, and returns for a different branch count', () => {
+      const first = deriveNextSteps({ ...BASE_PARAMS, settledBranches: MERGED }).find(
+        (candidate) => candidate.kind === 'archive-session',
+      );
+      const dismissed = new Set([first?.fingerprint ?? '']);
+
+      expect(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          settledBranches: MERGED,
+          dismissedFingerprints: dismissed,
+        }).some((candidate) => candidate.kind === 'archive-session'),
+      ).toBe(false);
+      expect(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          settledBranches: { merged: 2, closed: 0 },
+          dismissedFingerprints: dismissed,
+        }).some((candidate) => candidate.kind === 'archive-session'),
+      ).toBe(true);
+    });
+  });
 });

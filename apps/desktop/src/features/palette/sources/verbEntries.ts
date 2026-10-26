@@ -1,4 +1,4 @@
-import { formerNamesOf } from '../../../shared/names';
+import { formerNamesOf } from '../../../shared/utils/names';
 import type { ObjectTarget, ResolvedAction } from '../../actions/types';
 import type { PaletteEntry } from '../types';
 

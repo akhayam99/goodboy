@@ -3,7 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionStageInfo } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { describeSessionStage } from '../../../session-stage';
-import { sessionTitle } from '../../../sessionTitle';
+import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 
 type Props = {
   readonly session: Session;
@@ -20,7 +20,6 @@ export const AlsoInChipContent = ({ session }: Props) => {
       <Chip
         as="button"
         tone="neutral"
-        shape="badge"
         kind="reference"
         onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
         className="min-w-0 shrink gap-2 hover:bg-hover hover:text-foreground"

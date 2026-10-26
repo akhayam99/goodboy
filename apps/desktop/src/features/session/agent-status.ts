@@ -13,7 +13,7 @@ export const AGENT_STATUS_PRESENTATION = {
     label: 'Running',
     reason: 'Working right now',
     tone: 'info',
-    icon: CONCEPT_ICONS.sessions,
+    icon: CONCEPT_ICONS.stageRunning,
   },
   completed: {
     label: 'Done',

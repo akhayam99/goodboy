@@ -24,7 +24,7 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
           disabled={disabled}
           onChange={onToggle}
           className="min-w-0 flex-1"
-          label={<span className="truncate text-label text-foreground">{workflow.name}</span>}
+          label={<span className="truncate text-meta text-foreground">{workflow.name}</span>}
         />
         {isNameTaken ? (
           <span className="shrink-0 text-meta text-faint-foreground">Same name here</span>

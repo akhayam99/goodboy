@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  MountId,
   PullRequestState,
   ReplyVoice,
   ResolveCommitStyle,
@@ -31,6 +32,8 @@ type Params = {
   readonly batch?: ResolveAttemptBatch | null;
   readonly name?: string;
   readonly parentAgentId?: AgentId;
+  readonly mountId?: MountId;
+  readonly expectedMountRevision?: number;
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolveStartStyle;
   readonly spawnAgent: SpawnAgentFn;
@@ -49,6 +52,8 @@ export const startResolve = async ({
   batch = null,
   name,
   parentAgentId,
+  mountId,
+  expectedMountRevision,
   priorContext,
   style,
   spawnAgent,
@@ -75,6 +80,8 @@ export const startResolve = async ({
       batch === null ? null : { ...batch, launchChoice: { ...batch.launchChoice, commitStyle } },
     ...(name !== undefined && { name }),
     ...(parentAgentId !== undefined && { parentAgentId }),
+    ...(mountId !== undefined && { mountId }),
+    ...(expectedMountRevision !== undefined && { expectedMountRevision }),
     spawnAgent,
     setAgentConfig,
   });

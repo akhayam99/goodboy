@@ -33,7 +33,7 @@ export const QuestionPager = ({ pager }: Props) => {
 
   return (
     <span className="flex shrink-0 items-center gap-2">
-      <span className="text-label tabular-nums text-muted-foreground">
+      <span className="text-meta tabular-nums text-muted-foreground">
         {pager.index + 1} of {total}
       </span>
       <span aria-hidden className="flex items-center gap-1">

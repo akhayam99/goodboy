@@ -6,7 +6,7 @@ import {
   Send,
   ThumbsDown,
   ThumbsUp,
-  XCircle,
+  CircleX,
 } from 'lucide-react';
 import {
   NO_RECORD_VERBS,
@@ -151,7 +151,7 @@ export const useMrVerbs = ({
       confirm: {
         title: `Merge !${mr.iid}?`,
         description:
-          'GitLab merges it with the method the project is set to. It cannot be undone from here.',
+          "GitLab merges it with the method the project is set to. It can't be undone from here.",
         confirmLabel: 'Confirm merge',
       },
     };
@@ -168,7 +168,7 @@ export const useMrVerbs = ({
     const close: RecordVerb = {
       key: 'close',
       label: 'Close merge request',
-      icon: XCircle,
+      icon: CircleX,
       onRun: onClose,
       isBusy: busy === 'close',
       blockedReason: busy === 'close' ? null : writeReason,

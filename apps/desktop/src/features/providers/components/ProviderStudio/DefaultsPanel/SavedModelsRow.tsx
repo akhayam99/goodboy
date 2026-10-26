@@ -1,6 +1,6 @@
 import { Check, Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import type { SavedModelFacts } from './savedModelFacts';
 
 type Props = {
@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const SavedModelsRow = ({ entry, onApply, onDiscard }: Props) => (
-  <li className="flex min-w-0 items-center justify-between gap-3 text-label">
+  <li className="flex min-w-0 items-center justify-between gap-3 text-meta">
     <span className="min-w-0 flex-1 truncate text-muted-foreground">
       <span className="text-foreground">{entry.name}</span>
       {`: ${entry.facts.join(', ')}`}
@@ -38,7 +38,7 @@ export const SavedModelsRow = ({ entry, onApply, onDiscard }: Props) => (
         role="alert"
         icon={<Trash2 size={ICON_SIZE.control} aria-hidden />}
         title={`Discard the saved settings of ${entry.name}?`}
-        description="They are deleted and cannot be brought back."
+        description="They are deleted and can't be brought back."
         confirmLabel="Discard"
         onConfirm={onDiscard}
         trigger={({ arm }) => (

@@ -9,6 +9,8 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import type { Database, GuardedStatement, PlainStatement } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_DELEGATION_STATES = [
   'accepted',
@@ -106,18 +108,8 @@ const DELEGATION_SELECT = `SELECT id, tree_id, generation, request_id, request_h
   reason, retry_of, revise_of, base_revision, adopted, is_stopping, question_cycles, deadline_at,
   result_json, created_at, settled_at FROM auto_delegations`;
 
-const isRecord = (value: unknown): value is AutoJsonObject =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 export const parseAutoJson = ({ text }: NullableTextParams): unknown => {
-  if (text === null) {
-    return null;
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+  return parseJsonColumn<unknown>({ value: text, isValid: isJsonValue, fallback: null });
 };
 
 const asObject = ({ text }: TextParams): AutoJsonObject => {

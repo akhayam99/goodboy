@@ -12,7 +12,7 @@ import { planCommentGuard } from '../../../features/plans/planComments/planComme
 import { NOT_REVISING, planRevisingOf } from '../../../features/plans/planRevising';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { sessionById } from '../sessions/sessionIndex';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import { refreshArtifactComments } from './refresh';
 import { settleAgainstVersions } from './settleSentComments';
 import type { GetFn, SendArtifactCommentsParams, SendArtifactCommentsResult, SetFn } from './types';

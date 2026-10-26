@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { EmptyLine } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../store';
-import { autoRootsOf } from '../../../features/auto/autoRootsOf';
 import { useAttachedWorkflowRuns } from '../../../features/workflows/useAttachedWorkflowRuns';
+import { useSessionRuns } from '../../../features/session/hooks/useSessionRuns';
 import { launchesOf } from './launchesOf';
+import { SpawnedAgentGroup } from './SpawnedAgentGroup';
 import { SpawnedAutoGroup } from './SpawnedAutoGroup';
 import { SpawnedRunGroup } from './SpawnedRunGroup';
 import { SpawnedTree } from './SpawnedTree';
@@ -17,34 +17,50 @@ type Props = {
 export const SpawnedLaunches = ({ session, selectedAgentId }: Props) => {
   const sessionId = session.id;
   const attached = useAttachedWorkflowRuns({ session });
-  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const kindOverride = useAppStore((state) => state.agentKindOverride);
-  const roots = useMemo(() => autoRootsOf({ agents, kindOverride }), [agents, kindOverride]);
-  const launches = useMemo(() => launchesOf({ attached, roots }), [attached, roots]);
+  const runs = useSessionRuns({ session });
+  const launches = useMemo(() => launchesOf({ runs, attached }), [runs, attached]);
   if (launches.length === 0) {
-    return <EmptyLine className="px-2">Nothing launched yet</EmptyLine>;
+    return <EmptyLine className="px-2">No agents in this session yet</EmptyLine>;
   }
   return (
     <SpawnedTree label="Launches">
-      {launches.map((launch) =>
-        launch.kind === 'run' ? (
-          <SpawnedRunGroup
-            key={launch.id}
-            session={session}
-            run={launch.run}
-            workflow={launch.workflow}
-            isHeaded
-            selectedAgentId={selectedAgentId}
-          />
-        ) : (
-          <SpawnedAutoGroup
-            key={launch.id}
-            sessionId={sessionId}
-            rootAgentId={launch.rootAgentId}
-            selectedAgentId={selectedAgentId}
-          />
-        ),
-      )}
+      {launches.map((launch) => {
+        switch (launch.kind) {
+          case 'run':
+            return (
+              <SpawnedRunGroup
+                key={launch.id}
+                session={session}
+                run={launch.run}
+                workflow={launch.workflow}
+                isHeaded
+                selectedAgentId={selectedAgentId}
+              />
+            );
+          case 'auto':
+            return (
+              <SpawnedAutoGroup
+                key={launch.id}
+                sessionId={sessionId}
+                rootAgentId={launch.rootAgentId}
+                selectedAgentId={selectedAgentId}
+              />
+            );
+          case 'agent':
+            return (
+              <SpawnedAgentGroup
+                key={launch.id}
+                sessionId={sessionId}
+                agentId={launch.agentId}
+                selectedAgentId={selectedAgentId}
+              />
+            );
+          default: {
+            const unreachable: never = launch;
+            return unreachable;
+          }
+        }
+      })}
     </SpawnedTree>
   );
 };

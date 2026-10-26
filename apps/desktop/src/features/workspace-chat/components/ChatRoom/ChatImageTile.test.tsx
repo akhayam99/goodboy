@@ -37,7 +37,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { ChatBackend } from '../../chatBackend';
-import { createMemoryChatBackend } from '../../createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../../../test/createMemoryChatBackend';
 import { ChatImageTile } from './ChatImageTile';
 import { ChatUserMessage } from './ChatUserMessage';
 

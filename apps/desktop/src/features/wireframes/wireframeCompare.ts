@@ -107,11 +107,8 @@ export const describeWireframeChange = ({
       ? findNode({ document: before, nodeId: change.nodeId })
       : findNode({ document: after, nodeId: change.nodeId });
   const label = node === null ? change.nodeId : wireframeNodeLabel({ node });
-  if (change.change === 'added') {
-    return `${label}: added`;
-  }
-  if (change.change === 'removed') {
-    return `${label}: removed`;
+  if (change.change === 'added' || change.change === 'removed') {
+    return label;
   }
   return `${label}: ${fieldsSentence({ fields: change.fields })}`;
 };

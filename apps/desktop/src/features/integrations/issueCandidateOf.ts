@@ -1,19 +1,19 @@
 import type { GithubIssue, PullRequestState } from '@goodboy/types';
 import { titleBranchSlug } from '../../shared/utils/issueBranchSlug';
-import { goalFromIssue as goalFromGithubIssue } from './github/goal-from-issue';
-import { goalFromPullRequest as goalFromGithubPullRequest } from './github/goal-from-pull-request';
-import { githubBranchSlug } from './github/components/PullRequest/useGithubIssues';
+import { goalFromIssue as goalFromGithubIssue } from './github/githubGoalFromIssue';
+import { goalFromPullRequest as goalFromGithubPullRequest } from './github/githubGoalFromPullRequest';
+import { githubBranchSlug } from './github/components/PullRequest/githubBranchSlug';
 import type { IssueCandidate } from './fetchIssueCandidates';
 import type { LinearIssue } from './linear/client';
-import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
+import { goalFromIssue as goalFromLinearIssue } from './linear/linearGoalFromIssue';
 import { issueIdentifier, type GitlabIssue } from './gitlab/client';
-import { goalFromIssue as goalFromGitlabIssue } from './gitlab/goal-from-issue';
-import { gitlabBranchSlug } from './gitlab/MergeRequest/useGitlabIssues';
+import { goalFromIssue as goalFromGitlabIssue } from './gitlab/gitlabGoalFromIssue';
+import { gitlabBranchSlug } from './gitlab/MergeRequest/gitlabBranchSlug';
 import type { JiraIssue } from './jira/client';
-import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
-import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';
+import { goalFromIssue as goalFromJiraIssue } from './jira/jiraGoalFromIssue';
+import { jiraBranchSlug } from './jira/JiraStudio/jiraBranchSlug';
 import type { SentryIssue } from './sentry/client';
-import { goalFromSentry } from './sentry/goal-from-sentry';
+import { goalFromSentry } from './sentry/goalFromSentry';
 
 const SENTRY_SLUG_MAX_LEN = 30;
 
@@ -58,7 +58,7 @@ export const gitlabIssueCandidate = (issue: GitlabIssue): IssueCandidate => ({
   url: issue.webUrl,
   goal: goalFromGitlabIssue({ issue }),
   body: issue.description ?? '',
-  branchSlug: gitlabBranchSlug(issue),
+  branchSlug: gitlabBranchSlug({ issue }),
 });
 
 export const jiraIssueCandidate = (issue: JiraIssue): IssueCandidate => ({

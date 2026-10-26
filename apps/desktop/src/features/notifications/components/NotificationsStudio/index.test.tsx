@@ -62,6 +62,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
       read: false,
       action: null,
       coalesceKey: null,
+      actedAt: null,
       ...overrides,
     }),
   });
@@ -73,6 +74,8 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
     kind: notification.kind,
     hasSession: notification.sessionId != null,
     hasAction: notification.action != null,
+    actionKind: notification.action?.kind ?? null,
+    isActed: notification.actedAt !== null,
     read: notification.read,
     inWorkspace: true,
     count: 1,
@@ -228,6 +231,41 @@ describe('NotificationsStudio', () => {
     fireEvent.click(within(rail).getByRole('button', { name: /needs action/i }));
     expect(screen.getByText('Read row')).toBeDefined();
     expect(screen.queryByText('Unread row')).toBeNull();
+  });
+
+  it('lists only retries under needs action, not the links or the opened ones', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          id: 'retry',
+          title: 'Push failed',
+          action: deserialize({
+            value: JSON.stringify({ kind: 'retry-publication', sessionId: 's' }),
+          }),
+        }),
+        buildNotification({
+          id: 'link',
+          title: 'Near the limit',
+          action: deserialize({ value: JSON.stringify({ kind: 'open-budget', sessionId: null }) }),
+        }),
+        buildNotification({
+          id: 'opened',
+          title: 'Spend opened',
+          read: true,
+          actedAt: at({ value: '2026-09-02T10:05:00.000Z' }),
+          action: deserialize({ value: JSON.stringify({ kind: 'open-budget', sessionId: null }) }),
+        }),
+      ],
+    });
+    renderStudio();
+    const rail = openFilterRail();
+
+    const needsAction = within(rail).getByRole('button', { name: /needs action/i });
+    fireEvent.click(needsAction);
+
+    screen.getByText('Push failed');
+    expect(screen.queryByText('Near the limit')).toBeNull();
+    expect(screen.queryByText('Spend opened')).toBeNull();
   });
 
   it('defaults to this workspace and switches to every workspace', () => {

@@ -5,6 +5,7 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countUserTextEvents,
   insertTurnEvent,
+  listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
   readFirstUserText,
 } from './turn-event';
@@ -170,6 +171,32 @@ describe('turn event queries', () => {
     expect(events[0]).toMatchObject({ deliveredBy: 'auto' });
     expect(events[2]).toMatchObject({ deliveredBy: 'auto' });
     await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
+  });
+
+  it('lists the stored id with each event of one agent, oldest first', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-first',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'Reconcile Harborline', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-second',
+      sessionId,
+      agentId,
+      event: { kind: 'assistant_text', runId, delta: 'Done.', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-other',
+      sessionId,
+      agentId: otherAgentId,
+      event: { kind: 'user_text', runId, text: 'Another agent', at },
+    });
+
+    const entries = await listTurnEventEntriesForAgent({ db, agentId });
+
+    expect(entries.map((entry) => entry.id)).toEqual(['event-first', 'event-second']);
+    expect(entries.map((entry) => entry.event.kind)).toEqual(['user_text', 'assistant_text']);
   });
 
   it('round-trips the operator note stored on an orchestrator decision', async () => {

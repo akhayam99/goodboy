@@ -13,7 +13,7 @@ import type {
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
-import type { ChatRouting } from '../../chatRouting';
+import type { ChatRouting } from '../../../conversation/chatRouting';
 import { defaultChatRouting } from '../../defaultChatRouting';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
 import { ChatComposer, type ChatComposerMessage } from '../ChatComposer';

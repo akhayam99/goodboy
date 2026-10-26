@@ -9,7 +9,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { ChatBackend } from '../../features/workspace-chat/chatBackend';
-import { createMemoryChatBackend } from '../../features/workspace-chat/createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../test/createMemoryChatBackend';
 
 export const CHAT_WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 

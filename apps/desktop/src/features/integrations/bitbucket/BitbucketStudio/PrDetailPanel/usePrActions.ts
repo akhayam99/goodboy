@@ -4,6 +4,7 @@ import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
 import type { BitbucketPrWriteParams } from '../../../../../store/slices/bitbucket-pr';
 import type { BitbucketRepo } from '../../client';
+import { hostErrorRecoveryOf } from '../../../../../store/slices/notifications/hostErrorRecovery';
 
 export type BitbucketPrActionBusy =
   'approve' | 'unapprove' | 'request-changes' | 'withdraw-changes' | 'merge' | 'decline' | null;
@@ -12,6 +13,7 @@ type Params = {
   readonly sessionId: SessionId | null;
   readonly repo: BitbucketRepo | null;
   readonly pullRequestId: number | null;
+  readonly expectedHeadSha: string | null;
   readonly onWritten: () => void;
 };
 
@@ -39,7 +41,13 @@ type RunParams = {
   readonly act: (target: BitbucketPrWriteParams) => Promise<void>;
 };
 
-export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Params): Result => {
+export const usePrActions = ({
+  sessionId,
+  repo,
+  pullRequestId,
+  expectedHeadSha,
+  onWritten,
+}: Params): Result => {
   const approveBitbucketPr = useAppStore((state) => state.approveBitbucketPr);
   const unapproveBitbucketPr = useAppStore((state) => state.unapproveBitbucketPr);
   const requestBitbucketPrChanges = useAppStore((state) => state.requestBitbucketPrChanges);
@@ -70,6 +78,7 @@ export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Para
       void reportError({
         title: `Couldn't update pull request #${target.pullRequestId}`,
         error,
+        recovery: hostErrorRecoveryOf({ error, tool: 'bitbucket' }),
         sessionId: target.sessionId,
       });
     } finally {
@@ -105,7 +114,21 @@ export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Para
         act: withdrawBitbucketPrChanges,
       }),
     merge: () =>
-      run({ kind: 'merge', toast: 'Pull request merged on Bitbucket', act: mergeBitbucketPr }),
+      run({
+        kind: 'merge',
+        toast: 'Pull request merged on Bitbucket',
+        act: ({
+          sessionId: writtenSession,
+          repo: writtenRepo,
+          pullRequestId: writtenId,
+        }: BitbucketPrWriteParams) =>
+          mergeBitbucketPr({
+            sessionId: writtenSession,
+            repo: writtenRepo,
+            pullRequestId: writtenId,
+            expectedHeadSha,
+          }),
+      }),
     decline: () =>
       run({
         kind: 'decline',

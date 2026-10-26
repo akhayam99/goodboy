@@ -1,14 +1,25 @@
 import type { ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { Button, FOCUS_RING, Tooltip, cn, tintClasses, IconButton } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  FOCUS_RING,
+  ICON_SIZE,
+  IconButton,
+  StatusDot,
+  tintClasses,
+  Tooltip,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { notificationActionIcon } from '../../actionIcon';
+import { isNotificationDebt } from '../../actionClass';
+import { markPointersActed } from '../../markPointersActed';
 import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import type { NotificationActionTarget } from '../../../actions/types';
 import { NotificationRowActions } from './NotificationRowActions';
@@ -49,6 +60,9 @@ export const NotificationRow = ({
   const severity = NOTIFICATION_SEVERITY[latest.severity];
   const SeverityIcon = severity.icon;
   const isUnread = notifications.some((notification) => !notification.read);
+  const hasUnreadDebt = notifications.some(
+    (notification) => !notification.read && isNotificationDebt({ notification }),
+  );
   const action =
     latest.action != null
       ? mapNotificationAction(latest.action, useAppStore.getState())
@@ -56,10 +70,19 @@ export const NotificationRow = ({
   const otherWorkspaces = workspaces.filter((workspace) => workspace.id !== currentWorkspaceId);
   const context = notificationContext(latest, sessions, otherWorkspaces) ?? null;
   const hasBody = latest.body != null && latest.body !== '';
+  const isActed = latest.actedAt !== null;
   const runAction = () => {
     action?.onClick();
+    if (action !== undefined) {
+      markPointersActed({ notifications });
+    }
     onActed?.();
   };
+  const actedTag = isActed ? (
+    <span data-notification-acted="" className="shrink-0 text-meta text-faint-foreground">
+      Opened
+    </span>
+  ) : null;
   const age = (
     <Tooltip content={formatDateTime({ at: latest.ts, hasYear: true })}>
       <time
@@ -105,7 +128,10 @@ export const NotificationRow = ({
     const ActionIcon =
       latest.action != null ? notificationActionIcon({ kind: latest.action.kind }) : null;
     return (
-      <li className="group relative grid grid-cols-[0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover">
+      <li
+        data-notification-key={scrollKey}
+        className="group relative grid grid-cols-[0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover"
+      >
         {overlay}
         <SeverityIcon
           size={ICON_SIZE.control}
@@ -113,14 +139,25 @@ export const NotificationRow = ({
           aria-label={severity.label}
         />
         <span className="pointer-events-none relative flex min-w-0 items-center gap-2">
+          {isUnread ? (
+            <span
+              data-unread-dot={hasUnreadDebt ? 'warning' : 'primary'}
+              role="img"
+              aria-label="Unread"
+              className="flex shrink-0"
+            >
+              <StatusDot tone={hasUnreadDebt ? 'warning' : 'primary'} size="sm" />
+            </span>
+          ) : null}
           <span
             className={cn(
-              'truncate text-label',
+              'truncate text-meta',
               isUnread ? 'font-medium text-foreground' : 'text-muted-foreground',
             )}
           >
             {latest.title}
           </span>
+          {actedTag}
           {count}
         </span>
         {age}
@@ -172,17 +209,18 @@ export const NotificationRow = ({
                 data-unread={isUnread ? '' : undefined}
                 className={cn(
                   'truncate',
-                  isUnread ? 'text-row text-foreground' : 'text-label text-muted-foreground',
+                  isUnread ? 'text-row text-foreground' : 'text-meta text-muted-foreground',
                 )}
               >
                 {latest.title}
               </h3>
+              {actedTag}
               {count}
             </div>
             {hasBody && !isSelected && (
               <p
                 className={cn(
-                  'truncate text-label',
+                  'truncate text-meta',
                   isUnread ? 'text-muted-foreground' : 'text-faint-foreground',
                 )}
               >

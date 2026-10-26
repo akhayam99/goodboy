@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { IconButton, Textarea, Kbd } from '@goodboy/ui';
+import { IconButton, Textarea, Kbd, useEscapeLayer } from '@goodboy/ui';
 import { composerPlaceholder } from './composerPlaceholder';
 import { ReplyBar } from './ReplyBar';
 import type { ConversationSource } from './types';
@@ -22,6 +22,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
     toolLabel: source.toolLabel,
   });
   const isEmpty = draft.trim() === '';
+  useEscapeLayer(model.clearTarget, model.target != null);
 
   useEffect(() => {
     if (model.focusToken === 0) {
@@ -42,12 +43,6 @@ export const ConversationComposer = ({ source, model }: Props) => {
     if (isSubmitChord(event)) {
       event.preventDefault();
       submit();
-      return;
-    }
-    if (event.key === 'Escape' && model.target != null) {
-      event.preventDefault();
-      event.stopPropagation();
-      model.clearTarget();
     }
   };
 

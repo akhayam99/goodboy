@@ -1,6 +1,5 @@
 import { TerminalSquare, X } from 'lucide-react';
-import { ConfirmPopover, IconButton } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE, IconButton } from '@goodboy/ui';
 
 type Props = {
   readonly name: string;

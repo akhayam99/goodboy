@@ -29,7 +29,7 @@ export const SpendLimitFields = ({
     <div className="relative">
       <span
         aria-hidden
-        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-label text-muted-foreground"
+        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-meta text-muted-foreground"
       >
         $
       </span>
@@ -43,7 +43,7 @@ export const SpendLimitFields = ({
         aria-invalid={invalid}
         data-testid="spend-limit-amount"
         onChange={(event) => onAmount(event.target.value)}
-        className={cn('pl-6 text-label', invalid && 'border-danger')}
+        className={cn('pl-6 text-meta', invalid && 'border-danger')}
       />
     </div>
     {parseSpendLimit(amount) != null && (

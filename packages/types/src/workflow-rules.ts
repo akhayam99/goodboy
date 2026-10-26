@@ -8,6 +8,7 @@ import {
 } from './run-preset';
 import { parseRunRoute, type RunRoute } from './run-route';
 import type { AgentRole } from './workflow';
+import { isRecord } from './helpers';
 
 type RouteParams = {
   readonly value: unknown;
@@ -90,9 +91,6 @@ const GUIDANCE_ROLES: ReadonlyArray<AgentRole> = [
   'wireframe',
   'custom',
 ];
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const autonomyOf = (value: unknown): WorkflowAutonomy =>
   WORKFLOW_AUTONOMY_VALUES.find((candidate) => candidate === value) ??

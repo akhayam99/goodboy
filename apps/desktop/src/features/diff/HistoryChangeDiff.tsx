@@ -21,7 +21,12 @@ export const HistoryChangeDiff = ({ files, sessionId, copyPath }: Props) => {
         void run({
           key: `open-editor:${filePath}`,
           failureTitle: "Couldn't open the copied file.",
-          task: () => openFileInWorkspace(copyPath, `${copyPath}/${filePath}`, editor),
+          task: () =>
+            openFileInWorkspace({
+              workspacePath: copyPath,
+              filePath: `${copyPath}/${filePath}`,
+              editor,
+            }),
         });
       },
     }),

@@ -96,7 +96,7 @@ export const ReviewersProperty = ({
             <li
               key={reviewer.person.login}
               data-reviewer-state={reviewer.state}
-              className="flex min-h-7 min-w-0 items-center gap-2 text-label"
+              className="flex min-h-7 min-w-0 items-center gap-2 text-meta"
             >
               <Avatar url={reviewer.person.avatarUrl} alt={reviewer.person.login} size="xs" />
               <span className="min-w-0 truncate text-foreground">{reviewer.person.login}</span>

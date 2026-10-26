@@ -68,7 +68,16 @@ export const CreatePrPanel = ({
   }, [mountId, sessionId]);
 
   const create = useCallback(
-    async ({ title, body, base, isDraft, isScribeBody, dismissed, onPushed }: CreateReviewInput) =>
+    async ({
+      title,
+      body,
+      base,
+      isDraft,
+      isScribeBody,
+      dismissed,
+      forcePush,
+      onPushed,
+    }: CreateReviewInput) =>
       createPrForSession({
         sessionId,
         ...(mountId === null ? {} : { mountId }),
@@ -78,6 +87,7 @@ export const CreatePrPanel = ({
         draft: isDraft,
         isScribeBody,
         excludedIssues: dismissed,
+        ...(forcePush === null ? {} : { forcePush }),
         onPushed,
       }),
     [createPrForSession, mountId, sessionId],

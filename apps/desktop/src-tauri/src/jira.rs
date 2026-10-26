@@ -5,8 +5,12 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
-use crate::integrations::http::{self, TransportFailure};
+use crate::integration_credentials::{self, BoundValue, IntegrationCredentialError};
+use crate::integrations::failure::{self, HostFailure, HostFailureKind};
+use crate::integrations::http::{
+    self, require_secure_scheme, send_retrying, SchemeRefusal, TransportFailure,
+};
+use crate::integrations::quote::quoted_literal;
 use crate::secrets;
 use crate::util::percent_encode;
 
@@ -18,12 +22,23 @@ integration_credentials::token_cache!(JiraTokenCache);
 pub enum JiraError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("http error 429: {body}")]
+    RateLimited {
+        retry_after_seconds: Option<u64>,
+        body: String,
+    },
     #[error("request timed out: {0}")]
     Timeout(String),
     #[error("authentication failed: {0}")]
     Auth(String),
+    #[error("forbidden: {0}")]
+    Forbidden(String),
     #[error("not found: {0}")]
     NotFound(String),
+    #[error("invalid request: {0}")]
+    InvalidInput(String),
+    #[error("{0}")]
+    InsecureHost(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
@@ -34,19 +49,52 @@ pub enum JiraError {
     Secret(#[from] secrets::SecretError),
 }
 
-crate::util::impl_error_serialize!(JiraError);
+crate::util::impl_error_serialize!(JiraError, failure);
 
 impl JiraError {
     fn kind(&self) -> &'static str {
         match self {
             JiraError::Http { .. } => "http",
+            JiraError::RateLimited { .. } => "rate_limited",
             JiraError::Timeout(_) => "timeout",
             JiraError::Auth(_) => "auth",
+            JiraError::Forbidden(_) => "forbidden",
             JiraError::NotFound(_) => "not_found",
+            JiraError::InvalidInput(_) => "invalid_input",
+            JiraError::InsecureHost(_) => "insecure_host",
             JiraError::InvalidShape(_) => "shape",
             JiraError::NoToken(_) => "no_token",
             JiraError::Credential(_) => "credential",
             JiraError::Secret(_) => "secret",
+        }
+    }
+
+    fn failure(&self) -> Option<HostFailure> {
+        match self {
+            JiraError::Http { status, body } => {
+                Some(failure::failure_of_status(*status, None, body))
+            }
+            JiraError::RateLimited {
+                retry_after_seconds,
+                body,
+            } => Some(failure::failure_of_status(429, *retry_after_seconds, body)),
+            JiraError::Timeout(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Timeout, message))
+            }
+            JiraError::Auth(detail) => Some(failure::failure_of_status(401, None, detail)),
+            JiraError::Forbidden(detail) => Some(failure::failure_of_status(403, None, detail)),
+            JiraError::NotFound(detail) => Some(failure::failure_of_status(404, None, detail)),
+            JiraError::InsecureHost(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Failed, message))
+            }
+            JiraError::NoToken(_) => Some(HostFailure::of_kind(
+                HostFailureKind::BadCredentials,
+                &self.to_string(),
+            )),
+            JiraError::InvalidInput(_)
+            | JiraError::InvalidShape(_)
+            | JiraError::Credential(_)
+            | JiraError::Secret(_) => None,
         }
     }
 }
@@ -60,7 +108,7 @@ impl From<reqwest::Error> for JiraError {
     }
 }
 
-const MAX_PAGES: u32 = 20;
+use crate::util::limits::MAX_PAGES;
 const SEARCH_PAGE_SIZE: u32 = 50;
 const COMMENT_PAGE_SIZE: i64 = 100;
 const ISSUE_FIELDS: &str =
@@ -68,12 +116,10 @@ const ISSUE_FIELDS: &str =
 
 fn site_root(site_url: &str) -> Result<String, JiraError> {
     let trimmed = site_url.trim().trim_end_matches('/');
-    if !(trimmed.starts_with("http://") || trimmed.starts_with("https://")) {
-        return Err(JiraError::InvalidShape(format!(
-            "invalid site url: {}",
-            site_url
-        )));
-    }
+    require_secure_scheme(trimmed).map_err(|refusal| match refusal {
+        SchemeRefusal::Insecure(message) => JiraError::InsecureHost(message),
+        SchemeRefusal::Invalid(message) => JiraError::InvalidInput(message),
+    })?;
     Ok(trimmed.to_string())
 }
 
@@ -130,8 +176,8 @@ fn build_project_jql(project_key: &str, assigned_only: bool) -> String {
         false => "",
     };
     format!(
-        "project = \"{}\"{} AND statusCategory != Done ORDER BY updated DESC",
-        project_key.trim(),
+        "project = {}{} AND statusCategory != Done ORDER BY updated DESC",
+        quoted_literal(project_key.trim()),
         scope
     )
 }
@@ -139,7 +185,7 @@ fn build_project_jql(project_key: &str, assigned_only: bool) -> String {
 fn build_keys_jql(issue_keys: &[String]) -> String {
     let quoted: Vec<String> = issue_keys
         .iter()
-        .map(|key| format!("\"{}\"", key.trim()))
+        .map(|key| quoted_literal(key.trim()))
         .collect();
     format!("key in ({})", quoted.join(", "))
 }
@@ -174,11 +220,16 @@ fn error_message(body: &str) -> Option<String> {
     }
 }
 
-fn error_for_status(status: u16, body: String) -> JiraError {
+fn error_for_status(status: u16, retry_after_seconds: Option<u64>, body: String) -> JiraError {
     let detail = error_message(&body).unwrap_or_else(|| body.clone());
     match status {
-        401 | 403 => JiraError::Auth(detail),
+        401 => JiraError::Auth(detail),
+        403 => JiraError::Forbidden(detail),
         404 => JiraError::NotFound(detail),
+        429 => JiraError::RateLimited {
+            retry_after_seconds,
+            body,
+        },
         _ => JiraError::Http { status, body },
     }
 }
@@ -193,16 +244,18 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
 ) -> Result<T, JiraError> {
-    let res = http::client()
-        .get(url)
-        .basic_auth(credentials.email, Some(credentials.token))
-        .header("Accept", "application/json")
-        .send()
-        .await?;
+    let res = send_retrying(|| {
+        http::client()
+            .get(url)
+            .basic_auth(credentials.email, Some(credentials.token))
+            .header("Accept", "application/json")
+    })
+    .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), body));
+        return Err(error_for_status(status.as_u16(), retry_after, body));
     }
     serde_json::from_str(&body).map_err(|e| JiraError::InvalidShape(e.to_string()))
 }
@@ -221,9 +274,10 @@ async fn send_json<T: serde::de::DeserializeOwned>(
         .send()
         .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), text));
+        return Err(error_for_status(status.as_u16(), retry_after, text));
     }
     serde_json::from_str(&text).map_err(|e| JiraError::InvalidShape(e.to_string()))
 }
@@ -242,9 +296,10 @@ async fn send_no_content(
         .send()
         .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), text));
+        return Err(error_for_status(status.as_u16(), retry_after, text));
     }
     Ok(())
 }
@@ -254,8 +309,33 @@ pub(crate) fn read_token(
     project_id: Option<&str>,
     cache: &JiraTokenCache,
 ) -> Result<String, JiraError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
         .ok_or_else(|| JiraError::NoToken(workspace_id.to_string()))
+}
+
+pub(crate) fn read_bound_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    site_url: &str,
+    email: &str,
+    cache: &JiraTokenCache,
+) -> Result<String, JiraError> {
+    integration_credentials::require_bound(
+        PROVIDER,
+        workspace_id,
+        project_id,
+        &[
+            BoundValue {
+                key: "siteUrl",
+                supplied: site_url,
+            },
+            BoundValue {
+                key: "email",
+                supplied: email,
+            },
+        ],
+    )?;
+    read_token(workspace_id, project_id, cache)
 }
 
 fn flatten_text(node: &Value) -> String {
@@ -522,14 +602,14 @@ pub struct JiraAvatarUrls {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JiraUser {
-    #[serde(rename = "accountId")]
     pub account_id: String,
-    #[serde(rename = "displayName", default)]
+    #[serde(default)]
     pub display_name: String,
-    #[serde(rename = "emailAddress", default)]
+    #[serde(default)]
     pub email_address: Option<String>,
-    #[serde(rename = "avatarUrls", default)]
+    #[serde(default)]
     pub avatar_urls: Option<JiraAvatarUrls>,
     #[serde(default)]
     pub active: Option<bool>,
@@ -542,10 +622,11 @@ struct JiraStatusCategory {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct JiraStatus {
     #[serde(default)]
     name: Option<String>,
-    #[serde(rename = "statusCategory", default)]
+    #[serde(default)]
     status_category: Option<JiraStatusCategory>,
 }
 
@@ -589,15 +670,14 @@ struct JiraIssueRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JiraIssue {
     pub id: String,
     pub key: String,
     pub summary: String,
     pub description: String,
     pub status: String,
-    #[serde(rename = "statusCategory")]
     pub status_category: String,
-    #[serde(rename = "issueType")]
     pub issue_type: String,
     pub priority: Option<String>,
     pub assignee: Option<JiraUser>,
@@ -641,12 +721,13 @@ fn map_issue(raw: JiraIssueRaw, root: &str) -> JiraIssue {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct JiraSearchPage {
     #[serde(default)]
     issues: Vec<JiraIssueRaw>,
-    #[serde(rename = "nextPageToken", default)]
+    #[serde(default)]
     next_page_token: Option<String>,
-    #[serde(rename = "isLast", default)]
+    #[serde(default)]
     is_last: Option<bool>,
 }
 
@@ -740,10 +821,11 @@ fn map_comment(raw: JiraCommentRaw) -> JiraComment {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct JiraCommentPage {
     #[serde(default)]
     comments: Vec<JiraCommentRaw>,
-    #[serde(rename = "startAt", default)]
+    #[serde(default)]
     start_at: i64,
     #[serde(default)]
     total: i64,
@@ -766,13 +848,14 @@ pub struct JiraTransitionTarget {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JiraTransition {
     pub id: String,
     #[serde(default)]
     pub name: String,
     #[serde(default)]
     pub to: Option<JiraTransitionTarget>,
-    #[serde(rename = "hasScreen", default)]
+    #[serde(default)]
     pub has_screen: bool,
 }
 
@@ -828,7 +911,7 @@ pub async fn jira_validate_connection(
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraUser, JiraError> {
     let api_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, cache.0)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -849,14 +932,15 @@ pub struct JiraProject {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct JiraProjectPage {
     #[serde(default)]
     values: Vec<JiraProject>,
-    #[serde(rename = "startAt", default)]
+    #[serde(default)]
     start_at: i64,
-    #[serde(rename = "maxResults", default)]
+    #[serde(default)]
     max_results: i64,
-    #[serde(rename = "isLast", default)]
+    #[serde(default)]
     is_last: Option<bool>,
 }
 
@@ -885,7 +969,7 @@ pub async fn jira_list_projects(
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraProject>, JiraError> {
     let api_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, cache.0)?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -915,8 +999,8 @@ pub async fn jira_connect(
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
     let api_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &api_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, cache.0)?;
+    integration_credentials::store_secret(&credential_id, &api_token, cache.0)?;
     Ok(())
 }
 
@@ -930,7 +1014,13 @@ pub async fn jira_list_issues(
     assigned_only: bool,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraIssue>, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -958,7 +1048,13 @@ pub async fn jira_get_issues(
     if issue_keys.is_empty() {
         return Ok(Vec::new());
     }
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -983,7 +1079,13 @@ pub async fn jira_get_issue(
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraIssue, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1009,7 +1111,13 @@ pub async fn jira_list_comments(
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraComment>, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1044,7 +1152,13 @@ pub async fn jira_create_comment(
     body: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<JiraComment, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1068,7 +1182,13 @@ pub async fn jira_update_issue(
     description: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1090,7 +1210,13 @@ pub async fn jira_set_assignee(
     account_id: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1112,7 +1238,13 @@ pub async fn jira_list_assignable_users(
     query: Option<String>,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraUser>, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1136,7 +1268,13 @@ pub async fn jira_list_transitions(
     issue_key: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<Vec<JiraTransition>, JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1162,7 +1300,13 @@ pub async fn jira_transition_issue(
     transition_id: String,
     cache: State<'_, JiraTokenCache>,
 ) -> Result<(), JiraError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &site_url,
+        &email,
+        &cache,
+    )?;
     let root = site_root(&site_url)?;
     let base = api_base(&site_url)?;
     let credentials = Credentials {
@@ -1173,6 +1317,9 @@ pub async fn jira_transition_issue(
     let write = transition_write(&base, &issue_key, &transition_id);
     send_no_content(&credentials, reqwest::Method::POST, &write.url, &write.body).await
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -1235,7 +1382,7 @@ mod tests {
     #[test]
     fn site_root_rejects_a_url_without_scheme() {
         let err = site_root("acme.atlassian.net").unwrap_err();
-        assert!(matches!(err, JiraError::InvalidShape(_)));
+        assert!(matches!(err, JiraError::InvalidInput(_)));
     }
 
     #[test]
@@ -1271,17 +1418,19 @@ mod tests {
     }
 
     #[test]
-    fn error_for_status_treats_401_and_403_as_auth_failures() {
-        let unauthorized = error_for_status(401, r#"{"errorMessages":["Bad token"]}"#.into());
+    fn error_for_status_keeps_a_401_as_auth_and_a_403_as_forbidden() {
+        let unauthorized = error_for_status(401, None, r#"{"errorMessages":["Bad token"]}"#.into());
         assert!(matches!(unauthorized, JiraError::Auth(ref m) if m == "Bad token"));
-        let forbidden = error_for_status(403, r#"{"errorMessages":["No permission"]}"#.into());
-        assert!(matches!(forbidden, JiraError::Auth(ref m) if m == "No permission"));
+        let forbidden =
+            error_for_status(403, None, r#"{"errorMessages":["No permission"]}"#.into());
+        assert!(matches!(forbidden, JiraError::Forbidden(ref m) if m == "No permission"));
     }
 
     #[test]
     fn error_for_status_maps_404_to_not_found() {
         let err = error_for_status(
             404,
+            None,
             r#"{"errorMessages":["Issue does not exist"],"errors":{}}"#.into(),
         );
         assert!(matches!(err, JiraError::NotFound(ref m) if m == "Issue does not exist"));
@@ -1290,7 +1439,7 @@ mod tests {
     #[test]
     fn error_for_status_keeps_a_400_as_http_with_the_raw_body() {
         let body = r#"{"errorMessages":[],"errors":{"description":"Operation value must be an Atlassian Document"}}"#;
-        let err = error_for_status(400, body.into());
+        let err = error_for_status(400, None, body.into());
         assert!(matches!(err, JiraError::Http { status: 400, .. }));
     }
 
@@ -1881,5 +2030,112 @@ mod tests {
             .await
             .unwrap_err();
         assert_error_shape(&error, "http");
+    }
+
+    #[test]
+    fn every_http_status_reads_as_one_failure_kind_on_the_wire() {
+        for (status, kind) in [
+            (401, "bad_credentials"),
+            (403, "denied"),
+            (404, "not_found"),
+            (409, "failed"),
+            (500, "failed"),
+            (502, "failed"),
+        ] {
+            let wire = serde_json::to_value(error_for_status(status, None, "{}".into())).unwrap();
+            assert_eq!(wire["failureKind"], kind, "status {status}");
+            assert_eq!(wire["status"], status, "status {status}");
+        }
+        let network = serde_json::to_value(JiraError::Http {
+            status: 0,
+            body: "refused".into(),
+        })
+        .unwrap();
+        assert_eq!(network["failureKind"], "network");
+        let limited = serde_json::to_value(error_for_status(429, Some(9), "slow".into())).unwrap();
+        assert_eq!(limited["kind"], "rate_limited");
+        assert_eq!(limited["failureKind"], "rate_limited");
+        assert_eq!(limited["retryAfterSeconds"], 9);
+    }
+
+    #[test]
+    fn a_permission_denial_no_longer_reads_as_an_authentication_failure() {
+        let denied = serde_json::to_value(error_for_status(403, None, "{}".into())).unwrap();
+        assert_eq!(denied["kind"], "forbidden");
+        assert!(denied["message"].as_str().unwrap().starts_with("forbidden"));
+        let unauthorized = serde_json::to_value(error_for_status(401, None, "{}".into())).unwrap();
+        assert_eq!(unauthorized["kind"], "auth");
+    }
+
+    #[test]
+    fn a_bad_site_url_is_caller_input() {
+        let error = site_root("acme.atlassian.net").unwrap_err();
+        assert!(matches!(error, JiraError::InvalidInput(_)));
+        let wire = serde_json::to_value(error).unwrap();
+        assert!(wire.get("failureKind").is_none());
+    }
+
+    #[test]
+    fn a_plain_http_site_is_a_typed_failure_with_the_fix_in_the_detail() {
+        let error = site_root("http://jira.internal:8080").unwrap_err();
+        let wire = serde_json::to_value(error).unwrap();
+        assert_eq!(wire["kind"], "insecure_host");
+        assert_eq!(wire["failureKind"], "failed");
+        assert!(wire["detail"].as_str().unwrap().contains("use https"));
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_read_is_retried_and_keeps_the_retry_hint() {
+        use crate::integrations::http::test_support::{
+            http_response, serve_sequence, within_bound,
+        };
+        use crate::integrations::http::MAX_ATTEMPTS;
+        let answer = http_response(
+            "429 Too Many Requests",
+            &[("Retry-After", "0")],
+            "slow down",
+        );
+        let (base, server) = serve_sequence(vec![answer; MAX_ATTEMPTS as usize]).await;
+        let credentials = Credentials {
+            root: &base,
+            email: "nadia@harborline.test",
+            token: "token",
+        };
+        let error = within_bound(get_json::<Value>(&credentials, &base))
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            JiraError::RateLimited { retry_after_seconds: Some(0), ref body } if body == "slow down"
+        ));
+        assert_eq!(server.await.unwrap().len(), MAX_ATTEMPTS as usize);
+    }
+
+    #[test]
+    fn jql_values_escape_a_quote_a_backslash_and_keep_a_slash_and_a_space() {
+        assert_eq!(quoted_literal("GB"), "\"GB\"");
+        assert_eq!(quoted_literal("a/b c"), "\"a/b c\"");
+        assert_eq!(
+            quoted_literal("x\" OR project = \"Y"),
+            "\"x\\\" OR project = \\\"Y\""
+        );
+        assert_eq!(quoted_literal("back\\slash"), "\"back\\\\slash\"");
+    }
+
+    #[test]
+    fn a_hostile_project_key_cannot_widen_the_query() {
+        let jql = build_project_jql("GB\" OR project != \"x", false);
+        assert_eq!(
+            jql,
+            "project = \"GB\\\" OR project != \\\"x\" AND statusCategory != Done ORDER BY updated DESC"
+        );
+    }
+
+    #[test]
+    fn a_hostile_issue_key_stays_inside_its_quotes() {
+        assert_eq!(
+            build_keys_jql(&["NW-1\") OR (project = \"Y".to_string()]),
+            "key in (\"NW-1\\\") OR (project = \\\"Y\")"
+        );
     }
 }

@@ -20,6 +20,7 @@ const gitStatus = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
 const baseState = {
   updaterStatus: 'idle',
   storageFolders: [],
+  terminalTabs: {},
   settings: {},
   storageStats: null,
   openSecurityFindings: {},

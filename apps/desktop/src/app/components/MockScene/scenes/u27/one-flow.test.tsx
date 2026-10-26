@@ -119,7 +119,9 @@ describe('the u27 one flow scenes', () => {
     mount({ id: 'u27-one-flow-after-runs' });
 
     const list = await screen.findByRole('list', { name: 'Runs' }, WAIT);
-    const rows = within(list).getAllByRole('button');
+    const rows = within(list)
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-list-grid-row'));
     expect(rows).toHaveLength(4);
     for (const origin of [
       'Workflow · Preset Fix a layout',

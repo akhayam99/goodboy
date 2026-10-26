@@ -6,19 +6,6 @@ use thiserror::Error;
 
 pub(crate) const FOLDER_SIGNALS_ENTRY_CAP: u32 = 2_000;
 
-pub(crate) const SKIPPED_FOLDERS: &[&str] = &[
-    "node_modules",
-    "target",
-    "dist",
-    "build",
-    "out",
-    "vendor",
-    "Pods",
-    "DerivedData",
-    "__pycache__",
-    "venv",
-];
-
 const MARKER_FILES: &[(&str, &str)] = &[
     ("package.json", "package.json"),
     ("Cargo.toml", "Cargo.toml"),
@@ -270,7 +257,7 @@ fn visit_folder(scan: &mut Scan, path: &Path, name: &str, subfolders: Option<&mu
         scan.count_file(kind, 0);
         return;
     }
-    if SKIPPED_FOLDERS.contains(&name) {
+    if crate::reproducible_dirs::is_skipped_in_walk(name) {
         return;
     }
     if let Some(list) = subfolders {

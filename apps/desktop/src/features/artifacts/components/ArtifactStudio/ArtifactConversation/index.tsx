@@ -48,7 +48,7 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
           <div className="flex min-w-0 flex-1 items-baseline gap-2">
             <span
               data-testid="artifact-conversation-recipient"
-              className="shrink-0 text-label text-foreground"
+              className="shrink-0 text-meta text-foreground"
             >
               {agent === null
                 ? 'the agent behind this artifact is gone'
@@ -65,7 +65,7 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
               onClick={attach}
               disabled={!hasAgent}
               data-testid="artifact-attach"
-              title="the agent does not see your edits until you attach the artifact"
+              title="the agent doesn't see your edits until you attach the artifact"
             >
               Attach {artifact.kind}
             </Button>

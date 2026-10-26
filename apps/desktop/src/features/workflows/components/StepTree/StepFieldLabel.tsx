@@ -1,6 +1,6 @@
 import { Undo2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PolishField } from '../../stepPolishFields';
 
 type Props = {

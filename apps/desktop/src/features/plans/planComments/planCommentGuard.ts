@@ -40,16 +40,16 @@ const startedStepAfter = ({
 export const planCommentGuard = ({ plan, agents, runs, revising }: Params): PlanCommentGuard => {
   const planner = agents.find((agent) => agent.id === plan.agentId);
   if (planner === undefined || planner.deletedAt != null) {
-    return blocked({ reason: 'The planner is gone, so comments cannot be sent.' });
+    return blocked({ reason: "The planner is gone, so comments can't be sent." });
   }
   if (revising.kind === 'revising') {
     return blocked({ reason: PLAN_REVISING_REASON });
   }
   if (plan.status === 'consumed' || plan.consumptionCount > 0) {
-    return blocked({ reason: 'This plan already ran. Comments cannot change it.' });
+    return blocked({ reason: "This plan already ran. Comments can't change it." });
   }
   if (plan.status !== 'active') {
-    return blocked({ reason: 'This plan was replaced. Comments cannot change it.' });
+    return blocked({ reason: "This plan was replaced. Comments can't change it." });
   }
   if (planner.status === 'running') {
     return blocked({ reason: 'The planner is still working. Send once it finishes.' });
@@ -66,6 +66,6 @@ export const planCommentGuard = ({ plan, agents, runs, revising }: Params): Plan
     return ALLOWED;
   }
   return blocked({
-    reason: `The next step (${started.name}) already started. Comments cannot change the plan.`,
+    reason: `The next step (${started.name}) already started. Comments can't change the plan.`,
   });
 };

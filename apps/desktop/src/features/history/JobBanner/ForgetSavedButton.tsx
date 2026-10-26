@@ -1,6 +1,5 @@
 import { Archive } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly isBusy: boolean;

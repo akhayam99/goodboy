@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 
 export type FieldSize = 'sm' | 'md';
 
@@ -18,7 +19,9 @@ export const Input = ({ className, type = 'text', size = 'sm', ...rest }: InputP
       type={type}
       data-size={size}
       className={cn(
-        'w-full rounded-md border border-border bg-background text-label text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:bg-fill disabled:text-disabled-foreground',
+        'w-full rounded-md border border-border bg-background text-ui text-foreground placeholder:text-faint-foreground',
+        FOCUS_RING,
+        'disabled:bg-fill disabled:text-disabled-foreground',
         FIELD_SIZE_CLASSES[size],
         className,
       )}

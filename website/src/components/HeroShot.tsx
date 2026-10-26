@@ -34,8 +34,8 @@ export const HeroShot = () => (
         width={WIDTH}
         height={HEIGHT}
         alt={ALT}
-        loading="lazy"
         decoding="async"
+        fetchPriority="high"
         data-hero-shot=""
       />
     ))}

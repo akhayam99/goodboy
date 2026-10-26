@@ -15,7 +15,7 @@ import {
   makeRuntimeWorld,
   userSays,
   type RuntimeWorld,
-} from '../auto/testing/runtimeWorld';
+} from '../../runtime/auto/testing/runtimeWorld';
 import { stopAutoTreeForDelete } from './stopAutoTreeForDelete';
 
 const holder: { db: Database | undefined } = vi.hoisted(() => ({ db: undefined }));

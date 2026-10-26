@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { SetFn } from './types';
 
 export const loadSessionPlans = (set: SetFn) => {

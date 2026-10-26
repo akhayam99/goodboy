@@ -35,6 +35,23 @@ const workflowId = 'wf-1' as WorkflowId;
 const workflowId2 = 'wf-2' as WorkflowId;
 const NOW = '2026-06-12T00:00:00.000Z' as IsoDateTime;
 
+type OlderChainParams = {
+  readonly db: Database;
+  readonly runId: string;
+  readonly afterId: string;
+};
+
+const writeChainAnOlderReleaseSaved = async ({
+  db,
+  runId,
+  afterId,
+}: OlderChainParams): Promise<void> => {
+  await db.execute(
+    "UPDATE session_workflows SET trigger_mode = 'after_run', chain_after_run_id = ? WHERE workflow_run_id = ?",
+    [afterId, runId],
+  );
+};
+
 type InsertActivePlanParams = {
   readonly db: Database;
   readonly workflowRunId: WorkflowRunId;
@@ -237,7 +254,7 @@ describe('session_workflows trigger-mode queries', () => {
       expect(runs[0]!.orchestratorRouting).toBeUndefined();
     });
 
-    it('persists after_run mode with chain_after_run_id round-trip', async () => {
+    it('reads a chained run an older release saved, with its predecessor', async () => {
       await attachWorkflowToSession({
         db,
         sessionId,
@@ -253,8 +270,11 @@ describe('session_workflows trigger-mode queries', () => {
         workflowId: workflowId2,
         autoRun: true,
         updatedAt: NOW,
-        triggerMode: 'after_run',
-        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
+      await writeChainAnOlderReleaseSaved({
+        db,
+        runId: 'chained',
+        afterId: 'pred',
       });
       const runs = await readRunsNewestFirst({ db });
       const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
@@ -382,8 +402,11 @@ describe('session_workflows trigger-mode queries', () => {
         workflowId,
         autoRun: true,
         updatedAt: NOW,
-        triggerMode: 'after_run',
-        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
+      await writeChainAnOlderReleaseSaved({
+        db,
+        runId: 'run-1',
+        afterId: 'pred',
       });
       await updateSessionWorkflowTriggerMode(
         db,
@@ -412,8 +435,11 @@ describe('session_workflows trigger-mode queries', () => {
         workflowId,
         autoRun: true,
         updatedAt: NOW,
-        triggerMode: 'after_run',
-        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
+      await writeChainAnOlderReleaseSaved({
+        db,
+        runId: 'run-1',
+        afterId: 'pred',
       });
       await updateSessionWorkflowTriggerMode(
         db,
@@ -445,8 +471,11 @@ describe('session_workflows trigger-mode queries', () => {
         workflowId: workflowId2,
         autoRun: false,
         updatedAt: NOW,
-        triggerMode: 'after_run',
-        chainAfterRunId: 'pred' as WorkflowRunId,
+      });
+      await writeChainAnOlderReleaseSaved({
+        db,
+        runId: 'chained',
+        afterId: 'pred',
       });
       await updateWorkflowOrder(
         db,

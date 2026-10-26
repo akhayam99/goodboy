@@ -67,7 +67,7 @@ const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
 };
 
 const press = async (id: ShortcutId): Promise<void> => {
-  const anchor = await screen.findByRole('button', { name: /^Search \(/ });
+  const anchor = await screen.findByRole('button', { name: /^Search or run \(/ });
   anchor.focus();
   pressShortcut({ id });
   await settle();

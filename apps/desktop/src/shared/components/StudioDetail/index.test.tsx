@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { StudioWidget } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
-import { RailBlock } from '@goodboy/ui';
 import { StudioDetailTabs } from '@goodboy/ui';
 
 beforeEach(() => {
@@ -74,16 +73,6 @@ describe('StudioWidget', () => {
 
     const body = screen.getByText('Primary body').parentElement;
     expect(body?.className).toBe('');
-  });
-});
-
-describe('RailBlock', () => {
-  it('renders the label above its value without a description list', () => {
-    const { container } = render(<RailBlock label="Reviewers">Grace Hopper</RailBlock>);
-
-    expect(screen.getByText('Reviewers')).toBeDefined();
-    expect(screen.getByText('Grace Hopper')).toBeDefined();
-    expect(container.querySelector('dl')).toBeNull();
   });
 });
 

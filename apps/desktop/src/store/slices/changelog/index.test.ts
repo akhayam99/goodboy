@@ -33,7 +33,7 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
 
 import { createChangelogSlice } from './index';
-import { initialChangelogState, SETTING_CHANGELOG_SEEN, type ChangelogState } from './state';
+import { changelogInitialState, SETTING_CHANGELOG_SEEN, type ChangelogState } from './state';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 
 const dateRelease = {
@@ -44,7 +44,7 @@ const dateRelease = {
 };
 
 const harness = () => {
-  let state: ChangelogState = { ...initialChangelogState };
+  let state: ChangelogState = { ...changelogInitialState };
   const set = (p: Partial<ChangelogState> | ((s: ChangelogState) => Partial<ChangelogState>)) => {
     state = { ...state, ...(typeof p === 'function' ? p(state) : p) };
   };
@@ -64,7 +64,7 @@ describe('changelog slice', () => {
   it('has every release from CHANGELOG.md available synchronously, with no fetch', () => {
     const { getState } = harness();
 
-    expect(getState().changelogReleases.length).toBe(148);
+    expect(getState().changelogReleases.length).toBe(149);
     expect(fetchReleasesMock).not.toHaveBeenCalled();
   });
 

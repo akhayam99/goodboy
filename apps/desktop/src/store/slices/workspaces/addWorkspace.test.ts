@@ -93,4 +93,17 @@ describe('addWorkspace names the workspace after the picked folder', () => {
     expect(workspace.name).toBe('Harborline');
     expect(useAppStore.getState().projects.map((project) => project.name)).toEqual(['ledger_core']);
   });
+
+  it('writes the Full access default for a new workspace instead of leaning on the fallback', async () => {
+    const workspace = await useAppStore
+      .getState()
+      .addWorkspace({ rootPath: '/Users/me/Code/payments-api' });
+
+    const rows = await rowsOf<{ readonly default_permission_mode: string }>({
+      sql: 'SELECT default_permission_mode FROM workspaces WHERE id = ?',
+      params: [workspace.id],
+    });
+    expect(workspace.defaultPermissionMode).toBe('bypassPermissions');
+    expect(rows).toEqual([{ default_permission_mode: 'bypassPermissions' }]);
+  });
 });

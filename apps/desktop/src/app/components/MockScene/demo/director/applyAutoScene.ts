@@ -1,4 +1,5 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import {
   AUTO_PLAN,
   AUTO_PLAN_STORED,
@@ -28,9 +29,6 @@ const implementerTurnOf = ({ isRunning, at, runId }: TurnParams) =>
   isRunning
     ? { kind: 'running' as const, runId, startedAt: at }
     : { kind: 'idle' as const, lastActivityAt: at };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type ResultParams = {
   readonly result: unknown;

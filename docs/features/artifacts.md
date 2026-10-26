@@ -4,7 +4,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 ### Artifacts
 
-Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you**, **Ready**, **Running**, **Consumed** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card (`artifactStateCardOf`) with the state, its detail and what it means.
+Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you**, **Ready**, **Running**, **Consumed** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card with the state, its detail and what it means.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
@@ -42,7 +42,7 @@ Open any artifact as a folder, in your browser or your file manager. The folder 
 
 ### Create a wireframe
 
-Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). **Included context** lists exactly what goes into the pack.
+Describe the screen, add attachments, and choose how faithful it is and which device it targets. **Draw a wireframe** is the last entry of the **New** menu in a session, after **Start a run** and **Write a report**. Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). **Included context** lists exactly what goes into the pack.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-dark.webp">
@@ -92,3 +92,9 @@ Bring back an earlier plan, report or wireframe as a new revision, with its auth
 ### Save a copy and New variant
 
 Export a wireframe as a folder of pages, or redraw it at the other fidelity.
+
+## Under the hood
+
+This part is for contributors and agents who change the feature.
+
+- Fact card on a row: `artifactStateCardOf` builds the card that opens on the state of a row.

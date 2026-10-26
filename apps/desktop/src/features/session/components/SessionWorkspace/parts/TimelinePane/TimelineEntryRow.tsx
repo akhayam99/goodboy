@@ -21,7 +21,6 @@ import { DecisionChangesDetail } from './DecisionChangesDetail';
 import { HistoryBatchDetail } from './HistoryBatchDetail';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
-import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { timelineBranchKey } from './timelineBranchKey';

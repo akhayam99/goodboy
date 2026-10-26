@@ -14,7 +14,7 @@ import {
   stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { CommitsHistory } from './index';

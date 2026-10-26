@@ -52,7 +52,7 @@ export const AutoDelegationLines = ({
         );
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
-            <span className="flex h-7 min-w-0 items-center gap-2 text-label">
+            <span className="flex h-7 min-w-0 items-center gap-2 text-meta">
               <AgentKindChip kind={card.role} density="glyph" />
               <TruncatedText
                 className="min-w-0 truncate text-foreground"

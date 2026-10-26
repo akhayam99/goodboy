@@ -61,6 +61,8 @@ const {
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
     agentAttachments: Record<string, ReadonlyArray<never>>;
+    outputHandoffs: Record<string, ReadonlyArray<{ id: string; fileName: string; text: string }>>;
+    consumeOutputHandoffs: (params: { agentId: string; ids: ReadonlyArray<string> }) => void;
     agentQueue: Record<string, ReadonlyArray<{ id: string }>>;
     sessionTelemetry: Record<string, ReadonlyArray<{ kind: string; estimatedCostUsd: number }>>;
     sessionNudges: Record<string, null>;
@@ -123,6 +125,16 @@ const {
     transcripts: {},
     agentDraft: {},
     agentAttachments: {},
+    outputHandoffs: {},
+    consumeOutputHandoffs: ({ agentId, ids }) =>
+      set((s) => ({
+        outputHandoffs: {
+          ...s.outputHandoffs,
+          [agentId]: (s.outputHandoffs[agentId] ?? []).filter(
+            (handoff) => !ids.includes(handoff.id),
+          ),
+        },
+      })),
     agentQueue: {},
     sessionTelemetry: {},
     sessionNudges: {},
@@ -157,6 +169,8 @@ const {
     sendQueuedNow: vi.fn(async () => undefined),
     loadAgentQueues: async () => undefined,
     dismissSessionNudge: async () => undefined,
+    recordNudgeShown: vi.fn(async () => 'nudge-event-1'),
+    recordNudgeOutcome: vi.fn(async () => undefined),
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
     runScript: async () => ({ stdout: '', stderr: '', exitCode: 0 }),
@@ -184,6 +198,7 @@ function resetMockStore() {
   mockStore.setState({
     agentDraft: {},
     agentAttachments: {},
+    outputHandoffs: {},
     agentQueue: {},
     takeQueuedMessage: vi.fn(() => null),
     agentKindOverride: {},
@@ -362,7 +377,7 @@ describe('ChatInput, input wiring', () => {
       render(<ChatInput session={runningSession()} />);
 
       expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
-      expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+      screen.getByRole('button', { name: 'Stop' });
       await user.type(screen.getByRole('textbox'), 'keep the flag');
 
       expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
@@ -1239,6 +1254,53 @@ describe('ChatInput, composer flows', () => {
     expect(screen.getByText('1 file')).toBeDefined();
   });
 
+  it('attaches a queued output handoff as a text file, focuses the composer and sends nothing', async () => {
+    mockStore.setState({
+      sessionWorktrees: { 'session-1': ['/wt'] },
+      outputHandoffs: {
+        'agent-1': [
+          {
+            id: 'handoff-1',
+            fileName:
+              'Output of Check posting drift, Exit 1, ledger-core on nw-fix-settlement-replay.txt',
+            text: 'Output of Check posting drift, Exit 1\n\nFAIL postings\n',
+          },
+        ],
+      },
+    });
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
+
+    expect(
+      await screen.findByText(
+        'Output of Check posting drift, Exit 1, ledger-core on nw-fix-settlement-replay.txt',
+      ),
+    ).toBeTruthy();
+
+    await waitFor(() => expect(document.activeElement).toBe(textarea));
+    expect(mockStore.getState().outputHandoffs['agent-1']).toEqual([]);
+    expect(writeAttachmentMock).toHaveBeenCalledTimes(1);
+    expect(textarea.value).toBe('');
+    expect(sendTurnMock).not.toHaveBeenCalled();
+    expect(mockStore.getState().enqueueAgentMessage).not.toHaveBeenCalled();
+    expect(mockStore.getState().sendAgentMessageNow).not.toHaveBeenCalled();
+  });
+
+  it('keeps an output handoff as a draft attachment while the agent is running', async () => {
+    mockStore.setState({
+      sessionWorktrees: { 'session-1': ['/wt'] },
+      outputHandoffs: {
+        'agent-1': [{ id: 'handoff-1', fileName: 'Output of dev.txt', text: 'Output of dev\n' }],
+      },
+    });
+    render(<ChatInput session={runningSession()} />);
+
+    expect(await screen.findByText('Output of dev.txt')).toBeTruthy();
+    expect(mockStore.getState().enqueueAgentMessage).not.toHaveBeenCalled();
+    expect(mockStore.getState().sendAgentMessageNow).not.toHaveBeenCalled();
+    expect(sendTurnMock).not.toHaveBeenCalled();
+  });
+
   it('marks the composer as a drop target and removes a chip on demand', async () => {
     mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
     const user = userEvent.setup();
@@ -1305,10 +1367,13 @@ describe('ChatInput, composer flows', () => {
     expect(textarea.getAttribute('placeholder')).toBe(ARCHIVED_SESSION_REASON);
   });
 
-  it('leaves Stop to the conversation tail', () => {
+  it('puts a Stop square beside Send now and Queue that stops the turn', async () => {
+    const user = userEvent.setup();
     render(<ChatInput session={runningSession()} />);
 
-    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     expect(cancelCurrentTurnMock).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(cancelCurrentTurnMock).toHaveBeenCalledWith(expect.anything(), 'agent-1', 'user');
   });
 });

@@ -45,10 +45,10 @@ describe('the node of a session that needs you', () => {
     expect(needing(attention).tone).toBe(ATTENTION_REASON_META[attention].tone);
   });
 
-  it('says danger only for an agent error, a push that failed and failing checks', () => {
+  it('says danger only for an agent error, a push that failed, failing checks and a stopped run', () => {
     const danger = REASONS.filter((attention) => needing(attention).tone === 'danger');
 
-    expect(danger).toEqual(['agent-error', 'push-failed', 'ci-failed']);
+    expect(danger).toEqual(['agent-error', 'push-failed', 'ci-failed', 'run-stopped']);
   });
 
   it('draws a pull request waiting to merge as a solid approval, never as a failure', () => {

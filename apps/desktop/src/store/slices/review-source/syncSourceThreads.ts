@@ -1,27 +1,35 @@
 import { formatError } from '@goodboy/ui';
-import type { PrComment, ProjectId, ResolveSourceKind, SessionId } from '@goodboy/types';
+import type { MountId, PrComment, ProjectId, ResolveSourceKind, SessionId } from '@goodboy/types';
 import type { ResolveUpdates } from '../resolve/types';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
+  readonly mountId: MountId;
   readonly kind: Exclude<ResolveSourceKind, 'local'>;
   readonly prNumber: number;
   readonly projectId: ProjectId | null;
   readonly comments: ReadonlyArray<PrComment>;
+  readonly isCurrent: () => boolean;
 };
 
 export const syncSourceThreads = async ({
   get,
   sessionId,
+  mountId,
   kind,
   prNumber,
   projectId,
   comments,
+  isCurrent,
 }: Params): Promise<void> => {
+  if (!isCurrent()) {
+    return;
+  }
   await get().updateResolveThreads({
     sessionId,
+    isCurrent,
     updates: ({ rows }) => {
       const updates: Array<ResolveUpdates[number]> = [];
       for (const thread of comments) {
@@ -60,6 +68,9 @@ export const syncSourceThreads = async ({
       return updates;
     },
   });
+  if (!isCurrent()) {
+    return;
+  }
   try {
     await get().materializeReviewThreads({
       sessionId,
@@ -67,22 +78,32 @@ export const syncSourceThreads = async ({
       projectId,
       comments,
       sourceKind: kind,
+      isCurrent,
     });
   } catch (error) {
     console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
   }
+  if (!isCurrent()) {
+    return;
+  }
   await get()
-    .reconcileResolveLane({ sessionId })
+    .reconcileResolveLane({ sessionId, source: { mountId, kind, projectId, prNumber }, comments })
     .catch((error: unknown) => console.warn(`[review-lane] ${sessionId}: ${formatError(error)}`));
+  if (!isCurrent()) {
+    return;
+  }
   if (kind === 'github') {
     try {
-      await get().reconcileHandReplies({ sessionId, prNumber, comments });
+      await get().reconcileHandReplies({ sessionId, prNumber, comments, isCurrent });
     } catch (error) {
       console.warn(`[review-replies] ${sessionId}: ${formatError(error)}`);
     }
   }
+  if (!isCurrent()) {
+    return;
+  }
   try {
-    await get().syncSourceSnapshots({ sessionId, prNumber, comments });
+    await get().syncSourceSnapshots({ sessionId, prNumber, comments, isCurrent });
   } catch (error) {
     console.warn(`[review-source] ${sessionId}: ${formatError(error)}`);
   }

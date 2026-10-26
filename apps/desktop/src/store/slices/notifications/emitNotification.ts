@@ -55,6 +55,7 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
       action: action ?? null,
       coalesceKey:
         coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,
+      actedAt: null,
     };
     const state = get();
     const scope = scopedWorkspaceId({ state });

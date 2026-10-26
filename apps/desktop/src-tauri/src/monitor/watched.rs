@@ -6,6 +6,7 @@ use regex::Regex;
 use serde::Serialize;
 
 use crate::project_scripts::package_script_bodies;
+use crate::util::MessageError;
 
 const MAX_FILE_BYTES: u64 = 1_048_576;
 const ENV_FILES: [&str; 3] = [".env", ".env.local", ".env.development"];
@@ -200,10 +201,10 @@ pub(crate) fn scan(root: &Path) -> Vec<WatchedPort> {
 #[tauri::command]
 pub(crate) async fn monitor_watched_ports(
     project_root: String,
-) -> Result<Vec<WatchedPort>, String> {
+) -> Result<Vec<WatchedPort>, MessageError> {
     tauri::async_runtime::spawn_blocking(move || scan(Path::new(&project_root)))
         .await
-        .map_err(|error| error.to_string())
+        .map_err(|error| MessageError::Failed(error.to_string()))
 }
 
 #[cfg(test)]

@@ -18,7 +18,7 @@ import {
 } from '@goodboy/types';
 import { storedDeliveryOf } from '@goodboy/core';
 import { summarizerQueues } from './slices/turn/turnHelpers';
-import type { AutoRuntime } from './slices/auto/createAutoRuntime';
+import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
 import {
   buildStoryProject,
   buildStoryWorkspace,
@@ -91,13 +91,13 @@ const relay = buildStoryProject({
 });
 
 let useAppStore: StoryStore;
-let makeAutoRuntime: typeof import('./slices/auto/makeAutoRuntime').makeAutoRuntime;
-let startAutoTree: typeof import('./slices/auto/startAutoTrees').startAutoTree;
+let makeAutoRuntime: typeof import('./runtime/auto/makeAutoRuntime').makeAutoRuntime;
+let startAutoTree: typeof import('./runtime/auto/startAutoTrees').startAutoTree;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ makeAutoRuntime } = await import('./slices/auto/makeAutoRuntime'));
-  ({ startAutoTree } = await import('./slices/auto/startAutoTrees'));
+  ({ makeAutoRuntime } = await import('./runtime/auto/makeAutoRuntime'));
+  ({ startAutoTree } = await import('./runtime/auto/startAutoTrees'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 type SpawnSeen = {

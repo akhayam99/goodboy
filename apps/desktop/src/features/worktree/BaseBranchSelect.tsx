@@ -17,7 +17,7 @@ const STATUS_LABEL: Record<LoadState, string | undefined> = {
   idle: undefined,
   loading: 'Loading branches',
   ready: undefined,
-  failed: 'Could not load branches',
+  failed: "Couldn't load branches",
 };
 
 const AUTO_VALUE = '';

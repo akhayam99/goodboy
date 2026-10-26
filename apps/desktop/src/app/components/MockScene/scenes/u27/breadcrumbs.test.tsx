@@ -15,7 +15,7 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
-import { sessionTitle } from '../../../../../features/session/sessionTitle';
+import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { MOCK_SCENES } from '../..';
 import { U27_BREADCRUMBS_SCENES } from './breadcrumbs';
 import { BREADCRUMB_PLACES, type BreadcrumbPlaceId } from './breadcrumbs/breadcrumbPlaces';

@@ -3,6 +3,7 @@ import { ChevronRight, Search, ShieldCheck } from 'lucide-react';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { FOCUS_RING } from '../../focusRing';
+import { glyphsOfShortcut } from '../../shortcutGlyphs';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import { Button } from '../Button';
 import { CopyButton } from '../CopyButton';
@@ -92,7 +93,7 @@ export const ReportSheet = ({
   destination,
   submitLabel,
   submitIcon,
-  submitHint = '⌘↵',
+  submitHint = glyphsOfShortcut({ id: 'composer.submit' }),
   isSubmitting,
   canSubmit,
   onSubmit,

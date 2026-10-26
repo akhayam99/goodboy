@@ -103,7 +103,7 @@ type FakeState = {
   editPr: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
   recordSessionEventOnce: ReturnType<typeof vi.fn>;
-  pushSessionBranch: ReturnType<typeof vi.fn>;
+  pushBranch: ReturnType<typeof vi.fn>;
 };
 
 const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
@@ -147,7 +147,7 @@ const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
   editPr: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
   recordSessionEventOnce: vi.fn(async () => undefined),
-  pushSessionBranch: vi.fn(async () => ({ ok: true })),
+  pushBranch: vi.fn(async () => ({ ok: true })),
   ...overrides,
 });
 
@@ -380,13 +380,57 @@ describe('createPrForSession, pushing the branch first', () => {
 
     await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
 
-    expect(state.pushSessionBranch).toHaveBeenCalledExactlyOnceWith({
+    expect(state.pushBranch).toHaveBeenCalledExactlyOnceWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
+      mode: 'plain',
     });
-    expect(state.pushSessionBranch.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(state.pushBranch.mock.invocationCallOrder[0]).toBeLessThan(
       h.run.mock.invocationCallOrder[0] ?? 0,
     );
+  });
+
+  it('force pushes with the online commits the person confirmed, never a plain push', async () => {
+    const state = buildState();
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      title: 'Fix cards',
+      body: '',
+      forcePush: { confirmedOnlyOnline: ['b2c3d4e'] },
+    });
+
+    expect(state.pushBranch).toHaveBeenCalledExactlyOnceWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      mode: 'lease',
+      guard: { kind: 'confirmed', confirmedOnlyOnline: ['b2c3d4e'], confirmedRemoteSha: null },
+    });
+    expect(state.pushBranch.mock.invocationCallOrder[0]).toBeLessThan(
+      h.run.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('opens nothing when the force push is refused because origin moved after the confirm', async () => {
+    const state = buildState({
+      pushBranch: vi.fn(async () => ({
+        ok: false,
+        error: 'The online copy changed since you confirmed.',
+        reason: 'moved',
+      })),
+    });
+
+    await expect(
+      buildCreate(state)({
+        sessionId: SESSION_ID,
+        title: 'Fix cards',
+        body: '',
+        forcePush: { confirmedOnlyOnline: [] },
+      }),
+    ).rejects.toThrow("Couldn't push ak/cards: The online copy changed since you confirmed.");
+
+    expect(h.run).not.toHaveBeenCalled();
+    expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
   });
 
   it('pushes the branch of the mount asked for, not the active one', async () => {
@@ -399,17 +443,19 @@ describe('createPrForSession, pushing the branch first', () => {
       body: '',
     });
 
-    expect(state.pushSessionBranch).toHaveBeenCalledExactlyOnceWith({
+    expect(state.pushBranch).toHaveBeenCalledExactlyOnceWith({
       sessionId: SESSION_ID,
       mountId: OTHER_MOUNT_ID,
+      mode: 'plain',
     });
   });
 
   it('stops with the push reason and tells the user when the push is refused', async () => {
     const state = buildState({
-      pushSessionBranch: vi.fn(async () => ({
+      pushBranch: vi.fn(async () => ({
         ok: false,
         error: 'remote: Permission to acme/web.git denied',
+        reason: 'failed',
       })),
     });
 
@@ -552,7 +598,7 @@ describe('createPrForSession, while Scribe writes', () => {
         }),
       ).rejects.toThrow('Scribe is still writing the text.');
 
-      expect(state.pushSessionBranch).not.toHaveBeenCalled();
+      expect(state.pushBranch).not.toHaveBeenCalled();
       expect(h.run).not.toHaveBeenCalled();
       expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
     },
@@ -560,7 +606,7 @@ describe('createPrForSession, while Scribe writes', () => {
 
   it('refuses when Scribe starts writing while the branch is being pushed', async () => {
     const state = buildState();
-    state.pushSessionBranch = vi.fn(async () => {
+    state.pushBranch = vi.fn(async () => {
       state.scribeWork = { [`pr:${MOUNT_ID}`]: { status: 'writing' } };
       return { ok: true };
     });
@@ -574,7 +620,7 @@ describe('createPrForSession, while Scribe writes', () => {
       }),
     ).rejects.toThrow('Scribe is still writing the text.');
 
-    expect(state.pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(state.pushBranch).toHaveBeenCalledTimes(1);
     expect(h.run).not.toHaveBeenCalled();
     expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
   });
@@ -590,7 +636,7 @@ describe('createPrForSession, while Scribe writes', () => {
       isScribeBody: true,
     });
 
-    expect(state.pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(state.pushBranch).toHaveBeenCalledTimes(1);
     expect(h.run).toHaveBeenCalledTimes(1);
   });
 
@@ -618,5 +664,118 @@ describe('createPrForSession, while Scribe writes', () => {
     });
 
     expect(h.run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('createPrForSession, a create whose outcome was uncertain', () => {
+  const ALREADY_EXISTS = [
+    'a pull request for branch "ak/cards" into branch "main" already exists:',
+    CREATED_URL,
+  ].join('\n');
+
+  const create = (state: FakeState) =>
+    buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
+
+  it('returns the opened number with a warning when the link could not be saved', async () => {
+    const state = buildState();
+    h.upsertMountPullRequestLink.mockRejectedValueOnce(new Error('database is locked'));
+
+    const created = await create(state);
+
+    expect(created).toEqual({ number: 7, url: CREATED_URL });
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warning',
+        title: 'Opened #7, but Goodboy could not save the link',
+      }),
+    );
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: MOUNT_ID,
+    });
+  });
+
+  it('returns the opened number with a warning when the event could not be recorded', async () => {
+    const state = buildState({
+      recordSessionEventOnce: vi.fn(async () => {
+        throw new Error('database is locked');
+      }),
+    });
+
+    const created = await create(state);
+
+    expect(created.number).toBe(7);
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'warning' }),
+    );
+  });
+
+  it('adopts the request that already exists on the retry instead of opening a second', async () => {
+    const state = buildState();
+    h.upsertMountPullRequestLink.mockRejectedValueOnce(new Error('database is locked'));
+    await create(state);
+    h.run.mockResolvedValueOnce({ stdout: '', stderr: ALREADY_EXISTS, exitCode: 1 });
+
+    const retried = await create(state);
+
+    expect(retried).toEqual({ number: 7, url: CREATED_URL });
+    expect(h.upsertMountPullRequestLink).toHaveBeenCalledTimes(2);
+    expect(state.emitNotification).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't create the pull request" }),
+    );
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Linked the existing pull request for Fix the cards' }),
+    );
+  });
+
+  it('adopts a request someone else opened since the form was filled', async () => {
+    const state = buildState();
+    h.run.mockResolvedValueOnce({ stdout: '', stderr: ALREADY_EXISTS, exitCode: 1 });
+
+    const created = await create(state);
+
+    expect(created).toEqual({ number: 7, url: CREATED_URL });
+    expect(h.upsertMountPullRequestLink).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not record an adopted request as a draft from the new request flag', async () => {
+    const state = buildState();
+    h.run.mockResolvedValueOnce({ stdout: '', stderr: ALREADY_EXISTS, exitCode: 1 });
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      title: 'Fix cards',
+      body: '',
+      draft: true,
+    });
+
+    expect(h.upsertMountPullRequestLink).toHaveBeenCalledWith(
+      expect.objectContaining({ link: expect.objectContaining({ state: 'open' }) }),
+    );
+  });
+
+  it('still fails with the host line when the refusal is not an existing request', async () => {
+    const state = buildState();
+    h.run.mockResolvedValueOnce({
+      stdout: '',
+      stderr: 'GraphQL: Resource not accessible',
+      exitCode: 1,
+    });
+
+    await expect(create(state)).rejects.toThrow('GraphQL: Resource not accessible');
+
+    expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
+  });
+
+  it('opens once after a push that went through and a create that did not', async () => {
+    const state = buildState();
+    h.run.mockResolvedValueOnce({ stdout: '', stderr: 'network is down', exitCode: 1 });
+
+    await expect(create(state)).rejects.toThrow('network is down');
+    const retried = await create(state);
+
+    expect(retried.number).toBe(7);
+    expect(state.pushBranch).toHaveBeenCalledTimes(2);
+    expect(h.upsertMountPullRequestLink).toHaveBeenCalledTimes(1);
   });
 });

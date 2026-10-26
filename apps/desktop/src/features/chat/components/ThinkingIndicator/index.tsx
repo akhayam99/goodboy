@@ -1,18 +1,15 @@
 import { WorkNode } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
-import type { ThinkingContext } from '../../utils/thinking-context';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
-import { useThinkingPhrase } from '../../hooks/useThinkingPhrase';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 
 type Props = {
-  readonly context: ThinkingContext;
+  readonly phrase: string;
   readonly startedAt?: IsoDateTime | null;
 };
 
-export const ThinkingIndicator = ({ context, startedAt = null }: Props) => {
+export const ThinkingIndicator = ({ phrase, startedAt = null }: Props) => {
   const elapsedMs = useElapsedMs({ running: true, startedAt });
-  const phrase = useThinkingPhrase({ context });
   const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
   return (

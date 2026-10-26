@@ -1,9 +1,8 @@
-import { insertSettingIfAbsent, replaceSettingIfUnchanged } from '@goodboy/db';
+import { insertWorkspaceValueIfAbsent, replaceWorkspaceValueIfUnchanged } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { serializeSessionPins } from './parseSessionPins';
 import { readSessionPins } from './readSessionPins';
-import { sessionPinsKey } from './sessionPinsKey';
 import type { SessionPin } from './state';
 
 export type PinsChange = (pins: ReadonlyArray<SessionPin>) => ReadonlyArray<SessionPin>;
@@ -25,12 +24,13 @@ const attempt = async ({ workspaceId, change }: Params): Promise<Attempt> => {
   if (next === current) {
     return { kind: 'settled', pins: current };
   }
-  const key = sessionPinsKey({ workspaceId });
+  const db = tauriDatabase;
+  const key = 'sessions.pinned';
   const value = serializeSessionPins({ pins: next });
   const isWritten =
     raw === null
-      ? await insertSettingIfAbsent({ db: tauriDatabase, key, value })
-      : await replaceSettingIfUnchanged(tauriDatabase, { key, expected: raw, value });
+      ? await insertWorkspaceValueIfAbsent({ db, workspaceId, key, value })
+      : await replaceWorkspaceValueIfUnchanged({ db, workspaceId, key, expected: raw, value });
   return isWritten ? { kind: 'settled', pins: next } : { kind: 'lost' };
 };
 

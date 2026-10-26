@@ -327,6 +327,7 @@ const PR: PullRequestState = {
   isDraft: false,
   reviewDecision: 'review_required',
   body: '',
+  author: 'nadia-p',
   updatedAt: new Date().toISOString(),
   headSha: SHA.c,
 };

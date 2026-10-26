@@ -54,7 +54,7 @@ export const MessageRow = ({
       <div className="flex min-w-0 flex-col gap-0.5">
         {isContinuation ? null : (
           <div className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-label font-semibold text-foreground">
+            <span className="truncate text-meta font-semibold text-foreground">
               {message.author.name}
             </span>
             <MessageStatus message={message} />

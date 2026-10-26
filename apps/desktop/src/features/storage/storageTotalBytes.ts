@@ -17,8 +17,7 @@ export const storageTotalBytes = ({ stats, artifacts, summary, isScoped }: Param
     summary.canGo.bytes +
     summary.reviewFirst.bytes +
     summary.kept.bytes +
-    (isScoped ? 0 : appDataBytes) +
-    stats.archivedTranscriptBytes +
+    (isScoped ? 0 : appDataBytes + stats.archivedTranscriptBytes) +
     artifactBytes
   );
 };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import type { ChatRouting } from '../../../features/workspace-chat/chatRouting';
+import type { ChatRouting } from '../../../features/conversation/chatRouting';
 import {
   chatDefaultModelKey,
   parseChatDefaultModel,

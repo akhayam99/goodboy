@@ -1,5 +1,5 @@
-import { NAMES } from '../../../../shared/names';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
+
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Link2, ListPlus, Plus } from 'lucide-react';
@@ -7,10 +7,10 @@ import {
   AnchoredPopover,
   Button,
   Chip,
+  ICON_SIZE,
   MenuList,
-  cn,
-  useDropdown,
   type MenuEntry,
+  useDropdown,
 } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -125,7 +125,6 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
             as="button"
             tone="neutral"
             bordered={false}
-            shape="badge"
             kind="reference"
             ariaLabel={`Put on a branch ${branch}`}
             expanded={isOpen}

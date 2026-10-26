@@ -445,7 +445,7 @@ describe('store on sqlite: plan comments', () => {
       useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } });
       expect(await blockedBy()).toEqual({
         kind: 'blocked',
-        reason: 'The planner is gone, so comments cannot be sent.',
+        reason: "The planner is gone, so comments can't be sent.",
       });
     });
 
@@ -461,7 +461,7 @@ describe('store on sqlite: plan comments', () => {
       await loadAll();
       expect(await blockedBy()).toEqual({
         kind: 'blocked',
-        reason: 'This plan already ran. Comments cannot change it.',
+        reason: "This plan already ran. Comments can't change it.",
       });
     });
 
@@ -491,7 +491,7 @@ describe('store on sqlite: plan comments', () => {
       });
       expect(await blockedBy()).toEqual({
         kind: 'blocked',
-        reason: 'The next step (Implementer) already started. Comments cannot change the plan.',
+        reason: "The next step (Implementer) already started. Comments can't change the plan.",
       });
     });
 

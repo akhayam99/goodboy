@@ -74,6 +74,18 @@ export const isWorkspaceOwnedOverride = (key: string): key is keyof OverrideSett
     ([candidate, owner]) => candidate === key && owner.kind === 'field',
   );
 
+type FieldKeyParams = {
+  readonly field: WorkspaceSettingField;
+};
+
+export const overrideKeyOfField = ({ field }: FieldKeyParams): keyof OverrideSettings | null => {
+  const match = Object.entries(OVERRIDE_OWNER).find(
+    ([, owner]) => owner.kind === 'field' && owner.field === field,
+  );
+  const key = match?.[0];
+  return key !== undefined && isWorkspaceOwnedOverride(key) ? key : null;
+};
+
 const FIELDS = Object.keys(FIELD_PAGE).filter((key): key is WorkspaceSettingField =>
   Object.hasOwn(FIELD_PAGE, key),
 );

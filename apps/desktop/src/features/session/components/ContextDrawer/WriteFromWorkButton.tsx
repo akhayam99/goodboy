@@ -1,4 +1,5 @@
-import { Button } from '@goodboy/ui';
+import { Pencil } from 'lucide-react';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { linkedIssueSources } from '../../../../store/slices/issue-briefs/linkedIssueSources';
@@ -24,12 +25,13 @@ export const WriteFromWorkButton = ({ sessionId, isLocked }: Props) => {
   };
   return (
     <Button
-      variant="ghost"
+      variant="secondary"
       size="sm"
       className="self-start"
       disabled={isLocked}
       onClick={writeFromWork}
     >
+      <Pencil size={ICON_SIZE.row} aria-hidden />
       Write title and goal from linked work
     </Button>
   );

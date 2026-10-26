@@ -1,7 +1,7 @@
 import type { FramePage, Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import type { StudioKind } from '../../../store';
 
 export type StudioSkeletonShape = 'rows' | 'prose' | 'room' | 'terminal' | 'cards';

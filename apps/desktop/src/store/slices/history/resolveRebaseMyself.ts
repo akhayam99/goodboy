@@ -3,7 +3,7 @@ import { rebaseConflictOf } from '../../../features/history/rebaseConflictOf';
 import type { RebaseStop } from '../../../features/history/rebaseStopOf';
 import { worktreeStartRebase, type RebaseStep } from '../../../features/worktree/worktree';
 import type { SliceDeps } from '../../slice-types';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import { selectRebaseStop } from './selectRebaseStop';

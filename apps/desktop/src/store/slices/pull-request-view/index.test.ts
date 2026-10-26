@@ -9,6 +9,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 
 const h = vi.hoisted(() => ({
@@ -28,6 +29,7 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import type { SessionGithubState } from '../../types';
+import { pullRequestViewOf } from './pullRequestViewOf';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-payments-api' as ProjectId;
@@ -144,6 +146,9 @@ afterEach(() => {
 const load = (force = false) =>
   useAppStore.getState().loadPullRequestView({ sessionId: SESSION_ID, force });
 
+const entryOf = (mountId: MountId = MOUNT_ID) =>
+  useAppStore.getState().pullRequestViews[SESSION_ID]?.[mountId];
+
 const viewCalls = (): number =>
   h.run.mock.calls.filter(([args]) => args.join(' ').includes('closingIssuesReferences')).length;
 
@@ -151,7 +156,7 @@ describe('the pull request view slice', () => {
   it('reads the view once and keeps it with the merge methods the repository allows', async () => {
     await load();
 
-    const entry = useAppStore.getState().pullRequestViews[SESSION_ID];
+    const entry = entryOf();
     expect(entry?.prNumber).toBe(318);
     expect(entry?.isLoading).toBe(false);
     expect(entry?.error).toBeNull();
@@ -189,11 +194,11 @@ describe('the pull request view slice', () => {
     });
 
     const pending = load();
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.isLoading).toBe(true);
+    expect(entryOf()?.isLoading).toBe(true);
     open();
     await pending;
 
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.isLoading).toBe(false);
+    expect(entryOf()?.isLoading).toBe(false);
   });
 
   it('keeps the error and the last view when a read fails', async () => {
@@ -205,7 +210,7 @@ describe('the pull request view slice', () => {
     }));
     await load(true);
 
-    const entry = useAppStore.getState().pullRequestViews[SESSION_ID];
+    const entry = entryOf();
     expect(entry?.error).toContain('HTTP 502');
     expect(entry?.view?.number).toBe(318);
     expect(entry?.isLoading).toBe(false);
@@ -217,7 +222,7 @@ describe('the pull request view slice', () => {
     await load();
 
     expect(h.run).not.toHaveBeenCalled();
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]).toBeUndefined();
+    expect(entryOf()).toBeUndefined();
   });
 
   it('notes an edit of this session on the entry, in order', () => {
@@ -232,9 +237,7 @@ describe('the pull request view slice', () => {
       what: 'description',
     });
 
-    expect(
-      useAppStore.getState().pullRequestViews[SESSION_ID]?.edits.map((edit) => edit.what),
-    ).toEqual(['title', 'description']);
+    expect(entryOf()?.edits.map((edit) => edit.what)).toEqual(['title', 'description']);
   });
 
   it('keeps the edits when the view is read again', async () => {
@@ -246,8 +249,8 @@ describe('the pull request view slice', () => {
 
     await load(true);
 
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.edits).toHaveLength(1);
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.view?.number).toBe(318);
+    expect(entryOf()?.edits).toHaveLength(1);
+    expect(entryOf()?.view?.number).toBe(318);
   });
 
   it('drops a late answer for a pull request the session has moved off', async () => {
@@ -270,7 +273,7 @@ describe('the pull request view slice', () => {
     open();
     await slow;
 
-    const entry = useAppStore.getState().pullRequestViews[SESSION_ID];
+    const entry = entryOf();
     expect(entry?.prNumber).toBe(319);
     expect(entry?.isLoading).toBe(false);
   });
@@ -291,6 +294,63 @@ describe('the pull request view slice', () => {
     await load();
 
     expect(viewCalls()).toBe(before + 1);
-    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.mountId).toBe(other.mountId);
+    expect(entryOf(other.mountId)?.mountId).toBe(other.mountId);
+    expect(entryOf(MOUNT_ID)?.mountId).toBe(MOUNT_ID);
+  });
+
+  it('keeps one entry per mount, so the same number in two repositories never mixes', async () => {
+    await load();
+    const other = {
+      ...MOUNT,
+      mountId: brandId<MountId>({ value: 'mount-notify-relay' }),
+      worktreePath: '/worktrees/notify-relay',
+    };
+    useAppStore.setState({
+      sessionProjectMounts: { [SESSION_ID]: [MOUNT, other] },
+      mountGithub: {
+        [other.mountId]: {
+          ...GITHUB,
+          mountId: other.mountId,
+          projectId: PROJECT_ID,
+          revision: 1,
+          repository: 'harborline/notify-relay',
+          host: null,
+          branch: PR.headBranch,
+          links: [],
+          prs: [],
+          pr: { ...PR, title: 'Retry the relay on 503' },
+        },
+      },
+    });
+    useAppStore.getState().notePullRequestEdit({
+      sessionId: SESSION_ID,
+      prNumber: 318,
+      mountId: MOUNT_ID,
+      what: 'title',
+    });
+    await useAppStore
+      .getState()
+      .loadPullRequestView({ sessionId: SESSION_ID, mountId: other.mountId });
+
+    expect(entryOf(MOUNT_ID)?.edits).toHaveLength(1);
+    expect(entryOf(other.mountId)?.edits).toHaveLength(0);
+    expect(entryOf(MOUNT_ID)?.view?.number).toBe(318);
+    expect(entryOf(other.mountId)?.prNumber).toBe(318);
+    expect(
+      pullRequestViewOf({
+        state: useAppStore.getState(),
+        sessionId: SESSION_ID,
+        mountId: other.mountId,
+        prNumber: 318,
+      })?.mountId,
+    ).toBe(other.mountId);
+    expect(
+      pullRequestViewOf({
+        state: useAppStore.getState(),
+        sessionId: SESSION_ID,
+        mountId: other.mountId,
+        prNumber: 319,
+      }),
+    ).toBeNull();
   });
 });

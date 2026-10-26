@@ -13,7 +13,7 @@ import { insertProject, insertWorkspace } from '@goodboy/db';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { ToastProvider } from '../../shared/components/Toast';
 import { brandedId } from '../../features/history/testing/brandedId';
-import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
 import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import {

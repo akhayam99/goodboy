@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import type { BranchCommit, HistoryStep } from '@goodboy/types';
 import { useFlipList } from '../../../../../shared/hooks/useFlipList';
 import { planOrder } from '../../../historyPlan';
-import { useRowPositions } from '../../../useRowPositions';
+import { useRowPositions } from '../../../hooks/useRowPositions';
 import type { HistoryRowView } from '../historyRowLine';
 
 const FLIP_ROW_LIMIT = 60;

@@ -6,6 +6,7 @@ import {
 } from '@goodboy/core';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import {
   sessionPullRequestHostOf,
@@ -42,8 +43,10 @@ export const usePullRequestReadiness = ({
     [githubState, pr],
   );
   const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
-  const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
-  const view = entry !== null && entry.prNumber === github?.pr?.number ? entry.view : null;
+  const prNumber = github?.pr?.number ?? null;
+  const view = useAppStore(
+    (state) => pullRequestViewOf({ state, sessionId, mountId, prNumber })?.view ?? null,
+  );
   return useMemo(() => {
     const facts = sessionMergeFacts({
       sessionId,

@@ -5,7 +5,6 @@ import { resolveSkillInvocation } from '../../../features/skills/skills';
 import { WORKSPACE_FEATURES } from '../../../shared/lib/features';
 import type { AppStore } from '../../store';
 import type { GetFn } from './types';
-import { resolveSessionRepo } from '../worktrees/resolveSessionRepo';
 
 type Params = {
   before: AppStore;
@@ -51,15 +50,10 @@ export const resolveSkillPrompt = async (
       return { ok: false };
     }
     try {
-      const repo = resolveSessionRepo({ state: before, sessionId });
       const result = await resolveSkillInvocation({
         skill,
         args: slashCmd.args,
         workingDir,
-        projectRoot:
-          repo?.repoRoot ??
-          before.projects.find((project) => project.workspaceId === workspace.id)?.rootPath ??
-          workingDir,
       });
       resolvedPrompt = result.resolvedPrompt;
       const skillRunId = crypto.randomUUID() as ProviderRunId;

@@ -1,4 +1,4 @@
-import type { MountTargetSnapshot, SessionId, SessionProjectMount } from '@goodboy/types';
+import type { MountId, MountTargetSnapshot, SessionId, SessionProjectMount } from '@goodboy/types';
 import { selectActiveMount, selectMountById } from '../project-mounts/selectors';
 import type { GetFn } from './types';
 
@@ -12,11 +12,22 @@ export const mountTargetOf = ({ mount }: MountParams): MountTargetSnapshot => ({
 
 type SessionParams = { readonly get: GetFn; readonly sessionId: SessionId };
 
-export const requireMountTarget = ({
+const requireMountTarget = ({ get, sessionId }: SessionParams): MountTargetSnapshot | null => {
+  const mount = selectActiveMount({ state: get(), sessionId });
+  return mount === null ? null : mountTargetOf({ mount });
+};
+
+type NamedParams = SessionParams & { readonly mountId: MountId | undefined };
+
+export const namedMountTarget = ({
   get,
   sessionId,
-}: SessionParams): MountTargetSnapshot | null => {
-  const mount = selectActiveMount({ state: get(), sessionId });
+  mountId,
+}: NamedParams): MountTargetSnapshot | null => {
+  if (mountId === undefined) {
+    return requireMountTarget({ get, sessionId });
+  }
+  const mount = selectMountById({ state: get(), sessionId, mountId });
   return mount === null ? null : mountTargetOf({ mount });
 };
 

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderRunId, SessionId } from '@goodboy/types';
-import { Button, Notice, formatError, type NoticeTone } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, formatError, ICON_SIZE, Notice, type NoticeTone } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import {
   historyCandidatesOf,
@@ -180,7 +180,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           aria-hidden
           className="shrink-0 text-muted-foreground"
         />
-        <p className="min-w-0 flex-1 text-label text-foreground">
+        <p className="min-w-0 flex-1 text-meta text-foreground">
           Changed {count} {count === 1 ? 'file' : 'files'} in {folderName}
           <span className="text-muted-foreground"> · saved before this turn</span>
         </p>

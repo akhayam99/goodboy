@@ -1,13 +1,12 @@
 import {
-  PROVIDER_IDS,
   type IsoDateTime,
-  type ProviderId,
   type ProviderLimitStatus,
   type ProviderLimitWindow,
   type ProviderLimits,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { parseJsonColumn } from '../shared/parseJsonColumn';
+import { isProviderId } from '@goodboy/types/helpers';
 
 type ProviderLimitsRow = {
   provider_id: string;
@@ -27,9 +26,6 @@ const STATUSES: ReadonlyArray<ProviderLimitStatus> = ['ok', 'warning', 'reached'
 
 const isStatus = (value: unknown): value is ProviderLimitStatus =>
   STATUSES.some((status) => status === value);
-
-const isProviderId = (value: unknown): value is ProviderId =>
-  PROVIDER_IDS.some((providerId) => providerId === value);
 
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';

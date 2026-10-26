@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Check, Play, RotateCcw, Undo2, type LucideIcon } from 'lucide-react';
-import { Button, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../../store';
 import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
 import type { RunPrimaryKind } from '../../../../workflows/runPrimaryOf';

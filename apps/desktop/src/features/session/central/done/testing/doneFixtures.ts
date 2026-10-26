@@ -155,7 +155,15 @@ export const modelOf = ({
     events,
     agentKindOverride: {},
   });
-  return { entries, events, autoTrees, agents, checkNameByAgentId, now: NOW.getTime() };
+  return {
+    entries,
+    events,
+    autoTrees,
+    agents,
+    checkNameByAgentId,
+    turnFiles: new Map(),
+    now: NOW.getTime(),
+  };
 };
 
 export const sourceOf = ({

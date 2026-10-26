@@ -130,6 +130,21 @@ fn a_project_without_origin_reports_no_remote() {
 }
 
 #[test]
+fn a_project_whose_only_remote_is_upstream_reports_no_remote() {
+    let root = temp_root("upstream-only");
+    let repo = local_repo(&root);
+    let remote = bare_remote(&root);
+    git_ok(
+        &repo,
+        &["remote", "add", "upstream", remote.to_str().unwrap()],
+    );
+
+    assert_eq!(publish(&repo), PublishOutcome::NoRemote);
+    assert!(git(&remote, &["rev-parse", "--verify", "refs/heads/main"]).is_err());
+    std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
 fn a_repository_without_a_commit_has_nothing_to_publish() {
     let root = temp_root("unborn");
     let repo = root.join("work");

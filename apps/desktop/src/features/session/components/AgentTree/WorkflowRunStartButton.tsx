@@ -1,9 +1,9 @@
-import { AlertTriangle, Play } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
+import { TriangleAlert, Play } from 'lucide-react';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { useStartAnywayConfirm } from '../../../workflows/useStartAnywayConfirm';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../../shared/lib/userStarts';
 import { useAppStore } from '../../../../store';
@@ -61,7 +61,7 @@ export const WorkflowRunStartButton = ({
   return (
     <ConfirmPopover
       role="alert"
-      icon={<AlertTriangle size={ICON_SIZE.row} />}
+      icon={<TriangleAlert size={ICON_SIZE.row} />}
       title={start.title}
       description={start.description}
       confirmLabel={start.confirmLabel}
@@ -73,7 +73,7 @@ export const WorkflowRunStartButton = ({
       trigger={() => (
         <Button size="sm" variant={variant} isBusy={start.isBusy} onClick={start.onTrigger}>
           {isBlocked ? (
-            <AlertTriangle size={ICON_SIZE.control} aria-hidden />
+            <TriangleAlert size={ICON_SIZE.control} aria-hidden />
           ) : (
             <Play size={ICON_SIZE.control} aria-hidden />
           )}

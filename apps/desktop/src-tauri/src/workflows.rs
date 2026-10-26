@@ -17,10 +17,6 @@ type WorkflowTuple = (
     Option<String>,
 );
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepRow {
@@ -91,22 +87,10 @@ pub struct WorkflowRow {
     pub steps: Vec<StepRow>,
     pub created_at: String,
     pub updated_at: String,
-    // Epoch seconds when soft-deleted; None for live workflows. workflow_list
-    // only returns live ones, but workflows_for_session may return deleted ones
-    // still attached to a session.
     pub deleted_at: Option<i64>,
-    // True for reusable presets; false for one-off custom workflows that a
-    // session runs without being saved to the preset library.
     pub is_preset: bool,
-    // How the workflow came to exist: 'library' (shipped), 'custom' (built by
-    // hand) or 'orchestrated' (born from a dynamic run). None on rows written
-    // before the column existed.
     pub origin: Option<String>,
 }
-
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, thiserror::Error)]
 pub enum PhaseError {
@@ -145,10 +129,6 @@ impl From<DbError> for PhaseError {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 fn load_steps(
     conn: &rusqlite::Connection,
@@ -218,10 +198,6 @@ fn row_to_template(
     })
 }
 
-// ---------------------------------------------------------------------------
-// Commands — workflow CRUD
-// ---------------------------------------------------------------------------
-
 #[tauri::command]
 pub async fn workflow_list(
     state: State<'_, Db>,
@@ -278,10 +254,6 @@ pub async fn workflow_list(
     Ok(result)
 }
 
-/// Workflows attached to a session via `session_workflows`, INCLUDING ones that
-/// have since been soft-deleted from the workspace preset list. The session that
-/// started a workflow must keep seeing it even after it's deleted everywhere
-/// else, so this is loaded in addition to `workflow_list`.
 #[tauri::command]
 pub async fn workflows_for_session(
     state: State<'_, Db>,
@@ -336,10 +308,6 @@ pub async fn workflows_for_session(
     }
     Ok(result)
 }
-
-// ---------------------------------------------------------------------------
-// Commands — step library (reusable StepDef CRUD, soft-delete)
-// ---------------------------------------------------------------------------
 
 fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Error> {
     Ok(StepDefRow {
@@ -508,10 +476,6 @@ pub async fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), Pha
     delete_step_def(&conn, &id)
 }
 
-// Returns the set of workspace ids that contain at least one agent whose
-// terminal turn hasn't been viewed yet. The sidebar uses this to pulse the
-// workspace dot even for workspaces the user isn't currently on (their tasks
-// are not loaded in memory there).
 #[tauri::command]
 pub async fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;

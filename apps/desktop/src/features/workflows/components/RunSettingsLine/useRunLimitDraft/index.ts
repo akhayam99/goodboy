@@ -24,6 +24,10 @@ type DraftParams = {
   readonly run: WorkflowRun;
 };
 
+type SubmitParams = {
+  readonly event: FormEvent<HTMLFormElement>;
+};
+
 type AmountParams = {
   readonly amount: string;
 };
@@ -46,15 +50,24 @@ export const useRunLimitDraft = ({ sessionId, run, isOpen }: Params) => {
   const [failure, setFailure] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const wasOpen = useRef(false);
+  const isBusyRef = useRef(false);
+  const queued = useRef<Draft | null>(null);
   const saved = draftOf({ run });
   const isInvalid = draft.amount.trim() !== '' && parseSpendLimit(draft.amount) == null;
   const isDirty = draft.amount.trim() !== saved.amount || draft.mode !== saved.mode;
 
   const commit = async ({ draft: next, isClosing }: CommitParams): Promise<void> => {
     const limit = next.amount.trim() === '' ? null : parseSpendLimit(next.amount);
-    if (isBusy || (next.amount.trim() !== '' && limit == null)) {
+    if (next.amount.trim() !== '' && limit == null) {
       return;
     }
+    if (isBusyRef.current) {
+      if (isClosing) {
+        queued.current = next;
+      }
+      return;
+    }
+    isBusyRef.current = true;
     setIsBusy(true);
     setFailure(null);
     try {
@@ -62,11 +75,18 @@ export const useRunLimitDraft = ({ sessionId, run, isOpen }: Params) => {
     } catch (error) {
       if (isClosing) {
         await reportError({ title: "Couldn't change the run limit", error, sessionId });
-        return;
       }
-      setFailure(`Couldn't change it. ${formatError(error)}`);
+      if (!isClosing) {
+        setFailure(`Couldn't change it. ${formatError(error)}`);
+      }
     } finally {
+      isBusyRef.current = false;
       setIsBusy(false);
+    }
+    const waiting = queued.current;
+    queued.current = null;
+    if (waiting !== null) {
+      await commit({ draft: waiting, isClosing: true });
     }
   };
 
@@ -94,7 +114,7 @@ export const useRunLimitDraft = ({ sessionId, run, isOpen }: Params) => {
     error: isInvalid ? INVALID : failure,
     setAmount: ({ amount }: AmountParams) => setDraft((current) => ({ ...current, amount })),
     setMode: ({ mode }: ModeParams) => setDraft((current) => ({ ...current, mode })),
-    submit: (event: FormEvent<HTMLFormElement>) => {
+    submit: ({ event }: SubmitParams) => {
       event.preventDefault();
       if (isDirty && !isInvalid) {
         void commit({ draft, isClosing: false });

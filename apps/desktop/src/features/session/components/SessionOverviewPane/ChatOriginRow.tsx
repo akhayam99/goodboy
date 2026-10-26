@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { FOCUS_RING, cn, Tooltip } from '@goodboy/ui';
+import { cn, FOCUS_RING, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useChatOrigins } from '../../../../shared/hooks/useChatOrigins';
 import type { ChatOrigin } from '../../../../store/slices/chats/selectChatOrigins';
@@ -68,7 +68,7 @@ export const ChatOriginRow = ({ session }: Props) => {
           type="button"
           onClick={() => open(primary)}
           className={cn(
-            'flex min-w-0 items-center gap-2 rounded-sm text-left text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground',
+            'flex min-w-0 items-center gap-2 rounded-sm text-left text-meta text-muted-foreground motion-safe:transition-colors hover:text-foreground',
             FOCUS_RING,
           )}
         >

@@ -27,15 +27,27 @@ export const openInEditor = async ({ path, editor }: OpenInEditorParams): Promis
   await invokeCommand('open_in_editor', { path, editor });
 };
 
-export const openFileInWorkspace = async (
-  workspacePath: string,
-  filePath: string,
-  editor: string,
-): Promise<void> => {
+type OpenFileInWorkspaceParams = {
+  readonly workspacePath: string;
+  readonly filePath: string;
+  readonly editor: string;
+  readonly line?: number;
+  readonly column?: number;
+};
+
+export const openFileInWorkspace = async ({
+  workspacePath,
+  filePath,
+  editor,
+  line,
+  column,
+}: OpenFileInWorkspaceParams): Promise<void> => {
   await invokeCommand('open_file_in_workspace', {
     workspacePath,
     filePath,
     editor,
+    ...(line === undefined ? {} : { line }),
+    ...(column === undefined ? {} : { column }),
   });
 };
 

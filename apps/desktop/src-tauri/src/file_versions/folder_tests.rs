@@ -4,13 +4,14 @@ use std::path::{Path, PathBuf};
 use super::folder_prune::{
     folder_size, prune_folder, FolderPruneArgs, PruneSession, KEEP_AFTER_END_MS, MIN_CAP_BYTES,
 };
+use super::folder_rekey::rekey_folder;
 use super::folder_restore::{
     check_folder_restore, read_folder_version, restore_folder_turn, FolderCheckArgs,
     FolderReadArgs, FolderRestoreArgs, ReadKind, ReadSide, RestoreStatus,
 };
 use super::folder_store::{
     copy_file_into, is_cancelled, load_index, locate_folder, mark_cancelled, open_folder,
-    sync_mirror, walk_folder, CopyMethod, Store,
+    sync_mirror, walk_folder, walk_folder_within, CopyMethod, Store,
 };
 use super::folder_turns::{
     begin_folder_turn, discard_folder_turn, finalize_folder_turn, forget_folder, list_folder_turns,
@@ -927,4 +928,151 @@ fn two_folders_in_one_turn_keep_separate_records() {
     assert!(notes.turn.is_none());
     assert_eq!(research_turn.kept.len(), 1);
     assert_eq!(research_turn.kept[0].relative_path, "plan.md");
+}
+
+#[test]
+fn moving_a_folder_carries_its_saved_versions_to_the_new_path() {
+    let fx = Fixture::new("rekey");
+    fx.write("launch-memo.md", b"before");
+    fx.turn(SESSION, RUN_1, |fx| fx.write("launch-memo.md", b"after"));
+    let moved = fx.base.join("moved").join("acme-notes");
+    fs::create_dir_all(moved.parent().unwrap()).unwrap();
+    fs::rename(&fx.folder, &moved).unwrap();
+    let moved = fs::canonicalize(&moved).unwrap();
+
+    let did_move = rekey_folder(&fx.store, &fx.folder, &moved).unwrap();
+
+    assert!(did_move);
+    let turns = list_folder_turns(
+        &fx.store,
+        FolderSessionArgs {
+            folder_path: moved.to_string_lossy().into_owned(),
+            session_id: SESSION.to_string(),
+        },
+    )
+    .unwrap();
+    assert_eq!(turns.len(), 1);
+    assert_eq!(turns[0].folder_path, moved.to_string_lossy());
+    let old_key_dir = locate_folder(&fx.store, &fx.path()).unwrap().dir;
+    assert!(!old_key_dir.exists());
+    let status = open_folder(&fx.store, &moved.to_string_lossy()).unwrap();
+    assert_eq!(
+        load_index(&status).unwrap().folder_path,
+        moved.to_string_lossy()
+    );
+}
+
+#[test]
+fn moving_a_folder_back_restores_the_original_key() {
+    let fx = Fixture::new("rekey-undo");
+    fx.write("launch-memo.md", b"before");
+    fx.turn(SESSION, RUN_1, |fx| fx.write("launch-memo.md", b"after"));
+    let original = fx.folder.clone();
+    let moved = fx.base.join("moved").join("acme-notes");
+    fs::create_dir_all(moved.parent().unwrap()).unwrap();
+    fs::rename(&original, &moved).unwrap();
+    let moved = fs::canonicalize(&moved).unwrap();
+    rekey_folder(&fx.store, &original, &moved).unwrap();
+    fs::rename(&moved, &original).unwrap();
+
+    let did_move = rekey_folder(&fx.store, &moved, &original).unwrap();
+
+    assert!(did_move);
+    assert_eq!(fx.turns(SESSION).len(), 1);
+}
+
+#[test]
+fn a_folder_with_no_saved_versions_has_nothing_to_move() {
+    let fx = Fixture::new("rekey-empty");
+    let elsewhere = fx.base.join("elsewhere");
+    fs::create_dir_all(&elsewhere).unwrap();
+
+    assert!(!rekey_folder(&fx.store, &fx.folder, &elsewhere).unwrap());
+}
+
+#[test]
+fn saved_versions_at_the_destination_are_never_overwritten() {
+    let fx = Fixture::new("rekey-conflict");
+    fx.write("launch-memo.md", b"before");
+    fx.turn(SESSION, RUN_1, |fx| fx.write("launch-memo.md", b"after"));
+    let other = fx.base.join("other");
+    fs::create_dir_all(&other).unwrap();
+    let other = fs::canonicalize(other).unwrap();
+    prepare_folder(
+        &fx.store,
+        FolderPrepareArgs {
+            folder_path: other.to_string_lossy().into_owned(),
+            folder_id: None,
+        },
+    )
+    .unwrap();
+
+    let result = rekey_folder(&fx.store, &fx.folder, &other);
+
+    assert!(matches!(
+        result,
+        Err(FileVersionsError::FolderVersionsExist)
+    ));
+    assert_eq!(fx.turns(SESSION).len(), 1);
+}
+
+#[test]
+fn virtualenvs_and_framework_caches_do_not_eat_the_versions_budget() {
+    let fx = Fixture::new("reproducible");
+    fx.write("notes.md", b"keep");
+    fx.write(".venv/lib/site.py", b"x");
+    fx.write(".next/cache/page.js", b"x");
+    fx.write(".turbo/log.txt", b"x");
+    fx.write("packages/app/node_modules/dep/index.js", b"x");
+    fx.write("coverage/index.html", b"keep");
+
+    let walk = walk_folder(&fx.folder, DEFAULT_SIZE_CAP_BYTES).unwrap();
+
+    let kept: Vec<&str> = walk
+        .files
+        .iter()
+        .map(|file| file.relative_path.as_str())
+        .collect();
+    assert_eq!(kept, vec!["coverage/index.html", "notes.md"]);
+    let skipped: Vec<(&str, &str)> = walk
+        .skipped
+        .iter()
+        .map(|skip| (skip.relative_path.as_str(), skip.reason.as_str()))
+        .collect();
+    assert!(skipped.contains(&(".venv", "skipped_folder")));
+    assert!(skipped.contains(&(".next", "skipped_folder")));
+    assert!(skipped.contains(&(".turbo", "skipped_folder")));
+    assert!(skipped.contains(&("packages/app/node_modules", "skipped_folder")));
+}
+
+#[test]
+fn files_over_the_folder_limit_are_counted_in_the_result() {
+    let fx = Fixture::new("limit");
+    for name in ["a.md", "b.md", "c.md", "d.md", "e.md"] {
+        fx.write(name, b"x");
+    }
+
+    let walk = walk_folder_within(&fx.folder, DEFAULT_SIZE_CAP_BYTES, 2).unwrap();
+
+    assert_eq!(walk.files.len(), 2);
+    let limit = walk
+        .skipped
+        .iter()
+        .find(|skip| skip.reason == "folder_limit")
+        .expect("the limit is reported");
+    assert_eq!(limit.relative_path, "c.md");
+    assert_eq!(limit.omitted, Some(3));
+}
+
+#[test]
+fn a_folder_under_the_limit_reports_no_limit() {
+    let fx = Fixture::new("under-limit");
+    fx.write("a.md", b"x");
+
+    let walk = walk_folder_within(&fx.folder, DEFAULT_SIZE_CAP_BYTES, 2).unwrap();
+
+    assert!(walk
+        .skipped
+        .iter()
+        .all(|skip| skip.reason != "folder_limit"));
 }

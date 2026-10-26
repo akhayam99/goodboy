@@ -2,7 +2,7 @@ import type { Tone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { autoChildCopyOf } from '../../../auto/group/autoChildCopyOf';
 import type { AutoGroupChild } from '../../../auto/autoGroupOf';

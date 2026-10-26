@@ -1,7 +1,6 @@
 import { X } from 'lucide-react';
-import { Chip, IconButton } from '@goodboy/ui';
+import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ClosingIssueReference } from '../../github/closingIssueReferences';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly references: ReadonlyArray<ClosingIssueReference>;
@@ -13,8 +12,8 @@ export const ClosesChips = ({ references, onRemove }: Props) => (
     {references.map((reference) => (
       <li key={reference.number}>
         <Chip
+          kind="reference"
           tone="neutral"
-          size="md"
           label={reference.identifier}
           title={reference.line}
           trailing={

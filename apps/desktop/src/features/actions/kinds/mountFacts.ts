@@ -5,14 +5,10 @@ import type {
   SessionId,
   WorktreeStatus,
 } from '@goodboy/types';
-import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOnline';
+import type { OnlineCommit } from '../../../store/runtime/worktreeStatuses/onlyOnline';
 import { changedCount, distanceAhead, distanceBehind } from '../../../shared/lib/gitStatus';
-import {
-  branchPushStateOf,
-  commitsToPush,
-  type BranchPushState,
-} from '../../../shared/lib/branchPushState';
-import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
+import { branchPushFactsOf } from '../../../shared/lib/branchPushState';
+import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 
 type MountRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
 
@@ -78,9 +74,6 @@ const CREATABLE: Readonly<Partial<Record<RemoteHostKind, MountPullRequestProvide
   gitlab: 'gitlab',
 };
 
-const unpushedOf = ({ state }: { readonly state: BranchPushState }): number =>
-  state.kind === 'diverged' ? state.ahead : commitsToPush({ state });
-
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
@@ -141,7 +134,7 @@ export const mountFacts = ({
   autoBlockedReason,
 }: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
-  const pushState = status === null ? null : branchPushStateOf({ status });
+  const push = branchPushFactsOf({ status });
   const upstreamBehind =
     status === null ? null : distanceBehind({ distance: status.upstreamDistance });
   return {
@@ -164,7 +157,7 @@ export const mountFacts = ({
     requestProvider: request?.provider ?? null,
     createProvider: remoteKind === null ? null : (CREATABLE[remoteKind] ?? null),
     ahead,
-    unpushed: pushState === null ? 0 : unpushedOf({ state: pushState }),
+    unpushed: push.toPush,
     behind: status === null ? 0 : (distanceBehind({ distance: status.mainDistance }) ?? 0),
     dirty: status === null ? 0 : (changedCount({ workingTree: status.workingTree }) ?? 0),
     isDiverged: upstreamBehind !== null && upstreamBehind > 0,

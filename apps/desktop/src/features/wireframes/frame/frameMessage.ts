@@ -1,3 +1,5 @@
+import { isRecord } from '@goodboy/types/helpers';
+
 export type FrameMessage =
   | Readonly<{ type: 'navigated'; path: string; height: number }>
   | Readonly<{ type: 'picked'; nodeId: string; label: string }>
@@ -11,9 +13,6 @@ export type FrameCommand =
 const MAX_FIELD = 512;
 
 const PAGE_PATH = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*(\/[A-Za-z0-9_-][A-Za-z0-9_.-]*){0,2}$/;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const text = ({ value }: { readonly value: unknown }): string | null =>
   typeof value === 'string' && value.length <= MAX_FIELD ? value : null;

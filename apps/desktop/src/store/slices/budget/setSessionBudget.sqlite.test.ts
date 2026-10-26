@@ -85,6 +85,7 @@ describe('a session limit under a running Auto', () => {
       sessionId: AUTO_SEED_SESSION,
       softCapUsd: 2,
       onExceed: 'warn',
+      warnRatio: 0.8,
     });
     expect(await capOfTree()).toBe(5);
   });

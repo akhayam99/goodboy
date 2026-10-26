@@ -40,7 +40,7 @@ import type { ItemFacts } from './kinds/item';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
-import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import type { RemoteHostKind } from '../../shared/utils/remoteHost';
 import type { AgentKind } from '../session/agent-kind';
 import type { SessionSuggestion } from '../suggestions/types';
 
@@ -224,6 +224,11 @@ export type SessionActionTarget = {
 
 export type SessionsActionTarget = {
   readonly kind: 'sessions';
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
+export type DoneLaneActionTarget = {
+  readonly kind: 'doneLane';
   readonly sessionIds: ReadonlyArray<SessionId>;
 };
 
@@ -516,6 +521,7 @@ export type ActionCardActionTarget = {
 export type ObjectTarget =
   | SessionActionTarget
   | SessionsActionTarget
+  | DoneLaneActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
   | PlanPartActionTarget

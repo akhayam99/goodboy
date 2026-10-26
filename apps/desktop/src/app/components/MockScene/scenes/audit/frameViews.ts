@@ -1,4 +1,6 @@
 import type { useAppOverlays } from '../../../../hooks/useAppOverlays';
+import { openSettings } from '../../../../../features/settings/openSettings';
+import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { useAppStore } from '../../../../../store';
 import { installIphoneIpc } from '../u26s/settingsTree/installIphoneIpc';
 
@@ -9,28 +11,19 @@ type TriggerParams = {
   readonly openers: Openers;
 };
 
-type FireParams = {
-  readonly name: string;
-  readonly detail?: unknown;
-};
-
-const fire = ({ name, detail }: FireParams): void => {
-  window.dispatchEvent(new CustomEvent(name, { detail }));
-};
-
 export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
   switch (view) {
     case 'settings':
       openers.openSettings();
       return;
     case 'settings-workspace':
-      fire({ name: 'goodboy:open-settings', detail: { scope: 'workspace' } });
+      openSettings({ scope: 'workspace' });
       return;
     case 'settings-providers':
       openers.openProviders();
       return;
     case 'settings-tools':
-      fire({ name: 'goodboy:open-settings', detail: { scope: 'tools' } });
+      openSettings({ scope: 'tools' });
       return;
     case 'shortcuts':
       openers.openShortcutHelp();
@@ -57,17 +50,17 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       openers.openChangelog();
       return;
     case 'guide':
-      fire({ name: 'goodboy:open-guide' });
+      dispatchWindowEvent({ name: 'goodboy:open-guide' });
       return;
     case 'report':
-      fire({ name: 'goodboy:open-report-sheet' });
+      dispatchWindowEvent({ name: 'goodboy:open-report-sheet' });
       return;
     case 'add-workspace':
       openers.openAddWorkspace();
       return;
     case 'pair':
       installIphoneIpc({ enrolledCount: 1 });
-      fire({ name: 'goodboy:open-pair-device' });
+      dispatchWindowEvent({ name: 'goodboy:open-pair-device' });
       return;
     case 'palette':
       openers.openPalette();

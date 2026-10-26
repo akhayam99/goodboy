@@ -3,14 +3,14 @@ import {
   Button,
   ConfirmPopover,
   FormActions,
-  Input,
-  SectionHeader,
   formatError,
   formatUsd,
+  ICON_SIZE,
+  Input,
+  SectionHeader,
 } from '@goodboy/ui';
 import { Trash2 } from 'lucide-react';
 import { parseCap } from '../../../../shared/lib/parse-cap';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type SaveLimitParams = {
   readonly capUsd: number;
@@ -121,7 +121,7 @@ export const CapEditor = ({
           error={error}
           leading={
             <>
-              <span className="text-label text-muted-foreground">Limit</span>
+              <span className="text-meta text-muted-foreground">Limit</span>
               <span className="flex items-center gap-2">
                 <span className="text-body text-muted-foreground">$</span>
                 <Input
@@ -140,7 +140,7 @@ export const CapEditor = ({
                   aria-label={label}
                 />
               </span>
-              <span className="text-label text-muted-foreground">Warn at</span>
+              <span className="text-meta text-muted-foreground">Warn at</span>
               <span className="flex items-center gap-2">
                 <Input
                   type="text"

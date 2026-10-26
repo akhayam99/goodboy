@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import type { Session } from '@goodboy/types';
-import { ListGrid, ListGridGroup } from '@goodboy/ui';
+import { ListGrid, ListGridGroup, FOCUS_RING, cn } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
 import { useNow } from '../../../../../../shared/hooks/useNow';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { openSpawned } from '../../../../openSpawned';
-import { NAMES } from '../../../../../../shared/names';
+import { NAMES } from '../../../../../../shared/utils/names';
+import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import type { SessionRun } from '../../../../sessionRunsOf';
+import { InProgressAction } from './InProgressAction';
 import { RunsGridRow } from './RunsGridRow';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
 
@@ -21,10 +23,10 @@ type RowParams = {
   readonly run: SessionRun;
 };
 
-const VISIBLE_FINISHED_COUNT = 30;
-
-const FOLD_BUTTON =
-  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const FOLD_BUTTON = cn(
+  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const RunsGrid = ({ session, runs }: Props) => {
   const sessionId = session.id;
@@ -46,7 +48,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
         navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });
         return;
       case 'auto':
-        openSpawned({ sessionId, target: { kind: 'auto-root', agentId: run.open.agentId } });
+        openSpawned({ sessionId, target: { kind: 'agent', agentId: run.open.agentId } });
         return;
       case 'agent':
         navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });
@@ -81,7 +83,12 @@ export const RunsGrid = ({ session, runs }: Props) => {
   return (
     <ListGrid label={NAMES.runs} columns={RUNS_GRID_COLUMNS} isGrouped>
       {active.length > 0 ? (
-        <ListGridGroup headingLevel={2} label="In progress" count={active.length}>
+        <ListGridGroup
+          headingLevel={2}
+          label="In progress"
+          count={active.length}
+          action={<InProgressAction sessionId={sessionId} runs={active} />}
+        >
           {active.map((run) => renderRow({ run }))}
         </ListGridGroup>
       ) : null}

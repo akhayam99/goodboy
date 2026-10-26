@@ -4,7 +4,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';

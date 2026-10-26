@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Eyebrow, ROW_INTERACTIVE, Reveal, StatusDot, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, Eyebrow, ICON_SIZE, Reveal, ROW_INTERACTIVE, StatusDot } from '@goodboy/ui';
+
 import type { SettingsScopeChange } from '../../settingsFocus';
 import { foldAttentionOf, type SettingsGroup } from './settingsDirectory';
 import { SettingsRailPageList } from './SettingsRailPageList';

@@ -1,6 +1,6 @@
 import type { ShortcutId } from '../keyboard/registry';
 
-export const ACTION_RING_LIMIT = 10;
+const ACTION_RING_LIMIT = 10;
 
 const ACTION_NAME = /^[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+){0,3}$/;
 

@@ -4,7 +4,7 @@ The best support is running Goodboy on the work you already have. When something
 
 ### Report a bug
 
-Tell us what broke in one line. The bug icon next to the version at the foot of the sidebar opens the **Report a bug** sheet to the right of the icon, its bottom on the icon's bottom and inside the window. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens the same sheet from any screen, beside the icon while the sidebar shows it and centred at the bottom otherwise, and **What gets sent** shows exactly what leaves, with secrets, paths and emails stripped. After a crash, the next launch offers to report it.
+Tell us what broke in one line. Click the bug icon next to the version at the foot of the sidebar, or press **⌘I** from any screen. **What gets sent** shows exactly what leaves, with secrets, paths and emails stripped. A fact Goodboy cannot read, such as the version or the system, shows no chip and is left out. After a crash, the next launch offers to report it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-dark.webp">

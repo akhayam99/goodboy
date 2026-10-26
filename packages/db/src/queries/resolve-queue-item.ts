@@ -1,4 +1,5 @@
 import type {
+  ResolveQueueApprovalState,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
   ResolveThread,
@@ -43,6 +44,7 @@ type ApprovalParams = SessionParams & {
   readonly replyHash: string;
 };
 type ItemParams = SessionParams & { readonly itemId: string };
+type DeferParams = ItemParams & { readonly expectedState?: ResolveQueueApprovalState | null };
 type DeliveredParams = ItemParams & { readonly deliveredAt: number };
 type ReopenParams = ItemParams & {
   readonly id: string;
@@ -219,11 +221,12 @@ export const deferResolveQueueItem = async ({
   db,
   sessionId,
   itemId,
-}: ItemParams): Promise<boolean> => {
+  expectedState = null,
+}: DeferParams): Promise<boolean> => {
   const now = Date.now();
   const result = await db.execute(
-    `UPDATE resolve_queue_items SET approval_state = 'deferred', approved_revision = NULL, approved_reply_hash = NULL, deferred_at = ?, updated_at = ? WHERE id = ? AND session_id = ? AND superseded_at IS NULL AND delivered_at IS NULL AND integrated_sha IS NULL`,
-    [now, now, itemId, sessionId],
+    `UPDATE resolve_queue_items SET approval_state = 'deferred', approved_revision = NULL, approved_reply_hash = NULL, deferred_at = ?, updated_at = ? WHERE id = ? AND session_id = ? AND superseded_at IS NULL AND delivered_at IS NULL AND integrated_sha IS NULL AND (? IS NULL OR approval_state = ?)`,
+    [now, now, itemId, sessionId, expectedState, expectedState],
   );
   return result.rowsAffected === 1;
 };

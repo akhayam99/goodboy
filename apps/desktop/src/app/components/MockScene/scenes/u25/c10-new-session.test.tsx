@@ -103,7 +103,7 @@ describe('the c10 New session scenes', () => {
   it('c10-start-workflow is the task with the goal and two folders pinned in Where', async () => {
     await mount({ id: 'c10-start-workflow' });
 
-    expect(screen.getByRole('textbox', { name: 'Task' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
@@ -146,7 +146,7 @@ describe('the c10 New session scenes', () => {
     expect(
       screen.getByText(/The branch hl\/retry-guard already exists in payments-api/),
     ).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Task' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );

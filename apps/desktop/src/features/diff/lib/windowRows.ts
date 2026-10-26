@@ -1,7 +1,7 @@
 import type { DiffHunk, DiffHunkLine } from '@goodboy/types';
-import { buildDiffRows, type DiffRow } from '../../../shared/utils/diffRows';
-import { buildDiffPairRows, type DiffPairRow } from '../../../shared/utils/diffPairRows';
-import { visibleDiffRows } from '../../../shared/utils/visibleDiffRows';
+import { buildDiffRows, type DiffRow } from './diffRows';
+import { buildDiffPairRows, type DiffPairRow } from './diffPairRows';
+import { visibleDiffRows } from './visibleDiffRows';
 import type { ContextGap } from './contextGaps';
 
 type Params = {

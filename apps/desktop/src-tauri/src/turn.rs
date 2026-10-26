@@ -1,28 +1,30 @@
 use std::io::{BufRead, BufReader};
-use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStderr, ChildStdout, Command};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use thiserror::Error;
 
 use crate::live_child::{
-    drain_tail_lossy, run_to_exit, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+    drain_tail_active, register, run_to_exit, spawn_tagged_with, Activity, LiveChild,
+    LiveChildRegistry, SpawnTaggedParams, Spawned, MAX_STDERR_BYTES,
 };
-use crate::providers::cli_args::turn_args;
+use crate::proc::spawn::{spawn_command, StdinMode};
+use crate::providers::cli_args::{turn_args, turn_stdin};
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
 use crate::turn_delivery::{DeliveryClaim, DeliveryRegistry, DeliveryRun};
+use crate::turn_quiet::{LiveTurn, QuietTracker, TurnQuiet};
+use crate::util::lock_or_recover;
 
-pub(crate) const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
+use crate::util::limits::{format_limit, MAX_TURN_LINE_BYTES};
 
 #[derive(Debug, Error)]
 pub enum TurnError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("turn registry mutex poisoned")]
-    Poisoned,
     #[error("worktree writer lease is not owned by this turn")]
     WriterLeaseNotOwned,
     #[error("turn not found: {0}")]
@@ -39,7 +41,6 @@ impl TurnError {
     fn kind(&self) -> &'static str {
         match self {
             TurnError::Io(_) => "io",
-            TurnError::Poisoned => "poisoned",
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
             TurnError::NotFound(_) => "not_found",
             TurnError::ConfinementUnproven(_) => "confinement_unproven",
@@ -51,7 +52,12 @@ impl TurnError {
 type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
-pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog, pub DeliveryRegistry);
+pub struct TurnRegistry(
+    pub ChildRegistry,
+    pub TurnBacklog,
+    pub DeliveryRegistry,
+    pub QuietTracker,
+);
 
 impl TurnRegistry {
     pub fn new() -> Self {
@@ -70,14 +76,9 @@ pub fn shutdown(registry: &TurnRegistry) {
 }
 
 pub fn live_run_ids(registry: &TurnRegistry) -> Vec<String> {
-    match registry.0.lock() {
-        Ok(map) => {
-            let mut ids: Vec<String> = map.keys().cloned().collect();
-            ids.sort();
-            ids
-        }
-        Err(_) => Vec::new(),
-    }
+    let mut ids: Vec<String> = lock_or_recover(&registry.0).keys().cloned().collect();
+    ids.sort();
+    ids
 }
 
 pub fn mark_exiting() {
@@ -155,7 +156,7 @@ pub struct WriterLeaseBinding {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TurnEventPayload {
     Line {
-        line: String,
+        line: Arc<str>,
     },
     End {
         exit_code: Option<i32>,
@@ -170,8 +171,8 @@ pub enum TurnEventPayload {
 }
 
 #[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct TurnEventEnvelope {
-    #[serde(rename = "runId")]
     pub run_id: String,
     pub seq: u64,
     #[serde(flatten)]
@@ -263,6 +264,13 @@ pub(crate) fn apply_push_block(command: &mut Command) {
 }
 
 fn apply_git_host_access(command: &mut Command, args: &SpawnOneArgs<'_>) {
+    apply_git_host_access_with(command, args, crate::github::token_for_workspace);
+}
+
+fn apply_git_host_access_with<F>(command: &mut Command, args: &SpawnOneArgs<'_>, token_for: F)
+where
+    F: FnOnce(Option<&str>) -> Option<String>,
+{
     if args.blocks_push {
         apply_push_block(command);
         return;
@@ -272,7 +280,7 @@ fn apply_git_host_access(command: &mut Command, args: &SpawnOneArgs<'_>) {
         remove_host_tokens(command);
         return;
     }
-    if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
+    if let Some(token) = token_for(args.workspace_id) {
         command.env("GH_TOKEN", &token);
         command.env("GITHUB_TOKEN", &token);
     }
@@ -294,13 +302,23 @@ type SpawnedTurn = (
     crate::query_bridge::TurnProcess,
 );
 
+struct LeasedRun<'a> {
+    run_id: &'a str,
+    kind: crate::query_bridge::TurnKind,
+    scope: crate::query_bridge::TurnScope,
+}
+
 fn spawn_leased_child(
     command: &mut Command,
+    stdin: StdinMode,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     binding: Option<&WriterLeaseBinding>,
     write_set: Option<&crate::worktree_writer::WriteSetBinding>,
-    run_id: &str,
-    kind: crate::query_bridge::TurnKind,
+    LeasedRun {
+        run_id,
+        kind,
+        scope,
+    }: LeasedRun<'_>,
     on_exit: impl Fn(&str) + Send + Clone + 'static,
 ) -> Result<SpawnedTurn, TurnError> {
     let mut guards = Vec::new();
@@ -329,11 +347,10 @@ fn spawn_leased_child(
             .ok_or(TurnError::WriterLeaseNotOwned)?,
         );
     }
-    let (child, turn) = crate::query_bridge::spawn_turn(kind, || {
-        command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+    let (child, turn) = crate::query_bridge::spawn_turn(crate::query_bridge::SpawnTurnParams {
+        kind,
+        scope,
+        spawn: || spawn_command(command, stdin),
     })?;
     Ok((child, guards, turn))
 }
@@ -373,6 +390,7 @@ fn spawn_one<E: TurnEmitter>(
         },
     );
 
+    let prompt = turn_stdin(args.binary, &args);
     let mut cli_args = turn_args(args.binary, &args);
     cli_args.extend(crate::providers::cli_probe::partial_output_args(
         args.binary,
@@ -392,50 +410,54 @@ fn spawn_one<E: TurnEmitter>(
         true => crate::query_bridge::TurnKind::AutoChild,
         false => crate::query_bridge::TurnKind::HandStarted,
     };
-    let (mut child, lease_guards, turn_process) = spawn_leased_child(
-        &mut command,
-        leases,
-        args.writer_lease,
-        args.write_set_lease,
-        args.run_id,
-        kind,
-        move |path: &str| {
-            if let Some(holder) = &event_holder {
-                event_app.emit_turn(
-                    crate::worktree_writer::EVENT_NAME,
-                    crate::worktree_writer::WriterLeaseEvent {
-                        path: path.to_string(),
-                        holder: holder.clone(),
-                        reason: "exited",
-                    },
-                );
-            }
+    let (
+        Spawned {
+            live,
+            stdout,
+            stderr,
         },
-    )?;
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
-
-    let live = LiveChild::tagged(
-        child,
-        &tag,
-        crate::proc::ledger::LedgerContext {
+        (lease_guards, turn_process),
+    ) = spawn_tagged_with(
+        SpawnTaggedParams {
+            command: &mut command,
+            tag: &tag,
+            prompt,
             session_id: args.session_id.map(str::to_string),
             mount_path: args.writer_lease.map(|binding| binding.path.clone()),
-            ..crate::proc::ledger::LedgerContext::from_command(&command)
         },
-    );
+        |command, stdin| {
+            let (child, guards, turn) = spawn_leased_child(
+                command,
+                stdin,
+                leases,
+                args.writer_lease,
+                args.write_set_lease,
+                LeasedRun {
+                    run_id: args.run_id,
+                    kind,
+                    scope: crate::query_bridge::TurnScope {
+                        workspace_id: args.workspace_id.map(str::to_string),
+                        session_id: args.session_id.map(str::to_string),
+                    },
+                },
+                move |path: &str| {
+                    if let Some(holder) = &event_holder {
+                        event_app.emit_turn(
+                            crate::worktree_writer::EVENT_NAME,
+                            crate::worktree_writer::WriterLeaseEvent {
+                                path: path.to_string(),
+                                holder: holder.clone(),
+                                reason: "exited",
+                            },
+                        );
+                    }
+                },
+            )?;
+            Ok::<_, TurnError>((child, (guards, turn)))
+        },
+    )?;
     backlog.open(args.run_id);
-    registry
-        .lock()
-        .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.to_string(), live.clone());
+    register(registry, args.run_id, &live);
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
@@ -446,7 +468,8 @@ fn spawn_one<E: TurnEmitter>(
     // forwarding. Reading stderr only after stdout EOF used to deadlock: a CLI
     // that writes >~64KB to stderr mid-stream fills the pipe buffer, blocks on
     // the write, and stops producing stdout — so forward_lines waits forever.
-    let stderr_handle = thread::spawn(move || capture_stderr(stderr));
+    let stderr_activity = live.activity.clone();
+    let stderr_handle = thread::spawn(move || capture_stderr(stderr, &stderr_activity));
 
     thread::spawn(move || {
         let sink = TurnSink {
@@ -455,7 +478,7 @@ fn spawn_one<E: TurnEmitter>(
             run_id: &run_id_owned,
         };
         let ((), exited) = run_to_exit(&live, &registry_clone, &run_id_owned, None, || {
-            forward_lines(&sink, &live, stdout)
+            forward_lines(&sink, &live, stdout, "agent")
         });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         if !is_exiting() {
@@ -481,7 +504,7 @@ fn claim_delivery(state: &TurnRegistry, args: &SpawnArgs) -> Result<(), TurnErro
     let Some(delivery_id) = args.delivery_id.as_deref() else {
         return Ok(());
     };
-    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    let live = lock_or_recover(&state.0);
     match state.2.claim(delivery_id, &args.run_id, |run_id| {
         live.contains_key(run_id)
     }) {
@@ -501,19 +524,22 @@ pub async fn turn_delivery_lookup(
     state: State<'_, TurnRegistry>,
     delivery_id: String,
 ) -> Result<Option<DeliveryRun>, TurnError> {
-    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    let live = lock_or_recover(&state.0);
     Ok(state
         .2
         .lookup(&delivery_id, |run_id| live.contains_key(run_id)))
 }
 
 #[tauri::command]
-pub async fn turn_spawn(
-    app: AppHandle,
-    state: State<'_, TurnRegistry>,
-    leases: State<'_, crate::worktree_writer::WriterLeases>,
-    args: SpawnArgs,
-) -> Result<String, TurnError> {
+pub async fn turn_spawn(app: AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
+    tauri::async_runtime::spawn_blocking(move || spawn_turn(&app, args))
+        .await
+        .map_err(|error| TurnError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn spawn_turn(app: &AppHandle, args: SpawnArgs) -> Result<String, TurnError> {
+    let state = app.state::<TurnRegistry>();
+    let leases = app.state::<crate::worktree_writer::WriterLeases>();
     let binary = args.binary.as_deref().unwrap_or("claude");
     if let Some(role) = args.confined_role.as_deref() {
         crate::providers::cli_probe::ensure_confinement(binary, role)
@@ -527,7 +553,7 @@ pub async fn turn_spawn(
 
     claim_delivery(&state, &args)?;
     let spawned = spawn_one(
-        &app,
+        app,
         &state.0,
         &state.1,
         &leases.0,
@@ -571,8 +597,27 @@ pub async fn turn_spawn(
 
 #[tauri::command]
 pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String>, TurnError> {
-    let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
-    Ok(map.keys().cloned().collect())
+    Ok(lock_or_recover(&state.0).keys().cloned().collect())
+}
+
+#[tauri::command]
+pub async fn turn_quiet(state: State<'_, TurnRegistry>) -> Result<Vec<TurnQuiet>, TurnError> {
+    let turns: Vec<LiveTurn> = lock_or_recover(&state.0)
+        .iter()
+        .map(|(run_id, live)| LiveTurn {
+            run_id: run_id.clone(),
+            pid: live.pid,
+            output_idle: live.activity.idle_for(),
+        })
+        .collect();
+    if turns.is_empty() {
+        return Ok(Vec::new());
+    }
+    let pids: Vec<u32> = turns.iter().map(|turn| turn.pid).collect();
+    let cpus = tauri::async_runtime::spawn_blocking(move || crate::proc::reap::trees_cpu(&pids))
+        .await
+        .map_err(|error| TurnError::Io(std::io::Error::other(error)))?;
+    Ok(state.3.measure(&turns, &cpus, std::time::Instant::now()))
 }
 
 #[tauri::command]
@@ -596,12 +641,10 @@ pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Resu
 }
 
 fn cancel_run(registry: &ChildRegistry, run_id: &str) -> Result<(), TurnError> {
-    let map = registry.lock().map_err(|_| TurnError::Poisoned)?;
-    let live = map
+    let live = lock_or_recover(registry)
         .get(run_id)
         .cloned()
         .ok_or_else(|| TurnError::NotFound(run_id.to_string()))?;
-    drop(map);
 
     live.kill();
     Ok(())
@@ -654,13 +697,17 @@ fn strip_line_ending(buf: &mut Vec<u8>) {
     }
 }
 
+pub(crate) trait EventSink {
+    fn send(&self, event: TurnEventPayload);
+}
+
 struct TurnSink<'a, E: TurnEmitter> {
     app: &'a E,
     backlog: &'a TurnBacklog,
     run_id: &'a str,
 }
 
-impl<E: TurnEmitter> TurnSink<'_, E> {
+impl<E: TurnEmitter> EventSink for TurnSink<'_, E> {
     fn send(&self, event: TurnEventPayload) {
         if is_exiting() && !matches!(event, TurnEventPayload::Line { .. }) {
             return;
@@ -677,19 +724,28 @@ impl<E: TurnEmitter> TurnSink<'_, E> {
     }
 }
 
-fn forward_lines<E: TurnEmitter>(sink: &TurnSink<'_, E>, live: &LiveChild, stdout: ChildStdout) {
+pub(crate) fn forward_lines<S: EventSink>(
+    sink: &S,
+    live: &LiveChild,
+    stdout: ChildStdout,
+    subject: &str,
+) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
         match read_capped_line(&mut reader, &mut buf, MAX_TURN_LINE_BYTES) {
             Ok(CappedLine::Eof) => break,
             Ok(CappedLine::Line) => {
-                let line = String::from_utf8_lossy(&buf).into_owned();
+                live.activity.touch();
+                let line: Arc<str> = Arc::from(String::from_utf8_lossy(&buf));
                 sink.send(TurnEventPayload::Line { line });
             }
             Ok(CappedLine::Overflow) => {
                 sink.send(TurnEventPayload::Error {
-                    message: "agent output line exceeded 64 MiB".to_string(),
+                    message: format!(
+                        "{subject} output line exceeded {}",
+                        format_limit(MAX_TURN_LINE_BYTES as u64)
+                    ),
                 });
                 crate::process_group::terminate(live.pid);
                 break;
@@ -704,8 +760,8 @@ fn forward_lines<E: TurnEmitter>(sink: &TurnSink<'_, E>, live: &LiveChild, stdou
     }
 }
 
-fn capture_stderr(stderr: ChildStderr) -> String {
-    drain_tail_lossy(stderr, MAX_STDERR_BYTES)
+fn capture_stderr(stderr: ChildStderr, activity: &Activity) -> String {
+    drain_tail_active(stderr, MAX_STDERR_BYTES, activity)
 }
 
 // ---------------------------------------------------------------------------
@@ -714,6 +770,12 @@ fn capture_stderr(stderr: ChildStderr) -> String {
 
 #[cfg(all(test, unix))]
 mod fake_cli_tests;
+
+#[cfg(all(test, unix))]
+mod argv_fixture_tests;
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -728,6 +790,34 @@ mod tests {
             "deliveryId": delivery_id,
         }))
         .expect("spawn args")
+    }
+
+    struct CountingSink(std::cell::Cell<usize>);
+
+    impl EventSink for CountingSink {
+        fn send(&self, _event: TurnEventPayload) {
+            self.0.set(self.0.get() + 1);
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn every_line_of_output_counts_as_a_sign_of_life() {
+        let mut child = std::process::Command::new("sh")
+            .args(["-c", "printf 'one\\ntwo\\n'"])
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .expect("spawn sh");
+        let stdout = child.stdout.take().expect("stdout pipe");
+        let live = LiveChild::new(child);
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        assert!(live.activity.idle_for() >= std::time::Duration::from_millis(150));
+        let sink = CountingSink(std::cell::Cell::new(0));
+
+        forward_lines(&sink, &live, stdout, "agent");
+
+        assert_eq!(sink.0.get(), 2);
+        assert!(live.activity.idle_for() < std::time::Duration::from_millis(150));
     }
 
     #[test]
@@ -770,11 +860,18 @@ mod tests {
         let mut command = Command::new("/bin/echo");
         let result = spawn_leased_child(
             &mut command,
+            StdinMode::Null,
             &leases.0,
             Some(&binding),
             None,
-            "run-1",
-            crate::query_bridge::TurnKind::HandStarted,
+            LeasedRun {
+                run_id: "run-1",
+                kind: crate::query_bridge::TurnKind::HandStarted,
+                scope: crate::query_bridge::TurnScope {
+                    workspace_id: Some("ws-acme".to_string()),
+                    session_id: Some("session-acme".to_string()),
+                },
+            },
             |_| {},
         );
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
@@ -1038,6 +1135,111 @@ mod tests {
         }
     }
 
+    fn git_host_env<F>(
+        args: &SpawnOneArgs<'_>,
+        token_for: F,
+    ) -> std::collections::BTreeMap<String, Option<String>>
+    where
+        F: FnOnce(Option<&str>) -> Option<String>,
+    {
+        let mut command = Command::new("claude");
+        apply_git_host_access_with(&mut command, args, token_for);
+        command
+            .get_envs()
+            .map(|(key, value)| {
+                (
+                    key.to_string_lossy().into_owned(),
+                    value.map(|value| value.to_string_lossy().into_owned()),
+                )
+            })
+            .collect()
+    }
+
+    fn no_token_lookup(_: Option<&str>) -> Option<String> {
+        panic!("a turn that strips the host tokens never reads one");
+    }
+
+    fn assert_push_blocked_without_host_tokens(
+        env: &std::collections::BTreeMap<String, Option<String>>,
+        url: &str,
+    ) {
+        assert_eq!(env["GIT_CONFIG_COUNT"].as_deref(), Some("7"));
+        assert_eq!(
+            env["GIT_CONFIG_KEY_0"].as_deref(),
+            Some("remote.origin.pushurl")
+        );
+        assert_eq!(env["GIT_CONFIG_VALUE_0"].as_deref(), Some(url));
+        assert_eq!(
+            env["GIT_CONFIG_KEY_1"].as_deref(),
+            Some("remote.pushDefault")
+        );
+        assert_eq!(
+            env["GIT_CONFIG_VALUE_1"].as_deref(),
+            Some("goodboy-blocked")
+        );
+        for name in HOST_TOKEN_ENV {
+            assert_eq!(env.get(*name), Some(&None), "{name} stays in the env");
+        }
+    }
+
+    #[test]
+    fn a_hand_started_turn_gets_the_workspace_token_as_gh_and_github_token() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.workspace_id = Some("ws-harborline");
+        let mut asked = None;
+        let env = git_host_env(&args, |workspace_id| {
+            asked = workspace_id.map(str::to_string);
+            Some("harborline-token".to_string())
+        });
+
+        assert_eq!(asked.as_deref(), Some("ws-harborline"));
+        assert_eq!(env["GH_TOKEN"].as_deref(), Some("harborline-token"));
+        assert_eq!(env["GITHUB_TOKEN"].as_deref(), Some("harborline-token"));
+        assert_eq!(env.len(), 2);
+    }
+
+    #[test]
+    fn a_hand_started_turn_without_a_workspace_token_leaves_the_parent_env_as_is() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let env = git_host_env(&args, |_| None);
+
+        assert!(env.is_empty());
+    }
+
+    #[test]
+    fn an_auto_child_turn_blocks_push_and_strips_every_host_token() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.workspace_id = Some("ws-harborline");
+        args.is_auto_child = true;
+        let env = git_host_env(&args, no_token_lookup);
+
+        assert_push_blocked_without_host_tokens(&env, AUTO_CHILD_PUSH_BLOCK_URL);
+    }
+
+    #[test]
+    fn a_chat_turn_blocks_push_and_strips_every_host_token() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.blocks_push = true;
+        let env = git_host_env(&args, no_token_lookup);
+
+        assert_push_blocked_without_host_tokens(&env, PUSH_BLOCK_URL);
+    }
+
+    #[test]
+    fn a_turn_that_blocks_push_wins_over_the_auto_child_block() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.blocks_push = true;
+        args.is_auto_child = true;
+        let env = git_host_env(&args, no_token_lookup);
+
+        assert_push_blocked_without_host_tokens(&env, PUSH_BLOCK_URL);
+    }
+
     #[test]
     fn claude_args_omit_resume_and_system_prompt_when_none() {
         let empty: Vec<String> = vec![];
@@ -1189,7 +1391,7 @@ mod tests {
         let protected = [
             data.clone(),
             crate::db::resolve_db_path().expect("a database path"),
-            crate::history::reservations_dir(),
+            crate::history::reservations_dir().expect("a reservations folder"),
         ];
         let mut args = make_args(None, None, &empty);
         args.query_socket_directory = Some(&socket_directory);
@@ -1357,7 +1559,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);
         args.model = "openrouter/openai/gpt-5.4";
-        let cli = turn_args("openrouter", &args);
+        let cli = turn_args("opencode", &args);
         assert_eq!(
             cli,
             vec![
@@ -1492,7 +1694,7 @@ mod tests {
     #[test]
     fn opencode_args_other_modes_run_the_plan_agent() {
         let empty: Vec<String> = vec![];
-        for binary in ["opencode", "openrouter", "moonshot"] {
+        for binary in ["opencode", "/usr/local/bin/opencode"] {
             for mode in ["plan", "default", "dontAsk", "acceptEdits", "unknown"] {
                 let args = args_for_mode(mode, &empty);
                 let cli = turn_args(binary, &args);

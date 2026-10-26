@@ -13,9 +13,14 @@ The other docs link here instead of explaining them again.
 
 - **Workspace**: where you work, named after what you work on
 - **Folder**: one repository or plain folder inside a workspace (the code calls it a project)
-- **Session**: one task, with its own goal, limit and shared notes
+- **Session**: one goal, the unit of work, with its own limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
 - **Workflow**: a list of steps you can reuse, and each step gets its own agent
+- **Run**: one go at a goal inside a session, started as a workflow, an agent or Auto
+- **Plan**: the steps an agent writes before it builds, kept as an artifact you approve or revise
+- **Preset**: a workflow you saved, which a run follows as written or adapts as it goes
+- **Auto**: the agent that picks how a run goes and starts helpers, under your limit
+- **Scout**: a role that reads the code and answers, and changes nothing
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
 - **Lens**: one view of a session, such as its plans, questions or diff
 - **Turn**: one message from you and one answer from the agent
@@ -32,7 +37,7 @@ workspace
 ├── profile, integration bindings, workflows, skills
 ├── project (repo or folder)
 │   └── scripts, settings override, binding override
-└── session (one task)
+└── session (one goal)
     ├── mounts: a worktree and branch per project it touches
     ├── agents: one or more chat threads
     ├── workflow runs: steps, each with its own agent
@@ -108,9 +113,9 @@ created is picked up instead of refused.
 
 **The two faces of a plain folder.** A plain folder is either a **Code
 project** or **Documents** (`FolderPurpose`, `'code' | 'documents'`, in
-`packages/types/src/folder.ts`). The face is one settings row per folder,
-`folder.purpose.<project id>`, the same pattern as `bootstrap.phase.<project id>`:
-no column and no migration. A repository has no face. The
+`packages/types/src/folder.ts`). The face is one `project_values` row per folder,
+key `folder.purpose`, which goes with the folder when it is deleted. A
+repository has no face. The
 `store/slices/folder-purpose/` slice owns it:
 
 - `hydrateFolderPurposes()` loads every row at boot into `folderPurpose`,
@@ -166,8 +171,8 @@ background; a failure marks the folder failed and Folders settings offers
 Retry), and `removeProject` forgets that copy once the folder is removed. Home
 names a one folder workspace by its face (`workspaceFaceLabel`), and Folders
 settings switches it (the Plain folders band, [navigation.md](navigation.md)).
-Storage lists the saved versions of each plain folder in scope
-(`SavedVersionsSection`).
+Storage shows the saved versions of every plain folder once, as one row in
+the app data band (`savedVersionsBytes`, summed in Rust).
 
 A session that edits a plain folder in place shows the face where it works:
 the rail's **Folder** card names the folder and what agents do there
@@ -243,6 +248,18 @@ step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
+A list never words that agent as running, though. `agentStateOf` in
+`features/workTreeModel/agentStateOf.ts` is the one table from an agent's status,
+its turn and its open questions to the phase, the word, the node and the dot,
+and the Runs grid, the Runs page count, the Running card and the Agents tree all
+read it. A blocked turn is **Needs permission**: a waiting phase, an amber node
+without motion, counted in "N need you" and sorted ahead of what runs. The
+session's **needs-approval** reason in the attention registry reads the same
+fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
+so the agent word and the session count never disagree. A stopped
+agent that is not closed stays in progress as **Stopped, Continue**, and
+**Blocked** is a warning, never a failure.
+
 **Needs you** outranks running when what waits is a human input: an open
 question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
@@ -255,6 +272,18 @@ on exactly that. Every reason that holds is kept, not only the winner, and the
 hover card lists them all, so an approved pull request with a failing check
 shows both. The words and the mark of each reason come from one table (see
 Session stages under Identifiers).
+
+**Done** does not need a pull request. A session whose work never opens one
+reads **done** with the reason `answered`, `finished`, `report ready` or `plan
+ready` (`settledOutcomeOf`) when no pull request is open, no agent is running
+or waiting, every agent finished, no reply is unread and no question is open.
+Agents that only read (Scout, Planner, Reviewer, PR reviewer, Report, Wireframe)
+settle a session on a mounted project too; any other agent settles it only in a
+folder with no branch, where a pull request cannot come. An active plan reads
+`plan ready`, an active report or wireframe `report ready`. The session returns
+to **running** the moment you write again, and to **needs you** while a reply
+waits to be read. Nothing is stored: the stage is derived on every read, and the
+first launch after the change moves old read-only sessions to **done** at once.
 
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
@@ -273,11 +302,21 @@ Impact, the Spend tab and the spend chip in the top bar all count it.
 Every spend number on screen comes from one function, `spendFigures`
 (`features/budget/spendFigures.ts`), and each figure names its window: the
 Impact header says the range it spent over (7 days, 30 days or all time), the
-provider page says this month (the UTC calendar month, from the provider
+provider page says this month (your local calendar month, from the provider
 status, with the limit, what is left and the reset date), and the top bar chip
 says today. A provider row, a session row and a model row sum their own records
 through `totalUsd` in the same file. The overview empty state says what fills
 it in one line, whatever was spent today.
+
+One function decides where spend stands against a limit: `classify_spend` in
+`src-tauri/src/budget/standing.rs` answers clear, near or over. Spend equal to
+the limit is over, a limit of zero is always over, and the provider status, the
+provider alerts and the session alerts all ask it. The warning share of a
+provider is its rule threshold; the warning share of a session limit is the
+`warnRatio` the backend sends with the limit, so no screen holds its own 80.
+The month window comes from one clock, `SpendClock`, which is the time now and
+the offset from UTC the app sends with each call, so the month turns at local
+midnight and today never exceeds this month.
 
 | How it goes away                      | What happens to its rows                                                                          | What Impact keeps                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -464,7 +503,7 @@ a run, the questions it answered, and the plans, reports, wireframes and
 learnings it produced, listed behind "N outputs" above the launch. A run's
 count row stands where its newest folded row would read, so opening or
 folding the run never moves it, even when another run's rows fall between
-the run's rows in time (`foldedSlotIndexOf` in `buildTimelineStream.ts`). The Log holds the facts: plans, reports, wireframes and learnings
+the run's rows in time (`foldedSlotIndexOf` in `buildTimelineStream/ordering.ts`). The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
@@ -640,7 +679,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   agent; neither one just opens a panel and leaves starting the step to you.
 - Accepting plan-ready announces the started implementer with the Follow toast
   every other start uses ("Implementer started", with a `Follow` action, built by
-  `planRunToast`; see `docs/navigation.md` Follow toasts) - the toast the
+  `planRunToast`; see `docs/navigation/model.md` Follow toasts) - the toast the
   standalone PlanReadySuggestion component used to show before the unified
   resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Fix N") never starts an agent: it
@@ -1366,6 +1405,32 @@ Settings can be set at four levels. The level closest to the work wins:
   settings 2 projects had are saved. They no longer apply." and **Show** lists
   each project with **Apply to this page** and **Discard**, both behind a
   confirm anchored to the button.
+- **Which level a value comes from.** A workspace row whose setting a folder can
+  override says how many folders hold their own value ("2 folders use their own"),
+  counted by `countFoldersWithOwn` over the connected folders of the workspace. A
+  folder's own value is marked **From project**, a session's **From session**
+  (`levelOfSetting` and `levelChipLabel`). Which levels can hold a setting is one
+  table, `OVERRIDE_REACH`: the reply, attribution and workflow-rule settings live
+  on the workspace only, so they never show a chip.
+- **One list of override columns.** The workspace override row has one declared
+  column list per layer: `OVERRIDE_COLUMNS` in
+  `packages/types/src/override-columns.ts` and in `settings_overrides.rs`. The
+  database reads and writes, the Rust get and set commands, and the backup
+  export and import build their SQL from it. A test reads the migrated
+  `workspaces` table and fails when a column is not on the list, the Rust
+  settings struct, the Rust bundle struct or the TypeScript bundle type
+  disagree with it, or the two lists drift apart. A new override setting adds
+  one column to both lists and fails the build until the bundle carries it too;
+  that is how the backup stopped losing **After merge** on restore.
+- **One writer, one patch.** The override columns are written by one Rust
+  command, `patch_workspace_overrides`. A save sends only the keys it changes,
+  so a window that holds an older copy of the row cannot overwrite what another
+  window saved. The command refuses a key that is not a workspace setting, a
+  value of the wrong type, a value the column does not allow (a provider list of
+  neither shape, a voice that is not one of the four) and a workspace that does
+  not exist, with a named error and no write, and it returns the stored row,
+  which the settings screens show. Saves of one workspace run in order; when a
+  save fails, only the keys it changed go back to the last saved value.
 - **Workflows, saved steps and skills** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
@@ -1391,13 +1456,29 @@ specific rule that fits wins.
   agent's row, its session card and the top bar's Needs you all read **Needs
   permission**, not running, until you answer
 - The permission card's primary action, **Allow and continue**, grants that
-  exact call once and resumes the turn by itself; the secondary "Always
-  allow" actions write a rule (command-prefix for Bash, the whole tool for an
-  edit) and need a manual retry
+  exact call once and resumes the turn by itself. The "Always allow" actions
+  (this workspace, everywhere, this session) write a rule (command-prefix for
+  Bash, the whole tool for an edit) and resume the blocked call the same way,
+  with no second click; only when the turn could not be resumed does the
+  decision card say "Stopped before your answer." and offer **Continue**
+- **Deny** answers this call only: it records a once decision, writes no rule
+  and tells the agent the call is denied so it carries on another way. The
+  session-wide ban is a separate item in the card's overflow, **Never allow
+  "pnpm test" in this session**, which names the command prefix (the whole
+  tool for an edit), never the bare tool. **Deny and tell why** is also this
+  call only. The decision card reads in sentence case ("Allowed pnpm test for
+  this call", "Denied Bash for the rest of this session")
 - Settings › Workspace › Permissions lists the rules and adds one inline
   (`Add rule`: Allow or Deny, a command prefix, this workspace or all of
   them), then the last 50 decisions of the workspace's sessions from the
   audit log (`permission_audit_list`)
+- A glob in a rule is matched in linear time. `*` stays inside one command:
+  it does not cross `/`, `:`, `;`, `&`, `|`, a backtick or a line break, so
+  `Bash(git *)` matches `git status` and not `git status && rm -rf ~`. `**`
+  crosses all of them and is the only way to ask for that
+- The engine audits a call after Claude has run it. The audit log records
+  what the rules would have decided; what blocks a call is the permission
+  mode and the tool flags the CLI receives
 - A workflow step that was denied pauses the run instead of finishing the
   step with whatever text the model produced meanwhile
 
@@ -1460,7 +1541,10 @@ integrated when you can do all three:
 - **Act on it**: comment, reply, assign, move, approve, merge or resolve from
   the same screen
 - **Route it**: turn it into a session with the goal already written, and
-  follow it back when the work ships
+  follow it back when the work ships: once every branch of the session is
+  merged or closed and one merged, **Next** offers **Move HBL-412 to Done** for
+  a linked Linear or Jira item that is not done yet (the _Tracker follows the
+  merge_ paragraph below)
 
 A routed goal carries the item's text up to 1,200 characters, or 2,000 for a
 Slack thread. A longer text is cut at the last paragraph, line or sentence that
@@ -1484,6 +1568,32 @@ loading. Briefs are kept in memory per issue text, so the same issue is not
 briefed twice. With no connected provider free for the task, the block shows
 the issue text alone. Merge and pull requests start with their text as it is.
 
+#### The tracker follows the merge
+
+When every branch of a session is merged or closed and at least one merged, a
+linked **Linear** or **Jira** item that is not done yet gets one **Ship** row in
+Next: **Move HBL-412 to Done** (`trackerMoveSuggestionOf`, kind
+`move-tracker-item`), with the state it is in now under the title. It is a
+suggestion, never silent. The store slice `tracker-moves` owns it:
+
+- `checkTrackerMoves` reads each linked item when the session ships, keeps an
+  offer only for an item that is not completed or canceled, and drops a late
+  answer when a newer check ran, the person moved the item meanwhile, or the
+  session is no longer shipped. An item it cannot read keeps the offer it had
+- The target is the completed workflow state of the team in Linear (the one
+  named Done, else the first by position) and, in Jira, the transition that
+  lands on Done, Closed, Resolved or Completed. No such target, no row. A
+  _Part of_ link, a GitHub or GitLab issue (the host closes those from
+  `Closes #N`), a Slack thread and a Sentry item never get a row
+- **Move to Done** re-reads the item first: if another window or the tool
+  already moved it, nothing is written and the row goes. Otherwise it writes
+  with the existing transition call, and only after the tool accepted it does
+  the row leave. A refusal keeps the row and shows the error under it; the
+  button runs again. The toast offers **Undo**, which puts the item back (Linear
+  by the state it left, Jira by the transition that returns to its old status;
+  when Jira has none, the error says so). **Not now** is the ordinary Next
+  dismissal
+
 ### Each source
 
 - **GitHub**: read pull requests and act on them (approve, request changes,
@@ -1503,7 +1613,11 @@ the issue text alone. Merge and pull requests start with their text as it is.
 - **Linear**: read issues and turn them into sessions. The description and
   comments are written back, and the status row moves the issue to another
   state of its team.
-- **Sentry**: read issues and events and turn them into sessions.
+- **Sentry**: read and start only. It reads issues and events and turns them
+  into sessions. It cannot resolve, ignore or assign an issue, and the item
+  does not follow the merge: Goodboy asks Sentry for no write, and the
+  connect page says so ("Read and start only, it never changes Sentry"). A
+  Sentry item therefore meets See it and Route it, not Act on it.
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
@@ -1526,7 +1640,12 @@ source, key, title, status glyph, priority, age). It opens on For me
 records, records linked to a session) and switches to All in the header. The
 page title is the open count, since the studio bar already names Tasks. The
 choice and the
-grouping are kept per workspace (`taskListViewStorage`). Records are grouped
+grouping are kept per workspace (`taskListViewStorage`). So are the first-seen
+stamp of every record and the last look at the page (`taskArrivalsStorage`, held in
+the `taskArrivals` slice): a record is new when it was first seen after the look the
+visit began with (`arrivedKeysOf`), the first visit marks nothing, and the sidebar
+door reads `taskNewKeys`, filled by every `useInboxRecords` caller, so nothing is
+fetched for it. Records are grouped
 (`taskGroupsOf`) by source, by source and status word, by project or not at
 all, largest group first and newest first inside a group. A group shows five
 rows and Show all; an expanded group of 60 rows or more draws only a window
@@ -1623,8 +1742,8 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   total per session
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
-- **Budgets**: a monthly budget per provider, counted across all workspaces on a
-  UTC calendar month, and a limit per session that pauses workflows or
+- **Budgets**: a monthly budget per provider, counted across all workspaces on your
+  local calendar month, and a limit per session that pauses workflows or
   only warns, with an alert before you reach them. Only a limit that pauses
   caps an Auto run of the session; one that only warns caps nothing
   (`pausingSessionCapOf` in `apps/desktop/src/features/budget/`). **Spend and
@@ -1643,29 +1762,40 @@ provider you picked.
 ## Skills
 
 Skills live next to your code. They are markdown files with frontmatter, and
-Goodboy finds them in every project of the workspace, in either place:
+Goodboy finds them in every project of the workspace, in these places, in this
+order:
 
-- `<project-root>/.kay/skills/*.md`
+- `<project-root>/.goodboy/skills/*.md`, where a skill you write in Goodboy is
+  saved
+- `<project-root>/.kay/skills/*.md`, the folder older builds wrote, read until
+  0.31.0 (see [versioning.md](versioning.md) → State outside SQLite); when both
+  folders hold a skill of one name, the `.goodboy` one wins
 - `<project-root>/.claude/skills/<name>/SKILL.md`
 
 Each workspace has its own list of skills. There is no global list. Call one
 from the chat with `/skill-name`. A skill runs on any connected provider, not
 only the one whose folder it came from.
 
-Scripts that come with a skill run only from `<project-root>/.kay/skills`.
-Skills found under `.claude/skills` are prompts only, so a cloned repository
-cannot make its scripts run when you use a skill.
+Use a skill for a way of working you repeat in many sessions, such as how to
+cut a release or review a migration: it is text you call by name. Use a preset
+for a run you want again, with its steps in order ([workflows.md](features/workflows.md)).
+
+Scripts that come with a skill run only from `<project-root>/.goodboy/skills`
+or, until 0.31.0, `<project-root>/.kay/skills`. Skills found under
+`.claude/skills` are prompts only, so a cloned repository cannot make its
+scripts run when you use a skill. A project that only has `.kay/skills` keeps
+working with no move; Goodboy never renames the folder for you.
 
 ## Editor
 
 When you want to type code yourself, Goodboy opens your editor on the right
 worktree and branch. It finds the editors installed on your computer by
-itself. **Settings → App → General → Open with** picks the editor and the
-browser. With up to four options the choice is a segmented control like Theme;
+itself. **Settings → App → General → Open with** picks the editor, the terminal app
+(Terminal.app, iTerm, Warp or Ghostty, as installed) and the browser. With up to four options the choice is a segmented control like Theme;
 with more it is a list. The browser starts at **System default**, and links and
 artifacts open there. If the browser you picked is removed, links open in the
 system browser and a note in Settings says so. When you are done, you pick the
-task up again in Goodboy.
+session up again in Goodboy.
 
 ## Under the hood
 
@@ -1676,9 +1806,21 @@ task up again in Goodboy.
   **session** is the goal, **agent** is the chat.
 - No screen may use a different word for any of these four. Every surface that
   creates, adds, lists or manages what a workspace holds says folder: the
-  session rail, the session overview, Settings, palette labels, notices and
-  aria-labels alike. The old words stay findable as former names
-  (`formerNamesOf` in `shared/names.ts`: Projects, Add project, Dev project)
+  session overview, Settings, palette labels, notices and aria-labels alike.
+  One card keeps the owner's choice from 0.27.4: the session rail card that
+  holds a session's repositories reads **Projects** (`NAMES.projects`), and
+  Settings and the docs name it so. The old words stay findable as former
+  names (`formerNamesOf` in `shared/utils/names.ts`: Projects and Workspace projects
+  find the Folders page in Settings and the palette, Add project, Dev project);
+  a former name is a search alias, never a label drawn on a screen
+- **Task** means one thing: a work item that lives in another tool, such as a
+  Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
+  is what the **Tasks** door lists and what a task link attaches to a
+  session. A session is never called a task, the field that holds its goal
+  says **Goal**, and a script that runs and ends is a **Command** (the Scripts
+  pane groups **Services** and **Commands**). The setup wizard follows the
+  same rule: step 3 connects the tools your tasks come from, step 4 starts
+  your first session.
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
@@ -1702,15 +1844,21 @@ task up again in Goodboy.
 
 - One word per thing, written once. The names of lenses, roles, handoff
   sections, session stages, the autonomy header and the reply length live in
-  `apps/desktop/src/shared/names.ts` (`NAMES`), and the maps that show them read
+  `apps/desktop/src/shared/utils/names.ts` (`NAMES`), and the maps that show them read
   from there. `names.test.ts` pins that. A word that goes away goes into
   `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
   instead, and `copy-budget.test.ts` fails on it.
+- **Run**, **Plan**, **Preset**, **Auto** and **Scout** each have one sentence in
+  At a glance and in the Guide's Words chapter. A **workflow** is the saved
+  definition in the Workflows library; it is called a **preset** only where a
+  run starts from it (`~` in **Start a run**, the Preset card on New session),
+  and a **plan** is what an agent writes before it builds. The Words chapter
+  test keeps the five defined in one sentence each.
 - **Reply length** is **Short**, **Normal** or **Long**. The stored keys
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn.
+- **Stop** is the one name for ending a running turn: the square in the composer, the chip in the agent header, the line at the end of the conversation, the agent's menu and the palette all say it. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
@@ -1782,7 +1930,7 @@ task up again in Goodboy.
   artifact) gets a short tooltip, six words at most, written once. The mode
   switch in the workflow builder sets it as the `tooltip` of an option
   ("Goodboy picks each next agent"). The desktop glossary and its wrapper
-  component are gone, and so is `TermHint`.
+  component are gone, and so is the term hint component.
 - A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
@@ -1792,7 +1940,7 @@ task up again in Goodboy.
 ### Words we use
 
 One verb per job, one noun per object. The registered names live in
-`shared/names.ts` (`NAMES`, with `FORMER_NAMES` for search) and
+`shared/utils/names.ts` (`NAMES`, with `FORMER_NAMES` for search) and
 `__tests__/regressions/retiredNames.ts` fails the old phrase, so check there
 before a change adds a word.
 
@@ -1830,6 +1978,13 @@ before a change adds a word.
   your tools (it was Inbox). Its stored keys, events and scene ids keep the old
   name `inbox`.
 - **Notifications**: the bell and its list, capitalised everywhere.
+- **Send**: the one name of the button that sends a message, in the session
+  composer, Ask and Chat (it was Send message in the session composer). Its
+  tooltip shows the `composer.send` shortcut from the registry. While an answer
+  streams the same slot is **Stop**, then **Stopping**, then **Force stop**
+  (it was Stop the answer in Ask and Chat). A refused send puts the message
+  back in the field unless you typed something new meanwhile
+  (`restoreDraftOnFailedSend`).
 
 ### Identifiers
 
@@ -1843,7 +1998,7 @@ count rises (`projectResolveRows`), with an action that opens Activity, where
 the Needs you row waits.
 
 A pull request has one state word, from `pullRequestKindOf` in
-`shared/pullRequestKind.ts`, and every surface that names it reads that
+`shared/utils/pullRequestKind.ts`, and every surface that names it reads that
 function: the Branch header and menus, the pull
 request pane and strip, the detail facts and the ask pack. The order is merged,
 closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
@@ -1851,8 +2006,9 @@ closed or merged draft, so the flag alone never makes a word: a closed or merged
 pull request never reads Draft.
 
 Attention reasons, in `SessionAttentionReason`, rank in this order when several
-hold: `needs-approval`, `agent-error`, `push-failed`, `plan-approval`, `open-question`,
-`fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
+hold: `needs-approval`, `agent-error`, `run-stopped`, `push-failed`, `plan-approval`,
+`open-question`, `run-waits-for-go`, `auto-needs-you`, `slack-reply-waiting`,
+`fix-needs-you`, `run-paused-at-limit`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
 `pr-queued`, `pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason
 that holds in that order, `deriveSessionStage` takes the first as `attention` and
 keeps the rest as `otherReasons`, and `SessionStageInfo.isRunning` tells a session in
@@ -1860,7 +2016,7 @@ needs you that an agent still works. `plan-approval` comes from a workflow run
 whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
 run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
 for the sidebar, the switcher, the hover card, the Board card, the Now chip and
-the palette; red is only an agent error, a push that failed and failing checks. `pr-queued` ("In
+the palette; red is only an agent error, a run that stopped, a push that failed and failing checks. `pr-queued` ("In
 merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
 when it wins, the stage is `review` and `attention` still carries it, so the
 marks and words read it while the session stays out of Needs you. A queued pull
@@ -1924,7 +2080,7 @@ An agent materializes a project through the query bridge like this:
   out a session's stage
 - `apps/desktop/src/store/slices/session-view/sessionStageRequest.ts`: picks the
   worst request across a session's mounts
-- `apps/desktop/src/store/slices/live-work/selectLiveWork.ts`: the one answer to
+- `apps/desktop/src/store/runtime/live-work/selectLiveWork.ts`: the one answer to
   "what is live right now"
 - `apps/desktop/src/features/session/agent-kind.ts`: kind labels, their order,
   which ones show in the spawn menu, and kind prompts

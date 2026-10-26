@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import {
-  MAX_MOUNT_CONTINUATIONS,
   clearMountContinuations,
   mountContinuationPrompt,
   pendingMountContinuations,
@@ -61,7 +60,7 @@ describe('mount continuations', () => {
   });
 
   it('stops the chain at the cap so a broken mount cannot spend turns forever', () => {
-    for (let index = 0; index < MAX_MOUNT_CONTINUATIONS; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       const queued = queueMountContinuation({
         continuation: continuation({
           operationId: `req-${index}`,
@@ -80,7 +79,7 @@ describe('mount continuations', () => {
   });
 
   it('counts continuations already waiting against the chain cap', () => {
-    for (let index = 0; index < MAX_MOUNT_CONTINUATIONS; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       expect(
         queueMountContinuation({
           continuation: continuation({
@@ -99,7 +98,7 @@ describe('mount continuations', () => {
   });
 
   it('counts the chain per session and forgets it when the operator speaks again', () => {
-    for (let index = 0; index < MAX_MOUNT_CONTINUATIONS; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       queueMountContinuation({
         continuation: continuation({
           operationId: `req-${index}`,

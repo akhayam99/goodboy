@@ -6,12 +6,12 @@ import type { WireframeDocument, WireframeScreen } from '@goodboy/core';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import {
   buildFlowLayout,
-  WireframeFlowOverview,
   type FlowBox,
   type FlowEdge,
   type FlowLabel,
   type FlowLayout,
-} from './WireframeFlowOverview';
+} from '../../flowLayout/buildFlowLayout';
+import { WireframeFlowOverview } from './WireframeFlowOverview';
 
 const screenOf = ({
   id,

@@ -31,7 +31,7 @@ export type SlackThreadsSliceState = {
   readonly slackThreads: Readonly<Record<string, SlackThreadEntry>>;
 };
 
-export const initialSlackThreadsState: SlackThreadsSliceState = {
+export const slackThreadsInitialState: SlackThreadsSliceState = {
   slackChannels: {},
   slackUsers: {},
   slackThreadHeads: {},
@@ -53,7 +53,7 @@ type ThreadKeyParams = ChannelKeyParams & {
 export const slackThreadKey = ({ workspaceId, channelId, threadTs }: ThreadKeyParams): string =>
   `${workspaceId}:${channelId}:${threadTs}`;
 
-export const SLACK_THREAD_CACHE_LIMIT = 50;
+const SLACK_THREAD_CACHE_LIMIT = 50;
 
 type ThreadsParams = {
   readonly threads: SlackThreadsSliceState['slackThreads'];

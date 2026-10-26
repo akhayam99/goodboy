@@ -58,6 +58,8 @@ it('shows a failure with the first line only, then the answer time after a good 
     provider_test_connection: {
       ok: false,
       millis: 50,
+      outcome: 'refused',
+      secs: null,
       detail: 'Not logged in\nPrivate diagnostic',
     },
   });
@@ -69,12 +71,38 @@ it('shows a failure with the first line only, then the answer time after a good 
   expect(screen.queryByRole('button')).toBeNull();
 
   stubStoryInvoke({
-    provider_test_connection: { ok: true, millis: 800, detail: 'Models answered' },
+    provider_test_connection: {
+      ok: true,
+      millis: 800,
+      outcome: 'answered',
+      secs: null,
+      detail: '',
+    },
   });
   await act(async () => {
     await store.getState().testProviderConnection({ providerId: 'cursor' });
   });
   expect(screen.getByText('Cursor answered in 0.8 s.')).toBeDefined();
+});
+
+it.each([
+  ['timed_out', 15, '', "Cursor didn't answer in 15 s."],
+  ['empty', null, '', 'Cursor returned no models.'],
+  ['unsupported', null, '', 'Cursor has no account test.'],
+])('writes the %s outcome as a sentence the app owns', async (outcome, secs, detail, sentence) => {
+  render(
+    <ConnectionTest info={infoOf({ id: 'cursor' })}>
+      <span>Signed in</span>
+    </ConnectionTest>,
+  );
+  stubStoryInvoke({
+    provider_test_connection: { ok: false, millis: 15000, outcome, secs, detail },
+  });
+  await act(async () => {
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+  });
+
+  screen.getByText(sentence);
 });
 
 it('knows which providers have an account call to test', () => {

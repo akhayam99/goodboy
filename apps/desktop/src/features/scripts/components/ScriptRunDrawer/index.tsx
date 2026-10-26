@@ -1,12 +1,15 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Square, SquareTerminal } from 'lucide-react';
-import { Button, DrawerFrame, type DrawerBack } from '@goodboy/ui';
+import { Button, DrawerFrame, ICON_SIZE, type DrawerBack } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useAppStore } from '../../../../store';
 import { useScriptRun } from '../../hooks/useScriptRun';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { resolveScriptTarget } from '../../resolveScriptTarget';
+import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
+import { scriptRecordOutput } from '../../scriptRecordOutput';
+import { useHandOutputToAgent } from '../../../../shared/hooks/useHandOutputToAgent';
 import { ScriptCommandDisclosure } from './ScriptCommandDisclosure';
 import { ScriptRunDock } from './ScriptRunDock';
 import { ScriptRunLog } from './ScriptRunLog';
@@ -14,6 +17,8 @@ import { RunButton } from './RunButton';
 import { ScriptRunMeta } from './ScriptRunMeta';
 import { runLogPlaceholder } from './runLogPlaceholder';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { openFileLink } from '../../../explore/openFileLink';
+import { discoveredScriptCwd } from '../../scripts';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -53,7 +58,22 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
     };
   }, [resolved]);
   const scriptRun = useScriptRun({ sessionId, scriptKey, target });
+  const fileRoot = target?.worktreePath ?? null;
+  const fileBaseDir =
+    target === null
+      ? null
+      : discoveredScriptCwd({
+          worktreePath: target.worktreePath,
+          relDir: target.script.relDir,
+        });
   const record = scriptRun.record;
+  const markScriptRunSeen = useAppStore((state) => state.markScriptRunSeen);
+  const seenRunId = record !== null && record.status !== 'pending' ? record.runId : null;
+  useEffect(() => {
+    if (seenRunId !== null) {
+      markScriptRunSeen({ sessionId, scriptKey, runId: seenRunId });
+    }
+  }, [markScriptRunSeen, scriptKey, seenRunId, sessionId]);
   const title = resolved?.script.name ?? record?.name ?? 'Script';
   const command = savedBody ?? resolved?.script.invocation ?? null;
   const stdout = scriptRun.result?.stdout ?? record?.output ?? '';
@@ -62,7 +82,19 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
     resolved === null
       ? `${title} is no longer in this session`
       : `${resolved.group.projectName} is still preparing`;
-  const output = stderr === '' ? stdout : `${stdout}${stdout === '' ? '' : '\n'}${stderr}`;
+  const output = scriptRecordOutput({ record });
+  const handOutput = useHandOutputToAgent({ sessionId });
+  const askAboutOutput = () =>
+    handOutput.handOff({
+      subject: title,
+      outcome: scriptOutcomeLabel({
+        status: scriptRun.status,
+        exitCode: scriptRun.result?.exitCode ?? null,
+      }),
+      projectName: resolved?.group.projectName ?? null,
+      branch: resolved?.group.branch ?? null,
+      output,
+    });
 
   const action = scriptRun.isRunning ? (
     <Button variant="secondary" size="sm" onClick={scriptRun.stop}>
@@ -95,6 +127,9 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
             exitCode={scriptRun.result?.exitCode ?? null}
             elapsedMs={scriptRun.elapsedMs}
             output={output}
+            canAsk={handOutput.canHandOff}
+            askLabel={handOutput.askLabel}
+            onAsk={askAboutOutput}
           />
         )
       }
@@ -110,6 +145,12 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
           stdout={stdout}
           stderr={stderr}
           placeholder={runLogPlaceholder({ status: scriptRun.status })}
+          onOpenFile={
+            fileRoot === null || fileBaseDir === null
+              ? null
+              : (link) =>
+                  void openFileLink({ sessionId, root: fileRoot, baseDir: fileBaseDir, link })
+          }
         />
       </div>
     </DrawerFrame>

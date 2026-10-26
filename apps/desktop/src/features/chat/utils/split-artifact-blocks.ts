@@ -1,5 +1,6 @@
 import { locateArtifactSpans, scanArtifactBlocks, type ArtifactScanState } from '@goodboy/core';
 import type { ArtifactKind } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 
 const KNOWN_KINDS: ReadonlySet<string> = new Set<ArtifactKind>(['plan', 'report', 'wireframe']);
 
@@ -33,9 +34,6 @@ type AttrsParams = {
 type BodyParams = {
   readonly body: string;
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const artifactKindOf = ({ attrs }: AttrsParams): string => {
   const raw = (attrs['kind'] ?? '').toLowerCase();

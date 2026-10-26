@@ -1,5 +1,5 @@
 import type { VerbosityLevel } from '@goodboy/types';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 
 export const VERBOSITY_LEVELS = [
   'brief',

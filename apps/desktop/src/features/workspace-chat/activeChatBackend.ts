@@ -1,15 +1,12 @@
-import { MOCK_ENABLED } from '../../store/mock-data';
 import type { ChatBackend } from './chatBackend';
-import { createMemoryChatBackend } from './createMemoryChatBackend';
-import { mockChatResponder } from './mockChatResponder';
-import { mockChatSeed } from './mockChatSeed';
-import { mockWorkSummarizer } from './mockWorkSummarizer';
 import { tauriChatBackend } from './tauriChatBackend';
 
-export const activeChatBackend: ChatBackend = MOCK_ENABLED
-  ? createMemoryChatBackend({
-      respond: mockChatResponder,
-      seed: mockChatSeed,
-      summarize: mockWorkSummarizer,
-    })
-  : tauriChatBackend;
+type RegisterParams = {
+  readonly backend: ChatBackend;
+};
+
+export const activeChatBackend: ChatBackend = { ...tauriChatBackend };
+
+export const registerChatBackend = ({ backend }: RegisterParams): void => {
+  Object.assign(activeChatBackend, backend);
+};

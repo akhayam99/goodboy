@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { GitMerge, GitPullRequestClosed } from 'lucide-react';
-import { Button, ConfirmPopover, type ConfirmRole } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE, type ConfirmRole } from '@goodboy/ui';
 
 type Props = {
   readonly role: ConfirmRole;
@@ -35,7 +34,7 @@ export const HeaderConfirmScene = ({
           Settle payouts in the ledger-core export
         </h1>
         {isDone ? (
-          <span role="status" className="text-label text-muted-foreground">
+          <span role="status" className="text-meta text-muted-foreground">
             {doneLabel}
           </span>
         ) : (
@@ -62,7 +61,7 @@ export const HeaderConfirmScene = ({
           />
         )}
       </header>
-      <p data-slot="session-facts" className="text-label text-muted-foreground">
+      <p data-slot="session-facts" className="text-meta text-muted-foreground">
         Northwind, ledger-core, #318
       </p>
     </main>

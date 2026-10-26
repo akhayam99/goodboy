@@ -14,7 +14,7 @@ export const HandoffYourHint = ({ handoff }: Props) => {
   return (
     <div data-testid="handoff-your-hint" className="flex min-w-0 flex-col gap-1">
       <Eyebrow label="Your hint" />
-      <blockquote className="min-w-0 whitespace-pre-wrap break-words text-label text-muted-foreground">
+      <blockquote className="min-w-0 whitespace-pre-wrap break-words text-meta text-muted-foreground">
         {hint}
       </blockquote>
     </div>

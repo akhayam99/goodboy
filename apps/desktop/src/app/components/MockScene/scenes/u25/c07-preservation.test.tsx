@@ -51,7 +51,7 @@ const mount = ({ Scene }: MountParams): void => {
 const autoLevel = async (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Agents' }, WAIT);
 
-describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () => {
+describe('Auto: every capability keeps a home in Auto', () => {
   it('Start Auto from the Start a run field on the Runs page, with the Limit of the workspace', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 

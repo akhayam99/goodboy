@@ -77,7 +77,7 @@ const PortsScene = ({ variant }: Props) => {
   useEffect(() => {
     installSceneDatabase({
       settings: PORTS_SETTINGS,
-      fallback: (command, payload) => answerOf({ command, payload }),
+      fallback: ({ command, payload }) => answerOf({ command, payload }),
     });
     useAppStore.setState({
       workspaces: [WORKSPACE],

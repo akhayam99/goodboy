@@ -12,6 +12,7 @@ import type {
   HistoryOriginAhead,
   HistoryRebasePlan,
   IsoDateTime,
+  MountId,
   ProjectId,
   SessionEvent,
   SessionEventId,
@@ -29,7 +30,7 @@ import type { ProviderDisplayInfo } from '../../providers/providers';
 import {
   refreshWorktreeStatuses,
   resetWorktreeStatusCache,
-} from '../../../store/slices/worktreeStatuses/cache';
+} from '../../../store/runtime/worktreeStatuses/cache';
 import type { HistoryRun } from '../../../store/slices/history/types';
 import { clearSceneInvoke } from '../../../test/sceneInvoke';
 import {
@@ -122,9 +123,6 @@ const CONNECTED: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'claude',
     capabilities: {
       models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: true,
     },
     connection: 'connected',
     version: '1.0.0',
@@ -700,7 +698,7 @@ describe('a stop saved before a restart', () => {
     expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]?.rebaseConflict?.autoAgentId).toBe(
       A_REBASE_AGENT_ID,
     );
-    expect(screen.getByText('Auto is rebasing on main')).toBeDefined();
+    screen.getByText('Auto is rebasing on main');
   });
 
   it('leaves once a fresh git read shows the rebase finished', async () => {
@@ -933,8 +931,8 @@ describe('the rebase stop panel', () => {
   });
 
   it('offers a plain Push on a branch with no pull request', async () => {
-    const pushSessionBranch = vi.fn<AppStore['pushSessionBranch']>(async () => ({ ok: true }));
-    useAppStore.setState({ pushSessionBranch });
+    const pushBranch = vi.fn<AppStore['pushBranch']>(async () => ({ ok: true }));
+    useAppStore.setState({ pushBranch });
     gitNow.behind = 0;
     gitNow.upstreamAhead = 4;
     await showRun(
@@ -953,18 +951,20 @@ describe('the rebase stop panel', () => {
     fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
     await settle();
 
-    expect(pushSessionBranch).toHaveBeenCalledWith({
+    expect(pushBranch).toHaveBeenCalledWith({
       sessionId: A_REBASE_SESSION_ID,
       mountId: A_REBASE_MOUNT_ID,
+      mode: 'plain',
     });
   });
 
   it('keeps the panel with the error when the plain push fails', async () => {
-    const pushSessionBranch = vi.fn<AppStore['pushSessionBranch']>(async () => ({
+    const pushBranch = vi.fn<AppStore['pushBranch']>(async () => ({
       ok: false,
       error: 'rejected: non-fast-forward',
+      reason: 'failed',
     }));
-    useAppStore.setState({ pushSessionBranch });
+    useAppStore.setState({ pushBranch });
     gitNow.behind = 0;
     gitNow.upstreamAhead = 4;
     await showRun(
@@ -985,6 +985,158 @@ describe('the rebase stop panel', () => {
     fireEvent.click(within(panel()).getByRole('button', { name: 'Retry' }));
     await settle();
 
-    expect(pushSessionBranch).toHaveBeenCalledTimes(2);
+    expect(pushBranch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('a rebase git is in the middle of with no Goodboy stop', () => {
+  const rowVerbs = (): ReadonlyArray<string> =>
+    verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) });
+
+  it('draws one minimal row with Continue, Open terminal and Abort', async () => {
+    gitNow.isRebasing = true;
+    gitNow.unmerged = 1;
+    render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+
+    screen.getByText('Rebase in progress in the worktree');
+    expect(rowVerbs()).toEqual(['Continue rebase', 'Open terminal', 'Abort rebase']);
+  });
+
+  it('continues the rebase and draws nothing once git is done', async () => {
+    gitNow.isRebasing = true;
+    render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue rebase' }));
+    await settle();
+
+    expect(gitCalls).toContain('worktree_continue_rebase');
+    expect(screen.queryByRole('region', { name: 'Rebase' })).toBeNull();
+  });
+
+  it('draws nothing when git is not in the middle of a rebase', async () => {
+    render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+
+    expect(screen.queryByRole('region', { name: 'Rebase' })).toBeNull();
+  });
+});
+
+describe('the banner on a session with two branches', () => {
+  const OTHER_WORKTREE = '/w/ledger-core';
+  const OTHER_MOUNT_ID = brandedId<MountId>({ value: 'mount-ledger' });
+  const OTHER_MOUNT: SessionProjectMount = {
+    ...MOUNT,
+    mountId: OTHER_MOUNT_ID,
+    mountName: 'ledger-core',
+    worktreePath: OTHER_WORKTREE,
+    repoRoot: '/repos/ledger-core',
+    branch: 'hl/feat-rates',
+    parallelIndex: 1,
+  };
+  const STOP = {
+    reason: 'conflict',
+    message: '2 files conflict with main.',
+    files: ['src/a.ts', 'src/b.ts'],
+    sha: null,
+    head: 'head-sha',
+  } as const;
+  const stopped = ({ mountId }: { readonly mountId: MountId }): HistoryRun =>
+    aRebaseRun({
+      mountId,
+      phase: 'stopped',
+      commitCount: 4,
+      stop: STOP,
+      rebaseConflict: {
+        ontoRef: 'origin/main',
+        baseBranch: 'main',
+        head: 'head-sha',
+        autoAgentId: null,
+      },
+    });
+
+  const seedTwo = (): void => {
+    useAppStore.setState({
+      sessionProjectMounts: { [A_REBASE_SESSION_ID]: [MOUNT, OTHER_MOUNT] },
+      historyRuns: {
+        [A_REBASE_MOUNT_ID]: stopped({ mountId: A_REBASE_MOUNT_ID }),
+        [OTHER_MOUNT_ID]: stopped({ mountId: OTHER_MOUNT_ID }),
+      },
+    });
+  };
+
+  const failingKeep = (): ReturnType<typeof vi.fn<AppStore['keepRebaseStop']>> => {
+    const keepRebaseStop = vi.fn<AppStore['keepRebaseStop']>(async () => {
+      throw new Error('git is busy');
+    });
+    useAppStore.setState({ keepRebaseStop });
+    return keepRebaseStop;
+  };
+
+  it('keeps a failure on its own branch and names it', async () => {
+    seedTwo();
+    failingKeep();
+    const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    await settle();
+    screen.getByText('payments-api: git is busy');
+
+    view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);
+    await settle();
+    expect(screen.queryByText(/git is busy/)).toBeNull();
+
+    view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+    screen.getByText('payments-api: git is busy');
+  });
+
+  it('retries the failed branch even after the page moved to the other one and back', async () => {
+    seedTwo();
+    const keepRebaseStop = failingKeep();
+    const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    await settle();
+
+    view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);
+    await settle();
+    view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await settle();
+
+    expect(keepRebaseStop).toHaveBeenCalledTimes(2);
+    expect(keepRebaseStop).toHaveBeenLastCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+    });
+  });
+
+  it('does not lock the verbs of one branch while another branch is working', async () => {
+    seedTwo();
+    let release: () => void = () => undefined;
+    const keepRebaseStop = vi.fn<AppStore['keepRebaseStop']>(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    useAppStore.setState({ keepRebaseStop });
+    const view = render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    await settle();
+
+    view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);
+    await settle();
+
+    expect(screen.getByRole('button', { name: 'Resolve myself' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    release();
+    await settle();
   });
 });

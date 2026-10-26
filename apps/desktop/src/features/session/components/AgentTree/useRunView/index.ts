@@ -14,7 +14,7 @@ import {
 } from '../../../../../store/slices/workflows/workflowPlanApproval';
 import { useSessionAgentTree } from '../useSessionAgentTree';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
-import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
+import { workflowKindName } from '../../../../workflows/workflowKindName';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { isRunPaused } from '../../../../workflows/isRunPaused';
 import { isWorkflowRunClosable } from '../../../../workflows/isWorkflowRunClosable';
@@ -163,7 +163,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
   return {
     run,
     workflow,
-    name: run.title ?? workflowKindName(workflow),
+    name: run.title ?? workflowKindName({ workflow }),
     agents,
     isDiscarded,
     isDynamic,
@@ -192,7 +192,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
     predecessorName:
       predecessor === null
         ? 'previous'
-        : (predecessor.run.title ?? workflowKindName(predecessor.workflow)),
+        : (predecessor.run.title ?? workflowKindName({ workflow: predecessor.workflow })),
     advance,
     primary: runPrimaryOf({
       isDiscarded,

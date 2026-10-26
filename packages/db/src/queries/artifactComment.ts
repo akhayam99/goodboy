@@ -6,7 +6,9 @@ import type {
   IsoDateTime,
   SessionId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { Database } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type CommentRow = {
   readonly id: string;
@@ -26,16 +28,8 @@ const COMMENT_SELECT = `SELECT id, session_id, artifact_id, revision, anchor_jso
 
 const STATUSES: ReadonlyArray<ArtifactCommentStatus> = ['draft', 'sent', 'addressed', 'open'];
 
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 const asAnchor = ({ text }: { readonly text: string }): ArtifactCommentAnchor | null => {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    return null;
-  }
+  const value = parseJsonColumn<unknown>({ value: text, isValid: isJsonValue, fallback: null });
   if (!isRecord(value)) {
     return null;
   }

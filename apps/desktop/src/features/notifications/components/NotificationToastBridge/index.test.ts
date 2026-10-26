@@ -26,6 +26,7 @@ function notif(over: NotifOverride): Notification {
     read: false,
     action: null,
     coalesceKey: null,
+    actedAt: null,
   };
 }
 
@@ -73,10 +74,10 @@ describe('notificationContext', () => {
     );
   });
 
-  it('falls back to a placeholder for a blank goal', () => {
+  it('names a blank goal the way every session row does', () => {
     const blank = [{ id: 's2' as SessionId, goal: '   ' } as Session];
     const n = notif({ id: 'n', sessionId: 's2' as SessionId });
-    expect(notificationContext(n, blank, workspaces)).toBe('untitled session');
+    expect(notificationContext(n, blank, workspaces)).toBe('Untitled session');
   });
 
   it('returns undefined when neither session nor workspace resolves', () => {

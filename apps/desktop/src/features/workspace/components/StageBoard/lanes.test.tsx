@@ -222,13 +222,15 @@ describe('StageBoard lanes', () => {
     seed({ active: [building], archived: null });
     mountBoard([building]);
 
-    expect(within(lane('archived')).getByText('Loading')).toBeDefined();
+    expect(
+      within(lane('archived')).getByRole('status', { name: 'Loading sessions' }),
+    ).toBeDefined();
     expect(within(lane('archived')).queryByText('Nothing archived')).toBeNull();
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
 
     act(() => useAppStore.setState({ archivedSessions: { [workspace.id]: [] } }));
 
-    expect(within(lane('archived')).queryByText('Loading')).toBeNull();
+    expect(within(lane('archived')).queryByRole('status', { name: 'Loading sessions' })).toBeNull();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
   });
 

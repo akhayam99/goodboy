@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, IsoDateTime, SessionEvent, SessionEventId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionEvent } from '@goodboy/types';
 import { LogPane } from '../../../../../features/session/central/log/LogPane';
 import { useAppStore } from '../../../../../store';
 import type { ScribeWork } from '../../../../../store/slices/scribe/types';

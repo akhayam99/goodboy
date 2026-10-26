@@ -24,7 +24,7 @@ export const BootStage = ({ phase, children }: Props) => (
     <BootBrand />
     <div className="flex flex-col items-center gap-3">
       <BootProgress phase={phase} />
-      <span className="text-label text-faint-foreground">{BOOT_PHASE_LABEL[phase]}</span>
+      <span className="text-meta text-faint-foreground">{BOOT_PHASE_LABEL[phase]}</span>
       {children}
     </div>
   </div>

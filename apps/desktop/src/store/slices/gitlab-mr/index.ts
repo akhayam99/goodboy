@@ -3,7 +3,7 @@ import { mergeMrForSession } from './mergeMrForSession';
 import { refreshSessionMr } from './refreshSessionMr';
 import type { SliceDeps } from '../../slice-types';
 
-export { initialGitlabMrState } from './state';
+export { gitlabMrInitialState } from './state';
 
 export const createGitlabMrSlice = ({ set, get }: SliceDeps) => {
   return {

@@ -20,11 +20,66 @@
 
 <br>
 
-Goodboy is a desktop app for coding agents, on **macOS** and **Linux**. Connect the providers you already use, Claude, Codex, Cursor and four more, point it at your repos, and hand it a task. Each task becomes a session that keeps its own goal, decisions and summary, so every agent that works on it starts briefed and nobody tells the story twice.
+Goodboy runs coding agents side by side on your own repositories, one session for each goal. It is a desktop app for **macOS** and **Linux**.
 
 [**Features →**](./FEATURES.md)&emsp;[Privacy](#privacy)&emsp;[Install](#install)&emsp;[Run from source](#run-from-source)&emsp;[Documentation](#documentation)&emsp;[Contributors](#contributors)&emsp;[Support](#support-goodboy)
 
 <br>
+
+## The board
+
+Every task is a session, and the board shows where each one stands. Six lanes, **Building**, **Running**, **Needs you**, **In review**, **Done** and **Archived**, sit in that order. A session moves to the lane that matches what is happening in it, and the ones that wait for you sit in **Needs you**.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes, from Building to Archived">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+## Workflows
+
+A workflow splits a task into steps, such as scout, plan, implement and review. Each step is its own agent with its own role, model and effort, and it starts from a short brief. You choose how much it asks you and how much it may spend.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A workflow run with three steps, the second one open with its conversation">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+## Shared context
+
+What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session, so a new agent starts informed and nobody tells the story twice.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer of a session with its decisions and what changed since you last looked">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+## Pull request review
+
+The **Branch** page holds one branch: its pull request, review comments, changed files, commits and checks. Check the comments you want and press **Fix**, and an agent turns them into commits in its own copy of the branch. Nothing leaves your machine until you push. It works on GitHub, GitLab and Bitbucket.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page with its state, checks and readiness">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+## Chat
+
+Ask about your repos without starting a session. **Chat** reads every project and never changes a file. When an answer is worth acting on, **Start work from chat** starts a session from it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline with the answer to a question about three payments-api files">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ## Features
 
@@ -41,6 +96,8 @@ The [feature guide](./FEATURES.md) lists the main features of each area, with a 
 - Tool keys go in your system credential store
 - No account, and no Goodboy server
 
+[What leaves your machine](./SECURITY.md#your-data) lists every request Goodboy makes.
+
 <br>
 
 ## Install
@@ -55,6 +112,8 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 
 - **macOS**: the `.dmg`, then drop Goodboy in Applications
 - **Linux**: `AppImage`, `.deb` or `.rpm`
+
+Goodboy runs the agents you already pay for: Claude, Codex, Cursor and four more. You sign in to each from the app, or paste its key, and keys stay in your system's password store.
 
 <br>
 
@@ -75,13 +134,18 @@ pnpm tauri:dev
 
 ## Documentation
 
-Start at the [documentation index](./docs/README.md). From there:
+Start with the page for what you want to do:
 
+- [Your first task](./docs/first-session.md): from install to a merged pull request
 - [Concepts](./docs/concepts.md): sessions, workspaces, projects and how they fit
-- [Workflows](./docs/workflows.md): steps, the orchestrator and hands-free runs
 - [Providers](./docs/providers.md): installation and sign-in for each one
+- [Workflows](./docs/workflows.md): steps, the orchestrator and hands-free runs
+- [Keyboard shortcuts](./docs/features/keyboard.md): every chord, by area
+- [Where your data lives](./SECURITY.md#your-data): what stays on your computer and what leaves it
 - [Query bridge](./docs/query-bridge.md): how agents read from your tools
-- [Architecture](./docs/architecture.md): how the app is built
+- [Walkthroughs](./docs/walkthroughs/fix-a-failing-check.md): fix a failing check, comment on a plan, review with comments in place
+
+Working on Goodboy? Start at the [contributor map](./docs/README.md), then read [Architecture](./docs/architecture.md).
 
 <br>
 

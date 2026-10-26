@@ -1,5 +1,6 @@
 import type { MountBranchObservation, SessionMountView } from '@goodboy/types';
-import { worktreeBranchHolder, worktreeStatus } from '../../../features/worktree/worktree';
+import { worktreeBranchHolder } from '../../../features/worktree/worktree';
+import { readWorktreeStatusNow } from '../../runtime/worktreeStatuses/cache';
 import { forkMount } from './forkMount';
 import {
   clearMountBranchObservation,
@@ -50,7 +51,7 @@ type RestoreParams = {
 };
 
 const refuseWhenBusy = async ({ worktreePath, baseBranch }: GuardParams): Promise<void> => {
-  const status = await worktreeStatus({ worktreePath, baseBranch }).catch(() => null);
+  const status = await readWorktreeStatusNow({ worktreePath, baseBranch });
   if (status === null || status.workingTree.kind !== 'known') {
     throw mountError({
       code: 'unknown-state',
@@ -97,7 +98,7 @@ const readMountBranch = async ({
   if (worktreePath === null) {
     return { kind: 'unavailable' };
   }
-  const status = await worktreeStatus({ worktreePath, baseBranch }).catch(() => null);
+  const status = await readWorktreeStatusNow({ worktreePath, baseBranch });
   if (status === null) {
     return { kind: 'unavailable' };
   }

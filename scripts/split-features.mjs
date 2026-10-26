@@ -2,10 +2,18 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  bulletTitleOf,
+  cardProblemsOf,
+  indexProblemsOf,
+  rewriteCards,
+  rewriteIndex,
+} from './lib/featureLines.mjs';
 
 const ROOT =
   process.env.FEATURE_DOCS_ROOT ?? resolve(fileURLToPath(new URL('..', import.meta.url)));
 const FEATURES = resolve(ROOT, 'FEATURES.md');
+const CARDS = resolve(ROOT, 'website/src/pages/features/features.data.json');
 const DIRECTORY = resolve(ROOT, 'docs/features');
 const AREAS = [
   [
@@ -198,7 +206,8 @@ const checkCurrent = () => {
     const body = docs.get(slug);
     if (!body.startsWith(`# ${title}\n`))
       throw new Error(`${slug}.md H1 does not match its index entry`);
-    for (const [, item] of bullets.matchAll(/^- (.+)$/gm)) {
+    for (const [, bullet] of bullets.matchAll(/^- (.+)$/gm)) {
+      const item = bulletTitleOf({ bullet });
       if (!body.includes(`### ${item}`))
         throw new Error(`${slug}.md is missing index main item ${item}`);
     }
@@ -220,6 +229,15 @@ const checkCurrent = () => {
     if (row === null) throw new Error(`docs/README.md has no ownership glob for ${slug}`);
     if (globs.has(row[1])) throw new Error(`source glob ${row[1]} has more than one feature area`);
     globs.add(row[1]);
+  }
+  const problems = [
+    ...indexProblemsOf({ index, docs }),
+    ...cardProblemsOf({ data: JSON.parse(readFileSync(CARDS, 'utf8')), docs }),
+  ];
+  if (problems.length > 0) {
+    throw new Error(
+      `One sentence per entry:\n${problems.join('\n')}\nRun node scripts/split-features.mjs --write for the lines it can write.`,
+    );
   }
   console.log(
     `Feature doc contract OK: ${entries.length} index entries, ${files.length} area files, ${globs.size} ownership globs`,
@@ -274,9 +292,22 @@ const checkParity = ({ ref }) => {
     `Feature split parity OK: ${AREAS.length} areas, ${targetHeadings.length} entries, ${newWords}/${oldWords} words`,
   );
 };
+const writeLines = () => {
+  const docs = new Map(
+    AREAS.map(([slug]) => [slug, readFileSync(resolve(DIRECTORY, `${slug}.md`), 'utf8').trim()]),
+  );
+  const index = readFileSync(FEATURES, 'utf8');
+  writeFileSync(FEATURES, rewriteIndex({ index, docs }));
+  const raw = readFileSync(CARDS, 'utf8');
+  writeFileSync(CARDS, rewriteCards({ raw, data: JSON.parse(raw), docs }));
+};
 const main = () => {
-  if (process.argv.length > 2 && !process.argv.includes('--check')) {
-    throw new Error('split-features only supports --check');
+  const isWriting = process.argv.includes('--write');
+  if (process.argv.length > 2 && !process.argv.includes('--check') && !isWriting) {
+    throw new Error('split-features supports --check and --write');
+  }
+  if (isWriting) {
+    writeLines();
   }
   return checkCurrent();
 };

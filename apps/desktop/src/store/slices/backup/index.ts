@@ -12,6 +12,7 @@ import {
   chooseBackupImportProjectParent,
   loadBackupImportPreview,
   resetBackupImport,
+  setBackupImportWildcardConsent,
   setBackupImportResolvedPath,
   setBackupImportWorkspaceTarget,
 } from './importActions';
@@ -29,6 +30,7 @@ export const createBackupSlice = ({ set, get }: SliceDeps) => ({
   chooseBackupImportProjectParent: chooseBackupImportProjectParent(set, get),
   setBackupImportWorkspaceTarget: setBackupImportWorkspaceTarget(set, get),
   setBackupImportResolvedPath: setBackupImportResolvedPath(set, get),
+  setBackupImportWildcardConsent: setBackupImportWildcardConsent({ set }),
   applyBackupImport: applyBackupImport(set, get),
   resetBackupImport: resetBackupImport(set),
 });

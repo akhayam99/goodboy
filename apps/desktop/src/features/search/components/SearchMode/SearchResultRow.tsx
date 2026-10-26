@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import type { SearchHit } from '@goodboy/types';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitCrumb, hitHeadline } from '../../hitLabels';
 import { MarkedText } from './MarkedText';
@@ -56,7 +56,7 @@ export const SearchResultRow = memo(
             <MarkedText segments={hitHeadline({ hit })} />
           </span>
           {hit.snippet.length > 0 ? (
-            <span className="line-clamp-1 text-label text-muted-foreground">
+            <span className="line-clamp-1 text-meta text-muted-foreground">
               <MarkedText segments={hit.snippet} />
             </span>
           ) : null}

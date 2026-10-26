@@ -9,18 +9,20 @@ export const CoverageChip = ({ coverage }: Props) => {
   if (coverage === 'unpriced') {
     return (
       <Chip
+        className="rounded-md"
+        kind="state"
         tone="warning"
-        shape="badge"
         label="unpriced"
-        title="No price for this model, so this figure is not a measurement"
+        title="No price for this model, so this figure isn't a measurement"
       />
     );
   }
   if (coverage === 'approximate') {
     return (
       <Chip
+        className="rounded-md"
+        kind="state"
         tone="neutral"
-        shape="badge"
         label="approx"
         title="Priced from an estimated rate, not a billed amount"
       />

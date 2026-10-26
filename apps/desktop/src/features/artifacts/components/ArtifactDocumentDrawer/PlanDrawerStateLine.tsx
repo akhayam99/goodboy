@@ -14,7 +14,7 @@ export const PlanDrawerStateLine = ({ revising }: Props) => {
       role="status"
       data-testid="plan-drawer-state-line"
       data-state={revising.kind}
-      className="flex min-w-0 items-center gap-2 text-label text-info"
+      className="flex min-w-0 items-center gap-2 text-meta text-info"
     >
       <StatusDot tone="info" size="sm" pulsing />
       <span className="min-w-0">{planRevisingLabel({ revising })}</span>

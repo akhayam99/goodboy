@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useSessionMountHosts } from '../../../../shared/hooks/useSessionMountHosts';
 import {
   activeReviewSourceOf,
   selectedReviewEntryOf,
@@ -19,9 +20,15 @@ type Result = {
   readonly source: ActiveReviewSource | null;
 };
 
-export const useActiveReviewSource = ({ sessionId }: { readonly sessionId: SessionId }): Result => {
-  const slice = useAppStore(
-    useShallow((s): ReviewSourceSelectionState => ({
+type Params = {
+  readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
+};
+
+export const useActiveReviewSource = ({ sessionId, mountId = null }: Params): Result => {
+  const hosts = useSessionMountHosts({ sessionId });
+  const rest = useAppStore(
+    useShallow((s): Omit<ReviewSourceSelectionState, keyof typeof hosts> => ({
       sessions: s.sessions,
       projects: s.projects,
       sessionProjectMounts: s.sessionProjectMounts,
@@ -30,20 +37,17 @@ export const useActiveReviewSource = ({ sessionId }: { readonly sessionId: Sessi
       sessionActiveMount: s.sessionActiveMount,
       sessionGithub: s.sessionGithub,
       sessionGitlabMr: s.sessionGitlabMr,
-      mountGithub: s.mountGithub,
-      mountGitlabMr: s.mountGitlabMr,
-      mountBitbucketPr: s.mountBitbucketPr,
       sessionBitbucketPr: s.sessionBitbucketPr,
       reviewSourceThreads: s.reviewSourceThreads,
       reviewSourceKeys: s.reviewSourceKeys,
     })),
   );
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const slice: ReviewSourceSelectionState = { ...rest, ...hosts };
+    return {
       entries: reviewSourceEntriesOf({ state: slice, sessionId }),
-      selected: selectedReviewEntryOf({ state: slice, sessionId }),
-      source: activeReviewSourceOf({ state: slice, sessionId }),
-    }),
-    [sessionId, slice],
-  );
+      selected: selectedReviewEntryOf({ state: slice, sessionId, mountId }),
+      source: activeReviewSourceOf({ state: slice, sessionId, mountId }),
+    };
+  }, [hosts, mountId, rest, sessionId]);
 };

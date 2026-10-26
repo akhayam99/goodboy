@@ -26,7 +26,7 @@ import { resolveInitialState } from './state';
 import { createResolveThread } from './createResolveThread';
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { threadOutcome } from './threadOutcome';
-import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
+import { markTurnActive, markTurnSettled } from '../turn/turnSettled';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 
@@ -449,7 +449,7 @@ describe('durable resolve store', () => {
       clock.mockReturnValue(realNow);
       await live.actions.loadResolveSession({ sessionId: SESSION_ID });
       expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('running');
-      clock.mockReturnValue(realNow + SETTLE_CEILING_MS + 1);
+      clock.mockReturnValue(realNow + 5 * 60 * 1000 + 1);
       await live.actions.loadResolveSession({ sessionId: SESSION_ID });
       expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('failed');
       expect(

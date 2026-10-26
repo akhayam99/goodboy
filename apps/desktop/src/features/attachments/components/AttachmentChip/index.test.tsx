@@ -42,7 +42,7 @@ describe('AttachmentChip', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Preview board.png' }));
 
-    expect(screen.getByRole('dialog', { name: 'Preview board.png' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'board.png', hidden: true })).toBeDefined();
   });
 
   it('leaves plain files without a preview affordance', () => {

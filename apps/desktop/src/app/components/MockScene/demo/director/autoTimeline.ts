@@ -175,7 +175,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
   installDemoWorld({ store });
   const simulatedSend = store.getState().sendTurn;
   const simulatedSpawn = store.getState().spawnAgent;
-  const spawnAgent: AppStore['spawnAgent'] = async (sessionId, options) => {
+  const spawnAgent = (async (sessionId, options) => {
     if (sessionId !== AUTO_SESSION.id) {
       return simulatedSpawn(sessionId, options);
     }
@@ -197,8 +197,8 @@ const installAutoActions = ({ store }: FlowParams): void => {
       agentId: AUTO_ROOT_ID,
     });
     return AUTO_ROOT_ID;
-  };
-  const sendTurn: AppStore['sendTurn'] = async (input) => {
+  }) satisfies AppStore['spawnAgent'];
+  const sendTurn = (async (input) => {
     const isApproval = input.agentId === AUTO_ROOT_ID && input.content.startsWith(APPROVAL_PREFIX);
     if (!isApproval) {
       return simulatedSend(input);
@@ -213,14 +213,10 @@ const installAutoActions = ({ store }: FlowParams): void => {
       agentId: AUTO_ROOT_ID,
     });
     return { blockedOverBudget: false };
-  };
-  const attachWorkflowToSession: AppStore['attachWorkflowToSession'] = async (
-    sessionId,
-    _workflowId,
-    options,
-  ) => {
+  }) satisfies AppStore['sendTurn'];
+  const attachWorkflowToSession = (async (sessionId, _workflowId, options) => {
     await spawnAgent(sessionId, { initialPrompt: options?.goal ?? '' });
-  };
+  }) satisfies AppStore['attachWorkflowToSession'];
   registerTreeStopPort({
     port: async () => {
       demoRuns.stop({ agentId: AUTO_ROOT_ID });
@@ -270,7 +266,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
     spawnAgent,
     sendTurn,
     attachWorkflowToSession,
-    savePhaseTemplate: async (template) => {
+    savePhaseTemplate: (async (template) => {
       const at = nowIso({});
       return {
         id: template.id ?? brandId<WorkflowId>({ value: `demo-workflow-${crypto.randomUUID()}` }),
@@ -282,7 +278,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
         createdAt: at,
         updatedAt: at,
       };
-    },
+    }) satisfies AppStore['savePhaseTemplate'],
     generateWorkflowTitle: async () => undefined,
   });
 };

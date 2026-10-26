@@ -79,6 +79,9 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: repoMocks.dialogOpen }));
 vi.mock('./GoodboyIgnoreField', () => ({
   GoodboyIgnoreField: () => null,
 }));
+vi.mock('../../../worktree/NewWorktreesField', () => ({
+  NewWorktreesField: () => null,
+}));
 
 import { useAppStore as realStore } from '../../../../store/store';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
@@ -219,6 +222,38 @@ describe('WorkspaceProjectsSection', () => {
         afterMerge: 'local',
       }),
     );
+  });
+
+  it('says From project beside After merge only on a repo that holds its own rule', () => {
+    state.workspaceOverrides = { [WORKSPACE_ID]: { afterMerge: 'ask' } };
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: 'local' },
+      },
+      {
+        id: 'proj-relay',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: null },
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    openEditor('ledger-core');
+    screen.getByText('From project');
+    cleanup();
+    state.projects = state.projects.slice(1);
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    openEditor('notify-relay');
+    expect(screen.queryByText('From project')).toBeNull();
   });
 
   it('unlinks a project from its opened row at once and Undo links the same folder again', async () => {

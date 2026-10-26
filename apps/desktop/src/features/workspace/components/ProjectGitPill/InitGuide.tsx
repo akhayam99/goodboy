@@ -49,8 +49,8 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
     <section aria-label="Set up git for this folder" className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-2">
         <Eyebrow label="Git setup" muted />
-        <h3 className="text-label font-semibold text-foreground">{HEADLINE[state]}</h3>
-        <p className="text-label text-muted-foreground">{LEDE[state]}</p>
+        <h3 className="text-meta font-semibold text-foreground">{HEADLINE[state]}</h3>
+        <p className="text-meta text-muted-foreground">{LEDE[state]}</p>
         <p className="text-meta text-faint-foreground">
           Goodboy commits a .gitignore and nothing else. Your files stay as they are.
         </p>
@@ -66,10 +66,10 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
         </div>
       </div>
       <details className="flex flex-col gap-3">
-        <summary className="cursor-pointer text-label text-muted-foreground">
+        <summary className="cursor-pointer text-meta text-muted-foreground">
           Or run it yourself
         </summary>
-        <ol className="mt-3 flex flex-col gap-3">
+        <ol className="flex flex-col gap-3">
           {steps.map((step, index) => (
             <li key={step.command} className="flex gap-2">
               <span

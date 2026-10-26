@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { useSessionById } from '../../../../store';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { QuietSessionLine } from './QuietSessionLine';
 
 type Props = {

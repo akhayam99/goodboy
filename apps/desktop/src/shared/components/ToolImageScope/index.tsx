@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { RemoteImageLoaderProvider } from '@goodboy/ui';
-import { integrationLabel } from '../../../features/integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../utils/integrationLabel';
 import { useToolImageLoader } from '../../hooks/useToolImageLoader';
 import { openUrl } from '../../lib/editor';
 import type { ToolImageProvider } from '../../lib/remoteImage';

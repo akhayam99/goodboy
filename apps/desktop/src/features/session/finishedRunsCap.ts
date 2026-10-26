@@ -1,0 +1,1 @@
+export const VISIBLE_FINISHED_COUNT = 30;

@@ -95,7 +95,7 @@ export const U24_PLANDRAWER_SCENES = {
       main={
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-6">
           <h1 className="text-title text-foreground">Settlement rounding</h1>
-          <p className="text-label text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             The report from the last run is open beside.
           </p>
         </div>

@@ -9,18 +9,19 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ConversationRow } from '../../utils/conversationRows';
-import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { OperationsCluster } from '../OperationsCluster';
 import { PlanChecklist } from '../PlanChecklist';
 import { TurnSummaryLine } from '../TurnSummaryLine';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
+import type { StopPhase } from '../../../../shared/hooks/useAgentStop';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
+import { NewRowsDivider } from './NewRowsDivider';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
@@ -39,7 +40,7 @@ type Props = {
   onRefreshAuth: () => void;
   onOpenDiff: (filePath: string) => void;
   isThinking: boolean;
-  thinkingContext: ThinkingContext;
+  thinkingPhrase: string;
   thinkingStartedAt?: IsoDateTime | null;
   onRetryRun: (params: RetryRunParams) => void;
   retryingRunId: ProviderRunId | null;
@@ -53,7 +54,9 @@ type Props = {
   isStepsOnly?: boolean;
   waitingFor?: string | null;
   stopLabel?: string;
+  stopPhase?: StopPhase;
   clockStepAgentId?: AgentId;
+  newFromKey?: string | null;
 };
 
 const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
@@ -132,7 +135,7 @@ export const TranscriptRows = ({
   onRefreshAuth,
   onOpenDiff,
   isThinking,
-  thinkingContext,
+  thinkingPhrase,
   thinkingStartedAt = null,
   onRetryRun,
   retryingRunId,
@@ -146,7 +149,9 @@ export const TranscriptRows = ({
   isStepsOnly = false,
   waitingFor = null,
   stopLabel,
+  stopPhase,
   clockStepAgentId,
+  newFromKey = null,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -228,6 +233,10 @@ export const TranscriptRows = ({
   };
 
   rows.forEach((row, idx) => {
+    if (newFromKey !== null && row.key === newFromKey) {
+      flushRailGroup();
+      out.push(<NewRowsDivider key={`new-${row.key}`} />);
+    }
     if (row.kind === 'item' && row.item.kind === 'done') {
       return;
     }
@@ -273,7 +282,7 @@ export const TranscriptRows = ({
         flushRailGroup();
         out.push(
           <li key={row.key} data-turn-heading={turnIndex}>
-            <p className="truncate text-label text-muted-foreground">
+            <p className="truncate text-meta text-muted-foreground">
               {turnHeadingOf({ text: row.item.text })}
             </p>
           </li>,
@@ -407,14 +416,15 @@ export const TranscriptRows = ({
       {isThinking ? (
         <li>
           {onStop === undefined ? (
-            <ThinkingIndicator context={thinkingContext} startedAt={thinkingStartedAt} />
+            <ThinkingIndicator phrase={thinkingPhrase} startedAt={thinkingStartedAt} />
           ) : (
             <ConversationTail
-              context={thinkingContext}
+              phrase={thinkingPhrase}
               onStop={onStop}
               startedAt={thinkingStartedAt}
               waitingFor={waitingFor}
               {...(stopLabel !== undefined && { stopLabel })}
+              {...(stopPhase !== undefined && { stopPhase })}
               {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
             />
           )}

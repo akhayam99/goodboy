@@ -65,6 +65,41 @@ fn a_repository_without_origin_has_no_remote() {
 }
 
 #[test]
+fn a_remote_named_upstream_alone_reads_as_no_remote() {
+    let root = temp_root("upstream-only");
+    let repo = local_repo(&root);
+    let remote = bare_remote(&root, "main");
+    git_ok(
+        &repo,
+        &["remote", "add", "upstream", remote.to_str().unwrap()],
+    );
+
+    assert_eq!(probe(&repo), RemoteProbe::NoRemote);
+    std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn origin_is_probed_even_when_another_remote_is_listed_first() {
+    let root = temp_root("origin-wins");
+    let repo = local_repo(&root);
+    let decoy = root.join("decoy.git");
+    git_ok(
+        &root,
+        &["init", "--bare", "-b", "main", decoy.to_str().unwrap()],
+    );
+    git_ok(&repo, &["remote", "add", "aaa", decoy.to_str().unwrap()]);
+    let remote = bare_remote(&root, "main");
+    link(&repo, &remote);
+
+    assert_eq!(
+        probe(&repo),
+        RemoteProbe::ReachableNoMain,
+        "the empty origin answers, not the first remote by name"
+    );
+    std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
 fn a_folder_that_is_not_a_repository_has_no_remote() {
     let root = temp_root("folder");
 

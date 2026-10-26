@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { CornerDownLeft } from 'lucide-react';
-import { Button, ROW_INTERACTIVE, Skeleton, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, ICON_SIZE, ROW_INTERACTIVE, Skeleton } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceName: string;
@@ -71,7 +71,7 @@ export const ChatEmpty = ({
                   type="button"
                   onClick={() => onAsk(suggestion)}
                   className={cn(
-                    'group flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-label text-muted-foreground hover:text-foreground',
+                    'group flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-meta text-muted-foreground hover:text-foreground',
                     ROW_INTERACTIVE,
                   )}
                 >

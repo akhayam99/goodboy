@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
-import { Button, formatError } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, formatError, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../../shared/utils/formatBytes';
 import { useAppStore } from '../../../../../store';
 import { openStorage } from '../../../../storage/openStorage';

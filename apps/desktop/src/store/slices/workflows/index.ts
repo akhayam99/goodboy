@@ -72,7 +72,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     setWorkflowRunAutonomy: setWorkflowRunAutonomy(set, get),
     updateWorkflowRunRules: updateWorkflowRunRules(set, get),
     resolvePresetChange: resolvePresetChange(set, get),
-    setWorkflowRunProviderPool: setWorkflowRunProviderPool(set, get),
+    setWorkflowRunProviderPool: setWorkflowRunProviderPool({ set, get }),
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),

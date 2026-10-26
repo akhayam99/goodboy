@@ -80,7 +80,7 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
     });
 
     if (state.currentWorkspaceId === targetWorkspaceId) {
-      await get().setCurrentWorkspace(targetWorkspaceId);
+      await get().reloadWorkspace({ workspaceId: targetWorkspaceId });
     }
   };
 };

@@ -179,7 +179,7 @@ describe('ArtifactList wireframe import', () => {
     renderList();
     openImport();
     await waitFor(() =>
-      expect(screen.getByText('notes.json is not a wireframe Goodboy can read.')).toBeDefined(),
+      expect(screen.getByText("notes.json isn't a wireframe Goodboy can read.")).toBeDefined(),
     );
     expect(screen.getByTestId('wireframe-import-issues').textContent).toContain(
       'screens: expected at least one screen',

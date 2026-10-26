@@ -21,6 +21,7 @@ const unreadNotification = ({
   read: false,
   action: null,
   coalesceKey: null,
+  actedAt: null,
   kind: 'pr-created',
   title,
   body: 'payments-api #318',

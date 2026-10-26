@@ -23,23 +23,9 @@ pub(crate) fn local_only_commit_count(cwd: &Path) -> Option<u32> {
         .and_then(|raw| raw.trim().parse::<u32>().ok())
 }
 
-const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
-    "node_modules",
-    "target",
-    "dist",
-    "build",
-    ".next",
-    ".venv",
-    "__pycache__",
-    ".turbo",
-    "coverage",
-    ".gradle",
-    "Pods",
-];
-
 fn is_reproducible_ignored_path(relative: &str) -> bool {
     let top_level = relative.split('/').next().unwrap_or(relative);
-    REPRODUCIBLE_IGNORED_DIRS.contains(&top_level)
+    crate::reproducible_dirs::is_reproducible_at_top(top_level)
 }
 
 pub(crate) struct IgnoredFilesAtRisk {

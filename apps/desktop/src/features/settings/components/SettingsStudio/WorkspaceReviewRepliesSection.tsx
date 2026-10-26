@@ -3,7 +3,7 @@ import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/
 import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
   EDIT_POSTED_REPLY_OFF,
@@ -215,7 +215,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           <Band inset="content">
             <p className="text-meta text-muted-foreground">When fixed</p>
             {preview !== null && (
-              <Markdown text={preview} variant="preview" className="text-label text-foreground" />
+              <Markdown text={preview} variant="preview" className="text-meta text-foreground" />
             )}
           </Band>
           <Band inset="content">
@@ -224,7 +224,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               <Markdown
                 text={noChangePreview}
                 variant="preview"
-                className="text-label text-foreground"
+                className="text-meta text-foreground"
               />
             )}
           </Band>

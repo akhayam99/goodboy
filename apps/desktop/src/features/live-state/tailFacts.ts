@@ -1,7 +1,15 @@
 import type { AgentId, IsoDateTime } from '@goodboy/types';
 
 export type TailState =
-  'working' | 'waiting' | 'queued' | 'needsYou' | 'paused' | 'failed' | 'stopped' | 'idle';
+  | 'working'
+  | 'waiting'
+  | 'queued'
+  | 'stopping'
+  | 'needsYou'
+  | 'paused'
+  | 'failed'
+  | 'stopped'
+  | 'idle';
 
 export type TailActionId =
   | 'stop'
@@ -23,6 +31,7 @@ export type TailActionId =
 export type TailAction = Readonly<{
   id: TailActionId;
   label: string;
+  isBusy?: true;
 }>;
 
 export type TailFacts = Readonly<{

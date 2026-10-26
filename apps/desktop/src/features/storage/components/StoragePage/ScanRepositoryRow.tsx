@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { BandRow, Button } from '@goodboy/ui';
+import { BandRow, Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 
 export const ScanRepositoryRow = () => {

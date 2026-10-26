@@ -17,6 +17,7 @@ import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isScribeWriting } from '../scribe/isScribeWriting';
 import { signScribeBody } from '../scribe/scribeSignature';
+import { readOnlineRemoteSha } from '../../runtime/worktreeStatuses/onlyOnline';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { githubRequestHost } from './mountPrLink';
 import { ScribeWritingError } from './ScribeWritingError';
@@ -37,6 +38,7 @@ export type CreatePrInput = {
   readonly referenceMode?: CreatePrReferenceMode;
   readonly isScribeBody?: boolean;
   readonly excludedIssues?: ReadonlyArray<number>;
+  readonly forcePush?: { readonly confirmedOnlyOnline: ReadonlyArray<string> | null };
   readonly onPushed?: () => void;
 };
 
@@ -87,6 +89,15 @@ const parseCreatedPrUrl = ({ stdout }: ParseParams): string | null => {
   return null;
 };
 
+type StderrParams = {
+  readonly stderr: string;
+};
+
+const ALREADY_EXISTS = /already exists/i;
+
+const existingPrUrlOf = ({ stderr }: StderrParams): string | null =>
+  ALREADY_EXISTS.test(stderr) ? parseCreatedPrUrl({ stdout: stderr }) : null;
+
 export const createPrForSession = (_set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
@@ -98,6 +109,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     referenceMode,
     isScribeBody,
     excludedIssues,
+    forcePush,
     onPushed,
   }: CreatePrInput): Promise<CreatedPr> => {
     const target = resolveSessionPrFetch({
@@ -186,7 +198,20 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       args.push('--draft');
     }
 
-    const pushed = await get().pushSessionBranch({ sessionId, mountId: mount.id });
+    const pushed = await get().pushBranch(
+      forcePush === undefined
+        ? { sessionId, mountId: mount.id, mode: 'plain' }
+        : {
+            sessionId,
+            mountId: mount.id,
+            mode: 'lease',
+            guard: {
+              kind: 'confirmed',
+              confirmedOnlyOnline: forcePush.confirmedOnlyOnline,
+              confirmedRemoteSha: readOnlineRemoteSha({ mountId: mount.id }),
+            },
+          },
+    );
     if (!pushed.ok) {
       void get().emitNotification({
         kind: 'error',
@@ -204,7 +229,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       throw new ScribeWritingError();
     }
     const res = await tauriGhRunner.run(args, ghOptions);
-    if (res.exitCode !== 0) {
+    const existingUrl = res.exitCode === 0 ? null : existingPrUrlOf({ stderr: res.stderr });
+    const isAdopted = existingUrl !== null;
+    if (res.exitCode !== 0 && !isAdopted) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
       void get().emitNotification({
         kind: 'error',
@@ -216,8 +243,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       });
       throw new ReportedError(errMsg);
     }
-    const url = parseCreatedPrUrl({ stdout: res.stdout });
+    const url = existingUrl ?? parseCreatedPrUrl({ stdout: res.stdout });
     const number = url === null ? null : Number(PR_URL.exec(url)?.[1] ?? Number.NaN);
+    let unrecorded: { readonly error: unknown } | null = null;
     if (url !== null && number !== null && Number.isInteger(number)) {
       const now = new Date().toISOString() as IsoDateTime;
       const link: MountPullRequestLink = {
@@ -230,27 +258,45 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
         headBranch: mount.branch,
         baseBranch: baseBranch ?? null,
         url,
-        state: isDraft ? 'draft' : 'open',
+        state: isDraft && !isAdopted ? 'draft' : 'open',
         snapshot: null,
         lastObservedAt: now,
         createdAt: now,
         updatedAt: now,
       };
-      await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
-      await get().recordSessionEventOnce({
+      try {
+        await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
+        await get().recordSessionEventOnce({
+          sessionId,
+          kind: 'pr_created',
+          payload: mountRequestEventPayload({
+            mountId: mount.id,
+            projectId: mount.projectId,
+            identity: link,
+            title: title?.trim() || session.goal,
+            url,
+            branch: mount.branch,
+          }),
+        });
+      } catch (error) {
+        unrecorded = { error };
+      }
+    }
+    try {
+      await get().refreshSessionPr(sessionId, { force: true, mountId: mount.id });
+    } catch (error) {
+      unrecorded ??= { error };
+    }
+    if (unrecorded !== null && number !== null && Number.isInteger(number)) {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Opened #${number}, but Goodboy could not save the link`,
+        body: `Refresh to pick it up. ${formatError(unrecorded.error)}`,
         sessionId,
-        kind: 'pr_created',
-        payload: mountRequestEventPayload({
-          mountId: mount.id,
-          projectId: mount.projectId,
-          identity: link,
-          title: title?.trim() || session.goal,
-          url,
-          branch: mount.branch,
-        }),
+        workspaceId: workspace.id,
       });
     }
-    await get().refreshSessionPr(sessionId, { force: true, mountId: mount.id });
     const created = get().mountGithub?.[mount.id]?.pr ?? null;
     if (!hasFields && created !== null && mode === 'closing') {
       const filledReferences = closingIssueReferences({
@@ -281,7 +327,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     void get().emitNotification({
       kind: 'pr-created',
       severity: 'success',
-      title: `Pull request created for ${session.goal}`,
+      title: isAdopted
+        ? `Linked the existing pull request for ${session.goal}`
+        : `Pull request created for ${session.goal}`,
       sessionId,
       workspaceId: workspace.id,
     });

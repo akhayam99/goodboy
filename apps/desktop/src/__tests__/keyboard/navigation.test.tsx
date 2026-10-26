@@ -85,7 +85,8 @@ vi.mock('../../features/session/hooks/useSessionArchive', () => ({
 }));
 
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
-import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
+import { QuickActionsPopover } from '../../features/quick-actions/QuickActionsPopover';
+import type { QuickActionItem } from '../../features/quick-actions/types';
 import { ToastProvider } from '../../shared/components/Toast';
 
 afterEach(cleanup);

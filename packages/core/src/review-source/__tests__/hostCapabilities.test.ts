@@ -19,7 +19,7 @@ const VERB_SPEC = /provider: "([a-z]+)",\s+verb: "([a-z-]+)",/;
 
 const PARAM_NAME = /\b(?:req|opt|num|opt_num|flag)\("([a-z-]+)"\)/g;
 
-const ACCESS = /access: Access::(Read|Write)/;
+const ACCESS = /access: Access::(Read|Write|Publish)/;
 
 type BridgeVerb = Readonly<{
   provider: string;
@@ -90,6 +90,10 @@ describe('host capability table', () => {
       expect(capabilities.canChooseMergeMethod).toBe(row.mergeMethods.length > 0);
     });
 
+    it('pins a merge to the reviewed head on every host', () => {
+      expect(row.canPinMergeToHead).toBe(true);
+    });
+
     it('feeds the labels and nouns the app prints', () => {
       expect(REVIEW_SOURCE_LABEL[host]).toBe(row.label);
       expect(PULL_REQUEST_NOUNS[host]).toEqual(row.nouns);
@@ -123,7 +127,11 @@ describe('host capability table', () => {
       for (const [key, verb] of named) {
         const entry = catalog.find((candidate) => candidate.verb === verb);
         expect(entry, `${host} ${key} verb ${verb}`).toBeDefined();
-        expect(entry?.access).toBe(key === 'forBranch' ? 'Read' : 'Write');
+        if (key === 'forBranch') {
+          expect(entry?.access).toBe('Read');
+          continue;
+        }
+        expect(['Write', 'Publish']).toContain(entry?.access);
       }
     });
 
@@ -159,6 +167,20 @@ describe('host capability table', () => {
       );
       expect(hasBranchVerb).toBe(row.canReconcileByBranch);
     });
+  });
+
+  it.each([
+    ['gitlab', 'gitlab.rs', 'pub async fn gitlab_merge_mr('],
+    ['bitbucket', 'bitbucket.rs', 'pub async fn bitbucket_merge_pull_request('],
+  ] as const)('takes the reviewed head in the %s merge command', (_host, file, signature) => {
+    const source = readFileSync(
+      new URL(`../../../../../apps/desktop/src-tauri/src/${file}`, import.meta.url),
+      'utf8',
+    );
+    const start = source.indexOf(signature);
+    expect(start).toBeGreaterThan(-1);
+    const parameters = source.slice(start, source.indexOf(') ->', start));
+    expect(parameters).toContain('expected_head_sha: Option<String>');
   });
 
   it('has a bridge provider that exists for every row and for no other host', () => {

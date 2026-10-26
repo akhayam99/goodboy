@@ -1,7 +1,7 @@
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { Check, Play } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE } from '@goodboy/ui';
+
 import type { PlanPrimaryAction } from '../../usePlanPrimaryAction';
 import { PlanApproveConfirm } from './PlanApproveConfirm';
 

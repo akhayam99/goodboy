@@ -6,7 +6,7 @@ import { useAppStore } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import type { SessionDraftMount } from '../../../store/slices/sessionDraft/startSessionFromDraft';
 import { branchLandingTabOf } from '../../branch/branchLandingTab';
-import { goalFromPullRequest } from '../../integrations/github/goal-from-pull-request';
+import { goalFromPullRequest } from '../../integrations/github/githubGoalFromPullRequest';
 import { githubPullRequestCandidate } from '../../integrations/issueCandidateOf';
 import type { LaunchMount } from '../launchMountFor';
 

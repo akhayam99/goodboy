@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, HeaderActions } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
+
 import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';
 import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';

@@ -1,16 +1,11 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { FLOATING_SURFACE, ScrollFade, cn, useEscapeLayer } from '@goodboy/ui';
+import { FLOATING_SURFACE, ScrollFade, cn, useEscapeLayer, useFloatingPlace } from '@goodboy/ui';
 import type { RailFlyoutTarget } from './useRailFlyout';
 
 const FLYOUT_WIDTH = 288;
 const GAP = 8;
 const EDGE = 8;
-
-type Place = {
-  readonly top: number;
-  readonly left: number;
-};
 
 type Props = {
   readonly target: RailFlyoutTarget | null;
@@ -35,23 +30,17 @@ export const RailFlyout = ({
 }: Props) => {
   const isShown = target !== null;
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [place, setPlace] = useState<Place | null>(null);
   useEscapeLayer(onDismiss, isShown);
-
-  useLayoutEffect(() => {
-    const card = cardRef.current;
-    if (target === null || card === null) {
-      setPlace(null);
-      return;
-    }
-    const anchorRect = target.anchor.getBoundingClientRect();
-    const height = card.getBoundingClientRect().height;
-    const maxTop = Math.max(EDGE, window.innerHeight - height - EDGE);
-    setPlace({
-      left: anchorRect.right + GAP,
-      top: Math.min(Math.max(EDGE, anchorRect.top - GAP), maxTop),
-    });
-  }, [target]);
+  const place = useFloatingPlace({
+    anchor: target === null ? null : target.anchor,
+    tipRef: cardRef,
+    isActive: isShown,
+    side: 'right',
+    alignment: 'start',
+    gap: GAP,
+    edge: EDGE,
+    contentKey: target === null ? undefined : target.key,
+  });
 
   if (target === null) {
     return null;
@@ -91,13 +80,13 @@ export const RailFlyout = ({
         position: 'fixed',
         width: FLYOUT_WIDTH,
         maxHeight: window.innerHeight - 2 * EDGE,
-        top: place?.top ?? 0,
-        left: place?.left ?? 0,
+        top: place === null ? 0 : place.top,
+        left: place === null ? 0 : place.left,
         visibility: place === null ? 'hidden' : 'visible',
       }}
       className={cn(
         FLOATING_SURFACE,
-        'z-popover flex flex-col p-2 text-label',
+        'z-popover flex flex-col p-2 text-meta',
         place !== null && 'motion-safe:animate-popover-in',
       )}
     >

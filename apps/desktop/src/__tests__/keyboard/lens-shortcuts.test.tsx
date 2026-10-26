@@ -114,7 +114,7 @@ vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard:
 vi.mock('../../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
-vi.mock('../../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
+vi.mock('../../features/onboarding/onboardingSettings', () => ({ markStepComplete: vi.fn() }));
 vi.mock('../../shared/lib/zoom', () => ({
   applyStoredZoom: vi.fn(async () => undefined),
   zoomIn: vi.fn(async () => undefined),
@@ -222,10 +222,10 @@ describe('App lens shortcuts off darwin', () => {
     platform.current = 'linux';
   });
 
-  it('jumps to the agents lens on ctrl, where the command key does not exist', () => {
+  it('jumps to the agents lens on ctrl shift alt, where the command key does not exist', () => {
     render(<App />);
 
-    press({ code: 'KeyA', key: 'a', ctrlKey: true, altKey: true });
+    press({ code: 'KeyA', key: 'A', ctrlKey: true, shiftKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'agents' }),

@@ -3,7 +3,9 @@ import type {
   PullRequestReviewDecision,
   PullRequestReviewer,
   PullRequestStateKind,
+  RequestStateName,
 } from '@goodboy/types';
+import { requestStateKind } from './requestStateKind';
 import type {
   BitbucketPortParticipant,
   BitbucketPortStatus,
@@ -20,8 +22,18 @@ export const BITBUCKET_PR_STATE_KIND = {
 
 const KIND_BY_RAW_STATE: Readonly<Record<string, PullRequestStateKind>> = BITBUCKET_PR_STATE_KIND;
 
-export const bitbucketPrStateKind = ({ state }: { readonly state: string }): PullRequestStateKind =>
-  KIND_BY_RAW_STATE[state] ?? 'open';
+type StateKindParams = {
+  readonly state: string;
+  readonly requestState?: RequestStateName | undefined;
+};
+
+export const bitbucketPrStateKind = ({
+  state,
+  requestState,
+}: StateKindParams): PullRequestStateKind =>
+  requestState === undefined
+    ? (KIND_BY_RAW_STATE[state] ?? 'open')
+    : requestStateKind({ requestState });
 
 const REVIEWER_ROLE = 'REVIEWER';
 

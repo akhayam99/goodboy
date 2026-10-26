@@ -6,7 +6,8 @@ use crate::config_export::bundle::{
 };
 use crate::config_export::groups::{ExportCounts, ExportGroups, ExportPreview, LeftOutFinding};
 use crate::config_export::preview::{
-    ImportGroupStat, ImportManifest, ImportPreview, ProjectMatch, WorkspaceMatch,
+    AllowRulePreview, ImportGroupStat, ImportManifest, ImportPreview, ProjectMatch, ScriptPreview,
+    WorkspaceMatch,
 };
 use crate::config_export::validate::ValidationError;
 use serde::Serialize;
@@ -26,7 +27,7 @@ fn profile_bundle_wire_json_is_pinned() {
 #[test]
 fn workspace_bundle_wire_json_is_pinned() {
     assert_roundtrip::<WorkspaceBundle>(
-        r#"{"id":"v_id","name":"v_name","rootPath":"v_rootPath","projects":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","kind":"v_kind","description":"v_description","starredAt":"v_starredAt","baseBranch":"v_baseBranch","rootCommit":"v_rootCommit","remoteUrl":"v_remoteUrl","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","overrides":{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}},"profile":{"rolesJson":"v_rolesJson","aboutWork":"v_aboutWork","workingRules":"v_workingRules","explainMoreJson":"v_explainMoreJson"}}"#,
+        r#"{"id":"v_id","name":"v_name","rootPath":"v_rootPath","projects":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","kind":"v_kind","description":"v_description","starredAt":"v_starredAt","baseBranch":"v_baseBranch","rootCommit":"v_rootCommit","remoteUrl":"v_remoteUrl","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","overrides":{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","afterMerge":"v_afterMerge","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}},"profile":{"rolesJson":"v_rolesJson","aboutWork":"v_aboutWork","workingRules":"v_workingRules","explainMoreJson":"v_explainMoreJson"}}"#,
     );
 }
 
@@ -40,7 +41,7 @@ fn project_bundle_wire_json_is_pinned() {
 #[test]
 fn workspace_overrides_bundle_wire_json_is_pinned() {
     assert_roundtrip::<WorkspaceOverridesBundle>(
-        r#"{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}}"#,
+        r#"{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","afterMerge":"v_afterMerge","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}}"#,
     );
 }
 
@@ -103,7 +104,7 @@ fn app_preferences_bundle_wire_json_is_pinned() {
 #[test]
 fn config_bundle_wire_json_is_pinned() {
     assert_roundtrip::<ConfigBundle>(
-        r#"{"schemaVersion":7,"exportedAt":"v_exportedAt","workspaces":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","projects":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","kind":"v_kind","description":"v_description","starredAt":"v_starredAt","baseBranch":"v_baseBranch","rootCommit":"v_rootCommit","remoteUrl":"v_remoteUrl","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","overrides":{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}},"profile":{"rolesJson":"v_rolesJson","aboutWork":"v_aboutWork","workingRules":"v_workingRules","explainMoreJson":"v_explainMoreJson"}}],"skills":[{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","filePath":"v_filePath","body":"v_body","frontmatterJson":"v_frontmatterJson","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"phaseTemplates":[{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","steps":[{"id":"v_id","workflowId":"v_workflowId","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","role":"v_role","effort":"v_effort","expectedOutput":"v_expectedOutput","orchestratorReason":"v_orchestratorReason"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","isPreset":true,"origin":"v_origin","goal":"v_goal","processText":"v_processText"}],"permissionRules":[{"id":"v_id","scope":"v_scope","workspaceId":"v_workspaceId","sessionId":"v_sessionId","patternTool":"v_patternTool","patternArgsMatcher":"v_patternArgsMatcher","decision":"v_decision","priority":7,"createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"budgetRules":[{"id":"v_id","provider":"v_provider","period":"v_period","capUsd":1.5,"alertThresholdPct":1.5,"createdAt":"v_createdAt"}],"scripts":[{"id":"v_id","projectId":"v_projectId","name":"v_name","body":"v_body","sortOrder":7,"createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"toolBindings":[{"workspaceId":"v_workspaceId","projectId":"v_projectId","provider":"v_provider","configJson":"v_configJson"}],"appPreferences":{"editorBinary":"v_editorBinary","hiddenModelsJson":"v_hiddenModelsJson"}}"#,
+        r#"{"schemaVersion":7,"exportedAt":"v_exportedAt","workspaces":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","projects":[{"id":"v_id","name":"v_name","rootPath":"v_rootPath","kind":"v_kind","description":"v_description","starredAt":"v_starredAt","baseBranch":"v_baseBranch","rootCommit":"v_rootCommit","remoteUrl":"v_remoteUrl","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","overrides":{"defaultProviderId":"v_defaultProviderId","defaultBranchPrefix":"v_defaultBranchPrefix","defaultVerbosity":"v_defaultVerbosity","providerBindings":{"k":1},"taskModels":{"k":1},"roleModels":{"k":1},"parallelAgents":true,"providerPool":{"k":1},"attributionFooter":true,"replyVoice":"v_replyVoice","replyStyleNote":"v_replyStyleNote","replyTemplateFixed":"v_replyTemplateFixed","replyTemplateNoChange":"v_replyTemplateNoChange","resolveOnGithub":true,"resolveCommitStyle":"v_resolveCommitStyle","afterMerge":"v_afterMerge","defaultBranchTemplate":"v_defaultBranchTemplate","workflowRules":{"k":1}},"profile":{"rolesJson":"v_rolesJson","aboutWork":"v_aboutWork","workingRules":"v_workingRules","explainMoreJson":"v_explainMoreJson"}}],"skills":[{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","filePath":"v_filePath","body":"v_body","frontmatterJson":"v_frontmatterJson","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"phaseTemplates":[{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","steps":[{"id":"v_id","workflowId":"v_workflowId","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","role":"v_role","effort":"v_effort","expectedOutput":"v_expectedOutput","orchestratorReason":"v_orchestratorReason"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","isPreset":true,"origin":"v_origin","goal":"v_goal","processText":"v_processText"}],"permissionRules":[{"id":"v_id","scope":"v_scope","workspaceId":"v_workspaceId","sessionId":"v_sessionId","patternTool":"v_patternTool","patternArgsMatcher":"v_patternArgsMatcher","decision":"v_decision","priority":7,"createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"budgetRules":[{"id":"v_id","provider":"v_provider","period":"v_period","capUsd":1.5,"alertThresholdPct":1.5,"createdAt":"v_createdAt"}],"scripts":[{"id":"v_id","projectId":"v_projectId","name":"v_name","body":"v_body","sortOrder":7,"createdAt":"v_createdAt","updatedAt":"v_updatedAt"}],"toolBindings":[{"workspaceId":"v_workspaceId","projectId":"v_projectId","provider":"v_provider","configJson":"v_configJson"}],"appPreferences":{"editorBinary":"v_editorBinary","hiddenModelsJson":"v_hiddenModelsJson"}}"#,
     );
 }
 
@@ -289,6 +290,7 @@ fn import_group_stat_wire_json_is_pinned() {
 #[test]
 fn import_preview_wire_json_is_pinned() {
     let value = ImportPreview {
+        sha256: "v_sha256".to_string(),
         manifest: ImportManifest {
             schema_version: 7,
             exported_at: "v_exportedAt".to_string(),
@@ -314,10 +316,25 @@ fn import_preview_wire_json_is_pinned() {
             adds: 7,
             updates: 7,
         }],
+        allow_rules: vec![AllowRulePreview {
+            id: "v_id".to_string(),
+            scope: "v_scope".to_string(),
+            pattern_tool: "v_patternTool".to_string(),
+            pattern_args_matcher: Some("v_patternArgsMatcher".to_string()),
+            is_wildcard: true,
+            replaces_decision: Some("v_replacesDecision".to_string()),
+        }],
+        scripts: vec![ScriptPreview {
+            id: "v_id".to_string(),
+            project_id: "v_projectId".to_string(),
+            name: "v_name".to_string(),
+            head: "v_head".to_string(),
+            is_update: true,
+        }],
     };
     assert_eq!(
         serde_json::to_string(&value).unwrap(),
-        r#"{"manifest":{"schemaVersion":7,"exportedAt":"v_exportedAt","workspaceCount":7,"projectCount":7,"workflowCount":7},"workspaceMatches":[{"bundleId":"v_bundleId","name":"v_name","existingId":"v_existingId","action":"v_action"}],"projectMatches":[{"bundleProjectId":"v_bundleProjectId","name":"v_name","hasPath":true,"resolvedPath":"v_resolvedPath","verdict":"v_verdict"}],"groupStats":[{"group":"v_group","adds":7,"updates":7}]}"#
+        r#"{"sha256":"v_sha256","manifest":{"schemaVersion":7,"exportedAt":"v_exportedAt","workspaceCount":7,"projectCount":7,"workflowCount":7},"workspaceMatches":[{"bundleId":"v_bundleId","name":"v_name","existingId":"v_existingId","action":"v_action"}],"projectMatches":[{"bundleProjectId":"v_bundleProjectId","name":"v_name","hasPath":true,"resolvedPath":"v_resolvedPath","verdict":"v_verdict"}],"groupStats":[{"group":"v_group","adds":7,"updates":7}],"allowRules":[{"id":"v_id","scope":"v_scope","patternTool":"v_patternTool","patternArgsMatcher":"v_patternArgsMatcher","isWildcard":true,"replacesDecision":"v_replacesDecision"}],"scripts":[{"id":"v_id","projectId":"v_projectId","name":"v_name","head":"v_head","isUpdate":true}]}"#
     );
 }
 

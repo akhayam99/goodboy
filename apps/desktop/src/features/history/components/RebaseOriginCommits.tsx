@@ -19,7 +19,7 @@ export const RebaseOriginCommits = ({ commits }: Props) => {
           className="grid min-h-7 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2"
         >
           <span className="text-code text-faint-foreground">{commit.sha.slice(0, SHORT_SHA)}</span>
-          <TruncatedText className="min-w-0 truncate text-label text-foreground">
+          <TruncatedText className="min-w-0 truncate text-meta text-foreground">
             {commit.subject}
           </TruncatedText>
         </li>

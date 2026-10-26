@@ -8,7 +8,7 @@ import type {
 } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { buildStoryAgent, buildStorySession } from './storyHarness';
-import { initialState, type AppStore } from './store';
+import { useAppStore, type AppStore } from './store';
 import {
   NON_SESSION_STATE_KEYS,
   SESSION_EVICTION,
@@ -83,7 +83,7 @@ const buildPopulatedState = (): AppState => {
     ],
   });
   return {
-    ...initialState,
+    ...useAppStore.getState(),
     ...registeredState,
     sessions: [session],
     sessionPhaseRuns: {

@@ -2,14 +2,14 @@ import { useCallback, useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
-import { archiveSessions, restoreSessions } from '../../sessionArchive';
+import { archiveSessions, restoreSessions, type ArchiveOutcome } from '../../sessionArchive';
 
 type SessionsParams = {
   readonly sessions: ReadonlyArray<Session>;
 };
 
 export type SessionArchive = {
-  readonly archive: (params: SessionsParams) => Promise<void>;
+  readonly archive: (params: SessionsParams) => Promise<ArchiveOutcome>;
   readonly restore: (params: SessionsParams) => Promise<void>;
 };
 
@@ -19,15 +19,15 @@ export const useSessionArchive = (): SessionArchive => {
   const { showToast } = useToast();
 
   const restore = useCallback(
-    ({ sessions }: SessionsParams) =>
-      restoreSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast }),
+    async ({ sessions }: SessionsParams) => {
+      await restoreSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast });
+    },
     [bulkArchiveTask, bulkUnarchiveTask, showToast],
   );
 
   const archive = useCallback(
-    async ({ sessions }: SessionsParams) => {
-      await archiveSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast });
-    },
+    ({ sessions }: SessionsParams) =>
+      archiveSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast }),
     [bulkArchiveTask, bulkUnarchiveTask, showToast],
   );
 

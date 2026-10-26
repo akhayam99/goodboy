@@ -1,5 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 const TRUST_COPY =
   "Goodboy runs the provider's own sign-in. Your credentials never pass through it.";

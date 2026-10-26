@@ -191,7 +191,8 @@ pub(crate) fn trial_with(
     let steps = resolved_steps(cwd, &args.steps)?;
     let ordered = order_steps(&steps)?;
     let order = planned_order(cwd, &ordered)?;
-    let copy = copy_path_of(slug);
+    let copy =
+        copy_path_of(slug).map_err(|_| plan_error("there is no folder for the temporary copy"))?;
     let copy_text = copy.to_string_lossy().to_string();
     progress(TrialProgress::Copy);
     let mut guard = create_copy(cwd, &copy, &start)?;

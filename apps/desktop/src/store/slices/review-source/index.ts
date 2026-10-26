@@ -1,5 +1,6 @@
 import { refreshReviewSource } from './refreshReviewSource';
 import { selectReviewSource } from './selectReviewSource';
+import { sweepRequests } from './sweepRequests';
 import type {
   RefreshReviewSourceParams,
   ReviewSourceSlice,
@@ -14,4 +15,5 @@ export const createReviewSourceSlice = ({ set, get }: SliceDeps): ReviewSourceSl
     selectReviewSource({ set, get, ...params }),
   refreshReviewSource: (params: RefreshReviewSourceParams) =>
     refreshReviewSource({ set, get, ...params }),
+  sweepRequests: sweepRequests({ set, get }),
 });

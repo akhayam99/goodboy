@@ -2,7 +2,6 @@ import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type {
   Agent,
   AgentId,
-  AgentRole,
   IsoDateTime,
   OrchestratorRouting,
   ProviderId,
@@ -13,7 +12,6 @@ import type {
   StepId,
   TurnEvent,
   Workflow,
-  WorkflowModelPick,
   WorkflowOrchestrationOutcome,
   WorkflowOrchestrationStop,
   WorkflowRoutingDecision,
@@ -24,8 +22,6 @@ import {
   OrchestratorClient,
   OrchestratorClientSpawnError,
   OrchestratorProviderError,
-  ROLE_REGISTRY,
-  SELECTABLE_AGENT_ROLES,
   orchestratorModelPool,
   resolveStoredModelSelection,
   devWarn,
@@ -35,8 +31,6 @@ import {
   type BackgroundAttempt,
   type OrchestratorClientResult,
   type OrchestratorInput,
-  type OrchestratorModelOption,
-  type OrchestratorRoleDefault,
   type RunSummary,
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
@@ -82,7 +76,7 @@ import { admitWorkflowRun } from './workflowPlanApproval';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';

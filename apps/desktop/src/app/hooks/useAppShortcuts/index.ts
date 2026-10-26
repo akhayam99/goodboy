@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { innerColumnStore } from '@goodboy/ui';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
+import { useShortcutOverrides } from '../../../shared/keyboard/overrides/useShortcutOverrides';
 import { WORKSPACE_DIGIT_IDS } from '../../../shared/keyboard/registry';
 import { workspacesByDigit } from '../../../features/workspace/recent';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -32,6 +33,7 @@ import { goUp } from './goUp';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -75,6 +77,7 @@ export const useAppShortcuts = ({
   openShortcutHelp,
   toggleSidebar,
 }: AppShortcutsParams): void => {
+  useShortcutOverrides();
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const openWorkspace = useAppStore((state) => state.openWorkspace);
@@ -164,11 +167,11 @@ export const useAppShortcuts = ({
   }, [currentWorkspace]);
 
   const openModelPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-model-picker'));
+    dispatchWindowEvent({ name: 'goodboy:open-model-picker' });
   }, []);
 
   const openPermissionPicker = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
+    dispatchWindowEvent({ name: 'goodboy:open-permission-picker' });
   }, []);
 
   useShortcut('settings.open', openSettings);
@@ -183,7 +186,7 @@ export const useAppShortcuts = ({
   useShortcut('session.new', openNewSession);
   useShortcut('chat.new', openNewChat);
   useShortcut('workspace.switcher', () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
+    dispatchWindowEvent({ name: 'goodboy:open-workspace-switcher' }),
   );
   const toggleVisibleSidebar = useCallback(() => {
     const state = useAppStore.getState();

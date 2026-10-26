@@ -33,13 +33,13 @@ export const AutoResultCard = ({ result, label, onOpenChild }: Props) => {
         <div className="flex h-7 min-w-0 items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <AgentKindChip kind={kind} density="glyph" />
-            <TruncatedText className="min-w-0 shrink truncate text-label text-foreground">
+            <TruncatedText className="min-w-0 shrink truncate text-meta text-foreground">
               {label}
             </TruncatedText>
             <span className="min-w-0 shrink truncate">
               <RoutingLabel provider={result.provider} model={result.model} muted />
             </span>
-            <span className="shrink-0 text-label text-muted-foreground">{status.word}</span>
+            <span className="shrink-0 text-meta text-muted-foreground">{status.word}</span>
           </div>
           <Button
             variant="quiet"

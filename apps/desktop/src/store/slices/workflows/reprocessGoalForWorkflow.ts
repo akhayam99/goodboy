@@ -1,17 +1,16 @@
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { rewriteWorkflowGoal } from '@goodboy/core';
 import { upsertContextSlot } from '@goodboy/db';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {

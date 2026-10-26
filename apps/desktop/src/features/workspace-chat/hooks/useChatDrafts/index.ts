@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ChatId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 
 type Params = {
   readonly chatId: ChatId | null;

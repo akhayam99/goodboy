@@ -1,5 +1,5 @@
-import { Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import type { StatePresentation } from '../../../../../workTreeModel/statePresentation';
 
 type Props = {

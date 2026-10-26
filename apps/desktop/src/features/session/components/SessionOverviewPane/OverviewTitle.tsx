@@ -4,7 +4,7 @@ import { InlineMarkdown, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { TitleField } from '../../../../shared/components/TitleField';
 import { caretOffsetAt } from '../../../../shared/utils/caretOffsetAt';
-import { sessionRowTitle } from '../../sessionTitle';
+import { sessionRowTitle } from '../../../../shared/utils/sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { overviewTitleHost } from '../../overviewTitleHost';
 import { useRenameRequest } from '../../../actions/useRenameRequest';

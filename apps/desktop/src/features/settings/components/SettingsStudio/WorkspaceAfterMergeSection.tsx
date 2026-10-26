@@ -11,7 +11,8 @@ import {
   AFTER_MERGE_NEVER,
   githubAutoDeleteNote,
   githubAutoDeleteSummary,
-} from './afterMergeCopy';
+} from '../../../../shared/utils/afterMergeCopy';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -90,7 +91,12 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
     try {
       await patchWorkspaceOverrides({ workspaceId, patch: { afterMerge: next } });
     } catch (error) {
-      void reportError({ title: "Couldn't save what happens after a merge", error, workspaceId });
+      void reportError({
+        title: "Couldn't save what happens after a merge",
+        error,
+        workspaceId,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setIsBusy(false);
     }

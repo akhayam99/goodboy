@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
@@ -19,6 +19,7 @@ import { adaptLinearIssues } from '../adapters/linear';
 import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
 import { attachInboxProjects } from '../attachInboxProjects';
+import { isForMeRecord } from '../isForMeRecord';
 import { orderInboxRecords } from '../orderInboxRecords';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 import { useInboxSentryIssues } from '../useInboxSentryIssues';
@@ -104,6 +105,16 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
       }),
     [adapted, projects, sentryLinks, gitlabMrs.host],
   );
+  const noteTaskRecords = useAppStore((state) => state.noteTaskRecords);
+  useEffect(() => {
+    noteTaskRecords({
+      workspaceId,
+      records: records.map((record) => ({
+        key: record.key,
+        isForMe: isForMeRecord({ record, isStarred: false }),
+      })),
+    });
+  }, [noteTaskRecords, workspaceId, records]);
   const errors = {
     github: github.error ?? githubPrs.error,
     gitlab: gitlabIssues.error ?? gitlabMrs.error,

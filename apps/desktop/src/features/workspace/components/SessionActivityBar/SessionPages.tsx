@@ -1,6 +1,6 @@
-import { SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE, SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { openSessionPage } from '../../../session/openSessionPage';
 import type { PageCountFacts } from '../../../session/pageCountWord';

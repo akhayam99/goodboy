@@ -74,7 +74,7 @@ export const ControlsLadderScene = () => (
       <IconButton size="sm" icon={RefreshCw} label="Refresh ledger-core" />
     </SceneRow>
     <SceneRow name="List row actions">
-      <span className="text-label text-foreground">ledger-core / fix posting rounding</span>
+      <span className="text-meta text-foreground">ledger-core / fix posting rounding</span>
       <Button size="xs" variant="ghost">
         Open
       </Button>

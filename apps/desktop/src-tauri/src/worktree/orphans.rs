@@ -8,10 +8,10 @@ use std::path::{Path, PathBuf};
 pub(super) const WORKTREE_PARENT: [&str; 2] = [".goodboy", "worktrees"];
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct OrphanWorktree {
     pub path: String,
     pub name: String,
-    #[serde(rename = "isRegistered")]
     pub is_registered: bool,
 }
 
@@ -211,3 +211,6 @@ pub async fn worktree_orphans(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod wire_shape;

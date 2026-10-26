@@ -1,9 +1,9 @@
 use super::error::WorktreeError;
-use super::git::{git, RunGit};
+use super::git::{git_english, RunGit};
 use super::inspect::{common_git_dir_with, inspect_worktree_with};
 use super::status::{in_progress_operation, parse_working_tree};
 use super::types::{
-    GitWorkingTree, WorktreeInspection, WorktreeRemovalMode, WorktreeRemovalReason,
+    FolderVerdict, GitWorkingTree, WorktreeInspection, WorktreeRemovalMode, WorktreeRemovalReason,
     WorktreeRemovalResult,
 };
 use std::path::{Path, PathBuf};
@@ -66,6 +66,36 @@ pub(super) fn status_removal_reasons_with(
         reasons.push(WorktreeRemovalReason::OperationInProgress);
     }
     reasons
+}
+
+pub(crate) fn folder_verdict(
+    reasons: &[WorktreeRemovalReason],
+    changed_files: u32,
+    is_registered: bool,
+) -> FolderVerdict {
+    let has = |reason: &WorktreeRemovalReason| reasons.contains(reason);
+    if has(&WorktreeRemovalReason::WriterLeaseHeld) {
+        return FolderVerdict::Writing;
+    }
+    if has(&WorktreeRemovalReason::OperationInProgress)
+        || has(&WorktreeRemovalReason::UnmergedConflicts)
+    {
+        return FolderVerdict::Operation;
+    }
+    if has(&WorktreeRemovalReason::NotRegistered) {
+        return FolderVerdict::NotTracked;
+    }
+    if changed_files > 0
+        || has(&WorktreeRemovalReason::StagedChanges)
+        || has(&WorktreeRemovalReason::UnstagedChanges)
+        || has(&WorktreeRemovalReason::UntrackedFiles)
+    {
+        return FolderVerdict::Dirty;
+    }
+    if !is_registered || !reasons.is_empty() {
+        return FolderVerdict::Unavailable;
+    }
+    FolderVerdict::Safe
 }
 
 fn validate_removal_with(
@@ -213,7 +243,7 @@ pub(crate) fn remove_worktree_checked_leased(
         repo_path,
         worktree_path,
         mode,
-        &mut |cwd, args| git(cwd, args),
+        &mut |cwd, args| git_english(cwd, args),
         &mut |path| {
             crate::worktree_writer::is_lease_live(registry, path.to_string_lossy().as_ref())
         },

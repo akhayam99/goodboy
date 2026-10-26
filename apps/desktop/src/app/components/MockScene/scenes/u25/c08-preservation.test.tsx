@@ -204,7 +204,7 @@ const QUESTION: OpenQuestion = {
   createdAt: JSON.parse('"2026-10-16T15:05:00.000Z"'),
 };
 
-describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
+describe('run rows stay reachable from the preset run level', () => {
   it('Runs list: a group carries its count from two rows', async () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));

@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dismissTopEscapeLayer, escapeLayerCount, registerEscapeLayer } from './escape';
+import {
+  dismissTopEscapeLayer,
+  escapeLayerCount,
+  registerEscapeLayer,
+  transientEscapeLayerCount,
+} from './escape';
 
 const cleanups: Array<() => void> = [];
 
@@ -148,5 +153,28 @@ describe('dismissing the top layer without a key', () => {
   it('does nothing when no layer is open', () => {
     expect(escapeLayerCount()).toBe(0);
     expect(() => dismissTopEscapeLayer()).not.toThrow();
+  });
+});
+
+describe('base layers', () => {
+  it('count as layers but not as transient ones, so a page level Esc does not block a key use', () => {
+    cleanups.push(registerEscapeLayer(vi.fn(), true));
+
+    expect(escapeLayerCount()).toBe(1);
+    expect(transientEscapeLayerCount()).toBe(0);
+
+    layer(vi.fn());
+
+    expect(escapeLayerCount()).toBe(2);
+    expect(transientEscapeLayerCount()).toBe(1);
+  });
+
+  it('still close the page when nothing consumed the key', () => {
+    const leave = vi.fn();
+    cleanups.push(registerEscapeLayer(leave, true));
+
+    press();
+
+    expect(leave).toHaveBeenCalledOnce();
   });
 });

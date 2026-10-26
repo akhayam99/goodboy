@@ -7,6 +7,7 @@ describe('parseSpendLimit', () => {
     ['2.50', 2.5],
     ['2,50', 2.5],
     [' 7 ', 7],
+    [' 12.5 ', 12.5],
     ['0.01', 0.01],
   ])('reads %s as %s dollars', (draft, usd) => {
     expect(parseSpendLimit(draft)).toBe(usd);

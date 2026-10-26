@@ -9,6 +9,7 @@ import { setAgentTab } from './setAgentTab';
 import { setExploreExpanded } from './setExploreExpanded';
 import { setExploreMountPath } from './setExploreMountPath';
 import { dismissCheckProposal } from './dismissCheckProposal';
+import { setSessionDismissedNextSteps } from './setSessionDismissedNextSteps';
 import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
@@ -32,7 +33,7 @@ import type { SliceDeps } from '../../slice-types';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { SessionViewSlice } from './types';
-export type { LensKind, DiffFocus, ResolveQueueView, SessionCreationId } from './types';
+export type { LensKind, DiffFocus, SessionCreationId } from './types';
 
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
@@ -43,6 +44,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     markSessionOpened: markSessionOpened(set),
     toggleSessionGroup: toggleSessionGroup(set),
     dismissCheckProposal: dismissCheckProposal({ set }),
+    setSessionDismissedNextSteps: setSessionDismissedNextSteps({ set }),
     setExploreExpanded: setExploreExpanded(set),
     setExploreMountPath: setExploreMountPath(set),
     setAgentTab: setAgentTab(set),

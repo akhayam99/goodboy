@@ -24,7 +24,7 @@ const SEEDS: ReadonlyArray<ProviderSeed> = [
 const providerRow = ({ id, label, binary }: ProviderSeed): ProviderDisplayInfo => ({
   id,
   binary,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '1.0.0',
   identity: 'harborline',
@@ -69,6 +69,7 @@ const unread = ({ id, title }: { readonly id: string; readonly title: string }):
   read: false,
   action: null,
   coalesceKey: null,
+  actedAt: null,
   kind: 'pr-created',
   title,
   body: 'payments-api #318',

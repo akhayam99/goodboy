@@ -30,8 +30,8 @@ export const BUTTON_VARIANT_CLASSES = {
 } as const satisfies Record<ButtonVariant, string>;
 
 export const BUTTON_SIZE_CLASSES = {
-  xs: 'h-6 gap-1 px-2 text-label',
-  sm: 'h-7 gap-2 px-3 text-label',
+  xs: 'h-6 gap-1 px-2 text-meta',
+  sm: 'h-7 gap-2 px-3 text-meta',
   md: 'h-8 gap-2 px-3 text-body',
 } as const satisfies Record<ButtonSize, string>;
 

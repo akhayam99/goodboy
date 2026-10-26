@@ -1,6 +1,9 @@
 import { Button } from '@goodboy/ui';
 import type { ImportPreview } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
+import type { WildcardConsentParams } from '../../wildcardConsent';
+import { ImportAllowRules } from './ImportAllowRules';
+import { ImportScripts } from './ImportScripts';
 
 const VERDICT_LABEL: Readonly<Record<string, string>> = {
   same_repository: 'Found',
@@ -28,6 +31,8 @@ type Props = {
     readonly targetId: string | null;
   }) => void;
   readonly onChooseProjectParent: () => void;
+  readonly hasWildcardConsent: boolean;
+  readonly onWildcardConsentChange: (params: WildcardConsentParams) => void;
   readonly disabled: boolean;
 };
 
@@ -36,6 +41,8 @@ export const ImportPreviewSection = ({
   workspaceTargets,
   onWorkspaceTargetChange,
   onChooseProjectParent,
+  hasWildcardConsent,
+  onWildcardConsentChange,
   disabled,
 }: Props) => {
   const hasUnresolvedProjects = preview.projectMatches.some(
@@ -43,13 +50,13 @@ export const ImportPreviewSection = ({
   );
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-subtle p-4">
-      <p className="text-label text-muted-foreground">
+      <p className="text-meta text-muted-foreground">
         From Goodboy {preview.manifest.exportedAt.slice(0, 10)}. {preview.manifest.workspaceCount}{' '}
         {preview.manifest.workspaceCount === 1 ? 'workspace' : 'workspaces'},{' '}
         {preview.manifest.projectCount} projects, {preview.manifest.workflowCount} workflows.
       </p>
       {preview.groupStats.length > 0 && (
-        <ul className="flex flex-col gap-0.5 text-label text-muted-foreground">
+        <ul className="flex flex-col gap-0.5 text-meta text-muted-foreground">
           {preview.groupStats.map((stat) => (
             <li key={stat.group}>
               {GROUP_LABEL[stat.group] ?? stat.group}: {stat.adds} new, {stat.updates} updated
@@ -57,6 +64,13 @@ export const ImportPreviewSection = ({
           ))}
         </ul>
       )}
+      <ImportAllowRules
+        rules={preview.allowRules}
+        hasWildcardConsent={hasWildcardConsent}
+        onWildcardConsentChange={onWildcardConsentChange}
+        isDisabled={disabled}
+      />
+      <ImportScripts scripts={preview.scripts} />
       <ul className="flex flex-col gap-2">
         {preview.workspaceMatches.map((match) => {
           const chosenTarget = workspaceTargets[match.bundleId] ?? match.existingId ?? null;
@@ -65,7 +79,7 @@ export const ImportPreviewSection = ({
               key={match.bundleId}
               className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted p-2"
             >
-              <span className="text-label text-foreground">{match.name}</span>
+              <span className="text-meta text-foreground">{match.name}</span>
               <span className="flex items-center gap-2">
                 {match.existingId !== null && (
                   <Button
@@ -99,7 +113,7 @@ export const ImportPreviewSection = ({
       </ul>
       {preview.projectMatches.filter((project) => !project.hasPath).length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-label text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             This file has no folder paths. Choose where your folders are on this Mac.
           </p>
           <ul className="flex flex-col gap-1">
@@ -108,7 +122,7 @@ export const ImportPreviewSection = ({
               .map((project) => (
                 <li
                   key={project.bundleProjectId}
-                  className="flex items-center justify-between gap-2 text-label"
+                  className="flex items-center justify-between gap-2 text-meta"
                 >
                   <span className="text-foreground">{project.name}</span>
                   <span className="text-muted-foreground">

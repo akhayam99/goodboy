@@ -40,7 +40,7 @@ export const ForeignCommitsNotice = ({ sessionId, row, status }: Props) => {
       tone="warning"
       placement="inline"
       role="status"
-      title="This worktree is not on the PR's commits"
+      title="This worktree isn't on the PR's commits"
       body={
         error === null
           ? foreignCommitsBody({

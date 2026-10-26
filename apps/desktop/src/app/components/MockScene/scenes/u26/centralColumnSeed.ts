@@ -24,6 +24,7 @@ import {
   type WorkflowRunId,
 } from '@goodboy/types';
 import type { WorktreeStatus } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -35,7 +36,7 @@ import { centralAutoSeedOf } from './centralAutoSeed';
 export const COLUMN_SESSION_ID = SESSION_ID;
 
 export type ColumnKind =
-  'mid' | 'finished' | 'stuck' | 'blocked' | 'orchestrated' | 'agent' | 'branches';
+  'mid' | 'finished' | 'stuck' | 'blocked' | 'failed' | 'orchestrated' | 'agent' | 'branches';
 
 type SeedParams = {
   readonly kind: ColumnKind;
@@ -54,11 +55,17 @@ const at = ({ day = 18, time }: AtParams): IsoDateTime =>
 const ms = ({ day = 18, time }: AtParams): number =>
   clock.ms({ at: `2026-10-${day}T${time}:00.000Z` });
 
-const nowIso = (): IsoDateTime => brandId<IsoDateTime>({ value: new Date().toISOString() });
-
 const GOAL = 'Per-tenant limits on payouts';
 const GOAL_LINE =
   'Add per-tenant payout limits to payments-api and show them in the settlement view.';
+const SUMMARY_TEXT = [
+  '## State',
+  '- Limits are enforced on payout creation and the retry fix waits on a review.',
+  '- Tests pass in payments-api.',
+  '',
+  '## Next',
+  '- Review the retry fix.',
+].join('\n');
 const API_BRANCH = 'ak/eng-1190-tenant-limits';
 const LEDGER_BRANCH = 'ak/eng-1190-ledger-limits';
 
@@ -362,17 +369,20 @@ const buildAgents = ({ isFinished }: BuildParams): ReadonlyArray<Agent> => [
             completedAt: at({ time: `10:${25 + (index - 4) * 2}` }),
           }),
         ),
-        agentOf({
-          key: 'ci-fix',
-          name: 'Fix the static-analysis check',
-          kind: 'ci-debugger',
-          status: 'completed',
-          ordinal: 14,
-          mountId: API_MOUNT_ID,
-          outputSummary: 'Fixed the failing static-analysis check.',
-          startedAt: at({ time: '10:28' }),
-          completedAt: at({ time: '10:29' }),
-        }),
+        {
+          ...agentOf({
+            key: 'ci-fix',
+            name: 'Fix the static-analysis check',
+            kind: 'ci-debugger',
+            status: 'completed',
+            ordinal: 14,
+            mountId: API_MOUNT_ID,
+            outputSummary: 'Fixed the failing static-analysis check.',
+            startedAt: at({ time: '10:28' }),
+            completedAt: at({ time: '10:29' }),
+          }),
+          lastFinishedAt: at({ time: '10:29' }),
+        },
       ]
     : []),
 ];
@@ -480,7 +490,7 @@ const prOf = ({ checks }: PrParams): PullRequestState => ({
   mergeable: true,
   reviewDecision: null,
   body: '',
-  updatedAt: nowIso(),
+  updatedAt: isoNow(),
 });
 
 type GithubParams = {
@@ -489,7 +499,7 @@ type GithubParams = {
 };
 
 const githubOf = ({ pr, checks }: GithubParams) => {
-  const fetchedAt = nowIso();
+  const fetchedAt = isoNow();
   return {
     pr,
     linkedIssues: [],
@@ -576,7 +586,7 @@ type AutoParts = {
 };
 
 type AutoPartsParams = {
-  readonly variant: 'working' | 'stuck' | 'blocked';
+  readonly variant: 'working' | 'stuck' | 'blocked' | 'failed';
 };
 
 const autoPartsOf = ({ variant }: AutoPartsParams): AutoParts => {
@@ -669,7 +679,8 @@ const partsOf = ({ kind }: SeedParams): Parts => {
         checks: PASSED,
       };
     case 'stuck':
-    case 'blocked': {
+    case 'blocked':
+    case 'failed': {
       const auto = autoPartsOf({ variant: kind });
       return {
         ...NO_PARTS,
@@ -774,7 +785,25 @@ export const seedCentralColumn = ({ kind }: SeedParams): void => {
     projects,
     sessions: [session],
     currentSessionId: SESSION_ID,
-    sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: GOAL_LINE, enabled: true }] },
+    sessionSlots: {
+      [SESSION_ID]: [
+        { key: 'goal', value: GOAL_LINE, enabled: true },
+        { key: 'last_output_summary', value: SUMMARY_TEXT, enabled: true },
+      ],
+    },
+    slotHistory: {
+      [SESSION_ID]: {
+        last_output_summary: [
+          {
+            id: 'mock-central-summary-1',
+            key: 'last_output_summary',
+            value: SUMMARY_TEXT,
+            author: 'summarizer',
+            createdAt: at({ time: '10:30' }),
+          },
+        ],
+      },
+    },
     sessionSlotsLoad: { [SESSION_ID]: 'loaded' },
     sessionProjectMounts: { [SESSION_ID]: parts.mounts },
     sessionActiveProject: { [SESSION_ID]: API_PROJECT_ID },
@@ -838,7 +867,7 @@ export const seedCentralColumn = ({ kind }: SeedParams): void => {
             links: [],
             mr: LEDGER_MR,
             approvals: null,
-            fetchedAt: nowIso(),
+            fetchedAt: isoNow(),
             loading: false,
             error: null,
           },

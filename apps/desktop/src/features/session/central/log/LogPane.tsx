@@ -1,10 +1,10 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, Input, tintClasses } from '@goodboy/ui';
+import { Button, ICON_SIZE, Input, tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { countRowIdOf } from '../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../hooks/useExplodeGroups';
 import { useScrollAnchor } from '../../hooks/useScrollAnchor';

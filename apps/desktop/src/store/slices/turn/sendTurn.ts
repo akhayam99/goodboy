@@ -19,8 +19,10 @@ import { discardInPlaceCapture } from './discardInPlaceCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
-import { noticeAutoOfChildTurn } from '../auto/noticeAutoOfChildTurn';
-import { routeAutoUserTurn } from '../auto/routeAutoUserTurn';
+import { noticeAutoOfChildTurn } from '../../runtime/auto/noticeAutoOfChildTurn';
+import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
+import { lookupDeliveryRun } from '../../../features/chat/turn';
+import { handDelivery } from './handDelivery';
 
 type DiscardParams = Readonly<{
   error: unknown;
@@ -31,8 +33,13 @@ type RunOnceParams = Readonly<{
   lease: TurnLease;
 }>;
 
+const NO_KNOWN_RUN = null;
+
+const ALREADY_SENT: SendTurnResult = { blockedOverBudget: false, isAlreadySent: true };
+
 export const sendTurn = (set: SetFn, get: GetFn) => {
-  const runOnce = async ({ input, lease }: RunOnceParams): Promise<SendTurnResult> => {
+  const runOnce = async ({ input: given, lease }: RunOnceParams): Promise<SendTurnResult> => {
+    const input = handDelivery.withId({ input: given });
     const prepared = await prepareTurn({ set, get, input });
     if (prepared.isDone) {
       return prepared.result;
@@ -73,7 +80,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await readTurnStream({ set, get, ctx });
       await finalizeTurnStream({ set, get, ctx });
     } catch (err) {
-      const recovered = await recoverTurnFailure({ set, get, lease, ctx, err, runOnce, run });
+      const recovered = await recoverTurnFailure({ set, get, lease, ctx, err, runOnce });
       if (recovered !== null) {
         return recovered;
       }
@@ -83,6 +90,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     return await settleTurn({ set, get, ctx });
   };
   const run = async (input: SendTurnInput): Promise<SendTurnResult> => {
+    if (input.retry === undefined && input.agentId !== undefined) {
+      get().clearAgentLimitStops({ agentId: input.agentId });
+    }
     if (input.origin !== 'mount-continuation') {
       resetMountContinuationChain({ sessionId: input.sessionId });
     }
@@ -105,6 +115,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         });
       }
     }
+    const callerDeliveryId = handDelivery.isHandSent({ input }) ? input.deliveryId : undefined;
+    if (callerDeliveryId !== undefined) {
+      const isClaimed = handDelivery.claim({ deliveryId: callerDeliveryId });
+      const existing = isClaimed
+        ? await lookupDeliveryRun({ deliveryId: callerDeliveryId }).catch(() => NO_KNOWN_RUN)
+        : null;
+      if (!isClaimed || existing !== null) {
+        if (isClaimed) {
+          handDelivery.release({ deliveryId: callerDeliveryId });
+        }
+        return ALREADY_SENT;
+      }
+    }
     const lease: TurnLease = {
       path: null,
       holder: null,
@@ -120,6 +143,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     try {
       return await runOnce({ input, lease });
     } finally {
+      if (callerDeliveryId !== undefined) {
+        handDelivery.release({ deliveryId: callerDeliveryId });
+      }
       if (input.agentId !== undefined) {
         closeTurnStartWindow({ agentId: input.agentId });
       }

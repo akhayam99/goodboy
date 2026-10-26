@@ -5,8 +5,11 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
-use crate::integrations::http::{self, TransportFailure};
+use crate::integration_credentials::{self, BoundValue, IntegrationCredentialError};
+use crate::integrations::failure::{self, HostFailure, HostFailureKind};
+use crate::integrations::http::{self, send_retrying, Paged, TransportFailure};
+use crate::integrations::quote::quoted_literal;
+use crate::integrations::request_state::RequestState;
 use crate::secrets;
 use crate::util::percent_encode;
 
@@ -15,7 +18,7 @@ const PROVIDER: &str = "bitbucket";
 integration_credentials::token_cache!(BitbucketTokenCache);
 
 const API_BASE: &str = "https://api.bitbucket.org/2.0";
-const MAX_PAGES: u32 = 20;
+use crate::util::limits::MAX_PAGES;
 const PAGE_LEN: u32 = 50;
 
 const AUTH_HINT: &str = "bitbucket rejected the credentials. goodboy signs every call with http basic auth, your atlassian account email in the username slot and a secret in the password slot. that secret is either an atlassian api token or a legacy bitbucket app password. check which of the two you pasted, and that it grants the account, repository and pullrequest scopes";
@@ -24,6 +27,11 @@ const AUTH_HINT: &str = "bitbucket rejected the credentials. goodboy signs every
 pub enum BitbucketError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("http error 429: {body}")]
+    RateLimited {
+        retry_after_seconds: Option<u64>,
+        body: String,
+    },
     #[error("request timed out: {0}")]
     Timeout(String),
     #[error("authentication failed: {0}")]
@@ -38,18 +46,21 @@ pub enum BitbucketError {
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
     NoToken(String),
+    #[error("the branch changed after it was reviewed: {0}")]
+    StaleHead(String),
     #[error("credential store error: {0}")]
     Credential(#[from] IntegrationCredentialError),
     #[error("secret store error: {0}")]
     Secret(#[from] secrets::SecretError),
 }
 
-crate::util::impl_error_serialize!(BitbucketError);
+crate::util::impl_error_serialize!(BitbucketError, failure);
 
 impl BitbucketError {
     fn kind(&self) -> &'static str {
         match self {
             BitbucketError::Http { .. } => "http",
+            BitbucketError::RateLimited { .. } => "rate_limited",
             BitbucketError::Timeout(_) => "timeout",
             BitbucketError::Auth(_) => "auth",
             BitbucketError::Forbidden(_) => "forbidden",
@@ -57,8 +68,38 @@ impl BitbucketError {
             BitbucketError::NotFound(_) => "not_found",
             BitbucketError::InvalidShape(_) => "shape",
             BitbucketError::NoToken(_) => "no_token",
+            BitbucketError::StaleHead(_) => "stale_head",
             BitbucketError::Credential(_) => "credential",
             BitbucketError::Secret(_) => "secret",
+        }
+    }
+
+    fn failure(&self) -> Option<HostFailure> {
+        match self {
+            BitbucketError::Http { status, body } => {
+                Some(failure::failure_of_status(*status, None, body))
+            }
+            BitbucketError::RateLimited {
+                retry_after_seconds,
+                body,
+            } => Some(failure::failure_of_status(429, *retry_after_seconds, body)),
+            BitbucketError::Timeout(message) => {
+                Some(HostFailure::of_kind(HostFailureKind::Timeout, message))
+            }
+            BitbucketError::Auth(detail) => Some(failure::failure_of_status(401, None, detail)),
+            BitbucketError::Forbidden(detail) => {
+                Some(failure::failure_of_status(403, None, detail))
+            }
+            BitbucketError::NotFound(detail) => Some(failure::failure_of_status(404, None, detail)),
+            BitbucketError::NoToken(_) => Some(HostFailure::of_kind(
+                HostFailureKind::BadCredentials,
+                &self.to_string(),
+            )),
+            BitbucketError::StaleHead(_)
+            | BitbucketError::InvalidInput(_)
+            | BitbucketError::InvalidShape(_)
+            | BitbucketError::Credential(_)
+            | BitbucketError::Secret(_) => None,
         }
     }
 }
@@ -91,12 +132,16 @@ fn error_message(body: &str) -> Option<String> {
     }
 }
 
-fn error_for_status(status: u16, body: String) -> BitbucketError {
+fn error_for_status(status: u16, retry_after_seconds: Option<u64>, body: String) -> BitbucketError {
     let detail = error_message(&body).unwrap_or_else(|| body.clone());
     match status {
         401 => BitbucketError::Auth(format!("{AUTH_HINT} ({detail})")),
         403 => BitbucketError::Forbidden(format!("{AUTH_HINT} ({detail})")),
         404 => BitbucketError::NotFound(detail),
+        429 => BitbucketError::RateLimited {
+            retry_after_seconds,
+            body,
+        },
         _ => BitbucketError::Http { status, body },
     }
 }
@@ -150,9 +195,9 @@ fn pull_requests_url(base: &str, workspace: &str, repo: &str, state: Option<&str
 }
 
 fn pull_requests_for_branch_url(base: &str, workspace: &str, repo: &str, branch: &str) -> String {
-    let query = format!("source.branch.name=\"{}\"", branch.trim());
+    let query = format!("source.branch.name={}", quoted_literal(branch.trim()));
     format!(
-        "{}?state=OPEN&pagelen={}&q={}",
+        "{}?state=OPEN&state=MERGED&state=DECLINED&state=SUPERSEDED&sort=-updated_on&pagelen={}&q={}",
         pull_requests_path(base, workspace, repo),
         PAGE_LEN,
         percent_encode(&query)
@@ -199,16 +244,18 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
 ) -> Result<T, BitbucketError> {
-    let res = http::client()
-        .get(url)
-        .basic_auth(credentials.email, Some(credentials.token))
-        .header("Accept", "application/json")
-        .send()
-        .await?;
+    let res = send_retrying(|| {
+        http::client()
+            .get(url)
+            .basic_auth(credentials.email, Some(credentials.token))
+            .header("Accept", "application/json")
+    })
+    .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), body));
+        return Err(error_for_status(status.as_u16(), retry_after, body));
     }
     serde_json::from_str(&body).map_err(|e| BitbucketError::InvalidShape(e.to_string()))
 }
@@ -221,19 +268,21 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
 ) -> Result<Option<T>, BitbucketError> {
-    let res = http::client()
-        .get(url)
-        .basic_auth(credentials.email, Some(credentials.token))
-        .header("Accept", "application/json")
-        .send()
-        .await?;
+    let res = send_retrying(|| {
+        http::client()
+            .get(url)
+            .basic_auth(credentials.email, Some(credentials.token))
+            .header("Accept", "application/json")
+    })
+    .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if reads_as_absent(status.as_u16()) {
         return Ok(None);
     }
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), body));
+        return Err(error_for_status(status.as_u16(), retry_after, body));
     }
     serde_json::from_str(&body)
         .map(Some)
@@ -248,9 +297,10 @@ async fn get_text(credentials: &Credentials<'_>, url: &str) -> Result<String, Bi
         .send()
         .await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let body = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), body));
+        return Err(error_for_status(status.as_u16(), retry_after, body));
     }
     Ok(body)
 }
@@ -270,9 +320,10 @@ async fn send_json<T: serde::de::DeserializeOwned>(
     }
     let res = request.send().await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), text));
+        return Err(error_for_status(status.as_u16(), retry_after, text));
     }
     serde_json::from_str(&text).map_err(|e| BitbucketError::InvalidShape(e.to_string()))
 }
@@ -292,9 +343,10 @@ async fn send_no_content(
     }
     let res = request.send().await?;
     let status = res.status();
+    let retry_after = failure::retry_after_of(res.headers());
     let text = res.text().await?;
     if !status.is_success() {
-        return Err(error_for_status(status.as_u16(), text));
+        return Err(error_for_status(status.as_u16(), retry_after, text));
     }
     Ok(())
 }
@@ -304,8 +356,33 @@ fn read_token(
     project_id: Option<&str>,
     cache: &BitbucketTokenCache,
 ) -> Result<String, BitbucketError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
         .ok_or_else(|| BitbucketError::NoToken(workspace_id.to_string()))
+}
+
+fn read_bound_token(
+    workspace_id: &str,
+    project_id: Option<&str>,
+    workspace_slug: &str,
+    email: &str,
+    cache: &BitbucketTokenCache,
+) -> Result<String, BitbucketError> {
+    integration_credentials::require_bound(
+        PROVIDER,
+        workspace_id,
+        project_id,
+        &[
+            BoundValue {
+                key: "workspaceSlug",
+                supplied: workspace_slug,
+            },
+            BoundValue {
+                key: "email",
+                supplied: email,
+            },
+        ],
+    )?;
+    read_token(workspace_id, project_id, cache)
 }
 
 #[derive(Debug, Deserialize)]
@@ -342,14 +419,12 @@ struct BitbucketUserRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitbucketUser {
     pub uuid: String,
-    #[serde(rename = "accountId")]
     pub account_id: Option<String>,
     pub nickname: String,
-    #[serde(rename = "displayName")]
     pub display_name: String,
-    #[serde(rename = "avatarUrl")]
     pub avatar_url: Option<String>,
 }
 
@@ -379,11 +454,11 @@ struct BitbucketWorkspaceRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitbucketWorkspace {
     pub uuid: String,
     pub slug: String,
     pub name: String,
-    #[serde(rename = "webUrl")]
     pub web_url: Option<String>,
 }
 
@@ -490,35 +565,26 @@ struct BitbucketPullRequestRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitbucketPullRequest {
     pub id: u64,
     pub title: String,
     pub description: String,
     pub state: String,
-    #[serde(rename = "createdOn")]
+    pub request_state: RequestState,
     pub created_on: String,
-    #[serde(rename = "updatedOn")]
     pub updated_on: String,
-    #[serde(rename = "sourceBranch")]
     pub source_branch: String,
-    #[serde(rename = "sourceCommit")]
     pub source_commit: Option<String>,
-    #[serde(rename = "destinationBranch")]
     pub destination_branch: String,
-    #[serde(rename = "destinationCommit")]
     pub destination_commit: Option<String>,
     pub author: Option<BitbucketUser>,
     pub reviewers: Vec<BitbucketUser>,
     pub participants: Vec<BitbucketParticipant>,
-    #[serde(rename = "closeSourceBranch")]
     pub close_source_branch: bool,
-    #[serde(rename = "mergeCommit")]
     pub merge_commit: Option<String>,
-    #[serde(rename = "commentCount")]
     pub comment_count: u64,
-    #[serde(rename = "taskCount")]
     pub task_count: u64,
-    #[serde(rename = "webUrl")]
     pub web_url: Option<String>,
 }
 
@@ -535,13 +601,24 @@ fn commit_hash(endpoint: Option<&BitbucketEndpointRaw>) -> Option<String> {
         .and_then(|commit| commit.hash.clone())
 }
 
+fn request_state_of(host_state: &str) -> RequestState {
+    match host_state {
+        "OPEN" => RequestState::Open,
+        "MERGED" => RequestState::Merged,
+        "DECLINED" | "SUPERSEDED" => RequestState::Closed,
+        _ => RequestState::Unknown,
+    }
+}
+
 fn map_pull_request(raw: BitbucketPullRequestRaw) -> BitbucketPullRequest {
     let links = raw.links.unwrap_or_default();
+    let state = raw.state.unwrap_or_default();
     BitbucketPullRequest {
         id: raw.id,
         title: raw.title.unwrap_or_default(),
         description: raw.description.unwrap_or_default(),
-        state: raw.state.unwrap_or_default(),
+        request_state: request_state_of(&state),
+        state,
         created_on: raw.created_on.unwrap_or_default(),
         updated_on: raw.updated_on.unwrap_or_default(),
         source_branch: branch_name(raw.source.as_ref()),
@@ -610,19 +687,16 @@ struct BitbucketCommentRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitbucketComment {
     pub id: u64,
     pub body: String,
     pub user: Option<BitbucketUser>,
-    #[serde(rename = "createdOn")]
     pub created_on: String,
-    #[serde(rename = "updatedOn")]
     pub updated_on: String,
     pub deleted: bool,
-    #[serde(rename = "parentId")]
     pub parent_id: Option<u64>,
     pub inline: Option<BitbucketInline>,
-    #[serde(rename = "webUrl")]
     pub web_url: Option<String>,
 }
 
@@ -669,6 +743,7 @@ struct BitbucketStatusRaw {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BitbucketStatus {
     pub key: String,
     pub name: String,
@@ -676,9 +751,7 @@ pub struct BitbucketStatus {
     pub url: Option<String>,
     pub description: Option<String>,
     pub refname: Option<String>,
-    #[serde(rename = "createdOn")]
     pub created_on: String,
-    #[serde(rename = "updatedOn")]
     pub updated_on: String,
 }
 
@@ -784,6 +857,7 @@ struct BitbucketPage<T> {
 struct Pager {
     seen: HashSet<String>,
     pages: u32,
+    is_truncated: bool,
 }
 
 impl Pager {
@@ -791,6 +865,7 @@ impl Pager {
         Self {
             seen: HashSet::new(),
             pages: 0,
+            is_truncated: false,
         }
     }
 
@@ -801,10 +876,12 @@ impl Pager {
     ) -> Result<Option<String>, BitbucketError> {
         sink.extend(page.values);
         self.pages += 1;
+        let next = page.next.filter(|value| !value.trim().is_empty());
         if self.pages >= MAX_PAGES {
+            self.is_truncated = next.is_some();
             return Ok(None);
         }
-        let Some(next) = page.next.filter(|value| !value.trim().is_empty()) else {
+        let Some(next) = next else {
             return Ok(None);
         };
         if !self.seen.insert(next.clone()) {
@@ -820,6 +897,15 @@ async fn get_json_paged<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     first_url: &str,
 ) -> Result<Vec<T>, BitbucketError> {
+    Ok(get_json_paged_marked(credentials, first_url)
+        .await?
+        .into_items(first_url))
+}
+
+async fn get_json_paged_marked<T: serde::de::DeserializeOwned>(
+    credentials: &Credentials<'_>,
+    first_url: &str,
+) -> Result<Paged<T>, BitbucketError> {
     let mut pager = Pager::new();
     let mut collected: Vec<T> = Vec::new();
     let mut url = first_url.to_string();
@@ -830,7 +916,10 @@ async fn get_json_paged<T: serde::de::DeserializeOwned>(
         };
         url = next;
     }
-    Ok(collected)
+    Ok(Paged {
+        items: collected,
+        is_truncated: pager.is_truncated,
+    })
 }
 
 fn first_matching_branch(
@@ -840,7 +929,13 @@ fn first_matching_branch(
     let wanted = branch.trim();
     values
         .into_iter()
-        .find(|raw| branch_name(raw.source.as_ref()) == wanted)
+        .filter(|raw| branch_name(raw.source.as_ref()) == wanted)
+        .max_by_key(|raw| {
+            (
+                raw.state.as_deref() == Some("OPEN"),
+                raw.updated_on.clone().unwrap_or_default(),
+            )
+        })
 }
 
 struct BitbucketWrite {
@@ -916,6 +1011,34 @@ fn merge_strategy_of(strategy: Option<&str>) -> Result<Option<&'static str>, Bit
                 MERGE_STRATEGIES.join(", ")
             ))
         })
+}
+
+const MIN_PINNED_HEAD_LEN: usize = 7;
+
+fn head_matches(expected: &str, actual: &str) -> bool {
+    let expected = expected.trim().to_lowercase();
+    let actual = actual.trim().to_lowercase();
+    let mut pair = [expected, actual];
+    pair.sort_by_key(String::len);
+    let [short, long] = pair;
+    short.len() >= MIN_PINNED_HEAD_LEN && long.starts_with(short.as_str())
+}
+
+fn guard_head(expected: Option<&str>, current: Option<&str>) -> Result<(), BitbucketError> {
+    let Some(expected) = expected.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(());
+    };
+    let Some(current) = current else {
+        return Err(BitbucketError::StaleHead(format!(
+            "bitbucket did not report the source commit, the reviewed {expected} cannot be confirmed"
+        )));
+    };
+    if head_matches(expected, current) {
+        return Ok(());
+    }
+    Err(BitbucketError::StaleHead(format!(
+        "reviewed {expected}, the pull request is now at {current}"
+    )))
 }
 
 fn merge_write(
@@ -1018,7 +1141,7 @@ pub async fn bitbucket_validate_connection(
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketConnection, BitbucketError> {
     let api_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, cache.0)?;
     let credentials = Credentials {
         email: &email,
         token: &api_token,
@@ -1045,8 +1168,8 @@ pub async fn bitbucket_connect(
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
     let api_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &api_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, cache.0)?;
+    integration_credentials::store_secret(&credential_id, &api_token, cache.0)?;
     Ok(())
 }
 
@@ -1060,7 +1183,13 @@ pub async fn bitbucket_list_pull_requests(
     state: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketPullRequest>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1080,7 +1209,13 @@ pub async fn bitbucket_get_pull_request(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1100,7 +1235,13 @@ pub async fn bitbucket_pull_request_diff(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<String, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1119,7 +1260,13 @@ pub async fn bitbucket_list_pull_request_comments(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketComment>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1139,7 +1286,13 @@ pub async fn bitbucket_list_pull_request_statuses(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketStatus>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1159,7 +1312,13 @@ pub async fn bitbucket_pull_request_for_branch(
     source_branch: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Option<BitbucketPullRequest>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1179,7 +1338,13 @@ pub async fn bitbucket_approve_pull_request(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketParticipant, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1200,7 +1365,13 @@ pub async fn bitbucket_unapprove_pull_request(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1219,7 +1390,13 @@ pub async fn bitbucket_request_changes(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketParticipant, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1240,7 +1417,13 @@ pub async fn bitbucket_unrequest_changes(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<(), BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1261,6 +1444,7 @@ pub async fn bitbucket_merge_pull_request(
     close_source_branch: Option<bool>,
     message: Option<String>,
     merge_strategy: Option<String>,
+    expected_head_sha: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
     let write = merge_write(
@@ -1272,11 +1456,31 @@ pub async fn bitbucket_merge_pull_request(
         message.as_deref(),
         merge_strategy.as_deref(),
     )?;
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
     };
+    if expected_head_sha
+        .as_deref()
+        .is_some_and(|sha| !sha.trim().is_empty())
+    {
+        let current: BitbucketPullRequestRaw = get_json(
+            &credentials,
+            &pull_request_path(API_BASE, &workspace_slug, &repo_slug, pull_request_id),
+        )
+        .await?;
+        guard_head(
+            expected_head_sha.as_deref(),
+            commit_hash(current.source.as_ref()).as_deref(),
+        )?;
+    }
     let raw: BitbucketPullRequestRaw =
         send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_pull_request(raw))
@@ -1305,7 +1509,13 @@ pub async fn bitbucket_update_pull_request(
         description.as_deref(),
         reviewer_uuids.as_deref(),
     )?;
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1324,7 +1534,13 @@ pub async fn bitbucket_search_workspace_members(
     query: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketUser>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1349,7 +1565,13 @@ pub async fn bitbucket_list_pull_request_commits(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<Vec<BitbucketCommit>, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1369,7 +1591,13 @@ pub async fn bitbucket_decline_pull_request(
     pull_request_id: u64,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1392,7 +1620,13 @@ pub async fn bitbucket_create_pull_request_comment(
     body: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketComment, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1422,7 +1656,13 @@ pub async fn bitbucket_reply_to_pull_request_comment(
     body: String,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketComment, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let token = read_bound_token(
+        &workspace_id,
+        project_id.as_deref(),
+        &workspace_slug,
+        &email,
+        &cache,
+    )?;
     let credentials = Credentials {
         email: &email,
         token: &token,
@@ -1439,6 +1679,9 @@ pub async fn bitbucket_reply_to_pull_request_comment(
         send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_comment(raw))
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -1482,12 +1725,14 @@ mod tests {
         assert_eq!(BitbucketError::NotFound("x".into()).kind(), "not_found");
         assert_eq!(BitbucketError::InvalidShape("x".into()).kind(), "shape");
         assert_eq!(BitbucketError::NoToken("ws".into()).kind(), "no_token");
+        assert_eq!(BitbucketError::StaleHead("x".into()).kind(), "stale_head");
     }
 
     #[test]
     fn error_for_status_names_both_credential_schemes_on_a_401() {
         let err = error_for_status(
             401,
+            None,
             r#"{"type":"error","error":{"message":"Access token expired."}}"#.into(),
         );
         let BitbucketError::Auth(detail) = err else {
@@ -1501,11 +1746,12 @@ mod tests {
     #[test]
     fn error_for_status_maps_403_to_forbidden_and_404_to_not_found() {
         assert!(matches!(
-            error_for_status(401, "{}".into()),
+            error_for_status(401, None, "{}".into()),
             BitbucketError::Auth(_)
         ));
         let forbidden = error_for_status(
             403,
+            None,
             r#"{"type":"error","error":{"message":"Your credentials lack one or more required privilege scopes.","detail":{"required":["pullrequest:write"]}}}"#.into(),
         );
         let BitbucketError::Forbidden(detail) = forbidden else {
@@ -1514,6 +1760,7 @@ mod tests {
         assert!(detail.contains("api token"));
         let err = error_for_status(
             404,
+            None,
             r#"{"type":"error","error":{"message":"Repository not found"}}"#.into(),
         );
         assert!(matches!(err, BitbucketError::NotFound(ref m) if m == "Repository not found"));
@@ -1521,7 +1768,7 @@ mod tests {
 
     #[test]
     fn error_for_status_keeps_a_400_as_http_with_the_raw_body() {
-        let err = error_for_status(400, r#"{"error":{"message":"bad"}}"#.into());
+        let err = error_for_status(400, None, r#"{"error":{"message":"bad"}}"#.into());
         assert!(matches!(err, BitbucketError::Http { status: 400, .. }));
     }
 
@@ -1583,7 +1830,7 @@ mod tests {
     fn pull_requests_for_branch_url_quotes_and_encodes_the_branch_query() {
         let url = pull_requests_for_branch_url(BASE, "goodboy", "desktop", " ak/feat-x ");
         assert!(url.starts_with(
-            "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests?state=OPEN&pagelen=50&q="
+            "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests?state=OPEN&state=MERGED&state=DECLINED&state=SUPERSEDED&sort=-updated_on&pagelen=50&q="
         ));
         assert!(url.ends_with("q=source.branch.name%3D%22ak%2Ffeat-x%22"));
     }
@@ -1862,6 +2109,44 @@ mod tests {
     }
 
     #[test]
+    fn a_short_or_full_hash_of_the_reviewed_head_still_matches() {
+        assert!(head_matches(
+            "6c20f48a9e1d4b7a8f0c3e5d2b1a9c8e7f6d5c4b",
+            "6c20f48a9e1d"
+        ));
+        assert!(head_matches(
+            "6C20F48A9E1D",
+            "6c20f48a9e1d4b7a8f0c3e5d2b1a9c8e7f6d5c4b"
+        ));
+        assert!(!head_matches("6c20f48a9e1d", "9f3e2d1c0b8a"));
+        assert!(!head_matches("6c20", "6c20"));
+    }
+
+    #[test]
+    fn an_unpinned_merge_needs_no_head_check() {
+        assert!(guard_head(None, Some("9f3e2d1c0b8a")).is_ok());
+        assert!(guard_head(Some("  "), None).is_ok());
+    }
+
+    #[test]
+    fn a_moved_head_reads_as_stale_head() {
+        assert!(guard_head(Some("6c20f48a9e1d"), Some("6c20f48a9e1d")).is_ok());
+        let error = guard_head(Some("6c20f48a9e1d"), Some("9f3e2d1c0b8a")).unwrap_err();
+        assert!(matches!(
+            &error,
+            BitbucketError::StaleHead(message)
+                if message.contains("6c20f48a9e1d") && message.contains("9f3e2d1c0b8a")
+        ));
+        assert_eq!(error.kind(), "stale_head");
+    }
+
+    #[test]
+    fn a_head_the_host_does_not_report_cannot_confirm_the_review() {
+        let error = guard_head(Some("6c20f48a9e1d"), None).unwrap_err();
+        assert!(matches!(error, BitbucketError::StaleHead(_)));
+    }
+
+    #[test]
     fn comment_write_nests_the_text_under_content_raw() {
         let write = comment_write(BASE, "goodboy", "desktop", 9, "looks good");
         assert_eq!(write.method, reqwest::Method::POST);
@@ -2116,6 +2401,7 @@ mod tests {
             }
         }
         assert_eq!(sink.len() as u32, MAX_PAGES);
+        assert!(pager.is_truncated);
     }
 
     #[test]
@@ -2190,5 +2476,162 @@ mod tests {
             .await
             .unwrap_err();
         assert_error_shape(&error, "http");
+    }
+
+    #[test]
+    fn every_http_status_reads_as_one_failure_kind_on_the_wire() {
+        for (status, kind) in [
+            (401, "bad_credentials"),
+            (403, "denied"),
+            (404, "not_found"),
+            (409, "failed"),
+            (500, "failed"),
+            (502, "failed"),
+        ] {
+            let wire = serde_json::to_value(error_for_status(status, None, "{}".into())).unwrap();
+            assert_eq!(wire["failureKind"], kind, "status {status}");
+            assert_eq!(wire["status"], status, "status {status}");
+        }
+        let network = serde_json::to_value(BitbucketError::Http {
+            status: 0,
+            body: "refused".into(),
+        })
+        .unwrap();
+        assert_eq!(network["failureKind"], "network");
+        let limited = serde_json::to_value(error_for_status(429, Some(9), "slow".into())).unwrap();
+        assert_eq!(limited["kind"], "rate_limited");
+        assert_eq!(limited["failureKind"], "rate_limited");
+        assert_eq!(limited["retryAfterSeconds"], 9);
+    }
+
+    #[test]
+    fn local_failures_carry_a_failure_kind_and_input_errors_carry_none() {
+        let timeout = serde_json::to_value(BitbucketError::Timeout("deadline".into())).unwrap();
+        assert_eq!(timeout["failureKind"], "timeout");
+        let input = serde_json::to_value(BitbucketError::InvalidInput("x".into())).unwrap();
+        assert!(input.get("failureKind").is_none());
+    }
+
+    #[tokio::test]
+    async fn a_rate_limited_read_is_retried_and_keeps_the_retry_hint() {
+        use crate::integrations::http::test_support::{
+            http_response, serve_sequence, within_bound,
+        };
+        use crate::integrations::http::MAX_ATTEMPTS;
+        let answer = http_response(
+            "429 Too Many Requests",
+            &[("Retry-After", "0")],
+            "slow down",
+        );
+        let (base, server) = serve_sequence(vec![answer; MAX_ATTEMPTS as usize]).await;
+        let credentials = Credentials {
+            email: "nadia@harborline.test",
+            token: "token",
+        };
+        let error = within_bound(get_json::<Value>(&credentials, &base))
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            BitbucketError::RateLimited { retry_after_seconds: Some(0), ref body } if body == "slow down"
+        ));
+        assert_eq!(server.await.unwrap().len(), MAX_ATTEMPTS as usize);
+    }
+
+    #[test]
+    fn every_host_state_maps_to_one_request_state() {
+        for (host_state, expected) in [
+            ("OPEN", RequestState::Open),
+            ("MERGED", RequestState::Merged),
+            ("DECLINED", RequestState::Closed),
+            ("SUPERSEDED", RequestState::Closed),
+        ] {
+            assert_eq!(request_state_of(host_state), expected, "{host_state}");
+        }
+    }
+
+    #[test]
+    fn a_state_the_adapter_does_not_know_stays_visible_as_unknown() {
+        assert_eq!(request_state_of(""), RequestState::Unknown);
+        assert_eq!(request_state_of("DRAFT"), RequestState::Unknown);
+        assert_eq!(request_state_of("open"), RequestState::Unknown);
+    }
+
+    #[test]
+    fn a_hostile_branch_name_cannot_close_the_query_literal() {
+        let url = pull_requests_for_branch_url(BASE, "goodboy", "desktop", "a/b \" OR x = \"y");
+        assert!(
+            url.ends_with("q=source.branch.name%3D%22a%2Fb%20%5C%22%20OR%20x%20%3D%20%5C%22y%22")
+        );
+    }
+
+    #[test]
+    fn a_pager_that_reaches_the_end_exactly_at_the_cap_is_not_truncated() {
+        let mut pager = Pager::new();
+        let mut sink: Vec<BitbucketPullRequestRaw> = Vec::new();
+        for page in 0..MAX_PAGES {
+            let last = page + 1 == MAX_PAGES;
+            let next = format!("https://api.bitbucket.org/2.0/x?page={}", page + 2);
+            pager
+                .absorb(
+                    pr_page((!last).then_some(next.as_str()), &[page as u64]),
+                    &mut sink,
+                )
+                .unwrap();
+        }
+        assert!(!pager.is_truncated);
+    }
+
+    #[test]
+    fn a_pager_that_ends_early_is_not_truncated() {
+        let mut pager = Pager::new();
+        let mut sink: Vec<BitbucketPullRequestRaw> = Vec::new();
+        pager.absorb(pr_page(None, &[1]), &mut sink).unwrap();
+        assert!(!pager.is_truncated);
+    }
+
+    fn raw_request(id: u64, state: &str, updated_on: &str) -> BitbucketPullRequestRaw {
+        serde_json::from_str(&format!(
+            r#"{{ "id": {id}, "state": "{state}", "updated_on": "{updated_on}",
+                 "source": {{ "branch": {{ "name": "ak/feat-bb" }} }} }}"#
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn the_branch_lookup_asks_for_every_state_newest_first() {
+        let url = pull_requests_for_branch_url(BASE, "goodboy", "desktop", "ak/feat-bb");
+        for state in ["OPEN", "MERGED", "DECLINED", "SUPERSEDED"] {
+            assert!(url.contains(&format!("state={state}")), "{state}");
+        }
+        assert!(url.contains("sort=-updated_on"));
+    }
+
+    #[test]
+    fn the_request_for_a_branch_prefers_an_open_one_then_the_newest() {
+        let values = vec![
+            raw_request(3, "MERGED", "2026-09-03T00:00:00Z"),
+            raw_request(2, "OPEN", "2026-09-01T00:00:00Z"),
+            raw_request(1, "DECLINED", "2026-09-02T00:00:00Z"),
+        ];
+        assert_eq!(first_matching_branch(values, "ak/feat-bb").unwrap().id, 2);
+    }
+
+    #[test]
+    fn after_a_merge_the_branch_still_finds_its_request() {
+        let values = vec![
+            raw_request(1, "DECLINED", "2026-09-01T00:00:00Z"),
+            raw_request(2, "MERGED", "2026-09-03T00:00:00Z"),
+        ];
+        assert_eq!(first_matching_branch(values, "ak/feat-bb").unwrap().id, 2);
+    }
+
+    #[test]
+    fn two_open_requests_resolve_to_the_most_recently_updated() {
+        let values = vec![
+            raw_request(1, "OPEN", "2026-09-01T00:00:00Z"),
+            raw_request(2, "OPEN", "2026-09-02T00:00:00Z"),
+        ];
+        assert_eq!(first_matching_branch(values, "ak/feat-bb").unwrap().id, 2);
     }
 }

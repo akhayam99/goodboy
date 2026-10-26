@@ -39,6 +39,7 @@ type RenderParams = {
   readonly record?: InboxRecord;
   readonly isSelected?: boolean;
   readonly isCursor?: boolean;
+  readonly isNew?: boolean;
   readonly onSelect?: (record: InboxRecord) => void;
 };
 
@@ -46,11 +47,18 @@ const renderRow = ({
   record = issue,
   isSelected = false,
   isCursor = false,
+  isNew = false,
   onSelect = vi.fn(),
 }: RenderParams = {}) =>
   render(
     <ListGrid label="Task items" columns={TASK_COLUMNS}>
-      <InboxRow record={record} selected={isSelected} isCursor={isCursor} onSelect={onSelect} />
+      <InboxRow
+        record={record}
+        selected={isSelected}
+        isCursor={isCursor}
+        isNew={isNew}
+        onSelect={onSelect}
+      />
     </ListGrid>,
   );
 
@@ -63,6 +71,21 @@ const cell = (key: string): HTMLElement => {
   }
   return found;
 };
+
+describe('InboxRow new dot', () => {
+  it('draws a 6 px dot named New before the title of an arrival, and none otherwise', () => {
+    renderRow({ isNew: true });
+
+    const dot = within(cell('title')).getByRole('img', { name: 'New' });
+    expect(dot.hasAttribute('data-task-new')).toBe(true);
+    within(cell('title')).getByText(issue.title);
+    cleanup();
+
+    renderRow();
+
+    expect(within(cell('title')).queryByRole('img', { name: 'New' })).toBeNull();
+  });
+});
 
 describe('InboxRow', () => {
   it('fills every column of the shared grid: source, key, title, status, priority, age', () => {

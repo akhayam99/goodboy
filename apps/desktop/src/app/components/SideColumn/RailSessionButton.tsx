@@ -1,11 +1,9 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { cn, inlineMarkdownText } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { sessionNodeOf } from '../../../features/session/sessionNode';
+import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
 import { StateNode } from '../../../shared/components/StateNode';
 import { useObjectMenuTrigger } from '../../../features/actions/useObjectMenuTrigger';
-import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
-import { sessionRowTitle } from '../../../features/session/sessionTitle';
 import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
 
 export type RailSessionSign = 'current' | 'remembered' | 'none';
@@ -29,10 +27,7 @@ export const RailSessionButton = ({
   onLeave,
   onKeyDown,
 }: Props) => {
-  const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({ info: summary.info, isArchived: false });
-  const { title } = sessionRowTitle({ session, tasks: summary.tasks });
-  const text = inlineMarkdownText({ text: title });
+  const { summary, node, plainTitle: text } = useSessionRowFacts({ session });
   const words = summary.words ?? summary.reason;
   const label = words === '' ? text : `${text}, ${words}`;
   const isCurrent = sign === 'current';

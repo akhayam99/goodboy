@@ -81,6 +81,10 @@ beforeEach(() => {
     terminalTabs: {},
     terminalSessions: {},
     sessionGithub: {},
+    mountGithub: {},
+    mountGitlabMr: {},
+    mountBitbucketPr: {},
+    workspaceIntegrations: {},
     sessionGitlabMr: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
@@ -121,8 +125,8 @@ describe('useSessionPrFetchState', () => {
 
   it('reports known once that session fetch has landed', () => {
     fetchableSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
 
     const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
@@ -132,8 +136,8 @@ describe('useSessionPrFetchState', () => {
 
   it('reports unreachable once every attempt for that session failed', () => {
     fetchableSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
     };
 
     const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));

@@ -1,6 +1,7 @@
 import type { GitlabIntegrationBinding, MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
-import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
+import { projectPathFromRemoteUrl } from '../../../shared/utils/remoteHost';
+import { requestHostOfRemote } from '../review-source/requestHostOfRemote';
 import {
   listMountFetches,
   resolveMountFetch,
@@ -50,7 +51,11 @@ export const resolveMrContext = async ({
   }
   const remoteUrl = await worktreeRemoteUrl(target.mount.repoRoot);
   const projectPath = projectPathFromRemoteUrl(remoteUrl);
-  if (projectPath === null) {
+  const remoteHost = requestHostOfRemote({
+    url: remoteUrl,
+    gitlabHosts: [integration.config.host],
+  });
+  if (projectPath === null || remoteHost !== 'gitlab') {
     return null;
   }
   return {

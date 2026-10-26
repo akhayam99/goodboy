@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BandStack, CopyButton, DrawerFrame, ScrollFade } from '@goodboy/ui';
+import { BandStack, CopyButton, DrawerFrame, ICON_SIZE, ScrollFade } from '@goodboy/ui';
 import { activeDecisionsNewestFirst } from '@goodboy/core';
 import type { SessionContextItem, SessionDecision, SessionId } from '@goodboy/types';
 import {
@@ -13,8 +13,8 @@ import {
 } from '../../../../store';
 import type { ContextDrawerTab, ContextDrawerView } from '../../../../store/slices/drawer/state';
 import { decisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { shareableContext } from '../../context/shareableContext';
 import { CONTEXT_TAB_LABEL, CONTEXT_TAB_SLOT, type ContextSlotTab } from './contextTabs';
 import { GoalTab } from './GoalTab';
@@ -28,7 +28,6 @@ import { SlotSourceActions } from './SlotSourceActions';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { LearnedTab } from './LearnedTab';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
-import { isRoleMapOn } from '../../../context/contextSwitches';
 
 type SlotValueParams = {
   readonly slots: ReturnType<typeof useSessionSlots>;
@@ -72,7 +71,6 @@ export const ContextDrawer = ({
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
   const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
-  const showsVisibility = useAppStore((state) => isRoleMapOn({ settings: state.settings }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
@@ -178,7 +176,7 @@ export const ContextDrawer = ({
     setRawTab((current) => (current === section ? null : section));
 
   const visibilityOf = ({ section }: SectionParams) =>
-    showsVisibility ? slotVisibility({ slot: CONTEXT_TAB_SLOT[section] }) : null;
+    slotVisibility({ slot: CONTEXT_TAB_SLOT[section] });
 
   const sections = (() => {
     if (view === 'versions') {

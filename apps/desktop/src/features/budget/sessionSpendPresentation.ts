@@ -13,8 +13,6 @@ export type SessionSpendPresentation = {
   readonly isPaused: boolean;
 };
 
-const SPEND_NEAR_RATIO = 0.8;
-
 type Params = {
   readonly totalUsd: number;
   readonly limit: SessionBudget | null;
@@ -27,15 +25,16 @@ type UsdParams = {
 const limitUsd = ({ usd }: UsdParams): string =>
   Number.isInteger(usd) ? `$${usd}` : formatUsd(usd);
 
-type RatioParams = {
+type LevelParams = {
   readonly ratio: number;
+  readonly warnRatio: number;
 };
 
-const levelOf = ({ ratio }: RatioParams): SessionSpendLevel => {
+const levelOf = ({ ratio, warnRatio }: LevelParams): SessionSpendLevel => {
   if (ratio >= 1) {
     return 'over';
   }
-  return ratio >= SPEND_NEAR_RATIO ? 'near' : 'clear';
+  return ratio >= warnRatio ? 'near' : 'clear';
 };
 
 const TONE: Readonly<Record<SessionSpendLevel, Tone>> = {
@@ -59,7 +58,7 @@ export const sessionSpendPresentation = ({ totalUsd, limit }: Params): SessionSp
   }
   const capUsd = limit.softCapUsd;
   const ratio = capUsd > 0 ? totalUsd / capUsd : 1;
-  const level = levelOf({ ratio });
+  const level = levelOf({ ratio, warnRatio: limit.warnRatio });
   const isPaused = level === 'over' && limit.onExceed === 'pause';
   const amounts = `${formatUsd(totalUsd)} of ${formatUsd(capUsd)}`;
   const spent = `${formatUsd(totalUsd)} spent of the ${formatUsd(capUsd)} limit in this session`;

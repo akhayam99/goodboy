@@ -2,7 +2,6 @@ import {
   CHAT_MESSAGE_ROLES,
   CHAT_MESSAGE_STATUSES,
   CHAT_SESSION_LINK_KINDS,
-  PROVIDER_IDS,
   isEffortLevel,
   type Chat,
   type ChatAttachmentId,
@@ -25,6 +24,7 @@ import {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
+import { isProviderId } from '@goodboy/types/helpers';
 
 const PREVIEW_LENGTH = 240;
 
@@ -99,9 +99,6 @@ const MESSAGE_COLUMNS = `id, chat_id AS chatId, role, content, status, reads, er
 const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
 
 const toMs = (iso: IsoDateTime): number => Date.parse(iso);
-
-const isProviderId = (value: string): value is ProviderId =>
-  PROVIDER_IDS.some((provider) => provider === value);
 
 const isRole = (value: string): value is ChatMessageRole =>
   CHAT_MESSAGE_ROLES.some((role) => role === value);

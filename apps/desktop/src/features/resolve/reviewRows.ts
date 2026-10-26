@@ -20,20 +20,28 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
+type LaunchParams = Params & { readonly freshComments?: ReadonlyArray<PrComment> };
+
 const EMPTY_ENTRIES: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_COMMENTS: ReadonlyArray<PrComment> = [];
 const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
 const NO_ROWS: ReadonlyArray<ResolveQueueRow> = [];
 
-export const launchRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> =>
-  buildResolveQueueRows({
+export const launchRowsOf = ({
+  state,
+  sessionId,
+  freshComments,
+}: LaunchParams): ReadonlyArray<ResolveQueueRow> => {
+  return buildResolveQueueRows({
     entries: state.sessionResolveQueueItems[sessionId] ?? EMPTY_ENTRIES,
     attempts: state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
     deliveryReceipts: [],
-    comments: activeReviewSourceOf({ state, sessionId })?.comments ?? EMPTY_COMMENTS,
+    comments:
+      freshComments ?? activeReviewSourceOf({ state, sessionId })?.comments ?? EMPTY_COMMENTS,
     notes: state.diffComments[sessionId] ?? EMPTY_NOTES,
   });
+};
 
 export const reviewRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
   const entry = selectedReviewEntryOf({ state, sessionId });

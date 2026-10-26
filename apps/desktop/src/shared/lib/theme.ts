@@ -147,8 +147,6 @@ export const switchTheme = ({ to }: SwitchThemeParams): void => {
   }
 };
 
-export const oppositeOfApplied = (): Theme => (getAppliedTheme() === 'dark' ? 'light' : 'dark');
-
 const isThemePreference = (value: string | null): value is ThemePreference =>
   value === 'light' || value === 'dark' || value === 'system';
 

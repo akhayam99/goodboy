@@ -27,8 +27,8 @@ import {
 } from '@goodboy/types';
 import { AUTO_BRIDGE_EVENT, type AutoBridgeBus } from '../features/auto/bridge/autoBridgeProtocol';
 import { deriveNextSteps } from '../features/suggestions/deriveNextSteps';
-import type { AutoRuntime } from './slices/auto/createAutoRuntime';
-import type { BridgeOutcome, RefreshSessionArtifactsParams } from './slices/auto/ports';
+import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
+import type { BridgeOutcome, RefreshSessionArtifactsParams } from './runtime/auto/ports';
 import {
   buildStoryProject,
   buildStoryWorkspace,
@@ -82,17 +82,17 @@ const PLAN_ID = brandId<ArtifactId>({ value: 'plan-ledger-export' });
 const RUN_ID = 'run-auto-root';
 
 let useAppStore: StoryStore;
-let makeAutoRuntime: typeof import('./slices/auto/makeAutoRuntime').makeAutoRuntime;
-let startAutoTree: typeof import('./slices/auto/startAutoTrees').startAutoTree;
-let runAutoCommand: typeof import('./slices/auto/runAutoCommand').runAutoCommand;
-let startAutoRuntime: typeof import('./slices/auto/startAutoRuntime').startAutoRuntime;
+let makeAutoRuntime: typeof import('./runtime/auto/makeAutoRuntime').makeAutoRuntime;
+let startAutoTree: typeof import('./runtime/auto/startAutoTrees').startAutoTree;
+let runAutoCommand: typeof import('./runtime/auto/runAutoCommand').runAutoCommand;
+let startAutoRuntime: typeof import('./runtime/auto/startAutoRuntime').startAutoRuntime;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ makeAutoRuntime } = await import('./slices/auto/makeAutoRuntime'));
-  ({ startAutoTree } = await import('./slices/auto/startAutoTrees'));
-  ({ runAutoCommand } = await import('./slices/auto/runAutoCommand'));
-  ({ startAutoRuntime } = await import('./slices/auto/startAutoRuntime'));
+  ({ makeAutoRuntime } = await import('./runtime/auto/makeAutoRuntime'));
+  ({ startAutoTree } = await import('./runtime/auto/startAutoTrees'));
+  ({ runAutoCommand } = await import('./runtime/auto/runAutoCommand'));
+  ({ startAutoRuntime } = await import('./runtime/auto/startAutoRuntime'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

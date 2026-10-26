@@ -1,4 +1,4 @@
-import { CLAUDE_PERMISSION_MODES, PROVIDER_IDS } from '@goodboy/types';
+import { CLAUDE_PERMISSION_MODES, FAIL_CLOSED_PERMISSION_MODE, PROVIDER_IDS } from '@goodboy/types';
 import type {
   ClaudePermissionMode,
   IsoDateTime,
@@ -11,12 +11,7 @@ import type {
   SessionProviderPreference,
   TurnState,
   VerbosityLevel,
-  WorkflowId,
-  WorkflowExecutionMode,
-  WorkflowOrchestrationOutcome,
   WorkflowRun,
-  WorkflowRunId,
-  WorkflowTriggerMode,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -83,7 +78,7 @@ const toPermissionMode = (raw: string | null): ClaudePermissionMode => {
   if (raw !== null && VALID_PERMISSION_MODES.has(raw)) {
     return raw as ClaudePermissionMode;
   }
-  return 'bypassPermissions';
+  return FAIL_CLOSED_PERMISSION_MODE;
 };
 
 const toProviderPreference = (row: SessionRow): SessionProviderPreference => {
@@ -495,6 +490,7 @@ export const deleteSession = async (db: Database, id: SessionId): Promise<void> 
   await db.transaction({
     statements: [
       { sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_file_sets WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM sessions WHERE id = ?', params: [id] },
     ],
   });
@@ -513,6 +509,7 @@ export const purgeSessionForDelete = async ({
       { sql: 'DELETE FROM messages WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM turn_events WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM file_versions WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_file_sets WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM context_slots WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM context_slot_history WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM session_decisions WHERE session_id = ?', params: [id] },

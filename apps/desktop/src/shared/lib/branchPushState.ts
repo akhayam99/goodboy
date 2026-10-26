@@ -1,4 +1,4 @@
-import type { WorktreeStatus } from '@goodboy/types';
+import type { BranchCommit, WorktreeStatus } from '@goodboy/types';
 import { distanceAhead } from './gitStatus';
 
 export type BranchPushState =
@@ -41,15 +41,15 @@ type CountParams = {
   readonly state: BranchPushState;
 };
 
-export const commitsToPush = ({ state }: CountParams): number => {
+const commitsToPush = ({ state }: CountParams): number => {
   switch (state.kind) {
     case 'ahead':
+    case 'diverged':
       return state.ahead;
     case 'not-pushed':
       return state.commits ?? 0;
     case 'in-sync':
     case 'behind':
-    case 'diverged':
     case 'gone':
     case 'unknown':
       return 0;
@@ -58,4 +58,42 @@ export const commitsToPush = ({ state }: CountParams): number => {
       return exhaustive;
     }
   }
+};
+
+type FactsParams = {
+  readonly status:
+    | (Pick<WorktreeStatus, 'upstreamDistance' | 'mainDistance'> &
+        Partial<Pick<WorktreeStatus, 'upstream'>>)
+    | null;
+  readonly commits?: ReadonlyArray<Pick<BranchCommit, 'pushed'>> | null;
+  readonly hasRemoteHead?: boolean;
+};
+
+export type BranchPushFacts = {
+  readonly state: BranchPushState;
+  readonly toPush: number;
+  readonly canForce: boolean;
+};
+
+const UNKNOWN_FACTS: BranchPushFacts = { state: { kind: 'unknown' }, toPush: 0, canForce: false };
+
+export const branchPushFactsOf = ({
+  status,
+  commits = null,
+  hasRemoteHead = false,
+}: FactsParams): BranchPushFacts => {
+  const hasUpstream = (status !== null && (status.upstream ?? null) !== null) || hasRemoteHead;
+  const loaded = commits !== null && hasUpstream ? commits : null;
+  if (status === null) {
+    return loaded === null
+      ? UNKNOWN_FACTS
+      : { ...UNKNOWN_FACTS, toPush: loaded.filter((commit) => !commit.pushed).length };
+  }
+  const state = branchPushStateOf({ status });
+  return {
+    state,
+    toPush:
+      loaded === null ? commitsToPush({ state }) : loaded.filter((commit) => !commit.pushed).length,
+    canForce: state.kind === 'diverged',
+  };
 };

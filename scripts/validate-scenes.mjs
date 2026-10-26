@@ -1,17 +1,24 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CALL_TIMEOUT_MS,
   DevToolsTimeoutError,
+  SceneNotReadyError,
   WARM_UP_TIMEOUT_MS,
+  annotationLines,
   failingScenes,
   failureLines,
+  inboxAgeFailures,
   measureScene,
+  notReadyFailure,
   readDevToolsPort,
   summaryLine,
+  summaryMarkdown,
+  timeCellFailures,
+  unmeasuredFailures,
 } from './validateScenesBrowser.mjs';
 import {
   COLUMN_NAMES,
@@ -29,6 +36,15 @@ import {
   frameSceneVariants,
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
+import {
+  LAYER_MAX_TABS,
+  LAYER_SCENES,
+  LAYER_WHEEL_DELTA,
+  LAYER_WIDTH,
+  layerFailures,
+  layerProbe,
+  layerScrollMoves,
+} from './validateScenesLayers.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 import {
   HEADER_LINE_READY,
@@ -60,7 +76,7 @@ import {
 } from './validateScenesChatMeasure.mjs';
 
 const CHROME =
-  process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  process.env.VALIDATE_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ZOOMS = [1, 1.1];
 const WIDTHS = [1440, 1200, 1024, 880, 760];
 const HEIGHT = 1000;
@@ -270,6 +286,7 @@ const open = async ({
     const isReady = await attemptOpen({ send, scene, readySelector, settleMs });
     if (isReady) return;
   }
+  throw new SceneNotReadyError({ scene });
 };
 
 const clickButton = async ({ label, patience = 0 }) => {
@@ -497,38 +514,37 @@ const railSeams = ({ tolerance }) => {
   return seams;
 };
 
-const clippedTimes = () =>
-  [...document.querySelectorAll('[data-meta-column="time"]')].flatMap((cell) =>
-    cell.scrollWidth > cell.clientWidth + 0.5
-      ? [{ row: cell.closest('[data-row-id]')?.dataset.rowId ?? null, text: cell.textContent }]
-      : [],
-  );
+const clippedTimes = () => {
+  const cells = [...document.querySelectorAll('[data-meta-column="time"]')];
+  return {
+    measured: cells.length,
+    clipped: cells.flatMap((cell) =>
+      cell.scrollWidth > cell.clientWidth + 0.5
+        ? [{ row: cell.closest('[data-row-id]')?.dataset.rowId ?? null, text: cell.textContent }]
+        : [],
+    ),
+  };
+};
 
-const wrappedAges = () =>
-  [...document.querySelectorAll('[data-inbox-key] time')].flatMap((time) => {
-    const lineHeight = parseFloat(getComputedStyle(time).lineHeight);
-    return time.getBoundingClientRect().height > lineHeight * 1.5
-      ? [
-          {
-            key: time.closest('[data-inbox-key]')?.dataset.inboxKey ?? null,
-            text: time.textContent,
-          },
-        ]
-      : [];
-  });
-
-const branchCellOverlaps = () =>
-  [...document.querySelectorAll('[data-testid="project-mount-branch-cell"]')].flatMap((cell) => {
-    const action = cell.nextElementSibling;
-    if (!(action instanceof HTMLElement)) return [];
-    const actionLeft = action.getBoundingClientRect().left;
-    const reaching = [...cell.children].filter(
-      (child) => child.getBoundingClientRect().right > actionLeft + 0.5,
-    );
-    return reaching.length > 0
-      ? [{ row: cell.closest('li')?.getAttribute('aria-label') ?? null, count: reaching.length }]
-      : [];
-  });
+const wrappedAges = () => {
+  const cells = [...document.querySelectorAll('[data-list-grid-cell="updated"]')];
+  return {
+    measured: cells.length,
+    wrapped: cells.flatMap((cell) => {
+      const lineHeight = parseFloat(getComputedStyle(cell).lineHeight);
+      const isWrapped = cell.getBoundingClientRect().height > lineHeight * 1.5;
+      const isClipped = cell.scrollWidth > cell.clientWidth + 0.5;
+      return isWrapped || isClipped
+        ? [
+            {
+              key: cell.closest('[data-list-grid-row]')?.dataset.rowKey ?? null,
+              text: cell.textContent,
+            },
+          ]
+        : [];
+    }),
+  };
+};
 
 const waitForRoot = async ({ budgetMs }) => {
   const start = performance.now();
@@ -584,6 +600,14 @@ const measureActivity = async ({ send, scene }) => {
     if (motion.moved.length > 0) {
       failures.push({ scene, zoom, check: 'group row moved', rows: motion.moved });
     }
+    failures.push(
+      ...unmeasuredFailures({
+        scene,
+        width: WIDTHS[0],
+        subject: 'group rows',
+        count: motion.groups,
+      }),
+    );
     const seams = await run(send, railSeams, { tolerance: SEAM_TOLERANCE_PX });
     if (seams.length > 0) {
       failures.push({ scene, zoom, check: 'rail seam', seams });
@@ -594,10 +618,8 @@ const measureActivity = async ({ send, scene }) => {
   }
   for (const width of WIDTHS) {
     await open({ send, scene, width, zoom: 1 });
-    const clipped = await run(send, clippedTimes, null);
-    if (clipped.length > 0) {
-      failures.push({ scene, width, check: 'time wider than its column', clipped });
-    }
+    const times = await run(send, clippedTimes, null);
+    failures.push(...timeCellFailures({ scene, width, times }));
   }
   return { failures, wraps: 0 };
 };
@@ -605,7 +627,7 @@ const measureActivity = async ({ send, scene }) => {
 const measureColumns = async ({ send, scene }) => {
   const failures = [];
   for (const width of COLUMN_WIDTHS) {
-    await open({ send, scene, width, zoom: 1 });
+    await open({ send, scene, width, zoom: 1, readySelector: COLUMN_ROW_SELECTOR });
     const rows = await run(send, columnEdgesProbe, {
       names: COLUMN_NAMES,
       selector: COLUMN_ROW_SELECTOR,
@@ -663,34 +685,10 @@ const measureUpdatePill = async ({ send, scene }) => {
 
 const measureInbox = async ({ send, width }) => {
   const failures = [];
-  await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-inbox-key]' });
-  const wrapped = await run(send, wrappedAges, null);
-  if (wrapped.length > 0) {
-    failures.push({ scene: 'inbox', width, check: 'task age wraps', wrapped });
-  }
-  return { failures, wraps: wrapped.length };
-};
-
-const measureLongBranches = async ({ send, width }) => {
-  const scene = 'overview-long-branches';
-  const failures = [];
-  await open({
-    send,
-    scene,
-    width,
-    zoom: 1,
-    readySelector: '[data-testid="project-mount-branch-cell"]',
-  });
-  const overlaps = await run(send, branchCellOverlaps, null);
-  if (overlaps.length > 0) {
-    failures.push({
-      scene,
-      width,
-      check: 'branch runs under the put on branch button',
-      overlaps,
-    });
-  }
-  return { failures, wraps: 0 };
+  await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-list-grid-row]' });
+  const ages = await run(send, wrappedAges, null);
+  failures.push(...inboxAgeFailures({ width, ages }));
+  return { failures, wraps: ages.wrapped.length };
 };
 
 const measurePlanDrawer = async ({ send, scene, until }) => {
@@ -804,14 +802,14 @@ const measureMenuRows = async ({ send, scene }) => {
     scene,
     width: WIDTHS[0],
     zoom: 1,
-    readySelector: 'body',
+    readySelector: '#root > *',
     settleMs: MENU_SCENE_SETTLE_MS,
   });
   const probe = await run(send, menuRowsProbe, MENU_PROBE_PARAMS);
   console.log(
     `${scene}: ${probe.tested} of ${probe.total} menu triggers opened in ${Date.now() - startedAt}ms`,
   );
-  return { failures: menuRowsFailures({ scene, probe }), wraps: 0 };
+  return { failures: menuRowsFailures({ scene, probe }), wraps: 0, tested: probe.tested };
 };
 
 const measureFrame = async ({ send, entry }) => {
@@ -842,6 +840,70 @@ const measureFrame = async ({ send, entry }) => {
   return { failures, wraps: 0 };
 };
 
+const LAYER_SETTLE_MS = 800;
+const LAYER_KEY_PAUSE_MS = 40;
+const LAYER_WHEEL_PAUSE_MS = 120;
+
+const pressTab = async ({ send }) => {
+  for (const type of ['rawKeyDown', 'keyUp']) {
+    await send('Input.dispatchKeyEvent', {
+      type,
+      key: 'Tab',
+      code: 'Tab',
+      windowsVirtualKeyCode: 9,
+    });
+  }
+  await pause(LAYER_KEY_PAUSE_MS);
+};
+
+const measureLayer = async ({ send, entry, isAdvisory }) => {
+  await open({
+    send,
+    scene: entry.scene,
+    width: LAYER_WIDTH,
+    zoom: 1,
+    readySelector: entry.layer,
+    settleMs: LAYER_SETTLE_MS,
+  });
+  const layer = await run(send, layerProbe, { selector: entry.layer, mode: 'measure' });
+  let moves = [];
+  if (layer !== null && entry.isWheelChecked) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: layer.backdrop.x,
+      y: layer.backdrop.y,
+      deltaX: 0,
+      deltaY: LAYER_WHEEL_DELTA,
+    });
+    await pause(LAYER_WHEEL_PAUSE_MS);
+    const after = await run(send, layerProbe, { selector: entry.layer, mode: 'scroll' });
+    moves =
+      after === null ? [] : layerScrollMoves({ before: layer.scrollers, after: after.scrollers });
+  }
+  const tabs = [];
+  if (layer !== null && entry.isModal) {
+    const presses = Math.min(layer.focusables + 2, LAYER_MAX_TABS);
+    for (let press = 0; press < presses; press += 1) {
+      await pressTab({ send });
+      tabs.push(await run(send, layerProbe, { selector: entry.layer, mode: 'focus' }));
+    }
+  }
+  const found = layerFailures({ entry, measured: { layer, tabs, moves } });
+  console.log(
+    `${entry.scene}: ${entry.label}, ${tabs.length} Tab presses, ${found.length} layer ${
+      isAdvisory ? 'advisories' : 'failures'
+    }`,
+  );
+  console.log(`  focus path: ${tabs.map((tab) => `${tab.tag}:${tab.name}`).join(' > ')}`);
+  if (isAdvisory) {
+    for (const failure of found) {
+      console.warn(`layers advisory: ${JSON.stringify(failure)}`);
+    }
+    return { failures: [], wraps: 0 };
+  }
+  return { failures: found, wraps: 0 };
+};
+
 const frameEntries = ({ only: filter }) => {
   if (filter !== undefined && !filter.startsWith('frames')) {
     return [];
@@ -868,19 +930,59 @@ const menuScenes = ({ only: filter }) => {
   return ids.filter((id) => wanted.includes(id));
 };
 
+const readyOnly = async () => {
+  const session = await browser();
+  try {
+    await warmUp({ send: session.send });
+  } finally {
+    await session.close();
+  }
+  console.log('chrome ready');
+};
+
+const reportOutcome = ({ failures, crash, startedAt }) => {
+  const scenes = failingScenes({ failures, error: crash });
+  console.log(summaryLine({ scenes, crash }));
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    for (const line of annotationLines({ failures, crash })) {
+      console.log(line);
+    }
+  }
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    appendFileSync(
+      process.env.GITHUB_STEP_SUMMARY,
+      summaryMarkdown({ scenes, crash, durationMs: Date.now() - startedAt }),
+    );
+  }
+};
+
 const main = async () => {
+  if (process.argv.includes('--ready-only')) {
+    await readyOnly();
+    return;
+  }
+  const startedAt = Date.now();
   const failures = [];
   let crash = null;
+  let menuTriggers = 0;
   const session = await browser();
   const { send } = session;
   const measure = async ({ scene, task }) => {
-    const outcome = await measureScene({ scene, task });
-    failures.push(...outcome.failures);
-    return outcome;
+    try {
+      const outcome = await measureScene({ scene, task });
+      failures.push(...outcome.failures);
+      return outcome;
+    } catch (error) {
+      if (!(error instanceof SceneNotReadyError)) throw error;
+      failures.push(notReadyFailure({ error }));
+      return { failures: [], wraps: 0 };
+    }
   };
   try {
     await warmUp({ send });
-    for (const scene of only === undefined ? ['activity-run', 'activity-resolves'] : []) {
+    for (const scene of only === undefined || only === 'core'
+      ? ['activity-log', 'activity-kinds-light']
+      : []) {
       await measure({ scene, task: () => measureActivity({ send, scene }) });
     }
     for (const scene of only === undefined || only === 'columns' ? COLUMN_SCENES : []) {
@@ -900,16 +1002,12 @@ const main = async () => {
     if (only === undefined || only === 'chat') {
       await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });
     }
-    for (const width of only === undefined ? WIDTHS : []) {
+    for (const width of only === undefined || only === 'core' ? WIDTHS : []) {
       const inbox = await measure({
         scene: 'inbox',
         task: () => measureInbox({ send, width }),
       });
-      await measure({
-        scene: 'overview-long-branches',
-        task: () => measureLongBranches({ send, width }),
-      });
-      console.log(`inbox and overview-long-branches at ${width}: ${inbox.wraps} wraps`);
+      console.log(`inbox at ${width}: ${inbox.wraps} wraps`);
     }
     for (const { scene, until } of only === undefined || only === 'plan-drawer'
       ? PLAN_DRAWER_SCENES
@@ -930,18 +1028,35 @@ const main = async () => {
         task: () => measureConfirmPopover({ send, variant }),
       });
     }
+    for (const entry of only === undefined || only === 'layers' ? LAYER_SCENES : []) {
+      await measure({
+        scene: entry.scene,
+        task: () => measureLayer({ send, entry, isAdvisory: only !== 'layers' }),
+      });
+    }
     for (const entry of frameEntries({ only })) {
       await measure({ scene: entry.scene, task: () => measureFrame({ send, entry }) });
     }
-    for (const scene of menuScenes({ only })) {
-      await measure({ scene, task: () => measureMenuRows({ send, scene }) });
+    const sweptMenuScenes = menuScenes({ only });
+    for (const scene of sweptMenuScenes) {
+      const outcome = await measure({ scene, task: () => measureMenuRows({ send, scene }) });
+      menuTriggers += outcome.tested ?? 0;
+    }
+    if (sweptMenuScenes.length > 1 && menuTriggers === 0) {
+      failures.push(
+        ...unmeasuredFailures({
+          scene: 'menus',
+          subject: 'menu triggers',
+          count: menuTriggers,
+        }),
+      );
     }
   } catch (error) {
     crash = error;
   } finally {
     await session.close();
   }
-  console.log(summaryLine({ scenes: failingScenes({ failures, error: crash }) }));
+  reportOutcome({ failures, crash, startedAt });
   if (failures.length > 0) {
     console.error(JSON.stringify(failures, null, 2));
     console.error(`validate-scenes failed: ${failures.length} checks`);

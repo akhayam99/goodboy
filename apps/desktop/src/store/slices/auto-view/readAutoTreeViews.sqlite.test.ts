@@ -11,8 +11,13 @@ import { insertTurnEvent } from '@goodboy/db';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { autoGroupOf } from '../../../features/auto/autoGroupOf';
 import { autoRetryTargetsOf } from '../../../features/auto/autoRetryTargetsOf';
-import { batchInput, childInput, makeAutoWorld, type AutoWorld } from '../auto/testing/autoWorld';
-import { addOutboxRow } from '../auto/testing/deliveryWorld';
+import {
+  batchInput,
+  childInput,
+  makeAutoWorld,
+  type AutoWorld,
+} from '../../runtime/auto/testing/autoWorld';
+import { addOutboxRow } from '../../runtime/auto/testing/deliveryWorld';
 import { readAutoTreeViews } from './readAutoTreeViews';
 import { sameAutoTreeViews } from './sameAutoTreeViews';
 

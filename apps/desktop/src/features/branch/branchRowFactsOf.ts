@@ -1,8 +1,8 @@
 import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { MountPullRequestProvider, PrCheckRun } from '@goodboy/types';
 import type { MountRequestView } from '../../store/slices/project-mounts/mountRowModel';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
-import { pullRequestKindOf } from '../../shared/pullRequestKind';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
+import { pullRequestKindOf } from '../../shared/utils/pullRequestKind';
 import { countSlotText } from '../../shared/utils/countSlotText';
 import { checksCountsOf, type ChecksCounts } from '../integrations/github/checksRollup';
 import { pullRequestStateWordOf } from './pullRequestStateWordOf';

@@ -186,6 +186,7 @@ describe('sendTurn workflow turn breaker', () => {
         kind: 'error',
         severity: 'warning',
         title: expect.stringContaining('Run halted'),
+        body: `The run sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you. Goodboy stopped it. Open the agent to continue.`,
         sessionId: SESSION_ID,
       }),
     );

@@ -102,7 +102,7 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
       return {
         ...quiet({
           word: `${report.ahead} ahead`,
-          tooltip: `Local ${base} has ${plural({ count: report.ahead, noun: 'commit' })} that ${upstream} does not. Nothing to pull.`,
+          tooltip: `Local ${base} has ${plural({ count: report.ahead, noun: 'commit' })} that ${upstream} doesn't. Nothing to pull.`,
           tone: 'muted',
         }),
         glyph: 'ahead',
@@ -146,7 +146,7 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
     case 'missing':
       return quiet({
         word: 'Folder missing',
-        tooltip: 'Goodboy cannot reach this folder.',
+        tooltip: "Goodboy can't reach this folder.",
         tone: 'danger',
       });
     default: {

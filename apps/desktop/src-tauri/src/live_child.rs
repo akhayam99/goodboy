@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::Read;
-use std::process::Child;
+use std::process::{Child, ChildStderr, ChildStdout, Command};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, RecvTimeoutError};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 
 use crate::proc::ledger::{self, LedgerContext};
 use crate::proc::reap::{reap, tree_cpu, ReapParams, StoppedProcess};
+use crate::proc::spawn::{spawn_command, take_pipes, StdinMode};
+use crate::util::lock_or_recover;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IdlePolicy {
@@ -147,17 +149,150 @@ pub fn anonymous_key(prefix: &str) -> String {
     format!("{prefix}-{next}")
 }
 
-pub fn register(registry: &LiveChildRegistry, key: &str, live: &LiveChild) {
-    if let Ok(mut map) = registry.lock() {
-        map.insert(key.to_string(), live.clone());
+pub struct Spawned {
+    pub live: LiveChild,
+    pub stdout: ChildStdout,
+    pub stderr: ChildStderr,
+}
+
+pub struct SpawnTaggedParams<'a> {
+    pub command: &'a mut Command,
+    pub tag: &'a crate::aux_spawn::SpawnTag,
+    pub prompt: Option<String>,
+    pub session_id: Option<String>,
+    pub mount_path: Option<String>,
+}
+
+pub fn spawn_tagged(params: SpawnTaggedParams<'_>) -> std::io::Result<Spawned> {
+    let (spawned, ()) = spawn_tagged_with(params, |command, stdin| {
+        spawn_command(command, stdin).map(|child| (child, ()))
+    })?;
+    Ok(spawned)
+}
+
+pub fn spawn_tagged_with<X, E, L>(
+    SpawnTaggedParams {
+        command,
+        tag,
+        prompt,
+        session_id,
+        mount_path,
+    }: SpawnTaggedParams<'_>,
+    launch: L,
+) -> Result<(Spawned, X), E>
+where
+    E: From<std::io::Error>,
+    L: FnOnce(&mut Command, StdinMode) -> Result<(Child, X), E>,
+{
+    let stdin = StdinMode::for_prompt(prompt.as_deref());
+    let (child, extra) = launch(command, stdin)?;
+    let mut pipes = take_pipes(child)?;
+    if let Some(prompt) = prompt {
+        crate::providers::cli_args::feed_stdin(&mut pipes.child, prompt);
     }
+    let live = LiveChild::tagged(
+        pipes.child,
+        tag,
+        LedgerContext {
+            session_id,
+            mount_path,
+            ..LedgerContext::from_command(command)
+        },
+    );
+    let spawned = Spawned {
+        live,
+        stdout: pipes.stdout,
+        stderr: pipes.stderr,
+    };
+    Ok((spawned, extra))
+}
+
+pub const MAX_SIDE_JOB_STDOUT_BYTES: usize = 16 * 1024 * 1024;
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct SideJobOutput {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: Option<i32>,
+    pub is_timed_out: bool,
+}
+
+pub struct RunSideJobParams<'a> {
+    pub registry: &'a LiveChildRegistry,
+    pub kind: crate::aux_spawn::SpawnKind,
+    pub binary: &'a str,
+    pub cli_args: &'a [String],
+    pub working_dir: Option<&'a str>,
+    pub prompt: Option<String>,
+    pub run_id: Option<&'a str>,
+    pub idle: IdlePolicy,
+    pub max_stdout_bytes: usize,
+}
+
+pub fn run_side_job(
+    RunSideJobParams {
+        registry,
+        kind,
+        binary,
+        cli_args,
+        working_dir,
+        prompt,
+        run_id,
+        idle,
+        max_stdout_bytes,
+    }: RunSideJobParams<'_>,
+) -> std::io::Result<SideJobOutput> {
+    let mut command = crate::path_env::command(binary);
+    crate::aux_spawn::scrub_nested_session_env(&mut command);
+    let tag = crate::aux_spawn::tag_spawn(&mut command, kind);
+    crate::process_group::isolate(&mut command);
+    if let Some(dir) = working_dir.filter(|dir| !dir.is_empty()) {
+        command.current_dir(dir);
+    }
+    command.args(cli_args);
+    let Spawned {
+        live,
+        stdout,
+        stderr,
+    } = spawn_tagged(SpawnTaggedParams {
+        command: &mut command,
+        tag: &tag,
+        prompt,
+        session_id: None,
+        mount_path: None,
+    })?;
+
+    let key = run_id
+        .map(str::to_string)
+        .unwrap_or_else(|| anonymous_key(kind.as_str()));
+    register(registry, &key, &live);
+
+    let stdout_activity = live.activity.clone();
+    let stderr_activity = live.activity.clone();
+    let stdout_handle =
+        std::thread::spawn(move || drain_tail_active(stdout, max_stdout_bytes, &stdout_activity));
+    let stderr_handle =
+        std::thread::spawn(move || drain_tail_active(stderr, MAX_STDERR_BYTES, &stderr_activity));
+    let ((stdout, stderr), exited) = run_to_exit(&live, registry, &key, Some(idle), || {
+        (
+            stdout_handle.join().unwrap_or_default(),
+            stderr_handle.join().unwrap_or_default(),
+        )
+    });
+    Ok(SideJobOutput {
+        stdout,
+        stderr,
+        exit_code: exited.code,
+        is_timed_out: exited.is_timed_out,
+    })
+}
+
+pub fn register(registry: &LiveChildRegistry, key: &str, live: &LiveChild) {
+    lock_or_recover(registry).insert(key.to_string(), live.clone());
 }
 
 pub fn kill_one(registry: &LiveChildRegistry, key: &str) -> bool {
-    let live = match registry.lock() {
-        Ok(map) => map.get(key).cloned(),
-        Err(_) => return false,
-    };
+    let live = lock_or_recover(registry).get(key).cloned();
     let Some(live) = live else {
         return false;
     };
@@ -166,10 +301,10 @@ pub fn kill_one(registry: &LiveChildRegistry, key: &str) -> bool {
 }
 
 pub fn shutdown(registry: &LiveChildRegistry) {
-    let drained: Vec<LiveChild> = match registry.lock() {
-        Ok(mut map) => map.drain().map(|(_, live)| live).collect(),
-        Err(_) => return,
-    };
+    let drained: Vec<LiveChild> = lock_or_recover(registry)
+        .drain()
+        .map(|(_, live)| live)
+        .collect();
     std::thread::scope(|scope| {
         for live in &drained {
             scope.spawn(move || live.terminate_now());
@@ -206,16 +341,12 @@ pub fn wait_and_remove(live: &LiveChild, registry: &LiveChildRegistry, key: &str
     if let Some(spawn_id) = live.spawn_id.as_deref() {
         ledger::forget(spawn_id);
     }
-    if let Ok(mut map) = registry.lock() {
-        map.remove(key);
-    }
+    lock_or_recover(registry).remove(key);
     exited
 }
 
 fn wait_and_reap(live: &LiveChild) -> Exited {
-    let Ok(mut guard) = live.slot.lock() else {
-        return Exited::default();
-    };
+    let mut guard = lock_or_recover(&live.slot);
     let Some(child) = guard.as_mut() else {
         return Exited::default();
     };
@@ -295,29 +426,6 @@ pub fn run_to_exit<R>(
     })
 }
 
-fn read_to_end_touching<R: Read>(mut source: R, activity: Option<&Activity>) -> Vec<u8> {
-    let mut buf = Vec::new();
-    let mut chunk = [0u8; 8192];
-    loop {
-        match source.read(&mut chunk) {
-            Ok(0) => break,
-            Ok(read) => {
-                buf.extend_from_slice(&chunk[..read]);
-                if let Some(activity) = activity {
-                    activity.touch();
-                }
-            }
-            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
-            Err(_) => break,
-        }
-    }
-    buf
-}
-
-pub fn drain_lossy_active<R: Read>(source: R, activity: &Activity) -> String {
-    String::from_utf8_lossy(&read_to_end_touching(source, Some(activity))).into_owned()
-}
-
 pub const MAX_STDERR_BYTES: usize = 256 * 1024;
 
 pub fn drain_tail_lossy<R: Read>(source: R, max_bytes: usize) -> String {
@@ -343,7 +451,7 @@ fn drain_tail_with<R: Read>(
                 if let Some(activity) = activity {
                     activity.touch();
                 }
-                if tail.len() > max_bytes {
+                if tail.len() > max_bytes.saturating_mul(2) {
                     let excess = tail.len() - max_bytes;
                     tail.drain(..excess);
                 }
@@ -351,6 +459,10 @@ fn drain_tail_with<R: Read>(
             Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
             Err(_) => break,
         }
+    }
+    if tail.len() > max_bytes {
+        let excess = tail.len() - max_bytes;
+        tail.drain(..excess);
     }
     String::from_utf8_lossy(&tail).into_owned()
 }
@@ -470,8 +582,8 @@ mod tests {
         let err_activity = live.activity.clone();
         let pump = move || {
             std::thread::scope(|scope| {
-                let out = scope.spawn(|| drain_lossy_active(stdout, &out_activity));
-                let err = scope.spawn(|| drain_lossy_active(stderr, &err_activity));
+                let out = scope.spawn(|| drain_tail_active(stdout, usize::MAX, &out_activity));
+                let err = scope.spawn(|| drain_tail_active(stderr, usize::MAX, &err_activity));
                 (
                     out.join().unwrap_or_default(),
                     err.join().unwrap_or_default(),
@@ -712,5 +824,191 @@ mod tests {
         let mut bystander = bystander;
         let _ = bystander.kill();
         let _ = bystander.wait();
+    }
+
+    fn poisoned_registry() -> LiveChildRegistry {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let held = Arc::clone(&registry);
+        let _ = std::thread::spawn(move || {
+            let _guard = held.lock().expect("lock");
+            panic!("poison the registry");
+        })
+        .join();
+        assert!(registry.is_poisoned());
+        registry
+    }
+
+    #[test]
+    fn a_poisoned_registry_still_tracks_and_kills_the_child() {
+        let registry = poisoned_registry();
+        let live = register_sleeping(&registry, "run-poison");
+        let waiter = spawn_waiter(&registry, "run-poison", &live);
+
+        assert!(kill_one(&registry, "run-poison"));
+
+        assert_waiter_returns(
+            waiter,
+            Duration::from_secs(2),
+            "a poisoned registry left the child running",
+        );
+        assert!(lock_or_recover(&registry).is_empty());
+    }
+
+    #[test]
+    fn a_poisoned_registry_still_shuts_every_child_down() {
+        let registry = poisoned_registry();
+        let live = register_sleeping(&registry, "run-poison-1");
+        let waiter = spawn_waiter(&registry, "run-poison-1", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            Duration::from_secs(2),
+            "shutdown skipped a child behind a poisoned registry",
+        );
+    }
+
+    fn side_job(registry: &LiveChildRegistry, script: &str, run_id: Option<&str>, cap: usize) {
+        let cli_args = vec!["-c".to_string(), script.to_string()];
+        let output = run_side_job(RunSideJobParams {
+            registry,
+            kind: crate::aux_spawn::SpawnKind::Planner,
+            binary: "/bin/sh",
+            cli_args: &cli_args,
+            working_dir: None,
+            prompt: None,
+            run_id,
+            idle: quick_policy(60_000),
+            max_stdout_bytes: cap,
+        })
+        .expect("the side job runs");
+        assert_eq!(output.exit_code, Some(0));
+        assert!(output.stdout.len() <= cap);
+    }
+
+    #[test]
+    fn a_side_job_keeps_only_the_tail_of_a_flood() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let cli_args = vec![
+            "-c".to_string(),
+            "i=0; while [ $i -lt 2000 ]; do echo 0123456789abcdef0123456789abcdef; i=$((i+1)); done; echo last".to_string(),
+        ];
+
+        let output = run_side_job(RunSideJobParams {
+            registry: &registry,
+            kind: crate::aux_spawn::SpawnKind::Planner,
+            binary: "/bin/sh",
+            cli_args: &cli_args,
+            working_dir: None,
+            prompt: None,
+            run_id: None,
+            idle: quick_policy(60_000),
+            max_stdout_bytes: 1024,
+        })
+        .expect("the side job runs");
+
+        assert_eq!(output.exit_code, Some(0));
+        assert!(output.stdout.len() <= 1024);
+        assert!(output.stdout.ends_with("last\n"));
+        assert!(lock_or_recover(&registry).is_empty());
+    }
+
+    #[test]
+    fn a_side_job_caps_a_flood_on_stderr_too() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let cli_args = vec![
+            "-c".to_string(),
+            "i=0; while [ $i -lt 20000 ]; do echo 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef >&2; i=$((i+1)); done".to_string(),
+        ];
+
+        let output = run_side_job(RunSideJobParams {
+            registry: &registry,
+            kind: crate::aux_spawn::SpawnKind::Summary,
+            binary: "/bin/sh",
+            cli_args: &cli_args,
+            working_dir: None,
+            prompt: None,
+            run_id: None,
+            idle: quick_policy(60_000),
+            max_stdout_bytes: 1024,
+        })
+        .expect("the side job runs");
+
+        assert!(output.stderr.len() <= MAX_STDERR_BYTES);
+        assert!(output.stderr.len() > 1024);
+    }
+
+    #[test]
+    fn a_side_job_runs_under_the_run_id_it_was_given() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let runner_registry = Arc::clone(&registry);
+        let runner = std::thread::spawn(move || {
+            side_job(&runner_registry, "sleep 30", Some("plan-1"), 1024);
+        });
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !lock_or_recover(&registry).contains_key("plan-1") {
+            assert!(Instant::now() < deadline, "the run never registered");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+
+        assert!(kill_one(&registry, "plan-1"));
+
+        let _ = runner.join();
+        assert!(lock_or_recover(&registry).is_empty());
+    }
+
+    #[test]
+    fn a_side_job_without_a_prompt_has_dev_null_on_fd_zero() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let cli_args = vec![
+            "-e".to_string(),
+            r#"my @in = stat(STDIN); my @null = stat("/dev/null"); print(($in[1] == $null[1] && $in[6] == $null[6]) ? "null" : "other");"#.to_string(),
+        ];
+
+        let output = run_side_job(RunSideJobParams {
+            registry: &registry,
+            kind: crate::aux_spawn::SpawnKind::Summary,
+            binary: "/usr/bin/perl",
+            cli_args: &cli_args,
+            working_dir: None,
+            prompt: None,
+            run_id: None,
+            idle: quick_policy(60_000),
+            max_stdout_bytes: 1024,
+        })
+        .expect("the side job runs");
+
+        assert_eq!(output.stdout, "null");
+    }
+
+    #[test]
+    fn a_tagged_spawn_without_a_prompt_has_dev_null_on_fd_zero() {
+        use crate::aux_spawn::{tag_spawn, SpawnKind};
+        let mut command = std::process::Command::new("/usr/bin/perl");
+        command.args([
+            "-e",
+            r#"my @in = stat(STDIN); my @null = stat("/dev/null"); print(($in[1] == $null[1] && $in[6] == $null[6]) ? "null" : "other");"#,
+        ]);
+        let tag = tag_spawn(&mut command, SpawnKind::Turn);
+        crate::process_group::isolate(&mut command);
+        command.stdin(std::process::Stdio::piped());
+
+        let Spawned { live, stdout, .. } = spawn_tagged(SpawnTaggedParams {
+            command: &mut command,
+            tag: &tag,
+            prompt: None,
+            session_id: None,
+            mount_path: None,
+        })
+        .expect("spawn the probe");
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        register(&registry, "turn-fd0", &live);
+        let (report, exited) = run_to_exit(&live, &registry, "turn-fd0", None, || {
+            drain_tail_lossy(stdout, 64)
+        });
+
+        assert_eq!(exited.code, Some(0));
+        assert_eq!(report, "null");
     }
 }

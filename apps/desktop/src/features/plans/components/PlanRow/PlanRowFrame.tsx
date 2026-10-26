@@ -17,7 +17,7 @@ export const PlanRowFrame = ({ children, trailing, below = null, testId = 'plan-
       data-testid={testId}
       data-span="column"
       className={cn(
-        'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-md border py-1 pl-3 pr-2 text-label',
+        'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-md border py-1 pl-3 pr-2 text-meta',
         planTint.bgSoft,
         planTint.borderSoft,
       )}

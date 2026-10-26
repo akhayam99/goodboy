@@ -1,7 +1,7 @@
-import { ArrowUp } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
 import { DeliveryActions } from '../../../../../shared/components/DeliveryActions';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { SendStopControl } from '../../../../../shared/components/SendStopControl';
+
+import type { StopPhase } from '../../../../../shared/hooks/useAgentStop';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
 type Props = {
@@ -10,6 +10,9 @@ type Props = {
   readonly sendDisabledTitle?: string;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
+  readonly stopPhase?: StopPhase;
+  readonly isStopArmed?: boolean;
+  readonly onStop?: () => void;
 };
 
 export const SendControl = ({
@@ -18,32 +21,38 @@ export const SendControl = ({
   sendDisabledTitle,
   onSend,
   onSendNow,
+  stopPhase = 'idle',
+  isStopArmed = false,
+  onStop,
 }: Props) => {
   if (isRunning) {
     return (
-      <DeliveryActions
-        canSend={canSend}
-        readNowLabel="Send now"
-        readNowHint="Stop the turn and read this now"
-        queueKeys={formatCombo('Enter')}
-        readNowKeys={shortcutGlyphs('composer.submit')}
-        onQueue={onSend}
-        onReadNow={onSendNow}
-      />
+      <>
+        {onStop === undefined ? null : (
+          <SendStopControl
+            canSend={canSend}
+            stop={{
+              isStopping: stopPhase === 'stopping',
+              isStalled: stopPhase === 'stalled',
+              isArmed: isStopArmed,
+              shortcut: 'agent.stop',
+              onStop,
+            }}
+            onSend={onSend}
+          />
+        )}
+        <DeliveryActions
+          canSend={canSend}
+          readNowLabel="Send now"
+          readNowHint="Stop the turn and read this now"
+          queueKeys={formatCombo('Enter')}
+          readNowKeys={shortcutGlyphs('composer.submit')}
+          onQueue={onSend}
+          onReadNow={onSendNow}
+        />
+      </>
     );
   }
 
-  return (
-    <Tooltip content={sendDisabledTitle ?? 'Send (enter)'}>
-      <button
-        type="button"
-        onClick={onSend}
-        disabled={!canSend}
-        aria-label="Send message"
-        className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-on-tone shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-      >
-        <ArrowUp size={ICON_SIZE.control} aria-hidden />
-      </button>
-    </Tooltip>
-  );
+  return <SendStopControl canSend={canSend} disabledReason={sendDisabledTitle} onSend={onSend} />;
 };

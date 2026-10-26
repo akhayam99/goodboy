@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import type { PrMergeMethod } from '@goodboy/types';
+import { PullRequestPortError, STALE_HEAD_MESSAGE } from '../pullRequestPort';
 import type {
   GitlabApprovalsPayload,
   GitlabChecksPayload,
@@ -118,6 +119,7 @@ export type TransportOverrides = Partial<{
   users: ReadonlyArray<GitlabPersonPayload>;
   writeError: Error;
   readError: Error;
+  headNow: string;
 }>;
 
 export type FakeTransport = Readonly<{
@@ -125,6 +127,7 @@ export type FakeTransport = Readonly<{
   updates: Array<Parameters<GitlabPullRequestTransport['updateMergeRequest']>[0]>;
   states: Array<'close' | 'reopen'>;
   merges: Array<PrMergeMethod>;
+  mergeHeads: Array<string | null>;
   searches: Array<string>;
 }>;
 
@@ -132,6 +135,7 @@ export const fakeGitlabTransport = (overrides: TransportOverrides = {}): FakeTra
   const updates: FakeTransport['updates'] = [];
   const states: FakeTransport['states'] = [];
   const merges: FakeTransport['merges'] = [];
+  const mergeHeads: FakeTransport['mergeHeads'] = [];
   const searches: FakeTransport['searches'] = [];
   const fail = (error: Error | undefined): void => {
     if (error !== undefined) {
@@ -159,9 +163,21 @@ export const fakeGitlabTransport = (overrides: TransportOverrides = {}): FakeTra
       fail(overrides.writeError);
       states.push(stateEvent);
     }),
-    merge: vi.fn(async ({ method }) => {
+    merge: vi.fn(async ({ method, expectedHeadSha }) => {
       fail(overrides.writeError);
+      if (
+        expectedHeadSha !== null &&
+        overrides.headNow !== undefined &&
+        expectedHeadSha !== overrides.headNow
+      ) {
+        throw new PullRequestPortError({
+          kind: 'stale_head',
+          message: STALE_HEAD_MESSAGE,
+          details: 'SHA does not match HEAD of source branch',
+        });
+      }
       merges.push(method);
+      mergeHeads.push(expectedHeadSha);
     }),
     cancelAutoMerge: vi.fn(async () => {
       fail(overrides.writeError);
@@ -172,5 +188,5 @@ export const fakeGitlabTransport = (overrides: TransportOverrides = {}): FakeTra
       return overrides.users ?? [KENJI, PRIYA, OMAR];
     }),
   };
-  return { transport, updates, states, merges, searches };
+  return { transport, updates, states, merges, mergeHeads, searches };
 };

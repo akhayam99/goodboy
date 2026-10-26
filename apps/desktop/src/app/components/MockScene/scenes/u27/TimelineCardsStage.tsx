@@ -187,7 +187,7 @@ const SOURCE: WorkTimeSource = {
 };
 
 const TRIGGER_CLASSES =
-  'inline-flex h-7 items-center justify-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground';
+  'inline-flex h-7 items-center justify-center gap-2 rounded-md border border-border-soft px-2 text-meta text-muted-foreground';
 
 export const TimelineCardsStage = () => (
   <WorkTimeContext.Provider value={SOURCE}>

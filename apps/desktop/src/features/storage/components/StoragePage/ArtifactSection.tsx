@@ -2,11 +2,12 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Band,
   Button,
-  STRIPED_BLOCK_LIST,
-  STRIPED_MIN_ROWS,
+  cn,
+  ICON_SIZE,
   SectionHeader,
   SegmentedTabs,
-  cn,
+  STRIPED_BLOCK_LIST,
+  STRIPED_MIN_ROWS,
   type SegmentedTabOption,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -16,11 +17,11 @@ import {
 } from '../../../../store/slices/storage/classifyStorageArtifact';
 import type { ArtifactId } from '@goodboy/types';
 import type { StorageArtifactFilter, StorageScope } from '../../../../store/slices/storage/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
-import { useStorageSummary } from '../../useStorageSummary';
+import { useStorageSummary } from '../../hooks/useStorageSummary';
 import { ArtifactBulkDeleteBar } from './ArtifactBulkDeleteBar';
 import { ArtifactColumns } from './ArtifactColumns';
 import { ArtifactRow } from './ArtifactRow';
@@ -30,7 +31,7 @@ const VISIBLE_ROWS = 8;
 
 const EMPTY_COPY = {
   review: 'Nothing to review. Every artifact of a deleted session is kept.',
-  kept: 'You are not keeping any artifact.',
+  kept: "You aren't keeping any artifact.",
 } as const satisfies Record<StorageArtifactFilter, string>;
 
 const ReportIcon = CONCEPT_ICONS.report;
@@ -153,7 +154,7 @@ export const ArtifactSection = ({ scope }: Props) => {
       />
       <Band>
         {shown.length === 0 ? (
-          <p className="px-2 py-2 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
+          <p className="px-2 py-2 text-meta text-muted-foreground">{EMPTY_COPY[filter]}</p>
         ) : (
           <div className="@container flex flex-col">
             <ArtifactColumns />

@@ -1,26 +1,38 @@
 import { useState } from 'react';
-import { STRIPED_BLOCK_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, STRIPED_BLOCK_LIST, STRIPED_MIN_ROWS } from '@goodboy/ui';
 import { ChevronRight, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import type { TerminalTab } from '../../../../shared/types/terminal';
+import type { StorageFolderTerminals } from '../../../../store/slices/storage/types';
 import type { StorageFolderGroup } from '../../groupStorageFolders';
 import { WorktreeRow } from './WorktreeRow';
 import type { ToggleFolder } from './types';
 
 const VISIBLE_ROWS = 4;
 
+const NO_TERMINALS: ReadonlyArray<TerminalTab> = [];
+
 type Props = {
   readonly group: StorageFolderGroup;
   readonly now: number;
   readonly suggestAfterDays: number;
   readonly selected: ReadonlySet<string>;
+  readonly terminals: StorageFolderTerminals;
   readonly onToggle: ToggleFolder;
 };
 
 const RepoIcon = CONCEPT_ICONS.projectRepo;
 
-export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle }: Props) => {
+export const WorktreeGroup = ({
+  group,
+  now,
+  suggestAfterDays,
+  selected,
+  terminals,
+  onToggle,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const removing = useAppStore((state) => state.storageRemovingPaths);
   const measuringPath = useAppStore((state) => state.storageMeasuringPath);
@@ -28,7 +40,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
   const hidden = group.folders.length - visible.length;
   return (
     <div role="group" aria-label={group.root.projectName} className="flex flex-col">
-      <div className="flex h-8 items-center gap-2 px-2 text-label font-semibold text-foreground">
+      <div className="flex h-8 items-center gap-2 px-2 text-meta font-semibold text-foreground">
         <RepoIcon size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         <span className="truncate">{group.root.projectName}</span>
         {group.root.workspaceName === null ? null : (
@@ -58,6 +70,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
             isSelected={selected.has(folder.path)}
             isRemoving={removing[folder.path] === true}
             isMeasuring={measuringPath === folder.path}
+            terminals={terminals.get(folder.path) ?? NO_TERMINALS}
             onToggle={onToggle}
           />
         ))}
@@ -66,7 +79,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground hover:bg-hover"
+          className="flex h-8 items-center gap-2 rounded-md px-2 text-left text-meta text-muted-foreground hover:bg-hover"
         >
           <ChevronRight size={ICON_SIZE.row} aria-hidden />
           Show {hidden} more in {group.root.projectName}

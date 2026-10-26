@@ -25,6 +25,7 @@ export type SessionGitlabMrState = {
   readonly mr: GitlabMergeRequest | null;
   readonly approvals?: GitlabMrApprovalState | null;
   readonly fetchedAt: IsoDateTime | null;
+  readonly failedAt?: IsoDateTime | null;
   readonly loading: boolean;
   readonly error: string | null;
 };
@@ -34,7 +35,7 @@ export type GitlabMrSliceState = {
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
 };
 
-export const initialGitlabMrState: GitlabMrSliceState = {
+export const gitlabMrInitialState: GitlabMrSliceState = {
   mountGitlabMr: {},
   sessionGitlabMr: {},
 };

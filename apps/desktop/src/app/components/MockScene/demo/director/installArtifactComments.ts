@@ -14,17 +14,21 @@ type Params = {
   readonly store: DirectorStore;
 };
 
+type CommentsParams = {
+  readonly comments: ReadonlyArray<ArtifactComment>;
+};
+
 type PatchParams = {
   readonly store: DirectorStore;
   readonly sessionId: SessionId;
-  readonly patch: (comments: ReadonlyArray<ArtifactComment>) => ReadonlyArray<ArtifactComment>;
+  readonly patch: (params: CommentsParams) => ReadonlyArray<ArtifactComment>;
 };
 
 const patchComments = ({ store, sessionId, patch }: PatchParams): void => {
   store.setState((state) => ({
     artifactComments: {
       ...state.artifactComments,
-      [sessionId]: patch(state.artifactComments[sessionId] ?? []),
+      [sessionId]: patch({ comments: state.artifactComments[sessionId] ?? [] }),
     },
   }));
 };
@@ -37,7 +41,7 @@ type StatusParams = {
 
 const withStatus =
   ({ ids, status, at }: StatusParams) =>
-  (comments: ReadonlyArray<ArtifactComment>): ReadonlyArray<ArtifactComment> =>
+  ({ comments }: CommentsParams): ReadonlyArray<ArtifactComment> =>
     comments.map((comment) =>
       ids.has(comment.id) ? { ...comment, status, updatedAt: at } : comment,
     );
@@ -85,7 +89,7 @@ export const installArtifactComments = ({ store }: Params): void => {
       createdAt: at,
       updatedAt: at,
     };
-    patchComments({ store, sessionId, patch: (comments) => [...comments, comment] });
+    patchComments({ store, sessionId, patch: ({ comments }) => [...comments, comment] });
     return id;
   };
   const editArtifactComment: AppStore['editArtifactComment'] = async ({
@@ -97,7 +101,7 @@ export const installArtifactComments = ({ store }: Params): void => {
     patchComments({
       store,
       sessionId,
-      patch: (comments) =>
+      patch: ({ comments }) =>
         comments.map((comment) =>
           comment.id === commentId ? { ...comment, body: body.trim(), updatedAt: at } : comment,
         ),
@@ -111,7 +115,7 @@ export const installArtifactComments = ({ store }: Params): void => {
     patchComments({
       store,
       sessionId,
-      patch: (comments) => comments.filter((comment) => comment.id !== commentId),
+      patch: ({ comments }) => comments.filter((comment) => comment.id !== commentId),
     });
     return true;
   };

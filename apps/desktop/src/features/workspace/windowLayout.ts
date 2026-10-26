@@ -1,4 +1,5 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 import {
@@ -18,9 +19,6 @@ export type WindowLayout = {
   readonly location: Location;
   readonly at: number;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';

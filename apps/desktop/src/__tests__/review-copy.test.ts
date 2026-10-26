@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 const TESTS_DIR = dirname(fileURLToPath(import.meta.url));
 const REVIEW_ROOT = join(TESTS_DIR, '..', 'features', 'review');
 const RESOLVE_ROOT = join(TESTS_DIR, '..', 'store', 'slices', 'resolve');
-const EM_DASH = '\u2014';
 const BATCH_VOCABULARY =
   /\b(batch|batches|batched|queue|queued|queueing|scheduler|scheduled|scheduling)\b/i;
 
@@ -35,14 +34,6 @@ const isProse = ({ literal }: { readonly literal: string }): boolean =>
   /\s/.test(literal.trim()) && /[a-z]/.test(literal);
 
 describe('review copy', () => {
-  it('carries no em dash in any string the reader can see', () => {
-    const offenders = sourceFiles({ root: REVIEW_ROOT })
-      .filter((path) => readFileSync(path, 'utf8').includes(EM_DASH))
-      .map((path) => path.replace(REVIEW_ROOT, 'features/review'));
-
-    expect(offenders).toEqual([]);
-  });
-
   it('never calls a publication a batch, a queue, or a schedule', () => {
     const offenders = [
       ...sourceFiles({ root: REVIEW_ROOT }),

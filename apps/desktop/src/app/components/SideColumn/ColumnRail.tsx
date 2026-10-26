@@ -1,13 +1,14 @@
 import { Plus } from 'lucide-react';
-import { COLLAPSED_RAIL_WIDTH, PANE_RHYTHM, StatusDot, cn } from '@goodboy/ui';
+import { cn, COLLAPSED_RAIL_WIDTH, ICON_SIZE, PANE_RHYTHM } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
 import { hasSessionDraftContent } from '../../../store/slices/sessionDraft/hasSessionDraftContent';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { GoodboyChip } from '../GoodboyChip';
+import { DoorSignalMark } from './DoorSignalMark';
 import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
@@ -82,14 +83,10 @@ export const ColumnRail = ({
                   })}
                   isCurrent={place === door.id}
                   {...(signal !== undefined &&
-                    (signal.isWarning || signal.isUnread) && {
+                    (signal.isWarning || signal.isUnread || signal.tone === 'neutral') && {
                       badge: (
-                        <span
-                          aria-hidden
-                          data-door-signal={signal.isWarning ? 'warning' : 'unread'}
-                          className="absolute right-0.5 top-0.5 flex"
-                        >
-                          <StatusDot tone={signal.isWarning ? 'warning' : 'primary'} size="sm" />
+                        <span className="absolute right-0.5 top-0.5 flex">
+                          <DoorSignalMark signal={signal} />
                         </span>
                       ),
                     })}

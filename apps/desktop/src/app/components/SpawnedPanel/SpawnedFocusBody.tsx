@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
-import { Button, EmptyLine } from '@goodboy/ui';
+import { Button, EmptyLine, ICON_SIZE } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { requestRunAddStep } from '../../../features/workflows/requestRunAddStep';
 import { useAttachedWorkflowRuns } from '../../../features/workflows/useAttachedWorkflowRuns';
 import { openSpawned } from '../../../features/session/openSpawned';

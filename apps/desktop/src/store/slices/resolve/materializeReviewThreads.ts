@@ -23,6 +23,7 @@ export const materializeReviewThreads = async ({
   projectId,
   comments,
   sourceKind = 'github',
+  isCurrent = () => true,
 }: Params): Promise<number> => {
   const threadIds = openReviewThreadIds({ comments });
   if (threadIds.length === 0 || prNumber <= 0) {
@@ -33,6 +34,9 @@ export const materializeReviewThreads = async ({
   const queued = new Set(
     (await listResolveQueueItems({ db, sessionId })).map((entry) => entry.item.threadId),
   );
+  if (!isCurrent()) {
+    return 0;
+  }
   let created = 0;
   for (const threadId of threadIds) {
     if (queued.has(threadId)) {
@@ -42,10 +46,19 @@ export const materializeReviewThreads = async ({
     if (previous !== undefined && (previous.prNumber !== prNumber || previous.state === 'closed')) {
       continue;
     }
+    if (!isCurrent()) {
+      break;
+    }
     const row =
       previous ?? createResolveThread({ sessionId, threadId, projectId, prNumber, sourceKind });
-    if (previous === undefined && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
+    if (
+      previous === undefined &&
+      !(await saveResolveThread({ db, row, expectedRevision: null, isCurrent }))
+    ) {
       continue;
+    }
+    if (!isCurrent()) {
+      break;
     }
     await insertResolveQueueItem({
       db,
@@ -57,13 +70,21 @@ export const materializeReviewThreads = async ({
   if (created === 0) {
     return 0;
   }
-  await loadResolveQueueItemsInto({ set, sessionId });
+  if (!isCurrent()) {
+    return created;
+  }
+  await loadResolveQueueItemsInto({ set, sessionId, isCurrent });
+  const projectedRows = await listResolveThreads({ db, sessionId });
+  const projectedAttempts = await listResolveAttempts({ db, sessionId });
+  if (!isCurrent()) {
+    return created;
+  }
   projectResolveRows({
     set,
     get,
     sessionId,
-    rows: await listResolveThreads({ db, sessionId }),
-    attempts: await listResolveAttempts({ db, sessionId }),
+    rows: projectedRows,
+    attempts: projectedAttempts,
   });
   return created;
 };

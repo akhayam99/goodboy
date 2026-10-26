@@ -50,7 +50,7 @@ import { checksAnalyzeSeed } from '../../../app/components/MockScene/scenes/u24/
 import { BranchChecks } from '../components/BranchChecks';
 import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { analyzeFailingChecks } from './analyzeFailingChecks';
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 import { useSuggestionActions } from '../../suggestions/useSuggestionActions';
 
 let store: StoryStore;

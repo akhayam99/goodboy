@@ -3,6 +3,7 @@ mod auto_child;
 mod cli;
 mod dispatch;
 mod github;
+mod limits;
 pub mod mount;
 pub mod project;
 pub mod protocol;
@@ -18,13 +19,14 @@ use protocol::{
     SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
 };
 
-pub(crate) use auto_child::{spawn_turn, TurnKind, TurnProcess};
+pub(crate) use auto_child::{spawn_turn, SpawnTurnParams, TurnKind, TurnProcess, TurnScope};
 pub(crate) use cli::dispatch as run_cli;
 
 #[cfg(test)]
 pub(crate) use auto_child::{caller_of, kind_of_pid, Caller};
 
-const APP_DIR: &str = ".goodboy";
+#[cfg(test)]
+use crate::app_paths::APP_DIR;
 const SOCKET_DIR: &str = "query";
 const SWEEP_SUFFIX: &str = ".sweep-";
 
@@ -47,9 +49,8 @@ fn socket_pid(file_name: &str) -> Option<u32> {
 fn socket_path() -> Option<&'static Path> {
     SOCKET_PATH
         .get_or_init(|| {
-            dirs::home_dir().map(|home| {
-                home.join(APP_DIR)
-                    .join(SOCKET_DIR)
+            crate::app_paths::data_dir().ok().map(|dir| {
+                dir.join(SOCKET_DIR)
                     .join(socket_file_name(std::process::id()))
             })
         })
@@ -140,11 +141,7 @@ fn is_pid_alive(pid: u32) -> bool {
     if pid == 0 {
         return true;
     }
-    let outcome = unsafe { libc::kill(pid as libc::pid_t, 0) };
-    if outcome == 0 {
-        return true;
-    }
-    std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
+    crate::proc::signal::is_reachable(pid)
 }
 
 #[cfg(unix)]
@@ -295,13 +292,23 @@ pub(crate) fn start(app: tauri::AppHandle) {
             return;
         }
         LISTENING.store(true, Ordering::SeqCst);
+        let slots = std::sync::Arc::new(tokio::sync::Semaphore::new(limits::MAX_CONNECTIONS));
         loop {
             let Ok((stream, _)) = listener.accept().await else {
                 break;
             };
+            if !limits::is_same_user(stream.peer_cred().ok().map(|cred| cred.uid())) {
+                log::warn!("query bridge: refused a connection from another user");
+                continue;
+            }
+            let Some(slot) = limits::acquire_slot(&slots) else {
+                log::warn!("query bridge: refused a connection over the limit");
+                continue;
+            };
             let app = app.clone();
             tauri::async_runtime::spawn(async move {
                 serve_connection(stream, app).await;
+                drop(slot);
             });
         }
         LISTENING.store(false, Ordering::SeqCst);
@@ -320,22 +327,33 @@ pub(crate) fn shutdown() {
 
 #[cfg(unix)]
 async fn serve_connection(stream: tokio::net::UnixStream, app: tauri::AppHandle) {
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    use tokio::io::{AsyncWriteExt, BufReader};
 
-    let caller = auto_child::caller_of(peer_pid(&stream));
+    let peer = auto_child::peer_of(peer_pid(&stream));
     let (reader, mut writer) = stream.into_split();
-    let mut lines = BufReader::new(reader).lines();
-    while let Ok(Some(line)) = lines.next_line().await {
-        if line.trim().is_empty() {
-            continue;
-        }
-        let response = answer(&app, &line, caller).await;
+    let mut reader = BufReader::new(reader);
+    loop {
+        let outcome = limits::read_line(limits::ReadLineParams {
+            reader: &mut reader,
+            max_bytes: limits::MAX_LINE_BYTES,
+            timeout: limits::LINE_TIMEOUT,
+        })
+        .await;
+        let (response, is_final) = match outcome {
+            limits::LineOutcome::Line(line) if line.trim().is_empty() => continue,
+            limits::LineOutcome::Line(line) => (answer(&app, &line, &peer).await, false),
+            limits::LineOutcome::TooLong => (
+                QueryResponse::failed("request too long: the limit is 1 MiB per line"),
+                true,
+            ),
+            limits::LineOutcome::Closed | limits::LineOutcome::TimedOut => break,
+        };
         let mut payload = match serde_json::to_string(&response) {
             Ok(payload) => payload,
             Err(error) => format!("{{\"ok\":false,\"error\":\"{}\"}}", error),
         };
         payload.push('\n');
-        if writer.write_all(payload.as_bytes()).await.is_err() {
+        if writer.write_all(payload.as_bytes()).await.is_err() || is_final {
             break;
         }
     }
@@ -347,12 +365,12 @@ fn peer_pid(stream: &tokio::net::UnixStream) -> Option<u32> {
     u32::try_from(pid).ok().filter(|pid| *pid > 0)
 }
 
-async fn answer(app: &tauri::AppHandle, line: &str, caller: auto_child::Caller) -> QueryResponse {
+async fn answer(app: &tauri::AppHandle, line: &str, peer: &auto_child::Peer) -> QueryResponse {
     let request = match serde_json::from_str::<QueryRequest>(line) {
         Ok(request) => request,
         Err(error) => return QueryResponse::failed(format!("malformed request: {}", error)),
     };
-    match dispatch::dispatch(app, &request, caller).await {
+    match dispatch::dispatch(app, &request, peer).await {
         Ok(data) => QueryResponse::ok(data),
         Err(error) => QueryResponse::refused(error),
     }

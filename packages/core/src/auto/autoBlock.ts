@@ -1,4 +1,5 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_BLOCK_OPEN = '<<auto>>';
 export const AUTO_BLOCK_CLOSE = '<</auto>>';
@@ -30,9 +31,6 @@ export type ParseAutoBlockParams = Readonly<{
 }>;
 
 type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type TextParams = {
   readonly value: unknown;

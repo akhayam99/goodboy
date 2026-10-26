@@ -220,7 +220,7 @@ fn a_conflict_stops_names_the_step_discards_the_copy_and_leaves_the_branch() {
     assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
     assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
     assert_eq!(worktree_count(&l.root), 1);
-    assert!(!copy_path_of(&slug("run-conflict")).exists());
+    assert!(!copy_path_of(&slug("run-conflict")).unwrap().exists());
     assert_eq!(events.lock().unwrap().last(), Some(&TrialProgress::Cleanup));
 }
 

@@ -244,6 +244,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     await waitFor(() => expect(stubs.mergePr).toHaveBeenCalledTimes(1));
     expect(stubs.mergePr).toHaveBeenCalledWith(SESSION.id, 42, 'rebase', {
       mountId: expect.any(String),
+      expectedHeadSha: 'a41c9e2b7d3',
     });
   });
 
@@ -281,7 +282,9 @@ describe('the Pull request tab on Bitbucket, without a pull request', () => {
     await show('none');
 
     expect(await screen.findByRole('heading', { name: 'No pull request yet' })).toBeDefined();
-    expect(screen.getByText('Create the pull request on Bitbucket, it appears here')).toBeDefined();
+    expect(
+      screen.getByText('Create the pull request on Bitbucket and Goodboy follows it'),
+    ).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
     fireEvent.click(await screen.findByRole('button', { name: /Open Bitbucket/ }));

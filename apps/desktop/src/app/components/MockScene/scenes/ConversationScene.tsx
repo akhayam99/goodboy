@@ -23,11 +23,11 @@ export const ConversationScene = () => {
 
   return (
     <div className="flex h-screen w-screen gap-4 overflow-auto bg-subtle p-4">
-      <ConversationScenePane title="GitLab merge request" source={MR_SOURCE} />
+      <ConversationScenePane title="GitLab merge request" label="Review" source={MR_SOURCE} />
       <div data-scene-pane="flat" className="flex h-full">
-        <ConversationScenePane title="GitHub issue" source={FLAT_SOURCE} />
+        <ConversationScenePane title="GitHub issue" label="Discussion" source={FLAT_SOURCE} />
       </div>
-      <ConversationScenePane title="Read only" source={READ_ONLY_SOURCE} />
+      <ConversationScenePane title="Read only" label="Archive" source={READ_ONLY_SOURCE} />
     </div>
   );
 };

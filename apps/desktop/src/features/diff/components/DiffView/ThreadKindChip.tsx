@@ -1,6 +1,6 @@
 import { PenLine } from 'lucide-react';
-import { Chip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
+
 import { HOST_GLYPH, kindLabelOf } from './threadKind';
 import type { DiffThread } from './types';
 

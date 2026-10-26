@@ -3,15 +3,16 @@ import { Pencil } from 'lucide-react';
 import {
   Button,
   EmptyLine,
+  formatError,
+  ICON_SIZE,
   Notice,
   SectionHeader,
   SegmentedTabs,
   Textarea,
-  formatError,
   useEscapeLayer,
 } from '@goodboy/ui';
 import type { PullRequestState, SessionId, WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';

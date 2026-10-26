@@ -6,16 +6,18 @@ import {
   storySpies,
   type StoryStore,
 } from './storyHarness';
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
-  Session,
-  SessionId,
-  WorkspaceId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type Session,
+  type SessionId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import { nextAgentId } from '@goodboy/types/testing';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
 import { deriveSessionStage } from './slices/session-view/deriveSessionStage';
 
@@ -295,6 +297,135 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
     const stamped = markViewedSpy.mock.calls.map((c) => c[0]);
     expect(stamped).not.toContain(SIBLING);
     expect(stamped).not.toContain(SIBLING_CHILD);
+  });
+});
+
+describe('selectAgent remembers where the unseen rows begin', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    callOrder.length = 0;
+  });
+
+  it('keeps the previous view time of an agent with a reply to read, past the stamp', async () => {
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ lastFinishedAt: T3, lastViewedAt: T2 })] },
+      selectedAgentId: {},
+      agentUnseenSince: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID);
+
+    expect(useAppStore.getState().agentUnseenSince[AGENT_ID]).toBe(T2);
+    const stamped = useAppStore.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.lastViewedAt ?? T1;
+    expect(stamped > T2).toBe(true);
+  });
+
+  it('keeps it when the same agent is selected again, and drops it on leaving for another', async () => {
+    const OTHER = brandId<AgentId>({ value: 'agent-vs-2' });
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ lastFinishedAt: T3, lastViewedAt: T2 }),
+          buildAgent({ id: OTHER, ordinal: 2, lastFinishedAt: T1, lastViewedAt: T1 }),
+        ],
+      },
+      selectedAgentId: {},
+      agentUnseenSince: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID);
+    await useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID);
+    expect(useAppStore.getState().agentUnseenSince[AGENT_ID]).toBe(T2);
+
+    await useAppStore.getState().selectAgent(SESSION_ID, OTHER);
+    expect(useAppStore.getState().agentUnseenSince).toEqual({});
+  });
+
+  it('records nothing for an agent that was never viewed or has nothing new', async () => {
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ lastFinishedAt: T2 })] },
+      selectedAgentId: {},
+      agentUnseenSince: {},
+    });
+
+    await useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID);
+
+    expect(useAppStore.getState().agentUnseenSince).toEqual({});
+  });
+});
+
+describe('selectAgent stamps only while the window is in front', () => {
+  const PARENT = nextAgentId();
+
+  const seed = (): void => {
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: PARENT, lastFinishedAt: T2 })] },
+      selectedAgentId: {},
+    });
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    callOrder.length = 0;
+  });
+
+  it('stamps a reply when the window is visible and focused', async () => {
+    seed();
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+    const run = (useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? []).find(
+      (agent) => agent.id === PARENT,
+    );
+    expect(run?.lastViewedAt).toBeDefined();
+    expect(markViewedSpy).toHaveBeenCalledWith(PARENT, expect.any(String));
+  });
+
+  it('opens the agent but stamps nothing while the window is hidden', async () => {
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    seed();
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+    const run = (useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? []).find(
+      (agent) => agent.id === PARENT,
+    );
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PARENT);
+    expect(run?.lastViewedAt).toBeUndefined();
+    expect(markViewedSpy).not.toHaveBeenCalled();
+  });
+
+  it('stamps nothing while the window is visible but not focused', async () => {
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    seed();
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+    const run = (useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? []).find(
+      (agent) => agent.id === PARENT,
+    );
+    expect(run?.lastViewedAt).toBeUndefined();
+    expect(markViewedSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not stamp the agent it leaves while the window is hidden', async () => {
+    const LEFT = nextAgentId();
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ id: LEFT, lastFinishedAt: T2 }),
+          buildAgent({ id: PARENT, lastFinishedAt: T2 }),
+        ],
+      },
+      selectedAgentId: { [SESSION_ID]: LEFT },
+    });
+    await useAppStore.getState().selectAgent(SESSION_ID, PARENT);
+    const left = (useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? []).find(
+      (agent) => agent.id === LEFT,
+    );
+    expect(left?.lastViewedAt).toBeUndefined();
+    expect(markViewedSpy).not.toHaveBeenCalled();
   });
 });
 

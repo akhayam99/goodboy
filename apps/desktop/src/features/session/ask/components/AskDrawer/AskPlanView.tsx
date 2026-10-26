@@ -1,7 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
-import { Button, Markdown, useEscapeLayer } from '@goodboy/ui';
+import { Button, ICON_SIZE, Markdown, useEscapeLayer, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
 import { usePlanModel } from '../../../../plans/usePlanModel';
 
@@ -19,7 +19,10 @@ export const AskPlanView = ({ sessionId, artifactId, onBack }: Props) => {
       <button
         type="button"
         onClick={onBack}
-        className="flex h-6 items-center gap-1 self-start rounded-md pl-1 pr-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'flex h-6 items-center gap-1 self-start rounded-md pl-1 pr-2 text-meta text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+          FOCUS_RING,
+        )}
       >
         <ChevronLeft size={ICON_SIZE.row} aria-hidden />
         Back to answer

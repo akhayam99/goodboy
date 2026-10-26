@@ -2,7 +2,7 @@ import type { AgentId } from '@goodboy/types';
 
 export const MAX_UNATTENDED_TURNS_PER_AGENT = 4;
 
-export const UNATTENDED_WINDOW_MS = 60 * 60 * 1000;
+const UNATTENDED_WINDOW_MS = 60 * 60 * 1000;
 
 type Params = Readonly<{
   agentId: AgentId;

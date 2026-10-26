@@ -27,6 +27,7 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
     useShallow((store): RailSubtitleState & Pick<AppStore, 'providerHealth'> => ({
       updaterStatus: store.updaterStatus,
       storageFolders: store.storageFolders,
+      terminalTabs: store.terminalTabs,
       settings: store.settings,
       storageStats: store.storageStats,
       openSecurityFindings: store.openSecurityFindings,

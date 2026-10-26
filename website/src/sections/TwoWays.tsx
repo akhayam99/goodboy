@@ -8,7 +8,7 @@ export const TwoWays = () => (
     tone="band"
     head={{
       eyebrow: 'Providers, limits and cost',
-      heading: 'The same task, run two ways',
+      heading: 'See what a task costs two ways',
       lead: "A bug fix doesn't need one agent that remembers everything. Give each step a fresh one and pay only for what it reads.",
     }}
   >

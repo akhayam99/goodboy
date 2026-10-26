@@ -1,4 +1,18 @@
+use crate::config_export::bundle::ConfigBundle;
 use crate::config_export::error::ConfigExportError;
+use sha2::{Digest, Sha256};
+
+pub(super) struct BundleFile {
+    pub sha256: String,
+    pub bundle: ConfigBundle,
+}
+
+pub(super) fn read_bundle_file(path: &str) -> Result<BundleFile, ConfigExportError> {
+    let bytes = std::fs::read(path).map_err(|e| ConfigExportError::Validation(e.to_string()))?;
+    let sha256 = format!("{:x}", Sha256::digest(&bytes));
+    let bundle: ConfigBundle = serde_json::from_slice(&bytes)?;
+    Ok(BundleFile { sha256, bundle })
+}
 
 pub(super) fn write_config_file(path: &str, json: &str) -> Result<(), ConfigExportError> {
     use std::io::Write;

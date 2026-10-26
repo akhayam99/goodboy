@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store';
 import type { StorageFilter, StorageScope } from '../../store/slices/storage/types';
+import { openSettings } from '../settings/openSettings';
 
 type Params = {
   readonly filter?: StorageFilter;
@@ -12,7 +13,5 @@ export const openStorage = ({ filter = 'review', scope }: Params = {}) => {
   if (scope !== undefined) {
     store.setStorageScope(scope);
   }
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-settings', { detail: { scope: 'app', section: 'storage' } }),
-  );
+  openSettings({ scope: 'app', section: 'storage' });
 };

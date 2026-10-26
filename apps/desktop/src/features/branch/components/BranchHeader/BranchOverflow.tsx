@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import {
   AnchoredPopover,
+  ICON_SIZE,
   MENU_MAX_WIDTH,
   MenuList,
   MenuTriggerButton,
-  useDropdown,
   type MenuEntry,
+  useDropdown,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { runObjectAction } from '../../../actions/registry';
 import { toMenuEntries } from '../../../actions/toMenuEntries';
 import { useActionEnv } from '../../../actions/useActionEnv';

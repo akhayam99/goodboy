@@ -1,3 +1,4 @@
+import { prepareNewWorktree } from './prepareNewWorktree';
 import {
   insertSessionWorktree,
   updateSessionWorktreeRepoSlug,
@@ -219,6 +220,14 @@ export const createProjectMount = async ({
         }),
         ...mountViewPatch({ state, sessionId, mount }),
       }));
+      void prepareNewWorktree({
+        saveSetting: get().saveSetting,
+        reportError: get().reportError,
+        sessionId,
+        mountId,
+        project,
+        created,
+      });
       void stampRepoSlug({
         sessionId,
         workspaceId: session.workspaceId,

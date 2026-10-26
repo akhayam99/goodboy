@@ -1,6 +1,6 @@
 import type { FirstCommitPlan, FolderGitProbe, FolderPurpose, ProjectId } from '@goodboy/types';
 import type { KeyedQueue } from '../../../shared/utils/keyedQueue';
-import type { LatestOnly } from '../state-writes/latestOnly';
+import type { LatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { FolderPurposeState, FolderSignalsRead } from './state';
 import type { GetFn, SetFn } from '../../slice-types';
 

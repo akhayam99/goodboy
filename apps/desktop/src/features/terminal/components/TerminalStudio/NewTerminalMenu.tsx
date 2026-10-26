@@ -4,13 +4,14 @@ import { ChevronDown, Folder, GitBranch, Plus } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
+  ICON_SIZE,
   PopoverBody,
   SearchField,
   Tooltip,
-  useDropdown,
   type MenuEntry,
+  useDropdown,
 } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { filterPickerClusters } from '../../filterPickerClusters';
 import { pickerRowCount } from '../../pickerRowCount';

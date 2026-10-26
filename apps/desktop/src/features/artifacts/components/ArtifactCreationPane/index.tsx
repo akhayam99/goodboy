@@ -9,7 +9,7 @@ import { Docked } from '../../../../shared/components/Docked';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../../../../store/slices/providerLimits/workspacePolicyAvailability';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
-import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
+import { workflowKindName } from '../../../workflows/workflowKindName';
 import { ARTIFACT_BRIEF_LIMITS } from '../../artifactBrief';
 import { sessionGoalText } from '../../sessionGoalText';
 import { briefInventoryRow, replaceInventoryRow } from '../../artifactContextInventory';
@@ -64,9 +64,9 @@ type RunOptionsParams = {
 
 const runOptions = ({ attached }: RunOptionsParams): ReadonlyArray<ArtifactRunOption> => {
   const live = attached.filter(({ run }) => run.discardedAt == null);
-  const names = live.map(({ run, workflow }) => run.title ?? workflowKindName(workflow));
+  const names = live.map(({ run, workflow }) => run.title ?? workflowKindName({ workflow }));
   return live.map(({ run, workflow }) => {
-    const name = run.title ?? workflowKindName(workflow);
+    const name = run.title ?? workflowKindName({ workflow });
     const isAmbiguous = names.filter((entry) => entry === name).length > 1;
     return {
       workflowRunId: run.id,

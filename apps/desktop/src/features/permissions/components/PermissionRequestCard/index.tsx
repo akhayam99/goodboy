@@ -4,6 +4,7 @@ import {
   AnchoredPopover,
   Button,
   ConfirmPopover,
+  ICON_SIZE,
   MenuTriggerButton,
   tintClasses,
   useDropdown,
@@ -19,7 +20,7 @@ import { modeCopyOf } from '../../modeCopy';
 import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const warningTint = tintClasses('warning');
@@ -59,6 +60,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
     (s) => s.workspaces.find((w) => w.id === session?.workspaceId)?.name ?? null,
   );
   const allowAndContinue = useAppStore((s) => s.allowAndContinue);
+  const allowWithRule = useAppStore((s) => s.allowWithRule);
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
   const denyWithReason = useAppStore((s) => s.denyWithReason);
   const reportError = useAppStore((s) => s.reportError);
@@ -83,6 +85,8 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       ? rule.label
       : `${rule.label} in ${workspaceName}`
     : rule.label;
+
+  const neverLabel = `Never allow ${rule.subject} in this session`;
 
   const withBusy = async (action: () => Promise<void>) => {
     if (busy) {
@@ -125,7 +129,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       return Promise.resolve();
     }
     return withBusy(() =>
-      resolvePermissionRequest({
+      allowWithRule({
         sessionId,
         agentId,
         toolUseId: item.toolUseId,
@@ -141,6 +145,39 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
     if (sessionId === null || agentId === null) {
       return;
     }
+    void withBusy(() =>
+      denyWithReason({
+        sessionId,
+        agentId,
+        toolUseId: item.toolUseId,
+        toolName: item.toolName,
+        runId: item.runId,
+        reason: '',
+      }),
+    );
+  };
+
+  const handleAllowSession = () => {
+    if (sessionId === null || agentId === null) {
+      return;
+    }
+    void withBusy(() =>
+      allowWithRule({
+        sessionId,
+        agentId,
+        toolUseId: item.toolUseId,
+        toolName: item.toolName,
+        runId: item.runId,
+        scope: 'session',
+        pattern: { tool: item.toolName },
+      }),
+    );
+  };
+
+  const handleNeverAllow = () => {
+    if (sessionId === null || agentId === null) {
+      return;
+    }
     void withBusy(async () => {
       await resolvePermissionRequest({
         sessionId,
@@ -149,25 +186,13 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         toolName: item.toolName,
         runId: item.runId,
         scope: 'deny',
+        pattern: rule.pattern,
       });
-      showToast({ kind: 'info', message: `${item.toolName} denied for the rest of this session` });
+      showToast({
+        kind: 'info',
+        message: `Blocked ${rule.subject} for the rest of this session`,
+      });
     });
-  };
-
-  const handleAllowSession = () => {
-    if (sessionId === null || agentId === null) {
-      return;
-    }
-    void withBusy(() =>
-      resolvePermissionRequest({
-        sessionId,
-        agentId,
-        toolUseId: item.toolUseId,
-        toolName: item.toolName,
-        runId: item.runId,
-        scope: 'session',
-      }),
-    );
   };
 
   const handleDenyWithReason = () => {
@@ -197,7 +222,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       tone="warning"
       variant="boxed"
       emphasis
-      className="flex flex-col gap-2 text-label"
+      className="flex flex-col gap-2 text-meta"
     >
       <div className="flex flex-wrap items-center gap-2">
         <Hand size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
@@ -299,6 +324,13 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                       },
                       {
                         kind: 'item',
+                        key: 'never-allow',
+                        label: neverLabel,
+                        isDisabled: busy,
+                        onSelect: handleNeverAllow,
+                      },
+                      {
+                        kind: 'item',
                         key: 'deny-reason',
                         label: `Deny and tell ${askerNoun ?? 'the agent'} why…`,
                         isDisabled: busy,
@@ -315,11 +347,11 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                       label="Why you deny it"
                       value={denyReason}
                       onChange={setDenyReason}
-                      placeholder="Say why, so it does not try again this way"
+                      placeholder="Say why, so it doesn't try again this way"
                       minRows={2}
                       maxRows={4}
                       className="w-full bg-elevated"
-                      textClassName="text-label"
+                      textClassName="text-meta"
                     />
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>

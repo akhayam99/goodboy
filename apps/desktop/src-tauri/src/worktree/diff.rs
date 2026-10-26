@@ -1,14 +1,8 @@
 use super::base::{normalized_base, resolve_base};
 use super::error::WorktreeError;
-use super::git::{git, resolve_commit};
+use super::git::{git_plain_paths, resolve_commit, validated_rev};
+use crate::util::scoped_path::{resolve_within, ScopedPathError};
 use std::path::Path;
-
-const PLAIN_PATHS: [&str; 2] = ["-c", "core.quotepath=false"];
-
-fn git_plain_paths(p: &Path, args: &[&str]) -> Result<String, WorktreeError> {
-    let argv: Vec<&str> = PLAIN_PATHS.iter().chain(args.iter()).copied().collect();
-    git(p, &argv)
-}
 
 #[tauri::command]
 pub async fn worktree_diff(
@@ -93,38 +87,30 @@ fn confine_rel_path(worktree: &Path, path: &str) -> Result<String, WorktreeError
             message: "diff path is empty".to_string(),
         });
     }
-    let candidate = Path::new(trimmed);
-    let abs = if candidate.is_absolute() {
-        candidate.to_path_buf()
-    } else {
-        worktree.join(candidate)
+    let escapes = || WorktreeError::Git {
+        message: "diff path escapes the worktree".to_string(),
     };
-    // Reject any `..` component up front (cheap, no fs access) so we never even
-    // canonicalize a traversal attempt.
-    if abs
-        .components()
-        .any(|c| matches!(c, std::path::Component::ParentDir))
-    {
-        return Err(WorktreeError::Git {
-            message: "diff path escapes the worktree".to_string(),
-        });
-    }
     let root = worktree
         .canonicalize()
         .unwrap_or_else(|_| worktree.to_path_buf());
-    // Canonicalize when the file exists (resolves symlinks); fall back to the
-    // lexical join for not-yet-existing (e.g. untracked-but-deleted) paths.
-    let resolved = abs.canonicalize().unwrap_or(abs);
-    if !resolved.starts_with(&root) {
-        return Err(WorktreeError::Git {
-            message: "diff path escapes the worktree".to_string(),
-        });
-    }
-    let rel = resolved
-        .strip_prefix(&root)
-        .unwrap_or(&resolved)
-        .to_string_lossy()
-        .replace('\\', "/");
+    let candidate = Path::new(trimmed);
+    let relative = if candidate.is_absolute() {
+        candidate
+            .strip_prefix(&root)
+            .or_else(|_| candidate.strip_prefix(worktree))
+            .map_err(|_| escapes())?
+    } else {
+        candidate
+    };
+    let resolved = match resolve_within(&root, relative) {
+        Ok(resolved) => resolved
+            .strip_prefix(&root)
+            .map_err(|_| escapes())?
+            .to_path_buf(),
+        Err(ScopedPathError::Unavailable) => relative.to_path_buf(),
+        Err(_) => return Err(escapes()),
+    };
+    let rel = resolved.to_string_lossy().replace('\\', "/");
     if rel.is_empty() {
         return Err(WorktreeError::Git {
             message: "diff path resolves to the worktree root".to_string(),
@@ -143,7 +129,7 @@ pub async fn worktree_diff_commit(
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn worktree_diff_commit_blocking(
+pub(super) fn worktree_diff_commit_blocking(
     worktree_path: String,
     sha: String,
 ) -> Result<String, WorktreeError> {
@@ -151,13 +137,8 @@ fn worktree_diff_commit_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let trimmed = sha.trim();
-    if trimmed.is_empty() {
-        return Err(WorktreeError::Git {
-            message: "commit sha is empty".to_string(),
-        });
-    }
-    git_plain_paths(p, &["show", "--format=", trimmed])
+    let rev = validated_rev(&sha)?;
+    git_plain_paths(p, &["show", "--format=", rev])
 }
 
 #[tauri::command]
@@ -173,7 +154,7 @@ pub async fn worktree_diff_range(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn worktree_diff_range_blocking(
+pub(super) fn worktree_diff_range_blocking(
     worktree_path: String,
     base: String,
     head: String,
@@ -182,8 +163,8 @@ fn worktree_diff_range_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let from = resolve_commit(p, base.trim())?;
-    let to = resolve_commit(p, head.trim())?;
+    let from = resolve_commit(p, validated_rev(&base)?)?;
+    let to = resolve_commit(p, validated_rev(&head)?)?;
     git_plain_paths(p, &["diff", &from, &to])
 }
 

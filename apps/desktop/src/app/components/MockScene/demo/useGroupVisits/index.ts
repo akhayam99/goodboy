@@ -24,16 +24,20 @@ export const useGroupVisits = ({ chapterId }: Params): ReadonlyArray<string> => 
   }, [chapterId]);
 
   useEffect(() => {
-    const onStorage = (event: StorageEvent): void => {
-      if (event.key !== null && event.key !== GROUP_VISITS_KEY) {
-        return;
-      }
-      const next = readGroupVisits({ fallback: latest.current });
-      latest.current = next;
-      setVisitedIds(next);
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    const listener = new AbortController();
+    window.addEventListener(
+      'storage',
+      (event) => {
+        if (event.key !== null && event.key !== GROUP_VISITS_KEY) {
+          return;
+        }
+        const next = readGroupVisits({ fallback: latest.current });
+        latest.current = next;
+        setVisitedIds(next);
+      },
+      { signal: listener.signal },
+    );
+    return () => listener.abort();
   }, []);
 
   return visitedIds;

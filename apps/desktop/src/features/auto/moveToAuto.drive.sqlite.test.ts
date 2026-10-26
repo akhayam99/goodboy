@@ -24,9 +24,9 @@ import {
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
-import { createAutoRuntime } from '../../store/slices/auto/createAutoRuntime';
-import { createAutoScheduler } from '../../store/slices/auto/scheduler';
-import { makeFakePorts } from '../../store/slices/auto/testing/fakePorts';
+import { createAutoRuntime } from '../../store/runtime/auto/createAutoRuntime';
+import { createAutoScheduler } from '../../store/runtime/auto/scheduler';
+import { makeFakePorts } from '../../store/runtime/auto/testing/fakePorts';
 import type { AppStore } from '../../store/store';
 import { invokeAgentList } from '../workflows/workflows';
 import { registerAutoDrivePort } from './autoDrivePort';

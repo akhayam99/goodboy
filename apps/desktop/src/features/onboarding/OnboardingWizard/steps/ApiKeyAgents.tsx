@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { ChevronRight, KeyRound } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { isApiProvider } from '@goodboy/core';
-import { Button, Chip, FOCUS_RING, Reveal, cn } from '@goodboy/ui';
+import { Button, Chip, cn, FOCUS_RING, ICON_SIZE, Reveal } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { readyAgents } from '../readyAgents';
-import { AgentGlyph } from './AgentGlyph';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { StepListRow } from './StepListRow';
 import { StepStatus } from './StepStatus';
 
@@ -38,7 +38,7 @@ export const ApiKeyAgents = ({ defaultId, isLocked, onMakeDefault }: Props) => {
         aria-expanded={isOpen}
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         className={cn(
-          'flex items-center gap-2 self-start rounded-md py-1 pr-2 text-label text-muted-foreground hover:text-foreground',
+          'flex items-center gap-2 self-start rounded-md py-1 pr-2 text-meta text-muted-foreground hover:text-foreground',
           FOCUS_RING,
         )}
       >
@@ -60,14 +60,14 @@ export const ApiKeyAgents = ({ defaultId, isLocked, onMakeDefault }: Props) => {
                 key={id}
                 rowId={id}
                 isCompact
-                icon={<AgentGlyph providerId={id} size={ICON_SIZE.hero} />}
+                icon={<ProviderGlyph id={id} size={ICON_SIZE.hero} />}
                 name={PROVIDER_LABEL[id]}
                 line=""
                 trailing={
                   isReady ? (
                     <>
                       {defaultId === id ? (
-                        <Chip tone="primary" size="sm" label="Default" shape="badge" />
+                        <Chip className="rounded-md" kind="state" tone="primary" label="Default" />
                       ) : (
                         <Button
                           size="xs"

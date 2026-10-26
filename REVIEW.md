@@ -15,6 +15,7 @@ Hunt these classes first. They are the ones a test and a lint cannot see.
 - **Stale response.** Only the latest answer wins. Look for a request whose reply lands after the user moved on, and a list that renders a result for a query that changed.
 - **Derived values.** Every number on screen comes from one function. Look for a count, total or duration computed twice, in two places that can disagree.
 - **Renames in `aria`.** A rename moves every copy of the name: `aria-label`, tooltip, tests that query by accessible name, docs and `FEATURES.md`.
+- **Paths inside a root.** A Tauri command that reads or deletes a file under a root goes through `util/scoped_path.rs` (`resolve_within`, `open_within`), never a second `contains("..")` or `starts_with` check. Look for a root the window names instead of one the command finds in state, a `canonicalize` followed by a plain `File::open`, a delete that follows a symlinked parent, and a read of an absolute path the user never dropped.
 - **Untrusted input.** Look for a regex that can backtrack polynomially on input, a dispatch on a key the user controls, and a path or URL built from user text.
 
 A review unit is at most 15k changed lines of hand-written code. Generated files, baselines and images are marked `linguist-generated` in `.gitattributes` and do not count. A larger release lands in parts, one pull request per wave.

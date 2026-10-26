@@ -27,7 +27,7 @@ const LIVE_KEY_SUFFIX = ':live';
 
 const LIVE_VERBS: Readonly<Record<string, string>> = {
   'agent.message': 'Message',
-  'agent.interrupt': 'Interrupt',
+  'agent.stop': 'Stop',
 };
 
 export const liveAgentVerbs = ({ verbs, name, title }: Params): ReadonlyArray<PaletteEntry> =>

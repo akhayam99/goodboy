@@ -3,9 +3,7 @@ import type {
   AgentSourceKind,
   MountId,
   PlanId,
-  PrMergeMethod,
   ProjectId,
-  ProviderId,
   PullRequestState,
   SessionId,
   StepId,
@@ -22,8 +20,14 @@ import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './ne
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import { fixChecksSuggestionOf } from './fixChecksSuggestionOf';
+import { archiveSuggestionOf, type SettledBranches } from './archiveSuggestionOf';
 import { cleanupSuggestionOf } from './cleanupSuggestionOf';
+import { trackerMoveSuggestionOf } from './trackerMoveSuggestionOf';
+import { seriesMergeSuggestionOf } from './seriesMergeSuggestionOf';
+import type { SeriesStrip } from '../../store/slices/pr-series/seriesStripsOf';
+import type { TrackerMove } from '../../store/slices/tracker-moves/types';
 import { openPrSuggestionOf } from './openPrSuggestionOf';
+import { readyAndMergeSuggestionsOf } from './readyAndMergeSuggestionsOf';
 import { isOfferedByActivity } from './isOfferedByActivity';
 import { isMountBusyOf } from './isMountBusyOf';
 import { mountLabelOf } from './mountLabelOf';
@@ -202,6 +206,10 @@ const pushSuggestionOf = ({ mount, sessionId }: PushSuggestionParams): PushSugge
   return null;
 };
 
+const NO_SETTLED_BRANCHES: SettledBranches = { merged: 0, closed: 0 };
+
+const LIVE_AGENT_STATUSES: ReadonlyArray<string> = ['running', 'pending', 'blocked'];
+
 type Params = {
   readonly sessionId: SessionId;
   readonly workflowRuns: ReadonlyArray<SuggestionWorkflowRun>;
@@ -217,6 +225,9 @@ type Params = {
   readonly agents?: ReadonlyArray<SuggestionAgent>;
   readonly mounts?: ReadonlyArray<SuggestionMount>;
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
+  readonly trackerMoves?: ReadonlyArray<TrackerMove>;
+  readonly seriesStrips?: ReadonlyArray<SeriesStrip>;
+  readonly settledBranches?: SettledBranches;
   readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
   readonly isActivityShown?: boolean;
   readonly hasGoal?: boolean;
@@ -242,6 +253,9 @@ export const deriveNextSteps = ({
   agents = [],
   mounts = [],
   cleanupProposals = [],
+  trackerMoves = [],
+  seriesStrips = [],
+  settledBranches = NO_SETTLED_BRANCHES,
   checkChains = [],
   isActivityShown = true,
   hasGoal = false,
@@ -501,48 +515,7 @@ export const deriveNextSteps = ({
     }
     const pr = mount.pr;
     if (pr != null && pr.state !== 'merged' && pr.state !== 'closed') {
-      if (pr.isDraft && pr.checks === 'success') {
-        suggestions.push({
-          id: `mark-ready:${mount.mountId}`,
-          kind: 'mark-ready',
-          priority: 43,
-          band: 2,
-          title: `Mark #${pr.number} ready for review`,
-          detail: 'All checks passed',
-          sessionId,
-          targetKey: `pr:${mount.mountId}`,
-          fingerprint: `mark-ready:${mount.mountId}:${pr.number}`,
-          payload: {
-            mountId: mount.mountId,
-            projectName: mount.projectName,
-            prNumber: pr.number,
-          },
-        });
-      }
-      if (
-        !pr.isDraft &&
-        pr.reviewDecision === 'approved' &&
-        pr.checks === 'success' &&
-        pr.mergeable === true
-      ) {
-        suggestions.push({
-          id: `merge-pr:${mount.mountId}`,
-          kind: 'merge-pr',
-          priority: 44,
-          band: 2,
-          title: `Merge #${pr.number}`,
-          detail: 'Approved, checks passed',
-          sessionId,
-          targetKey: `pr:${mount.mountId}`,
-          fingerprint: `merge-pr:${mount.mountId}:${pr.number}`,
-          payload: {
-            mountId: mount.mountId,
-            projectName: mount.projectName,
-            prNumber: pr.number,
-            defaultMethod: 'squash',
-          },
-        });
-      }
+      suggestions.push(...readyAndMergeSuggestionsOf({ mount, pr, sessionId }));
     }
     if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
       openPrTargets.push({
@@ -571,9 +544,29 @@ export const deriveNextSteps = ({
   if (openPr !== null) {
     suggestions.push(openPr);
   }
+  for (const strip of seriesStrips) {
+    const merge = seriesMergeSuggestionOf({ sessionId, strip });
+    if (merge !== null) {
+      suggestions.push(merge);
+    }
+  }
+  for (const move of trackerMoves) {
+    suggestions.push(trackerMoveSuggestionOf({ sessionId, move }));
+  }
   const cleanup = cleanupSuggestionOf({ sessionId, proposals: cleanupProposals });
   if (cleanup !== null) {
     suggestions.push(cleanup);
+  }
+  const archive = archiveSuggestionOf({
+    sessionId,
+    settled: settledBranches,
+    isBusy:
+      openQuestionCount > 0 ||
+      agents.some((agent) => LIVE_AGENT_STATUSES.includes(agent.status)) ||
+      workflowRuns.some((run) => run.isRunning),
+  });
+  if (archive !== null) {
+    suggestions.push(archive);
   }
   const rebaseTargets: RebaseSuggestionTarget[] = [];
   const rebaseTargetIds = new Set<string>();

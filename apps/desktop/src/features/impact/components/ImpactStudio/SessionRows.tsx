@@ -1,8 +1,15 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { EmptyState, InlineMarkdown, STRIPED_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import {
+  cn,
+  EmptyState,
+  ICON_SIZE,
+  InlineMarkdown,
+  STRIPED_LIST,
+  STRIPED_MIN_ROWS,
+} from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 
 type Props = {
@@ -12,7 +19,7 @@ type Props = {
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-const ROW = 'flex items-center gap-3 rounded-sm px-2 py-2 text-left text-label';
+const ROW = 'flex items-center gap-3 rounded-sm px-2 py-2 text-left text-meta';
 
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {

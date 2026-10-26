@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 vi.hoisted(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-18T10:31:00.000Z'));
+  vi.setSystemTime(new Date(2026, 9, 18, 10, 31, 0));
 });
+
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -10,7 +11,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -22,7 +23,7 @@ import {
 } from '../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../store/runtime/worktreeStatuses/cache';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { registerTreeStopPort } from '../../../auto/treeStopPort';
 import {
@@ -55,6 +56,10 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+});
+
+afterAll(() => {
+  vi.useRealTimers();
 });
 
 const mountedSession = () => {

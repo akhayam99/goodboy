@@ -4,7 +4,7 @@ import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 

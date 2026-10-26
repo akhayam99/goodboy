@@ -6,6 +6,7 @@ import { selectWritableMounts } from '../../store/slices/project-mounts/selector
 import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { searchHitTarget, type SearchHitTarget } from './searchHitTarget';
+import { dispatchWindowEvent } from '../../shared/lib/dispatchWindowEvent';
 
 type WorkspaceParams = {
   readonly workspaceId: WorkspaceId | null;
@@ -37,15 +38,14 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
     return true;
   }
   if (target.kind === 'inbox') {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-inbox', {
-        detail: {
-          workspaceId: target.workspaceId,
-          provider: target.provider,
-          recordKey: target.recordKey,
-        },
-      }),
-    );
+    dispatchWindowEvent({
+      name: 'goodboy:open-inbox',
+      detail: {
+        workspaceId: target.workspaceId,
+        provider: target.provider,
+        recordKey: target.recordKey,
+      },
+    });
     return true;
   }
   await enterWorkspace({ workspaceId: target.workspaceId });
@@ -54,7 +54,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       return false;
     }
     useAppStore.getState().setWorkflowStudioFocus({ workflowId: target.workflowId });
-    window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio'));
+    dispatchWindowEvent({ name: 'goodboy:open-workflow-studio' });
     return true;
   }
   const store = useAppStore.getState();

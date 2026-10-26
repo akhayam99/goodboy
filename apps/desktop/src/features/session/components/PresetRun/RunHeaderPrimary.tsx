@@ -1,6 +1,6 @@
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAnswerQuestion } from '../../../workflows/useAnswerQuestion';
 import type { WorkflowRunActionTarget } from '../../../actions/types';
 import { RaiseCapPrimary } from '../AgentTree/RunHeader/RaiseCapPrimary';

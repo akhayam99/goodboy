@@ -1,4 +1,5 @@
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, firstOnProvider } from '@goodboy/core';
+import { FAIL_CLOSED_PERMISSION_MODE } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type {
   Agent,
@@ -18,7 +19,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  deleteSession,
   insertSession,
   getWorkspaceById,
   listProjectsForWorkspace,
@@ -28,7 +28,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
-import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
+import { AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
@@ -162,7 +162,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
 
     const workspacePermissionMode =
       get().workspaces.find((candidate) => candidate.id === workspaceId)?.defaultPermissionMode ??
-      'bypassPermissions';
+      FAIL_CLOSED_PERMISSION_MODE;
 
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };

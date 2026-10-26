@@ -95,9 +95,10 @@ vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
 }));
 
 import { useAppStore, type AppStore } from '../../store';
+import { pushBranch } from '../github/pushBranch';
 import { createHistorySlice } from './index';
 import { historyInitialState } from './state';
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { assertCleanTree } from './assertCleanTree';
 import { rewriterCopyFor } from './rewriterCopyFor';
 import { rewriterKickoff } from './rewriterKickoff';
@@ -184,7 +185,7 @@ const harness = ({ mount, project }: Bases = { mount: 'main', project: 'main' })
   };
   const get: GetFn = () => state;
   const slice = createHistorySlice({ set, get });
-  state = { ...state, ...slice };
+  state = { ...state, ...slice, pushBranch: pushBranch({ set, get }) };
   return { slice, read: get, seed: set, spawnAgent, sendTurn };
 };
 
@@ -746,9 +747,8 @@ describe('rebase on main', () => {
         payload: expect.objectContaining({ reason: 'origin-moved', planId: 'plan-1' }),
       }),
     );
-    expect(read().reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ action: { kind: 'open-activity', sessionId: SESSION_ID } }),
-    );
+    const open = { action: { kind: 'open-activity', sessionId: SESSION_ID } };
+    expect(read().reportError).toHaveBeenCalledWith(expect.objectContaining({ recovery: open }));
   });
 });
 

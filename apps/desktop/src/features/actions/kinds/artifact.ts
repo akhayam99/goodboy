@@ -1,7 +1,7 @@
 import {
   ArchiveRestore,
   Copy,
-  ExternalLink,
+  SquareArrowOutUpRight,
   FileDown,
   FolderOpen,
   Pencil,
@@ -40,7 +40,7 @@ import { openPlanDrawer } from '../../plans/openPlanDrawer';
 import { NOT_REVISING, planRevisingOf, type PlanRevising } from '../../plans/planRevising';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { ArtifactGeneration } from '../../artifacts/artifactCollection';
 import {
@@ -595,7 +595,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   {
     id: 'artifact.openInBrowser',
     label: 'Open in browser',
-    icon: ExternalLink,
+    icon: SquareArrowOutUpRight,
     group: 'copy',
     slot: ({ facts }) => (facts.kind === 'wireframe' ? 'secondary' : 'menu'),
     when: isStored,

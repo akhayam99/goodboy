@@ -1,0 +1,193 @@
+{
+  "cases": [
+    {
+      "name": "github classic token",
+      "input": "push failed for ghp_0123456789abcdefghijABCDEFGHIJ012345 on ledger-core",
+      "leaks": ["ghp_0123456789abcdefghijABCDEFGHIJ012345"],
+      "keeps": ["ledger-core"]
+    },
+    {
+      "name": "github oauth and server tokens",
+      "input": "gho_0123456789abcdefghijABCDEFGHIJ012345 ghs_0123456789abcdefghijABCDEFGHIJ012345",
+      "leaks": [
+        "gho_0123456789abcdefghijABCDEFGHIJ012345",
+        "ghs_0123456789abcdefghijABCDEFGHIJ012345"
+      ],
+      "keeps": []
+    },
+    {
+      "name": "github fine grained token",
+      "input": "token github_pat_11ABCDEFG0abcdefghij_ABCDEFGHIJKLMNOPQRSTUV end",
+      "leaks": ["github_pat_11ABCDEFG0abcdefghij_ABCDEFGHIJKLMNOPQRSTUV"],
+      "keeps": ["end"]
+    },
+    {
+      "name": "gitlab token",
+      "input": "glpat-abcdefghijklmnopqrstu rejected",
+      "leaks": ["glpat-abcdefghijklmnopqrstu"],
+      "keeps": ["rejected"]
+    },
+    {
+      "name": "slack bot and user tokens",
+      "input": "xoxb-1234567890-abcdefghijkl xoxp-1234567890-abcdefghijkl",
+      "leaks": ["xoxb-1234567890-abcdefghijkl", "xoxp-1234567890-abcdefghijkl"],
+      "keeps": []
+    },
+    {
+      "name": "slack app token",
+      "input": "socket xapp-1-A0123456789-1234567890-abcdef0123456789 open",
+      "leaks": ["xapp-1-A0123456789-1234567890-abcdef0123456789"],
+      "keeps": ["socket", "open"]
+    },
+    {
+      "name": "anthropic key",
+      "input": "key sk-ant-api03-abcdefghijklmnopqrstuvwx used",
+      "leaks": ["sk-ant-api03-abcdefghijklmnopqrstuvwx"],
+      "keeps": ["used"]
+    },
+    {
+      "name": "openai key",
+      "input": "OPENAI sk-abcdefghijklmnopqrstuvwx1234",
+      "leaks": ["sk-abcdefghijklmnopqrstuvwx1234"],
+      "keeps": []
+    },
+    {
+      "name": "linear api key",
+      "input": "linear lin_api_abcdefghijklmnopqrstuvwxyz012345 north",
+      "leaks": ["lin_api_abcdefghijklmnopqrstuvwxyz012345"],
+      "keeps": ["north"]
+    },
+    {
+      "name": "sentry org and user tokens",
+      "input": "sntrys_eyJpYXQiOjE2OTkwMDAwMDB sntryu_0123456789abcdef0123456789abcdef",
+      "leaks": ["sntrys_eyJpYXQiOjE2OTkwMDAwMDB", "sntryu_0123456789abcdef0123456789abcdef"],
+      "keeps": []
+    },
+    {
+      "name": "atlassian api token",
+      "input": "jira ATATT3xFfGF0abcdefghijklmnopqrstuvwxyz0123456789ABCD1234 ok",
+      "leaks": ["ATATT3xFfGF0abcdefghijklmnopqrstuvwxyz0123456789ABCD1234"],
+      "keeps": ["jira", "ok"]
+    },
+    {
+      "name": "bitbucket api token",
+      "input": "bb ATBBabcdefghijklmnopqrstuv0123 ok",
+      "leaks": ["ATBBabcdefghijklmnopqrstuv0123"],
+      "keeps": ["ok"]
+    },
+    {
+      "name": "aws access key",
+      "input": "aws AKIAIOSFODNN7EXAMPLE and ASIAIOSFODNN7EXAMPLE",
+      "leaks": ["AKIAIOSFODNN7EXAMPLE", "ASIAIOSFODNN7EXAMPLE"],
+      "keeps": ["aws"]
+    },
+    {
+      "name": "json web token",
+      "input": "jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhY21lIn0.c2lnbmF0dXJlMTIzNDU2 done",
+      "leaks": ["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiJhY21lIn0", "c2lnbmF0dXJlMTIzNDU2"],
+      "keeps": ["done"]
+    },
+    {
+      "name": "private key block",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdef0123456789\n-----END RSA PRIVATE KEY----- tail",
+      "leaks": ["MIIEowIBAAKCAQEAabcdef0123456789"],
+      "keeps": ["tail"]
+    },
+    {
+      "name": "authorization bearer header",
+      "input": "Authorization: Bearer abcdefghijklmnop",
+      "leaks": ["abcdefghijklmnop"],
+      "keeps": ["Authorization"]
+    },
+    {
+      "name": "bare bearer value",
+      "input": "sent Bearer abcdefghijklmnop to payments-api",
+      "leaks": ["abcdefghijklmnop"],
+      "keeps": ["payments-api"]
+    },
+    {
+      "name": "basic credential",
+      "input": "Authorization: Basic dXNlcjpwYXNzd29yZA==",
+      "leaks": ["dXNlcjpwYXNzd29yZA=="],
+      "keeps": []
+    },
+    {
+      "name": "api key flag with equals",
+      "input": "run --api-key=sk_test_abcdefgh --port=3000",
+      "leaks": ["sk_test_abcdefgh"],
+      "keeps": ["--port=3000"]
+    },
+    {
+      "name": "api key flag with space",
+      "input": "run --api-key abcdefghij --port 80",
+      "leaks": ["abcdefghij"],
+      "keeps": ["--port 80"]
+    },
+    {
+      "name": "token query parameter",
+      "input": "GET /hook?token=abc123&page=2",
+      "leaks": ["abc123"],
+      "keeps": ["page=2"]
+    },
+    {
+      "name": "env style token assignment",
+      "input": "GITHUB_TOKEN=abcd1234efgh vite",
+      "leaks": ["abcd1234efgh"],
+      "keeps": ["vite"]
+    },
+    {
+      "name": "quoted password with spaces",
+      "input": "password: \"correct horse battery\" next",
+      "leaks": ["correct horse battery"],
+      "keeps": ["next"]
+    },
+    {
+      "name": "single quoted secret",
+      "input": "secret: 'topsecretvalue1' next",
+      "leaks": ["topsecretvalue1"],
+      "keeps": ["next"]
+    },
+    {
+      "name": "url userinfo with password",
+      "input": "fatal: https://harborline:hunter2pass@github.com/acme/widgets.git denied",
+      "leaks": ["harborline:hunter2pass", "hunter2pass"],
+      "keeps": ["github.com/acme/widgets.git", "denied"]
+    },
+    {
+      "name": "url userinfo with token user",
+      "input": "https://x-access-token:abcdef012345@github.com/acme/widgets",
+      "leaks": ["abcdef012345"],
+      "keeps": ["github.com/acme/widgets"]
+    },
+    {
+      "name": "url userinfo on ssh scheme",
+      "input": "ssh://deploy@northwind.example/repo.git",
+      "leaks": ["deploy@"],
+      "keeps": ["northwind.example/repo.git"]
+    },
+    {
+      "name": "plain url is kept",
+      "input": "fatal: repository 'https://github.com/acme/widgets' not found",
+      "leaks": [],
+      "keeps": ["https://github.com/acme/widgets", "not found"]
+    },
+    {
+      "name": "plain flags and ports are kept",
+      "input": "node --inspect=9229 app.js PORT=3000",
+      "leaks": [],
+      "keeps": ["node --inspect=9229 app.js PORT=3000"]
+    },
+    {
+      "name": "prose about tokens is kept",
+      "input": "token budget exceeded for the run",
+      "leaks": [],
+      "keeps": ["token budget exceeded for the run"]
+    },
+    {
+      "name": "words that only contain a label are kept",
+      "input": "the secretary reviewed the passwords policy",
+      "leaks": [],
+      "keeps": ["the secretary reviewed the passwords policy"]
+    }
+  ]
+}

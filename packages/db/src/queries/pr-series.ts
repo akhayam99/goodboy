@@ -14,6 +14,7 @@ import type {
   ProjectId,
   SessionId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { Database } from '../client';
 import {
   MOUNT_PR_LINK_COLUMNS,
@@ -88,9 +89,6 @@ const SERIES_COLUMNS = `id, session_id AS sessionId, project_id AS projectId, na
 
 const MEMBER_COLUMNS = `id, series_id AS seriesId, mount_id AS mountId, branch, ordinal, label,
     status, created_at AS createdAt, updated_at AS updatedAt`;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parseIdentity = ({
   value,

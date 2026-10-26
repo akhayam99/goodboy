@@ -1,7 +1,7 @@
-import { StatusDot } from '@goodboy/ui';
+import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../store/slices/project-mounts/mountRowModel';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { branchRowFactsOf } from '../../../features/branch/branchRowFactsOf';
 import { pullRequestStateToneOf } from '../../../features/branch/pullRequestStateToneOf';
 import { switchBranchMount } from '../../../features/branch/switchBranchMount';

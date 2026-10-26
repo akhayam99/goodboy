@@ -4,65 +4,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { ThinkingIndicator } from './index';
 
-const mockMatchMedia = (reduced: boolean) => {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: reduced,
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
-};
-
 beforeEach(() => {
   vi.useFakeTimers();
-  mockMatchMedia(false);
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 describe('ThinkingIndicator', () => {
-  it('shows a phrase from the active context bucket', () => {
-    render(<ThinkingIndicator context="search" />);
-    screen.getByText('Searching the code');
+  it('shows the phrase it is given', () => {
+    render(<ThinkingIndicator phrase="Running pnpm in payments-api" />);
+    screen.getByText('Running pnpm in payments-api');
   });
 
-  it('rotates the phrase on the tick interval', () => {
-    render(<ThinkingIndicator context="run" />);
-    screen.getByText('Running the command');
+  it('keeps the phrase put while time passes, so the line changes only with the activity', () => {
+    const { rerender } = render(<ThinkingIndicator phrase="Reading webhook.ts" />);
     act(() => {
-      vi.advanceTimersByTime(2600);
+      vi.advanceTimersByTime(60_000);
     });
-    screen.getByText('Collecting the output');
-  });
-
-  it('settles into a reassurance phrase after a long wait', () => {
-    render(<ThinkingIndicator context="think" />);
-    act(() => {
-      vi.advanceTimersByTime(2600 * 8);
-    });
-    screen.getByText('Still working');
-  });
-
-  it('freezes on the first phrase under reduced motion', () => {
-    mockMatchMedia(true);
-    render(<ThinkingIndicator context="think" />);
-    screen.getByText('Thinking it through');
-    act(() => {
-      vi.advanceTimersByTime(2600 * 4);
-    });
-    screen.getByText('Thinking it through');
+    screen.getByText('Reading webhook.ts');
+    rerender(<ThinkingIndicator phrase="Editing ledger.ts" />);
+    screen.getByText('Editing ledger.ts');
   });
 
   it('shows the running node and a live duration instead of a pulsing border', () => {
-    const { container } = render(<ThinkingIndicator context="think" />);
+    const { container } = render(<ThinkingIndicator phrase="Thinking" />);
     expect(container.querySelector('[data-node-state="running"]')).toBeTruthy();
     expect(container.querySelector('.animate-border-pulse')).toBeNull();
     act(() => {

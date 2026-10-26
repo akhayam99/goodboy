@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertWorkspace } from '@goodboy/db';
+import { insertProject, insertWorkspace } from '@goodboy/db';
 import { aProject, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
 import {
   brandId,
@@ -224,7 +224,9 @@ const userMessages = () =>
 beforeEach(async () => {
   await resetStoryStore();
   inPlaceSnapshot.reset();
-  await insertWorkspace({ db: await openStorySqlite(), workspace });
+  const db = await openStorySqlite();
+  await insertWorkspace({ db, workspace });
+  await insertProject({ db, project: notes });
   useAppStore.setState({
     workspaces: [workspace],
     currentWorkspaceId: workspace.id,

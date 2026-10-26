@@ -1,5 +1,5 @@
 import type { PullRequestStateKind } from '@goodboy/types';
-import { pullRequestKindOf } from '../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../shared/utils/pullRequestKind';
 import { pullRequestStateWordOf } from './pullRequestStateWordOf';
 
 type Params = {

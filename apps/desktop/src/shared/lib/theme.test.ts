@@ -5,7 +5,6 @@ import { STORAGE_KEYS } from './storage-keys';
 import {
   bootstrapTheme,
   getAppliedTheme,
-  oppositeOfApplied,
   resolveTheme,
   subscribeAppliedTheme,
   switchTheme,
@@ -13,6 +12,8 @@ import {
 } from './theme';
 
 type Listener = () => void;
+
+const oppositeOfApplied = (): 'dark' | 'light' => (getAppliedTheme() === 'dark' ? 'light' : 'dark');
 
 const mockSystem = ({ isLight }: { readonly isLight: boolean }) => {
   const listeners = new Set<Listener>();

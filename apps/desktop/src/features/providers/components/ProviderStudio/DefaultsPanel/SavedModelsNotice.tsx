@@ -21,7 +21,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
 
   useEffect(() => {
     void loadSavedProjectModels().catch((error: unknown) =>
-      reportError({ title: 'Could not read the saved folder model settings', error, workspaceId }),
+      reportError({ title: "Couldn't read the saved folder model settings", error, workspaceId }),
     );
   }, [loadSavedProjectModels, reportError, workspaceId]);
 

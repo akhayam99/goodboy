@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { AppShell, COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 import { shellArrangement } from '../../app/shellArrangement';
-import { PLAIN_INSET } from '../../shared/hooks/useTitlebarInset';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
 const SPACING_PX = 4;
@@ -74,14 +73,14 @@ describe('workspace tile and collapsed rail axis', () => {
 
     const tileCenter =
       spacingOf({ className: bar, prefix: 'px' }) +
-      Number.parseFloat(PLAIN_INSET) +
+      Number.parseFloat('0px') +
       spacingOf({ className: trigger, prefix: 'px' }) +
       spacingOf({ className: tile, prefix: 'size' }) / 2;
 
     expect(tileCenter).toBe(22);
     expect(tileCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
     expect(row).toContain('ml-(--titlebar-inset)');
-    expect(STYLES).toContain(`--titlebar-inset: ${PLAIN_INSET};`);
+    expect(STYLES).toContain(`--titlebar-inset: 0px;`);
   });
 
   it('sizes the rail of doors from the same constant and keeps every icon at its open row x', () => {

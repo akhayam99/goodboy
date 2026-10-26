@@ -35,7 +35,7 @@ describe('TranscriptRowHeader', () => {
     render(<TranscriptRowHeader tone="primary" eyebrow="tool" preview="read a file" meta="1.2s" />);
 
     expect(screen.getByText('tool').className).toContain('text-eyebrow');
-    expect(screen.getByText('read a file').className).toContain('text-label');
+    expect(screen.getByText('read a file').className).toContain('text-meta');
     expect(screen.getByText('1.2s').className).toContain('text-meta');
   });
 

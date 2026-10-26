@@ -1,0 +1,13 @@
+{
+  "apps/desktop/src/app/components/SideColumn/ColumnRail.tsx": 1,
+  "apps/desktop/src/app/components/SpawnedPanel/SpawnedNowRow.tsx": 1,
+  "apps/desktop/src/features/live-state/TailGlyph.tsx": 1,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,
+  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineMoreRow.tsx": 1,
+  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineNowRule.tsx": 1,
+  "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": 1,
+  "apps/desktop/src/shared/components/AnswerOptionRow/SelectionIndicator.tsx": 1,
+  "apps/desktop/src/shared/components/RoutingPicker/ProviderGrid.tsx": 1,
+  "packages/ui/src/components/Markdown/index.tsx": 1,
+  "packages/ui/src/components/StageTrack.tsx": 1
+}

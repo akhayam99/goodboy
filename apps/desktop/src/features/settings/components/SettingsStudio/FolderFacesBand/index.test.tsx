@@ -14,6 +14,7 @@ vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }))
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type ProjectId } from '@goodboy/types';
+import { insertProject, insertWorkspace } from '@goodboy/db';
 import { aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -25,7 +26,6 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { folderPurposeKey } from '../../../../../store/slices/folder-purpose/folderPurposeKey';
 import { FolderFacesBand } from './index';
 
 let useAppStore: StoryStore;
@@ -64,8 +64,8 @@ const sizeOf = ({ args }: SizeArgs) => ({
 const storedFace = async (): Promise<string | null> =>
   (
     await rowsOf<{ readonly value: string }>({
-      sql: 'SELECT value FROM settings WHERE key = ?',
-      params: [folderPurposeKey({ projectId: NOTES_ID })],
+      sql: 'SELECT value FROM project_values WHERE project_id = ? AND key = ?',
+      params: [NOTES_ID, 'folder.purpose'],
     })
   )[0]?.value ?? null;
 
@@ -77,7 +77,10 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  await openStorySqlite();
+  const db = await openStorySqlite();
+  await insertWorkspace({ db, workspace: WORKSPACE });
+  await insertProject({ db, project: NOTES });
+  await insertProject({ db, project: LEDGER });
   stubStoryInvoke({ file_versions_folder_size: sizeOf });
   useAppStore.setState({ workspaces: [WORKSPACE], projects: [NOTES, LEDGER] });
   await useAppStore.getState().setFolderPurpose({ projectId: NOTES_ID, purpose: 'documents' });
@@ -113,7 +116,7 @@ describe('the plain folders band in Folders settings', () => {
   });
 
   it('keeps the old face with the error beside it when the write fails', async () => {
-    injectDbFault({ match: /UPDATE settings/, message: 'disk I/O error' });
+    injectDbFault({ match: /UPDATE project_values/, message: 'disk I/O error' });
     render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
 
     fireEvent.click(faces().getByRole('tab', { name: 'Code project' }));

@@ -29,6 +29,53 @@ An older build refuses to open a database that a newer one migrated. It shows
 a screen that offers to restore the copy taken before the migration, or to
 quit. See [architecture.md](architecture.md) → Database migrations.
 
+## State outside SQLite
+
+Database migrations have a runner, a backup and convergence tests. State kept
+anywhere else has none of that, so it follows one rule. It covers browser
+local and session storage, the keychain, files under `~/.goodboy` or inside a
+repository checkout, and settings keys.
+
+A change that moves, renames or reshapes such state:
+
+- reads the old shape for two minor releases after the one that writes the new
+  shape, and writes only the new shape;
+- names the release that stops reading the old shape, in the code and in the
+  doc that owns the state;
+- ships a test that boots from the old shape and finds the same value in the
+  new one;
+- counts as a one-way door when an older build cannot read the new shape (add
+  the `One-way-door:` line below).
+
+## Retired state
+
+A state shape that Goodboy still reads, or that it stopped reading, has a row
+here. The row names the release that writes the new shape and the release that
+stops reading the old one. `legacy-state-sunset.test.ts` fails when the
+running version reaches that release while the row is still listed: remove the
+read in the code, then delete the row.
+
+| State                                                     | Old shape                    | New shape written since | Old shape read until (excluded) |
+| --------------------------------------------------------- | ---------------------------- | ----------------------- | ------------------------------- |
+| local storage key `goodboy:diffReviewed:<session>:<view>` | no mount id in the key       | 0.18.1                  | 0.30.0                          |
+| skills folder of a project                                | `<project-root>/.kay/skills` | 0.28.0                  | 0.31.0                          |
+
+Gone already:
+
+- The setting `context.roleMap` (introduced in 0.16.0) switched the role map off
+  for a person who edited the database by hand; no screen set it. It is not
+  read since 0.28.8, a stored `false` changes nothing, and the row stays in
+  the database untouched. `store.sqlite-context-items.test.ts` boots from that
+  old value.
+
+The skills folder is also a one-way door: a build before 0.28.0 does not read
+`.goodboy/skills`, so a skill written there is invisible to it. The commit that
+made the change carries `One-way-door: new skills are written to
+.goodboy/skills`, and 0.28.0 is a minor release.
+
+A change to derived state that reshuffles what an existing user sees, such as a
+lane or a sort order computed on launch, carries one line in the changelog.
+
 ## How a one-way door is spotted
 
 - A new migration file under `packages/db/src/migrations/` counts on its own.

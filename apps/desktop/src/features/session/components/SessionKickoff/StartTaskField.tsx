@@ -29,16 +29,16 @@ export const StartTaskField = ({
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
 
   return (
-    <section aria-label={START_KIND_COPY.task} className="flex flex-col gap-2">
+    <section aria-label={START_KIND_COPY.goal} className="flex flex-col gap-2">
       <DraftTasks workspaceId={workspaceId} />
       <PromptField
         kind="message"
-        label={START_KIND_COPY.task}
+        label={START_KIND_COPY.goal}
         value={goal}
         onChange={(next) => patchSessionDraft({ workspaceId, patch: { workflowGoal: next } })}
         onSubmit={onSubmit}
         isSubmitBlocked={isSubmitBlocked}
-        placeholder={START_KIND_COPY.taskPlaceholder}
+        placeholder={START_KIND_COPY.goalPlaceholder}
         disabled={isDisabled}
         minRows={2}
         maxRows={8}

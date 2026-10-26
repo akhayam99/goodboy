@@ -39,7 +39,7 @@ export const FileRail = ({ isShown, isOverlay, frame, bodyRef, children }: Props
       style={{ ...resizable.style, width: isShown ? `var(${RAIL_WIDTH_VAR})` : 0 }}
       className={cn(
         'flex min-h-0 shrink-0 overflow-clip bg-background',
-        'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-out',
+        'motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out',
         isOverlay
           ? 'absolute inset-y-0 right-0 z-20 max-w-[calc(100%-16px)] rounded-l-frame bg-drawer'
           : 'relative h-full',

@@ -20,6 +20,13 @@ export const isTurnStateLive = ({ turnState, includeBlocked = false }: TurnParam
   turnState?.kind === 'running' ||
   (includeBlocked && turnState?.kind === 'blocked');
 
+type BlockedParams = {
+  readonly turnState: TurnState | null | undefined;
+};
+
+export const isTurnStatePermissionBlocked = ({ turnState }: BlockedParams): boolean =>
+  turnState?.kind === 'blocked';
+
 export const isAgentClosedByUser = ({ agent }: AgentParams): boolean =>
   agent.doneAt != null && agent.status !== 'completed' && agent.status !== 'skipped';
 

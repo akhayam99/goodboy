@@ -1,5 +1,5 @@
 import { generateIssueBrief } from '@goodboy/core';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
@@ -12,9 +12,9 @@ import type {
   SetFn,
 } from './types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 

@@ -18,7 +18,7 @@ type Params = {
 
 type SharedParams = Pick<Params, 'get' | 'sessionId' | 'agentId' | 'startedAt'>;
 
-const isTurnShared = async ({
+export const isTurnShared = async ({
   get,
   sessionId,
   agentId,

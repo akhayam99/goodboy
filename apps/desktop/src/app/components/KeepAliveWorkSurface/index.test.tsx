@@ -11,6 +11,10 @@ vi.mock('../../../store', () => ({
   useSessionById: useSessionByIdSpy,
 }));
 
+vi.mock('../../hooks/useGoToBoard', () => ({
+  useGoToBoard: () => () => undefined,
+}));
+
 vi.mock('../../../features/session/components/SessionWorkspace', () => ({
   SessionWorkspace: sessionWorkspaceSpy,
 }));

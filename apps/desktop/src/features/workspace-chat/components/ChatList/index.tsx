@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Search } from 'lucide-react';
 import {
-  ROW_INTERACTIVE,
-  cn,
   Button,
+  cn,
   EmptyLine,
+  ICON_SIZE,
   Notice,
-  SkeletonRow,
+  ROW_INTERACTIVE,
   ScrollFade,
+  SkeletonRow,
 } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
@@ -299,7 +300,7 @@ export const ChatList = ({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search chats"
           aria-label="Search chats"
-          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
+          className="min-w-0 flex-1 bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
         />
       </label>
       <ScrollFade className="flex-1">
@@ -371,7 +372,7 @@ export const ChatList = ({
               tone="danger"
               placement="inline"
               role="alert"
-              title="Could not load chats"
+              title="Couldn't load chats"
               detail={error}
               actions={
                 <Button size="sm" onClick={() => void loadChats({ workspaceId })}>
@@ -412,7 +413,7 @@ export const ChatList = ({
             type="button"
             onClick={() => setIsArchivedView(true)}
             className={cn(
-              'flex h-8 w-full items-center gap-2 rounded-md px-2 text-label text-muted-foreground hover:text-foreground',
+              'flex h-8 w-full items-center gap-2 rounded-md px-2 text-meta text-muted-foreground hover:text-foreground',
               ROW_INTERACTIVE,
             )}
           >

@@ -1,39 +1,38 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreatedWorktree {
-    #[serde(rename = "worktreePath")]
     pub worktree_path: String,
-    #[serde(rename = "branchName")]
     pub branch_name: String,
     pub slug: String,
     pub reused: bool,
-    #[serde(rename = "trackedRemote")]
     pub tracked_remote: bool,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorktreeInfo {
     pub path: String,
     pub branch: Option<String>,
     pub head: String,
-    #[serde(rename = "isMain")]
     pub is_main: bool,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum WorktreeInspection {
     Missing {
         path: String,
     },
     Registered {
         path: String,
-        #[serde(rename = "isMain")]
         is_main: bool,
-        #[serde(rename = "isLocked")]
         is_locked: bool,
-        #[serde(rename = "lockReason")]
         lock_reason: Option<String>,
     },
     ForeignDirectory {
@@ -62,6 +61,38 @@ pub enum WorktreeRemovalReason {
     NotRegistered,
     OutsideWorktreeFolder,
     UnpushedCommits,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum FolderVerdict {
+    Safe,
+    Dirty,
+    Writing,
+    Operation,
+    NotTracked,
+    Unavailable,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum WorktreeRestoreRefusal {
+    OutsideWorktreeFolder,
+    PathTaken,
+    BranchMissing,
+    BranchInUse,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum WorktreeRestoreResult {
+    Restored {
+        path: String,
+    },
+    Refused {
+        path: String,
+        reason: WorktreeRestoreRefusal,
+    },
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -95,7 +126,11 @@ pub enum BranchIntegration {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum WorktreeDetachAssessment {
     Missing {
         path: String,
@@ -107,84 +142,71 @@ pub enum WorktreeDetachAssessment {
     Assessed {
         path: String,
         branch: Option<String>,
-        #[serde(rename = "hasUpstream")]
         has_upstream: bool,
-        #[serde(rename = "affectedFiles")]
         affected_files: u32,
-        #[serde(rename = "localOnlyCommits")]
         local_only_commits: u32,
-        #[serde(rename = "ignoredFiles")]
         ignored_files: u32,
-        #[serde(rename = "ignoredFileSamples")]
         ignored_file_samples: Vec<String>,
         integration: BranchIntegration,
     },
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct WorktreeDirectorySize {
     pub path: String,
-    #[serde(rename = "sizeBytes")]
     pub size_bytes: Option<u64>,
-    #[serde(rename = "isPartial")]
     pub is_partial: bool,
     pub exists: bool,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateArgs {
-    #[serde(rename = "repoPath")]
     pub repo_path: String,
-    #[serde(rename = "branchName")]
     pub branch_name: String,
-    #[serde(rename = "parentDir")]
     pub parent_dir: Option<String>,
-    #[serde(rename = "existingBranch", default)]
+    #[serde(default)]
     pub existing_branch: Option<String>,
-    #[serde(rename = "fallbackRef", default)]
+    #[serde(default)]
     pub fallback_ref: Option<String>,
     /// Base branch to cut a new branch from. Defaults to `main`. The branch is
     /// always cut from `origin/<base>` (not the local copy) so a stale local
     /// `main` cannot leak unrelated commits into the new branch. Ignored when
     /// `existing_branch` is set.
-    #[serde(rename = "baseBranch", default)]
+    #[serde(default)]
     pub base_branch: Option<String>,
-    #[serde(rename = "dirName", default)]
+    #[serde(default)]
     pub dir_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BranchInfo {
     pub name: String,
     /// True when this branch is currently checked out in some worktree.
-    #[serde(rename = "inUse")]
     pub in_use: bool,
     /// True when the branch has uncommitted changes in its checkout.
-    #[serde(rename = "hasUncommitted")]
     pub has_uncommitted: bool,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RemoteBranchInfo {
     pub name: String,
     pub author: String,
     pub sha: String,
     pub timestamp: i64,
-    #[serde(rename = "hasLocal")]
     pub has_local: bool,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct RemoteBranchState {
-    #[serde(rename = "remoteAhead")]
     pub remote_ahead: u32,
-    #[serde(rename = "localOwn")]
     pub local_own: u32,
-    #[serde(rename = "remoteContainsLocal")]
     pub remote_contains_local: bool,
-    #[serde(rename = "remoteSha")]
     pub remote_sha: String,
-    #[serde(rename = "localSha")]
     pub local_sha: String,
 }
 
@@ -194,55 +216,46 @@ pub struct ChangedBranch {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChangeBranchArgs {
-    #[serde(rename = "repoPath")]
     pub repo_path: String,
-    #[serde(rename = "worktreePath")]
     pub worktree_path: String,
     pub branch: String,
     /// When true, create the branch with `git switch -c`. When false, switch to
     /// an existing branch with `git switch`.
-    #[serde(rename = "createNew")]
     pub create_new: bool,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IntegrateCandidateArgs {
-    #[serde(rename = "worktreePath")]
     pub worktree_path: String,
-    #[serde(rename = "candidateId")]
     pub candidate_id: String,
-    #[serde(rename = "candidateSha")]
     pub candidate_sha: String,
-    #[serde(rename = "expectedHead")]
     pub expected_head: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuarantineCandidateArgs {
-    #[serde(rename = "worktreePath")]
     pub worktree_path: String,
-    #[serde(rename = "candidateId")]
     pub candidate_id: String,
-    #[serde(rename = "baseSha")]
     pub base_sha: String,
     #[serde(default)]
     pub stack: bool,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SplitCandidatePick {
-    #[serde(rename = "candidateId")]
     pub candidate_id: String,
-    #[serde(rename = "commitSha")]
     pub commit_sha: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SplitCandidatesArgs {
-    #[serde(rename = "worktreePath")]
     pub worktree_path: String,
-    #[serde(rename = "baseSha")]
     pub base_sha: String,
     pub picks: Vec<SplitCandidatePick>,
     #[serde(default)]
@@ -250,8 +263,8 @@ pub struct SplitCandidatesArgs {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SplitCandidate {
-    #[serde(rename = "candidateId")]
     pub candidate_id: String,
     pub sha: Option<String>,
 }
@@ -262,22 +275,21 @@ pub struct IntegratedCandidate {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuarantinedCandidate {
     pub sha: Option<String>,
-    #[serde(rename = "baseSha")]
     pub base_sha: String,
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BranchCommit {
     pub sha: String,
-    #[serde(rename = "shortSha")]
     pub short_sha: String,
     pub subject: String,
     pub author: String,
     pub timestamp: i64,
     pub pushed: bool,
-    #[serde(rename = "parentSha")]
     pub parent_sha: Option<String>,
 }
 
@@ -324,19 +336,17 @@ pub enum GitOperation {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorktreeStatus {
     pub branch: Option<String>,
     pub head: Option<String>,
-    #[serde(rename = "headSubject")]
     pub head_subject: Option<String>,
-    #[serde(rename = "upstreamDistance")]
     pub upstream_distance: GitDistance,
-    #[serde(rename = "mainDistance")]
     pub main_distance: GitDistance,
-    #[serde(rename = "workingTree")]
     pub working_tree: GitWorkingTree,
-    #[serde(rename = "upstream")]
     pub upstream: Option<String>,
-    #[serde(rename = "inProgress")]
     pub in_progress: Option<GitOperation>,
 }
+
+#[cfg(test)]
+mod wire_shape;

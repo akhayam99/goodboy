@@ -37,9 +37,15 @@ const delta = (index: number): TurnEvent => ({
   at: NOW,
 });
 
-const createHarness = async (): Promise<Harness> => {
+type HarnessParams = {
+  readonly seededRows?: number;
+};
+
+const createHarness = async ({ seededRows = 0 }: HarnessParams = {}): Promise<Harness> => {
   const { appendTurnEvent } = await import('./appendTurnEvent');
-  let state: { transcripts: Record<string, ReadonlyArray<TurnEvent>> } = { transcripts: {} };
+  let state: { transcripts: Record<string, ReadonlyArray<TurnEvent>> } = {
+    transcripts: { [AGENT_ID]: Array.from({ length: seededRows }, (_, index) => delta(index)) },
+  };
   let setCalls = 0;
   const set = ((updater: unknown) => {
     setCalls += 1;
@@ -102,5 +108,48 @@ describe('turn event buffering', () => {
 
     expect(harness.transcriptOf(OTHER_AGENT_ID)).toBe(before);
     expect(harness.transcriptOf(AGENT_ID)).toHaveLength(1);
+  });
+
+  it.each([
+    [0, 16],
+    [1000, 16],
+    [3000, 58],
+    [5000, 100],
+    [90000, 100],
+  ])(
+    'waits as long as the window for a transcript of %i rows: %ims',
+    async (seededRows, windowMs) => {
+      const harness = await createHarness({ seededRows });
+
+      harness.append(AGENT_ID, SESSION_ID, delta(0));
+      harness.append(AGENT_ID, SESSION_ID, delta(1));
+      expect(harness.setCalls()).toBe(1);
+
+      vi.advanceTimersByTime(windowMs - 1);
+      expect(harness.setCalls()).toBe(1);
+
+      vi.advanceTimersByTime(1);
+      expect(harness.setCalls()).toBe(2);
+    },
+  );
+
+  it('writes a long transcript less often than a short one and keeps every event', async () => {
+    const writesFor = async (seededRows: number): Promise<number> => {
+      vi.resetModules();
+      const harness = await createHarness({ seededRows });
+      for (let index = 0; index < 10; index += 1) {
+        harness.append(AGENT_ID, SESSION_ID, delta(index));
+        vi.advanceTimersByTime(20);
+      }
+      vi.advanceTimersByTime(200);
+      expect(harness.transcriptOf(AGENT_ID)).toHaveLength(seededRows + 10);
+      return harness.setCalls();
+    };
+
+    const shortWrites = await writesFor(0);
+    const longWrites = await writesFor(3000);
+
+    expect(shortWrites).toBeGreaterThanOrEqual(10);
+    expect(longWrites).toBeLessThanOrEqual(5);
   });
 });

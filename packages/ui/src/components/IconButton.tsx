@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
@@ -81,9 +82,10 @@ export const IconButton = ({
           variant === 'outline'
             ? 'border border-border-soft hover:border-border hover:bg-hover'
             : 'border border-transparent hover:bg-hover',
-          'hover:text-foreground disabled:text-disabled-foreground disabled:hover:bg-transparent',
+          'hover:text-foreground disabled:hover:bg-transparent',
           FOCUS_RING,
           tone !== 'neutral' && toneClasses(tone, variant),
+          (disabled === true || busy === true) && DISABLED,
           className,
         )}
         {...rest}

@@ -1,75 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { issueBranchMatches, issueBranchSlug } from '../../../../shared/utils/issueBranchSlug';
+import { issueBranchMatches } from '../../../../shared/utils/issueBranchSlug';
 import { useAppStore, useSessions } from '../../../../store';
-import { jiraListIssues, type JiraIssue, type JiraStatusCategoryKey } from '../client';
+import { jiraListIssues, type JiraIssue } from '../client';
+import { buildIssueGroups, type JiraIssueGroup } from './buildIssueGroups';
 import { useJiraConfig } from '../useJiraConfig';
-import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
-import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
+import { useLatestFetch } from '../../hooks/useLatestFetch';
+import { useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { sessionByExternalId } from '../../shared/sessionByExternalId';
 
 const JIRA_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['jira'];
-
-type BranchSlugParams = {
-  readonly issue: JiraIssue;
-};
-
-export const jiraBranchSlug = ({ issue }: BranchSlugParams): string =>
-  issueBranchSlug({ prefix: issue.key, title: issue.summary });
-
-type JiraIssueRow = {
-  readonly issue: JiraIssue;
-  readonly sessionId: SessionId | null;
-};
-
-export type JiraIssueGroup = {
-  readonly key: JiraStatusCategoryKey;
-  readonly label: string;
-  readonly rows: ReadonlyArray<JiraIssueRow>;
-};
-
-const GROUP_ORDER: ReadonlyArray<JiraStatusCategoryKey> = ['indeterminate', 'new', 'done', ''];
-
-const GROUP_LABEL: Record<JiraStatusCategoryKey, string> = {
-  indeterminate: 'In progress',
-  new: 'To do',
-  done: 'Done',
-  '': 'Other',
-};
-
-type GroupParams = {
-  readonly issues: ReadonlyArray<JiraIssue>;
-  readonly sessionIdByExternalId: ReadonlyMap<string, SessionId>;
-};
-
-export const buildIssueGroups = ({
-  issues,
-  sessionIdByExternalId,
-}: GroupParams): ReadonlyArray<JiraIssueGroup> => {
-  const buckets = new Map<JiraStatusCategoryKey, JiraIssueRow[]>();
-  for (const issue of issues) {
-    const row: JiraIssueRow = {
-      issue,
-      sessionId: sessionIdByExternalId.get(issue.id) ?? null,
-    };
-    const existing = buckets.get(issue.statusCategory);
-    if (existing != null) {
-      existing.push(row);
-      continue;
-    }
-    buckets.set(issue.statusCategory, [row]);
-  }
-  return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
-    key,
-    label: GROUP_LABEL[key],
-    rows: buckets
-      .get(key)!
-      .slice()
-      .sort((left, right) =>
-        compareIsoDesc({ left: left.issue.updated, right: right.issue.updated }),
-      ),
-  }));
-};
 
 type SessionMatchParams = {
   readonly issues: ReadonlyArray<JiraIssue>;
@@ -83,27 +24,21 @@ export const resolveIssueSessions = ({
   sessions,
   sessionBranches,
   linkedSessions,
-}: SessionMatchParams): Map<string, SessionId> => {
-  const byIssue = new Map<string, SessionId>();
-  for (const issue of issues) {
-    const linked = linkedSessions.get(linkedTaskKey({ provider: 'jira', externalId: issue.id }));
-    if (linked !== undefined) {
-      byIssue.set(issue.id, linked);
-      continue;
-    }
-    const match = sessions.find((session) => {
+}: SessionMatchParams): Map<string, SessionId> =>
+  sessionByExternalId({
+    issues,
+    sessions,
+    linkedSessions,
+    provider: 'jira',
+    externalIdOf: ({ issue }) => issue.id,
+    isSessionOfIssue: ({ issue, session }) => {
       const branch = sessionBranches[session.id];
       if (branch == null) {
         return false;
       }
       return issueBranchMatches({ branch, prefix: issue.key, title: issue.summary });
-    });
-    if (match != null) {
-      byIssue.set(issue.id, match.id);
-    }
-  }
-  return byIssue;
-};
+    },
+  });
 
 export type UseJiraIssues = {
   readonly groups: ReadonlyArray<JiraIssueGroup>;
@@ -133,8 +68,10 @@ export const useJiraIssues = ({
   const [issues, setIssues] = useState<ReadonlyArray<JiraIssue>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const beginFetch = useLatestFetch();
 
   const fetchIssues = useCallback(async () => {
+    const isStale = beginFetch();
     if (!isEnabled || siteUrl == null || email == null || projectKey == null) {
       setIssues([]);
       setIsLoading(false);
@@ -151,13 +88,21 @@ export const useJiraIssues = ({
         projectKey,
         assignedOnly,
       });
+      if (isStale()) {
+        return;
+      }
       setIssues(rows);
     } catch (fetchError) {
+      if (isStale()) {
+        return;
+      }
       setError(formatError(fetchError));
     } finally {
-      setIsLoading(false);
+      if (!isStale()) {
+        setIsLoading(false);
+      }
     }
-  }, [workspaceId, siteUrl, email, projectKey, assignedOnly, isEnabled]);
+  }, [beginFetch, workspaceId, siteUrl, email, projectKey, assignedOnly, isEnabled]);
 
   useEffect(() => {
     void fetchIssues();

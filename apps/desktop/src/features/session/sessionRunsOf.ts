@@ -6,6 +6,8 @@ import type {
   TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
+import { agentStateOf } from '../workTreeModel/agentStateOf';
+import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
@@ -13,7 +15,7 @@ import { autoTreeWordOf } from '../auto/autoTreeWordOf';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
 import { splitWorkflowRuns } from '../workflows/activeWorkflowRuns';
 import { runRowFactsOf } from '../workflows/runRowFactsOf';
-import { workflowKindName } from '../workspace/components/WorkspacesSidebar/lib';
+import { workflowKindName } from '../workflows/workflowKindName';
 import {
   agentKindPalette,
   classifyAgent,
@@ -21,7 +23,6 @@ import {
   isStandaloneAgent,
   type AgentKind,
 } from './agent-kind';
-import { describeAgentStatus } from './agent-status';
 import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
@@ -46,6 +47,8 @@ export type SessionRun = Readonly<{
   isWaiting: boolean;
   isArchived: boolean;
   isFinished: boolean;
+  isUnread: boolean;
+  isRestartStopped: boolean;
   progress: string;
   startedAt: number;
   agentIds: ReadonlyArray<AgentId>;
@@ -60,6 +63,7 @@ type Params = {
   readonly orchestrating: Readonly<Record<string, boolean>> | undefined;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
+  readonly turnByAgentId: ReadonlyMap<string, TurnState>;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -138,6 +142,14 @@ const descendantsOf = ({ agents, rootId }: DescendantParams): ReadonlyArray<Agen
   return found;
 };
 
+type UnreadParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly agentIds: ReadonlyArray<AgentId>;
+};
+
+const isUnreadOf = ({ agents, agentIds }: UnreadParams): boolean =>
+  agents.some((agent) => agentIds.includes(agent.id) && agentHasUnread(agent, false));
+
 type WorkflowRowsParams = Pick<Params, 'attachedRuns' | 'agents' | 'orchestrating' | 'questions'>;
 
 const workflowRowsOf = ({
@@ -148,7 +160,7 @@ const workflowRowsOf = ({
 }: WorkflowRowsParams): ReadonlyArray<SessionRun> => {
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const nameByRunId = new Map(
-    attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName(workflow)]),
+    attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName({ workflow })]),
   );
   return attachedRuns.map(({ run, workflow }) => {
     const stepAgents = agentsByRunId.get(run.id) ?? NO_AGENTS;
@@ -163,22 +175,29 @@ const workflowRowsOf = ({
     });
     const isOrchestrated = run.executionMode === 'dynamic';
     const isArchived = run.discardedAt != null;
+    const agentIds = agents
+      .filter((agent) => agent.workflowRunId === run.id)
+      .map((agent) => agent.id);
     return {
       id: run.id,
       kind: isOrchestrated ? 'orchestrated' : 'preset',
       shape: 'plan',
-      title: nameByRunId.get(run.id) ?? workflowKindName(workflow),
+      title: nameByRunId.get(run.id) ?? workflowKindName({ workflow }),
       origin: isOrchestrated
         ? ORIGIN.orchestrated
-        : runKindLineOf({ line: { kind: 'preset', presetName: workflowKindName(workflow) } }),
+        : runKindLineOf({
+            line: { kind: 'preset', presetName: workflowKindName({ workflow }) },
+          }),
       dot: facts.dot,
       stateWord: facts.word,
       ...(isArchived ? { isInProgress: false, isWaiting: false } : progressStateOf(facts)),
       isArchived,
       isFinished: !facts.isActive,
+      isUnread: isUnreadOf({ agents, agentIds }),
+      isRestartStopped: false,
       progress: facts.progress,
       startedAt: timeOf({ value: run.createdAt }),
-      agentIds: agents.filter((agent) => agent.workflowRunId === run.id).map((agent) => agent.id),
+      agentIds,
       open: { kind: 'run', runId: run.id },
     };
   });
@@ -222,6 +241,7 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
     view === undefined ? resting : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
   const dot = autoDotOf(state);
   const children = descendantsOf({ agents, rootId: root.id });
+  const agentIds = [root.id, ...children.map((child) => child.id)];
   return {
     id: root.id,
     kind: 'auto',
@@ -233,43 +253,13 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
     ...progressStateOf({ dot }),
     isArchived: false,
     isFinished: FINISHED_DOTS.has(dot),
+    isUnread: isUnreadOf({ agents, agentIds }),
+    isRestartStopped: false,
     progress: children.length === 0 ? '' : countWordOf({ count: children.length, noun: 'agent' }),
     startedAt: view === undefined ? timeOf({ value: root.startedAt }) : view.tree.createdAt,
-    agentIds: [root.id, ...children.map((child) => child.id)],
+    agentIds,
     open: { kind: 'auto', agentId: root.id },
   };
-};
-
-type AgentDotParams = {
-  readonly agent: Agent;
-  readonly hasQuestion: boolean;
-};
-
-const agentDotOf = ({ agent, hasQuestion }: AgentDotParams): DotState => {
-  if (agent.doneAt != null) {
-    return agent.status === 'completed' ? 'done' : 'stopped';
-  }
-  if (hasQuestion) {
-    return 'needsYou';
-  }
-  switch (agent.status) {
-    case 'running':
-      return 'running';
-    case 'completed':
-      return 'done';
-    case 'failed':
-    case 'blocked':
-      return 'failed';
-    case 'stopped':
-    case 'skipped':
-      return 'stopped';
-    case 'pending':
-      return 'idle';
-    default: {
-      const unreachable: never = agent.status;
-      return unreachable;
-    }
-  }
 };
 
 type AgentRowParams = {
@@ -277,35 +267,58 @@ type AgentRowParams = {
   readonly kind: AgentKind;
   readonly agents: ReadonlyArray<Agent>;
   readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly turn: TurnState | undefined;
 };
 
-const agentRowOf = ({ agent, kind, agents, questions }: AgentRowParams): SessionRun => {
-  const hasQuestion = questions.some(
-    (question) => question.status === 'open' && question.createdByAgentId === agent.id,
-  );
-  const dot = agentDotOf({ agent, hasQuestion });
+const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRun => {
+  const state = agentStateOf({
+    agent,
+    turn,
+    openQuestions: questions.filter(
+      (question) => question.status === 'open' && question.createdByAgentId === agent.id,
+    ),
+  });
   const children = descendantsOf({ agents, rootId: agent.id });
   const count = children.length + 1;
+  const agentIds = [agent.id, ...children.map((child) => child.id)];
   return {
     id: agent.id,
     kind: 'agent',
     shape: 'lead',
     title: agent.name,
     origin: runKindLineOf({ line: { kind: 'agent', role: agentKindPalette({ kind }).label } }),
-    dot,
-    stateWord: hasQuestion ? 'Needs you' : describeAgentStatus({ status: agent.status }).label,
-    ...progressStateOf({ dot }),
+    dot: state.dot,
+    stateWord: state.word,
+    ...progressStateOf({ dot: state.dot }),
     isArchived: false,
-    isFinished: FINISHED_DOTS.has(dot),
+    isFinished: state.isFinished,
+    isUnread: isUnreadOf({ agents, agentIds }),
+    isRestartStopped: state.status === 'stopped' && !state.isFinished && agent.stoppedBy === 'app',
     progress: countWordOf({ count, noun: 'agent' }),
     startedAt: timeOf({ value: agent.startedAt }),
-    agentIds: [agent.id, ...children.map((child) => child.id)],
+    agentIds,
     open: { kind: 'agent', agentId: agent.id },
   };
 };
 
-const compareRuns = (first: SessionRun, second: SessionRun): number =>
-  second.startedAt - first.startedAt;
+type RankParams = {
+  readonly run: SessionRun;
+};
+
+const rankOf = ({ run }: RankParams): number => {
+  if (run.isFinished) {
+    return run.isUnread ? 3 : 4;
+  }
+  if (run.dot === 'needsYou' || run.dot === 'failed') {
+    return 0;
+  }
+  return run.dot === 'running' ? 1 : 2;
+};
+
+const compareRuns = (first: SessionRun, second: SessionRun): number => {
+  const rankGap = rankOf({ run: first }) - rankOf({ run: second });
+  return rankGap === 0 ? second.startedAt - first.startedAt : rankGap;
+};
 
 export const sessionRunsOf = ({
   attachedRuns,
@@ -315,6 +328,7 @@ export const sessionRunsOf = ({
   orchestrating,
   questions,
   rootTurns,
+  turnByAgentId,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -326,7 +340,9 @@ export const sessionRunsOf = ({
     .map(({ agent }) => autoRowOf({ root: agent, agents, autoViews, rootTurns }));
   const agentRows = kinds
     .filter(({ kind }) => isAgentsPageKind({ kind }))
-    .map(({ agent, kind }) => agentRowOf({ agent, kind, agents, questions }));
+    .map(({ agent, kind }) =>
+      agentRowOf({ agent, kind, agents, questions, turn: turnByAgentId.get(agent.id) }),
+    );
   return [
     ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions }),
     ...autoRows,

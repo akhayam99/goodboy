@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { inPlaceFoldersOf } from '../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { LevelCard } from './LevelCard';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { PopoverPortalProvider, cn } from '@goodboy/ui';
+import { FLOATING_SURFACE, PopoverPortalProvider, Scrim, cn } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PALETTE_MODES } from '../../paletteModes';
@@ -66,12 +66,7 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
       ref={setLayer}
       className="fixed inset-0 z-command-palette flex items-start justify-center px-4 pt-14"
     >
-      <div
-        aria-hidden
-        data-testid="palette-scrim"
-        className="absolute inset-0 bg-scrim motion-safe:animate-fade-in"
-        onMouseDown={onClose}
-      />
+      <Scrim testId="palette-scrim" onMouseDown={onClose} />
       <PopoverPortalProvider value={layer}>
         <div
           role="dialog"
@@ -79,7 +74,8 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
           aria-label={active.label}
           style={{ minHeight: PALETTE_MIN_HEIGHT_PX }}
           className={cn(
-            'relative flex max-h-[calc(100vh-7rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
+            FLOATING_SURFACE,
+            'relative flex max-h-[calc(100vh-7rem)] w-full flex-col overflow-hidden motion-safe:animate-studio-in',
             active.widthClass,
           )}
         >

@@ -5,7 +5,7 @@ import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useCurrentSession, useSessions } from '../../../../store';
-import { isDirectedScene } from '../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../shared/utils/isDirectedScene';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';

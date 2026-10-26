@@ -1,9 +1,9 @@
 import { modeSupportFor } from '@goodboy/core';
 import type { ClaudePermissionMode, ProviderId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Band, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { Band, BAND_ROW_CLASS, cn, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
 import { Check, EqualApproximately, X, type LucideIcon } from 'lucide-react';
 import { modeCopyOf } from '../../../../permissions/modeCopy';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { PROVIDER_LABEL } from '../../../providerLabel';
 
 type Props = {
@@ -93,7 +93,7 @@ export const PermissionsGroup = ({ providerId }: Props) => {
           const tint = tintClasses(row.verdict.tone);
           const Icon = row.verdict.icon;
           return (
-            <li key={row.key} className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
+            <li key={row.key} className={cn(BAND_ROW_CLASS, 'gap-3 text-meta')}>
               <span className="w-28 shrink-0 truncate text-foreground">{row.label}</span>
               <span className="flex w-36 shrink-0 items-center gap-1 text-muted-foreground">
                 <Icon

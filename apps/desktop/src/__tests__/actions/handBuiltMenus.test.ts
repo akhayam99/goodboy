@@ -7,7 +7,7 @@ const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const REGISTRY_ROOT = 'features/actions/';
 
-const HAND_BUILT_MENU = /OverflowMenuItem|<OverflowMenu\b|<MenuItems\b|<MenuList\b|<ContextMenu\b/;
+const HAND_BUILT_MENU = /<OverflowMenu\b|<MenuList\b|<ContextMenu\b/;
 
 const HAND_BUILT_MENU_ROLE =
   /\srole=(?:["']|\{[^}\n]*?[?:]\s*["'])(?:menu|menuitem|menuitemradio|menuitemcheckbox)["']/;
@@ -52,7 +52,7 @@ const roleOffenders = (): ReadonlyArray<string> =>
     .map((path) => relative(SRC, path).split(sep).join('/'))
     .filter((path) => HAND_BUILT_MENU_ROLE.test(readFileSync(join(SRC, path), 'utf8')));
 
-const ITEMS_OPENING = 'items={[';
+const ITEMS_OPENING = 'entries={[';
 
 type BracketParams = {
   readonly source: string;
@@ -107,13 +107,13 @@ const singleItemMenus = (): ReadonlyArray<string> =>
 
 describe('a menu of one item', () => {
   it('is found in a literal items array', () => {
-    const source = `<OverflowMenu items={[{ kind: 'item', key: 'a', label: 'A', onClick }]} />`;
+    const source = `<OverflowMenu entries={[{ kind: 'item', key: 'a', label: 'A', onSelect }]} />`;
     expect(literalItemCounts({ source })).toEqual([1]);
   });
 
   it('counts two items and skips an array that spreads other items', () => {
-    const two = `<OverflowMenu items={[{ kind: 'item', key: 'a' }, { kind: 'item', key: 'b' }]} />`;
-    const spread = `<OverflowMenu items={[...more, { kind: 'item', key: 'a' }]} />`;
+    const two = `<OverflowMenu entries={[{ kind: 'item', key: 'a' }, { kind: 'item', key: 'b' }]} />`;
+    const spread = `<OverflowMenu entries={[...more, { kind: 'item', key: 'a' }]} />`;
     expect(literalItemCounts({ source: two })).toEqual([2]);
     expect(literalItemCounts({ source: spread })).toEqual([]);
   });

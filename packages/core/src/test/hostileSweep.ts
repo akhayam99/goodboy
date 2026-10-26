@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const HOSTILE_LENGTH = 100_000;
 
@@ -45,9 +46,6 @@ export type HostileRun = Readonly<{
   style: 'string' | 'params';
   ms: number;
 }>;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null;
 
 const isCallable = (value: unknown): value is (...args: ReadonlyArray<unknown>) => unknown =>
   typeof value === 'function';

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '../cn';
-import { ICON_SIZE } from '../iconSize';
+import { FOCUS_RING } from '../focusRing';
+import { ICON_SIZE, ICON_STROKE } from '../iconSize';
 
 export type CheckboxProps = {
   readonly label?: ReactNode;
@@ -26,7 +27,7 @@ export const Checkbox = ({
 }: CheckboxProps) => (
   <label
     className={cn(
-      'inline-flex items-center gap-1 text-label text-foreground',
+      'inline-flex items-center gap-1 text-meta text-foreground',
       disabled ? 'cursor-not-allowed text-disabled-foreground' : 'cursor-pointer',
       className,
     )}
@@ -48,24 +49,26 @@ export const Checkbox = ({
           }
         }}
         className={cn(
-          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:bg-fill',
+          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border bg-background transition-colors checked:border-primary checked:bg-primary',
+          FOCUS_RING,
+          'disabled:cursor-not-allowed disabled:bg-fill',
           indeterminate === true && 'border-primary bg-primary',
         )}
       />
       {checked && indeterminate !== true ? (
         <Check
           size={ICON_SIZE.row}
-          strokeWidth={3}
+          strokeWidth={ICON_STROKE.check}
           aria-hidden
-          className="pointer-events-none absolute inset-0 m-auto text-background"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-background"
         />
       ) : null}
       {indeterminate === true ? (
         <Minus
           size={ICON_SIZE.row}
-          strokeWidth={3}
+          strokeWidth={ICON_STROKE.check}
           aria-hidden
-          className="pointer-events-none absolute inset-0 m-auto text-background"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-background"
         />
       ) : null}
     </span>

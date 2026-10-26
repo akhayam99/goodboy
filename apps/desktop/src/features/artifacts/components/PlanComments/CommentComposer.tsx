@@ -1,13 +1,14 @@
-import { useRef, useState } from 'react';
-import { Button, useEscapeLayer } from '@goodboy/ui';
-import { PromptField } from '../../../../shared/components/PromptField';
-import { useFocusReturn } from '../../../../shared/hooks/useFocusReturn';
+import { useState } from 'react';
+import {
+  CommentComposer as SharedCommentComposer,
+  type CommentComposerBody,
+} from '../../../../shared/components/CommentComposer';
 
 type Props = {
   readonly quote: string | null;
   readonly initialBody?: string;
   readonly submitLabel?: string;
-  readonly onSubmit: (params: { readonly body: string }) => Promise<void>;
+  readonly onSubmit: (params: CommentComposerBody) => Promise<void>;
   readonly onCancel: () => void;
 };
 
@@ -19,44 +20,22 @@ export const CommentComposer = ({
   onCancel,
 }: Props) => {
   const [body, setBody] = useState(initialBody);
-  const [isBusy, setIsBusy] = useState(false);
-  const isBlank = body.trim().length === 0;
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  useEscapeLayer(onCancel);
-  useFocusReturn({ rootRef });
-
-  const submit = () => {
-    if (isBlank || isBusy) {
-      return;
-    }
-    setIsBusy(true);
-    void onSubmit({ body }).finally(() => setIsBusy(false));
-  };
 
   return (
-    <div ref={rootRef} data-testid="plan-comment-composer" className="flex min-w-0 flex-col gap-2">
-      {quote === null ? null : (
-        <q className="block text-meta italic text-muted-foreground">{quote}</q>
-      )}
-      <PromptField
-        kind="document"
-        autoFocus
-        label="Comment for the planner"
-        placeholder="Write a comment for the planner"
-        value={body}
-        onChange={setBody}
-        onSubmit={submit}
-        minRows={2}
-        maxRows={8}
-      />
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" size="sm" disabled={isBlank} isBusy={isBusy} onClick={submit}>
-          {submitLabel}
-        </Button>
-      </div>
-    </div>
+    <SharedCommentComposer
+      testId="plan-comment-composer"
+      label="Comment for the planner"
+      placeholder="Write a comment for the planner"
+      submitLabel={submitLabel}
+      value={body}
+      onChange={setBody}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      lead={
+        quote === null ? null : (
+          <q className="block text-meta italic text-muted-foreground">{quote}</q>
+        )
+      }
+    />
   );
 };

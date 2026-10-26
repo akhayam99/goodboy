@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { ExternalLink, SquareTerminal } from 'lucide-react';
-import { Button, CopyButton, Reveal, useEscapeLayer } from '@goodboy/ui';
+import { SquareArrowOutUpRight, SquareTerminal } from 'lucide-react';
+import { Button, CopyButton, ICON_SIZE, Reveal, useEscapeLayer } from '@goodboy/ui';
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { openUrl } from '../../../../shared/lib/editor';
 import type { AgentRow } from '../agentRowOf';
 import { TerminalLines } from './TerminalLines';
@@ -20,7 +20,7 @@ export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
   if (row.state === 'missing' && row.installCommand !== null) {
     return (
       <div className="flex flex-col gap-2 rounded-md bg-background px-3 py-2">
-        <span className="text-label text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           Goodboy runs this in a terminal here:
         </span>
         <div className="flex items-center justify-between gap-2">
@@ -49,13 +49,13 @@ export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
     const docsUrl = row.docsUrl;
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-background px-3 py-2">
-        <span className="min-w-0 text-label text-muted-foreground">
+        <span className="min-w-0 text-meta text-muted-foreground">
           Install {row.product} and sign in there. This row turns ready when you come back to this
           window.
         </span>
         {docsUrl === null ? null : (
           <Button size="xs" variant="ghost" onClick={() => void openUrl(docsUrl)}>
-            <ExternalLink size={ICON_SIZE.control} aria-hidden />
+            <SquareArrowOutUpRight size={ICON_SIZE.control} aria-hidden />
             How to install
           </Button>
         )}

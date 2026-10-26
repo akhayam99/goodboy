@@ -149,7 +149,7 @@ const STATUS: WorktreeStatus = {
 const CLAUDE: ProviderDisplayInfo = {
   id: 'anthropic',
   binary: 'claude',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '1.0.0',
   identity: 'mock-team',

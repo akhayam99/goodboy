@@ -1,13 +1,15 @@
 import { AppWindow, Unplug } from 'lucide-react';
-import { ConfirmPopover, IconButton, InteractiveRow, StatusDot } from '@goodboy/ui';
+import { ConfirmPopover, ICON_SIZE, IconButton, InteractiveRow, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
+import { useAppStore, useWorkspaceAttentionEntry } from '../../../../store';
+
+import { NEW_WINDOW_TOOLTIP } from '../../newWindowTooltip';
+import { useWorkspaceRowFacts } from '../../hooks/useWorkspaceRowFacts';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { useNow } from '../../../../shared/hooks/useNow';
+import { needYouWords } from '../../needYouWords';
 import { workspaceFaceLabel } from '../../workspaceFaceLabel';
 import { workspaceFolderPath } from '../../workspaceFolderPath';
+import { WorkspaceAttentionMark } from '../WorkspaceAttentionMark';
 import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
 
 type Props = {
@@ -19,8 +21,8 @@ type Props = {
 };
 
 export const WorkspaceRow = ({ workspace, home, onOpen, onOpenNewWindow, onDisconnect }: Props) => {
-  const now = useNow(30_000);
-  const hasUnread = useWorkspaceHasUnread(workspace.id);
+  const { lastSeen, hasUnread } = useWorkspaceRowFacts({ workspace });
+  const attention = useWorkspaceAttentionEntry({ workspaceId: workspace.id });
   const folders = useAppStore((state) =>
     workspaceFaceLabel({
       projects: state.projects,
@@ -31,15 +33,15 @@ export const WorkspaceRow = ({ workspace, home, onOpen, onOpenNewWindow, onDisco
   const path = useAppStore((state) =>
     workspaceFolderPath({ projects: state.projects, workspaceId: workspace.id, home }),
   );
-  const lastSeen =
-    workspace.lastAccessedAt === undefined
-      ? ''
-      : formatAdaptiveAge({ at: workspace.lastAccessedAt, now });
 
   return (
     <li data-workspace-row={workspace.name} className="bg-subtle">
       <InteractiveRow
-        label={`Open ${workspace.name}`}
+        label={
+          attention === null
+            ? `Open ${workspace.name}`
+            : `Open ${workspace.name}, ${needYouWords({ count: attention.count })}`
+        }
         isSelected={false}
         onOpen={onOpen}
         frameClassName="rounded-none"
@@ -49,17 +51,24 @@ export const WorkspaceRow = ({ workspace, home, onOpen, onOpenNewWindow, onDisco
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-row text-foreground">{workspace.name}</span>
+            {attention === null ? null : (
+              <WorkspaceAttentionMark
+                count={attention.count}
+                tone={attention.tone}
+                variant="words"
+              />
+            )}
             {hasUnread ? <StatusDot tone="warning" size="sm" title="Unread activity" /> : null}
           </span>
           <span className="truncate text-meta text-faint-foreground">
-            {joinFacts({ facts: [folders, path] })}
+            {joinFacts({ facts: [attention?.reasonWords.join(', ') ?? '', folders, path] })}
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-0.5">
           <IconButton
             icon={AppWindow}
             label={`Open ${workspace.name} in a new window`}
-            tooltip="Open in a new window"
+            tooltip={NEW_WINDOW_TOOLTIP}
             variant="ghost"
             size="xs"
             iconSize={ICON_SIZE.row}

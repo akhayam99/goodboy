@@ -1,6 +1,5 @@
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import type { Tone } from '@goodboy/ui';
 import { costCoverage, type CostCoverage } from '@goodboy/core';
 
 export type SortKey = 'recent' | 'expensive';
@@ -52,23 +51,6 @@ type Expect<T extends true> = T;
 type ProviderIdsAreTotal =
   Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
-
-type SpendToneParams = {
-  readonly pct: number;
-  readonly warnAt?: number;
-};
-
-const DEFAULT_WARN_AT = 0.8;
-
-export const spendTone = ({ pct, warnAt = DEFAULT_WARN_AT }: SpendToneParams): Tone => {
-  if (pct >= 1) {
-    return 'danger';
-  }
-  if (pct >= warnAt) {
-    return 'warning';
-  }
-  return 'primary';
-};
 
 export const sortTurns = (
   turns: ReadonlyArray<WorkspaceTurn>,

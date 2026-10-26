@@ -1,7 +1,6 @@
-import { AlertTriangle, Check, Clock, RefreshCw } from 'lucide-react';
-import { StatusDot } from '@goodboy/ui';
+import { TriangleAlert, Check, Clock, RefreshCw } from 'lucide-react';
+import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 import type { ContextUpdatePhase } from './contextUpdateCopy';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly phase: ContextUpdatePhase;
@@ -19,7 +18,7 @@ export const ContextUpdateGlyph = ({ phase, placement }: Props) => {
     return <Check size={ICON_SIZE.mark} aria-hidden className="shrink-0" />;
   }
   if (phase === 'failed' && placement === 'status') {
-    return <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="shrink-0 text-danger" />;
+    return <TriangleAlert size={ICON_SIZE.mark} aria-hidden className="shrink-0 text-danger" />;
   }
   if (placement === 'status') {
     return <StatusDot tone="success" size="sm" ariaLabel="Current" />;

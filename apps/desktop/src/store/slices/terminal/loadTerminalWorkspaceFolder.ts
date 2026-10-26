@@ -1,7 +1,6 @@
-import { getSetting } from '@goodboy/db';
+import { getWorkspaceValue } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { settingTerminalFolder } from './state';
 import type { GetFn, SetFn } from './types';
 
 type LoadParams = {
@@ -12,7 +11,11 @@ export const loadTerminalWorkspaceFolder = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId }: LoadParams): Promise<void> => {
     let raw: string | null | undefined;
     try {
-      raw = await getSetting(tauriDatabase, settingTerminalFolder({ workspaceId }));
+      raw = await getWorkspaceValue({
+        db: tauriDatabase,
+        workspaceId,
+        key: 'terminal.workspaceFolder',
+      });
     } catch (error) {
       await get().reportError({
         title: 'Could not read the terminal folder',

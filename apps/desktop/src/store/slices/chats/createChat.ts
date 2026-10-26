@@ -1,10 +1,5 @@
-import {
-  CHAT_PROVIDER_REFUSAL,
-  isChatProvider,
-  type Chat,
-  type ChatId,
-  type IsoDateTime,
-} from '@goodboy/types';
+import { isChatProvider, type Chat, type ChatId, type IsoDateTime } from '@goodboy/types';
+import { CHAT_PROVIDER_REFUSAL } from '../../../features/workspace-chat/chatProviderRefusal';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
 import { NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import type { CreateChatParams, SetFn } from './types';

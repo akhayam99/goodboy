@@ -6,9 +6,12 @@ import { isRunPaused } from './isRunPaused';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
+export type RunWait = 'stopped' | 'limit' | 'go';
+
 export type RunRowFacts = {
   readonly dot: DotState;
   readonly word: string;
+  readonly wait: RunWait | null;
   readonly isWordRead: boolean;
   readonly progress: string;
   readonly isActive: boolean;
@@ -33,6 +36,7 @@ type Params = {
 type StateFacts = {
   readonly dot: DotState;
   readonly word: string;
+  readonly wait?: RunWait;
 };
 
 type RunParams = {
@@ -102,10 +106,12 @@ const stateOf = ({
       : { dot: 'idle', word: 'Stopped' };
   }
   if (stop?.kind === 'budget' && !isRunning) {
-    return { dot: 'needsYou', word: 'Paused at the limit' };
+    return { dot: 'needsYou', word: 'Paused at the limit', wait: 'limit' };
   }
   if (stop !== null && !isRunning) {
-    return { dot: 'failed', word: 'Failed' };
+    return stop.kind === 'failure'
+      ? { dot: 'failed', word: 'Failed', wait: 'stopped' }
+      : { dot: 'failed', word: 'Failed' };
   }
   if (isRunning || isOrchestrating) {
     return { dot: 'running', word: 'Running' };
@@ -122,7 +128,7 @@ const stateOf = ({
   if (agents.every((agent) => agent.status === 'pending')) {
     return { dot: 'idle', word: 'Waits to start' };
   }
-  return { dot: 'needsYou', word: 'Waits for you' };
+  return { dot: 'needsYou', word: 'Waits for you', wait: 'go' };
 };
 
 export const runRowFactsOf = ({
@@ -133,9 +139,17 @@ export const runRowFactsOf = ({
   isOrchestrating,
   questions,
 }: Params): RunRowFacts => {
-  const state = stateOf({ run, workflow, agents, predecessorName, isOrchestrating, questions });
+  const { wait = null, ...state } = stateOf({
+    run,
+    workflow,
+    agents,
+    predecessorName,
+    isOrchestrating,
+    questions,
+  });
   return {
     ...state,
+    wait,
     isWordRead: !DOT_ONLY_WORDS.has(state.word),
     progress: progressOf({ run, workflow, agents }),
     isActive:

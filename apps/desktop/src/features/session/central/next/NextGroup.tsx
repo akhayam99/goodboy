@@ -115,9 +115,9 @@ export const NextGroup = ({
         label={
           <span className="flex min-w-0 flex-1 items-baseline gap-2">
             <span className="text-row text-foreground">{group.label}</span>
-            <span className="text-label text-faint-foreground">{group.rows.length}</span>
+            <span className="text-meta text-faint-foreground">{group.rows.length}</span>
             {isOpen ? null : (
-              <span className="min-w-0 truncate text-label text-muted-foreground">{hint}</span>
+              <span className="min-w-0 truncate text-meta text-muted-foreground">{hint}</span>
             )}
           </span>
         }

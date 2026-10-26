@@ -1,5 +1,7 @@
 import { invoke, type InvokeArgs, type InvokeOptions } from '@tauri-apps/api/core';
 import { formatError } from '@goodboy/ui';
+import type { HostFailure } from './hostFailure';
+import { hostFailureOf } from './hostFailureOf';
 
 const UNKNOWN_KIND = 'unknown';
 
@@ -7,15 +9,18 @@ type Params = {
   readonly kind: string;
   readonly message: string;
   readonly cause?: unknown;
+  readonly failure?: HostFailure | null;
 };
 
 export class CommandError extends Error {
   readonly kind: string;
+  readonly failure: HostFailure | null;
 
-  constructor({ kind, message, cause }: Params) {
+  constructor({ kind, message, cause, failure = null }: Params) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'CommandError';
     this.kind = kind;
+    this.failure = failure;
   }
 
   toJSON() {
@@ -39,6 +44,7 @@ export const toCommandError = (rejection: unknown): CommandError => {
     kind: kindOf(rejection),
     message: formatError(rejection),
     cause: rejection,
+    failure: hostFailureOf({ rejection }),
   });
 };
 

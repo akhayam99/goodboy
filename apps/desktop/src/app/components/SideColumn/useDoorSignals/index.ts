@@ -9,7 +9,6 @@ import { runningTerminalCount } from '../../../../features/terminal/runningTermi
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import type { ColumnDoorId } from '../columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
-import { needsYouReasonsOf } from '../needsYouReasonsOf';
 
 type Params = Record<never, never>;
 
@@ -21,7 +20,12 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
   const pinned = useAppStore((state) => state.monitorPinned);
   const hidden = useAppStore((state) => state.monitorHidden);
   const { runningCount, hasUnread } = useChatActivity();
-  const { needsYou } = useNowSessions({});
+  const taskNewCount = useAppStore((state) =>
+    state.currentWorkspaceId === null
+      ? 0
+      : (state.taskNewKeys[state.currentWorkspaceId]?.length ?? 0),
+  );
+  const { attention } = useNowSessions({});
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -33,9 +37,13 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
     return {
       board: doorSignalOf({
         kind: 'board',
-        count: needsYou.length,
-        reasons: needsYouReasonsOf({ state: useAppStore.getState(), sessions: needsYou }),
+        count: attention.count,
+        tone: attention.tone,
+        reasons: attention.reasons,
+        quietCount: attention.quietCount,
+        quietReasons: attention.quietReasons,
       }),
+      inbox: doorSignalOf({ kind: 'inbox', count: taskNewCount }),
       chat: doorSignalOf({ kind: 'chat', count: runningCount, hasUnread }),
       terminal: doorSignalOf({
         kind: 'terminal',
@@ -45,5 +53,16 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
         ? doorSignalOf({ kind: 'monitoring', ...monitoringSignal({ split }) })
         : undefined,
     };
-  }, [needsYou, runningCount, hasUnread, terminalTabs, rows, hasSnapshot, scanned, pinned, hidden]);
+  }, [
+    attention,
+    taskNewCount,
+    runningCount,
+    hasUnread,
+    terminalTabs,
+    rows,
+    hasSnapshot,
+    scanned,
+    pinned,
+    hidden,
+  ]);
 };

@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePoll } from '../../../../shared/lib/usePoll';
 import { useAppStore } from '../../../../store';
-import { createLatestOnly } from '../../../../store/slices/state-writes/latestOnly';
+import { createLatestOnly } from '../../../../store/runtime/state-writes/latestOnly';
+import { foregroundLabelOf } from '../../foregroundLabelOf';
+import { isBusyTerminal } from '../../isBusyTerminal';
 import { invokeTerminalListLive } from '../../terminal';
 
 const POLL_MS = 2000;
@@ -10,55 +13,55 @@ type Params = {
   readonly isEnabled: boolean;
 };
 
-const NO_BUSY: ReadonlySet<string> = new Set();
+export type TerminalLedger = {
+  readonly busy: ReadonlySet<string>;
+  readonly commands: ReadonlyMap<string, string>;
+};
 
-export const useTerminalLedger = ({ isEnabled }: Params): ReadonlySet<string> => {
-  const [busy, setBusy] = useState<ReadonlySet<string>>(NO_BUSY);
+const NO_LEDGER: TerminalLedger = { busy: new Set(), commands: new Map() };
+
+export const useTerminalLedger = ({ isEnabled }: Params): TerminalLedger => {
+  const [ledger, setLedger] = useState<TerminalLedger>(NO_LEDGER);
   const hasReported = useRef(false);
 
-  useEffect(() => {
-    if (!isEnabled) {
-      return;
-    }
-    const latest = createLatestOnly();
-    const poll = (): void => {
-      latest
-        .run({
-          key: LEDGER_KEY,
-          request: invokeTerminalListLive,
-          apply: (live) =>
-            setBusy(
-              new Set(
-                live
-                  .filter(
-                    (terminal) =>
-                      terminal.pid !== null &&
-                      terminal.foregroundPid !== null &&
-                      terminal.pid !== terminal.foregroundPid,
-                  )
-                  .map((terminal) => terminal.id),
-              ),
-            ),
-        })
-        .catch((error) => {
-          if (hasReported.current) {
-            return;
-          }
-          hasReported.current = true;
-          void useAppStore.getState().reportError({
-            title: 'Could not read which terminals are busy',
-            error,
-            severity: 'warning',
-          });
-        });
-    };
-    poll();
-    const timer = window.setInterval(poll, POLL_MS);
-    return () => {
-      window.clearInterval(timer);
-      latest.cancel({ key: LEDGER_KEY });
-    };
-  }, [isEnabled]);
+  const latest = useMemo(() => createLatestOnly(), []);
 
-  return busy;
+  const poll = (): void => {
+    latest
+      .run({
+        key: LEDGER_KEY,
+        request: invokeTerminalListLive,
+        apply: (live) => {
+          const busyTerminals = live.filter((terminal) => isBusyTerminal({ terminal }));
+          setLedger({
+            busy: new Set(busyTerminals.map((terminal) => terminal.id)),
+            commands: new Map(
+              busyTerminals.flatMap((terminal) => {
+                const label = foregroundLabelOf({ command: terminal.foregroundCommand ?? '' });
+                return label === '' ? [] : [[terminal.id, label] as const];
+              }),
+            ),
+          });
+        },
+      })
+      .catch((error) => {
+        if (hasReported.current) {
+          return;
+        }
+        hasReported.current = true;
+        void useAppStore.getState().reportError({
+          title: "Couldn't read which terminals are busy",
+          error,
+          severity: 'warning',
+        });
+      });
+  };
+
+  usePoll({ run: poll, everyMs: POLL_MS, isEnabled });
+
+  useEffect(() => {
+    return () => latest.cancel({ key: LEDGER_KEY });
+  }, [isEnabled, latest]);
+
+  return ledger;
 };

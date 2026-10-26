@@ -504,3 +504,48 @@ describe('insertSession', () => {
     ).resolves.toBe(0);
   });
 });
+
+describe('session permission mode on read', () => {
+  let db: Database;
+
+  const permissionModeOf = async (): Promise<Session['permissionMode'] | undefined> =>
+    (await getSessionById(db, sessionId))?.permissionMode;
+
+  beforeEach(async () => {
+    db = await makeMigratedTestDatabase();
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+      [workspaceId, 'Northwind', '/tmp/northwind'],
+    );
+  });
+
+  it('reads a stored known mode as written', async () => {
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, permission_mode, created_at, updated_at)
+       VALUES (?, ?, 'Reconcile the ledger-core export', 'idle', 'plan', 1, 1)`,
+      [sessionId, workspaceId],
+    );
+
+    await expect(permissionModeOf()).resolves.toBe('plan');
+  });
+
+  it('keeps the schema default when the row names no mode', async () => {
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+       VALUES (?, ?, 'Reconcile the ledger-core export', 'idle', 1, 1)`,
+      [sessionId, workspaceId],
+    );
+
+    await expect(permissionModeOf()).resolves.toBe('bypassPermissions');
+  });
+
+  it('falls back to Ask first when the stored mode is unknown', async () => {
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, permission_mode, created_at, updated_at)
+       VALUES (?, ?, 'Reconcile the ledger-core export', 'idle', 'yolo', 1, 1)`,
+      [sessionId, workspaceId],
+    );
+
+    await expect(permissionModeOf()).resolves.toBe('default');
+  });
+});

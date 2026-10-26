@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { LEVEL_MS, canAnimate, exitSnapshotOf, type ExitSnapshot } from '@goodboy/ui';
+import { DURATION_BASE_MS, canAnimate, exitSnapshotOf, type ExitSnapshot } from '@goodboy/ui';
 import type { RailLevel } from '../../../../store/slices/navigation/railLevel';
 
 export type LevelDirection = 'forward' | 'back';
@@ -64,7 +64,7 @@ export const useLevelSwap = ({ shown, elementsRef }: Params): LevelSwap => {
     if (ghost === null) {
       return;
     }
-    const timer = window.setTimeout(() => setSettledId(ghost.id), LEVEL_MS);
+    const timer = window.setTimeout(() => setSettledId(ghost.id), DURATION_BASE_MS);
     return () => window.clearTimeout(timer);
   }, [ghost]);
 

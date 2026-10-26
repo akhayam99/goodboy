@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Eyebrow, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, Eyebrow, ICON_SIZE } from '@goodboy/ui';
 
 const COUNT_FLOOR = 2;
 

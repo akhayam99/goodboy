@@ -1,4 +1,4 @@
-import type { OrchestratorPhase } from './components/OrchestratorStrip/orchestratorState';
+import type { OrchestratorPhase } from './orchestratorState';
 
 export type RunPrimaryKind =
   | 'review-plan'

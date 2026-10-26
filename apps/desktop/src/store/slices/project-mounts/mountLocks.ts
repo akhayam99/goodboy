@@ -1,25 +1,14 @@
+import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
+
 type LockParams<T> = {
   readonly key: string;
   readonly run: () => Promise<T>;
 };
 
-const chains = new Map<string, Promise<void>>();
+const queue = createKeyedQueue();
 
-export const withMountLock = async <T>({ key, run }: LockParams<T>): Promise<T> => {
-  const previous = chains.get(key) ?? Promise.resolve();
-  const result = previous.then(run, run);
-  const guard = result.then(
-    () => undefined,
-    () => undefined,
-  );
-  chains.set(key, guard);
-  void guard.then(() => {
-    if (chains.get(key) === guard) {
-      chains.delete(key);
-    }
-  });
-  return result;
-};
+export const withMountLock = <T>({ key, run }: LockParams<T>): Promise<T> =>
+  queue.run({ key, task: run });
 
 type RepoLockParams<T> = {
   readonly repoRoot: string;

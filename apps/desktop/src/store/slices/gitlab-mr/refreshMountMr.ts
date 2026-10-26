@@ -15,6 +15,7 @@ import {
   refreshMountRequest,
   syncRequestLinks,
 } from '../project-mounts/refreshMountRequest';
+import { nowIso } from '../project-mounts/nowIso';
 import { applyMountGitlabMr } from './mountGitlabMr';
 import { gitlabRequestIdentity, mergeRequestFromLink, toMountMrLink } from './mrLink';
 import { resolveMrContext, type MrContext } from './resolveMrContext';
@@ -24,6 +25,7 @@ export type RefreshMrOptions = {
   readonly mountId?: MountId;
   readonly force?: boolean;
   readonly silent?: boolean;
+  readonly retries?: number;
 };
 
 type Params = {
@@ -80,6 +82,7 @@ export const refreshMountMr = async ({
     sessionId,
     mount,
     opts,
+    host: 'gitlab',
     adapter: {
       read: (state) => state.mountGitlabMr?.[mountId],
       apply: ({ state, entry }) => applyMountGitlabMr({ state, sessionId, mountId, gitlab: entry }),
@@ -99,6 +102,7 @@ export const refreshMountMr = async ({
         mr: existing?.mr ?? null,
         approvals: existing?.approvals ?? null,
         fetchedAt: existing?.fetchedAt ?? null,
+        failedAt: existing?.failedAt ?? null,
         loading: true,
         error: null,
       }),
@@ -162,12 +166,18 @@ export const refreshMountMr = async ({
                   mr,
                   approvals,
                   fetchedAt: observedAt,
+                  failedAt: null,
                   loading: false,
                   error: null,
                 },
         };
       },
-      failedEntry: ({ current, error }) => ({ ...current, loading: false, error }),
+      failedEntry: ({ current, error }) => ({
+        ...current,
+        failedAt: nowIso({}),
+        loading: false,
+        error,
+      }),
     },
   });
 };

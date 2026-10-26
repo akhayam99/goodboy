@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
@@ -59,32 +60,34 @@ export const SideColumn = ({
                 {...(onNavigate !== undefined && { onNavigate })}
               />
               {COLUMN_DOORS.map((door) => (
-                <ColumnDoorRow
-                  key={door.id}
-                  id={door.id}
-                  icon={door.icon}
-                  label={door.label}
-                  {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
-                  isCurrent={place === door.id}
-                  signal={signals[door.id]}
-                  {...(door.id === 'chat' && {
-                    create: {
-                      label: 'New chat',
-                      shortcut: 'chat.new',
-                      onCreate: go(actions.openNewChat),
-                    },
-                  })}
-                  {...(door.id === 'board' && {
-                    action: <SidebarSessionsFilter workspaceId={workspaceId} />,
-                  })}
-                  {...(door.id === 'terminal' && {
-                    create: {
-                      label: 'New terminal',
-                      onCreate: go(actions.openNewTerminal),
-                    },
-                  })}
-                  onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
-                />
+                <Fragment key={door.id}>
+                  <ColumnDoorRow
+                    id={door.id}
+                    icon={door.icon}
+                    label={door.label}
+                    isQuiet={door.isReference === true}
+                    {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
+                    isCurrent={place === door.id}
+                    signal={signals[door.id]}
+                    {...(door.id === 'chat' && {
+                      create: {
+                        label: 'New chat',
+                        shortcut: 'chat.new',
+                        onCreate: go(actions.openNewChat),
+                      },
+                    })}
+                    {...(door.id === 'board' && {
+                      action: <SidebarSessionsFilter workspaceId={workspaceId} />,
+                    })}
+                    {...(door.id === 'terminal' && {
+                      create: {
+                        label: 'New terminal',
+                        onCreate: go(actions.openNewTerminal),
+                      },
+                    })}
+                    onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
+                  />
+                </Fragment>
               ))}
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">

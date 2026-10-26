@@ -13,7 +13,9 @@ import type {
   WireframeArtifactMetadata,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { Database } from '../client';
+import { isJsonValue, parseJsonStrict } from '../shared/parseJsonColumn';
 import { artifactRevisionInsert, type ArtifactRevisionNote } from './artifactRevision';
 import { isWorkflowRoutingProposal } from './workflowRoutingCodec';
 
@@ -89,9 +91,6 @@ type SessionParams = DatabaseParams & {
 const ARTIFACT_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, kind,
   schema_version, title, source_format, source_text, metadata_json, status,
   revision, source_turn_id, created_at, updated_at, opened_at FROM session_artifacts`;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isImplementationCluster = (value: unknown): value is ImplementationCluster => {
   if (!isRecord(value)) {
@@ -188,12 +187,7 @@ const parseMetadata = ({
   readonly kind: ArtifactKind;
   readonly value: string;
 }) => {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error('Invalid artifact metadata JSON');
-  }
+  const parsed = parseJsonStrict({ value, isValid: isJsonValue, label: 'artifact metadata JSON' });
   return metadataForRead({ kind, value: parsed });
 };
 
@@ -265,6 +259,26 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
     sourceFormat: row.source_format,
     metadata: parseMetadata({ kind, value: row.metadata_json }) as WireframeArtifactMetadata,
   };
+};
+
+type SkippedReasonParams = {
+  readonly error: unknown;
+};
+
+const skippedReason = ({ error }: SkippedReasonParams): string =>
+  error instanceof Error ? error.message.slice(0, 120) : 'unreadable';
+
+type ToDomainOrSkipParams = {
+  readonly row: ArtifactRow;
+};
+
+const toDomainOrSkip = ({ row }: ToDomainOrSkipParams): SessionArtifact | null => {
+  try {
+    return toDomain(row);
+  } catch (error) {
+    console.warn(`[artifact] skipped row ${row.id}: ${skippedReason({ error })}`);
+    return null;
+  }
 };
 
 const selectArtifact = async ({
@@ -354,7 +368,10 @@ export const listArtifactsForSession = async ({
     `${ARTIFACT_SELECT} WHERE session_id = ? ORDER BY created_at ASC`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.flatMap((row) => {
+    const artifact = toDomainOrSkip({ row });
+    return artifact === null ? [] : [artifact];
+  });
 };
 
 export type ArtifactMirrorCursor = Readonly<{ createdAt: number; id: string }>;
@@ -400,7 +417,10 @@ export const listArtifactMirrorPage = async ({
         );
   const last = rows[rows.length - 1];
   return {
-    rows: rows.map((row) => ({ artifact: toDomain(row), workspaceSlug: row.workspace_slug })),
+    rows: rows.flatMap((row) => {
+      const artifact = toDomainOrSkip({ row });
+      return artifact === null ? [] : [{ artifact, workspaceSlug: row.workspace_slug }];
+    }),
     next:
       last === undefined || rows.length < limit
         ? null

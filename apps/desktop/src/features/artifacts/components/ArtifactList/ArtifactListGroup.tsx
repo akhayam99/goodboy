@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { ARTIFACT_GROUP_LABEL, type ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactGroup } from '../../artifactStateOf';
 import { ArtifactListRow } from './ArtifactListRow';
+import { FOCUS_RING, cn } from '@goodboy/ui';
 
 type Props = {
   readonly group: ArtifactGroup;
@@ -14,8 +15,10 @@ type Props = {
   readonly hasActionColumn: boolean;
 };
 
-const SHOW_BUTTON =
-  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const SHOW_BUTTON = cn(
+  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const ArtifactListGroup = ({
   group,
@@ -38,7 +41,7 @@ export const ArtifactListGroup = ({
       className="flex min-w-0 flex-col"
     >
       <div className="flex h-7 min-w-0 items-center gap-2">
-        <h2 id={headingId} className="flex items-center gap-2 text-label text-muted-foreground">
+        <h2 id={headingId} className="flex items-center gap-2 text-meta text-muted-foreground">
           {ARTIFACT_GROUP_LABEL[group]}
           {rows.length > 1 ? (
             <span className="tabular-nums text-faint-foreground">{rows.length}</span>
@@ -57,7 +60,7 @@ export const ArtifactListGroup = ({
         ) : null}
       </div>
       {isTrash && isTrashShown ? (
-        <p className="pr-2 pb-2 text-label text-faint-foreground">
+        <p className="pr-2 pb-2 text-meta text-faint-foreground">
           Deleted artifacts stay here. Restore them, or delete them for good.
         </p>
       ) : null}

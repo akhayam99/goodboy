@@ -4,10 +4,9 @@ import type {
   IntegrationCredentialId,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
-import { Button, Collapsible, formatError, Input } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
+import { Button, Collapsible, formatError, ICON_SIZE, Input } from '@goodboy/ui';
+import { SquareArrowOutUpRight } from 'lucide-react';
 import { IntegrationCredentialPicker } from '../IntegrationCredentialPicker';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ConnectConfigField = {
   readonly id: string;
@@ -64,7 +63,7 @@ const ConfigFieldInput = ({
   readonly isDisabled: boolean;
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
-    <label htmlFor={field.id} className="text-label font-medium text-foreground">
+    <label htmlFor={field.id} className="text-meta font-medium text-foreground">
       {field.label}
     </label>
     <Input
@@ -153,7 +152,7 @@ export const ConnectForm = ({
       {credentialId === null ? guide : null}
       {credentialId === null ? (
         <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor={tokenId} className="text-label font-medium text-foreground">
+          <label htmlFor={tokenId} className="text-meta font-medium text-foreground">
             {tokenLabel}
           </label>
           <Input
@@ -175,7 +174,7 @@ export const ConnectForm = ({
               rel="noreferrer"
               className="inline-flex w-fit items-center gap-1 text-meta text-muted-foreground hover:text-foreground"
             >
-              {tokenLink.label} <ExternalLink size={ICON_SIZE.mark} aria-hidden />
+              {tokenLink.label} <SquareArrowOutUpRight size={ICON_SIZE.mark} aria-hidden />
             </a>
           ) : null}
         </div>

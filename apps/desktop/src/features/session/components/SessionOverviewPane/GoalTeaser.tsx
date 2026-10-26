@@ -1,7 +1,18 @@
-import { Button, Chip, Notice, Skeleton, TruncatedText, inlineMarkdownText } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  ICON_SIZE,
+  inlineMarkdownText,
+  Notice,
+  Skeleton,
+  TruncatedText,
+  FOCUS_RING,
+  cn,
+} from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading, useSessionSlots } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { useGoalHint } from '../../hooks/useGoalHint';
 import { useGoalFromWork } from '../../hooks/useGoalFromWork';
 import { GoalFromWorkCard } from './GoalFromWorkCard';
@@ -10,8 +21,17 @@ type Props = {
   readonly session: Session;
 };
 
-const ROW =
-  'flex min-w-0 items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+type FlatTextParams = {
+  readonly text: string;
+};
+
+const flatTextOf = ({ text }: FlatTextParams): string =>
+  inlineMarkdownText({ text }).replace(/\s+/g, ' ').trim();
+
+const ROW = cn(
+  'flex min-w-0 items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover',
+  FOCUS_RING,
+);
 
 export const GoalTeaser = ({ session }: Props) => {
   const sessionId = session.id;
@@ -114,7 +134,10 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
 
-  const text = inlineMarkdownText({ text: value }).replace(/\s+/g, ' ').trim();
+  const text = flatTextOf({ text: value });
+  if (text === flatTextOf({ text: sessionTitle({ session }) })) {
+    return null;
+  }
 
   return (
     <button

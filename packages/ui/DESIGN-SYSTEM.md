@@ -1,15 +1,28 @@
 # Design system
 
-> **Read this when** you need concrete tokens, scales, or primitives to implement against. **Not for** intent and product judgment (`DESIGN.md`) or Tailwind authoring mechanics (`docs/styling.md`).
+> **Read this when** you need concrete tokens or scales to implement against, or the page for a primitive or a surface. **Not for** intent and product judgment (`DESIGN.md`) or Tailwind authoring mechanics (`docs/styling.md`).
 
-This file holds the tokens, scales, primitives and visual rules for
-`@goodboy/ui`. It owns the design system layer. Fixed rules and product intent
+This file is the registry of the tokens, scales, z-index layers and motion of
+`@goodboy/ui`. It owns the design system layer. The primitives and surfaces
+have a page each in [design/](design/), listed under Pages. Fixed rules and product intent
 stay in [DESIGN.md](../../DESIGN.md). Tailwind mechanics and the reasons behind
 stacking order stay in [docs/styling.md](../../docs/styling.md).
 
 The tokens are stored in `apps/desktop/src/styles.css` under `@theme`. That
 file is only where they sit. The rules for what they mean and how they combine
 live here.
+
+## Pages
+
+This file is the registry: the tokens and scales that tests and primitives read. The pages below hold the rules for one family of surfaces each.
+
+| Page                                                | Holds                                                                                                                                                                                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Controls](design/controls.md)                      | Primitives, Control scale, Listbox, Menus, Key hints                                                                                                                                                |
+| [Feedback and empty states](design/feedback.md)     | Notices, Action feedback, Empty states, Question card                                                                                                                                               |
+| [Layout and action grammar](design/layout.md)       | The left column, Pane anatomy, Action zones, Section rhythm, Prose disclosure, Card action grammar and creation grammar, One way to ask, Comment composer and replies, Form actions                 |
+| [Surfaces](design/surfaces.md)                      | Report sheet, Pull request page, Workspace chat                                                                                                                                                     |
+| [Rail and work vocabulary](design/rail-and-work.md) | Needs you and the two views, Rail vocabulary, History graph, Work nodes and row states, Row hover and focus, Session row hover card and switcher, Rail, Work meta, The plan in the workflow builder |
 
 ## Text hierarchy
 
@@ -25,6 +38,15 @@ The four steps are named by what the text does, in `TEXT_ROLE`
 take their colour from the table, so a role changes in one place. A call site
 that picks a colour for a role the table names uses the role constant. The
 token values themselves are not part of the table.
+
+`Input`, `Textarea` and `SearchField` print their placeholder in
+`faint-foreground`, the same as every hand-built field, so an empty field reads
+apart from a filled one. `placeholder:text-muted-foreground` is forbidden by
+`no-token-bypass.test.ts`. A `provider-*` token is a logo colour: it paints a
+glyph (`IntegrationGlyph`), never text, because the brand hues clear only the
+3:1 glyph floor. A chip that names a provider keeps its label in `foreground`
+and its glyph in the brand colour; `text-provider-*` is forbidden by the same
+test.
 
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
@@ -89,6 +111,10 @@ Three borders, each with one job:
 | `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
 | `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
 
+`border` is an alpha overlay (foreground at 38% in dark, 45% in light), never a
+solid value, so it holds 3:1 on every step from `chrome` to `floating` and sits
+near 3.3:1 on the base sheet instead of 4.5:1.
+
 Three translucent tokens paint over whatever sits below them: `frame-edge`
 (white 8% in dark, black 8.5% in light) draws the content sheet and the right
 drawer container at 1.2:1 or more on chrome and background, and
@@ -116,10 +142,9 @@ hairline track, `bg-selected` on the active segment, no raised pill. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
 doors, `RailButton` and the pressed session tool) over one function,
-`navEntryToneOf`, which takes the nav kind colors first (Agents and Auto
-agents info blue, Artifacts merged violet, the owner's call for the nav only),
-then the icon's `CONCEPT_TONE` (questions warning, files and comments info,
-checks success) and falls back to
+`navEntryToneOf`, which reads the icon's `CONCEPT_TONE` (Agents and Auto agents
+primary, Artifacts draft, questions warning, files and comments info, checks
+success) and falls back to
 `primary` for an entry with no kind color (Overview, Terminal, Settings).
 
 A selected row adds no hover wash on top of `bg-selected`
@@ -148,16 +173,12 @@ apart, as in VS Code and Linear lists.
 A row that holds its own links or buttons is `InteractiveRow`: one overlay
 button stretched over the row opens it, and the inner controls sit above it.
 A `role="button"` div with its own key handler and propagation stopping is not
-another pattern. A settings-style rail entry with an icon, a subtitle and a
-status dot is `StatusRailItem`. Its dot is optional: without a `tone` it draws
-none, so a rail shows tone only on the rows that need attention, and
-`statusLabel` names a dot that no subtitle explains. `density="compact"` is the
-tighter child row under a rail heading. The row never indents itself: every
-child list under a rail heading takes `PANE_RHYTHM.navRail.nest`, so child
-icons line up under the parent label and every nested list indents by one
-step. The Settings navigation does not use it: its rows are one 28px line of
-icon and word (`SettingsNavRow` in the desktop app), a 6px `StatusDot` at the
-end names a row that needs attention, and the sentence lives on the page.
+another pattern. A rail entry is a `SelectableRow`; the row never indents
+itself: every child list under a rail heading takes `PANE_RHYTHM.navRail.nest`,
+so child icons line up under the parent label and every nested list indents by
+one step. The Settings navigation rows are one 28px line of icon and word
+(`SettingsNavRow` in the desktop app), a 6px `StatusDot` at the end names a
+row that needs attention, and the sentence lives on the page.
 
 ## List grid
 
@@ -188,6 +209,9 @@ state is a `StateDot` or a glyph in a 16px column.
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
   where it has nothing, so the column stays on one x. Unknown is an empty cell,
   never "0 B", "-" or "no port".
+- `canSpanEmpty` on a column lets its cell take the empty cells right after it in
+  a row, so a title keeps the width of a column that row leaves blank. The Questions
+  grid sets it on the question column: a waiting question has no answer line.
 - `ListGridGroup` takes an optional `mark` drawn right before its name, over
   the rows' leading glyph column: the Sessions List puts one
   6px `StatusDot` in the stage tone there (`stageTrackOf`), so rows keep only
@@ -221,7 +245,8 @@ state is a `StateDot` or a glyph in a 16px column.
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
-lives in the dot's tooltip, never as colored text.
+lives in the dot's tooltip, never as colored text. The Sessions door is the one exception: it
+says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the two size specimen.
@@ -288,9 +313,8 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-row`     | 13/20, 500                | a top-level row label, a card title                                                    |
 | `text-body`    | 14/20                     | running text; text with no class inherits it from the body                             |
 | `text-prose`   | 14/22                     | messages, markdown, artifacts                                                          |
-| `text-label`   | 12/16                     | controls, a nested row, a status label                                                 |
 | `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                |
-| `text-meta`    | 12/16, tabular            | time, ordinal, cost, count, a row's second line                                        |
+| `text-meta`    | 12/16, tabular            | controls, a nested row, a status label, time, ordinal, cost, count, a second line      |
 | `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
 | `text-code`    | mono 12/18                | branch, path, command, inline code                                                     |
 | `text-ui`      | 13/20                     | every line of a two size surface that is not its title or prose                        |
@@ -329,7 +353,7 @@ listed in `scale-rules.mono-code.json` like any other code. Every list built on
 that renders `ListGrid` reaches for another role. The older roles stay for the
 surfaces that have not moved yet; a surface moves whole, never half.
 
-A role with no weight inherits one: `text-label font-medium` is a control label
+A role with no weight inherits one: `text-meta font-medium` is a control label
 at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
 600 belongs to display, title and heading. `text-row`, `text-lead`, `text-chip`
 and `text-eyebrow` carry 500 themselves, so a weight utility next to a role is redundant, and
@@ -442,7 +466,7 @@ together, and there is no arbitrary shadow.
 | 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
 | 5 tooltip  | `floating`                      | `shadow-lg` | `border-soft`                 | `md`                       | label tooltips                   |
 
-The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-label` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. The `card` variant keeps `bg-elevated` until the fact card replaces it.
+The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-meta` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. `Tooltip` has no variant; a mark with two facts or more uses the fact card below.
 
 **Fact card.** `FactCard` (`packages/ui/src/components/FactCard`) is the hover card for a mark that has two facts or more, built from the session hover card: `FLOATING_SURFACE`, `p-3`, `gap-3` between parts, 320px wide, `z-tooltip`, with `pointer-events-none` so it never covers the next row. It takes data, never JSX: a `FactCardSpec` of an optional decorative glyph, a title with an optional sub, an optional state (a tone dot, the words, a pulse only for running work), one to six facts (label in muted, value in foreground with tabular numbers, an optional faint note, an optional tone) and an optional faint footnote. The label column is `fit-content(40%)`: a short label takes its width, a long one (a session title) cuts at 40% of the card so the value stays in view. More than six facts throws in development and names the card; a production build shows the first six. One sentence is a `Tooltip`, text that is already visible needs nothing or `TruncatedText`. A fact card holds no buttons: the click on the trigger acts and the footnote says what it does. It opens after 500ms of rest, closes after 180ms of grace, opens at once within 300ms of another card closing (`useRestHover`, shared with the session hover card), and opens at once on keyboard focus (the rested-focus prop makes a list with arrow keys wait the rest instead). Escape closes it and still reaches the layer beneath. A touch never opens it, so the tap does what the trigger does; the tap-open prop is for a trigger whose only job is the card, and a tap outside closes it. the suppressed prop keeps it shut under an open menu. The card is `aria-hidden`: `factCardSentence` writes one sentence from the data into a node that is always mounted, and the trigger points at it with `aria-describedby`, so a screen reader hears the card once, even before it opens. The trigger must be a native element or a component that forwards `ref`, the pointer, focus and click handlers and `aria-describedby`.
 
@@ -454,7 +478,7 @@ The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: 
 
 **Tooltip kinds guard.** `tooltip-kinds` counts, per file, a `Tooltip` or `OptionalTooltip` whose `content` is JSX (inline or a variable declared in the file), a `content` that joins facts (`·`, `joinFacts(`, `.join(`), a `content` that greys its text (`text-faint-foreground`, `text-muted-foreground`), and `variant="card"`. It is a plain ban now: the baseline file is gone and any count fails the test, with the kind to use in the message. A `Tooltip` has no `variant`, so a hand built card has no primitive to hide in. Two facts on one label go on two lines (`\n`, the label keeps line breaks) or into a `FactCard`. `floating-surface-is-one-constant` covers the label `Tooltip` and `FactCard` too: both paint `FLOATING_SURFACE` and neither sets a `bg-floating` fill (the `FactCard` parts set no fill or shadow at all).
 
-**Text that is already visible.** A tooltip never repeats what the screen shows. A branch name, a title or a row label that fits has no tooltip; one that can be cut goes through `TruncatedText`, which opens the full text only when the element is cut. A control that falls back to its own visible text (`MessageAction`, `RecordActions`) shows a tooltip only when it has something else to say, such as a blocked reason, through `OptionalTooltip`. A native `title` attribute is never used: the `native-title` baseline is empty and the guard is a ban, so a reason on a disabled control or a status line goes through `Tooltip`. `TermHint` is gone: a word that stays on screen gets a `tooltip` on its option, and a definition with facts is a `FactCard` with one row. Where the state word sits inside a row that already has its own tooltip (the timeline state line), only the inner mark keeps it.
+**Text that is already visible.** A tooltip never repeats what the screen shows. A branch name, a title or a row label that fits has no tooltip; one that can be cut goes through `TruncatedText`, which opens the full text only when the element is cut. A control that falls back to its own visible text (`MessageAction`, `RecordActions`) shows a tooltip only when it has something else to say, such as a blocked reason, through `OptionalTooltip`. A native `title` attribute is never used: the `native-title` baseline is empty and the guard is a ban, so a reason on a disabled control or a status line goes through `Tooltip`. The term hint component is gone: a word that stays on screen gets a `tooltip` on its option, and a definition with facts is a `FactCard` with one row. Where the state word sits inside a row that already has its own tooltip (the timeline state line), only the inner mark keeps it.
 
 A right drawer is its own container, never a card inside the sheet: it takes `drawer` (see Surfaces), `frame-edge` and `rounded-frame` like the sheet it stands beside. Over the page it is flush with the window edge (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
@@ -465,14 +489,36 @@ only to a dragged card.
 `MenuChoicePanel`, the crumb menu, the history arrow menu, the session hover
 card, the session switcher, the update arrival card and the delete confirm
 take it as it is; a site adds layout and padding only, never a border, a fill or
-a shadow of its own.
+a shadow of its own. So do the find bars, the selection bars and their confirm,
+the bulk undo bar, the quick actions popover, the palette panel, the question
+pill, the toast overflow chip and the drag ghost of the history. A tone may
+change the border colour (`border-danger`) and a pill may change the radius
+(`rounded-full`); nothing else leaves the constant. `floating-surface-is-one-constant`
+fails on any tsx file that writes `bg-floating` without importing it, bar a
+fixed list that only falls: the edge-to-edge sidebar peek, the inline rename
+field, the `Dialog` surface table and the mock scenes.
 
 **One width scale.** A floating surface is 240px wide when it is a menu (never
-under 200), 320 or 384 when it is a popover, 360 when it is a toast, 320 when
-it is the hover card and 420 when it is the session switcher. Nothing else:
-224, 260, 300 and 368 are retired. A wider panel (a form in a popover) is the
-exception, listed in `regressions/popover-widths.baseline.json`, which counts
-the off-scale widths per file and never lets one grow.
+under 200), 320 or 384 when it is a popover, 500 when it is a studio panel (a
+form in a popover), 360 when it is a toast, 320 when it is the hover card and
+420 when it is the session switcher. Nothing else: 224, 260, 300 and 368 are
+retired. The four popover widths are named once in `@goodboy/ui`:
+`POPOVER_WIDTH_PX` and `POPOVER_WIDTH_CLASS` hold `compact` 240, `standard` 320,
+`wide` 384 and `studio` 500, and a `useDropdown` call reads its `width` and
+`expectedWidth` from them instead of writing a pixel value. A popover never
+carries a hand-measured height: `useDropdown` measures the open panel and caps
+it with `maxHeight`, so a row or header that changes height cannot leave a gap
+or clip. Any other wide panel is the exception, listed in
+`regressions/popover-widths.baseline.json`, which counts the off-scale widths
+per file and never lets one grow.
+
+**Side cards place with `useFloatingPlace`.** The rail flyout and the session
+hover card open beside their anchor through `useFloatingPlace`, which wraps
+`placeFloating` (side `right`, alignment `start`, an 8px gap and edge, flipping to
+the left when the card does not fit). It paints nothing until the first
+measurement and measures again on a resize and on a scroll of any ancestor
+(capture), skipping a scroll inside the card itself. A new hover card or flyout
+calls the hook; it does not copy the clamp.
 
 ## Spacing scale
 
@@ -489,15 +535,30 @@ That shows up as a one pixel bounce on every icon in the column.
 
 ## Icon ladder and row scale
 
-An icon is one of four sizes, `ICON_SIZE` in `packages/ui/src/iconSize.ts`, and
-nothing else: no numeric `size=` on an icon.
+An icon is one of five sizes, `ICON_SIZE` in `packages/ui/src/iconSize.ts`
+(imported from `@goodboy/ui`, never re-exported from a domain file), and
+nothing else: no numeric `size=` on an icon, in a prop, a default parameter or a
+ternary. `icon-size-uses-a-token.test.ts` scans the app and `packages/ui`.
 
 | token               | px  | used for                                                  |
 | ------------------- | --- | --------------------------------------------------------- |
 | `ICON_SIZE.mark`    | 10  | a glyph inside a chip, a dot, the xs and 3xs controls     |
 | `ICON_SIZE.row`     | 12  | the leading or trailing glyph of a row, a trigger chevron |
 | `ICON_SIZE.control` | 14  | buttons, menu triggers, rail tabs, form adornments        |
+| `ICON_SIZE.notice`  | 16  | the tone icon of a `Notice`, the `DogMascot` default      |
 | `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
+
+Stroke is one rule, `ICON_STROKE` in the same file: 2 at `mark` and `row`, 1.75
+at `control` and `notice`, 1.5 at `hero`, and 2.5 on a check mark. A call site
+passes the token, never a number.
+
+One glyph has one import spelling, the one `conceptIcons.ts` uses
+(`TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck`,
+`SquareArrowOutUpRight`). `lucide-one-spelling-per-glyph.test.ts` fails on the
+old aliases. Three glyphs mean failure, each in one place: `CircleAlert` for a
+`Notice` of tone danger, `TriangleAlert` for a danger zone, `CircleX` for a
+failed run. `ArrowUpRight` means open in a larger view (a drawer's open as page)
+and is never an external link: that is `SquareArrowOutUpRight`.
 
 A brand mark (`DogMascot`, `IntegrationGlyph`, `BrandGlyph`) takes its own pixel
 size and is not an icon here. A row, one line or a menu row, is 24, 28, 32, 36,
@@ -557,6 +618,15 @@ concept cannot get an icon without a tone, or a tone without an icon.
   is `danger` because it is errors. `terminal` and `settings` are `neutral`
   because they are plumbing. Giving a concept a new color changes what it
   claims.
+- **A concept has one tone everywhere.** The nav, the lens switcher, search and
+  the palette read the same `CONCEPT_TONE` entry. There is no second map for
+  the nav. Agents and Auto agents are `primary`, plans and artifacts are
+  `draft`, and `merged` stays the color of a merged pull request and a done
+  stage.
+- **An agent color is not a state color.** No `--color-agent-*` token equals
+  another agent token, `primary` or a tone, in either theme
+  (`identity-palette-avoids-state-hues.test.ts`). Auto is its own green-teal,
+  CI fixer its own cyan.
 - **On an artifact, colour says the state, never the kind.** `plan`, `report`
   and `wireframe` are `neutral`: the glyph and the word name the kind. A plan
   nobody ran is `warning` (the next click is yours), one that ran is `success`,
@@ -641,702 +711,7 @@ identity palettes of their own. Each has a single accessor and is held to the
 same floor test. Anything else that reaches for an identity colour is a bug.
 Add a tone instead.
 
-### Needs you and the two views
-
-The feed has a header of its own: **Activity | Log**, a `SegmentedTabs` at
-`xs` size with `role="tablist"`. It is the only control that changes what the
-feed shows. There is no filter, no preset, no category, no hidden count and no
-tag that says a row was shown because you started it. Every kind of row has
-exactly one home (`activityView.ts`, `entriesOfView`):
-
-- **Activity** holds what you launched, one row per launch: an agent, a
-  workflow run, a fix run. The right side of a row says its state or
-  its one action, then time, then cost, and never reserves an empty slot. A
-  launch folds what happens inside it into its own row: steps and subagents
-  (a chip, "4 subagents"), answered questions (the tally), and its plans,
-  reports, wireframes and learnings behind the chip "N outputs", which opens
-  them as rows below the launch. A history row that still has a recovery
-  (a rewrite with a backup, a push, a stopped rewrite) stays in Activity with
-  no verb and no `⋯` of its own: `Undo rewrite`, `Restore previous history`,
-  `Retry` and `Retry with a note` live in the Commits tab of the Branch page,
-  and the row opens it. No Activity row has a `⋯`.
-- **Log** holds the facts: plans, reports, wireframes and learnings without a
-  launch, Context, branch and worktree events, link events (an unlink carries
-  **Re-link**), pull request events, answered questions without a launch and
-  the session archive and restore. It is flat, newest first, with the `fact`
-  grade, one muted row per fact, rows of one kind and day merged, and a search
-  box at the top. Each row opens its own object.
-- **Needs you** is a block on top of Activity, drawn only while it is not
-  empty: a card on `bg-subtle` with one inner `warning` `ToneBar`, a neutral
-  eyebrow and one row per owner, never one per child. The line is the only
-  amber on the card: no ring, no triangle, muted row icons. A row is an icon,
-  one line of text (`#318 · 1 question · 5 to review`,
-  `Retry policy · 1 question`, `Rebase of feat/export stopped ×2`) and a ghost
-  `xs` **Open** that goes to whoever owns the action: the first comment that waits on you (the question
-  before the reviews, the reviews before the failures), the exact question, the
-  branch. A pull request is one row however many fix runs it had. It never
-  offers Push or Answer, because the verb stays with its owner. The owners come
-  from the same row states as the rows themselves (`needsYouOwners`), so a
-  question is counted once however many rows could show it.
-
-A fix run is one row, `Fix run · #318 · 9 comments`: the resolver agent's own
-row, with the tally of its comments in the five words (`5 ready · 1 needs you
-· 2 working · 1 couldn't fix`) as its state line, the model cell, and the time
-over the cost. It has no per-agent burst, no files below it, no `related` tag
-and no retry count: a fix run is one agent, and a follow-up or a retry is
-another turn of that agent. The row opens the run's page, and the comments
-stay in the Comments tab, one click away. The title and the tally count
-comments, never agents.
-
-### Rail vocabulary
-
-A feed reads up, a recipe reads down. Activity is a feed: newest first at every
-level, like a git graph, so a child sits above its parent and the clock never
-rises going down. The workflow run page is a recipe: steps in the order they
-run, top down. Both draw their structure with the same four ingredients.
-
-| ingredient | value                                                                              | meaning                                     |
-| ---------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row, column 0                      | the session's own thread                    |
-| lane       | 2px in the run's identity hue, one 16px column per run, a child lane one column in | a launch's members, each at its own time    |
-| pattern    | solid or dashed                                                                    | solid happened, dashed has not happened yet |
-| count row  | hollow 10px node on the lane, muted text on the label column, 24px high            | a finished branch, folded                   |
-
-Content hugs its marker. The label of a row (ordinal, role glyph and title, a
-fact row's words, a count row's summary) starts a fixed 10px after the right
-edge of that row's own marker: label x is the marker column's x plus the marker
-radius (10px, 5px for the count node) plus 10px. The rail space of a row ends
-where its label starts, so depth 0, 1 and 2 indent by exactly one 16px column
-each and no row has a wide empty gap between ball and text. The right-hand
-columns (state, model cell, duration over cost) hang on the row's right edge and
-stay aligned across rows; the time gutter is unchanged. A lane of another group
-beside the marker that runs through a row and would touch the label (the next
-column over for the 5px count node, two columns or more for a full node) pushes
-that row's label to 10px past the lane, for every row kind.
-`railInsetOf` in `railGeometry.ts` computes the space; the run page keeps its
-one global rail width. The step ordinal is left-aligned in a 16px slot.
-
-A lane starts at its origin marker with a quarter curve out of the column of
-the row above it in the hierarchy and climbs through its members. The origin
-row (the Workflow row) sits at the run's start time, at the bottom of its
-members; the steps stand above it, newest on top. The subagents of a step open
-upward from the step's own marker: the child lane branches from that marker,
-never from the lane beside it. The lane takes the run's identity hue (one of
-six calm hues, never red or amber: status colour stays on the markers), a child
-lane the same hue. A discarded run dims its lane.
-
-Time rules. Rows are in one time order whatever their level: a launch that
-started while a run was working sits at its own time between the steps and the
-lane passes beside it. Day rules sit between any two rows of different days,
-inside a run that crossed midnight too, and the lane runs through them. The
-newest group gets its day label unless it is from today. A queued step has no
-clock; it sits on the dashed stretch above the newest dated row, under NOW.
-While a run is live its lane continues dashed from its newest dated member up
-through the NOW row, so the line itself says the work is live; a finished lane
-ends on its newest member.
-
-Folding. A branch folds only when it is finished. A live branch (a run that is
-not finished or asks you something, a step with a running, queued or failed
-subagent, a launch still working) shows
-all its members and has no control to fold it. A finished branch folds by
-default, whatever its size, into one count row that sits on its lane exactly
-where its children would be, above the parent: `6 steps · 1 question answered`
-over a run, `3 subagents` over a step, `2 outputs` over a launch. A tally follows the total only when not everything is done (`3
-subagents · 1 closed`). A click on the count row, or Right on it, opens the
-branch; the count row stays as the top cap of the lane and a second click, or
-Left, folds it again. There is no chevron and no chip at the right of a feed
-row; the run tree's fold row is the one exception and ends in a chevron, down
-while it is folded and up while it is open.
-Right and Left work on every expandable row too: Right opens the branch the row
-carries, Left folds it, and Left on a child folds the branch it hangs in and
-moves the focus to its count row. A run that finishes while you watch it stays
-open until you fold it.
-
-The lane is a control: a click on it opens the run page, with the tooltip `Open
-workflow: <title>` and its shortcut, Shift+Enter on a focused row does the same
-(`activity.openRun` in the shortcut registry), and the lane gets no hover tint.
-A row click opens its own leaf: a step its chat, a run its page, a fix run its
-page. A count row never navigates; it only folds and opens.
-
-The recipe is the run page: `layoutTimelineRail` runs there with `hasSpine:
-false`, the run lane takes column 0 and starts on the run's first step, steps
-follow in execution order and children take column 1. Its lanes are `down`
-groups, the feed's are `up` groups; `buildTimelineStream` takes the direction
-from its caller, so the run tree and the agent tree keep their order. There is
-no run row, no NOW and no time column on the run page. Its one count row is the
-fold row of a settled set of sub-agents (`RunTreeFoldRow`): it sits under its
-parent step, one column in, and opens the set downward, oldest first.
-
-Never delete a rail element without the defect it fixes. 0.17 had a head node
-with a grey stub for a folded group; the stub landed on the lane and not on the
-step's marker, and the count row replaces it. The 0.17 elbow that rejoined a
-queued child lane into its parent lane is not back: the dash up to NOW says
-what it said. The lane hover wash and the thicker hover stroke are gone: they
-lit a whole run for a pointer that was only passing.
-
-Geometry is computed in
-`apps/desktop/src/features/workTreeModel/railGeometry.ts`. Rows are laid out
-against `apps/desktop/src/features/workTreeModel/timelineRhythm.ts`. Its grades
-fix line height and box height (entry 40px, step 32px, queued 24px, fact 28px,
-count 24px), so a node centres on its label's line and not on its row box. Every grade
-carries the same 20px node. `fact` is the grade of every row of the Log: the
-Context row ("Context · 1 added, 2 replaced", words and no diff colours), an
-answered question, a plan or an artifact created without a launch ("Plan
-created · Refund idempotency plan"), and every session event. It takes an 8px
-gap instead of 12px and a 12px muted label, so a log row weighs the same as a
-step and never as an agent.
-
-The direction of time is one rule: the feed is newest first at every level. A
-run or an agent sits where its origin started and its members stand
-above it, each at its own time, so a step number only ever falls down the list
-(8, 7, 6 above the run row; 8.4, 8.3 above step 8). Day rules sit between any
-two rows of different days.
-
-**A queued step is future, not hidden.** It is a row of its own with its own
-dashed node, on the dashed stretch above the newest dated row. A failed step or
-a parent you closed ends there; queued children of a failed parent cannot start
-and draw as skipped when you closed the parent. The row states come from each
-row's `RowState` in `buildTimelineStream`, not from a second status check.
-
-Suggestions are not scheduled work, so they never draw a dash and never sit in
-the activity feed. They live in the **Needs you** and **Next** cards of the
-Overview, outside the log, as `docs/concepts.md` (Next steps) describes.
-
-A second rule covers what Activity shows: **a finished launch is one row and
-one count row, opened one level**. Nothing inside a finished launch is a row
-until you open its count row, and a state that needs you can never hide inside
-a folded branch: a branch with something that needs you, or something still
-working or failed, is not finished and stays open, and Needs you carries it.
-Density comes from the grades in `timelineRhythm.ts`.
-
-### History graph
-
-Rewrite history draws one branch on the same grammar: newer above older,
-solid for what happened, dashed for what has not happened yet. Main is a
-straight `idle` trunk with its head node and one dot per commit it gained
-(the subject on hover); the branch leaves it with a quarter curve at the real
-fork point and climbs in a `muted-foreground` lane, one node per commit. The graph shows the local branch and updates after each successful edit.
-There is one full-width column at every window size. The moved row shows
-an inline busy state while Git works; controls ignore further edits until it
-finishes. Undo and Redo are icon buttons with tooltips in the Commits header.
-
-Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
-`apps/desktop/src/features/history/historyActionClasses.ts`:
-
-| action                      | git term | colour     | token                      |
-| --------------------------- | -------- | ---------- | -------------------------- |
-| Keep                        | pick     | green      | `--color-success`          |
-| Fold in, keep its title     | fixup    | azure      | `--color-history-fixup`    |
-| Combine, keep both messages | squash   | yellow     | `--color-history-squash`   |
-| Move                        | reorder  | violet     | `--color-history-move`     |
-| Rename                      | reword   | neutral    | `--color-muted-foreground` |
-| Remove                      | drop     | red        | `--color-danger`           |
-| Rebase on the base branch   | rebase   | trunk grey | `--color-idle`             |
-
-A kept row gets a green node. Warnings keep `warning` and the triangle.
-`token-contrast-floor.test.ts` holds the history tokens at 4.5:1 on every
-surface and their own marks. Successful row updates settle with `useFlipList`;
-reduced motion makes the update instant. Errors and stash consent stay inline
-with actions next to their reason.
-
-### Work nodes and row states
-
-Every surface that draws a sequence of work (the activity feed, the workflow
-run tree, the agents on a project, the transcript's status column) draws its
-nodes with one primitive, `WorkNode` in `packages/ui/src/components/WorkTree/`.
-It knows nothing about agents: the caller hands it a state, a mark, a label
-and a `size` (`md`, 20px, the default; `sm`, 14px, for a transcript row's
-icon column), and sits on the canvas so the lane never shows through it.
-
-| node       | ring                                    | centre                    |
-| ---------- | --------------------------------------- | ------------------------- |
-| `queued`   | 1.5px dashed, `faint-foreground`        | local index, faint        |
-| `ready`    | 1.5px dashed, `warning`                 | play triangle, warning    |
-| `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot  |
-| `question` | 1.5px `warning`                         | `?`, warning              |
-| `budget`   | 1.5px `warning`                         | `$`, warning              |
-| `approval` | 1.5px `warning`                         | shield, warning           |
-| `alert`    | 1.5px `warning`                         | `!`, warning              |
-| `failed`   | 1.5px `danger`                          | `!`, danger               |
-| `approved` | 1px `success` over a solid `success`    | check, `on-tone` (white)  |
-| `merging`  | 1.5px `primary`                         | half-filled core, primary |
-| `done`     | 1px `success` over a `success/18` fill  | check, success            |
-| `closed`   | 1px `border`                            | check, muted              |
-| `stopped`  | 1px `border`                            | small square, muted       |
-| `skipped`  | 1px `border-soft`                       | dash, faint               |
-| `marker`   | `ring-1` in the concept tone            | the concept glyph         |
-| `mixed`    | arcs per state, 2px, 1.5px gap          | the state of the children |
-
-`mixed` is the node of a group row (a batch of resolves, a folded run or chain): the caller passes
-`parts` (a tone and a count each) and the ring is split into arcs whose length
-is proportional to the count, one tone per state, in the order given, with a
-1.5px gap between arcs (none for a single part). The centre is a dot: a ball
-shows a state and never a count, because a number in a ball reads as a step
-number. It keeps the same 20px box as every other state.
-
-`approval` is a pending permission request without a decision yet: a tool
-call waiting on you, distinct from `question` (an open question waiting on
-you) even though both use the warning tone. The transcript also gives a
-turn's `blocked` state its own node this way instead of sharing `question`'s
-glyph.
-
-`failed` is the red `!` and means something broke. `alert` is the same sign in
-`warning` for what you must act on while nothing is broken (changes requested,
-comments the fix could not fix), so red stays rare. `approved` is a solid
-`success` disc with a white check, 12px at `md` and at `sm`: ready to ship.
-`finished` is its twin in `merged` violet: the same solid disc, ring and 12px
-white check, for a session that is done. `merging` is a pull request waiting in
-the merge queue: a hollow `primary` ring around a core filled on its right half,
-drawn to the node's own scale, so it reads as in progress and never as a solid
-disc, a check or the dashed pending ring. Neither is `done`, which is an outline
-with a tinted fill and a `success` check (a finished workflow step). The glyph
-inside a node is never under 12px, so the `sm` node (14px) keeps its ring and
-only the glyph grew from 9px. Any state can also take `isSpinning`, which draws the running
-`spin-border` around the node's own ring and glyph in the colour of
-`spinClassName` (`spin-border-info` by default, motion-gated): the reason holds
-the session while an agent still works.
-
-A node can also take `progress`, measured active time over the usual time,
-from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc
-from twelve o'clock over the `border-soft` track instead of `spin-border`, and
-the `soft-pulse` head sits on the end of the arc. A `question` or `budget` node
-keeps the arc frozen in `warning` over a `warning/35` track, with no motion.
-A `failed` node never draws the arc. The arc steps with the panel's 5 second
-clock and never animates between values: a ring that glides for nine minutes
-decorates, it does not confirm. Without progress the node is the table above.
-
-A node never carries a number. The step's full path (`4.2`) is the ordinal
-column of the row, always visible, so the node only says the state: a row in a
-sequence carries a dot until it has something to say, a fact row (plan,
-artifact, event, issue, question) carries its concept glyph, and a state that
-asks something or broke has its glyph, so colour never speaks alone.
-
-A comparison of two versions (the wireframe Compare) marks each change with a
-glyph and a word, never a colour: `+ Added`, `~ Changed`, `− Removed`,
-`= Same`. On the pages, added nodes get a solid outline with `+`, changed nodes
-a dashed outline with `~`, and removed nodes, on the older side, an outline
-with `−`.
-
-What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
-`apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
-value: the node comes from `rowStateNode`, the status in the row's state slot
-from `statePresentationOf` (`workTreeModel/statePresentation.ts`), and the
-single visible action from the ask. The state slot is a fixed 112px space
-(96px under 790px) at the right of the label, right before the meta, so every
-row says its state at the same x and the title takes the rest and truncates.
-Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
-show as an icon in their tone, with the word in the tooltip and for screen
-readers; states that ask you or report trouble (Needs you, Ready,
-Couldn't fix, Longer than usual, Step 3 ready) stay a word, in their short form,
-with the full sentence in the tooltip. A new state is a row in the
-`statePresentation` tables, never a branch in the component.
-When several conditions hold, failed wins, then waiting (an answer, then the
-next click, then the spend limit), then running, then queued, then done. The
-summarizer briefing the next step and a chat turn in flight are the machine
-working: they read as running, never as "Needs you". A run you stopped reads
-as `stopped`, an agent you closed as `closed`: finished is not the same as
-succeeded.
-
-A fix run is a plain agent row. Its state line is the tally of its comments in
-the five words, and its row never opens or folds anything: the comments live in
-the Comments tab and the Needs you block carries the run when one waits on you.
-
-Subagents have no group row and no chip. A finished step or agent that has
-subagents has a count row above it on its own lane: `3 subagents`, with a tally
-only when not all of them are done (`3 subagents · 1 closed`), muted, on the
-label column right where the first child would be. A step with one subagent has
-the same row. The count row opens the children above the step, one column in,
-numbered 8.4, 8.3 down to 8.1 over step 8, each with its own time and cost; the
-step's time and cost already include them, counted once, and the children show
-their own. The row's unread dot covers the hidden children and Needs you
-carries the run once, also for a subagent that asks or has failed. A subagent
-that is working, queued, failed or waiting on you keeps its branch open: a
-branch folds only when everything in it is finished. The outputs of an agent
-work the same way: the count row `3 outputs` opens a plan, a report, a
-wireframe or a learning as rows above it, on a lane of their own. Children grow
-with `Reveal` like a group's, closing runs it backwards, and the lane keeps its
-column whether it is open or not. A folded chain or run shows its descendants
-when it opens; the trees (the run page and a Brief) always show them.
-
-A finished workflow run or agent chain, whatever its size, is a third group
-kind, `steps`: the run row keeps its own node (the state of the run, never a
-count), and its count row sits above it with the summary from `groupSummary`
-(`8 steps · 1 question answered · Context · 2 added, 2 replaced`), never
-truncated: the Context part is the same string as the Context row inside the run
-(`CONTEXT_LABEL` and `decisionCountsText`), summed over the rows of the run's
-agents, and shows only when a row changed something. Those Context rows are
-members of the run, graded `fact`, and a folded run hides them; a Context event
-with no agent is a row of the Log. An answered or dismissed question inside a
-run is counted in the summary and drawn as no row, and an open one keeps the run
-open and is carried by Needs you. The run row's click opens the run page, not
-the fold. A run that asks you something, failed or is still running is never
-folded. The gutter clock carries a tooltip with the row's own times ("Started
-16:41 · finished 16:57", "Started 10:09 · running"). The count row's label
-aligns with the step titles, a step's ordinal and role glyph included. A row
-already on screen never grows again: when a run finishes under the pointer its
-rows join the group already open.
-
-A resolver takes its row state from the comment it fixes, not from the agent:
-the `review` reason carries the Review state and its word, one of five (Working,
-Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
-(Pushed), with Review's tone and node. An agent that fixes several comments
-counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
-that needs you, has a ready fix or could not be fixed sets the `reviewComment`
-ask, so Needs you carries it and the row itself is not tinted.
-
-### Row hover and focus
-
-Every row that can be clicked reads as clickable in three ways at once: the
-pointer turns to a hand, `bg-hover` washes it, and a keyboard focus draws the
-focus ring. The three live in one string, `ROW_INTERACTIVE`
-(`packages/ui/src/rowInteractive.ts`), and a row never copies it. `bg-hover`
-is a `background-image` layer, so a waiting or unread row keeps its tint and
-shows the wash on top of it. `SelectableRow` and the Activity rows
-(`TimelineStreamRow`, `TimelineCountRow`, `TimelineMoreRow`) carry the whole
-string on their one clickable element. `InteractiveRow` splits it, because its
-frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
-the pointer is over an inner link or button, and the overlay button that opens
-the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. The Files tree rows of a
-diff (`ChangeTree`) take the shared string; a Board card washes
-whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
-pointer: hovering it for 450ms marks it seen when the pointer leaves, never
-while it is still on the row.
-`row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
-
-### Session row, hover card and switcher
-
-A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
-and the title, with a `gap-2` between them and `px-2` inside the pill. It has
-no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
-fills its disc with `bg-background` to mask a rail line behind it; on a
-selected or current row it takes `isTransparent` (`StateNode`
-`isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
-reads as a solid dot. `sessionNodeOf`
-picks the node from the stage and, under needs you, from the winning reason,
-and every surface that says why a session waits reads the same table,
-`ATTENTION_REASON_META` in `features/session/session-stage.ts`: one mark, one
-tone and one sentence per reason. The sidebar node, the switcher row, the hover
-card, the Board card tone, the Now chip rows and the palette's Needs you rows
-agree on tone and words, and the node's accessible label is the sentence.
-
-Red means broken, amber means you must answer, approve or act, green means
-ready to ship, teal (`primary`) means waiting in the merge queue, violet means
-done, blue means moving or new. A pictogram under 12px is unreadable, so the
-marks inside the ring are typographic or 12px: `?`, `!`, the approval shield,
-the check and the half-filled core of the queue.
-
-| reason              | node                 | tone    | words                                    |
-| ------------------- | -------------------- | ------- | ---------------------------------------- |
-| `agent-error`       | `failed`, `!`        | danger  | An agent stopped on an error             |
-| `ci-failed`         | `failed`, `!`        | danger  | Checks failing                           |
-| `open-question`     | `question`, `?`      | warning | 1 question for you (plural by the count) |
-| `fix-needs-you`     | `question`, `?`      | warning | 3 comments need you                      |
-| `needs-approval`    | `approval`, shield   | warning | Waiting for your permission              |
-| `plan-approval`     | `approval`, shield   | warning | Plan v2 waits for your approval          |
-| `changes-requested` | `alert`, `!`         | warning | Changes requested                        |
-| `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
-| `pr-queued`         | `merging`, half core | primary | In merge queue                           |
-| `pr-approved`       | `approved`, solid    | success | Approved, ready to merge                 |
-| `unread-reply`      | `marker` and its dot | info    | New reply                                |
-| stage `done`        | `finished`, solid    | merged  | Done                                     |
-
-`pr-queued` is the one reason in the table that does not need you. It ranks
-below the needs-you reasons and above `pr-approved`, and it is mutually exclusive
-with it: a pull request in the merge queue is never also approved, ready to merge,
-whatever its review decision. The session stays in the review stage, so the Board
-card sits in In review with the `primary` tone bar, the sidebar, the switcher
-and the hover card draw the `merging` node and the words, and the Now chip and
-the palette's Needs you rows never list it. The hover card shows no Needs you
-action for it. With several mounts, a mount in review or approved speaks for the
-session ahead of a mount in the queue, and failing checks speak ahead of both.
-
-`plan-approval` names the plan's version when it is known and says "The plan
-waits for your approval" otherwise. An unread reply is not a mark: the node
-stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
-also shows on any other node while a reply waits among the other reasons.
-
-A branch and its pull request follow one state table on every surface: the
-Now card branch rows (`BRANCH_STATE_TONE` in
-`features/session/central/branches/branchStateTone.ts`), the pull request pill
-and icon (`PULL_REQUEST_PRESENTATION`, `pullRequestStateToneOf`) and the
-attention reasons above. Color says the state of the thing in the row, never
-whether it has a card in Next. `stateToneMap.test.ts` walks every map and fails
-on a disagreement.
-
-| state                                                  | tone    | words                        |
-| ------------------------------------------------------ | ------- | ---------------------------- |
-| merged                                                 | merged  | Merged                       |
-| approved, ready to merge                               | success | Approved, Ready to merge     |
-| in merge queue                                         | primary | In merge queue               |
-| open, in review                                        | info    | Open, In review              |
-| checks running, rebasing                               | info    | Checks running, Rebasing     |
-| draft                                                  | neutral | Draft                        |
-| no pull request, not pushed, nothing committed, closed | neutral | No pull request, Not pushed  |
-| changes requested, conflicts, remote branch gone       | warning | Changes requested, Conflicts |
-| checks failing                                         | danger  | Checks failing               |
-| done agent or step                                     | neutral | a muted check, never green   |
-
-Green for an open pull request would make approved stop standing out, so open
-is `info`. A done segment of `StepMeter` fills `muted-foreground`, the running
-segment takes the color of its role (`AGENT_KIND_PALETTE`), never `info`, and a
-step at a ready gate or a question is `warning`. The children of a Running row
-hang from one 1px `border` lane with a quarter elbow each (`LiveSpine`); the
-shared `WorkNode` done node keeps its violet disc.
-
-`StageTrack` draws where a branch stands as one 80px line of stages (Commit,
-Push, Pull request, Checks, Review, Merge on a Now card branch row). A 1px
-line joins the stages and is filled `muted-foreground` up to the last stage
-reached, `border` after it. A stage has four looks: done is a 6px
-`muted-foreground` dot, current a 10px dot in the state tone (the only tone on
-the track), todo a 6px hollow `faint-foreground` ring and skipped a short dash.
-There is no ring state: a running or stale step is current, and its tone and
-word say the rest. Each stage names itself and its state in its own Tooltip
-("Checks skipped"). The track is `role="img"` and its accessible name lists
-every stage with its state ("Commit done, Push done, Pull request current,
-Checks to do, ..."). Never use `StepMeter` (segments of a run) or `WorkNode`
-(one node) for stages with connectors.
-
-The other nodes are the stage's own. Running is the ring with the centre dot,
-done is `finished`: a solid `merged` violet disc with a white 12px check, the
-same size and weight as the green approved disc, so it reads as complete next
-to the hollow rings (a session whose pull request closed unmerged keeps
-`closed`, the muted check), in review and building are a 1px hollow ring named
-by the stage word (never "Idle"), and archived is `queued`, a dashed faint
-ring, only under Show archived.
-
-Human-input reasons (`open-question`, `fix-needs-you`, `needs-approval` and
-`plan-approval`) outrank running: the stage is needs you and, while an agent
-works, the node keeps the reason's mark and takes the running `spin-border`
-(`isSpinning`), the Board card breathes as a running card, and the hover card
-adds a line, An agent is working. An agent error keeps its place above running.
-Failing checks, changes requested, comments it couldn't fix, approved and unread
-rank below running, because an agent may be working on exactly that.
-
-The title is `text-row`. Needs you and running read in `foreground`, idle, done
-and archived in `muted-foreground`. The open session is medium weight, and its
-row has no fill while its pages are nested under it. The pages are 28px
-child rows in a `SelectableRow` (the five work pages, and Questions while one is
-open, warning-toned), with no indent of their own because the card
-groups them (see The left column): the page icon in its concept tone, centred
-in a 14px box so it sits in the node's column, then its word starting at the
-title's x, and its count word in `faint-foreground`. There is one current sign,
-from `currentSignOf`: the page that matches takes `bg-selected` and
-`aria-current="page"` alone; where no row matches (Tools, linked records) or
-the pages are folded, the session row takes `bg-selected` and
-`aria-current="page"`; while a studio sits over it the session row keeps medium
-weight and `text-foreground` with no fill and no `aria-current` (`remembered`).
-The row carries `data-current-sign`. A 16px chevron button sits at the right end
-of the open row (visible on hover and focus, always visible while folded,
-`aria-expanded`), and a 20px ghost pin button in the same slot on hover and
-focus of any live row (the checkbox owns the left slot). With two or more
-branches the card nests a 28px row per branch under the Branch page while it
-is current, at the page indent, up to five and then `All branches`: the repo
-glyph, the branch cut at the end in `text-code`, and the pull request glyph;
-the current branch reads in `foreground`. Every row and button takes its hover
-wash and focus ring from `ROW_INTERACTIVE`, never a copy.
-
-The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
-and its title row, state rows and facts line are the `FactCard` parts
-(`FactCardHeader`, `FactCardState`, `FactCardFootnote`), so it and every fact
-card share one anatomy and cannot drift; only its chips and actions are its own,
-at `z-popover`, 8px to the right of the column and aligned to its row, with a
-`gap-3` between its blocks: the title in `text-heading`, the node with the stage
-word and its reason in `text-meta` (under needs you, the winning reason's
-words, then each other reason that holds on its own line behind a small tone
-dot, so a red mark is always explained),
-the run progress, the chips (`Chip` `xs`:
-the pull request in its presentation tone, linked tasks as the compact task
-chip, projects with the folder glyph), a `text-meta` line of agents, spend and
-age in `faint-foreground`, and one `GhostActionButton` when the session needs
-you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
-and enters with `popover-in` once, never on a swap.
-
-The switcher is the palette frame (`z-command-palette`, a scrim, the floating
-surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
-and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
-`shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
-work and live in the Keyboard shortcuts list. It stays hidden for the first
-120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
-adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
-sessions`; the first `Tab` still selects the previous session wherever it sits.
-
-### Rail
-
-The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
-buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `StateNode`, current
-fill on its page, no fill and `text-foreground` while a studio sits over it),
-then up to seven pinned sessions with the title and the stage words in a
-tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout
-instead of a tooltip: the floating surface, 288px wide, `z-popover`, 8px to the
-right of the button, holding the title and stage words, the pages list (the
-same `SessionPages`), the branches and a `Pinned` eyebrow with one row per pin.
-It opens after a 150ms rest or keyboard focus, closes 180ms after the pointer
-leaves, and Esc closes it and returns focus to the button. `New` shows a 6px
-primary dot (`data-slot="draft-dot"`) while a written draft waits, and its label
-and tooltip read `New session, draft in progress`.
-
-### Work meta
-
-The right end of a work row is `WorkMeta` in
-`packages/ui/src/components/WorkTree/`. Its columns have fixed widths from
-`WORK_META_COLUMN`, so every row reads down the same columns and a cost of
-`$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
-running or done, and so does every surface that reads `formatActiveTime`.
-
-| column     | width | holds                                                                                                                                                 | in a narrow row                                |
-| ---------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                                                           | "left" goes under 640px, gone under 500px      |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                                                                | under 620px it leaves the row                  |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                                                          | under 620px it leaves the row                  |
-| model      | 136px | `ModelBlock`: a 24px provider glyph cell, then model and version on line 1 (meta size), variant and effort on line 2 (chip size, faint), left aligned | lines hide under 640px, glyphs stay            |
-| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                                                               | cost leaves under 620px, all of it under 500px |
-| action     | 80px  | the one verb of the row (`ROW_ACTION_LABEL`, at most nine characters), right aligned; present only in a feed that has an actionable row               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                                                              | never drops                                    |
-
-The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
-`min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
-working · 1 couldn't fix" shows whole when the row has room, and the title is
-what truncates first. Under 790px of row it narrows to 96px, under 320px it
-leaves.
-
-A row inside a `WorkTimeProvider` always renders the time column, empty when
-it has nothing to say, so the columns stay in line. The cost column follows
-the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
-drops it, as the builder does for a plan with no measured estimate yet. A
-run row takes the time column and the cost column like any other row.
-
-The step rows of the activity timeline and of the run tree (Runs, the run page
-and a Brief's Subagents) are one grammar: role icon, step title, model with
-effort, then time over cost. Both draw it from the same pieces, so they cannot
-drift: `TimelineRoleGlyph` for the icon, `AgentRowMeta` for the right side
-(`TimelineModelCell` and the stacked `TimelineRowMeta`), `agentRowIdentity` for
-the card and the accessible name, and `useRowCard` for when the card opens.
-The role is an icon only, never a coloured role-name pill: the 18px glyph has
-the role as its accessible name (`role="img"`) and in the card header. The
-workflow builder keeps its role pill because the role is a field there.
-
-The right side uses three columns, in this order after the state word: the
-model block (`ModelBlock`, drawn by `TimelineModelCell`), the stacked time and
-cost column (`TimelineRowMeta`) and the action column. `ModelBlock` is the same
-trick as the time and cost stack: a 24px glyph cell centred on the row midline
-(14px icons, two providers overlap by 6px), then two 16px lines. Line 1 is the
-model and version and sits on the baseline of the time, line 2 is the variant
-and effort (`Thinking · High`, faint) and sits on the baseline of the cost; it
-is left out when empty. The models are read from the turn spans of the agent in
-run order. An agent that ran on two models shows the one it ended on with "from
-Kimi K3" on line 2, and "3 models" from three. A run row shows the model with
-most steps and "+ 2 models" under it. The card lists each model in order. The
-name truncates before the title does, and under 640px the lines go and the
-glyph cell stays. The title keeps a 160px floor (`WORK_ROW.label`) down to a
-640px row; under it the title truncates first, so a state word never pushes
-the model and the stack past the edge the other rows end on. A live agent ends on its current routing; an agent that has
-not started shows its planned model in faint. Every row holds the model and the
-stack, empty when it has nothing to say, so duration and cost line up down the
-feed. The action column is a fixed 80px, `justify-end`, and a feed draws it on
-every row as soon as one row has an action, so the model and the stack end on
-the same edge in every row (`scripts/validate-scenes.mjs` measures it on
-`step-rows-activity`, `step-rows-runs` and `workflow-run-plan-review` at 1100,
-1440 and 1920). Action labels are verbs from `ROW_ACTION_LABEL`
-(`features/workTreeModel/rowActionLabels.ts`): Answer, Skip, Open plan, Open,
-Start, Resume, Retry. A label never passes nine characters and the row title
-names the object ("Start", never "Start implementer"). A row has no menu slot.
-
-The role glyph before the title and the model cell are the only two hover
-targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`).
-Each one wraps its trigger in a `FactCard` and sends data only (header, facts,
-a footnote, six rows at most: a model list or a run with many steps keeps five
-and a footnote says how many more), so the cards sit on the floating surface
-with the session hover card's timing: the pointer rests 500ms, the card closes
-180ms after it leaves, and a card opens at once when another closed less than
-300ms ago. The run tree opens the same cards: its glyph and meta sit above the
-row's click layer (`WORK_ROW.pointerLayer`) and a click on them still opens the
-step. A trigger passes through `TimelineRowIdentity.wrapCard`, so the glyph and
-the model cell never import a card. Keyboard focus on a row opens the identity
-card after the same 500ms (a click never does), blur and Escape close it, and
-`i` on a focused row toggles it at once (`useRowCard`). Nothing is only in a card: the Brief has the same facts and the
-accessible name of a feed row reads "Implementer", then "Sonnet 5.5, High".
-
-The narrow rules are container queries, never window breakpoints, because
-the same feed sits in a wide overview and in a split pane. The activity feed
-puts the container on each row's content box (`WORK_ROW.container`, right of
-the time gutter and the rail), so the widths above are the room the label and
-the meta share, not the width of the panel. The label always gets what the
-meta leaves: the role and run glyphs are the same 18px circle at every width,
-the model cell keeps only its glyphs under 640px, and the state slot always reads the short form ("Needs you",
-"Step 3 ready"), with the full sentence in its tooltip. A row with no state
-word and no note draws no slot, so a finished row gives that room to its
-title. The slot never shrinks. The title keeps about 45% of the row: the
-meta gives way first, in this order, the cost leaves under 620px, the time
-under 500px. Only then does
-the title truncate, and the label keeps a 160px floor (`WORK_ROW.label`)
-until the row is under 440px. Under 320px the row state goes (the node and the
-action still say it). The cost stays in the time tooltip. A folded run or chain
-keeps its title whole before its summary: the summary takes the room left
-beside the title and truncates its tail first, then the title truncates. A list under 440px also
-drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
-leading words and tokens whole ("Opened #612:") and only the last segment
-truncates. A row carries no hover hint on its right; the open target and the
-keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
-"Longer than usual" shows only on a running step, never on a finished one, and
-it is not a word in the row: the duration turns to the warning tone, the note
-leads its tooltip and screen readers hear it after the time, so it never pushes
-the model column.
-What leaves the row stays in the routing tooltip, which
-always reads the whole route ("Claude · Opus 5.5 · High"). The builder and the plan
-parts draw the same block through `RoutingModelBlock`, with no fill and no chip. Its words come from
-`routingLabelParts`, the same function behind the model picker trigger, so a
-row, the trigger, the queue and a header say a route the same way: the catalog
-label is the model name (`GPT-5.6 Sol`), the Cursor
-modes and the effort are details. Planned routing (a step that has not
-started) is faint; routing that ran is muted. The detail is faint while the
-effort is only planned and takes the row tone once the run reports the effort
-it was started with. When the run picked something other than the plan, in
-model, provider or observed effort, the whole cell is underlined dotted and
-its one tooltip names the plan ("Planned Opus 5 High, routing picked Sonnet 5
-Medium", "Planned High, ran Medium"). Nothing is struck through. The activity
-feed, the workflow run tree and the Subagents tree of a Brief all end their
-rows with this meta, so a step and its sub-agents read the same wherever they
-appear. Headers, cards, tables and the queue use the inline `RoutingLabel`. `RoutingLabel` says
-the effort only when it is not the default Medium ("Sonnet 5.5 · High", plain
-"Sonnet 5.5" at Medium), unless the effort diverged from the plan; its
-tooltip always reads the whole route. The picker trigger draws the provider mark in its brand color, reads "Auto ·
-Sonnet 5.5" while Auto resolves the route (`autoTrigger="resolved"`), and says
-a verbosity only when it is not
-Normal ("Verbose", "Terse"), and a pinned route as "· pinned" in gray.
-
-### The plan in the workflow builder
-
-The builder draws the plan with the same grammar as the run, so a step
-looks the same before and after it starts. Every row is future, so every node is `queued` with its
-number and the lane is dashed in the run's identity colour. There is no
-ordinal column: nothing in the form can turn into a check. Each row draws
-its own lane segment over its own height, so an expanded row lengthens its
-segment and needs no second lane engine. A recipe reads top down: step 1 is the first row and
-**Add step** is the last node, under the last step, so the lane is a dashed
-line that ends at that node. The first row is the origin, so the lane starts at
-its node, and a drop zone above step 1 draws no lane. The run tree and the
-activity timeline keep growing upward to NOW on purpose. The form sits on the pane measure, the same column as the
-workflow detail, so the plan keeps its width when the run starts. The meta
-columns are `WorkMeta` with no `@container` above them, so the effort shows at
-every width, since choosing it is the point of the form. The row's trailing
-column is `WORK_META_COLUMN.menu`, sized to the reorder grip it holds. A row opens in place as
-one group (the rule in `docs/styling.md`), and its model axes are the
-`RoutingPicker` body mounted inline, not a copy of it. Once the workspace has
-enough measured steps and at least one step in the plan has an estimate, each
-row's time column holds its usual range and its cost column a cost range, in the same faint as the planned routing, and the
-name row carries the plan's total in a muted chip. Nothing in the form draws a
-percentage or an arc: nothing has run yet.
-
-An orchestrated plan has no steps yet, so it draws the orchestrator as the
-origin node, the guidance disclosure under it and three example rows below:
-queued nodes, muted role pills and a bare bar for the title, never text or
-routing, under a caption that says they are an example. They enter once,
-top to bottom, staggered 120ms apart, with the
-`fade-in` transition keyframe and `animation-fill-mode: backwards`. The
-entry confirms that the mode changed and that the run grows one step at a
-time. It never loops, and reduced motion drops it.
+The rail, work node and row vocabulary continues in [Rail and work vocabulary](design/rail-and-work.md).
 
 ## z-index tokens
 
@@ -1356,6 +731,7 @@ is a precedence chain (each layer must sit above the one below).
 | `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                   |
 | `--z-index-toast`            | 85    | the toast stack                                                                    |
 | `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                     |
+| `--z-index-boot`             | 95    | the boot splash fade-out cover, above everything z-indexed                         |
 | (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                             |
 
 A popover opened from inside the command palette does not need a higher token.
@@ -1374,1139 +750,71 @@ close it. `AnchoredPopover` marks the press on its surface through
 `dropdown.markPress`, and React carries it across the portal; a press outside
 both still closes both.
 
-## Primitives
-
-The register taxonomy, and the rule that all registers share one family, live
-in [DESIGN.md](../../DESIGN.md). The barrel file is the list of primitives. A
-list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
-the family does not have, add it to the family. A register never keeps a
-private one.
-
-## Control scale
-
-One ladder of control heights runs through every register: **24** (`xs`),
-**28** (`sm`, the default), **32** (`md`). Nothing else is a control height.
-
-| Primitive                            | Sizes                                                                                                           | Notes                                                                                                                                                                                                                                                                                               |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`                             | `xs` 24 (icon 12, gap 4), `sm` 28 (icon 12, gap 8), `md` 32 (icon 14, gap 8)                                    | Variants `primary`, `secondary`, `ghost`, `quiet` (a ghost with muted text), `danger`, `ghost-danger`. Solid `danger` is the confirm button of `InlineConfirm` only: no other first click is solid red. Disabled is the `fill` background with the `disabled-foreground` label, never `opacity-50`. |
-| `IconButton`                         | `xs` 24, `sm` 28, `md` 32 squares, `rounded-md`, glyph 12, 14, 14                                               | Ghost by default. A border only for `variant="outline"`. A smaller glyph sits inside the 24 target. Every icon-only control keeps its tooltip.                                                                                                                                                      |
-| `Chip`                               | `kind="state"` pill 20 (11/16), `reference` badge 24 (12/16, clickable), `id` 4px mono badge 20, `count` dot 16 | The kind is the meaning; the old `size` and `shape` props map onto it until the sweep. `StateBadge` is `Chip kind="state"`. A routing chip (effort, reply length, mode) is neutral and selected by fill.                                                                                            |
-| `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
-| `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input, with one focus ring on its container and none on the inner input; it takes a `hint` for a registered shortcut.                                                                |
-| `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
-| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`.                                                                                                                                                                                                              |
-
-A bar has one control height. Every control in the top bar is 28 and
-`rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
-Spend, the Limits chips and the Now chip all take
-`TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
-`FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now, Limits,
-Spend, the bell, and Spend opens Impact on its Spend tab (`Spend today. Open
-Impact`): Impact is a sidebar door, and the bar has no Impact icon and no theme
-toggle. The command
-centre says `Search` with its chord as bare text; the workspace name lives in its
-tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
-number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). A fold holds two crumbs or more: a lone ancestor stays an icon, which is as wide as the fold. `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
-inside the bell's box. The session trail band keeps its 24 controls, and trail,
-rail and tree-row buttons are 24.
-
-A task chip reserves a 16px trailing slot that shows the unlink on hover, so
-the button never covers the last character of the label.
-
-A selected card is a fill plus a check: never a ring, a border and a wash
-together.
-A `ChoiceCards` option may carry `facts` (label and text pairs, the New
-session page's Example line). While nothing is picked the cards are explained:
-each card has a soft border and draws its facts under the hint. Once one is
-picked every card folds back to the one-line card, so the form under it has
-the room. A focus ring appears on keyboard focus (`focus-visible`) only.
-
-Rules for new and changed code (the migration of old code is the sweep's):
-icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18), on the icon and
-on an `iconSize` override alike, and a file never keeps its own alias of a step
-(`const KIND_ICON_SIZE = 10`): `scale-rules.test.ts` counts all three; mono is for
-branch, path, command, sha and code; money, counts and durations are sans with
-`tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
-24 and 32 (no `gap-5`, `gap-7`, `gap-10`); labels are sentence case, and a
-section label goes through `Eyebrow`.
-`control-heights.test.ts`, `kbd-overrides.test.ts`,
-`hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts`,
-`row-heights-on-the-scale.test.ts` and `scale-rules.test.ts` hold the line.
-`scale-rules` is at its end state: its baseline lists only the files a named unit
-still has to change, and a mock scene (`design-scale-ladders`, `design-controls-scale`)
-draws every step from the tokens.
-
-## Listbox
-
-`Listbox` is the one control for picking a value from a list. There is no
-native `<select>`: the WebKit menu ignores theme, density and keyboard.
-`no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
-
-- **Trigger**: `field` in forms and Settings (hairline `border`, the
-  container's fill, 28px `sm` (the default) or 32px `md`, 12px text,
-  `rounded-md`), `quiet` for a value
-  inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps
-  (`chipClasses`). Open, the border goes to `border-strong` and the chevron
-  turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
-  `disabledReason` shows in a tooltip.
-- **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
-  padding 4, at least the trigger's width and at most 360 by 320, scrolling in
-  a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). Every select,
-  picker and filter opens under its trigger, start aligned (`side` `bottom`,
-  `align` `start`, the hook's defaults), and clamps inside the window. The hook
-  measures the trigger itself when the anchor wrapper holds one element, so a
-  wrapper stretched by a column never pushes the popover to the far edge.
-  `side: 'right'` opens beside the trigger (the terminal picker, the bug report)
-  and flips left when the right is short. An override of either needs a reason
-  in `regressions/popover-anchoring.baseline.json`, which only falls. It keeps 12px from
-  the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
-  (160px at least) so a long title truncates instead of widening the popover;
-  use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a
-  `maxWidth` passed to `useDropdown`, because the inline `max-width` the hook
-  writes would beat a `max-w-*` class. Popovers stop above the status bar: the
-  hook subtracts `--dropdown-bottom-inset` (36px, set in `styles.css`) from the
-  room below the trigger, so a popover shrinks or flips instead of covering it.
-  A list of long identifiers passes `maxPopupWidth` to raise the 360 cap: the
-  branch pickers (`BranchCombobox`, `BaseBranchSelect`) pass
-  `BRANCH_PICKER_MAX_WIDTH` (480), wide enough for a ticket-prefixed branch and
-  its pull request note on one line.
-- **Option**: 32px on one line, or two lines with an 11/16 faint description;
-  a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
-  keyboard, is `bg-selected`; the current value is a check on the right and
-  `text-row`. No primary tint. A blocked option stays visible in
-  `disabled-foreground` and says why on its second line. A group label is a
-  muted `Eyebrow`. A label that can outgrow the popup is cut at the end with
-  `truncate`, in the row and the trigger; text never stays after the ellipsis.
-  Names that share a start are told apart by what the row carries beside them
-  (a pull request number), and the full name sits in the tooltip.
-  A name in a row is never cut in the middle. A file or terminal path keeps
-  the extension or last segment after the ellipsis (`MiddleText`).
-- **Search** appears on its own above 8 options (or with `searchable`): a flush
-  row (search icon, no box, a hairline divider below, no focus ring of its own),
-  a fuzzy filter, the match underlined (the list itself shows the matches, so no
-  "3 of 41" count), and an empty state in one
-  sentence plus the `create` row when the caller can make the value.
-- **Multiple**: a checkbox in the leading slot with the row icon beside it,
-  Enter toggles and stays open, a footer reading "2 selected" (nothing at 0)
-  and Clear.
-- **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
-  {noun}s yet" and "No {noun} matches" sentences when the list has its own
-  words ("No sessions match").
-- **Keyboard and ARIA**: the APG select-only combobox. Enter, Space and the
-  arrows open on the current value; arrows, Home, End, PageUp and PageDown move;
-  letters run typeahead; Enter chooses; Escape and a click outside close and
-  give focus back to the trigger; Tab closes and moves on. The trigger is
-  `role="combobox"` with `aria-activedescendant` (the search field takes it
-  when it shows), the list `role="listbox"`, each row `role="option"`.
-
-`ListboxList` and `ListboxOptionRow` are the headless list and row for a list
-that lives inside another popover (chips input suggestions, a preset list with
-its own actions), so every value list draws the same row. Menus of actions stay
-on `MenuList` (object menus) or `MenuItems` (pickers and page menus), and inline
-choice rows stay inline.
-
-## Menus
-
-`MenuList` is the one body for a menu of actions on an object; `ContextMenu`
-places it at the pointer, and an overflow trigger places it in an
-`AnchoredPopover`. The desktop feeds both from the action registry, so the two
-never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
-
-- **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `border`,
-  `rounded-lg`), 240px wide with a 200px floor and a 384px ceiling
-  (`MENU_MAX_WIDTH`, passed as `maxWidth` to `useDropdown` because the inline
-  `max-width` the hook writes would beat a `max-w-*` class; a long row
-  truncates its label and clamps its description at three lines),
-  padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
-  `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
-  at the pointer and flips left or up to stay 8px inside the window
-  (`placeContextMenu`).
-- **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
-  the right in `text-meta text-faint-foreground`, and a chevron when the
-  row opens a submenu. Verb groups are split by a hairline, never by headers. A
-  blocked row stays in `disabled-foreground` with its reason on a second faint
-  line, is `aria-disabled`, and keeps focus so the reason can be read. Only a
-  verb whose confirm is destructive takes the danger tint.
-- **One submenu level**: `choices` open a second panel beside the row (right,
-  or left when there is no room), with a check on the current value. Nothing
-  nests deeper.
-- **Radio group**: a `kind: 'radio'` entry is a named set of choices drawn in
-  the menu itself (`MenuRadioGroup`): a `role="group"` with the label as an
-  eyebrow, one `menuitemradio` row per choice with `aria-checked`, and a
-  primary check in the leading slot of the current one. Choosing closes the
-  menu and runs `onSelect` with the choice id. A disabled group stays
-  visible and `aria-disabled`. A choice can carry a `hint` (a count, drawn
-  after the label in `text-meta`, as the diff filter does) and a `tooltip`
-  (also its `aria-description`, as the run autonomy menu does). Every value
-  picker is a radio group: the run route Change menu, Group by in the tasks
-  inbox, the file tree filter, run autonomy, the Explore folder switcher,
-  the history arrows, the wireframe version and the Jira assignee.
-- **Labeled group**: a `kind: 'group'` entry holds items under an eyebrow
-  label in a `role="group"` named by it, for a list of places split by owner
-  (the New terminal picker groups its folders by session). Radio groups and
-  labeled groups are the only places a menu shows a header, because the label
-  names what the rows belong to.
-- **Item extras**: `tooltip` draws a tooltip on the row (the terminal
-  picker's full path), `isActive` paints the row hovered while focus stays in
-  a filter field (the row Enter would open), and `shouldStayOpen` keeps the
-  menu open after a choice so its owner closes it once the write succeeds and
-  shows a refusal inline (the Jira moves and assignee). `shouldStayOpen` works
-  on a radio entry too.
-- **Confirm in place**: a verb with a confirm swaps the menu body for
-  `InlineConfirm`, the menu swap placement below; Escape
-  cancels the confirm first, then closes.
-- **Keyboard and ARIA**: `role="menu"` with `menuitem` rows (`menuitemradio` in
-  a submenu and a radio group). The first row takes focus on open; the arrows, Home and End move;
-  letters run typeahead; Enter and Space run; ArrowRight opens the submenu and
-  ArrowLeft or Escape leaves it; Tab and a click outside close. Every
-  `AnchoredPopover` with `role="menu"` gets the same arrow keys and typeahead
-  through `useMenuKeys`, so `MenuItems` menus move the same way.
-- **No hand-built roles**: only the primitives in this package write `menu`,
-  `menuitem`, `menuitemradio` or `menuitemcheckbox`. The desktop renders every
-  menu through `AppMenuList`, with no allowlist
-  (`apps/desktop/src/__tests__/actions/handBuiltMenus.test.ts`). A picker
-  with a filter field puts the field above the list and passes
-  `isAutoFocus={false}` so typing stays in the field.
-
-## Key hints
-
-`Kbd` in `packages/ui/src/components/Kbd.tsx` draws every key hint, in one of
-two looks.
-
-- **`inline`** is the default. A chord inside a control ("Ask ⌘L", "Search
-  ⌘K") is bare `font-sans text-meta text-faint-foreground`: no border, no fill,
-  no fixed height. It sits 4px after the label, which is the control's own
-  `gap-1`, never a margin on the hint. It is `aria-hidden` when the control
-  already says the shortcut in its tooltip, its `aria-label` or
-  `aria-keyshortcuts`.
-- **`cap`** is the boxed 20px `rounded-sm` mono cap. A single key inside a
-  button (Accept A, Reply only R, Skip S) takes it, because a bare letter reads
-  as part of the label. The shortcut sheet and the Esc of a sheet header take it
-  too.
-
-Inside a filled button a hint takes the button's `on-tone` text (`isOnTone` on
-`Kbd`, `KeyHint` and `KbdPill`), never an opacity step. `KeyHint` is the one
-component for a hint inside a control: a chord (`⌘↵`) is drawn bare, a single
-key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
-`KbdPill` is `Kbd look="cap"` and takes no `className`; `kbd-overrides.test.ts`
-holds it. A hint shows only on a control whose shortcut is registered. A control
-that lists a shortcut in its tooltip (the Link work chip) does not repeat it as a
-cap. `Kbd` sets `data-look` and, on a filled button, `data-on-tone`, so a test names the look
-without reading a class.
-
-## Notices
-
-`Notice` is the one shape for an error, a warning, an info line or a success
-that sits in the page. Its tone lives only in the 16px icon. The surface stays
-neutral, the title is `foreground` and the body is `muted-foreground`. Tone
-never colors the text, fills the surface or draws a line.
-
-- **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
-  (`Info`), `success` (`CircleCheck`), always at 16px. A notice for a named
-  concept may replace that mark with the concept icon while keeping the tone's
-  color and the same size.
-- **No tone line, no border.** `inline` and `banner` sit on `bg-subtle`,
-  `rounded-md`, 12px padding, with no border, no ring, no `ToneBar` and no
-  side rail: a side line on a rounded box is the debt the design system
-  retires, and the icon already says the tone. `transcript` is the one
-  exception: it keeps a 2px edge at the left of its transparent surface,
-  because there it is a quote rail, not a box. `floating` (toasts) takes the
-  one floating surface, `FLOATING_SURFACE`, like every other level 4 layer.
-  `tone-edges-are-inner-lines.test.ts` counts `border-l-2` next to a tone
-  class per file, and its allowance only shrinks.
-- **Placement** changes the surface and padding, never the anatomy.
-  `transcript` is transparent with no border, `inline` and `banner` sit on
-  `bg-subtle`, `floating` sits on `FLOATING_SURFACE`.
-- **One notice per state, one primary.** A state that already has a notice on
-  the screen never gets a second box saying it again.
-- **Title names the action** that failed ("Couldn't load pull requests"). The
-  body states the cause in plain words. Raw output (stderr, exit codes, paths,
-  URLs) goes in `detail`, which renders behind a Details disclosure in
-  monospace. `splitErrorMessage` decides whether a message is a readable
-  sentence or raw output.
-- **Actions stay neutral**: `Button variant="secondary"` for the recovery,
-  `ghost` for an alternative. Never a tone-colored button.
-- **Actions follow the notice's own width.** The notice is an
-  `@container/notice`. From `@md` (28rem) the actions sit to the right of the
-  text, top-aligned with a multi-line notice and centred on a title-only one.
-  Below it they drop onto their own row under the body, aligned with the
-  title, and wrap. Text never shrinks to make room for a button.
-- **Children** render under the body at full width, for live work the notice
-  owns, such as the terminal of a CLI update running inside the card.
-
-Every message shape in the desktop app renders through it. `ErrorStrip` is a
-thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
-and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
-the branch switch confirmation and merge conflicts are `inline`. So are three
-failures that used to print one red line: the wireframe viewer ("Couldn't show
-the pages", with Retry), the Scribe's pull request text ("Couldn't write the
-pull request text", with Retry) and the first-lap publish steps, each with the
-raw message behind Details. The publish panel's missing GitHub tool is an
-`inline` `warning` Notice that holds the install command with `CopyButton` as
-its children and **Check again** as its action. A page that
-cannot load its list is an `inline` `danger` Notice with `role="alert"`
-(Empty states, state 4), and the startup error screen is the same Notice. The
-sign-in prompt in the chat is `transcript`. Toasts are `floating`: the toast
-card owns only its timer, hover pause and dismiss, and passes its action and a
-ghost dismiss button as the Notice actions. Chat errors in the desktop app go through `formatErrorForHumans`, which
-turns a known provider failure into a sentence and keeps the raw text as the
-detail.
-
-## Report sheet
-
-`ReportSheet` is the one shape for reporting a bug. It takes everything from
-props and reads no store, so it also renders inside `ErrorBoundary` after the
-app below it has crashed.
-
-- **Variants**: `floating` is level 4 (`FLOATING_SURFACE`), placed by the host
-  to the right of the sidebar bug icon (`side: 'right'`, `align: 'end'`, inside
-  the window) with no overlay, or at the bottom centre when the icon is not on
-  screen. `inline` drops the shadow onto `subtle`, for the crash and startup
-  screens. The body scrolls in a `ScrollFade` between the head and the action
-  row, so a short window never pushes the sheet off screen.
-- **Head**: the bug glyph, a `text-heading` title, an optional type control (a
-  `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
-- **Line**: one borderless `text-body` input that takes focus on mount, and
-  can start selected. ⇥ from the line, or Add detail, opens an autogrowing
-  `Textarea` under it. ⌘↵ anywhere in the sheet submits.
-- **Match**: an open issue that matches the line sits in a `fill` row with
-  Add mine there.
-- **Attachments**: one `rounded-full` `fill` chip per part, `text-chip`,
-  a 12px glyph and a × with a tooltip. A removed part stays as a dashed chip,
-  struck through, that puts it back. The error chip carries the danger ring.
-- **What gets sent**: a disclosure row (chevron, shield in success, the
-  summary in `faint-foreground`) that opens the exact text in a `muted`
-  `ScrollFade` of `text-code`, a copy button, and the line that says what never
-  leaves.
-- **Error**: a danger `Notice` (`inline`) at the end of the body, above the
-  action row.
-- **Action row**: `FormActions`, with the destination in `text-meta` on the
-  left, Add detail while the detail is closed, and the
-  primary button whose label names the destination, with its shortcut in an
-  on-tone pill.
-
-## The left column
-
-`AppShell` lays out one left column on the chrome, a resize handle and the
-content sheet. The column is 240px by default, resizable from 200 to 400
-(`LEFT_SIDEBAR_*`), and its one reduced state is a 44px rail
-(`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
-what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surfaces.
-
-| part        | shape                                                                                                    |
-| ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton` in the top bar, left of Back (⌘B)     |
-| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
-| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
-| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                         |
-| rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
-
-Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
-column swaps its content only for Settings, as two layers in place that
-cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
-layer is `inert`. Settings takes the column in both sidebar states: over the
-44px rail the grid track grows to the saved width while the stored collapse
-stays untouched. A studio never covers it: `studioCoversLeft={false}` puts the
-studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
-`wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
-band on that sheet instead of on the chrome. A frame whose body is a bare
-page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
-its page the band's 40px as top padding, so the title row lands where a session
-page's does under its trail.
-
-**A session has its own rail, not a card.** The workspace list keeps every
-session a flat row and never changes level; the open one is set in medium
-weight and takes `bg-selected` while its page is on screen. Its pages, projects
-and linked work live on the session level of the session rail
-(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
-`bg-subtle` panel with its header row inside), at the left of the page on the page background
-with the column's row recipe, and its deeper levels slide in there over 180ms,
-so no card nests inside the list. A page
-entry ends in one fixed 40px right-aligned slot: the count in tabular gray and
-a 6px dot for running (info) or open questions (warning).
-
-**Pinned sessions are a group.** A **Pinned** group sits first in the sessions
-list, above every other group, in pin order. Its header is an `Eyebrow` with the
-count, the same header as a group's: a toggle in a grouped list, a plain label
-in a flat one (the rest of the flat list then reads Sessions, so the
-boundary is named, with no divider). A pinned row is the same row as any other,
-with no glyph at rest.
-
-A list that belongs to a studio's page (Chat's chats, Changelog's releases) or
-its filters (Tasks, Notifications) uses `StudioRailLayout` with
-`placement="page"`: the rail sits on the page background and the resize handle
-draws the only line between it and the detail. Every page rail is 288 wide
-(`standard`), resizes between 220 and 420 unless the page passes `min` and
-`max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
-adds the fold control to the first row; `isCollapsed` hides the rail, and
-`rail={null}` draws no rail at all, for a page with nothing to list (Chat before
-its first chat, Terminal before its first terminal). Chat and Terminal rails
-fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
-the full-width secondary New chat / New terminal button. A folded rail keeps a
-44px strip with Show the rail at the fold control's height. The page
-owns the folded state through `useStudioRailFold` (remembered per surface, and
-forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
-title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
-filters, opening the same facets in a popover. Every filter trigger renders
-through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
-the two icon-only `xs` triggers (the Sessions header and the file tree), and
-that list only falls.
-
-## Pane anatomy
-
-The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
-and `Divider`, and the pane frame built from them. `PaneShell` lives at
-`packages/ui/src/components/PaneShell/` and is the one wrapper every main pane uses. It is a scroll region whose
-header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
-`meta` holds counts and totals in `tabular-nums` on one muted line 4px under the
-title row, never a control. The title row is fixed (`h-8`, centred, no wrap): a long
-title truncates and the actions never drop under it. The pane
-owns the gap below the header, and children add no top margins. The root is
-`@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
-`StudioShell` it fills the pane and `PageColumn` centres the column inside it.
-
-**One header grid.** Every page, sub-page, studio and the Board draws its header
-through `PageHeader` (`packages/ui/src/components/PaneShell/PageHeader.tsx`): the
-12px header inset (`PANE_RHYTHM.headerInset`), or a 40px studio band where the band
-still holds Close, a 32px title row with the page's `h1` at `text-title` and the
-actions at its right, and an optional 12px muted meta line 4px under the row. The
-title's centre is therefore 28px under the pane top (56px under a band) and its left
-edge is the column's content edge on every page; a page names its kind
-(`page="overview"`) and `PAGE_MEASURE` gives its column; `frameGeometryOf`
-(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
-page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
-`[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
-band is the first child of the detail, never over the rail. Inside
-a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
-`PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
-adds no top padding; outside both, a bare page keeps 12px above.
-
-**One title per page, no studio title band.** The studio band never draws a
-title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
-title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
-(`none`: Tasks, Chat, Workflows, Terminal, Impact, Monitoring) has no band and no Close; the top bar
-Back and Escape leave it. A closable overlay (`header`: Notifications, Guide, What's new) has no band either: `StudioFrame` hands its Close button
-to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
-action of the title row; until a page header claims it, the band holds it. The other overlays (`band`: Settings over the window,
-Add workspace) keep a 40px band that holds only
-Close. A band also appears when the body hands it a trail (`StudioTrail`, the
-workflow editor and the Settings crumbs) or a header accessory, and only then is
-the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
-sit on the 12px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
-their own row under the meta line, at the column's left. A glyph never indents the
-title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
-crumb names the structure and the `h1` the object, and a report's document title is an
-`h2`.
-There is no description line and no divider under the header: the text that
-teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
-The one exception is the four session pages that hold work (Runs, Orchestrated,
-Agents, Auto agents), which explain themselves on content and empty alike:
-each passes `SessionPageIntro` as its `subheader`, two muted `text-body` lines at
-the prose measure from the one copy map `SESSION_PAGE_INTRO`, and their empty
-states keep only a title and an action. Every other page, the secondary pages
-included, adds no description line.
-A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
-fixed `h-8` row) through the custom `header` slot. The agent detail passes
-`AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
-name on hover) and the provider mark, then the actions, **View transcript** and the
-overflow menu. No meta line, no state, no model and no tabs (the state is the
-conversation tail, the model sits in each turn footer), and the conversation under it
-starts 8px down (`ChatView` `topInset="tight"`, `mode="conversation"`). A page that must show a banner
-under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
-draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
-`Goal` line (an 11px faint label, the goal in muted text on one line with an
-ellipsis) only when the goal says more than the title, or `Add a goal` when
-there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
-live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
-`scroll="self"` hands the body a bounded region that scrolls itself (a
-transcript), and `dock` pins a chat composer to the bottom of the same column.
-A form's actions never go in `dock`: they are `FormActions` at the end of the
-body. Studio
-chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
-the only `h1` on the surface.
-
-**One centred column.** Every column and measure page is centred in the pane
-by `PageColumn` (`mx-auto`) and nowhere else: Overview, Runs, Agents,
-Artifacts, plans, reports, Chat, Workflows, settings pages, agent and pull
-request detail. Header, trail band (crumbs and the Ask button, whose right
-edge is the column's), body and footer share its edges. Prose keeps the 720px
-measure aligned left inside it, except an artifact page, which fills the column
-(the plan drawer keeps the measure). Three tiers: **measure** (`--measure`, 720px,
-`PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **column**
-(`--column-max`, 960px) for the page column, and **full** for work surfaces,
-which start at the pane's left edge and are the only exception. `PageColumn`
-adds the 24px gutter, 16px when the pane is under 720px wide. No view picks its
-own width or centres itself: the column changes only when the window changes or
-the right drawer opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
-[docs/styling.md](../../docs/styling.md) owns the column rules.
-
-**The drawer slides the column left.** A drawer (context, plan or artifact,
-file diff, script output, a fix run transcript, an agent conversation) takes
-its track from the main area and the centred column re-centres in the space
-left of it, at its full width while that space is wide enough, in one 220ms
-ease-out move (`FOLD_MS`, none under reduced motion). A full tier work surface keeps its
-left edge and only gives up its right. One rule decides the mode: with
-`room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
-width (side tier 400 by default, reader tier 720) and otherwise lies over the
-page at `min(saved, main - 16)`; it is never squeezed. Pushing, the drawer is
-its own container beside the page container: both rounded on all four corners
-with `frame-edge`, 8px apart, the drawer 8px from the window's right edge, the
-drawer on `bg-drawer`. Over the page it spends no pixels on an inset: the
-container runs the full height of the sheet, flush with its top, bottom and
-right edges, with `rounded-l-frame`, a left border only and `shadow-xl`, over a
-`scrim` that fades in in 120ms. The
-page under it is `inert`, a click on the scrim dismisses the top escape layer
-like Esc, and focus moves into the card on open and back to the trigger on
-close.
-
-**The drawer container.** `DrawerFrame` is its one frame: a header whose 32px row sits on the
-page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
-divider, a body and an optional `dock`. The title row reads icon, title, count
-(a number or a version, never a session title), at most one labelled action,
-then Close. A pane whose title is a control (the terminal scope picker) passes it as
-`titleContent`: it replaces the visible heading, the region keeps `title` as its name. A pane that is a page (Explore) passes `isHeaderless` and draws `PaneShell` as its body: the frame then keeps only the region, Esc and focus, and `title` stays its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
-glyph); every utility in the header (copy, open on its page) is a 28px
-icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
-composer, a transcript reply field and a script run's status line. The first
-control takes focus when the drawer opens (the composer of the dock when it has
-one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
-the next press, and a click on the scrim does the same through the escape
-stack. A toast beside a pushing drawer stops at the container's left edge less the
-12px gutter.
-
-**A form opens where you clicked.** One placement rule for every inline form:
-
-| The form acts on             | It opens                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| a line or a block            | inline under it, across the whole code width (both halves in a split diff) |
-| a row                        | inside the row                                                             |
-| a section                    | in the section body, under its header                                      |
-| the page                     | in the header's action zone, or an anchored panel under the primary        |
-| a selection                  | a bar at the bottom of the collection; the panel in the detail column      |
-| an object of another surface | the right drawer, never a navigation                                       |
-
-Every opening form scrolls itself into view (`block: 'nearest'`), takes focus,
-and gives focus back to its trigger when it closes, saved or cancelled: a diff
-line composer returns to its gutter number, a file composer to Comment on
-file, a plan block composer to its comment button. Ask agent on a diff line
-opens that agent's conversation in the `transcript` drawer with the quote in
-its field; the diff stays. A split diff needs 880px for its code: under that it
-draws unified and the toolbar says `Split needs a wider window`, and the
-choice comes back with room.
-
-**Work panes use the full width.** A pane whose body is a working surface (the
-terminal, a Tasks list, the Board) passes `width="full"` to `PaneShell`, and to
-the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
-drops the 960px cap, so the header and the body share one left edge on any
-pane, from the pane's own edge. The Branch page is not one of them: every tab
-sits on the 960px column, the trail and the Ask button included, so nothing
-moves from one tab to the next. Its Comments tab is one full-width list at
-every width; a comment opens in a side tier `DrawerFrame` with its actions at
-the end of the content through `FormActions`.
-
-**Trail separator.** Each segment except the last ends with one 24px chevron
-slot in `faint-foreground`: a button that opens the segment's menu, or a static
-separator when there is none. Segments sit 4px apart, the name and the chevron
-of a menu segment share one `hover` chip, and the chevron turns 90 degrees
-while the menu is open. Colour changes take 120ms `ease-out`; nothing else
-moves.
-
-**Trail on pages.** A page below a door names its place with a `Trail` handed to
-its header through `PageTrailContext`: `PageHeader` draws it first, a 24px line
-(`data-slot="page-trail"`) above the title row in the header's 8px gap, on the
-title's left edge, with no band, border or background. `PaneShell` clears the
-context for its body, so only the page's own header draws it. The last crumb
-names the kind and carries `aria-current="page"`; a link crumb may carry a
-`tooltip` and a `shortcut` (the parent crumb reads `Go up to Run` with ⌘↑).
-
-**Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
-`floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
-(`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots
-(20px lead, 12px label with an 11px faint second part, fixed-width tabular
-meta, a state word with its dot or glyph, a 14px check on the current row on
-`overlay-selected`), and an action band on `fill` under the list with at most
-two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
-4px drop) and closes without motion. A segment whose menu would hold fewer than two entries (rows plus actions) draws as a plain crumb with no chevron, so there is never a menu of one (`crumbMenuWithChoice`).
-
-## Action zones
-
-Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
-
-- Primary actions are visible, labeled buttons. Overflow holds copy and rare actions. Reversible removals act immediately, offer an Undo toast for about 10 seconds, and join app Undo outside text fields. Only an action that loses work asks for inline confirmation. Linked task chips open their task and reveal a separate unlink control on hover or focus; they have no overflow trigger.
-- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and `DrawerFrame` as its one `action`. The focused object's primary action uses it too. A drawer whose header carries a state and verbs, like the plan drawer, adds one second row through `DrawerFrame`'s `toolbar`, and its title may then take two lines; expanded, the same content goes into the one `action` and the header is one row.
-- A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
-- A blocked object's way out is one next action strip in the `banner` slot of the detail layout: under the header, above the tabs, outside every scroll region, so every tab sees the same copy. Its tone sits on the left rail only (danger for a failed step, warning for a question, info for a wait), with a sentence that names the object, a muted cause, the technical detail behind a disclosure, one primary action and at most two secondary ones. It never repeats at the bottom of a transcript.
-- A status row that describes the same block, like the orchestrator strip under a failed step or an open question, stays on a neutral rail, so only the next action strip carries the tone.
-- The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
-- A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
-- A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
-- The New session page follows the same rule, with one exception: it asks "What kind of run?" with two explained `ChoiceCards` (Workflow, Agent) side by side, then the two kinds of the picked card under them, because the kinds are the doors and they read better side by side. Only the picked kind's form, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
-- The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
-- An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
-- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's autorun is a menu verb, Turn on Autopilot or Turn off Autopilot, in the session `⋯`.
-
-**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). When a page has no second rare verb, so its overflow would hold one item, the verb stays a quiet text button instead (`ObjectActionVerb` over its registry kind, which keeps the confirm, now anchored to the word): Notifications' **Delete all** after **Mark all read**, and **Discard request** in the Auto project ask. A row or strip whose registry kind may resolve to one action wraps its `⋯` in `ObjectMenuOrVerb`, which draws the menu from two actions and the lone action as a quiet word: the diff file header and the terminal tab strip. A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
-
-**Run headers and Close.** A run page (a preset step, the preset overview, the
-orchestrated document) shows Pause run or Resume run and Stop run (which
-confirms) as visible header buttons while the run lives, and Restore alone once
-it is archived. The tail never repeats them: it carries a step verb ("Stop step
-2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
-overlay page (Notifications, the guide) ends its header with Close,
-which `StudioFrame` hands it; a sidebar door page has no Close.
-
-**One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
-
-**Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
-
-| Place     | What goes there                                                      | Shape                                              |
-| --------- | -------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Start from HBL-412, Review pull request, or Open session once linked | one filled button, first in the action row         |
-| Secondary | at most two tool verbs that move the record forward, picked by state | neutral `secondary` buttons, tone only in the icon |
-| Overflow  | rare tool verbs, Refresh and Copy link                               | the `⋯` menu on the identity line                  |
-| Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
-
-A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms in a `ConfirmPopover` on its button, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
-
-**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Remove from session in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
-
-A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. Archiving a session is the one exception the owner asked for: it asks (`archiveConfirmOf`) and still offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
-
-- **Focus**: on open it lands on Cancel for `role="danger"` and on the confirm button for `primary` and `alert`. Enter activates the focused button, `Cmd+Enter` confirms from anywhere inside, Tab cycles between the buttons, Escape and a click outside cancel. After the confirm, if the trigger is gone, `returnFocusTo={{ rowSelector }}` puts focus on the next row, else the previous one, else the list; otherwise it returns to the trigger.
-- **Trigger**: it takes the open state (`aria-expanded`), so a hover-revealed trigger stays visible while its popover is open (`group-has-[[aria-expanded=true]]/slot:opacity-100`, as in `ChatListRow`).
-- **States**: busy keeps the popover open with the confirm busy, Cancel disabled and Escape ignored; failed keeps it open with the reason under the text in `role="alert"`; done closes it and shows no toast.
-
-There is no card confirm: `InlineConfirm` draws one plain surface (no border, no fill, no tone line), and the one placement is the anchored `ConfirmPopover`. `InlineConfirm` stays for in-place confirms that never move the page: a plain menu swap inside a popover, the row of a palette, a banner that is itself a review step (the push review), and the floating confirm above a selection bar. `inline-confirm-placement.baseline.json` is empty and `inline-confirm-placement.test.ts` fails any confirm that asks for a card surface or a delay, and `absolute top-full` next to a confirm stays banned (`confirmpopover` scenes check that arming moves nothing). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
-When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. A confirm never disarms by itself: it waits for Cancel, Escape or a click outside.
-
-**Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). On a Board card the box sits out of the title row (`absolute`) in a 28px left gutter (`pl-7`), 6px from the card edge and from the title, and the tone rail starts below it (`top-9`) whenever the box shows, so the title lines up with the meta line and nothing moves when the box appears. The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A list whose bar can grow taller than that (a narrow column wraps it, a note stacks above it) passes `onHeightChange` and ends its scroll content with a spacer of that height plus 24px, so the last row always scrolls clear. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
-
-**Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
-
-## Action feedback
-
-Every click that starts work answers at once, on the control that started it,
-and answers again when the work ends. The product rules live in
-[DESIGN.md](../../DESIGN.md) → Status & signals; the mechanics are here.
-
-- **Pending is on the control.** The button that started the action takes
-  `isBusy` (`Button`, `GhostActionButton`, `InlineConfirm`) or `busy`
-  (`IconButton`, `RefreshIconButton`): the pulsing glyph, `aria-busy`, and
-  disabled against a second submit. Never a spinner, never a toast that
-  says "started" when the control already says it.
-- **Success is the new state.** The action refetches exactly the state it
-  changed (the mount's request, the worktree status, the resolve rows), so
-  the screen shows the result without a reload. A toast adds nothing when the
-  result is on screen; it is only for a result that lands somewhere else, like
-  an agent started with `focus: 'none'`.
-- **Failure is one log row.** The error goes to `reportError` with a title
-  that names the action ("Couldn't push the branch") and the real message as
-  its body. The toast is its preview. The control comes back enabled, so the
-  click is the retry. A form the user is still looking at keeps its error next
-  to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
-  a suggestion for the same outcome.
-
-`usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
-one runner: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
-until `task` settles, drops a second run of the same key, reports a thrown
-error once through `reportError` and resolves to whether it worked. A store
-action that already logged its failure throws `ReportedError`, and a turn error
-the transcript already shows counts the same (`isReportedError`), so the runner
-never logs one failure twice. A store verb never turns a missing target into
-a quiet no-op: the pull request writes resolve their target through
-`prWriteContext`, which logs and throws `ReportedError` when the session,
-workspace, pull request or repository is missing. Every next-step suggestion
-runs through the runner: `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
-`useSuggestionRunner` owns the runner (`useSuggestionActions` test guards every kind).
-A suggestion's `choices` (a rebase target, "Start tester instead") render as
-ghost buttons beside the primary in `NextStepRow`, run through the same runner
-under their own key, and hold the row's other controls while one runs.
-
-## Section rhythm
-
-`PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. The folder groups in the Projects card are content too: the parent's 12px `gap` sets one group apart from the next, one step above the flush rows inside a group, with no `Divider`. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.
-
-**One page, one section header.** The sections of a page (the Overview's Projects, Next and Unassigned notes) all open with `SectionHeader` at `headingLevel={2}`: the eyebrow, an optional count in `meta`, the section's one control in `action` and its one line of explanation in `hint`. A section never builds its own heading from a `h2` and type classes.
-
-**The outline is independent of the grade.** `headingLevel` turns an eyebrow-grade label into an `h2` or `h3`. So a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading does not need bigger type because of that.
-
-**A group of rows that belong together under one name is a `Band`.** The band
-is `bg-fill` and `rounded-lg`, with 4px of padding (`inset="rows"`) or 12px
-for prose (`inset="content"`). `fill` and not `subtle`: `subtle` on the sheet
-is 1.06:1 and does not read, `fill` is 1.17:1 in dark and 1.12:1 in light, and
-because it is relative to its parent it steps down on its own inside a drawer.
-The section keeps its eyebrow **outside** the band (`label`, with the
-same `icon`, `hint`, `action` and `headingLevel` slots `SectionHeader` gives).
-A group inside a section names itself on the band's first row (`groupLabel`),
-in sentence case on `text-label` medium muted, with a faint count on the right
-(`groupMeta`, "3 roles"). A group of one row drops its label. Rows inside are
-`BandRow`: `rounded-sm` (8 minus 4, concentric) with `bg-hover` when they act.
-Bands of one block stack 8px apart (`BandStack`), sections 24px.
-
-Use a band where something is configured in groups: defaults, the provider
-page, settings, a tool's detail, skills. Never on a navigation or selection
-list (sidebar, Tasks, facet rail, popover, palette: there the background means
-hover and selection), never in a creation flow, never in a card or in another
-band (`Band` throws when nested), never together with a border or a divider.
-
-**A table read across columns stripes its rows.** From five rows up
-(`STRIPED_MIN_ROWS`), even rows take `bg-fill` with `rounded-sm` at the ends,
-under an eyebrow header with no line and no divider between rows. A `<table>`
-takes `STRIPED_TABLE` (separate borders, so cells can round) and each `<tr>`
-takes `STRIPED_ROW`, which paints the cells; row hover goes on the cells too
-(`hover:[&>*]:bg-hover`). A list of row elements takes `STRIPED_LIST` on the
-container; a list whose items wrap a row and an inline confirm takes
-`STRIPED_BLOCK_LIST`, which paints only the row. Spend tables, Storage, Impact,
-usage windows and Models in the picker stripe this way.
-
-A metadata line is not a section and does not get a band.
-
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. Every label is sentence case, the eyebrow included: no label is uppercase or tracked. A section label renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
-
-## Prose disclosure
-
-`ClampedProse` is the only multi-line prose clamp. It accepts one to six lines, renders the text as preview markdown, and shows the complete text in place through Show more and Show less. Do not apply `line-clamp-*` directly to prose, and do not slice a display string. Single-line identity labels may use `truncate` when their full value is available from the focused object or an accessible disclosure.
-
-Artifacts exempted by `DESIGN.md`, including the text of an open question, never use `ClampedProse`.
-
-## Card action grammar and creation grammar
-
-**One card action grammar.** Two fixed slots. Navigation sits top right and is
-always visible. Lifecycle and destructive actions sit bottom right, visible at
-rest. A card says its state once, with its `ToneBar`: the quick action stays
-`muted-foreground` at rest and takes its tone only on hover, and a closed pull
-request glyph on a Done card is quiet too. `CardAction` has no resting tint unless
-a caller passes `highlighted` for a state of its own (an inspected or armed row). The
-warning line paints with `warning-mark` (the same amber as `warning` in dark, a
-lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. No action
-shows only on hover: hover may add a tooltip, a fill or a hover card, never the
-only way to do something. `no-hover-only-actions.test.ts` fails on an
-`opacity-0`, `invisible` or `hidden` element that a `hover:` or `group-hover:`
-class reveals, outside its short list of decorative marks (an aria-hidden hint
-inside a button that is itself the action) and second ways (the multi select
-tick, entered by Cmd or Shift click).
-
-**A list row leads with one action.** A row in a list (the Artifacts list, the
-Scripts list) leads with its state-driven primary and the open control: no
-trash column, no second text button. Secondary actions (Edit, Copy, Pin, Run)
-sit after them, visible at rest, inside one element marked
-`data-row-secondary` so a test can tell the primary from the rest. Destructive
-and rare actions (Delete, Rename) live in the row's overflow menu, drawn as a
-horizontal `Ellipsis` in a `row-actions` cell (docs/styling.md): empty at rest on a row that is not current, shown on hover, on focus inside the row and while its menu is open, always drawn on the current row, and every verb also opens from a right click and Shift+F10. A running Stop is the
-exception: it stays visible. Every control of a list, row actions and group
-header refresh alike, sits in a 28px slot on the same right edge.
-
-**A header row has one control height.** Title row, trail band and page header
-rows that hold several controls draw them all at 28px: `SegmentedTabs` `xs`,
-`Button` `sm`, and an icon-only menu trigger as a 28px centred square
-(`MenuTriggerButton size="control"`, which `OverflowMenu size="control"` and the
-Branch header's Branch actions both draw). The compact trigger (21px, the
-default) is for the end of a row of text, never beside a button. `Button`,
-`SegmentedTabs` and the trigger carry `data-size`, so a screen's test asserts the
-sizes it chose without reading a class. A primary and its overflow share one
-baseline, primary first and overflow last, and a Branch header shows one primary
-only.
-
-**A control whose only content is an icon carries a tooltip, everywhere.** The
-`aria-label` names it for assistive tech but gives the mouse user nothing. So
-`IconButton`, `OverflowMenu`, `CopyButton` and `RefreshIconButton` wrap
-themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
-`title` waits a second, shows in the OS style and not ours, and cannot be
-positioned or styled. Pass `tooltip` when the control needs to say more than
-its accessible name. `IconButton` refuses a `title` at the type level.
-
-An icon-only control is an `IconButton` by construction: the
-`hand-rolled-icon-buttons` ratchet counts a `<button>` whose only child is an
-icon outside `packages/ui`, and its baseline only falls. Convert such a button to
-`IconButton` (`tooltipSide` moves its tooltip to the side of a rail).
-
-**One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
-registry id, on `Tooltip`, `IconButton` or a wrapper. The
-tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
-a `gap-2` after it: `Start an agent  ⌘L`, two nodes, never `Start an agent (⌘L)`
-and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on
-a key written into a `tooltip`, `content` or `title` string and on a `shortcut`
-literal that is not an id. A key with no registered keys prints the label alone.
-
-**No native `title` on a DOM node.** `native-title` counts `title=` on a lowercase
-element in `apps/desktop/src` and `packages/ui/src` (an `<iframe title>` is its
-accessible name and is not counted), and its baseline is empty, so a new one fails the guard. A control or
-a label with a different meaning goes behind `Tooltip`. Text that a `truncate`
-cuts goes behind `TruncatedText`: it renders the element (`as` takes `span`, `div`,
-`p`, `h3`, `code`, `li`, `dd` or `td`; a page `h1` stays an `h1` inside `Tooltip`), measures it when the pointer
-enters, and shows its text (or `tooltip`) only when `scrollWidth` is wider than
-`clientWidth` or `scrollHeight` is taller than `clientHeight`. A control with a
-`title` prop (`Chip`, `StatusDot`, `GhostActionButton`, `SelectableRow`,
-`ValueToken`, a `SegmentedTabs` option, a `SelectionBar` verb) shows it in a
-`Tooltip`, never as an attribute; `SelectableRow` also takes the tooltip's
-`shortcut` and `tooltipSide`, and `isPressed` for a row that toggles a pane
-(the session tools). An empty tooltip shows nothing, so a
-conditional reason is `content={reason}` with `reason` possibly `undefined`.
-A long label wraps at 28rem and keeps a line break it is given. `Button` still
-forwards a `title` as the native attribute, so a `Button` that needs a reason
-stands inside a `Tooltip` instead.
-
-There is no exception for a control that can go `disabled`, and no native
-`title` for that state either. A disabled element sends no mouse events and
-cuts the event path above itself. So listeners on the control stop working in
-exactly the state where the user most needs to know why nothing happens.
-`Tooltip` handles that itself. When a trigger declares `disabled`, `Tooltip`
-adds an anchor span. The span carries the listeners and takes `pointer-events`
-away from the disabled control. So the hover lands on the anchor, and the
-tooltip still opens. If a trigger needs its anchor shaped (because it is out of
-flow or stretches), pass `anchorClassName`. Do not hand-roll a wrapper, because
-a wrapper between `Tooltip` and the control hides the `disabled` the primitive
-checks. Keyboard focus still cannot reach the control while it is `disabled`.
-`Tooltip` has one look, the label on `FLOATING_SURFACE`, and no `variant`. A
-tooltip that has to show several facts (the top bar Limits chips) is a
-`FactCard`, not a `Tooltip`.
-A card that must not open while the pointer only passes over a dense list
-passes `restDelayMs` (the Activity feed uses 800): the pointer has to rest, each
-move restarts the wait, focus does not open it, and every other tooltip keeps
-its 400ms. `isOpen` forces a tooltip open from the outside, as `i` does on an
-Activity row.
-A tooltip never sits on top of what its control opened. `isSuppressed` hides it
-and keeps it from opening: `MenuTriggerButton` passes its open state, and
-`IconButton` takes `isTooltipSuppressed` for a trigger that opens a popover
-(the Explore ask button). A press on the control and Esc close an open tooltip,
-and the focus a closing menu hands back to its trigger does not reopen it.
-Keyboard focus (`:focus-visible`) opens the tooltip at once, and so does any
-tooltip that opens less than 300ms after another one closed, so a row of icons
-reads as one hover and not as four waits. A card with `restDelayMs` keeps its
-rest. The overflow tooltip always says `More actions`: `OverflowMenu` and
-`ObjectOverflowMenu` take no `tooltip`, and the contextual name stays in
-`aria-label`. Only a choice menu that is not an overflow (`ObjectChoiceMenu`) names
-itself.
-That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
-enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
-written as member expressions such as `<CONCEPT_ICONS.agents />`.
-
-**One creation grammar.** Bare sections stacked in one column, never a bordered
-box around the whole thing. Secondary controls go in `SectionHeader`'s
-`action` slot. Related options sit in one container, not one card each. One
-action row comes right after the last section: error on the left, exactly one
-primary button on the right, cancel and alternates as ghost or secondary.
-
-## One way to ask
-
-Four rules keep the same intent in the same shape. `apps/desktop/src/shared/lib/interactionRules.ts`
-holds the constants, the guide chapter How Goodboy listens prints them, and
-`apps/desktop/src/__tests__/regressions/interaction-rules.test.ts` checks the code.
-
-- **One verb per intent, one button variant per verb.** **Done** finishes an
-  edit in place (`secondary`, `sm`). **Close** leaves a panel (`ghost`, `sm`),
-  including the studio band. **Dismiss** hides a notice (`ghost`, `sm`).
-  **Discard** abandons an unsaved draft (`ghost`, `sm`), the way the New
-  workflow form does. **Delete** removes an object and confirms first. A verb is
-  never drawn with a hand-made `<button>`.
-- **Choosing a value.** Up to four options that fit the row are a
-  `SegmentedTabs`. Five or more, or a list that depends on data, is a `Listbox`.
-  A segmented control never carries a More segment. Reply verbosity and Theme
-  are segmented, the default editor is a list.
-- **Two kinds of field, one key each.** A message sends with Enter, goes to a
-  new line with Shift+Enter and sends now with ⌘↵. A document takes a new line on
-  Enter and saves or sends with ⌘↵. Every ⌘↵ check reads the `composer.submit`
-  id through `isSubmitChord`, and every hint prints `shortcutGlyphs`.
-- **A key you can see works.** The rail hints, the pills and the Keyboard shortcuts page
-  read the registry. `navigation-flows/keys.test.tsx` presses every id on the
-  real app and has a short exemption list that may only shrink.
-
-## Form actions
-
-Every form, creation and edit flow ends the way the new workflow form does
-(session Overview, Workflows, Create): a page title, one big input card,
-segmented choices with a one-line explanation, options as quiet pill selects,
-and then the action row inline at the end of the content. Two primitives carry
-it:
-
-- **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
-  holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
-- **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Run on its own, Limit, routing, an error
-  with `role="alert"`). A job that runs longer than a few seconds shows its
-  status inside the input card, never in this row: the create form's card holds
-  Scribe's running dot, seconds and `Stop` in its bottom row, and the actions
-  stay inline at the end of the content with no bar. The children sit right-aligned in
-  order: secondary first (Discard, Cancel, Back as `ghost` with
-  `text-muted-foreground`), alternates as `secondary`, and the one primary
-  last. `reason` puts the disabled primary's explanation under the buttons and
-  pairs with the primary's `aria-describedby` through `reasonId`; `error` does
-  the same for a failure: the cause in default text after a 14px danger glyph
-  (never a red sentence), and the caller relabels the primary "Retry" while the
-  draft stays. Leading holds the options (Model, Limit, Asks you, Starts);
-  trailing is "Discard" (ghost) then the primary, and an empty estimate slot
-  collapses so Discard always touches the primary.
-
-Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
-row sits right after the last block: inside a popover it is the end of
-`PopoverBody`, inside a dialog the end of the body, in a card the last child.
-
-There is no footer bar. A form never pins its actions under the content with a
-`Divider`, a `border-t`, a `<footer>`, `PaneShell` `dock` or
-`PANE_RHYTHM.dock`. `PopoverFooter` and the `Dialog` `footer` slot are gone for
-that reason. The `footer-cta-bar` rule in
-`apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts
-those shapes per file and fails on a new one. The only pinned row left is a
-chat composer (`dock={conversation.composer}`). A review surface that lives
-over a long diff puts its submit in the diff toolbar instead (Write review's
-Submit review, the diff lens notes), the way a code host puts Review changes at
-the top.
-
-## Question card
-
-An open question is a decision to take, not a message to write, so it has one
-card (`QuestionCard`, in `features/context/components/QuestionsTab`) in three
-places: the Questions lens detail (`variant="full"`), the tail of the
-transcript and the top of an agent's Brief (`variant="compact"`, a raised
-`bg-elevated` card with a `border-soft` hairline). `LiveQuestionCard` wires it
-to the drafts and the delegate controls; every place uses that one.
-
-- **Top line.** The asking agent's avatar, "_Name_ asks", a warning `Chip`
-  when it blocks, the age, then on the right "2 of 3" with dots and chevrons
-  when the same agent asked more than one, and the dismiss `IconButton` for a
-  question that does not block. No footer with pips or a recap.
-- **Question.** The first line is the title (`text-title` full,
-  `text-heading` compact), the rest is up to a few lines of context in
-  `text-body` muted, and file paths quoted as code become `text-code` chips in
-  the full card.
-- **Options.** One tile per answer (`AnswerOptionRow`): the keyboard number in
-  a `text-meta` key cap, the label in `text-row`, a primary `Chip`
-  "Recommended" on the recommended one, and a radio or checkbox indicator on
-  the right. A tile at rest is `bg-fill` plus `border-soft`; hover takes
-  `border`; a picked tile takes `bg-selected`, never a primary tint. "Something
-  else" is the last tile and opens its field in line (`CustomAnswerField`). A
-  question with no options is one text field.
-- **Delegation** is a secondary text action under the tiles
-  (`DelegateAnswerRow`): "Let an agent decide", then the routing pill, hints
-  and Cancel once chosen, and the tiles dim.
-- **Actions** end the card through `FormActions` (`AnswerSubmitButton`): the
-  key hint in `leading`, Skip as `ghost`, Answer (or Hand off) as the one
-  primary. `1` to `9` pick, Enter answers, Escape leaves a field.
-- **Answered.** A staged answer keeps the picked tile and swaps the actions for
-  a done line with Undo (`QuestionAnswerDone`); a sent one shows the answer in
-  a `bg-fill` box.
-
-## Empty states
-
-A page is always in one of five states, and each state has one shape. So "nothing
-here" never reads five ways, loading never looks empty, and a failure is never
-drawn as an empty list.
-
-1. **Loading.** Never empty and never "Nothing yet" while loading. Keep the
-   last known content, or show the section's heading with a muted "Loading"
-   line. Unread lists show three SkeletonRow rows with accessible loading names
-   and aria-busy. A part that reloads keeps its last known content.
-2. **First time.** Something will be here, and nothing has made it yet.
-   `EmptyState size="page"`: a bare 18px icon in `text-muted-foreground` (no
-   circle, no fill, no border), a title that says what will be here, one
-   sentence that says how it gets here, and one primary that starts it. A page
-   with nothing the person can start (Questions) has no primary. Inside a
-   section of a page, `EmptyState size="section"`: one line, no card and no
-   padding block.
-   A stage may hold its input. The empty chat is one stage centred both ways and
-   lifted 24px above the optical centre: the bare glyph, the title, one
-   sentence, the composer itself and up to three quiet suggestion rows. The
-   first message docks the composer at the bottom.
-3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
-   with `Clear filter` (or `Clear search`), or the next place to look. It never
-   uses the first-time shape: the list exists, the filter is the cause.
-4. **Can't load.** `Notice tone="danger" placement="inline" role="alert"`: a
-   title that names what failed, the reason in words, the fix, `Retry`, and
-   `Details` with the raw text. A permission problem uses `tone="warning"` and
-   names the fix. A failure is never an empty state, and an empty state is
-   never shown while a load failed.
-5. **Not connected.** The tool behind the page is not connected. The
-   `ConnectIntegrationEmptyState` pattern for one tool, a `page` state with
-   `Connect a tool` where several tools feed the page (Tasks).
-
-### The primitives
-
-`EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
-`bordered` state with no size still maps to `page` without a border. The glyph
-is muted, without a tinted circle. A `page` state sits at the top left of the
-content column (18px glyph, title, one sentence, then its one action), never
-centred in the pane; the empty chat stage (`ChatEmpty`) is the one centred
-stage. A `page` state is an `h2` unless
-`headingLevel` chooses another level; a `section` state has no heading.
-`FilledEmptyState` remains a thin section wrapper only for host callers awaiting
-integration. Owned callers name the section size directly. A caller passes only
-layout or an inset, never a fill, border or circle.
-
-An empty line inside a section ("No scripts match "tset".") is `EmptyLine`: one
-faint sentence, an optional glyph before it and an optional action after it. It
-is the only shape for a one-line empty, never bare text in its own style.
-`hand-made-notices-and-empty-lines.test.ts` and
-`inline-empty-states-use-the-wrappers.test.ts` count text that opens with `No `,
-`Nothing` or `None` outside the wrappers, and their baselines only shrink.
-
-### Page by state
-
-A cell names the shape that page uses. N/A means the state cannot happen
-there. `0.22.1` marks a page the sweep has not reached yet: it still shows its
-old shape, and the next round moves it.
-
-| Page           | Loading                                  | First time                                                                                       | Nothing matches                                          | Can't load                                                          | Not connected                             |
-| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
-| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Run a workflow. `section`: No runs in progress                              | N/A                                                      | N/A                                                                 | N/A                                       |
-| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                               | N/A                                                      | N/A                                                                 | N/A                                       |
-| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                           | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
-| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add folder. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
-| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                             | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                         | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
-| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                              | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
-| Tasks          | Skeleton rows                            | `page`: No items yet                                                                             | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
-| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                       | N/A                                                      | N/A                                                                 | N/A                                       |
-| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                           | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
-| Comments       | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                         | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
-| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                           | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
-| Chat           | Three skeleton rows                      | `page`, no rail: No chats yet, Start a chat                                                      | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
-| Settings lists | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-
-The new session draft is the kickoff. It asks "How do you want to
-start?" and answers with a single-select list of three rows, each a concept
-glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
-selected row reveals its fields and its one primary under the list. Arrow keys
-move between rows and Enter moves into the selected row's fields. There is no
-example run and no grid of tiles.
-
-Inline empty states belong to a lens or a compact collection surface, and they
-are `section` states. `inline-empty-states-use-the-wrappers.test.ts` fails on any
-`size="inline"` under `apps/desktop/src`: name `section` or `page`.
-
-**Loading keeps the page in place.** A part that reloads shows a skeleton of
-its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
-or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
-title, the goal, the timeline and the cost stay.
-
-**Bare beats the circle and the hero.** The pane already has a title and a
-rhythm. A tinted circle, a border and a bigger title repeat the title and
-pretend the page is a landing page, when it is one of a rail full of
-destinations. The page state is a glyph, two lines and one action.
-
-**The gap trap.** The parent flex container owns the spacing. So a child that
-renders `<div />` or an empty fragment still costs a full gap step, and leaves
-a hole nobody can trace. A component with nothing to show returns `null`. The
-rail drops groups with no rows, instead of drawing a heading over nothing.
-
-```tsx
-if (count === 0) return null;
-```
-
-Groups are separated by the step the pane puts between its body children.
-Rows inside one group sit tighter. That is what makes active, completed and
-discarded read as three answers instead of one long list.
-
-What "empty" means, and the copy rule for it, are product rules and live in
-[DESIGN.md](../../DESIGN.md).
-
-## Pull request page
-
-The Overview of the Branch page is a document on the 960px column with
-a properties column, the page example of the split frame: a rail of sections on the left
-(the pages under the current branch row of the Projects tree, `aria-current="page"` on the section on screen) and,
-on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
-that ends at the column's right edge: Linear's pull request page in our register. The main column
-is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
-Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
-of a 20px glyph on a round `bg-subtle` dot joined by a 1px `border-soft` spine, comments as
-`bg-subtle` cards clamped to two lines, one muted line with the person in `text-row`, and the age at the
-right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
-says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
-no hover. The title is the page's `h1` in the fixed 32px title row
-(`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The side column is 224px beside a reading column of at most a prose measure (`max-w-prose`, 65ch) from an 880px page
-container (`@container` query, not the window); below it the side column sits above the
-reading column as one wrapping row. Each block is a faint `text-meta` label over its value rows
-of 28px or more and nothing else: Reviewers (the verdict right after the name, not pinned to
-the edge), Bots that commented (no verdict), Author and Linked issues with their relation.
-The state is the chip in the line under the title, never a block, and the status strip sits
-between the header and the columns: four cells on `bg-subtle` split by 1px `border-soft`
-gaps in one `rounded-lg` frame, each a `text-meta` label, a `text-label` word after a
-`StatusDot` and one faint `text-meta` detail; the cells take their tones from the branch state
-map (conflicts `warning`, a failing check `danger`). Labels are not headings, so the outline reads `h1`, then
-the `h2`s of Description and Activity.
-
-**The capability rule.** The page never branches on the host. It reads the
-`ReviewSourceCapabilities` of the active source: a control the host cannot do on
-an object that exists is shown disabled with its reason in words (`Bitbucket has
-no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
-control for a concept the host does not have is left out. The merge
-confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
-the option cards carry the effect sentence, draw no icon tile when they have no
-icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is the branch page
-(the branch as the title, its pushed state and distance as the line under it, the
-status strip, then the create form with `In this branch` under it), the activity
-loads as a `SkeletonRow`, a failed read is an inline danger `Notice` with Retry.
-
-## Workspace chat
-
-The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
-on `StudioRailLayout`: the chat list is the rail on `chrome`, one
-conversation is the wrapped sheet, and "Start work from chat" is the
-`DrawerColumn` drawer beside it, never a dialog.
-
-- **List rows** are `InteractiveRow`s: title `text-label`, the last answer
-  as a `text-meta` snippet, time as `text-meta` on the right. Pin and
-  Archive are ghost `IconButton`s that replace the time on hover. Groups are
-  `Eyebrow` headings (Pinned, Today, This week, Idle). An idle row keeps its
-  shape and only drops a text step (`faint` title, `disabled` snippet); a
-  group action ("Archive idle") is a quiet text button at the end of its
-  heading, and its Undo line takes the group's place.
-- **The conversation** sits on `PageColumn`, the same 960px column as every
-  other page: the header, the thread and the composer share one left and one
-  right edge. Prose (paragraphs, lists, quotes, headings) stops at the 720px
-  measure, left aligned; tables and code blocks take the whole column. The
-  question is a `bg-subtle` bubble on the right in `text-prose`; the answer is
-  `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
-  (a quiet
-  disclosure listing paths in `text-code`), then one `h-7` row. Copy
-  (`CopyButton` with `tone="faint"`) and "Start work from chat" sit on the
-  left, quiet `text-meta` actions that show on hover or keyboard focus of
-  the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
-  the model and effort that wrote the answer sit on the right as faint
-  `text-meta` text, always visible. A saved session link is a
-  `bg-subtle` note in the thread under the answer it came from. A streaming
-  answer with no text yet shows a pulsing `StatusDot` and "Reading {workspace}",
-  never a spinner.
-- **The header** holds the chat title as `text-heading`, the linked-sessions
-  chip and one secondary `Start work` button. The chip is a `border-soft`
-  button with the sessions glyph, "N sessions" and a `StatusDot` in the tone
-  of the most urgent linked session (`STAGE_TONE`); it opens an anchored
-  popover listing each session with its stage dot, title, origin and an Open
-  button. It is absent while no live session is linked.
-- **The composer** is the only pinned row: a `bg-subtle` box with the
-  textarea, the app `RoutingPicker` in its `pill` variant (chat providers
-  only, effort editable, a one-line footer for the providers that cannot
-  chat), the faint "Read only. Nothing is changed." hint from `@2xl/chat`, and a
-  square send button that turns into Stop while an answer streams. The Enter
-  and Shift+Enter keys live in the send button's tooltip.
-
 ## Motion registry
 
-Eight animations, one meaning each. Transition keyframes (`fade-in`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
-`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`, `fold-fade-in`,
-`fold-fade-out`, `level-in-forward`, `level-in-back`, `level-out-forward`,
-`level-out-back`) move content between states and sit outside the
-registry.
+Four animations, one meaning each: `spin-border`, `soft-pulse`, `cost-tick`
+and `text-shimmer`, described below. The Skeleton pulse is `soft-pulse` under
+the Tailwind name `animate-pulse` (`--animate-pulse` points at it), so the
+app has one breathing animation, not two: a loading skeleton and a running
+sign share the same period and dip, and the surface they sit on says which
+one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `studio-body-in`,
+`layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
+`drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
+`popover-in`, `fold-fade-in`, `fold-fade-out`, `level-in-forward`,
+`level-in-back`, `level-out-forward`, `level-out-back`, `wizard-fade-in`,
+`wizard-fade-out`, `wizard-step-in`, `wizard-step-out`, `welcome-word-out`,
+`welcome-rise`) move content between states and sit outside the meanings.
+`motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
+section does not name, and on a name here that `styles.css` does not define.
+
+**Three durations, two curves.** Every transition and animation takes one of
+`--duration-quick` (120ms: a popover, a fade, anything that leaves),
+`--duration-base` (200ms: a width, a drawer, a level, a swap) and
+`--duration-slow` (280ms: a studio opening), and one of `--ease-enter`
+(`cubic-bezier(0.2, 0, 0, 1)`: what arrives) and `--ease-exit`
+(`cubic-bezier(0.4, 0, 1, 1)`: what leaves). A stagger is `--delay-step`
+(60ms). Four values sit outside the scale on purpose: the three loop periods
+`--loop-pulse`, `--loop-spin` and `--loop-shimmer`, and `--hold-history-arrive`
+(the 1.4s fade of a landed history row). The fold and level timers are
+`DURATION_BASE_MS`, and `DRAWER_EXIT_MS` is `DURATION_QUICK_MS`, in
+`packages/ui/src/motionTimings.ts`; `motion-registry.test.ts` pins each constant
+to its token. A literal duration or `cubic-bezier` in `styles.css` outside the
+token block fails the same test.
 
 **Motion tokens.** A width that opens or folds (the main sidebar grid column,
-the session rail, the drawer track, the diff file rail) eases in 220ms `ease-out` (`FOLD_MS` in
-`packages/ui/src/motionTimings.ts`); words fade in 140ms (`fold-label-out`, and
-`fold-label-in` after 60ms, so they arrive once there is room); a level drill
-takes 200ms in, after 60ms, and 120ms out (`LEVEL_MS`); drawer content fades in
-140ms after 80ms (`drawer-content-in`) and out in 120ms (`drawer-content-out`).
+the session rail, the drawer track, the diff file rail) eases in
+`--duration-base` (`DURATION_BASE_MS`); words fade in `--duration-quick`
+(`fold-label-out`, and `fold-label-in` after one `--delay-step`, so they arrive
+once there is room); a level drill takes `--duration-base` in, after one
+`--delay-step`, and `--duration-quick` out (`DURATION_BASE_MS`); drawer content fades in
+`--duration-quick` after one `--delay-step` (`drawer-content-in`) and out in
+`--duration-quick` (`drawer-content-out`).
 Width moves only on the one element that owns it; what moves inside it is
 opacity and `transform`, and the content keeps its final width, so nothing
 reflows or wraps mid move. Every new keyframe lives under
 `prefers-reduced-motion: no-preference`, and the hooks that stage a move
 (`useFoldPhase`, `useLevelSwap`, `useDrawerExit`) check `canAnimate` first: under
 reduced motion, or with nothing laid out, the state changes in place.
+
+**A floating control stays mounted and fades.** A control that comes and goes
+with the reader's position (the chat's **Jump to latest**) is never mounted and
+unmounted: it stays in the tree, `inert` and `aria-hidden` while it is not
+needed, and moves between `opacity-0` and `opacity-100` with
+`motion-safe:transition-opacity` on `--duration-quick` and `--ease-enter`, so it
+does not pop in during streaming and a screen reader never lands on it hidden.
+It is built on `IconButton`, never a hand-made round button. A mark that shows
+where unseen content begins is a plain hairline (not a `Divider`, which sits
+between chrome) with the word **New** in the muted meta type, drawn once, never
+animated.
+
+**A hidden window stands still, and forced colors keep the sign.** While the
+window is hidden or minimised, `useHiddenWindowPause` sets `data-window-hidden` on
+`<html>` from one `visibilitychange` listener, and one rule in `styles.css`
+pauses every running animation under it: no per-element observer, nothing to
+unsubscribe. Under `forced-colors: active` a pulsing dot or arc takes the
+system `Highlight` colour and the `spin-border` ring traces in `Highlight`, so
+the "who is working" sign never vanishes with the author palette.
 
 **A fold keeps every icon where it is.** `FoldLayers` holds a rail's two
 states as two layers pinned to its left edge and clipped (`overflow-clip`): the
@@ -2526,11 +834,11 @@ leaving layer (`exitSnapshotOf`, the drawer's exit copy) during the render that
 changes it, slides the copy 24px toward the back and fades it, and slides the
 new layer in 24px from the drill side (forward from the right, back from the
 left). The folded icon levels drill the same way. The `Trail` closes a crumb label with `grid-template-columns` from
-`1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
+`1fr` to `0fr` (`--duration-base`, `--ease-enter`, 40ms cascade), the same
 trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
-from `0fr` to `1fr`, 200ms `ease-out`, the curve of the `AppShell` columns,
+from `0fr` to `1fr`, `--duration-base` on `--ease-enter`, the pair of the `AppShell` columns,
 behind `motion-safe`. It keeps its children mounted through the
 collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
@@ -2560,18 +868,9 @@ before the swap until two painted frames later (a timer guards a window that
 never paints), so no `transition-colors` surface animates on its own and a
 state change in the same click, such as the selected tab, does not fade
 through the new palette. Never add a per-element color transition for the
-theme, and never wrap the swap in `document.startViewTransition`: a view
-transition repaints the whole window for every frame of a 420ms fade
-(Chrome measured 44 style recalcs, 22 paints and 225ms of main-thread work
-against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
-with a 500ms freeze on a large diff, against 80 frames with the swap alone),
-and a window that repaints for a fade reads as the UI flickering, worst on
-the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. A fixed full-window cover fading over the swap
-(`opacity` only, 100ms in, 200ms out) was specified as a third try, gated on
-a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30
-sessions and a 3,000 line diff). The spike was not measured, so the cover did
-not ship and the switch stays the instant swap. The few things
+theme, and never wrap the swap in `document.startViewTransition` or fade a
+cover over it: the switch stays the instant swap
+([docs/traps.md](../../docs/traps.md) → Theme switch is an instant swap). The few things
 that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 
@@ -2589,7 +888,7 @@ update only themselves.
   as one running state, not two claims. The bar for another lasting-state
   animation is high.
 - `cost-tick`: the spend chip's amount just changed. The figure rises 6px into
-  place in 160ms; with reduced motion it changes in place.
+  place in `--duration-base`; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
 - The update pill has no animation of its own. It enters once with
@@ -2647,8 +946,8 @@ width follows its content breaks the column for every row under it.
   its role colour; `hand-made-chips.test.ts` counts hand-rolled pills per file
   and the count only goes down.
 - A chip that works as a control next to buttons (the session overview's
-  context, attention, linked-work and branch chips) is `Chip size="control"`
-  with `shape="badge"`. That gives the `h-6` control height, the focus ring,
+  context, attention, linked-work and branch chips) is `Chip kind="reference"`.
+  That gives the `h-6` control height, the focus ring,
   and a tone hover. A custom element that needs the same frame (a popover
   trigger with its own ref) takes `chipClasses`, never a local class string.
 - In a right-aligned cluster, variable text comes first and glyphs last. What

@@ -96,6 +96,7 @@ const turnWorkTime = ({
     hasStarted: active.hasStarted,
     estimate: isLiveTurn || !active.hasStarted ? estimate : null,
     unknownBasis: isLiveTurn ? unknownBasis : null,
+    quietMs: isLiveTurn ? (source.quietMs?.get(agentId) ?? null) : null,
   });
 };
 

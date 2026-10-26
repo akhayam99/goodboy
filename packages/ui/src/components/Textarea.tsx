@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, type ComponentProps } from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 
 export type TextareaProps = ComponentProps<'textarea'> & {
   autoGrow?: boolean;
@@ -45,7 +46,9 @@ export const Textarea = ({
       ref={ref}
       value={value}
       className={cn(
-        'native-scroll w-full rounded-md border border-border bg-background px-3 py-2 text-label text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:bg-fill disabled:text-disabled-foreground resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
+        'native-scroll w-full rounded-md border border-border bg-background px-3 py-2 text-ui text-foreground shadow-sm placeholder:text-faint-foreground',
+        FOCUS_RING,
+        'disabled:bg-fill disabled:text-disabled-foreground resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
         !autoGrow && 'min-h-16',
         className,
       )}

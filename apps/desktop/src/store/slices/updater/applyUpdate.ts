@@ -45,7 +45,7 @@ export const applyUpdate = (set: SetFn, get: GetFn) => {
         void get().reportError({
           title: `Couldn't install ${update.version}`,
           error: err,
-          action: { kind: 'retry-update' },
+          recovery: { action: { kind: 'retry-update' } },
         });
       }
       return;
@@ -70,7 +70,7 @@ export const applyUpdate = (set: SetFn, get: GetFn) => {
       void get().reportError({
         title: `Couldn't install ${update.version}`,
         error: err,
-        action: { kind: 'retry-update' },
+        recovery: { action: { kind: 'retry-update' } },
       });
     }
   };

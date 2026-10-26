@@ -1,6 +1,6 @@
 import { Check, Circle, Square, X } from 'lucide-react';
-import { InteractiveRow, StatusDot, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, InteractiveRow, StatusDot, Tooltip } from '@goodboy/ui';
+
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { lastOutputLine } from '../../lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';

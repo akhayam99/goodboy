@@ -6,12 +6,19 @@ type Props = {
   readonly card: OverviewCardModel;
   readonly hasHeader?: boolean;
   readonly aside?: ReactNode;
+  readonly countNote?: string | null;
   readonly children: ReactNode;
 };
 
 const SURFACE = 'flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4';
 
-export const OverviewCard = ({ card, hasHeader = true, aside, children }: Props) => {
+export const OverviewCard = ({
+  card,
+  hasHeader = true,
+  aside,
+  countNote = null,
+  children,
+}: Props) => {
   if (!hasHeader) {
     return (
       <div data-overview-card={card.id} className={SURFACE}>
@@ -24,8 +31,9 @@ export const OverviewCard = ({ card, hasHeader = true, aside, children }: Props)
       <header className="flex min-w-0 items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
           <Eyebrow label={card.title} muted />
-          <span data-overview-count="" className="text-ui tabular-nums text-faint-foreground">
-            {card.count}
+          <span className="flex items-baseline text-ui tabular-nums text-faint-foreground">
+            <span data-overview-count="">{card.count}</span>
+            {countNote === null ? null : <span data-overview-note="">, {countNote}</span>}
           </span>
         </span>
         {aside}

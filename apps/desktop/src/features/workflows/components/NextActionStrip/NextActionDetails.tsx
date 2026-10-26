@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { AgentId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
+import { cn, FOCUS_RING } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -24,7 +24,8 @@ export const NextActionDetails = ({ agentId }: Props) => {
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
           'w-fit rounded-sm text-chip text-muted-foreground underline decoration-border-soft underline-offset-2',
-          'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          'transition-colors hover:text-foreground',
+          FOCUS_RING,
         )}
       >
         {isOpen ? 'Hide details' : 'Show details'}

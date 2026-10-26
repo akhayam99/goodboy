@@ -155,7 +155,7 @@ export const limitsTimeline = ({ state }: TimelineParams): DemoTimeline | null =
   return {
     setup: ({ store }) => {
       installDemoWorld({ store });
-      const sendTurn: AppStore['sendTurn'] = async (input) => {
+      const sendTurn = (async (input) => {
         const agentId = input.agentId ?? target.agentId;
         store.setState((current) => ({
           agentDraft: Object.fromEntries(
@@ -176,7 +176,7 @@ export const limitsTimeline = ({ state }: TimelineParams): DemoTimeline | null =
           agentId,
         });
         return { blockedOverBudget: false };
-      };
+      }) satisfies AppStore['sendTurn'];
       store.setState({ sendTurn });
     },
     prepare: () => undefined,

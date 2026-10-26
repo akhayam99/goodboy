@@ -30,7 +30,7 @@ export const AddStepMenuOption = ({
     onMouseDown={(event) => event.preventDefault()}
     onClick={onPick}
     className={cn(
-      'flex h-7 min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-label',
+      'flex h-7 min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-meta',
       isActive ? 'bg-hover text-foreground' : 'text-muted-foreground',
     )}
   >

@@ -12,9 +12,7 @@ describe('OverviewEmpty', () => {
 
     expect(screen.getByRole('heading', { name: 'Nothing finished yet' })).toBeDefined();
     expect(
-      screen.getByText(
-        'Finished sessions appear here: what shipped, how long it took, what it cost.',
-      ),
+      screen.getByText('Each finished session shows what shipped, how long it took and its cost.'),
     ).toBeDefined();
     expect(screen.queryByText(/spent today/)).toBeNull();
   });

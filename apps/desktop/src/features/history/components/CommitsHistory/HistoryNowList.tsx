@@ -3,8 +3,8 @@ import { cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
-import type { HistoryDropTarget } from '../../useHistoryDrag';
-import type { RowPositions } from '../../useRowPositions';
+import type { HistoryDropTarget } from '../../hooks/useHistoryDrag';
+import type { RowPositions } from '../../hooks/useRowPositions';
 import { HistoryBaseRow, type RebaseRequest } from './HistoryBaseRow';
 import { HistoryLaneSvg, type LaneNode } from './HistoryLaneSvg';
 import type { HistoryRowView } from './historyRowLine';
@@ -63,7 +63,7 @@ export const HistoryNowList = ({
         className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)] items-center"
       >
         <span aria-hidden />
-        <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-3 px-3 text-meta text-muted-foreground">
           <HistoryBaseRow
             sessionId={sessionId}
             graph={graph}

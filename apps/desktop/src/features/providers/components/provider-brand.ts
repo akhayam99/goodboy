@@ -24,7 +24,3 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   openrouter: { icon: OpenrouterIcon, cssVar: '--color-provider-openrouter' },
   moonshot: { icon: MoonshotIcon, cssVar: '--color-provider-moonshot' },
 };
-
-export const brandColor = (providerId: ProviderId): string => {
-  return `var(${PROVIDER_BRAND[providerId].cssVar})`;
-};

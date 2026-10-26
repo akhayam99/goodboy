@@ -8,18 +8,83 @@ use std::time::Duration;
 const NON_INTERACTIVE_EDITOR: &str = "true";
 const BATCH_SSH_COMMAND: &str = "ssh -oBatchMode=yes";
 const INHERITED_REPO_ENV: [&str; 3] = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"];
-const NETWORK_VERBS: [&str; 5] = ["fetch", "push", "pull", "ls-remote", "clone"];
+const NETWORK_VERBS: [&str; 8] = [
+    "fetch",
+    "push",
+    "pull",
+    "ls-remote",
+    "clone",
+    "submodule",
+    "lfs",
+    "remote",
+];
+const READ_VERBS: [&str; 24] = [
+    "status",
+    "diff",
+    "diff-tree",
+    "diff-index",
+    "diff-files",
+    "log",
+    "show",
+    "show-ref",
+    "rev-parse",
+    "rev-list",
+    "ls-files",
+    "ls-tree",
+    "cat-file",
+    "for-each-ref",
+    "merge-base",
+    "describe",
+    "blame",
+    "grep",
+    "name-rev",
+    "check-ignore",
+    "count-objects",
+    "cherry",
+    "shortlog",
+    "reflog",
+];
 const KILL_GRACE: Duration = Duration::from_secs(1);
 
-pub(crate) const LOCAL_TIMEOUT: Duration = Duration::from_secs(1800);
+pub(crate) const READ_TIMEOUT: Duration = Duration::from_secs(180);
+pub(crate) const WRITE_TIMEOUT: Duration = Duration::from_secs(600);
 pub(crate) const NETWORK_TIMEOUT: Duration = Duration::from_secs(1800);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GitClass {
+    Read,
+    Write,
+    Network,
+}
+
+impl GitClass {
+    pub(crate) fn of_verb(verb: Option<&str>) -> Self {
+        match verb {
+            Some(verb) if NETWORK_VERBS.contains(&verb) => GitClass::Network,
+            Some(verb) if READ_VERBS.contains(&verb) => GitClass::Read,
+            _ => GitClass::Write,
+        }
+    }
+
+    pub(crate) fn deadline(self) -> Duration {
+        match self {
+            GitClass::Read => READ_TIMEOUT,
+            GitClass::Write => WRITE_TIMEOUT,
+            GitClass::Network => NETWORK_TIMEOUT,
+        }
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum GitError {
     #[error("{0}")]
     Spawn(#[from] std::io::Error),
     #[error("git {args} timed out after {secs}s")]
-    Timeout { args: String, secs: u64 },
+    Timeout {
+        args: String,
+        secs: u64,
+        class: GitClass,
+    },
     #[error("{message}")]
     Failed { message: String },
     #[error("invalid utf-8 in git output")]
@@ -69,6 +134,11 @@ impl GitOutput {
     pub(crate) fn stderr_redacted(&self) -> String {
         crate::worktree::redact_credentials(&String::from_utf8_lossy(&self.stderr))
     }
+}
+
+pub(crate) fn run_with_timeout(command: Command, timeout: Duration) -> Result<GitOutput, GitError> {
+    let label = command.get_program().to_string_lossy().into_owned();
+    execute(command, None, timeout).ok_or_timeout(label, timeout, GitClass::Network)
 }
 
 pub(crate) struct Git {
@@ -147,6 +217,10 @@ impl Git {
         self
     }
 
+    pub(crate) fn english(self) -> Self {
+        self.env("LC_ALL", "C")
+    }
+
     pub(crate) fn batch_auth(mut self) -> Self {
         self.batch_auth = true;
         self
@@ -191,14 +265,19 @@ impl Git {
         None
     }
 
-    fn effective_timeout(&self) -> Duration {
-        if let Some(timeout) = self.timeout {
-            return timeout;
-        }
+    fn slow_label(&self) -> String {
         match self.verb() {
-            Some(verb) if NETWORK_VERBS.contains(&verb.as_str()) => NETWORK_TIMEOUT,
-            _ => LOCAL_TIMEOUT,
+            Some(verb) if is_subcommand_name(&verb) => format!("git {verb}"),
+            _ => "git".to_string(),
         }
+    }
+
+    fn class(&self) -> GitClass {
+        GitClass::of_verb(self.verb().as_deref())
+    }
+
+    fn effective_timeout(&self) -> Duration {
+        self.timeout.unwrap_or_else(|| self.class().deadline())
     }
 
     fn build(&self) -> Command {
@@ -242,9 +321,13 @@ impl Git {
 
     pub(crate) fn output(self) -> Result<GitOutput, GitError> {
         let timeout = self.effective_timeout();
+        let class = self.class();
         let label = crate::worktree::redact_credentials(&self.label());
+        let slow_label = self.slow_label();
         let command = self.build();
-        execute(command, self.input, timeout).ok_or_timeout(label, timeout)
+        crate::logging::timed(&slow_label, || {
+            execute(command, self.input, timeout).ok_or_timeout(label, timeout, class)
+        })
     }
 
     pub(crate) fn stdout(self) -> Result<String, GitError> {
@@ -259,6 +342,10 @@ impl Git {
         String::from_utf8(output.stdout).map_err(|_| GitError::InvalidUtf8)
     }
 
+    pub(crate) fn into_command(self) -> Command {
+        self.build()
+    }
+
     pub(crate) fn spawn_streaming(self) -> std::io::Result<Child> {
         let mut command = self.build();
         command
@@ -269,18 +356,28 @@ impl Git {
     }
 }
 
+fn is_subcommand_name(verb: &str) -> bool {
+    verb.len() <= 24 && verb.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
 enum Executed {
     Done(Result<GitOutput, std::io::Error>),
     TimedOut,
 }
 
 impl Executed {
-    fn ok_or_timeout(self, label: String, timeout: Duration) -> Result<GitOutput, GitError> {
+    fn ok_or_timeout(
+        self,
+        label: String,
+        timeout: Duration,
+        class: GitClass,
+    ) -> Result<GitOutput, GitError> {
         match self {
             Executed::Done(result) => result.map_err(GitError::Spawn),
             Executed::TimedOut => Err(GitError::Timeout {
                 args: label,
                 secs: timeout.as_secs(),
+                class,
             }),
         }
     }
@@ -390,7 +487,7 @@ mod tests {
     }
 
     fn is_alive(pid: libc::pid_t) -> bool {
-        unsafe { libc::kill(pid, 0) == 0 }
+        crate::proc::signal::exists(pid as u32)
     }
 
     #[test]
@@ -450,6 +547,7 @@ mod tests {
         let timeout = GitError::Timeout {
             args: "fetch origin".to_string(),
             secs: 300,
+            class: GitClass::Network,
         };
         let spawn = GitError::Spawn(std::io::Error::other("no git"));
 
@@ -479,6 +577,7 @@ mod tests {
         let timeout = WorktreeError::from(GitError::Timeout {
             args: "push origin".to_string(),
             secs: 300,
+            class: GitClass::Network,
         });
         let spawn = WorktreeError::from(GitError::Spawn(std::io::Error::other("no git")));
         let utf8 = WorktreeError::from(GitError::InvalidUtf8);
@@ -698,13 +797,14 @@ mod tests {
         let error = std::io::Error::from(GitError::Timeout {
             args: "ls-remote origin".to_string(),
             secs: 300,
+            class: GitClass::Network,
         });
 
         assert_eq!(error.kind(), std::io::ErrorKind::TimedOut);
     }
 
     #[test]
-    fn network_verbs_get_the_network_timeout_and_the_rest_the_local_one() {
+    fn every_verb_gets_the_deadline_of_its_class() {
         let timeout_of = |args: &[&str]| Git::new().args(args).effective_timeout();
 
         assert_eq!(timeout_of(&["fetch", "origin"]), NETWORK_TIMEOUT);
@@ -721,9 +821,99 @@ mod tests {
             timeout_of(&["-C", "/tmp/ledger-core", "fetch"]),
             NETWORK_TIMEOUT
         );
-        assert_eq!(timeout_of(&["status", "--porcelain"]), LOCAL_TIMEOUT);
-        assert_eq!(timeout_of(&["log", "--", "fetch"]), LOCAL_TIMEOUT);
-        assert_eq!(timeout_of(&[]), LOCAL_TIMEOUT);
+        assert_eq!(
+            timeout_of(&["submodule", "update", "--init"]),
+            NETWORK_TIMEOUT
+        );
+        assert_eq!(timeout_of(&["lfs", "pull"]), NETWORK_TIMEOUT);
+        assert_eq!(timeout_of(&["remote", "update"]), NETWORK_TIMEOUT);
+        assert_eq!(timeout_of(&["status", "--porcelain"]), READ_TIMEOUT);
+        assert_eq!(
+            timeout_of(&["-c", "core.quotepath=false", "diff", "--numstat"]),
+            READ_TIMEOUT
+        );
+        assert_eq!(timeout_of(&["rev-parse", "HEAD"]), READ_TIMEOUT);
+        assert_eq!(timeout_of(&["log", "--", "fetch"]), READ_TIMEOUT);
+        assert_eq!(timeout_of(&["rebase", "origin/main"]), WRITE_TIMEOUT);
+        assert_eq!(timeout_of(&["worktree", "add", "-b", "x"]), WRITE_TIMEOUT);
+        assert_eq!(timeout_of(&[]), WRITE_TIMEOUT);
+    }
+
+    #[test]
+    fn the_three_deadlines_are_three_minutes_ten_minutes_and_half_an_hour() {
+        assert_eq!(READ_TIMEOUT.as_secs(), 180);
+        assert_eq!(WRITE_TIMEOUT.as_secs(), 600);
+        assert_eq!(NETWORK_TIMEOUT.as_secs(), 1800);
+        assert_eq!(GitClass::Read.deadline(), READ_TIMEOUT);
+        assert_eq!(GitClass::Write.deadline(), WRITE_TIMEOUT);
+        assert_eq!(GitClass::Network.deadline(), NETWORK_TIMEOUT);
+    }
+
+    #[test]
+    fn a_timeout_carries_the_class_of_the_command_that_hung() {
+        let fake = FakeCli::stage("hang");
+        let error = |verb: &str| {
+            Git::with_binary(fake.binary("git"))
+                .cwd(fake.work_dir())
+                .arg(verb)
+                .timeout(SHORT)
+                .output()
+                .unwrap_err()
+        };
+
+        assert!(matches!(
+            error("status"),
+            GitError::Timeout {
+                class: GitClass::Read,
+                ..
+            }
+        ));
+        assert!(matches!(
+            error("rebase"),
+            GitError::Timeout {
+                class: GitClass::Write,
+                ..
+            }
+        ));
+        assert!(matches!(
+            error("fetch"),
+            GitError::Timeout {
+                class: GitClass::Network,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn english_forces_the_c_locale_so_error_text_can_be_matched() {
+        let fake = FakeCli::stage("env");
+
+        Git::with_binary(fake.binary("git"))
+            .cwd(fake.work_dir())
+            .english()
+            .arg("fetch")
+            .output()
+            .unwrap();
+
+        assert_eq!(recorded_env(&fake, "LC_ALL"), "C");
+    }
+
+    #[test]
+    fn english_wins_over_a_locale_the_caller_set_earlier() {
+        let root = temp_root("english-locale");
+
+        let error = Git::new()
+            .cwd(&root)
+            .env("LC_ALL", "it_IT.UTF-8")
+            .english()
+            .args(["rev-parse", "--git-dir"])
+            .stdout();
+
+        let message = error.unwrap_err().to_string();
+        assert!(
+            message.contains("not a git repository") || message.contains("not a git"),
+            "{message}"
+        );
     }
 
     #[test]
@@ -733,71 +923,27 @@ mod tests {
         assert_eq!(git.effective_timeout(), SHORT);
     }
 
-    fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
-        for entry in std::fs::read_dir(dir).unwrap() {
-            let path = entry.unwrap().path();
-            if path.is_dir() {
-                rust_files(&path, out);
-                continue;
-            }
-            if path.extension().is_some_and(|ext| ext == "rs") {
-                out.push(path);
-            }
-        }
-    }
+    #[test]
+    fn the_slow_label_is_the_verb_and_never_a_path_or_an_argument() {
+        let fetch = Git::new().args(["-c", "core.pager=cat", "fetch", "origin"]);
+        let odd = Git::new().arg("/Users/someone/repo");
+        let bare = Git::new();
 
-    fn production_lines(text: &str) -> Vec<(usize, &str)> {
-        let mut kept = Vec::new();
-        let mut skipping = false;
-        let mut depth = 0i32;
-        let mut opened = false;
-        for (index, line) in text.lines().enumerate() {
-            let trimmed = line.trim();
-            if !skipping && trimmed.starts_with("#[cfg(") && trimmed.contains("test") {
-                skipping = true;
-                depth = 0;
-                opened = false;
-                continue;
-            }
-            if skipping {
-                depth += line.matches('{').count() as i32 - line.matches('}').count() as i32;
-                opened |= line.contains('{');
-                if (opened && depth <= 0) || (!opened && trimmed.ends_with(';')) {
-                    skipping = false;
-                }
-                continue;
-            }
-            kept.push((index + 1, line));
-        }
-        kept
+        assert_eq!(fetch.slow_label(), "git fetch");
+        assert_eq!(odd.slow_label(), "git");
+        assert_eq!(bare.slow_label(), "git");
     }
 
     #[test]
     fn only_proc_git_launches_git_in_production_code() {
-        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-        let mut files = Vec::new();
-        rust_files(&src, &mut files);
-        let mut offenders = Vec::new();
-        for path in files {
-            let name = path.file_name().unwrap().to_string_lossy().into_owned();
-            let relative = path
-                .strip_prefix(&src)
-                .unwrap()
-                .to_string_lossy()
-                .into_owned();
-            if relative == "proc/git.rs" || name.ends_with("tests.rs") || name == "fake_cli.rs" {
-                continue;
-            }
-            let text = std::fs::read_to_string(&path).unwrap();
-            for (line, content) in production_lines(&text) {
-                let spawns_git = content.contains("command(\"git\")")
-                    || content.contains("Command::new(\"git\")")
-                    || content.contains("command_with_login_env(\"git\")");
-                if spawns_git {
-                    offenders.push(format!("{relative}:{line}"));
-                }
-            }
-        }
+        let offenders = crate::util::source_scan::production_hits(
+            &[
+                "command(\"git\")",
+                "Command::new(\"git\")",
+                "command_with_login_env(\"git\")",
+            ],
+            &["proc/git.rs"],
+        );
 
         assert!(
             offenders.is_empty(),

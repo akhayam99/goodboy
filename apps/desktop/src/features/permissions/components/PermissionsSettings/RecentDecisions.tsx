@@ -4,7 +4,7 @@ import { commandPrefix } from '@goodboy/core';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { EmptyState, STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useRecentDecisions } from '../../hooks/useRecentDecisions';
 import type { RecentDecision } from '../../permissions';
@@ -72,7 +72,7 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
       className={cn('flex flex-col rounded-lg bg-subtle p-1', STRIPED_LIST)}
     >
       {decisions.map((decision) => (
-        <li key={decision.id} className="flex min-w-0 items-center gap-2 px-3 py-2 text-label">
+        <li key={decision.id} className="flex min-w-0 items-center gap-2 px-3 py-2 text-meta">
           <span
             className={cn(
               'shrink-0',

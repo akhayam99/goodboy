@@ -1,3 +1,5 @@
+import type { RequestStateName } from '@goodboy/types';
+
 export type BitbucketStatusState = 'SUCCESSFUL' | 'FAILED' | 'INPROGRESS' | 'STOPPED';
 
 export type BitbucketPullRequestStateName = 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED';
@@ -23,6 +25,7 @@ export type BitbucketPortPullRequest = Readonly<{
   title: string;
   description: string;
   state: BitbucketPullRequestStateName;
+  requestState?: RequestStateName;
   createdOn: string;
   updatedOn: string;
   sourceBranch: string;

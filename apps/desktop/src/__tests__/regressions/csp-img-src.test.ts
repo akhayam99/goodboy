@@ -5,14 +5,16 @@ import { describe, expect, it } from 'vitest';
 
 const DESKTOP = join(__dirname, '..', '..', '..');
 
-type TauriConfig = { readonly app: { readonly security: { readonly csp: string } } };
-
-const readCsp = (): string => {
-  const config: TauriConfig = JSON.parse(
-    readFileSync(join(DESKTOP, 'src-tauri', 'tauri.conf.json'), 'utf8'),
-  );
-  return config.app.security.csp;
+type TauriConfig = {
+  readonly app: {
+    readonly security: { readonly csp: string; readonly freezePrototype?: unknown };
+  };
 };
+
+const readConfig = (): TauriConfig =>
+  JSON.parse(readFileSync(join(DESKTOP, 'src-tauri', 'tauri.conf.json'), 'utf8'));
+
+const readCsp = (): string => readConfig().app.security.csp;
 
 type DirectiveParams = {
   readonly csp: string;
@@ -41,5 +43,17 @@ describe('the app content security policy', () => {
       'http://ipc.localhost',
     ]);
     expect(directive({ csp, name: 'frame-src' })).toEqual(['gbframe:', 'http://gbframe.localhost']);
+  });
+
+  it('forbids a base tag and a form post, and freezes the prototype', () => {
+    const csp = readCsp();
+    expect(directive({ csp, name: 'base-uri' })).toEqual(["'none'"]);
+    expect(directive({ csp, name: 'form-action' })).toEqual(["'none'"]);
+    expect(readConfig().app.security.freezePrototype).toBe(true);
+  });
+
+  it('never admits a data url or a blob url as a frame source', () => {
+    expect(directive({ csp: readCsp(), name: 'frame-src' })).not.toContain('data:');
+    expect(directive({ csp: readCsp(), name: 'frame-src' })).not.toContain('blob:');
   });
 });

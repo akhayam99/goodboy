@@ -15,7 +15,7 @@ import type {
 } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { queueLineOf } from '../../queueLineOf';

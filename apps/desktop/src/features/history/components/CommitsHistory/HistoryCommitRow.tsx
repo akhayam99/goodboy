@@ -1,9 +1,9 @@
 import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { GitMerge, GripVertical } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ICON_SIZE } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import type { CombineMode } from '../../historyPlan';
 import {
@@ -179,7 +179,7 @@ const HistoryCommitRowView = ({
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           {isBusy ? (
-            <span role="status" className="text-label text-muted-foreground text-shimmer">
+            <span role="status" className="text-meta text-muted-foreground text-shimmer">
               Editing commit
             </span>
           ) : null}
@@ -247,7 +247,7 @@ const HistoryCommitRowView = ({
                   {takenIn.map((taken) => (
                     <span
                       key={taken.commit.sha}
-                      className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
+                      className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
                     >
                       <GitMerge size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                       <span className="truncate text-foreground">{taken.commit.subject}</span>

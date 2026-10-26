@@ -8,6 +8,7 @@ type Params = {
   readonly row: ResolveThread;
   readonly expectedRevision: number | null;
   readonly previous?: ResolveThread | null;
+  readonly isCurrent?: () => boolean;
 };
 
 const storedRow = async ({
@@ -23,8 +24,12 @@ export const saveResolveThread = async ({
   row,
   expectedRevision,
   previous,
+  isCurrent = () => true,
 }: Params): Promise<boolean> => {
   const before = previous === undefined ? await storedRow({ db, row }) : previous;
+  if (!isCurrent()) {
+    return false;
+  }
   return upsertResolveThread({
     db,
     row: withNextStage({ previous: before, row }),

@@ -1,9 +1,11 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { buildIssueRows, dedupById, useSentryIssues } from './useSentryIssues';
 import { sentryFetchIssues } from '../client';
 import type { SentryIssue, SentryIssuesPage } from '../client';
+import { deferred } from '../../testing/deferred';
 
 const hoisted = vi.hoisted(() => ({
   externalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
@@ -21,6 +23,7 @@ vi.mock('../../../../store', () => ({
 
 const fetchIssues = vi.mocked(sentryFetchIssues);
 const WS = 'ws-1' as WorkspaceId;
+const WS_TWO = brandId<WorkspaceId>({ value: 'ws-2' });
 
 const page = (issues: SentryIssue[], next_cursor: string | null = null): SentryIssuesPage => ({
   issues,
@@ -160,6 +163,26 @@ describe('useSentryIssues', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.loading).toBe(false);
     expect(result.current.rows.map((row) => row.issue.id)).toEqual(['fresh']);
+  });
+
+  it('ignores an older load that answers after a newer one', async () => {
+    const slow = deferred<SentryIssuesPage>();
+    fetchIssues
+      .mockImplementationOnce(() => slow.promise)
+      .mockResolvedValue(page([makeIssue({ id: 'fresh' })]));
+    const { result, rerender } = renderHook(
+      ({ workspaceId }: { readonly workspaceId: WorkspaceId }) => useSentryIssues(workspaceId),
+      { initialProps: { workspaceId: WS } },
+    );
+
+    rerender({ workspaceId: WS_TWO });
+    await waitFor(() => expect(result.current.rows.map((row) => row.issue.id)).toEqual(['fresh']));
+    await act(async () => {
+      slow.resolve(page([makeIssue({ id: 'stale' })]));
+    });
+
+    expect(result.current.rows.map((row) => row.issue.id)).toEqual(['fresh']);
+    expect(result.current.loading).toBe(false);
   });
 
   it('exposes hasMore and forwards the cursor on loadMore, deduping across pages', async () => {

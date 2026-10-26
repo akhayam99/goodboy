@@ -31,16 +31,16 @@ describe('CommandCenter', () => {
     expect(hint?.textContent).toBe(shortcutGlyphs('palette.open'));
   });
 
-  it('says Search only and keeps the workspace name in the tooltip', () => {
+  it('says Search or run and keeps the workspace name in the tooltip', () => {
     render(<CommandCenter />);
     const button = screen.getByRole('button', {
-      name: `Search (${shortcutGlyphs('palette.open')})`,
+      name: `Search or run (${shortcutGlyphs('palette.open')})`,
     });
 
-    expect(button.textContent).toBe(`Search${shortcutGlyphs('palette.open')}`);
+    expect(button.textContent).toBe(`Search or run${shortcutGlyphs('palette.open')}`);
     expect(button.getAttribute('title')).toBeNull();
     const tip = tooltipTextOf({ element: button });
-    expect(tip).toContain('Search ');
+    expect(tip).toContain('Search or run in ');
     expect(tip).toContain(shortcutGlyphs('palette.open'));
     expect(screen.queryByText(/Search or ask/)).toBeNull();
   });

@@ -23,6 +23,7 @@ import {
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
 import { useAttachedWorkflowRuns } from '../../../../../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../../../../../workflows/useWorkflowAdvanceStates';
+import { useLiveAgentTurns } from '../../../../../../../shared/hooks/useLiveAgentTurns';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';
 import { agentSpendById } from '../../../../../timeline/agentSpendById';
@@ -241,6 +242,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   }, [agentRunHistory, agents, telemetry, workflows]);
 
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
+  const turnByAgentId = useLiveAgentTurns({ agents });
 
   const unreadAgentIds = useMemo(() => {
     const unread = new Set<string>();
@@ -284,6 +286,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
           resolveFactsByAgentId: resolveActivity.factsByAgentId,
           jobFactsByAgentId: jobActivity.factsByAgentId,
           autoFactsByAgentId,
+          turnByAgentId,
         }).items,
         entries: model.entries,
         events,
@@ -303,6 +306,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       openMountIds,
       resolveActivity,
       settledStopIds,
+      turnByAgentId,
       unreadAgentIds,
     ],
   );
@@ -330,6 +334,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         jobFactsByAgentId: jobActivity.factsByAgentId,
         autoFactsByAgentId,
+        turnByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
         foldsFinished: true,
@@ -343,6 +348,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       explode.fullIds,
       jobActivity,
       resolveActivity,
+      turnByAgentId,
       unreadAgentIds,
       view,
       viewEntries,
@@ -363,6 +369,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
             resolveFactsByAgentId: resolveActivity.factsByAgentId,
             jobFactsByAgentId: jobActivity.factsByAgentId,
             autoFactsByAgentId,
+            turnByAgentId,
             expandedGroupIds,
             fullGroupIds,
             foldsFinished: true,
@@ -375,6 +382,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       decidingRunIds,
       jobActivity,
       resolveActivity,
+      turnByAgentId,
       unreadAgentIds,
       view,
       viewEntries,

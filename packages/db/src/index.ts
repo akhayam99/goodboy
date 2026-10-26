@@ -193,14 +193,16 @@ export {
   countUserTextEvents,
   readFirstUserText,
   listTurnEventsForAgent,
+  listTurnEventEntriesForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,
   getTurnEventStatsForSessions,
   deleteTurnEventsForSessions,
   type PendingTurnEventInsert,
+  type StoredTurnEvent,
   type TurnEventStorageStats,
 } from './queries/turn-event';
-export { getDatabaseSizeBytes, vacuumDatabase } from './queries/storage';
+export { getDatabaseSizeBytes } from './queries/storage';
 export {
   upsertContextSlot,
   listContextSlotsForSession,
@@ -239,11 +241,27 @@ export {
   deleteSetting,
   deleteSettingIfUnchanged,
   getSetting,
+  getSettings,
   insertSettingIfAbsent,
   listSettingsWithPrefix,
   replaceSettingIfUnchanged,
   setSetting,
 } from './queries/settings';
+export {
+  deleteProjectValue,
+  getProjectValue,
+  getWorkspaceValue,
+  insertProjectValueIfAbsent,
+  insertWorkspaceValueIfAbsent,
+  listProjectValues,
+  replaceProjectValueIfUnchanged,
+  replaceWorkspaceValueIfUnchanged,
+  setProjectValue,
+  setWorkspaceValue,
+  type ProjectValueKey,
+  type ProjectValueWrite,
+  type WorkspaceValueKey,
+} from './queries/entity-value';
 export {
   listWorkflows,
   listWorkflowsIncludingDeleted,
@@ -275,6 +293,7 @@ export {
   agentInsertStatement,
   insertAgent,
   insertAgentBatch,
+  markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
   setAgentDone,
@@ -298,6 +317,7 @@ export {
   getAgentById,
   type AgentConfigUpdate,
 } from './queries/agent';
+export { insertTurnFileSet, listTurnFileSets } from './queries/turn-file-set';
 export {
   listAgentQueuedMessages,
   replaceAgentQueuedMessages,
@@ -377,7 +397,7 @@ export {
   registerWorktreeRoot,
 } from './queries/worktree-root';
 export { insertSessionEvent, listSessionEvents } from './queries/session-event';
-export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
+export { getWorkspaceOverrides } from './queries/settings-overrides';
 export {
   listProviderCredentials,
   insertProviderCredential,
@@ -414,6 +434,7 @@ export {
   markAllNotificationsRead,
   markNotificationRead,
   markNotificationUnread,
+  markNotificationsActed,
   deleteNotification,
   clearAllNotifications,
   clearResolvedHelperNotifications,

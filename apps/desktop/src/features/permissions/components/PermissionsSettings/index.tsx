@@ -2,20 +2,21 @@ import { useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import {
-  EmptyState,
   Band,
+  cn,
   Collapsible,
+  EmptyState,
   ErrorStrip,
+  ICON_SIZE,
   PanelLoading,
   STRIPED_LIST,
-  cn,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
 import { undoable } from '../../../../shared/utils/undoable';
 import { usePermissionRules } from '../../hooks/usePermissionRules';
 import { DEFAULT_PERMISSION_MODE, pickerModeOf, type PickerMode } from '../../modeCopy';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { hasIgnoredDeny } from '../../utils/providerSupport';
 import { DefaultModeCards } from './DefaultModeCards';
 import { IgnoredDenyNotice } from './IgnoredDenyNotice';

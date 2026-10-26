@@ -2,7 +2,7 @@ import { CHAT_PROVIDER_IDS, type ProviderId, type WorkspaceId } from '@goodboy/t
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { savedRouteEffort } from '../../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
-import { chatModelId, chatModelKey, shownChatEffort } from '../../../../workspace-chat/chatRouting';
+import { chatModelId, chatModelKey, shownChatEffort } from '../../../../conversation/chatRouting';
 import { defaultChatRouting } from '../../../../workspace-chat/defaultChatRouting';
 import { useHiddenModels } from '../../../hooks/useHiddenModels';
 import { DefaultRow } from './DefaultRow';

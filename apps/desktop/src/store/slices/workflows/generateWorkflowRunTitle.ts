@@ -1,4 +1,4 @@
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { devWarn } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';

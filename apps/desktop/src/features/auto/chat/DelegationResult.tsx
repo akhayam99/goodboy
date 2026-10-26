@@ -77,14 +77,14 @@ export const DelegationResult = ({
           liveKey={liveKey}
           itemKey={SUMMARY_ITEM_KEY}
           text={summary}
-          className="min-w-0 text-label"
+          className="min-w-0 text-meta"
         />
       )}
       {result.reasonText === null ? null : (
-        <p className="text-label text-warning">{result.reasonText}</p>
+        <p className="text-meta text-warning">{result.reasonText}</p>
       )}
       {result.remoteText === null ? null : (
-        <p className="text-label text-warning">{result.remoteText}</p>
+        <p className="text-meta text-warning">{result.remoteText}</p>
       )}
       {result.changedFileCount === 0 ? null : (
         <p className="text-meta text-muted-foreground">
@@ -95,7 +95,7 @@ export const DelegationResult = ({
         <div className="flex min-w-0 items-center gap-2">
           <p
             role="status"
-            className={`min-w-0 text-label ${checksToneOf({ verdict: result.checksVerdict })}`}
+            className={`min-w-0 text-meta ${checksToneOf({ verdict: result.checksVerdict })}`}
           >
             {result.checksText}
           </p>
@@ -115,7 +115,7 @@ export const DelegationResult = ({
         <div className="flex min-w-0 items-center gap-2">
           <p
             role="status"
-            className={`min-w-0 text-label ${publishToneOf({ state: result.publish.state })}`}
+            className={`min-w-0 text-meta ${publishToneOf({ state: result.publish.state })}`}
           >
             {result.publish.text}
           </p>
@@ -146,7 +146,7 @@ export const DelegationResult = ({
           {result.checks.map((check) => (
             <li
               key={check.name}
-              className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
+              className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
             >
               {check.status === 'fail' ? (
                 <X size={ICON_SIZE.control} aria-hidden className="shrink-0 text-danger" />
@@ -176,7 +176,7 @@ export const DelegationResult = ({
           {result.questions.map((question) => (
             <li
               key={question}
-              className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
+              className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
             >
               <MessageSquare size={ICON_SIZE.control} aria-hidden className="shrink-0" />
               <span className="min-w-0">{question}</span>

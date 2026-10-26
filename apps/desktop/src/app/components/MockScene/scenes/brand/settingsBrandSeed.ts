@@ -4,7 +4,7 @@ import type {
   IntegrationCredentialId,
   IsoDateTime,
 } from '@goodboy/types';
-import { finish } from '../../../../../features/onboarding/onboarding-store';
+import { finish } from '../../../../../features/onboarding/onboardingSettings';
 import { useAppStore } from '../../../../../store';
 import { SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
 import { BRAND_PEOPLE } from './canon';

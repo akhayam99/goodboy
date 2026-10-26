@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Chip, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { AnchoredPopover, Chip, ICON_SIZE, type MenuEntry, useDropdown } from '@goodboy/ui';
 import type { CrumbMenuGroup } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { AppMenuList } from '../../../actions/AppMenuList';
 import type { ExploreTarget } from '../../selectExploreMount';
 import { ExploreBranchName } from './ExploreBranchName';
@@ -91,9 +91,8 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
   if (!canSwitch) {
     return (
       <Chip
+        kind="reference"
         tone="neutral"
-        shape="badge"
-        size="control"
         className={CHIP_CLASS}
         icon={icon}
         label={label.node}
@@ -108,10 +107,9 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
       anchorClassName="flex min-w-0 max-w-full"
       trigger={
         <Chip
+          kind="reference"
           as="button"
           tone="neutral"
-          shape="badge"
-          size="control"
           className={CHIP_CLASS}
           icon={icon}
           label={label.node}

@@ -1,5 +1,7 @@
 import type { ArtifactId, IsoDateTime } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { Database, GuardedStatement, PlainStatement, Statement } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 export const ARTIFACT_REVISION_AUTHORS = ['agent', 'user', 'import', 'restore'] as const;
 
@@ -54,18 +56,8 @@ type RevisionRow = {
 const REVISION_SELECT = `SELECT artifact_id, revision, title, source_text, metadata_json, author,
   ask, pinned_json, summary_json, created_at FROM artifact_revisions`;
 
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 const parseJson = ({ text }: { readonly text: string | null }): unknown => {
-  if (text === null) {
-    return null;
-  }
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
+  return parseJsonColumn<unknown>({ value: text, isValid: isJsonValue, fallback: null });
 };
 
 const asAuthor = ({ value }: { readonly value: string }): ArtifactRevisionAuthor =>

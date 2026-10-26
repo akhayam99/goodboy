@@ -3,7 +3,7 @@ import {
   listPlansForSession as invokeListPlansForSession,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../../features/plans/plans';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import type { SetFn } from './types';
 
 export const setPlanStatus = (set: SetFn) => {

@@ -1,10 +1,12 @@
-import type {
-  AgentId,
-  IsoDateTime,
-  ProviderId,
-  SessionId,
-  WorkflowRunId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type MountId,
+  type ProviderId,
+  type SessionId,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -59,7 +61,19 @@ export type NotificationAction =
   | { readonly kind: 'retry-update' }
   | { readonly kind: 'update-provider-cli'; readonly providerId: ProviderId }
   | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' }
-  | { readonly kind: 'open-activity'; readonly sessionId: SessionId };
+  | { readonly kind: 'open-activity'; readonly sessionId: SessionId }
+  | {
+      readonly kind: 'open-settings';
+      readonly scope: 'app' | 'workspace' | 'providers' | 'tools';
+      readonly section?: string;
+      readonly provider?: ProviderId;
+      readonly tool?: NotificationSettingsTool;
+    }
+  | { readonly kind: 'reveal-path'; readonly path: string }
+  | { readonly kind: 'retry-push'; readonly sessionId: SessionId; readonly mountId: MountId };
+
+type NotificationSettingsTool =
+  'bitbucket' | 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry' | 'slack';
 
 export type Notification = {
   readonly id: string;
@@ -73,6 +87,7 @@ export type Notification = {
   readonly read: boolean;
   readonly action: NotificationAction | null;
   readonly coalesceKey: string | null;
+  readonly actedAt: IsoDateTime | null;
 };
 
 type NotificationRow = {
@@ -87,6 +102,7 @@ type NotificationRow = {
   read: number;
   action: string | null;
   coalesce_key: string | null;
+  acted_at: number | null;
 };
 
 const NOTIFICATION_ACTION_KINDS = {
@@ -102,12 +118,27 @@ const NOTIFICATION_ACTION_KINDS = {
   'update-provider-cli': true,
   'open-lens': true,
   'open-activity': true,
+  'open-settings': true,
+  'reveal-path': true,
+  'retry-push': true,
 } satisfies Record<NotificationAction['kind'], true>;
 
 const isNotificationAction = (value: unknown): value is NotificationAction =>
   isJsonRecord(value) &&
   typeof value.kind === 'string' &&
   Object.hasOwn(NOTIFICATION_ACTION_KINDS, value.kind);
+
+type ActionKindParams = {
+  readonly value: string | null;
+};
+
+const actionKindOf = ({ value }: ActionKindParams): NotificationAction['kind'] | null => {
+  if (value === null) {
+    return null;
+  }
+  const candidate = { kind: value };
+  return isNotificationAction(candidate) ? candidate.kind : null;
+};
 
 function parseAction(raw: string | null): NotificationAction | null {
   return parseJsonColumn<NotificationAction | null>({
@@ -134,13 +165,17 @@ function toNotification(row: NotificationRow): Notification {
     read: row.read !== 0,
     action: parseAction(row.action),
     coalesceKey: row.coalesce_key,
+    actedAt:
+      row.acted_at === null
+        ? null
+        : brandId<IsoDateTime>({ value: new Date(row.acted_at).toISOString() }),
   };
 }
 
 export const insertNotification = async (db: Database, n: Notification): Promise<void> => {
   await db.execute(
-    `INSERT INTO notifications (id, ts, kind, title, body, severity, session_id, workspace_id, read, action, coalesce_key)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO notifications (id, ts, kind, title, body, severity, session_id, workspace_id, read, action, coalesce_key, acted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       n.id,
       Date.parse(n.ts),
@@ -153,6 +188,7 @@ export const insertNotification = async (db: Database, n: Notification): Promise
       n.read ? 1 : 0,
       serializeAction(n.action),
       n.coalesceKey,
+      n.actedAt === null ? null : Date.parse(n.actedAt),
     ],
   );
 };
@@ -212,6 +248,8 @@ export type NotificationCountBucket = {
   readonly kind: NotificationKind;
   readonly hasSession: boolean;
   readonly hasAction: boolean;
+  readonly actionKind: NotificationAction['kind'] | null;
+  readonly isActed: boolean;
   readonly read: boolean;
   readonly inWorkspace: boolean;
   readonly count: number;
@@ -222,6 +260,8 @@ type NotificationCountRow = {
   kind: string;
   has_session: number;
   has_action: number;
+  action_kind: string | null;
+  is_acted: number;
   read: number;
   in_workspace: number;
   count: number;
@@ -236,11 +276,13 @@ export const countNotifications = async ({
     `SELECT severity, kind,
        CASE WHEN session_id IS NULL THEN 0 ELSE 1 END AS has_session,
        CASE WHEN action IS NULL THEN 0 ELSE 1 END AS has_action,
+       json_extract(action, '$.kind') AS action_kind,
+       CASE WHEN acted_at IS NULL THEN 0 ELSE 1 END AS is_acted,
        CASE WHEN read = 0 THEN 0 ELSE 1 END AS read,
        ${inWorkspace} AS in_workspace,
        COUNT(*) AS count
      FROM notifications
-     GROUP BY severity, kind, has_session, has_action, read, in_workspace`,
+     GROUP BY severity, kind, has_session, has_action, action_kind, is_acted, read, in_workspace`,
     workspaceId == null ? [] : [workspaceId],
   );
   return rows.map((row) => ({
@@ -248,6 +290,8 @@ export const countNotifications = async ({
     kind: row.kind as NotificationKind,
     hasSession: row.has_session !== 0,
     hasAction: row.has_action !== 0,
+    actionKind: actionKindOf({ value: row.action_kind }),
+    isActed: row.is_acted !== 0,
     read: row.read !== 0,
     inWorkspace: row.in_workspace !== 0,
     count: row.count,
@@ -275,6 +319,23 @@ export const markNotificationUnread = async ({
   id,
 }: SingleNotificationParams): Promise<void> => {
   await db.execute('UPDATE notifications SET read = 0 WHERE id = ?', [id]);
+};
+
+type ActedParams = {
+  readonly db: Database;
+  readonly ids: ReadonlyArray<string>;
+  readonly at: IsoDateTime;
+};
+
+export const markNotificationsActed = async ({ db, ids, at }: ActedParams): Promise<void> => {
+  if (ids.length === 0) {
+    return;
+  }
+  const marks = ids.map(() => '?').join(', ');
+  await db.execute(
+    `UPDATE notifications SET acted_at = ?, read = 1 WHERE acted_at IS NULL AND id IN (${marks})`,
+    [Date.parse(at), ...ids],
+  );
 };
 
 export const deleteNotification = async ({ db, id }: SingleNotificationParams): Promise<void> => {

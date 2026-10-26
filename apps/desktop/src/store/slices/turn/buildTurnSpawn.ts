@@ -17,7 +17,8 @@ import { selectWritableMounts } from '../project-mounts/selectors';
 import { isTurnWritableMount } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
 import { readFolderPurposes } from './readFolderPurposes';
-import { collectTouchedMounts } from './collectTouchedMounts';
+import { collectTouchedMounts, isTurnShared } from './collectTouchedMounts';
+import { beginTurnFileSets, recordTurnFileSets } from './turnFileSets';
 import { composeAgentHandoff } from './composeAgentHandoff';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
@@ -313,6 +314,17 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       before: mountChangesBefore,
       startedAt: turnSpanBase.startedAt,
     });
+  const turnFilesBefore = beginTurnFileSets({ mounts: turnMounts });
+  const recordTurnFiles = () =>
+    recordTurnFileSets({
+      reportError: get().reportError,
+      sessionId,
+      runId,
+      projects: get().projects,
+      begun: turnFilesBefore,
+      isShared: () =>
+        isTurnShared({ get, sessionId, agentId: activeAgentId, startedAt: turnSpanBase.startedAt }),
+    });
   return {
     resolveAttemptId,
     progress,
@@ -324,6 +336,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     fullSystemPrompt,
     turnSpanBase,
     touchedMountsForTurn,
+    recordTurnFiles,
     explainMoreTopics,
     resolvedPrompt,
   };

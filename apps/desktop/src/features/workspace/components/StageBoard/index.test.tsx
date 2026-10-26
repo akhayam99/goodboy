@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Project,
   ProjectId,
@@ -32,6 +32,14 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
   useStageGroupedSessions: () => groups.current,
+  useWorkspaceAttention: () => ({
+    count: 0,
+    quietCount: 0,
+    tone: null,
+    countedIds: [],
+    reasons: [],
+    quietReasons: [],
+  }),
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
   useSessionListModel: () => ({ groups: [], stageBySession: {}, hiddenByFilters: 0 }),
   useSessionViewPrefs: () => ({
@@ -126,6 +134,24 @@ vi.mock('../../../../shared/components/ObjectSelectionBar', () => ({
 
 vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
+}));
+
+vi.mock('../TrackWithGitFlow', () => ({
+  TrackWithGitFlow: ({
+    project,
+    heading,
+    onCancel,
+  }: {
+    project: Project;
+    heading: string;
+    onCancel: () => void;
+  }) => (
+    <section aria-label={heading} data-project={project.id}>
+      <button type="button" onClick={onCancel}>
+        Cancel the commit
+      </button>
+    </section>
+  ),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -317,6 +343,35 @@ describe('StageBoard git gate', () => {
     const [event] = listener.mock.calls[0] ?? [];
     expect(event instanceof CustomEvent ? event.detail : null).toEqual({ scope: 'workspace' });
     window.removeEventListener('goodboy:open-settings', listener);
+  });
+
+  it('offers the first commit itself, as the one action, when the repository has none', () => {
+    gitStatuses.current = { 'proj-1': statusOf('unborn') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    const empty = document.querySelector<HTMLElement>('[data-slot="board-empty"]');
+    expect(empty).not.toBeNull();
+    expect(
+      within(empty ?? document.body)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Make the first commit']);
+    expect(screen.queryByRole('button', { name: 'Open workspace settings' })).toBeNull();
+    screen.getByText('Sessions branch from the latest commit, and this repository has none yet.');
+  });
+
+  it('opens the first commit review in place, for the repository that has none', () => {
+    state.projects = [projectOf({ id: 'ready-one' }), projectOf({ id: 'proj-1' })];
+    gitStatuses.current = { 'ready-one': statusOf('absent'), 'proj-1': statusOf('unborn') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Make the first commit' }));
+
+    const review = screen.getByRole('region', { name: 'First commit in proj-1' });
+    expect(review.getAttribute('data-project')).toBe('proj-1');
+    expect(screen.queryByRole('button', { name: 'Make the first commit' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel the commit' }));
+    screen.getByRole('button', { name: 'Make the first commit' });
   });
 
   it('names the unreachable folder on an empty board', () => {

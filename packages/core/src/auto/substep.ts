@@ -1,4 +1,5 @@
 import type { AutoDelegationRole } from './roles';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_SUBSTEP_ROLES = [
   'scout',
@@ -26,11 +27,6 @@ export type SubstepLink = Readonly<{
 type RequestParams = {
   readonly request: Readonly<Record<string, unknown>>;
 };
-
-type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const substepLinkOf = ({ request }: RequestParams): SubstepLink | null => {
   const parent = request['parent'];

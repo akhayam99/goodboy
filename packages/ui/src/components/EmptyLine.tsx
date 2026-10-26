@@ -19,7 +19,7 @@ export const EmptyLine = ({ icon: Icon, action, className, children }: Props) =>
   <div
     data-slot="empty-line"
     className={cn(
-      'flex min-h-7 min-w-0 items-center gap-2 text-label text-faint-foreground',
+      'flex min-h-7 min-w-0 items-center gap-2 text-meta text-faint-foreground',
       className,
     )}
   >

@@ -142,6 +142,7 @@ describe('useScopeNudge', () => {
 
   it('still intercepts when recording the nudge fails', async () => {
     detectScopeMismatchSpy.mockReturnValue(MISMATCH);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     insertNudgeEventSpy.mockRejectedValueOnce(new Error('db down'));
     const { result } = mount();
     let intercepted = false;
@@ -150,6 +151,8 @@ describe('useScopeNudge', () => {
     });
     expect(intercepted).toBe(true);
     expect(result.current.scopePending).not.toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 
   it('records an outcome once and clears the event id', async () => {

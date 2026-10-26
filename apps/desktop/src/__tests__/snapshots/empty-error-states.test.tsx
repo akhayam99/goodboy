@@ -42,7 +42,7 @@ vi.mock('../../features/session/hooks/useSessionArchive', () => ({
 
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { QuickActionsPopover } from '../../features/quick-actions';
+import { QuickActionsPopover } from '../../features/quick-actions/QuickActionsPopover';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -104,7 +104,7 @@ describe('empty states', () => {
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {
     const listener = vi.fn();
-    window.addEventListener('goodboy:open-workflow-builder', listener);
+    window.addEventListener('goodboy:open-start-run', listener);
     render(
       <ChatEmptyState
         sessionId={SESSION_ID}
@@ -114,7 +114,7 @@ describe('empty states', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /set up a workflow/i }));
-    window.removeEventListener('goodboy:open-workflow-builder', listener);
+    window.removeEventListener('goodboy:open-start-run', listener);
     expect(listener).toHaveBeenCalledOnce();
   });
 });

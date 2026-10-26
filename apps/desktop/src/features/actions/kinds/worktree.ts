@@ -1,4 +1,6 @@
 import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';
 
 export const KEEP_DAYS = 30;
@@ -41,6 +43,15 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
       group: 'open',
       when: () => true,
       run: ({ facts }) => facts.onEditor(),
+    },
+    {
+      id: 'worktree.terminalApp',
+      label: 'Open in terminal app',
+      icon: CONCEPT_ICONS.terminal,
+      group: 'open',
+      when: () => true,
+      run: ({ facts, env }) =>
+        openInConfiguredTerminal({ path: facts.path, state: env.getState() }),
     },
     {
       id: 'worktree.keepDays',

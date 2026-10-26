@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { EmptyLine, Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
+import { Button, EmptyLine, ICON_SIZE, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { storageScopeLabel } from '../../storageScopeLabel';

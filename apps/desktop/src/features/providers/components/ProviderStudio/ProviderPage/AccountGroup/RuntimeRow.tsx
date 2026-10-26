@@ -17,7 +17,7 @@ export const RuntimeRow = ({ info }: { readonly info: ProviderDisplayInfo }) => 
     }
   };
   return (
-    <div className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
+    <div className={cn(BAND_ROW_CLASS, 'gap-3 text-meta')}>
       <span className="w-28 shrink-0 text-muted-foreground">Runtime</span>
       <span className="min-w-0 flex-1 truncate text-foreground">
         {isReady

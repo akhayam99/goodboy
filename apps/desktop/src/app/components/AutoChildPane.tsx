@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, DrawerFrame, EmptyState, type DrawerBack } from '@goodboy/ui';
+import { Button, DrawerFrame, EmptyState } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, agentPlace, useAppStore, useTranscript } from '../../store';
 import { briefImagesOf } from '../../features/auto/child/briefImagesOf';
@@ -20,11 +20,10 @@ import { useExecutedRoutingOf } from '../../features/auto/useExecutedRoutingOf';
 type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
-  readonly back?: DrawerBack;
   readonly onClose: () => void;
 };
 
-export const AutoChildPane = ({ sessionId, agentId, back, onClose }: Props) => {
+export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const isActive = useAppStore((state) => state.currentSessionId === sessionId);
@@ -71,12 +70,7 @@ export const AutoChildPane = ({ sessionId, agentId, back, onClose }: Props) => {
 
   if (session === null || agent === null || card === null || tree === null) {
     return (
-      <DrawerFrame
-        title="Agent"
-        icon={CONCEPT_ICONS.agents}
-        onClose={onClose}
-        {...(back !== undefined && { back })}
-      >
+      <DrawerFrame title="Agent" icon={CONCEPT_ICONS.agents} onClose={onClose}>
         <EmptyState
           size="section"
           icon={CONCEPT_ICONS.agents}
@@ -93,7 +87,6 @@ export const AutoChildPane = ({ sessionId, agentId, back, onClose }: Props) => {
       icon={CONCEPT_ICONS.agents}
       scroll="self"
       onClose={onClose}
-      {...(back !== undefined && { back })}
       action={
         <Button
           variant="quiet"

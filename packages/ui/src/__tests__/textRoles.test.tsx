@@ -10,8 +10,8 @@ import { TEXT_ROLE } from '../textRoles';
 afterEach(cleanup);
 
 describe('ICON_SIZE', () => {
-  it('is the four-rung ladder and nothing else', () => {
-    expect(ICON_SIZE).toEqual({ mark: 10, row: 12, control: 14, hero: 18 });
+  it('is the five-rung ladder and nothing else', () => {
+    expect(ICON_SIZE).toEqual({ mark: 10, row: 12, control: 14, notice: 16, hero: 18 });
   });
 });
 

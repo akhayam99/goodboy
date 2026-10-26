@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Reveal, SelectableRow, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Reveal, SelectableRow } from '@goodboy/ui';
+
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 
 type Props = {

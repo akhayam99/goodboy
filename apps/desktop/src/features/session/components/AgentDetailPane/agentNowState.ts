@@ -1,5 +1,6 @@
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
 import { agentStatusWord } from '../../agentStatusWord';
+import { NEEDS_PERMISSION_WORD, effectiveAgentStatusOf } from '../../../workTreeModel/agentStateOf';
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 type AgentNowState = {
@@ -40,7 +41,7 @@ type StatusParams = {
 };
 
 export const effectiveAgentStatus = ({ agent, turnState }: StatusParams): Agent['status'] =>
-  turnState?.kind === 'running' ? 'running' : agent.status;
+  effectiveAgentStatusOf({ agent, turn: turnState });
 
 export const agentNowState = ({
   agent,
@@ -57,7 +58,7 @@ export const agentNowState = ({
   }
 
   if (turnState?.kind === 'blocked') {
-    return { label: 'Needs permission' };
+    return { label: NEEDS_PERMISSION_WORD };
   }
   if (turnState?.kind === 'error') {
     return { label: turnState.message };

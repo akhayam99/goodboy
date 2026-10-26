@@ -8,86 +8,62 @@ use crate::db::{Db, DbError};
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionRuleRow {
     pub id: String,
     pub scope: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "sessionId")]
     pub session_id: Option<String>,
-    #[serde(rename = "patternTool")]
     pub pattern_tool: String,
-    #[serde(rename = "patternArgsMatcher")]
     pub pattern_args_matcher: Option<String>,
     pub decision: String,
     pub priority: i64,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionRuleUpsertInput {
     pub id: Option<String>,
     pub scope: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "sessionId")]
     pub session_id: Option<String>,
-    #[serde(rename = "patternTool")]
     pub pattern_tool: String,
-    #[serde(rename = "patternArgsMatcher")]
     pub pattern_args_matcher: Option<String>,
     pub decision: String,
     pub priority: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionAuditRow {
     pub id: String,
-    #[serde(rename = "runId")]
     pub run_id: String,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "toolUseId")]
     pub tool_use_id: String,
-    #[serde(rename = "toolName")]
     pub tool_name: String,
-    #[serde(rename = "inputJson")]
     pub input_json: String,
     pub decision: String,
-    #[serde(rename = "ruleId")]
     pub rule_id: Option<String>,
-    #[serde(rename = "decidedBy")]
     pub decided_by: String,
-    #[serde(rename = "requestedAt")]
     pub requested_at: String,
-    #[serde(rename = "decidedAt")]
     pub decided_at: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionAuditInsertInput {
     pub id: Option<String>,
-    #[serde(rename = "runId")]
     pub run_id: String,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "toolUseId")]
     pub tool_use_id: String,
-    #[serde(rename = "toolName")]
     pub tool_name: String,
-    #[serde(rename = "inputJson")]
     pub input_json: String,
     pub decision: String,
-    #[serde(rename = "ruleId")]
     pub rule_id: Option<String>,
-    #[serde(rename = "decidedBy")]
     pub decided_by: String,
-    #[serde(rename = "requestedAt")]
     pub requested_at: String,
-    #[serde(rename = "decidedAt")]
     pub decided_at: String,
 }
 
@@ -353,23 +329,20 @@ pub async fn permission_audit_insert(
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AuditRetryRow {
     pub id: String,
-    #[serde(rename = "payloadJson")]
     pub payload_json: String,
     pub attempts: i64,
-    #[serde(rename = "lastError")]
     pub last_error: Option<String>,
-    #[serde(rename = "createdAt")]
     pub created_at: i64,
-    #[serde(rename = "updatedAt")]
     pub updated_at: i64,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AuditRetryEnqueueInput {
     pub id: String,
-    #[serde(rename = "payloadJson")]
     pub payload_json: String,
 }
 
@@ -379,10 +352,7 @@ pub async fn permission_audit_retry_enqueue(
     input: AuditRetryEnqueueInput,
 ) -> Result<(), PermissionError> {
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    let now_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64;
+    let now_ms = crate::util::now_ms();
 
     conn.execute(
         "INSERT INTO permission_audit_retry (id, payload_json, attempts, last_error, created_at, updated_at)
@@ -427,10 +397,7 @@ pub async fn permission_audit_retry_update(
     last_error: String,
 ) -> Result<(), PermissionError> {
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
-    let now_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64;
+    let now_ms = crate::util::now_ms();
 
     conn.execute(
         "UPDATE permission_audit_retry SET attempts = ?1, last_error = ?2, updated_at = ?3 WHERE id = ?4",
@@ -525,6 +492,9 @@ pub async fn permission_audit_list(
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
     Ok(list_audit(&conn, &session_ids)?)
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {

@@ -15,7 +15,6 @@
   "apps/desktop/src/features/integrations/slack/ThreadReactions/index.tsx": 1,
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FirstSessionStep.tsx": 1,
   "apps/desktop/src/features/reports/components/ReportStudio/ReportProvenanceRow.tsx": 1,
-  "apps/desktop/src/features/session/components/AgentStartFields.tsx": 1,
   "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeProvenanceRow.tsx": 1,
   "apps/desktop/src/shared/components/PromptField/PromptDropOverlay.tsx": 1,
   "apps/desktop/src/shared/components/Toast/ToastOverflowChip.tsx": 1,

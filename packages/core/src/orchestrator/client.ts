@@ -85,12 +85,13 @@ export class OrchestratorClient {
 
   async decide(input: OrchestratorInput): Promise<OrchestratorClientResult> {
     const userMessage = buildOrchestratorUserPrompt(input);
+    const runId = crypto.randomUUID();
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const timeout = new Promise<never>((_resolve, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new Error('orchestrator decision timed out')),
-        this.timeoutMs,
-      );
+      timeoutId = setTimeout(() => {
+        reject(new Error('orchestrator decision timed out'));
+        void Promise.resolve(this.invokeFn('planner_cancel', { runId })).catch(() => undefined);
+      }, this.timeoutMs);
     });
     let result: InvokeResult;
     try {
@@ -106,6 +107,7 @@ export class OrchestratorClient {
                 ? ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT
                 : ORCHESTRATOR_SYSTEM_PROMPT,
             toolsDisabled: true,
+            runId,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
           },

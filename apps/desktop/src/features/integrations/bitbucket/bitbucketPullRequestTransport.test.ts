@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { PullRequestPortError } from '@goodboy/core';
+import { PullRequestPortError, STALE_HEAD_MESSAGE, isPullRequestPortError } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestTransport } from './bitbucketPullRequestTransport';
 
@@ -58,7 +58,7 @@ describe('bitbucketPullRequestTransport', () => {
     mockInvoke.mockResolvedValue({});
     const transport = bitbucketPullRequestTransport({ repo, pullRequestId: 42 });
 
-    await transport.merge({ strategy: 'rebase_merge' });
+    await transport.merge({ strategy: 'rebase_merge', expectedHeadSha: null });
     await transport.decline();
 
     expect(mockInvoke.mock.calls.map((call) => call[0])).toEqual([
@@ -66,6 +66,34 @@ describe('bitbucketPullRequestTransport', () => {
       'bitbucket_decline_pull_request',
     ]);
     expect(mockInvoke.mock.calls[0]?.[1]).toMatchObject({ mergeStrategy: 'rebase_merge' });
+  });
+
+  it('hands the reviewed head to the merge command', async () => {
+    mockInvoke.mockResolvedValue({});
+    const transport = bitbucketPullRequestTransport({ repo, pullRequestId: 42 });
+
+    await transport.merge({ strategy: 'squash', expectedHeadSha: '6c20f48a9e1d' });
+
+    expect(mockInvoke.mock.calls[0]?.[1]).toMatchObject({ expectedHeadSha: '6c20f48a9e1d' });
+  });
+
+  it('names a moved head as stale_head with the refresh and review message', async () => {
+    mockInvoke.mockRejectedValue({
+      kind: 'stale_head',
+      message: 'the branch changed after it was reviewed: reviewed 6c20f48a9e1d, now 9f3e2d1c0b8a',
+    });
+    const transport = bitbucketPullRequestTransport({ repo, pullRequestId: 42 });
+
+    const error = await transport
+      .merge({ strategy: 'squash', expectedHeadSha: '6c20f48a9e1d' })
+      .then(
+        () => null,
+        (caught: unknown) => (isPullRequestPortError(caught) ? caught : null),
+      );
+
+    expect(error?.kind).toBe('stale_head');
+    expect(error?.message).toBe(STALE_HEAD_MESSAGE);
+    expect(error?.details).toContain('9f3e2d1c0b8a');
   });
 
   it('searches members of the workspace without the repository', async () => {
@@ -86,10 +114,13 @@ describe('bitbucketPullRequestTransport', () => {
     mockInvoke.mockRejectedValue({
       kind: 'http',
       message: 'http error 400: {"error":{"message":"Squash is not allowed"}}',
+      failureKind: 'failed',
+      status: 400,
+      detail: '{"error":{"message":"Squash is not allowed"}}',
     });
     const transport = bitbucketPullRequestTransport({ repo, pullRequestId: 42 });
 
-    const error = await transport.merge({ strategy: 'squash' }).then(
+    const error = await transport.merge({ strategy: 'squash', expectedHeadSha: null }).then(
       () => null,
       (caught: unknown) => caught,
     );

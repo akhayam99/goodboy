@@ -4,9 +4,11 @@ import { IconButton, ScrollFade } from '@goodboy/ui';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { isOverlayOpen } from '../../../../shared/keyboard/isOverlayOpen';
+import { isTerminalFocused } from '../../../../shared/keyboard/isTerminalFocused';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { PortChip } from '../PortChip';
 import { TerminalTabItem } from './TerminalTabItem';
+import { useTerminalTabShortcuts } from './useTerminalTabShortcuts';
 
 type RenameParams = {
   readonly tab: TerminalTab;
@@ -24,6 +26,7 @@ type Props = {
   readonly onRestart: (tab: TerminalTab) => void;
   readonly onRename: (params: RenameParams) => Promise<void>;
   readonly onNew: () => void;
+  readonly onCloseLastIdle?: () => void;
   readonly isShortcutEnabled?: boolean;
   readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
@@ -42,6 +45,7 @@ export const TerminalTabStrip = ({
   onRestart,
   onRename,
   onNew,
+  onCloseLastIdle,
   isShortcutEnabled = true,
   folderAction = null,
   actions = null,
@@ -68,11 +72,24 @@ export const TerminalTabStrip = ({
         setArmedId(tab.id);
         return;
       }
+      if (onCloseLastIdle !== undefined && tabs.length === 1 && tab.status !== 'exited') {
+        onCloseLastIdle();
+        return;
+      }
       onClose(tab);
     },
     isShortcutEnabled,
     { canDecline: true },
   );
+
+  useTerminalTabShortcuts({
+    tabs,
+    selectedId,
+    onSelect,
+    isEnabled: isShortcutEnabled,
+    isInside: () =>
+      isTerminalFocused() || listRef.current?.contains(document.activeElement) === true,
+  });
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {

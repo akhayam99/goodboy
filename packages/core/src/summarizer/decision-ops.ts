@@ -1,4 +1,5 @@
 import type { DecisionOp } from '../context/decisions-ledger';
+import { isRecord } from '@goodboy/types/helpers';
 
 export type SummarizerDecisionOp = Exclude<DecisionOp, { readonly kind: 'restore' }>;
 
@@ -25,9 +26,6 @@ const idOf = ({ value }: ValueParams): number | null => {
 
 const textOf = ({ value }: ValueParams): string | null =>
   typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type EntryOutcome =
   | { readonly kind: 'op'; readonly op: SummarizerDecisionOp }

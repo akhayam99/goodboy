@@ -14,6 +14,7 @@ import { useFileDropTarget } from '../useFileDropTarget';
 import { readDroppedAttachment } from '../../lib/readDroppedAttachment';
 import {
   ATTACHMENT_LIMIT,
+  ATTACHMENT_LIMIT_NOTICE,
   MAX_ATTACHMENT_BYTES,
   base64ToBlob,
   extFromMime,
@@ -60,8 +61,6 @@ const COMPOSER_DROP_NOTICES: AttachmentDropNotices = {
 };
 
 const MAX_ATTACHMENT_MB = MAX_ATTACHMENT_BYTES / (1024 * 1024);
-
-const ATTACHMENT_LIMIT_NOTICE = `Up to ${ATTACHMENT_LIMIT} files per message.`;
 
 const tooLargeNotice = ({ fileName }: NameParams): string =>
   `${fileName} is over ${MAX_ATTACHMENT_MB} MB.`;

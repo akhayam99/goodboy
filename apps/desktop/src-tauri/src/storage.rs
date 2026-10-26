@@ -6,41 +6,37 @@ use serde::{Deserialize, Serialize};
 pub mod other_tools;
 
 use crate::worktree::{
-    canonical_path, contained_worktrees_parent, git, in_progress_operation,
-    local_only_commit_count, parse_porcelain, parse_working_tree, GitWorkingTree, RunGit,
-    WorktreeError, WorktreeRemovalReason,
+    canonical_path, contained_worktrees_parent, folder_verdict, git, in_progress_operation,
+    local_only_commit_count, parse_porcelain, parse_working_tree, FolderVerdict, GitWorkingTree,
+    RunGit, WorktreeError, WorktreeRemovalReason,
 };
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FolderFactsRequest {
-    #[serde(rename = "repoRoot")]
     pub repo_root: String,
     pub path: String,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct WorktreeFolderFacts {
     pub path: String,
     pub exists: bool,
-    #[serde(rename = "isRegistered")]
     pub is_registered: bool,
     pub branch: Option<String>,
-    #[serde(rename = "lastCommitAt")]
     pub last_commit_at: Option<i64>,
-    #[serde(rename = "localOnlyCommits")]
     pub local_only_commits: Option<u32>,
-    #[serde(rename = "changedFiles")]
     pub changed_files: u32,
-    #[serde(rename = "changedSample")]
     pub changed_sample: Option<String>,
     pub reasons: Vec<WorktreeRemovalReason>,
+    pub verdict: FolderVerdict,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct DiskFree {
-    #[serde(rename = "freeBytes")]
     pub free_bytes: Option<u64>,
-    #[serde(rename = "totalBytes")]
     pub total_bytes: Option<u64>,
 }
 
@@ -58,6 +54,7 @@ fn empty_facts(
         local_only_commits: None,
         changed_files: 0,
         changed_sample: None,
+        verdict: folder_verdict(&reasons, 0, false),
         reasons,
     }
 }
@@ -167,6 +164,7 @@ pub(crate) fn folder_facts_with(
     let Some((_, branch)) = registered.iter().find(|(entry, _)| entry == &folder) else {
         reasons.push(WorktreeRemovalReason::NotRegistered);
         return WorktreeFolderFacts {
+            verdict: folder_verdict(&reasons, 0, false),
             reasons,
             ..empty_facts(path, true, Vec::new())
         };
@@ -182,6 +180,7 @@ pub(crate) fn folder_facts_with(
         local_only_commits: local_only(&folder),
         changed_files,
         changed_sample,
+        verdict: folder_verdict(&reasons, changed_files, true),
         reasons,
     }
 }
@@ -267,15 +266,12 @@ pub async fn disk_free(path: String) -> Result<DiskFree, WorktreeError> {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct AppDataUsage {
     pub folder: String,
-    #[serde(rename = "databaseBytes")]
     pub database_bytes: u64,
-    #[serde(rename = "snapshotBytes")]
     pub snapshot_bytes: u64,
-    #[serde(rename = "snapshotCount")]
     pub snapshot_count: u32,
-    #[serde(rename = "savedVersionsBytes")]
     pub saved_versions_bytes: u64,
 }
 
@@ -326,27 +322,12 @@ pub async fn app_data_usage(
 }
 
 fn reveal_blocking(path: &Path) -> Result<(), WorktreeError> {
-    if !path.exists() {
+    if !path.is_absolute() || !path.exists() {
         return Err(WorktreeError::RepoNotFound(
             path.to_string_lossy().into_owned(),
         ));
     }
-    #[cfg(target_os = "macos")]
-    let result = std::process::Command::new("open")
-        .arg("-R")
-        .arg(path)
-        .spawn();
-    #[cfg(target_os = "linux")]
-    let result = std::process::Command::new("xdg-open")
-        .arg(path.parent().unwrap_or(path))
-        .spawn();
-    #[cfg(target_os = "windows")]
-    let result = std::process::Command::new("explorer")
-        .arg(format!("/select,{}", path.to_string_lossy()))
-        .spawn();
-    result
-        .map(crate::proc::detach::detach)
-        .map_err(WorktreeError::Io)
+    crate::proc::open::reveal(path).map_err(WorktreeError::Io)
 }
 
 #[tauri::command]
@@ -357,12 +338,22 @@ pub async fn reveal_in_file_manager(path: String) -> Result<(), WorktreeError> {
 }
 
 #[cfg(test)]
+mod wire_shape;
+
+#[cfg(test)]
 mod tests {
     use super::{
         app_data_usage_blocking, disk_free_blocking, folder_facts_with, registered_worktrees,
+        reveal_blocking,
     };
-    use crate::worktree::{git, WorktreeRemovalReason};
+    use crate::worktree::{git, FolderVerdict, WorktreeRemovalReason};
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn reveal_refuses_an_option_shaped_or_relative_path() {
+        assert!(reveal_blocking(Path::new("-a Calculator")).is_err());
+        assert!(reveal_blocking(Path::new("relative/folder")).is_err());
+    }
 
     fn temp_root(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -435,6 +426,7 @@ mod tests {
         assert!(found.last_commit_at.unwrap() > 0);
         assert_eq!(found.local_only_commits, Some(2));
         assert!(found.reasons.is_empty());
+        assert_eq!(found.verdict, FolderVerdict::Safe);
     }
 
     #[test]
@@ -447,6 +439,7 @@ mod tests {
         let found = facts(&root, &folder, false);
 
         assert_eq!(found.changed_files, 2);
+        assert_eq!(found.verdict, FolderVerdict::Dirty);
         assert!(found.changed_sample.is_some());
         assert!(found
             .reasons
@@ -472,6 +465,7 @@ mod tests {
                 WorktreeRemovalReason::NotRegistered
             ]
         );
+        assert_eq!(found.verdict, FolderVerdict::Writing);
     }
 
     #[test]
@@ -487,6 +481,7 @@ mod tests {
             vec![WorktreeRemovalReason::OutsideWorktreeFolder]
         );
         assert!(!found.is_registered);
+        assert_eq!(found.verdict, FolderVerdict::Unavailable);
     }
 
     #[test]

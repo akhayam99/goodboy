@@ -34,8 +34,13 @@ const seed = ({ editors, browsers }: SeedParams) => {
   useAppStore.setState({
     detectedEditors: EDITORS.slice(0, editors),
     detectedBrowsers: BROWSERS.slice(0, browsers),
+    detectedTerminals: [
+      { id: 'terminal', label: 'Terminal.app', canRunCommand: true },
+      { id: 'iterm', label: 'iTerm', canRunCommand: true },
+    ],
     loadDetectedEditors: async () => undefined,
     loadDetectedBrowsers: async () => undefined,
+    loadDetectedTerminals: async () => undefined,
     loadSetting: async (key: string) => stored.get(key) ?? null,
     saveSetting: async (key: string, value: string) => {
       stored.set(key, value);
@@ -134,7 +139,7 @@ describe('AppGeneralSection open with', () => {
 
     expect(
       await screen.findByText(
-        'Arc is not installed any more. Links open with your system browser until you pick another.',
+        "Arc isn't installed any more. Links open with your system browser until you pick another.",
       ),
     ).toBeDefined();
 
@@ -166,10 +171,13 @@ describe('AppGeneralSection row rhythm', () => {
 
       const theme = rowOf('Theme');
       const editor = rowOf('Editor');
+      const terminal = rowOf('Terminal');
       const browser = rowOf('Browser');
 
-      expect(editor.nextElementSibling).toBe(browser);
+      expect(editor.nextElementSibling).toBe(terminal);
+      expect(terminal.nextElementSibling).toBe(browser);
       expect(shapeOf(editor)).toEqual(shapeOf(theme));
+      expect(shapeOf(terminal)).toEqual(shapeOf(theme));
       expect(shapeOf(browser)).toEqual(shapeOf(theme));
     },
   );

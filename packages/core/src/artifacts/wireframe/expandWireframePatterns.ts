@@ -1,6 +1,5 @@
 import { WIREFRAME_LIMITS, type WireframeIssue } from './schema';
-
-type RawRecord = Readonly<Record<string, unknown>>;
+import { isRecord } from '@goodboy/types/helpers';
 
 type Expansion =
   | Readonly<{ status: 'expanded'; value: unknown }>
@@ -15,9 +14,6 @@ type Ctx = {
 const PLACEHOLDER = /\{\{\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g;
 
 const USE_KEYS = new Set(['use', 'with', 'id', 'note', 'only', 'hidden']);
-
-const isRecord = (value: unknown): value is RawRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const fill = ({
   value,
@@ -55,18 +51,16 @@ const prefixIds = ({
   if (!isRecord(value)) {
     return value;
   }
-  const out: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(value)) {
+  const entries = Object.entries(value).map(([key, entry]): [string, unknown] => {
     if (key === 'id' && typeof entry === 'string') {
-      out[key] = isRoot ? prefix : `${prefix}-${entry}`;
-      continue;
+      return [key, isRoot ? prefix : `${prefix}-${entry}`];
     }
     if (key === 'children' || key === 'items') {
-      out[key] = prefixIds({ value: entry, prefix, isRoot: false });
-      continue;
+      return [key, prefixIds({ value: entry, prefix, isRoot: false })];
     }
-    out[key] = entry;
-  }
+    return [key, entry];
+  });
+  const out = Object.fromEntries(entries);
   if (isRoot && out['id'] === undefined) {
     out['id'] = prefix;
   }

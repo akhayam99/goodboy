@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Route } from 'lucide-react';
-import { Markdown, cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, Markdown, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { landingLiveKey } from '../../reveal/landingLiveKey';
@@ -8,7 +8,6 @@ import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoTint = tintClasses('info');
 
@@ -32,7 +31,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
       <TranscriptDisclosure
         tone="neutral"
         open={open}
-        bodyClassName="gap-2 text-label text-foreground"
+        bodyClassName="gap-2 text-meta text-foreground"
         header={
           <TranscriptRowHeader
             grouped
@@ -67,7 +66,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
               <TranscriptShell
                 tone="info"
                 variant="boxed"
-                className="min-w-0 text-label text-foreground"
+                className="min-w-0 text-meta text-foreground"
               >
                 <Markdown text={note} />
               </TranscriptShell>

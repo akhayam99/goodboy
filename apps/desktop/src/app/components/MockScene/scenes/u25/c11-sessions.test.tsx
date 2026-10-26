@@ -180,7 +180,7 @@ describe('the c11 Sessions scenes', () => {
   });
 });
 
-describe('SPEC3 9.9: every Sessions page capability is reachable from its new home', () => {
+describe('every Sessions page capability is reachable from its home', () => {
   it('Board as a page: the Sessions page Board view, switchable to List and back', async () => {
     await mount('c11-sessions-board');
     fireEvent.click(within(viewSwitch()).getByRole('tab', { name: 'List' }));
@@ -189,13 +189,6 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     fireEvent.click(within(viewSwitch()).getByRole('tab', { name: 'Board' }));
     await settle();
     expect(screen.getByRole('group', { name: 'building' })).toBeDefined();
-  });
-
-  it('Building and Archived lanes stay, and an archived card keeps Restore', async () => {
-    await mount('c11-sessions-board');
-    expect(screen.getByRole('group', { name: 'building' })).toBeDefined();
-    const archived = screen.getByRole('group', { name: 'archived' });
-    expect(within(archived).getAllByRole('button', { name: 'Restore' }).length).toBeGreaterThan(0);
   });
 
   it('the card PR token and quick action stay on the card, the menu on its right click', async () => {

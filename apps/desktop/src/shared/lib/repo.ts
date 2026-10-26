@@ -6,6 +6,7 @@ import type {
   BootstrapClearReport,
   BootstrapPrepared,
   BootstrapRecoverState,
+  BootstrapRollbackReport,
   ChildRepo,
   FastForwardResult,
   GitRepoCheck,
@@ -310,12 +311,19 @@ type BootstrapRollbackParams = {
   readonly projectPath: string;
   readonly worktreePath: string;
   readonly branch: string;
+  readonly expectedTip: string | null;
 };
 
 export const bootstrapRollback = async ({
   projectPath,
   worktreePath,
   branch,
-}: BootstrapRollbackParams): Promise<void> => {
-  return invokeCommand<void>('bootstrap_rollback', { projectPath, worktreePath, branch });
+  expectedTip,
+}: BootstrapRollbackParams): Promise<BootstrapRollbackReport> => {
+  return invokeCommand<BootstrapRollbackReport>('bootstrap_rollback', {
+    projectPath,
+    worktreePath,
+    branch,
+    expectedTip,
+  });
 };

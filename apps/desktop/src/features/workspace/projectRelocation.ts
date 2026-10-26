@@ -4,6 +4,7 @@ import type { ProjectId } from '@goodboy/types';
 export type ProjectRelocationResult = {
   readonly relocationId: string;
   readonly repairedGitLinks: boolean;
+  readonly repairError: string | null;
   readonly restoredSessionFolders: number;
 };
 

@@ -207,9 +207,9 @@ describe('sendTurn, provider failure fallback', () => {
   const USAGE_LIMIT_MESSAGE =
     "You've hit your usage limit. Upgrade to Pro (https://openai.com/chatgpt/pricing) or try again at 3:10 PM.";
 
-  it('cools the provider down and warns when a usage limit leaves no alternative', async () => {
+  it('cools the provider down and offers to continue when a usage limit leaves no alternative', async () => {
     setup();
-    useAppStore.setState({ providerCooldowns: {} });
+    useAppStore.setState({ providerCooldowns: {}, limitStops: {} });
     const scheduled: number[] = [];
     const timerSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation(((
       _handler: () => void,
@@ -238,9 +238,75 @@ describe('sendTurn, provider failure fallback', () => {
       severity: 'warning',
       title: 'Provider at its usage limit',
     });
-    expect(notification?.body).toContain('Claude is at its usage limit. Retrying at');
-    expect(scheduled.some((delay) => delay > 0)).toBe(true);
+    expect(notification?.body).toContain('Claude is at its usage limit. You can continue it at');
+    const resetAtMs = parseUsageLimitResetAt({ message: USAGE_LIMIT_MESSAGE }) ?? 0;
+    const untilReset = resetAtMs - Date.now();
+    expect(scheduled.some((delay) => Math.abs(delay - untilReset) < 5_000)).toBe(false);
+    const stops = Object.values(useAppStore.getState().limitStops);
+    expect(stops).toHaveLength(1);
+    expect(stops[0]).toMatchObject({
+      agentId: AGENT_A,
+      sessionId: SESSION_ID,
+      provider: 'anthropic',
+      resetAtMs,
+      isScheduled: false,
+    });
+    expect(stops[0]?.input.content).toBe('go');
     timerSpy.mockRestore();
+  });
+
+  it('offers no continue button when the turn moves to another provider', async () => {
+    setup();
+    useAppStore.setState({
+      providerCooldowns: {},
+      limitStops: {},
+      authResults: {
+        anthropic: { state: 'connected', identity: 'test' },
+        codex: { state: 'connected', identity: 'test' },
+      },
+      providers: [
+        ...connectedAnthropicState().providers,
+        {
+          id: 'codex',
+          binary: 'codex',
+          capabilities: { models: [] },
+          connection: 'connected',
+          version: '1.0.0',
+          identity: 'test',
+          label: 'Codex',
+          error: null,
+          docsUrl: '',
+        },
+      ],
+    });
+    storySpies.runTurn.mockImplementationOnce(async function* () {
+      throw new Error(USAGE_LIMIT_MESSAGE);
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(Object.values(useAppStore.getState().limitStops)).toHaveLength(0);
+  });
+
+  it('drops the offer when the person sends a new message to the same agent', async () => {
+    setup();
+    useAppStore.setState({ providerCooldowns: {}, limitStops: {} });
+    storySpies.runTurn.mockImplementationOnce(async function* () {
+      throw new Error(USAGE_LIMIT_MESSAGE);
+    });
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('usage limit');
+    expect(Object.values(useAppStore.getState().limitStops)).toHaveLength(1);
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'try something else' });
+
+    expect(Object.values(useAppStore.getState().limitStops)).toHaveLength(0);
   });
 
   it('falls back to a cooldown of half an hour when no reset time is given', async () => {

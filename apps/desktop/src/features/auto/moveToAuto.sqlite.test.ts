@@ -17,6 +17,7 @@ import {
   listAutoDelegations,
   listAutoOutbox,
   setSetting,
+  setWorkspaceValue,
   type Database,
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
@@ -36,7 +37,6 @@ import {
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import { invokeAgentList } from '../workflows/workflows';
-import { autoTreeLimitKey } from './autoTreeLimit';
 import { moveToAuto } from './moveToAuto';
 
 const SOURCE = brandId<AgentId>({ value: 'agent-source' });
@@ -128,7 +128,12 @@ describe('moving an agent to Auto from the app', () => {
   });
 
   it('sizes the cap from the limit stored for the workspace', async () => {
-    await setSetting(db, autoTreeLimitKey({ workspaceId: WORKSPACE }), '8');
+    await setWorkspaceValue({
+      db,
+      workspaceId: WORKSPACE,
+      key: 'auto.treeLimitUsd',
+      value: '8',
+    });
 
     const outcome = await move();
 
@@ -139,10 +144,15 @@ describe('moving an agent to Auto from the app', () => {
   });
 
   it('caps the new Auto at a smaller session budget only when that budget pauses', async () => {
-    await setSetting(db, autoTreeLimitKey({ workspaceId: WORKSPACE }), '8');
+    await setWorkspaceValue({ db, workspaceId: WORKSPACE, key: 'auto.treeLimitUsd', value: '8' });
     useAppStore.setState({
       sessionBudgets: {
-        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 3, onExceed: 'pause' },
+        [AUTO_SEED_SESSION]: {
+          sessionId: AUTO_SEED_SESSION,
+          softCapUsd: 3,
+          onExceed: 'pause',
+          warnRatio: 0.8,
+        },
       },
     });
 
@@ -155,10 +165,15 @@ describe('moving an agent to Auto from the app', () => {
   });
 
   it('leaves the new Auto at the workspace limit under a session budget that only warns', async () => {
-    await setSetting(db, autoTreeLimitKey({ workspaceId: WORKSPACE }), '8');
+    await setWorkspaceValue({ db, workspaceId: WORKSPACE, key: 'auto.treeLimitUsd', value: '8' });
     useAppStore.setState({
       sessionBudgets: {
-        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 3, onExceed: 'warn' },
+        [AUTO_SEED_SESSION]: {
+          sessionId: AUTO_SEED_SESSION,
+          softCapUsd: 3,
+          onExceed: 'warn',
+          warnRatio: 0.8,
+        },
       },
     });
 

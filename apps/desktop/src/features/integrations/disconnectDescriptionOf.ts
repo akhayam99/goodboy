@@ -1,4 +1,5 @@
-import { integrationLabel, type IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
+import { integrationLabel } from '../../shared/utils/integrationLabel';
 
 type Params = {
   readonly provider: Exclude<IntegrationGlyphProvider, 'github'>;

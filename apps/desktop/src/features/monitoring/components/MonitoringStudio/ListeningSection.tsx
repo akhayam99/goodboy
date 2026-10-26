@@ -25,7 +25,7 @@ export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) 
         aria-expanded={isOpen}
         onClick={() => setIsToggledOpen((wasOpen) => !wasOpen)}
         className={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1 text-left text-label text-muted-foreground',
+          'flex items-center gap-2 rounded-md px-2 py-1 text-left text-meta text-muted-foreground',
           ROW_INTERACTIVE,
         )}
       >

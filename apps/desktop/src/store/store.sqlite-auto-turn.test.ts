@@ -179,7 +179,7 @@ describe('a delegation turn through the real store', () => {
     expect(settled).toEqual([expect.objectContaining({ hasFailed: true, wasCancelled: false })]);
   });
 
-  it('leaves every other turn exactly as it was: no delivery, no tree, no planned run', async () => {
+  it('leaves every other turn exactly as it was: a hand delivery id, no tree, no planned run', async () => {
     await useAppStore.getState().sendTurn({
       sessionId: first.sessionId,
       agentId: first.agentId,
@@ -188,7 +188,7 @@ describe('a delegation turn through the real store', () => {
 
     const spawn = storySpies.runTurn.mock.calls[0]?.[0];
     expect(spawn).toBeDefined();
-    expect(spawn).not.toHaveProperty('deliveryId');
+    expect(spawn).toHaveProperty('deliveryId', expect.stringMatching(/^hand:/));
     expect(spawn).not.toHaveProperty('confinedRole');
   });
 

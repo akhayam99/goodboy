@@ -79,8 +79,8 @@ const paneToggles = (): ReadonlyArray<Element> =>
 
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
-describe('SPEC3 section 9 rows reachable from the session tools', () => {
-  it('9.4 Ask beside any page: the tools stay the same on the Overview and on Agents', async () => {
+describe('session tools rows stay reachable', () => {
+  it('Ask beside any page: the tools stay the same on the Overview and on Agents', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -95,16 +95,7 @@ describe('SPEC3 section 9 rows reachable from the session tools', () => {
     expect(paneToggles()).toEqual([]);
   });
 
-  it('9.3 Context drawer from the old chip: the Context row opens it', async () => {
-    const sessionId = seedSessionWithMounts({ useAppStore });
-    await mountSession({ sessionId });
-
-    await press(/^Context/);
-
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'context', sessionId });
-  });
-
-  it('9.8 session terminal: the Terminal toggle opens a shell on the worktree', async () => {
+  it('session terminal: the Terminal toggle opens a shell on the worktree', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     const mounts = (useAppStore.getState().sessionProjectMounts[sessionId] ?? []).map((mount) => ({
       ...mount,
@@ -126,7 +117,7 @@ describe('SPEC3 section 9 rows reachable from the session tools', () => {
     expect(mounts.map((mount) => mount.worktreePath)).toContain(tab?.cwd);
   });
 
-  it('9.8 Explore lens: the Explore toggle opens the files pane', async () => {
+  it('Explore lens: the Explore toggle opens the files pane', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -136,7 +127,7 @@ describe('SPEC3 section 9 rows reachable from the session tools', () => {
     expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
   });
 
-  it('9.8 Scripts lens: the Scripts row, the palette and the Open scripts toast reach the pane', async () => {
+  it('Scripts lens: the Scripts row, the palette and the Open scripts toast reach the pane', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 

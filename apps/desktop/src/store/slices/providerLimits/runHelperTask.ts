@@ -17,7 +17,7 @@ import type { GetFn, SetFn } from '../../slice-types';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 const HELPER_FAILURE_WINDOW_MS = 3 * 60 * 1000;
 

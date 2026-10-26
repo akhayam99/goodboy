@@ -11,7 +11,7 @@ export const BranchConflicts = ({ files, requestNoun }: Props) => (
     {files.length === 0 ? null : (
       <ul className="flex min-w-0 flex-col">
         {files.map((path) => (
-          <li key={path} className="flex min-h-7 min-w-0 items-center gap-3 text-label">
+          <li key={path} className="flex min-h-7 min-w-0 items-center gap-3 text-meta">
             <StatusDot tone="warning" size="sm" />
             <span className="min-w-0 flex-1 truncate text-code text-foreground">{path}</span>
           </li>

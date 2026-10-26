@@ -32,12 +32,20 @@ import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 import { projectById } from '../projects/projectIndex';
 
-const removePersistedDirectory = async (path: string): Promise<void> => {
+type RemovePersistedDirectoryParams = {
+  readonly sessionId: SessionId;
+  readonly path: string;
+};
+
+const removePersistedDirectory = async ({
+  sessionId,
+  path,
+}: RemovePersistedDirectoryParams): Promise<void> => {
   const parent = path.slice(0, path.lastIndexOf('/'));
   if (parent === '') {
     throw new Error(`session path has no parent: ${path}`);
   }
-  await removeSessionDirectory({ basePath: parent, path });
+  await removeSessionDirectory({ sessionId, path });
 };
 
 type RetainParams = {
@@ -136,7 +144,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       };
       if (project?.kind !== 'repo') {
         try {
-          await removePersistedDirectory(worktreePath);
+          await removePersistedDirectory({ sessionId, path: worktreePath });
           detached.push({ mountId: mount.id, diskState: 'removed' });
         } catch (error) {
           keep(error, 'present');

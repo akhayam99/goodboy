@@ -272,8 +272,8 @@ const monthStatus = ({ spentUsd, capUsd, thresholdPct }: StatusParams): Provider
   return {
     remainingUsd: capUsd - spentUsd,
     pct,
-    exceeded: spentUsd > capUsd,
-    overThreshold: spentUsd <= capUsd && pct >= thresholdPct,
+    exceeded: spentUsd >= capUsd,
+    overThreshold: spentUsd < capUsd && pct >= thresholdPct,
     spentUsd,
     capUsd,
     thresholdPct,
@@ -344,7 +344,7 @@ export const seedImpactScene = (): void => {
     budgetRules: BUDGET_RULES,
     budgetAlerts: BUDGET_ALERTS,
     sessionBudgets: {
-      [PAYMENTS_ID]: { sessionId: PAYMENTS_ID, softCapUsd: 120, onExceed: 'pause' },
+      [PAYMENTS_ID]: { sessionId: PAYMENTS_ID, softCapUsd: 120, onExceed: 'pause', warnRatio: 0.8 },
     },
     loadBudgetRules: noop,
     loadBudgetAlerts: noop,

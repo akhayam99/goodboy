@@ -1,18 +1,26 @@
-import type {
-  Agent,
-  AgentId,
-  IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
-  ProviderRunId,
-  PullRequestState,
-  ResolveThread,
-  Session,
-  SessionId,
-  TurnState,
-  WorkflowRun,
-  WorkflowRunId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IntegrationDraft,
+  type IntegrationDraftId,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type ProviderRunId,
+  type PullRequestState,
+  type ResolveThread,
+  type Session,
+  type SessionId,
+  type StepId,
+  type TurnState,
+  type Workflow,
+  type WorkflowId,
+  type WorkflowRun,
+  type WorkflowRunId,
 } from '@goodboy/types';
+import { aView } from '../../../../../features/auto/testing/autoViewFixtures';
+import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { useAppStore } from '../../../../../store';
 import type { SessionGithubState } from '../../../../../store/types';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
@@ -65,6 +73,35 @@ const heldRun = (slug: string): WorkflowRun => ({
   orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
   createdAt: at('2026-10-07T08:00:00.000Z'),
 });
+
+const WORKFLOW_ID = brandId<WorkflowId>({ value: 'mock-marks-workflow' });
+
+type StoppedRunParams = {
+  readonly slug: string;
+  readonly stop?: WorkflowRun['orchestrationStop'];
+};
+
+const stoppedRun = ({ slug, stop }: StoppedRunParams): WorkflowRun => ({
+  id: brandId<WorkflowRunId>({ value: `mock-marks-run-${slug}` }),
+  workflowId: WORKFLOW_ID,
+  ordinal: 1,
+  currentStep: 0,
+  autoRun: false,
+  triggerMode: 'manual',
+  executionMode: 'dynamic',
+  ...(stop === undefined ? {} : { orchestrationStop: stop }),
+  createdAt: at('2026-10-07T08:00:00.000Z'),
+});
+
+const WORKFLOW: Workflow = {
+  id: WORKFLOW_ID,
+  workspaceId: WORKSPACE_ID,
+  name: 'Release checklist',
+  description: 'Mock workflow for the session marks scene',
+  steps: [],
+  createdAt: at('2026-09-20T09:00:00.000Z'),
+  updatedAt: at('2026-09-20T09:00:00.000Z'),
+};
 
 const SESSIONS: ReadonlyArray<Session> = [
   sessionOf({
@@ -127,6 +164,44 @@ const SESSIONS: ReadonlyArray<Session> = [
     goal: 'Plan the Cascadia onboarding',
     openedAt: '2026-10-07T09:10:00.000Z',
     workflowRuns: [heldRun('plan')],
+  }),
+  sessionOf({
+    slug: 'runstop',
+    goal: 'Sync the Northwind ledger nightly',
+    openedAt: '2026-10-07T09:08:00.000Z',
+    workflowRuns: [
+      stoppedRun({
+        slug: 'runstop',
+        stop: { kind: 'failure', message: 'The orchestrator could not pick a next step.' },
+      }),
+    ],
+  }),
+  sessionOf({
+    slug: 'runlimit',
+    goal: 'Backfill the Cascadia invoices',
+    openedAt: '2026-10-07T09:07:00.000Z',
+    workflowRuns: [
+      stoppedRun({
+        slug: 'runlimit',
+        stop: { kind: 'budget', message: 'The run reached its spend limit.' },
+      }),
+    ],
+  }),
+  sessionOf({
+    slug: 'rungo',
+    goal: 'Roll out the notify-relay templates',
+    openedAt: '2026-10-07T09:06:00.000Z',
+    workflowRuns: [stoppedRun({ slug: 'rungo' })],
+  }),
+  sessionOf({
+    slug: 'autowait',
+    goal: 'Let Auto split the payments-api retries',
+    openedAt: '2026-10-07T09:04:00.000Z',
+  }),
+  sessionOf({
+    slug: 'slack',
+    goal: 'Answer the Acme thread about refunds',
+    openedAt: '2026-10-07T09:03:00.000Z',
   }),
   sessionOf({
     slug: 'reply',
@@ -283,7 +358,51 @@ const agentFor = ({
   ...(isUnread && { lastFinishedAt: at('2026-10-07T08:55:00.000Z') }),
 });
 
+type SlugParams = {
+  readonly slug: string;
+};
+
+const stepAgentFor = ({ slug }: SlugParams): Agent => ({
+  ...agentFor({ slug, status: 'completed', isUnread: false }),
+  workflowRunId: brandId<WorkflowRunId>({ value: `mock-marks-run-${slug}` }),
+  stepId: brandId<StepId>({ value: `mock-marks-step-${slug}` }),
+});
+
+const autoRootFor = ({ slug }: SlugParams): Agent => ({
+  ...agentFor({ slug, status: 'running', isUnread: false }),
+  name: 'Auto',
+  kind: 'auto',
+});
+
+const AUTO_VIEW: AutoTreeView = (() => {
+  const view = aView({ phase: 'blocked' });
+  return {
+    ...view,
+    tree: {
+      ...view.tree,
+      sessionId: idOf('autowait'),
+      rootAgentId: agentIdOf('autowait'),
+    },
+  };
+})();
+
+const SLACK_DRAFT: IntegrationDraft = {
+  id: brandId<IntegrationDraftId>({ value: 'mock-marks-draft-slack' }),
+  workspaceId: WORKSPACE_ID,
+  sessionId: idOf('slack'),
+  provider: 'slack',
+  verb: 'reply',
+  target: { channelId: 'C-acme-refunds', threadTs: '1760000000.000100' },
+  body: 'The refund webhook ships in the next release.',
+  status: 'pending',
+  createdAt: at('2026-10-07T09:00:00.000Z'),
+  updatedAt: at('2026-10-07T09:00:00.000Z'),
+  decidedAt: null,
+};
+
 const PHASE_RUNS: Readonly<Record<string, ReadonlyArray<Agent>>> = {
+  [idOf('rungo')]: [stepAgentFor({ slug: 'rungo' })],
+  [idOf('autowait')]: [autoRootFor({ slug: 'autowait' })],
   [idOf('tool')]: [agentFor({ slug: 'tool', status: 'running', isUnread: false })],
   [idOf('reply')]: [agentFor({ slug: 'reply', status: 'completed', isUnread: true })],
   [idOf('working')]: [agentFor({ slug: 'working', status: 'running', isUnread: false })],
@@ -321,7 +440,15 @@ export const seedSessionMarks = (): Session => {
     },
     sessionPhaseRuns: { ...state.sessionPhaseRuns, ...PHASE_RUNS },
     agentTurnState: { ...state.agentTurnState, ...BLOCKED },
-    sessionWorkflows: { ...state.sessionWorkflows, [idOf('plan')]: [] },
+    sessionWorkflows: {
+      ...state.sessionWorkflows,
+      [idOf('plan')]: [],
+      [idOf('runstop')]: [WORKFLOW],
+      [idOf('runlimit')]: [WORKFLOW],
+      [idOf('rungo')]: [WORKFLOW],
+    },
+    autoTreeViews: { ...state.autoTreeViews, [idOf('autowait')]: [AUTO_VIEW] },
+    sessionSlackDrafts: { ...state.sessionSlackDrafts, [idOf('slack')]: [SLACK_DRAFT] },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
         pageView: 'board',

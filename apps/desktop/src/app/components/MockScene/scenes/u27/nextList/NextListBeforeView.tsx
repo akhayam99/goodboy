@@ -28,7 +28,7 @@ export const NextListBeforeView = ({ cards, actionsFor, chipFor }: Props) => {
       <SectionHeader
         label="Next"
         headingLevel={2}
-        meta={<span className="text-label text-faint-foreground">{cards.length}</span>}
+        meta={<span className="text-meta text-faint-foreground">{cards.length}</span>}
         action={
           isFolded ? (
             <Button size="sm" variant="secondary" onClick={() => setIsExpanded(true)}>

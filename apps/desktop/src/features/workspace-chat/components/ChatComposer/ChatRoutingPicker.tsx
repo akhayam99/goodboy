@@ -1,13 +1,13 @@
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@goodboy/ui';
-import { CHAT_PROVIDER_IDS, CHAT_PROVIDER_REFUSAL, isChatProvider } from '@goodboy/types';
+import { CHAT_PROVIDER_IDS, isChatProvider } from '@goodboy/types';
+import { CHAT_PROVIDER_REFUSAL } from '../../chatProviderRefusal';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { savedRouteEffort } from '../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
-import { chatModelId, chatModelKey, shownChatEffort, type ChatRouting } from '../../chatRouting';
+import { shownChatEffort, type ChatRouting } from '../../../conversation/chatRouting';
+import { ConversationRoutingPicker } from '../../../conversation/ConversationRoutingPicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,29 +45,11 @@ export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => 
   const refusedLabels = refused.map((candidate) => PROVIDER_LABEL[candidate]).join(', ');
 
   return (
-    <RoutingPicker
-      variant="pill"
-      align="start"
+    <ConversationRoutingPicker
       ariaLabel={CHAT_ROUTING_LABEL}
-      connectedProviders={offeredProviders(connected, routing.provider)}
-      provider={routing.provider}
-      model={chatModelId({ provider: routing.provider, model: routing.model })}
-      effort={{ editable: true, value: shownChatEffort(routing) }}
-      disabled={false}
-      onChange={(route) => {
-        if (route.provider === '') {
-          return;
-        }
-        onChange({
-          provider: route.provider,
-          model: chatModelKey({ provider: route.provider, modelId: route.model }),
-          effort: savedRouteEffort({
-            route,
-            requested: shownChatEffort(routing),
-            wasSaved: routing.effort !== null,
-          }),
-        });
-      }}
+      routing={routing}
+      providers={offeredProviders(connected, routing.provider)}
+      onChange={onChange}
       footer={
         <div className="flex flex-col gap-1 px-3 py-2 text-meta text-muted-foreground">
           {refused.length === 0 ? null : (

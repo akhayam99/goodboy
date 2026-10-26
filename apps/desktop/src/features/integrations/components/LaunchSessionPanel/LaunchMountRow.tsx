@@ -1,6 +1,6 @@
 import type { ProjectId } from '@goodboy/types';
-import { Listbox, type ListboxOption } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LaunchMount } from '../../../inbox/launchMountFor';
 
 type Props = {

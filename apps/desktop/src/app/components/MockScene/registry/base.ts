@@ -134,7 +134,6 @@ import { ReviewModesScene } from '../scenes/audit/ReviewModesScene';
 import { CodeLayersScene } from '../scenes/CodeLayersScene';
 import { WorkflowStudioScene } from '../scenes/audit/WorkflowStudioScene';
 import { RulesTeleportScene } from '../scenes/audit/RulesTeleportScene';
-import { WorkflowBuilderModesScene } from '../scenes/audit/WorkflowBuilderModesScene';
 import { FormsAuditScene } from '../scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from '../scenes/audit/ImpactScopesScene';
 import { ExploreScene } from '../scenes/audit/ExploreScene';
@@ -216,12 +215,16 @@ const themed = ({ id, render }: ThemedParams): ReadonlyArray<readonly [string, C
 
 const NEW_WORKSPACE_STATES: ReadonlyArray<NewWorkspaceSceneState> = [
   'empty',
+  'likely',
   'repo',
   'many',
   'plain',
   'conflict',
   'denied',
   'scratch',
+  'clone',
+  'cloning',
+  'clone-auth',
 ];
 
 const WIZARD_STEP_STATES: ReadonlyArray<WizardSceneState> = [
@@ -447,7 +450,6 @@ export const BASE_SCENES = {
   'rules-no-limits': WorkflowStudioScene,
   'rules-teleport': RulesTeleportScene,
   'rail-ticket-ids': MountsScene,
-  'workflow-builder-modes': WorkflowBuilderModesScene,
   forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
   'impact-deleted': ImpactDeletedScene,

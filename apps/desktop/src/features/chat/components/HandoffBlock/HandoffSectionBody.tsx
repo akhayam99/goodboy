@@ -6,6 +6,7 @@ import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
 import { HandoffEarlierStepRow } from './HandoffEarlierStepRow';
 import { HandoffRawText } from './HandoffRawText';
 import { HandoffThreadRow } from './HandoffThreadRow';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 
 type Props = {
   readonly section: HandoffSection;
@@ -19,9 +20,7 @@ type OpenPlanParams = {
 };
 
 const openPlan = ({ sessionId, planId }: OpenPlanParams): void => {
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-plan-studio', { detail: { sessionId, planId } }),
-  );
+  dispatchWindowEvent({ name: 'goodboy:open-plan-studio', detail: { sessionId, planId } });
 };
 
 export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
@@ -33,7 +32,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
             <Markdown text={codeFenceMarkers({ text: section.bodyMd })} />
           </ClampedText>
           {doneWhen === null ? null : (
-            <div className="flex min-w-0 gap-2 text-label">
+            <div className="flex min-w-0 gap-2 text-meta">
               <span className="w-32 shrink-0 text-muted-foreground">Done when</span>
               <span className="min-w-0 flex-1 text-foreground">{doneWhen}</span>
             </div>
@@ -58,7 +57,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
       );
     case 'plan':
       return (
-        <div className="flex min-w-0 items-center gap-2 text-label">
+        <div className="flex min-w-0 items-center gap-2 text-meta">
           <span className="min-w-0 flex-1 truncate text-foreground">{section.summary}</span>
           {section.refs.flatMap((entry) =>
             entry.kind === 'plan' && sessionId !== null
@@ -106,7 +105,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
           {section.refs.flatMap((entry) =>
             entry.kind === 'rule'
               ? [
-                  <div key={entry.label} className="flex min-w-0 gap-2 text-label">
+                  <div key={entry.label} className="flex min-w-0 gap-2 text-meta">
                     <span className="w-32 shrink-0 text-muted-foreground">{entry.label}</span>
                     <span className="min-w-0 flex-1 text-foreground">{entry.detail}</span>
                   </div>,

@@ -8,7 +8,8 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { Button, cn, type DiffLayoutMode, EmptyState } from '@goodboy/ui';
+import { Button, cn, EmptyState } from '@goodboy/ui';
+import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useFileSides, type FileSidesLoader } from '../../hooks/useFileSides';
@@ -284,14 +285,14 @@ const DiffFileView = ({
           <CommentComposer
             label={`${comments.composerLabel} on ${rangeLabel(composer.anchor)}`}
             submitLabel={comments.submitLabel}
-            onSubmit={(body) => {
+            onSubmit={({ body }) => {
               comments.onSubmit(file.path, composer.anchor, body);
               closeLine(composer.anchor);
             }}
             onCancel={() => closeLine(composer.anchor)}
             onAskAgent={
               comments.onAskAgent
-                ? (note) => {
+                ? ({ body: note }) => {
                     comments.onAskAgent?.({
                       filePath: file.path,
                       anchor: composer.anchor,
@@ -412,7 +413,7 @@ const DiffFileView = ({
                 <CommentComposer
                   label={comments.fileComposer?.label ?? `${comments.composerLabel} on this file`}
                   submitLabel={comments.fileComposer?.submitLabel ?? comments.submitLabel}
-                  onSubmit={(body) => {
+                  onSubmit={({ body }) => {
                     comments.onSubmit(file.path, null, body);
                     closeFile();
                   }}

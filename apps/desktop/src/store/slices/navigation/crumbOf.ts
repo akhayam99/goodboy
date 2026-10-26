@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { LENS_ICON, LENS_LABEL } from '../../../features/session/lens-labels';
-import { sessionTitle } from '../../../features/session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { selectSessionById } from '../sessions/selectSessionById';
 import type { AppState } from '../../types';
 import type { Place } from './types';

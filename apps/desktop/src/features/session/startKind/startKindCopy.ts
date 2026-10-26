@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import type { StartShape } from '../../../store/slices/sessionDraft/state';
 
 type PickedKind = 'workflow' | 'agent';
@@ -38,8 +38,8 @@ export const START_KIND_COPY = {
   example: 'Example',
   notSure: 'Not sure? Describe it and Auto picks',
   pickYourself: 'Pick it yourself',
-  task: 'Task',
-  taskPlaceholder: 'Describe a task, or pick one from Tasks',
+  goal: NAMES.goal,
+  goalPlaceholder: 'Describe the goal, or pick one from Tasks',
   pickTask: 'Pick from Tasks',
   where: {
     label: 'Where',
@@ -69,7 +69,7 @@ export const START_KIND_COPY = {
   },
   starting: 'Starting',
   discard: 'Discard',
-  goalNeeded: 'Write the task first.',
+  goalNeeded: 'Write the goal first.',
   presetNeeded: 'Pick a preset first.',
   failed: "Couldn't start the run",
   lastStartFailed: "Couldn't read your last start",

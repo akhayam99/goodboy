@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Button, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from './conceptIcons';
+import { Button, cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;

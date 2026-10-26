@@ -2,7 +2,7 @@ import { updateSessionMountBranch } from '@goodboy/db';
 import type { IsoDateTime, SessionMountView } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { moveToRemoteCommits } from '../../../features/worktree/worktree';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';

@@ -78,9 +78,6 @@ beforeEach(async () => {
         identity: null,
         capabilities: {
           models: [],
-          supportsTools: true,
-          supportsStream: true,
-          supportsCheapModel: true,
         },
       },
     ],

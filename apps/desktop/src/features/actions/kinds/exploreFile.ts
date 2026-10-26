@@ -1,5 +1,6 @@
-import { Copy, ExternalLink, FolderOpen } from 'lucide-react';
+import { Copy, SquareArrowOutUpRight, FolderOpen } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 
@@ -23,7 +24,7 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
     {
       id: 'exploreFile.openInEditor',
       label: ({ facts }) => facts.openLabel ?? 'Open',
-      icon: ExternalLink,
+      icon: SquareArrowOutUpRight,
       group: 'open',
       slot: () => 'hover',
       description: ({ facts }) =>
@@ -38,6 +39,15 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
       group: 'open',
       when: ({ facts }) => facts.onOpenInFiles != null,
       run: ({ facts }) => facts.onOpenInFiles?.(),
+    },
+    {
+      id: 'exploreFile.openInTerminalApp',
+      label: 'Open in terminal app',
+      icon: CONCEPT_ICONS.terminal,
+      group: 'open',
+      when: ({ facts }) => facts.isDir,
+      run: ({ facts, env }) =>
+        openInConfiguredTerminal({ path: facts.absolutePath, state: env.getState() }),
     },
     {
       id: 'exploreFile.reveal',

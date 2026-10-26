@@ -6,6 +6,7 @@ import {
   type MountId,
   type Step,
   type StepId,
+  type TurnState,
   type Workflow,
   type WorkflowId,
   type WorkflowRun,
@@ -160,6 +161,7 @@ type ModelParams = {
   readonly autoTrees?: ReadonlyArray<AutoTreeView>;
   readonly decidingRunIds?: ReadonlySet<string>;
   readonly advanceByRunId?: ReadonlyMap<string, WorkflowAdvanceState>;
+  readonly turnByAgentId?: ReadonlyMap<string, TurnState>;
 };
 
 export const nowModelOf = ({
@@ -168,6 +170,7 @@ export const nowModelOf = ({
   autoTrees = [],
   decidingRunIds = new Set(),
   advanceByRunId = new Map(),
+  turnByAgentId = new Map(),
 }: ModelParams): SessionWorkModel => ({
   entries: buildTimelineGroups({
     sessionId: NOW_SESSION,
@@ -192,5 +195,6 @@ export const nowModelOf = ({
   resolveFactsByAgentId: new Map(),
   jobFactsByAgentId: new Map(),
   autoFactsByAgentId: new Map(),
+  turnByAgentId,
   isLoaded: true,
 });

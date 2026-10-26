@@ -24,6 +24,14 @@ const message = ({ id, name, minutes, body, handle }: MessageParams): Conversati
   status: 'sent',
 });
 
+const ROLLBACK_REPLIES: ReadonlyArray<string> = [
+  'Agreed. I will cover the failed ledger write first.',
+  'Add the retry case too: the second attempt must not post a credit twice.',
+  'Done for both. The tests sit next to settle/batch.ts.',
+  'They pass locally, CI is running them now.',
+  'Green on CI. Ready for another look.',
+];
+
 const MR_THREADS: ReadonlyArray<ConversationThread> = [
   {
     id: 'mr-1',
@@ -52,12 +60,12 @@ const MR_THREADS: ReadonlyArray<ConversationThread> = [
       minutes: 8,
       body: 'Can we get a test for the rollback path before merging?',
     }),
-    replies: [1, 2, 3, 4, 5].map((index) =>
+    replies: ROLLBACK_REPLIES.map((body, offset) =>
       message({
-        id: `mr-2r${index}`,
-        name: index % 2 === 0 ? 'Priya M.' : 'Sam K.',
-        minutes: 8 - index,
-        body: `Follow-up ${index} on the rollback test.`,
+        id: `mr-2r${offset + 1}`,
+        name: offset % 2 === 0 ? 'Sam K.' : 'Priya M.',
+        minutes: 7 - offset,
+        body,
       }),
     ),
     anchor: null,

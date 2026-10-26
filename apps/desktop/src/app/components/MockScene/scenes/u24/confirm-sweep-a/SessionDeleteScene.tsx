@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 const NAME = 'Speed up the payout export';
 
@@ -39,7 +38,7 @@ export const SessionDeleteScene = () => {
           />
         )}
       </header>
-      <p data-slot="session-facts" className="text-label text-muted-foreground">
+      <p data-slot="session-facts" className="text-meta text-muted-foreground">
         Northwind, ledger-core, 3 agents
       </p>
     </main>

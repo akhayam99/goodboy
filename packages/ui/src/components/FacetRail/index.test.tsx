@@ -2,7 +2,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { Inbox, Mail } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FacetKeyHints } from './FacetKeyHints';
 import { FacetRow } from './FacetRow';
 import { FacetSection } from './FacetSection';
 import { FacetRail } from '.';
@@ -46,24 +45,5 @@ describe('FacetRail', () => {
 
     expect(screen.getByText('Empty').className).toContain('text-faint-foreground');
     expect(screen.getByText('Picked').className).not.toContain('text-faint-foreground');
-  });
-
-  it('lists every key hint with its keys', () => {
-    render(
-      <FacetKeyHints
-        hints={[
-          { keys: ['j', 'k'], label: 'Next or previous' },
-          { keys: ['e'], label: 'Dismiss' },
-        ]}
-      />,
-    );
-
-    const group = screen.getByRole('group', { name: 'Keys' });
-    expect(within(group).getByText('Next or previous')).toBeDefined();
-    expect(screen.queryByRole('region')).toBeNull();
-    expect(screen.getByText('Next or previous')).toBeDefined();
-    expect(screen.getByText('j')).toBeDefined();
-    expect(screen.getByText('k')).toBeDefined();
-    expect(screen.getByText('Dismiss')).toBeDefined();
   });
 });

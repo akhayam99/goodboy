@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useOpenStopMountIds } from '../../hooks/useOpenStopMountIds';
-import type { Session, SessionEvent, SessionId } from '@goodboy/types';
+import type { Session, SessionEvent, SessionId, TurnState } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
@@ -21,6 +21,7 @@ import { useRebaseStatuses } from '../../../history/useRebaseStatuses';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../../workflows/useWorkflowAdvanceStates';
 import { useJobActivity } from '../../hooks/useJobActivity';
+import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 import { useResolveActivity } from '../../hooks/useResolveActivity';
 import {
   buildTimelineGroups,
@@ -48,6 +49,7 @@ export type SessionWorkModel = {
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
   readonly jobFactsByAgentId: ReadonlyMap<string, JobActivityFacts>;
   readonly autoFactsByAgentId: ReadonlyMap<string, AutoRowFacts>;
+  readonly turnByAgentId: ReadonlyMap<string, TurnState>;
   readonly isLoaded: boolean;
 };
 
@@ -151,6 +153,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   );
 
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
+  const turnByAgentId = useLiveAgentTurns({ agents });
 
   const unreadAgentIds = useMemo(() => {
     const unread = new Set<string>();
@@ -193,6 +196,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
           resolveFactsByAgentId: resolveActivity.factsByAgentId,
           jobFactsByAgentId: jobActivity.factsByAgentId,
           autoFactsByAgentId,
+          turnByAgentId,
         }).items,
         entries: model.entries,
         events,
@@ -212,6 +216,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
       openMountIds,
       resolveActivity,
       settledStopIds,
+      turnByAgentId,
       unreadAgentIds,
     ],
   );
@@ -229,6 +234,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
     resolveFactsByAgentId: resolveActivity.factsByAgentId,
     jobFactsByAgentId: jobActivity.factsByAgentId,
     autoFactsByAgentId,
+    turnByAgentId,
     isLoaded: hasLoadedEvents && hasLoadedAgents,
   };
 };

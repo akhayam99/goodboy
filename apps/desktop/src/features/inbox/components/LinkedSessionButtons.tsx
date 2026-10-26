@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../shared/components/OpenSessionButton';
 import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 
 type Props = {
   readonly sessionIds: ReadonlyArray<SessionId>;

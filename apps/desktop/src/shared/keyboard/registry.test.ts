@@ -13,35 +13,7 @@ import {
   shortcutRangeGlyphs,
 } from './registry';
 import type { ShortcutEntry } from './registry';
-
-const RESERVED_COMBOS: ReadonlyArray<string> = [
-  'cmd+KeyQ',
-  'cmd+KeyM',
-  'cmd+KeyH',
-  'cmd+alt+KeyH',
-  'cmd+alt+KeyD',
-  'cmd+shift+KeyQ',
-  'cmd+alt+shift+KeyQ',
-  'cmd+shift+Slash',
-  'cmd+shift+Digit3',
-  'cmd+shift+Digit4',
-  'cmd+shift+Digit5',
-  'cmd+Space',
-  'cmd+Tab',
-  'cmd+shift+Tab',
-  'cmd+Backquote',
-  'cmd+KeyA',
-  'cmd+KeyC',
-  'cmd+KeyV',
-  'cmd+KeyX',
-  'cmd+KeyZ',
-  'cmd+shift+KeyZ',
-  'cmd+Backspace',
-  'cmd+ArrowLeft',
-  'cmd+ArrowRight',
-  'cmd+ArrowUp',
-  'cmd+ArrowDown',
-];
+import { RESERVED_COMBOS } from './overrides/reservedCombos';
 
 const entries: ReadonlyArray<readonly [string, ShortcutEntry]> = Object.entries(SHORTCUTS);
 
@@ -114,6 +86,12 @@ describe('shortcut registry', () => {
         continue;
       }
       if (id === 'terminal.closeTab' && shadowed === 'app.close') {
+        continue;
+      }
+      if (
+        (id === 'terminal.prevTab' && shadowed === 'session.prev') ||
+        (id === 'terminal.nextTab' && shadowed === 'session.next')
+      ) {
         continue;
       }
       expect(shadowed, `${id} in ${entry.scope} shadows ${shadowed}`).toBeUndefined();
@@ -269,7 +247,7 @@ describe('shortcut registry', () => {
 
     expect(shortcutGlyphs('palette.open')).toBe('Ctrl+K');
     expect(shortcutGlyphs('session.delete')).toBe('Ctrl+Shift+Backspace');
-    expect(shortcutGlyphs('lens.agents')).toBe('Ctrl+Alt+A');
+    expect(shortcutGlyphs('lens.agents')).toBe('Ctrl+Shift+Alt+A');
     expect(shortcutGlyphs('workspace.1')).toBe('Ctrl+1');
     expect(formatCombo('cmd+BracketLeft')).toBe('Ctrl+[');
     expect(formatCombo('cmd+Enter')).toBe('Ctrl+Enter');
@@ -283,6 +261,31 @@ describe('shortcut registry', () => {
         /[⌘⌥⇧⌃⌫⎋↵␣]/,
       );
     }
+  });
+
+  it('gives every cmd+alt entry a Linux chord that is not a bare Ctrl+Alt', () => {
+    const withAlt = entries.filter(([, entry]) => entry.combo.split('+').includes('alt'));
+
+    expect(withAlt.length).toBeGreaterThan(0);
+    for (const [id, entry] of withAlt) {
+      const offMac = entry.offMacCombo;
+      expect(offMac, `${id} has no offMacCombo for ${entry.combo}`).toBeDefined();
+      const parts = (offMac ?? '').split('+');
+      expect(
+        parts.includes('ctrl') && parts.includes('shift') && parts.includes('alt'),
+        `${id} reads ${offMac} off macOS, which a Linux desktop may take`,
+      ).toBe(true);
+      expect(parts.at(-1), `${id} changes its key off macOS`).toBe(entry.combo.split('+').at(-1));
+    }
+  });
+
+  it('spells the Linux view chords with Ctrl, Shift and Alt together', () => {
+    platform.current = 'linux';
+    expect(shortcutGlyphs('lens.scripts')).toBe('Ctrl+Shift+Alt+S');
+    expect(shortcutGlyphs('lens.pr')).toBe('Ctrl+Shift+Alt+1');
+    expect(shortcutGlyphs('session.terminal')).toBe('Ctrl+Shift+Alt+T');
+    platform.current = 'darwin';
+    expect(shortcutGlyphs('lens.scripts')).toBe('⌘⌥S');
   });
 
   it('keeps each family contiguous inside one group', () => {
@@ -335,6 +338,6 @@ describe('shortcut registry', () => {
     platform.current = 'linux';
     expect(shortcutGlyphs('session.switcher')).toBe('Ctrl+Tab');
     expect(shortcutGlyphs('session.switcherBack')).toBe('Ctrl+Shift+Tab');
-    expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Alt+Down');
+    expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Shift+Alt+Down');
   });
 });

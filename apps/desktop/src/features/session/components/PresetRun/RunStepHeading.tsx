@@ -17,7 +17,7 @@ export const RunStepHeading = ({ agent, stepAgent, workflow }: Props) => {
   return (
     <span data-run-step-heading="" className="flex min-w-32 items-center gap-2">
       <AgentKindChip kind={kind} density="glyph" isDecorative />
-      <span className="min-w-0 truncate">
+      <span className="min-w-0 break-words">
         {stepHeadingOf({ agent, stepAgent, workflow, role })}
       </span>
     </span>

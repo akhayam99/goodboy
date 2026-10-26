@@ -47,13 +47,14 @@ describe('how often the repositories are checked', () => {
     expect(screen.getByRole('tab', { name: '15 min' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('keeps the old interval when the save fails', async () => {
+  it('keeps the old interval when the save fails and says nothing was changed', async () => {
+    const reportError = vi.fn(async () => undefined);
     useAppStore.setState({
       settings: { [SETTING_REPO_CHECK_MINUTES]: '30' },
       saveSetting: async () => {
         throw new Error('database is locked');
       },
-      reportError: async () => undefined,
+      reportError,
     });
     render(<RepoCheckBand />);
 
@@ -63,5 +64,11 @@ describe('how often the repositories are checked', () => {
       expect(screen.getByRole('tab', { name: 'Off' }).hasAttribute('disabled')).toBe(false),
     );
     expect(useAppStore.getState().settings[SETTING_REPO_CHECK_MINUTES]).toBe('30');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't save how often to check the repositories",
+        recovery: { clause: 'nothing-changed' },
+      }),
+    );
   });
 });

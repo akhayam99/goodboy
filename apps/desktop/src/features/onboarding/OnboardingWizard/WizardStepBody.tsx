@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { openSettings } from '../../settings/openSettings';
 import { applyDefaultAgent } from './defaultAgent';
-import { readyAgents } from './readyAgents';
-import { handOffFirstSession, startFirstScout } from './startFirstSession';
+import { handOffFirstSession } from './startFirstSession';
 import type { WizardContext } from './useOnboardingWizard';
 import type { WizardNav, WizardStepId } from './wizardSteps';
 import { AgentsStep } from './steps/AgentsStep';
@@ -24,15 +23,9 @@ type CreatedParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-const FALLBACK_AGENT: ProviderId = 'anthropic';
-
 export const WizardStepBody = ({ step, nav, wizard }: Props) => {
   const { workspace, projects, mode } = wizard;
   const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
-  const workspaceAgent = useAppStore((state) =>
-    workspace === null ? null : (state.workspaceOverrides[workspace.id]?.defaultProviderId ?? null),
-  );
-  const firstReady = useAppStore((state) => readyAgents({ providers: state.providers })[0] ?? null);
   const [stepError, setStepError] = useState<string | null>(null);
   const folder = projects[0] ?? null;
   const toTools = mode === 'single' ? null : () => nav.goTo({ step: 'tools' });
@@ -63,16 +56,7 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
         />
       );
     case 'workspace':
-      return (
-        <div className="flex flex-col gap-4">
-          <WorkspaceStep onCreated={onWorkspaceCreated} onBack={nav.goBack} />
-          {stepError === null ? null : (
-            <p role="alert" className="text-meta text-danger">
-              {stepError}
-            </p>
-          )}
-        </div>
-      );
+      return <WorkspaceStep onCreated={onWorkspaceCreated} onBack={nav.goBack} error={stepError} />;
     case 'tools':
       return workspace === null ? null : (
         <ToolsStep
@@ -91,20 +75,11 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
         <FirstSessionStep
           workspaceId={workspace.id}
           folder={folder}
-          agent={workspaceAgent ?? firstReady ?? FALLBACK_AGENT}
           mode={mode}
           isLocked={nav.isLocked}
           onBack={nav.goBack}
           onSkip={() => nav.finish()}
-          onStart={async (target) => {
-            nav.setBusy(true);
-            try {
-              await startFirstScout(target);
-              nav.finish();
-            } finally {
-              nav.setBusy(false);
-            }
-          }}
+          onStarted={() => nav.finish()}
           onDraft={(target) => nav.finish({ after: () => handOffFirstSession(target) })}
           onOpenTools={toTools}
         />

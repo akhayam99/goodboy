@@ -1,7 +1,6 @@
 import { PROVIDER_IDS } from '@goodboy/types';
-import { BrandGlyph } from '@goodboy/ui';
+import { BrandGlyph, ICON_SIZE } from '@goodboy/ui';
 import { PROVIDER_BRAND } from './provider-brand';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: string | null | undefined;
@@ -10,7 +9,12 @@ type Props = {
   readonly variant?: 'glyph' | 'icon';
 };
 
-export const ProviderIcon = ({ provider, size = 14, muted, variant = 'icon' }: Props) => {
+export const ProviderIcon = ({
+  provider,
+  size = ICON_SIZE.control,
+  muted,
+  variant = 'icon',
+}: Props) => {
   const id = PROVIDER_IDS.find((candidate) => candidate === provider);
   if (id == null && variant === 'glyph') {
     return null;

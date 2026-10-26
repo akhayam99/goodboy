@@ -2,7 +2,7 @@ import { UndoToastBridge } from '../UndoToastBridge';
 import { useEffect } from 'react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
-import { finish as finishOnboarding } from '../../../features/onboarding/onboarding-store';
+import { finish as finishOnboarding } from '../../../features/onboarding/onboardingSettings';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { useHideSceneToasts } from './useHideSceneToasts';
 import { useBackdropParam } from './useBackdropParam';

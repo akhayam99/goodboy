@@ -16,7 +16,6 @@ import type { OtherToolUsage } from '../../../../../features/storage/otherTools'
 import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from '../audit/SettingsFrame';
 import { SETTINGS_PROJECTS, SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
-import { BRAND_SESSION } from './canon';
 import { seedBrandSettings } from './settingsBrandSeed';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -195,6 +194,7 @@ const projectBranchOf = (spec: BranchSpec): ProjectBranch => ({
   lastCommitAt: Math.floor(daysAgoMs(spec.days) / 1000),
   location: spec.location,
   mergeState: spec.mergeState,
+  isSafeToDelete: spec.mergeState.kind !== 'not-merged',
   behind: 0,
 });
 
@@ -217,6 +217,7 @@ const scanOf = (projectId: ProjectId): BranchScanEntry => {
           lastCommitAt: Math.floor(daysAgoMs(0.2) / 1000),
           location: 'on-origin',
           mergeState: { kind: 'protected' },
+          isSafeToDelete: false,
           behind: 0,
         },
         ...specs.map(projectBranchOf),
@@ -292,6 +293,7 @@ const folderOf = (spec: FolderSpec, index: number): StorageFolder => {
       changedFiles: 0,
       changedSample: null,
       reasons: [],
+      verdict: 'safe',
     },
     keptAt: null,
     keptUntil: null,

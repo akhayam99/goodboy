@@ -57,7 +57,8 @@ Never gate on a raw number: `{count && <X/>}` renders the text `0` when `count` 
 
 A condition must name what it tests. `if (url)` treats `null`, `''`, and a real URL as one yes/no.
 
-- nullable (`T | null`, `T | undefined`): `x != null` / `x == null`
+- nullable (`T | null`, `T | undefined`): `x == null` / `x != null`, the one loose comparison `eqeqeq` allows; every other comparison is strict
+- nullable boolean (`boolean | null`, `boolean | undefined`): `x === true` / `x === false`
 - string with an empty sentinel: `x !== ''` / `x === ''`
 - number: `x > 0` / `x === 0`
 
@@ -71,7 +72,13 @@ if (!session) { ... }
 const pool = candidates.length ? candidates : fallback
 ```
 
-Booleans are the exception. A `boolean` already is the condition, so use it directly (`if (!isOpen)`, `isRunning && <X/>`). Never inflate one to `=== true`. One more exception: coalescing (using `??` or `||` to fall back to a default) at a data boundary, like `raw ?? []` or `value || null`. That normalizes a value rather than branching on it, so the pattern stays.
+Booleans are the exception. A `boolean` already is the condition, so use it directly (`if (!isOpen)`, `isRunning && <X/>`). Never inflate a plain `boolean` to `=== true`; a nullable one is not a condition, so it takes `=== true`. One more exception: coalescing (using `??` or `||` to fall back to a default) at a data boundary, like `raw ?? []` or `value || null`. That normalizes a value rather than branching on it, so the pattern stays.
+
+The lint enforces this in a second pass (`pnpm run lint:ts:strict`, `eslint.strict.config.mjs`): `@typescript-eslint/strict-boolean-expressions` refusing a bare string, number, nullable object, nullable string, nullable number and nullable boolean as a condition, and `eqeqeq` with `null: 'ignore'`. Its debt sits in `eslint-suppressions-strict.json`, which only falls, like the first one.
+
+## Braces on every if
+
+The body of an `if` is always a block, whatever the statement: `if (a) ids.add(a);` is wrong. `if-without-braces` counts it from the syntax tree.
 
 ## Guard the short branch
 

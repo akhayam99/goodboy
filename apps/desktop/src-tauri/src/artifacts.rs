@@ -16,9 +16,22 @@ pub enum ArtifactExportError {
     Destination(String),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Executable(#[from] crate::util::open_guard::ExecutableRefused),
 }
 
 crate::util::impl_error_serialize!(ArtifactExportError);
+
+impl From<crate::proc::open::OpenError> for ArtifactExportError {
+    fn from(error: crate::proc::open::OpenError) -> Self {
+        match error {
+            crate::proc::open::OpenError::Refused(refused) => {
+                ArtifactExportError::Executable(refused)
+            }
+            crate::proc::open::OpenError::Io(io) => ArtifactExportError::Io(io),
+        }
+    }
+}
 
 impl ArtifactExportError {
     fn kind(&self) -> &'static str {
@@ -27,6 +40,7 @@ impl ArtifactExportError {
             ArtifactExportError::TooLarge => "too_large",
             ArtifactExportError::Destination(_) => "destination",
             ArtifactExportError::Io(_) => "io",
+            ArtifactExportError::Executable(_) => "executable_refused",
         }
     }
 }

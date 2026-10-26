@@ -178,7 +178,7 @@ const TASK: IssueCandidate = {
 };
 
 const typeGoal = (text: string): void => {
-  fireEvent.change(textBox('Task'), { target: { value: text } });
+  fireEvent.change(textBox('Goal'), { target: { value: text } });
 };
 
 type ChooseParams = {
@@ -229,9 +229,9 @@ describe('New session page', () => {
   it('opens on the task first, with Tasks and Where in its bottom row and no Folders field', async () => {
     await openPage();
 
-    const task = within(screen.getByRole('region', { name: 'Task' }));
-    expect(textBox('Task').placeholder).toBe('Describe a task, or pick one from Tasks');
-    expect(task.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+    const task = within(screen.getByRole('region', { name: 'Goal' }));
+    expect(textBox('Goal').placeholder).toBe('Describe the goal, or pick one from Tasks');
+    task.getByRole('combobox', { name: 'Pick from Tasks' });
     expect(task.getByRole('combobox', { name: 'Where' }).textContent).toContain('Auto picks');
     expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
@@ -290,13 +290,11 @@ describe('New session page', () => {
 
     expect(screen.queryByRole('tablist', { name: KINDS })).toBeNull();
     const auto = within(screen.getByRole('region', { name: 'Start a run' }));
-    expect(
-      auto.getByText('Auto picks a workflow or an agent. Type ~preset or @role.'),
-    ).toBeDefined();
-    expect(textBox('Task')).toBeDefined();
+    auto.getByText('Auto picks a workflow or an agent. Type ~preset or @role.');
+    expect(textBox('Goal')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Pick it yourself' }));
     await settle();
-    expect(screen.getByRole('tablist', { name: KINDS })).toBeDefined();
+    screen.getByRole('tablist', { name: KINDS });
     expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
   });
 
@@ -353,10 +351,10 @@ describe('New session page', () => {
     await openPage();
     await autoPicks();
 
-    expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
+    screen.getByRole('button', { name: /start blank/i });
     expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
-    fireEvent.change(textBox('Task'), { target: { value: GOAL } });
+    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
 
     expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
@@ -366,7 +364,7 @@ describe('New session page', () => {
     await openPage();
     await autoPicks();
 
-    fireEvent.change(textBox('Task'), { target: { value: GOAL } });
+    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(startButton());
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -386,7 +384,7 @@ describe('New session page', () => {
     await openPage();
     await autoPicks();
 
-    fireEvent.change(textBox('Task'), { target: { value: `~Scout, plan, build ${GOAL}` } });
+    fireEvent.change(textBox('Goal'), { target: { value: `~Scout, plan, build ${GOAL}` } });
     fireEvent.click(startButton());
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
@@ -432,10 +430,10 @@ describe('New session page', () => {
     await openPage();
     await pick({ list: KINDS, name: /^Workflow/ });
     await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
-    expect(screen.getByRole('button', { name: /^Asks you: Every step, / })).toBeDefined();
+    screen.getByRole('button', { name: /^Asks you: Every step, / });
 
     await pick({ list: 'Which workflow?', name: /^Preset/ });
-    expect(screen.getByRole('button', { name: /^Asks you: Every step, / })).toBeDefined();
+    screen.getByRole('button', { name: /^Asks you: Every step, / });
 
     await pick({ list: KINDS, name: /^Agent/ });
     await pick({ list: 'Which agent?', name: /^Auto agent/ });
@@ -476,7 +474,7 @@ describe('New session page', () => {
     await settle();
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
     await settle();
-    expect(screen.getByRole('button', { name: 'Asks you: Never, this run' })).toBeDefined();
+    screen.getByRole('button', { name: 'Asks you: Never, this run' });
     typeGoal(GOAL);
     fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
@@ -501,7 +499,7 @@ describe('New session page', () => {
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start workflow' }).disabled).toBe(
       true,
     );
-    expect(screen.getByText('Pick a preset first.')).toBeDefined();
+    screen.getByText('Pick a preset first.');
     await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
     const steps = screen.getByRole('list', { name: 'Preset steps' });
     expect(within(steps).getAllByRole('listitem')).toHaveLength(1);
@@ -579,7 +577,7 @@ describe('New session page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     expect(await screen.findByText('The folder is locked by another window')).toBeDefined();
-    expect(textBox('Task').value).toBe(GOAL);
+    expect(textBox('Goal').value).toBe(GOAL);
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
   });
@@ -604,7 +602,7 @@ describe('New session page', () => {
     await renderPage();
 
     expect(screen.queryByText('Late failure')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Start Auto agent' })).toBeDefined();
+    screen.getByRole('button', { name: 'Start Auto agent' });
   });
 
   it('attaches a task on any kind, starts on it, and Remove takes it off', async () => {
@@ -613,7 +611,7 @@ describe('New session page', () => {
     await openPage();
     await pick({ list: KINDS, name: /^Agent/ });
     await pick({ list: 'Which agent?', name: /^Auto agent/ });
-    expect(screen.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+    screen.getByRole('combobox', { name: 'Pick from Tasks' });
 
     act(() =>
       useAppStore.getState().patchSessionDraft({
@@ -640,7 +638,7 @@ describe('New session page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove NW-88' }));
     await settle();
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.pickedIssues).toEqual([]);
-    expect(screen.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+    screen.getByRole('combobox', { name: 'Pick from Tasks' });
   });
 
   it('asks on Esc with a goal in the form, and Discard clears the draft', async () => {
@@ -651,7 +649,7 @@ describe('New session page', () => {
 
     fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
     await settle();
-    expect(screen.getByText('Keep this draft?')).toBeDefined();
+    screen.getByText('Keep this draft?');
 
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     await settle();

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
@@ -83,7 +82,7 @@ pub(crate) fn entry_for(tag: &SpawnTag, pid: u32, context: LedgerContext) -> Led
         session_id: context.session_id,
         mount_path: context.mount_path,
         cwd: context.cwd,
-        started_at: now_millis(),
+        started_at: crate::util::now_millis_u64(),
     }
 }
 
@@ -98,13 +97,6 @@ pub(crate) fn forget(spawn_id: &str) {
 #[cfg(test)]
 pub(crate) fn holds(spawn_id: &str) -> bool {
     global().list().iter().any(|row| row.spawn_id == spawn_id)
-}
-
-fn now_millis() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
 }
 
 #[tauri::command]

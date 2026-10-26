@@ -1,4 +1,4 @@
-import { splitLead } from '../artifacts/components/ArtifactDocument/splitLead';
+import { splitLead } from '../../shared/utils/splitLead';
 
 export type PlanBody = Readonly<{
   lead: string;

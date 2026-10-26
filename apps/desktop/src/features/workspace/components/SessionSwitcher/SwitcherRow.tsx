@@ -1,9 +1,7 @@
 import { SelectableRow } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useSessionSummary } from '../../hooks/useSessionSummary';
-import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
-import { sessionNodeOf } from '../../../session/sessionNode';
+import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { StateNode } from '../../../../shared/components/StateNode';
 
 type Props = {
@@ -13,9 +11,7 @@ type Props = {
 };
 
 export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
-  const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({ info: summary.info, isArchived: false });
-  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
+  const { summary, node, keys, title } = useSessionRowFacts({ session });
   return (
     <SelectableRow
       role="option"
@@ -23,7 +19,7 @@ export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
       ariaSelected={isSelected}
       tabIndex={-1}
       onClick={onChoose}
-      className="h-9 items-center gap-3 px-3 text-label"
+      className="h-9 items-center gap-3 px-3 text-meta"
     >
       <StateNode node={node} />
       <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />

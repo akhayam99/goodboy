@@ -23,7 +23,7 @@ import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { selectResolution } from '../models/selectResolution';
+import { selectResolution } from '../../runtime/models/selectResolution';
 import { usableArtifactProviders } from './usableArtifactProviders';
 
 const REPORT_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';

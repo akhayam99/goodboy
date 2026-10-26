@@ -1,5 +1,5 @@
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import type { ActionControls } from '../../../actions/useActionControls';
 
 type Props = {

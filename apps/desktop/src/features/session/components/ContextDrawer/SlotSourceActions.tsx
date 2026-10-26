@@ -1,6 +1,5 @@
 import { Code } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly isLocked: boolean;

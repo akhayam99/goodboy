@@ -24,6 +24,7 @@ import type {
   DoneStepLine,
 } from './doneTypes';
 import { firstSentenceOf } from './firstSentenceOf';
+import { doneFilesOf } from './doneFilesOf';
 import { fullTextOf } from './fullTextOf';
 import { isRunEntryFinished, outcomeLineOf } from './outcomeLineOf';
 
@@ -53,6 +54,7 @@ const EMPTY_DETAIL: DoneDetail = {
   steps: NO_STEPS,
   auto: null,
   branches: NO_BRANCHES,
+  files: null,
 };
 
 type ValueParams = {
@@ -191,6 +193,7 @@ const agentRowOf = ({
     at,
     mountId: entry.agent.mountId ?? null,
     retryAgentId: null,
+    agentIds: [entry.agent.id],
     detail: {
       ...ran,
       duration: agentDurationOf({ agent: entry.agent, kind: entry.agentKind, source }),
@@ -202,6 +205,7 @@ const agentRowOf = ({
       steps: NO_STEPS,
       auto,
       branches: NO_BRANCHES,
+      files: doneFilesOf({ agentIds: [entry.agent.id], byAgentId: model.turnFiles }),
     },
   };
 };
@@ -266,6 +270,7 @@ const runRowOf = ({ entry, slice, steps, context }: RunRowParams): DoneRowModel 
     at,
     mountId: mountOfSteps({ steps: shown }),
     retryAgentId: null,
+    agentIds: shown.map((step) => step.agent.id),
     detail: {
       model: summary?.name ?? null,
       effort: null,
@@ -277,6 +282,10 @@ const runRowOf = ({ entry, slice, steps, context }: RunRowParams): DoneRowModel 
         .map((step) => stepLineOf({ step, source })),
       auto: null,
       branches: NO_BRANCHES,
+      files: doneFilesOf({
+        agentIds: shown.map((step) => step.agent.id),
+        byAgentId: model.turnFiles,
+      }),
     },
   };
 };
@@ -336,6 +345,7 @@ const eventRowOf = ({
     at: entry.event.createdAt,
     mountId: entry.event.payload?.mountId ?? null,
     retryAgentId: null,
+    agentIds: [],
     detail: EMPTY_DETAIL,
   };
 };
@@ -373,6 +383,7 @@ const stoppedChildRowsOf = ({ model }: ModelParams): ReadonlyArray<DoneRowModel>
             at: new Date(child.finishedAt).toISOString(),
             mountId: child.mountId,
             retryAgentId: child.agentId,
+            agentIds: [],
             detail: EMPTY_DETAIL,
           },
         ];

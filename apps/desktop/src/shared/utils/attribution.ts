@@ -1,6 +1,6 @@
 import type { OverrideSettings } from '@goodboy/types';
 
-export const ATTRIBUTION_TEXT = 'Written by Goodboy';
+const ATTRIBUTION_TEXT = 'Written by Goodboy';
 
 type AttributionSyntax = 'markdown' | 'mrkdwn';
 

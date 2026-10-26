@@ -1,7 +1,7 @@
 import type { Agent, AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { ListGrid, ListGridGroup } from '@goodboy/ui';
 import { useNow } from '../../../../../../shared/hooks/useNow';
-import { NAMES } from '../../../../../../shared/names';
+import { NAMES } from '../../../../../../shared/utils/names';
 import type { AgentKind } from '../../../../agent-kind';
 import { questionMetaOf } from '../questionMetaOf';
 import type { QuestionGroups, QuestionRow } from '../questionsLensModel';

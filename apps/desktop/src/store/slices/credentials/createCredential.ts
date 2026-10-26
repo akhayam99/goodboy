@@ -6,7 +6,7 @@ import { credentialSecretKey, maskApiKey } from './credentialKey';
 import type { SetFn } from './types';
 
 type ApiKeyCheck = {
-  readonly valid: boolean;
+  readonly status: 'valid' | 'rejected' | 'unchecked';
   readonly message: string | null;
 };
 
@@ -20,7 +20,7 @@ export const createCredential = (set: SetFn) => {
       providerId,
       apiKey: apiKey.trim(),
     });
-    if (!check.valid) {
+    if (check.status === 'rejected') {
       throw new Error(check.message ?? 'API key validation failed');
     }
     const credential: ProviderCredential = {
@@ -30,11 +30,21 @@ export const createCredential = (set: SetFn) => {
       hint: maskApiKey(apiKey),
       createdAt: new Date().toISOString() as IsoDateTime,
     };
+    const secretKey = credentialSecretKey(credential.id);
     await invokeCommand('secret_set', {
-      key: credentialSecretKey(credential.id),
+      key: secretKey,
       value: apiKey.trim(),
     });
-    await insertProviderCredential(tauriDatabase, credential);
+    try {
+      await insertProviderCredential(tauriDatabase, credential);
+    } catch (error) {
+      try {
+        await invokeCommand('secret_delete', { key: secretKey });
+      } catch {
+        throw new Error('the key was saved to the password store but could not be removed again');
+      }
+      throw error;
+    }
     set((state) => ({ providerCredentials: [...state.providerCredentials, credential] }));
     return credential;
   };

@@ -1,4 +1,10 @@
-import type { IsoDateTime, OverrideSettings, Workspace, WorkspaceId } from '@goodboy/types';
+import {
+  NEW_WORKSPACE_PERMISSION_MODE,
+  type IsoDateTime,
+  type OverrideSettings,
+  type Workspace,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { seedWorkflowLibrary } from '@goodboy/core';
 import { insertWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -44,6 +50,7 @@ export const createWorkspace = (set: SetFn, get: GetFn) => {
       name: trimmed,
       slug: workspaceSlug({ name: trimmed, id: workspaceId }),
       overrides: EMPTY_OVERRIDES,
+      defaultPermissionMode: NEW_WORKSPACE_PERMISSION_MODE,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,

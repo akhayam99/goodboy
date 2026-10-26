@@ -72,7 +72,7 @@ describe('TranscriptCard', () => {
         }}
       />,
     );
-    expect(screen.getByText('The turn stopped')).toBeTruthy();
+    expect(screen.getByText('The turn failed')).toBeTruthy();
     expect(screen.queryByText(longMessage)).toBeNull();
     const disclosure = screen.getByRole('button', { name: 'Details' });
     expect(disclosure.getAttribute('aria-expanded')).toBe('false');

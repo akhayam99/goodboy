@@ -1,5 +1,6 @@
 import { Check, Minus, Shield } from 'lucide-react';
 import { cn } from '../../cn';
+import { ICON_STROKE } from '../../iconSize';
 import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';
 
 type Props = {
@@ -88,7 +89,7 @@ export const WorkNodeCenter = ({
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
     case 'approved':
-      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
+      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
     case 'merging':
       return (
         <svg viewBox="0 0 20 20" className="size-full fill-primary">
@@ -98,7 +99,7 @@ export const WorkNodeCenter = ({
     case 'done':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
     case 'finished':
-      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
+      return <Check size={glyphSize} strokeWidth={ICON_STROKE.check} className="text-on-tone" />;
     case 'closed':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':

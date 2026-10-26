@@ -108,7 +108,7 @@ export const RoleRow = ({
           <span className="w-32 shrink-0 truncate text-body text-foreground">{label}</span>
           <TruncatedText
             className={cn(
-              'min-w-0 flex-1 truncate text-label',
+              'min-w-0 flex-1 truncate text-meta',
               isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >

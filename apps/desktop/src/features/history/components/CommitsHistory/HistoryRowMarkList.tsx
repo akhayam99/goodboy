@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, GitMerge, Minus, PenLine } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { quoted } from '../../historyEditText';
 import type { HistoryRowMark } from '../../historyRowMarks';
 import { HistoryChangeMark } from './HistoryChangeMark';

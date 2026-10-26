@@ -7,6 +7,7 @@ export type ListGridColumn = {
   readonly tone?: 'label' | 'secondary' | 'hint';
   readonly shouldHideWhenEmpty?: boolean;
   readonly isShrinkable?: boolean;
+  readonly canSpanEmpty?: boolean;
 };
 
 type Params = {

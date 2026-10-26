@@ -46,7 +46,7 @@ export const FixRunStatusLine = ({
     <p
       data-testid="fix-run-status"
       aria-live="polite"
-      className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
+      className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
     >
       {status === 'ended' ? (
         <StatusDot tone="success" size="sm" />

@@ -1,6 +1,6 @@
 import type { ShortcutId } from '../../shared/keyboard/registry';
-import { NAMES } from '../../shared/names';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import { NAMES } from '../../shared/utils/names';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 
 export type BranchTabEntry = {

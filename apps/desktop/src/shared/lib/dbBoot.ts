@@ -16,6 +16,12 @@ import { NewerDatabaseError } from './newerDatabase';
 const migrationSnapshotStorage: MigrationSnapshotStorage = {
   list: async () => invokeDb<ReadonlyArray<string>>('db_list_migration_snapshots', {}),
   remove: async ({ path }) => invokeDb('db_remove_migration_snapshot', { path }),
+  secure: async () => invokeDb('db_secure_files', {}),
+  snapshot: async ({ currentVersion, nextVersion, stamp }) => {
+    await invokeDb('db_create_migration_snapshot', {
+      request: { currentVersion, nextVersion, stamp },
+    });
+  },
 };
 
 type RunGuardedMigrationsParams = {

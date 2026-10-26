@@ -24,7 +24,9 @@ const PR_KINDS: ReadonlySet<ActionCardModel['kind']> = new Set([
 
 const OWN_KINDS: ReadonlySet<ActionCardModel['kind']> = new Set([
   'rebase-project',
+  'move-tracker-item',
   'close-worktree',
+  'archive-session',
 ]);
 
 const mountSubjectOf = ({ mountId, hasPr }: MountParams): NextSubject => ({

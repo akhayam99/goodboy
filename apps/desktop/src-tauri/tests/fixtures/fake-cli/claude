@@ -26,6 +26,7 @@ case "$1" in
     esac
     ;;
   *)
+    fake_record_stdin "$@"
     fake_turn claude.jsonl "$@"
     ;;
 esac

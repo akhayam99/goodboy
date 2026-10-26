@@ -4,7 +4,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useHistoryRunFlow } from '../CommitsHistory/useHistoryRunFlow';
 import { useHistoryPlan } from '../CommitsHistory/useHistoryPlan';
-import { useHistoryVersions } from '../../useHistoryVersions';
+import { useHistoryVersions } from '../../hooks/useHistoryVersions';
 import { HistoryVersionRow } from './HistoryVersionRow';
 
 type Props = {

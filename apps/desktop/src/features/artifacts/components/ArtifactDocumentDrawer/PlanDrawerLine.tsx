@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly reason: string | null;

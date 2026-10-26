@@ -148,11 +148,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette next step: Push the branch',
-    covers: ['pushSessionBranch', 'palette:Push the branch'],
+    covers: ['pushBranch', 'palette:Push the branch'],
     seed: 'pr',
     open: async () => {
       pushed = vi.fn(async () => ({ ok: true }));
-      useAppStore.setState({ pushSessionBranch: pushed } as never);
+      useAppStore.setState({ pushBranch: pushed } as never);
       await openPalette(/^Push the branch/);
     },
     lands: () => waitFor(() => expect(pushed).toHaveBeenCalledTimes(1), WAIT),
@@ -346,7 +346,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => clickButton(/^New session$/),
     lands: both(
       () => heading('New session'),
-      () => visible('textbox', 'Task'),
+      () => visible('textbox', 'Goal'),
       () => visible('button', /Start blank/),
     ),
   },

@@ -13,9 +13,11 @@ import { ToastProvider } from '../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../test/fakeResizeObserver';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import type { StoryStore } from '../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
+import { collectAskPackInput } from '../../features/session/ask/collectAskPackInput';
+import { seriesStripsOf } from '../../store/slices/pr-series/seriesStripsOf';
 import { MountsScene } from '../../app/components/MockScene/scenes/MountsScene';
 
 const SETTLE_MS = 2_000;
@@ -84,11 +86,27 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
 
 const notices = () => within(screen.getByRole('region', { name: 'Notices' }));
 
-describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
+describe('Overview capabilities from the session Overview', () => {
   it('shows the goal as prose and opens it in the Context drawer', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Goal: Split the ledger/ }));
+    expect(screen.queryByRole('button', { name: /^Goal: Split the ledger/ })).toBeNull();
+    const sessionId = Object.keys(useAppStore.getState().sessionSlots)[0] ?? '';
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionSlots: {
+          ...state.sessionSlots,
+          [sessionId]: [
+            {
+              key: 'goal',
+              value: 'Reviewers read the ledger rewrite one part at a time.',
+              enabled: true,
+            },
+          ],
+        },
+      }));
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^Goal: Reviewers read the ledger/ }));
     await advance();
 
     expect(useAppStore.getState().drawer?.kind).toBe('context');
@@ -121,7 +139,9 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     await advance();
 
     await advance();
-    screen.getByRole('button', { name: 'Write title and goal from linked work' });
+    const action = screen.getByRole('button', { name: 'Write title and goal from linked work' });
+    expect(action.getAttribute('data-variant')).toBe('secondary');
+    expect(action.querySelector('svg')).not.toBeNull();
   });
 
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
@@ -207,6 +227,58 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     await advance();
 
     screen.getByRole('region', { name: 'Unassigned notes' });
+  });
+
+  it('leaves the detached mount out of the Ask context and the worktree list', async () => {
+    render(
+      <ToastProvider>
+        <MountsScene />
+      </ToastProvider>,
+    );
+    await advance();
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    if (sessionId === null) {
+      throw new Error('no current session');
+    }
+
+    const pack = collectAskPackInput({ state, sessionId, rightNow: [] });
+    const branches = pack.branches.map((entry) => entry.branch);
+
+    expect(branches).toContain('fix/ledger-reconciliation-idempotent-postings');
+    expect(branches).not.toContain('fix/ledger-reconciliation-settlement-boundaries');
+    expect(branches).not.toContain('fix/ledger-reconciliation-statement-backfill');
+    expect(
+      (state.sessionWorktreeRecords?.[sessionId] ?? []).map((record) => record.branch),
+    ).not.toContain('fix/ledger-reconciliation-settlement-boundaries');
+    expect(state.sessionWorktrees[sessionId]).not.toContain(
+      '~/code/harborline/ledger-core-boundaries',
+    );
+  });
+
+  it('reads the merged parts of the series strip from mounts the loader keeps', async () => {
+    render(
+      <ToastProvider>
+        <MountsScene />
+      </ToastProvider>,
+    );
+    await advance();
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    if (sessionId === null) {
+      throw new Error('no current session');
+    }
+
+    const [strip] = seriesStripsOf({ state, sessionId });
+
+    expect(strip?.parts.map((part) => part.state)).toEqual([
+      'merged',
+      'merged',
+      'open',
+      'open',
+      'open',
+      'planned',
+    ]);
   });
 
   it('keeps the exact ask one press away: Answer on the run row opens the question beside the page', async () => {

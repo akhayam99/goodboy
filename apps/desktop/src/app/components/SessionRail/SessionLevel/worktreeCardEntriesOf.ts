@@ -17,7 +17,7 @@ import {
   type WorktreeEntryFacts,
 } from '../../../../features/branch/worktreeEntryFacts';
 import { checksRunsOf } from '../../../../features/integrations/github/checksRollup';
-import { notPushedOf } from '../../../../features/branch/notPushedOf';
+import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { commentsCountOf } from '../../../../features/resolve/commentsCountOf';
 import { requestStateOf } from './requestStateOf';
 
@@ -102,7 +102,7 @@ export const worktreeCardEntriesOf = ({
     commentsNeedYou: commentsCountOf({ threads: ownThreads }).needsYou,
     files: null,
     diff,
-    notPushed: notPushedOf({ status, commits, hasRemoteHead }),
+    notPushed: branchPushFactsOf({ status, commits, hasRemoteHead }).toPush,
     checks: runsOf({ github, view, pr }),
     checksUnreadReason: unreadReasonOf({ view, pr }),
   });

@@ -38,7 +38,7 @@ fn the_trial_replays_every_verb_and_keeps_authors() {
     );
     assert_eq!(result.map.len(), 3);
     assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
-    assert!(!copy_path_of(&trial_slug).exists());
+    assert!(!copy_path_of(&trial_slug).unwrap().exists());
 }
 
 #[test]

@@ -1,8 +1,7 @@
 import reactHooks from 'eslint-plugin-react-hooks';
 import regexp from 'eslint-plugin-regexp';
 import tseslint from 'typescript-eslint';
-
-const BOOLEAN_PREFIXES = ['is', 'has', 'can', 'should', 'was', 'will'];
+import { BOOLEAN_PREFIXES } from './scripts/rules/ast/booleanPrefixes.mjs';
 
 export const lintTsConfig = ({ files, tsconfigRootDir }) =>
   tseslint.config({
@@ -36,7 +35,36 @@ export const lintTsConfig = ({ files, tsconfigRootDir }) =>
     },
   });
 
-const UNTYPED_TWINS = [
+const EQEQEQ = 'eqeqeq';
+
+export const lintStrictConfig = ({ files, tsconfigRootDir }) =>
+  tseslint.config({
+    files,
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: { projectService: true, tsconfigRootDir },
+    },
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    rules: {
+      '@typescript-eslint/strict-boolean-expressions': [
+        'error',
+        {
+          allowString: false,
+          allowNumber: false,
+          allowNullableObject: false,
+          allowNullableBoolean: false,
+          allowNullableString: false,
+          allowNullableNumber: false,
+          allowNullableEnum: false,
+          allowAny: false,
+        },
+      ],
+      [EQEQEQ]: ['error', 'always', { null: 'ignore' }],
+    },
+  });
+
+export const UNTYPED_TWINS = [
   'apps/desktop/src/features/branch/hooks/useBranchIdentity/index.test.tsx',
   'apps/desktop/src/features/resolve/notes/useBranchNotes/index.test.tsx',
   'apps/desktop/src/features/session/hooks/usePageCountFacts/index.test.tsx',

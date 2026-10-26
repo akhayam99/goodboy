@@ -23,7 +23,7 @@ import {
   setArtifactStatus,
   updateArtifactSource,
 } from './artifact';
-import { artifactRevisionInsert, writeArtifactRevision } from './artifactRevision';
+import { writeArtifactRevision } from './artifactRevision';
 
 const PLAN_SCHEMA_VERSION = 1;
 

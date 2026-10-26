@@ -1,5 +1,4 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import {
   PROVIDER_IDS,
@@ -11,6 +10,7 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
+import { createRunEventRouter } from './createRunEventRouter';
 import { parseProviderLine } from './parseProviderLine';
 import { clearTurnCursor, writeTurnCursor, type TurnCursor, type TurnOwner } from './turnCursor';
 
@@ -156,7 +156,9 @@ export type RunTurnHooks = {
 
 export const RELOAD_GAP_MESSAGE =
   'Part of this output was written while the window reloaded and could not be recovered.';
-export const RUN_GONE_MESSAGE = 'This run ended while the window reloaded.';
+const RUN_GONE_MESSAGE = 'This run ended while the window reloaded.';
+
+const turnEvents = createRunEventRouter<RawTurnEnvelope>({ eventName: EVENT_NAME });
 
 const activeStreams = new Set<string>();
 
@@ -360,15 +362,15 @@ async function* streamTurn({
 
   let isHolding = true;
   const held: RawTurnEnvelope[] = [];
-  const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
-    if (event.payload.runId !== runId) {
-      return;
-    }
-    if (isHolding) {
-      held.push(event.payload);
-      return;
-    }
-    handleEnvelope(event.payload);
+  const unlisten: () => void = await turnEvents.subscribe({
+    runId,
+    handler: ({ envelope }) => {
+      if (isHolding) {
+        held.push(envelope);
+        return;
+      }
+      handleEnvelope(envelope);
+    },
   });
 
   const writeCursor = ({ seq, index }: { readonly seq: number; readonly index: number }) =>
@@ -509,6 +511,19 @@ export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
     return new Set(ids ?? []);
   } catch {
     return new Set();
+  }
+};
+
+export type QuietRun = {
+  readonly runId: string;
+  readonly quietMs: number;
+};
+
+export const listQuietRuns = async (): Promise<ReadonlyArray<QuietRun>> => {
+  try {
+    return (await invokeCommand<ReadonlyArray<QuietRun>>('turn_quiet')) ?? [];
+  } catch {
+    return [];
   }
 };
 

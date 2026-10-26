@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -20,7 +20,10 @@ vi.mock('./OpenQuestionCluster', () => ({ OpenQuestionCluster: () => <div data-t
 
 import { TranscriptRows } from './TranscriptRows';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const SESSION_ID = brandId<SessionId>({ value: 's1' });
 const AGENT_ID = brandId<AgentId>({ value: 'a1' });
@@ -66,7 +69,7 @@ const renderRows = ({
         onRefreshAuth={() => undefined}
         onOpenDiff={() => undefined}
         isThinking={false}
-        thinkingContext="think"
+        thinkingPhrase="Thinking"
         onRetryRun={() => undefined}
         retryingRunId={null}
         insertions={insertions}
@@ -75,9 +78,15 @@ const renderRows = ({
   );
 
 const SECOND = 1_000;
-const T0 = new Date(Date.now() - 30 * SECOND);
-const T1 = new Date(Date.now() - 20 * SECOND);
-const T2 = new Date(Date.now() - 10 * SECOND);
+const NOW = new Date(2026, 9, 20, 12, 0, 0);
+const T0 = new Date(NOW.getTime() - 30 * SECOND);
+const T1 = new Date(NOW.getTime() - 20 * SECOND);
+const T2 = new Date(NOW.getTime() - 10 * SECOND);
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW);
+});
 
 describe('transcript insertions', () => {
   it('seats a card before the first message sent after its work settled', () => {

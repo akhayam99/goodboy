@@ -1,5 +1,6 @@
 import { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from '@goodboy/core';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { UNKNOWN_VALUE } from '../../utils/unknownValue';
 
 type AccessRow = Readonly<{
   label: string;
@@ -42,14 +43,14 @@ export const ProfileAccessPopover = () => {
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className="text-label font-medium text-primary underline-offset-2 hover:underline"
+          className="text-meta font-medium text-primary underline-offset-2 hover:underline"
         >
           See who reads what
         </button>
       }
     >
       <span className="text-heading text-foreground">Who reads what</span>
-      <table className="w-full text-label">
+      <table className="w-full text-meta">
         <thead>
           <tr className="text-faint-foreground">
             <th scope="col" className="py-1 text-left font-medium">
@@ -79,7 +80,7 @@ export const ProfileAccessPopover = () => {
                       isRead ? 'text-success' : 'text-faint-foreground',
                     )}
                   >
-                    {isRead ? '✓' : '–'}
+                    {isRead ? '✓' : UNKNOWN_VALUE}
                   </td>
                 );
               })}

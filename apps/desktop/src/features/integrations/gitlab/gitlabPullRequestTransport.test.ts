@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PullRequestPortError } from '@goodboy/core';
+import { PullRequestPortError, STALE_HEAD_MESSAGE, isPullRequestPortError } from '@goodboy/core';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 
@@ -95,17 +95,42 @@ describe('gitlabPullRequestTransport', () => {
     const transport = gitlabPullRequestTransport(target);
 
     await transport.setState({ stateEvent: 'close' });
-    await transport.merge({ method: 'rebase' });
+    await transport.merge({ method: 'rebase', expectedHeadSha: null });
 
     expect(h.updateState).toHaveBeenCalledWith({ ...target, stateEvent: 'close' });
-    expect(h.merge).toHaveBeenCalledWith(
-      WORKSPACE,
-      'https://gitlab.com',
-      'harborline/payments-api',
-      42,
-      PROJECT,
-      'rebase',
+    expect(h.merge).toHaveBeenCalledWith({ ...target, method: 'rebase', expectedHeadSha: null });
+  });
+
+  it('hands the reviewed head to the merge command', async () => {
+    const transport = gitlabPullRequestTransport(target);
+
+    await transport.merge({ method: 'squash', expectedHeadSha: '6c20f48a9e1d' });
+
+    expect(h.merge).toHaveBeenCalledWith({
+      ...target,
+      method: 'squash',
+      expectedHeadSha: '6c20f48a9e1d',
+    });
+  });
+
+  it('names a moved head as stale_head with the refresh and review message', async () => {
+    const transport = gitlabPullRequestTransport(target);
+    h.merge.mockRejectedValue(
+      new CommandError({
+        kind: 'stale_head',
+        message:
+          'the branch changed after it was reviewed: SHA does not match HEAD of source branch',
+      }),
     );
+
+    const error = await transport.merge({ method: 'squash', expectedHeadSha: '6c20f48a9e1d' }).then(
+      () => null,
+      (caught: unknown) => (isPullRequestPortError(caught) ? caught : null),
+    );
+
+    expect(error?.kind).toBe('stale_head');
+    expect(error?.message).toBe(STALE_HEAD_MESSAGE);
+    expect(error?.details).toContain('SHA does not match HEAD');
   });
 
   it('reads the project rules and searches its users without the merge request number', async () => {
@@ -137,29 +162,26 @@ describe('gitlabPullRequestTransport', () => {
   });
 
   it.each([
-    [
-      'http',
-      'http error 403: {"message":"403 Forbidden"}',
-      'denied',
-      '{"message":"403 Forbidden"}',
-    ],
-    ['http', 'http error 401: 401 Unauthorized', 'denied', '401 Unauthorized'],
-    ['http', 'http error 429: Retry later', 'rate_limited', 'Retry later'],
-    ['http', 'http error 0: error sending request', 'network', 'error sending request'],
-    ['http', 'http error 500: boom', 'failed', 'boom'],
-    ['timeout', 'request timed out: deadline', 'network', 'request timed out: deadline'],
-    [
-      'no_token',
-      'no personal API key stored for workspace ws-1',
-      'denied',
-      'no personal API key stored for workspace ws-1',
-    ],
-    ['shape', 'invalid response shape: x', 'failed', 'invalid response shape: x'],
+    ['bad_credentials', 401, 'denied', '401 Unauthorized'],
+    ['denied', 403, 'denied', '{"message":"403 Forbidden"}'],
+    ['not_found', 404, 'failed', '404 Project Not Found'],
+    ['rate_limited', 429, 'rate_limited', 'Retry later'],
+    ['network', 0, 'network', 'error sending request'],
+    ['timeout', null, 'network', 'request timed out: deadline'],
+    ['failed', 422, 'failed', 'Unprocessable'],
+    ['failed', 500, 'failed', 'boom'],
+    ['failed', 502, 'failed', '<html>Bad Gateway</html>'],
   ] as const)(
-    'turns a %s failure %j into a %s error that keeps the host text',
-    async (kind, message, portKind, details) => {
+    'turns the Rust failure kind %s (status %s) into a %s port error that keeps the host text',
+    async (failureKind, status, portKind, detail) => {
       const transport = gitlabPullRequestTransport(target);
-      h.updateMr.mockRejectedValue(new CommandError({ kind, message }));
+      h.updateMr.mockRejectedValue(
+        new CommandError({
+          kind: 'http',
+          message: `http error ${status}: ${detail}`,
+          failure: { kind: failureKind, status, retryAfterSeconds: null, detail },
+        }),
+      );
 
       const error = await transport.updateMergeRequest({ title: 'x' }).then(
         () => null,
@@ -167,10 +189,23 @@ describe('gitlabPullRequestTransport', () => {
       );
 
       expect(error).toBeInstanceOf(PullRequestPortError);
-      expect((error as PullRequestPortError).kind).toBe(portKind);
-      expect((error as PullRequestPortError).details).toBe(details);
+      expect(error).toMatchObject({ kind: portKind, details: detail });
     },
   );
+
+  it('reads an error that carries no failure kind as failed', async () => {
+    const transport = gitlabPullRequestTransport(target);
+    h.updateMr.mockRejectedValue(
+      new CommandError({ kind: 'shape', message: 'invalid response shape: x' }),
+    );
+
+    const error = await transport.updateMergeRequest({ title: 'x' }).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toMatchObject({ kind: 'failed', details: 'invalid response shape: x' });
+  });
 
   it('keeps a typed error as it is and wraps a plain one as failed', async () => {
     const transport = gitlabPullRequestTransport(target);
@@ -189,7 +224,13 @@ describe('gitlabPullRequestTransport', () => {
 
   it('gives an empty body a plain message', async () => {
     const transport = gitlabPullRequestTransport(target);
-    h.getMr.mockRejectedValue(new CommandError({ kind: 'http', message: 'http error 500: ' }));
+    h.getMr.mockRejectedValue(
+      new CommandError({
+        kind: 'http',
+        message: 'http error 500: ',
+        failure: { kind: 'failed', status: 500, retryAfterSeconds: null, detail: '' },
+      }),
+    );
 
     await expect(transport.readMergeRequest()).rejects.toMatchObject({
       message: 'GitLab did not answer',

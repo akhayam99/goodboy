@@ -1,21 +1,47 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 use crate::proc::probe;
 use crate::providers::cli_args::{
     needs_workspace_trust, partial_output_flag, role_access, Cli, RoleAccess, CURSOR_TRUST_FLAG,
 };
+use crate::util::lock_or_recover;
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(8);
 const AUTO_ROLE: &str = "auto";
 
 type Verdict = Result<(), String>;
-type CacheKey = (String, String, &'static str);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct BinaryId {
+    path: PathBuf,
+    len: u64,
+    modified: Option<SystemTime>,
+}
+
+type CacheKey = (BinaryId, &'static str);
 
 fn cache() -> &'static Mutex<HashMap<CacheKey, Verdict>> {
     static CACHE: OnceLock<Mutex<HashMap<CacheKey, Verdict>>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn versions() -> &'static Mutex<HashMap<BinaryId, String>> {
+    static VERSIONS: OnceLock<Mutex<HashMap<BinaryId, String>>> = OnceLock::new();
+    VERSIONS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn binary_id(binary: &str) -> Option<BinaryId> {
+    let found = crate::path_env::which(binary)?;
+    let path = std::fs::canonicalize(&found).unwrap_or_else(|_| PathBuf::from(&found));
+    let meta = std::fs::metadata(&path).ok()?;
+    Some(BinaryId {
+        path,
+        len: meta.len(),
+        modified: meta.modified().ok(),
+    })
 }
 
 fn required_flags(cli: Cli, access: RoleAccess) -> &'static [&'static str] {
@@ -69,16 +95,16 @@ fn run_text(binary: &str, args: &[&str]) -> Result<String, String> {
     Ok(format!("{}\n{}", output.stdout, output.stderr))
 }
 
-fn judge(binary: &str, cli: Cli, access: RoleAccess, version: &str) -> Verdict {
+fn judge(binary: &str, cli: Cli, access: RoleAccess, version: &str) -> Result<Verdict, String> {
     let help = run_text(binary, help_args(cli))?;
     let missing = missing_flags(cli, access, &help);
     if missing.is_empty() {
-        return Ok(());
+        return Ok(Ok(()));
     }
-    Err(format!(
+    Ok(Err(format!(
         "{binary} {version} does not list {}",
         missing.join(", ")
-    ))
+    )))
 }
 
 fn access_label(access: RoleAccess) -> &'static str {
@@ -88,76 +114,88 @@ fn access_label(access: RoleAccess) -> &'static str {
     }
 }
 
+pub(crate) fn version_cached(binary: &str) -> Option<String> {
+    let id = binary_id(binary);
+    if let Some(known) = id
+        .as_ref()
+        .and_then(|id| lock_or_recover(versions()).get(id).cloned())
+    {
+        return Some(known);
+    }
+    let version = version_of(&run_text(binary, &["--version"]).ok()?)?;
+    if let Some(id) = id {
+        lock_or_recover(versions()).insert(id, version.clone());
+    }
+    Some(version)
+}
+
 pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
     let access = role_access(role).ok_or_else(|| format!("role {role} is not a confined role"))?;
-    let cli = Cli::of_binary(binary);
+    let cli =
+        Cli::of_binary(binary).ok_or_else(|| format!("{binary} is not a binary Goodboy drives"))?;
     if role == AUTO_ROLE && cli == Cli::Opencode {
         return Err(
             "auto does not run on opencode: its plan agent still asks before a shell command and the run flag approves it"
                 .to_string(),
         );
     }
-    let version = version_of(&run_text(binary, &["--version"])?)
-        .ok_or_else(|| format!("{binary} did not report a version"))?;
-    let key: CacheKey = (binary.to_string(), version.clone(), access_label(access));
-    if let Some(known) = cache()
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .get(&key)
+    let id = binary_id(binary);
+    let label = access_label(access);
+    if let Some(known) = id
+        .as_ref()
+        .and_then(|id| lock_or_recover(cache()).get(&(id.clone(), label)).cloned())
     {
-        return known.clone();
+        return known;
     }
-    let verdict = judge(binary, cli, access, &version);
-    cache()
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .insert(key, verdict.clone());
+    let version = match id.as_ref() {
+        Some(_) => version_cached(binary),
+        None => version_of(&run_text(binary, &["--version"])?),
+    }
+    .ok_or_else(|| format!("{binary} did not report a version"))?;
+    let verdict = judge(binary, cli, access, &version)?;
+    if let Some(id) = id {
+        lock_or_recover(cache()).insert((id, label), verdict.clone());
+    }
     verdict
 }
 
 fn lists_flag(binary: &str, flag: &'static str) -> bool {
-    let version = match run_text(binary, &["--version"])
-        .ok()
-        .as_deref()
-        .and_then(version_of)
-    {
-        Some(version) => version,
-        None => return false,
-    };
-    let key: CacheKey = (binary.to_string(), version, flag);
-    if let Some(known) = cache()
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .get(&key)
+    let id = binary_id(binary);
+    if let Some(known) = id
+        .as_ref()
+        .and_then(|id| lock_or_recover(cache()).get(&(id.clone(), flag)).cloned())
     {
         return known.is_ok();
     }
-    let help = match run_text(binary, help_args(Cli::of_binary(binary))) {
-        Ok(help) => help,
-        Err(_) => return false,
+    let Some(cli) = Cli::of_binary(binary) else {
+        return false;
+    };
+    let Ok(help) = run_text(binary, help_args(cli)) else {
+        return false;
     };
     let verdict: Verdict = help
         .contains(flag)
         .then_some(())
         .ok_or_else(|| format!("{binary} does not list {flag}"));
     let listed = verdict.is_ok();
-    cache()
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-        .insert(key, verdict);
+    if let Some(id) = id {
+        lock_or_recover(cache()).insert((id, flag), verdict);
+    }
     listed
 }
 
 pub(crate) fn partial_output_args(binary: &str) -> Vec<String> {
-    match partial_output_flag(Cli::of_binary(binary)) {
+    match Cli::of_binary(binary).and_then(partial_output_flag) {
         Some(flag) if lists_flag(binary, flag) => vec![flag.to_string()],
         _ => Vec::new(),
     }
 }
 
 pub(crate) fn workspace_trust_args(binary: &str, argv: &[String]) -> Vec<String> {
-    if needs_workspace_trust(Cli::of_binary(binary), argv) && lists_flag(binary, CURSOR_TRUST_FLAG)
-    {
+    let Some(cli) = Cli::of_binary(binary) else {
+        return Vec::new();
+    };
+    if needs_workspace_trust(cli, argv) && lists_flag(binary, CURSOR_TRUST_FLAG) {
         return vec![CURSOR_TRUST_FLAG.to_string()];
     }
     Vec::new()
@@ -234,12 +272,7 @@ mod tests {
 
     #[test]
     fn auto_is_refused_on_every_opencode_binary_before_any_probe_runs() {
-        for binary in [
-            "opencode",
-            "/nonexistent/opencode",
-            "openrouter",
-            "moonshot",
-        ] {
+        for binary in ["opencode", "/nonexistent/opencode"] {
             let refusal = ensure_confinement(binary, "auto").expect_err("refused");
             assert!(
                 refusal.contains("auto does not run on opencode"),
@@ -254,8 +287,16 @@ mod tests {
     #[test]
     fn an_unknown_role_is_not_confined_and_a_missing_binary_is_refused() {
         assert!(ensure_confinement("claude", "generalist").is_err());
-        let refusal = ensure_confinement("/nonexistent/goodboy-cli", "scout").expect_err("refused");
+        let refusal = ensure_confinement("/nonexistent/claude", "scout").expect_err("refused");
         assert!(refusal.contains("did not start"));
+    }
+
+    #[test]
+    fn a_binary_that_is_not_one_of_ours_is_refused_before_any_probe_runs() {
+        for binary in ["openrouter", "moonshot", "/nonexistent/goodboy-cli"] {
+            let refusal = ensure_confinement(binary, "scout").expect_err("refused");
+            assert!(refusal.contains("not a binary Goodboy drives"), "{refusal}");
+        }
     }
 
     #[cfg(unix)]
@@ -305,6 +346,115 @@ mod tests {
         assert_eq!(current, old);
         assert_eq!(ensure_confinement(&current, "scout"), Ok(()));
         assert_eq!(ensure_confinement(&current, "implementer"), Ok(()));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn counting_cli(dir: &std::path::Path, help: &str) -> (String, std::path::PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let path = dir.join("claude");
+        let counter = dir.join("calls");
+        let body = format!(
+            "#!/bin/sh\necho \"$1\" >> '{}'\ncase \"$1\" in\n  --version) echo '2.1.40 (Claude Code)';;\n  --help) printf '%s\\n' '{help}';;\nesac\n",
+            counter.display()
+        );
+        std::fs::write(&path, body).expect("write the script");
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        runnable(&path);
+        let _ = std::fs::remove_file(&counter);
+        (path.to_string_lossy().into_owned(), counter)
+    }
+
+    #[cfg(unix)]
+    fn calls_in(counter: &std::path::Path) -> usize {
+        std::fs::read_to_string(counter)
+            .map(|text| text.lines().count())
+            .unwrap_or(0)
+    }
+
+    #[cfg(unix)]
+    fn scratch(label: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-cli-{label}-{}-{:016x}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        dir
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_proved_role_costs_no_process_the_second_time() {
+        let dir = scratch("verdict-cache");
+        let (binary, counter) = counting_cli(
+            &dir,
+            "--tools --disallowedTools --permission-mode --add-dir",
+        );
+
+        assert_eq!(ensure_confinement(&binary, "scout"), Ok(()));
+        assert_eq!(calls_in(&counter), 2);
+        assert_eq!(ensure_confinement(&binary, "scout"), Ok(()));
+        assert_eq!(ensure_confinement(&binary, "scout"), Ok(()));
+        assert_eq!(calls_in(&counter), 2);
+        assert_eq!(ensure_confinement(&binary, "implementer"), Ok(()));
+        assert_eq!(calls_in(&counter), 3);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_changed_binary_is_probed_again() {
+        let dir = scratch("verdict-change");
+        let (binary, counter) = counting_cli(&dir, "--disallowedTools --permission-mode");
+        let refusal = ensure_confinement(&binary, "scout").expect_err("old binary refused");
+        assert!(refusal.contains("--tools"), "{refusal}");
+        assert_eq!(calls_in(&counter), 2);
+
+        let (same, _) = counting_cli(
+            &dir,
+            "--tools --disallowedTools --permission-mode --add-dir",
+        );
+        assert_eq!(same, binary);
+
+        assert_eq!(ensure_confinement(&binary, "scout"), Ok(()));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_version_is_read_once_per_binary() {
+        let dir = scratch("version-cache");
+        let (binary, counter) = counting_cli(&dir, "--tools");
+
+        assert_eq!(
+            version_cached(&binary).as_deref(),
+            Some("2.1.40 (Claude Code)")
+        );
+        assert_eq!(
+            version_cached(&binary).as_deref(),
+            Some("2.1.40 (Claude Code)")
+        );
+        assert_eq!(calls_in(&counter), 1);
+        assert_eq!(version_cached("/nonexistent/goodboy-cli"), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_flag_that_is_listed_is_looked_up_once() {
+        let dir = scratch("flag-cache");
+        let (binary, counter) = counting_cli(&dir, "--tools --include-partial-messages");
+
+        assert_eq!(
+            partial_output_args(&binary),
+            vec!["--include-partial-messages".to_string()]
+        );
+        assert_eq!(
+            partial_output_args(&binary),
+            vec!["--include-partial-messages".to_string()]
+        );
+        assert_eq!(calls_in(&counter), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

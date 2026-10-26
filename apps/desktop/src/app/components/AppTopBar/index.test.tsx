@@ -2,7 +2,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
-const { currentWorkspace, hooks, store } = vi.hoisted(() => {
+type Attention = {
+  count: number;
+  quietCount: number;
+  tone: 'danger' | 'warning' | null;
+  countedIds: ReadonlyArray<string>;
+  reasons: ReadonlyArray<string>;
+  quietReasons: ReadonlyArray<string>;
+  countedSessions: ReadonlyArray<Session>;
+};
+
+const { currentWorkspace, hooks, store, noAttention } = vi.hoisted(() => {
+  const noAttention = (): Attention => ({
+    count: 0,
+    quietCount: 0,
+    tone: null,
+    countedIds: [],
+    reasons: [],
+    quietReasons: [],
+    countedSessions: [],
+  });
   const workspace = {
     id: 'ws-1' as WorkspaceId,
     name: 'Harborline',
@@ -30,6 +49,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
     updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
   } satisfies Workspace;
   return {
+    noAttention,
     currentWorkspace: workspace,
     hooks: {
       sessions: [] as ReadonlyArray<Session>,
@@ -38,6 +58,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
         readonly sessions: ReadonlyArray<Session>;
       }>,
       rollup: { attentionCount: 0, runningCount: 0, todaySpend: 0 },
+      attention: noAttention(),
     },
     store: {
       setCurrentSession: vi.fn(async () => undefined),
@@ -51,6 +72,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
       providers: [] as ReadonlyArray<never>,
       providerLimits: {},
+      hostReachability: {},
       navigation: {},
       currentSessionId: null,
       appStudio: null,
@@ -69,9 +91,11 @@ vi.mock('../../../store', () => ({
   EMPTY_ARRAY: [],
   useCurrentWorkspace: () => currentWorkspace,
   useHasUnreadElsewhere: () => false,
+  useAttentionElsewhere: () => ({ count: 0, tone: null }),
   useSessions: () => hooks.sessions,
   useWorkspaceRollup: () => hooks.rollup,
   useStageGroupedSessions: () => hooks.groups,
+  useWorkspaceAttention: () => hooks.attention,
   useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
   useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
     getState: () => store,
@@ -94,6 +118,7 @@ vi.mock('../../../features/workspace/components/FolderGitWatch', () => ({
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
+  hooks.attention = noAttention();
   hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 1.25 };
   store.setCurrentSession.mockClear();
 });
@@ -139,7 +164,7 @@ describe('AppTopBar', () => {
     window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, spy);
 
     const center = screen.getByRole('button', {
-      name: `Search (${shortcutGlyphs('palette.open')})`,
+      name: `Search or run (${shortcutGlyphs('palette.open')})`,
     });
     fireEvent.click(center);
 
@@ -190,15 +215,45 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
   });
 
-  it('puts the theme toggle between spend and the bell, named by its tooltip', () => {
+  it('reads Search or run beside the palette chord and holds no theme switch', () => {
     renderBar();
 
-    const toggle = screen.getByRole('button', { name: /^(Dark|Light) theme\. Switch to /i });
+    const center = screen.getByRole('button', { name: /^Search or run \(/ });
+    expect(center.textContent).toContain('Search or run');
+    expect(screen.queryByRole('button', { name: /theme/i })).toBeNull();
+  });
+
+  it('shows the needs you count as the first segment of the Now chip, and not at zero', () => {
+    hooks.groups = [{ key: 'running', sessions: [ATTENTION_SESSION] }];
+    hooks.rollup = { attentionCount: 2, runningCount: 1, todaySpend: 5.04 };
+    const { container, rerender } = renderBar();
+    expect(container.querySelector('[data-now-needs-you]')).toBeNull();
+
+    hooks.attention = {
+      count: 2,
+      quietCount: 0,
+      tone: 'warning',
+      countedIds: ['a', 'b'],
+      reasons: ['1 question for you'],
+      quietReasons: [],
+      countedSessions: [ATTENTION_SESSION, ATTENTION_SESSION],
+    };
+    rerender(<AppTopBar onOpenSpend={vi.fn()} onOpenScript={vi.fn()} />);
+
+    const right = zones(container)[2];
+    const now = screen.getByRole('button', { name: '2 need you, 1 session running' });
+    expect(right?.contains(now)).toBe(true);
+    expect(now.querySelector('[data-now-needs-you]')).not.toBeNull();
+  });
+
+  it('puts the bell right after spend, with no theme switch between them', () => {
+    renderBar();
+
     const spend = screen.getByRole('button', { name: 'Spend today. Open Impact' });
     const bell = screen.getByTestId('notification-center');
 
-    expect(spend.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(toggle.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(spend.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(spend.nextElementSibling).toBe(bell);
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {

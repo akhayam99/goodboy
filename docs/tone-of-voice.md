@@ -68,7 +68,9 @@ talking to a market. There are two voices:
   in [concepts.md](concepts.md) → Vocabulary rules.
 - **Help text stays short.** A `description`, `hint`, `help`, `meta` or `body`
   holds 13 words or fewer and one fact. It never says where it sits ("shows up
-  here", "above", "below") and never speaks in the first person. A Settings rail
+  here", "appears here", "is listed here", "above", "below") and never speaks in
+  the first person. An empty state says what the thing is, not where it lands:
+  "Finished sessions show what shipped", not "Finished sessions appear here". A Settings rail
   row is 24 characters or fewer, without a period. `copy-budget.test.ts` counts
   what is left and lets the number fall and never grow. A sentence of 14 words
   that carries a fact is fine: raise the baseline in a change that says why.
@@ -76,7 +78,17 @@ talking to a market. There are two voices:
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").
 - **Contractions everywhere.** "Couldn't", "haven't", "can't", never "could
-  not" or "cannot" in a string the reader sees.
+  not" or "cannot" in a string the reader sees. `contractions-copy.test.ts`
+  scans the rendered copy for could not, cannot, do not, does not, is not, are
+  not, will not and have not, and its baseline only falls.
+- **One sentence says what Goodboy is.** "Goodboy runs coding agents side by
+  side on your own repositories, one session for each goal." opens the README,
+  the website hero lead and the Welcome step, and `one-sentence.test.ts` keeps
+  the three equal. ADE is spelled out once, where the site defines it, and
+  never stands in for that sentence.
+- **The product name keeps its capital.** Goodboy, never goodboy, in running
+  text; only a code span, a path or an event name stays lowercase.
+  `jargon-copy.test.ts` checks the rendered copy.
 - **A state or reason starts with a capital.** "The agent is waiting for you",
   not "the agent is waiting for you", even when it sits under a label.
 - **Options never say "I", "me" or "my".** An option says what the app does:
@@ -88,6 +100,10 @@ talking to a market. There are two voices:
   again".
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and limits.
+- **One form for a settings path and for a key.** Write a path as
+  **Settings › App › Storage**: bold, with › between the steps, the way the app
+  writes its trail. Write a key as its Mac glyphs, **⌘Z**, never "Cmd+Z". A
+  Linux form is stated on the keyboard page, not beside the Mac key elsewhere.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 
@@ -109,7 +125,8 @@ talking to a market. There are two voices:
   name verbatim. A
   site h2 says what you get in one plain sentence of seven words or fewer,
   never a question or a slogan. The one brand line, "Stop re-explaining
-  yourself.", closes the landing page.
+  yourself.", heads the Shared context chapter, where the page delivers on
+  it, and stands alone as the last block before the footer.
 - **Don't echo the label in its own title.** Eyebrow "Workflow Studio", title
   "Build it once, reuse it forever", not "Build the workflow once".
 - **Don't repeat a phrase across sections.** "In one place", then "in one
@@ -117,6 +134,16 @@ talking to a market. There are two voices:
 - **Don't leak internals.** No internal names ("rail", "slice", "turn blob").
   No mechanism either: which thread, function or table, or why it broke in the
   code. Name what the reader sees on screen and what changed for them.
+- **A feature page stays short and plain.** Sentences have 30 words or fewer,
+  paragraphs 120 or fewer and a picture description 25 or fewer. The body
+  holds no code identifier and no source path: those go in the
+  `## Under the hood` section at the end of the page. It never says
+  "Experimental" and never names a platform the app does not ship for
+  (macOS and Linux). It names no screen the app retired, such as an Agents
+  or Auto agents entry in the session rail. `scripts/check-doc-budget.mjs` counts the breaches per
+  page and a count only falls. The README, `docs/first-session.md` and the
+  `docs/walkthroughs/` pages sit under the same count. A walkthrough has numbered steps,
+  Harborline data, one line on why it works and 150 to 200 words.
 - **Phrase titles so they still fit as the app grows.** "Turn any issue into a
   session" outlives "Turn a Linear issue into a session". Name the integration
   in the body, not the title.
@@ -239,6 +266,16 @@ Good:
 
 > Goodboy used to open with a blank window five times out of seven. It now
 > paints on every launch.
+
+### Errors
+
+A failed action says what did not happen in the title, shows the cause in the
+body and ends one of two ways. If a fix exists, it is a button named with a
+verb and its object: "Retry push", "Reconnect GitLab", "Open settings", "Show
+in Finder". If none exists, the last sentence says what is safe: "Nothing was
+changed." or "Your work is still on the branch." Never "Try again", never a
+cause with no ending. [DESIGN.md](../DESIGN.md) → Status & signals holds the
+contract.
 
 ### In-app micro-copy
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, FormActions, Input, Notice, Textarea, formatError } from '@goodboy/ui';
 import { SESSION_TITLE_MAX_LENGTH, type Session } from '@goodboy/types';
 import { useSessionSlots } from '../../../../store/slices/slots/selectors';
+import { UNTITLED_BASE } from '../../../../shared/utils/sessionTitle';
 import type {
   IssueBriefEntry,
   IssueBriefSource,
@@ -44,7 +45,7 @@ export const GoalFromWorkCard = ({
   currentEntry.current = entry;
   const slots = useSessionSlots(session.id);
   const currentGoal = slots.find((slot) => slot.key === 'goal')?.value ?? '';
-  const hasTitle = session.goal.trim() !== '' && session.goal !== 'Untitled session';
+  const hasTitle = session.goal.trim() !== '' && session.goal !== UNTITLED_BASE;
   const shouldReplace = hasTitle || currentGoal.trim() !== '';
   useEffect(() => {
     if (entry?.status === 'ready') {
@@ -106,7 +107,7 @@ export const GoalFromWorkCard = ({
       ) : null}
       {entry?.status === 'ready' ? (
         <>
-          <label className="flex flex-col gap-1 text-label">
+          <label className="flex flex-col gap-1 text-meta">
             Title
             {hasTitle ? (
               <span className="text-meta text-muted-foreground">Now: {session.goal}</span>
@@ -119,7 +120,7 @@ export const GoalFromWorkCard = ({
               disabled={isSaving}
             />
           </label>
-          <label className="flex flex-col gap-1 text-label">
+          <label className="flex flex-col gap-1 text-meta">
             Goal
             {currentGoal.trim() !== '' ? (
               <span className="text-meta text-muted-foreground">Now: {currentGoal}</span>

@@ -1,6 +1,14 @@
 import type { SessionProjectMount } from '@goodboy/types';
 import { gitCommonDirectory, worktreeGitDirectory } from '../../../features/worktree/worktree';
 
+type MountsParams = {
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+type WorktreePathsParams = {
+  readonly worktreePaths: ReadonlyArray<string>;
+};
+
 type BuildParams = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly workingDir: string;
@@ -18,11 +26,7 @@ export const repoRootsForTurn = ({
 }): ReadonlyArray<string> =>
   Array.from(new Set(mounts.filter(isTurnWritableMount).map((mount) => mount.repoRoot)));
 
-export const worktreePathsForTurn = ({
-  mounts,
-}: {
-  readonly mounts: ReadonlyArray<SessionProjectMount>;
-}): ReadonlyArray<string> =>
+export const worktreePathsForTurn = ({ mounts }: MountsParams): ReadonlyArray<string> =>
   Array.from(new Set(mounts.filter(isTurnWritableMount).map((mount) => mount.worktreePath)));
 
 export const buildTurnWritableRoots = ({
@@ -64,9 +68,7 @@ export const resolveGitCommonDirs = async ({
 
 export const resolveWorktreeGitDirs = async ({
   worktreePaths,
-}: {
-  readonly worktreePaths: ReadonlyArray<string>;
-}): Promise<ReadonlyMap<string, string>> => {
+}: WorktreePathsParams): Promise<ReadonlyMap<string, string>> => {
   const resolved = new Map<string, string>();
   for (const worktreePath of worktreePaths) {
     try {

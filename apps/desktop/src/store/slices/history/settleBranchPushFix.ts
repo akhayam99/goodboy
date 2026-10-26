@@ -1,7 +1,8 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import { formatError } from '@goodboy/ui';
 import { identityChange } from './historyIdentity';
+import { pushFailureReportOf } from '../notifications/pushFailureReport';
 import type { SliceDeps } from '../../slice-types';
+import { WORK_KEPT } from '../notifications/errorRecovery';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -26,23 +27,30 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
     const { mountId, identity, isForce, confirmedOnlyOnline, confirmedRemoteSha } = fix;
     const change = identityChange({ get, sessionId, mountId, identity });
     if (change !== null) {
-      await get().reportError({ title: "Couldn't push the fix.", error: change, sessionId });
+      await get().reportError({
+        title: "Couldn't push the fix.",
+        error: change,
+        sessionId,
+        recovery: WORK_KEPT,
+      });
       return;
     }
-    const result = isForce
-      ? await get().forcePushSessionBranch({
-          sessionId,
-          mountId,
-          confirmedOnlyOnline,
-          confirmedRemoteSha,
-        })
-      : await get().pushSessionBranch({
-          sessionId,
-          mountId,
-          expectedWorktreePath: identity.worktreePath,
-        });
+    const result = await get().pushBranch(
+      isForce
+        ? {
+            sessionId,
+            mountId,
+            mode: 'lease',
+            guard: { kind: 'confirmed', confirmedOnlyOnline, confirmedRemoteSha },
+          }
+        : { sessionId, mountId, mode: 'plain', expectedWorktreePath: identity.worktreePath },
+    );
     if (!result.ok) {
-      await get().reportError({ title: "Couldn't push the fix.", error: result.error, sessionId });
+      await get().reportError({
+        title: "Couldn't push the fix.",
+        error: result.error,
+        ...pushFailureReportOf({ sessionId, mountId, isRetryable: !isForce }),
+      });
       return;
     }
     set((state) => ({

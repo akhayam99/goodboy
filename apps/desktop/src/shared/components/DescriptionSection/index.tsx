@@ -1,10 +1,9 @@
 import { useState, type MouseEvent } from 'react';
 import { Pencil } from 'lucide-react';
-import { Button, cn, EmptyLine, Markdown, Textarea } from '@goodboy/ui';
+import { Button, cn, EmptyLine, ICON_SIZE, Markdown, Textarea } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
 import { isInteractiveClick } from '../../utils/isInteractiveClick';
 import { StudioWidget } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly text: string;
@@ -49,11 +48,11 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
             aria-label="Edit description"
             onChange={(event) => edit.setDraft(event.target.value)}
             onKeyDown={edit.onKeyDown}
-            className="font-mono text-label"
+            className="font-mono text-meta"
           />
           <div className="flex items-center justify-between gap-3">
             {edit.error != null ? (
-              <p role="alert" className="min-w-0 text-label text-danger">
+              <p role="alert" className="min-w-0 text-meta text-danger">
                 {edit.error}
               </p>
             ) : (

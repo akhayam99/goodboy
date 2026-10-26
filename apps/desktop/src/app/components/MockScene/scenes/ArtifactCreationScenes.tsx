@@ -29,7 +29,7 @@ const AT = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 const ANTHROPIC: ProviderDisplayInfo = {
   id: 'anthropic' as ProviderId,
   binary: 'claude',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '2.1.251',
   identity: 'harborline',

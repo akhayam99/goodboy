@@ -76,6 +76,7 @@ const agent = (over: Partial<Record<keyof Agent, unknown>> = {}): Agent =>
 const limit = (softCapUsd: number, onExceed: 'pause' | 'warn' = 'pause'): SessionBudget => ({
   sessionId: SID,
   softCapUsd,
+  warnRatio: 0.8,
   onExceed,
 });
 

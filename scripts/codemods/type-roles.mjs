@@ -76,7 +76,7 @@ const RULES = [
     when: (tokens) => leadingOf(tokens).length === 0 && weightsOf(tokens).length === 0,
   },
   {
-    role: 'text-label',
+    role: 'text-meta',
     needs: ['text-xs'],
     drops: [],
     when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
@@ -102,7 +102,6 @@ const LEADING_BY_ROLE = {
   'text-row': ['leading-5'],
   'text-prose': ['leading-relaxed'],
   'text-body': ['leading-5'],
-  'text-label': ['leading-4'],
   'text-meta': ['leading-4'],
 };
 

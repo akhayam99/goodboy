@@ -1,4 +1,4 @@
-import { Eyebrow, FLOATING_SURFACE, cn } from '@goodboy/ui';
+import { FLOATING_SURFACE, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { SwitcherSection } from './SwitcherSection';

@@ -1,4 +1,4 @@
-import { integrationLabel } from '../integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../shared/utils/integrationLabel';
 import { orderInboxRecords } from './orderInboxRecords';
 import type { InboxRecord, InboxState } from './types';
 

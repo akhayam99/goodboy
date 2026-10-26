@@ -1,9 +1,18 @@
 import { Check, ChevronDown, X } from 'lucide-react';
-import { AnchoredPopover, Button, Chip, Tooltip, cn, tintClasses, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  Chip,
+  cn,
+  ICON_SIZE,
+  tintClasses,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { modeSupportFor } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import {
   DEFAULT_PERMISSION_MODE,
@@ -13,7 +22,7 @@ import {
   pickerModeOf,
 } from '../../modeCopy';
 import { openPermissionSettings } from '../../openPermissionSettings';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly session: Session;
@@ -65,9 +74,9 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       trigger={
         <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
           <Chip
+            kind="reference"
             tone="neutral"
             bordered={false}
-            size="md"
             as="button"
             onClick={toggle}
             hasPopup="dialog"
@@ -94,7 +103,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       }
     >
       <div className="flex items-center px-3 pb-1 pt-1">
-        <span className="text-label text-muted-foreground">What can agents do?</span>
+        <span className="text-meta text-muted-foreground">What can agents do?</span>
       </div>
       {PICKER_MODES.map((mode) => {
         const copy = MODE_COPY[mode];
@@ -125,7 +134,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
               <span className="flex items-center gap-2">
                 <span
                   className={cn(
-                    'text-label',
+                    'text-meta',
                     isUnavailable ? 'text-disabled-foreground' : 'text-foreground',
                   )}
                 >

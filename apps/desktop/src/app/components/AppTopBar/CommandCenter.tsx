@@ -1,22 +1,22 @@
 import { Search } from 'lucide-react';
-import { Kbd, FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
+import { cn, FOCUS_RING, ICON_SIZE, Kbd, Tooltip, TOP_BAR_CONTROL } from '@goodboy/ui';
 import { useCurrentWorkspace } from '../../../store';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 
 export const CommandCenter = () => {
   const workspace = useCurrentWorkspace();
   const glyph = shortcutGlyphs('palette.open');
   const place = workspace?.name ?? 'Goodboy';
-  const tooltip = `Search ${place}`;
+  const tooltip = `Search or run in ${place}`;
 
   return (
     <Tooltip content={tooltip} shortcut="palette.open" side="bottom">
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent(OPEN_COMMAND_PALETTE_EVENT))}
-        aria-label={`Search (${glyph})`}
+        aria-label={`${NAMES.searchOrRun} (${glyph})`}
         className={cn(
           TOP_BAR_CONTROL.height,
           TOP_BAR_CONTROL.radius,
@@ -26,7 +26,7 @@ export const CommandCenter = () => {
       >
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="hidden min-w-0 flex-1 truncate text-left @min-chrome-labels/topbar:inline">
-          Search
+          {NAMES.searchOrRun}
         </span>
         <Kbd look="inline" aria-hidden className="shrink-0">
           {glyph}

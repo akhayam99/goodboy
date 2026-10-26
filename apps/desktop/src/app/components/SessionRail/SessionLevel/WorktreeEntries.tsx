@@ -1,9 +1,9 @@
-import { SelectableRow } from '@goodboy/ui';
+import { ICON_SIZE, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { WorktreeEntrySlot } from '../../../../features/branch/components/WorktreeEntrySlot';
 import { entryAriaLabel } from '../../../../features/branch/entryAriaLabel';
 import { WORKTREE_ENTRY_ICONS } from '../../../../features/branch/worktreeEntryIcons';

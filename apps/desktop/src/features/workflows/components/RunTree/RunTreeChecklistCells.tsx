@@ -49,7 +49,7 @@ export const RunTreeChecklistCells = ({
         {entry.agent.name}
       </TruncatedText>
       {change === null ? null : (
-        <span data-plan-change={change.kind} className="shrink-0 text-label text-info">
+        <span data-plan-change={change.kind} className="shrink-0 text-meta text-info">
           {PRESET_CHANGE_COPY.tag[change.kind]}
         </span>
       )}

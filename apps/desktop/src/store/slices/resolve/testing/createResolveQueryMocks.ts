@@ -2,9 +2,12 @@ import { vi } from 'vitest';
 import type {
   ResolveAttempt,
   ResolveBatch,
+  ResolveCandidate,
+  ResolveCandidateItem,
   ResolvePublication,
   ResolvePublicationPhase,
   ResolvePublicationThread,
+  ResolveQueueApprovalState,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
   ResolveThread,
@@ -46,9 +49,14 @@ type ApprovalParams = QueueItemIdParams & {
   readonly revision: number;
   readonly replyHash: string;
 };
+type DeferParams = QueueItemIdParams & {
+  readonly expectedState?: ResolveQueueApprovalState | null;
+};
 type DeliveredParams = QueueItemIdParams & { readonly deliveredAt: number };
 type RebaseParams = QueueItemIdParams & { readonly candidateRevision: number };
 type BatchParams = { readonly batch: ResolveBatch };
+type CandidateIdParams = { readonly candidateId: string };
+type CandidateStateParams = CandidateIdParams & { readonly state: ResolveCandidate['state'] };
 type CopyPathParams = { readonly id: string; readonly copyPath: string | null };
 
 const ACTIVE_PHASES: ReadonlyArray<ResolvePublicationPhase> = [
@@ -342,10 +350,11 @@ export const createResolveQueryMocks = () => {
         return true;
       },
     ),
-    deferResolveQueueItem: vi.fn(async ({ sessionId, itemId }: QueueItemIdParams) => {
+    deferResolveQueueItem: vi.fn(async ({ sessionId, itemId, expectedState }: DeferParams) => {
       const item = queueItems.get(itemId);
       if (
         item === undefined ||
+        (expectedState != null && item.approvalState !== expectedState) ||
         item.sessionId !== sessionId ||
         item.supersededAt !== null ||
         item.deliveredAt !== null ||
@@ -398,14 +407,16 @@ export const createResolveQueryMocks = () => {
         return true;
       },
     ),
-    listResolveCandidates: vi.fn(async () => []),
+    listResolveCandidates: vi.fn(async (): Promise<Array<ResolveCandidate>> => []),
     getResolveCandidate: vi.fn(async () => null),
     getReadyResolveCandidateForItem: vi.fn(async () => null),
-    listResolveCandidateItems: vi.fn(async () => []),
+    listResolveCandidateItems: vi.fn(
+      async (_params: CandidateIdParams): Promise<Array<ResolveCandidateItem>> => [],
+    ),
     insertResolveCandidate: vi.fn(async () => undefined),
     insertResolveCandidateItem: vi.fn(async () => undefined),
     markResolveCandidateReady: vi.fn(async () => true),
-    setResolveCandidateState: vi.fn(async () => true),
+    setResolveCandidateState: vi.fn(async (_params: CandidateStateParams) => true),
     markOverlappingResolveCandidatesStale: vi.fn(async () => undefined),
     hasResolveImport: vi.fn(async () => false),
     commitResolveImport: vi.fn(async ({ rows }: ImportParams) => {

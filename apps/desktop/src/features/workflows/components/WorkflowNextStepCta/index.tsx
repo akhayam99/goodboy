@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { AlertTriangle, Play } from 'lucide-react';
-import { ConfirmPopover, cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { TriangleAlert, Play } from 'lucide-react';
+import { cn, ConfirmPopover, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import type {
   Agent,
@@ -19,7 +19,7 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 
@@ -101,7 +101,7 @@ export const WorkflowNextStepCta = ({
     <div className={className}>
       <ConfirmPopover
         role="alert"
-        icon={<AlertTriangle size={ICON_SIZE.row} />}
+        icon={<TriangleAlert size={ICON_SIZE.row} />}
         title={advance.title}
         description={advance.description}
         confirmLabel={advance.confirmLabel}
@@ -126,7 +126,9 @@ export const WorkflowNextStepCta = ({
               disabled={advance.isBusy || blockReason === 'paused'}
               data-testid="workflow-next-step-cta"
               className={cn(
-                'flex items-center gap-1 rounded-md border px-2 py-1 text-chip font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                'flex items-center gap-1 rounded-md border px-2 py-1 text-chip font-semibold',
+                FOCUS_RING,
+                'motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                 blockReason != null
                   ? cn(
                       tintClasses('warning').border,
@@ -144,7 +146,7 @@ export const WorkflowNextStepCta = ({
               aria-label={`Run next step: ${next.name} (${modelLabel(routing.model, routing.provider)}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
             >
               {blockReason != null ? (
-                <AlertTriangle
+                <TriangleAlert
                   size={ICON_SIZE.row}
                   aria-hidden
                   className="shrink-0"

@@ -9,8 +9,8 @@ import type { ItemRevisionParams, SliceParams } from './types';
 
 type Params = SliceParams & ItemRevisionParams;
 
-export const REFUSAL_AFTER_INTEGRATION = 'Fix already integrated';
-export const EMPTY_REFUSAL_REPLY = 'Write the reply the reviewer will read before you refuse';
+const REFUSAL_AFTER_INTEGRATION = 'Fix already integrated';
+const EMPTY_REFUSAL_REPLY = 'Write the reply the reviewer will read before you refuse';
 
 export const refuseResolveQueueItem = async ({
   set,

@@ -60,6 +60,7 @@ const clickButton = ({ name }: ClickParams): void => {
 const FOLLOW_UP: Partial<Readonly<Record<WizardSceneState, string>>> = {
   'tools-linear': 'Connect Linear',
   'agents-error': 'Output',
+  'first-ask': 'Ask about the code',
   'first-task': 'Pick up an issue',
 };
 

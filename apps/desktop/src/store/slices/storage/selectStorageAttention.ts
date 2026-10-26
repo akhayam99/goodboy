@@ -2,10 +2,11 @@ import type { AppStore } from '../../store';
 import { formatBytes } from '../../../shared/utils/formatBytes';
 import { NUDGE_MIN_BYTES, isLowDisk } from './evaluateStorageNudge';
 import { suggestAfterDaysOf } from './storageSettings';
+import { liveTerminalsByFolder } from '../../../features/storage/liveTerminalsByFolder';
 import { summarizeStorage } from './summarizeStorage';
 
 type Params = {
-  readonly state: Pick<AppStore, 'storageFolders' | 'settings' | 'storageStats'>;
+  readonly state: Pick<AppStore, 'storageFolders' | 'settings' | 'storageStats' | 'terminalTabs'>;
 };
 
 type StorageAttention = {
@@ -25,6 +26,7 @@ export const storageAttention = ({ state, nowMs }: AttentionParams): StorageAtte
     folders: state.storageFolders,
     now: nowMs,
     suggestAfterDays: suggestAfterDaysOf({ settings: state.settings }),
+    terminals: liveTerminalsByFolder({ folders: state.storageFolders, tabs: state.terminalTabs }),
   });
   const canGoBytes = summary.canGo.bytes;
   const diskFreeBytes = state.storageStats?.diskFreeBytes ?? null;

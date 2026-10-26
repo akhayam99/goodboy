@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -11,10 +10,12 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime, State};
 
 use crate::db::{Db, DbError};
+use crate::proc::pty::PtyChild;
 use crate::pty_ring::{
     empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
     SharedRing,
 };
+use crate::util::lock_or_recover;
 
 // ---------------------------------------------------------------------------
 // PTY run slot
@@ -24,22 +25,21 @@ struct PtyRun {
     spawn_id: String,
     _writer: Box<dyn Write + Send>,
     _master: Box<dyn portable_pty::MasterPty + Send>,
-    child: Box<dyn portable_pty::Child + Send + Sync>,
+    child: PtyChild,
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct ScriptOutputPayload {
-    #[serde(rename = "runId")]
     run_id: String,
     data: String,
     offset: u64,
 }
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct ScriptExitPayload {
-    #[serde(rename = "runId")]
     run_id: String,
-    #[serde(rename = "exitCode")]
     exit_code: i32,
 }
 
@@ -62,6 +62,7 @@ pub struct LiveScriptRun {
     script_id: String,
     name: String,
     session_id: String,
+    cwd: String,
     pid: Option<u32>,
     started_at: u64,
 }
@@ -77,6 +78,20 @@ impl ScriptRegistry {
     fn list_live(&self) -> Result<Vec<LiveScriptRun>, ScriptError> {
         let map = self.0.lock().map_err(|_| ScriptError::Poisoned)?;
         Ok(map.values().map(|slot| slot.metadata.clone()).collect())
+    }
+
+    pub(crate) fn ended_scripts(&self) -> Vec<crate::ended_work::EndedScript> {
+        let Ok(live) = self.list_live() else {
+            return Vec::new();
+        };
+        live.into_iter()
+            .map(|run| crate::ended_work::EndedScript {
+                script_id: run.script_id,
+                session_id: run.session_id,
+                name: run.name,
+                cwd: run.cwd,
+            })
+            .collect()
     }
 }
 
@@ -94,8 +109,7 @@ pub fn shutdown(registry: &ScriptRegistry) {
         let Some(mut run) = guard.take() else {
             continue;
         };
-        crate::terminal::reap_pty_session(run.child.process_id(), &run.spawn_id);
-        crate::logging::note_kill_failure("script kill", run.child.kill());
+        crate::proc::pty::stop(&mut run.child, &run.spawn_id, "script kill");
     }
 }
 
@@ -111,8 +125,14 @@ pub enum ScriptError {
     Poisoned,
     #[error("script not found: {0}")]
     NotFound(String),
+    #[error(
+        "script {0} came from an imported backup and is disabled; open it and save it to enable"
+    )]
+    Disabled(String),
     #[error("io error: {0}")]
     Io(String),
+    #[error("a script run is already live under {0}")]
+    Duplicate(String),
 }
 
 crate::util::impl_error_serialize!(ScriptError);
@@ -123,7 +143,9 @@ impl ScriptError {
             ScriptError::Db(_) => "db",
             ScriptError::Poisoned => "poisoned",
             ScriptError::NotFound(_) => "not_found",
+            ScriptError::Disabled(_) => "disabled",
             ScriptError::Io(_) => "io",
+            ScriptError::Duplicate(_) => "duplicate",
         }
     }
 }
@@ -143,22 +165,10 @@ impl From<DbError> for ScriptError {
 // ---------------------------------------------------------------------------
 
 #[cfg(unix)]
-fn signal_number(name: &str) -> Option<i32> {
-    if name.is_empty() {
-        return None;
-    }
-    (1..32).find(|signal| {
-        let described = unsafe { libc::strsignal(*signal) };
-        if described.is_null() {
-            return false;
-        }
-        unsafe { std::ffi::CStr::from_ptr(described) }.to_string_lossy() == name
-    })
-}
-
-#[cfg(unix)]
 fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
-    let signalled = status.signal().and_then(signal_number);
+    let signalled = status
+        .signal()
+        .and_then(crate::proc::signal::number_of_name);
     if let Some(signal) = signalled {
         return 128 + signal;
     }
@@ -197,7 +207,51 @@ struct ScriptSpawnRequest<R: Runtime> {
     rows: u16,
 }
 
+fn ensure_run_id_is_free(
+    registry: &Mutex<HashMap<String, ScriptSlot>>,
+    run_id: &str,
+) -> Result<(), ScriptError> {
+    let map = registry.lock().map_err(|_| ScriptError::Poisoned)?;
+    if map.contains_key(run_id) {
+        return Err(ScriptError::Duplicate(run_id.to_string()));
+    }
+    Ok(())
+}
+
+fn register_run(
+    registry: &Mutex<HashMap<String, ScriptSlot>>,
+    run_id: &str,
+    slot: ScriptSlot,
+) -> bool {
+    let Ok(mut map) = registry.lock() else {
+        return false;
+    };
+    if map.contains_key(run_id) {
+        return false;
+    }
+    map.insert(run_id.to_string(), slot);
+    true
+}
+
+fn owns_run(registry: &Mutex<HashMap<String, ScriptSlot>>, run_id: &str, run: &PtySlot) -> bool {
+    let map = lock_or_recover(registry);
+    map.get(run_id)
+        .map(|entry| Arc::ptr_eq(&entry.run, run))
+        .unwrap_or(true)
+}
+
+fn release_run(registry: &Mutex<HashMap<String, ScriptSlot>>, run_id: &str, run: &PtySlot) {
+    let mut map = lock_or_recover(registry);
+    let is_same = map
+        .get(run_id)
+        .is_some_and(|entry| Arc::ptr_eq(&entry.run, run));
+    if is_same {
+        map.remove(run_id);
+    }
+}
+
 fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), ScriptError> {
+    ensure_run_id_is_free(&request.registry, &request.run_id)?;
     let pty_system = native_pty_system();
     let pair = pty_system
         .openpty(PtySize {
@@ -244,38 +298,40 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         _master: pair.master,
         child,
     })));
-    let started_at = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|error| ScriptError::Io(error.to_string()))?
-        .as_millis() as u64;
+    let started_at = crate::util::now_millis_u64();
     let metadata = LiveScriptRun {
         run_id: request.run_id.clone(),
         script_id: request.script_id,
         name: request.name,
         session_id: request.session_id,
+        cwd: request.cwd,
         pid,
         started_at,
     };
 
     let ring = new_shared_ring();
+    let registered = register_run(
+        &request.registry,
+        &request.run_id,
+        ScriptSlot {
+            run: Arc::clone(&slot),
+            metadata,
+            ring: Arc::clone(&ring),
+        },
+    );
+    if !registered {
+        if let Some(mut run) = lock_or_recover(&slot).take() {
+            crate::proc::pty::stop(&mut run.child, &run.spawn_id, "duplicate script kill");
+        }
+        return Err(ScriptError::Duplicate(request.run_id));
+    }
     request.exited.forget(&request.run_id);
-    request
-        .registry
-        .lock()
-        .map_err(|_| ScriptError::Poisoned)?
-        .insert(
-            request.run_id.clone(),
-            ScriptSlot {
-                run: Arc::clone(&slot),
-                metadata,
-                ring: Arc::clone(&ring),
-            },
-        );
 
     let run_id = request.run_id;
     let app = request.app;
     let registry = request.registry;
     let exited = request.exited;
+    let reader_slot = Arc::clone(&slot);
     thread::spawn(move || {
         let mut reader = reader;
         let mut buf = [0u8; 4096];
@@ -297,30 +353,16 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
             }
         }
 
-        let exit_code = {
-            let slot = {
-                let guard = registry.lock().ok();
-                guard
-                    .as_ref()
-                    .and_then(|map| map.get(&run_id).map(|entry| Arc::clone(&entry.run)))
-            };
-            if let Some(slot) = slot {
-                let mut guard = slot.lock().unwrap_or_else(|error| error.into_inner());
-                guard
-                    .as_mut()
-                    .and_then(|run| run.child.wait().ok())
-                    .map(|status| exit_code_of(&status))
-                    .unwrap_or(-1)
-            } else {
-                -1
-            }
-        };
+        let exit_code = crate::proc::pty::wait_for_exit(&reader_slot, |run| &mut run.child)
+            .map(|status| exit_code_of(&status))
+            .unwrap_or(-1);
 
         crate::proc::ledger::forget(&spawn_id);
-        exited.keep(&run_id, Arc::clone(&ring), exit_code);
-        if let Ok(mut map) = registry.lock() {
-            map.remove(&run_id);
+        if !owns_run(&registry, &run_id, &reader_slot) {
+            return;
         }
+        exited.keep(&run_id, Arc::clone(&ring), exit_code);
+        release_run(&registry, &run_id, &reader_slot);
         let _ = app.emit(
             "script-exit",
             ScriptExitPayload {
@@ -337,6 +379,29 @@ async fn spawn_script_blocking(request: ScriptSpawnRequest<tauri::Wry>) -> Resul
     tauri::async_runtime::spawn_blocking(move || spawn_script(request))
         .await
         .map_err(|error| ScriptError::Io(error.to_string()))?
+}
+
+fn load_enabled_script(
+    conn: &rusqlite::Connection,
+    script_id: &str,
+) -> Result<(String, String), ScriptError> {
+    let (name, body, is_enabled) = conn
+        .query_row(
+            "SELECT name, body, is_enabled FROM project_scripts WHERE id = ?1 LIMIT 1",
+            rusqlite::params![script_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, i64>(2)?,
+                ))
+            },
+        )
+        .map_err(|_| ScriptError::NotFound(script_id.to_string()))?;
+    if is_enabled == 0 {
+        return Err(ScriptError::Disabled(script_id.to_string()));
+    }
+    Ok((name, body))
 }
 
 /// Spawns `bash -c <body>` inside a pty, registers the run under `run_id`, and
@@ -357,12 +422,7 @@ pub async fn workspace_script_run(
 ) -> Result<(), ScriptError> {
     let (name, body) = {
         let conn = state.0.lock().map_err(|_| ScriptError::Poisoned)?;
-        conn.query_row(
-            "SELECT name, body FROM project_scripts WHERE id = ?1 LIMIT 1",
-            rusqlite::params![script_id],
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
-        )
-        .map_err(|_| ScriptError::NotFound(script_id.clone()))?
+        load_enabled_script(&conn, &script_id)?
     };
     spawn_script_blocking(ScriptSpawnRequest {
         app,
@@ -443,8 +503,7 @@ pub async fn workspace_script_list_live(
 // ---------------------------------------------------------------------------
 
 fn stop_run(mut run: PtyRun) -> usize {
-    let signalled = crate::terminal::reap_pty_session(run.child.process_id(), &run.spawn_id);
-    crate::logging::note_kill_failure("script kill", run.child.kill());
+    let signalled = crate::proc::pty::stop(&mut run.child, &run.spawn_id, "script kill");
     let _ = run.child.wait();
     signalled
 }
@@ -478,6 +537,9 @@ pub async fn workspace_script_cancel(
 }
 
 #[cfg(test)]
+mod wire_shape;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -486,6 +548,34 @@ mod tests {
             ("GITHUB_PACKAGES_TOKEN".to_string(), "tok".to_string()),
             ("NVM_DIR".to_string(), "/home/u/.nvm".to_string()),
         ]
+    }
+
+    fn scripts_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE project_scripts (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, body TEXT NOT NULL,
+                is_enabled INTEGER NOT NULL DEFAULT 1
+            );
+            INSERT INTO project_scripts (id, name, body, is_enabled)
+            VALUES ('lint', 'lint', 'echo lint', 1), ('imported', 'deploy', 'echo deploy', 0);",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn an_enabled_saved_script_loads_for_a_run() {
+        let conn = scripts_conn();
+        let (name, body) = load_enabled_script(&conn, "lint").expect("enabled script loads");
+        assert_eq!((name.as_str(), body.as_str()), ("lint", "echo lint"));
+    }
+
+    #[test]
+    fn a_disabled_saved_script_is_refused_for_a_run() {
+        let conn = scripts_conn();
+        let error = load_enabled_script(&conn, "imported").expect_err("disabled script refused");
+        assert!(matches!(error, ScriptError::Disabled(id) if id == "imported"));
     }
 
     #[test]
@@ -545,6 +635,7 @@ mod tests {
             script_id: "script-1".to_string(),
             name: "Script one".to_string(),
             session_id: "session-1".to_string(),
+            cwd: "/work/ledger-core".to_string(),
             pid: Some(4321),
             started_at: 1234,
         };
@@ -616,14 +707,14 @@ mod tests {
     fn stop_run_kills_a_descendant_that_ignores_hangup() {
         let (run, mut reader) = spawn_pty_run("trap \"\" HUP; sleep 30 & echo pid=$!; wait");
         let descendant = read_background_pid(&mut reader);
-        assert_eq!(unsafe { libc::kill(descendant, 0) }, 0);
+        assert!(crate::proc::signal::exists(descendant as u32));
 
         let signalled = stop_run(run);
 
         assert!(signalled >= 1);
         let mut alive = true;
         for _ in 0..20 {
-            if unsafe { libc::kill(descendant, 0) } != 0 {
+            if !crate::proc::signal::exists(descendant as u32) {
                 alive = false;
                 break;
             }
@@ -750,19 +841,6 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn signal_names_map_back_to_their_number() {
-        let killed = unsafe { std::ffi::CStr::from_ptr(libc::strsignal(libc::SIGKILL)) }
-            .to_string_lossy()
-            .into_owned();
-        assert_eq!(signal_number(&killed), Some(libc::SIGKILL));
-        assert_eq!(signal_number(""), None);
-        assert_eq!(signal_number("   "), None);
-        assert_eq!(signal_number("not a signal"), None);
-        assert_eq!(signal_number(&"x".repeat(100_000)), None);
-    }
-
-    #[cfg(unix)]
-    #[test]
     fn an_unknown_signal_name_keeps_the_pty_exit_code() {
         assert_eq!(
             exit_code_of(&portable_pty::ExitStatus::with_signal("not a signal")),
@@ -809,6 +887,130 @@ mod tests {
 
         std::fs::write(&flag, "").expect("write the flag");
 
+        crate::proc::ledger::test_support::assert_row_gone(&cwd);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn request_for(
+        app: &tauri::App<tauri::test::MockRuntime>,
+        registry: &ScriptRegistry,
+        run_id: &str,
+        cwd: &str,
+        body: &str,
+    ) -> ScriptSpawnRequest<tauri::test::MockRuntime> {
+        ScriptSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            script_id: "script-1".to_string(),
+            name: "Probe".to_string(),
+            body: body.to_string(),
+            run_id: run_id.to_string(),
+            session_id: "session-5".to_string(),
+            cwd: cwd.to_string(),
+            cols: 80,
+            rows: 24,
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_run_id_that_is_still_live_is_refused_and_the_first_run_keeps_its_entry() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("script-duplicate");
+        let cwd = dir.to_string_lossy().into_owned();
+        let flag = dir.join("stop");
+        let wait_body = format!("while [ ! -e '{}' ]; do sleep 0.05; done", flag.display());
+        let app = tauri::test::mock_app();
+        let registry = ScriptRegistry::new();
+        spawn_script(request_for(&app, &registry, "run-dup", &cwd, &wait_body)).expect("first run");
+        let first = crate::proc::ledger::test_support::wait_for_row(&cwd);
+
+        let second = spawn_script(request_for(&app, &registry, "run-dup", &cwd, "echo second"));
+
+        assert!(matches!(second, Err(ScriptError::Duplicate(id)) if id == "run-dup"));
+        let live = registry.list_live().expect("list");
+        assert_eq!(live.len(), 1);
+        assert_eq!(live[0].pid, Some(first.pid));
+        std::fs::write(&flag, "").expect("write the flag");
+        crate::proc::ledger::test_support::assert_row_gone(&cwd);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn registering_over_a_live_run_id_is_refused() {
+        let registry = ScriptRegistry::new();
+        let slot = |run_id: &str| ScriptSlot {
+            run: Arc::new(Mutex::new(None)),
+            metadata: LiveScriptRun {
+                run_id: run_id.to_string(),
+                script_id: "script-1".to_string(),
+                name: "Probe".to_string(),
+                session_id: "session-1".to_string(),
+                cwd: "/work/ledger-core".to_string(),
+                pid: None,
+                started_at: 1,
+            },
+            ring: new_shared_ring(),
+        };
+
+        assert!(register_run(&registry.0, "run-a", slot("run-a")));
+        assert!(!register_run(&registry.0, "run-a", slot("run-a")));
+        assert!(ensure_run_id_is_free(&registry.0, "run-a").is_err());
+        assert!(ensure_run_id_is_free(&registry.0, "run-b").is_ok());
+    }
+
+    #[test]
+    fn a_finished_run_removes_only_its_own_entry() {
+        let registry = ScriptRegistry::new();
+        let old: PtySlot = Arc::new(Mutex::new(None));
+        let current: PtySlot = Arc::new(Mutex::new(None));
+        registry.0.lock().unwrap().insert(
+            "run-a".to_string(),
+            ScriptSlot {
+                run: Arc::clone(&current),
+                metadata: LiveScriptRun {
+                    run_id: "run-a".to_string(),
+                    script_id: "script-1".to_string(),
+                    name: "Probe".to_string(),
+                    session_id: "session-1".to_string(),
+                    cwd: "/work/ledger-core".to_string(),
+                    pid: None,
+                    started_at: 1,
+                },
+                ring: new_shared_ring(),
+            },
+        );
+
+        assert!(!owns_run(&registry.0, "run-a", &old));
+        release_run(&registry.0, "run-a", &old);
+        assert_eq!(registry.0.lock().unwrap().len(), 1);
+
+        assert!(owns_run(&registry.0, "run-a", &current));
+        release_run(&registry.0, "run-a", &current);
+        assert!(registry.0.lock().unwrap().is_empty());
+        assert!(owns_run(&registry.0, "run-a", &old));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn waiting_for_a_run_never_holds_its_slot_lock() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("script-lock");
+        let cwd = dir.to_string_lossy().into_owned();
+        let flag = dir.join("stop");
+        let body = format!("while [ ! -e '{}' ]; do sleep 0.05; done", flag.display());
+        let app = tauri::test::mock_app();
+        let registry = ScriptRegistry::new();
+        spawn_script(request_for(&app, &registry, "run-lock", &cwd, &body)).expect("run");
+        crate::proc::ledger::test_support::wait_for_row(&cwd);
+        let slot = Arc::clone(&registry.0.lock().unwrap().get("run-lock").unwrap().run);
+
+        for _ in 0..10 {
+            assert!(slot.try_lock().is_ok(), "the reader holds the slot lock");
+            thread::sleep(std::time::Duration::from_millis(30));
+        }
+
+        std::fs::write(&flag, "").expect("write the flag");
         crate::proc::ledger::test_support::assert_row_gone(&cwd);
         let _ = std::fs::remove_dir_all(&dir);
     }

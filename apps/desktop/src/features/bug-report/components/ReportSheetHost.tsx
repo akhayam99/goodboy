@@ -7,9 +7,9 @@ import { redactReport } from '../../../shared/utils/redactReport';
 import { useAppStore } from '../../../store';
 import type { AppState } from '../../../store/types';
 import { tauriGhRunner } from '../../integrations/github/github';
-import { collectReportContext } from '../../settings/reportContext';
+import { collectReportContext } from '../reportContext';
 import { lastCrashPart } from '../crashReport';
-import { LAST_CRASH_TITLE } from '../lastCrash';
+import { LAST_CRASH_TITLE, type LastCrashKind } from '../lastCrash';
 import { OPEN_REPORT_SHEET_EVENT, type OpenReportSheetDetail } from '../openReportSheet';
 import { contextParts, noticePart, type ReportPart } from '../reportBody';
 import type { ReportFiled } from '../reportDestination';
@@ -57,9 +57,15 @@ const leadParts = ({ state, detail }: LeadPartsParams): ReadonlyArray<ReportPart
   ];
 };
 
+const CRASH_HEADING: Readonly<Record<LastCrashKind, string>> = {
+  panic: 'Report this crash',
+  error: 'Report this error',
+  freeze: 'Report this freeze',
+};
+
 const headingFor = ({ detail }: { readonly detail: OpenReportSheetDetail }): string => {
   if (detail.crash != null) {
-    return detail.crash.kind === 'panic' ? 'Report this crash' : 'Report this error';
+    return CRASH_HEADING[detail.crash.kind];
   }
   return detail.notice == null ? 'Report a bug' : 'Report this';
 };

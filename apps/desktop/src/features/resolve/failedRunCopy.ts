@@ -1,17 +1,16 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { ResolveRowAction } from './resolveRowState';
 
 export const FAILED_RUN_COPY = {
   retry: NAMES.retry,
   anotherModel: 'Try another model',
   hintLabel: 'What should the agent do differently?',
-  hintKeys: '↵ sends, ⇧↵ new line, Esc cancels',
   reply: NAMES.reply,
   skip: 'Skip',
   openTranscript: 'Open transcript',
   moreActions: 'More actions',
   modelList: 'Model for a new agent',
-  usedAndFailed: 'could not fix it',
+  usedAndFailed: "couldn't fix it",
   attemptsRegion: 'Previous attempts',
 } as const;
 

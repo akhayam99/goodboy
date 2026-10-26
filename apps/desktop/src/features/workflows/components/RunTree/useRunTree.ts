@@ -15,6 +15,7 @@ import {
 import { layoutTimelineRail, type RailLayout } from '../../../workTreeModel/railGeometry';
 import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
+import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 import { runTreeStreamOf } from './runTreeStreamOf';
 
 const UNDATED_RUN_AT = new Date(0).toISOString() as IsoDateTime;
@@ -47,6 +48,7 @@ export const useRunTree = ({
   const openQuestions = useSessionOpenQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
   const advance = useWorkflowRunAdvance({ sessionId, run, workflow });
+  const turnByAgentId = useLiveAgentTurns({ agents });
 
   const entry = useMemo(() => {
     const model = buildTimelineGroups({
@@ -93,6 +95,7 @@ export const useRunTree = ({
         unreadAgentIds,
         advance: advance.state,
         isDeciding,
+        turnByAgentId,
       }),
       run,
       rowHeight,
@@ -101,5 +104,5 @@ export const useRunTree = ({
       stream,
       rail: layoutTimelineRail({ rows: stream.items, groups: stream.groups, hasSpine: false }),
     };
-  }, [advance.state, entry, isDeciding, rowHeight, run, unreadAgentIds]);
+  }, [advance.state, entry, isDeciding, rowHeight, run, turnByAgentId, unreadAgentIds]);
 };

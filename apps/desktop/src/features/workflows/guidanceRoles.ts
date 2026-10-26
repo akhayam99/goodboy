@@ -30,14 +30,6 @@ export const guidanceLeftOutText = ({ roles }: { readonly roles: ReadonlyArray<A
   return `${left.join(', ')} ${left.length === 1 ? "doesn't" : "don't"} get it, so each keeps its own brief.`;
 };
 
-export const sameRoles = ({
-  left,
-  right,
-}: {
-  readonly left: ReadonlyArray<AgentRole>;
-  readonly right: ReadonlyArray<AgentRole>;
-}): boolean => left.length === right.length && left.every((role) => right.includes(role));
-
 export const workingRulesSkippedText = (): string => {
   const skipped = (Object.keys(ROLE_LABEL) as ReadonlyArray<AgentRole>)
     .filter((role) => !PROFILE_ACCESS[role].includes('workingRules'))

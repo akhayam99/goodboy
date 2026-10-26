@@ -11,6 +11,10 @@ import type {
 export type ClaudePermissionMode =
   'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
+export const FAIL_CLOSED_PERMISSION_MODE = 'default' satisfies ClaudePermissionMode;
+
+export const NEW_WORKSPACE_PERMISSION_MODE = 'bypassPermissions' satisfies ClaudePermissionMode;
+
 export const CLAUDE_PERMISSION_MODES = [
   'default',
   'acceptEdits',

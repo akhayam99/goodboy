@@ -1,7 +1,7 @@
 import { Clock, Trash2, Undo2 } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
-import { Button, Chip, ConfirmPopover, IconButton, TruncatedText } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, Chip, ConfirmPopover, ICON_SIZE, IconButton, TruncatedText } from '@goodboy/ui';
+
 import { BRANCH_TABLE_GRID } from '../../branches/branchTableGrid';
 import { deletedBranchDays } from '../../branches/deletedBranchDays';
 
@@ -43,13 +43,13 @@ export const DeletedBranchRow = ({
             {entry.sha.slice(0, 7)}
           </span>
         </span>
-        <span data-cell="folder" className="truncate text-label text-muted-foreground">
+        <span data-cell="folder" className="truncate text-meta text-muted-foreground">
           {projectName}
         </span>
         <span data-cell="state" className="flex min-w-0">
           <Chip
+            kind="state"
             tone={left <= NEAR_EXPIRY_DAYS ? 'warning' : 'neutral'}
-            size="xs"
             icon={<Clock size={ICON_SIZE.control} aria-hidden />}
             label={left === 1 ? '1 day left' : `${left} days left`}
           />

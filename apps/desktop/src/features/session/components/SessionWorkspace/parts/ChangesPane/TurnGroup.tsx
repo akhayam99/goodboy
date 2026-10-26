@@ -13,7 +13,7 @@ type Props = {
 
 export const TurnGroup = ({ sessionId, turn, age, selectedKey, onSelect }: Props) => (
   <section aria-label={turnNameOf({ turn })} className="flex flex-col gap-1">
-    <h3 className="flex min-w-0 items-baseline gap-2 px-2 text-label text-foreground">
+    <h3 className="flex min-w-0 items-baseline gap-2 px-2 text-meta text-foreground">
       <span className="min-w-0 flex-1 truncate">{turnNameOf({ turn })}</span>
       <span className="shrink-0 text-meta text-faint-foreground">{age}</span>
     </h3>

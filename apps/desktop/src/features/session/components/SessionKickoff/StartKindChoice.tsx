@@ -1,9 +1,9 @@
-import { Button, ChoiceCards, SectionHeader, type ChoiceCardOption } from '@goodboy/ui';
+import { Button, ChoiceCards, ICON_SIZE, SectionHeader, type ChoiceCardOption } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { StartShape } from '../../../../store/slices/sessionDraft/state';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 
 type Props = {

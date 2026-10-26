@@ -14,7 +14,6 @@ import { FilesPane } from './parts/FilesPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
-import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { PresetRunPage } from '../PresetRun';
 import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
@@ -100,7 +99,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
   const leaveAgentOverlay = useCallback(() => up(), [up]);
 
-  useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
+  useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
   const trail = <SessionTrail sessionId={sessionId} />;

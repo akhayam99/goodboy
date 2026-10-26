@@ -1,3 +1,4 @@
+import { brandId } from '@goodboy/types';
 import type {
   AgentId,
   ContextSlot,
@@ -36,6 +37,7 @@ export type AutoPopulateInput = {
   readonly assistantText: string;
   readonly agentContext?: AgentContext;
   readonly isQuestionIntakeSkipped?: boolean;
+  readonly newId?: () => string;
 };
 
 export type AutoPopulateResult = {
@@ -96,7 +98,7 @@ export const autoPopulateContext = async (
   let insertedCount = 0;
   for (const q of freshQuestions) {
     const res = await insertOpenQuestion(input.db, {
-      id: cryptoRandomUUID() as OpenQuestionId,
+      id: brandId<OpenQuestionId>({ value: (input.newId ?? randomId)() }),
       sessionId: input.sessionId,
       workflowId: input.agentContext?.workflowId,
       workflowRunId: input.agentContext?.workflowRunId,
@@ -147,17 +149,7 @@ function matchesAny(text: string, candidates: ReadonlyArray<string>): boolean {
   });
 }
 
-function cryptoRandomUUID(): string {
-  const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) {
-    return g.crypto.randomUUID();
-  }
-  const rnd = () =>
-    Math.floor(Math.random() * 0x10000)
-      .toString(16)
-      .padStart(4, '0');
-  return `${rnd()}${rnd()}-${rnd()}-4${rnd().slice(1)}-${rnd()}-${rnd()}${rnd()}${rnd()}`;
-}
+const randomId = (): string => globalThis.crypto.randomUUID();
 
 function pushUpdate(
   updates: Array<{ key: SlotKey; value: string }>,

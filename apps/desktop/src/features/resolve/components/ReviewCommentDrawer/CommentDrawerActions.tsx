@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { ArrowUp, ExternalLink } from 'lucide-react';
+import { ArrowUp, SquareArrowOutUpRight } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, FormActions, KeyHint, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, FormActions, ICON_SIZE, KeyHint, Tooltip } from '@goodboy/ui';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ResolvedAction } from '../../../actions/types';
 import type { ReviewCommentBinding } from '../../hooks/useReviewCommentController';
@@ -130,7 +130,7 @@ export const CommentDrawerActions = ({ entry, push, plan, lone, extra, binding }
             data-review-verb={COMMENT_DRAWER_VERB.openHost}
             onClick={() => binding.onRun(COMMENT_DRAWER_VERB.openHost)}
           >
-            <ExternalLink size={ICON_SIZE.control} aria-hidden />
+            <SquareArrowOutUpRight size={ICON_SIZE.control} aria-hidden />
             {BAR_COPY.viewOn({ host })}
           </Button>
         );

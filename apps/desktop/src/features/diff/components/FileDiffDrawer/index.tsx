@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { Button, DrawerFrame, ErrorStrip, Skeleton, formatError } from '@goodboy/ui';
+import { Button, DrawerFrame, ErrorStrip, formatError, ICON_SIZE, Skeleton } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { FileDiffSource } from '../../../../store/slices/drawer/state';
@@ -8,7 +8,7 @@ import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/s
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ghCommitDiff } from '../../../integrations/github/github';
 import { worktreeDiff, worktreeDiffCommit, worktreeFileSides } from '../../../worktree/worktree';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
@@ -43,13 +43,16 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
         ? null
         : {
             onOpenInEditor: (filePath: string) => {
-              void openFileInWorkspace(editorRoot, `${editorRoot}/${filePath}`, editorBinary).catch(
-                (error: unknown) =>
-                  reportError({
-                    title: "Couldn't open the file in your editor",
-                    error: formatError(error),
-                    sessionId,
-                  }),
+              void openFileInWorkspace({
+                workspacePath: editorRoot,
+                filePath: `${editorRoot}/${filePath}`,
+                editor: editorBinary,
+              }).catch((error: unknown) =>
+                reportError({
+                  title: "Couldn't open the file in your editor",
+                  error: formatError(error),
+                  sessionId,
+                }),
               );
             },
           },

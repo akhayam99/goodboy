@@ -46,7 +46,7 @@ export const FlowPlanPreview = ({
   }
   return (
     <div className="flex flex-col gap-2">
-      <p aria-live="polite" className="text-label text-muted-foreground">
+      <p aria-live="polite" className="text-meta text-muted-foreground">
         {mode === 'copy'
           ? `Will change ${pluralize(count, 'setting')} on ${pluralize(pageCount, 'page')}. ${STAYS}`
           : `Goes back to the default: ${pluralize(count, 'setting')} on ${pluralize(pageCount, 'page')}.`}

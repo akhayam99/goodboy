@@ -149,3 +149,24 @@ describe('captureCrash', () => {
     });
   });
 });
+
+describe('describeCrash', () => {
+  it('replaces a module load failure with plain words and no module address', async () => {
+    const { describeCrash } = await loadCapture();
+    const text = describeCrash(
+      new TypeError(
+        'Failed to fetch dynamically imported module: http://localhost:1420/src/features/setup/Harborline.tsx',
+      ),
+    );
+
+    expect(text).toBe("A part of the app couldn't be loaded. Reload to fetch it again.");
+  });
+
+  it('keeps the redacted message of any other crash', async () => {
+    const { describeCrash } = await loadCapture();
+
+    expect(describeCrash(new Error('ledger-core is not defined'))).toBe(
+      'ledger-core is not defined',
+    );
+  });
+});

@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode, Ref } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, FOCUS_RING } from '@goodboy/ui';
 
 type Props = {
   readonly label: ReactNode;
@@ -32,7 +32,9 @@ export const BranchTemplateOption = ({
     onClick={onPick}
     onKeyDown={onKeyDown}
     className={cn(
-      'flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50',
+      'flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors hover:bg-hover',
+      FOCUS_RING,
+      'disabled:opacity-50',
       isChecked && 'bg-selected',
     )}
   >
@@ -48,7 +50,7 @@ export const BranchTemplateOption = ({
     <span
       className={cn(
         'min-w-0 flex-1 truncate text-foreground',
-        isMono ? 'font-mono text-code' : 'text-label',
+        isMono ? 'font-mono text-code' : 'text-meta',
       )}
     >
       {label}

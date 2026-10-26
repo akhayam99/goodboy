@@ -8,6 +8,7 @@ import { handlersFor } from '../brand/DiffStage';
 import { CTX_BASE_SHA, CTX_COMMITS } from '../brand/contextBranch';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { prViewsOf } from '../prViewsOf';
 import { SESSION_ID } from '../resolveSeed';
 import { U21_BRANCH_SCENES } from '../u21/branch';
 import { REBASE_JOB_MOUNT_ID } from './rebaseJobSeed';
@@ -44,9 +45,11 @@ const GRAPH: HistoryGraph = {
     },
   ],
   behind: 15,
-  remoteSha: CTX_COMMITS[0]?.sha ?? null,
+  remoteSha: CTX_COMMITS.find((commit) => commit.pushed)?.sha ?? null,
   files: [],
 };
+
+const PUSHED_COMMITS = CTX_COMMITS.filter((commit) => commit.pushed);
 
 const ITEMS = initialPlanItems({ commits: CTX_COMMITS });
 
@@ -115,12 +118,24 @@ export const CommitsBranchScene = ({ isPlanned, stageWidth, answers }: Props) =>
       }
       return HANDLERS[command]?.(undefined) ?? null;
     });
-    useAppStore.setState((current) => ({
-      branchTab: { ...current.branchTab, [SESSION_ID]: 'commits' },
-      historyDrafts: { ...current.historyDrafts, [REBASE_JOB_MOUNT_ID]: draftOf({ isPlanned }) },
-      historyRuns: {},
-      loadHistoryDraft: async () => undefined,
-    }));
+    useAppStore.setState((current) => {
+      const pr = current.mountGithub[REBASE_JOB_MOUNT_ID]?.pr ?? null;
+      return {
+        pullRequestViews:
+          pr === null
+            ? current.pullRequestViews
+            : prViewsOf({
+                sessionId: SESSION_ID,
+                mountId: REBASE_JOB_MOUNT_ID,
+                pr: { ...pr, headSha: PUSHED_COMMITS[0]?.sha ?? pr.headSha },
+                commits: PUSHED_COMMITS,
+              }),
+        branchTab: { ...current.branchTab, [SESSION_ID]: 'commits' },
+        historyDrafts: { ...current.historyDrafts, [REBASE_JOB_MOUNT_ID]: draftOf({ isPlanned }) },
+        historyRuns: {},
+        loadHistoryDraft: async () => undefined,
+      };
+    });
   }, [answers, isPlanned]);
   if (stageWidth === undefined) {
     return <BaseScene />;

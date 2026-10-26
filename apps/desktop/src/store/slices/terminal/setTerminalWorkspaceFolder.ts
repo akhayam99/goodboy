@@ -1,7 +1,6 @@
-import { setSetting } from '@goodboy/db';
+import { setWorkspaceValue } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { settingTerminalFolder } from './state';
 import type { SetFn } from './types';
 
 type SetFolderParams = {
@@ -12,7 +11,12 @@ type SetFolderParams = {
 export const setTerminalWorkspaceFolder = (set: SetFn) => {
   return async ({ workspaceId, folder }: SetFolderParams): Promise<void> => {
     const next = folder === null || folder.trim() === '' ? null : folder.trim();
-    await setSetting(tauriDatabase, settingTerminalFolder({ workspaceId }), next ?? '');
+    await setWorkspaceValue({
+      db: tauriDatabase,
+      workspaceId,
+      key: 'terminal.workspaceFolder',
+      value: next ?? '',
+    });
     set((s) => ({
       terminalFolderOverrides: { ...s.terminalFolderOverrides, [workspaceId]: next },
     }));

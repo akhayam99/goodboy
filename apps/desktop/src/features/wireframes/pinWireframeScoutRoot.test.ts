@@ -3,13 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   collectWireframeScoutRootCandidates,
   pinWireframeScoutRoot,
-  WIREFRAME_SCOUT_REPOSITORY_ROOT,
 } from './pinWireframeScoutRoot';
 
 describe('pinWireframeScoutRoot', () => {
   it('pins the repository root when the repository declares no workspaces', () => {
     const pinned = pinWireframeScoutRoot({ candidates: [], goal: 'draw the admin', brief: null });
-    expect(pinned.path).toBe(WIREFRAME_SCOUT_REPOSITORY_ROOT);
+    expect(pinned.path).toBe('.');
     expect(pinned.reason).toContain('declares no workspaces');
   });
 
@@ -38,7 +37,7 @@ describe('pinWireframeScoutRoot', () => {
       goal: 'draw the settlement flow',
       brief: null,
     });
-    expect(pinned.path).toBe(WIREFRAME_SCOUT_REPOSITORY_ROOT);
+    expect(pinned.path).toBe('.');
     expect(pinned.reason).toContain('2 workspaces');
   });
 
@@ -48,7 +47,7 @@ describe('pinWireframeScoutRoot', () => {
       goal: 'look in the apps folder',
       brief: null,
     });
-    expect(pinned.path).toBe(WIREFRAME_SCOUT_REPOSITORY_ROOT);
+    expect(pinned.path).toBe('.');
   });
 
   it('breaks a tie deterministically by path length then alphabet', () => {

@@ -17,8 +17,7 @@ const { prompts, launch } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../features/session/ask/activeAskBackend', async () => {
-  const { createMemoryAskBackend } =
-    await import('../../../features/session/ask/createMemoryAskBackend');
+  const { createMemoryAskBackend } = await import('../../../test/createMemoryAskBackend');
   const backend = createMemoryAskBackend({
     respond: async ({ request, onText, onStarted }) => {
       await launch.whileStarting?.();

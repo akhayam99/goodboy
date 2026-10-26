@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 type StepDirection = 'forward' | 'back';
 
-export const STEP_TRANSITION_MS = 240;
+const STEP_TRANSITION_MS = 240;
 const REDUCED_STEP_TRANSITION_MS = 80;
-export const OUTGOING_FALLBACK_MS = 300;
+const OUTGOING_FALLBACK_MS = 300;
 
 type Params<T extends string> = {
   readonly step: T;

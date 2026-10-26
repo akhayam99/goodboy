@@ -1,9 +1,11 @@
 use crate::config_export::bundle::{ConfigBundle, ProjectBundle};
 use crate::config_export::convert::{normalized_root_path, workspace_projects};
 use crate::config_export::error::ConfigExportError;
+use crate::config_export::validate::is_wildcard_allow;
 use crate::repo::{
     find_moved_projects_blocking, FindMovedProjectsArgs, MovedProjectInput, MovedProjectVerdict,
 };
+use rusqlite::OptionalExtension;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -45,11 +47,90 @@ pub struct ImportGroupStat {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AllowRulePreview {
+    pub id: String,
+    pub scope: String,
+    pub pattern_tool: String,
+    pub pattern_args_matcher: Option<String>,
+    pub is_wildcard: bool,
+    pub replaces_decision: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScriptPreview {
+    pub id: String,
+    pub project_id: String,
+    pub name: String,
+    pub head: String,
+    pub is_update: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportPreview {
+    pub sha256: String,
     pub manifest: ImportManifest,
     pub workspace_matches: Vec<WorkspaceMatch>,
     pub project_matches: Vec<ProjectMatch>,
     pub group_stats: Vec<ImportGroupStat>,
+    pub allow_rules: Vec<AllowRulePreview>,
+    pub scripts: Vec<ScriptPreview>,
+}
+
+const SCRIPT_HEAD_CHARS: usize = 120;
+
+fn script_head(body: &str) -> String {
+    let first = body
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .unwrap_or("");
+    first.chars().take(SCRIPT_HEAD_CHARS).collect()
+}
+
+fn allow_rule_previews(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+) -> Result<Vec<AllowRulePreview>, rusqlite::Error> {
+    let mut stmt = conn.prepare("SELECT decision FROM permission_rules WHERE id = ?1")?;
+    let mut previews = Vec::new();
+    for rule in bundle
+        .permission_rules
+        .iter()
+        .filter(|r| r.decision == "allow")
+    {
+        let existing: Option<String> = stmt
+            .query_row(rusqlite::params![rule.id], |row| row.get(0))
+            .optional()?;
+        previews.push(AllowRulePreview {
+            id: rule.id.clone(),
+            scope: rule.scope.clone(),
+            pattern_tool: rule.pattern_tool.clone(),
+            pattern_args_matcher: rule.pattern_args_matcher.clone(),
+            is_wildcard: is_wildcard_allow(rule),
+            replaces_decision: existing.filter(|decision| decision != "allow"),
+        });
+    }
+    Ok(previews)
+}
+
+fn script_previews(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+) -> Result<Vec<ScriptPreview>, rusqlite::Error> {
+    let mut stmt = conn.prepare("SELECT 1 FROM project_scripts WHERE id = ?1 LIMIT 1")?;
+    let mut previews = Vec::new();
+    for script in &bundle.scripts {
+        previews.push(ScriptPreview {
+            id: script.id.clone(),
+            project_id: script.project_id.clone(),
+            name: script.name.clone(),
+            head: script_head(&script.body),
+            is_update: stmt.exists(rusqlite::params![script.id])?,
+        });
+    }
+    Ok(previews)
 }
 
 fn count_id_group<'a>(
@@ -159,6 +240,7 @@ fn verdict_label(verdict: &MovedProjectVerdict) -> String {
 pub(super) fn build_import_preview(
     conn: &rusqlite::Connection,
     bundle: &ConfigBundle,
+    sha256: &str,
     project_parent: Option<&str>,
 ) -> Result<ImportPreview, ConfigExportError> {
     let project_count: usize = bundle
@@ -306,12 +388,17 @@ pub(super) fn build_import_preview(
     group_stats.retain(|stat| stat.adds > 0 || stat.updates > 0);
 
     Ok(ImportPreview {
+        sha256: sha256.to_string(),
         manifest,
         workspace_matches,
         project_matches,
         group_stats,
+        allow_rules: allow_rule_previews(conn, bundle)?,
+        scripts: script_previews(conn, bundle)?,
     })
 }
 
+#[cfg(test)]
+mod allow_tests;
 #[cfg(test)]
 mod tests;

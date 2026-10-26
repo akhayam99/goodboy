@@ -17,10 +17,6 @@
       "message": "[roles] unknown role \"unknown\"; using custom"
     },
     {
-      "file": "src/features/workflows/components/WorkflowBuilderView/index.test.tsx",
-      "message": "[roles] unknown role \"engineer\"; using custom"
-    },
-    {
       "file": "src/features/workflows/engine/index.test.ts",
       "message": "[roles] unknown role \"emperor\"; using custom"
     },

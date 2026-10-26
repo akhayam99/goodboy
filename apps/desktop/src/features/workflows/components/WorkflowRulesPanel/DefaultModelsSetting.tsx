@@ -1,6 +1,6 @@
 import { Button, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { openSettings } from '../../../settings/openSettings';
 import { usePolicySummary } from '../../hooks/usePolicySummary';
 import { SettingChip } from '../../../../shared/components/SettingChip';

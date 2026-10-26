@@ -8,6 +8,13 @@ import { classifyBranch } from './classifyBranch';
 const NOW = Date.parse('2026-09-27T10:00:00.000Z');
 const nowS = NOW / 1000;
 
+const SAFE_STATES: ReadonlySet<string> = new Set([
+  'merged-via-merge',
+  'merged-via-rebase',
+  'merged-via-pr',
+  'no-own-commits',
+]);
+
 const branch = (patch: Partial<ProjectBranch>): ProjectBranch => ({
   name: 'hl/flaky-retry-test',
   sha: 'abc',
@@ -15,6 +22,7 @@ const branch = (patch: Partial<ProjectBranch>): ProjectBranch => ({
   lastCommitAt: nowS - 86_400,
   location: 'on-origin',
   mergeState: { kind: 'merged-via-pr' },
+  isSafeToDelete: SAFE_STATES.has(patch.mergeState?.kind ?? 'merged-via-pr'),
   behind: null,
   ...patch,
 });

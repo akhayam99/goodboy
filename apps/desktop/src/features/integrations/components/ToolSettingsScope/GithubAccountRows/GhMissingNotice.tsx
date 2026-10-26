@@ -1,8 +1,8 @@
-import { ExternalLink, TriangleAlert } from 'lucide-react';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { SquareArrowOutUpRight, TriangleAlert } from 'lucide-react';
+import { ICON_SIZE } from '@goodboy/ui';
 
 export const GhMissingNotice = () => (
-  <p className="flex items-center gap-2 text-label text-warning">
+  <p className="flex items-center gap-2 text-meta text-warning">
     <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
     <span>
       The GitHub CLI is not installed.{' '}
@@ -12,7 +12,7 @@ export const GhMissingNotice = () => (
         rel="noreferrer"
         className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
       >
-        Install gh <ExternalLink size={ICON_SIZE.mark} aria-hidden />
+        Install gh <SquareArrowOutUpRight size={ICON_SIZE.mark} aria-hidden />
       </a>
     </span>
   </p>

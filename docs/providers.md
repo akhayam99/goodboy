@@ -330,7 +330,11 @@ repeats a verb. A provider that is not connected shows only its connect card.
   month across all workspaces, counted by Goodboy at API prices, and the
   provider's budget when you set one. `provider_budget_overview` in
   `src-tauri/src/budget.rs` answers all of it in one call. The budget month
-  runs on UTC and resets at 00:00 UTC, shown in your local time. Routing, the
+  runs on your local calendar and resets at your local midnight on the 1st; the
+  app sends its UTC offset with each call and `SpendClock` in
+  `src-tauri/src/budget/standing.rs` is the only place that turns it into a window.
+  `classify_spend` in the same file decides clear, near or over for the status and
+  the alerts: spend equal to the cap is over. Routing, the
   provider page, Impact and the chat pill read the same `check_provider_budget`
   status, so the percentage is the same everywhere. **Open in Impact** edits the
   budget. On a
@@ -367,6 +371,9 @@ read the result). The row shows the elapsed time on success or the first line of
 error, with **Sign in again** on the row. An authentication refusal counts as one
 refusal in the existing provider breaker; a passing call confirms the account.
 The command is `provider_test_connection` in `src-tauri/src/providers/test_connection.rs`.
+It answers with a typed outcome (`answered`, `timed_out` with its seconds, `empty`,
+`unsupported` or `refused` with the CLI's own text) and never writes a sentence;
+the row writes it, so the deadline it names is the one the command used.
 
 **History** in the header menu opens a panel under the Account rows and shows the
 newest 20 changes since Goodboy started, with relative times and absolute times in
@@ -401,8 +408,10 @@ pays for every turn.
   **Sign in again**. Picking the provider yourself still runs on it, and one accepted run
   closes the breaker
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
-  After two minutes, **Run in terminal** runs the same command in your own
-  terminal. Goodboy notices when it finishes
+  After two minutes, **Open in Terminal.app** (or the terminal app you picked in
+  Settings, Open with, when it can take a command: iTerm does, Warp and Ghostty
+  do not) runs the same command in your own terminal, and the failure hint shows
+  it with **Copy command** at once. Goodboy notices when it finishes
 - **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
   the 5-hour window above, the week below. A bar turns amber from 80%, red and
   full when the window is used up, and fades when the figures are old; the chip
@@ -422,9 +431,29 @@ pays for every turn.
   CLI supports. Goodboy never guesses: a CLI whose version it can't read is never
   flagged. Update waits while a turn on the same provider is running
 
+## Moving a conversation to another model
+
+Cursor, Codex and Gemini do not keep your conversation: Goodboy sends it again
+with each turn, as a block of prior turns that holds at most 8,000 estimated
+tokens (`PRIOR_TURNS_BUDGET_TOKENS`). Your original request always goes along,
+and so does the end of the conversation, with a long message cut and marked.
+When a move leaves something out, the agent's transcript says so, for example
+"Carried over: 6 turns, the plan, 2 notes; left out: 14 older turns."
+
 ## Under the hood
 
 This part is for contributors and agents who change how providers work.
+
+### The provider table
+
+One row per provider says what the app knows about it, in two places that a test keeps equal.
+
+- Rust: `PROVIDER_SPECS` in `src-tauri/src/providers/spec.rs`. A row holds the id, the CLI family (`Cli`), the binary to run, the read-only chat shape (only Claude and Codex have one) and the sign-in check. Finding a CLI (`detect_provider`), checking sign-in (`check_provider_auth_blocking`), the lifecycle exit status, the chat shape and `Cli::of_provider` all read it. `Cli::of_binary` answers `None` for a name that is no row's binary, so a mistyped binary gets no arguments instead of Claude's.
+- TypeScript: `PROVIDER_FLAGS` in `packages/core/src/providers/providerFlags.ts`. A row holds the binary, the store slot that keeps the last status (`statusSlot`), whether the transcript is replayed as text (`shouldReplayHistoryAsText`) and whether an account test exists (`hasAccountTest`). A flag exists only when code branches on it, and a test per flag pins its value.
+
+`provider-spec-parity.test.ts` reads `spec.rs` and fails when the ids, their order or a binary drift from the TypeScript table. `provider-id-comparisons.test.ts` counts the places that still compare with a provider id (`=== 'cursor'`); the count only falls. To branch on what a provider can do, add a flag, read it, and leave the comparison out. The steps for a whole new provider are in [add-a-provider](recipes/add-a-provider.md).
+
+Two helpers have one owner each: `codex_home()` in `codex_rollout.rs` is the only place that resolves `CODEX_HOME`, and `exit_code_of` in `proc/pty.rs` turns a finished PTY child into the exit code the lifecycle and terminal events carry.
 
 ### How Connect works
 
@@ -449,7 +478,7 @@ The timers live in `apps/desktop/src/store/slices/providers/connectProvider.ts`:
 - `STALL_MS` (15s): if the login goes quiet for this long, it is probably waiting for
   input. The hidden terminal appears
 - `HANDOFF_LONG_MS` (30s): the card says it is still waiting for the browser
-- `HANDOFF_FALLBACK_MS` (120s): the card offers **Run in terminal**
+- `HANDOFF_FALLBACK_MS` (120s): the card offers **Open in Terminal.app**
 - `POST_EXIT_PROBE_MS` (60s): after the CLI exits, Goodboy keeps checking the sign-in
   for this long
 
@@ -506,6 +535,17 @@ log with the provider, the kind and the milliseconds.
 - The sign-in parsers read the exit code and the output together. `claude auth status`
   and `codex login status` exit 1 when you are signed out, and that is read as
   disconnected. Output the parser does not recognise is `unknown`, with a `reason`.
+- `AuthState.reason` is a typed `AuthReason` (`providers/auth_reason.rs`), never a
+  sentence: `timed_out` with its `secs` (the budget the check ran under),
+  `not_installed`, `spawn_failed` and `cli_said` with a `detail` (the OS or CLI words),
+  `printed_nothing`, `exited_with_code` with its `code`, `no_exit_code`,
+  `empty_command`, `no_access_token`, `not_confirmed_by_server`, `no_status`,
+  `unknown_provider` and `check_unfinished`. `authReasonSentence` in
+  `features/providers` writes the one sentence for each kind, and
+  `probeOutcomeOf` hands it to the connection history. A chat that cannot run
+  read-only fails with the kind `not_read_only`; `chatStartError` in
+  `features/workspace-chat` turns it into `CHAT_PROVIDER_REFUSAL`, the same
+  sentence the model picker shows.
 - Cursor reads `cursor-agent status --format json` and falls back to the plain text.
   `isAuthenticated` and `hasAccessToken` prove the local tokens. An email in `message`
   or `about` proves the server knows the account. Tokens without an email give
@@ -664,8 +704,11 @@ covers turns, the planner and the summarizer. All of them get their arguments fr
 Goodboy runs codex with no prompts:
 
 ```
-codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- <PROMPT>
+codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -
 ```
+
+The trailing `-` makes codex read the prompt from stdin. See
+[Prompt on stdin](#prompt-on-stdin).
 
 - The sandbox follows the mode, as in [Permission modes per CLI](#permission-modes-per-cli).
   Full access keeps `workspace-write`: Goodboy never passes
@@ -722,6 +765,36 @@ opencode looks up providers live on models.dev, so the model id names the provid
 - Moonshot models point at Moonshot directly (`moonshotai/kimi-k3`)
 - Both already contain a `/`, so `opencodeModelArg` adds no `OPENCODE_ROUTING` prefix
 
+### Prompt on stdin
+
+Any local user can read another user's command line with `ps`, so a prompt that
+holds a pasted key must not travel in argv. `prompt_on_stdin` in
+`providers/cli_args.rs` names the CLIs that read it from stdin, and
+`turn_stdin`, `side_job_stdin` and `feed_stdin` hand it over. Turns, the planner
+and the summarizer use them.
+
+| CLI             | Prompt                              | Status                    |
+| --------------- | ----------------------------------- | ------------------------- |
+| Claude          | `-p` with no value, prompt on stdin | on stdin                  |
+| Codex           | trailing `-`, prompt on stdin       | on stdin                  |
+| Cursor          | `-p <prompt>`                       | argv, stdin not confirmed |
+| Antigravity     | `-p <prompt>`                       | argv, stdin not confirmed |
+| opencode family | `-- <prompt>`                       | argv, stdin not confirmed |
+
+- The chat and ask turns in `chat.rs` still put the prompt in argv: their
+  hardening reads the prompt at the end of the argument list. They call
+  `turn_args_with_prompt`
+- A system prompt passed with `--system-prompt` or `--append-system-prompt` is
+  still in argv
+- The process monitor hides what a CLI keeps in argv: `monitor/mask.rs` masks
+  the text after `-p`, `--prompt`, `--system-prompt`, `--append-system-prompt`
+  and after a bare `--`. It also masks `--token`, `--password`, `--secret`,
+  `--api-key` and their values, bearer values and web address credentials
+  through `util/redact.rs`
+- The fake claude and codex record what they read on stdin in
+  `fake-cli-stdin.txt`, and the fake CLI tests check that argv holds no prompt
+- A CLI moves to stdin only after its help or a real run confirms it reads one
+
 ### Permission modes per CLI
 
 Every turn sends the session's mode to its CLI, not only to Claude.
@@ -759,7 +832,13 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   allowed and Full access. It disables the rows the active provider can't
   honor and says why. `dontAsk` stays in the type for older sessions and reads
   as Ask first; the picker never offers it
-- Every workspace starts on Full access (`workspaces.default_permission_mode`).
+- Every workspace starts on Full access (`workspaces.default_permission_mode`),
+  written explicitly when the workspace is created (`NEW_WORKSPACE_PERMISSION_MODE`).
+  Any read that finds no workspace, no default or an unknown stored mode falls
+  back to Ask first (`FAIL_CLOSED_PERMISSION_MODE`), resolved per provider
+  through `resolveModeFor`, never to Full access. The SQL column default of
+  `sessions` and `workspaces` is still `bypassPermissions` for a row inserted
+  without the column
   A new session takes its workspace's default, which Settings, Workspace,
   Permissions can lower; a running session keeps its mode
 
@@ -771,7 +850,7 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   (tool name, input, tool use id, suggested rules) and waits for a
   `control_response` with `behavior` `allow` or `deny`. That shape is read from
   the 2.1.282 binary and `claude --help`; no real turn has exercised it
-- `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
+- `turn.rs` starts Claude with `-p`, the prompt on stdin and no input stream, so no host
   exists: every call the mode doesn't allow is denied, the turn stops, and the
   permission card takes it from there
 - Cursor's help describes `--mode plan` as read-only planning with no edits.
@@ -917,7 +996,7 @@ When a provider ships or retires a model, update these together:
 4. `catalogDescriptor.ts`: a `WEIGHT_BY_KEY` row. `catalogDescriptor.test.ts` fails
    on a model without one.
 5. Nothing else. Auto (`autoRouting/effortLadder.ts`) and the chat default
-   (`workspace-chat/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and pick
+   (`conversation/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and pick
    its newest model through `latestInGroup`. A source scan
    (`model-versions-live-in-the-catalog.test.ts`) fails when product code outside
    the catalog layer writes a versioned id.
@@ -947,7 +1026,7 @@ When a provider ships or retires a model, update these together:
   the routing rules. `explainResolution` turns `skipped` into the one sentence rows
   print, and `skippedPinNote` into the clause the orchestrator prompt carries. The
   store builds the inputs once:
-  `selectModelContext` and `selectResolution` (`store/slices/models/`), and components
+  `selectModelContext` and `selectResolution` (`store/runtime/models/`), and components
   read them through `useResolution` (`features/providers/hooks/useResolution`). The
   Models page rows, the run page orchestrator pill and the workflow builder pill all
   read it, so they print the same model (`resolution.parity.test.tsx`). A lookup for
@@ -970,7 +1049,7 @@ When a provider ships or retires a model, update these together:
   `resolver-entrypoints` ratchet counts the files that still import `resolveRoleRouting`,
   `resolveTaskModel`, `resolveAuto` or their wrappers; it only falls. What remains are
   kind and step routing (`kindRouting` behind `selectKindRouting` for a spawned agent,
-  `resolveStepRouting`, `suggestedRouting`), which read the same resolved settings and
+  `resolveStepRouting`), which read the same resolved settings and
   scope and which the parity test checks against the row
 
 - **Auto** is one ladder for roles and tasks, `resolveAuto` in
@@ -1006,9 +1085,10 @@ When a provider ships or retires a model, update these together:
   a 0.15.4 build reads the entries as `null`, so it falls back to every provider and
   never crashes, and the backup bundle carries either shape at the same schema
   version. One writer, `setProviderPolicy` (overrides slice), patches the policy and
-  the default provider together; the slice queues `set_workspace_overrides` per
-  workspace and each write sends the latest row, so two quick edits keep both
-  fields. One reader, `providerCandidates` (`autoRouting/providerCandidates.ts`):
+  the default provider together; the slice queues `patch_workspace_overrides` per
+  workspace and each write sends only the keys it changes, so two quick edits, even
+  from two windows, keep both fields. A policy that is neither shape is refused with
+  `invalid_setting_value`, not stored as null. One reader, `providerCandidates` (`autoRouting/providerCandidates.ts`):
   usable On providers in the policy order, then usable Backup only providers. The
   user's order beats the curated-first rule, which stays only for a `null` policy.
   `providerStanding` names why a provider is out (`not-connected`, `off`,
@@ -1161,5 +1241,7 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
+- `apps/desktop/src-tauri/src/providers/spec.rs`: `PROVIDER_SPECS`, the Rust provider table
+- `packages/core/src/providers/providerFlags.ts`: `PROVIDER_FLAGS`, the TypeScript provider table
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks
 - `apps/desktop/src-tauri/src/turn.rs`: the args and env for starting a turn

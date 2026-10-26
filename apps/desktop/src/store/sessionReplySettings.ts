@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { replySettingsOf, type ReplySettings } from '../features/resolve/replySettings';
 import type { ResolveStartStyle } from '../features/resolve/startResolve';
 import { isAttributionEnabled } from '../shared/utils/attribution';
@@ -12,9 +12,15 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-export const sessionReplySettings = ({ state, sessionId }: Params): ReplySettings => {
+type SettingsParams = Params & { readonly projectId?: ProjectId | null };
+
+export const sessionReplySettings = ({
+  state,
+  sessionId,
+  projectId: named,
+}: SettingsParams): ReplySettings => {
   const session = sessionById(state.sessions, sessionId);
-  const projectId = state.sessionActiveProject?.[sessionId] ?? null;
+  const projectId = named ?? state.sessionActiveProject?.[sessionId] ?? null;
   const project = projectById(state.projects, projectId);
   const workspace =
     session === undefined ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
@@ -24,12 +30,23 @@ export const sessionReplySettings = ({ state, sessionId }: Params): ReplySetting
   };
 };
 
-export const sessionResolveStyle = ({ state, sessionId }: Params): ResolveStartStyle => {
-  const settings = sessionReplySettings({ state, sessionId });
+type StyleParams = Params & { readonly mountId?: MountId };
+
+export const sessionResolveStyle = ({
+  state,
+  sessionId,
+  mountId,
+}: StyleParams): ResolveStartStyle => {
+  const repo = resolveSessionRepo({ state, sessionId, ...(mountId !== undefined && { mountId }) });
+  const settings = sessionReplySettings({
+    state,
+    sessionId,
+    ...(mountId !== undefined && { projectId: repo?.projectId ?? null }),
+  });
   return {
     commitStyle: settings.commitStyle,
     voice: settings.voice,
     styleNote: settings.styleNote,
-    worktreePath: resolveSessionRepo({ state, sessionId })?.worktreePath ?? null,
+    worktreePath: repo?.worktreePath ?? null,
   };
 };

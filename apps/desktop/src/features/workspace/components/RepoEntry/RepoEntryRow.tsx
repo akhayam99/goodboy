@@ -1,8 +1,8 @@
 import { useId, type ReactNode } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronRight } from 'lucide-react';
-import { Button, IconButton, ROW_INTERACTIVE, Reveal, Tooltip, cn } from '@goodboy/ui';
+import { TriangleAlert, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronRight } from 'lucide-react';
+import { Button, cn, ICON_SIZE, IconButton, Reveal, ROW_INTERACTIVE, Tooltip } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { RepoRowFacts, RepoRowGlyph, RepoRowTone } from './repoRowFactsOf';
 
 type Props = {
@@ -42,7 +42,7 @@ const glyphOf = ({ glyph }: GlyphParams) => {
     case 'up-to-date':
       return <Check size={ICON_SIZE.mark} aria-hidden />;
     case 'failed':
-      return <AlertTriangle size={ICON_SIZE.mark} aria-hidden />;
+      return <TriangleAlert size={ICON_SIZE.mark} aria-hidden />;
     case 'none':
       return null;
     default: {

@@ -33,6 +33,7 @@ const payments = {
   name: 'payments-api',
   kind: 'repo',
   rootPath: '/repos/payments-api',
+  overrides: { afterMerge: null },
 };
 
 const ledger = {
@@ -41,6 +42,7 @@ const ledger = {
   name: 'ledger-core',
   kind: 'repo',
   rootPath: '/repos/ledger-core',
+  overrides: { afterMerge: null },
 };
 
 beforeEach(() => {

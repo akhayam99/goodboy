@@ -46,7 +46,7 @@ const UpdaterCardFrame = ({ version, size }: FrameProps) => {
       >
         <ul className="flex flex-col gap-1">
           {ROWS.map((row) => (
-            <li key={row} className="truncate px-2 py-1 text-label text-muted-foreground">
+            <li key={row} className="truncate px-2 py-1 text-meta text-muted-foreground">
               {row}
             </li>
           ))}

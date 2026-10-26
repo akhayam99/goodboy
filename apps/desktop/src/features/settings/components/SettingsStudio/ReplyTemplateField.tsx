@@ -30,7 +30,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <label htmlFor={id} className="text-label font-medium text-foreground">
+      <label htmlFor={id} className="text-meta font-medium text-foreground">
         {label}
       </label>
       <Textarea

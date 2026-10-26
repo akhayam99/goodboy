@@ -4,8 +4,9 @@ export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
+export { DISABLED } from './disabledStyle';
 export { FOCUS_RING } from './focusRing';
-export { dismissTopEscapeLayer, registerEscapeLayer } from './escape';
+export { dismissTopEscapeLayer, registerEscapeLayer, transientEscapeLayerCount } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
@@ -13,7 +14,7 @@ export { useDropdown } from './useDropdown';
 export { useDropdownDirection } from './useDropdownDirection';
 export { PopoverPortalProvider, usePopoverPortalTarget } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
-export { ICON_SIZE } from './iconSize';
+export { ICON_SIZE, ICON_STROKE } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
 export type { TextRole } from './textRoles';
 export { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM, PANE_RHYTHM } from './paneRhythm';
@@ -69,15 +70,12 @@ export type { DrawerBack, DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button, buttonClasses } from './components/Button';
 export { Avatar } from './components/Avatar';
-export { BranchPair } from './components/BranchPair';
 export { BrandGlyph } from './components/BrandGlyph';
 export { CardAction } from './components/CardAction';
 export { CardActionSlot } from './components/CardActionSlot';
 export { CommandPreview } from './components/CommandPreview';
-export { DiffLayoutToggle } from './components/DiffLayoutToggle';
-export type { DiffLayoutMode } from './components/DiffLayoutToggle';
 export { ErrorBoundary } from './components/ErrorBoundary';
-export type { ErrorReportRequest } from './components/ErrorBoundary';
+export type { ErrorFallbackRequest, ErrorReportRequest } from './components/ErrorBoundary';
 export { ReportSheet } from './components/ReportSheet';
 export type {
   ReportSheetAttachment,
@@ -90,12 +88,9 @@ export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
 export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
-export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuTriggerButton } from './components/MenuTriggerButton';
 export type { MenuTriggerSize } from './components/MenuTriggerButton';
-export { LineMark } from './components/LineMark';
-export { MenuItems } from './components/MenuItems';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
 export { MenuList } from './components/ContextMenu/MenuList';
 export type {
@@ -105,9 +100,7 @@ export type {
   MenuItemEntry,
   MenuPoint,
 } from './components/ContextMenu/menuTypes';
-export type { OverflowMenuItem } from './components/MenuItems';
 export { PanelLoading } from './components/PanelLoading';
-export { RailBlock } from './components/RailBlock';
 export { RailCard } from './components/RailCard';
 export { RefreshIconButton } from './components/RefreshIconButton';
 export { Sparkline } from './components/Sparkline';
@@ -164,7 +157,7 @@ export { SelectionConfirm } from './components/SelectionBar/SelectionConfirm';
 export type { SelectionConfirmProps } from './components/SelectionBar/SelectionConfirm';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip, chipClasses } from './components/Chip';
-export type { ChipClassParams, ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
+export type { ChipClassParams, ChipEmphasis, ChipProps } from './components/Chip';
 export { ClampedProse } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
@@ -175,6 +168,8 @@ export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';
 export type { DialogProps, DialogSize } from './components/Dialog';
+export { Scrim } from './components/Scrim';
+export type { ScrimProps } from './components/Scrim';
 export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { DogMascot } from './components/DogMascot';
@@ -184,8 +179,6 @@ export type { EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
 export { FacetRail } from './components/FacetRail';
-export { FacetKeyHints } from './components/FacetRail/FacetKeyHints';
-export type { FacetKeyHint } from './components/FacetRail/FacetKeyHints';
 export { FacetRow } from './components/FacetRail/FacetRow';
 export { FacetSection } from './components/FacetRail/FacetSection';
 export { FieldRow } from './components/FieldRow';
@@ -213,6 +206,11 @@ export {
   type CodeToken,
   type CodeTokenKind,
 } from './components/Markdown/codeHighlighter';
+export {
+  CodeBlockActionsContext,
+  type CodeBlockActions,
+  type CodeBlockActionsProps,
+} from './components/Markdown/codeBlockActions';
 export { parseMarkdown } from './components/Markdown/parseMarkdown';
 export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { InlineMarkdown } from './components/Markdown/InlineMarkdown';
@@ -236,7 +234,7 @@ export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export { FoldLayers } from './components/FoldLayers';
 export type { FoldLayersProps } from './components/FoldLayers';
-export { FOLD_MS, LEVEL_MS } from './motionTimings';
+export { DURATION_BASE_MS, DURATION_QUICK_MS, DURATION_SLOW_MS } from './motionTimings';
 export { canAnimate } from './canAnimate';
 export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
@@ -279,7 +277,7 @@ export {
   STRIPED_TABLE,
 } from './components/Band';
 export type { BandProps } from './components/Band';
-export { Listbox, LISTBOX_SEARCH_THRESHOLD } from './components/Listbox';
+export { Listbox } from './components/Listbox';
 export type {
   ListboxCreate,
   ListboxOption,
@@ -295,15 +293,16 @@ export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRo
 export { filterOptions } from './components/Listbox/filterOptions';
 export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
 export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
+export { TREE_INDENT_PX, treeIndentPx } from './treeIndent';
+export { Meter } from './components/Meter';
+export type { MeterProps, MeterSize } from './components/Meter';
+export { METER_TRACK } from './meterTrack';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Skeleton, SkeletonText } from './components/Skeleton';
-export { SkeletonChip } from './components/SkeletonChip';
 export { SkeletonRow } from './components/SkeletonRow';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
-export { StatusRailItem } from './components/StatusRailItem';
-export type { StatusRailItemProps } from './components/StatusRailItem';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
 export { StageTrack } from './components/StageTrack';
@@ -371,6 +370,9 @@ export { TOP_BAR_CONTROL } from './topBarControl';
 export { lastFocusedElement, useLastFocused } from './useLastFocused';
 export { FLOATING_SURFACE } from './floatingSurface';
 export { MENU_MAX_WIDTH } from './menuMaxWidth';
+export { POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX } from './popoverWidth';
+export type { PopoverWidth } from './popoverWidth';
+export { useFloatingPlace } from './useFloatingPlace';
 
 export {
   FRAME_BAND_PX,

@@ -54,7 +54,7 @@ describe('the start scenes', () => {
 
     const picked = await screen.findByRole('list', { name: 'Picked issues' });
     expect(picked.textContent).toContain('HBL-412');
-    expect(screen.getByRole('textbox', { name: 'Task' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
     expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();

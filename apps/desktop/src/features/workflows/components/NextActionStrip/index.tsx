@@ -1,7 +1,7 @@
 import { CircleAlert } from 'lucide-react';
-import { ClampedProse, StatusDot, ToneBar, cn, tintClasses } from '@goodboy/ui';
+import { ClampedProse, cn, ICON_SIZE, StatusDot, tintClasses, ToneBar } from '@goodboy/ui';
 import type { AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
 import { resolveNextAction, type NextAction } from '../../resolveNextAction';
 import { NextActionButtons } from './NextActionButtons';

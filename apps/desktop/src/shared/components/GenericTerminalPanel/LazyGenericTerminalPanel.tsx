@@ -10,7 +10,7 @@ type Props = ComponentProps<typeof Panel>;
 export const LazyGenericTerminalPanel = (props: Props) => (
   <Suspense
     fallback={
-      <p role="status" className="text-label text-muted-foreground">
+      <p role="status" className="text-meta text-muted-foreground">
         Starting the shell
       </p>
     }

@@ -1,8 +1,8 @@
-import { Chip, cn, Tooltip } from '@goodboy/ui';
+import { Chip, cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../../../../shared/pullRequestPresentation';
+} from '../../../../../shared/utils/pullRequestPresentation';
 
 type Variant = 'icon' | 'compact' | 'badge';
 
@@ -34,7 +34,7 @@ export const PullRequestChip = ({
           aria-label={description}
           className={cn('inline-flex shrink-0', meta.textClass, className)}
         >
-          <Icon size={iconSize ?? 10} aria-hidden />
+          <Icon size={iconSize ?? ICON_SIZE.mark} aria-hidden />
         </span>
       </Tooltip>
     );
@@ -44,7 +44,7 @@ export const PullRequestChip = ({
     return (
       <Tooltip content={meta.label}>
         <span className={cn('inline-flex items-center gap-1 text-chip', meta.textClass, className)}>
-          <Icon size={iconSize ?? 12} aria-hidden />
+          <Icon size={iconSize ?? ICON_SIZE.row} aria-hidden />
           {number !== undefined && <span>#{number}</span>}
         </span>
       </Tooltip>
@@ -56,7 +56,7 @@ export const PullRequestChip = ({
       tone={meta.tone}
       kind="state"
       bordered={false}
-      icon={<Icon size={iconSize ?? 10} aria-hidden />}
+      icon={<Icon size={iconSize ?? ICON_SIZE.mark} aria-hidden />}
       label={<span>{meta.label}</span>}
       trailing={
         number !== undefined ? (

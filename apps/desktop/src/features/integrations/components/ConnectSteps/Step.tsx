@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 type StepStatus = 'done' | 'current' | 'later';
 

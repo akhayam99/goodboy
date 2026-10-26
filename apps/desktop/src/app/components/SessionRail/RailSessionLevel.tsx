@@ -1,4 +1,4 @@
-import { StatusDot } from '@goodboy/ui';
+import { ICON_SIZE, StatusDot } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { Session } from '@goodboy/types';
@@ -7,7 +7,7 @@ import { pageSlotOf } from '../../../features/session/pageSlot';
 import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { RailButton } from '../SideColumn/RailButton';
 import { RailWorktrees } from './RailWorktrees';
 

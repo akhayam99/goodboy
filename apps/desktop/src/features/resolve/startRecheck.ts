@@ -1,8 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
-import { selectTaskModel } from '../../store/slices/models/selectTaskModel';
-import { sessionById } from '../../store/slices/sessions/sessionIndex';
+import { selectTaskModel } from '../../store/runtime/models/selectTaskModel';
 import { buildRecheckAgentArgs } from '../chat/spawn-from-comment';
 import { recheckParentOf } from './recheckParentOf';
 import { reviewRowsOf } from './reviewRows';

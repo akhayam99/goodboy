@@ -1,13 +1,13 @@
 import { redactSecrets } from '../../shared/utils/redactSecrets';
-import type { ReportContext } from '../settings/reportContext';
+import { UNKNOWN_CONTEXT, type ReportContext } from './reportContext';
 import {
   buildIssueUrl,
   capIssueTitle,
   fitsIssueUrl,
   longestFittingPrefix,
   withoutLoneSurrogates,
-} from '../settings/issueUrl';
-import { issueTypeLabel, type IssueTypeValue } from '../settings/reportIssueTypes';
+} from './issueUrl';
+import { issueTypeLabel, type IssueTypeValue } from './reportIssueTypes';
 
 export type ReportPartId = 'version' | 'system' | 'screen' | 'cliVersions' | 'error' | 'notice';
 
@@ -24,27 +24,56 @@ type ContextPartsParams = {
   readonly context: ReportContext;
 };
 
-export const contextParts = ({ context }: ContextPartsParams): ReadonlyArray<ReportPart> => [
-  {
-    id: 'version',
-    chip: `${context.version} · ${context.build}`,
-    text: `Version: ${context.version} (build ${context.build})`,
-    isBlock: false,
-  },
-  { id: 'system', chip: context.system, text: `System: ${context.system}`, isBlock: false },
-  { id: 'screen', chip: context.screen, text: `Screen: ${context.screen}`, isBlock: false },
-  {
-    id: 'cliVersions',
-    chip: context.cliVersions === NO_CLI ? 'No CLI found' : context.cliVersions,
-    text: `CLI versions: ${context.cliVersions}`,
-    isBlock: false,
-  },
-];
+const versionPartOf = ({ context }: ContextPartsParams): ReportPart | null => {
+  const isVersionKnown = context.version !== UNKNOWN_CONTEXT;
+  const isBuildKnown = context.build !== UNKNOWN_CONTEXT;
+  if (isVersionKnown && isBuildKnown) {
+    return {
+      id: 'version',
+      chip: `${context.version} · ${context.build}`,
+      text: `Version: ${context.version} (build ${context.build})`,
+      isBlock: false,
+    };
+  }
+  if (isVersionKnown) {
+    return {
+      id: 'version',
+      chip: context.version,
+      text: `Version: ${context.version}`,
+      isBlock: false,
+    };
+  }
+  if (isBuildKnown) {
+    return {
+      id: 'version',
+      chip: `build ${context.build}`,
+      text: `Build: ${context.build}`,
+      isBlock: false,
+    };
+  }
+  return null;
+};
+
+export const contextParts = ({ context }: ContextPartsParams): ReadonlyArray<ReportPart> => {
+  const version = versionPartOf({ context });
+  const parts: ReadonlyArray<ReportPart> = [
+    ...(version === null ? [] : [version]),
+    { id: 'system', chip: context.system, text: `System: ${context.system}`, isBlock: false },
+    { id: 'screen', chip: context.screen, text: `Screen: ${context.screen}`, isBlock: false },
+    {
+      id: 'cliVersions',
+      chip: context.cliVersions === NO_CLI ? 'No CLI found' : context.cliVersions,
+      text: `CLI versions: ${context.cliVersions}`,
+      isBlock: false,
+    },
+  ];
+  return parts.filter((part) => part.id !== 'system' || context.system !== UNKNOWN_CONTEXT);
+};
 
 const fenced = ({ heading, text }: { readonly heading: string; readonly text: string }): string =>
   `**${heading}**\n\`\`\`\n${text.replaceAll('```', "'''")}\n\`\`\``;
 
-export const STACK_FRAME_LIMIT = 8;
+const STACK_FRAME_LIMIT = 8;
 
 const FOREIGN_FRAME =
   /node_modules|\/\.vite\/deps\/|\/@fs\/|chunk-[A-Z0-9]{6,}|react-dom|scheduler/;

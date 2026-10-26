@@ -19,6 +19,7 @@ import { getAgentById } from './agent';
 import {
   insertAgent,
   insertAgentBatch,
+  markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
   setAgentDone,
@@ -417,6 +418,15 @@ describe('agent writes', () => {
       expect(stamped).not.toBe(STOPPED_AT);
     });
 
+    it('clears the viewed time, so the agent reads as unseen again', async () => {
+      const id = await seedAgent('a1', 'completed');
+      await markAgentViewed(db, id, STOPPED_AT);
+
+      await markAgentUnviewed({ db, id });
+
+      expect((await getAgentById(db, id))?.lastViewedAt).toBeUndefined();
+    });
+
     it('marks an agent done and reopens it', async () => {
       const id = await seedAgent('a1', 'completed');
 
@@ -439,6 +449,7 @@ describe('agent writes', () => {
           }),
       ],
       ['markAgentViewed', (id: AgentId) => markAgentViewed(db, id, STOPPED_AT)],
+      ['markAgentUnviewed', (id: AgentId) => markAgentUnviewed({ db, id })],
       ['setAgentDone', (id: AgentId) => setAgentDone(db, id, true, STOPPED_AT)],
     ])('%s refuses an agent that does not exist', async (_name, write) => {
       await expect(write('missing' as AgentId)).rejects.toThrow(

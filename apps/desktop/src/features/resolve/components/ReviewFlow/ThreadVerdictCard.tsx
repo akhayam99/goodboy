@@ -29,7 +29,7 @@ export const ThreadVerdictCard = ({ sessionId, verdict, isPushed }: Props) => {
     <section aria-label={RECHECK_LABEL.result} className="flex min-w-0 flex-col">
       <Notice tone="info" placement="inline" title={RECHECK_LABEL.result}>
         <div className="flex min-w-0 flex-col gap-2">
-          <p className="flex min-w-0 items-center gap-2 text-label">
+          <p className="flex min-w-0 items-center gap-2 text-meta">
             <WorkNode state={view.node} label={view.word} mark={{ kind: 'dot' }} />
             <span className={cn('shrink-0', REMOTE_TONE_CLASS[view.tone])}>{view.word}</span>
           </p>

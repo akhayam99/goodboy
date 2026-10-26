@@ -1,7 +1,7 @@
-import { Chip } from '@goodboy/ui';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
 import { describeBitbucketPrState } from './bitbucketPrPresentation';
 import { stateDescription } from '../../../shared/utils/statePresentation';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import type { BitbucketPullRequestState } from './client';
 
 type Props = {
@@ -15,8 +15,8 @@ export const BitbucketStateChip = ({ state }: Props) => {
 
   return (
     <Chip
+      kind="state"
       tone={presentation.tone}
-      size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       label={presentation.label}

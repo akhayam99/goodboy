@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
 import { branchPushStateOf } from '../../../../../shared/lib/branchPushState';
 import { changedCount, distanceAhead, distanceBehind } from '../../../../../shared/lib/gitStatus';
 import { useMountRows } from '../../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useSessionMountHosts } from '../../../../../shared/hooks/useSessionMountHosts';
 import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
 import type { LiveGroupModel } from '../../now/liveGroupsOf';
 import { branchFactsOf, type BranchFacts, type BranchStatusFacts } from '../branchFactsOf';
@@ -20,9 +20,7 @@ type Result = {
 
 export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
   const mountGroups = useMountRows({ sessionId });
-  const mountGithub = useAppStore((state) => state.mountGithub);
-  const mountGitlabMr = useAppStore((state) => state.mountGitlabMr);
-  const mountBitbucketPr = useAppStore((state) => state.mountBitbucketPr);
+  const { mountGithub, mountGitlabMr, mountBitbucketPr } = useSessionMountHosts({ sessionId });
   const rows = useMemo(() => mountGroups.flatMap((group) => group.rows), [mountGroups]);
   const finishedRows = useMemo(
     () => mountGroups.flatMap((group) => group.finishedRows),

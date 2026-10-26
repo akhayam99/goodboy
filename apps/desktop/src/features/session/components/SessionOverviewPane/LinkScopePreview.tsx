@@ -1,4 +1,4 @@
-import { Button } from '@goodboy/ui';
+import { Button, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { TaskLinkChip } from '../../../../shared/components/TaskLinkChip';
 import { LINKED_LABEL } from './linkScope';
@@ -33,9 +33,9 @@ export const LinkScopePreview = ({
   <div aria-label="Link preview" className="flex flex-col gap-2 px-3 py-3">
     <div className="flex min-w-0 items-center gap-2">
       <TaskLinkChip provider={provider} identifier={identifier} />
-      <span className="truncate text-label text-muted-foreground">not on a branch yet</span>
+      <span className="truncate text-meta text-muted-foreground">not on a branch yet</span>
     </div>
-    <p className="text-label text-foreground">
+    <p className="text-meta text-foreground">
       {isDuplicate ? (
         `${LINKED_LABEL} already.`
       ) : isClosing ? (
@@ -44,7 +44,10 @@ export const LinkScopePreview = ({
           <button
             type="button"
             onClick={onToggleClosing}
-            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
+              FOCUS_RING,
+            )}
           >
             Don’t close
           </button>
@@ -55,7 +58,10 @@ export const LinkScopePreview = ({
           <button
             type="button"
             onClick={onToggleClosing}
-            className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
+              FOCUS_RING,
+            )}
           >
             Close it instead
           </button>

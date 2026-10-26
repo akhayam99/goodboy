@@ -1,5 +1,5 @@
 import { Wrench } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import type { ChangelogFix } from '../../parseChangelog';
 import { AreaTag } from './AreaTag';
 import { PrRef } from './PrRef';
@@ -13,7 +13,7 @@ export const FixRow = ({ fix, showPrRef }: Props) => (
   <div className="flex items-start justify-between gap-2 py-1">
     <div className="flex min-w-0 items-start gap-2">
       <Wrench size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
-      <span className="text-label text-muted-foreground">{fix.text}</span>
+      <span className="text-meta text-muted-foreground">{fix.text}</span>
     </div>
     <div className="flex shrink-0 items-center gap-2">
       <AreaTag area={fix.area} />

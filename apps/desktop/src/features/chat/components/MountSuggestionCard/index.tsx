@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, cn, IconButton, tintClasses, Eyebrow } from '@goodboy/ui';
+import { Button, cn, Eyebrow, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly projectName: string;
@@ -72,7 +72,7 @@ export const MountSuggestionCard = ({
       aria-label={`Folder suggestion for ${projectName}`}
       data-testid="mount-suggestion-card"
       className={cn(
-        'flex min-w-0 flex-col gap-2 rounded-lg border px-3 py-2 text-label',
+        'flex min-w-0 flex-col gap-2 rounded-lg border px-3 py-2 text-meta',
         tint.borderSoft,
         tint.bgSoft,
         isMounting && 'spin-border spin-border-info',
@@ -82,7 +82,7 @@ export const MountSuggestionCard = ({
         <span className={cn('flex shrink-0 items-center', tint.icon)}>
           <CONCEPT_ICONS.mount size={ICON_SIZE.row} aria-hidden />
         </span>
-        <span className="min-w-0 flex-1 text-label text-foreground">
+        <span className="min-w-0 flex-1 text-meta text-foreground">
           {consequenceSentence({ projectName, agentName, cause })}
         </span>
         <Button
@@ -109,7 +109,7 @@ export const MountSuggestionCard = ({
       {isOpen ? (
         <div className="flex min-w-0 flex-col gap-2 pl-6">
           <Eyebrow label="Reason" />
-          <span className="min-w-0 text-label text-foreground">{reason}</span>
+          <span className="min-w-0 text-meta text-foreground">{reason}</span>
           <span className="text-meta text-muted-foreground">
             Requested by {agentName} for {projectName}.
           </span>

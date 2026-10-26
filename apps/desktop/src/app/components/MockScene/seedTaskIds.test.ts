@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const SEED_ROOTS = [
   join(__dirname, 'scenes'),
-  join(__dirname, '..', '..', '..', 'features', 'workspace-chat', 'mockChatAnswers.ts'),
+  join(__dirname, 'backends', 'chat', 'mockChatAnswers.ts'),
 ];
 
 const walk = (path: string): ReadonlyArray<string> =>

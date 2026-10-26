@@ -95,10 +95,13 @@ vi.mock('../../../features/worktree/worktree', () => ({
   sessionDirExists: h.sessionDirExists,
   worktreeBranchHolder: h.worktreeBranchHolder,
   worktreeStatus: h.worktreeStatus,
+  carryIntoWorktree: vi.fn(async () => []),
+  worktreeSetupProposal: vi.fn(async () => null),
 }));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
+    getProjectValue: vi.fn(async () => null),
     listSessionMounts: vi.fn(async ({ sessionId }: { sessionId: string }) =>
       [...h.rows.values()].filter((row) => row.sessionId === sessionId),
     ),
@@ -233,6 +236,8 @@ const makeState = (): State => ({
   sessionSelectedPrNumber: {},
   terminalTabs: {},
   recordSessionEvent: vi.fn(async () => undefined),
+  saveSetting: vi.fn(async () => undefined),
+  reportError: vi.fn(async () => undefined),
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
   refreshSessionPr: vi.fn(async () => undefined),
   refreshSessionMr: vi.fn(async () => undefined),

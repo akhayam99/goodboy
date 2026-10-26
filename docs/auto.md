@@ -94,7 +94,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
   already spent. The first start stores the cap for the workspace
-  (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
+  (`workspace_values` key `auto.treeLimitUsd`, compare and swap), so the next start is
   not asked again; a person can change it from the chip.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
@@ -120,7 +120,7 @@ end first." while the agent works.
   handoff marker with `kind=auto` shows the same panel from the chip **Agent
   suggests: Auto**, which does not start an agent of its own.
 - `moveToAuto` (`features/auto/moveToAuto.ts`) checks the release gate, then
-  `adoptAgent` (`store/slices/auto/adoptAgent.ts`) writes the
+  `adoptAgent` (`store/runtime/auto/adoptAgent.ts`) writes the
   whole transfer in one guarded transaction: a new Auto agent, its tree, one
   adopted delegation for the source (settled, `adopted = 1`), the plan and report
   artifacts of the source in `auto_artifacts`, and one `user` outbox row with the
@@ -224,7 +224,7 @@ writing to it reopens it to **Deciding**.
 ## The chat
 
 - **The tree in the Agents panel.** What Auto spawned lives in the Agents
-  panel of the session tools ([navigation.md](navigation.md#the-session-tools)):
+  panel of the session tools ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)):
   opening Auto agents or an Auto agent opens it, and it follows an Auto agent
   or one of its children in the center. The tree sits on the Activity rail
   with Auto at the bottom and one row per child above it, ordered by when Auto
@@ -232,7 +232,7 @@ writing to it reopens it to **Deciding**.
   alike (one `SpawnedAutoGroup`); a child that starts while you read lower
   moves in at the top without moving your scroll or focus; a live tree opens, a
   settled one folds to Auto with its count of children
-  ([navigation.md](navigation.md#the-session-tools)). Auto is titled by the
+  ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)). Auto is titled by the
   first line of the ask it started with (`autoRootTitleOf`), which the tree
   view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript
   has to load. The ask is the root's first `operator_text`, else its first
@@ -260,11 +260,11 @@ writing to it reopens it to **Deciding**.
   through `pausingSessionCapOf`), so the source and the chain name this Auto or
   the workspace and a raise over it goes through. An amount under spent
   plus reserved is refused by the write.
-  `setAutoTreeCap` (`store/slices/auto/setAutoTreeCap.ts`) writes it in one
+  `setAutoTreeCap` (`store/runtime/auto/setAutoTreeCap.ts`) writes it in one
   statement that compares the cap it read and checks spent plus reserved in the
   same write, so a reservation cannot slip in between; a lost compare says "The
   limit changed in another window." and a failed save keeps the popover open with
-  "Could not save the limit. Try again." under the field. It leaves `phase_rev` alone, so a running
+  "Couldn't save the limit. Try again." under the field. It leaves `phase_rev` alone, so a running
   turn keeps its next step, then drives the tree, so a tree paused at the limit
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
@@ -308,9 +308,7 @@ writing to it reopens it to **Deciding**.
   of the numbers). The role stays visible as its glyph, with the noun in its
   tooltip and accessible name. The rail row, the Agents drawer, the delegation
   line, the result card and the delivery text Auto reads all take the name from
-  that one function, so Auto and the screen say the same name. The Now
-  sentence quotes that name instead of gluing a verb onto it
-  (`autoStuckLineOf`). A stuck child is a Next card headed by its branch and
+  that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
   pull request ("Auto is stuck" only when its branch is unknown) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
   `failed.`, `timed out.`, `is blocked.`, one verb per child state from
@@ -319,26 +317,24 @@ writing to it reopens it to **Deciding**.
   reason code maps to (`delegationReasonTextOf`), never a blocked child's own
   words, which can be in another language, until the agent text plan gives
   each child a one-line summary in your language. Its verb reads **Retry**
-  with the accessible name `Retry "<name>"`, and the Now sentence of a waiting
-  tree reads `Waiting for "<name>"`, or "Waiting for N agents" when more than
-  one is open ("Auto is waiting for" when another group leads the sentence).
+  with the accessible name `Retry "<name>"`.
 - **Why a child stopped, and what a done child said.** The second line of a
-  stuck child on the rail and in Now is its reason in
+  stuck child on the rail and in the Running card is its reason in
   words, never a code like `declared_blocked`: a blocked child's own summary
   from `delegation.result.declared.summary`, else the sentence the reason code
   maps to (`delegationReasonTextOf`, shared with the result card), else
   nothing. A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
   "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
-  and Auto is live, the Auto row reads **Stuck**, the same word as the Now
-  header (`AutoGroup.isStuck`), not Auto's own phase.
+  and Auto is live, the Auto row reads **Stuck**, the same word as the Running
+  card (`AutoGroup.isStuck`), not Auto's own phase.
 - **Stopped and replaced children are not stuck.** A delegation that settled
   `stopped` (you or Auto stopped it, or you declined its start, reason
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
-  count: it leaves Next and the Now Stuck state, reads **Stopped** on the rail,
-  and shows in **What was done** as "You stopped the reviewer" (or "You
-  declined the implementer"), by Auto, with **Retry** in its detail
-  (`doneRowsOf`, `DoneRetry`, the same continue as the Next retry). A settled
+  count: it leaves Next and the Running card's stuck actions, reads **Stopped** on the
+  rail, and shows among the latest finished items of the Done card and in
+  the full log, with **Retry** in its detail (`doneRowsOf`, the same continue
+  as the Next retry). A settled
   child that did not complete is superseded, state `retried`, when a later
   delegation takes the same role on the same branch (`target.mountId`), with or
   without `retryOf` (`autoGroupOf`).
@@ -350,7 +346,7 @@ writing to it reopens it to **Deciding**.
   The agents of those left out attempts go into `hiddenChildIds`, so an
   earlier attempt whose agent is still in the session does not come back as a
   linked child (`autoGroupOf`).
-  Every reader of `autoTreeViews` (Next, the Now Stuck state, What was done,
+  Every reader of `autoTreeViews` (Next, the Running card, the Done card,
   the rail, the Agents drawer, the counts) sees the same list, so none of them
   shows a card for it, and a moved child belongs to the session that holds it
   now. A child whose agent row does not exist yet (accepted, not started) stays.
@@ -450,7 +446,7 @@ transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
 does not reach the store by itself, so `delegate` calls the
 `refreshSessionArtifacts` port after an accepted or replayed admission, and
 `landAttemptRevision` calls it after a revise lands (the revise turn skips the
-usual capture). The port (`store/slices/auto/makeRefreshSessionArtifacts.ts`)
+usual capture). The port (`store/runtime/auto/makeRefreshSessionArtifacts.ts`)
 reloads the plans and artifacts of the session the grant names and reports a
 failed read without undoing the admission. It also emits
 `goodboy:auto-artifacts-changed` with that session id on the Auto bridge bus;
@@ -726,14 +722,14 @@ after its own steps. The boundary is the query bridge. `readTurnStream` marks th
 (`isAutoChildTurn`: origin `delegation` and a confined role other than `auto`, which is the root)
 with `isAutoChild`; `turn_spawn` records the pid of the process it starts (`spawn_turn` in
 `query_bridge/auto_child.rs`) until the process ends, and `dispatch` refuses, before any host call,
-every act in `ACT_VERBS` for a request whose socket peer descends from that pid. The bridge reads
+every verb declared `Access::Publish` for a request whose socket peer descends from that pid. The bridge reads
 the peer pid from the socket, never a run id the request carries: GitHub `push`,
 `pr-create`, `pr-ready`, `pr-merge`; GitLab `mr-create`, `mr-approve`, `mr-unapprove`, `mr-merge`;
 Bitbucket `pr-approve`, `pr-unapprove`, `pr-request-changes`, `pr-unrequest-changes`, `pr-merge`,
 `pr-decline`. The child reads the code `auto_child_act` and "Goodboy pushes after its checks. Say in
 your report what should be pushed." Reads, comments, thread replies and thread resolves stay open
 (the task of a job like "resolve review comments"). A turn started by hand is recorded as hand
-started and keeps every verb; an act from a process that descends from no recorded turn is refused
+started and keeps every verb; any verb from a process that descends from no recorded turn is refused
 `caller_unknown`. The env of every child also carries no git host token: `apply_git_host_access`
 in `turn.rs` removes every name in `HOST_TOKEN_ENV` (`GH_TOKEN`, `GITHUB_TOKEN`, the GitHub
 Enterprise pair, `GITLAB_TOKEN`, `GITLAB_ACCESS_TOKEN`) and never adds the workspace token, so the
@@ -831,7 +827,7 @@ no migration, outcome still `completed`:
   (`claimAutoAttemptPublishStatement`: the attempt still ended at its generation, the tree at that
   generation, not stopping, and owned by this window's lease) inside the per worktree publish queue
   (`publishQueue.ts`, shared with `publishAct`), and only a claimed record is pushed through the
-  `pushBranch` port (`pushSessionBranch`, `sha:refs/heads/<branch>`). A claim that fails writes
+  `pushBranch` port (the `pushBranch` store verb, `sha:refs/heads/<branch>`). A claim that fails writes
   "Auto moved on or stopped before the push, so nothing was pushed", retryable. The result lands on
   the attempt and, when the batch already joined, on the settled delegation
   (`followAutoDelegationPublishStatement`). `recoverTree` resumes a `pushing` record that was never
@@ -869,7 +865,7 @@ no migration, outcome still `completed`:
 
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
-and falls back to the last `}` when the close marker is missing. `store/slices/auto/applyAutoBlock.ts`
+and falls back to the last `}` when the close marker is missing. `store/runtime/auto/applyAutoBlock.ts`
 runs at the top of `settleAutoTurn` and only for the current run of a `deciding` tree that is not
 stopping, so a duplicate settle, a late settle after a stop and a recovered turn that passes the
 same text admit once (the admission guards and the request id replay do the rest).

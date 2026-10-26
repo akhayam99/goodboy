@@ -41,7 +41,7 @@ export const DetectionLine = ({ rows, className }: Props) => {
     <p
       role="status"
       className={cn(
-        'flex items-center justify-center gap-2 text-label text-muted-foreground',
+        'flex items-center justify-center gap-2 text-meta text-muted-foreground',
         className,
       )}
     >

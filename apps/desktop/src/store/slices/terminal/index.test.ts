@@ -35,7 +35,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -716,17 +716,18 @@ describe('store contract', () => {
         .setTerminalWorkspaceFolder({ workspaceId: WS_ID, folder: '/mock/northwind' });
 
       expect(store.getState().terminalFolderOverrides[WS_ID]).toBe('/mock/northwind');
-      expect(storySpies.setSetting).toHaveBeenCalledWith(
-        expect.anything(),
-        `terminal.workspaceFolder.${WS_ID}`,
-        '/mock/northwind',
-      );
+      expect(storySpies.setWorkspaceValue).toHaveBeenCalledWith({
+        db: expect.anything(),
+        workspaceId: WS_ID,
+        key: 'terminal.workspaceFolder',
+        value: '/mock/northwind',
+      });
     });
 
     it('setTerminalWorkspaceFolder leaves the old folder when saving fails', async () => {
       const store = useAppStore;
       store.setState({ terminalFolderOverrides: { [WS_ID]: '/mock/acme' } });
-      storySpies.setSetting.mockRejectedValueOnce(new Error('disk full'));
+      storySpies.setWorkspaceValue.mockRejectedValueOnce(new Error('disk full'));
 
       await expect(
         store

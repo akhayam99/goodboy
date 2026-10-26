@@ -8,6 +8,14 @@ const SNAPSHOT_RETENTION = 2;
 export type MigrationSnapshotStorage = {
   readonly list: () => Promise<ReadonlyArray<string>>;
   readonly remove: (params: RemoveSnapshotParams) => Promise<void>;
+  readonly secure: () => Promise<void>;
+  readonly snapshot: (params: CreateSnapshotStorageParams) => Promise<void>;
+};
+
+type CreateSnapshotStorageParams = {
+  readonly currentVersion: number;
+  readonly nextVersion: number;
+  readonly stamp: string;
 };
 
 type RemoveSnapshotParams = {
@@ -26,18 +34,20 @@ type VersionRow = {
   readonly version: number;
 };
 
+type TableCountRow = {
+  readonly count: number;
+};
+
+type HasUserTablesParams = {
+  readonly db: Database;
+};
+
 type SnapshotTimestampParams = {
   readonly date: Date;
 };
 
-type EscapeSqlStringParams = {
-  readonly value: string;
-};
-
 type CreateSnapshotParams = {
   readonly currentVersion: number;
-  readonly databasePath: string;
-  readonly db: Database;
   readonly nextVersion: number;
   readonly now: () => Date;
   readonly storage: MigrationSnapshotStorage;
@@ -51,10 +61,17 @@ type ErrorDetailParams = {
   readonly error: unknown;
 };
 
+const hasUserTables = async ({ db }: HasUserTablesParams): Promise<boolean> => {
+  const rows = await db.select<TableCountRow>(
+    `SELECT COUNT(*) AS count FROM sqlite_master
+     WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+       AND name NOT IN ('schema_version', 'schema_migration_segment')`,
+  );
+  return (rows[0]?.count ?? 0) > 0;
+};
+
 const snapshotTimestamp = ({ date }: SnapshotTimestampParams): string =>
   date.toISOString().replaceAll(/[-:.]/g, '');
-
-const escapeSqlString = ({ value }: EscapeSqlStringParams): string => value.replaceAll("'", "''");
 
 const snapshotAgeKey = ({ path }: SnapshotAgeKeyParams): string =>
   path.match(/-(\d{8}T\d{9}Z)\.bak$/)?.[1] ?? '';
@@ -71,16 +88,17 @@ const errorDetail = ({ error }: ErrorDetailParams): string => {
 
 const createSnapshot = async ({
   currentVersion,
-  databasePath,
-  db,
   nextVersion,
   now,
   storage,
 }: CreateSnapshotParams): Promise<void> => {
-  const snapshotPath = `${databasePath}.pre-m${nextVersion}-from-m${currentVersion}-${snapshotTimestamp({ date: now() })}.bak`;
-
   try {
-    await db.exec(`VACUUM INTO '${escapeSqlString({ value: snapshotPath })}'`);
+    await storage.snapshot({
+      currentVersion,
+      nextVersion,
+      stamp: snapshotTimestamp({ date: now() }),
+    });
+    await storage.secure();
     const snapshots = [...(await storage.list())].sort((left, right) =>
       snapshotAgeKey({ path: left }).localeCompare(snapshotAgeKey({ path: right })),
     );
@@ -115,10 +133,12 @@ export const runRuntimeMigrations = async ({
   const isFileDatabase =
     databasePath != null && databasePath.length > 0 && databasePath !== ':memory:';
 
-  if (pending.length > 0 && isFileDatabase) {
-    const currentVersion = rows.reduce((highest, row) => Math.max(highest, row.version), 0);
+  const currentVersion = rows.reduce((highest, row) => Math.max(highest, row.version), 0);
+  const hasHistory = currentVersion > 0 || (await hasUserTables({ db }));
+
+  if (pending.length > 0 && isFileDatabase && hasHistory) {
     const nextVersion = Math.min(...pending.map((migration) => migration.version));
-    await createSnapshot({ currentVersion, databasePath, db, nextVersion, now, storage });
+    await createSnapshot({ currentVersion, nextVersion, now, storage });
   }
 
   return migrate(db, migrations);

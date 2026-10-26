@@ -7,7 +7,7 @@ import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { detachFromAuto } from '../detachFromAuto';
 import { moveToAuto } from '../moveToAuto';
 import { useIsAutoReleased } from '../useIsAutoReleased';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -85,7 +85,7 @@ export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
         placeholder={PLACEHOLDER}
         minRows={2}
         maxRows={6}
-        textClassName="text-label"
+        textClassName="text-meta"
       />
       <FormActions error={error}>
         <Button

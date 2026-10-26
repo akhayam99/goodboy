@@ -46,7 +46,7 @@ export const StartPresetFields = ({ workspaceId, isDisabled }: Props) => {
   const steps = (preset?.steps ?? []).filter((step) => step.deletedAt == null);
 
   if (presets.length === 0) {
-    return <p className="text-label text-muted-foreground">{START_KIND_COPY.noPresets}</p>;
+    return <p className="text-meta text-muted-foreground">{START_KIND_COPY.noPresets}</p>;
   }
 
   return (
@@ -75,7 +75,7 @@ export const StartPresetFields = ({ workspaceId, isDisabled }: Props) => {
         {steps.length === 0 ? null : (
           <ol aria-label={START_KIND_COPY.presetSteps} className="flex flex-col gap-1">
             {steps.map((step, index) => (
-              <li key={step.id} className="flex min-w-0 items-baseline gap-2 text-label">
+              <li key={step.id} className="flex min-w-0 items-baseline gap-2 text-meta">
                 <span className="w-4 shrink-0 text-faint-foreground tabular-nums">{index + 1}</span>
                 <span className="shrink-0 text-muted-foreground">
                   {AGENT_KIND_META[classifyStep({ step })].noun}
@@ -94,7 +94,7 @@ export const StartPresetFields = ({ workspaceId, isDisabled }: Props) => {
           onChange={(next) => patchSessionDraft({ workspaceId, patch: { presetCloseness: next } })}
           options={CLOSENESS_OPTIONS}
         />
-        <p className="text-label text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           {closeness === 'follow'
             ? START_KIND_COPY.closeness.followLine
             : START_KIND_COPY.closeness.adaptLine}

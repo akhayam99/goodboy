@@ -1,6 +1,5 @@
-use std::fs::{self, File};
 use std::io::Read;
-use std::path::{Component, Path};
+use std::path::Path;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
@@ -8,9 +7,17 @@ use rusqlite::Connection;
 use tauri::State;
 
 use crate::db::Db;
+use crate::util::scoped_path::{open_within, ScopedPathError};
 use crate::util::MessageError;
 
-const MAX_IMAGE_BYTES: u64 = 15 * 1024 * 1024;
+use crate::util::limits::{format_limit, MAX_LOCAL_IMAGE_BYTES};
+
+fn image_too_large() -> String {
+    format!(
+        "image exceeds the {} limit",
+        format_limit(MAX_LOCAL_IMAGE_BYTES)
+    )
+}
 
 #[tauri::command]
 pub async fn local_image_read(
@@ -68,12 +75,6 @@ fn resolve_root(conn: &Connection, session_id: &str) -> Result<String, String> {
 }
 
 fn read_image(root: &Path, path: &Path) -> Result<String, String> {
-    if !root.is_absolute()
-        || path.components().any(|part| part == Component::ParentDir)
-        || root.components().any(|part| part == Component::ParentDir)
-    {
-        return Err("image path escapes the selected root".to_string());
-    }
     let extension = path
         .extension()
         .and_then(|value| value.to_str())
@@ -86,25 +87,20 @@ fn read_image(root: &Path, path: &Path) -> Result<String, String> {
         "webp" => "image/webp",
         _ => return Err("unsupported image type".to_string()),
     };
-    let canonical_root = fs::canonicalize(root).map_err(|_| "image root is unavailable")?;
-    let canonical_path = fs::canonicalize(root.join(path)).map_err(|_| "image is unavailable")?;
-    let relative = canonical_path
-        .strip_prefix(&canonical_root)
-        .map_err(|_| "image path escapes the selected root")?;
-    let file = open_scoped(&canonical_root, relative).map_err(open_scoped_error_message)?;
+    let file = open_within(root, path).map_err(scoped_error_message)?;
     let metadata = file.metadata().map_err(|_| "image is unavailable")?;
     if !metadata.is_file() {
         return Err("image must be a regular file".to_string());
     }
-    if metadata.len() > MAX_IMAGE_BYTES {
-        return Err("image exceeds the 15 MiB limit".to_string());
+    if metadata.len() > MAX_LOCAL_IMAGE_BYTES {
+        return Err(image_too_large());
     }
     let mut bytes = Vec::new();
-    file.take(MAX_IMAGE_BYTES + 1)
+    file.take(MAX_LOCAL_IMAGE_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|_| "could not read the image")?;
-    if bytes.len() as u64 > MAX_IMAGE_BYTES {
-        return Err("image exceeds the 15 MiB limit".to_string());
+    if bytes.len() as u64 > MAX_LOCAL_IMAGE_BYTES {
+        return Err(image_too_large());
     }
     if crate::remote_image::sniff_image_mime(&bytes) != Some(expected_mime) {
         return Err("image content does not match its file type".to_string());
@@ -115,67 +111,21 @@ fn read_image(root: &Path, path: &Path) -> Result<String, String> {
     ))
 }
 
-fn open_scoped_error_message(error: std::io::Error) -> String {
-    if error.kind() == std::io::ErrorKind::Unsupported {
-        error.to_string()
-    } else {
-        "image is unavailable".to_string()
+fn scoped_error_message(error: ScopedPathError) -> String {
+    match error {
+        ScopedPathError::Escapes => "image path escapes the selected root".to_string(),
+        ScopedPathError::Unsupported => "local images are unavailable on this platform".to_string(),
+        ScopedPathError::Unavailable => "image is unavailable".to_string(),
     }
-}
-
-#[cfg(unix)]
-fn open_scoped(root: &Path, relative: &Path) -> std::io::Result<File> {
-    use std::ffi::CString;
-    use std::os::fd::{AsRawFd, FromRawFd};
-    use std::os::unix::ffi::OsStrExt;
-    use std::os::unix::fs::OpenOptionsExt;
-
-    let mut file = fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW)
-        .open(root)?;
-    let mut parts = relative.components().peekable();
-    while let Some(part) = parts.next() {
-        let Component::Normal(name) = part else {
-            return Err(std::io::Error::other("invalid image path"));
-        };
-        let name = CString::new(name.as_bytes())?;
-        let directory_flag = match parts.peek() {
-            Some(_) => libc::O_DIRECTORY,
-            None => 0,
-        };
-        let fd = unsafe {
-            libc::openat(
-                file.as_raw_fd(),
-                name.as_ptr(),
-                libc::O_RDONLY
-                    | libc::O_CLOEXEC
-                    | libc::O_NOFOLLOW
-                    | libc::O_NONBLOCK
-                    | directory_flag,
-            )
-        };
-        if fd < 0 {
-            return Err(std::io::Error::last_os_error());
-        }
-        file = unsafe { File::from_raw_fd(fd) };
-    }
-    Ok(file)
-}
-
-#[cfg(not(unix))]
-fn open_scoped(_root: &Path, _relative: &Path) -> std::io::Result<File> {
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Unsupported,
-        "local images are unavailable on this platform",
-    ))
 }
 
 #[cfg(test)]
 mod tests {
-    #[cfg(unix)]
-    use super::open_scoped;
-    use super::{open_scoped_error_message, read_image, resolve_root, MAX_IMAGE_BYTES};
+    #[cfg(not(unix))]
+    use super::scoped_error_message;
+    use super::{read_image, resolve_root, MAX_LOCAL_IMAGE_BYTES};
+    #[cfg(not(unix))]
+    use crate::util::scoped_path::ScopedPathError;
     use rusqlite::Connection;
     use std::fs;
     use std::path::PathBuf;
@@ -252,7 +202,7 @@ mod tests {
             .write(true)
             .open(&path)
             .unwrap()
-            .set_len(MAX_IMAGE_BYTES + 1)
+            .set_len(MAX_LOCAL_IMAGE_BYTES + 1)
             .unwrap();
         assert!(read_image(&fixture.0, &path)
             .unwrap_err()
@@ -388,30 +338,6 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn rejects_a_file_swapped_for_an_in_root_symlink_after_canonicalization() {
-        let fixture = Fixture::new();
-        let root = fs::canonicalize(&fixture.0).unwrap();
-        let path = fs::canonicalize(root.join("out/chart.png")).unwrap();
-        let relative = path.strip_prefix(&root).unwrap();
-        fs::rename(&path, root.join("original.png")).unwrap();
-        std::os::unix::fs::symlink(root.join("original.png"), &path).unwrap();
-        assert!(open_scoped(&root, relative).is_err());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn rejects_a_directory_swapped_for_an_in_root_symlink_after_canonicalization() {
-        let fixture = Fixture::new();
-        let root = fs::canonicalize(&fixture.0).unwrap();
-        let path = fs::canonicalize(root.join("out/chart.png")).unwrap();
-        let relative = path.strip_prefix(&root).unwrap();
-        fs::rename(root.join("out"), root.join("original")).unwrap();
-        std::os::unix::fs::symlink(root.join("original"), root.join("out")).unwrap();
-        assert!(open_scoped(&root, relative).is_err());
-    }
-
-    #[cfg(unix)]
-    #[test]
     fn rejects_an_image_named_fifo_without_blocking() {
         use std::ffi::CString;
         use std::os::unix::ffi::OsStrExt;
@@ -459,26 +385,12 @@ mod tests {
     fn refuses_local_image_reads_on_unsupported_platforms() {
         let fixture = Fixture::new();
         assert_eq!(
-            open_scoped(&fixture.0, &PathBuf::from("out/chart.png"))
-                .unwrap_err()
-                .kind(),
-            std::io::ErrorKind::Unsupported
+            scoped_error_message(ScopedPathError::Unsupported),
+            "local images are unavailable on this platform"
         );
         assert_eq!(
             read_image(&fixture.0, &PathBuf::from("out/chart.png")).unwrap_err(),
             "local images are unavailable on this platform"
         );
-    }
-
-    #[test]
-    fn propagates_the_specific_message_for_unsupported_platform_errors() {
-        let error = std::io::Error::new(std::io::ErrorKind::Unsupported, "not supported here");
-        assert_eq!(open_scoped_error_message(error), "not supported here");
-    }
-
-    #[test]
-    fn maps_genuine_open_failures_to_a_generic_message() {
-        let error = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
-        assert_eq!(open_scoped_error_message(error), "image is unavailable");
     }
 }

@@ -49,6 +49,6 @@ export const reportHistoryStop = async ({
     error: stop.message,
     severity: 'warning',
     sessionId: target.sessionId,
-    action: { kind: 'open-activity', sessionId: target.sessionId },
+    recovery: { action: { kind: 'open-activity', sessionId: target.sessionId } },
   });
 };

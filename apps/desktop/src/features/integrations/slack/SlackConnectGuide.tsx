@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Button, CopyButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
+import { Button, CopyButton, ICON_SIZE, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { ArrowLeft, ArrowRight, SquareArrowOutUpRight } from 'lucide-react';
 import { openUrl } from '../../../shared/lib/editor';
 import { SLACK_APPS_URL, SLACK_NEW_APP_URL, SLACK_USER_SCOPES } from './slackAppManifest';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly manifestUrl: string | null;
@@ -115,7 +114,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
           ariaLabel="Slack setup path"
         />
       </div>
-      <p className="min-w-0 text-label text-foreground">{step.title}</p>
+      <p className="min-w-0 text-meta text-foreground">{step.title}</p>
       {step.action != null ? (
         <div className="flex">
           <Button
@@ -125,7 +124,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
             className="max-w-full"
           >
             <span className="truncate">{step.action.label}</span>
-            <ExternalLink size={ICON_SIZE.row} aria-hidden />
+            <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
           </Button>
         </div>
       ) : null}

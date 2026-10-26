@@ -1,7 +1,7 @@
 import { useAppStore } from '../../../../../store';
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
 import type { OpenPaletteParams } from '../../../../../features/palette/paletteModeTypes';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 
 type Params = {
   readonly openPalette: (params?: OpenPaletteParams) => void;

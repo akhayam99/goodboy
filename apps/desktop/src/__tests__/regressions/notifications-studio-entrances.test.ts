@@ -15,7 +15,7 @@ const PALETTE_FILE = 'features/palette/hooks/useCommandEntries.ts';
 const MENU_BAR_FILE = 'app/hooks/useMenuCommands/menuActions.ts';
 const DISPATCHER_FILES = [BELL_FILE, PALETTE_FILE, MENU_BAR_FILE];
 const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/useStudioEvents.ts';
-const MOUNT_FILE = 'app/components/AppOverlayRouter/index.tsx';
+const MOUNT_FILE = 'app/components/AppOverlayRouter/renderStudio.tsx';
 
 function listSourceFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -65,7 +65,7 @@ const referencesEvent = (line: string): boolean =>
   line.includes(EVENT_CONSTANT) || line.includes(EVENT_NAME);
 
 const isDispatch = (line: string): boolean =>
-  referencesEvent(line) && line.includes('dispatchEvent');
+  referencesEvent(line) && (line.includes('dispatchEvent') || line.includes('dispatchWindowEvent'));
 
 const mountsStudio = (line: string): boolean => line.includes(`<${STUDIO_COMPONENT}`);
 
@@ -108,7 +108,8 @@ describe('the notifications studio has three entrances, the bell, the palette an
       (hit) =>
         !DISPATCHER_FILES.includes(hit.file) &&
         hit.file !== EVENT_LISTENER_FILE &&
-        hit.file !== 'features/notifications/studioEvent.ts',
+        hit.file !== 'features/notifications/studioEvent.ts' &&
+        hit.file !== 'shared/lib/dispatchWindowEvent/windowEvents.ts',
     );
 
     if (unexpected.length > 0) {

@@ -11,7 +11,7 @@ type Params = {
 };
 
 export const installStopTurn = ({ store }: Params): void => {
-  const cancelCurrentTurn: AppStore['cancelCurrentTurn'] = async (sessionId, agentId) => {
+  const cancelCurrentTurn = (async (sessionId, agentId) => {
     const target = agentId ?? store.getState().selectedAgentId[sessionId] ?? null;
     if (target === null) {
       return;
@@ -25,6 +25,6 @@ export const installStopTurn = ({ store }: Params): void => {
     appendTurnEvents({ store, agentId: target, events: [{ kind: 'done', runId: turn.runId, at }] });
     finishAgentTurn({ store, sessionId, agentId: target, at, isViewed: true });
     patchAgent({ store, sessionId, agentId: target, patch: { status: 'stopped' } });
-  };
+  }) satisfies AppStore['cancelCurrentTurn'];
   store.setState({ cancelCurrentTurn });
 };

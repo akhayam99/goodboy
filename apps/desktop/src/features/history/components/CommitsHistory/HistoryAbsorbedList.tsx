@@ -17,7 +17,7 @@ export const HistoryAbsorbedList = ({ absorbed }: Props) => {
       onOpenChange={setOpen}
       className="mt-2"
       trigger={
-        <span className="flex min-w-0 items-baseline gap-2 text-label">
+        <span className="flex min-w-0 items-baseline gap-2 text-meta">
           <span className="shrink-0 text-foreground">
             Absorbed <span className="tabular-nums">{absorbed.length}</span>{' '}
             {absorbed.length === 1 ? 'commit' : 'commits'}

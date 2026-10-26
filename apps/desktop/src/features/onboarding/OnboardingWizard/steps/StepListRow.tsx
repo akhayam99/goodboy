@@ -47,7 +47,7 @@ export const StepListRow = ({
         {icon}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className={isQuiet ? 'text-label' : 'text-row text-foreground'}>{name}</span>
+        <span className={isQuiet ? 'text-meta' : 'text-row text-foreground'}>{name}</span>
         {line === '' ? null : (
           <span
             key={line}

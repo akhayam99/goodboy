@@ -1,10 +1,7 @@
 import type { CliRequirement } from '@goodboy/core';
-import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
+import { isProviderId } from '@goodboy/types/helpers';
 
 export const SETTING_CLI_REQUIREMENTS = 'provider.cliRequirements';
-
-const isProviderId = (value: unknown): value is ProviderId =>
-  typeof value === 'string' && PROVIDER_IDS.some((providerId) => providerId === value);
 
 const isCliRequirement = (value: unknown): value is CliRequirement =>
   typeof value === 'object' &&

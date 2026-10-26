@@ -4,12 +4,12 @@ import type {
   ArtifactProvenance,
   ArtifactRunPhase,
   ArtifactScoutPlanEntry,
-  IsoDateTime,
   MountId,
   SessionId,
   TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import {
@@ -111,8 +111,6 @@ export const resetArtifactScoutRegistry = (): void => {
   deadlines.clear();
   joined.clear();
 };
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const probeRelPath = ({ root, relPath }: Readonly<{ root: string; relPath: string }>): string => {
   const base = root === '.' ? '' : root;
@@ -395,7 +393,7 @@ const settleChildren = async ({
     await invokeAgentUpdateStatus(child.id, {
       status: 'skipped',
       outputSummary: reason,
-      completedAt: nowIso(),
+      completedAt: isoNow(),
     }).catch(() => undefined);
   }
   const refreshed = await invokeAgentList(sessionId);
@@ -746,7 +744,7 @@ export const stopArtifactGeneration = (set: SetFn, get: GetFn) => {
       await invokeAgentUpdateStatus(child.id, {
         status: 'skipped',
         outputSummary: WIREFRAME_SCOUT_STOP_REASON,
-        completedAt: nowIso(),
+        completedAt: isoNow(),
       }).catch(() => undefined);
     }
     await get()
@@ -869,7 +867,7 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
         await invokeAgentUpdateStatus(container.id, {
           status: 'failed',
           outputSummary: artifactProducerRestartSummary({ kind }),
-          completedAt: nowIso(),
+          completedAt: isoNow(),
         }).catch(() => undefined);
         continue;
       }
@@ -883,7 +881,7 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
       await invokeAgentUpdateStatus(container.id, {
         status: 'failed',
         outputSummary: artifactRunRestartSummary({ kind }),
-        completedAt: nowIso(),
+        completedAt: isoNow(),
       }).catch(() => undefined);
     }
     if (!isAbandoned) {

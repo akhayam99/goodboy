@@ -48,7 +48,7 @@ export const ProviderSupportTable = () => (
               <th
                 key={provider}
                 scope="col"
-                className="px-2 py-2 text-left text-label font-normal text-muted-foreground"
+                className="px-2 py-2 text-left text-meta font-normal text-muted-foreground"
               >
                 {COLUMN_LABEL[provider]}
               </th>
@@ -58,10 +58,7 @@ export const ProviderSupportTable = () => (
         <tbody>
           {ROWS.map((row) => (
             <tr key={row.key} className={cn('align-top', STRIPED_ROW)}>
-              <th
-                scope="row"
-                className="px-2 py-2 text-left text-label font-normal text-foreground"
-              >
+              <th scope="row" className="px-2 py-2 text-left text-meta font-normal text-foreground">
                 {row.label}
               </th>
               {SUPPORT_COLUMNS.map((provider) => (

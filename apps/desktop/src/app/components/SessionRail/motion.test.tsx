@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
-import { FOLD_MS, LEVEL_MS } from '@goodboy/ui';
+import { DURATION_BASE_MS } from '@goodboy/ui';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -133,7 +133,7 @@ describe('the session rail fold', () => {
       within(elementOf('[data-fold-layer="folded"]')).getByRole('button', { name: 'Runs' }),
     ).toBeDefined();
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(foldOf()).toBe('folded');
     expect(openLayer()).toBeNull();
@@ -151,7 +151,7 @@ describe('the session rail fold', () => {
     expect(openLayer()?.hasAttribute('inert')).toBe(false);
     expect(foldedLayer()?.getAttribute('aria-hidden')).toBe('true');
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(foldOf()).toBe('open');
     expect(foldedLayer()).toBeNull();
@@ -203,7 +203,7 @@ describe('the session rail drill', () => {
     );
     expect(elementOf('[data-rail-level="worktree"]')).toBeDefined();
     expect(ghost()?.getAttribute('data-level-ghost')).toBe('forward');
-    advance(LEVEL_MS);
+    advance(DURATION_BASE_MS);
     expect(ghost()).toBeNull();
 
     goTo(null);
@@ -235,7 +235,7 @@ describe('the session tools column at the right of the content', () => {
     expect(before?.closest('[aria-label="Session"]')).toBeNull();
 
     fireEvent.click(elementOf('[data-session-rail-toggle]'));
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(foldOf()).toBe('folded');
     expect(tools()).toBe(before);

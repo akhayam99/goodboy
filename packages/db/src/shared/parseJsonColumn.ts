@@ -16,6 +16,20 @@ export const parseJsonColumn = <T>({ value, isValid, fallback }: ParseJsonColumn
   }
 };
 
+type ParseJsonStrictParams<T> = {
+  readonly value: string;
+  readonly isValid: (value: unknown) => value is T;
+  readonly label: string;
+};
+
+export const parseJsonStrict = <T>({ value, isValid, label }: ParseJsonStrictParams<T>): T => {
+  const parsed = parseJsonColumn<T | undefined>({ value, isValid, fallback: undefined });
+  if (parsed === undefined) {
+    throw new Error(`Invalid ${label}`);
+  }
+  return parsed;
+};
+
 export const isJsonValue = (value: unknown): value is unknown => value !== undefined;
 
 export const isJsonRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>

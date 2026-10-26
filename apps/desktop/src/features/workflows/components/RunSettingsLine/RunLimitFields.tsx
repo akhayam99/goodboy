@@ -10,7 +10,11 @@ type Props = {
 };
 
 export const RunLimitFields = ({ run, limit }: Props) => (
-  <form aria-label="Limit for this run" onSubmit={limit.submit} className="flex flex-col gap-2">
+  <form
+    aria-label="Limit for this run"
+    onSubmit={(event) => limit.submit({ event })}
+    className="flex flex-col gap-2"
+  >
     <SpendLimitFields
       amount={limit.draft.amount}
       behavior={behaviorOfRunMode({ mode: limit.draft.mode })}

@@ -1,17 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, formatError, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, formatError, ICON_SIZE } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
 import { undoable } from '../../../../../shared/utils/undoable';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import type { StepDraft } from '../../../engine';
 import { useSavedSteps } from '../../../hooks/useSavedSteps';
 import {
@@ -253,6 +249,7 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
           <li>
             <EmptyState
               size="section"
+              headingLevel={3}
               icon={CONCEPT_ICONS.workflows}
               tone={CONCEPT_TONE.workflows}
               title="No saved steps yet"

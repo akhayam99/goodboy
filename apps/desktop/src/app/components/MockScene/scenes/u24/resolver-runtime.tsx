@@ -13,9 +13,6 @@ const SAVED_PROJECTS = 2;
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 type ProviderParams = {

@@ -9,10 +9,11 @@ import type {
   IsoDateTime,
   ModelKey,
   ProviderId,
-  ProviderRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import type { ChatTurnOutcome, RunChatTurnParams } from './runChatTurn';
+import type { ChatTurnOutcome } from '../conversation/chatTurnOutcome';
+import type { ConversationBackend } from '../conversation/conversationBackend';
+import type { RunChatTurnParams } from './runChatTurn';
 
 type ListChatsParams = {
   readonly workspaceId: WorkspaceId;
@@ -25,10 +26,6 @@ type ChatRefParams = {
 
 type InsertChatParams = {
   readonly chat: Chat;
-};
-
-type ChatMessageParams = {
-  readonly message: ChatMessage;
 };
 
 type SetArchivedParams = {
@@ -80,10 +77,6 @@ type WriteChatImageParams = ChatImageRef & {
   readonly blob: Blob;
 };
 
-type CancelTurnParams = {
-  readonly runId: ProviderRunId;
-};
-
 export type SummarizeForWorkParams = {
   readonly provider: ProviderId;
   readonly model: ModelKey;
@@ -92,12 +85,10 @@ export type SummarizeForWorkParams = {
   readonly userMessage: string;
 };
 
-export type ChatBackend = {
+export type ChatBackend = ConversationBackend & {
   readonly listChats: (params: ListChatsParams) => Promise<ReadonlyArray<ChatSummary>>;
   readonly listMessages: (params: ChatRefParams) => Promise<ReadonlyArray<ChatMessage>>;
   readonly insertChat: (params: InsertChatParams) => Promise<void>;
-  readonly insertMessage: (params: ChatMessageParams) => Promise<void>;
-  readonly finishMessage: (params: ChatMessageParams) => Promise<void>;
   readonly setArchived: (params: SetArchivedParams) => Promise<void>;
   readonly deleteChats: (params: DeleteChatsParams) => Promise<void>;
   readonly insertLink: (params: InsertLinkParams) => Promise<void>;
@@ -109,6 +100,5 @@ export type ChatBackend = {
   readonly writeImage: (params: WriteChatImageParams) => Promise<number>;
   readonly readImage: (params: ChatImageRef) => Promise<Blob>;
   readonly runTurn: (params: RunChatTurnParams) => Promise<ChatTurnOutcome>;
-  readonly cancelTurn: (params: CancelTurnParams) => Promise<void>;
   readonly summarizeForWork: (params: SummarizeForWorkParams) => Promise<string>;
 };

@@ -3,6 +3,7 @@ import { Tooltip } from '../Tooltip';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../cn';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';
 import { useEscapeLayer } from '../../useEscapeLayer';
@@ -34,6 +35,7 @@ export type SelectionBarProps = {
   readonly confirm?: ReactNode;
   readonly onDismissConfirm?: () => void;
   readonly note?: ReactNode;
+  readonly hint?: string;
   readonly clearShortcut?: string;
   readonly selectAllShortcut?: string;
   readonly onFocusReturn?: () => void;
@@ -60,6 +62,7 @@ export const SelectionBar = ({
   confirm = null,
   onDismissConfirm,
   note = null,
+  hint,
   clearShortcut,
   selectAllShortcut,
   onFocusReturn,
@@ -162,7 +165,10 @@ export const SelectionBar = ({
         <div
           role="toolbar"
           aria-label={ariaLabel ?? `${count} selected`}
-          className="flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-floating py-1 pl-1 pr-2 shadow-lg motion-safe:animate-studio-in"
+          className={cn(
+            FLOATING_SURFACE,
+            'flex max-w-full flex-wrap items-center gap-x-4 gap-y-2 py-1 pl-1 pr-2 motion-safe:animate-studio-in',
+          )}
         >
           <span className="flex items-center gap-2">
             <IconButton
@@ -181,7 +187,7 @@ export const SelectionBar = ({
                   type="button"
                   onClick={onSelectAll}
                   className={cn(
-                    'whitespace-nowrap rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors',
+                    'whitespace-nowrap rounded-md px-2 py-1 text-meta text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors',
                     FOCUS_RING,
                   )}
                 >
@@ -191,7 +197,7 @@ export const SelectionBar = ({
             ) : null}
           </span>
           {verbs.length === 0 ? null : (
-            <span className="ml-2 flex flex-wrap items-center gap-1">
+            <span className="flex flex-wrap items-center gap-1">
               {verbs.map((verb) => (
                 <OptionalTooltip key={verb.id} content={verb.title}>
                   <Button
@@ -216,6 +222,14 @@ export const SelectionBar = ({
             </span>
           )}
         </div>
+      ) : null}
+      {hasBar && hint !== undefined ? (
+        <p
+          data-selection-hint=""
+          className="max-w-full text-balance text-center text-meta text-faint-foreground"
+        >
+          {hint}
+        </p>
       ) : null}
     </div>
   );

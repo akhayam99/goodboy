@@ -1,5 +1,5 @@
-import { BAND_ROW_CLASS, Button, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { BAND_ROW_CLASS, Button, cn, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SentryLinkSuggestion } from './suggestLinks';
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const SuggestionRow = ({ suggestion, isBusy, onLink }: Props) => (
-  <li className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
+  <li className={cn(BAND_ROW_CLASS, 'gap-3 text-meta')}>
     <CONCEPT_ICONS.suggestion
       size={ICON_SIZE.row}
       aria-hidden

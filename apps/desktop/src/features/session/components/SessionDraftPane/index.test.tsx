@@ -159,7 +159,7 @@ describe('closing the New session page', () => {
 
   it('asks on Esc with only Start a run written, keeps it on reopen and Discard clears it', async () => {
     await openDraft();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Task' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Reconcile the Northwind ledger' },
     });
 
@@ -174,7 +174,7 @@ describe('closing the New session page', () => {
     cleanup();
 
     await openDraft();
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Task' }).value).toBe(
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Goal' }).value).toBe(
       'Reconcile the Northwind ledger',
     );
 

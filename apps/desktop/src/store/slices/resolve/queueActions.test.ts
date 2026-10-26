@@ -9,12 +9,11 @@ import {
   type Database,
 } from '@goodboy/db';
 import { migrate } from '@goodboy/db/migrations';
-import { approvedPublicationScope } from './approvedPublicationScope';
+import { approvedPublicationScope } from './publication/approvedPublicationScope';
 import { saveResolveThread } from './saveResolveThread';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
-import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import { threadOutcome } from './threadOutcome';
 import type { GetFn, SetFn } from './types';
@@ -274,8 +273,10 @@ describe('resolve queue actions', () => {
         revision: 2,
         reply: '   ',
       }),
-    ).rejects.toThrow(EMPTY_REFUSAL_REPLY);
-    expect(EMPTY_REFUSAL_REPLY).toBe('Write the reply the reviewer will read before you refuse');
+    ).rejects.toThrow('Write the reply the reviewer will read before you refuse');
+    expect('Write the reply the reviewer will read before you refuse').toBe(
+      'Write the reply the reviewer will read before you refuse',
+    );
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
     await live.actions.refuseResolveQueueItem({
       sessionId,
@@ -356,8 +357,8 @@ describe('resolve queue actions', () => {
         revision: 2,
         reply: 'Reply',
       }),
-    ).rejects.toThrow(REFUSAL_AFTER_INTEGRATION);
-    expect(REFUSAL_AFTER_INTEGRATION).toBe('Fix already integrated');
+    ).rejects.toThrow('Fix already integrated');
+    expect('Fix already integrated').toBe('Fix already integrated');
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });
 

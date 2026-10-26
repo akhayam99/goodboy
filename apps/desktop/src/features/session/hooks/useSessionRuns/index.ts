@@ -6,6 +6,7 @@ import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { sessionRunsOf, type SessionRun } from '../../sessionRunsOf';
+import { useLiveAgentTurns } from '../../../../shared/hooks/useLiveAgentTurns';
 
 type Params = {
   readonly session: Session;
@@ -23,6 +24,7 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const autoViews = useAppStore((state) => state.autoTreeViews[sessionId] ?? NO_AUTO_VIEWS);
   const orchestrating = useAppStore((state) => state.orchestratingWorkflowRuns);
   const questions = useSessionOpenQuestions(sessionId);
+  const turnByAgentId = useLiveAgentTurns({ agents });
   const rootTurns = useAppStore(
     useShallow((state) => {
       const turns: Record<string, TurnState | undefined> = {};
@@ -45,7 +47,17 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         orchestrating,
         questions,
         rootTurns,
+        turnByAgentId,
       }),
-    [attachedRuns, agents, kindOverride, autoViews, orchestrating, questions, rootTurns],
+    [
+      attachedRuns,
+      agents,
+      kindOverride,
+      autoViews,
+      orchestrating,
+      questions,
+      rootTurns,
+      turnByAgentId,
+    ],
   );
 };

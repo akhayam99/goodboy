@@ -12,6 +12,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { Database } from '../client';
 import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
@@ -78,9 +79,6 @@ const EVIDENCE_KINDS: ReadonlyArray<ArtifactEvidenceKind> = [
   'workflow-run',
   'unknown',
 ];
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const evidenceKind = (value: unknown): ArtifactEvidenceKind => {
   const match = EVIDENCE_KINDS.find((kind) => kind === value);

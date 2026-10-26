@@ -1,6 +1,6 @@
-import { Check, ExternalLink } from 'lucide-react';
-import { Button, Markdown, WorkNode } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Check, SquareArrowOutUpRight } from 'lucide-react';
+import { Button, ICON_SIZE, Markdown, WorkNode } from '@goodboy/ui';
+
 import { openUrl } from '../../../../shared/lib/editor';
 import { BAR_COPY } from '../../commentStateCopy';
 import { REPLY_NOTE_COPY, decidedNote } from '../../reviewFlowCopy';
@@ -45,7 +45,7 @@ export const ReplyNote = ({
           <span className="min-w-0">{REPLY_NOTE_COPY.posted({ provider })}</span>
           {url !== null && (
             <Button size="xs" variant="ghost" onClick={() => void openUrl(url)}>
-              <ExternalLink size={ICON_SIZE.control} aria-hidden />
+              <SquareArrowOutUpRight size={ICON_SIZE.control} aria-hidden />
               {BAR_COPY.viewOn({ host: provider })}
             </Button>
           )}

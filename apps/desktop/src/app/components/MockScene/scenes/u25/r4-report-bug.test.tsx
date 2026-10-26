@@ -68,7 +68,15 @@ describe('the round 4 report scene', () => {
     expect(sheet.closest('[data-report-placement]')?.getAttribute('data-report-placement')).toBe(
       'beside-trigger',
     );
-    expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open on GitHub/ })).toBeDefined();
+  });
+
+  it('r4-report-bug shows a believable environment and no unknown chip', async () => {
+    await mount();
+
+    const sheet = screen.getByRole('dialog', { name: 'Report a bug' });
+    expect(sheet.textContent).toContain('macOS 15.5 arm64');
+    expect(sheet.textContent).not.toContain('unknown');
   });
 
   it('r4-report-bug has no accessibility violation', async () => {

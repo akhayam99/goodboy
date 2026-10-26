@@ -64,7 +64,7 @@ export const RewordEditor = ({
           onChange={(event) => setSubject(event.target.value)}
           aria-label="Commit subject"
           placeholder="Commit subject"
-          className="h-7 min-w-0 flex-1 text-label"
+          className="h-7 min-w-0 flex-1 text-meta"
           autoFocus
         />
         <span
@@ -81,7 +81,7 @@ export const RewordEditor = ({
         onChange={(event) => setBody(event.target.value)}
         aria-label="Commit body"
         placeholder="Body, optional"
-        className="text-label"
+        className="text-meta"
         autoGrow
         minRows={1}
         maxRows={6}

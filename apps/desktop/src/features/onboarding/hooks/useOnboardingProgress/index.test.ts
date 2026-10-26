@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OnboardingStepId } from '../../onboarding-store';
+import type { OnboardingStepId } from '../../onboardingSettings';
 
 type Workspace = { id: string; name?: string; profile?: { roles: ReadonlyArray<string> } };
 
@@ -20,7 +20,7 @@ const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
 }));
 
-vi.mock('../../onboarding-store', () => ({
+vi.mock('../../onboardingSettings', () => ({
   ONBOARDING_PROGRESS_EVENT: 'goodboy:onboarding-progress',
   getCompleted: () => completed,
   getWizardState: () => wizardState,

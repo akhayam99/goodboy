@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ExternalLink, ShieldAlert } from 'lucide-react';
-import { Button, formatError, Input, StatusDot } from '@goodboy/ui';
+import { Check, SquareArrowOutUpRight, ShieldAlert } from 'lucide-react';
+import { Button, ICON_SIZE, Input, StatusDot } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
 import { ConnectSteps, type ConnectStepDef } from '../components/ConnectSteps';
 import { WhatGoodboyCanDo } from '../components/WhatGoodboyCanDo';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { useDebouncedCheck } from '../hooks/useDebouncedCheck';
 
 const SECURITY_URL = 'https://linear.app/settings/account/security';
-const VERIFY_DEBOUNCE_MS = 500;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -25,49 +24,24 @@ export const LinearConnectSteps = ({
   const connectLinear = useAppStore((s) => s.connectLinear);
   const [hasOpenedLink, setHasOpenedLink] = useState(false);
   const [token, setToken] = useState('');
-  const [status, setStatus] = useState<'idle' | 'checking' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const attemptRef = useRef(0);
+  const onConnectedRef = useRef(onConnected);
+  onConnectedRef.current = onConnected;
+
+  const trimmedToken = token.trim();
+  const check = useDebouncedCheck<void>({
+    key: trimmedToken === '' ? null : trimmedToken,
+    run: async () => {
+      await connectLinear({ workspaceId, token: trimmedToken, credentialId: null });
+    },
+  });
+  const status = check.status === 'checking' || check.status === 'error' ? check.status : 'idle';
+  const error = check.status === 'error' ? check.error : null;
 
   useEffect(() => {
-    return () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
-
-  const verify = async (candidate: string) => {
-    const attempt = ++attemptRef.current;
-    setStatus('checking');
-    setError(null);
-    try {
-      await connectLinear({ workspaceId, token: candidate, credentialId: null });
-      if (attemptRef.current === attempt) {
-        onConnected?.();
-      }
-    } catch (verifyError) {
-      if (attemptRef.current === attempt) {
-        setStatus('error');
-        setError(formatError(verifyError));
-      }
+    if (check.status === 'ok') {
+      onConnectedRef.current?.();
     }
-  };
-
-  const onTokenChange = (value: string) => {
-    setToken(value);
-    setStatus('idle');
-    setError(null);
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-    }
-    const trimmed = value.trim();
-    if (trimmed === '') {
-      return;
-    }
-    timerRef.current = window.setTimeout(() => void verify(trimmed), VERIFY_DEBOUNCE_MS);
-  };
+  }, [check.status]);
 
   const step1Done = hasOpenedLink || token.trim() !== '';
 
@@ -86,7 +60,7 @@ export const LinearConnectSteps = ({
           }}
         >
           Open Linear
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
         </Button>
       ),
     },
@@ -105,7 +79,7 @@ export const LinearConnectSteps = ({
             autoFocus={shouldAutoFocus}
             placeholder="lin_api_…"
             value={token}
-            onChange={(event) => onTokenChange(event.target.value)}
+            onChange={(event) => setToken(event.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}

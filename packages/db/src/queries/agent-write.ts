@@ -328,6 +328,18 @@ export const markAgentViewed = async (
   });
 };
 
+type UnviewedParams = {
+  readonly db: Database;
+  readonly id: AgentId;
+};
+
+export const markAgentUnviewed = async ({ db, id }: UnviewedParams): Promise<void> => {
+  await requireApplied(db, id, {
+    sql: 'UPDATE agents SET last_viewed_at = NULL WHERE id = ?',
+    params: [id],
+  });
+};
+
 export const setAgentDone = async (
   db: Database,
   id: AgentId,

@@ -35,6 +35,14 @@ pub enum WorktreeError {
 
 crate::util::impl_error_serialize!(WorktreeError);
 
+impl From<crate::github::GithubError> for WorktreeError {
+    fn from(error: crate::github::GithubError) -> Self {
+        WorktreeError::Git {
+            message: error.to_string(),
+        }
+    }
+}
+
 impl From<GitError> for WorktreeError {
     fn from(error: GitError) -> Self {
         match error {

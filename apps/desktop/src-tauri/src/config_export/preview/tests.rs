@@ -9,7 +9,7 @@ use crate::config_export::fixtures::{bundled_project, export_conn};
 fn import_preview_group_stats_split_adds_from_updates() {
     let conn = export_conn();
     conn.execute_batch(
-        "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('existing-ws', 'Existing', 1, 1);
+        "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('existing-ws', 'Existing', 'existing-ws', 1, 1);
          INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
          VALUES ('existing-project', 'existing-ws', 'ledger-core', '/repo/existing', 'repo', 1, 1);
          INSERT INTO skills (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at)
@@ -83,7 +83,7 @@ fn import_preview_group_stats_split_adds_from_updates() {
         app_preferences: AppPreferencesBundle::default(),
     };
 
-    let preview = build_import_preview(&conn, &bundle, None).expect("preview failed");
+    let preview = build_import_preview(&conn, &bundle, "sha", None).expect("preview failed");
     let stat = |group: &str| {
         preview
             .group_stats

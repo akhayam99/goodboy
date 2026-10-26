@@ -10,9 +10,6 @@ const OPEN_DELAY_MS = 30;
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 type ProviderParams = {

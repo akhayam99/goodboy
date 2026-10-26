@@ -1,10 +1,10 @@
 import type { MouseEvent } from 'react';
 import { ChevronRight, Folder, FolderOpen } from 'lucide-react';
-import { cn, ROW_INTERACTIVE } from '@goodboy/ui';
+import { cn, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ExploreFileActionTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatAge } from '../../../../shared/utils/time/formatAge';

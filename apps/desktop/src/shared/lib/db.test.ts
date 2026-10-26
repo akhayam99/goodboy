@@ -5,7 +5,7 @@ const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
-import { DATABASE_FILE_HINT, DATABASE_UNAVAILABLE_MESSAGE, tauriDatabase } from './db';
+import { DATABASE_UNAVAILABLE_MESSAGE, tauriDatabase } from './db';
 
 beforeEach(() => {
   invokeMock.mockReset();
@@ -21,12 +21,12 @@ describe('tauriDatabase', () => {
     await expect(tauriDatabase.select('SELECT 1')).rejects.toThrow(DATABASE_UNAVAILABLE_MESSAGE);
   });
 
-  it('names the file the user has to move aside', () => {
-    expect(DATABASE_UNAVAILABLE_MESSAGE).toContain(DATABASE_FILE_HINT);
-    expect(DATABASE_FILE_HINT.startsWith('~/')).toBe(true);
+  it('names the file that still holds the data', () => {
+    expect(DATABASE_UNAVAILABLE_MESSAGE).toContain('~/.goodboy/data.db');
+    expect('~/.goodboy/data.db'.startsWith('~/')).toBe(true);
   });
 
-  it('marks that failure so the boot screen can drop a retry that cannot work', async () => {
+  it('marks that failure so the boot screen can offer its own recovery', async () => {
     invokeMock.mockRejectedValue(UNMANAGED_REJECTION);
 
     const failure = await tauriDatabase.exec('PRAGMA user_version').catch((err: unknown) => err);

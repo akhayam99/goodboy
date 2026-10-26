@@ -1,6 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly open: boolean;

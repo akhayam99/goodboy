@@ -6,7 +6,7 @@ export type ContextDrawerSliceState = {
   readonly contextDrawerTab: Readonly<Record<SessionId, ContextDrawerTab>>;
 };
 
-export const initialContextDrawerState: ContextDrawerSliceState = {
+export const contextDrawerInitialState: ContextDrawerSliceState = {
   sessionContextSeenAt: {},
   contextDrawerTab: {},
 };

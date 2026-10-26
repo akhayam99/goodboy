@@ -39,7 +39,7 @@ import {
   hydrateOnboardingFromDb,
   markStepComplete,
   pauseWizard,
-} from '../../../onboarding/onboarding-store';
+} from '../../../onboarding/onboardingSettings';
 import { WorkspaceLauncher } from './index';
 
 const NOW = brandId<IsoDateTime>({ value: '2026-10-17T09:00:00.000Z' });
@@ -180,6 +180,34 @@ describe('Home', () => {
     expect(await screen.findByText('Documents · ~/Documents/acme-notes')).toBeDefined();
     expect(screen.getByText('Code, no git yet · ~/Code/acme-web')).toBeDefined();
     expect(screen.getByText('3 folders · ~/Code/harborline')).toBeDefined();
+  });
+
+  it('says how many sessions need you in a workspace and why, before you open it', async () => {
+    act(() => {
+      useAppStore.setState({
+        attentionFromDatabase: {
+          [NORTHWIND.id]: {
+            count: 2,
+            tone: 'danger',
+            reasonWords: ['Checks failing', '1 question for you'],
+          },
+        },
+      });
+    });
+    const { container } = renderHome();
+
+    await screen.findByRole('button', { name: 'Open Northwind, 2 need you' });
+    const row = container.querySelector('[data-workspace-row="Northwind"]');
+    expect(row?.textContent).toContain('2 need you');
+    expect(row?.textContent).toContain('Checks failing, 1 question for you');
+    expect(
+      container
+        .querySelector('[data-workspace-row="Northwind"] [data-workspace-attention]')
+        ?.getAttribute('data-workspace-attention'),
+    ).toBe('danger');
+    expect(
+      container.querySelector('[data-workspace-row="Harborline"] [data-workspace-attention]'),
+    ).toBeNull();
   });
 
   it('opens a workspace from its row', () => {

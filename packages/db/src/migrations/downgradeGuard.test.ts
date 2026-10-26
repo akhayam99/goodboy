@@ -53,6 +53,8 @@ describe('downgrade guard', () => {
     const storage = {
       list: vi.fn(async () => []),
       remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
     } satisfies MigrationSnapshotStorage;
 
     await expect(

@@ -27,7 +27,13 @@ beforeEach(async () => {
 describe('Test connection evidence', () => {
   it('counts one authentication refusal for overlapping tests', async () => {
     stubStoryInvoke({
-      provider_test_connection: { ok: false, millis: 80, detail: 'Not logged in. Sign in again.' },
+      provider_test_connection: {
+        ok: false,
+        millis: 80,
+        outcome: 'refused',
+        secs: null,
+        detail: 'Not logged in. Sign in again.',
+      },
     });
     const test = store.getState().testProviderConnection;
     await Promise.all([test({ providerId: 'cursor' }), test({ providerId: 'cursor' })]);
@@ -43,13 +49,25 @@ describe('Test connection evidence', () => {
 
   it('keeps the standing after a timeout and confirms the account after retry', async () => {
     stubStoryInvoke({
-      provider_test_connection: { ok: false, millis: 15000, detail: 'Probe timed out' },
+      provider_test_connection: {
+        ok: false,
+        millis: 15000,
+        outcome: 'timed_out',
+        secs: 15,
+        detail: '',
+      },
     });
     await store.getState().testProviderConnection({ providerId: 'cursor' });
     expect(store.getState().providerHealth.cursor.standing).toBe('unknown');
     expect(store.getState().providerHealth.cursor.refusals).toHaveLength(0);
     stubStoryInvoke({
-      provider_test_connection: { ok: true, millis: 800, detail: 'Models answered' },
+      provider_test_connection: {
+        ok: true,
+        millis: 800,
+        outcome: 'answered',
+        secs: null,
+        detail: '',
+      },
     });
     await store.getState().testProviderConnection({ providerId: 'cursor' });
     expect(store.getState().providerHealth.cursor.standing).toBe('connected');

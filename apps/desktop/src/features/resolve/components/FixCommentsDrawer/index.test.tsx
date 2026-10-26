@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ResolveBatch } from '@goodboy/types';
-import { agentIdOf } from '../../../../shared/lib/brandedIds';
+import { agentIdOf } from '../../../../__tests__/helpers/brandedIds';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

@@ -1,9 +1,17 @@
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
 import { RotateCw } from 'lucide-react';
-import { Button, FormActions, KeyHint, Notice, formatError, useEscapeLayer } from '@goodboy/ui';
+import {
+  Button,
+  FormActions,
+  formatError,
+  ICON_SIZE,
+  KeyHint,
+  Notice,
+  useEscapeLayer,
+} from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { AgentProviderId } from '../../../../store/slices/providers/probeAgent';
 import { loadDefaultAgent, saveDefaultAgent } from '../defaultAgent';

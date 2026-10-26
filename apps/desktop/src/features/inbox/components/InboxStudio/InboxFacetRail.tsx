@@ -11,13 +11,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { Button, StatusDot, FacetRail, FacetRow, FacetSection } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import {
-  IntegrationGlyph,
-  integrationLabel,
-} from '../../../integrations/components/IntegrationGlyph';
+import { Button, FacetRail, FacetRow, FacetSection, ICON_SIZE, StatusDot } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../../../shared/utils/integrationLabel';
 import {
   activeFilterCount,
   visibleTypeFacets,

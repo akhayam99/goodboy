@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, FOCUS_RING } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { SelectionIndicator } from './SelectionIndicator';
 
@@ -59,7 +59,7 @@ export const AnswerOptionRow = ({
           onClick={disabled ? undefined : onToggle}
           className={cn(
             'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-sm text-left text-row text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            FOCUS_RING,
             'after:absolute after:inset-0 after:rounded-md after:content-[""]',
             disabled ? 'cursor-default' : 'cursor-pointer',
           )}
@@ -67,7 +67,13 @@ export const AnswerOptionRow = ({
           <span className="min-w-0 break-words">{label}</span>
           {recommended && (
             <span id={recommendedId} className="flex">
-              <Chip tone="primary" label="Recommended" shape="badge" bordered={false} />
+              <Chip
+                className="rounded-md"
+                kind="state"
+                tone="primary"
+                label="Recommended"
+                bordered={false}
+              />
             </span>
           )}
         </button>

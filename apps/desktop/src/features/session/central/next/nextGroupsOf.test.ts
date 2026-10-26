@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import type { SessionSuggestion } from '../../../suggestions/types';
-import { needsYouCountOf } from '../now/needsYouCountOf';
 import { actionCardsOf, type ActionCardModel, type AutoActionTarget } from './actionCardsOf';
 import { nextGroupsOf } from './nextGroupsOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
@@ -147,19 +146,6 @@ describe('nextGroupsOf', () => {
     ]);
   });
 
-  it('counts Decide and Fix rows as waiting on you, never Update or Ship', () => {
-    const cards = cardsOf({
-      autoTargets: [
-        APPROVE,
-        childOf({ page: 'home', kind: 'childBlocked' }),
-        { ...childOf({ page: 'home', kind: 'timedOut' }), agentId: brandId({ value: 'agent-t' }) },
-      ],
-      suggestions: [pushOf({ page: 'faq' }), pushOf({ page: 'settings' })],
-    });
-
-    expect(needsYouCountOf({ cards })).toBe(2);
-  });
-
   it('puts what unblocks most first inside a group, then what was seen first', () => {
     const rebaseAll: SessionSuggestion = {
       id: 'rebase-project:harbor',
@@ -217,5 +203,28 @@ describe('nextGroupsOf', () => {
     });
 
     expect(shapeOf({ cards: after, seen })).toEqual(shapeOf({ cards: before, seen }));
+  });
+
+  it('puts Archive this session last in Ship, after a push, as a row of its own', () => {
+    const archive: SessionSuggestion = {
+      id: 'archive-session:session-harborline',
+      kind: 'archive-session',
+      priority: 52,
+      band: 3,
+      title: 'Archive this session',
+      detail: 'All branches merged',
+      sessionId: SESSION_ID,
+      fingerprint: 'archive-session:session-harborline:1',
+      targetKey: `archive:${SESSION_ID}`,
+      payload: { branchCount: 1 },
+    };
+    const cards = cardsOf({
+      autoTargets: [],
+      suggestions: [archive, pushOf({ page: 'faq' })],
+    });
+
+    expect(shapeOf({ cards })).toEqual([
+      ['ship', ['suggestion:push-branch:faq', 'suggestion:archive-session:session-harborline']],
+    ]);
   });
 });

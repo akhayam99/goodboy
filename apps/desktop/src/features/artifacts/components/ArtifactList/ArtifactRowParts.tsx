@@ -12,7 +12,7 @@ export const ArtifactRowParts = ({ parts, hasActionColumn }: Props) => (
     {parts.map((part) => (
       <li
         key={part.index}
-        className={cn(ARTIFACT_ROW_GRID.frame, 'min-h-6 text-label', ARTIFACT_ROW_GRID.partsIndent)}
+        className={cn(ARTIFACT_ROW_GRID.frame, 'min-h-6 text-meta', ARTIFACT_ROW_GRID.partsIndent)}
       >
         <WorkNode
           state={part.nodeState}

@@ -622,74 +622,18 @@ describe('attachWorkflowToSession trigger modes', () => {
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
   });
 
-  it('after_run with an incomplete predecessor stays queued and still wakes the advance', async () => {
+  it('a new run is never chained behind another: no chain id is written or stored', async () => {
     const pred = makeRun('pred', 'immediate');
     const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'pending', 0)]);
     const { set, get } = harness(state);
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
       autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
+      triggerMode: 'manual',
     });
-    expect(attachArgs()?.['triggerMode']).toBe('after_run');
-    expect(attachArgs()?.['chainAfterRunId']).toBe('pred');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
-    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
-  });
-
-  it('after_run degrades to immediate when the predecessor is already complete', async () => {
-    const pred = makeRun('pred', 'immediate');
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('immediate');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
-  });
-
-  it('after_run does not degrade when the predecessor was discarded', async () => {
-    const pred = makeRun('pred', 'immediate', { discardedAt: NOW });
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('after_run');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-  });
-
-  it('after_run wakes the advance once when the predecessor cannot be found', async () => {
-    const state = baseState([], []);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'ghost' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('after_run');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
-  });
-
-  it('persists chainAfterId onto the new run in store state', async () => {
-    const pred = makeRun('pred', 'immediate');
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'pending', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    const sess = (state['sessions'] as Session[])[0]!;
-    const added = sess.workflowRuns.find((r) => r.triggerMode === 'after_run');
-    expect(added?.chainAfterId).toBe('pred');
+    expect(attachArgs()?.['chainAfterRunId']).toBeUndefined();
+    const added = (state['sessions'] as Session[])[0]!.workflowRuns.find((r) => r.id !== pred.id);
+    expect(added?.triggerMode).toBe('manual');
+    expect(added?.chainAfterId).toBeUndefined();
   });
 
   it('immediate autoRun delegates to maybeAutoAdvance', async () => {
@@ -739,47 +683,5 @@ describe('attachWorkflowToSession trigger modes', () => {
     const added = (state.sessions[0] as Session).workflowRuns[0]!;
     expect(added.executionMode).toBe('dynamic');
     expect(state.orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, added.id);
-  });
-
-  it('after_run degrades to immediate when the dynamic predecessor persisted done', async () => {
-    const pred = makeRun('pred', 'immediate', {
-      executionMode: 'dynamic',
-      orchestrationOutcome: 'done',
-    });
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('immediate');
-  });
-
-  it('after_run stays queued behind a dynamic predecessor without a persisted outcome', async () => {
-    const pred = makeRun('pred', 'immediate', { executionMode: 'dynamic' });
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('after_run');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-  });
-
-  it('after_run wakes the advance when the predecessor template is missing', async () => {
-    const pred = makeRun('pred', 'immediate', { workflowId: 'wf-gone' as WorkflowId });
-    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
-    const { set, get } = harness(state);
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
-      autoRun: true,
-      triggerMode: 'after_run',
-      chainAfterId: 'pred' as WorkflowRunId,
-    });
-    expect(attachArgs()?.['triggerMode']).toBe('after_run');
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledTimes(1);
-    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
   });
 });

@@ -7,20 +7,30 @@ pub(crate) fn iso_now() -> String {
     )
 }
 
-pub(crate) fn now_secs() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
+pub(crate) fn system_now() -> std::time::SystemTime {
+    std::time::SystemTime::now()
+}
+
+fn since_epoch() -> std::time::Duration {
+    system_now()
+        .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
-        .as_secs()
+}
+
+pub(crate) fn now_secs() -> u64 {
+    since_epoch().as_secs()
 }
 
 pub(crate) fn now_ms() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64
+    since_epoch().as_millis() as i64
+}
+
+pub(crate) fn now_millis_u64() -> u64 {
+    u64::try_from(since_epoch().as_millis()).unwrap_or(u64::MAX)
+}
+
+pub(crate) fn now_nanos() -> u128 {
+    since_epoch().as_nanos()
 }
 
 pub(crate) fn ms_to_iso(ms: i64) -> String {
@@ -206,6 +216,28 @@ mod tests {
         assert_eq!(stamp.len(), 20, "unexpected format: {stamp}");
         assert!(stamp.ends_with('Z'));
         assert!(!stamp.contains('.'));
+    }
+
+    #[test]
+    fn only_util_reads_the_system_clock_in_production_code() {
+        let offenders = crate::util::source_scan::production_hits(
+            &["SystemTime::now()"],
+            &["util/time.rs", "util/ids.rs"],
+        );
+
+        assert!(
+            offenders.is_empty(),
+            "read the clock through crate::util::time: {offenders:?}"
+        );
+    }
+
+    #[test]
+    fn the_integer_clocks_agree() {
+        let before = now_millis_u64();
+        let nanos = now_nanos();
+        let after = now_millis_u64();
+        let millis = (nanos / 1_000_000) as u64;
+        assert!(millis >= before && millis <= after);
     }
 
     #[test]

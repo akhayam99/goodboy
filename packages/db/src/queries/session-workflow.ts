@@ -171,8 +171,7 @@ type AttachWorkflowToSessionParams = {
   readonly autoRun: boolean;
   readonly updatedAt: IsoDateTime;
   readonly goal?: string;
-  readonly triggerMode?: WorkflowTriggerMode;
-  readonly chainAfterRunId?: WorkflowRunId;
+  readonly triggerMode?: Exclude<WorkflowTriggerMode, 'after_run'>;
   readonly executionMode?: WorkflowExecutionMode;
   readonly orchestratorRouting?: OrchestratorRouting;
   readonly spendLimitUsd?: number;
@@ -190,7 +189,6 @@ export const attachWorkflowToSession = async ({
   updatedAt,
   goal,
   triggerMode = 'immediate',
-  chainAfterRunId,
   executionMode = 'static',
   orchestratorRouting,
   spendLimitUsd,
@@ -205,7 +203,7 @@ export const attachWorkflowToSession = async ({
   const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1;
 
   await db.execute(
-    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, provider_pool, rules_snapshot, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, execution_mode, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, provider_pool, rules_snapshot, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       workflowRunId,
       sessionId,
@@ -215,7 +213,6 @@ export const attachWorkflowToSession = async ({
       autoRun ? 1 : 0,
       goal ?? null,
       triggerMode,
-      chainAfterRunId ?? null,
       executionMode,
       orchestratorRouting?.providerId ?? null,
       orchestratorRouting?.model ?? null,

@@ -17,7 +17,10 @@ export type PullRequestPort = Readonly<{
   }) => Promise<ReadonlyArray<PullRequestPerson>>;
   requestReviewers: (params: { readonly logins: ReadonlyArray<string> }) => Promise<void>;
   setDraft: (params: { readonly isDraft: boolean }) => Promise<void>;
-  merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  merge: (params: {
+    readonly method: PrMergeMethod;
+    readonly expectedHeadSha: string | null;
+  }) => Promise<void>;
   cancelAutoMerge?: () => Promise<void>;
   close: () => Promise<void>;
   reopen: () => Promise<void>;
@@ -28,7 +31,11 @@ export type PullRequestCapability = Exclude<
   'canReply' | 'canResolve'
 >;
 
-export type PullRequestFailureKind = 'denied' | 'failed' | 'rate_limited' | 'network';
+export type PullRequestFailureKind =
+  'denied' | 'failed' | 'rate_limited' | 'network' | 'stale_head';
+
+export const STALE_HEAD_MESSAGE =
+  'The branch changed after you reviewed it. Refresh and review again before merging.';
 
 export class PullRequestPortError extends Error {
   readonly kind: PullRequestFailureKind;

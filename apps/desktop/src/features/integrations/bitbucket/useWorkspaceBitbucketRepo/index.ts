@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { BitbucketIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
-import { projectPathFromRemoteUrl } from '../../../../shared/lib/remoteHost';
+import { projectPathFromRemoteUrl } from '../../../../shared/utils/remoteHost';
 import { bitbucketRepoSlug } from '../../../../store/slices/bitbucket-pr/bitbucketRepoSlug';
 import type { BitbucketRepo } from '../client';
 

@@ -1,13 +1,13 @@
 import { useId } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Reveal, SelectableRow } from '@goodboy/ui';
+import { ICON_SIZE, Reveal, SelectableRow } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type {
   MountProjectGroup,
   MountRowView,
 } from '../../../../store/slices/project-mounts/mountRowModel';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';

@@ -18,7 +18,7 @@ export const LeftoversList = ({ rows, now }: Props) => {
   return (
     <div role="group" aria-label="Leftovers" className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2 px-2">
-        <h3 className="flex items-center gap-1 text-label text-foreground">
+        <h3 className="flex items-center gap-1 text-meta text-foreground">
           Leftovers
           {rows.length > 1 ? (
             <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
@@ -38,7 +38,7 @@ export const LeftoversList = ({ rows, now }: Props) => {
           <li
             key={row.spawnId}
             data-leftover-row={row.spawnId}
-            className={cn(PORT_GRID, 'min-h-8 text-label')}
+            className={cn(PORT_GRID, 'min-h-8 text-meta')}
           >
             <StatusDot tone="warning" size="md" />
             <span />

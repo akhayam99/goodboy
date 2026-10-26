@@ -32,7 +32,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -103,13 +103,34 @@ const POLICY: ProviderPolicy = [
   { id: 'cursor', state: 'backup' },
 ];
 
-type OverridesPayload = {
+type PatchPayload = {
   readonly workspaceId: string;
-  readonly overrides: OverrideSettings;
+  readonly patch: Partial<OverrideSettings>;
 };
 
-const isOverridesPayload = (value: unknown): value is OverridesPayload =>
-  typeof value === 'object' && value !== null && 'overrides' in value;
+const isPatchPayload = (value: unknown): value is PatchPayload =>
+  typeof value === 'object' && value !== null && 'patch' in value;
+
+const PATCH_COMMAND = 'patch_workspace_overrides';
+
+type Disk = {
+  row: OverrideSettings;
+  readonly patches: Array<Partial<OverrideSettings>>;
+};
+
+const diskHolding = ({ row }: { readonly row: OverrideSettings }): Disk => ({ row, patches: [] });
+
+const writeToDisk = ({
+  disk,
+  patch,
+}: {
+  readonly disk: Disk;
+  readonly patch: Partial<OverrideSettings>;
+}): OverrideSettings => {
+  disk.patches.push(patch);
+  disk.row = { ...disk.row, ...patch };
+  return disk.row;
+};
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
@@ -201,28 +222,27 @@ describe('store contract', () => {
   });
 
   describe('overrides', () => {
-    it('setWorkspaceOverrides caches the override map keyed by workspace', async () => {
+    it('patchWorkspaceOverrides sends only the named keys and caches the row by workspace', async () => {
       const store = useAppStore;
-      const overrides = {
-        defaultVerbosity: 'brief',
-        providerPool: ['anthropic', 'codex'],
-      } as never;
-      await store.getState().setWorkspaceOverrides(WS_ID, overrides);
-      expect(store.getState().workspaceOverrides[WS_ID]?.defaultVerbosity).toBe('brief');
-      expect(store.getState().workspaceOverrides[WS_ID]?.providerPool).toEqual([
-        'anthropic',
-        'codex',
-      ]);
       const { invoke } = await import('@tauri-apps/api/core');
-      expect(invoke).toHaveBeenCalledWith('set_workspace_overrides', {
+
+      await store.getState().patchWorkspaceOverrides({
         workspaceId: WS_ID,
-        overrides,
+        patch: { defaultVerbosity: 'brief', providerPool: ANTHROPIC_ONLY },
       });
-      const payload = vi.mocked(invoke).mock.calls[0]?.[1] as {
-        readonly overrides: Record<string, unknown>;
-      };
-      expect(payload.overrides).toHaveProperty('providerPool', ['anthropic', 'codex']);
-      expect(payload.overrides).not.toHaveProperty('enabledProviders');
+
+      expect(store.getState().workspaceOverrides[WS_ID]?.defaultVerbosity).toBe('brief');
+      expect(store.getState().workspaceOverrides[WS_ID]?.providerPool).toEqual(ANTHROPIC_ONLY);
+      expect(invoke).toHaveBeenCalledWith(PATCH_COMMAND, {
+        workspaceId: WS_ID,
+        patch: { defaultVerbosity: 'brief', providerPool: ANTHROPIC_ONLY },
+      });
+      const payload = vi.mocked(invoke).mock.calls[0]?.[1];
+      expect(isPatchPayload(payload) ? payload.patch : null).not.toHaveProperty('enabledProviders');
+      expect(isPatchPayload(payload) ? Object.keys(payload.patch) : []).toEqual([
+        'defaultVerbosity',
+        'providerPool',
+      ]);
     });
 
     it('patchWorkspaceOverrides merges one key into the current row and keeps the others', async () => {
@@ -297,15 +317,11 @@ describe('store contract', () => {
 
       await store.getState().setProviderPolicy({ workspaceId: WS_ID, policy: POLICY });
 
-      const writes = vi
-        .mocked(invoke)
-        .mock.calls.filter(([command]) => command === 'set_workspace_overrides');
+      const writes = vi.mocked(invoke).mock.calls.filter(([command]) => command === PATCH_COMMAND);
       expect(writes).toHaveLength(1);
       const payload = writes[0]?.[1];
-      expect(isOverridesPayload(payload) ? payload.overrides.providerPool : null).toEqual(POLICY);
-      expect(isOverridesPayload(payload) ? payload.overrides.defaultProviderId : null).toBe(
-        'codex',
-      );
+      expect(isPatchPayload(payload) ? payload.patch.providerPool : null).toEqual(POLICY);
+      expect(isPatchPayload(payload) ? payload.patch.defaultProviderId : null).toBe('codex');
     });
 
     it('setProviderPolicy writes null only on reset and keeps the default', async () => {
@@ -318,25 +334,24 @@ describe('store contract', () => {
       expect(store.getState().workspaceOverrides[WS_ID]?.defaultProviderId).toBe('codex');
     });
 
-    it('queues overlapping writes so the last one on disk carries both changes', async () => {
+    it('queues overlapping writes so the disk carries both changes and each write names only its own', async () => {
       const store = useAppStore;
       const { invoke } = await import('@tauri-apps/api/core');
       let releaseFirstWrite = (): void => undefined;
       const firstWrite = new Promise<void>((done) => {
         releaseFirstWrite = done;
       });
-      const disk: Array<OverrideSettings> = [];
+      const disk = diskHolding({ row: { ...buildWorkspace().overrides, workflowRules: null } });
       let writeCount = 0;
       vi.mocked(invoke).mockImplementation(async (command, args) => {
-        if (command !== 'set_workspace_overrides' || !isOverridesPayload(args)) {
+        if (command !== PATCH_COMMAND || !isPatchPayload(args)) {
           return null;
         }
         writeCount += 1;
         if (writeCount === 1) {
           await firstWrite;
         }
-        disk.push(args.overrides);
-        return null;
+        return writeToDisk({ disk, patch: args.patch });
       });
 
       const policyWrite = store
@@ -348,10 +363,34 @@ describe('store contract', () => {
       releaseFirstWrite();
       await Promise.all([policyWrite, bindingWrite]);
 
-      const last = disk.at(-1);
-      expect(disk).toHaveLength(2);
-      expect(last?.providerPool).toEqual(POLICY);
-      expect(last?.providerBindings).toEqual({ anthropic: 'credential-harborline' });
+      expect(disk.patches.map((patch) => Object.keys(patch).sort())).toEqual([
+        ['defaultProviderId', 'providerPool'],
+        ['providerBindings'],
+      ]);
+      expect(disk.row.providerPool).toEqual(POLICY);
+      expect(disk.row.providerBindings).toEqual({ anthropic: 'credential-harborline' });
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(disk.row);
+    });
+
+    it('adopts the stored row the write returns, including a key another window saved', async () => {
+      const store = useAppStore;
+      const { invoke } = await import('@tauri-apps/api/core');
+      const stale = buildWorkspace().overrides;
+      store.setState({ workspaceOverrides: { [WS_ID]: stale } });
+      const disk = diskHolding({ row: { ...stale, afterMerge: 'local' } });
+      vi.mocked(invoke).mockImplementation(async (command, args) =>
+        command === PATCH_COMMAND && isPatchPayload(args)
+          ? writeToDisk({ disk, patch: args.patch })
+          : null,
+      );
+
+      await store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+
+      expect(disk.patches).toEqual([{ defaultBranchPrefix: 'nw' }]);
+      expect(store.getState().workspaceOverrides[WS_ID]?.afterMerge).toBe('local');
+      expect(store.getState().workspaceOverrides[WS_ID]?.defaultBranchPrefix).toBe('nw');
     });
 
     it('loadWorkspaceOverrides reads a legacy list of names as a policy', async () => {
@@ -389,6 +428,29 @@ describe('store contract', () => {
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual(previous);
     });
 
+    it('a refused value rolls the row back and surfaces the refusal', async () => {
+      const store = useAppStore;
+      const previous = { ...buildWorkspace().overrides, providerPool: ANTHROPIC_ONLY };
+      store.setState({ workspaceOverrides: { [WS_ID]: previous } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockRejectedValueOnce({
+        kind: 'invalid_setting_value',
+        message: 'providerPool does not accept this value',
+      });
+
+      await expect(
+        store.getState().patchWorkspaceOverrides({
+          workspaceId: WS_ID,
+          patch: { providerPool: POLICY },
+        }),
+      ).rejects.toMatchObject({
+        kind: 'invalid_setting_value',
+        message: 'providerPool does not accept this value',
+      });
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(previous);
+    });
+
     it('a later queued write that fails leaves memory on what the disk holds', async () => {
       const store = useAppStore;
       const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
@@ -398,17 +460,16 @@ describe('store contract', () => {
       const firstWrite = new Promise<void>((done) => {
         releaseFirstWrite = done;
       });
-      const disk: Array<OverrideSettings> = [];
+      const disk = diskHolding({ row: original });
       let writeCount = 0;
       vi.mocked(invoke).mockImplementation(async (command, args) => {
-        if (command !== 'set_workspace_overrides' || !isOverridesPayload(args)) {
+        if (command !== PATCH_COMMAND || !isPatchPayload(args)) {
           return null;
         }
         writeCount += 1;
         if (writeCount === 1) {
           await firstWrite;
-          disk.push(args.overrides);
-          return null;
+          return writeToDisk({ disk, patch: args.patch });
         }
         throw new Error('disk full');
       });
@@ -423,8 +484,8 @@ describe('store contract', () => {
       await first;
       await expect(second).rejects.toThrow('disk full');
 
-      expect(disk).toEqual([{ ...original, defaultBranchPrefix: 'nw' }]);
-      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(disk.at(-1));
+      expect(disk.row).toEqual({ ...original, defaultBranchPrefix: 'nw' });
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(disk.row);
     });
 
     it('two queued writes that both fail roll memory back to the last saved row', async () => {
@@ -433,7 +494,7 @@ describe('store contract', () => {
       store.setState({ workspaceOverrides: { [WS_ID]: original } });
       const { invoke } = await import('@tauri-apps/api/core');
       vi.mocked(invoke).mockImplementation(async (command) => {
-        if (command === 'set_workspace_overrides') {
+        if (command === PATCH_COMMAND) {
           throw new Error('disk full');
         }
         return null;
@@ -449,6 +510,30 @@ describe('store contract', () => {
       await expect(second).rejects.toThrow('disk full');
 
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual(original);
+    });
+
+    it('two queued writes to the same key that both fail leave the saved value, not the first attempt', async () => {
+      const store = useAppStore;
+      const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: original } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockImplementation(async (command) => {
+        if (command === PATCH_COMMAND) {
+          throw new Error('disk full');
+        }
+        return null;
+      });
+
+      const first = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+      const second = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'ac' } });
+      await expect(first).rejects.toThrow('disk full');
+      await expect(second).rejects.toThrow('disk full');
+
+      expect(store.getState().workspaceOverrides[WS_ID]?.defaultBranchPrefix).toBe('hb');
     });
   });
 });

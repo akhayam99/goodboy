@@ -1,7 +1,7 @@
 import { ListTree } from 'lucide-react';
-import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { ReportOutlineEntry } from '../../reportOutline';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { ReportOutlineNav } from './ReportOutlineNav';
 
 type Props = {

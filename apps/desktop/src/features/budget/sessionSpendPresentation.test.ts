@@ -7,12 +7,18 @@ const SID = brandedId<SessionId>({ value: 'mock-session-harborline-export' });
 
 type LimitParams = {
   readonly softCapUsd: number;
+  readonly warnRatio?: number;
   readonly onExceed?: SessionBudget['onExceed'];
 };
 
-const limitOf = ({ softCapUsd, onExceed = 'pause' }: LimitParams): SessionBudget => ({
+const limitOf = ({
+  softCapUsd,
+  warnRatio = 0.8,
+  onExceed = 'pause',
+}: LimitParams): SessionBudget => ({
   sessionId: SID,
   softCapUsd,
+  warnRatio,
   onExceed,
 });
 
@@ -63,5 +69,31 @@ describe('sessionSpendPresentation', () => {
     expect(near.tone).toBe('warning');
     expect(over.isPaused).toBe(false);
     expect(over.sentence).toBe('$11.00 spent of the $10.00 limit in this session');
+  });
+
+  it('passes the limit at exactly the cap and warns at exactly eighty percent', () => {
+    const atCap = sessionSpendPresentation({ totalUsd: 10, limit: limitOf({ softCapUsd: 10 }) });
+    const atNear = sessionSpendPresentation({ totalUsd: 8, limit: limitOf({ softCapUsd: 10 }) });
+    const below = sessionSpendPresentation({ totalUsd: 7.99, limit: limitOf({ softCapUsd: 10 }) });
+
+    expect(atCap.level).toBe('over');
+    expect(atCap.isPaused).toBe(true);
+    expect(atNear.level).toBe('near');
+    expect(below.level).toBe('clear');
+  });
+
+  it('reads a limit of zero as already passed', () => {
+    const shown = sessionSpendPresentation({ totalUsd: 0, limit: limitOf({ softCapUsd: 0 }) });
+
+    expect(shown.ratio).toBe(1);
+    expect(shown.level).toBe('over');
+    expect(shown.isPaused).toBe(true);
+  });
+
+  it('warns at the ratio the backend sent, not at a number of its own', () => {
+    const limit = limitOf({ softCapUsd: 10, warnRatio: 0.5 });
+
+    expect(sessionSpendPresentation({ totalUsd: 5, limit }).level).toBe('near');
+    expect(sessionSpendPresentation({ totalUsd: 4.99, limit }).level).toBe('clear');
   });
 });

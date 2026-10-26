@@ -114,9 +114,13 @@ export const INITIAL_LIFECYCLE_MAP: ProviderLifecycleMap = {
   moonshot: IDLE_LIFECYCLE,
 };
 
+type ConnectionOutcome = 'answered' | 'timed_out' | 'empty' | 'unsupported' | 'refused';
+
 export type ConnectionTestResult = {
   readonly isOk: boolean;
   readonly millis: number;
+  readonly outcome: ConnectionOutcome;
+  readonly secs: number | null;
   readonly detail: string;
 };
 

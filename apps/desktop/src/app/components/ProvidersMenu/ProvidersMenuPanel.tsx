@@ -1,7 +1,7 @@
 import { ArrowUpRight } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { ROW_INTERACTIVE, cn, EmptyLine, Eyebrow, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { EmptyLine, Eyebrow, ICON_SIZE, SelectableRow, tintClasses } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../shared/components/RoutingPicker/ProviderGlyph';
 import { ProviderPolicyList } from '../../../features/providers/components/ProviderPolicyList';
 import { openProviderConnect } from '../../../features/providers/openProviderConnect';
@@ -33,34 +33,28 @@ export const ProvidersMenuPanel = ({ workspaceId, onClose }: Props) => {
       <ul aria-label="Provider actions" className="flex flex-col px-1 pt-1">
         {missing.map((id) => (
           <li key={id}>
-            <button
-              type="button"
+            <SelectableRow
+              selected={false}
               onClick={() => {
                 onClose();
                 openProviderConnect({ providerId: id, connection: connectionOf({ id }) });
               }}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground',
-                ROW_INTERACTIVE,
-              )}
+              className="items-center gap-2 px-2 py-1 text-meta text-foreground"
             >
               <ProviderGlyph id={id} size={ICON_SIZE.control} />
               <span className="flex-1 text-left">Connect {PROVIDER_LABEL[id]}</span>
               <span className="text-meta text-faint-foreground">Not connected</span>
-            </button>
+            </SelectableRow>
           </li>
         ))}
         <li>
-          <button
-            type="button"
+          <SelectableRow
+            selected={false}
             onClick={() => {
               onClose();
               openProviderUsage({ providerId: null });
             }}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground',
-              ROW_INTERACTIVE,
-            )}
+            className="items-center gap-2 px-2 py-1 text-meta text-foreground"
           >
             <CONCEPT_ICONS.settings
               size={ICON_SIZE.row}
@@ -69,7 +63,7 @@ export const ProvidersMenuPanel = ({ workspaceId, onClose }: Props) => {
             />
             <span className="flex-1 text-left">Manage providers</span>
             <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
-          </button>
+          </SelectableRow>
         </li>
       </ul>
     </>

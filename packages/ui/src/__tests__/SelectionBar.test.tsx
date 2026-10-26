@@ -51,6 +51,24 @@ describe('SelectionBar', () => {
     expect(onSelectAll).toHaveBeenCalledTimes(1);
   });
 
+  it('lets the hint wrap inside the dock instead of running past its edges', () => {
+    render(
+      <SelectionBar
+        count={1}
+        total={4}
+        verbs={[]}
+        onClear={vi.fn()}
+        onSelectAll={vi.fn()}
+        hint="Shift click for a range, Option click to add one"
+      />,
+    );
+
+    const hint = screen.getByText('Shift click for a range, Option click to add one');
+    expect(hint.className).not.toContain('whitespace-nowrap');
+    expect(hint.className).toContain('max-w-full');
+    expect(hint.className).toContain('text-center');
+  });
+
   it('reports the height of the dock while it shows and zero once it goes', () => {
     const observers: Array<(entries: ReadonlyArray<{ contentRect: { height: number } }>) => void> =
       [];

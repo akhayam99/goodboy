@@ -1,5 +1,5 @@
-import { FactCard, SelectableRow, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, FactCard, ICON_SIZE, SelectableRow } from '@goodboy/ui';
+
 import type { BranchRowFacts } from '../../../../features/branch/branchRowFactsOf';
 import { pullRequestStateToneOf } from '../../../../features/branch/pullRequestStateToneOf';
 import { TRAIL_PILL_INSET } from '../../../../shared/components/trailingSlot';

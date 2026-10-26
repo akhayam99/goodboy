@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction, WorkflowRunActionTarget } from '../../../actions/types';

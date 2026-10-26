@@ -1,10 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import {
-  buildSlackManifestUrl,
-  SLACK_MANIFEST_URL_LIMIT,
-  SLACK_USER_SCOPES,
-} from './slackAppManifest';
+import { buildSlackManifestUrl, SLACK_USER_SCOPES } from './slackAppManifest';
 
 type DecodedManifest = {
   readonly _metadata: { readonly major_version: number; readonly minor_version: number };
@@ -22,7 +18,7 @@ describe('buildSlackManifestUrl', () => {
   it('drops the manifest into the app creation flow', () => {
     const url = buildSlackManifestUrl({ userScopes: SLACK_USER_SCOPES }) ?? '';
     expect(url.startsWith('https://api.slack.com/apps?new_app=1&manifest_json=')).toBe(true);
-    expect(url.length).toBeLessThanOrEqual(SLACK_MANIFEST_URL_LIMIT);
+    expect(url.length).toBeLessThanOrEqual(8000);
   });
 
   it('asks for the five scopes as user scopes and for no bot scope at all', () => {

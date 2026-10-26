@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { DEFAULT_WORKFLOW_RULES, type WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -28,7 +29,12 @@ export const useOrchestratorModelPick = ({ workspaceId }: Params): OrchestratorM
         workspaceId,
         patch: { workflowRules: { ...current, canOrchestratorPickModel: isNext } },
       }).catch((error: unknown) => {
-        void reportError({ title: "Couldn't save the workflow rules", error, workspaceId });
+        void reportError({
+          title: "Couldn't save the run defaults",
+          error,
+          workspaceId,
+          recovery: NOTHING_CHANGED,
+        });
       });
     },
     [patchWorkspaceOverrides, reportError, workspaceId],

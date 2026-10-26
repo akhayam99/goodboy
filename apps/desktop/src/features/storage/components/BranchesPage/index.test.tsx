@@ -55,6 +55,7 @@ const branch = (patch: BranchPatch = {}): ProjectBranch => ({
   lastCommitAt: nowS - 86_400,
   location: 'local-only',
   mergeState: { kind: 'merged-via-pr' },
+  isSafeToDelete: patch.mergeState === undefined || patch.mergeState.kind !== 'not-merged',
   behind: null,
   ...patch,
 });
@@ -164,6 +165,8 @@ describe('BranchesPage', () => {
         sha: 'sha-del-fee',
         keepRef: 'refs/goodboy/deleted/del-fee',
         pushToOrigin: false,
+        workspaceId: HARBORLINE.id,
+        projectId: LEDGER.id,
       },
     });
     await waitFor(() => expect(within(group).queryByText('goodboy/fee-rounding')).toBeNull());

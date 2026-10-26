@@ -7,11 +7,10 @@ use serde::Serialize;
 use std::path::Path;
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct BaseUpdateResult {
     pub base: String,
-    #[serde(rename = "checkoutBranch")]
     pub checkout_branch: Option<String>,
-    #[serde(rename = "commitsPulled")]
     pub commits_pulled: u32,
 }
 
@@ -35,7 +34,7 @@ pub async fn checkout_update_base(
     project_id: Option<String>,
 ) -> Result<BaseUpdateResult, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         checkout_update_base_blocking(checkout_path, base_branch, token.as_deref())
     })
     .await
@@ -77,7 +76,7 @@ pub(super) fn checkout_update_base_blocking(
         )));
     };
     let refspec = format!("{base}:{base}");
-    let fetched = crate::github::run_git_authenticated(
+    let fetched = crate::remote_auth::run_git_authenticated(
         &["fetch", "--no-tags", "origin", &refspec],
         &checkout_path,
         token,
@@ -103,3 +102,6 @@ pub(super) fn checkout_update_base_blocking(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod wire_shape;

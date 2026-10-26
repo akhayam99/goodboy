@@ -1,8 +1,8 @@
 import { Bot, RotateCcw } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, ICON_SIZE, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { ProviderId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { QUESTION_DELEGATE_COPY, type DelegateRowState } from '../../../questionDelegate';
 import type { DelegateRouting } from '../useOpenQuestions';
@@ -19,9 +19,9 @@ type Props = {
 };
 
 const LINK_CLASS = cn(
-  'inline-flex min-w-0 items-center gap-2 rounded-sm text-label text-muted-foreground',
+  'inline-flex min-w-0 items-center gap-2 rounded-sm text-meta text-muted-foreground',
   'motion-safe:transition-colors enabled:hover:text-foreground disabled:text-faint-foreground',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+  FOCUS_RING,
 );
 
 export const DelegateAnswerRow = ({
@@ -41,7 +41,7 @@ export const DelegateAnswerRow = ({
   if (state === 'chosen') {
     return (
       <div data-testid="delegate-answer-row" data-state={state} className="flex flex-col gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-foreground">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-meta text-foreground">
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span>{QUESTION_DELEGATE_COPY.chosen}</span>
           <RoutingPicker
@@ -67,7 +67,7 @@ export const DelegateAnswerRow = ({
           placeholder={QUESTION_DELEGATE_COPY.hintsPlaceholder}
           minRows={1}
           maxRows={4}
-          textClassName="text-label"
+          textClassName="text-meta"
         />
       </div>
     );

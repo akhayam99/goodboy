@@ -22,7 +22,7 @@ import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import {
   refreshWorktreeStatuses,
   resetWorktreeStatusCache,
-} from '../../../../../store/slices/worktreeStatuses/cache';
+} from '../../../../../store/runtime/worktreeStatuses/cache';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { U24_CI_FIX_STATE_SCENES } from './ci-fix-state';
 

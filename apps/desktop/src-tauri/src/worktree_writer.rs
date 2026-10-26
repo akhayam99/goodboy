@@ -216,7 +216,13 @@ fn acquire_at(
         .first()
         .map(|waiting| waiting == holder)
         .unwrap_or(true);
-    if is_free && is_next {
+    let is_reentrant = slot.holder.as_ref().is_some_and(|current| {
+        current.id == holder
+            && token == Some(current.token.as_str())
+            && !current.has_exited
+            && !is_stealable
+    });
+    if is_reentrant || (is_free && is_next) {
         slot.waiters.retain(|waiting| waiting != holder);
         let kept = match slot.holder.take() {
             Some(current) if current.id == holder && !current.has_exited && !is_stealable => {
@@ -614,6 +620,38 @@ mod tests {
         assert!(status.is_granted);
         assert_eq!(granted_token(&status), token);
         assert!(status.waiting.is_empty());
+    }
+
+    #[test]
+    fn acquire_is_idempotent_for_the_holder_while_another_attempt_is_queued() {
+        let mut map = LeaseMap::new();
+        let first = acquire_in(&mut map, "/repo/one", "attempt-a", None);
+        let token = granted_token(&first);
+        let queued = acquire_in(&mut map, "/repo/one", "attempt-b", None);
+        assert!(!queued.is_granted);
+
+        let again = acquire_in(&mut map, "/repo/one", "attempt-a", Some(&token));
+
+        assert!(again.is_granted);
+        assert_eq!(granted_token(&again), token);
+        assert_eq!(again.holder.as_deref(), Some("attempt-a"));
+        assert_eq!(again.waiting, vec!["attempt-b".to_string()]);
+    }
+
+    #[test]
+    fn a_queued_attempt_still_waits_for_its_turn_after_the_holder_re_acquires() {
+        let mut map = LeaseMap::new();
+        let first = acquire_in(&mut map, "/repo/one", "attempt-a", None);
+        let token = granted_token(&first);
+        acquire_in(&mut map, "/repo/one", "attempt-b", None);
+        acquire_in(&mut map, "/repo/one", "attempt-a", Some(&token));
+
+        let (_, was_released) = release_in(&mut map, "/repo/one", "attempt-a", Some(&token));
+        let next = acquire_in(&mut map, "/repo/one", "attempt-b", None);
+
+        assert!(was_released);
+        assert!(next.is_granted);
+        assert_eq!(next.holder.as_deref(), Some("attempt-b"));
     }
 
     #[test]

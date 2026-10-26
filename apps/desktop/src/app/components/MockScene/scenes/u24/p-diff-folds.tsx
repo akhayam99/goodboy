@@ -7,7 +7,6 @@ import { useAppStore } from '../../../../../store';
 import { BRAND_PEOPLE } from '../brand/canon';
 import {
   CTX_PAYMENTS_MOUNT_ID,
-  CTX_SESSION,
   CTX_SESSION_ID,
   minutesAgo,
   seedContextBase,

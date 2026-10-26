@@ -1,5 +1,5 @@
 import type { DemoShortcutCode, DemoShortcutCommand } from './demoProtocol';
-import { isDemoEnvelope } from './isDemoEnvelope';
+import { readDemoEnvelope } from './readDemoEnvelope';
 
 const SHORTCUT_CODES: ReadonlyMap<unknown, DemoShortcutCode> = new Map<unknown, DemoShortcutCode>([
   ['KeyK', 'KeyK'],
@@ -12,9 +12,18 @@ type Params = {
 };
 
 export const readDemoShortcutCommand = ({ data }: Params): DemoShortcutCommand | null => {
-  if (!isDemoEnvelope(data) || data.type !== 'shortcut') {
+  const envelope = readDemoEnvelope({ data });
+  if (envelope === null || envelope.type !== 'shortcut') {
     return null;
   }
-  const code = SHORTCUT_CODES.get(Reflect.get(data, 'code'));
-  return code === undefined ? null : { ...data, type: 'shortcut', code };
+  const code = SHORTCUT_CODES.get(Reflect.get(envelope.data, 'code'));
+  return code === undefined
+    ? null
+    : {
+        channel: envelope.channel,
+        version: envelope.version,
+        generation: envelope.generation,
+        type: 'shortcut',
+        code,
+      };
 };

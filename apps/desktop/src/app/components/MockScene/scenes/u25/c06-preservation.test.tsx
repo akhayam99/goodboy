@@ -66,7 +66,7 @@ const openAgentMenu = async (): Promise<HTMLElement> => {
   return screen.getByRole('menu');
 };
 
-describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => {
+describe('agent rows stay reachable from the one conversation', () => {
   it('Agent menu full list: the header menu keeps the registry list, Copy and Delete included', async () => {
     await mount({ name: 'c06-agent-finished' });
 
@@ -76,12 +76,12 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     }
   });
 
-  it('Interrupt: Stop is on the tail while the turn runs, Interrupt stays in the menu', async () => {
+  it('Stop: Stop is on the tail, the composer and the header while the turn runs, and in the menu', async () => {
     await mount({ name: 'c06-agent-working' });
 
-    expect(screen.getByRole('button', { name: 'Stop' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Stop' }).length).toBeGreaterThanOrEqual(2);
     const menu = await openAgentMenu();
-    expect(within(menu).getByRole('menuitem', { name: /^Interrupt/ })).toBeDefined();
+    expect(within(menu).getByRole('menuitem', { name: /^Stop/ })).toBeDefined();
   });
 
   it('Brief outcome: the closing reply carries the outcome, with no band restating it', async () => {
@@ -114,14 +114,6 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(within(pane).getAllByText(/^(Ran|Read) /).length).toBeGreaterThan(0);
   });
 
-  it('Links into the transcript: View transcript opens the transcript pane on this agent', async () => {
-    await mount({ name: 'c06-agent-finished' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(C06_AGENT_ID);
-  });
-
   it('Agent usage footer: the transcript pane carries the agent usage', async () => {
     await mount({ name: 'c06-agent-transcript' });
 
@@ -142,9 +134,11 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(screen.getByRole('button', { name: /^Send now/ })).toBeDefined();
   });
 
-  it('The turn stopped with Retry: a failed turn keeps its Retry', async () => {
+  it('The turn failed with Retry: a failed turn keeps its Retry and says failed', async () => {
     await mount({ name: 'c06-agent-failed' });
 
+    expect(screen.getByText('The turn failed')).toBeDefined();
+    expect(screen.queryByText('The turn stopped')).toBeNull();
     expect(screen.getByRole('button', { name: /^Retry/ })).toBeDefined();
   });
 

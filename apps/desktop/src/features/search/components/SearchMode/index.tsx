@@ -26,21 +26,14 @@ import { SearchPreview } from './SearchPreview';
 import { SearchFooter } from './SearchFooter';
 import { LookupHitRow } from './LookupHitRow';
 import { searchProgressLabel } from './searchProgressLabel';
+import { useListboxCursor } from '../../../../shared/hooks/useListboxCursor';
 
 type Item =
   | { readonly kind: 'lookup'; readonly id: string; readonly url: string }
   | { readonly kind: 'result'; readonly id: string; readonly hit: SearchHit };
 
-type OptionIdParams = {
-  readonly id: string;
-};
-
 type OpenItemParams = {
   readonly item: Item;
-};
-
-type MoveParams = {
-  readonly delta: 1 | -1;
 };
 
 const RECENT_KINDS = ['session', 'plan', 'report', 'decision', 'question', 'issue', 'pr'] as const;
@@ -64,7 +57,6 @@ export const SearchMode = ({
     extractQualifiers({ text, projects: context.projects, now, isFinal: true }),
   );
   const [chips, setChips] = useState<ReadonlyArray<SearchChip>>(initial.chips);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const listboxId = useId();
@@ -107,27 +99,16 @@ export const SearchMode = ({
     return [...fromLookup, ...fromIndex];
   }, [lookupHits, results.hits]);
 
-  const selectedIndex = Math.max(
-    0,
-    items.findIndex((item) => item.id === selectedId),
-  );
-  const selected = items[selectedIndex] ?? null;
+  const itemIds = useMemo(() => items.map((item) => item.id), [items]);
+  const cursor = useListboxCursor({ ids: itemIds, listRef, listboxId });
+  const { optionId, select: selectItem } = cursor;
+  const selected = items[cursor.selectedIndex] ?? null;
   const selectedHit = selected?.kind === 'result' ? selected.hit : null;
   const selectedTarget = selectedHit === null ? null : searchHitTarget({ hit: selectedHit });
-  const optionId = useCallback(({ id }: OptionIdParams) => `${listboxId}-${id}`, [listboxId]);
 
   useEffect(() => {
-    setSelectedId(null);
-  }, [query]);
-
-  useEffect(() => {
-    if (selected === null) {
-      return;
-    }
-    listRef.current
-      ?.querySelector(`#${CSS.escape(optionId({ id: selected.id }))}`)
-      ?.scrollIntoView?.({ block: 'nearest' });
-  }, [selected, optionId]);
+    selectItem({ id: null });
+  }, [query, selectItem]);
 
   const openItem = useCallback(
     ({ item }: OpenItemParams) => {
@@ -192,17 +173,10 @@ export const SearchMode = ({
     inputRef.current?.focus();
   };
 
-  const move = ({ delta }: MoveParams) => {
-    const next = items[Math.min(Math.max(selectedIndex + delta, 0), items.length - 1)];
-    if (next !== undefined) {
-      setSelectedId(next.id);
-    }
-  };
-
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      move({ delta: event.key === 'ArrowDown' ? 1 : -1 });
+      cursor.move({ delta: event.key === 'ArrowDown' ? 1 : -1 });
       return;
     }
     if (event.key === 'Enter') {
@@ -300,7 +274,7 @@ export const SearchMode = ({
                   record={hit.record}
                   optionId={optionId({ id })}
                   isSelected={selected?.id === id}
-                  onHover={() => setSelectedId(id)}
+                  onHover={() => selectItem({ id })}
                   onOpen={() => openById(id)}
                 />
               );
@@ -313,7 +287,7 @@ export const SearchMode = ({
                 isSelected={selected?.id === hit.docId}
                 isBlocked={searchHitTarget({ hit }).kind === 'blocked'}
                 isSessionScoped={scope.kind === 'session'}
-                onHover={setSelectedId}
+                onHover={(id) => selectItem({ id })}
                 onOpen={openById}
               />
             ))}
@@ -341,7 +315,7 @@ export const SearchMode = ({
               <button
                 type="button"
                 onClick={() => setScope({ kind: 'all' })}
-                className="rounded-md px-2 py-1 text-label text-foreground hover:bg-hover"
+                className="rounded-md px-2 py-1 text-meta text-foreground hover:bg-hover"
               >
                 Search everywhere
               </button>

@@ -41,9 +41,8 @@ import {
   seedSettingsBase,
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { OnboardingWizard } from '../../features/onboarding/OnboardingWizard';
-import { openWizardStep } from '../../features/onboarding/onboarding-store';
+import { openWizardStep } from '../../features/onboarding/onboardingSettings';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
-import { autoTreeLimitKey } from '../../features/auto/autoTreeLimit';
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
@@ -142,7 +141,21 @@ describe('main flows on the real store', () => {
   it('starts the first session from the onboarding wizard', async () => {
     seedSettingsBase();
     const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
-    stubActions({ hydrated: true, startSessionFromDraft });
+    stubActions({
+      hydrated: true,
+      startSessionFromDraft,
+      loadSetting: vi.fn(async () => null),
+      loadWorkspaceValue: vi.fn(async () => null),
+    });
+    useAppStore.setState((state) => ({
+      workspaceValues: {
+        ...state.workspaceValues,
+        [SETTINGS_WORKSPACE.id]: {
+          ...state.workspaceValues[SETTINGS_WORKSPACE.id],
+          'auto.treeLimitUsd': '5',
+        },
+      },
+    }));
 
     await mountFlow(<OnboardingWizard />);
     await act(async () => {
@@ -154,7 +167,10 @@ describe('main flows on the real store', () => {
     await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());
     expect(startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: SETTINGS_WORKSPACE.id,
-      start: expect.objectContaining({ kind: 'scout' }),
+      start: expect.objectContaining({
+        kind: 'workflow-run',
+        goal: expect.stringContaining('Explain how'),
+      }),
     });
     const projectId = useAppStore.getState().projects[0]?.id ?? null;
     expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectIds).toEqual(
@@ -166,13 +182,20 @@ describe('main flows on the real store', () => {
   it('starts a session from the new session draft', async () => {
     seedBoardScene();
     const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
-    stubActions({ startSessionFromDraft, loadSetting: vi.fn(async () => null) });
+    stubActions({
+      startSessionFromDraft,
+      loadSetting: vi.fn(async () => null),
+      loadWorkspaceValue: vi.fn(async () => null),
+    });
     useAppStore.setState((state) => ({
-      settings: { ...state.settings, [autoTreeLimitKey({ workspaceId: WORKSPACE_ID })]: '5' },
+      workspaceValues: {
+        ...state.workspaceValues,
+        [WORKSPACE_ID]: { ...state.workspaceValues[WORKSPACE_ID], 'auto.treeLimitUsd': '5' },
+      },
     }));
 
     await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Task' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Read the ledger-core importer' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));

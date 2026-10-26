@@ -1,7 +1,7 @@
 import { FolderPlus } from 'lucide-react';
-import { Button, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { openWorkspaceProjects } from './openWorkspaceProjects';
 import { useConnectProject, type ConnectFailure } from './useConnectProject';
 

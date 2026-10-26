@@ -29,7 +29,7 @@ import type { ChatId } from '@goodboy/types';
 import { aProject, aWorkspace } from '@goodboy/types/testing';
 import type { ChatBackend } from '../../../features/workspace-chat/chatBackend';
 import type { ChatTurnRequest } from '../../../features/workspace-chat/runChatTurn';
-import { createMemoryChatBackend } from '../../../features/workspace-chat/createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../../test/createMemoryChatBackend';
 import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
 import { SETTING_CHAT_IMAGES } from '../../../features/settings/settings';
 import {
@@ -162,6 +162,36 @@ describe('chat images', () => {
     const [asked] = read().chatMessages[chatId] ?? [];
     expect(asked?.attachments).toEqual([]);
     expect(requests[0]?.images).toBeUndefined();
+  });
+
+  it('starts one run when two sends arrive while an image is being saved', async () => {
+    const backend = newBackend();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    holder.backend = {
+      ...backend,
+      writeImage: async (params) => {
+        await gate;
+        return backend.writeImage(params);
+      },
+    };
+    const { slice, read } = harness();
+    const chatId = await startChat({ slice });
+
+    const first = slice.sendChatMessage({
+      chatId,
+      content: 'Why 502?',
+      attachments: [screenshot('a.png')],
+    });
+    const isSecondStarted = await slice.sendChatMessage({ chatId, content: 'Why 502?' });
+    release();
+
+    expect(isSecondStarted).toBe(false);
+    expect(await first).toBe(true);
+    expect(requests).toHaveLength(1);
+    expect(read().chatMessages[chatId]).toHaveLength(2);
   });
 
   it('sends nothing when an image cannot be saved', async () => {

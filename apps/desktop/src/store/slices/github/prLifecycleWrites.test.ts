@@ -17,16 +17,10 @@ import { convertPrToDraft } from './convertPrToDraft';
 import { editPr } from './editPr';
 import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
-import {
-  PR_WRITE_NO_PORT,
-  PR_WRITE_NO_PULL_REQUEST,
-  PR_WRITE_NO_REPO,
-  PR_WRITE_NO_SESSION,
-  PR_WRITE_NO_WORKSPACE,
-} from './prWriteContext';
 import { reopenPr } from './reopenPr';
 import { requestReview } from './requestReview';
 import { isReportedError } from '../notifications/reportedError';
+import { STALE_HEAD_MESSAGE } from '@goodboy/core';
 
 const SESSION_ID = 'session-1' as SessionId;
 const LEDGER_ID = 'project-ledger' as ProjectId;
@@ -275,6 +269,154 @@ describe('pull request writes with two mounts', () => {
   });
 });
 
+const REVIEWED_HEAD = 'a41c9e2b7d3f';
+
+const withHeads = (): State => {
+  const state = makeState();
+  return {
+    ...state,
+    sessionGithub: {
+      [SESSION_ID]: {
+        pr: {
+          number: 12,
+          title: 'Ledger change',
+          url: 'https://example.test/12',
+          headSha: REVIEWED_HEAD,
+        },
+        detail: null,
+      },
+    },
+    mountGithub: {
+      [RELAY_MOUNT_ID]: {
+        pr: null,
+        detail: null,
+        prs: [
+          {
+            number: 44,
+            title: 'Relay change',
+            url: 'https://example.test/44',
+            headSha: '0d9c8b7a6f5e',
+          },
+        ],
+      },
+    },
+  };
+};
+
+describe('merge pinned to the head the user reviewed', () => {
+  it('pins the displayed pull request to its head', async () => {
+    const state = withHeads();
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12);
+
+    expect(h.run.mock.calls[0]?.[0]).toEqual([
+      'pr',
+      'merge',
+      '12',
+      '--squash',
+      '--match-head-commit',
+      REVIEWED_HEAD,
+    ]);
+  });
+
+  it('pins a pull request of the named mount to its own head, not the displayed one', async () => {
+    const state = withHeads();
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 44, 'rebase', { mountId: RELAY_MOUNT_ID });
+
+    expect(h.run.mock.calls[0]?.[0]).toEqual([
+      'pr',
+      'merge',
+      '44',
+      '--rebase',
+      '--match-head-commit',
+      '0d9c8b7a6f5e',
+    ]);
+  });
+
+  it('does not borrow the head of another pull request', async () => {
+    const state = withHeads();
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 99);
+
+    expect(h.run.mock.calls[0]?.[0]).toEqual(['pr', 'merge', '99', '--squash']);
+  });
+
+  it('takes the head the caller names over the stored one', async () => {
+    const state = withHeads();
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12, 'merge', {
+      expectedHeadSha: '6c20f48a9e1d',
+    });
+
+    expect(h.run.mock.calls[0]?.[0]).toEqual([
+      'pr',
+      'merge',
+      '12',
+      '--merge',
+      '--match-head-commit',
+      '6c20f48a9e1d',
+    ]);
+  });
+
+  it('merges without a pin when the caller says there is none', async () => {
+    const state = withHeads();
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12, 'squash', { expectedHeadSha: null });
+
+    expect(h.run.mock.calls[0]?.[0]).toEqual(['pr', 'merge', '12', '--squash']);
+  });
+
+  it('answers a moved head with refresh and review again, then refreshes the request', async () => {
+    const state = withHeads();
+    h.run.mockResolvedValue({
+      exitCode: 1,
+      stdout: '',
+      stderr:
+        'GraphQL: Head branch was modified. Review and try the merge again. (mergePullRequest)',
+    });
+
+    const error = await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+
+    expect(isReportedError(error)).toBe(true);
+    expect(error instanceof Error ? error.message : '').toBe(STALE_HEAD_MESSAGE);
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't merge #12",
+        body: STALE_HEAD_MESSAGE,
+        severity: 'error',
+      }),
+    );
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, { force: true });
+    expect(state.recordSessionEventOnce).not.toHaveBeenCalled();
+  });
+
+  it('merges on a retry once the user reviewed the new head', async () => {
+    const state = withHeads();
+    h.run.mockResolvedValueOnce({
+      exitCode: 1,
+      stdout: '',
+      stderr: 'GraphQL: Head branch was modified. Review and try the merge again.',
+    });
+    const first = await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+    expect(isReportedError(first)).toBe(true);
+
+    await mergePr(vi.fn(), asGet(state))(SESSION_ID, 12, 'squash', {
+      expectedHeadSha: '6c20f48a9e1d',
+    });
+
+    expect(h.run).toHaveBeenCalledTimes(2);
+    expect(h.run.mock.calls[1]?.[0]).toContain('6c20f48a9e1d');
+    expect(state.recordSessionEventOnce).toHaveBeenCalledTimes(1);
+  });
+});
+
 type Verb = (params: { readonly state: State; readonly prNumber?: number }) => Promise<void>;
 
 const asGet = (state: State) => (() => state) as never;
@@ -364,7 +506,7 @@ describe.each(VERBS)('$name without what it needs', ({ title, call }) => {
       run: call({ state, prNumber: 12 }),
       state,
       title,
-      message: PR_WRITE_NO_WORKSPACE,
+      message: "This session's workspace is missing",
     });
   });
 
@@ -375,7 +517,7 @@ describe.each(VERBS)('$name without what it needs', ({ title, call }) => {
       run: call({ state, prNumber: 12 }),
       state,
       title,
-      message: PR_WRITE_NO_REPO,
+      message: 'No repository is mounted for this pull request',
     });
   });
 
@@ -386,7 +528,7 @@ describe.each(VERBS)('$name without what it needs', ({ title, call }) => {
       run: call({ state, prNumber: 12 }),
       state,
       title,
-      message: PR_WRITE_NO_SESSION,
+      message: 'This session no longer exists',
     });
   });
 });
@@ -401,7 +543,7 @@ describe.each(VERBS.filter(({ hasOptionalNumber }) => hasOptionalNumber))(
         run: call({ state }),
         state,
         title: title.replace('#12', 'the pull request'),
-        message: PR_WRITE_NO_PULL_REQUEST,
+        message: 'This session has no pull request to update',
       });
     });
   },
@@ -447,7 +589,7 @@ describe('pull request writes on a host without a port', () => {
       run: mergePr(vi.fn(), asGet(state))(SESSION_ID, 12),
       state,
       title: "Couldn't merge !12",
-      message: PR_WRITE_NO_PORT,
+      message: 'Goodboy cannot change this pull request on its host yet',
     });
   });
 });

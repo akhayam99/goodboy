@@ -1,4 +1,6 @@
-import { openWizardStep, resumeSetup } from '../onboarding-store';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
+import { openSettings } from '../../settings/openSettings';
+import { openWizardStep, resumeSetup } from '../onboardingSettings';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import type { SetupItemId } from '../setupProgress';
 import { StepRow } from './StepRow';
@@ -15,19 +17,11 @@ type ActionParams = {
   readonly isMainWindow: boolean;
 };
 
-type DispatchParams = {
-  readonly name: string;
-  readonly detail?: unknown;
-};
-
-const dispatch = ({ name, detail }: DispatchParams) =>
-  window.dispatchEvent(new CustomEvent(name, { detail }));
-
 const AFTER_SETUP: Readonly<Record<SetupItemId, (() => void) | null>> = {
-  agents: () => dispatch({ name: 'goodboy:open-settings', detail: { scope: 'providers' } }),
-  workspace: () => dispatch({ name: 'goodboy:add-workspace' }),
+  agents: () => openSettings({ scope: 'providers' }),
+  workspace: () => dispatchWindowEvent({ name: 'goodboy:add-workspace' }),
   tools: () => openWizardStep('tools'),
-  'first-session': () => dispatch({ name: 'goodboy:new-session' }),
+  'first-session': () => dispatchWindowEvent({ name: 'goodboy:new-session' }),
 };
 
 const MAIN_WINDOW_ONLY: ReadonlySet<SetupItemId> = new Set(['tools']);

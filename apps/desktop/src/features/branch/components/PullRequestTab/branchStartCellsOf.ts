@@ -47,6 +47,16 @@ const remoteCell = ({ step }: Pick<Params, 'step'>): StatusCell => {
     step.unpushed > 0
       ? `${counted({ count: step.unpushed, one: 'commit', many: 'commits' })} only here`
       : null;
+  if (step.diverged !== null) {
+    return {
+      id: 'remote',
+      label: 'Remote',
+      word: 'Diverged',
+      detail: `${step.diverged.yours} yours and ${step.diverged.online} online`,
+      tone: 'warning',
+      opens: null,
+    };
+  }
   if (!step.isPushed) {
     return {
       id: 'remote',

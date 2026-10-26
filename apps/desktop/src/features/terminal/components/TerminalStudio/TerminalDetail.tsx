@@ -61,10 +61,23 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
             onChangeDirectory={model.changeDirectory}
           />
         }
-        actions={<TerminalStripActions worktree={worktree} />}
+        actions={
+          <TerminalStripActions
+            worktree={worktree}
+            tab={selected}
+            handoffSessionId={worktree.sessionId}
+          />
+        }
       />
       <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">
-        <TerminalPane key={selected.id} tab={selected} isActive={isActive} />
+        <TerminalPane
+          key={selected.id}
+          tab={selected}
+          isActive={isActive}
+          sessionId={worktree.sessionId}
+          projectName={worktree.projectName}
+          branch={worktree.branch}
+        />
       </div>
     </div>
   );

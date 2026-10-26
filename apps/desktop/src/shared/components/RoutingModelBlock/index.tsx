@@ -1,5 +1,5 @@
-import { FactCard, ModelBlock, WORK_META_COLUMN, cn } from '@goodboy/ui';
-import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
+import { FactCard, ICON_SIZE, ModelBlock, WORK_META_COLUMN, cn } from '@goodboy/ui';
+import { ProviderGlyph } from '../RoutingPicker/ProviderGlyph';
 import { routingNameText } from '../RoutingPicker/routingSummary';
 import { routingLabelModel, type PlannedRouting } from '../RoutingLabel/routingLabelModel';
 
@@ -12,8 +12,6 @@ type Props = {
   readonly isPlanned?: boolean;
   readonly layout?: 'column' | 'inline';
 };
-
-const GLYPH_SIZE = 14;
 
 const DIVERGED_CLASS = 'underline decoration-dotted underline-offset-2';
 
@@ -30,21 +28,13 @@ export const RoutingModelBlock = ({
   if (shown.label == null || shown.card === null) {
     return <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />;
   }
-  const Glyph = shown.provider === null ? null : PROVIDER_BRAND[shown.provider].icon;
   const glyphs =
-    Glyph === null || shown.provider === null
+    shown.provider === null
       ? []
       : [
           {
             key: shown.provider,
-            node: (
-              <Glyph
-                size={GLYPH_SIZE}
-                className="shrink-0"
-                style={{ color: brandColor(shown.provider) }}
-                aria-hidden
-              />
-            ),
+            node: <ProviderGlyph id={shown.provider} size={ICON_SIZE.control} />,
           },
         ];
   return (

@@ -3,15 +3,15 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../../../store';
 import type { ShowToast } from '../../../../../../shared/components/Toast';
+import { parseQuery } from '../../../../../quick-actions/grammar';
 import {
   buildAgentActions,
   buildScriptActions,
   buildSkillActions,
   buildWorkflowActions,
-  parseQuery,
-  type QuickActionItem,
-} from '../../../../../quick-actions';
-import type { ScriptPick } from '../../../../../quick-actions/registry';
+  type ScriptPick,
+} from '../../../../../quick-actions/registry';
+import type { QuickActionItem } from '../../../../../quick-actions/types';
 import { scriptEmptyHint } from '../../../../../quick-actions/scriptEmptyHint';
 import { discoveredScriptCwd } from '../../../../../scripts/scripts';
 import { useSessionScripts } from '../../../../../scripts/hooks/useSessionScripts';

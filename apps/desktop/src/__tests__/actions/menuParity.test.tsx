@@ -13,7 +13,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { GitMerge, XCircle } from 'lucide-react';
+import { GitMerge, CircleX } from 'lucide-react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -366,7 +366,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
   it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
     const agent = agentFixture({ status: 'failed' });
     seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
+    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowStop />);
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
@@ -407,7 +407,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
             {
               key: 'close',
               label: 'Close merge request',
-              icon: XCircle,
+              icon: CircleX,
               onRun: vi.fn(),
               isBusy: false,
               blockedReason: null,

@@ -6,7 +6,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import type { HistoryRun, HistoryStopReason } from '../../store/slices/history/types';
-import type { WorktreeStatusRead } from '../../store/slices/worktreeStatuses/cache';
+import type { WorktreeStatusRead } from '../../store/runtime/worktreeStatuses/cache';
 import { hasHistoryRecovery } from './historyRecovery';
 import { isRebaseStopSettled } from './isRebaseStopSettled';
 

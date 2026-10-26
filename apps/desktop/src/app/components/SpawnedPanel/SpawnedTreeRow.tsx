@@ -1,5 +1,6 @@
 import { useContext, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import type { AgentId } from '@goodboy/types';
 import { FactCard, ICON_SIZE, ROW_INTERACTIVE, cn, type FactCardSpec } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
@@ -10,6 +11,7 @@ import { SpawnedTreeContext } from './spawnedTreeContext';
 
 type Props = {
   readonly id: string;
+  readonly agentId?: AgentId;
   readonly level: number;
   readonly hasChildren: boolean;
   readonly rail: RailRow;
@@ -34,6 +36,7 @@ const countWordOf = ({ count }: CountParams): string =>
 
 export const SpawnedTreeRow = ({
   id,
+  agentId,
   level,
   hasChildren,
   rail,
@@ -83,6 +86,7 @@ export const SpawnedTreeRow = ({
     <div
       role="treeitem"
       data-tree-id={id}
+      data-agent-id={agentId}
       data-spawned-row={level}
       aria-level={level}
       aria-expanded={fold === null ? (hasChildren ? true : undefined) : fold.isExpanded}

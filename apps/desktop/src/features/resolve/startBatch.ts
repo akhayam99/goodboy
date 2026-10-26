@@ -1,9 +1,15 @@
-import type { AgentId, ResolveLaunchChoice, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  MountId,
+  PrComment,
+  PullRequestState,
+  ResolveLaunchChoice,
+  SessionId,
+} from '@goodboy/types';
 import type { LaunchNoun } from './reviewLaunchCopy';
 import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
-import type { CommentThread } from '../integrations/github/comment-threads';
-import { launchRowsOf } from './reviewRows';
+import { launchThreadsOf } from './launchThreadsOf';
 import { startResolve } from './startResolve';
 
 type Params = {
@@ -11,6 +17,10 @@ type Params = {
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
   readonly launchChoice: ResolveLaunchChoice;
+  readonly comments?: ReadonlyArray<PrComment>;
+  readonly mountId?: MountId;
+  readonly expectedMountRevision?: number;
+  readonly onWrite?: () => void;
   readonly noun?: LaunchNoun;
   readonly name?: string;
   readonly parentAgentId?: AgentId;
@@ -22,29 +32,39 @@ export type StartedBatch = {
   readonly agentId: AgentId;
 };
 
-const NOTHING_TO_DRAFT: Record<LaunchNoun, string> = {
-  comment: 'These comments are no longer on the pull request',
-  note: 'These notes are no longer open',
+type PrParams = {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+  readonly mountId?: MountId;
 };
+
+const prOf = ({ state, sessionId, mountId }: PrParams): PullRequestState | null =>
+  mountId === undefined
+    ? (state.sessionGithub[sessionId]?.pr ?? null)
+    : (state.mountGithub?.[mountId]?.pr ?? null);
 
 export const startBatch = async ({
   getState,
   sessionId,
   threadIds,
   launchChoice,
+  comments,
+  mountId,
+  expectedMountRevision,
+  onWrite,
   noun = 'comment',
   name,
   parentAgentId,
 }: Params): Promise<StartedBatch> => {
   const state = getState();
-  const rows = launchRowsOf({ state, sessionId });
-  const threads = threadIds.flatMap((threadId): ReadonlyArray<CommentThread> => {
-    const commentThread = rows.find((row) => row.thread.threadId === threadId)?.commentThread;
-    return commentThread == null ? [] : [commentThread];
+  const threads = launchThreadsOf({
+    state,
+    sessionId,
+    threadIds,
+    noun,
+    ...(comments !== undefined && { comments }),
   });
-  if (threads.length === 0) {
-    throw new Error(NOTHING_TO_DRAFT[noun]);
-  }
+  onWrite?.();
   const batch = await state.createResolveBatch({
     sessionId,
     threadIds: threads.flatMap((thread) =>
@@ -55,11 +75,13 @@ export const startBatch = async ({
   const { launchId, agentId } = await startResolve({
     sessionId,
     threads,
-    pr: state.sessionGithub[sessionId]?.pr ?? null,
+    pr: prOf({ state, sessionId, ...(mountId !== undefined && { mountId }) }),
     batch: { batchId: batch.id, launchChoice },
     ...(name !== undefined && { name }),
     ...(parentAgentId !== undefined && { parentAgentId }),
-    style: sessionResolveStyle({ state, sessionId }),
+    ...(mountId !== undefined && { mountId }),
+    ...(expectedMountRevision !== undefined && { expectedMountRevision }),
+    style: sessionResolveStyle({ state, sessionId, ...(mountId !== undefined && { mountId }) }),
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,
   });

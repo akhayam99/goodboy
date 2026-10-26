@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { assessTurnWeight } from '@goodboy/core';
-import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
-import type { IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
-import { tauriDatabase } from '../../../../../shared/lib/db';
+import type { NudgeOutcome } from '@goodboy/db';
+import type { ProviderId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
 import { suggestHeavierModel, suggestLighterModel } from '../../../utils/chat-constants';
 import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 
@@ -46,9 +46,13 @@ export const useRightSizeNudge = ({
   const [rightSizePending, setRightSizePending] = useState<RightSizePending | null>(null);
   const [rightSizeDismissed, setRightSizeDismissed] = useState(false);
   const [rightSizeNudgeEventId, setRightSizeNudgeEventId] = useState<string | null>(null);
+  const recordNudgeShown = useAppStore((s) => s.recordNudgeShown);
+  const recordNudgeOutcome = useAppStore((s) => s.recordNudgeOutcome);
 
   const rightSizeSuggestion = useMemo<RightSizeSuggestion | null>(() => {
-    if (!isFirstTurnForAgent || rightSizeDismissed) return null;
+    if (!isFirstTurnForAgent || rightSizeDismissed) {
+      return null;
+    }
     const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
     if (weight === 'light') {
       const s = suggestLighterModel({
@@ -91,17 +95,7 @@ export const useRightSizeNudge = ({
     if (rightSizeNudgeEventId === null) {
       return;
     }
-    try {
-      await updateNudgeEventOutcome(
-        tauriDatabase,
-        rightSizeNudgeEventId,
-        outcome,
-        new Date().toISOString() as IsoDateTime,
-      );
-    } catch {
-      setRightSizeNudgeEventId(null);
-      return;
-    }
+    await recordNudgeOutcome({ id: rightSizeNudgeEventId, outcome });
     setRightSizeNudgeEventId(null);
   };
 
@@ -109,28 +103,21 @@ export const useRightSizeNudge = ({
     content: string,
     atts: ReadonlyArray<PendingAttachment>,
   ): Promise<boolean> => {
-    if (!allowOverride || rightSizeSuggestion === null || rightSizePending !== null) return false;
-
-    const id = crypto.randomUUID();
-    try {
-      await insertNudgeEvent(tauriDatabase, {
-        id,
-        sessionId,
-        ts: new Date().toISOString() as IsoDateTime,
-        kind: 'model-rightsize',
-        contextJson: JSON.stringify({
-          sessionId,
-          from: effectiveModel,
-          to: rightSizeSuggestion.model,
-          direction: rightSizeSuggestion.direction,
-        }),
-        outcome: null,
-        outcomeTs: null,
-      });
-      setRightSizeNudgeEventId(id);
-    } catch {
-      setRightSizeNudgeEventId(null);
+    if (!allowOverride || rightSizeSuggestion === null || rightSizePending !== null) {
+      return false;
     }
+
+    const id = await recordNudgeShown({
+      sessionId,
+      kind: 'model-rightsize',
+      context: {
+        sessionId,
+        from: effectiveModel,
+        to: rightSizeSuggestion.model,
+        direction: rightSizeSuggestion.direction,
+      },
+    });
+    setRightSizeNudgeEventId(id);
 
     setRightSizePending({ content, attachments: atts });
     return true;

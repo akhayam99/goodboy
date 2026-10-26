@@ -3,6 +3,7 @@ import { useAppStore } from '../../../../store';
 import { useComposerClassicKeys } from '../../../../shared/hooks/useComposerClassicKeys';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { SETTING_COMPOSER_CLASSIC_KEYS } from '../../settings';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 export const ClassicComposerKeysField = () => {
   const isClassic = useComposerClassicKeys({ isEnabled: true });
@@ -13,7 +14,11 @@ export const ClassicComposerKeysField = () => {
     try {
       await saveSetting(SETTING_COMPOSER_CLASSIC_KEYS, next ? 'true' : 'false');
     } catch (error) {
-      void reportError({ title: "Couldn't save the composer keys", error });
+      void reportError({
+        title: "Couldn't save the composer keys",
+        error,
+        recovery: NOTHING_CHANGED,
+      });
     }
   };
 

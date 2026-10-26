@@ -7,8 +7,8 @@ type Props = {
 
 export const BranchChip = ({ label }: Props) => (
   <Chip
+    kind="state"
     tone="neutral"
-    size="xs"
     label={label.projectName}
     title={label.branch}
     testId="branch-chip"

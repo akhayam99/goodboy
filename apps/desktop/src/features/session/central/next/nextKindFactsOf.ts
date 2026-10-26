@@ -32,10 +32,13 @@ const KIND_FACTS: Readonly<Record<ActionCardModel['kind'], KindFacts>> = {
   'rebase-project': { group: 'update', rank: 0 },
   rebase: { group: 'update', rank: 1 },
   'merge-pr': { group: 'ship', rank: 0 },
+  'merge-series': { group: 'ship', rank: 0 },
   'mark-ready': { group: 'ship', rank: 1 },
   'open-pr': { group: 'ship', rank: 2 },
   'push-branch': { group: 'ship', rank: 3 },
-  'close-worktree': { group: 'ship', rank: 4 },
+  'move-tracker-item': { group: 'ship', rank: 4 },
+  'close-worktree': { group: 'ship', rank: 5 },
+  'archive-session': { group: 'ship', rank: 6 },
 };
 
 const DIVERGED: KindFacts = { group: 'update', rank: 2 };

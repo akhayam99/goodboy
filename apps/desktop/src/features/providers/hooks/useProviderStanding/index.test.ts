@@ -29,7 +29,7 @@ const WORKSPACE = aWorkspace({ id: 'workspace-northwind' as WorkspaceId, name: '
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: null,
   identity: null,

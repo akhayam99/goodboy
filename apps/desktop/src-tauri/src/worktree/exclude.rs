@@ -22,20 +22,7 @@ pub(crate) fn remove_goodboy_exclude_entry(repo_path: &Path) {
     let Some(file) = exclude_file_path(repo_path) else {
         return;
     };
-    let Ok(existing) = std::fs::read_to_string(&file) else {
-        return;
-    };
-    let next: String = existing
-        .lines()
-        .filter(|line| {
-            let trimmed = line.trim();
-            trimmed != ".goodboy/" && trimmed != "/.goodboy/" && trimmed != ".goodboy"
-        })
-        .map(|line| format!("{line}\n"))
-        .collect();
-    if next != existing {
-        let _ = std::fs::write(&file, next);
-    }
+    let _ = crate::ignore_file::remove_goodboy_entries(&file);
 }
 
 pub(crate) fn tidy_goodboy_dir(repo_path: &Path) {
@@ -65,23 +52,10 @@ pub(crate) fn ensure_goodboy_excluded(repo_path: &Path) {
     let Some(file) = exclude_file_path(repo_path) else {
         return;
     };
-    let existing = std::fs::read_to_string(&file).unwrap_or_default();
-    let has_entry = existing.lines().any(|line| {
-        let trimmed = line.trim();
-        trimmed == ".goodboy/" || trimmed == "/.goodboy/" || trimmed == ".goodboy"
-    });
-    if has_entry {
-        return;
-    }
-    let mut next = existing;
-    if !next.is_empty() && !next.ends_with('\n') {
-        next.push('\n');
-    }
-    next.push_str(".goodboy/\n");
-    if let Some(parent) = file.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    let _ = std::fs::write(&file, next);
+    let _ = crate::ignore_file::append_ignore_entries(
+        &file,
+        &[crate::ignore_file::GOODBOY_IGNORE_ENTRY],
+    );
 }
 
 #[cfg(test)]

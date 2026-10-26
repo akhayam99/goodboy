@@ -6,6 +6,8 @@ import { gitlabPullRequestPort } from '../gitlabPullRequestPort';
 import {
   PullRequestPortError,
   PullRequestPortUnsupported,
+  STALE_HEAD_MESSAGE,
+  isPullRequestPortError,
   type PullRequestFailureKind,
   type PullRequestPort,
 } from '../pullRequestPort';
@@ -17,9 +19,11 @@ import { GITLAB_MR_URL, fakeGitlabTransport } from './gitlabPullRequestFixture';
 type Built = Readonly<{
   port: PullRequestPort;
   mergeMethodOf: () => PrMergeMethod | null;
+  mergeHeadOf: () => string | null;
 }>;
 
 type BuildParams = Readonly<{
+  headNow?: string;
   failWith?: Readonly<{ text: string; kind: PullRequestFailureKind }>;
   capabilities?: ReviewSourceCapabilities;
 }>;
@@ -41,6 +45,13 @@ const NO_CAPABILITIES: ReviewSourceCapabilities = {
   canReply: false,
   canResolve: false,
 };
+
+const REVIEWED_HEAD = '6c20f48a9e1d';
+
+const MOVED_HEAD = '9f3e2d1c0b8a';
+
+const GITHUB_STALE_HEAD =
+  'GraphQL: Head branch was modified. Review and try the merge again. (mergePullRequest)';
 
 const FLAG_METHOD: Readonly<Record<string, PrMergeMethod>> = {
   '--squash': 'squash',
@@ -79,10 +90,11 @@ const bitbucket: Adapter = {
   resolves: [],
   failures: BITBUCKET_FAILURES,
   alwaysUnsupported: ['setDraft', 'reopen'],
-  build: ({ failWith, capabilities }) => {
-    const { transport, calls } = fakeBitbucketTransport(
-      failWith === undefined ? {} : { failWrites: failWith },
-    );
+  build: ({ failWith, capabilities, headNow }) => {
+    const { transport, calls } = fakeBitbucketTransport({
+      ...(failWith === undefined ? {} : { failWrites: failWith }),
+      ...(headNow === undefined ? {} : { headNow }),
+    });
     return {
       port: bitbucketPullRequestPort({
         transport,
@@ -93,6 +105,7 @@ const bitbucket: Adapter = {
         const strategy = calls.merges[0];
         return strategy === undefined ? null : (BITBUCKET_STRATEGY_METHOD[strategy] ?? null);
       },
+      mergeHeadOf: () => calls.mergeHeads[0] ?? null,
     };
   },
 };
@@ -114,12 +127,17 @@ const github: Adapter = {
   ],
   failures: GITHUB_FAILURES,
   alwaysUnsupported: [],
-  build: ({ failWith, capabilities }) => {
+  build: ({ failWith, capabilities, headNow }) => {
     const { runner, calls } = githubRunner({
-      override: (args) =>
-        failWith !== undefined && args[0] === 'pr' && args[1] !== 'view'
+      override: (args) => {
+        const pinned = args[args.indexOf('--match-head-commit') + 1];
+        if (headNow !== undefined && args.includes('--match-head-commit') && pinned !== headNow) {
+          return failure({ stderr: GITHUB_STALE_HEAD });
+        }
+        return failWith !== undefined && args[0] === 'pr' && args[1] !== 'view'
           ? failure({ stderr: failWith.text })
-          : null,
+          : null;
+      },
     });
     return {
       port: githubPullRequestPort({
@@ -133,6 +151,11 @@ const github: Adapter = {
         const merge = calls.find((args) => args[0] === 'pr' && args[1] === 'merge');
         const flag = merge?.find((arg) => arg in FLAG_METHOD);
         return flag === undefined ? null : (FLAG_METHOD[flag] ?? null);
+      },
+      mergeHeadOf: () => {
+        const merge = calls.find((args) => args[0] === 'pr' && args[1] === 'merge');
+        const at = merge?.indexOf('--match-head-commit') ?? -1;
+        return at === -1 ? null : (merge?.[at + 1] ?? null);
       },
     };
   },
@@ -149,9 +172,9 @@ const gitlab: Adapter = {
   resolves: [],
   failures: GITHUB_FAILURES,
   alwaysUnsupported: [],
-  build: ({ failWith, capabilities }) => {
-    const fake = fakeGitlabTransport(
-      failWith === undefined
+  build: ({ failWith, capabilities, headNow }) => {
+    const fake = fakeGitlabTransport({
+      ...(failWith === undefined
         ? {}
         : {
             writeError: new PullRequestPortError({
@@ -159,8 +182,9 @@ const gitlab: Adapter = {
               message: failWith.text,
               details: failWith.text,
             }),
-          },
-    );
+          }),
+      ...(headNow === undefined ? {} : { headNow }),
+    });
     return {
       port: gitlabPullRequestPort({
         transport: fake.transport,
@@ -168,6 +192,7 @@ const gitlab: Adapter = {
         ...(capabilities === undefined ? {} : { capabilities }),
       }),
       mergeMethodOf: () => fake.merges[0] ?? null,
+      mergeHeadOf: () => fake.mergeHeads[0] ?? null,
     };
   },
 };
@@ -198,7 +223,7 @@ const GUARDED_WRITES: ReadonlyArray<Write> = [
 
 const WRITES: ReadonlyArray<Write> = [
   ...GUARDED_WRITES,
-  { name: 'merge', call: (port) => port.merge({ method: 'squash' }) },
+  { name: 'merge', call: (port) => port.merge({ method: 'squash', expectedHeadSha: null }) },
 ];
 
 describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
@@ -252,11 +277,39 @@ describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
     },
   );
 
+  describe('a merge pinned to the head the user reviewed', () => {
+    it('hands the reviewed head to the host', async () => {
+      const built = adapter.build({ headNow: REVIEWED_HEAD });
+      await built.port.merge({ method: 'squash', expectedHeadSha: REVIEWED_HEAD });
+      expect(built.mergeHeadOf()).toBe(REVIEWED_HEAD);
+      expect(built.mergeMethodOf()).toBe('squash');
+    });
+
+    it('refuses with stale_head when the head moved after the review', async () => {
+      const built = adapter.build({ headNow: MOVED_HEAD });
+      const error = await built.port
+        .merge({ method: 'squash', expectedHeadSha: REVIEWED_HEAD })
+        .then(
+          () => null,
+          (caught: unknown) => (isPullRequestPortError(caught) ? caught : null),
+        );
+      expect(error?.kind).toBe('stale_head');
+      expect(error?.message).toBe(STALE_HEAD_MESSAGE);
+    });
+
+    it('sends no pin when the caller has none', async () => {
+      const built = adapter.build({ headNow: MOVED_HEAD });
+      await built.port.merge({ method: 'squash', expectedHeadSha: null });
+      expect(built.mergeHeadOf()).toBeNull();
+      expect(built.mergeMethodOf()).toBe('squash');
+    });
+  });
+
   it.each<PrMergeMethod>(['squash', 'merge', 'rebase'])(
     'passes the %s method through',
     async (method) => {
       const built = adapter.build({});
-      await built.port.merge({ method });
+      await built.port.merge({ method, expectedHeadSha: null });
       expect(built.mergeMethodOf()).toBe(method);
     },
   );

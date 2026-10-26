@@ -1,3 +1,4 @@
+import { dispatchWindowEvent } from '../../shared/lib/dispatchWindowEvent';
 export const openNewWorkspace = (): void => {
-  window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
+  dispatchWindowEvent({ name: 'goodboy:add-workspace' });
 };

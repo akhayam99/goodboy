@@ -8,7 +8,12 @@
 > ([architecture.md](architecture.md)).
 
 Owns the on-disk layout of session mounts, the mount lifecycle, the operation
-log and recovery. Code lives in `apps/desktop/src/store/slices/project-mounts/`
+log and recovery.
+
+Names differ by layer. The entity is a mount; it is stored in the table
+`session_worktrees`, referenced from other tables as `mount_id`, and served by
+the Rust module `worktree`. No rename is planned ([ADR 001](adr/001-workspace-project-rename.md)
+settled the earlier one); renaming the table is an owner question. Code lives in `apps/desktop/src/store/slices/project-mounts/`
 and `apps/desktop/src/store/slices/mount-cleanup/`.
 
 ## Where a session writes
@@ -95,6 +100,17 @@ folders the task needs, and it is the one rule for this: `createSession` runs it
 - The first-lap session and a blank session (`startBlankSession`) do not pass
   `shouldPickFolders` and start with nothing mounted.
 
+## A new worktree starts usable
+
+A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, the local config, the installed dependencies. Each repository folder has a **Worktree setup** section in Settings, Workspace, Folders (`NewWorktreesField`) with two settings rows per project, never columns, like the first lap phase:
+
+- **Carry into every new branch** (`worktree.carry` in `project_values`, a JSON list). The page lists the git-ignored files and folders at the repository (`worktree_carry_candidates`), none ticked. A secret (`is_secret_name`: `.env*`, `*.pem`, `*.key`, `id_rsa` and the like) reads **secret: only when ticked**; dependency and build folders are left out, and a large tree cannot be ticked.
+- **Setup after creation** (`worktree.setup` in `project_values`), prefilled from a lockfile next to its manifest (`worktree_setup_proposal`: `pnpm install`, `yarn install`, `npm install`, `bun install`, `composer install`) with **proposed from pnpm-lock.yaml** until you save. A saved empty value means no setup, an unsaved one means the proposal.
+
+When a session cuts a worktree for a project (`createProjectMount`, `forkMount`; reattaching a removed one carries nothing), `prepareNewWorktree` runs `worktree_carry_into` with exactly the ticked paths and never for a reused worktree. The command only works on a registered worktree of that repository that is not the main checkout, and each path obeys these rules (`worktree/carry.rs`): git must ignore it; a file or folder already there is never overwritten or merged into; a link is never followed; a path that is absolute, climbs with `..` or enters `.git` or `.goodboy` is refused; a file over 5 MiB, a dependency folder, and a folder holding a dependency folder, more than 500 files or more than 10 MiB are never byte copied and are left to the setup step; inside a ticked folder, files with a secret name stay behind unless their own path is ticked. Each path comes back `copied` or `skipped` with its reason, and a failure never fails the mount.
+
+The result is saved as `worktree.setup-offer.<mount-id>` and shows on the mount in the session overview (`WorktreeSetupOffer`): **Worktree payments-api/retry-webhook is ready.** with what was copied and **Setup proposed: pnpm install.**, then **Run** and **Not now**. Nothing runs until **Run**; it starts the command as the script `setup:<mount-id>` in the worktree (`runDiscoveredScript`), reads **Running pnpm install...** while it works, **Setup finished** when it exits 0, and offers **Retry** with the last line of the error when it does not.
+
 ## The first lap and the bootstrap move
 
 A project made from the empty screen starts in its **first lap**. The phase is
@@ -132,6 +148,20 @@ project folder is untouched until the copy is verified:
 A crash leaves the phase at `moving`; the next start verifies the copy and
 finishes, or undoes it. A second move is not possible: the phase ends at `done`.
 
+Undoing is as careful as doing. `bootstrap_prepare` returns the tip of the
+branch it cut (`branchTip`) and the phase row keeps it. `bootstrap_rollback`
+takes that tip and deletes the branch only when the branch still points at it
+(`update-ref -d` with the old value); a branch that gained commits is kept with
+its worktree, and a phase saved before the tip was recorded keeps the branch
+too. The answer is a typed list of what could not be undone (`branch-moved`,
+`branch-tip-unknown`, `worktree-not-removed`, `folder-not-removed`,
+`prune-failed`, `branch-not-deleted`), and the failure message names each
+leftover instead of hiding it.
+
+A writer lease is re-entrant for the holder that has the token: it is granted
+again even while another attempt waits in the queue, and the queue keeps its
+order.
+
 ## Git later
 
 A plain folder gets git only when you ask, or when git shows up by itself.
@@ -157,6 +187,9 @@ A plain folder gets git only when you ask, or when git shows up by itself.
   The project becomes `repo` only after the commit and `validate_git_repo`
   resolved. New sessions then cut their branch from local `main`, which works
   with no `origin` (`worktree/create.rs` falls back to the local branch).
+  A `repo` project whose git status is `unborn` (no commit yet) takes the same
+  path, only to make the first commit: its kind stays `repo` and the status is
+  read again. The empty board offers it as **Make the first commit**.
 - **Publish to GitHub** on a repository with no remote is the first lap's
   `PublishPanel` and `publishFirstLap`: create on GitHub or link an address,
   then push `main`.
@@ -166,7 +199,7 @@ A plain folder gets git only when you ask, or when git shows up by itself.
   only while no session holds its write lease, and the band says so with
   `Keep editing in place`. A documents folder, or a folder inside another
   repository, keeps writing in place and asks once. The answer to keep
-  editing in place is one settings row, `folder.git.<project-id>` =
+  editing in place is one `project_values` row, key `folder.git` =
   `in-place`, and the probe leaves that folder alone after it.
 
 ## Hiding .goodboy from git
@@ -185,6 +218,14 @@ project switches to the project or global choice. Adopting a repository that
 already has commits never touches its `.gitignore` (`repo.rs::adopt_repo`);
 only a still-commit-less repo gets the bootstrap write, matching
 `create_repo`.
+
+Every ignore-file write goes through `ignore_file.rs`, which has one spelling of
+the entry (`GOODBOY_IGNORE_ENTRY`, `/.goodboy/`) and reads the older spellings
+(`.goodboy/`, `.goodboy`, `/.goodboy`) as the same line. It works on bytes, so a
+file that is not UTF-8 keeps every byte; it writes a temp file and renames it,
+through a link to the real file; and it refuses, leaving the file as it was,
+when the file cannot be read, is read only, or is a link to nowhere. The refusal
+shows as `read_only` or `io` in the Git band.
 
 ## Rows and disk
 
@@ -295,6 +336,21 @@ the main checkout sits on. A checkout never becomes its own base, whatever
 the name, so a repo with no default at all stays unknown and branch cleanup keeps
 what it cannot place. Creating a mount may cut from the main checkout branch.
 The rebase plan and the history graph take the same optional name.
+
+Goodboy talks to one remote per project, and it is named `origin`. That is a
+written decision, not a default: `remote::resolve(root)` answers `origin` when
+the repository has it and nothing otherwise, and the probe, the publish push,
+the project fetch, the base fetch and the branch cleanup pushes all ask it. A
+project whose only remote is called `upstream` reads as having no remote
+(`no-remote`), and Publish adds `origin` for it; Goodboy never probes one remote
+and pushes to another. Every git network call runs through
+`remote_auth::run_git_authenticated` (the credential helper table lives there,
+today `github.com` through `gh`), which returns the real `GitError`: a refused
+push is a `git` error with git's own text, and only a call that ran out of time
+is a `timeout`. The cleanup pushes (`branch_delete_checked` with `alsoOrigin`
+and `branch_restore` with `pushToOrigin`) use it too, with the workspace's
+token, and lease the remote branch by its qualified name
+(`refs/heads/<branch>`).
 
 ## Cleanup proposals
 
@@ -417,8 +473,8 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
 - **A row reads its request from `mountGithub`, and every git action refreshes
   it.** `refreshSessionPr` fills the entry per mount (`gh pr list --head
 <branch>`). Creating, merging, closing, reopening, marking ready or draft
-  and editing a request refresh it forced. So do a push (`pushSessionBranch`,
-  which the header, the suggestion and the resolve push share, and which also
+  and editing a request refresh it forced. So do a push (`pushBranch`, the one store verb
+  the header, the suggestion, the resolve push, Auto and the history family share, and which also
   re-reads that worktree's status so the ahead count drops at once), a history push
   (rebase or rewrite) and a branch switch on any mount. Changes made outside
   the app (an agent that ran `gh`, a terminal) are caught cheaply:
@@ -427,7 +483,9 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   only). It makes at most one refresh per mount, skips a mount that is loading
   or whose request merged or closed, and skips a mount fetched in the last 5s
   (turn end) or 60s (focus). `useGithubPolling` still sweeps on boot, on a
-  branch change and every 5 minutes, but its timer and its visibility sweep
+  branch change and every 5 minutes, through `sweepRequests`, which asks the
+  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)),
+  but its timer and its visibility sweep
   skip mounts already fetched with no request, so only the recheck finds a PR
   opened outside the app. There is no faster global poll.
 - **The push count re-reads with the request.** Every push surface (the
@@ -442,18 +500,28 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   from another clone does not move that ref: when a request refresh returns
   a head sha that differs from it, `syncBranchRefToPr` fetches that one ref
   (`worktree_sync_branch_ref`) and re-reads the status. No other fetch runs.
+  The command answers `updated`, `unchanged` or `failed` with git's message
+  (credentials redacted): a failed fetch is never read as "nothing changed".
 - **Refresh re-reads a session on demand.** The header's Refresh button
   (before Archive and Delete, hidden on an archived session), ⌘⇧R and the
   palette's `Refresh session` run `resyncSession`: mounts and branches from
   disk, the local branch and worktree status caches, linked work items, and
-  every provider request forced, then the PR detail of the open session. The
+  every provider request and the review threads of the open session forced,
+  all through `sweepRequests` for that session. The
   glyph pulses in place while it runs (`sessionSyncing`), the page stays live,
   and a failure raises an error notification with the provider's message.
 - **A series is declared, never inferred.** `series create` names the split
   and its size; `series set-member` places a mount at a position, or reserves
   a planned position when no mount is given. Generated request text carries
   a "Part of" line with the work item and the position, never a closing
-  reference for the series.
+  reference for the series. The Branches block shows what was declared and
+  nothing else: **Part 2 of 3** on the row, one strip per series, and the
+  planned positions with no mount named as planned. **Merge in order**
+  (`mergeSeriesInOrder`) walks the parts by ordinal, re-reads each request
+  through its host port, stops at the first part that is closed, draft,
+  conflicting, failing or waiting for changes, and merges through the same
+  `mergePr` verb as a single request, so a refusal reaches the person with the
+  host's words and a second run resumes at the first part still open.
 - **Retry reuses the request id.** After a timeout the turn reads the
   operation back before acting again; recovery reconciles what the disk and
   the database reached.
@@ -573,7 +641,7 @@ current branch alone opens in place under its row: the status line with
 Rebase, then its pages (Pull request, Comments, Files with the diff stat,
 Commits, Checks). Its row menu (the `⋯`, a right click, Shift+F10) holds the
 `mount` kind of the action registry (`features/actions/kinds/mount.ts`). The
-navigation rules live in [navigation.md](navigation.md#session-rail).
+navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
 slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap
@@ -636,7 +704,7 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   merged and closed branches back as `finished`, outside the list: the Done
   card names them in one line. The story names a `BranchState` and its tone
   comes only from `BRANCH_STATE_TONE` (`branchStateTone.ts`), the table in
-  [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md); never from whether the
+  [rail-and-work.md](../packages/ui/design/rail-and-work.md); never from whether the
   branch has a card in Next. An approved branch that cannot merge says
   Conflicts, amber.
 - The order is `branchEntriesOf`, one rank table (`RANK_OF_STATE`): blocked

@@ -9,7 +9,7 @@ type Params = {
 
 export const pushCheckFix = async ({ sessionId, mountId, fixAgentId }: Params): Promise<void> => {
   const state = useAppStore.getState();
-  const result = await state.pushSessionBranch({ sessionId, mountId });
+  const result = await state.pushBranch({ sessionId, mountId, mode: 'plain' });
   if (!result.ok) {
     throw new Error(result.error);
   }

@@ -42,7 +42,7 @@ describe('the u24 scripts-live scenes', () => {
     expect(within(services).getByText(':5005')).toBeDefined();
     expect(within(services).getByText(/^Exit 137 · /)).toBeDefined();
     expect(within(services).getByText('Killed')).toBeDefined();
-    const tasks = screen.getByRole('region', { name: /^Tasks of /u });
+    const tasks = screen.getByRole('region', { name: /^Commands of /u });
     expect(within(tasks).getByText('12s · 3m ago')).toBeDefined();
     expect(within(tasks).getByText(/^Exit 1 · /)).toBeDefined();
     expect(within(tasks).getByText(/error TS2322/)).toBeDefined();

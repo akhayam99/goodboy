@@ -28,6 +28,8 @@ const bucket = (count: number): NotificationCountBucket => ({
   kind: 'pr-created',
   hasSession: false,
   hasAction: false,
+  actionKind: null,
+  isActed: false,
   read: false,
   inWorkspace: true,
   count,

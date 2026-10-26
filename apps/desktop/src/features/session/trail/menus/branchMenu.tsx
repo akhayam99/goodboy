@@ -19,7 +19,7 @@ import {
   mainPresenceOf,
   type BranchPriorityKind,
   type OpenRequestHead,
-} from '../../../../shared/lib/branchPresence';
+} from '../../../../shared/utils/branchPresence';
 import { pullRequestWord } from '../../../branch/pullRequestWord';
 import { DiffStat } from '../../../../shared/components/DiffStat';
 

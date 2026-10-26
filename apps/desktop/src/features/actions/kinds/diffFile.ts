@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, FileText } from 'lucide-react';
+import { Copy, SquareArrowOutUpRight, FileText } from 'lucide-react';
 import type { DiffFileActionTarget, ObjectKindDefinition } from '../types';
 
 export type DiffFileFacts = {
@@ -14,7 +14,7 @@ export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFile
     {
       id: 'diffFile.openInEditor',
       label: 'Open in editor',
-      icon: ExternalLink,
+      icon: SquareArrowOutUpRight,
       group: 'open',
       when: ({ facts }) => facts.onOpenInEditor !== null,
       run: ({ facts }) => facts.onOpenInEditor?.(),

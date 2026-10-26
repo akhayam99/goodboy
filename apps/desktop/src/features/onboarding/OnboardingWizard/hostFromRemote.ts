@@ -1,4 +1,4 @@
-import { classifyRemoteHost } from '../../../shared/lib/remoteHost';
+import { classifyRemoteHost } from '../../../shared/utils/remoteHost';
 
 export type CodeHost = 'github' | 'gitlab' | 'bitbucket';
 

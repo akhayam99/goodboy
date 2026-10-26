@@ -5,6 +5,7 @@ import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
+import { selectDisplayedMount } from '../../../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../../../store';
 import { applyMountGithub } from '../../../../../store/slices/github/mountGithub';
 import { sceneClock } from '../../sceneClock';
@@ -63,10 +64,15 @@ export const PrpageFrameScene = ({
     if (isQueued) {
       queue();
     }
-    useAppStore.setState((state) => ({
-      branchTab: { ...state.branchTab, [SESSION_ID]: tab },
-      ...(hasNote && { diffComments: { [SESSION_ID]: [NOTE] } }),
-    }));
+    useAppStore.setState((state) => {
+      const mount = selectDisplayedMount({ state, sessionId: SESSION_ID });
+      const note: DiffComment =
+        mount === null ? NOTE : { ...NOTE, projectId: mount.projectId, branch: mount.branch };
+      return {
+        branchTab: { ...state.branchTab, [SESSION_ID]: tab },
+        ...(hasNote && { diffComments: { [SESSION_ID]: [note] } }),
+      };
+    });
     setIsReady(true);
   }, [hasNote, isQueued, tab, variant]);
 

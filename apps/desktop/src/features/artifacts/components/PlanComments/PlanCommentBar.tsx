@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
 import { PlanApproveConfirm } from '../../../plans/planSurfaces';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';

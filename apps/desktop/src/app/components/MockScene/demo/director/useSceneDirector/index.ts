@@ -26,9 +26,9 @@ import {
   type DemoReport,
   type DemoThemeMessage,
 } from '../demoProtocol';
-import { isDemoCommand } from '../isDemoCommand';
-import { isDemoHintsCommand } from '../isDemoHintsCommand';
-import { isDemoRevealCommand } from '../isDemoRevealCommand';
+import { readDemoCommand } from '../readDemoCommand';
+import { readDemoHintsCommand } from '../readDemoHintsCommand';
+import { readDemoRevealCommand } from '../readDemoRevealCommand';
 import { readDemoThemeMessage } from '../readDemoThemeMessage';
 import { readDemoShortcutCommand } from '../readDemoShortcutCommand';
 import { dispatchDemoShortcut } from '../dispatchDemoShortcut';
@@ -144,68 +144,68 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       }
     };
 
-    const onMessage = (event: MessageEvent): void => {
-      if (event.origin !== window.location.origin || event.source !== window.parent) {
-        return;
-      }
-      if (director === null) {
-        return;
-      }
-      if (isDemoRevealCommand(event.data)) {
-        if (event.data.generation === director.generation()) {
-          hints?.reveal({ hintId: event.data.hintId });
+    const listeners = new AbortController();
+    window.addEventListener(
+      'message',
+      (event) => {
+        if (event.origin !== window.location.origin || event.source !== window.parent) {
+          return;
         }
-        return;
-      }
-      if (isDemoHintsCommand(event.data)) {
-        if (event.data.generation === director.generation()) {
-          hints?.setTrack({ chapterId: event.data.chapterId, settledIds: event.data.settledIds });
+        if (director === null) {
+          return;
         }
-        return;
-      }
-      const themeMessage = readDemoThemeMessage({ data: event.data });
-      if (themeMessage !== null) {
-        if (themeMessage.generation === director.generation()) {
-          expectedTheme = themeMessage.theme;
-          applyDocumentTheme({ theme: themeMessage.theme });
+        const reveal = readDemoRevealCommand({ data: event.data });
+        if (reveal !== null) {
+          if (reveal.generation === director.generation()) {
+            hints?.reveal({ hintId: reveal.hintId });
+          }
+          return;
         }
-        return;
-      }
-      const shortcutCommand = readDemoShortcutCommand({ data: event.data });
-      if (shortcutCommand !== null) {
-        if (shortcutCommand.generation === director.generation()) {
-          dispatchDemoShortcut({ code: shortcutCommand.code });
+        const themeMessage = readDemoThemeMessage({ data: event.data });
+        if (themeMessage !== null) {
+          if (themeMessage.generation === director.generation()) {
+            expectedTheme = themeMessage.theme;
+            applyDocumentTheme({ theme: themeMessage.theme });
+          }
+          return;
         }
-        return;
-      }
-      if (!isDemoCommand(event.data)) {
-        return;
-      }
-      const command = event.data;
-      if (command.type === 'restart') {
-        if (command.generation > director.generation()) {
-          runs.cancel();
-          director.restart({ generation: command.generation });
-          hints?.reset();
+        const shortcutCommand = readDemoShortcutCommand({ data: event.data });
+        if (shortcutCommand !== null) {
+          if (shortcutCommand.generation === director.generation()) {
+            dispatchDemoShortcut({ code: shortcutCommand.code });
+          }
+          return;
         }
-        return;
-      }
-      if (command.generation !== director.generation()) {
-        return;
-      }
-      if (command.type === 'play') {
-        director.play();
-        return;
-      }
-      director.pause();
-    };
-
-    const onInput = (event: Event): void => {
-      if (!event.isTrusted) {
-        return;
-      }
-      director?.settle();
-    };
+        const track = readDemoHintsCommand({ data: event.data });
+        if (track !== null) {
+          if (track.generation === director.generation()) {
+            hints?.setTrack({ chapterId: track.chapterId, settledIds: track.settledIds });
+          }
+          return;
+        }
+        const command = readDemoCommand({ data: event.data });
+        if (command === null) {
+          return;
+        }
+        if (command.type === 'restart') {
+          if (command.generation > director.generation()) {
+            runs.cancel();
+            director.restart({ generation: command.generation });
+            hints?.reset();
+          }
+          return;
+        }
+        if (command.generation !== director.generation()) {
+          return;
+        }
+        if (command.type === 'play') {
+          director.play();
+          return;
+        }
+        director.pause();
+      },
+      { signal: listeners.signal },
+    );
 
     const unwatchTheme = subscribeAppliedTheme(() => {
       const applied = getAppliedTheme();
@@ -224,9 +224,17 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       });
     });
 
-    window.addEventListener('message', onMessage);
     for (const type of INPUT_EVENTS) {
-      window.addEventListener(type, onInput, { capture: true, passive: true });
+      window.addEventListener(
+        type,
+        (event) => {
+          if (!event.isTrusted) {
+            return;
+          }
+          director?.settle();
+        },
+        { capture: true, passive: true, signal: listeners.signal },
+      );
     }
     void boot();
     return () => {
@@ -235,10 +243,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       director?.dispose();
       hints?.dispose();
       unwatchTheme();
-      window.removeEventListener('message', onMessage);
-      for (const type of INPUT_EVENTS) {
-        window.removeEventListener(type, onInput, { capture: true });
-      }
+      listeners.abort();
     };
   }, [sceneName]);
 };

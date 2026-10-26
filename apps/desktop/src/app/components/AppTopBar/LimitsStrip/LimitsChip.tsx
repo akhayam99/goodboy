@@ -1,12 +1,9 @@
 import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
-import { FOCUS_RING, TOP_BAR_CONTROL, cn } from '@goodboy/ui';
-import {
-  PROVIDER_BRAND,
-  brandColor,
-} from '../../../../features/providers/components/provider-brand';
+import { cn, FOCUS_RING, ICON_SIZE, TOP_BAR_CONTROL } from '@goodboy/ui';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { limitsChipHeadline } from '../../../../features/providers/limits/limitsChipHeadline';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { LimitsBars } from './LimitsBars';
 import { LimitsTooltip } from './LimitsTooltip';
 
@@ -19,7 +16,6 @@ type Props = {
 };
 
 export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props) => {
-  const Glyph = PROVIDER_BRAND[chip.providerId].icon;
   const headline = limitsChipHeadline({ chip, nowMs });
   return (
     <LimitsTooltip chip={chip} nowMs={nowMs}>
@@ -39,12 +35,7 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
           className,
         )}
       >
-        <Glyph
-          size={ICON_SIZE.row}
-          aria-hidden
-          className="shrink-0"
-          style={{ color: brandColor(chip.providerId) }}
-        />
+        <ProviderGlyph id={chip.providerId} size={ICON_SIZE.row} />
         <LimitsBars state={chip.state} windows={chip.windows} isStale={chip.isStale} />
       </button>
     </LimitsTooltip>

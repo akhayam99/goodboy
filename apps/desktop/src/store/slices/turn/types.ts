@@ -18,6 +18,7 @@ export type SendTurnResult = Readonly<{
   blockedOverBudget: boolean;
   isWriterLeaseDenied?: boolean;
   isLaneQueued?: boolean;
+  isAlreadySent?: boolean;
 }>;
 
 type TurnSettledInfo = Readonly<{

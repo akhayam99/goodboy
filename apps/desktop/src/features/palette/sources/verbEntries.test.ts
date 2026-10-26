@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { Square } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import type { ResolvedAction, SessionsActionTarget } from '../../actions/types';
 import { verbEntries } from './verbEntries';
 

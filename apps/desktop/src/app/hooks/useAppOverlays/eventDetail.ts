@@ -1,8 +1,6 @@
 import {
-  PROVIDER_IDS,
   isProviderName,
   type PlanId,
-  type ProviderId,
   type ProviderLifecycleAction,
   type SessionId,
   type WorkspaceId,
@@ -16,6 +14,7 @@ import {
 } from '../../../features/inbox/types';
 import type { SettingsStudioScope } from '../../../features/settings/settingsFocus';
 import type { StudioPlace } from '../../../store';
+import { isProviderId } from '@goodboy/types/helpers';
 
 type EventValueParams = {
   readonly event: Event;
@@ -38,9 +37,6 @@ const isSessionId = (value: unknown): value is SessionId => typeof value === 'st
 export const isPlanId = (value: unknown): value is PlanId => typeof value === 'string';
 
 export const isWorkspaceId = (value: unknown): value is WorkspaceId => typeof value === 'string';
-
-const isProviderId = (value: unknown): value is ProviderId =>
-  typeof value === 'string' && PROVIDER_IDS.some((providerId) => providerId === value);
 
 const isProviderLifecycleAction = (value: unknown): value is ProviderLifecycleAction =>
   value === 'install' || value === 'login' || value === 'logout' || value === 'update';

@@ -83,7 +83,7 @@ describe('RunSpendLimitPopover', () => {
       25,
       'notify',
     );
-    expect(screen.getByRole('dialog')).toBeDefined();
+    screen.getByRole('dialog');
   });
 
   it('applies the amount when the popover closes, and nothing when nothing changed', () => {
@@ -143,6 +143,19 @@ describe('RunSpendLimitPopover', () => {
       RUN_ID,
       null,
       'pause',
+    );
+  });
+
+  it('keeps an invalid spend cap from being saved in silence', () => {
+    renderPopover(run({ spendLimitUsd: 12.5 }));
+
+    openPopover();
+    fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '0' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Limit for this run' }));
+
+    expect(storeState['setWorkflowRunSpendLimit']).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog').textContent).toContain(
+      'Enter an amount over zero, or clear the field for no limit.',
     );
   });
 

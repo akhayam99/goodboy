@@ -39,6 +39,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     settings: {} as Record<string, string>,
     agentTurnState: {} as Record<string, unknown>,
     agentKindOverride: {} as Record<string, string>,
+    agentUnseenSince: Object.fromEntries<string>([]),
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     resolveMergeConflicts: vi.fn(async () => undefined),
     loadSessionOpenQuestions: vi.fn(async () => undefined),
@@ -244,6 +245,18 @@ describe('ChatView', () => {
 
     expect(content?.tagName).toBe('UL');
     expect(content?.hasAttribute('data-find-root')).toBe(true);
+  });
+
+  it('leaves the growing list out of the live regions so no row is read aloud as it lands', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container } = render(<ChatView session={session} />);
+    const content = container.querySelector('[data-scroll-content]');
+
+    expect(content?.hasAttribute('aria-live')).toBe(false);
+    expect(content?.closest('[aria-live]')).toBeNull();
   });
 
   it('renders without throwing on an empty session', () => {

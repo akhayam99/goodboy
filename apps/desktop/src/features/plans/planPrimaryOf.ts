@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { ArtifactComment, PlanWithCount, WorkflowRun } from '@goodboy/types';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 import { PLANNER_QUESTION_REASON } from './plannerQuestions';

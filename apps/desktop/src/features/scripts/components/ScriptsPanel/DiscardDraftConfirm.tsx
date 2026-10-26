@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { FileWarning } from 'lucide-react';
-import { ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly isOpen: boolean;

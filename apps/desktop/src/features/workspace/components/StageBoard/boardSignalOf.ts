@@ -1,11 +1,25 @@
-import type { SessionPrFetchState, SessionStageInfo } from '@goodboy/types';
+import type {
+  PullRequestHost,
+  SessionAttentionReason,
+  SessionPrFetchState,
+  SessionStageInfo,
+} from '@goodboy/types';
+import { attentionWordsOf } from '../../../session/session-stage';
 import type { LinkedRequest } from './StageBoardCard/getLinkedRequest';
 
 export type BoardSignal =
-  | { readonly kind: 'question'; readonly count: number }
-  | { readonly kind: 'checks-failed' }
+  | {
+      readonly kind: 'attention';
+      readonly reason: SessionAttentionReason;
+      readonly label: string;
+      readonly word: string | null;
+    }
   | { readonly kind: 'request'; readonly request: LinkedRequest }
-  | { readonly kind: 'request-pending'; readonly fetchState: 'unknown' | 'unreachable' }
+  | {
+      readonly kind: 'request-pending';
+      readonly fetchState: 'unknown' | 'unreachable';
+      readonly host: PullRequestHost;
+    }
   | { readonly kind: 'running'; readonly count: number }
   | { readonly kind: 'none' };
 
@@ -13,30 +27,61 @@ type Params = {
   readonly info: SessionStageInfo;
   readonly request: LinkedRequest;
   readonly prFetchState: SessionPrFetchState;
+  readonly requestHost?: PullRequestHost;
   readonly runningCount: number;
   readonly isArchived: boolean;
 };
 
-type ChecksParams = {
+type InfoParams = {
   readonly info: SessionStageInfo;
 };
 
-const hasFailedChecks = ({ info }: ChecksParams): boolean =>
-  info.attention === 'ci-failed' || (info.otherReasons ?? []).includes('ci-failed');
+type ReasonParams = InfoParams & {
+  readonly reason: SessionAttentionReason;
+};
+
+const hasReason = ({ info, reason }: ReasonParams): boolean =>
+  info.attention === reason || (info.otherReasons ?? []).includes(reason);
+
+const hasOpenQuestion = ({ info }: InfoParams): boolean =>
+  (info.openQuestionCount ?? 0) > 0 || hasReason({ info, reason: 'open-question' });
+
+const compactWordOf = ({ info, reason }: ReasonParams): string | null => {
+  if (reason === 'open-question') {
+    const count = Math.max(info.openQuestionCount ?? 0, 1);
+    return count > 1 ? String(count) : null;
+  }
+  return reason === 'ci-failed' ? 'Checks' : null;
+};
+
+const attentionSignalOf = ({ info, reason }: ReasonParams): BoardSignal => {
+  const words = attentionWordsOf({ reason, counts: info });
+  return { kind: 'attention', reason, label: words, word: words };
+};
+
+const compactSignalOf = ({ info, reason }: ReasonParams): BoardSignal => ({
+  kind: 'attention',
+  reason,
+  label: attentionWordsOf({ reason, counts: info }),
+  word: compactWordOf({ info, reason }),
+});
 
 export const boardSignalOf = ({
   info,
   request,
   prFetchState,
+  requestHost = 'github',
   runningCount,
   isArchived,
 }: Params): BoardSignal => {
-  const questions = info.openQuestionCount ?? 0;
-  if (!isArchived && (questions > 0 || info.attention === 'open-question')) {
-    return { kind: 'question', count: Math.max(questions, 1) };
+  if (!isArchived && info.stage === 'attention' && info.attention !== null) {
+    return attentionSignalOf({ info, reason: info.attention });
   }
-  if (!isArchived && hasFailedChecks({ info })) {
-    return { kind: 'checks-failed' };
+  if (!isArchived && hasOpenQuestion({ info })) {
+    return compactSignalOf({ info, reason: 'open-question' });
+  }
+  if (!isArchived && hasReason({ info, reason: 'ci-failed' })) {
+    return compactSignalOf({ info, reason: 'ci-failed' });
   }
   if (request.state !== 'none') {
     return { kind: 'request', request };
@@ -46,7 +91,7 @@ export const boardSignalOf = ({
     return { kind: 'running', count: running };
   }
   if (!isArchived && prFetchState !== 'known') {
-    return { kind: 'request-pending', fetchState: prFetchState };
+    return { kind: 'request-pending', fetchState: prFetchState, host: requestHost };
   }
   return { kind: 'none' };
 };

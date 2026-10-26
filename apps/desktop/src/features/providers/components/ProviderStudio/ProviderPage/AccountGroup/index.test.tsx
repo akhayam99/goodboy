@@ -133,7 +133,13 @@ describe('AccountGroup signed in row', () => {
         ...useAppStore.getState().providerConnectionTests,
         anthropic: {
           isTesting: false,
-          result: { isOk: false, millis: 40, detail: 'Not logged in' },
+          result: {
+            isOk: false,
+            millis: 40,
+            outcome: 'refused',
+            secs: null,
+            detail: 'Not logged in',
+          },
         },
       },
     });

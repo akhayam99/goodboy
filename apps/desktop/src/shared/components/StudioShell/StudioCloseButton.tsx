@@ -1,6 +1,5 @@
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { X } from 'lucide-react';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly label: string;

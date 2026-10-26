@@ -4,16 +4,17 @@ import {
   Chip,
   ICON_SIZE,
   IconButton,
+  Meter,
   TEXT_ROLE,
   type ButtonSize,
-  type ChipSize,
+  type ChipKind,
 } from '@goodboy/ui';
 import { Frame } from './Frame';
 import { Section } from './Section';
 import { ROW_HEIGHTS } from './rowHeights';
 
 const BUTTON_SIZES: ReadonlyArray<ButtonSize> = ['xs', 'sm', 'md'];
-const CHIP_SIZES: ReadonlyArray<ChipSize> = ['3xs', 'xs', 'sm', 'md', 'control'];
+const CHIP_KINDS: ReadonlyArray<ChipKind> = ['state', 'reference', 'id', 'count'];
 
 export const ControlsScaleScene = () => (
   <Frame>
@@ -35,9 +36,16 @@ export const ControlsScaleScene = () => (
     </Section>
     <Section title="Chip">
       <div className="flex flex-wrap items-center gap-2">
-        {CHIP_SIZES.map((size) => (
-          <Chip key={size} size={size} tone="neutral" label={`Chip ${size}`} />
+        {CHIP_KINDS.map((kind) => (
+          <Chip key={kind} kind={kind} tone="neutral" label={`Chip ${kind}`} />
         ))}
+      </div>
+    </Section>
+    <Section title="Meter">
+      <div className="flex flex-col gap-2">
+        <Meter size="xs" label="Cache reuse for Harborline" value={42} />
+        <Meter label="Saved versions of ledger-core" value={18} max={60} />
+        <Meter label="Spent on payments-api" value={92} tone="warning" />
       </div>
     </Section>
     <Section title="Row">
@@ -45,7 +53,7 @@ export const ControlsScaleScene = () => (
         {ROW_HEIGHTS.map((row) => (
           <li
             key={row.px}
-            className={`flex ${row.height} items-center gap-2 rounded-md px-2 text-label hover:bg-hover`}
+            className={`flex ${row.height} items-center gap-2 rounded-md px-2 text-meta hover:bg-hover`}
           >
             <GitBranch size={ICON_SIZE.row} aria-hidden className={TEXT_ROLE.secondary} />
             <span className="min-w-0 flex-1 truncate text-foreground">

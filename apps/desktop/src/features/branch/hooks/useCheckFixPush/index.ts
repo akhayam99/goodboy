@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { pushFailureReportOf } from '../../../../store/slices/notifications/pushFailureReport';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { pushCheckFix } from '../../checks/pushCheckFix';
 
@@ -29,7 +30,11 @@ export const useCheckFixPush = ({ sessionId, mountId, fixAgentId }: Params): Che
       await pushCheckFix({ sessionId, mountId, fixAgentId });
     } catch (error: unknown) {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't push the branch", error, sessionId });
+        void reportError({
+          title: "Couldn't push the branch",
+          error,
+          ...pushFailureReportOf({ sessionId, mountId, isRetryable: true }),
+        });
       }
     } finally {
       isRunningRef.current = false;

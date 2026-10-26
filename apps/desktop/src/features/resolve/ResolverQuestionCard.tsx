@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { CircleHelp } from 'lucide-react';
-import { Button, Input, Markdown, formatError, tintClasses } from '@goodboy/ui';
+import { Button, formatError, ICON_SIZE, Input, Markdown, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
 import { AnswerOptionRow } from '../../shared/components/AnswerOptionRow';
-import { ICON_SIZE } from '../../shared/components/conceptIcons';
+
 import { landingLiveKey } from '../chat/reveal/landingLiveKey';
 import { useFreshLanding } from '../chat/reveal/useFreshLanding';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
@@ -68,7 +68,7 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
       data-testid="resolver-question"
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4 ring-1 ring-border-soft"
     >
-      <h2 className="flex items-center gap-2 text-label text-foreground">
+      <h2 className="flex items-center gap-2 text-meta text-foreground">
         <CircleHelp size={ICON_SIZE.control} aria-hidden className={tintClasses('warning').text} />
         {FIX_RUN_QUESTION_COPY.title}
       </h2>

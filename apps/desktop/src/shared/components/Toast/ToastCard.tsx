@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { X } from 'lucide-react';
-import { Button, IconButton, KeyHint, Notice, cn, type NoticeTone } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { Button, cn, ICON_SIZE, IconButton, KeyHint, Notice, type NoticeTone } from '@goodboy/ui';
+
+import { useIsWindowFocused } from '../../hooks/useIsWindowFocused';
 import { toastDuration } from './toastTiming';
 import type { ToastItem, ToastKind } from './types';
 
@@ -26,7 +27,8 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const duration = toastDuration({ persist: toast.persist, hasAction: toast.action != null });
   const remainingRef = useRef<number | null>(duration);
-  const isPaused = isHovered || isFocused;
+  const isWindowFocused = useIsWindowFocused();
+  const isPaused = isHovered || isFocused || !isWindowFocused;
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setIsShown(true));

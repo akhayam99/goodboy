@@ -6,14 +6,14 @@ import {
   seedAutoTree,
 } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type SessionId } from '@goodboy/types';
-import { createAutoScheduler } from '../../store/slices/auto/scheduler';
+import { createAutoScheduler } from '../../store/runtime/auto/scheduler';
 import {
   batchInput,
   childInput,
   makeTestClock,
   WORLD_RUN,
   WORLD_TREE,
-} from '../../store/slices/auto/testing/autoWorld';
+} from '../../store/runtime/auto/testing/autoWorld';
 import {
   importStore,
   openStorySqlite,

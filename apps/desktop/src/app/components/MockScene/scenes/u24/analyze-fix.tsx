@@ -6,6 +6,6 @@ export const U24_ANALYZE_FIX_SCENES: Readonly<Record<string, ComponentType>> = {
   'checks-fixing': () => <AnalyzeFixScene phase="fixing" surface="checks" />,
   'activity-check-chain': () => <AnalyzeFixScene phase="fixing" surface="activity" isLogOpen />,
   'activity-ci-fix-unloaded': () => (
-    <AnalyzeFixScene phase="fixing" surface="timeline" isDetailUnloaded />
+    <AnalyzeFixScene phase="fixing" surface="activity" isLogOpen isDetailUnloaded />
   ),
 };

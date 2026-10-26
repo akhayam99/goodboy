@@ -2,17 +2,17 @@ use super::{sanitize_slug, slugify, MAX_SLUG_LEN};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct SlugCase {
     name: String,
     input: String,
-    #[serde(rename = "maxLength")]
     max_length: Option<usize>,
     expected: String,
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct SlugFixture {
-    #[serde(rename = "defaultMaxLength")]
     default_max_length: usize,
     cases: Vec<SlugCase>,
 }

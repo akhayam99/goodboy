@@ -163,6 +163,49 @@ describe('OrchestratorClient', () => {
     ).rejects.toThrow('orchestrator decision timed out');
   });
 
+  it('cancels the planner run it started when the decision times out', async () => {
+    const calls: Array<{ command: string; args: Record<string, unknown> | undefined }> = [];
+    const invokeFn: OrchestratorClientDeps['invokeFn'] = async <T>(
+      command: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      calls.push({ command, args });
+      return new Promise<T>(() => undefined);
+    };
+    const client = new OrchestratorClient({
+      providerId: 'codex',
+      model: 'gpt-5.4-mini',
+      timeoutMs: 1,
+      invokeFn,
+    });
+
+    await expect(client.decide(input())).rejects.toThrow('orchestrator decision timed out');
+
+    const started = calls.find((call) => call.command === 'planner_run');
+    const request = started?.args?.['args'];
+    const runId =
+      typeof request === 'object' && request !== null
+        ? Object.fromEntries(Object.entries(request))['runId']
+        : undefined;
+    expect(typeof runId).toBe('string');
+    expect(calls.filter((call) => call.command === 'planner_cancel')).toEqual([
+      { command: 'planner_cancel', args: { runId } },
+    ]);
+  });
+
+  it('does not cancel a decision that finished in time', async () => {
+    const seen = capture();
+    const client = new OrchestratorClient({
+      providerId: 'anthropic',
+      model: 'haiku-4.5',
+      invokeFn: seen.invokeFn,
+    });
+
+    await client.decide(input());
+
+    expect(seen.command()).toBe('planner_run');
+  });
+
   it('reports a timed out decision as its own error', async () => {
     const invokeFn: OrchestratorClientDeps['invokeFn'] = async <T>(): Promise<T> =>
       ({ stdout: '', stderr: '', exitCode: null, isTimedOut: true }) as T;

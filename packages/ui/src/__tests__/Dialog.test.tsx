@@ -51,6 +51,27 @@ describe('Dialog', () => {
     expect(screen.getByLabelText('Workspace path')).toBe(document.activeElement);
   });
 
+  it('gives focus back to the opener once it closes', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    const view = render(
+      <Dialog open onClose={() => undefined} title="Add workspace">
+        <input aria-label="Workspace path" />
+      </Dialog>,
+    );
+    expect(document.activeElement).not.toBe(opener);
+
+    view.rerender(
+      <Dialog open={false} onClose={() => undefined} title="Add workspace">
+        <input aria-label="Workspace path" />
+      </Dialog>,
+    );
+
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
   it('closes on escape', () => {
     const onClose = vi.fn();
     render(

@@ -68,7 +68,7 @@ vi.mock('../../hooks/useDiffNotes', () => ({
   useDiffNotes: () => ({ threads: [], allowFileLevel: h.store['allowFileLevel'] === true }),
 }));
 
-vi.mock('../../../permissions/components/DiffViewSelector', () => ({
+vi.mock('../DiffViewSelector', () => ({
   DiffViewSelector: ({ baseBranch }: { readonly baseBranch: string | null }) => (
     <button type="button">Compared with {baseBranch ?? 'its base branch'}</button>
   ),

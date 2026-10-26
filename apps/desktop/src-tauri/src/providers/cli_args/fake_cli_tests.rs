@@ -36,6 +36,15 @@ fn strings(parts: &[&str]) -> Vec<String> {
 }
 
 fn run_side_job(job: Job, provider_id: &str, binary: &str, effort: Option<&str>) -> Vec<String> {
+    run_side_job_with_stdin(job, provider_id, binary, effort).0
+}
+
+fn run_side_job_with_stdin(
+    job: Job,
+    provider_id: &str,
+    binary: &str,
+    effort: Option<&str>,
+) -> (Vec<String>, Option<String>) {
     let fake = FakeCli::stage("ok");
     let work_dir = fake.work_dir();
     let binary_path = fake.binary(binary);
@@ -52,6 +61,7 @@ fn run_side_job(job: Job, provider_id: &str, binary: &str, effort: Option<&str>)
                     working_dir: Some(work_dir),
                     tools_disabled: false,
                     effort: effort.map(str::to_string),
+                    run_id: None,
                 },
             )
             .expect("the planner spawns")
@@ -76,7 +86,7 @@ fn run_side_job(job: Job, provider_id: &str, binary: &str, effort: Option<&str>)
         }
     };
     assert_eq!(exit_code, Some(0));
-    recorded(&fake)
+    (recorded(&fake), fake.work_file("fake-cli-stdin.txt"))
 }
 
 fn with_prompt(head: &[&str], tail: &[&str]) -> Vec<String> {
@@ -152,11 +162,12 @@ fn gemini_side_jobs_omit_the_effort_when_none_is_chosen() {
 }
 
 #[test]
-fn codex_side_jobs_spawn_read_only_with_the_prompt_after_the_separator() {
+fn codex_side_jobs_spawn_read_only_with_the_prompt_on_stdin() {
     for job in JOBS {
-        let argv = run_side_job(job, "codex", "codex", Some("low"));
+        let (argv, stdin) = run_side_job_with_stdin(job, "codex", "codex", Some("low"));
 
-        let mut expected = strings(&[
+        assert_eq!(stdin.as_deref(), Some(COMBINED), "{job:?}");
+        let expected = strings(&[
             "exec",
             "--json",
             "--skip-git-repo-check",
@@ -166,9 +177,8 @@ fn codex_side_jobs_spawn_read_only_with_the_prompt_after_the_separator() {
             "read-only",
             "-c",
             "model_reasoning_effort=\"low\"",
-            "--",
+            "-",
         ]);
-        expected.push(COMBINED.to_string());
         assert_eq!(argv, expected, "{job:?}");
     }
 }
@@ -224,7 +234,6 @@ fn claude_side_jobs_spawn_without_tools_and_with_the_effort() {
 
     let common = [
         "-p",
-        USER,
         "--model",
         "fake-model",
         "--system-prompt",
@@ -253,6 +262,42 @@ fn claude_side_jobs_spawn_without_tools_and_with_the_effort() {
     ]));
     assert_eq!(summarizer, expected_summarizer);
     assert_eq!(planner, expected_planner);
+}
+
+#[test]
+fn a_cli_that_reads_stdin_never_sees_the_prompt_in_its_argv() {
+    for (provider_id, binary) in [("anthropic", "claude"), ("codex", "codex")] {
+        for job in JOBS {
+            let (argv, stdin) = run_side_job_with_stdin(job, provider_id, binary, None);
+
+            assert!(
+                !argv.iter().any(|arg| arg.contains("Northwind")),
+                "{provider_id} {job:?}: {argv:?}"
+            );
+            let expected = match provider_id {
+                "anthropic" => USER,
+                _ => COMBINED,
+            };
+            assert_eq!(stdin.as_deref(), Some(expected), "{provider_id} {job:?}");
+        }
+    }
+}
+
+#[test]
+fn the_other_clis_keep_the_prompt_in_argv_until_their_stdin_is_confirmed() {
+    for (provider_id, binary) in [
+        ("cursor", "cursor-agent"),
+        ("gemini", "agy"),
+        ("opencode", "opencode"),
+    ] {
+        let (argv, stdin) = run_side_job_with_stdin(Job::Planner, provider_id, binary, None);
+
+        assert!(
+            argv.contains(&COMBINED.to_string()),
+            "{provider_id}: {argv:?}"
+        );
+        assert_eq!(stdin, None, "{provider_id}");
+    }
 }
 
 #[test]

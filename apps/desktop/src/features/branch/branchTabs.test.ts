@@ -24,7 +24,7 @@ import { locationKey } from '../../store/slices/navigation/locationKey';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import type { BranchTab, Place } from '../../store/slices/navigation/types';
 import { SHORTCUTS } from '../../shared/keyboard/registry';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import {
   BRANCH_TAB_REGISTRY,
   branchTabsOf,

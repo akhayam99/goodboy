@@ -9,7 +9,7 @@ type Props = {
 const SIZE_CLASS: Record<'inherit' | 'sm' | 'md', string> = {
   inherit: '',
   sm: 'text-chip',
-  md: 'text-label',
+  md: 'text-meta',
 };
 
 export const DiffStat = ({ additions, deletions, size = 'sm' }: Props) => {

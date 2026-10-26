@@ -40,7 +40,7 @@ export const StepRow = ({ title, detail, isDone, actionLabel, onOpen }: Props) =
       >
         <StepMark isDone={false} />
         {text}
-        <span className="shrink-0 text-label text-primary">{actionLabel}</span>
+        <span className="shrink-0 text-meta text-primary">{actionLabel}</span>
       </button>
     </li>
   );

@@ -18,8 +18,8 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { commitLink } from '../github/buildResolutionReplyBody';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';
 import { readCommitStory, recordReplyEdit } from './commitStory';
-import { publicationTarget } from './publicationTarget';
-import { loadPublicationsInto } from './publicationState';
+import { publicationTarget } from './publication/publicationTarget';
+import { loadPublicationsInto } from './publication/publicationState';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -71,7 +71,7 @@ export const editPostedReplies = async ({ set, get, sessionId }: Params): Promis
   if (!isEditPostedReplyOn({ raw })) {
     return 0;
   }
-  const { prUrl } = publicationTarget({ get, sessionId });
+  const { prUrl } = publicationTarget({ get, sessionId, mountId: null });
   const options = sessionThreadGhOptions({ get, sessionId });
   let edited = 0;
   for (const row of get().sessionResolveThreads[sessionId] ?? []) {

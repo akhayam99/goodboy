@@ -4,6 +4,7 @@ import { loadDiscoveredScripts } from './loadDiscoveredScripts';
 import { loadProjectRootScripts } from './loadProjectRootScripts';
 import { loadScriptPins } from './loadScriptPins';
 import { loadScripts } from './loadScripts';
+import { markScriptRunSeen } from './markScriptRunSeen';
 import { reattachScriptRuns } from './reattachScriptRuns';
 import { refreshDiscoveredScripts } from './refreshDiscoveredScripts';
 import { runDiscoveredScript } from './runDiscoveredScript';
@@ -24,6 +25,7 @@ export const createScriptsSlice = ({ set, get }: SliceDeps) => {
     runDiscoveredScript: runDiscoveredScript(set, get),
     reattachScriptRuns: reattachScriptRuns(set, get),
     cancelScript: cancelScript(set, get),
+    markScriptRunSeen: markScriptRunSeen({ set }),
     loadScriptPins: loadScriptPins(set),
     toggleScriptPin: toggleScriptPin(get),
     toggleAutoCheck: toggleAutoCheck(get),

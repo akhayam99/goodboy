@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { seedBoardScene } from '../BoardScene';
 import { AppFrame } from './AppFrame';
 import { seedFrameChromeStubs } from './frameSeed';
@@ -30,7 +31,7 @@ export const NotificationsScene = ({ openLabels }: Props) => {
       return;
     }
     const timer = window.setTimeout(
-      () => window.dispatchEvent(new CustomEvent('goodboy:open-notifications')),
+      () => dispatchWindowEvent({ name: 'goodboy:open-notifications' }),
       300,
     );
     return () => window.clearTimeout(timer);

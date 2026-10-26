@@ -8,10 +8,10 @@ import {
   mergeWorkspaceOverrides,
   type WorkspaceOverridesPatch,
 } from '../../../../../store/slices/overrides/patchWorkspaceOverrides';
-import { chatModelKey } from '../../../../workspace-chat/chatRouting';
+import { chatModelKey } from '../../../../conversation/chatRouting';
 import { DefaultsPanel } from './index';
 
-type SetWorkspaceOverrides = (workspaceId: string, overrides: OverrideSettings) => Promise<void>;
+type WriteRow = (workspaceId: string, overrides: OverrideSettings) => Promise<void>;
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -31,7 +31,7 @@ const { state } = vi.hoisted(() => ({
     loadSavedProjectModels: vi.fn(async () => undefined),
     applySavedProjectModels: vi.fn(async () => undefined),
     discardSavedProjectModels: vi.fn(async () => undefined),
-    setWorkspaceOverrides: vi.fn<SetWorkspaceOverrides>(async () => undefined),
+    writeRow: vi.fn<WriteRow>(async () => undefined),
     patchWorkspaceOverrides: async (_params: {
       workspaceId: string;
       patch: WorkspaceOverridesPatch;
@@ -154,7 +154,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 
 beforeEach(() => {
   state.patchWorkspaceOverrides = ({ workspaceId, patch }) =>
-    state.setWorkspaceOverrides(
+    state.writeRow(
       workspaceId,
       mergeWorkspaceOverrides({
         base: state.workspaceOverrides[workspaceId] ?? EMPTY_OVERRIDES,
@@ -167,8 +167,8 @@ beforeEach(() => {
   state.settings = {};
   state.loadSetting.mockClear();
   state.saveSetting.mockClear();
-  state.setWorkspaceOverrides.mockReset();
-  state.setWorkspaceOverrides.mockImplementation(async (workspaceId, overrides) => {
+  state.writeRow.mockReset();
+  state.writeRow.mockImplementation(async (workspaceId, overrides) => {
     state.workspaceOverrides = {
       ...state.workspaceOverrides,
       [workspaceId]: overrides,
@@ -258,7 +258,7 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing model' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.writeRow).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         taskModels: {
@@ -273,7 +273,7 @@ describe('DefaultsPanel', () => {
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({ taskModels: null }),
     );
@@ -290,7 +290,7 @@ describe('DefaultsPanel', () => {
       screen.getByRole('button', { name: 'Workflow orchestrator routing high effort' }),
     );
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({
         taskModels: {
@@ -317,7 +317,7 @@ describe('DefaultsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing cheap model' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.writeRow).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         taskModels: {
@@ -424,11 +424,11 @@ describe('DefaultsPanel', () => {
     expect(set.textContent).toContain('Not set. Auto picks the model');
     fireEvent.click(screen.getByRole('button', { name: 'Add model' }));
     fireEvent.click(screen.getByRole('button', { name: 'Planner add model model' }));
-    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+    expect(state.writeRow).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Planner add model commit' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledTimes(1);
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.writeRow).toHaveBeenCalledTimes(1);
+    expect(state.writeRow).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
@@ -519,7 +519,7 @@ describe('DefaultsPanel', () => {
       altKey: true,
     });
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
@@ -545,7 +545,7 @@ describe('DefaultsPanel', () => {
       key: 'Backspace',
     });
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
@@ -574,7 +574,7 @@ describe('DefaultsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Opus 5' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({ roleModels: null }),
     );
@@ -624,8 +624,8 @@ describe('DefaultsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing provider' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledTimes(1);
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.writeRow).toHaveBeenCalledTimes(1);
+    expect(state.writeRow).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         taskModels: {
@@ -675,7 +675,7 @@ describe('DefaultsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({ taskModels: null }),
     );
@@ -699,7 +699,7 @@ describe('DefaultsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+    expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({ taskModels: null }),
     );
@@ -731,11 +731,11 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all to Auto' }));
     expect(screen.getByText('Reset 3 pinned models to Auto?')).toBeDefined();
-    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+    expect(state.writeRow).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 
     await waitFor(() =>
-      expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+      expect(state.writeRow).toHaveBeenLastCalledWith(
         'ws-1',
         expect.objectContaining({ taskModels: null, roleModels: null }),
       ),
@@ -838,11 +838,11 @@ describe('DefaultsPanel', () => {
       ).toBeDefined();
       fireEvent.click(screen.getByRole('button', { name: 'Back to Auto for those 2' }));
       const confirm = screen.getByRole('dialog', { name: 'Put 2 agents back to Auto?' });
-      expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+      expect(state.writeRow).not.toHaveBeenCalled();
       fireEvent.click(within(confirm).getByRole('button', { name: 'Back to Auto' }));
 
       await waitFor(() =>
-        expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+        expect(state.writeRow).toHaveBeenLastCalledWith(
           'ws-1',
           expect.objectContaining({
             roleModels: {

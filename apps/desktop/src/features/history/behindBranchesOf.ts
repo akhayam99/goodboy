@@ -3,7 +3,7 @@ import type { AppStore } from '../../store/store';
 import { distanceBehind } from '../../shared/lib/gitStatus';
 import { isMountCompleted } from '../../store/slices/project-mounts/mountRowModel';
 import { resolveMountBaseBranch } from '../../store/slices/project-mounts/selectors';
-import { readWorktreeStatus, worktreeStatusKey } from '../../store/slices/worktreeStatuses/cache';
+import { readWorktreeStatus, worktreeStatusKey } from '../../store/runtime/worktreeStatuses/cache';
 
 export const REBASE_ALL_MIN_BRANCHES = 2;
 

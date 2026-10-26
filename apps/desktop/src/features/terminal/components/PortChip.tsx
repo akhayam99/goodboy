@@ -14,7 +14,6 @@ export const PortChip = ({ port }: Props) => {
       <Chip
         tone="neutral"
         kind="reference"
-        size="xs"
         label={`:${port}`}
         ariaLabel={`Open localhost:${port}`}
         onClick={() => {

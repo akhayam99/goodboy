@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '../../cn';
+import { FOCUS_RING } from '../../focusRing';
 import { ScrollFade } from '../ScrollFade';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow as RowModel } from './crumbMenuTypes';
 import { CrumbMenuActions } from './CrumbMenuActions';
@@ -139,7 +140,10 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
           placeholder={model.filterPlaceholder ?? undefined}
           aria-label={model.filterPlaceholder ?? undefined}
           onChange={(event) => setQuery(event.target.value)}
-          className="h-7 shrink-0 rounded-md bg-fill px-2 text-label text-foreground outline-none placeholder:text-faint-foreground focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'h-7 shrink-0 rounded-md bg-fill px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground',
+            FOCUS_RING,
+          )}
         />
       ) : null}
       <ScrollFade className="min-h-0 flex-1" fadeFrom="floating">

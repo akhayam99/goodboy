@@ -61,7 +61,7 @@ const seedWaitingWork = (sessionId: SessionId): void => {
     current,
     id: 'sidebar-states-held',
     goal: 'Plan the Cascadia onboarding',
-    updatedAt: '2026-10-03T09:00:00.000Z',
+    updatedAt: '2026-10-06T09:00:00.000Z',
     over: {
       workflowRuns: [
         {

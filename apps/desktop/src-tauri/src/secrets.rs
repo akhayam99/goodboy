@@ -21,11 +21,14 @@ pub enum SecretError {
     Backend(#[from] keyring::Error),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("secret key is outside the allowed grammar")]
+    InvalidKey,
 }
 
 impl SecretError {
     fn kind(&self) -> &'static str {
         match self {
+            SecretError::InvalidKey => "invalid_key",
             SecretError::Backend(_) => "backend",
             SecretError::Io(_) => "io",
         }
@@ -59,8 +62,25 @@ pub fn clear(key: &str) -> Result<(), SecretError> {
     }
 }
 
+const WEBVIEW_KEY_PREFIX: &str = "provider_credential.";
+const WEBVIEW_ID_MAX: usize = 64;
+
+fn check_webview_key(key: &str) -> Result<(), SecretError> {
+    let id = key
+        .strip_prefix(WEBVIEW_KEY_PREFIX)
+        .ok_or(SecretError::InvalidKey)?;
+    let is_id = !id.is_empty()
+        && id.len() <= WEBVIEW_ID_MAX
+        && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+    if !is_id {
+        return Err(SecretError::InvalidKey);
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn secret_set(key: String, value: String) -> Result<(), SecretError> {
+    check_webview_key(&key)?;
     tauri::async_runtime::spawn_blocking(move || set(&key, &value))
         .await
         .map_err(|e| SecretError::Io(std::io::Error::other(e.to_string())))?
@@ -68,6 +88,7 @@ pub async fn secret_set(key: String, value: String) -> Result<(), SecretError> {
 
 #[tauri::command]
 pub async fn secret_delete(key: String) -> Result<(), SecretError> {
+    check_webview_key(&key)?;
     tauri::async_runtime::spawn_blocking(move || clear(&key))
         .await
         .map_err(|e| SecretError::Io(std::io::Error::other(e.to_string())))?
@@ -93,6 +114,30 @@ mod tests {
             .find(|part| part.starts_with(name))
             .unwrap_or_else(|| panic!("{name} directive missing"))
             .to_string()
+    }
+
+    #[test]
+    fn a_provider_credential_key_is_accepted() {
+        assert!(super::check_webview_key("provider_credential.3f2a-9c1b").is_ok());
+    }
+
+    #[test]
+    fn a_key_outside_the_grammar_is_rejected() {
+        for key in [
+            "",
+            "github.pat",
+            "goodboy.credential.abc",
+            "goodboy.workspace.w1.linear",
+            "provider_credential.",
+            "provider_credential.a.b",
+            "provider_credential.a/b",
+            "provider_credential.a b",
+            "Provider_credential.abc",
+        ] {
+            assert!(super::check_webview_key(key).is_err(), "{key}");
+        }
+        let long = format!("provider_credential.{}", "a".repeat(65));
+        assert!(super::check_webview_key(&long).is_err());
     }
 
     #[test]

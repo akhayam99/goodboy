@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ConfirmPopover } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 
 const WorktreeIcon = CONCEPT_ICONS.worktree;
 const LINES = [
@@ -19,7 +19,7 @@ export const WorktreeRemoveScene = () => {
         data-slot="mount-row"
         className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-md px-2"
       >
-        <span className="min-w-0 truncate text-label text-foreground">notify-relay</span>
+        <span className="min-w-0 truncate text-meta text-foreground">notify-relay</span>
         {isRemoved ? (
           <span className="text-meta text-faint-foreground">Removed</span>
         ) : (
@@ -39,7 +39,7 @@ export const WorktreeRemoveScene = () => {
                 aria-label="Close branch for notify-relay"
                 aria-haspopup="dialog"
                 onClick={arm}
-                className="rounded-md px-2 py-1 text-label text-faint-foreground hover:bg-hover hover:text-danger"
+                className="rounded-md px-2 py-1 text-meta text-faint-foreground hover:bg-hover hover:text-danger"
               >
                 Close branch
               </button>

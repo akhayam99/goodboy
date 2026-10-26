@@ -1,5 +1,4 @@
-import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { formatError } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import {
@@ -13,8 +12,8 @@ import { useAppStore } from '../../store/store';
 import { findMountById } from '../../store/slices/project-mounts/findMountById';
 import { recoverSoleMount } from '../../store/slices/project-mounts/recoverSoleMount';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
-import { isMainWindow } from '../workspace/window';
 import { selectProjectById } from '../../store/slices/projects/selectProjectById';
+import { serveHandoff } from '../../shared/lib/serveHandoff';
 
 const MATERIALIZE_EVENT = 'query-bridge://project-materialize';
 
@@ -34,8 +33,6 @@ type MaterializeOutcome = {
   readonly mountPath?: string;
   readonly branch?: string;
 };
-
-const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 export const executeMaterializeRequest = async ({
   sessionId,
@@ -125,23 +122,18 @@ export const executeMaterializeRequest = async ({
   });
 };
 
-export const listenProjectMaterializeRequests = async (): Promise<UnlistenFn> => {
-  if (!inTauri() || !isMainWindow()) {
-    return () => undefined;
-  }
-  return listen<MaterializeRequest>(MATERIALIZE_EVENT, (event) => {
-    const request = event.payload;
-    void executeMaterializeRequest(request)
-      .then((result) =>
-        invokeCommand('project_materialize_result', {
-          id: request.id,
-          ok: result.ok,
-          error: result.error ?? null,
-          mountId: result.mountId ?? null,
-          mountPath: result.mountPath ?? null,
-          branch: result.branch ?? null,
-        }),
-      )
-      .catch((error) => console.error('[query-bridge] materialize result dispatch failed', error));
+export const listenProjectMaterializeRequests = (): Promise<UnlistenFn> =>
+  serveHandoff<MaterializeRequest, MaterializeOutcome>({
+    event: MATERIALIZE_EVENT,
+    command: 'project_materialize_result',
+    label: 'materialize',
+    execute: executeMaterializeRequest,
+    replyOf: ({ request, result }) => ({
+      id: request.id,
+      ok: result.ok,
+      error: result.error ?? null,
+      mountId: result.mountId ?? null,
+      mountPath: result.mountPath ?? null,
+      branch: result.branch ?? null,
+    }),
   });
-};

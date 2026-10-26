@@ -34,7 +34,8 @@ import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActiva
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
-import { sessionReads } from '../state-writes/sessionReads';
+import { sessionReads } from '../../runtime/state-writes/sessionReads';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -133,11 +134,10 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     }));
 
     if (focus === 'announce') {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:workflow-step-started', {
-          detail: { sessionId, agentId, stepName: step?.name ?? agent.name },
-        }),
-      );
+      dispatchWindowEvent({
+        name: 'goodboy:workflow-step-started',
+        detail: { sessionId, agentId, stepName: step?.name ?? agent.name },
+      });
     }
 
     const effectiveKind = classifyAgent({

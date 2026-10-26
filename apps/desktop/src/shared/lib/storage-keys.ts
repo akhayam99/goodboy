@@ -2,6 +2,9 @@ const PREFIX = 'goodboy:';
 
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
+  contrast: `${PREFIX}contrast`,
+  awayBadge: `${PREFIX}away-badge:v1`,
+  awayBanner: `${PREFIX}away-banner:v1`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
   diffWrap: `${PREFIX}diff-wrap`,
@@ -19,6 +22,7 @@ export const STORAGE_KEYS = {
   chatUnread: `${PREFIX}chat-unread:v1`,
   zoom: `${PREFIX}zoom`,
   windowReloadIntent: `${PREFIX}window-reload-intent`,
+  rowActionsCue: `${PREFIX}row-actions-cue:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {
@@ -29,6 +33,7 @@ export const STORAGE_PREFIXES = {
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   taskListView: `${PREFIX}task-list-view:v1:`,
+  taskArrivals: `${PREFIX}task-arrivals:v1:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   scriptsGroupsCollapsed: `${PREFIX}scripts-groups-collapsed:v1:`,
   scriptsPackagesCollapsed: `${PREFIX}scripts-packages-collapsed:v1:`,

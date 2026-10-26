@@ -1,40 +1,35 @@
-import { NAMES } from '../../../../shared/names';
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import {
-  ROW_INTERACTIVE,
   AnchoredPopover,
-  Button,
-  cn,
   Divider,
-  SegmentedTabs,
-  Skeleton,
-  StatusDot,
-  FOCUS_RING,
-  TOP_BAR_CONTROL,
-  EmptyState,
-  Tooltip,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  SelectableRow,
   useDropdown,
-  type SegmentedTabOption,
 } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
-import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAppStore, useAttentionElsewhere } from '../../../../store';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
-import { openNotificationSession } from '../../openNotificationSession';
-import { NotificationRow } from '../NotificationRow';
+import { isNotificationDebt } from '../../actionClass';
+import { BellButton } from './BellButton';
+import { BellHeader } from './BellHeader';
+import { BellRows } from './BellRows';
+import type { PopoverView, ScopeValue } from './bellTypes';
+import { useRowsOnScreen } from './useRowsOnScreen';
 import { useSeenNotifications } from './useSeenNotifications';
 
-const DROPDOWN_WIDTH = 384;
-const MAX_ROWS = 8;
-const ROW_HEIGHT = 30;
-const HEADER_HEIGHT = 41;
-const FOOTER_HEIGHT = 33;
-const DROPDOWN_MAX_HEIGHT = HEADER_HEIGHT + MAX_ROWS * ROW_HEIGHT + FOOTER_HEIGHT;
 const OPEN_EVENT = 'goodboy:open-notifications';
 
-type PopoverView = 'unread' | 'all';
+type ScopeParams = {
+  readonly next: ScopeValue;
+};
+
+type GroupParams = {
+  readonly group: ReadonlyArray<Notification>;
+};
 
 type UnreadKeysParams = {
   readonly notifications: ReadonlyArray<Notification>;
@@ -59,16 +54,20 @@ export const NotificationCenter = () => {
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const reportError = useAppStore((s) => s.reportError);
+  const notificationScope = useAppStore((s) => s.notificationScope);
+  const setNotificationScope = useAppStore((s) => s.setNotificationScope);
+  const hasManyWorkspaces = useAppStore((s) => s.workspaces.length > 1);
+  const elsewhere = useAttentionElsewhere({ currentId: currentWorkspaceId });
   const dismissNotificationGroup = useAppStore((s) => s.dismissNotificationGroup);
   const dropdown = useDropdown({
     align: 'center',
-    width: 'w-96',
-    expectedWidth: DROPDOWN_WIDTH,
-    expectedHeight: DROPDOWN_MAX_HEIGHT,
+    width: POPOVER_WIDTH_CLASS.wide,
+    expectedWidth: POPOVER_WIDTH_PX.wide,
     openEvent: OPEN_EVENT,
   });
   const { open, close, toggle } = dropdown;
   const openRef = useRef(open);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const [unreadKeys, setUnreadKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [view, setView] = useState<PopoverView>('all');
 
@@ -106,17 +105,35 @@ export const NotificationCenter = () => {
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
   const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
-  const hasUnreadAction = notifications.some(
-    (notification) => !notification.read && notification.action !== null,
+  const hasUnreadDebt = notifications.some(
+    (notification) => !notification.read && isNotificationDebt({ notification }),
   );
-  const shownGroups = (
+  const shownGroups =
     view === 'unread'
       ? groups.filter((group) => unreadKeys.has(notificationGroupKey({ group })))
-      : groups
-  ).slice(0, MAX_ROWS);
-  const shownUnreadIds = shownGroups.flatMap((group) =>
-    group.filter((notification) => !notification.read).map((notification) => notification.id),
+      : groups;
+  const onScreen = useRowsOnScreen({
+    rootRef: viewportRef,
+    isActive: open,
+    keys: shownGroups.map((group) => notificationGroupKey({ group })),
+  });
+  const isOnScreen = ({ group }: GroupParams) =>
+    onScreen.isEverything || onScreen.keys.has(notificationGroupKey({ group }));
+  const lastOnScreenIndex = shownGroups.reduce(
+    (last, group, index) => (isOnScreen({ group }) ? index : last),
+    -1,
   );
+  const unreadBelow =
+    lastOnScreenIndex < 0
+      ? 0
+      : shownGroups
+          .slice(lastOnScreenIndex + 1)
+          .filter((group) => group.some((notification) => !notification.read)).length;
+  const shownUnreadIds = shownGroups
+    .filter((group) => isOnScreen({ group }))
+    .flatMap((group) =>
+      group.filter((notification) => !notification.read).map((notification) => notification.id),
+    );
   useSeenNotifications({
     isOpen: open,
     ids: shownUnreadIds,
@@ -131,136 +148,73 @@ export const NotificationCenter = () => {
       void reportError({ title: "Couldn't mark the notifications read", error });
     });
   };
-  const viewOptions: ReadonlyArray<SegmentedTabOption<PopoverView>> = [
-    {
-      value: 'unread',
-      label: 'Unread',
-      badge: <span className="tabular-nums text-muted-foreground">{unreadKeys.size}</span>,
-    },
-    { value: 'all', label: 'All' },
-  ];
-
+  const changeScope = ({ next }: ScopeParams) => {
+    setNotificationScope(next)
+      .then(() => {
+        setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
+      })
+      .catch((error: unknown) => {
+        void reportError({ title: "Couldn't change which workspaces the bell shows", error });
+      });
+  };
   return (
-    <div role="region" aria-label="Notifications" aria-live="polite">
+    <div role="region" aria-label="Notifications">
       <AnchoredPopover
         dropdown={dropdown}
         hasBackdrop
         trigger={
-          <Tooltip content={NAMES.notifications} side="top">
-            <button
-              type="button"
-              onClick={handleOpen}
-              className={cn(
-                TOP_BAR_CONTROL.square,
-                TOP_BAR_CONTROL.radius,
-                FOCUS_RING,
-                'relative flex shrink-0 items-center justify-center motion-safe:transition-colors',
-                open
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-hover',
-              )}
-              aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
-            >
-              <Bell size={ICON_SIZE.control} aria-hidden />
-              {unread > 0 && (
-                <span
-                  aria-hidden
-                  data-bell-dot={hasUnreadAction ? 'warning' : 'unread'}
-                  className="absolute right-1 top-1 flex"
-                >
-                  <StatusDot tone={hasUnreadAction ? 'warning' : 'primary'} size="sm" />
-                </span>
-              )}
-            </button>
-          </Tooltip>
+          <BellButton
+            isOpen={open}
+            unread={unread}
+            hasUnreadDebt={hasUnreadDebt}
+            onClick={handleOpen}
+          />
         }
       >
-        <header className="flex items-center justify-between gap-2 px-3 py-2">
-          <span className="text-label font-semibold text-foreground">Notifications</span>
-          {notifications.length === 0 ? null : (
-            <div className="flex items-center gap-2">
-              {unread > 0 && (
-                <Button variant="ghost" size="sm" onClick={markAllRead}>
-                  Mark all read
-                </Button>
-              )}
-              <SegmentedTabs
-                ariaLabel="Show unread or all notifications"
-                options={viewOptions}
-                value={view}
-                onChange={setView}
-                size="sm"
-              />
-            </div>
-          )}
-        </header>
+        <BellHeader
+          hasNotifications={notifications.length > 0}
+          unread={unread}
+          view={view}
+          onViewChange={setView}
+          onMarkAllRead={markAllRead}
+          hasManyWorkspaces={hasManyWorkspaces}
+          scope={notificationScope}
+          elsewhere={elsewhere}
+          onScopeChange={(next) => changeScope({ next })}
+        />
         <Divider />
-        {notificationsLoading && notifications.length === 0 ? (
-          <div
-            className="flex flex-col gap-3 px-3 py-3"
+        <BellRows
+          isLoading={notificationsLoading && notifications.length === 0}
+          hasNotifications={notifications.length > 0}
+          groups={shownGroups}
+          viewportRef={viewportRef}
+          close={close}
+          onOpenStudio={openNotificationsStudio}
+          onDismiss={(ids) => {
+            void dismissNotificationGroup({ ids });
+          }}
+        />
+        {unreadBelow > 0 ? (
+          <p
             role="status"
-            aria-label="Loading notifications"
+            data-unread-below=""
+            className="px-3 py-1 text-meta text-muted-foreground"
           >
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Skeleton className="size-3.5 shrink-0 rounded-full" />
-                <Skeleton className="h-3 w-2/3 rounded-sm" />
-              </div>
-            ))}
-          </div>
-        ) : shownGroups.length === 0 ? (
-          <EmptyState
-            size="section"
-            className="px-3 py-2"
-            icon={Bell}
-            title={notifications.length === 0 ? 'No notifications yet' : "You're caught up"}
-            description={
-              notifications.length === 0
-                ? undefined
-                : 'Everything new has been seen. All shows the history.'
-            }
-          />
-        ) : (
-          <ul className="flex flex-col py-1">
-            {shownGroups.map((group) => (
-              <NotificationRow
-                key={notificationGroupKey({ group })}
-                notifications={group}
-                density="compact"
-                isSelected={false}
-                onOpen={() => {
-                  const latest = group[0];
-                  close();
-                  if (latest != null && openNotificationSession({ notification: latest })) {
-                    return;
-                  }
-                  openNotificationsStudio();
-                }}
-                onActed={close}
-                onDismiss={() => {
-                  void dismissNotificationGroup({
-                    ids: group.map((notification) => notification.id),
-                  });
-                }}
-              />
-            ))}
-          </ul>
-        )}
+            {unreadBelow} more unread
+          </p>
+        ) : null}
         <Divider />
-        <button
-          type="button"
+        <SelectableRow
+          selected={false}
           onClick={() => {
             close();
             openNotificationsStudio();
           }}
-          className={cn(
-            'flex w-full items-center justify-between gap-2 px-3 py-2 text-meta text-muted-foreground hover:text-foreground',
-            ROW_INTERACTIVE,
-          )}
+          className="items-center justify-between gap-2 rounded-none px-3 py-2 text-meta"
         >
           Open all notifications
           <ChevronRight size={ICON_SIZE.row} aria-hidden />
-        </button>
+        </SelectableRow>
       </AnchoredPopover>
     </div>
   );

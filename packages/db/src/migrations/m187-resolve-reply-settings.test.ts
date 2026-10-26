@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { getWorkspaceOverrides, setWorkspaceOverrides } from '../queries/settings-overrides';
+import { getWorkspaceOverrides } from '../queries/settings-overrides';
+import { seedWorkspaceOverrides } from '../test-helpers/seedWorkspaceOverrides';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -40,13 +41,17 @@ describe('m187 resolve reply settings', () => {
     if (before === null) {
       throw new Error('workspace missing');
     }
-    await setWorkspaceOverrides(db, WORKSPACE, {
-      ...before,
-      replyVoice: 'mine',
-      replyStyleNote: 'Short. Starts lowercase.',
-      replyTemplateFixed: '{reason}\n\nDone in {commit}.',
-      resolveOnGithub: false,
-      resolveCommitStyle: 'fixup',
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WORKSPACE,
+      overrides: {
+        ...before,
+        replyVoice: 'mine',
+        replyStyleNote: 'Short. Starts lowercase.',
+        replyTemplateFixed: '{reason}\n\nDone in {commit}.',
+        resolveOnGithub: false,
+        resolveCommitStyle: 'fixup',
+      },
     });
     await db.execute('DELETE FROM schema_version WHERE version = 187');
 

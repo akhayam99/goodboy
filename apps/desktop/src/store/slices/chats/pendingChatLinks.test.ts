@@ -13,8 +13,7 @@ const { link } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../features/workspace-chat/activeChatBackend', async () => {
-  const { createMemoryChatBackend } =
-    await import('../../../features/workspace-chat/createMemoryChatBackend');
+  const { createMemoryChatBackend } = await import('../../../test/createMemoryChatBackend');
   const backend = createMemoryChatBackend({ respond: async () => ({ status: 'done' }) });
   return {
     activeChatBackend: {

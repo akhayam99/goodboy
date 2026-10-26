@@ -110,11 +110,6 @@ export const estimateBasis = ({ estimate, key, unit }: Params): string => {
   return `${sized}${missing}Based on ${basisScope({ estimate, key, unit })}, ${WINDOW_NOTE}`;
 };
 
-export const estimateBasisShort = ({ estimate, key, unit }: Params): string =>
-  estimate.size === null
-    ? `based on ${basisScope({ estimate, key, unit })}`
-    : `sized ${estimate.size}, based on ${basisScope({ estimate, key, unit })}`;
-
 type UnknownParams = KeyParams & {
   readonly unit: DurationUnit;
   readonly progress?: EstimateProgress | null;

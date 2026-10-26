@@ -1,7 +1,7 @@
 import { SESSION_TITLE_MAX_LENGTH, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
-import type { SessionRowTitle } from '../../sessionTitle';
+import type { SessionRowTitle } from '../../../../shared/utils/sessionTitle';
 
 type Params = SessionRowTitle & {
   readonly sessionId: SessionId;

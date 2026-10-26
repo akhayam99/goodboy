@@ -11,7 +11,7 @@ import { useEscapeLayer } from '../useEscapeLayer';
 import { Divider } from './Divider';
 import { ScrollFade } from './ScrollFade';
 
-export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
 
 export type DialogSurface = 'floating' | 'screen';
 
@@ -47,6 +47,7 @@ const SIZE: Record<DialogSize, string> = {
   lg: 'w-[44rem]',
   xl: 'w-[56rem]',
   '2xl': 'w-[64rem]',
+  full: 'w-screen',
 };
 
 const MIN_HEIGHT: Record<DialogSize, string> = {
@@ -55,6 +56,7 @@ const MIN_HEIGHT: Record<DialogSize, string> = {
   lg: 'min-h-[28rem]',
   xl: 'min-h-[32rem]',
   '2xl': 'min-h-[34rem]',
+  full: 'min-h-screen',
 };
 
 const SMALL_VIEWPORT = 'max-md:w-screen max-md:h-screen max-md:max-h-screen max-md:max-w-none';
@@ -91,6 +93,15 @@ export const Dialog = ({
   });
 
   const programmaticCloseRef = useRef(false);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  const returnFocus = () => {
+    const opener = openerRef.current;
+    openerRef.current = null;
+    if (opener?.isConnected === true) {
+      opener.focus();
+    }
+  };
 
   useEscapeLayer(() => onCloseRef.current(), open);
 
@@ -110,11 +121,14 @@ export const Dialog = ({
         return;
       }
       onCloseRef.current();
+      returnFocus();
     };
     dialog.addEventListener('close', handleClose);
 
     if (open) {
       if (!dialog.open) {
+        const opener = document.activeElement;
+        openerRef.current = opener instanceof HTMLElement ? opener : null;
         dialog.showModal();
         const target = initialFocusRef?.current;
         if (target) {
@@ -129,6 +143,7 @@ export const Dialog = ({
     } else if (dialog.open) {
       programmaticCloseRef.current = true;
       dialog.close();
+      returnFocus();
     }
 
     return () => {
@@ -136,6 +151,7 @@ export const Dialog = ({
       if (dialog.open) {
         programmaticCloseRef.current = true;
         dialog.close();
+        returnFocus();
       }
     };
   }, [open, initialFocusRef]);
@@ -159,6 +175,7 @@ export const Dialog = ({
       className={cn(
         'overflow-hidden rounded-lg border border-border p-0 text-foreground shadow-lg',
         SURFACE[surface],
+        size === 'full' && 'max-h-none max-w-none rounded-none border-0 shadow-none',
         fullScreenOnSmall &&
           'max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none',
       )}
@@ -166,7 +183,7 @@ export const Dialog = ({
       <div
         className={cn(
           'flex min-h-0 flex-col',
-          fixedHeightClass ?? 'max-h-[85vh]',
+          fixedHeightClass ?? (size === 'full' ? 'h-screen' : 'max-h-[85vh]'),
           fixedHeightClass ? null : MIN_HEIGHT[size],
           SIZE[size],
           fullScreenOnSmall && SMALL_VIEWPORT,
@@ -183,7 +200,7 @@ export const Dialog = ({
                   </h2>
                 ) : null}
                 {description ? (
-                  <p id={descId} className="text-label text-muted-foreground">
+                  <p id={descId} className="text-meta text-muted-foreground">
                     {description}
                   </p>
                 ) : null}

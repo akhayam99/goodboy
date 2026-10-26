@@ -1,5 +1,5 @@
 import type { Session, SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { UNTITLED_BASE } from '../../../../session/sessionTitle';
+import { UNTITLED_BASE } from '../../../../../shared/utils/sessionTitle';
 
 export const SAMPLE_GOAL = 'Fix the login redirect';
 export const SAMPLE_TASK_ID = 'ENG-412';

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,9 +16,11 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
+import { sceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C08_PRESET_RUN_SCENES } from '../../scenes/u25/c08-preset-run';
 import { U25_C07_AUTO_SCENES } from '../../scenes/u25/c07-auto';
 import { U25_B_RESOLVE_FIX_SCENES } from '../../scenes/u25/b-resolve-fix';
@@ -49,8 +52,15 @@ beforeAll(async () => {
   installDemoIpc();
 }, STORE_IMPORT_TIMEOUT_MS);
 
-beforeEach(async () => {
+const resetScene = async (): Promise<void> => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
+};
+
+beforeEach(async () => {
+  await resetScene();
   vi.useFakeTimers({
     toFake: [
       'setTimeout',
@@ -227,7 +237,7 @@ describe('the Orchestrate hints', () => {
     await settle({ ms: 500 });
     expect(tried()).toEqual(['run-approve']);
     await click({ target: element({ selector: '[role="treeitem"][data-tree-id]' }) });
-    expect(store.getState().drawer?.kind).toBe('run-step');
+    expect(store.getState().drawer?.kind).toBe('spawned');
     expect(tried()).toEqual(['run-approve', 'run-step']);
     await click({ target: element({ selector: 'button[aria-label^="Model routing"]' }) });
     await click({ target: button({ name: 'Opus' }) });
@@ -333,7 +343,7 @@ describe('walking Orchestrate and Find work and results', () => {
     const triedIds = [...first.tried()];
     first.engine.dispose();
     cleanup();
-    await resetStoryStore();
+    await resetScene();
     await mount({ Scene: U25_C08_PRESET_RUN_SCENES['c08-run-approval'] });
     act(() => {
       installRunActions({ store });
@@ -383,7 +393,7 @@ describe('walking Orchestrate and Find work and results', () => {
     const triedIds = [...first.tried()];
     first.engine.dispose();
     cleanup();
-    await resetStoryStore();
+    await resetScene();
     await mount({ Scene: ArtifactsLensShellScene });
     act(() => {
       installDemoWorld({ store });
@@ -526,7 +536,7 @@ describe('the Review and ship hints', () => {
     triedIds.push(...first.tried());
     first.engine.dispose();
     cleanup();
-    await resetStoryStore();
+    await resetScene();
     await mount({ Scene: ResolveQueueShellScene });
     withSimulatedSend();
     act(() => {
@@ -585,7 +595,7 @@ describe('the Review and ship hints', () => {
     triedIds.push(...first.tried());
     first.engine.dispose();
     cleanup();
-    await resetStoryStore();
+    await resetScene();
     await mount({ Scene: U25_B_RESOLVE_FIX_SCENES['resolve-fix-ready'] });
     withSimulatedSend();
     act(() => {

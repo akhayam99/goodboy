@@ -24,6 +24,11 @@ export const ScriptRunMeta = ({ status, elapsedMs, branch }: Props) => {
     <p className="flex shrink-0 items-center gap-2 text-meta tabular-nums text-muted-foreground">
       {isRunning ? <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" /> : null}
       <span className="truncate">{facts}</span>
+      {isRunning ? (
+        <span className="min-w-0 flex-1 truncate text-right text-faint-foreground">
+          Output only. Stop ends it.
+        </span>
+      ) : null}
     </p>
   );
 };

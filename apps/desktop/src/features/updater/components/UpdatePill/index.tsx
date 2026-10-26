@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import { openChangelogStudio } from '../../../changelog/changelogStudioEvent';
 import { useUpdateCardState } from '../../hooks/useUpdateCardState';
 import { updatePillLabel } from '../../updateCardCopy';
@@ -35,7 +35,7 @@ export const UpdatePill = ({
           data-update-pill=""
           aria-label={label}
           onClick={toggleUpdateCard}
-          className="flex min-w-0 max-w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn('flex min-w-0 max-w-full rounded-full', FOCUS_RING)}
         >
           <UpdatePillVisual state={state} version={version} />
         </button>

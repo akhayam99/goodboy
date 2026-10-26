@@ -6,14 +6,14 @@ export {
   useSessionHasUnread,
   useSessionLastTurnFinishedAt,
 } from './slices/agents/selectors';
-export { useRunningHere } from './slices/live-work/selectors';
+export { useRunningHere } from './runtime/live-work/selectors';
 export {
   useSessionOpenQuestions,
   useSessionAnsweredQuestions,
   useSessionDismissedQuestions,
 } from './slices/open-questions/selectors';
 export { useSessionPlans } from './slices/plans/selectors';
-export { useSessionPrFetchState } from './slices/github/selectors';
+export { useSessionPrFetchState, useSessionRequestHost } from './slices/github/selectors';
 export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/useMountDiffStats';
 export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
 export {
@@ -23,7 +23,9 @@ export {
   useSessionStages,
   useSessionViewPrefs,
   useStageGroupedSessions,
+  useWorkspaceAttention,
   useWorkspaceRollup,
+  type WorkspaceAttention,
 } from './slices/session-view/selectors';
 export { useDormantSpend } from './slices/dormant-spend/selectors';
 export {
@@ -41,7 +43,12 @@ export {
   useSessions,
   useTelemetryForSessions,
 } from './slices/sessions/selectors';
-export { useHasUnreadElsewhere, useWorkspaceHasUnread } from './slices/sidebar/selectors';
+export {
+  useAttentionElsewhere,
+  useHasUnreadElsewhere,
+  useWorkspaceAttentionEntry,
+  useWorkspaceHasUnread,
+} from './slices/sidebar/selectors';
 export { useSessionSlackDrafts } from './slices/slack-drafts/selectors';
 export {
   useSessionSlots,

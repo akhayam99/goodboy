@@ -1,7 +1,7 @@
 import { useMemo, type RefObject } from 'react';
 import type { WireframeDocument } from '@goodboy/core';
 import type { WireframeArtifact } from '@goodboy/types';
-import { useFrameStage } from '../../useFrameStage';
+import { useFrameStage } from '../../hooks/useFrameStage';
 import { screenPagePath } from '../../wireframePagePath';
 import type { WireframeDiffMarks } from '../../wireframePages/renderWireframeNode';
 import { wireframeStageFiles } from '../../wireframeStageFiles';

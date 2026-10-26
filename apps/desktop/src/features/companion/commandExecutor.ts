@@ -44,7 +44,7 @@ import {
   linearFetchIssue,
   type LinearIssue,
 } from '../integrations/linear/client';
-import { goalFromIssue as linearGoalFromIssue } from '../integrations/linear/goal-from-issue';
+import { goalFromIssue as linearGoalFromIssue } from '../integrations/linear/linearGoalFromIssue';
 import {
   sentryFetchIssue,
   sentryFetchIssues,
@@ -52,7 +52,7 @@ import {
   sentryResolveShortId,
   type SentryIssue,
 } from '../integrations/sentry/client';
-import { goalFromSentry } from '../integrations/sentry/goal-from-sentry';
+import { goalFromSentry } from '../integrations/sentry/goalFromSentry';
 import {
   gitlabFetchAssignedIssues,
   gitlabFetchIssue,
@@ -61,9 +61,9 @@ import {
 } from '../integrations/gitlab/client';
 import { classifyLookupError } from '../integrations/issueCode/classifyLookupError';
 import { parseIssueCode } from '../integrations/issueCode/parseIssueCode';
-import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goal-from-issue';
+import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/gitlabGoalFromIssue';
 import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
-import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
+import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/jiraGoalFromIssue';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 
 export const BRIDGE_PROVIDER_ALLOWLIST = [
@@ -144,6 +144,28 @@ function requireSession(data: Record<string, unknown>): SessionId {
     throw new BridgeSafeError(`unknown session: ${id}`);
   }
   return id as SessionId;
+}
+
+type RequireAgentParams = {
+  readonly data: Record<string, unknown>;
+  readonly sessionId: SessionId;
+};
+
+const MAX_AGENT_ID_LENGTH = 64;
+
+function requireAgent({ data, sessionId }: RequireAgentParams): AgentId | undefined {
+  if (data.agentId === undefined || data.agentId === null) {
+    return undefined;
+  }
+  const id = asString(data.agentId);
+  if (id === undefined || id.length > MAX_AGENT_ID_LENGTH) {
+    throw new BridgeSafeError('invalid agentId');
+  }
+  const runs = useAppStore.getState().sessionPhaseRuns[sessionId] ?? [];
+  if (!runs.some((run) => run.id === id)) {
+    throw new BridgeSafeError(`unknown agent for session: ${id}`);
+  }
+  return id as AgentId;
 }
 
 function coerceAttachments(v: unknown): ReadonlyArray<AttachmentInput> {
@@ -609,7 +631,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         try {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(
-              new CustomEvent('goodboy:open-workflow-builder', {
+              new CustomEvent('goodboy:open-start-run', {
                 detail: { sessionId: session.id },
               }),
             );
@@ -632,7 +654,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (content.trim().length === 0 && attachments.length === 0) {
         throw new BridgeSafeError('send requires content or attachments');
       }
-      const agentId = asString(data.agentId) as AgentId | undefined;
+      const agentId = requireAgent({ data, sessionId });
       const override = coerceOverride(data);
       void store
         .sendTurn({
@@ -713,7 +735,9 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!gate.ok) {
         throw new BridgeSafeError(`merge refused: ${gate.reason}`);
       }
-      await store.mergePr(sessionId, gate.pr.number, gate.method);
+      await store.mergePr(sessionId, gate.pr.number, gate.method, {
+        expectedHeadSha: gate.pr.headSha ?? null,
+      });
       return undefined;
     }
 

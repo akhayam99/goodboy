@@ -68,7 +68,7 @@ export const BranchStartPage = ({
           size="page"
           icon={CONCEPT_ICONS.commits}
           title="No commits on this branch yet"
-          description="Commit on this branch and the pull request form appears here"
+          description="Commit on this branch to start a pull request"
         />
       );
     }

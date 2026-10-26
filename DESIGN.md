@@ -115,7 +115,12 @@ Six rules, written so you can check a diff against them directly.
   one trailing control stays on the row, only when it is the row's own toggle
   and differs from opening it (Run or Stop on a script, Viewed on a diff file,
   the selection box), in a fixed cell at the same x on every row. Nothing
-  appears only on hover (G17, guarded by `no-hover-only-actions.test.ts`).
+  appears only on hover (G17, guarded by `no-hover-only-actions.test.ts`): a
+  hover reveal is allowed when focus, the right click menu or the palette
+  reaches the same verb. The cue is taught three times and never drawn at rest:
+  the first time the pointer enters a list every row shows its cell until the
+  pointer leaves (once per install), the `⋯` tooltip reads "Right click or
+  Shift+F10", and the Shortcuts page says so in its header.
 - **Empty sections collapse.** When a surface is the whole body of where the
   user navigated (a pane, or a wizard step), it shows an `EmptyState`. A
   section inside a composite page shows its header at most, never a
@@ -212,6 +217,12 @@ about its effect is a worse defect than one that reads badly.
 - **Dark by default**, light fully supported, and Match system as a third
   choice that follows the OS. The choice is saved. Settings > App > General
   holds the choice; the palette toggle sets the opposite of what is showing.
+- **More contrast is one switch, not a slider.** `data-contrast="more"` on the
+  root, set by `prefers-contrast: more` or by Settings > App > General > More
+  contrast, moves the soft border to the border value, lifts the hover and
+  selected washes one step, draws idle marks and disabled text at the faint
+  text color and the frame edge at 2:1. It overrides tokens only, in both
+  themes; `more-contrast-tokens.test.ts` holds the floors for each.
 - **The brand mark in the chrome is a bare glyph in `foreground`**: light on
   dark, dark on light, no tile. The black tile belongs to the dock icon, the
   favicon and the site ([docs/brand.md](docs/brand.md)).
@@ -234,7 +245,7 @@ about its effect is a worse defect than one that reads badly.
   as a label.
 - **A row that needs you or went wrong carries a tone bar. A neutral row
   carries no bar: its kind lives in the icon column.** The transcript's
-  status column (`packages/ui/DESIGN-SYSTEM.md` → WorkNode) is where this
+  status column (`packages/ui/design/rail-and-work.md` → WorkNode) is where this
   applies: a small `WorkNode` in the icon slot carries a lifecycle (running,
   done, failed, waiting on your approval, stopped, denied), or a muted type
   icon when the row has none. The bar stays for a Notice, an open question
@@ -247,7 +258,7 @@ about its effect is a worse defect than one that reads badly.
   danger or warning tint never fills a message: `tone-is-a-rail-not-a-fill.test.ts`
   allows it only on chips, small controls and diff cells, and its debt list
   only shrinks. The anatomy and placements live in
-  [packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Notices.
+  [packages/ui/design/feedback.md](packages/ui/design/feedback.md) → Notices.
 
 - **The element is the signal.** A running session shows a moving signal, not a
   spinner placed beside it. On a board card or a sidebar row, its `ToneBar`
@@ -258,7 +269,7 @@ about its effect is a worse defect than one that reads badly.
   confirm each hold at most one filled button. While a header's own confirm is
   open, the header primary steps down to secondary and the confirm holds the
   filled button. A confirm is neutral with a tone line, never a tinted
-  box ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Action
+  box ([packages/ui/design/layout.md](packages/ui/design/layout.md) → Action
   zones).
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
@@ -269,11 +280,20 @@ about its effect is a worse defect than one that reads badly.
 - **A start offers Follow.** An action that starts work or creates something
   elsewhere shows one `info` toast per start, with a past-tense title and a
   `Follow` action that drops when the user already sees the target
-  ([docs/navigation.md](docs/navigation.md#follow-toasts)).
+  ([docs/navigation.md](docs/navigation/model.md#follow-toasts)).
 - **An error lands in the log first.** When something the user asked for did
   not happen, it becomes a notification row (`reportError`) with a title that
   names the action ("Couldn't prune archived transcripts"). The toast is only
   its preview. `showToast` has no error kind.
+- **An error names its way out, or says nothing was lost.** `reportError` takes
+  a `recovery`. With an `action` the row and its toast offer the fix as a
+  button (Retry push, Reconnect GitLab, Open settings, Show in Finder); a
+  retry is a debt, a link is a pointer, as in Needs action. With a `clause` the
+  body ends in one sentence: "Nothing was changed." for a write that did not
+  happen, "Your work is still on the branch." for a push. Say the clause only
+  where the code makes it true, and promise an action only when a test runs
+  it. An error with neither stays a plain log line, which is a defect to fix
+  when the site is touched.
 - **Form errors stay inline, action errors go to the log.** A form the user is
   still looking at (link project, create merge request, confirm notes) keeps
   its error next to its footer. A one-click action reports to the log. No
@@ -285,7 +305,7 @@ about its effect is a worse defect than one that reads badly.
   loaded" hint, or an error state with Retry. Never 0, and never "nothing".
 - **Every action answers twice.** Pending shows at once on the control that
   started it, then the new state shows without a reload, or the failure lands
-  in the log. `packages/ui/DESIGN-SYSTEM.md` → Action feedback has the
+  in the log. `packages/ui/design/feedback.md` → Action feedback has the
   mechanics.
 - **No echo toasts.** A control that already shows its new value (switch,
   select, a field saved on blur) saves silently, like VS Code and Linear
@@ -323,7 +343,7 @@ rule with the exception in Status & signals.
 ### Action zones
 
 Actions sit with the object they affect. The slots that carry each zone are in
-[DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#action-zones).
+[layout.md](./packages/ui/design/layout.md#action-zones).
 
 - **Object actions live on the context row.** The fixed breadcrumb or
   object-title row holds generic object actions (open folder, archive,
@@ -358,11 +378,13 @@ second home for them.
   tile sits on the boot splash's tile.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
-  Never a dead end, never a "start chatting" prompt. An empty Activity shows
-  the shape work will take: a ghost run of three queued nodes (Scout, Plan,
-  Implement), no model and no estimate, because nothing is chosen yet. No tour
-  and no onboarding popup: an empty state teaches every time it is needed and
-  leaves on its own.
+  Never a dead end, never a "start chatting" prompt. An empty board draws the
+  five lanes muted at their normal size, one sentence each, with the single New
+  session button in the first lane. An empty Activity shows the shape work will
+  take: a ghost run of three queued steps (Scout, Planner, Implementer), no
+  model and no estimate, because nothing is chosen yet. No tour and no
+  onboarding popup: an empty state teaches every time it is needed and leaves
+  on its own.
 - **A card in a collection keeps that grammar. The sole occupant of a pane gets
   a header toolbar.** When a record is shown alone, it is a pane, not a card.
   Its lifecycle and destructive actions move up beside the title.
@@ -388,13 +410,23 @@ second home for them.
   and a clear ask. Motion means the machine is working, so animating "waiting
   for you" puts the work on the wrong party. A surface that shimmers for hours
   teaches that its motion means nothing.
-- **One animation, one meaning.** The list of animations is closed. Adding one
-  is a design-system change, not a feature decision.
+- **One animation, one meaning.** The list of animations is closed, and a test
+  fails on a keyframe the Motion registry does not name. Adding one is a
+  design-system change, not a feature decision. Time is closed too: three
+  durations and two curves, no other value.
 - **Loading is a skeleton. Running is a moving border. Spinners are forbidden.**
   No `Loader2`, `LoaderCircle` or `animate-spin` anywhere in the app or in
   `packages/ui`. `no-token-bypass.test.ts` enforces that in CI. The skeleton
   copies the real layout and is part of the component. If you change the
-  layout, update the skeleton in the same change.
+  layout, update the skeleton in the same change. The word "Loading" lives in
+  the `aria-label` of the skeleton, never on screen as text;
+  `loading-is-a-skeleton.test.ts` counts it. The skeleton fill is the
+  `skeleton` token (10% white in dark, 8% black in light), one step above
+  `fill` so it shows on every surface.
+- **Disabled is one string.** `DISABLED` from `@goodboy/ui` (the
+  `disabled-foreground` label and a not-allowed cursor) styles a disabled
+  control. Opacity steps are not a disabled state: `disabled-opacity.test.ts`
+  holds a baseline that only falls.
 
 ## Accessibility
 
@@ -402,6 +434,22 @@ second home for them.
   element with the keyboard, and it shows a visible `focus-visible` ring.
 - Color is never the only carrier of meaning. Pair it with an icon, a word, or
   a shape.
+
+### What a screen reader hears
+
+- **One polite live region for the whole app** (`AnnouncementRegion`, fed
+  through `announce`). Nothing else on screen is a live region: a list that
+  grows, such as the transcript, is never `aria-live`, so a screen reader does
+  not read every tool row as it lands.
+- **A finished turn is one sentence**, `Turn finished: ` plus the turn's
+  summary line and its error count, said once when the turn on screen stops.
+  Opening a finished transcript says nothing.
+- **A session that starts to need you is announced once**, with its title and
+  the reason (`<title> needs you: <reason>`). A session that already needed you
+  at launch, or a workspace you switch to, stays quiet.
+- A new announcement replaces the last one; a sentence is short enough to hear
+  whole. Not yet tried with a screen reader: the policy is held by
+  `useTurnEndAnnouncement.test.tsx` and `useNeedsYouAnnouncement.test.tsx`.
 
 Every pixel is intentional: if it carries no meaning, cut it.
 

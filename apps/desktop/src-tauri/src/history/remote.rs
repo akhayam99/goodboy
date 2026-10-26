@@ -100,7 +100,7 @@ pub async fn history_origin_ahead(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         origin_ahead(
             &cwd,
             &branch,
@@ -132,7 +132,7 @@ pub(crate) fn remote_lease(
 ) -> RemoteLease {
     let reference = format!("refs/heads/{branch}");
     let cwd_text = cwd.to_string_lossy().to_string();
-    let run = match crate::github::run_git_authenticated(
+    let run = match crate::remote_auth::run_git_authenticated(
         &["ls-remote", "origin", &reference],
         &cwd_text,
         token,
@@ -186,7 +186,7 @@ pub async fn history_remote_lease(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref())?;
         Ok(remote_lease(
             &cwd,
             &branch,

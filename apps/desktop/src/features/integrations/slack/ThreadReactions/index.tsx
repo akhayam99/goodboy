@@ -1,4 +1,4 @@
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SlackReaction } from '../client';
 import type { SlackReactionPick } from '../useSlackThreadActions';
 import { QUICK_REACTIONS, reactionEmoji } from './quickReactions';
@@ -25,8 +25,10 @@ const blockReason = ({ canReact, isWriting }: ReasonParams): string | null => {
   return null;
 };
 
-const PILL =
-  'inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const PILL = cn(
+  'inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:opacity-50',
+  FOCUS_RING,
+);
 
 const QUICK_ROW = 'flex items-center gap-1';
 

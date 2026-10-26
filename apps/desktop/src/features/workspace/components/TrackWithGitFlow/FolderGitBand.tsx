@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { Band } from '@goodboy/ui';
+import { Band, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/utils/names';
 import { FolderGitCard } from './FolderGitCard';
 import { folderGitCardIds } from './folderGitCardIds';
 import type { FolderGitRow } from './folderGitRowOf';

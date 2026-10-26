@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
-import { Chip, Listbox } from '@goodboy/ui';
+import { Chip, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
-import { ICON_SIZE } from '../conceptIcons';
+
 import { projectPickerOptions } from './projectPickerOptions';
 
 type Props = {
@@ -59,7 +59,6 @@ export const ProjectPicker = ({
               key={project.id}
               as="button"
               tone="neutral"
-              shape="badge"
               kind="reference"
               label={project.name}
               ariaLabel={`Remove ${project.name}`}

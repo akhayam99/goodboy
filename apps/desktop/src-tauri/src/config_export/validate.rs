@@ -1,4 +1,4 @@
-use crate::config_export::bundle::ConfigBundle;
+use crate::config_export::bundle::{ConfigBundle, PermissionRuleBundle};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -7,7 +7,18 @@ pub struct ValidationError {
     pub message: String,
 }
 
-pub(super) fn validate_bundle(bundle: &ConfigBundle) -> Vec<ValidationError> {
+pub(super) fn is_wildcard_allow(rule: &PermissionRuleBundle) -> bool {
+    if rule.decision != "allow" {
+        return false;
+    }
+    let matcher = rule.pattern_args_matcher.as_deref().unwrap_or("").trim();
+    rule.pattern_tool.contains('*') || matcher.is_empty() || matcher.contains('*')
+}
+
+pub(super) fn validate_bundle(
+    bundle: &ConfigBundle,
+    accept_wildcard_allow: bool,
+) -> Vec<ValidationError> {
     let mut errors: Vec<ValidationError> = Vec::new();
     for (i, w) in bundle.workspaces.iter().enumerate() {
         if w.id.trim().is_empty() {
@@ -34,6 +45,15 @@ pub(super) fn validate_bundle(bundle: &ConfigBundle) -> Vec<ValidationError> {
             errors.push(ValidationError {
                 field: format!("permissionRules[{i}].decision"),
                 message: format!("invalid decision '{}'", r.decision),
+            });
+        }
+        if !accept_wildcard_allow && is_wildcard_allow(r) {
+            errors.push(ValidationError {
+                field: format!("permissionRules[{i}].decision"),
+                message: format!(
+                    "wildcard allow rule for '{}' needs its own consent",
+                    r.pattern_tool
+                ),
             });
         }
     }

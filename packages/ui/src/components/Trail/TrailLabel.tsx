@@ -14,7 +14,7 @@ export const TrailLabel = ({ label, isCurrent, isIconOnly, delayStyle }: Props) 
     style={delayStyle}
     className={cn(
       'grid min-w-0 overflow-hidden',
-      'motion-safe:transition-[grid-template-columns] motion-safe:duration-220 motion-safe:ease-[cubic-bezier(0.2,0,0,1)]',
+      'motion-safe:transition-[grid-template-columns] motion-safe:duration-200 motion-safe:ease-enter',
       isIconOnly ? 'grid-cols-[0fr]' : 'grid-cols-[1fr]',
     )}
   >

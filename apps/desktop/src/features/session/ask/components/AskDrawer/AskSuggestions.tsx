@@ -1,5 +1,5 @@
-import { Eyebrow, ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { cn, Eyebrow, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly suggestions: ReadonlyArray<string>;

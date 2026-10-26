@@ -26,7 +26,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
   return (
     <div className="flex flex-col gap-2">
       {draft.found === null ? null : (
-        <p className="flex items-center gap-1 text-label text-muted-foreground">
+        <p className="flex items-center gap-1 text-meta text-muted-foreground">
           <FoundIcon size={ICON_SIZE.row} aria-hidden className="text-primary" />
           Found {repositories} in {draft.found.parentName}.
         </p>

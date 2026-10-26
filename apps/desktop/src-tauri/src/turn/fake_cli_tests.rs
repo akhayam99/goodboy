@@ -45,7 +45,7 @@ impl Drop for ParentEnv {
 const WAIT: Duration = Duration::from_secs(30);
 
 #[derive(Clone)]
-struct Recorder(Arc<Mutex<Sender<(String, Value)>>>);
+pub(super) struct Recorder(Arc<Mutex<Sender<(String, Value)>>>);
 
 impl TurnEmitter for Recorder {
     fn emit_turn<S: Serialize + Clone>(&self, event: &str, payload: S) {
@@ -54,16 +54,16 @@ impl TurnEmitter for Recorder {
     }
 }
 
-struct Run {
-    fake: FakeCli,
-    registry: TurnRegistry,
-    leases: crate::worktree_writer::WriterLeases,
-    recorder: Recorder,
-    events: Receiver<(String, Value)>,
+pub(super) struct Run {
+    pub(super) fake: FakeCli,
+    pub(super) registry: TurnRegistry,
+    pub(super) leases: crate::worktree_writer::WriterLeases,
+    pub(super) recorder: Recorder,
+    pub(super) events: Receiver<(String, Value)>,
 }
 
 impl Run {
-    fn new(mode: &str) -> Self {
+    pub(super) fn new(mode: &str) -> Self {
         let (sender, events) = channel();
         Self {
             fake: FakeCli::stage(mode),
@@ -159,7 +159,7 @@ impl Run {
         }
     }
 
-    fn turn_events_until_end(&self) -> Vec<Value> {
+    pub(super) fn turn_events_until_end(&self) -> Vec<Value> {
         let mut collected = Vec::new();
         loop {
             let (name, value) = self.next("the end of the turn");
@@ -234,7 +234,8 @@ fn env_of(run: &Run, key: &str) -> String {
         .to_string()
 }
 
-const PROMPT: &str = "summarize the Harborline release notes, \"quoted\" $HOME `id` ; done";
+pub(super) const PROMPT: &str =
+    "summarize the Harborline release notes, \"quoted\" $HOME `id` ; done";
 
 fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
     let empty: Vec<String> = Vec::new();
@@ -314,7 +315,11 @@ fn claude_recorded_stream_reaches_the_sink_with_stream_json_flags() {
         .unwrap();
     assert_eq!(argv[format + 1], "stream-json");
     assert!(argv.contains(&"--verbose".to_string()));
-    assert!(argv.contains(&PROMPT.to_string()));
+    assert!(!argv.iter().any(|arg| arg.contains("Harborline")));
+    assert_eq!(
+        run.fake.work_file("fake-cli-stdin.txt").as_deref(),
+        Some(PROMPT)
+    );
     assert!(argv.contains(&"--include-partial-messages".to_string()));
 }
 
@@ -325,8 +330,12 @@ fn codex_recorded_stream_reaches_the_sink_with_exec_json_flags() {
     assert_eq!(&argv[..3], ["exec", "--json", "--skip-git-repo-check"]);
     let cd = argv.iter().position(|arg| arg == "--cd").unwrap();
     assert_eq!(argv[cd + 1], run.fake.work_dir());
-    assert_eq!(argv[argv.len() - 2], "--");
-    assert_eq!(argv[argv.len() - 1], PROMPT);
+    assert_eq!(argv[argv.len() - 1], "-");
+    assert!(!argv.iter().any(|arg| arg.contains("Harborline")));
+    assert_eq!(
+        run.fake.work_file("fake-cli-stdin.txt").as_deref(),
+        Some(PROMPT)
+    );
 }
 
 #[test]
@@ -678,7 +687,7 @@ fn a_read_only_turn_spawns_every_cli_with_its_read_only_posture() {
 
         let argv = argv_of(&run);
 
-        let found = read_only_violations(Cli::of_binary(binary), Job::Turn, &argv);
+        let found = read_only_violations(Cli::of_binary(binary).unwrap(), Job::Turn, &argv);
         assert!(found.is_empty(), "{binary}: {found:?} in {argv:?}");
     }
 }
@@ -711,16 +720,15 @@ fn cursor_asks_for_workspace_trust_only_when_it_does_not_force() {
         .unwrap();
     read_only.turn_events_until_end();
 
-    let plan_argv = argv_of(&read_only);
+    let trusted = argv_of(&read_only);
     assert_eq!(
-        plan_argv
+        trusted
             .iter()
             .filter(|arg| arg.as_str() == "--trust")
             .count(),
-        1,
-        "{plan_argv:?}"
+        1
     );
-    assert!(!plan_argv.contains(&"--force".to_string()));
+    assert!(!trusted.contains(&"--force".to_string()));
     assert!(!argv_of(&full).contains(&"--trust".to_string()));
 }
 

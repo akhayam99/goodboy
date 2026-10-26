@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { ExternalLink, WrapText } from 'lucide-react';
+import { SquareArrowOutUpRight, WrapText } from 'lucide-react';
 import {
   Button,
   DrawerFrame,
+  ICON_SIZE,
   IconButton,
   SegmentedTabs,
   Tooltip,
@@ -13,7 +14,7 @@ import { exploreFileTargetOf } from '../exploreFileTarget';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ExploreEntry } from '../explore';
 import type { ExploreOpenFailure } from '../openFailure';
 import { fileGlyphOf } from '../fileGlyph';
@@ -135,7 +136,7 @@ export const ExploreFileDrawer = ({
           <Tooltip content={openAction.tooltip}>
             <Button size="sm" variant="secondary" onClick={open}>
               {openAction.editor === null ? (
-                <ExternalLink size={ICON_SIZE.row} aria-hidden />
+                <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
               ) : (
                 <CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />
               )}

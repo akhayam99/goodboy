@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { runWithConcurrency } from '../../../shared/lib/concurrency';
+import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import { readRepoDivergence } from './readRepoDivergence';
 import { workspaceReposOf } from './workspaceReposOf';
 import type { CheckOutcome, GetFn, SetFn } from './types';
@@ -34,10 +34,9 @@ export const checkRepoDivergence = (set: SetFn, get: GetFn) => {
     }
     setInFlight({ set, workspaceId, isInFlight: true });
     try {
-      await runWithConcurrency({
-        items: projects,
+      await runWithLimit({
+        tasks: projects.map((project) => () => readRepoDivergence({ set, get, project, maxAgeMs })),
         limit: CHECK_CONCURRENCY,
-        run: (project) => readRepoDivergence({ set, get, project, maxAgeMs }),
       });
       set((state) => ({ repoCheckedAt: { ...state.repoCheckedAt, [workspaceId]: Date.now() } }));
     } finally {

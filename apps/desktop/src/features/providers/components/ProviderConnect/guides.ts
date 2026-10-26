@@ -31,7 +31,7 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
       },
       {
         title: 'If it asks for your password',
-        body: 'A global npm install can need sudo when node is not managed by nvm or a similar tool. Click in the terminal and type your password, the prompt accepts input directly.',
+        body: "A global npm install can need sudo when node isn't managed by nvm or a similar tool. Click in the terminal and type your password, the prompt accepts input directly.",
       },
       {
         title: 'After install',
@@ -47,11 +47,11 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     steps: [
       {
         title: 'Curl + bash installer',
-        body: 'Cursor is not on npm. The official script downloads the right binary for your OS and drops it into `~/.local/bin` (or equivalent).',
+        body: "Cursor isn't on npm. The official script downloads the right binary for your OS and drops it into `~/.local/bin` (or equivalent).",
       },
       {
         title: 'PATH check',
-        body: 'After install, restart Goodboy if `cursor-agent` does not show up. Some shells need a new session before the new PATH takes effect.',
+        body: "After install, restart Goodboy if `cursor-agent` doesn't show up. Some shells need a new session before the new PATH takes effect.",
       },
       {
         title: 'Then sign in',
@@ -91,11 +91,11 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
       },
       {
         title: 'PATH check',
-        body: 'After install, restart Goodboy if `agy` does not show up. Some shells need a new session before the new PATH takes effect.',
+        body: "After install, restart Goodboy if `agy` doesn't show up. Some shells need a new session before the new PATH takes effect.",
       },
       {
         title: 'Then connect it outside Goodboy',
-        body: 'Antigravity ships no auth subcommand, so Goodboy cannot sign you in. Sign in from the Antigravity app, or set a Gemini API key as a credential.',
+        body: "Antigravity ships no auth subcommand, so Goodboy can't sign you in. Sign in from the Antigravity app, or set a Gemini API key as a credential.",
       },
     ],
     docsUrl: GEMINI_DOCS,

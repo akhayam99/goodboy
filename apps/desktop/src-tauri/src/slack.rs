@@ -15,7 +15,7 @@ use crate::util::{epoch_secs_to_datetime, percent_encode};
 integration_credentials::token_cache!(SlackTokenCache);
 
 const API_BASE: &str = "https://slack.com/api";
-const MAX_PAGES: u32 = 20;
+use crate::util::limits::MAX_PAGES;
 const PAGE_LEN: u32 = 200;
 
 const AUTH_HINT: &str = "slack rejected the token. goodboy signs every call with the user token you pasted as a bearer token, so it has to start with xoxp- and belong to an app installed in this workspace. check that the app grants channels:read, channels:history, users:read, chat:write and reactions:write under user token scopes";
@@ -441,7 +441,7 @@ fn read_token(
     project_id: Option<&str>,
     cache: &SlackTokenCache,
 ) -> Result<String, SlackError> {
-    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, &cache.0)?
+    integration_credentials::read_for_binding(PROVIDER, workspace_id, project_id, cache.0)?
         .ok_or_else(|| SlackError::NoToken(workspace_id.to_string()))
 }
 
@@ -861,7 +861,7 @@ pub async fn slack_validate_connection(
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackConnection, SlackError> {
     let user_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, cache.0)?;
     reject_bot_token(&user_token)?;
     validate_connection(API_BASE, &user_token).await
 }
@@ -873,8 +873,8 @@ pub async fn slack_connect(
     cache: State<'_, SlackTokenCache>,
 ) -> Result<(), SlackError> {
     let user_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &user_token, &cache.0)?;
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, cache.0)?;
+    integration_credentials::store_secret(&credential_id, &user_token, cache.0)?;
     Ok(())
 }
 

@@ -62,7 +62,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
       {open && docked !== null ? (
         <ConversationThread thread={docked} onOpenUrl={(url) => void openUrl(url)} />
       ) : entry.label === '' ? null : (
-        <span className="text-label text-foreground">{entry.label}</span>
+        <span className="text-meta text-foreground">{entry.label}</span>
       )}
     </div>
   );

@@ -2,14 +2,17 @@ import type { MountId, SessionEvent, SessionId } from '@goodboy/types';
 import { rebaseStatusTargetsOf } from '../../../features/history/behindBranchesOf';
 import { isRebaseStopSettled } from '../../../features/history/isRebaseStopSettled';
 import type { HistoryRun } from '../history/types';
-import { readWorktreeStatusRead, type WorktreeStatusRead } from '../worktreeStatuses/cache';
+import {
+  readWorktreeStatusRead,
+  type WorktreeStatusRead,
+} from '../../runtime/worktreeStatuses/cache';
 import type { GetFn, RebaseAllBranch, RebaseAllRun, SetFn, SettleStaleRebasesInput } from './types';
 
 type Reads = ReadonlyMap<string, WorktreeStatusRead>;
 
 const SETTLED_REASONS: ReadonlySet<string> = new Set(['conflict', 'hook', 'failed']);
 
-const NO_STOPS: ReadonlyArray<string> = [];
+const NO_STOPS: ReadonlySet<string> = new Set();
 
 type RunHeadParams = {
   readonly run: HistoryRun | undefined;
@@ -91,6 +94,16 @@ const isSettledStop = ({ event, reads }: EventParams): boolean => {
   );
 };
 
+type PresentParams = {
+  readonly known: ReadonlySet<string>;
+  readonly events: ReadonlyArray<SessionEvent>;
+};
+
+const stillPresent = ({ known, events }: PresentParams): ReadonlyArray<string> => {
+  const present = new Set<string>(events.map((event) => event.id));
+  return [...known].filter((id) => present.has(id));
+};
+
 export const settleStaleRebases = (set: SetFn, get: GetFn) => {
   return ({ sessionId }: SettleStaleRebasesInput): void => {
     const state = get();
@@ -116,12 +129,13 @@ export const settleStaleRebases = (set: SetFn, get: GetFn) => {
         historyRuns: current.historyRuns,
         reads,
       });
-      const known = current.settledRebaseStops[sessionId] ?? NO_STOPS;
-      const fresh = (current.sessionEvents?.[sessionId] ?? [])
-        .filter((event) => !known.includes(event.id) && isSettledStop({ event, reads }))
+      const known = new Set(current.settledRebaseStops[sessionId] ?? NO_STOPS);
+      const events = current.sessionEvents?.[sessionId] ?? [];
+      const fresh = events
+        .filter((event) => !known.has(event.id) && isSettledStop({ event, reads }))
         .map((event) => event.id);
       if (staleMounts.length === 0 && batch === null && fresh.length === 0) {
-        return {};
+        return current;
       }
       const historyRuns: Record<MountId, HistoryRun> = {};
       for (const run of Object.values(current.historyRuns)) {
@@ -135,7 +149,10 @@ export const settleStaleRebases = (set: SetFn, get: GetFn) => {
           rebaseAllRuns: { ...current.rebaseAllRuns, [sessionId]: batch },
         }),
         ...(fresh.length > 0 && {
-          settledRebaseStops: { ...current.settledRebaseStops, [sessionId]: [...known, ...fresh] },
+          settledRebaseStops: {
+            ...current.settledRebaseStops,
+            [sessionId]: [...stillPresent({ known, events }), ...fresh],
+          },
         }),
       };
     });

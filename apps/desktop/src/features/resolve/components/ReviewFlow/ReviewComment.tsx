@@ -1,12 +1,12 @@
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Chip, Markdown, SectionHeader, Tooltip } from '@goodboy/ui';
+import { Chip, ICON_SIZE, Markdown, SectionHeader, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
-import { PromptField } from '../../../../shared/components/PromptField';
+import { CommentComposer } from '../../../../shared/components/CommentComposer';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import {
   PARTIAL_ACCEPTANCE,
   PARTIAL_REFUSAL,
@@ -76,19 +76,6 @@ const HINT_OPTIONAL: ReadonlySet<ReviewCompose['mode']> = new Set([
   'fixAnyway',
   'rewrite',
 ]);
-
-const isComposeBlocked = ({ compose }: { readonly compose: ReviewCompose }): boolean =>
-  !HINT_OPTIONAL.has(compose.mode) && compose.text.trim() === '';
-
-const onCancelKey =
-  ({ onCancel }: { readonly onCancel: () => void }) =>
-  (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      onCancel();
-    }
-  };
 
 export const ReviewComment = ({
   sessionId,
@@ -322,7 +309,10 @@ export const ReviewComment = ({
                 <button
                   type="button"
                   onClick={() => onSelect(member.threadId)}
-                  className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  className={cn(
+                    'block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline',
+                    FOCUS_RING,
+                  )}
                 >
                   {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
                 </button>
@@ -348,47 +338,35 @@ export const ReviewComment = ({
             headingLevel={2}
             meta={
               state === 'edited' ? (
-                <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.edited} />
+                <Chip kind="state" tone="neutral" label={REVIEW_FLOW_LABEL.edited} />
               ) : state === 'replied' && canResolve && isResolveOnly({ row }) ? (
-                <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.resolveOnly} />
+                <Chip kind="state" tone="neutral" label={REVIEW_FLOW_LABEL.resolveOnly} />
               ) : undefined
             }
           />
           {isEditingReply ? (
-            <div className="flex min-w-0 flex-col gap-2">
-              <PromptField
-                kind="document"
-                label={REVIEW_FLOW_LABEL.editReply}
-                value={replyText}
-                autoFocus
-                hasPreview
-                hasChangedKeys
-                minRows={3}
-                maxRows={12}
-                onChange={setReplyText}
-                onSubmit={saveReply}
-                keyLabels={{ send: 'save' }}
-                onKeyDown={onCancelKey({ onCancel: onReplyDone })}
-              />
-              <div className="flex items-center justify-end gap-2">
-                <span className="mr-auto text-meta text-faint-foreground">
-                  {REVIEW_FLOW_LABEL.keysHint}
-                </span>
-                <Button size="sm" variant="ghost" onClick={onReplyDone}>
-                  {REVIEW_FLOW_LABEL.cancel}
-                </Button>
-                <Button size="sm" variant="primary" onClick={saveReply}>
-                  {REVIEW_FLOW_LABEL.saveReply}
-                </Button>
-              </div>
-            </div>
+            <CommentComposer
+              label={REVIEW_FLOW_LABEL.editReply}
+              submitLabel={REVIEW_FLOW_LABEL.saveReply}
+              cancelLabel={REVIEW_FLOW_LABEL.cancel}
+              value={replyText}
+              onChange={setReplyText}
+              onSubmit={saveReply}
+              onCancel={onReplyDone}
+              isEmptyAllowed
+              error={error}
+            />
           ) : canEditReply ? (
             <Tooltip content={REVIEW_FLOW_LABEL.editReply} anchorClassName="block min-w-0">
               <button
                 type="button"
                 onClick={startEdit}
                 aria-label={REVIEW_FLOW_LABEL.editReply}
-                className="-mx-2 block w-[calc(100%+1rem)] rounded-md px-2 py-1 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
+                className={cn(
+                  '-mx-2 block w-[calc(100%+1rem)] rounded-md px-2 py-1 text-left hover:bg-hover',
+                  FOCUS_RING,
+                  'motion-safe:transition-colors',
+                )}
               >
                 <Markdown text={reply} variant="preview" className="text-body text-foreground" />
               </button>
@@ -449,47 +427,21 @@ export const ReviewComment = ({
       {compose !== null && composeCopy !== null ? (
         <div className="flex min-w-0 flex-col gap-2">
           <SectionHeader label={composeCopy.label} headingLevel={2} />
-          <PromptField
-            kind="document"
+          <CommentComposer
             label={composeCopy.label}
             placeholder={composeCopy.placeholder}
+            submitLabel={composeCopy.submit}
+            cancelLabel={REVIEW_FLOW_LABEL.cancel}
             value={compose.text}
-            autoFocus
-            hasPreview
-            hasChangedKeys
-            minRows={3}
-            maxRows={12}
-            disabled={isSubmitting}
             onChange={onComposeChange}
             onSubmit={onComposeSubmit}
-            keyLabels={{ send: 'send' }}
-            isSubmitBlocked={isComposeBlocked({ compose })}
-            onKeyDown={onCancelKey({ onCancel: onComposeCancel })}
+            onCancel={onComposeCancel}
+            isEmptyAllowed={HINT_OPTIONAL.has(compose.mode)}
+            isBusy={isSubmitting}
+            error={error}
           />
-          <div className="flex items-center justify-end gap-2">
-            <span className="mr-auto text-meta text-faint-foreground">
-              {REVIEW_FLOW_LABEL.keysHint}
-            </span>
-            <Button size="sm" variant="ghost" disabled={isSubmitting} onClick={onComposeCancel}>
-              {REVIEW_FLOW_LABEL.cancel}
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              isBusy={isSubmitting}
-              disabled={isComposeBlocked({ compose })}
-              onClick={onComposeSubmit}
-            >
-              {composeCopy.submit}
-            </Button>
-          </div>
         </div>
       ) : null}
-      {error !== null && (compose !== null || isEditingReply) && (
-        <p role="alert" className="text-meta text-danger">
-          {error}
-        </p>
-      )}
     </article>
   );
 };

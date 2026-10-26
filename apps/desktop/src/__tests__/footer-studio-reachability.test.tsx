@@ -139,6 +139,12 @@ vi.mock('../shared/components/Toast', () => ({
 vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
+vi.mock('../app/components/NeedsYouAnnouncementBridge', () => ({
+  NeedsYouAnnouncementBridge: () => null,
+}));
+vi.mock('../features/notifications/components/AwayAlertsBridge', () => ({
+  AwayAlertsBridge: () => null,
+}));
 vi.mock('../features/session/components/NewSessionBridge', () => ({
   NewSessionBridge: () => null,
 }));
@@ -191,7 +197,7 @@ vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: ()
 vi.mock('../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
-vi.mock('../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
+vi.mock('../features/onboarding/onboardingSettings', () => ({ markStepComplete: vi.fn() }));
 vi.mock('../shared/lib/zoom', () => ({
   applyStoredZoom: vi.fn(async () => undefined),
   zoomIn: vi.fn(async () => undefined),

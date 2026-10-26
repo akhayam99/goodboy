@@ -177,8 +177,9 @@ describe('sendTurn keeps the executed combo across a retry', () => {
     expect(spawnedModels()).toEqual(['composer-2.5-fast', 'composer-2.5-fast']);
   });
 
-  it('repeats the fast combo when the usage limit retry fires', async () => {
+  it('repeats the fast combo when the continue after a usage limit fires', async () => {
     setup();
+    useAppStore.setState({ limitStops: {} });
     const scheduled: Array<() => void> = [];
     const timerSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation(((
       handler: () => void,
@@ -198,6 +199,13 @@ describe('sendTurn keeps the executed combo across a retry', () => {
         override: FAST_OVERRIDE,
       }),
     ).rejects.toThrow('usage limit');
+
+    expect(scheduled).toHaveLength(0);
+    const [stop] = Object.values(useAppStore.getState().limitStops);
+    if (stop === undefined) {
+      throw new Error('expected a limit stop');
+    }
+    useAppStore.getState().continueAfterLimit({ runId: stop.runId });
     timerSpy.mockRestore();
 
     expect(scheduled).toHaveLength(1);

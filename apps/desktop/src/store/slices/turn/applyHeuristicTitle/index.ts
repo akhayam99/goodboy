@@ -1,4 +1,4 @@
-import { selectTaskModel } from '../../models/selectTaskModel';
+import { selectTaskModel } from '../../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../../providerLimits/runHelperTask';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
@@ -8,7 +8,6 @@ import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristi
 import { parseGeneratedTitle } from './parseGeneratedTitle';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
-import { selectResolvedSettings } from '../../overrides/selectResolvedSettings';
 import { sessionById } from '../../sessions/sessionIndex';
 
 const TITLE_TIMEOUT_MS = 15_000;

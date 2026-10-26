@@ -1,6 +1,6 @@
 import { cn } from '@goodboy/ui';
 import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
-import type { WordSegment } from '../../wordDiff';
+import type { WordSegment } from '../../wordSegments';
 
 export const SourceChangeLine = ({
   kind,

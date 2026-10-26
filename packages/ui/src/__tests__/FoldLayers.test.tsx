@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import { FoldLayers } from '../components/FoldLayers';
-import { FOLD_MS } from '../motionTimings';
+import { DURATION_BASE_MS } from '../motionTimings';
 
 const layOut = (width: number) => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -93,7 +93,7 @@ describe('FoldLayers folding', () => {
     expect(openLayer()?.hasAttribute('inert')).toBe(true);
     expect(foldedLayer()?.hasAttribute('aria-hidden')).toBe(false);
 
-    advance(FOLD_MS - 1);
+    advance(DURATION_BASE_MS - 1);
     expect(openLayer()).not.toBeNull();
 
     advance(1);
@@ -111,7 +111,7 @@ describe('FoldLayers folding', () => {
     expect(foldedLayer()?.getAttribute('aria-hidden')).toBe('true');
     expect(foldedLayer()?.hasAttribute('inert')).toBe(true);
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
     expect(frame()?.dataset.fold).toBe('open');
     expect(foldedLayer()).toBeNull();
     expect(openLayer()?.className).not.toContain('animate-fold-label-in');
@@ -125,7 +125,7 @@ describe('FoldLayers folding', () => {
 
     expect(frame()?.dataset.fold).toBe('unfolding');
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
     expect(frame()?.dataset.fold).toBe('open');
   });
 

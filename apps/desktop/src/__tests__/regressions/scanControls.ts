@@ -43,6 +43,34 @@ export const productSources = (): ReadonlyArray<SourceFile> =>
     }))
     .sort((left, right) => left.path.localeCompare(right.path));
 
+const walkAll = (directory: string): ReadonlyArray<string> => {
+  if (!existsSync(directory)) {
+    return [];
+  }
+  return readdirSync(directory).flatMap((entry) => {
+    if (['node_modules', 'dist', 'target', 'gen'].includes(entry)) {
+      return [];
+    }
+    const full = join(directory, entry);
+    return statSync(full).isDirectory() ? walkAll(full) : [full];
+  });
+};
+
+export const testSources = (): ReadonlyArray<SourceFile> =>
+  [
+    join(REPO_ROOT, 'apps', 'desktop', 'src'),
+    ...readdirSync(join(REPO_ROOT, 'packages')).map((name) =>
+      join(REPO_ROOT, 'packages', name, 'src'),
+    ),
+  ]
+    .flatMap(walkAll)
+    .filter((full) => /\.test\.tsx?$/.test(full))
+    .map((full) => ({
+      path: relative(REPO_ROOT, full).split(sep).join('/'),
+      text: readFileSync(full, 'utf8'),
+    }))
+    .sort((left, right) => left.path.localeCompare(right.path));
+
 type TagParams = {
   readonly text: string;
   readonly name: string;

@@ -1,11 +1,19 @@
-import { ROW_INTERACTIVE, cn, tintClasses, InlineMarkdown, type Tone } from '@goodboy/ui';
+import {
+  cn,
+  ICON_SIZE,
+  InlineMarkdown,
+  ROW_INTERACTIVE,
+  tintClasses,
+  type Tone,
+} from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../../store';
 import {
   ATTENTION_REASON_META,
   attentionWordsOf,
 } from '../../../../features/session/session-stage';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type SelectParams = {
   readonly sessionId: SessionId;
@@ -63,8 +71,8 @@ export const NeedsYouSessionRow = ({
         />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <InlineMarkdown
-            text={session.goal}
-            className="truncate text-label font-medium text-foreground"
+            text={sessionTitle({ session })}
+            className="truncate text-meta font-medium text-foreground"
           />
           <span className="truncate text-meta text-muted-foreground">{words}</span>
         </span>

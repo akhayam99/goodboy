@@ -56,7 +56,7 @@ afterEach(cleanup);
 
 const fireBuilder = ({ detail }: { readonly detail: Readonly<Record<string, string>> }) => {
   act(() => {
-    window.dispatchEvent(new CustomEvent('goodboy:open-workflow-builder', { detail }));
+    window.dispatchEvent(new CustomEvent('goodboy:open-start-run', { detail }));
   });
 };
 

@@ -1,56 +1,56 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import type { HostFailureKind } from '../../../shared/lib/hostFailure';
+import { HOST_FAILURE_KINDS } from '../../../shared/lib/testing/hostFailureKinds';
 import { CommandError } from '../../../shared/lib/invokeCommand';
-import { classifyGitlabFailure, gitlabFailureOf } from './classifyGitlabFailure';
+import { gitlabFailureOf } from './classifyGitlabFailure';
 
-describe('classifyGitlabFailure', () => {
-  it.each([
-    [401, 'bad_credentials'],
-    [403, 'denied'],
-    [429, 'rate_limited'],
-    [0, 'network'],
-    [404, 'failed'],
-    [422, 'failed'],
-    [500, 'failed'],
-    [502, 'failed'],
-  ] as const)('reads status %s as %s', (status, kind) => {
-    expect(classifyGitlabFailure({ status, body: '' })).toBe(kind);
+const failing = ({
+  kind,
+  status,
+  detail,
+}: {
+  readonly kind: HostFailureKind;
+  readonly status: number | null;
+  readonly detail: string | null;
+}): CommandError =>
+  new CommandError({
+    kind: 'http',
+    message: `http error ${status}: ${detail}`,
+    failure: { kind, status, retryAfterSeconds: null, detail },
   });
-
-  it('reads an unknown status as failed and never guesses from the text', () => {
-    expect(classifyGitlabFailure({ status: null, body: '403 Forbidden' })).toBe('failed');
-    expect(classifyGitlabFailure({ status: 500, body: 'rate limit exceeded' })).toBe('failed');
-    expect(classifyGitlabFailure({ status: null, body: 'something odd' })).toBe('failed');
-  });
-});
 
 describe('gitlabFailureOf', () => {
-  it.each([
-    ['http', 'http error 403: {"message":"403 Forbidden"}', 403, '{"message":"403 Forbidden"}'],
-    ['http', 'http error 401: 401 Unauthorized', 401, '401 Unauthorized'],
-    ['http', 'http error 0: error sending request', 0, 'error sending request'],
-    ['http', 'http error 500: ', 500, ''],
-    ['timeout', 'request timed out: deadline', 0, 'request timed out: deadline'],
-    [
-      'no_token',
-      'no personal API key stored for workspace ws-1',
-      401,
-      'no personal API key stored for workspace ws-1',
-    ],
-    ['shape', 'invalid response shape: x', null, 'invalid response shape: x'],
-    ['http', 'something without a status', null, 'something without a status'],
-  ] as const)('reads a %s error %j as status %s', (kind, message, status, body) => {
-    expect(gitlabFailureOf({ error: new CommandError({ kind, message }) })).toEqual({
-      status,
-      body,
+  it.each(HOST_FAILURE_KINDS)('keeps the kind %s that Rust decided', (kind) => {
+    const failure = gitlabFailureOf({
+      error: failing({ kind, status: 500, detail: 'host text' }),
     });
+    expect(failure).toEqual({ kind, body: 'host text' });
   });
 
-  it('reads a plain error and a string by their text, with no status', () => {
+  it('reads the host text from the detail, not from the message prose', () => {
+    const failure = gitlabFailureOf({
+      error: failing({ kind: 'denied', status: 403, detail: '{"message":"403 Forbidden"}' }),
+    });
+    expect(failure.body).toBe('{"message":"403 Forbidden"}');
+  });
+
+  it('reads an error with no failure kind as failed and never guesses from the text', () => {
+    expect(
+      gitlabFailureOf({ error: new CommandError({ kind: 'http', message: 'http error 403: x' }) }),
+    ).toEqual({ kind: 'failed', body: 'http error 403: x' });
+    expect(
+      gitlabFailureOf({
+        error: new CommandError({ kind: 'shape', message: 'invalid response shape: x' }),
+      }),
+    ).toEqual({ kind: 'failed', body: 'invalid response shape: x' });
+  });
+
+  it('reads a plain error and a string by their text', () => {
     expect(gitlabFailureOf({ error: new Error('socket closed') })).toEqual({
-      status: null,
+      kind: 'failed',
       body: 'socket closed',
     });
-    expect(gitlabFailureOf({ error: 'offline' })).toEqual({ status: null, body: 'offline' });
+    expect(gitlabFailureOf({ error: 'offline' })).toEqual({ kind: 'failed', body: 'offline' });
   });
 });

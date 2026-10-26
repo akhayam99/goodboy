@@ -1,6 +1,6 @@
 import type { PullRequestStateKind } from '@goodboy/types';
 import { githubStateCategory } from '../../../shared/detail-fields/githubIssueFields';
-import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
 import type { GithubIssueGroup } from '../../integrations/github/components/PullRequest/useGithubIssues';
 import type { GithubPrGroup } from '../../integrations/github/components/PullRequest/useGithubPrs';
 import type { InboxRecord, InboxState } from '../types';

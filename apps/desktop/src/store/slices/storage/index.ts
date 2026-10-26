@@ -10,6 +10,7 @@ import { openStorageArtifact } from './openStorageArtifact';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeStorageFolders } from './removeStorageFolders';
 import { scanStorageRepository } from './scanStorageRepository';
+import { undoStorageRemoval } from './undoStorageRemoval';
 import type { StorageFocus, StorageScope } from './types';
 import type { SliceDeps } from '../../slice-types';
 
@@ -20,6 +21,7 @@ export const createStorageSlice = ({ set, get }: SliceDeps) => {
     measureStorageSizes: measureStorageSizes(set, get),
     pruneArchivedTranscripts: pruneArchivedTranscripts(set, get),
     removeStorageFolders: removeStorageFolders(set, get),
+    undoStorageRemoval: undoStorageRemoval({ set, get }),
     keepStorageFolder: keepStorageFolder(set, get),
     keepStorageArtifact: keepStorageArtifact(set, get),
     deleteStorageArtifacts: deleteStorageArtifacts(set, get),

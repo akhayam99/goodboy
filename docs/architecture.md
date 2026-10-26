@@ -44,7 +44,7 @@ processes it starts (`apps/desktop/src-tauri/src/path_env.rs`).
 Which helper to use depends on what the process runs.
 
 - If it runs a script the user wrote, it gets the full login environment. Use `command_with_login_env`, or `resolved_env()` for terminal spawners that never build a `Command`.
-- Everything else gets only `PATH`. Use `command`.
+- Everything else gets the resolved `PATH` on top of the app's own environment. Use `command`. It sets `PATH` and does not clear anything else, so the child inherits every variable the app process holds. Nothing here is an allowlist.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
 variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
@@ -80,6 +80,10 @@ Their children inherit it.
 `proc/reap.rs` ends everything a spawn started. `reap` reads one table of
 processes with `ps` and gives each row the start time the kernel reports for
 it (`proc/kernel.rs`: `proc_pidinfo` on macOS, `/proc/<pid>/stat` on Linux).
+The read runs through `proc::probe::run` with a 5 second deadline; a table
+that does not answer counts as unreadable. Only processes that began after
+this app did are asked for their environment, since an older one cannot carry
+this app's tag (the startup sweep of a dead app's orphans still reads all).
 It signals in this order: the tree below the leader (read before any signal,
 while the leader is still ours), the leader's process group, then every
 straggler whose environment carries this spawn id, this app pid and this app
@@ -101,6 +105,20 @@ group terminated anyway.
   its pid and group cannot be reused while the reap reads the table. Also on
   cancel, on shutdown, on script Stop and on terminal close. A turn does not
   wait for its stdout to close: the reap closes the pipe a stray child held.
+- **One way to start and stop a pty.** `proc/pty.rs` owns the stop of every
+  pty session (terminal, provider login, script): `stop` signals the whole
+  session by tag and then kills the leader, so Cancel on a login leaves no
+  descendant. It also owns the wait, `wait_for_exit`, which polls `try_wait`
+  and holds the session lock only for each poll, so a close or cancel is never
+  queued behind a running child. A script `run_id` that is already live is
+  refused (`duplicate`), and a finished run removes only its own registry
+  entry, never a newer run under a reused id.
+- **One way to signal and one way to open.** `proc/signal.rs` holds the only
+  `kill`, `killpg`, liveness and session lookups (R7 in `docs/rust.md`), and
+  `proc/open.rs` the only OS open: `open_target` for an address, `open_path`
+  for a file or folder (refused when it is an executable) and `reveal`. Every
+  child they start is detached and reaped. Editor detection reads the resolved
+  PATH through `path_env::which`, with no `which` process.
 - **What it never touches.** A pid without this spawn id or with another app
   pid or app start, pid 1, this app, another user's process, a pid whose start
   time or tag changed since the table was read, and a leader that is not this
@@ -111,6 +129,8 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `LiveChild::tagged`, a script and a terminal when their pty starts. The row
   leaves when the run is reaped (`wait_and_remove`), when a script ends or is
   stopped, and when a terminal closes, so a finished spawn is never listed.
+  A provider login or install (a pty too) is tagged and listed as a
+  `terminal` while it runs.
   The `process_ledger_list` command returns it. `LiveScriptRun` and
   `LiveTerminal` carry the leader `pid`; a terminal also carries
   `foregroundPid`, the leader of its foreground process group when the
@@ -164,9 +184,69 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   (`TerminateJobObject`) and so does the app dying. The assignment happens
   right after the spawn, so a grandchild started in that first instant can
   escape it.
+- **One way to start an agent process.** A turn, a chat, a planner and a
+  summary start through `live_child::spawn_tagged` (a turn through
+  `spawn_tagged_with`, which lets it bind its writer lease and register with
+  the query bridge before the child runs). It launches through
+  `proc::spawn`, which gives stdin to `/dev/null` unless there is a prompt to
+  pipe (fd 0 is never the app's own), pipes stdout and stderr, and kills the
+  child before returning an error when a pipe is missing. A planner and a
+  summary then run through `live_child::run_side_job`: both streams are kept
+  to their last bytes (16 MiB for stdout, 256 KiB for stderr), the run goes
+  under the caller's `runId` (`summarize_cancel`, `planner_cancel`) or an
+  anonymous key, and a silent run is stopped by the idle cap. A turn and a
+  chat share `turn::forward_lines` over the `EventSink` trait. Lines travel as
+  `Arc<str>`, so the backlog and the window event share one copy.
+- **Locks never hide a child.** A child registry, a slot and the turn backlog
+  open through `util::lock_or_recover`. A panic elsewhere that poisoned the
+  registry no longer skips the insert, the kill or the shutdown, so the
+  process stays tracked and dies with its run. The turn backlog keeps at most
+  50,000 events and 16 MiB per run, and every event weighs 64 bytes of
+  overhead, so a flood of blank lines is bounded too.
 - **Spawn sites.** `rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()`
   in `src-tauri/src` outside `proc/` against `rust-spawn-sites.baseline.json`.
   It only falls: a new process is started through `proc/`.
+- **Commands come from a table, never from the window.**
+  `provider_lifecycle_run` and `open_command_in_external_terminal` take a
+  provider id and an action (`install`, `update`, `login`, `logout`) and look
+  the command up in `provider_commands.rs`; an unknown pair is refused. The
+  `env` of a lifecycle run may carry only the names that table lists
+  (`NO_OPEN_BROWSER`). `provider-commands-table-parity.test.ts` keeps the table
+  equal to `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/core`, which the UI shows
+  and copies. `open_in_editor`, `open_file_in_workspace` and `explore_open` take
+  an editor id from `KNOWN_EDITORS` (`editor.rs`), not a binary or a path.
+  `open_file_in_workspace` and `explore_open` also take an optional `line` and
+  `column`; `EDITOR_LINE_STYLES` (`editor.rs`) says how each editor spells them
+  (`-g file:line:col`, `file:line:col`, `--line N --column N file`, or the
+  plain path). `explore_open` still resolves the path inside the session
+  folder first.
+- **What was running when the app quit is written once, at drain.**
+  `ended_work::persist` (called from `drain_child_processes`, before the
+  registries are stopped) writes `restart.ended_work` to `settings`: the
+  terminals whose shell had a foreground job (id and the `ps` command line) and
+  every live script run (script id, session, name, cwd). An empty drain keeps
+  the previous record, because the exit events call drain twice. The store reads
+  it once at boot (`loadEndedWork`) and stores the record's `at` in
+  `restart.ended_work_seen`, so the strips show on the first launch only.
+
+- **External terminals come from a table.** `open_in_external_terminal` takes a
+  folder (it must exist and be a folder) and an optional id from
+  `KNOWN_TERMINALS` (`external_terminal.rs`: terminal, iterm, warp, ghostty),
+  never an app name or a path; without an id it reads `terminal.app` from
+  `settings` and falls back to Terminal.app when that app is gone. On macOS it
+  runs `open -a <app> <folder>` with the two as separate arguments. A provider
+  command (`open_command_in_external_terminal`) runs through AppleScript in
+  Terminal.app or iTerm only. `detect_terminals` lists the installed ones.
+- **Open never runs a file.** `util/open_guard.rs` refuses a file or bundle
+  whose extension is executable (`.command`, `.app`, `.sh`, `.exe`, `.desktop`
+  and the rest of its list, in any case) or whose execute bit is set, before
+  `explore_open` or `artifact_mirror_open` hands it to the OS default handler.
+  The refusal has kind `executable_refused`; Reveal stays allowed.
+  `reveal_in_file_manager` takes an absolute path only.
+- **Discovered scripts are quoted.** `project_scripts.rs` writes
+  `npm run 'build all'` for a script name with a space, `&`, a quote or `$`
+  (POSIX single quotes, a quote inside becomes `'\''`) and drops a name that
+  starts with `-`.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
@@ -174,7 +254,16 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   once, at the end, so a long healthy call is silent, and the CPU of the CLI
   and of the tools it runs is what shows it is alive. A stopped job returns
   `isTimedOut: true` (`exitCode` stays null) and the caller throws
-  `AuxTimedOutError`. Turns have no cap.
+  `AuxTimedOutError`. Turns have no cap, but they are measured with the same
+  evidence: a turn counts as alive when it wrote a stdout line or a stderr
+  chunk (`LiveChild.activity`) or when the CPU of its process tree changed.
+  `turn_quiet` answers, for each live run, how long it has been quiet
+  (`TurnQuiet { runId, quietMs }`, the smaller of the output silence and the
+  CPU stillness). One process table read serves every live run
+  (`proc::reap::trees_cpu`), a run whose CPU cannot be read gets no answer,
+  and nothing is stopped. The window asks every 30 seconds while a turn runs
+  (`WorkTimeProvider`) and the row says "Quiet for 12 min" after
+  `QUIET_TURN_AFTER_MS` (5 minutes, `workTime.ts`).
 - **Startup sweep.** At launch, tagged processes of kind `turn`, `chat`,
   `planner`, `summary` or `probe` whose app is dead and whose parent is 1 are
   stopped (`sweep_orphans`). The app counts as dead when its pid is gone or
@@ -205,7 +294,15 @@ exit code.
 byte, and the exit code once the process ended (`null` while it runs). An
 unknown id returns an empty snapshot at offset 0.
 
-The app listens once per event kind. `features/terminal/outputBus.ts` is
+The app listens once per event kind, and one factory owns the rules:
+`shared/lib/createOutputStream.ts` (`createOutputStream({ outputEvent,
+exitEvent, idField, isStartRequired })`) installs one output listener and one
+exit listener, decodes each chunk, keeps the 256KB tail per id with its running
+offset, hands chunks and the exit to the subscribers of that id, and exposes
+`listenAll` for a reader that wants every payload. The terminal bus, the
+provider lifecycle buffer and the script events are three configurations of
+it, so a fix to the tail, the offset or the replay lands once.
+`features/terminal/outputBus.ts` is
 registered at boot (`reattachTerminalTabs`) and by every terminal driver; it
 keeps a 256KB tail per terminal and hands each chunk to that terminal's
 subscribers. `GenericTerminalPanel` subscribes first, buffers what arrives,
@@ -219,7 +316,10 @@ starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
 the last 256KB per `runId` with the same running `offset`, and `InlineTerminal`
 replays it through the same snapshot path, so a remount during a login still
 shows the device code once. The buffer of an exited run is dropped when its
-terminal unmounts, and only the newest four exited runs are kept.
+terminal unmounts, and only the newest four exited runs are kept. The run
+actions that only need the text and the exit (`connectProvider`,
+`runLifecycle`) read the same stream through `listenLifecycleOutput` and
+`listenLifecycleExit`, so a login run costs two listeners, not six.
 
 `shared/components/GenericTerminalPanel/index.tsx` keeps the normal terminal renderer when WebGL addon construction or activation fails, and disposes the failed addon. Acceleration is optional; an unavailable WebGL2 context does not close the terminal.
 
@@ -236,10 +336,19 @@ finds one.
 - `batch_auth()` also blanks the askpass helpers and puts ssh in batch mode.
   `worktree::git` uses it; the other callers keep their own auth behavior.
 - `login_env()` starts git with the login environment, for the one caller whose
-  `pre-push` hook needs it (`run_git_authenticated`).
-- Every call has a timeout: 5 minutes for `fetch`, `push`, `pull`, `ls-remote`
-  and `clone`, 10 minutes for everything else. When it fires, git and its
-  children are killed and the caller gets a `timeout` error.
+  `pre-push` hook needs it (`remote_auth::run_git_authenticated`, which returns
+  `GitError`).
+- Every call has a deadline set by its class (`GitClass`): 3 minutes for a
+  read (`status`, `diff`, `log`, `rev-parse`, `rev-list`, `ls-files` and the
+  other verbs that only look), 10 minutes for a write (every verb not named
+  here), 30 minutes for the network (`fetch`, `push`, `pull`, `ls-remote`,
+  `clone`, `submodule`, `lfs` and `remote`). A caller can set its own with
+  `.timeout()`. When the deadline fires, git and its children are killed and
+  the caller gets a `timeout` error that carries its class, so a wedged
+  `git status` frees its thread in three minutes, not in half an hour.
+- `english()` forces `LC_ALL=C`. A caller that matches git's error text (the
+  worktree removal retry, the fetch that tells a missing branch from an outage)
+  must use it, because git translates its messages.
 - A failure comes back as `GitError`, which serializes as `{kind, message}`.
   The message carries the arguments and the stderr with URL credentials
   redacted. `WorktreeError`, `GithubError` and plain `io::Error` callers map it
@@ -265,6 +374,31 @@ helper another file needs is `pub(super)`; nothing else leaves its file. Tests
 sit in a `tests.rs` beside the file they cover.
 
 ### Diff file sides
+
+A Tauri command that reads or deletes a file under a root uses
+`apps/desktop/src-tauri/src/util/scoped_path.rs`. `resolve_within` returns the
+canonical path of a file below a root and refuses a relative root, a `..`
+component and a path or symlink that resolves outside the root. `open_within`
+also walks the path with `openat` and `O_NOFOLLOW`, so a file swapped for a
+symlink after the check is refused (unix only; other platforms refuse, and
+`open_file_within` falls back to `resolve_within` where an attachment must still
+work). `local_image_read`, `attachment_read`, `attachment_write`,
+`attachment_delete`, `explore_*`, the single-file diff and `skill_run_script` all
+go through it; a new command that takes a path must too.
+
+`attachment_read_dropped` accepts only a path the window reported in a drag drop
+event. The Rust shell records the paths of each `DragDrop` event
+(`dropped_paths.rs`) and removes a path the first time it is read, so a path that
+was never dropped, or was dropped once and already read, is refused with
+`not_dropped`.
+
+`skill_run_script` takes the skill id, not a root. The roots come from the
+skill's workspace projects in the database, and the script must resolve inside
+`<root>/.kay/skills`. `session_dir_remove` takes the session id and removes a
+directory only when it is a direct child of a `sessions` folder (or a mount
+inside one) whose `.goodboy` marker names that session, and never through a
+symlink. `worktree_scratch_remove` takes only a direct child of the temp folder
+named `goodboy-check-*`.
 
 `worktree_file_sides` reads local file contents for unchanged context expansion.
 An omitted old revision uses the same configured merge base as the branch diff;
@@ -374,7 +508,12 @@ the app moves. So the split is by what the command does.
 - **Terminal and provider-login input stays a plain `fn` on purpose.**
   `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
   thread keeps them in the order they were typed. Two async calls could
-  finish out of order.
+  finish out of order. The command never writes to the pty itself: it queues
+  the bytes for the session's writer thread (`proc::pty::PtyInput`, 256 chunks
+  deep), so a child that never reads cannot hold the main thread, the session
+  lock, a close or a cancel. A full queue answers `backlogged`, a session whose
+  writer died answers `input_closed`, and a session already gone is a quiet
+  no-op.
 - **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
   lock, copy out what you need and drop it before the next `.await`, or do the
   whole locked section inside `spawn_blocking`.
@@ -409,12 +548,28 @@ anywhere; a debug build also prints to stdout.
   a file's content or a command line. `logging::detail` is the one way to
   print an error: it keeps the first line, hides credentials inside URLs and
   cuts the text at 200 characters.
+- **Slow operations.** `logging::slow(label, started)` writes one `info` line,
+  `[slow] <label> took <n>ms`, when an operation took 250 ms or more
+  (`logging::SLOW_THRESHOLD`); `logging::timed(label, run)` wraps a closure the
+  same way. The label is fixed: `git <verb>` in the `Git` runner (the
+  subcommand only, never an argument or a path, and `git` alone when the word
+  is not a plain subcommand name), and `db_exec`, `db_execute`, `db_select` and
+  `db_transaction` for the webview's SQL commands, each with a second
+  `<command> lock wait` line when waiting for the connection lock took that
+  long. Nothing is exported or sent; the line lands in the same file and
+  rotation as every other line. Spawn and the provider probes do not write one
+  yet.
 - **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
   `let _ =` in process teardown (killing a terminal, script, provider login or
   live child) and in git cleanup (removing scratch and copy worktrees,
   `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
   already exited is not reported. Other `let _ =` are still silent by design:
   event emits to a closed window and best-effort file cleanup.
+- **A frozen window leaves a record.** `window_heartbeat.rs` is a watchdog
+  with no network and no kill: it notes a freeze in `last-crash.json` (see
+  [navigation/shell.md](navigation/shell.md), After a crash the app could not show) and
+  logs nothing else. It does not run in debug builds, where a paused debugger
+  would read as a freeze.
 - **Logging never blocks startup.** `logging::init` builds the logger itself
   and does not register the plugin. If the folder or file cannot be created or
   opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
@@ -452,6 +607,61 @@ anywhere; a debug build also prints to stdout.
 - **The artifacts folder is one command away.** The lens header's `Show in
 Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
   (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
+
+### Untrusted text
+
+- **Text a stranger wrote reaches a prompt only through `untrustedBlock`.**
+  Issue and ticket text, check names, check logs, file paths and PR text
+  go through `untrustedBlock({ source, text })` in `packages/core`. It prints
+  a line naming the source and saying the text is evidence only, then the text
+  in a fence longer than any backtick run inside it, so the text cannot close
+  its own block. The issue brief and the check analysis builders use it, and
+  a test per builder fails when a host word lands outside a block. A new
+  builder that puts host text in a prompt calls it too. It frames the text; it
+  is not the boundary, which stays the permission mode.
+- **Text a stranger wrote renders with a depth cap and linear patterns.**
+  `parseMarkdown` opens at most six nested `<<tag>>` callouts
+  (`MAX_CALLOUT_DEPTH`); a seventh opener stays plain text, so
+  `'<<note>>'.repeat(2500)` cannot overflow the stack. The table divider is
+  checked cell by cell, not with a regex that backtracks. If a parse or a render
+  step still throws, `Markdown` logs it and shows the raw text in a `<pre>` for
+  that block of text only; the rest of the window stays alive, and the next text
+  parses again. The patterns in `redactReport` that match a stranger's text
+  (URL scheme, scp remote, email) bound every repeat. A new pattern over
+  untrusted text bounds its repeats and gets a pathological-input case in a
+  perf test (`MarkdownDepth.test.tsx`, `redactReport.perf.test.ts`).
+- **A key a model or a host controls is looked up with `ownValue`.**
+  `ownValue({ table, key })` in `packages/core` reads a table through
+  `Object.hasOwn`, so `constructor`, `__proto__` and `toString` answer
+  `undefined` instead of an inherited function. The wireframe near tables
+  (the enum gate the frame trusts), the GitLab job conclusions, the GitHub
+  review decisions and the Claude rate limit status and window tables use it,
+  each with a test that feeds the inherited names. Pattern expansion copies
+  keys with `Object.fromEntries`, so a `__proto__` key stays data and never
+  rewires a node. A new table keyed by a string from outside uses `ownValue`
+  or a `Map`.
+- **A remote image never reaches a reserved address.** `remote_image.rs`
+  refuses, for IPv4, `0.0.0.0/8`, loopback, private, link-local, `100.64.0.0/10`,
+  `192.0.0.0/24`, `192.88.99.0/24`, `198.18.0.0/15`, documentation, multicast
+  and `240.0.0.0/4`; for IPv6, unique local, link-local, loopback, multicast,
+  NAT64 (`64:ff9b::/32`), 6to4 (`2002::/16`), Teredo (`2001::/32`),
+  documentation (`2001:db8::/32`), discard (`100::/64`) and the `::/96`
+  IPv4-compatible block. An IPv4-mapped address takes the IPv4 rules. The table
+  tests in `remote_image.rs` pin each range and its public neighbours; a new
+  range changes both lists.
+
+### Render errors
+
+- **A render error ends one panel, not the window.** `PanelBoundary`
+  (`app/components/PanelBoundary`) wraps each studio (`AppStudio`), each
+  drawer (`DrawerHost`, keyed by `drawerKey`) and each session page
+  (`KeepAliveWorkSurface`). A throw inside one shows "This page could not be
+  drawn" in that panel with Retry (remounts the panel), a leave action (Go to
+  the board, Close drawer or Close) and Report this (the inline crash report).
+  The rail, the top bar and every other session stay alive.
+- **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
+  when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;
+  a panel passes `renderFallback`, the root does not.
 
 ### Frames
 
@@ -501,6 +711,18 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   a timeout or a failed step is `unreachable`, never `main-present`. It runs on
   window focus and every 60 seconds (five minutes after three unreachable
   answers) only while a project is in its first lap, from `useBootstrapWatch`.
+  That pace is `hostPollDelayMs`, the one backoff the host reachability state
+  below reuses.
+
+- **A host that does not answer is one state, not a message per poll.**
+  `hostReachability` holds, per host (GitLab and Bitbucket), the first time of
+  the outage and a count of `network` or `timeout` answers from the typed host
+  failures. Every refresh of a request goes through `refreshMountRequest`, which
+  feeds the state and holds a silent refresh back once a host has failed three
+  times, until five minutes pass. A refresh the person asked for (`force`, or
+  from a screen) always asks. Any other answer, even a refused sign-in, means
+  the host is there. The top bar shows one quiet line per host with Retry, and
+  Retry asks again for every session that already holds a request of that host.
 
 ### Database migrations
 
@@ -518,9 +740,12 @@ The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
 line appears. Each part commits on its own and saves a checkpoint row in
 `schema_migration_segment`. If a migration stops halfway, the next start picks
 up at the next part, so nothing is left half done. Only the last part writes
-to `schema_version` and clears the checkpoints. If a statement fails with
-"already exists" or "duplicate column name", the runner treats it as done. It
-logs a warning and keeps going.
+to `schema_version` and clears the checkpoints. For versions up to
+`ALREADY_EXISTS_TOLERATED_THROUGH_VERSION` (234, the last version shipped
+before the checkpoint), a statement that fails with "already exists" or
+"duplicate column name" counts as done: the runner logs a warning and keeps
+going. A newer version has no such tolerance and fails, so a collision never
+hides behind a skipped statement.
 
 The runner splits a migration into statements on semicolons, but keeps a
 `CREATE TRIGGER ... BEGIN ... END` whole, so a trigger body may hold several
@@ -528,11 +753,28 @@ statements. A trigger without its closing `END` fails the migration.
 
 `registry.test.ts` guards all of this. It fails CI when two migrations share a
 version, when a version number is skipped, or when a filename does not match
-its registered version. It also checks that upgrading from every older
-version ends up with the exact same schema as a fresh install.
+its registered version. It pins the SQL of every shipped migration by SHA-256
+in `SHIPPED_MIGRATION_SQL_SHA256`, so an edited shipped body fails. A new
+migration fails the test until you paste its SHA into that manifest; the
+failure message prints the lines to paste. It also checks that upgrading from
+a sample of older versions ends up with the exact same schema as a fresh
+install: twelve sampled versions plus the oldest and the newest, not every
+version.
 
-When the app starts and a database file has migrations waiting, the runner
-first saves a copy next to it with `VACUUM INTO`. The copy is named
+Rust tests do not hand-write the tables they read. `schema-fixture.test.ts`
+renders the schema the migrations build (tables, indexes, views and triggers,
+without the search shadow tables) into
+`apps/desktop/src-tauri/src/test_support/migrated_schema.sql`, fails when the
+committed file differs, and regenerates it with
+`GOODBOY_UPDATE_SCHEMA_FIXTURE=1`. Every Rust test that needs a table loads it
+through `test_support::migrated_connection()` (the config export, the project
+move and the connection tests do). `check-parity.test.ts` reads the string
+`CHECK` lists from that same migrated schema and compares them, column by
+column, with the constant that owns them.
+
+When the app starts and a database file that already holds data has migrations
+waiting, the runner first asks Rust for a copy next to it (`db_create_migration_snapshot`, a `VACUUM INTO` on the managed connection; the window SQL path refuses it). An empty
+file (no recorded version and no table) gets no copy: there is nothing to keep. The copy is named
 `data.db.pre-m<next>-from-m<current>-<timestamp>.bak`. Here `<next>` is the
 lowest version waiting to run, the one the copy protects you from.
 `<current>` is the highest version already applied, the schema the file
@@ -594,7 +836,12 @@ its baseline. A new table has to appear here first: the same test fails on a
 table this map does not name. The rows marked `rust` are written by Rust
 commands; TypeScript still reaches some of them (`integration_credentials`,
 `integration_bindings`, `permission_rules`, the `permission_audit_log`
-cleanup) and moving those calls behind the commands is not done yet.
+cleanup) and moving those calls behind the commands is not done yet. The same
+test guards that direction too: it scans `packages/db/src/queries/` for an
+`INSERT`, `UPDATE` or `DELETE` on a `rust` table and fails when a query gains
+one beyond `TS_WRITES_TO_RUST_TABLES` (today `integration-binding.ts`,
+`integration-credential.ts`, `project-adoption.ts` and `workspace-merge.ts`).
+The count only falls: remove a line when the write moves behind a command.
 
 | Table                         | Writer | Notes                                                                                                                                                                                                                                                                                                     |
 | ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -611,7 +858,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `auto_delegations`            | ts     |                                                                                                                                                                                                                                                                                                           |
 | `auto_outbox`                 | ts     |                                                                                                                                                                                                                                                                                                           |
 | `auto_reservations`           | ts     |                                                                                                                                                                                                                                                                                                           |
-| `auto_trees`                  | ts     | Auto tree registry (`store/slices/auto/`). Nothing in Rust writes it.                                                                                                                                                                                                                                     |
+| `auto_trees`                  | ts     | Auto tree registry (`store/runtime/auto/`). Nothing in Rust writes it.                                                                                                                                                                                                                                    |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                                                                                                                                                                                                               |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                                                                                                                                                                                                        |
 | `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.                                                                                                                                                                                                  |
@@ -645,6 +892,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `project_relocations`         | rust   | `project_relocation.rs`                                                                                                                                                                                                                                                                                   |
 | `project_scripts`             | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                             |
 | `project_sentry_links`        | ts     |                                                                                                                                                                                                                                                                                                           |
+| `project_values`              | ts     | Per-folder values (`folder.purpose`, `folder.git`), keys registered in `queries/entity-value.ts`; deleted with the project. The backup does not carry them.                                                                                                                                               |
 | `projects`                    | ts     | Exceptions: the backup import and a project move.                                                                                                                                                                                                                                                         |
 | `provider_credentials`        | ts     |                                                                                                                                                                                                                                                                                                           |
 | `provider_limits`             | ts     |                                                                                                                                                                                                                                                                                                           |
@@ -683,10 +931,12 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                             |
 | `telemetry_records`           | ts     |                                                                                                                                                                                                                                                                                                           |
 | `turn_events`                 | ts     |                                                                                                                                                                                                                                                                                                           |
+| `turn_file_sets`              | ts     | One row per writing turn and git mount, written when the turn ends (`recordTurnFileSets`).                                                                                                                                                                                                                |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                        |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                             |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                           |
-| `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                                                                                                                                                                                                          |
+| `workspace_values`            | ts     | Per-workspace values (`auto.treeLimitUsd`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                      |
+| `workspaces`                  | ts     | Exceptions: the backup import and the override columns, which have one writer, `patch_workspace_overrides` in `settings_overrides.rs`. It writes only the columns a patch names, refuses a value the column does not allow, and returns the stored row; `packages/db` only reads them.                    |
 | `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                                                                                                                                                                                                           |
 
 ### Auto tree registry
@@ -714,7 +964,7 @@ kept.
   `idx_auto_trees_live` leave a finished tree out. `auto_delegations`,
   `auto_attempts`, `auto_reservations`, `auto_outbox`, `auto_artifacts` and
   `auto_artifact_versions` hang off it and go with it.
-- `store/slices/auto/scheduler.ts` is the one writer of tree state. A window
+- `store/runtime/auto/scheduler.ts` is the one writer of tree state. A window
   writes only while it holds the lease, so a second window reads. Every
   transition names the phase revision, generation and phase it expects, and a
   lost race comes back as a typed answer.
@@ -830,7 +1080,7 @@ kept.
   every fifteen seconds, which also renews the owner lease. The interval starts with the
   runtime and stops only on teardown. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
-  else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
+  else at the `workspace_values` key `auto.treeLimitUsd`, else at the default
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
   confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
   reports a tree that did not stop, and one that another window runs. When delegation is
@@ -864,13 +1114,17 @@ kept.
   delegations, artifact ledger and `treeSpend` budget (`readAutoTreeViews`),
   keeps only the latest answer and writes the store only when something
   changed (`sameAutoTreeViews`). `features/auto/useAutoTrees` loads on mount
-  and polls every 2 seconds while the session has an Auto agent or a tree that
-  is not finished; nothing pushes tree changes to a window yet. The Settings
+  and polls every 2 seconds only while the session has an Auto agent that is
+  pending, running or blocked, or a tree that is not finished; a finished Auto
+  run reads once. Two hooks on one session share one interval
+  (`useAutoTrees/sharedPoll.ts`); nothing pushes tree changes to a window yet. The Settings
   row counts the working trees with `countLiveAutoTrees`.
 
 ### On-disk data layout
 
-Everything the app saves for itself lives in `~/.goodboy`.
+Everything the app saves for itself lives in `~/.goodboy`, an owner-only folder (`0700`). `data.db`, its `-wal` and `-shm` files and every `.bak` copy are `0600`: `db::restrict_data_files` sets it on every open and restore, after the reset copy, and through the `db_secure_files` command that `runRuntimeMigrations` calls right after each snapshot (a failure there stops the migrations). Windows sets no bits.
+
+One function, `app_paths::data_dir`, names that folder for all Rust code, and one function, `db::open_connection`, opens every connection to the database (foreign keys on, WAL, `synchronous = NORMAL`, a 5 second busy timeout). A debug build uses `data.dev.db` and `GOODBOY_DB_FILE` overrides the file (`db::resolve_db_path`). The history copy folder has no fallback: with no home folder, a copy fails with an error instead of landing in an empty path.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it, and so does the copy kept before a half-done wipe is finished (`data.db.pre-reset-*.bak`).
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
@@ -909,9 +1163,14 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `file-versions/<session-id>/`: saved versions of files, one copy per
   version named `<version-id>-<file name>`, each with its `file_versions` row.
   A session that writes in a `sessions/<name>` folder also stages its turn in
-  `file-versions/<session-id>/staging/<run-id>/` until the turn ends. This
-  layout is what older builds read: changing it is a new on-disk format and a
-  one-way door ([versioning.md](versioning.md)).
+  `file-versions/<session-id>/staging/<run-id>/` until the turn ends. A
+  staging that fails removes its run folder, and a run folder left without its
+  manifest (a crash) is swept by the next begin of that run, so a retry is
+  never refused for a leftover. A restore copies into a temp file beside the
+  target and renames it, as the folder store does (`copy_atomic`), so a failed
+  restore never leaves half a file. This layout is what older builds read:
+  changing it is a new on-disk format and a one-way door
+  ([versioning.md](versioning.md)).
 - `folder-versions/<folder-key>/`: saved versions of a plain folder that agents
   edit in place, keyed by a hash of the folder's real path. Nothing is written
   inside the folder itself. `mirror/` is the first copy of the folder (an APFS
@@ -922,8 +1181,11 @@ Everything the app saves for itself lives in `~/.goodboy`.
   deleted, with before and after hashes) and each restore. Before copies of
   modified and deleted files go to `file-versions/<session-id>/` with their
   rows, as above. Not versioned: files over 15 MB, links, the dependency and
-  build folders `folder_signals` skips, `.git`, `.DS_Store` and the
-  `sessions/` folders of older sessions. Pruning drops a session's versions 30
+  build folders of the one `reproducible_dirs` table (see below), `.git`,
+  `.DS_Store` and the `sessions/` folders of older sessions. A folder past
+  100,000 files or 8 GB keeps its first files and the turn's `skipped` list
+  carries one `folder_limit` entry with `omitted`, the number of files left
+  unversioned. Pruning drops a session's versions 30
   days after it ends (archived or deleted), then the oldest versions over the
   folder cap (1 GB or the folder's size, whichever is larger), never the newest
   version of a file a live session changed; rows go only after their copies.
@@ -946,12 +1208,28 @@ Two things live next to your code instead of in `~/.goodboy`. A folder
 project keeps the session folders of sessions made before 0.27.3 in
 `<project-root>/sessions/`; newer sessions write in the folder itself and add
 nothing to it. Skills live
-in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
+in `<project-root>/.goodboy/skills/`, the older `<project-root>/.kay/skills/`
+(read until 0.31.0) or `<project-root>/.claude/skills/`.
 
 ### How mounts are saved and recovered
 
 The mount table, the operation log, recovery and cleanup are described in
 [mounts.md](mounts.md).
+
+### Dependency and build folders
+
+One table, `REPRODUCIBLE_DIRS` in `apps/desktop/src-tauri/src/reproducible_dirs.rs`,
+names the folders a tool can rebuild, each with a scope. `Dependency`
+(`node_modules`, `__pycache__`, `.venv`, `venv`, `Pods`, `vendor`) counts at
+any depth. `Output` (`dist`, `build`, `out`, `target`, `DerivedData`, `.next`,
+`.turbo`, `.gradle`) counts at the top of a project and, for the version walk,
+at any depth. `TopOnly` (`coverage`) counts at the top of a project only. Four
+readers ask it and none keeps a list of its own: the folder signals and the
+saved-versions walk (`is_skipped_in_walk`: dependency and output at any depth),
+the first-commit plan (`is_dependency` for any parent folder, `is_output_at_top`
+for the first one), the detach assessment (`is_reproducible_at_top`: an ignored
+folder like these is not at risk) and the script finder (`is_dependency`, plus
+`.git`). Add a name there, with a test, and all four follow.
 
 ### Moving a project's folder
 
@@ -975,10 +1253,23 @@ is reconnected, and once in the background the first time its git status
 comes back `ready` after boot. It never leaves the local database.
 
 Relocating a project (`project_relocate` in
-`apps/desktop/src-tauri/src/project_relocation.rs`) rewrites every table
-above by path prefix inside one transaction, checks the `UNIQUE` constraints
-on `projects.root_path` and `session_worktrees.worktree_path` first, and
-calls `git worktree repair` from the new root once the commit lands. Finding
+`apps/desktop/src-tauri/src/project_relocation.rs`) runs on a blocking
+thread, not the async runtime. It first checks that the destination is a
+folder and, for a repo project that saved a root commit, that the repository
+there has the same one (`destination_differs` otherwise). Then it rewrites the
+tables above inside one transaction, checks the `UNIQUE` constraints on
+`projects.root_path` and `session_worktrees.worktree_path` first, and calls
+`git worktree repair` from the new root once the commit lands. A path matches
+only at a folder boundary (the path itself or the path plus `/`), never as a
+substring and never through `LIKE`, so a sibling folder `ledger-core-web`, a
+`ledger_core` next to `ledgerXcore` or a path holding `%` stay untouched. Every
+update is scoped to the moved project: its own mounts, its retained paths (and
+orphan rows with no project), its skills (same workspace), the resolve rows of
+its mounts, and `mount_operations` JSON, which is parsed and rewritten value by
+value. The saved folder versions (`folder-versions/<key>`, keyed by a hash of
+the real path) are moved to the new key by `rekey_folder_versions`, on undo
+too. What could not be carried over (git links, saved versions) comes back as
+`repairError` and shows under the success notice. Finding
 candidate folders (`find_moved_projects`) reads one level under a chosen
 parent, computes `repo_identity` for each, and matches saved projects by
 identity first and by folder name second; the desktop UI is

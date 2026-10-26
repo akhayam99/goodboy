@@ -1,10 +1,4 @@
-import type {
-  ArtifactComment,
-  ArtifactCommentAnchor,
-  ArtifactId,
-  PlanWithCount,
-  SessionId,
-} from '@goodboy/types';
+import type { ArtifactCommentAnchor, ArtifactId, PlanWithCount, SessionId } from '@goodboy/types';
 
 export type { GetFn, SetFn } from '../../slice-types';
 

@@ -34,7 +34,6 @@ export const openPaneOf = ({ state, sessionId }: Params): ClusterPane | null => 
       return 'spawned';
     case 'auto-child':
     case 'run-step':
-      return drawer.payload.from === 'spawned' ? 'spawned' : null;
     case 'artifact':
     case 'artifact-document':
     case 'check-analysis':

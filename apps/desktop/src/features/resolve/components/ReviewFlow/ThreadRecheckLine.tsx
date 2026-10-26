@@ -21,7 +21,7 @@ export const ThreadRecheckLine = ({ sessionId, agentId }: Props) => {
   );
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <p className="flex min-w-0 items-center gap-2 text-label">
+      <p className="flex min-w-0 items-center gap-2 text-meta">
         <WorkNode state="running" label={RECHECK_LABEL.running} mark={{ kind: 'dot' }} />
         <span className="shrink-0 text-foreground">{RECHECK_LABEL.running}</span>
         <span className="min-w-0 truncate text-muted-foreground">

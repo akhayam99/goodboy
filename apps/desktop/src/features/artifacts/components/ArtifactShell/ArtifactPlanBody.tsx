@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PlanWithCount } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
-import { dropLeadingTitleHeading } from '../ArtifactDocument/dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../../../../shared/utils/dropLeadingTitleHeading';
 import { dropPartsSection } from '../../../plans/dropPartsSection';
 import { splitPlanBody } from '../../../plans/splitPlanBody';
 import { PlanParts } from '../../../plans/components/PlanParts';

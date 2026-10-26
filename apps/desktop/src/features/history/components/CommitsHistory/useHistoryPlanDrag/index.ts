@@ -7,7 +7,7 @@ import {
   moveAbove,
   slotAnchorIsNoop,
 } from '../../../historyPlan';
-import { useHistoryDrag } from '../../../useHistoryDrag';
+import { useHistoryDrag } from '../../../hooks/useHistoryDrag';
 import type { HistoryChange } from '../useHistoryEditing';
 
 type Params = {
