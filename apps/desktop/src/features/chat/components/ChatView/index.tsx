@@ -187,7 +187,7 @@ export const ChatView = ({
   const agentQuestionCount = openQuestions.filter(
     (question) => question.createdByAgentId === selectedAgentId,
   ).length;
-  const { scrollerRef, pinned, onScroll, onUserScroll, jumpToLatest, isHolding } = useScrollPin({
+  const { scrollerRef, pinned, onScroll, userInput, jumpToLatest, isHolding } = useScrollPin({
     deps: [deferredItems, agentQuestionCount],
     resetKey: selectedAgentId,
     onRevealOverflow: ({ keys }) => {
@@ -286,12 +286,12 @@ export const ChatView = ({
     }
     scrollerRef.current = viewport;
     viewport.addEventListener('scroll', onScroll, { passive: true });
-    const stopInput = listenUserInput({ root: inputRoot, onInput: onUserScroll });
+    const stopInput = listenUserInput({ root: inputRoot, ...userInput });
     return () => {
       viewport.removeEventListener('scroll', onScroll);
       stopInput();
     };
-  }, [scrollerRef, onScroll, onUserScroll]);
+  }, [scrollerRef, onScroll, userInput]);
 
   const { suspend: suspendAnchor } = useScrollAnchor({
     viewportRef: scrollerRef,

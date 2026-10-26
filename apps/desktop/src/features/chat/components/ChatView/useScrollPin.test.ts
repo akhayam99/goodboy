@@ -8,6 +8,7 @@ type Box = {
   scrollHeight: number;
   scrollTop: number;
   clientHeight: number;
+  isInside?: boolean;
 };
 
 const scroller = (box: Box): HTMLDivElement =>
@@ -24,6 +25,7 @@ const scroller = (box: Box): HTMLDivElement =>
     get clientHeight() {
       return box.clientHeight;
     },
+    contains: () => box.isInside === true,
     querySelectorAll: () => [],
     querySelector: () => null,
   }) as unknown as HTMLDivElement;
@@ -38,7 +40,9 @@ const open = (box: Box) => {
 };
 
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+  vi.useFakeTimers({
+    toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout'],
+  });
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -159,5 +163,98 @@ describe('useScrollPin', () => {
       tops.push(box.scrollTop);
     }
     expect(tops).toEqual([2499, 2498, 2497, 2496, 2495, 2494]);
+  });
+
+  it('keeps a thumb drag the reader own for its whole length', () => {
+    const box = { scrollHeight: 3000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(2500);
+
+    const thumb = document.createElement('div');
+    act(() => result.current.onPointerDown({ target: thumb }));
+    const tops: number[] = [];
+    for (let step = 0; step < 8; step += 1) {
+      box.scrollTop -= 1;
+      act(() => result.current.onScroll());
+      box.scrollHeight += 120;
+      rerender({ items: 2 + step });
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      tops.push(box.scrollTop);
+    }
+    expect(tops).toEqual([2499, 2498, 2497, 2496, 2495, 2494, 2493, 2492]);
+    expect(result.current.pinned).toBe(false);
+
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    expect(box.scrollTop).toBe(2492);
+    expect(result.current.pinned).toBe(false);
+  });
+
+  it('keeps a keyboard scroll the reader own while its animation still moves', () => {
+    const box = { scrollHeight: 3000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    act(() => result.current.onUserScroll());
+    for (let step = 0; step < 5; step += 1) {
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      box.scrollTop -= 40;
+      act(() => result.current.onScroll());
+      box.scrollHeight += 100;
+      rerender({ items: 2 + step });
+    }
+    expect(box.scrollTop).toBe(2300);
+    expect(result.current.pinned).toBe(false);
+  });
+
+  it('ignores a pointer down on a row, which is a click and no scroll gesture', () => {
+    const box: Box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    const row = document.createElement('div');
+    box.isInside = true;
+    act(() => result.current.onPointerDown({ target: row }));
+    box.scrollHeight = 1600;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(1100);
+  });
+
+  it('stays pinned when collapsing content clamps the top at the bottom', () => {
+    const box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(500);
+
+    act(() => result.current.onUserScroll());
+    box.scrollHeight = 900;
+    box.scrollTop = 400;
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(true);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    box.scrollHeight = 1300;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(800);
   });
 });

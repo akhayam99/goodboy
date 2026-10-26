@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const PIN_TOLERANCE_PX = 32;
 const SETTLE_FRAMES = 30;
@@ -8,7 +8,16 @@ const ANSWER_TOP_GAP_PX = 56;
 const ANSWER_SELECTOR = '[data-reveal-answer]';
 const CONTENT_SELECTOR = '[data-scroll-content]';
 
-export const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
+const GESTURE_IDLE_MS = 160;
+const CLAMP_DISTANCE_PX = 0.5;
+const POINTER_END_EVENTS = ['pointerup', 'pointercancel'] as const;
+const NON_SCROLL_TARGET_SELECTOR = 'button, a, input, textarea, select';
+
+export const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
+
+type PointerDownParams = {
+  readonly target: EventTarget | null;
+};
 
 type OverflowParams = {
   readonly keys: ReadonlyArray<string>;
@@ -51,7 +60,9 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
   const isLockedRef = useRef(false);
   const ownTopRef = useRef<number | null>(null);
   const lastTopRef = useRef<number | null>(null);
-  const isUserInputRef = useRef(false);
+  const lastHeightRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
   const observedRef = useRef<Element | null>(null);
   const overflowRef = useRef(onRevealOverflow);
@@ -70,8 +81,11 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     if (!el || (!pinnedRef.current && !isAnchoredRef.current)) {
       return;
     }
-    isUserInputRef.current = false;
+    if (isDraggingRef.current || holdTimerRef.current !== null) {
+      return;
+    }
     lastTopRef.current = null;
+    lastHeightRef.current = el.scrollHeight;
     const answers = [...el.querySelectorAll<HTMLElement>(ANSWER_SELECTOR)];
     const answer = answers[answers.length - 1];
     if (answer === undefined) {
@@ -166,6 +180,66 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     return stopSettling;
   }, [pinned, stopSettling, applyFollow, observeContent, ...deps]);
 
+  const releaseGesture = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    isDraggingRef.current = false;
+    for (const name of POINTER_END_EVENTS) {
+      window.removeEventListener(name, releaseGesture);
+    }
+    applyFollow();
+  }, [applyFollow]);
+
+  const armHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      clearTimeout(holdTimerRef.current);
+    }
+    holdTimerRef.current = setTimeout(releaseGesture, GESTURE_IDLE_MS);
+  }, [releaseGesture]);
+
+  const onUserScroll = useCallback(() => {
+    stopSettling();
+    armHoldTimer();
+  }, [stopSettling, armHoldTimer]);
+
+  const onPointerDown = useCallback(
+    ({ target }: PointerDownParams) => {
+      const el = scrollerRef.current;
+      if (el === null || !(target instanceof Element)) {
+        return;
+      }
+      const isScrollbar = target === el || !el.contains(target);
+      if (!isScrollbar || target.closest(NON_SCROLL_TARGET_SELECTOR) !== null) {
+        return;
+      }
+      stopSettling();
+      isDraggingRef.current = true;
+      for (const name of POINTER_END_EVENTS) {
+        window.addEventListener(name, releaseGesture);
+      }
+    },
+    [stopSettling, releaseGesture],
+  );
+
+  const userInput = useMemo(
+    () => ({ onInput: onUserScroll, onPointerDown }),
+    [onUserScroll, onPointerDown],
+  );
+
+  useEffect(
+    () => () => {
+      if (holdTimerRef.current !== null) {
+        clearTimeout(holdTimerRef.current);
+      }
+      for (const name of POINTER_END_EVENTS) {
+        window.removeEventListener(name, releaseGesture);
+      }
+    },
+    [releaseGesture],
+  );
+
   const onScroll = () => {
     const el = scrollerRef.current;
     if (!el) {
@@ -175,9 +249,15 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     setAtTop(el.scrollTop < PIN_TOLERANCE_PX);
     const lastTop = lastTopRef.current ?? ownTopRef.current;
     lastTopRef.current = el.scrollTop;
-    const isUserInput = isUserInputRef.current;
-    isUserInputRef.current = false;
-    if (isUserInput && lastTop !== null && el.scrollTop < lastTop) {
+    const lastHeight = lastHeightRef.current;
+    lastHeightRef.current = el.scrollHeight;
+    const isUserInput = isDraggingRef.current || holdTimerRef.current !== null;
+    if (holdTimerRef.current !== null) {
+      armHoldTimer();
+    }
+    const isClamp =
+      lastHeight !== null && el.scrollHeight < lastHeight && distance <= CLAMP_DISTANCE_PX;
+    if (isUserInput && !isClamp && lastTop !== null && el.scrollTop < lastTop) {
       isAnchoredRef.current = false;
       stopSettling();
       setPinned(false);
@@ -207,11 +287,6 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     setPinned(false);
   };
 
-  const onUserScroll = useCallback(() => {
-    isUserInputRef.current = true;
-    stopSettling();
-  }, [stopSettling]);
-
   const jumpToLatest = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) {
@@ -231,6 +306,8 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     atTop,
     onScroll,
     onUserScroll,
+    onPointerDown,
+    userInput,
     jumpToLatest,
     isHolding,
   };
