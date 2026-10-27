@@ -17,6 +17,13 @@ impl DroppedPaths {
         recorded.extend(paths.iter().take(MAX_RECORDED_PATHS).cloned());
     }
 
+    pub(crate) fn record_window_event(&self, event: &tauri::WindowEvent) {
+        let tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event else {
+            return;
+        };
+        self.record(paths);
+    }
+
     pub(crate) fn take(&self, path: &Path) -> bool {
         let Ok(mut recorded) = self.0.lock() else {
             return false;
@@ -48,6 +55,26 @@ mod tests {
         drops.record(&[PathBuf::from("/tmp/harborline/brief.pdf")]);
         assert!(!drops.take(Path::new("/tmp/harborline/other.pdf")));
         assert!(drops.take(Path::new("/tmp/harborline/brief.pdf")));
+    }
+
+    #[test]
+    fn records_the_paths_a_window_drop_reports() {
+        let drops = DroppedPaths::default();
+        drops.record_window_event(&tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop {
+            paths: vec![PathBuf::from("/tmp/harborline/screen shot@2x.png")],
+            position: tauri::PhysicalPosition::new(10.0, 20.0),
+        }));
+        assert!(drops.take(Path::new("/tmp/harborline/screen shot@2x.png")));
+    }
+
+    #[test]
+    fn ignores_a_window_drag_that_did_not_drop() {
+        let drops = DroppedPaths::default();
+        drops.record_window_event(&tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Enter {
+            paths: vec![PathBuf::from("/tmp/harborline/brief.pdf")],
+            position: tauri::PhysicalPosition::new(10.0, 20.0),
+        }));
+        assert!(!drops.take(Path::new("/tmp/harborline/brief.pdf")));
     }
 
     #[test]

@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.3
+
+Files you drop on a message box attach again.
+
+### Fixed
+
+- Dropping an image or a file on a message box, a hint or a new run showed "Couldn't attach" for any file, whatever its size; the file now attaches. <!-- gb area=sessions -->
+
 ## Goodboy v0.28.2
 
 A new install of Goodboy opens again on its first start, and so does an update from an older version.
