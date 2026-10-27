@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.2
+
+A new install of Goodboy opens again on its first start, and so does an update from an older version.
+
+### Fixed
+
+- A new install, or an update from an older version, could stop at the first start with "Migration failed: authorization denied"; it now starts and migrates your data. <!-- gb area=storage -->
+
 ## Goodboy v0.28.1
 
 Goodboy opens again after the update that stopped it at start, with your updated data kept.
