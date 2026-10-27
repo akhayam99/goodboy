@@ -2,7 +2,9 @@ import type { InvokeArgs } from '@tauri-apps/api/core';
 import type { GitRepoCheck } from '@goodboy/types';
 
 const HOME = '/mock';
-const HARBORLINE_FOLDER = `${HOME}/Code/harborline`;
+const CODE_FOLDER = `${HOME}/Code`;
+const DOCUMENTS_FOLDER = `${HOME}/Documents`;
+const HARBORLINE_FOLDER = `${CODE_FOLDER}/harborline`;
 const PICKER_MS = 300;
 
 type RepoParams = {
@@ -20,9 +22,26 @@ type PathParams = {
   readonly path: string;
 };
 
+const isDirectlyUnderHome = ({ path }: PathParams): boolean =>
+  path.startsWith(`${HOME}/`) && !path.slice(HOME.length + 1).includes('/');
+
+const REPO_PARENTS: ReadonlyArray<string> = [HARBORLINE_FOLDER, CODE_FOLDER, DOCUMENTS_FOLDER];
+
+const missingAt = ({ path }: PathParams): GitRepoCheck => ({
+  isRepo: false,
+  rootPath: null,
+  resolvedPath: null,
+  defaultBranch: null,
+  error: `path does not exist: ${path}`,
+  errorKind: 'not_found',
+});
+
 const repoCheckOf = ({ path }: PathParams): GitRepoCheck => {
   const repo = HARBORLINE_REPOS.find((entry) => `${HARBORLINE_FOLDER}/${entry.name}` === path);
   if (repo === undefined) {
+    if (!REPO_PARENTS.includes(path) && isDirectlyUnderHome({ path })) {
+      return missingAt({ path });
+    }
     return {
       isRepo: false,
       rootPath: null,
@@ -87,7 +106,7 @@ export const setupSceneAnswer = ({ command, payload }: AnswerParams): unknown =>
     case 'validate_git_repo':
       return repoCheckOf({ path: pathOf({ payload }) });
     case 'scan_child_repos':
-      return pathOf({ payload }) === HARBORLINE_FOLDER
+      return REPO_PARENTS.includes(pathOf({ payload }))
         ? HARBORLINE_REPOS.map((repo) => ({
             name: repo.name,
             path: `${HARBORLINE_FOLDER}/${repo.name}`,
