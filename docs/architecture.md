@@ -387,8 +387,9 @@ work). `local_image_read`, `attachment_read`, `attachment_write`,
 go through it; a new command that takes a path must too.
 
 `attachment_read_dropped` accepts only a path the window reported in a drag drop
-event. The Rust shell records the paths of each `DragDrop` event
-(`dropped_paths.rs`) and removes a path the first time it is read, so a path that
+event. The Rust shell records the paths of each window `DragDrop` event
+(`dropped_paths.rs`, called from `on_window_event`: a webview window reports a
+drop as a window event, never as a webview event) and removes a path the first time it is read, so a path that
 was never dropped, or was dropped once and already read, is refused with
 `not_dropped`.
 

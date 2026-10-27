@@ -196,6 +196,10 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .on_window_event(|window, event| {
             use tauri::Manager;
+            window
+                .app_handle()
+                .state::<dropped_paths::DroppedPaths>()
+                .record_window_event(event);
             if !matches!(event, tauri::WindowEvent::Destroyed) {
                 return;
             }
@@ -208,17 +212,6 @@ pub fn run() {
             if survivors == 0 {
                 drain_child_processes(app, false);
             }
-        })
-        .on_webview_event(|webview, event| {
-            use tauri::Manager;
-            let tauri::WebviewEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event
-            else {
-                return;
-            };
-            webview
-                .app_handle()
-                .state::<dropped_paths::DroppedPaths>()
-                .record(paths);
         })
         .register_asynchronous_uri_scheme_protocol(
             frame_protocol::FRAME_SCHEME,

@@ -194,7 +194,7 @@ export const usePendingAttachments = ({
     if (rejected.length > 0) {
       const label =
         rejected.length === 1
-          ? `Couldn't attach ${rejected[0]}. It may be over ${MAX_ATTACHMENT_MB} MB.`
+          ? `Couldn't attach ${rejected[0]}. Drop it again or use Attach files.`
           : `Couldn't read ${rejected.length} files.`;
       showToast({ kind: 'warning', message: label });
     }
