@@ -173,7 +173,13 @@ export const FirstSessionStep = ({
             <Button size="md" variant="secondary" disabled={isLocked} onClick={skip}>
               {cta.skip}
             </Button>
-            <Button size="md" variant="primary" disabled={!canDraft} onClick={draft}>
+            <Button
+              size="md"
+              variant="primary"
+              disabled={!canDraft}
+              onClick={draft}
+              data-demo-anchor="setup-first-start"
+            >
               {cta.primary}
               <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
             </Button>
