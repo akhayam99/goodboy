@@ -485,7 +485,7 @@ pub struct ExecResult {
     pub rows_affected: i64,
 }
 
-const ALLOWED_PRAGMAS: [&str; 12] = [
+const ALLOWED_PRAGMAS: [&str; 13] = [
     "data_version",
     "foreign_keys",
     "foreign_key_check",
@@ -495,6 +495,7 @@ const ALLOWED_PRAGMAS: [&str; 12] = [
     "integrity_check",
     "page_count",
     "page_size",
+    "quick_check",
     "table_info",
     "table_xinfo",
     "user_version",
@@ -1658,6 +1659,17 @@ mod tests {
         let mut conn = memory_db();
         run_batch(&mut conn, "PRAGMA data_version").unwrap();
         assert!(run_batch(&mut conn, "PRAGMA journal_mode = DELETE").is_err());
+    }
+
+    #[test]
+    fn webview_sql_drops_a_column_through_the_quick_check_sqlite_runs() {
+        let mut conn = memory_db();
+        run_batch(
+            &mut conn,
+            "CREATE TABLE notes (id TEXT PRIMARY KEY, body TEXT, legacy TEXT); ALTER TABLE notes DROP COLUMN legacy;",
+        )
+        .unwrap();
+        run_batch(&mut conn, "PRAGMA quick_check").unwrap();
     }
 
     #[test]
