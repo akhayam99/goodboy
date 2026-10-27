@@ -30,6 +30,7 @@ type RevealParams = {
 type SetTrackParams = {
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding?: boolean;
 };
 
 export type HintEngine = {
@@ -78,6 +79,26 @@ const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
+
+type GuardParams = {
+  readonly event: MouseEvent | KeyboardEvent;
+};
+
+type FieldParams = {
+  readonly element: Element;
+};
+
+type ControlParams = {
+  readonly target: Node;
+};
+
+const TEXT_FIELD = 'textarea, input, [contenteditable="true"], [role="textbox"]';
+const CONTROL = `${TEXT_FIELD}, button, a[href], summary, [role="button"], [role="tab"], [role="menuitem"]`;
+
+const isTextField = ({ element }: FieldParams): boolean => element.matches(TEXT_FIELD);
+
+const isOnControl = ({ target }: ControlParams): boolean =>
+  target instanceof Element && target.closest(CONTROL) !== null;
 
 type Placement = {
   readonly element: Element | null;
@@ -173,6 +194,7 @@ export const createHintEngine = ({
   let lastSignature = '';
   let pending: number | null = null;
   let isDisposed = false;
+  let isGuarding = false;
   let dwellUntil = 0;
   let dwellStart = 0;
   let dwellTimer: number | null = null;
@@ -337,14 +359,13 @@ export const createHintEngine = ({
       settling = [...settling, hint];
       onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
     }
-    const isHeld = isDwelling();
-    if (!isHeld) {
+    if (!isDwelling()) {
       for (const hint of settling) {
         hint.settle?.({ root });
       }
       settling = [];
     }
-    const current = isHeld ? undefined : currentOf({ state });
+    const current = currentOf({ state });
     const rect = current?.placement.rect ?? null;
     const resultRects = current === undefined ? [] : results.rects();
     const focus =
@@ -394,7 +415,46 @@ export const createHintEngine = ({
     pending = view.requestAnimationFrame(evaluate);
   };
 
+  const guard = ({ event }: GuardParams): void => {
+    if (!isGuarding || !event.isTrusted || !(event.target instanceof Node)) {
+      return;
+    }
+    const active = activeOf();
+    if (active === undefined) {
+      return;
+    }
+    const state = store.getState();
+    const own = anchorOf({ hint: active, probe: probeOf({ hint: active, state }) });
+    if (own?.contains(event.target) === true) {
+      return;
+    }
+    const { target } = event;
+    const skipping = hints
+      .slice(hints.indexOf(active) + 1)
+      .map((hint) => anchorOf({ hint, probe: probeOf({ hint, state }) }))
+      .filter((anchor) => anchor !== null && !isTextField({ element: anchor }));
+    const isOnSkipping = skipping.some((anchor) => anchor?.contains(target) === true);
+    const isEnterAnywhere =
+      event instanceof KeyboardEvent &&
+      event.key === 'Enter' &&
+      skipping.length > 0 &&
+      !isOnControl({ target });
+    if (!isOnSkipping && !isEnterAnywhere) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    onReport({ report: { ...envelope(), type: 'blocked', hintId: active.id } });
+  };
+
   const clickListener = new AbortController();
+
+  for (const type of ['click', 'keydown'] as const) {
+    view.addEventListener(type, (event) => guard({ event }), {
+      capture: true,
+      signal: clickListener.signal,
+    });
+  }
 
   const unsubscribe = store.subscribe(schedule);
   const mutations = new MutationObserver(schedule);
@@ -422,11 +482,12 @@ export const createHintEngine = ({
   );
 
   return {
-    setTrack: ({ chapterId: track, settledIds }) => {
+    setTrack: ({ chapterId: track, settledIds, isGuarding: isGuardOn = false }) => {
       if (trackedId !== track) {
         scrolled.clear();
       }
       trackedId = track;
+      isGuarding = isGuardOn;
       hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
       lastSignature = '';

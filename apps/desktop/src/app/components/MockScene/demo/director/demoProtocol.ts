@@ -36,6 +36,7 @@ export type DemoHintsCommand = {
   readonly type: 'hints';
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding: boolean;
 };
 
 export type DemoRevealCommand = {
@@ -68,7 +69,15 @@ type DemoTriedReport = {
   readonly hintId: string;
 };
 
-export type DemoHintReport = DemoAnchorReport | DemoTriedReport;
+type DemoBlockedReport = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'blocked';
+  readonly hintId: string;
+};
+
+export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoBlockedReport;
 
 export type DemoTheme = 'dark' | 'light';
 

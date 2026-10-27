@@ -79,6 +79,9 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   if (envelope.type === 'tried') {
     return hintId === null ? null : { ...base, type: 'tried', hintId };
   }
+  if (envelope.type === 'blocked') {
+    return hintId === null ? null : { ...base, type: 'blocked', hintId };
+  }
   if (envelope.type !== 'anchor') {
     return null;
   }

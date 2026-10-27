@@ -132,16 +132,12 @@ const openPopover = (): void => {
 };
 
 describe('the hint engine dwell', () => {
-  it('holds the next hint for the dwell after a step is done, then shows it', async () => {
+  it('shows the next hint as soon as a step is done, with no dwell', async () => {
     const { engine, last } = start();
     await elapse({ ms: 40 });
     expect(last()).toMatchObject({ hintId: 'first' });
     visitorClick({ selector: '#first' });
-    await elapse({ ms: 100 });
-    expect(last()).toMatchObject({ hintId: null, rect: null });
-    await elapse({ ms: 2000 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 600 });
+    await elapse({ ms: 40 });
     expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });
@@ -152,8 +148,6 @@ describe('the hint engine dwell', () => {
     visitorClick({ selector: '#first' });
     openPopover();
     await elapse({ ms: 1200 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 1700 });
     const report = last();
     expect(report).toMatchObject({ hintId: 'second' });
     const focus = report?.type === 'anchor' ? report.focus : null;
@@ -182,7 +176,7 @@ describe('the hint engine dwell', () => {
     engine.dispose();
   });
 
-  it('keeps waiting while the pointer rests on the result', async () => {
+  it('keeps the next hint lit while the pointer rests on the result', async () => {
     const { engine, last } = start();
     await elapse({ ms: 40 });
     visitorClick({ selector: '#first' });
@@ -191,11 +185,8 @@ describe('the hint engine dwell', () => {
     for (let step = 0; step < 5; step += 1) {
       pointerAt({ x: 350 + step, y: 350 });
       await elapse({ ms: 1000 });
-      expect(last()).toMatchObject({ hintId: null });
+      expect(last()).toMatchObject({ hintId: 'second' });
     }
-    pointerAt({ x: 20, y: 20 });
-    await elapse({ ms: 900 });
-    expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });
 

@@ -180,15 +180,13 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
-  it('holds the next step for the dwell after a step is done, then lights it', async () => {
+  it('lights the next step in the same frame the previous one is done, with no wait', async () => {
     document.body.innerHTML = BUTTONS;
     const { engine, shown } = engineFor({ hints: STORY });
     engine.setTrack({ chapterId: 'test', settledIds: [] });
     await frame();
     click({ selector: '#open' });
     await frame();
-    expect(shown().at(-1)).toBeNull();
-    await dwell();
     expect(shown().at(-1)).toBe('read');
     engine.dispose();
   });

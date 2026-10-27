@@ -296,6 +296,7 @@ export const DemoStage = ({
         type: 'hints',
         chapterId: hintTrack.chapterId,
         settledIds: hintTrack.settledIds,
+        isGuarding: hintTrack.isGuarding,
       },
     });
   }, [hintTrack, mountedKeys, currentKey, command, loadEpoch]);

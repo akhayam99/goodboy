@@ -112,14 +112,15 @@ const start = ({ hints = [FIRST, SECOND] }: StartParams = {}) => {
 };
 
 describe('a result held for its own dwell', () => {
-  it('keeps the result for the hint dwell and closes it once, after the dwell', async () => {
+  it('lights the next hint at once, keeps the result for the hint dwell and closes it once, after the dwell', async () => {
     const closed = vi.fn();
     document.addEventListener('pointerdown', closed);
     const { engine, last } = start();
     await elapse({ ms: 40 });
     visitorClick({ selector: '#first' });
-    await elapse({ ms: 3000 });
-    expect(last()).toMatchObject({ hintId: null });
+    await elapse({ ms: 100 });
+    expect(last()).toMatchObject({ hintId: 'second' });
+    await elapse({ ms: 2900 });
     expect(closed).not.toHaveBeenCalled();
     await elapse({ ms: 2000 });
     expect(closed).toHaveBeenCalledTimes(1);

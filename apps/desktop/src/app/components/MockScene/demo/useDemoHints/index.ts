@@ -19,6 +19,7 @@ type Params = {
 export type HintTrack = {
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding: boolean;
 };
 
 export type HintReportParams = {
@@ -94,6 +95,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const [hold, setHold] = useState<Hold | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [pulse, setPulse] = useState(0);
 
   const { hints } = chapter;
   const steps = stepsOf({ chapter, progress });
@@ -101,8 +103,15 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
   const activeIdRef = useRef<string | undefined>(activeHint?.id);
   activeIdRef.current = activeHint?.id;
   const anchorIdRef = useRef<string | null>(null);
+  const doneIdsRef = useRef(steps.doneIds);
+  doneIdsRef.current = steps.doneIds;
+  const pendingIdsRef = useRef(new Set<string>());
 
   const settledKey = [...steps.doneIds].sort().join(' ');
+
+  useEffect(() => {
+    pendingIdsRef.current.clear();
+  }, [settledKey, chapter.id]);
 
   const track = useMemo((): HintTrack | undefined => {
     if (hints.length === 0) {
@@ -112,8 +121,9 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
     return {
       chapterId: chapter.id,
       settledIds: settledKey.length > 0 ? settledKey.split(' ').filter((id) => ids.has(id)) : [],
+      isGuarding: isEnabled,
     };
-  }, [hints, chapter.id, settledKey]);
+  }, [hints, chapter.id, settledKey, isEnabled]);
 
   useEffect(() => {
     if (hold === null) {
@@ -145,10 +155,28 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       if (report.hintId !== null && !hints.some((hint) => hint.id === report.hintId)) {
         return;
       }
-      if (report.type === 'tried') {
+      if (report.type === 'blocked') {
         if (report.hintId !== activeIdRef.current) {
           return;
         }
+        const blockedId = report.hintId;
+        setDismissedIds((previous) => {
+          if (!previous.has(blockedId)) {
+            return previous;
+          }
+          return new Set([...previous].filter((id) => id !== blockedId));
+        });
+        setPulse((previous) => previous + 1);
+        return;
+      }
+      if (report.type === 'tried') {
+        const expected = hints.find(
+          (hint) => !doneIdsRef.current.has(hint.id) && !pendingIdsRef.current.has(hint.id),
+        );
+        if (report.hintId !== expected?.id) {
+          return;
+        }
+        pendingIdsRef.current.add(report.hintId);
         markTried({ chapterId: chapter.id, hintId: report.hintId });
         setHold({ chapterId: chapter.id, hintId: report.hintId, phase: 'show' });
         return;
@@ -212,8 +240,9 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       focus: current.focus,
       opened: current.opened,
       isDimmed: activeHint.isDimmed !== false,
+      pulse,
     };
-  }, [isOpen, activeHint, acting, current]);
+  }, [isOpen, activeHint, acting, current, pulse]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
     if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {

@@ -436,6 +436,33 @@ describe('demo playground', () => {
     });
   });
 
+  it('credits two steps the frame finishes in the same tick, one after the other', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const { hints } = chapterOf({ id: 'setup' });
+    act(() => {
+      for (const entry of [hints[0], hints[1]]) {
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              channel: DEMO_PROTOCOL.channel,
+              version: DEMO_PROTOCOL.version,
+              generation: 0,
+              type: 'tried',
+              hintId: entry?.id ?? '',
+            },
+            origin: window.location.origin,
+            source: frame.contentWindow,
+          }),
+        );
+      }
+    });
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      setup: { tried: [hints[0]?.id, hints[1]?.id], epoch: 0 },
+    });
+  });
+
   it('shows the instruction, then the result for the dwell, then the next instruction', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();

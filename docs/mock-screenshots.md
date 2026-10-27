@@ -585,7 +585,7 @@ a step the visitor did not do would break the story after it.
 
 The header line (`hints/headerInstruction.ts`) is always what to do now: the
 step's `instruction`; once the step is done, its `result` for at least 2.5
-seconds (`hints/resultDwellMs.ts`, the engine's dwell; a hint whose result needs
+seconds (`hints/resultDwellMs.ts`; a hint whose result needs
 reading sets `dwellMs`, 3.5 to 4.5 seconds, read through `hints/dwellOf.ts`:
 the waiting card, Follow a helper, Add note, Push; and its optional `settle`
 runs once after the dwell, as closing the limits popover so the composer takes
@@ -633,12 +633,16 @@ chrome recedes to 65 percent (`quietClasses`, `data-quiet`): the rail rows other
 than the open group and the next one, the version chip and the link back to the
 site. The group title, its instruction, Up next and the coach
 mark stay at full strength, and hover or focus brings a quiet row back.
-A step is done only once its result has been shown. When a step is done,
-`createHintEngine` holds the next one for 2.5 seconds
-(`hints/resultDwellMs.ts`) and reports no hint, so nothing dims and no callout
-moves while the result is read; the wait grows while the pointer keeps moving
-over the result, up to 8 seconds, and a pointer that stopped does not hold it.
-A reset never waits. `director/createResultTracker.ts`
+A step is done only once its result has been shown. The result stays in the
+header line, never in front of the next coach: when a step is done,
+`createHintEngine` reports the next hint in the same pass, so its coach shows as
+soon as its control is on screen (one animation frame, 10 to 50ms in the walk)
+and no timer, dwell or entrance wait stands between the page and the coach. Only
+a gate the step names holds it back (`revealWhen`, as the composer steps waiting
+for the agent to end its turn). The dwell of a hint is the time its `settle`
+waits; it grows while the pointer keeps moving over the result, up to 8 seconds,
+and a pointer that stopped does not hold it. A reset never waits.
+`director/createResultTracker.ts`
 finds the result: what appeared in the 450ms after a trusted press (a popover
 portal whose wrapper has no height counts through its visible children), kept
 until the visitor presses somewhere else or it closes. The next hint's hole is
@@ -646,6 +650,17 @@ the control, its region and the open result (`director/unionOf.ts`); when that
 covers more than 60 percent of the stage (`hints/isHoleTooBig.ts`) the hint
 shows without a spotlight instead of dimming the result. The engine never
 scrolls to the next control while a result is open; Show control still does.
+
+No fast click can skip a step. While hints are on, the frame stops a trusted
+click, Enter or Space on the control of a later step (the anchor of a hint after
+the active one, text fields apart) and reports `blocked` for the active hint. The
+stage then shows its coach again, even if it was dismissed, with a short pulse
+(`pulse` in `CoachMark`). Enter pressed on no control is stopped the same way
+while such a control is on screen, so the wizard's own Enter handler cannot
+continue past Connect Linear. With Hide hints on the guard is off (`isGuarding`
+in the `hints` message). `createHintEngine.guard.test.ts` pins it. Two steps the
+frame finishes in the same tick are both credited, in order (`pendingIdsRef` in
+`useDemoHints`).
 Hints never take focus. After
 a press, the demo frame ignores a programmatic `focus()` on the composer for
 3 seconds unless the press was inside the composer, so the opened view keeps
@@ -667,6 +682,11 @@ Set up runs the real wizard end to end. `scenes/onboarding/setupSceneAnswer.ts`
 answers the folder picker with `~/Code/harborline` (payments-api, ledger-core,
 notify-relay) after a short delay, the git checks and a committed
 `db_transaction`, so Create goes through the real `createWorkspaceWithFolders`.
+The tick list offers only `~/Code` and, on a Mac, `~/Documents` (every other
+home folder the app looks for answers not found, so it is not listed), and both
+lead to the same three repositories: no tick, one tick, two ticks or the picker
+ends on a workspace Create accepts, with no purpose to pick. Every setup page
+fits the 900px layout without an inner scroll (`setupSceneAnswer.test.ts`).
 `seedWizardScene` signs in a detected agent on Sign in, keeps the new workspace
 on `setCurrentWorkspace` and starts the first task through
 `startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and

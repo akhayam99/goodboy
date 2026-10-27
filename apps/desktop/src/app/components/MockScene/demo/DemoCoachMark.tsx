@@ -15,6 +15,7 @@ export type CoachMark = {
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
   readonly isDimmed: boolean;
+  readonly pulse: number;
 };
 
 type Size = {
@@ -37,6 +38,7 @@ const MARGIN = 16;
 const CALLOUT_WIDTH = 240;
 const CARET = 8;
 const ENTER_MS = 120;
+const PULSE_MS = 360;
 
 const ENTER_SHIFT = {
   bottom: 'translateY(-4px)',
@@ -167,6 +169,18 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
       enter.cancel();
     };
   }, [coach.hintId, side]);
+
+  useEffect(() => {
+    const callout = calloutRef.current;
+    if (coach.pulse === 0 || callout === null || !canAnimate({ element: callout })) {
+      return;
+    }
+    const nudge = callout.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
+      { duration: PULSE_MS, easing: 'ease-out' },
+    );
+    return () => nudge.cancel();
+  }, [coach.pulse]);
 
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">

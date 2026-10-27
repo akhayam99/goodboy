@@ -170,7 +170,11 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         const track = readDemoHintsCommand({ data: event.data });
         if (track !== null) {
           if (track.generation === director.generation()) {
-            hints?.setTrack({ chapterId: track.chapterId, settledIds: track.settledIds });
+            hints?.setTrack({
+              chapterId: track.chapterId,
+              settledIds: track.settledIds,
+              isGuarding: track.isGuarding,
+            });
           }
           return;
         }

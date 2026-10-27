@@ -30,7 +30,8 @@ export const readDemoHintsCommand = ({ data }: Params): DemoHintsCommand | null 
   }
   const chapterId = readHintId({ value: Reflect.get(envelope.data, 'chapterId') });
   const settledIds = settledIdsOf({ value: Reflect.get(envelope.data, 'settledIds') });
-  if (chapterId === null || settledIds === null) {
+  const isGuarding: unknown = Reflect.get(envelope.data, 'isGuarding');
+  if (chapterId === null || settledIds === null || typeof isGuarding !== 'boolean') {
     return null;
   }
   return {
@@ -40,5 +41,6 @@ export const readDemoHintsCommand = ({ data }: Params): DemoHintsCommand | null 
     type: 'hints',
     chapterId,
     settledIds,
+    isGuarding,
   };
 };
