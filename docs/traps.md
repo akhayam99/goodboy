@@ -938,3 +938,7 @@ The notification plugin reports a click on a banner to the listeners of all wind
 ## Rust returns a kind and its numbers, never a sentence
 
 `AuthState.reason` (`AuthReason`), the connection test (`ConnectionOutcome`) and the chat refusal (`not_read_only`) reach the screen through one TypeScript function each: `authReasonSentence`, `outcomeSentenceOf` in `ConnectionTest` and `chatStartError`. A sentence written in Rust drifts from the words the app owns, and a duration typed into it drifts from the deadline the command used. A new failure adds a variant with its payload (the seconds, the code, the CLI text as `detail`) and a case in the TypeScript function; the `never` default makes the compiler list the missing case. The `message` of a `ChatError` is for logs only.
+
+## The webview SQL authorizer sees what SQLite runs inside a statement
+
+A write to a searchable table fires the search triggers, and the full text index reads `PRAGMA data_version` inside that statement. The authorizer in `db.rs` sees that read as a window pragma, so a pragma missing from `ALLOWED_PRAGMAS` fails a plain `DELETE` with "authorization denied" and, at boot, the hygiene `DELETE` on `github_pr_cache` fails every launch. A new window pragma, or a new indexed table, needs a test in `db.rs` that writes through `run_webview_sql` on the migrated schema.
