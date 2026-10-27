@@ -13,6 +13,7 @@ type Params = {
   readonly callout: Size;
   readonly bounds: Size;
   readonly side: HintSide | undefined;
+  readonly isLocked?: boolean;
   readonly gap: number;
   readonly margin: number;
 };
@@ -132,6 +133,7 @@ export const placeCallout = ({
   callout,
   bounds,
   side: preferred,
+  isLocked = false,
   gap,
   margin,
 }: Params): CalloutPlacement => {
@@ -164,6 +166,16 @@ export const placeCallout = ({
       litBucket: Math.ceil(share * LIT_BUCKETS),
     };
   });
+  const wanted = candidates[0];
+  if (
+    isLocked &&
+    preferred !== undefined &&
+    wanted !== undefined &&
+    wanted.room >= 0 &&
+    !isCovering({ placement: wanted.placement, callout, rects: [target] })
+  ) {
+    return wanted.placement;
+  }
   const best = [...candidates].sort(
     (left, right) =>
       rankOf(right) - rankOf(left) || left.litBucket - right.litBucket || right.room - left.room,

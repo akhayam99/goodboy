@@ -20,6 +20,23 @@ describe('stageFitOf', () => {
     expect(fit.height).toBeGreaterThanOrEqual(APP_SIZE.height - 0.001);
   });
 
+  it.each([
+    { name: '1000 by 628', box: { width: 968, height: 400 } },
+    { name: '1280 by 720', box: { width: 996, height: 560 } },
+    { name: '1440 by 900', box: { width: 1156, height: 740 } },
+    { name: '1920 by 1080', box: { width: 1636, height: 920 } },
+  ])(
+    'fits the width and the height of the stage at $name without cropping or scrolling',
+    ({ box }) => {
+      const fit = stageFitOf({ box });
+      expect(fit.scale).toBeLessThanOrEqual(1);
+      expect(fit.width * fit.scale).toBeCloseTo(box.width);
+      expect(fit.height * fit.scale).toBeCloseTo(box.height);
+      expect(fit.height).toBeGreaterThanOrEqual(APP_SIZE.height - 0.001);
+      expect(fit.width).toBeGreaterThanOrEqual(APP_SIZE.width - 0.001);
+    },
+  );
+
   it('never scales above one', () => {
     expect(stageFitOf({ box: { width: 4000, height: 3000 } }).scale).toBe(1);
   });

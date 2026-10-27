@@ -46,6 +46,23 @@ describe('callout placement', () => {
     expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
   });
 
+  it('keeps a locked side while it fits and covers nothing, even over a lit region', () => {
+    const target = { x: 600, y: 200, width: 100, height: 32 };
+    const lit = { x: 300, y: 150, width: 300, height: 200 };
+    const placement = placeCallout({
+      target,
+      avoid: [],
+      lit,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: 'right',
+      isLocked: true,
+      gap: 12,
+      margin: 16,
+    });
+    expect(placement.side).toBe('right');
+  });
+
   it('goes to the left of a control near the right edge, where the room is', () => {
     const target = { x: 900, y: 200, width: 80, height: 32 };
     const placement = place({ target });

@@ -236,6 +236,7 @@ export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints =
       hintId: activeHint.id,
       copy: acting?.progressCopy ?? activeHint.copy,
       side: activeHint.side,
+      isSideLocked: activeHint.isSideLocked === true,
       rect: current.rect,
       focus: current.focus,
       opened: current.opened,

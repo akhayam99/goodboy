@@ -11,6 +11,7 @@ export type CoachMark = {
   readonly hintId: string;
   readonly copy: string;
   readonly side: HintSide | undefined;
+  readonly isSideLocked: boolean;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
   readonly opened: ReadonlyArray<DemoRect>;
@@ -142,6 +143,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
+          isLocked: coach.isSideLocked,
           gap: GAP,
           margin: MARGIN,
         });

@@ -98,6 +98,8 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     result: 'The helper opened: its brief, its work and its checks are next to Auto.',
     beat: 0,
     dwellMs: 4500,
+    side: 'right',
+    isSideLocked: true,
     anchor: AUTO_LEDGER_HELPER,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) &&

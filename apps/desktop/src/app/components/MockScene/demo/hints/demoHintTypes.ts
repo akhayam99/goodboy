@@ -29,6 +29,7 @@ export type DemoHint = {
   readonly anchor: HintAnchor;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;
+  readonly isSideLocked?: boolean;
   readonly dwellMs?: number;
   readonly isDimmed?: boolean;
   readonly settle?: (params: SettleParams) => void;
