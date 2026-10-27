@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.1
+
+Goodboy opens again after the update that stopped it at start, with your updated data kept.
+
+### Fixed
+
+- Goodboy 0.28.0 could stop at start with "Migration failed: authorization denied"; it now starts and keeps the data 0.28.0 already updated. <!-- gb area=storage -->
+
 ## Goodboy v0.28.0
 
 Needs you counts everywhere, agents stop and resume cleanly, terminals re-run what they ran, and set up, shortcuts and security get sturdier.
