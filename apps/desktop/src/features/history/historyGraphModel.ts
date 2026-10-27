@@ -83,11 +83,12 @@ export const historyGraphModel = ({
 }: Params): HistoryGraphModel => {
   const shas = new Set(commits.map((commit) => commit.sha));
   const rewritten = new Set(original.slice(rewrittenFrom({ items, original, onto })));
-  const remoteSha = graph?.remoteSha ?? null;
+  const remoteRowSha =
+    commits.find((commit) => commit.sha === graph?.remoteSha && commit.pushed)?.sha ?? null;
   return {
     rows: commits,
     headSha: commits[0]?.sha ?? null,
-    remoteRowSha: remoteSha !== null && shas.has(remoteSha) ? remoteSha : null,
+    remoteRowSha,
     prRowSha: prHeadSha !== null && shas.has(prHeadSha) ? prHeadSha : null,
     ownCount: commits.length,
     afterCount: keptOrder({ items }).length,

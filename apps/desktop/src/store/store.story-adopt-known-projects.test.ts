@@ -1,5 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import { aSession, nextProviderRunId, TEST_NOW } from '@goodboy/types/testing';
+import { switchEpoch } from './slices/workspaces/switchEpoch';
 import {
   buildStoryProject,
   buildStorySession,
@@ -250,5 +252,58 @@ describe('story: two migrated shells fuse into one workspace board', () => {
     expect(archived).toHaveLength(1);
     expect(useAppStore.getState().sessions.length + archived.length).toBe(9);
     expect(useAppStore.getState().archivedSessions[STOREFRONT_WEB_WS] ?? []).toHaveLength(0);
+  });
+});
+
+describe('story: adopting into the open workspace keeps live work', () => {
+  it('keeps a running turn in the open workspace when a shell is merged into it', async () => {
+    const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
+    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    const running = aSession({
+      workspaceId: acme.id,
+      state: { kind: 'running', runId: nextProviderRunId(), startedAt: TEST_NOW },
+    });
+    useAppStore.setState({ sessions: [running] });
+    storySpies.cancelTurn.mockClear();
+
+    await useAppStore
+      .getState()
+      .adoptProject({ projectId: STOREFRONT_WEB_PROJECT, targetWorkspaceId: acme.id });
+
+    const state = useAppStore.getState();
+    expect(storySpies.cancelTurn).not.toHaveBeenCalled();
+    expect(state.currentWorkspaceId).toBe(acme.id);
+    expect(state.sessions.find((session) => session.id === running.id)?.state.kind).toBe('running');
+    expect(state.sessions).toHaveLength(5);
+  });
+
+  it('drops a reload that a workspace switch overtook', async () => {
+    const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
+    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    const listed = vi.mocked(dbMock.listSessionsForWorkspace).getMockImplementation();
+    vi.mocked(dbMock.listSessionsForWorkspace).mockImplementationOnce(async (db, workspaceId) => {
+      switchEpoch.value += 1;
+      return listed === undefined ? [] : listed(db, workspaceId);
+    });
+
+    await useAppStore
+      .getState()
+      .adoptProject({ projectId: STOREFRONT_WEB_PROJECT, targetWorkspaceId: acme.id });
+
+    expect(useAppStore.getState().sessions).toHaveLength(0);
+  });
+
+  it('refuses a merge with the number of agents running in the source', async () => {
+    const acme = await useAppStore.getState().createWorkspace({ name: 'Acme' });
+    await useAppStore.getState().setCurrentWorkspace(acme.id);
+    vi.mocked(dbMock.countRunningAdoptionAgents).mockResolvedValueOnce(2);
+    vi.mocked(dbMock.mergeWorkspaces).mockClear();
+
+    await expect(
+      useAppStore
+        .getState()
+        .adoptProject({ projectId: STOREFRONT_WEB_PROJECT, targetWorkspaceId: acme.id }),
+    ).rejects.toThrow('2 agents are running in storefront-web. Stop them, then try again.');
+    expect(vi.mocked(dbMock.mergeWorkspaces)).not.toHaveBeenCalled();
   });
 });

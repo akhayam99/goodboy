@@ -1,3 +1,4 @@
+import { FOCUS_RING, cn } from '@goodboy/ui';
 type Props = {
   readonly label: string;
   readonly onUndo: () => void;
@@ -9,7 +10,10 @@ export const ChatUndoRow = ({ label, onUndo }: Props) => (
     <button
       type="button"
       onClick={onUndo}
-      className="shrink-0 rounded-sm px-1 text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+      className={cn(
+        'shrink-0 rounded-sm px-1 text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+        FOCUS_RING,
+      )}
     >
       Undo
     </button>

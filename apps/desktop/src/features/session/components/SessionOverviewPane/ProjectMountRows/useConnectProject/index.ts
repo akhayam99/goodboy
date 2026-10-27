@@ -20,7 +20,7 @@ type CheckParams = {
 
 const REASON = {
   permission_denied: "Goodboy can't read that folder.",
-  not_found: 'That folder is not there anymore.',
+  not_found: "That folder isn't there anymore.",
   not_a_directory: 'That is a file, not a folder.',
   git_failed: "Git couldn't read that folder.",
 } as const;

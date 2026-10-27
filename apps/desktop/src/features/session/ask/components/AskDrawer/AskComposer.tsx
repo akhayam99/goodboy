@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { ArrowUp, Eye, Square } from 'lucide-react';
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Eye } from 'lucide-react';
+import { ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { askDraftKeyOf } from '../../../../../store/slices/ask/askDraftKeyOf';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { PromptField } from '../../../../../shared/components/PromptField';
 import { useToastLift } from '../../../../../shared/components/Toast';
-import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { SendStopControl } from '../../../../../shared/components/SendStopControl';
+import { restoreDraftOnFailedSend } from '../../../../../shared/utils/restoreDraftOnFailedSend';
 import { ASK_FOCUS_EVENT } from '../../askFocusEvent';
 import { AskRoutingPicker } from './AskRoutingPicker';
 
@@ -18,13 +19,6 @@ type Props = {
   readonly onSend: (question: string) => Promise<boolean>;
   readonly onStop: () => void;
 };
-
-const SEND_HINT = `Send with ${shortcutGlyphs('composer.send')}, new line with ${shortcutGlyphs('composer.newLine')}`;
-
-const PRIMARY = tintClasses('primary').solid;
-
-const ROUND_BUTTON =
-  'flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop }: Props) => {
   const threadId = useAppStore((state) => state.askThreadId[sessionId] ?? null);
@@ -56,10 +50,8 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
       }
       const { askThreadId, askDrafts } = useAppStore.getState();
       const now = askThreadId[sessionId] ?? null;
-      if ((askDrafts[askDraftKeyOf({ sessionId, threadId: now })] ?? '') !== '') {
-        return;
-      }
-      setAskDraft({ sessionId, threadId: now, text: sent });
+      const current = askDrafts[askDraftKeyOf({ sessionId, threadId: now })] ?? '';
+      setAskDraft({ sessionId, threadId: now, text: restoreDraftOnFailedSend({ sent, current }) });
     });
   };
 
@@ -88,34 +80,11 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
         </span>
       }
       actions={
-        isStreaming ? (
-          <Tooltip content="Stop the answer">
-            <button
-              type="button"
-              aria-label="Stop the answer"
-              disabled={isStopping}
-              onClick={onStop}
-              className={cn(
-                ROUND_BUTTON,
-                'bg-fill text-foreground hover:bg-hover disabled:opacity-50',
-              )}
-            >
-              <Square size={ICON_SIZE.row} aria-hidden />
-            </button>
-          </Tooltip>
-        ) : (
-          <Tooltip content={SEND_HINT}>
-            <button
-              type="button"
-              aria-label="Send"
-              disabled={!canSend}
-              onClick={send}
-              className={cn(ROUND_BUTTON, canSend ? PRIMARY : 'bg-fill text-faint-foreground')}
-            >
-              <ArrowUp size={ICON_SIZE.control} aria-hidden />
-            </button>
-          </Tooltip>
-        )
+        <SendStopControl
+          canSend={canSend}
+          stop={isStreaming ? { isStopping, onStop } : undefined}
+          onSend={send}
+        />
       }
     />
   );

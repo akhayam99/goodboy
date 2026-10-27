@@ -2,7 +2,7 @@ import { markArtifactOpened } from '@goodboy/db';
 import type { ArtifactId } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
 
-export const ARTIFACT_OPENED_DEBOUNCE_MS = 10 * 60 * 1000;
+const ARTIFACT_OPENED_DEBOUNCE_MS = 10 * 60 * 1000;
 
 const lastWrites = new Map<ArtifactId, number>();
 

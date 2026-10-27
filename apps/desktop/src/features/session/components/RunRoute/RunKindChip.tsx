@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, cn, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import type { RunRoute, Workflow, WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import type { RunRouteChoice, RunRouteTarget } from '../../startRun/changeRunRoute';
 import { runKindOfRoute } from '../../startRun/runKindOfRoute';
@@ -86,9 +85,9 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, hasStarte
           {RUN_ROUTE_COPY.setAtStart}
         </span>
       </div>
-      <p className="text-label text-muted-foreground">{kind.what}</p>
+      <p className="text-meta text-muted-foreground">{kind.what}</p>
       {whyLine === '' ? null : (
-        <p data-run-kind-why="" className="text-label text-muted-foreground">
+        <p data-run-kind-why="" className="text-meta text-muted-foreground">
           {whyLine}
         </p>
       )}
@@ -101,7 +100,7 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, hasStarte
         onChoose={(params) => void choose(params)}
       />
       {change.error === null ? null : (
-        <p role="alert" className="text-label text-danger">
+        <p role="alert" className="text-meta text-danger">
           {`${RUN_ROUTE_COPY.changeFailed}: ${change.error}`}
         </p>
       )}

@@ -1,9 +1,15 @@
+type DoorTone = 'danger' | 'warning' | 'neutral';
+
 export type DoorSignal = {
   readonly count: number;
   readonly isWarning: boolean;
   readonly isUnread: boolean;
   readonly fact: string;
+  readonly tone?: DoorTone;
+  readonly pill?: string;
 };
+
+const DOOR_PILL_CAP = 9;
 
 type TerminalParams = {
   readonly kind: 'terminal';
@@ -12,6 +18,21 @@ type TerminalParams = {
   readonly downPins?: undefined;
   readonly hasUnread?: undefined;
   readonly reasons?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
+};
+
+type InboxParams = {
+  readonly kind: 'inbox';
+  readonly count: number;
+  readonly inUse?: undefined;
+  readonly downPins?: undefined;
+  readonly hasUnread?: undefined;
+  readonly reasons?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
 };
 
 type ChatParams = {
@@ -21,6 +42,9 @@ type ChatParams = {
   readonly inUse?: undefined;
   readonly downPins?: undefined;
   readonly reasons?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
 };
 
 type MonitoringParams = {
@@ -30,18 +54,43 @@ type MonitoringParams = {
   readonly downPins: ReadonlyArray<number>;
   readonly hasUnread?: undefined;
   readonly reasons?: undefined;
+  readonly tone?: undefined;
+  readonly quietCount?: undefined;
+  readonly quietReasons?: undefined;
 };
 
 type BoardParams = {
   readonly kind: 'board';
   readonly count: number;
+  readonly tone: 'danger' | 'warning' | null;
   readonly reasons: ReadonlyArray<string>;
+  readonly quietCount: number;
+  readonly quietReasons: ReadonlyArray<string>;
   readonly inUse?: undefined;
   readonly downPins?: undefined;
   readonly hasUnread?: undefined;
 };
 
-type Params = TerminalParams | ChatParams | MonitoringParams | BoardParams;
+type Params = TerminalParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
+
+type PillParams = {
+  readonly count: number;
+};
+
+const pillOf = ({ count }: PillParams): string | undefined => {
+  if (count < 2) {
+    return undefined;
+  }
+  return count > DOOR_PILL_CAP ? `${DOOR_PILL_CAP}+` : String(count);
+};
+
+type FactParams = {
+  readonly lead: string;
+  readonly reasons: ReadonlyArray<string>;
+};
+
+const factOf = ({ lead, reasons }: FactParams): string =>
+  reasons.length === 0 ? lead : `${lead}: ${reasons.join(', ')}`;
 
 export const doorSignalOf = ({
   kind,
@@ -50,20 +99,47 @@ export const doorSignalOf = ({
   downPins,
   hasUnread,
   reasons,
+  tone,
+  quietCount,
+  quietReasons,
 }: Params): DoorSignal | undefined => {
   if (kind === 'board') {
-    if (count === 0) {
+    if (count === 0 && quietCount === 0) {
       return undefined;
     }
-    const needYou = `${count} ${count === 1 ? 'needs' : 'need'} you`;
-    const fact = reasons.length === 0 ? needYou : `${needYou}: ${reasons.join(', ')}`;
-    return { count, isWarning: true, isUnread: false, fact };
+    if (count === 0) {
+      return {
+        count: 0,
+        isWarning: false,
+        isUnread: false,
+        tone: 'neutral',
+        fact: factOf({
+          lead: `${quietCount} to look at`,
+          reasons: quietReasons,
+        }),
+      };
+    }
+    const pill = pillOf({ count });
+    return {
+      count,
+      isWarning: true,
+      isUnread: false,
+      tone: tone ?? 'warning',
+      ...(pill !== undefined && { pill }),
+      fact: factOf({ lead: `${count} ${count === 1 ? 'needs' : 'need'} you`, reasons }),
+    };
   }
   if (kind === 'terminal') {
     if (count === 0) {
       return undefined;
     }
     return { count, isWarning: false, isUnread: false, fact: `${count} running` };
+  }
+  if (kind === 'inbox') {
+    if (count === 0) {
+      return undefined;
+    }
+    return { count, isWarning: false, isUnread: true, fact: `${count} new` };
   }
   if (kind === 'chat') {
     if (count > 0) {

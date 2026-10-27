@@ -1,20 +1,22 @@
-import { NAMES } from '../../../../../shared/names';
+import { NAMES } from '../../../../../shared/utils/names';
 import { useState } from 'react';
 import { GitFork } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   AnchoredPopover,
   Button,
+  cn,
+  ICON_SIZE,
   Input,
   SegmentedTabs,
   Tooltip,
-  cn,
   useDropdown,
+  FOCUS_RING,
 } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectProjectById } from '../../../../../store/slices/projects/selectProjectById';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { ExistingBranchField } from '../../../../worktree/ExistingBranchField';
 import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 
@@ -100,7 +102,10 @@ export const NewBranchMountAction = ({
               onClick={() => dropdown.toggle()}
               className={cn(
                 triggerClassName ??
-                  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                  cn(
+                    'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+                    FOCUS_RING,
+                  ),
               )}
             >
               <GitFork size={ICON_SIZE.row} aria-hidden />
@@ -114,7 +119,7 @@ export const NewBranchMountAction = ({
     >
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-label font-medium text-foreground">{label}</span>
+          <span className="text-meta font-medium text-foreground">{label}</span>
           <span className="text-meta text-muted-foreground">
             It gets its own branch. The branches already here keep their pull requests.
           </span>
@@ -157,7 +162,7 @@ export const NewBranchMountAction = ({
               event.preventDefault();
               void create();
             }}
-            className="h-8 w-full text-label"
+            className="h-8 w-full text-meta"
           />
         )}
         <div className="flex items-center justify-end gap-1">

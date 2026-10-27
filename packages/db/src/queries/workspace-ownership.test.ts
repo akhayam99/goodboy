@@ -24,6 +24,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   pr_series: 'follows-project',
   project_relocations: 'follows-project',
   project_scripts: 'follows-project',
+  project_values: 'follows-project',
   search_excluded_projects: 'follows-project',
   session_worktrees: 'follows-project',
   diff_comments: 'follows-session',
@@ -40,6 +41,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   skills: 'lost-with-the-source',
   step_library: 'lost-with-the-source',
   workflows: 'lost-with-the-source',
+  workspace_values: 'lost-with-the-source',
 };
 
 const MERGE_SOURCE = readFileSync(join(import.meta.dirname, 'workspace-merge.ts'), 'utf8');

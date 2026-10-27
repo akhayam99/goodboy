@@ -1363,7 +1363,7 @@ describe('resolve candidates keep the branch tip approved', () => {
     ).rejects.toThrow('never captured');
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(stranded);
 
-    const preview = await live.actions.preparePublication({ sessionId: SESSION_ID });
+    const preview = await live.actions.preparePublication({ sessionId: SESSION_ID, mountId: null });
 
     expect(preview.blocker).toBe('uncaptured_work');
     expect(preview.publicationId).toBeNull();
@@ -1398,9 +1398,9 @@ const seedSiblings = async ({ ids }: { readonly ids: ReadonlyArray<string> }): P
   for (const [index, threadId] of ids.entries()) {
     await seedItem({ threadId, thread: { disposition: 'fix', commitShas: [`sha-${index}`] } });
     await db.execute(
-      `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, state, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'ready', 1, 1)`,
-      [`sibling-${index}`, SESSION_ID, index + 1, rootSha, `sha-${index}`, worktreePath],
+      `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, mount_id, mount_revision, state, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 4, 'ready', 1, 1)`,
+      [`sibling-${index}`, SESSION_ID, index + 1, rootSha, `sha-${index}`, worktreePath, MOUNT_ID],
     );
     await db.execute(
       'INSERT INTO resolve_candidate_items (candidate_id, queue_item_id, item_revision) VALUES (?, ?, 0)',
@@ -1596,7 +1596,7 @@ describe('a lane keeps one chain of fixes on a branch', () => {
 
     await live.actions.reconcileResolveLane({ sessionId: SESSION_ID });
 
-    expect(await readyCandidateIds()).toEqual(['sibling-0']);
+    expect(await readyCandidateIds()).toEqual(['sibling-0', 'sibling-1', 'sibling-2']);
     expect(await stateOfItem({ itemId: 'item-thread-b' })).toBe('deferred');
     expect(await stateOfItem({ itemId: 'item-thread-c' })).toBe('none');
   });

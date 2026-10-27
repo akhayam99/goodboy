@@ -1,4 +1,5 @@
-import { CHAT_PROVIDER_REFUSAL, isChatProvider, type IsoDateTime } from '@goodboy/types';
+import { isChatProvider, type IsoDateTime } from '@goodboy/types';
+import { CHAT_PROVIDER_REFUSAL } from '../../../features/workspace-chat/chatProviderRefusal';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
 import { patchChatSummary } from './patchChatSummary';
 import type { SetChatModelParams, SetFn } from './types';

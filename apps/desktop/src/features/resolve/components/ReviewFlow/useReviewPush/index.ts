@@ -88,7 +88,15 @@ const failed = (sentence: string, canSync = false): ReviewPushPhase => ({
   result: { tone: 'failed', sentence, ...(canSync && { canSync }) },
 });
 
-const syncMountIdOf = ({ sessionId }: { readonly sessionId: SessionId }): MountId | null => {
+type SyncMountParams = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+};
+
+const syncMountIdOf = ({ sessionId, mountId }: SyncMountParams): MountId | null => {
+  if (mountId !== null) {
+    return mountId;
+  }
   const state = useAppStore.getState();
   const latest = (
     state.sessionResolvePublications[sessionId] ?? []
@@ -104,9 +112,10 @@ const syncMountIdOf = ({ sessionId }: { readonly sessionId: SessionId }): MountI
 
 type PushParams = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
 };
 
-export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
+export const useReviewPush = ({ sessionId, mountId = null }: PushParams): ReviewPush => {
   const preparePublication = useAppStore((s) => s.preparePublication);
   const retryPublication = useAppStore((s) => s.retryPublication);
   const publishConversations = useAppStore((s) => s.publishConversations);
@@ -117,7 +126,8 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
   const [phase, setPhase] = useState<ReviewPushPhase>(IDLE);
   const phaseRef = useRef<ReviewPushPhase>(IDLE);
   const armedThreadIds = useRef<ReadonlyArray<string> | undefined>(undefined);
-  const { source } = useActiveReviewSource({ sessionId });
+  const { source } = useActiveReviewSource({ sessionId, mountId });
+  const mountRef = useRef(mountId);
   const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   const move = useCallback((next: ReviewPushPhase): void => {
@@ -143,15 +153,35 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
     [closePreparation, sessionId],
   );
 
+  useEffect(() => {
+    mountRef.current = mountId;
+    const current = phaseRef.current;
+    if (IN_FLIGHT.has(current.kind) || current.kind === 'idle') {
+      return;
+    }
+    if (current.kind === 'confirm' && current.preview.publicationId !== null) {
+      closePreparation({ target: sessionId, publicationId: current.preview.publicationId });
+    }
+    move(IDLE);
+  }, [closePreparation, mountId, move, sessionId]);
+
   const run = useCallback(
     async ({ preview, hasPanel }: RunParams): Promise<void> => {
       const { publicationId } = preview;
       if (publicationId === null) {
         return;
       }
+      const startedOn = mountRef.current;
       move({ kind: 'pushing', preview, hasPanel });
       try {
         const result = await publishConversations({ sessionId, publicationId });
+        if (mountRef.current !== startedOn) {
+          if (result.kind === 'stale' && result.preview.publicationId !== null) {
+            closePreparation({ target: sessionId, publicationId: result.preview.publicationId });
+          }
+          move(IDLE);
+          return;
+        }
         switch (result.kind) {
           case 'done':
             move({
@@ -191,7 +221,11 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
           }
         }
       } catch (error) {
-        move(isReportedError(error) ? IDLE : failed(formatError(error)));
+        move(
+          isReportedError(error) || mountRef.current !== startedOn
+            ? IDLE
+            : failed(formatError(error)),
+        );
       }
     },
     [closePreparation, move, provider, publishConversations, sessionId],
@@ -203,6 +237,7 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
         return;
       }
       armedThreadIds.current = threadIds;
+      const startedOn = mountRef.current;
       const previous = phaseRef.current;
       move({ kind: 'preparing' });
       if (previous.kind === 'confirm' && previous.preview.publicationId !== null) {
@@ -211,13 +246,16 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
       try {
         const preview =
           threadIds !== undefined
-            ? await preparePublication({ sessionId, threadIds, isolated: true })
+            ? await preparePublication({ sessionId, mountId, threadIds, isolated: true })
             : isRetry
-              ? await retryPublication({ sessionId })
-              : await preparePublication({ sessionId });
-        if (phaseRef.current.kind !== 'preparing') {
+              ? await retryPublication({ sessionId, mountId })
+              : await preparePublication({ sessionId, mountId });
+        if (phaseRef.current.kind !== 'preparing' || mountRef.current !== startedOn) {
           if (preview.publicationId !== null) {
             closePreparation({ target: sessionId, publicationId: preview.publicationId });
+          }
+          if (phaseRef.current.kind === 'preparing') {
+            move(IDLE);
           }
           return;
         }
@@ -239,7 +277,7 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
         move(isReportedError(error) ? IDLE : failed(formatError(error)));
       }
     },
-    [closePreparation, move, preparePublication, retryPublication, run, sessionId],
+    [closePreparation, mountId, move, preparePublication, retryPublication, run, sessionId],
   );
 
   const confirm = useCallback(async (): Promise<void> => {
@@ -274,14 +312,14 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
   const askSync = useCallback((): void => move({ kind: 'sync_confirm' }), [move]);
 
   const confirmSync = useCallback(async (): Promise<void> => {
-    const mountId = syncMountIdOf({ sessionId });
-    if (mountId === null) {
+    const syncMountId = syncMountIdOf({ sessionId, mountId });
+    if (syncMountId === null) {
       move(failed(SYNC_COPY.noBranch));
       return;
     }
     move({ kind: 'syncing' });
     try {
-      const outcome = await syncBranchWithRemote({ sessionId, mountId });
+      const outcome = await syncBranchWithRemote({ sessionId, mountId: syncMountId });
       switch (outcome.kind) {
         case 'synced':
         case 'nothing':
@@ -305,7 +343,7 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
     } catch (error) {
       move(isReportedError(error) ? IDLE : failed(formatError(error)));
     }
-  }, [arm, move, sessionId, syncBranchWithRemote]);
+  }, [arm, mountId, move, sessionId, syncBranchWithRemote]);
 
   const recover = useCallback(
     (action: NonNullable<BlockerCopy['action']>): void => {

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Terminal } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectTerminalWorkspaceFolder } from '../../../../store/slices/terminal/selectors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { homeFolder } from '../../../../shared/lib/homeFolder';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -54,7 +55,11 @@ export const WorkspaceTerminalFolderRow = ({ workspaceId }: Props) => {
     try {
       await setTerminalWorkspaceFolder({ workspaceId, folder: next });
     } catch (error) {
-      void reportError({ title: "Couldn't save the terminal folder", error });
+      void reportError({
+        title: "Couldn't save the terminal folder",
+        error,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setIsBusy(false);
     }
@@ -75,7 +80,7 @@ export const WorkspaceTerminalFolderRow = ({ workspaceId }: Props) => {
       className="flex h-8 min-w-0 items-center gap-2 px-2"
     >
       <Terminal size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="shrink-0 text-label text-muted-foreground">Terminal folder</span>
+      <span className="shrink-0 text-meta text-muted-foreground">Terminal folder</span>
       <span className="min-w-0 flex-1 truncate text-code text-meta text-foreground">
         {folder ?? 'No folder yet'}
       </span>

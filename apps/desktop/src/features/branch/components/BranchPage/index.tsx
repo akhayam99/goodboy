@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import { PageColumn, PaneShell, ScrollFade, tintClasses } from '@goodboy/ui';
+import { ICON_SIZE, PageColumn, PaneShell, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
+import { useAppStore, useMountDiffStats } from '../../../../store';
+import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
+import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
@@ -37,9 +39,8 @@ import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import type { BranchPushState, BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
-import { notPushedOf } from '../../notPushedOf';
 import { commentsCountOf } from '../../../resolve/commentsCountOf';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
@@ -54,7 +55,7 @@ import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const NO_PREFILL = { title: '', body: '' };
 
@@ -94,16 +95,20 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       ? ''
       : `${s.historyDrafts[historyMountId]?.headSha ?? ''}:${s.historyRuns[historyMountId]?.updatedAt ?? 0}`,
   );
-  const repo = useSessionRepo({ sessionId });
+  const repo = useSessionRepo({ sessionId, mountId: historyMountId });
   const bitbucketRemote = useBitbucketRemote({
     sessionId,
     workspaceId: session.workspaceId,
+    mountId: historyMountId,
     repoRoot: repo?.repoRoot ?? null,
   });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
-  const { entries: sources, source: activeSource } = useActiveReviewSource({ sessionId });
-  const { entries } = useReviewEntries({ sessionId });
-  const push = useReviewPush({ sessionId });
+  const { entries: sources, source: activeSource } = useActiveReviewSource({
+    sessionId,
+    mountId: historyMountId,
+  });
+  const { entries } = useReviewEntries({ sessionId, mountId: historyMountId });
+  const push = useReviewPush({ sessionId, mountId: historyMountId });
   const diff = useSessionDiff({
     sessionId,
     worktreePath: identity.mountPath,
@@ -119,7 +124,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   });
   const remoteHost: PullRequestHost =
     remoteKind === 'gitlab' ? 'gitlab' : bitbucketRemote.isBitbucket ? 'bitbucket' : 'github';
-  const host: PullRequestHost = activeSource?.kind ?? (pr === null ? remoteHost : identity.host);
+  const host: PullRequestHost = pr === null ? remoteHost : identity.host;
   const hasComments = useAppStore(
     (s) => branchScopeOf({ state: s, sessionId, mountId: historyMountId }).hasComments,
   );
@@ -189,7 +194,15 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     mountId: historyMountId,
     isRebaseStopOpen: hasOpenRebaseStop,
   });
-  const mergeMethod = useAppStore((s) => s.pullRequestViews[sessionId]?.view?.mergeMethods[0]);
+  const mergeMethod = useAppStore(
+    (s) =>
+      pullRequestViewOf({
+        state: s,
+        sessionId,
+        mountId: historyMountId,
+        prNumber: pr?.number ?? null,
+      })?.view?.mergeMethods[0],
+  );
   const mergeWord = MERGE_METHOD_LABEL[mergeMethod ?? 'squash'];
   const onlineAhead =
     diff.status !== null && diff.status.upstreamDistance.kind === 'known'
@@ -406,7 +419,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    return <ReviewFlow session={session} push={push} />;
+    return <ReviewFlow session={session} mountId={historyMountId} push={push} />;
   };
 
   const baseRow =
@@ -440,7 +453,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       .needsYou,
     files: filesCount,
     diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
-    notPushed: notPushedOf({ status: diff.status, commits: historyCommits, hasRemoteHead }),
+    notPushed: branchPushFactsOf({ status: diff.status, commits: historyCommits, hasRemoteHead })
+      .toPush,
     checks: checksRuns,
     checksUnreadReason,
   });
@@ -467,7 +481,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const startLine = isBranchStart ? (
     <span
       data-branch-start-line={start.step.state}
-      className="flex min-w-0 flex-wrap items-center gap-x-2 text-label text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground"
     >
       <span className={`inline-flex items-center gap-1 ${tintClasses(start.line.tone).text}`}>
         <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />
@@ -516,7 +530,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               pageAction={tab === 'comments' ? tabActionsSlotNode : null}
               onMutated={onMutated}
             />
-            <PushBanner sessionId={sessionId} push={push} />
+            <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
             {baseRow}
             <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">
               <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />

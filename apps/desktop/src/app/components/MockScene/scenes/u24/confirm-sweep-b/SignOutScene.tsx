@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Unplug } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 export const SignOutScene = () => {
   const [isSignedIn, setIsSignedIn] = useState(true);
@@ -15,10 +14,10 @@ export const SignOutScene = () => {
         data-slot="provider-account-row"
         className="flex h-10 min-w-0 items-center gap-3 rounded-md px-2"
       >
-        <span className="w-28 shrink-0 text-label text-muted-foreground">
+        <span className="w-28 shrink-0 text-meta text-muted-foreground">
           {isSignedIn ? 'Signed in' : 'Signed out'}
         </span>
-        <span className="min-w-0 flex-1 truncate text-label text-foreground">
+        <span className="min-w-0 flex-1 truncate text-meta text-foreground">
           maya@harborline.example · Max plan
         </span>
         {isSignedIn ? (

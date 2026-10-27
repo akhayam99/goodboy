@@ -24,7 +24,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { detachFromAuto } from '../../auto/detachFromAuto';
 import { classifyAgent } from '../../session/agent-kind';
 import { parseRunRoutes, runRoutesKey } from '../../session/startRun/runRoutesSetting';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import {
   isAgentClosable,
   isAgentClosedByUser,
@@ -201,8 +201,8 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       },
     },
     {
-      id: 'agent.interrupt',
-      label: 'Interrupt',
+      id: 'agent.stop',
+      label: 'Stop',
       icon: OctagonX,
       group: 'act',
       when: ({ facts }) => facts.isTurnRunning,

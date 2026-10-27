@@ -4,8 +4,8 @@ import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { couldntFixWords, needsYouWords, pushFailedWords } from '../resolve/notes/attentionWords';
-import { NAMES } from '../../shared/names';
-import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
+import { NAMES } from '../../shared/utils/names';
+import { PULL_REQUEST_PRESENTATION } from '../../shared/utils/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
 export type AttentionMark = '!' | '?' | 'approval' | 'queue' | 'approved' | 'none';
@@ -91,6 +91,36 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     words: 'Approved, ready to merge',
   }),
   'unread-reply': entryOf({ icon: 'agents', tone: 'info', mark: 'none', words: 'New reply' }),
+  'run-stopped': entryOf({
+    icon: 'runFailed',
+    tone: 'danger',
+    mark: '!',
+    words: 'A run stopped',
+  }),
+  'run-paused-at-limit': entryOf({
+    icon: 'budget',
+    tone: 'warning',
+    mark: '!',
+    words: 'A run paused at its limit',
+  }),
+  'run-waits-for-go': entryOf({
+    icon: 'runStopped',
+    tone: 'warning',
+    mark: 'approval',
+    words: 'A run waits for you to continue',
+  }),
+  'auto-needs-you': entryOf({
+    icon: 'auto',
+    tone: 'warning',
+    mark: 'approval',
+    words: 'Auto waits for you',
+  }),
+  'slack-reply-waiting': entryOf({
+    icon: 'slack',
+    tone: 'warning',
+    mark: 'approval',
+    words: 'A Slack reply waits for your OK',
+  }),
 };
 
 type AttentionCounts = Pick<
@@ -199,7 +229,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
 
 const SESSION_STAGE_ICON: Record<SessionStage, LucideIcon> = {
   attention: CONCEPT_ICONS.questions,
-  running: CONCEPT_ICONS.sessions,
+  running: CONCEPT_ICONS.stageRunning,
   review: Eye,
   building: Hammer,
   done: CONCEPT_ICONS.runDone,

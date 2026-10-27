@@ -1,13 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
-import { Button, ConfirmPopover, EmptyState, ListGrid } from '@goodboy/ui';
+import { Button, ConfirmPopover, EmptyState, ICON_SIZE, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { WorkflowListMenu } from '../../../../actions/WorkflowListMenu';
 import {
   builtinWorkflowState,
@@ -113,7 +109,7 @@ export const WorkflowList = ({
           icon={CONCEPT_ICONS.workflows}
           tone={CONCEPT_TONE.workflows}
           title="No workflows yet"
-          description="Create one to chain several agents in a single session, or restore the built-in workflows."
+          description="Create one to chain several agents in a single session, or restore the built-in workflows. A run can start from any of them as a preset."
         />
       ) : (
         <ListGrid label="Workflows" columns={WORKFLOW_LIST_COLUMNS}>

@@ -7,7 +7,7 @@ import { OrchestratedRunPage } from '../../OrchestratedRun';
 import { useSessionRuns } from '../../../hooks/useSessionRuns';
 import { RunsGrid } from './RunsGrid';
 import { StartRun } from '../../StartRun/StartRun';
-import { NAMES } from '../../../../../shared/names';
+import { NAMES } from '../../../../../shared/utils/names';
 import { SessionPageIntro } from '../../SessionPageIntro';
 
 type Props = {

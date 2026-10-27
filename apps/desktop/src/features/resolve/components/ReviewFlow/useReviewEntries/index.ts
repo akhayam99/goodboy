@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type {
   AgentId,
+  MountId,
   PrComment,
   ResolveCheckRun,
   ResolveSourceSnapshot,
@@ -83,18 +84,20 @@ export type ReviewEntryCounts = {
 export const useReviewEntries = ({
   sessionId,
   scope = 'comments',
+  mountId = null,
 }: {
   readonly sessionId: SessionId;
   readonly scope?: ReviewEntryScope;
+  readonly mountId?: MountId | null;
 }): {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
   readonly all: ReadonlyArray<ReviewEntry>;
   readonly counts: ReviewEntryCounts;
 } => {
-  const rows = useResolveQueueRows({ sessionId, scope: 'displayed' });
+  const rows = useResolveQueueRows({ sessionId, scope: 'displayed', mountId });
   const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
-  const { selected } = useActiveReviewSource({ sessionId });
+  const { selected } = useActiveReviewSource({ sessionId, mountId });
   const kind = selected?.kind ?? null;
   const projectId = selected?.projectId ?? null;
   const number = selected?.number ?? null;

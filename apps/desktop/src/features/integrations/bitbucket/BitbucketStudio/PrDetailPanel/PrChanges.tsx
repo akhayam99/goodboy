@@ -31,7 +31,7 @@ export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
         icon={CONCEPT_ICONS.diff}
         tone={CONCEPT_TONE.diff}
         title="No file changes"
-        description="This pull request does not touch any file Goodboy can render."
+        description="This pull request doesn't touch any file Goodboy can render."
       />
     );
   }

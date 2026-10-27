@@ -1,5 +1,5 @@
 import { jiraStateCategory } from '../../../shared/detail-fields/jiraIssueFields';
-import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
+import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/buildIssueGroups';
 import type { InboxRecord } from '../types';
 type Params = { readonly groups: ReadonlyArray<JiraIssueGroup> };
 export const adaptJiraIssues = ({ groups }: Params): InboxRecord[] =>

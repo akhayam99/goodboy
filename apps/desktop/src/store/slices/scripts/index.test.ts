@@ -28,7 +28,7 @@ import type {
 } from '@goodboy/types';
 import { autoChecksKey } from '../../../features/scripts/autoChecksKey';
 import { parseScriptPins } from '../../../features/scripts/parseScriptPins';
-import { makeGate } from '../auto/testing/makeGate';
+import { makeGate } from '../../runtime/auto/testing/makeGate';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -40,7 +40,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -316,6 +316,23 @@ describe('store contract', () => {
         }),
       );
       expect(store.getState().scriptRuns[SESSION_ID]?.['manifest-script']?.status).toBe('ok');
+    });
+
+    it('records an error instead of staying pending when the listeners cannot attach', async () => {
+      const store = useAppStore;
+      listenScriptExitSpy.mockRejectedValueOnce(new Error('event bus unavailable'));
+
+      const result = await store.getState().runDiscoveredScript({
+        sessionId: SESSION_ID,
+        scriptId: 'manifest-script',
+        name: 'dev',
+        command: 'pnpm run dev',
+        cwd: '/sessions/one/api/apps/web',
+      });
+
+      expect(result.exitCode).toBe(-1);
+      expect(result.stderr).toContain('event bus unavailable');
+      expect(store.getState().scriptRuns[SESSION_ID]?.['manifest-script']?.status).toBe('error');
     });
 
     it('loadScripts caches workspace scripts', async () => {

@@ -1,5 +1,5 @@
 import type { AgentRole, WorkflowRun } from '@goodboy/types';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 
 type SectionParams = {
   readonly run: Pick<WorkflowRun, 'executionMode' | 'rulesSnapshot'> | null | undefined;

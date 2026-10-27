@@ -1,10 +1,9 @@
-import { formatUsd } from '@goodboy/ui';
+import { formatUsd, ICON_SIZE } from '@goodboy/ui';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { modelLabel } from '../../utils/chat-constants';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import type { TurnFooterData } from './useTurnFooter';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly data: TurnFooterData;

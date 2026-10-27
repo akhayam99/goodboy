@@ -1,4 +1,5 @@
 import type { MountId, ProjectId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type {
   TerminalOwner,
   TerminalSelection,
@@ -65,9 +66,6 @@ export const snapshotTerminalTabs = ({
 const isOrdinalRecord = (value: unknown): value is Record<string, number> =>
   isRecord(value) &&
   Object.values(value).every((ordinal) => typeof ordinal === 'number' && Number.isInteger(ordinal));
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isOwner = (value: unknown): value is TerminalOwner => {
   if (!isRecord(value)) {

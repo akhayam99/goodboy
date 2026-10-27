@@ -12,7 +12,7 @@ import { BitbucketNoPullRequest } from './BitbucketNoPullRequest';
 afterEach(cleanup);
 
 describe('BitbucketNoPullRequest', () => {
-  it('points at Bitbucket and says the request will appear here when connected', () => {
+  it('points at Bitbucket and says Goodboy follows the request when connected', () => {
     render(
       <BitbucketNoPullRequest
         url="https://bitbucket.org/harborline/payments-api/pull-requests/new"
@@ -20,7 +20,9 @@ describe('BitbucketNoPullRequest', () => {
       />,
     );
 
-    expect(screen.getByText('Create the pull request on Bitbucket, it appears here')).toBeDefined();
+    expect(
+      screen.getByText('Create the pull request on Bitbucket and Goodboy follows it'),
+    ).toBeDefined();
     expect(screen.getByRole('button', { name: /Open Bitbucket/ })).toBeDefined();
   });
 

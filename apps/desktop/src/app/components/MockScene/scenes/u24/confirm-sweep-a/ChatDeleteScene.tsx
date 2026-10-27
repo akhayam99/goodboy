@@ -23,7 +23,7 @@ export const ChatDeleteScene = () => {
             data-chat-row={title}
             className="flex h-10 min-w-0 items-center gap-2 rounded-md px-2 hover:bg-hover"
           >
-            <span className="min-w-0 flex-1 truncate text-label text-foreground">{title}</span>
+            <span className="min-w-0 flex-1 truncate text-meta text-foreground">{title}</span>
             <ChatDeleteConfirm
               title={title}
               canArchive

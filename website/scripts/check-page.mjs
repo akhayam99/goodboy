@@ -968,7 +968,12 @@ const indexMainItems = () => {
       current = line.slice(3).trim();
       index.set(current, []);
     } else if (current !== null && line.startsWith('- ')) {
-      index.get(current).push(line.slice(2).trim());
+      index.get(current).push(
+        line
+          .slice(2)
+          .trim()
+          .replace(/^\*\*(.+?)\*\*: .*$/, '$1'),
+      );
     }
   });
   return index;

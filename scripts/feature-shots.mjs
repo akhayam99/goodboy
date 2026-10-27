@@ -3,14 +3,20 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { appVersionOf, recipeOf, recordFigure } from './lib/figures.mjs';
+import {
+  appVersionOf,
+  chromePathOf,
+  DEFAULT_SHOT_URL,
+  recipeOf,
+  recordFigure,
+} from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(
   process.env.GOODBOY_MEDIA_DIR ?? resolve(ROOT_DIRECTORY, '..', 'goodboy-media'),
   'features',
 );
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
 const THEMES = ['dark', 'light'];
 
 const STAGE = {
@@ -63,7 +69,7 @@ const parseArgs = (argv) => {
     scroll: args.scroll ?? null,
     version: args.version ?? null,
     themes: (args.themes ?? THEMES.join(',')).split(','),
-    base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
+    base: args.base ?? process.env.GOODBOY_SHOT_URL ?? DEFAULT_SHOT_URL,
   };
 };
 
@@ -73,7 +79,7 @@ const openChrome = async ({ width, height }) => {
   const port = 9400 + Math.floor(Math.random() * 500);
   const profile = mkdtempSync(join(tmpdir(), 'feature-shots-'));
   const chrome = spawn(
-    CHROME,
+    chromePathOf(),
     [
       '--headless=new',
       '--disable-gpu',

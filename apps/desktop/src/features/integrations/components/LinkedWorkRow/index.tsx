@@ -1,0 +1,105 @@
+import type { ReactNode } from 'react';
+import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
+import { cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
+import { IntegrationGlyph, type IntegrationGlyphProvider } from '../IntegrationGlyph';
+
+type IconLeading = {
+  readonly kind: 'icon';
+  readonly icon: LucideIcon;
+  readonly tone: Tone;
+  readonly label: string;
+};
+
+type GlyphLeading = {
+  readonly kind: 'glyph';
+  readonly provider: IntegrationGlyphProvider;
+};
+
+type LinkedWorkRowLeading = IconLeading | GlyphLeading;
+
+type Props = {
+  readonly leading: LinkedWorkRowLeading;
+  readonly identifier: string;
+  readonly title?: string;
+  readonly onClick: () => void;
+  readonly ariaLabel?: string;
+  readonly tooltip?: string;
+  readonly actions?: ReactNode;
+  readonly attribution?: ReactNode;
+  readonly navigation?: 'internal' | 'external';
+  readonly isSelected?: boolean;
+};
+
+export const LinkedWorkRow = ({
+  leading,
+  identifier,
+  title,
+  onClick,
+  ariaLabel,
+  tooltip,
+  actions,
+  attribution,
+  navigation = 'internal',
+  isSelected = false,
+}: Props) => {
+  const glyph =
+    leading.kind === 'icon' ? (
+      <span
+        role="img"
+        aria-label={leading.label}
+        className={cn('shrink-0', tintClasses(leading.tone).icon)}
+      >
+        <leading.icon size={ICON_SIZE.control} aria-hidden />
+      </span>
+    ) : (
+      <IntegrationGlyph provider={leading.provider} size="sm" />
+    );
+
+  return (
+    <div
+      data-selected={isSelected ? 'true' : undefined}
+      className={cn(
+        'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-4 py-3 shadow-sm transition-colors',
+        isSelected
+          ? cn(tintClasses('primary').border, 'ring-1', tintClasses('primary').ring)
+          : 'border-border-soft hover:border-border',
+      )}
+    >
+      <Tooltip content={tooltip}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+          aria-label={ariaLabel}
+          className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-md text-left', FOCUS_RING)}
+        >
+          {glyph}
+          <span className="shrink-0 font-mono text-meta font-semibold text-foreground">
+            {identifier}
+          </span>
+          {title != null ? (
+            <span className="min-w-0 flex-1 truncate text-body text-foreground">{title}</span>
+          ) : null}
+          {attribution}
+          {navigation === 'internal' ? (
+            <ArrowRight
+              size={ICON_SIZE.control}
+              aria-hidden
+              className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+            />
+          ) : (
+            <ArrowUpRight
+              size={ICON_SIZE.control}
+              aria-hidden
+              className="shrink-0 text-faint-foreground group-hover:text-muted-foreground"
+            />
+          )}
+        </button>
+      </Tooltip>
+      {actions}
+    </div>
+  );
+};

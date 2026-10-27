@@ -25,7 +25,7 @@ export const BriefStrip = ({ source, entry, isShowingBrief, onToggle, onRetry }:
     )}
     {entry.status === 'ready' && (
       <>
-        <Chip tone="primary" size="xs" bordered={false} label="Brief ready" />
+        <Chip kind="state" tone="primary" bordered={false} label="Brief ready" />
         <span className="flex-1" />
         <Button variant="ghost" size="sm" onClick={onToggle}>
           {isShowingBrief ? 'Show issue text' : 'Use brief'}

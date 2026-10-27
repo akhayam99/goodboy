@@ -38,7 +38,7 @@ vi.mock('../../../shared/lib/repo', () => ({
 vi.mock('../sessions/discardUncreatedSession', () => ({
   discardUncreatedSession: h.discard,
 }));
-vi.mock('../live-work/selectLiveWork', () => ({
+vi.mock('../../runtime/live-work/selectLiveWork', () => ({
   selectLiveWork: () => ({ liveSessionIds: h.liveSessionIds }),
 }));
 
@@ -55,6 +55,7 @@ const prepared = {
   snapshotId: 'a'.repeat(40),
   snapshotRef: 'refs/goodboy/bootstrap/proj-cascadia',
   branch: 'goodboy/bootstrap',
+  branchTip: 'b'.repeat(40),
   baseBranch: 'main',
   files: [
     { path: 'a.txt', change: 'added', size: 1 },
@@ -88,6 +89,7 @@ const phaseOf = (patch: Partial<BootstrapPhase> = {}): BootstrapPhase => ({
   snapshotId: null,
   worktreePath: null,
   branch: null,
+  branchTip: null,
   updatedAt: TEST_NOW,
   ...patch,
 });
@@ -98,6 +100,7 @@ const interrupted = phaseOf({
   snapshotId: prepared.snapshotId,
   worktreePath: WORKTREE,
   branch: prepared.branch,
+  branchTip: prepared.branchTip,
 });
 
 type StoreOptions = {
@@ -157,7 +160,7 @@ beforeEach(() => {
   h.clearRoot.mockResolvedValue({ cleared: ['a.txt', 'b.txt'], kept: [] });
   h.alignMain.mockResolvedValue({ kind: 'already-aligned' });
   h.recover.mockResolvedValue({ kind: 'verified' });
-  h.rollback.mockResolvedValue(undefined);
+  h.rollback.mockResolvedValue({ notUndone: [] });
   h.discard.mockResolvedValue(undefined);
 });
 
@@ -330,6 +333,7 @@ describe('moveToBootstrap', () => {
       projectPath: '/games/cascadia',
       worktreePath: '',
       branch: prepared.branch,
+      expectedTip: prepared.branchTip,
     });
     expect(h.apply).not.toHaveBeenCalled();
     expect(h.clearRoot).not.toHaveBeenCalled();
@@ -352,6 +356,7 @@ describe('moveToBootstrap', () => {
       projectPath: '/games/cascadia',
       worktreePath: '',
       branch: prepared.branch,
+      expectedTip: prepared.branchTip,
     });
     expect(createSession).not.toHaveBeenCalled();
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
@@ -373,9 +378,44 @@ describe('moveToBootstrap', () => {
       projectPath: '/games/cascadia',
       worktreePath: WORKTREE,
       branch: prepared.branch,
+      expectedTip: prepared.branchTip,
     });
     expect(h.clearRoot).not.toHaveBeenCalled();
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
+  });
+
+  it('names what the undo could not take back in the message the user reads', async () => {
+    h.apply.mockRejectedValue(
+      new CommandError({ kind: 'apply_conflict', message: 'the work does not apply: plot.txt' }),
+    );
+    h.rollback.mockResolvedValue({
+      notUndone: [
+        { kind: 'branch-moved', actual: 'c'.repeat(40) },
+        { kind: 'worktree-not-removed', message: 'the folder is locked' },
+      ],
+    });
+    const { set, get } = makeStore();
+
+    const result = await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
+
+    expect(result).toMatchObject({ kind: 'refused', reason: 'refused' });
+    expect(result.kind === 'refused' ? result.message : '').toContain(
+      'Not undone: the branch goodboy/bootstrap was kept because it has new commits; the bootstrap folder could not be removed (the folder is locked).',
+    );
+  });
+
+  it('says so when the rollback itself fails', async () => {
+    h.apply.mockRejectedValue(
+      new CommandError({ kind: 'apply_conflict', message: 'the work does not apply: plot.txt' }),
+    );
+    h.rollback.mockRejectedValue(new Error('another move is running'));
+    const { set, get } = makeStore();
+
+    const result = await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
+
+    expect(result.kind === 'refused' ? result.message : '').toContain(
+      'Not undone: the move could not be rolled back (another move is running).',
+    );
   });
 
   it('keeps the phase at moving when clearing fails so the move can resume', async () => {
@@ -426,7 +466,12 @@ describe('resumeBootstrapMove', () => {
 
   it('undoes a move that was interrupted before the session had its worktree filled', async () => {
     const { store, set, get } = makeStore({
-      phase: phaseOf({ stage: 'moving', snapshotId: prepared.snapshotId, branch: prepared.branch }),
+      phase: phaseOf({
+        stage: 'moving',
+        snapshotId: prepared.snapshotId,
+        branch: prepared.branch,
+        branchTip: prepared.branchTip,
+      }),
     });
 
     const result = await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
@@ -437,8 +482,29 @@ describe('resumeBootstrapMove', () => {
       projectPath: '/games/cascadia',
       worktreePath: '',
       branch: prepared.branch,
+      expectedTip: prepared.branchTip,
     });
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
+  });
+
+  it('hands a move saved before the tip was recorded to the rollback with no expected tip', async () => {
+    const { set, get } = makeStore({
+      phase: phaseOf({
+        stage: 'moving',
+        snapshotId: prepared.snapshotId,
+        branch: prepared.branch,
+        branchTip: null,
+      }),
+    });
+
+    await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
+
+    expect(h.rollback).toHaveBeenCalledWith({
+      projectPath: '/games/cascadia',
+      worktreePath: '',
+      branch: prepared.branch,
+      expectedTip: null,
+    });
   });
 
   it('does nothing for a project that is not moving', async () => {

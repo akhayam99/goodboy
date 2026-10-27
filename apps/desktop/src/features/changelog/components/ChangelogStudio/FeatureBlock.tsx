@@ -38,7 +38,7 @@ export const FeatureBlock = ({
         </div>
       </div>
       {feature.paragraphs.map((paragraph, index) => (
-        <p key={index} className="text-label text-muted-foreground">
+        <p key={index} className="text-meta text-muted-foreground">
           {paragraph}
         </p>
       ))}

@@ -221,7 +221,7 @@ describe('demo rail', () => {
       expect(window.location.hash).not.toBe(`#${title}`);
     }
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
-    expect(within(rowOf({ title: 'Orchestrate' })).getByText(/Locked/)).not.toBeNull();
+    within(rowOf({ title: 'Orchestrate' })).getByText(/Locked/);
   });
 
   it('keeps the optional Set up open and lets the visitor start at the first required group', () => {

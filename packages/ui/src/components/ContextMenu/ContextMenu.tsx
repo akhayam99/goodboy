@@ -75,7 +75,7 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
       }}
       className={cn(
         FLOATING_SURFACE,
-        'fixed z-popover flex max-h-[calc(100vh-16px)] max-w-80 flex-col text-label motion-safe:animate-popover-in',
+        'fixed z-popover flex max-h-[calc(100vh-16px)] max-w-80 flex-col text-meta motion-safe:animate-popover-in',
       )}
     >
       <ScrollFade

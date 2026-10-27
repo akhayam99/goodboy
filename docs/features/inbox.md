@@ -4,7 +4,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 ### Supported tools
 
-Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in **Settings**, **Integrations**. Each one feeds Tasks and can start a session with its brief drafted.
+Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in **Settings › Integrations**. Each one feeds Tasks and can start a session with its brief drafted.
 
 ### Agents use your tools
 
@@ -17,6 +17,8 @@ Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors a
 Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group: Source**). Each group names its total once, beside its label, shows its first five rows and **Show all**, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Rows carry no buttons: the row is the button.
 
 Narrow the list from one **Filters** button in the header, the same lines icon as every filter: **Source** with its counts, **Show** (starred, in progress, with a session, closed), **Type** and **Project**; a choice with nothing in it is dimmed and shows no number, and the button shows how many filters are on. A search that is a key shows the issue found and the rows that match. A tool that did not load, or is rate limited, says so in one gray line inside its group, with a **Retry** button. **Refresh** and **Manage tools** sit in `⋯`.
+
+What arrived since you last looked has a small dot before its title, and the header adds how many ("12 open, 2 new"). Goodboy remembers, on this Mac and per workspace, when it first saw each item and when you last had Tasks in front for a few seconds; the dots stay until you leave, and the next visit starts clean. The very first visit marks nothing. The Tasks row in the sidebar shows a dot while something assigned to you arrived and you have not looked yet. Nothing is fetched in the background for it: the dot follows what Tasks, the task picker or the work-item links already loaded.
 
 Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Back** at the top returns to the list.
 
@@ -44,7 +46,7 @@ Star an issue from the star next to its key in the pane, or press **s** on its r
 
 ### Start from any item
 
-Press **Start session** on an issue or an error (or **Start from HBL-412** from the row's menu) and the New session draft opens with the issue picked and its brief being written. On a pull request waiting for your review, **Review pull request** starts a read-only reviewer instead.
+Press **Start session** on an issue or an error, or **Start from HBL-412** from the row's menu. The New session draft opens with the issue picked and its brief being written. On a pull request waiting for your review, **Review pull request** starts a read-only reviewer instead.
 
 ### Link an item to a session
 
@@ -52,7 +54,7 @@ Attach a task to work that already exists with **Link to a session**, under the 
 
 ### Trackers
 
-Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project. Comment, assign, edit and move issues in Linear and Jira the same way.
+Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project. Comment, assign, edit and move issues in Linear and Jira the same way. Sentry stays read and start only: Goodboy never changes a Sentry error. When the work for a Linear or Jira item ships, Next offers to move that item to Done, with Undo.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-sentry-dark.webp">
@@ -65,13 +67,15 @@ Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and fi
 
 Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket comments, approvals and merges without leaving Goodboy. GitHub and GitLab can work side by side, one for code and one for tickets.
 
+A GitLab merge request merges from Tasks the way it does from its Branch page: with the project that owns the repository and the method that project prefers (merge, squash or rebase). When GitLab refuses, the panel stays open with the reason, and **Merge** tries again. Every task list shows only the answer for the workspace and source you have open, so a slow answer for a workspace you left never replaces the list.
+
 ### Slack: what agents can do
 
 Decide how far agents go in Slack. Tick the channels they follow, then set each action: reading threads is **Allowed** or **Off**, and replying and reacting are **Allowed**, **Ask first** or **Never**. Replies default to **Ask first**, and agents never start new conversations or send direct messages.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-permissions-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-permissions-light.webp" alt="Settings, Integrations, Slack: the channels #payments-oncall and #ledger-dev ticked and #releases not, and under What agents can do, Read threads in followed channels Allowed, Read other channels you're in Off, Reply in threads Ask first, Add reactions Allowed, then the Signature note Written with Goodboy">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-permissions-light.webp" alt="Settings › Integrations › Slack: the channels #payments-oncall and #ledger-dev ticked and #releases not, and under What agents can do, Read threads in followed channels Allowed, Read other channels you're in Off, Reply in threads Ask first, Add reactions Allowed, then the Signature note Written with Goodboy">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

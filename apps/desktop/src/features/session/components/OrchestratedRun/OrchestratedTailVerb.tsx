@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { CircleStop } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { OrchestratedVerb } from '../../../workflows/orchestratedTailOf';
 import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import type { RunView } from '../AgentTree/useRunView';
@@ -19,8 +19,10 @@ type PressParams = {
   readonly failure: string;
 };
 
-const QUIET_VERB =
-  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const QUIET_VERB = cn(
+  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   const sessionId = session.id;

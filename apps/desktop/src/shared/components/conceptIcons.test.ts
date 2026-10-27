@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { Folder, FolderGit2, ListVideo, SquareTerminal } from 'lucide-react';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE, projectGlyph } from './conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, projectGlyph } from './conceptIcons';
+import { ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 
 describe('CONCEPT_TONE', () => {
   it('uses the draft tone for plans', () => {
@@ -53,8 +54,19 @@ describe('CONCEPT_ICONS', () => {
 });
 
 describe('ICON_SIZE', () => {
-  it('exposes exactly the four sizes the app draws with', () => {
-    expect(ICON_SIZE).toEqual({ mark: 10, row: 12, control: 14, hero: 18 });
+  it('exposes exactly the five sizes the app draws with, with no hole between 10 and 18', () => {
+    expect(ICON_SIZE).toEqual({ mark: 10, row: 12, control: 14, notice: 16, hero: 18 });
+  });
+
+  it('gives each size one stroke weight and checks a heavier one', () => {
+    expect(ICON_STROKE).toEqual({
+      mark: 2,
+      row: 2,
+      control: 1.75,
+      notice: 1.75,
+      hero: 1.5,
+      check: 2.5,
+    });
   });
 
   it('keeps every size even so a glyph centres on whole pixels in an even badge', () => {

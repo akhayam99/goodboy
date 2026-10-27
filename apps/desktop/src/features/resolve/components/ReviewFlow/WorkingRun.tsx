@@ -45,7 +45,7 @@ export const WorkingRun = ({ attempt }: Props) => {
       data-testid="resolver-working"
       className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-4 ring-1 ring-border-soft"
     >
-      <h2 className="flex items-center gap-2 text-label text-foreground">
+      <h2 className="flex items-center gap-2 text-meta text-foreground">
         <WorkNode state="running" label={FIX_RUN_THREAD_COPY.working} mark={{ kind: 'dot' }} />
         {isWaiting
           ? FIX_RUN_THREAD_COPY.working

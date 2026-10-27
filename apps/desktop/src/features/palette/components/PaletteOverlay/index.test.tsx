@@ -200,7 +200,7 @@ describe('PaletteOverlay, the commands mode', () => {
     expect(optionNames()).toContain('Archive…');
 
     fireEvent.keyDown(input, { key: 'ArrowLeft' });
-    expect(screen.getByPlaceholderText('Search or ask')).toBeDefined();
+    expect(screen.getByPlaceholderText('Search or run')).toBeDefined();
   });
 
   it('previews the highlighted session with its facts', () => {
@@ -320,7 +320,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('offers Interrupt on a running agent and never on an idle one', () => {
+  it('offers Stop on a running agent and never on an idle one', () => {
     act(() => {
       useAppStore.setState(
         (state) =>
@@ -338,7 +338,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     });
     const running = openIn(PAYOUT, IMPLEMENTER);
     expect(screen.getByText('For this agent')).toBeDefined();
-    expect(optionNames()).toContain('Interrupt');
+    expect(optionNames()).toContain('Stop');
     cleanup();
 
     act(() => {
@@ -351,7 +351,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     });
     const idle = openIn(PAYOUT, IMPLEMENTER);
     type(idle.input, 'interrupt');
-    expect(screen.queryByRole('option', { name: 'Interrupt' })).toBeNull();
+    expect(screen.queryByRole('option', { name: 'Stop' })).toBeNull();
     expect(running.onClose).not.toHaveBeenCalled();
   });
 

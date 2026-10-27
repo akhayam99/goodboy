@@ -5,7 +5,8 @@ import {
   unstarIssue as removeStar,
   updateStarredIssueSnapshots,
 } from '@goodboy/db';
-import type { IsoDateTime, JiraIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import type { JiraIntegrationConfig, WorkspaceId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { refreshStarredIssues as runRefresh } from '../../../features/integrations/starred/refreshStarredIssues';
 import {
   starredIssueOf,
@@ -16,8 +17,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { starredIssuesInitialState } from './state';
 import type { SetFn, StarredIssuesSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const REFRESH_AFTER_MS = 5 * 60 * 1000;
 
@@ -35,7 +34,7 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
     const issue = starredIssueOf({
       workspaceId,
       record,
-      now: nowIso(),
+      now: isoNow(),
     });
     if (issue === null) {
       return;
@@ -53,7 +52,7 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
     const issue = starredIssueOfTask({
       workspaceId,
       task,
-      now: nowIso(),
+      now: isoNow(),
     });
     if (issue === null) {
       return false;
@@ -120,7 +119,7 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
       issues,
       gitlabHost,
       jiraConfig,
-      now: nowIso(),
+      now: isoNow(),
     });
     await updateStarredIssueSnapshots({ db: tauriDatabase, issues: refreshed.snapshots });
     set((state) => ({

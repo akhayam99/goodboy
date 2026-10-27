@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { MountId, SessionId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import {
   ensure,
   readWorktreeStatus,
   subscribe,
-} from '../../../store/slices/worktreeStatuses/cache';
+} from '../../../store/runtime/worktreeStatuses/cache';
 import { unmergedCount } from '../../../shared/lib/gitStatus';
+import { pickKeys } from '../../../shared/utils/pickKeys';
 import { rebaseStatusTargetsOf } from '../behindBranchesOf';
 
 type Params = {
@@ -61,7 +63,10 @@ export const useRebaseStatuses = ({
     targets.map((target) => fingerprintOf({ status: readWorktreeStatus(target.key) })).join('|'),
   );
   const events = useAppStore((s) => s.sessionEvents?.[sessionId]);
-  const historyRuns = useAppStore((s) => s.historyRuns);
+  const mountIds = useMemo(() => mounts.map((mount) => mount.mountId), [mounts]);
+  const historyRuns = useAppStore(
+    useShallow((s) => pickKeys({ source: s.historyRuns, keys: mountIds })),
+  );
   const run = useAppStore((s) => s.rebaseAllRuns[sessionId]);
   useEffect(() => {
     if (fingerprint === '') {

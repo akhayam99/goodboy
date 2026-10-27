@@ -1,4 +1,4 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
 import { historyRewriterConfig } from './historyRewriterConfig';
@@ -14,7 +14,6 @@ import type {
   SetFn,
   StartHistoryRewriterInput,
 } from './types';
-import { sessionById } from '../sessions/sessionIndex';
 
 const HISTORY_REWRITER_NAME = 'History rewriter';
 

@@ -4,6 +4,7 @@ import type {
   BranchCommit,
   PrComment,
   PullRequestState,
+  PullRequestView,
   ProjectId,
   ResolveAttempt,
   ResolveCandidate,
@@ -95,6 +96,7 @@ const PR: PullRequestState = {
   isDraft: false,
   reviewDecision: 'review_required',
   body: '',
+  author: 'nadia-p',
   updatedAt: NOW_ISO,
 };
 
@@ -673,6 +675,59 @@ export const FIX_RUN_MOUNT: SessionProjectMount = {
   revision: 0,
 };
 
+const PR_VIEW: PullRequestView = {
+  host: 'github',
+  number: PR.number,
+  title: PR.title,
+  body: PR.body,
+  url: PR.url,
+  state: PR.state,
+  isDraft: PR.isDraft,
+  author: { login: 'nadia-p', name: 'Nadia P', avatarUrl: null },
+  baseBranch: PR.baseBranch,
+  headBranch: PR.headBranch,
+  headSha: 'a41c9e2b7d3',
+  createdAt: isoAgo({ minutes: 3 * 24 * 60 }),
+  updatedAt: PR.updatedAt,
+  mergedAt: null,
+  mergeable: PR.mergeable,
+  reviewDecision: PR.reviewDecision,
+  reviewers: [],
+  resolves: [],
+  checks: { read: 'ok', error: null, runs: [] },
+  files: { count: 0, first: [] },
+  commits: [
+    {
+      sha: '9e4f1c2bbbb',
+      headline: 'Batch the ledger lookups',
+      committedAt: isoAgo({ minutes: 2 * 24 * 60 }),
+      author: 'nadia-p',
+    },
+    {
+      sha: 'a41c9e2aaaa',
+      headline: 'Redact the webhook payload',
+      committedAt: isoAgo({ minutes: 24 * 60 }),
+      author: 'nadia-p',
+    },
+  ],
+  mergeMethods: ['squash'],
+  mergeMethodReasons: {},
+};
+
+type PrViewEntryParams = {
+  readonly mountId: MountId | null;
+};
+
+const prViewEntryOf = ({ mountId }: PrViewEntryParams) => ({
+  prNumber: PR.number,
+  mountId,
+  view: PR_VIEW,
+  isLoading: false,
+  error: null,
+  fetchedAt: NOW_ISO,
+  edits: [],
+});
+
 const ATTEMPT_RETRY: ResolveAttempt = {
   id: ATTEMPT_RETRY_ID,
   sessionId: SESSION_ID,
@@ -965,7 +1020,7 @@ const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
 ).map(([id, binary, label]) => ({
   id,
   binary,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '1.0.0',
   identity: 'harborline',
@@ -1210,6 +1265,12 @@ export const seedResolveScene = ({
           checks: [],
         },
         detailFetchedAt: NOW_ISO,
+      },
+    },
+    pullRequestViews: {
+      [SESSION_ID]: {
+        none: prViewEntryOf({ mountId: null }),
+        [MOUNT_TARGET.mountId]: prViewEntryOf({ mountId: MOUNT_TARGET.mountId }),
       },
     },
     sessionExternalTasks: { [SESSION_ID]: [] },

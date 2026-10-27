@@ -1,12 +1,12 @@
 import { OptionalTooltip } from './OptionalTooltip';
 import type { FocusEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
+import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
 import { TEXT_ROLE } from '../textRoles';
 import { tintClasses, type Tone } from '../tint';
 
 export type ChipKind = 'state' | 'reference' | 'id' | 'count';
-export type ChipSize = '3xs' | 'xs' | 'sm' | 'md' | 'control';
 export type ChipEmphasis = 'subtle' | 'soft' | 'strong';
 
 export type ChipProps = {
@@ -15,9 +15,7 @@ export type ChipProps = {
   readonly icon?: ReactNode;
   readonly trailing?: ReactNode;
   readonly kind?: ChipKind;
-  readonly size?: ChipSize;
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
-  readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
   readonly emphasis?: ChipEmphasis;
   readonly as?: 'span' | 'button';
@@ -45,14 +43,6 @@ export const CHIP_KIND_CLASSES = {
   count: 'h-4 min-w-4 shrink-0 justify-center rounded-full px-1 text-chip tabular-nums',
 } as const satisfies Record<ChipKind, string>;
 
-const KIND_BY_SIZE = {
-  '3xs': 'state',
-  xs: 'state',
-  sm: 'state',
-  md: 'reference',
-  control: 'reference',
-} as const satisfies Record<ChipSize, ChipKind>;
-
 const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'min-w-16 justify-center',
   md: 'min-w-24 justify-center',
@@ -62,27 +52,16 @@ const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
 export type ChipClassParams = {
   readonly tone: Tone;
   readonly kind?: ChipKind;
-  readonly size?: ChipSize;
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
-  readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
   readonly emphasis?: ChipEmphasis;
   readonly isInteractive?: boolean;
 };
 
-const legacyShapeClass = ({ kind, shape }: Pick<ChipClassParams, 'kind' | 'shape'>): string => {
-  if (kind !== undefined || shape === undefined) {
-    return '';
-  }
-  return shape === 'pill' ? 'rounded-full' : 'rounded-md';
-};
-
 export const chipClasses = ({
   tone,
-  kind,
-  size = 'xs',
+  kind = 'state',
   width = 'auto',
-  shape,
   bordered = true,
   emphasis = 'soft',
   isInteractive = false,
@@ -92,14 +71,13 @@ export const chipClasses = ({
     'inline-flex items-center gap-1 font-medium',
     emphasis === 'subtle' ? tint.bgSoft : tint.bg,
     tone === 'neutral' ? TEXT_ROLE.secondary : tint.text,
-    CHIP_KIND_CLASSES[kind ?? KIND_BY_SIZE[size]],
-    legacyShapeClass({ kind, shape }),
+    CHIP_KIND_CLASSES[kind],
     width === 'auto' ? '' : widthClasses[width],
     bordered ? 'ring-1' : '',
     bordered ? (emphasis === 'strong' ? tint.ringStrong : tint.ring) : '',
     isInteractive
       ? cn(
-          'motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          'motion-safe:transition-colors',
           FOCUS_RING,
           bordered ? tint.hoverRing : cn('hover:ring-1', tint.hoverRing),
           tint.hoverText,
@@ -114,9 +92,7 @@ export const Chip = ({
   icon,
   trailing,
   kind,
-  size = 'xs',
   width = 'auto',
-  shape,
   bordered = true,
   emphasis = 'soft',
   as = 'span',
@@ -141,13 +117,12 @@ export const Chip = ({
     chipClasses({
       tone,
       kind,
-      size,
       width,
-      shape,
       bordered,
       emphasis,
       isInteractive: isButton,
     }),
+    isButton && disabled && DISABLED,
     className,
   );
 

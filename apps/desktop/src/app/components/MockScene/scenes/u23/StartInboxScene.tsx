@@ -8,7 +8,7 @@ import { orderInboxRecords } from '../../../../../features/inbox/orderInboxRecor
 import type { InboxProvider, InboxRecord } from '../../../../../features/inbox/types';
 import type { GithubPrGroup } from '../../../../../features/integrations/github/components/PullRequest/useGithubPrs';
 import type { LinearIssue } from '../../../../../features/integrations/linear/client';
-import { buildIssueGroups } from '../../../../../features/integrations/linear/LinearStudio/useLinearIssues';
+import { buildIssueGroups } from '../../../../../features/integrations/linear/LinearStudio/buildIssueGroups';
 import { WORKSPACE_ID } from '../BoardScene';
 import { LINEAR_PICKER_ANSWERS } from '../linearPickerAnswers';
 import { TasksStage } from '../u25/c12/TasksStage';
@@ -187,7 +187,9 @@ const installIpc = (): void => {
 
 const recordsOf = ({ variant }: Props): ReadonlyArray<InboxRecord> =>
   variant === 'issue'
-    ? adaptLinearIssues({ groups: buildIssueGroups(LINEAR_ISSUES, new Map()) })
+    ? adaptLinearIssues({
+        groups: buildIssueGroups({ issues: LINEAR_ISSUES, sessionIdByExternalId: new Map() }),
+      })
     : adaptGithubPrs({ groups: PR_GROUPS });
 
 export const StartInboxScene = ({ variant }: Props) => {

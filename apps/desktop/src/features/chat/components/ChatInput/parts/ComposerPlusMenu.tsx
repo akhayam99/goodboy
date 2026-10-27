@@ -3,7 +3,7 @@ import { AnchoredPopover, IconButton, useDropdown, type MenuEntry } from '@goodb
 import type { QuickActionGroup } from '../../../../quick-actions/grammar';
 import { AppMenuList } from '../../../../actions/AppMenuList';
 import { CHAT_PREFIXES } from '../lib';
-import { NAMES } from '../../../../../shared/names';
+import { NAMES } from '../../../../../shared/utils/names';
 
 type Props = {
   readonly onAttachFiles: () => void;

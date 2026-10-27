@@ -17,10 +17,10 @@ The folder rule, stated once in [docs/file-system.md](../../docs/file-system.md)
 ## Tauri command patterns
 
 - Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Store actions and feature wrapper modules may call `invoke`. Components and hooks never import it. They pass a wrapper instead, including where a `@goodboy/core` helper takes an `invokeFn`.
+- Rust rules (errors, the one clock, wire structs) are owned by [docs/rust.md](../../docs/rust.md). This section keeps the command wiring.
 - A command returns a Rust `Result<T, E>`. Tauri resolves with `T` on `Ok(T)` and **rejects** on `Err(E)`. No tagged `{ ok, value }` envelope travels over the wire.
 - Every `E` serializes to an object with `kind` and `message`: an error enum calls `impl_error_serialize!` from `util/mod.rs` and gives each variant a `kind()`; a command with no enum of its own returns `util::MessageError` (`refused` or `failed`). An enum whose variants carry data the UI reads (`BranchCleanupError`) serializes the same two fields by hand and adds that data as extra fields. Never a bare string, and every message reads as a sentence to a user.
-- A wire struct puts `#[serde(rename_all = "camelCase")]` on the struct, never a `rename` on each field. Only a key that is not the camelCase of its field keeps its own `rename`. `workflows::wire_shape_tests` and `config_export::wire_shape_tests` pin the json of the workflow and config structs.
-- Shared Rust helpers live in `src-tauri/src/util/`: `time.rs` (`now_ms`, `now_secs`, `iso_now`, `ms_to_iso`, `iso_to_ms` and the one calendar), `ids.rs` (`uuid_v4`) and `encoding.rs` (`percent_encode`). A module never defines its own copy.
+- Shared Rust helpers live in `src-tauri/src/util/`: `time.rs` (the one clock and calendar, [docs/rust.md](../../docs/rust.md) R6), `ids.rs` (`uuid_v4`) and `encoding.rs` (`percent_encode`). A module never defines its own copy.
 - `db_select`, `db_execute` and `db_transaction` compile through `prepare_cached` (cache of 128 statements, set in `open_connection`). A compiled statement outlives a migration, so column names are read from the row after the first step, never before it. New SQL in `db.rs` uses `prepare_cached`.
 - On the TS side, wrappers call `invokeCommand` from `shared/lib/invokeCommand.ts`, never `invoke`. It turns any rejection into a `CommandError` with `kind` and `message`, and keeps the raw rejection as `cause` so extra fields stay reachable (`asBranchCleanupError` reads them from there). Callers branch on `kind` and never on message text; `unknown` means the wrapper could not tell.
 - Show an error with `formatError` from `@goodboy/ui`. Never `String(error)` and never `error instanceof Error ? error.message : String(error)`: on a rejection that is not an `Error` those print `[object Object]`.
@@ -58,6 +58,10 @@ The folder rule, stated once in [docs/file-system.md](../../docs/file-system.md)
 
 Mechanics live in [docs/styling.md](../../docs/styling.md). Theme rules that
 never change live in [DESIGN.md](../../DESIGN.md).
+
+## Rust data folder and connections
+
+The data folder (`~/.goodboy`) is named once, in `src-tauri/src/app_paths.rs`. Any Rust module that needs it calls `app_paths::data_dir()`, which returns an error when there is no home folder. No module declares its own `APP_DIR`, joins `.goodboy` onto the home, or falls back to an empty path. Every SQLite connection comes from `db::open_connection`, which turns on foreign keys, WAL, `synchronous = NORMAL` and a 5 second busy timeout. A module that needs the database never calls `Connection::open` on the data file itself.
 
 ## Naming
 

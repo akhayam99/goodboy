@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
-import { StatCard, cn, tintClasses, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, StatCard, tintClasses, Tooltip } from '@goodboy/ui';
+
 import type { ImpactDelta } from '../../utils/impactDelta';
 
 type Props = {

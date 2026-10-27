@@ -11,6 +11,8 @@ import type {
   SessionBudgetOnExceed,
 } from '@goodboy/types';
 
+const utcOffsetMinutes = (): number => -new Date().getTimezoneOffset();
+
 type Params = {
   provider: ProviderName;
   sessionId: SessionId;
@@ -32,8 +34,8 @@ export const invokeSessionBudgetSet = async (
   sessionId: string,
   softCapUsd: number,
   onExceed: SessionBudgetOnExceed,
-): Promise<void> => {
-  return invokeCommand<void>('session_budget_set', { sessionId, softCapUsd, onExceed });
+): Promise<SessionBudget> => {
+  return invokeCommand<SessionBudget>('session_budget_set', { sessionId, softCapUsd, onExceed });
 };
 
 export const invokeSessionBudgetClear = async (sessionId: string): Promise<void> => {
@@ -52,7 +54,9 @@ export const invokeBudgetEmitAlerts = async ({
   provider,
   sessionId,
 }: Params): Promise<BudgetAlert[]> => {
-  return invokeCommand<BudgetAlert[]>('budget_emit_alerts', { input: { provider, sessionId } });
+  return invokeCommand<BudgetAlert[]>('budget_emit_alerts', {
+    input: { provider, sessionId, utcOffsetMinutes: utcOffsetMinutes() },
+  });
 };
 
 export const invokeBudgetAlertDismiss = async (id: string): Promise<void> => {
@@ -63,7 +67,11 @@ export const invokeCheckProviderBudget = async (
   provider: ProviderName,
   period: BudgetPeriod,
 ): Promise<ProviderBudgetStatus> => {
-  return invokeCommand<ProviderBudgetStatus>('check_provider_budget', { provider, period });
+  return invokeCommand<ProviderBudgetStatus>('check_provider_budget', {
+    provider,
+    period,
+    utcOffsetMinutes: utcOffsetMinutes(),
+  });
 };
 
 type OverviewParams = {
@@ -81,5 +89,6 @@ export const invokeProviderBudgetOverview = async ({
     provider,
     todayStartMs,
     weekStartMs,
+    utcOffsetMinutes: utcOffsetMinutes(),
   });
 };

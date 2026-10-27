@@ -7,13 +7,13 @@ import { CardAction } from '../components/CardAction';
 afterEach(cleanup);
 
 describe('CardAction', () => {
-  it('dims a disabled action in place', () => {
+  it('shows a disabled action with the disabled label colour in place', () => {
     render(<CardAction icon={Star} label="Pin" disabled onClick={vi.fn()} />);
     const button = screen.getByRole('button', { name: 'Pin' });
 
-    expect(button.className).toContain('opacity-40');
+    expect(button.className).toContain('text-disabled-foreground');
+    expect(button.className).not.toContain('opacity-40');
     expect(button.className).not.toContain('opacity-0');
-    expect(button.querySelector('svg')?.getAttribute('class') ?? '').not.toContain('opacity-40');
   });
 
   it('stays visible at rest', () => {

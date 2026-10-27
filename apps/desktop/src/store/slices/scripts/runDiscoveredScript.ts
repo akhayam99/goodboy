@@ -48,17 +48,18 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
     writeRun({
       record: { status: 'pending', result: null, runId, startedAt, name, ...mountField },
     });
-    const registered = await registerScriptRunListeners({
-      set,
-      get,
-      sessionId,
-      scriptId,
-      runId,
-      startedAt,
-      name,
-      ...mountField,
-    });
+    let registered: Awaited<ReturnType<typeof registerScriptRunListeners>> | null = null;
     try {
+      registered = await registerScriptRunListeners({
+        set,
+        get,
+        sessionId,
+        scriptId,
+        runId,
+        startedAt,
+        name,
+        ...mountField,
+      });
       await runAdhocScript({
         scriptId,
         name,
@@ -69,8 +70,9 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
         cols,
         rows,
       });
+      return registered.result;
     } catch (caughtError) {
-      registered.dispose();
+      registered?.dispose();
       const result: ScriptRunResult = {
         stdout: '',
         stderr: formatError(caughtError),
@@ -89,6 +91,5 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
       });
       return result;
     }
-    return registered.result;
   };
 };

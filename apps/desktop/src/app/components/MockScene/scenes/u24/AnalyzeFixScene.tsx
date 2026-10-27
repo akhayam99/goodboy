@@ -3,7 +3,6 @@ import { AppShell, ScrollFade } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
-import { TimelinePane } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane';
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
@@ -18,7 +17,7 @@ const arrangement = shellArrangement({
 
 type Props = {
   readonly phase: AnalyzeFixPhase;
-  readonly surface: 'checks' | 'activity' | 'timeline';
+  readonly surface: 'checks' | 'activity';
   readonly shouldOpenDrawer?: boolean;
   readonly isDetailUnloaded?: boolean;
   readonly isLogOpen?: boolean;
@@ -51,11 +50,7 @@ export const AnalyzeFixScene = ({
     return null;
   }
   const main =
-    surface === 'timeline' ? (
-      <div className="relative h-full w-full">
-        <TimelinePane session={SESSION} />
-      </div>
-    ) : surface === 'activity' ? (
+    surface === 'activity' ? (
       <ScrollFade className="min-h-0 flex-1">
         <div className="px-6 py-4">
           <SessionOverviewPane session={SESSION} />

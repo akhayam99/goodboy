@@ -11,8 +11,6 @@ import {
   useAppStore,
 } from './harness';
 
-const PINS_KEY_PREFIX = 'sessions.pinned.';
-
 const stored = new Map<string, string>();
 
 let targetId = '';
@@ -26,8 +24,15 @@ export const resetPinsBridge = (): void => {
   isMountlessArchive = false;
 };
 
-const isPinsKey = (value: unknown): value is string =>
-  typeof value === 'string' && value.startsWith(PINS_KEY_PREFIX);
+const PINS_KEY = 'sessions.pinned';
+
+type SlotParams = {
+  readonly workspaceId: unknown;
+  readonly key: unknown;
+};
+
+const pinsSlot = ({ workspaceId, key }: SlotParams) =>
+  typeof workspaceId === 'string' && key === PINS_KEY ? workspaceId : null;
 
 const sessionIdsInStore = (): ReadonlyArray<{ readonly id: string }> => {
   const state = useAppStore.getState();
@@ -39,9 +44,14 @@ const sessionIdsInStore = (): ReadonlyArray<{ readonly id: string }> => {
 export const pinsBridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
   const sql = args?.sql ?? '';
   const params = args?.params ?? [];
-  if (command === 'db_select' && /FROM settings WHERE key = \?/.test(sql) && isPinsKey(params[0])) {
-    const value = stored.get(params[0]);
-    return Promise.resolve(value === undefined ? [] : [{ key: params[0], value, updated_at: 1 }]);
+  const selectedSlot = pinsSlot({ workspaceId: params[0], key: params[1] });
+  if (
+    command === 'db_select' &&
+    /FROM workspace_values WHERE workspace_id = \? AND key = \?/.test(sql) &&
+    selectedSlot !== null
+  ) {
+    const value = stored.get(selectedSlot);
+    return Promise.resolve(value === undefined ? [] : [{ value }]);
   }
   if (
     command === 'db_select' &&
@@ -49,20 +59,22 @@ export const pinsBridge = (command: string, args?: BridgeArgs): Promise<unknown>
   ) {
     return Promise.resolve(sessionIdsInStore());
   }
-  if (command === 'db_execute' && /INSERT INTO settings[\s\S]*DO NOTHING/.test(sql)) {
-    const [key, value] = params;
-    if (!isPinsKey(key) || typeof value !== 'string' || stored.has(key)) {
+  if (command === 'db_execute' && /INSERT INTO workspace_values[\s\S]*DO NOTHING/.test(sql)) {
+    const [workspaceId, key, value] = params;
+    const slot = pinsSlot({ workspaceId, key });
+    if (slot === null || typeof value !== 'string' || stored.has(slot)) {
       return Promise.resolve({ rowsAffected: 0 });
     }
-    stored.set(key, value);
+    stored.set(slot, value);
     return Promise.resolve({ rowsAffected: 1 });
   }
-  if (command === 'db_execute' && /UPDATE settings SET value = \?/.test(sql)) {
-    const [value, , key, expected] = params;
-    if (!isPinsKey(key) || typeof value !== 'string' || stored.get(key) !== expected) {
+  if (command === 'db_execute' && /UPDATE workspace_values SET value = \?/.test(sql)) {
+    const [value, , workspaceId, key, expected] = params;
+    const slot = pinsSlot({ workspaceId, key });
+    if (slot === null || typeof value !== 'string' || stored.get(slot) !== expected) {
       return Promise.resolve({ rowsAffected: 0 });
     }
-    stored.set(key, value);
+    stored.set(slot, value);
     return Promise.resolve({ rowsAffected: 1 });
   }
   if (

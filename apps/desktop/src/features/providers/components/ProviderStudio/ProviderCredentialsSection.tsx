@@ -2,18 +2,20 @@ import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
+  cn,
   ConfirmPopover,
+  EmptyState,
+  ICON_SIZE,
   Input,
   SectionHeader,
-  Tooltip,
-  cn,
   tintClasses,
-  EmptyState,
+  Tooltip,
+  FOCUS_RING,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -88,7 +90,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <Plus size={ICON_SIZE.row} aria-hidden /> Add key
             </button>
@@ -141,7 +143,8 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                       className={cn(
                         'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground',
                         tintClasses('danger').hoverBg,
-                        'hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                        'hover:text-danger',
+                        FOCUS_RING,
                       )}
                     >
                       <Trash2 size={ICON_SIZE.row} aria-hidden />

@@ -11,6 +11,9 @@ import {
   Link,
   Link2,
   ListChecks,
+  Mail,
+  MailOpen,
+  OctagonX,
   Pencil,
   Pin,
   PinOff,
@@ -19,15 +22,18 @@ import {
 import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
-import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
+import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
+import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
 import { openStartRun } from '../../session/startRun/openStartRun';
+import { stopAllMessageOf } from '../../session/stopAllMessageOf';
+import { stopAllRunningAgents } from '../../session/stopAllRunningAgents';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
@@ -45,10 +51,12 @@ import type {
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIssueSources';
 import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
+import { SESSION_EXTERNAL_OPEN_ACTIONS } from './sessionExternalOpenActions';
+import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_REBASE_ACTIONS } from './sessionRebaseActions';
 
 export type SessionFacts = {
@@ -72,6 +80,8 @@ export type SessionFacts = {
   readonly prUrl: string | null;
   readonly hasLinkedIssues: boolean;
   readonly runningAgentCount: number;
+  readonly hasUnread: boolean;
+  readonly canMarkUnread: boolean;
 };
 
 type SessionWorktree = {
@@ -92,8 +102,6 @@ export const sessionObjectKey = ({ sessionId }: { readonly sessionId: SessionId 
 export const SESSION_HEADER_ANCHOR = 'session-header';
 
 const NO_MOUNT_REASON = 'Add a folder to this session first';
-
-const NO_WORKTREE_REASON = 'This session has no worktree yet';
 
 const REFRESHING_REASON = 'Already refreshing';
 
@@ -116,18 +124,13 @@ type LifecycleParams = {
   readonly session: Session;
 };
 
-const lifecyclePorts = ({ env }: { readonly env: ActionEnv }) => ({
-  bulkArchiveTask: env.getState().bulkArchiveTask,
-  bulkUnarchiveTask: env.getState().bulkUnarchiveTask,
-  showToast: env.showToast,
-});
-
 const archive = async ({ env, session }: LifecycleParams): Promise<void> => {
-  await archiveSessions({ sessions: [session], ...lifecyclePorts({ env }) });
+  await archiveSessions({ sessions: [session], ...lifecyclePortsOf({ env }) });
 };
 
-const restore = ({ env, session }: LifecycleParams): Promise<void> =>
-  restoreSessions({ sessions: [session], ...lifecyclePorts({ env }) });
+const restore = async ({ env, session }: LifecycleParams): Promise<void> => {
+  await restoreSessions({ sessions: [session], ...lifecyclePortsOf({ env }) });
+};
 
 const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfirm => ({
   title: 'Delete session?',
@@ -283,19 +286,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     when: ({ facts }) => isLive({ facts }) && facts.isBranchless,
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
-  {
-    id: 'session.editor',
-    label: 'Open in editor',
-    icon: CONCEPT_ICONS.editor,
-    group: 'open',
-    when: isLive,
-    blockedReason: ({ facts }) => (facts.worktreePath === null ? NO_WORKTREE_REASON : null),
-    run: ({ facts, env }) => {
-      if (facts.worktreePath !== null) {
-        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
-      }
-    },
-  },
+  ...SESSION_EXTERNAL_OPEN_ACTIONS,
   {
     id: 'session.openLog',
     label: 'Open the full log',
@@ -335,6 +326,22 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
         detail: { objectKey, anchorKey: SESSION_HEADER_ANCHOR },
       });
     },
+  },
+  {
+    id: 'session.markUnread',
+    label: 'Mark as unread',
+    icon: Mail,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.canMarkUnread && !facts.hasUnread,
+    run: ({ facts, env }) => env.getState().markSessionUnread({ sessionId: facts.sessionId }),
+  },
+  {
+    id: 'session.markRead',
+    label: 'Mark as read',
+    icon: MailOpen,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.hasUnread,
+    run: ({ facts, env }) => env.getState().markAllAgentsSeen(facts.sessionId),
   },
   {
     id: 'session.select',
@@ -496,6 +503,20 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => env.copyText({ text: facts.prUrl ?? '' }),
   },
   {
+    id: 'session.stopAll',
+    label: ({ facts }) => `Stop all running agents (${facts.runningAgentCount})`,
+    icon: OctagonX,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.runningAgentCount > 0,
+    run: async ({ facts, env }) => {
+      const result = await stopAllRunningAgents({
+        getState: env.getState,
+        sessionId: facts.sessionId,
+      });
+      env.showToast({ kind: 'info', message: stopAllMessageOf({ result }) });
+    },
+  },
+  {
     id: 'session.archive',
     label: 'Archive',
     icon: CONCEPT_ICONS.archive,
@@ -596,6 +617,8 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       worktreePaths,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
       runningAgentCount: runningAgentCountOf({ state, sessionId: target.sessionId }),
+      hasUnread: sessionHasUnread({ state, sessionId: target.sessionId }),
+      canMarkUnread: unreadTargetOf({ state, sessionId: target.sessionId }) !== null,
     };
   },
   actions: SESSION_ACTIONS,

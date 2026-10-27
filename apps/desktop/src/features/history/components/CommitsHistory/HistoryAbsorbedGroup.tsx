@@ -13,7 +13,7 @@ export const HistoryAbsorbedGroup = ({ group }: Props) => {
       open={isOpen}
       onOpenChange={setOpen}
       trigger={
-        <span className="flex items-baseline gap-2 text-label">
+        <span className="flex items-baseline gap-2 text-meta">
           <span className="text-foreground">{group.type}</span>
           <span className="text-meta text-muted-foreground tabular-nums">{group.items.length}</span>
         </span>
@@ -23,7 +23,7 @@ export const HistoryAbsorbedGroup = ({ group }: Props) => {
         {group.items.map((item) => (
           <li
             key={item.sha}
-            className="flex min-w-0 items-baseline gap-2 text-label text-muted-foreground"
+            className="flex min-w-0 items-baseline gap-2 text-meta text-muted-foreground"
           >
             <TruncatedText tooltip={item.title} className="min-w-0 flex-1">
               {subjectWithoutType({ title: item.title })}

@@ -19,9 +19,7 @@ import {
   attachWorkflowToSession as attachWorkflowToSessionInDb,
   detachWorkflowFromSession as detachWorkflowFromSessionInDb,
 } from '@goodboy/db';
-import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
@@ -40,8 +38,7 @@ import { selectHiddenModels } from '../settings/selectHiddenModels';
 type Options = {
   autoRun?: boolean;
   goal?: string;
-  triggerMode?: WorkflowTriggerMode;
-  chainAfterId?: WorkflowRunId;
+  triggerMode?: Exclude<WorkflowTriggerMode, 'after_run'>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
   orchestratorRouting?: OrchestratorRouting;
@@ -82,7 +79,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const autoRun = options?.autoRun ?? session.autoRun;
     const executionMode = options?.executionMode ?? 'static';
     const goal = options?.goal?.trim() || undefined;
-    const chainAfterId = options?.chainAfterId;
     const spendLimitUsd =
       options?.spendLimitUsd != null && options.spendLimitUsd > 0
         ? options.spendLimitUsd
@@ -99,24 +95,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ...workspaceRulesFor({ get, workspaceId: session.workspaceId }),
       autonomy: autoRun ? 'run' : 'step',
     };
-    let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
-    if (triggerMode === 'after_run' && chainAfterId) {
-      const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
-      const predTemplate = predecessor
-        ? templates.find((t) => t.id === predecessor.workflowId)
-        : undefined;
-      if (predecessor && !predecessor.discardedAt && predTemplate) {
-        const predAgents = runsForWorkflowRun(
-          get().sessionPhaseRuns[sessionId] ?? [],
-          chainAfterId,
-        );
-        if (
-          isWorkflowRunComplete({ run: predecessor, workflow: predTemplate, agents: predAgents })
-        ) {
-          triggerMode = 'immediate';
-        }
-      }
-    }
+    const triggerMode = options?.triggerMode ?? 'immediate';
     const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;
     await attachWorkflowToSessionInDb({
@@ -128,7 +107,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       updatedAt: now,
       ...(goal && { goal }),
       triggerMode,
-      ...(chainAfterId && { chainAfterRunId: chainAfterId }),
       executionMode,
       ...(orchestratorRouting != null && { orchestratorRouting }),
       ...(spendLimitUsd != null && { spendLimitUsd }),
@@ -199,7 +177,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       executionMode,
       createdAt: now,
       ...(orchestratorRouting != null && { orchestratorRouting }),
-      ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
@@ -262,11 +239,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
 
     if (goal != null && template.origin !== 'orchestrated') {
       void generateWorkflowRunTitle({ set, get, sessionId, workflowRunId });
-    }
-
-    if (triggerMode === 'after_run') {
-      void get().maybeAutoAdvanceWorkflow(sessionId);
-      return;
     }
 
     if (triggerMode === 'immediate') {

@@ -21,7 +21,7 @@ export const PublishConfirmRow = ({ branches, isBusy, onConfirm, onDecline }: Pr
   <div
     role="group"
     aria-label="Confirm the force push"
-    className="flex min-w-0 items-center gap-3 text-label text-foreground"
+    className="flex min-w-0 items-center gap-3 text-meta text-foreground"
   >
     <p className="min-w-0 flex-1">{lineOf({ branches })}</p>
     <Button variant="ghost" size="sm" disabled={isBusy} onClick={onDecline}>

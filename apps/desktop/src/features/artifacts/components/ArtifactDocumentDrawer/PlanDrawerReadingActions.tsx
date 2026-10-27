@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
-import { Button, HeaderActions } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
+
 import type { ResolvedAction } from '../../../actions/types';
 import { PlanPrimaryButton } from '../../../plans/planSurfaces';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';

@@ -1,4 +1,4 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, FOCUS_RING } from '@goodboy/ui';
 
 type ShellParams = {
   readonly selected?: boolean;
@@ -15,7 +15,8 @@ const restBorder = ({ selected }: Pick<ShellParams, 'selected'>): string => {
 
 export const sessionCardShell = ({ selected, active, dimmed }: ShellParams): string =>
   cn(
-    'relative rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+    'relative rounded-lg border bg-elevated text-foreground transition-colors',
+    FOCUS_RING,
     active === true ? 'border-border shadow-sm' : restBorder({ selected }),
     dimmed === true && 'opacity-50',
   );

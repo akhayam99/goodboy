@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserRound, UserX } from 'lucide-react';
-import { formatError, type MenuEntry } from '@goodboy/ui';
+import { formatError, SkeletonRow, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamMembers, type LinearTeamMember } from './client';
 import { AppMenuList } from '../../actions/AppMenuList';
@@ -73,7 +73,7 @@ export const LinearAssigneeMenu = ({
   }, [workspaceId, issueId, projectId]);
 
   if (loaded.kind === 'loading') {
-    return <p className="px-3 py-2 text-faint-foreground italic">Loading people</p>;
+    return <SkeletonRow label="Loading people" />;
   }
   if (loaded.kind === 'failed') {
     return (

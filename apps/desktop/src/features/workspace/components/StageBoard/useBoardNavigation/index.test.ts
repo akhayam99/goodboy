@@ -7,9 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../../../store/storyHarness')).dbModuleMock({
-    markAgentViewed: async () => undefined,
-  }),
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
 );
 vi.mock('../../../../../shared/lib/db', async () =>
   (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
@@ -64,7 +62,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ open_in_editor: async () => null, workspaces_with_unread: async () => [] });
+  stubStoryInvoke({ open_in_editor: async () => null });
 });
 
 afterEach(cleanup);
@@ -194,7 +192,7 @@ describe('useBoardNavigation', () => {
         useAppStore.getState().notifications.some((n) => n.title === "Couldn't open the editor"),
       ).toBe(true),
     );
-    stubStoryInvoke({ open_in_editor: async () => null, workspaces_with_unread: async () => [] });
+    stubStoryInvoke({ open_in_editor: async () => null });
     act(() => result.current.openIDE(session));
     await vi.waitFor(() => expect(editorCalls()).toHaveLength(2));
   });

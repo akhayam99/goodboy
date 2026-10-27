@@ -1,4 +1,4 @@
-import { Input, StateDot, Tooltip } from '@goodboy/ui';
+import { Input, StateDot, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../store';
 import { useRunView } from '../../../features/session/components/AgentTree/useRunView';
@@ -53,7 +53,10 @@ export const RunIdentityRow = ({ session, run, workflow }: Props) => {
         <button
           type="button"
           onClick={rename.start}
-          className="min-w-0 flex-1 cursor-text truncate rounded-md text-left text-row text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'min-w-0 flex-1 cursor-text truncate rounded-md text-left text-row text-foreground',
+            FOCUS_RING,
+          )}
         >
           {view.name}
         </button>

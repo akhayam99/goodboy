@@ -1,9 +1,8 @@
-import { deleteSetting, updateProjectKind } from '@goodboy/db';
+import { deleteProjectValue, updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
 import { trimTrailingSeparators } from '../terminal/terminalOwner';
 import { projectById } from '../projects/projectIndex';
-import { folderGitChoiceKey } from './folderGitChoiceKey';
 import { storeFolderGitChoice } from './storeFolderGitChoice';
 import { storeFolderGitNotice } from './storeFolderGitNotice';
 import { storeProjectKind } from './storeProjectKind';
@@ -37,7 +36,7 @@ export const switchFolderToRepo = ({ set, get }: FolderGitDeps) => {
     if (get().folderPurpose[projectId] === 'documents') {
       await get().setFolderPurpose({ projectId, purpose: 'code' });
     }
-    await deleteSetting(tauriDatabase, folderGitChoiceKey({ projectId }));
+    await deleteProjectValue({ db: tauriDatabase, projectId, key: 'folder.git' });
     await updateProjectKind({ db: tauriDatabase, id: projectId, kind: 'repo', rootPath });
     storeProjectKind({ set, projectId, kind: 'repo', rootPath });
     storeFolderGitChoice({ set, projectId, choice: null });

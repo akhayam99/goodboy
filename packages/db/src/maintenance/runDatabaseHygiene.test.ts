@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { runDatabaseHygiene } from './runDatabaseHygiene';
+import { DATABASE_RETENTION } from './retention';
 
 const NOW = Date.UTC(2026, 7, 22, 12, 0, 0);
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -205,6 +206,79 @@ describe('runDatabaseHygiene', () => {
     expect(result.turnEventRowsDeleted).toBe(1);
     expect(auditCount[0]?.count).toBe(5000);
     expect(eventCount[0]?.count).toBe(200_000);
+  });
+
+  it('deletes old turn events in bounded batches and keeps the recent ones', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedSession({ db });
+    await db.execute(
+      `WITH RECURSIVE sequence(value) AS (
+         SELECT 1
+         UNION ALL
+         SELECT value + 1 FROM sequence WHERE value < 250
+       )
+       INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
+       SELECT 'old-' || value, 'session-1', 'agent-1', '{}', ?
+       FROM sequence`,
+      [NOW - (DATABASE_RETENTION.turnEvents.maxAgeDays + 1) * DAY_MS],
+    );
+    await db.execute(
+      `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
+       VALUES ('recent-1', 'session-1', 'agent-1', '{}', ?), ('recent-2', 'session-1', 'agent-1', '{}', ?)`,
+      [NOW, NOW],
+    );
+    const deletes: number[] = [];
+    const counted: Database = {
+      exec: (sql) => db.exec(sql),
+      execute: async (sql, params) => {
+        const result = await db.execute(sql, params);
+        if (sql.startsWith('DELETE FROM turn_events')) {
+          deletes.push(result.rowsAffected);
+        }
+        return result;
+      },
+      select: (sql, params) => db.select(sql, params),
+      transaction: (transactionParams) => db.transaction(transactionParams),
+    };
+
+    const result = await runDatabaseHygiene({ db: counted, now: NOW, batchRows: 100 });
+    const left = await db.select<{ id: string }>('SELECT id FROM turn_events ORDER BY id');
+
+    expect(result.turnEventRowsDeleted).toBe(250);
+    expect(deletes.slice(0, 3)).toEqual([100, 100, 50]);
+    expect(Math.max(...deletes)).toBeLessThanOrEqual(100);
+    expect(left.map((row) => row.id)).toEqual(['recent-1', 'recent-2']);
+  });
+
+  it('stops after an empty batch when the rows are an exact multiple of the batch', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedSession({ db });
+    await db.execute(
+      `WITH RECURSIVE sequence(value) AS (
+         SELECT 1
+         UNION ALL
+         SELECT value + 1 FROM sequence WHERE value < 200
+       )
+       INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
+       SELECT 'old-' || value, 'session-1', 'agent-1', '{}', ?
+       FROM sequence`,
+      [NOW - (DATABASE_RETENTION.turnEvents.maxAgeDays + 1) * DAY_MS],
+    );
+
+    const result = await runDatabaseHygiene({ db, now: NOW, batchRows: 100 });
+    const count = await db.select<{ count: number }>('SELECT COUNT(*) AS count FROM turn_events');
+
+    expect(result.turnEventRowsDeleted).toBe(200);
+    expect(count[0]?.count).toBe(0);
+  });
+
+  it('names its limits in one table', () => {
+    expect(DATABASE_RETENTION).toEqual({
+      permissionAuditLog: { maxAgeDays: 30, maxRows: 5000 },
+      turnEvents: { maxAgeDays: 90, maxRows: 200_000 },
+      providerRuns: { maxAgeDays: 90 },
+      inFlightProviderRuns: { cancelAfterDays: 1 },
+    });
   });
 
   it('prunes only old terminal provider runs that no spend, agent or file version points at', async () => {

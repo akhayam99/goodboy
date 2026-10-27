@@ -1,5 +1,10 @@
-export const TRAIL_CRUMB_CLASS =
-  'inline-flex min-w-0 items-center truncate rounded-sm px-1 py-0.5 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+import { cn } from '../../cn';
+import { FOCUS_RING } from '../../focusRing';
+
+export const TRAIL_CRUMB_CLASS = cn(
+  'inline-flex min-w-0 items-center truncate rounded-sm px-1 py-0.5 text-meta transition-colors',
+  FOCUS_RING,
+);
 
 export const TRAIL_LINK_CLASS = 'text-faint-foreground hover:bg-hover hover:text-foreground';
 

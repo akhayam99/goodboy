@@ -75,7 +75,7 @@ const info = ({
   identity: 'ada@harborline.dev',
   error: null,
   docsUrl: 'https://docs.cursor.com',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
 });
 
 type SeedParams = {

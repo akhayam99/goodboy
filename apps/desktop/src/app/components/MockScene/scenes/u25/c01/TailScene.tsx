@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { TEXT_ROLE, cn } from '@goodboy/ui';
 import { TailLine } from '../../../../../../features/live-state/TailLine';
 import type { TailActionId } from '../../../../../../features/live-state/tailFacts';
-import { WorkTimeContext } from '../../../../../../features/workTreeModel/workTimeSource';
 import { tailSceneFacts, type TailSceneState } from './tailSceneFacts';
-import { TAIL_SCENE_STEP } from './tailSceneStep';
 
 type Props = {
   readonly state: TailSceneState;
@@ -23,11 +21,7 @@ export const TailScene = ({ state }: Props) => {
           Use pnpm, not yarn. <span className={TEXT_ROLE.hint}>Queued</span>
         </p>
       ) : null}
-      {facts === null ? null : (
-        <WorkTimeContext.Provider value={TAIL_SCENE_STEP.source}>
-          <TailLine facts={facts} onAction={setLastAction} />
-        </WorkTimeContext.Provider>
-      )}
+      {facts === null ? null : <TailLine facts={facts} onAction={setLastAction} />}
       <p role="status" className={TEXT_ROLE.hint}>
         {lastAction === null ? '' : `Pressed ${lastAction}`}
       </p>

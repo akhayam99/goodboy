@@ -2,15 +2,15 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { Plus, X } from 'lucide-react';
 import {
   AnchoredPopover,
-  ListboxList,
-  ScrollFade,
   cn,
-  listboxOptionId,
-  useDropdown,
+  ICON_SIZE,
   IconButton,
+  ListboxList,
+  listboxOptionId,
+  ScrollFade,
+  useDropdown,
 } from '@goodboy/ui';
 import { chipsInputOptions, type ChipSuggestion } from './chipsInputOptions';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly label: string;
@@ -127,7 +127,7 @@ export const ChipsInput = ({
           {values.map((value) => (
             <span
               key={value}
-              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-label text-foreground"
+              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-meta text-foreground"
             >
               {value}
               <IconButton

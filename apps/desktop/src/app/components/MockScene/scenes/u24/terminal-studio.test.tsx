@@ -216,7 +216,7 @@ describe('the terminal studio scenes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
 
     expect(await screen.findByText('dev server is running. Close it?')).toBeDefined();
-    expect(screen.getByText('pnpm dev')).toBeDefined();
+    expect(screen.getAllByText('pnpm dev')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
     await settle();
     expect(screen.queryByText('dev server is running. Close it?')).toBeNull();
@@ -358,5 +358,15 @@ describe('the terminal studio scenes', () => {
     const tabs = store.getState().terminalTabs['ws:mock-u24-workspace-harborline'] ?? [];
     expect(tabs).toHaveLength(1);
     expect(tabs[0]?.cwd).toBe('/mock/harborline');
+  });
+
+  it('offers to run again what ended when Goodboy quit, on the restored tab', async () => {
+    renderScene('terminal-studio-restored');
+    await settle();
+
+    expect(await screen.findByText('pnpm dev ended when Goodboy quit')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await settle();
+    expect(screen.queryByText('pnpm dev ended when Goodboy quit')).toBeNull();
   });
 });

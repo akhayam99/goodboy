@@ -92,7 +92,7 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }
           />
         ))}
         {error === null ? null : (
-          <p role="alert" className="text-label text-danger">
+          <p role="alert" className="text-meta text-danger">
             {error}
           </p>
         )}

@@ -1,4 +1,11 @@
-import type { AgentId, ProviderRunId, TurnState, ProviderId, EffortLevel } from '@goodboy/types';
+import type {
+  AgentId,
+  EffortLevel,
+  IsoDateTime,
+  ProviderId,
+  ProviderRunId,
+  TurnState,
+} from '@goodboy/types';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import type { DraftAttachment } from './setAgentAttachments';
 
@@ -10,6 +17,7 @@ export type AgentsState = {
   readonly agentEffortOverride: Readonly<Record<AgentId, EffortLevel>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
+  readonly agentUnseenSince: Readonly<Record<AgentId, IsoDateTime>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
 };
 
@@ -21,5 +29,6 @@ export const agentsInitialState: AgentsState = {
   agentEffortOverride: {},
   agentKindOverride: {},
   agentDraft: {},
+  agentUnseenSince: {},
   agentAttachments: {},
 };

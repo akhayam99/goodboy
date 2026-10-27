@@ -6,7 +6,10 @@ use serde::Serialize;
 use serde_json::Value;
 
 const MAX_PACKAGES: usize = 50;
-const EXCLUDED_DIRS: [&str; 3] = ["node_modules", ".git", "vendor"];
+
+fn is_excluded_dir(name: &str) -> bool {
+    name == ".git" || crate::reproducible_dirs::is_dependency(name)
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -76,6 +79,24 @@ fn script_body(value: &Value) -> Option<String> {
     }
 }
 
+fn is_plain_word(word: &str) -> bool {
+    !word.is_empty()
+        && word
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | ':' | '/' | '@'))
+}
+
+fn shell_word(word: &str) -> String {
+    if is_plain_word(word) {
+        return word.to_string();
+    }
+    format!("'{}'", word.replace('\'', "'\\''"))
+}
+
+fn is_option_shaped(name: &str) -> bool {
+    name.starts_with('-')
+}
+
 fn package_scripts(value: &Value, manager: &str) -> Vec<DiscoveredScript> {
     let Some(scripts) = value.get("scripts").and_then(Value::as_object) else {
         return Vec::new();
@@ -83,10 +104,13 @@ fn package_scripts(value: &Value, manager: &str) -> Vec<DiscoveredScript> {
     scripts
         .iter()
         .filter_map(|(name, entry)| {
+            if is_option_shaped(name) {
+                return None;
+            }
             let body = script_body(entry)?;
             Some(DiscoveredScript {
                 name: name.clone(),
-                command: format!("{manager} run {name}"),
+                command: format!("{manager} run {}", shell_word(name)),
                 body,
             })
         })
@@ -100,10 +124,13 @@ fn composer_scripts(value: &Value) -> Vec<DiscoveredScript> {
     scripts
         .iter()
         .filter_map(|(name, entry)| {
+            if is_option_shaped(name) {
+                return None;
+            }
             let body = script_body(entry)?;
             Some(DiscoveredScript {
                 name: name.clone(),
-                command: format!("composer run-script {name}"),
+                command: format!("composer run-script {}", shell_word(name)),
                 body,
             })
         })
@@ -191,7 +218,7 @@ fn normalized_relative_path(value: &str) -> Option<PathBuf> {
         match component {
             Component::Normal(segment) => {
                 let segment = segment.to_str()?;
-                if EXCLUDED_DIRS.contains(&segment) {
+                if is_excluded_dir(segment) {
                     return None;
                 }
                 normalized.push(segment);
@@ -253,7 +280,7 @@ fn expand_pattern(root: &Path, pattern: &str, candidates: &mut BTreeSet<String>)
             let Some(name) = entry.file_name().to_str().map(str::to_string) else {
                 continue;
             };
-            if EXCLUDED_DIRS.contains(&name.as_str()) {
+            if is_excluded_dir(name.as_str()) {
                 continue;
             }
             add_candidate(root, &base_path.join(name), candidates);
@@ -411,6 +438,63 @@ mod tests {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
         }
+    }
+
+    fn quoted_names_of(manifest: &str) -> Vec<String> {
+        let dir = TestDir::new("quoting");
+        dir.write("package.json", manifest);
+        scan(&dir.0).unwrap()[0]
+            .scripts
+            .iter()
+            .map(|script| script.command.clone())
+            .collect()
+    }
+
+    #[test]
+    fn script_names_with_shell_syntax_are_quoted() {
+        let commands = quoted_names_of(
+            r#"{"scripts":{"build all":"x","a&b":"x","say \"hi\"":"x","cost$HOME":"x","it's":"x","$(id)":"x","a;b":"x"}}"#,
+        );
+        for expected in [
+            "npm run 'build all'",
+            "npm run 'a&b'",
+            "npm run 'say \"hi\"'",
+            "npm run 'cost$HOME'",
+            "npm run 'it'\\''s'",
+            "npm run '$(id)'",
+            "npm run 'a;b'",
+        ] {
+            assert!(commands.iter().any(|c| c == expected), "{expected}");
+        }
+    }
+
+    #[test]
+    fn plain_names_stay_unquoted_and_option_names_are_dropped() {
+        let commands = quoted_names_of(
+            r#"{"scripts":{"test:unit":"x","build-all":"x","--prefix":"x","-g":"x"}}"#,
+        );
+        assert!(commands.iter().any(|c| c == "npm run test:unit"));
+        assert!(commands.iter().any(|c| c == "npm run build-all"));
+        assert_eq!(commands.len(), 2);
+    }
+
+    #[test]
+    fn composer_names_are_quoted_too() {
+        let dir = TestDir::new("composer-quoting");
+        dir.write(
+            "composer.json",
+            r#"{"name":"acme/ledger-core","scripts":{"lint all":"x","ok":"x"}}"#,
+        );
+        let groups = scan(&dir.0).unwrap();
+        let commands: Vec<String> = groups[0]
+            .scripts
+            .iter()
+            .map(|script| script.command.clone())
+            .collect();
+        assert!(commands
+            .iter()
+            .any(|c| c == "composer run-script 'lint all'"));
+        assert!(commands.iter().any(|c| c == "composer run-script ok"));
     }
 
     #[test]

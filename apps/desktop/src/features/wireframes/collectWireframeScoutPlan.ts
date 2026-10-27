@@ -22,7 +22,6 @@ import {
   type WireframeScoutRoot,
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
-import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 import { selectKindRouting } from '../../store/slices/agents/selectKindRouting';
 import { selectHiddenModels } from '../../store/slices/settings/selectHiddenModels';
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
-import { Band } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Band, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { homeFolder } from '../../../../../shared/lib/homeFolder';
 import { useAppStore } from '../../../../../store';
 import { FolderFaceCard } from './FolderFaceCard';

@@ -92,7 +92,7 @@ const harness = (initial: Record<string, unknown>): Harness => {
     workspaceIntegrations: { [SOURCE]: [] },
     projectScripts: {},
     workspaceOverrides: { [SOURCE]: overrides },
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    reloadWorkspace: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     ...initial,
   } as unknown as AppStore;
@@ -232,7 +232,7 @@ describe('mergeWorkspaces slice action', () => {
       store.get,
     )({ sourceWorkspaceIds: [SOURCE], targetWorkspaceId: TARGET });
 
-    expect(store.state.setCurrentWorkspace).toHaveBeenCalledWith(TARGET);
+    expect(store.state.reloadWorkspace).toHaveBeenCalledWith({ workspaceId: TARGET });
   });
 
   it('refuses an unknown target and touches nothing', async () => {

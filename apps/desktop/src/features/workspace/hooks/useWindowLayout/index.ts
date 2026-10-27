@@ -5,7 +5,7 @@ import { captureWindowLocation } from '../../../../store/slices/navigation/captu
 import { currentWindowLabel, onWindowClose } from '../../window';
 import { forgetWindowLayout, saveWindowLayout } from '../../windowLayout';
 
-export const WINDOW_LAYOUT_SAVE_DELAY_MS = 500;
+const WINDOW_LAYOUT_SAVE_DELAY_MS = 500;
 
 const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
   state.currentWorkspaceId,

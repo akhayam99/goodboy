@@ -1,8 +1,7 @@
 import { ArrowUpRight, FileEdit } from 'lucide-react';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { TranscriptShell } from '../TranscriptShell';
-import { tintClasses, Eyebrow, TruncatedText } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Eyebrow, ICON_SIZE, tintClasses, TruncatedText } from '@goodboy/ui';
 
 const infoAccent = tintClasses('info');
 

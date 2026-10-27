@@ -8,6 +8,8 @@ import { formatError } from '@goodboy/ui';
 import { updateProviderRunStatus, updateSessionState } from '@goodboy/db';
 import type { TurnState } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { CommandError } from '../../../shared/lib/invokeCommand';
+import { ALREADY_SENT_MESSAGE } from './handDelivery';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import {
   providersCoolingDown,
@@ -31,10 +33,7 @@ import { selectHiddenModels } from '../settings/selectHiddenModels';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
-import { liveEnabledProviders } from '../models/liveEnabledProviders';
-
-const MIN_USAGE_LIMIT_RETRY_MS = 1_000;
-const MAX_TIMEOUT_MS = 2_147_483_647;
+import { liveEnabledProviders } from '../../runtime/models/liveEnabledProviders';
 
 const formatResetTime = ({ resetAtMs }: { readonly resetAtMs: number }): string =>
   formatClock({ at: resetAtMs });
@@ -49,10 +48,9 @@ type Params = Readonly<{
     readonly input: SendTurnInput;
     readonly lease: TurnLease;
   }) => Promise<SendTurnResult>;
-  run: (input: SendTurnInput) => Promise<SendTurnResult>;
 }>;
 
-export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, run }: Params) => {
+export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }: Params) => {
   const { sessionId, content, attachments, override, force, origin, retry } = ctx.input;
   const {
     session,
@@ -72,9 +70,11 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
     progress,
     turnSpanBase,
     touchedMountsForTurn,
+    recordTurnFiles,
   } = ctx;
   const { assistantText } = progress;
-  const rawMessage = formatError(err);
+  const isAlreadySent = err instanceof CommandError && err.kind === 'delivery_duplicate';
+  const rawMessage = isAlreadySent ? ALREADY_SENT_MESSAGE : formatError(err);
   const maxModeFailure =
     provider === 'cursor' ? matchCursorMaxModeFailure({ message: rawMessage }) : null;
   if (maxModeFailure != null) {
@@ -101,6 +101,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
       touchedMountIds: await touchedMountsForTurn(),
     },
   });
+  void recordTurnFiles();
   const failure = classifyProviderError({ message: rawMessage });
   if (!cancelledBeforeFailure) {
     feedAuthRefusal({ set, get, providerId: provider, runId, message: rawMessage });
@@ -121,28 +122,29 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
     prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
     failed: { provider, model: spawnModel },
   });
-  const fallbackPlan = cancelledBeforeFailure
-    ? null
-    : planTurnFallback({
-        failure: failure.kind,
-        provider,
-        model: spawnModel,
-        connectedProviders,
-        attempt: retry?.attempt ?? 0,
-        wantsThinker: fallbackWantsThinker({ role: fallbackRole }),
-        enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
-        coolingDownProviders: providersCoolingDown({
-          cooldowns: get().providerCooldowns,
-          nowMs: Date.now(),
-        }),
-        hidden: selectHiddenModels({ state: get() }),
-        ...(preferredFallback != null && {
-          preferred: {
-            provider: preferredFallback.provider,
-            model: preferredFallback.model,
-          },
-        }),
-      });
+  const fallbackPlan =
+    cancelledBeforeFailure || isAlreadySent
+      ? null
+      : planTurnFallback({
+          failure: failure.kind,
+          provider,
+          model: spawnModel,
+          connectedProviders,
+          attempt: retry?.attempt ?? 0,
+          wantsThinker: fallbackWantsThinker({ role: fallbackRole }),
+          enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
+          coolingDownProviders: providersCoolingDown({
+            cooldowns: get().providerCooldowns,
+            nowMs: Date.now(),
+          }),
+          hidden: selectHiddenModels({ state: get() }),
+          ...(preferredFallback != null && {
+            preferred: {
+              provider: preferredFallback.provider,
+              model: preferredFallback.model,
+            },
+          }),
+        });
   const message =
     maxModeFailure != null
       ? cursorMaxModeMessage(maxModeFailure)
@@ -224,7 +226,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
         title: 'Provider at its usage limit',
         body:
           resetLabel != null
-            ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
+            ? `${PROVIDER_LABEL[provider]} is at its usage limit. You can continue it at ${resetLabel} from the session.`
             : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
         sessionId,
         workspaceId: session.workspaceId,
@@ -232,27 +234,31 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
       })
       .catch(() => undefined);
     if (usageLimitResetAtMs != null) {
-      const delayMs = Math.min(
-        Math.max(usageLimitResetAtMs - Date.now(), MIN_USAGE_LIMIT_RETRY_MS),
-        MAX_TIMEOUT_MS,
-      );
-      setTimeout(() => {
-        void run({
-          sessionId,
+      get().recordLimitStop({
+        stop: {
+          runId,
           agentId: activeAgentId,
-          content,
-          ...(override !== undefined && { override }),
-          ...(force === true ? { force: true } : {}),
-          ...(origin !== undefined && { origin }),
-          ...(turnTarget !== null && { mountTarget: turnTarget }),
-          retry: {
-            attempt: 0,
-            provider,
-            model: spawnModel,
-            attachmentRefs,
+          sessionId,
+          provider,
+          resetAtMs: usageLimitResetAtMs,
+          isScheduled: false,
+          input: {
+            sessionId,
+            agentId: activeAgentId,
+            content,
+            ...(override !== undefined && { override }),
+            ...(force === true ? { force: true } : {}),
+            ...(origin !== undefined && { origin }),
+            ...(turnTarget !== null && { mountTarget: turnTarget }),
+            retry: {
+              attempt: 0,
+              provider,
+              model: spawnModel,
+              attachmentRefs,
+            },
           },
-        }).catch(() => undefined);
-      }, delayMs);
+        },
+      });
     }
   }
   const errorState: TurnState = {
@@ -271,7 +277,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
     kind: 'error',
     runId,
     message,
-    retryable: true,
+    retryable: !isAlreadySent,
     at: now(),
   });
   if (resolvedAgentId) {

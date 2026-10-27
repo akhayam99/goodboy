@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import { AppWindow } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';

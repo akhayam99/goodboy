@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { EmptyLine, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { cn, EmptyLine, ICON_SIZE, ROW_INTERACTIVE } from '@goodboy/ui';
 import type {
   LinkedIssue,
   MountId,
@@ -7,7 +7,7 @@ import type {
   PullRequestView,
   SessionId,
 } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -106,7 +106,7 @@ export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Prop
                   openLens({ sessionId, lens: 'github_issue' });
                 }}
                 className={cn(
-                  'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-label',
+                  'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-meta',
                   row.number === null ? 'cursor-default' : ROW_INTERACTIVE,
                 )}
               >

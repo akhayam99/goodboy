@@ -27,7 +27,7 @@ export const FreePortRow = ({ row, layer, name, nameSlot }: Props) => {
       className={cn(
         'group/row relative rounded-md',
         PORT_GRID,
-        'min-h-8 text-label text-faint-foreground',
+        'min-h-8 text-meta text-faint-foreground',
       )}
     >
       <span aria-hidden />

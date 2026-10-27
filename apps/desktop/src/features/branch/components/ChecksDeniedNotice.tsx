@@ -87,12 +87,12 @@ export const ChecksDeniedNotice = ({
       }
     >
       {isTokenBound ? (
-        <p className="text-label text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           Give the token read access to checks and commit statuses.
         </p>
       ) : (
         <div className="flex min-w-0 flex-col items-start gap-2">
-          <p className="text-label text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             Run this in a terminal, then check again.
           </p>
           <div className="flex min-w-0 items-center gap-1">

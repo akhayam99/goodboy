@@ -1,0 +1,12 @@
+{
+  "entity-keyed-setting": {
+    "apps/desktop/src/features/resolve/editPostedReplySetting.ts": 1,
+    "apps/desktop/src/features/session/startKind/lastStartSetting.ts": 1,
+    "apps/desktop/src/features/session/startRun/runDefaultSetting.ts": 2,
+    "apps/desktop/src/features/session/startRun/runRoutesSetting.ts": 1,
+    "apps/desktop/src/features/workspace-chat/chatDefaultModelSetting.ts": 1,
+    "apps/desktop/src/features/workspace-chat/workDrafter.ts": 1,
+    "apps/desktop/src/store/slices/monitoring/settingKeys.ts": 1,
+    "apps/desktop/src/store/slices/resolve/commitStory.ts": 1
+  }
+}

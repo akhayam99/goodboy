@@ -1,7 +1,9 @@
 import { Check, Copy, Square, X } from 'lucide-react';
-import { Button, cn, useCopyLink } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, ICON_SIZE, useCopyLink } from '@goodboy/ui';
+
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
+import { AskOutputButton } from './AskOutputButton';
+import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import type { ScriptRunStatus } from '../../scripts';
 
 type Props = {
@@ -9,27 +11,32 @@ type Props = {
   readonly exitCode: number | null;
   readonly elapsedMs: number | null;
   readonly output: string;
+  readonly canAsk: boolean;
+  readonly askLabel: string;
+  readonly onAsk: () => void;
 };
 
-type OutcomeParams = {
-  readonly status: ScriptRunStatus;
-  readonly exitCode: number | null;
-};
-
-const outcomeLabel = ({ status, exitCode }: OutcomeParams): string => {
-  if (status === 'cancelled') {
-    return 'Stopped';
-  }
-  return exitCode === null ? 'Finished' : `Exit ${exitCode}`;
-};
-
-export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) => {
+export const ScriptRunDock = ({
+  status,
+  exitCode,
+  elapsedMs,
+  output,
+  canAsk,
+  askLabel,
+  onAsk,
+}: Props) => {
   const { copiedKey, copy } = useCopyLink();
 
   if (status === 'pending' || status === 'idle') {
     return (
-      <div className="flex items-center gap-2 text-meta text-faint-foreground">
-        Following output
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 text-meta text-faint-foreground">Following output</span>
+        <AskOutputButton
+          canAsk={canAsk}
+          askLabel={askLabel}
+          onAsk={onAsk}
+          hasOutput={output !== ''}
+        />
       </div>
     );
   }
@@ -39,7 +46,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
 
   return (
     <div className="flex items-center gap-2">
-      <span className="flex min-w-0 flex-1 items-center gap-2 text-label text-muted-foreground">
+      <span className="flex min-w-0 flex-1 items-center gap-2 text-meta text-muted-foreground">
         <Glyph
           size={ICON_SIZE.row}
           aria-hidden
@@ -49,7 +56,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
             status === 'error' && 'text-danger',
           )}
         />
-        <span>{outcomeLabel({ status, exitCode })}</span>
+        <span>{scriptOutcomeLabel({ status, exitCode })}</span>
         {duration === null ? null : <span>· {duration}</span>}
       </span>
       <Button
@@ -61,6 +68,12 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
         <Copy size={ICON_SIZE.row} aria-hidden />
         {copiedKey === 'output' ? 'Copied' : 'Copy output'}
       </Button>
+      <AskOutputButton
+        canAsk={canAsk}
+        askLabel={askLabel}
+        onAsk={onAsk}
+        hasOutput={output !== ''}
+      />
     </div>
   );
 };

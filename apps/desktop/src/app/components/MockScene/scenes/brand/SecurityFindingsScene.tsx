@@ -64,6 +64,26 @@ const seedFindings = (): void => {
   });
 };
 
+const SCROLL_DELAY_MS = 600;
+const SCROLL_PAD_PX = 28;
+
+const scrollToFindings = (): void => {
+  window.setTimeout(() => {
+    const section = document.querySelector('section[aria-label="Security findings"]');
+    section?.scrollIntoView({ block: 'start' });
+    let parent = section?.parentElement ?? null;
+    while (parent !== null && parent.scrollTop === 0) {
+      parent = parent.parentElement;
+    }
+    parent?.scrollBy({ top: -SCROLL_PAD_PX });
+  }, SCROLL_DELAY_MS);
+};
+
+const seedFindingsInView = (): void => {
+  seedFindings();
+  scrollToFindings();
+};
+
 export const BrandSecurityFindingsScene = () => (
-  <SettingsFrame focus={{ scope: 'app', section: 'security-findings' }} seed={seedFindings} />
+  <SettingsFrame focus={{ scope: 'app', section: 'security-findings' }} seed={seedFindingsInView} />
 );

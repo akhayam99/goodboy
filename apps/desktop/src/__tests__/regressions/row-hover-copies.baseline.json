@@ -15,7 +15,6 @@
   "features/session/components/ContextDrawer/DecisionsSection.tsx": 2,
   "features/session/components/SessionNavSidebar/parts/SidebarToggleButton.tsx": 1,
   "features/session/components/SessionOverviewPane/GoalTeaser.tsx": 1,
-  "features/session/components/SessionWorkspace/parts/WorkflowRailCard.tsx": 1,
   "features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": 1,
   "features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
   "features/settings/components/SettingsStudio/SettingsColumnNav.tsx": 1,

@@ -7,7 +7,7 @@ type Params = {
 export const runLogPlaceholder = ({ status }: Params): string => {
   switch (status) {
     case 'idle':
-      return 'Its output shows here once it runs.';
+      return 'Its output shows once it runs.';
     case 'pending':
       return 'Waiting for output';
     case 'cancelled':

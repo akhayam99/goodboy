@@ -1,6 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertProject, insertWorkspace } from '@goodboy/db';
-import { brandId, type FirstCommit, type ProjectId, type WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type FirstCommit,
+  type ProjectId,
+  type WorkspaceGitStatus,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   buildStoryProject,
@@ -58,6 +64,16 @@ const FIRST_COMMIT: FirstCommit = {
   branch: 'main',
   commit: 'a1b2c3d',
   files: 215,
+};
+
+const UNBORN: WorkspaceGitStatus = {
+  state: 'unborn',
+  branch: 'main',
+  headSubject: null,
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: null,
+  inProgress: null,
 };
 
 let useAppStore: StoryStore;
@@ -176,5 +192,55 @@ describe('convertProjectToRepo', () => {
     await useAppStore.getState().convertProjectToRepo({ projectId: WEB, include: [] });
 
     expect(useAppStore.getState().projects[0]?.kind).toBe('repo');
+  });
+
+  it('makes the first commit of a repository with none and leaves it a repo', async () => {
+    const repo = buildStoryProject({
+      id: WEB,
+      workspaceId: ACME,
+      name: 'acme-web',
+      rootPath: WEB_PATH,
+      kind: 'repo',
+    });
+    const loadProjectGitStatus = vi.fn(async () => undefined);
+    useAppStore.setState({
+      projects: [repo],
+      projectGitStatus: { [WEB]: UNBORN },
+      loadProjectGitStatus,
+    });
+    stubStoryInvoke({ folder_git_make_first_commit: () => FIRST_COMMIT });
+
+    const converted = await useAppStore
+      .getState()
+      .convertProjectToRepo({ projectId: WEB, include: [] });
+
+    expect(converted.commit.files).toBe(215);
+    expect(invoked('folder_git_make_first_commit')).toEqual([
+      { args: { path: WEB_PATH, include: [] } },
+    ]);
+    expect(loadProjectGitStatus).toHaveBeenCalledWith({ projectId: WEB });
+    expect(useAppStore.getState().projects[0]?.kind).toBe('repo');
+    expect(storySpies.releaseWriteSet).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a repository that already has a commit', async () => {
+    const repo = buildStoryProject({
+      id: WEB,
+      workspaceId: ACME,
+      name: 'acme-web',
+      rootPath: WEB_PATH,
+      kind: 'repo',
+    });
+    useAppStore.setState({
+      projects: [repo],
+      projectGitStatus: { [WEB]: { ...UNBORN, state: 'ready' } },
+    });
+    stubStoryInvoke({ folder_git_make_first_commit: () => FIRST_COMMIT });
+
+    await expect(
+      useAppStore.getState().convertProjectToRepo({ projectId: WEB, include: [] }),
+    ).rejects.toThrow('acme-web is already tracked with git');
+
+    expect(invoked('folder_git_make_first_commit')).toEqual([]);
   });
 });

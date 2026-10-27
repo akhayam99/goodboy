@@ -23,6 +23,8 @@ import {
   mountFixture,
   seedActionState,
 } from '../../../../__tests__/helpers/actionFixtures';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { ROW_MENU_TOOLTIP } from '../../rowMenuTooltip';
 import type { ObjectTarget } from '../../types';
 import { ObjectOverflowMenu } from './index';
 
@@ -45,6 +47,21 @@ afterEach(cleanup);
 const TARGET: ObjectTarget = { kind: 'agent', sessionId: SESSION, agentId: AGENT };
 
 describe('ObjectOverflowMenu', () => {
+  it('says More actions in its tooltip, and what a row adds when it is given', () => {
+    const { rerender } = render(<ObjectOverflowMenu target={TARGET} label="Actions for agent" />);
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Actions for agent' }) }),
+    ).toBe('More actions');
+
+    rerender(
+      <ObjectOverflowMenu target={TARGET} label="Actions for agent" tooltip={ROW_MENU_TOOLTIP} />,
+    );
+
+    expect(
+      tooltipTextOf({ element: screen.getByRole('button', { name: 'Actions for agent' }) }),
+    ).toBe('More actions. Right click or Shift+F10');
+  });
+
   it('draws the ellipsis glyph by default, never the vertical dots', () => {
     render(<ObjectOverflowMenu target={TARGET} label="More actions" />);
 
@@ -75,7 +92,7 @@ describe('ObjectOverflowMenu', () => {
           'agent.changes',
           'agent.message',
           'agent.rename',
-          'agent.interrupt',
+          'agent.stop',
           'agent.close',
           'agent.reopen',
           'agent.model',
@@ -102,7 +119,7 @@ describe('ObjectOverflowMenu', () => {
           'agent.changes',
           'agent.message',
           'agent.rename',
-          'agent.interrupt',
+          'agent.stop',
           'agent.close',
           'agent.reopen',
           'agent.model',
@@ -128,7 +145,7 @@ describe('ObjectOverflowMenu', () => {
           'agent.open',
           'agent.changes',
           'agent.message',
-          'agent.interrupt',
+          'agent.stop',
           'agent.close',
           'agent.reopen',
           'agent.model',

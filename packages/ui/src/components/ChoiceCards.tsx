@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '../cn';
+import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';
 import { tintClasses } from '../tint';
@@ -82,7 +83,7 @@ export const ChoiceCards = <T extends string>({
                 : 'items-center',
               FOCUS_RING,
               isActive ? 'bg-selected' : 'hover:bg-hover',
-              option.disabled === true && 'cursor-not-allowed opacity-50 hover:bg-transparent',
+              option.disabled === true && cn(DISABLED, 'hover:bg-transparent'),
             )}
           >
             {mark === null ? null : (
@@ -97,7 +98,14 @@ export const ChoiceCards = <T extends string>({
             )}
             <span className={cn('flex min-w-0 flex-col', isExplained && 'gap-1')}>
               <span className="flex min-w-0 items-center gap-2">
-                <span className="truncate text-row text-foreground">{option.label}</span>
+                <span
+                  className={cn(
+                    'truncate text-row',
+                    option.disabled === true ? 'text-disabled-foreground' : 'text-foreground',
+                  )}
+                >
+                  {option.label}
+                </span>
                 {option.badge}
               </span>
               {option.hint != null && (

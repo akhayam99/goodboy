@@ -19,8 +19,6 @@ import {
   SESSION_GOAL_LIMITS,
   sessionGoalText,
 } from '../artifacts/sessionGoalText';
-import { ARTIFACT_QUESTION_LIMIT } from '../artifacts/artifactQuestionContract';
-import { REDACTED } from '../../shared/utils/redactSecrets';
 import {
   buildWireframeContext,
   WIREFRAME_CONTEXT_LIMITS,
@@ -147,7 +145,7 @@ describe('buildWireframeContext question contract', () => {
     expect(text).toContain(
       '<<ctx-question suggestions="first option|second option" recommended="first option" select="one" blocking="true">>the question<</ctx-question>>',
     );
-    expect(text).toContain(`at most ${ARTIFACT_QUESTION_LIMIT} questions`);
+    expect(text).toContain(`at most ${2} questions`);
     expect(text).toContain(
       'when no question is blocking, put the questions before the artifact block, in the same turn',
     );
@@ -234,19 +232,19 @@ describe('buildWireframeContext', () => {
   it('redacts a secret carried in an agent name', () => {
     const text = textFor({ agentName: 'deploy ghp_abcdefghijklmnopqrst' });
     expect(text).not.toContain('ghp_abcdefghijklmnopqrst');
-    expect(text).toContain(REDACTED);
+    expect(text).toContain('[redacted]');
   });
 
   it('redacts a secret carried in a plan title', () => {
     const text = textFor({ planTitle: 'rotate password: hunter2hunter2' });
     expect(text).not.toContain('hunter2hunter2');
-    expect(text).toContain(REDACTED);
+    expect(text).toContain('[redacted]');
   });
 
   it('redacts a secret carried in the session goal', () => {
     const text = textFor({ goal: 'wire up api_key=abcdef123456 in the header' });
     expect(text).not.toContain('abcdef123456');
-    expect(text).toContain(REDACTED);
+    expect(text).toContain('[redacted]');
   });
 
   it('redacts secrets read out of the repository design profile', () => {
@@ -506,7 +504,7 @@ describe('buildWireframeContext session goal', () => {
   it('redacts a secret carried in the goal the user wrote', () => {
     const text = textFor({ goalSlot: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` });
     expect(text).not.toContain('harborline-test-value');
-    expect(text).toContain(REDACTED);
+    expect(text).toContain('[redacted]');
   });
 
   it('reports the goal the user wrote in the inventory', () => {

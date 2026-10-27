@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, useDropdown, type MenuEntry } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AnchoredPopover, Button, ICON_SIZE, type MenuEntry, useDropdown } from '@goodboy/ui';
+
 import { AppMenuList } from '../../../actions/AppMenuList';
 import { wireframeVersionLabel, type WireframeVersion } from '../../wireframeVersion';
 

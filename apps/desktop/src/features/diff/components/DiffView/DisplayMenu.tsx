@@ -1,13 +1,14 @@
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import {
   AnchoredPopover,
-  DiffLayoutToggle,
-  OptionalTooltip,
   cn,
+  ICON_SIZE,
+  OptionalTooltip,
   useDropdown,
-  type DiffLayoutMode,
+  FOCUS_RING,
 } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
+import { DiffLayoutToggle } from '../DiffLayoutToggle';
 
 type Props = {
   readonly layout: DiffLayoutMode;
@@ -37,9 +38,9 @@ export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
           className={cn(
-            'inline-flex h-7 items-center gap-2 rounded-md px-2 text-label text-muted-foreground',
+            'inline-flex h-7 items-center gap-2 rounded-md px-2 text-meta text-muted-foreground',
             'hover:bg-hover hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            FOCUS_RING,
             dropdown.open && 'bg-hover text-foreground',
           )}
         >
@@ -50,7 +51,7 @@ export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-label text-muted-foreground">Layout</span>
+        <span className="text-meta text-muted-foreground">Layout</span>
         <DiffLayoutToggle mode={layout} onChange={onLayout} />
       </div>
       <OptionalTooltip content={isSplit ? 'Split view always wraps' : undefined}>
@@ -61,7 +62,8 @@ export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
           disabled={isSplit}
           onClick={() => onWrap(!wrap)}
           className={cn(
-            'flex items-center justify-between gap-3 rounded-sm text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'flex items-center justify-between gap-3 rounded-sm text-meta',
+            FOCUS_RING,
             isSplit ? 'cursor-not-allowed text-faint-foreground' : 'text-foreground',
           )}
         >

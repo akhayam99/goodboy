@@ -17,6 +17,18 @@ type ElementParams = {
   readonly element: Element;
 };
 
+type TargetParams = {
+  readonly target: Node | null;
+};
+
+type EventParams = {
+  readonly event: Event;
+};
+
+type PointerMoveParams = {
+  readonly event: PointerEvent;
+};
+
 type PointParams = {
   readonly x: number;
   readonly y: number;
@@ -130,7 +142,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
     });
   };
 
-  const isInsideComposer = (target: Node | null): boolean => {
+  const isInsideComposer = ({ target }: TargetParams): boolean => {
     const composer = root.querySelector(COMPOSER);
     if (composer === null || target === null) {
       return false;
@@ -142,7 +154,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
     return card.contains(target);
   };
 
-  const onPress = (event: Event): void => {
+  const onPress = ({ event }: EventParams): void => {
     if (!event.isTrusted || !(event.target instanceof Node)) {
       return;
     }
@@ -165,7 +177,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
     onChange();
   };
 
-  const onPointerMove = (event: PointerEvent): void => {
+  const onPointerMove = ({ event }: PointerMoveParams): void => {
     if (!event.isTrusted) {
       return;
     }
@@ -182,7 +194,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
   const isStealing = ({ element }: ElementParams): boolean =>
     element.matches(COMPOSER) &&
     Date.now() - clickedAt <= FOCUS_STEAL_MS &&
-    !isInsideComposer(clickTarget);
+    !isInsideComposer({ target: clickTarget });
 
   const nativeFocus = HTMLElement.prototype.focus;
   HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions): void {
@@ -192,9 +204,20 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
     nativeFocus.call(this, options);
   };
 
-  view.addEventListener('pointerdown', onPress, { capture: true });
-  view.addEventListener('click', onPress, { capture: true });
-  view.addEventListener('pointermove', onPointerMove, { capture: true, passive: true });
+  const listeners = new AbortController();
+  view.addEventListener('pointerdown', (event) => onPress({ event }), {
+    capture: true,
+    signal: listeners.signal,
+  });
+  view.addEventListener('click', (event) => onPress({ event }), {
+    capture: true,
+    signal: listeners.signal,
+  });
+  view.addEventListener('pointermove', (event) => onPointerMove({ event }), {
+    capture: true,
+    passive: true,
+    signal: listeners.signal,
+  });
 
   return {
     rects: () =>
@@ -229,9 +252,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
       if (settleTimer !== null) {
         view.clearTimeout(settleTimer);
       }
-      view.removeEventListener('pointerdown', onPress, { capture: true });
-      view.removeEventListener('click', onPress, { capture: true });
-      view.removeEventListener('pointermove', onPointerMove, { capture: true });
+      listeners.abort();
       HTMLElement.prototype.focus = nativeFocus;
     },
   };

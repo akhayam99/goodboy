@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Check, Copy, X } from 'lucide-react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
+import { ICON_SIZE } from '../iconSize';
 import { useCopyLink } from '../useCopyLink';
 import { Tooltip } from './Tooltip';
 
@@ -34,7 +35,7 @@ const STATE_TOOLTIP: Record<CopyState, string | null> = {
 export const CopyButton = ({
   value,
   label = 'Copy',
-  size = 11,
+  size = ICON_SIZE.row,
   className,
   children,
   presentation = 'text',

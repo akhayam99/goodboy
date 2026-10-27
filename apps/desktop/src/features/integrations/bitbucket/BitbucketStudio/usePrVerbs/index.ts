@@ -5,7 +5,7 @@ import {
   RotateCcw,
   ThumbsDown,
   ThumbsUp,
-  XCircle,
+  CircleX,
 } from 'lucide-react';
 import {
   NO_RECORD_VERBS,
@@ -79,7 +79,7 @@ export const usePrVerbs = ({
       confirm: {
         title: 'Merge this pull request?',
         description:
-          'Bitbucket merges it with the strategy the repository is set to. It cannot be undone from here.',
+          "Bitbucket merges it with the strategy the repository is set to. It can't be undone from here.",
         confirmLabel: 'Confirm merge',
       },
     };
@@ -95,7 +95,7 @@ export const usePrVerbs = ({
     const decline: RecordVerb = {
       key: 'decline',
       label: 'Decline',
-      icon: XCircle,
+      icon: CircleX,
       onRun: onDecline,
       isBusy: busy === 'decline',
       blockedReason: busy === 'decline' ? null : writeReason,

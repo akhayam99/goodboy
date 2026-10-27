@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
-import { FOLD_MS } from '@goodboy/ui';
+import { DURATION_BASE_MS } from '@goodboy/ui';
 import { aWorkspace } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { shellArrangement } from '../../shellArrangement';
@@ -106,7 +106,7 @@ describe('the main sidebar fold', () => {
     );
     expect(railLayer()?.closest('[data-fold-layer="folded"]')).not.toBeNull();
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(foldOf()).toBe('folded');
     expect(columnLayer()).toBeNull();
@@ -124,7 +124,7 @@ describe('the main sidebar fold', () => {
     );
     expect(railLayer()?.closest('[data-fold-layer="folded"]')?.hasAttribute('inert')).toBe(true);
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(foldOf()).toBe('open');
     expect(railLayer()).toBeNull();

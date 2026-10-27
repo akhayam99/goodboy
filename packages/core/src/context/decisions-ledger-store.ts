@@ -6,6 +6,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import type { ContextSlotAuthor, IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import {
   applyDecisionOps,
   renderDecisionsSlot,
@@ -22,8 +23,6 @@ type LoadParams = {
   readonly now?: () => IsoDateTime;
   readonly newId?: () => string;
 };
-
-const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const randomId = (): string => globalThis.crypto.randomUUID();
 

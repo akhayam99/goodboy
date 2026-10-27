@@ -1,11 +1,11 @@
 import { Plus } from 'lucide-react';
-import { PANE_RHYTHM, ROW_INTERACTIVE, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, PANE_RHYTHM, ROW_INTERACTIVE, StatusDot, Tooltip } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
 import { hasSessionDraftContent } from '../../../../store/slices/sessionDraft/hasSessionDraftContent';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { requestNewSession } from '../../../session/requestNewSession';
 
 type Props = {

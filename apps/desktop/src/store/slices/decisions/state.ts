@@ -5,7 +5,7 @@ export type DecisionsSliceState = {
   readonly sessionDecisionsBaseline: Readonly<Record<SessionId, IsoDateTime | null>>;
 };
 
-export const initialDecisionsState: DecisionsSliceState = {
+export const decisionsInitialState: DecisionsSliceState = {
   sessionDecisions: {},
   sessionDecisionsBaseline: {},
 };

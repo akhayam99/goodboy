@@ -1,10 +1,6 @@
 import { Check, Copy, Trash2, Undo2 } from 'lucide-react';
-import { Button, OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, OverflowMenu, tintClasses, type MenuItemEntry } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../../shared/components/StudioShell/StudioTrail';
 import type { SaveStatus } from '../../WorkflowsPanel/useWorkflowEditor';
 
@@ -37,34 +33,34 @@ export const EditorTrail = ({
   onUndo,
   onDelete,
 }: Props) => {
-  const duplicateItem: OverflowMenuItem = {
+  const duplicateItem: MenuItemEntry = {
     kind: 'item',
     key: 'duplicate',
     label: 'Duplicate',
     icon: Copy,
-    onClick: onDuplicate,
+    onSelect: onDuplicate,
   };
-  const undoItem: OverflowMenuItem = {
+  const undoItem: MenuItemEntry = {
     kind: 'item',
     key: 'undo',
     label: 'Undo changes',
     icon: Undo2,
-    onClick: onUndo,
+    onSelect: onUndo,
   };
-  const deleteItem: OverflowMenuItem = {
+  const deleteItem: MenuItemEntry = {
     kind: 'item',
     key: 'delete',
     label: isSavedWorkflow ? 'Delete' : 'Discard',
     icon: Trash2,
-    destructive: true,
-    onClick: onDelete,
+    isDestructive: true,
+    onSelect: onDelete,
   };
-  const candidates: ReadonlyArray<OverflowMenuItem | null> = [
+  const candidates: ReadonlyArray<MenuItemEntry | null> = [
     isSavedWorkflow ? duplicateItem : null,
     isDirty ? undoItem : null,
     deleteItem,
   ];
-  const items = candidates.filter((item): item is OverflowMenuItem => item !== null);
+  const entries = candidates.filter((entry): entry is MenuItemEntry => entry !== null);
 
   return (
     <StudioTrail
@@ -91,13 +87,13 @@ export const EditorTrail = ({
             {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
             {STATUS_LABEL[saveStatus]}
           </span>
-          {items.length > 1 ? (
+          {entries.length > 1 ? (
             <OverflowMenu
               label="Workflow actions"
               disabled={disabled}
               align="left"
               trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-              items={items}
+              entries={entries}
             />
           ) : (
             <Button size="sm" variant="ghost-danger" disabled={disabled} onClick={onDelete}>

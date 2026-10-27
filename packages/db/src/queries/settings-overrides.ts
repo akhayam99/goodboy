@@ -1,93 +1,16 @@
-import type {
-  OverrideSettings,
-  ProviderBindings,
-  RoleModelPreferences,
-  TaskModelPreferences,
-  WorkspaceId,
-} from '@goodboy/types';
+import { OVERRIDE_COLUMNS } from '@goodboy/types';
+import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import {
-  REPLY_SETTING_COLUMNS,
-  overridesFromRow,
-  replySettingValues,
-  type OverrideRow,
-} from './override-row';
-
-function serializeBindings(bindings: ProviderBindings | null): string | null {
-  return bindings && Object.keys(bindings).length > 0 ? JSON.stringify(bindings) : null;
-}
-
-function serializeTaskModels(taskModels: TaskModelPreferences | null): string | null {
-  return taskModels && Object.keys(taskModels).length > 0 ? JSON.stringify(taskModels) : null;
-}
-
-function serializeRoleModels(roleModels: RoleModelPreferences | null): string | null {
-  return roleModels && Object.keys(roleModels).length > 0 ? JSON.stringify(roleModels) : null;
-}
-
-type ProviderPool = {
-  readonly providerPool: OverrideSettings['providerPool'];
-};
-
-const serializeProviderPool = ({ providerPool }: ProviderPool): string | null =>
-  providerPool === null ? null : JSON.stringify(providerPool);
+import { overridesFromRow, type OverrideRow } from './override-row';
 
 export const getWorkspaceOverrides = async (
   db: Database,
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<OverrideRow>(
-    `SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, ${REPLY_SETTING_COLUMNS}, after_merge, default_branch_template, workflow_rules
-     FROM workspaces WHERE id = ?`,
+    `SELECT ${OVERRIDE_COLUMNS.join(', ')} FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
   const row = rows[0];
   return row === undefined ? null : overridesFromRow({ row });
-};
-
-export const setWorkspaceOverrides = async (
-  db: Database,
-  workspaceId: WorkspaceId,
-  overrides: OverrideSettings,
-): Promise<void> => {
-  await db.execute(
-    `UPDATE workspaces
-     SET default_provider_id = ?,
-         default_branch_prefix = ?,
-         default_verbosity = ?,
-         provider_bindings = ?,
-         task_models = ?,
-         role_models = ?,
-         parallel_agents = ?,
-         provider_pool = ?,
-         attribution_footer = ?,
-         reply_voice = ?,
-         reply_style_note = ?,
-         reply_template_fixed = ?,
-         reply_template_no_change = ?,
-         resolve_on_github = ?,
-         resolve_commit_style = ?,
-         after_merge = ?,
-         default_branch_template = ?,
-         workflow_rules = ?,
-         updated_at = ?
-     WHERE id = ?`,
-    [
-      overrides.defaultProviderId,
-      overrides.defaultBranchPrefix,
-      overrides.defaultVerbosity,
-      serializeBindings(overrides.providerBindings),
-      serializeTaskModels(overrides.taskModels),
-      serializeRoleModels(overrides.roleModels),
-      overrides.parallelAgents === null ? null : overrides.parallelAgents ? 1 : 0,
-      serializeProviderPool({ providerPool: overrides.providerPool }),
-      overrides.attributionFooter === null ? null : overrides.attributionFooter ? 1 : 0,
-      ...replySettingValues({ overrides }),
-      overrides.afterMerge,
-      overrides.defaultBranchTemplate,
-      overrides.workflowRules == null ? null : JSON.stringify(overrides.workflowRules),
-      Date.now(),
-      workspaceId,
-    ],
-  );
 };

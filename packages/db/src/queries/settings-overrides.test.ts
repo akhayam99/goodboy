@@ -3,7 +3,8 @@ import { PROVIDER_IDS } from '@goodboy/types';
 import type { IsoDateTime, OverrideSettings, ProviderPolicy, WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertWorkspace } from './workspace';
-import { getWorkspaceOverrides, setWorkspaceOverrides } from './settings-overrides';
+import { seedWorkspaceOverrides } from '../test-helpers/seedWorkspaceOverrides';
+import { getWorkspaceOverrides } from './settings-overrides';
 
 const WS_ID = 'w1' as WorkspaceId;
 
@@ -73,12 +74,16 @@ async function makeDb() {
 describe('workspace overrides', () => {
   it('round-trips role preferences and the routing pool', async () => {
     const db = await makeDb();
-    await setWorkspaceOverrides(db, WS_ID, {
-      ...EMPTY,
-      roleModels: {
-        reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: {
+        ...EMPTY,
+        roleModels: {
+          reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
+        },
+        providerPool: POLICY,
       },
-      providerPool: POLICY,
     });
 
     const stored = await getWorkspaceOverrides(db, WS_ID);
@@ -130,7 +135,11 @@ describe('workspace overrides', () => {
 
   it('writes the new shape so the 0.15.4 reader falls back to every provider', async () => {
     const db = await makeDb();
-    await setWorkspaceOverrides(db, WS_ID, { ...EMPTY, providerPool: POLICY });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: { ...EMPTY, providerPool: POLICY },
+    });
     const [row] = await db.select<{ provider_pool: string | null }>(
       'SELECT provider_pool FROM workspaces WHERE id = ?',
       [WS_ID],
@@ -144,19 +153,35 @@ describe('workspace overrides', () => {
 
     expect((await getWorkspaceOverrides(db, WS_ID))?.attributionFooter).toBeNull();
 
-    await setWorkspaceOverrides(db, WS_ID, { ...EMPTY, attributionFooter: false });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: { ...EMPTY, attributionFooter: false },
+    });
     expect((await getWorkspaceOverrides(db, WS_ID))?.attributionFooter).toBe(false);
 
-    await setWorkspaceOverrides(db, WS_ID, { ...EMPTY, attributionFooter: true });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: { ...EMPTY, attributionFooter: true },
+    });
     expect((await getWorkspaceOverrides(db, WS_ID))?.attributionFooter).toBe(true);
 
-    await setWorkspaceOverrides(db, WS_ID, { ...EMPTY, attributionFooter: null });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: { ...EMPTY, attributionFooter: null },
+    });
     expect((await getWorkspaceOverrides(db, WS_ID))?.attributionFooter).toBeNull();
   });
 
   it('stores no row value for an empty preference map', async () => {
     const db = await makeDb();
-    await setWorkspaceOverrides(db, WS_ID, { ...EMPTY, roleModels: {} });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: WS_ID,
+      overrides: { ...EMPTY, roleModels: {} },
+    });
 
     expect((await getWorkspaceOverrides(db, WS_ID))?.roleModels).toBeNull();
   });

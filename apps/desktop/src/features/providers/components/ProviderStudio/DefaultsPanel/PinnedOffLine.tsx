@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { Button, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 
@@ -34,7 +34,7 @@ export const PinnedOffLine = ({ count, total, onProviderIds, isDisabled, onConfi
   }
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <p className="min-w-0 text-label text-muted-foreground">
+      <p className="min-w-0 text-meta text-muted-foreground">
         {`${leadOf({ onProviderIds })}, ${count} of ${pluralize(total, 'agent')} use${count === 1 ? 's' : ''} a pin that cannot run. Auto picks apply.`}
       </p>
       <ConfirmPopover

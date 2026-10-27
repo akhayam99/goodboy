@@ -1,29 +1,35 @@
-import { AlertCircle, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
+import { CircleAlert, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
 import {
   Button,
   Chip,
+  cn,
   FOCUS_RING,
   GhostActionButton,
+  ICON_SIZE,
   IconButton,
   InlineConfirm,
-  WorkNode,
   tintClasses,
-  cn,
+  WorkNode,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import {
+  selectMountById,
+  selectWritableMounts,
+} from '../../../../store/slices/project-mounts/selectors';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SYNC_COPY } from '../../failedRunCopy';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { pushConfirmBody, pushConfirmTitle, pushStyleNote } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly push: ReviewPush;
 };
 
@@ -46,10 +52,15 @@ const PUSH_LABEL = 'Push';
 const DISMISS_LABEL = 'Dismiss';
 const NOT_A_FIX_LABEL = 'Not a fix';
 
-export const PushBanner = ({ sessionId, push }: Props) => {
+export const PushBanner = ({ sessionId, mountId = null, push }: Props) => {
   const commitStyle = useAppStore((s) => sessionReplySettings({ state: s, sessionId }).commitStyle);
   const { phase } = push;
-  const { source } = useActiveReviewSource({ sessionId });
+  const { source } = useActiveReviewSource({ sessionId, mountId });
+  const repoName = useAppStore((s) =>
+    mountId === null || selectWritableMounts({ state: s, sessionId }).length < 2
+      ? null
+      : (selectMountById({ state: s, sessionId, mountId })?.mountName ?? null),
+  );
   const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   if (phase.kind === 'sync_confirm') {
@@ -93,7 +104,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
             className={cn('shrink-0', tintClasses('success').icon)}
           />
         ) : (
-          <AlertCircle
+          <CircleAlert
             size={ICON_SIZE.control}
             aria-hidden
             className={cn('shrink-0', tintClasses('danger').icon)}
@@ -133,7 +144,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
         role="alert"
         className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta"
       >
-        <AlertCircle
+        <CircleAlert
           size={ICON_SIZE.control}
           aria-hidden
           className={cn('shrink-0', tintClasses('warning').icon)}
@@ -162,7 +173,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
     <InlineConfirm
       role="primary"
       icon={<ArrowUp size={ICON_SIZE.control} aria-hidden />}
-      title={pushConfirmTitle({ preview })}
+      title={pushConfirmTitle({ preview, repoName })}
       description={pushConfirmBody({
         preview,
         commitStyle,
@@ -189,8 +200,8 @@ export const PushBanner = ({ sessionId, push }: Props) => {
                 <span className="min-w-0 flex-1 truncate">{commit.subject}</span>
                 {!isFix && (
                   <Chip
+                    kind="state"
                     tone="neutral"
-                    size="xs"
                     bordered={false}
                     emphasis="subtle"
                     label={NOT_A_FIX_LABEL}
@@ -231,7 +242,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
         role="status"
         className="flex min-w-0 items-center gap-2 px-1 text-meta text-muted-foreground"
       >
-        <AlertCircle
+        <CircleAlert
           size={ICON_SIZE.control}
           aria-hidden
           className={cn('shrink-0', tintClasses('warning').icon)}

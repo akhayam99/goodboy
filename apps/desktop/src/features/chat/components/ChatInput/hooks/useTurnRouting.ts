@@ -226,7 +226,9 @@ export const useTurnRouting = ({ session, agentId }: Params) => {
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));
-    if (effectiveModel) ids.add(effectiveModel);
+    if (effectiveModel) {
+      ids.add(effectiveModel);
+    }
     return Array.from(ids);
   }, [providerModels, effectiveModel]);
 

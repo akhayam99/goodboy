@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { Play } from 'lucide-react';
-import { CopyButton, Markdown, Notice } from '@goodboy/ui';
+import { CopyButton, ICON_SIZE, Markdown, Notice, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
+
+import { NAMES } from '../../../../shared/utils/names';
 import { chatAnswerMeta } from '../../chatAnswerMeta';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
@@ -75,7 +75,10 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
               <button
                 type="button"
                 onClick={() => onStartWork(message.id)}
-                className="flex h-6 items-center gap-1 rounded-md px-2 text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn(
+                  'flex h-6 items-center gap-1 rounded-md px-2 text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+                  FOCUS_RING,
+                )}
               >
                 <Play size={ICON_SIZE.row} aria-hidden />
                 {NAMES.startWorkFromChat}

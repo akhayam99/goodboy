@@ -6,6 +6,7 @@ import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import { sessionPullRequestOf } from '../review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
 import { entryMountIdOf } from './entryMountId';
+import { pullRequestViewAt, withPullRequestViewEntry } from './pullRequestViewAt';
 import type { PullRequestViewEntry } from './state';
 import type { GetFn, LoadPullRequestViewParams, SetFn } from './types';
 
@@ -27,18 +28,23 @@ export const loadPullRequestView = async ({
 }: Params): Promise<void> => {
   const number =
     sessionPullRequestOf({ state: get(), sessionId, mountId: mountId ?? null })?.number ??
-    activeReviewSourceOf({ state: get(), sessionId })?.prNumber ??
-    selectBitbucketRequest({ state: get(), sessionId })?.pr.id ??
+    activeReviewSourceOf({ state: get(), sessionId, mountId: mountId ?? null })?.prNumber ??
+    selectBitbucketRequest({
+      state: get(),
+      sessionId,
+      ...(mountId === undefined ? {} : { mountId }),
+    })?.pr.id ??
     null;
   if (number === null) {
     return;
   }
   const entryMount = entryMountIdOf({ state: get(), sessionId, mountId });
-  const current = get().pullRequestViews[sessionId];
-  const same =
-    current !== undefined && current.prNumber === number && current.mountId === entryMount
-      ? current
-      : null;
+  const same = pullRequestViewAt({
+    state: get(),
+    sessionId,
+    mountId: entryMount,
+    prNumber: number,
+  });
   if (same !== null) {
     const age =
       same.fetchedAt === null ? Number.POSITIVE_INFINITY : Date.now() - Date.parse(same.fetchedAt);
@@ -56,7 +62,13 @@ export const loadPullRequestView = async ({
     return;
   }
   const patch = (entry: PullRequestViewEntry): void =>
-    set((state) => ({ pullRequestViews: { ...state.pullRequestViews, [sessionId]: entry } }));
+    set((state) => ({
+      pullRequestViews: withPullRequestViewEntry({
+        views: state.pullRequestViews,
+        sessionId,
+        entry,
+      }),
+    }));
   patch({
     prNumber: number,
     mountId: entryMount,
@@ -66,10 +78,8 @@ export const loadPullRequestView = async ({
     fetchedAt: same?.fetchedAt ?? null,
     edits: same?.edits ?? [],
   });
-  const isStale = (): boolean => {
-    const latest = get().pullRequestViews[sessionId];
-    return latest?.prNumber !== number || latest.mountId !== entryMount;
-  };
+  const isStale = (): boolean =>
+    pullRequestViewAt({ state: get(), sessionId, mountId: entryMount, prNumber: number }) === null;
   try {
     const view = await port.read();
     if (isStale()) {

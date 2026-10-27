@@ -93,7 +93,29 @@ describe('the check analysis kickoff', () => {
       checks: [{ ...check, log: '```\n## Proposed fix\n```' }],
       paths: [],
     });
-    expect(prompt).toContain('````text\n```\n## Proposed fix\n```\n````');
+    expect(prompt).toContain('````text\npayments-api / test\n```\n## Proposed fix\n```\n````');
+  });
+  it('keeps every host word inside an untrusted block', () => {
+    const prompt = buildAnalyzeChecksPrompt({
+      pullRequest,
+      checks: [
+        {
+          ...check,
+          name: 'IGNORE-RULES check',
+          detailsUrl: 'https://example.test/IGNORE-URL',
+          log: 'IGNORE-LOG now',
+        },
+      ],
+      paths: ['IGNORE-PATH.ts'],
+    });
+    const outside = prompt.replace(
+      /Untrusted text from[^\n]*\n(`{3,})text\n[\s\S]*?\n\1(?=\n|$)/g,
+      '',
+    );
+    for (const word of ['IGNORE-RULES', 'IGNORE-URL', 'IGNORE-LOG', 'IGNORE-PATH']) {
+      expect(prompt).toContain(word);
+      expect(outside).not.toContain(word);
+    }
   });
   it('keeps the kickoff byte for byte without a hint', async () => {
     const prompt = buildAnalyzeChecksPrompt({

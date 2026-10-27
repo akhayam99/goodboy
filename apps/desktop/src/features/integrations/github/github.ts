@@ -9,7 +9,6 @@ import {
   listIssueComments,
   listOpenPrBranches,
   updateIssueBody,
-  viewPullRequest,
 } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, OpenPrBranch } from '@goodboy/core';
 import type {
@@ -17,7 +16,6 @@ import type {
   GithubInboxPullRequest,
   GithubIssue,
   GithubIssueComment,
-  PullRequestState,
 } from '@goodboy/types';
 
 type RawGhRunResult = {

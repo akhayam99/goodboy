@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Check, RefreshCw } from 'lucide-react';
-import { Button, Disclosure, IconButton, PopoverBody, cn } from '@goodboy/ui';
+import { Button, cn, Disclosure, ICON_SIZE, IconButton, PopoverBody } from '@goodboy/ui';
 import type { BaseDivergence, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { openInEditor } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
@@ -14,6 +14,7 @@ import { ProjectGitDetail } from '../ProjectGitPill/ProjectGitDetail';
 import { RepoEntryRow } from './RepoEntryRow';
 import { repoGroupsOf } from './repoGroupsOf';
 import { repoRowFactsOf, type RepoRowFacts } from './repoRowFactsOf';
+import { OPEN_APP_SETTINGS_GENERAL } from '../../../../store/slices/notifications/errorRecovery';
 
 type Entry = {
   readonly project: Project;
@@ -112,6 +113,7 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
         title: `Couldn't open ${project.name} in the editor`,
         error,
         workspaceId,
+        recovery: OPEN_APP_SETTINGS_GENERAL,
       });
     }
   };
@@ -143,7 +145,7 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
   return (
     <>
       <div data-repo-header="" className="flex h-10 shrink-0 items-center gap-2 px-3">
-        <span className="shrink-0 text-label text-foreground">Repositories</span>
+        <span className="shrink-0 text-meta text-foreground">Repositories</span>
         <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
           {statusLineOf({ isChecking, checkedAt })}
         </span>

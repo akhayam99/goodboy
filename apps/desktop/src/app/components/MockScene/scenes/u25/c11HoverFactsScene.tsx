@@ -34,7 +34,7 @@ export const HoverFactsScene = () => {
 
   return (
     <main className="flex h-screen items-start justify-center bg-background p-12 text-foreground">
-      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-label')}>
+      <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-meta')}>
         <SessionHoverCardBody
           session={session}
           isArchived={false}

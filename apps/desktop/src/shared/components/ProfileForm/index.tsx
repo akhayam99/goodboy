@@ -2,9 +2,9 @@ import { useCallback, useId, type ReactNode } from 'react';
 import { Eye } from 'lucide-react';
 import { matchRoleLibrary } from '@goodboy/core';
 import type { WorkspaceProfile } from '@goodboy/types';
-import { Textarea } from '@goodboy/ui';
-import { NAMES } from '../../names';
-import { ICON_SIZE } from '../conceptIcons';
+import { ICON_SIZE, Textarea } from '@goodboy/ui';
+import { NAMES } from '../../utils/names';
+
 import { ChipsInput } from './ChipsInput';
 import { ProfileAccessPopover } from './ProfileAccessPopover';
 
@@ -55,7 +55,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <span className="text-label font-medium text-muted-foreground">{NAMES.yourJob}</span>
+        <span className="text-meta font-medium text-muted-foreground">{NAMES.yourJob}</span>
         <ChipsInput
           label={NAMES.yourJob}
           values={value.roles}
@@ -67,7 +67,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor={aboutWorkId} className="text-label font-medium text-muted-foreground">
+        <label htmlFor={aboutWorkId} className="text-meta font-medium text-muted-foreground">
           About your work{' '}
           <span className="font-normal text-faint-foreground">what you do and for whom</span>
         </label>
@@ -83,7 +83,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor={workingRulesId} className="text-label font-medium text-muted-foreground">
+        <label htmlFor={workingRulesId} className="text-meta font-medium text-muted-foreground">
           How agents should work with you
         </label>
         <Textarea
@@ -98,7 +98,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
       </div>
       <div className="flex flex-col gap-2">
-        <span className="text-label font-medium text-muted-foreground">
+        <span className="text-meta font-medium text-muted-foreground">
           Explain more when it touches
         </span>
         <ChipsInput
@@ -111,7 +111,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
         {learned}
       </div>
-      <div className="flex items-center gap-2 text-label text-faint-foreground">
+      <div className="flex items-center gap-2 text-meta text-faint-foreground">
         <Eye size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         Agents read these fields by role.
         <ProfileAccessPopover />

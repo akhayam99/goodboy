@@ -3,6 +3,7 @@ import { AUTO_FACTS_MOUNTS_MAX } from './limits';
 import { parseDelegatePublish, type DelegatePublish } from './publish';
 import type { AutoRefusalCode } from './refusals';
 import { parseAutoDelegationRole, type AutoDelegationRole } from './roles';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const DELEGATE_TASK_CHARS = 8_000;
 export const DELEGATE_FIELD_CHARS = 1_000;
@@ -54,9 +55,6 @@ export type DelegateSpecOutcome =
     }>;
 
 type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type TextParams = {
   readonly value: unknown;

@@ -4,7 +4,7 @@ import type { AgentId, Session } from '@goodboy/types';
 import type { ComposerControlSlots } from './composerControlSlots';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
-import { QuickActionsPopover } from '../../../quick-actions';
+import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
 import { useTurnRouting } from './hooks/useTurnRouting';
@@ -14,11 +14,14 @@ import { useRightSizeNudge } from './hooks/useRightSizeNudge';
 import { useAgentSwitchSync } from './hooks/useAgentSwitchSync';
 import { useAgentSelection } from './hooks/useAgentSelection';
 import { useComposerDraft } from './hooks/useComposerDraft';
+import { useOutputHandoffs } from './hooks/useOutputHandoffs';
 import { useComposerQueue } from './hooks/useComposerQueue';
 import { useComposerDataLoad } from './hooks/useComposerDataLoad';
 import { useComposerSend } from './hooks/useComposerSend';
 import { useComposerSuggestions } from './hooks/useComposerSuggestions';
 import { useFirstMessageFocus } from './hooks/useFirstMessageFocus';
+import { useAgentStop } from '../../../../shared/hooks/useAgentStop';
+import { useEscapeStop } from './hooks/useEscapeStop';
 import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
@@ -71,12 +74,15 @@ export const ChatInput = ({
     onFileInputChange,
     removeAttachment,
     cleanupSentAttachments,
+    isRestored,
+    attachOutputHandoffs,
   } = useAttachments({
     selectedAgentId,
     sessionWorktree,
     providerDisconnected,
     showToast,
   });
+  useOutputHandoffs({ selectedAgentId, isReady: isRestored, wrapperRef, attachOutputHandoffs });
   useToastLift({ ref: composerRef });
 
   const {
@@ -182,7 +188,13 @@ export const ChatInput = ({
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 
-  const onKeyDown = composerKeyDown({ popoverOpen });
+  const agentStop = useAgentStop({ sessionId: session.id, agentId: selectedAgentId });
+  const escapeStop = useEscapeStop({
+    isLive: agentStop.isLive,
+    phase: agentStop.phase,
+    stop: agentStop.stop,
+  });
+  const onKeyDown = composerKeyDown({ popoverOpen, onEscape: escapeStop.onEscape });
 
   const hasTray = queue.length > 0 || suggestions.length > 0;
   const insertPrefix = (symbol: string) => {
@@ -282,6 +294,9 @@ export const ChatInput = ({
               sendDisabledTitle={sendDisabledTitle}
               onSend={() => void onSend()}
               onSendNow={() => void onSendNow()}
+              stopPhase={agentStop.phase}
+              isStopArmed={escapeStop.isArmed}
+              onStop={agentStop.stop}
             />
           </div>
         </div>

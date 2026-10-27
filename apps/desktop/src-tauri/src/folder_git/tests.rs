@@ -110,6 +110,43 @@ fn the_plan_groups_what_goes_in_and_what_stays_out() {
 }
 
 #[test]
+fn the_plan_leaves_out_the_same_folders_the_other_readers_know() {
+    let paths: Vec<String> = [
+        "notes.md",
+        ".venv/lib/site.py",
+        ".next/cache/page.js",
+        ".turbo/log.txt",
+        "coverage/index.html",
+        "packages/app/vendor/lib.go",
+        "docs/build/guide.md",
+    ]
+    .iter()
+    .map(|path| path.to_string())
+    .collect();
+
+    let plan = super::plan::plan_entries(&paths, false);
+
+    let left_out: Vec<(EntryKind, &str)> = plan
+        .iter()
+        .filter(|entry| entry.is_left_out)
+        .map(|entry| (entry.kind, entry.key.as_str()))
+        .collect();
+    assert_eq!(
+        left_out,
+        vec![
+            (EntryKind::Dependencies, ".venv/"),
+            (EntryKind::Dependencies, "vendor/"),
+            (EntryKind::Output, ".next/"),
+            (EntryKind::Output, ".turbo/"),
+            (EntryKind::Output, "coverage/"),
+        ]
+    );
+    assert!(plan
+        .iter()
+        .any(|entry| entry.key == "docs/" && !entry.is_left_out));
+}
+
+#[test]
 fn the_first_commit_keeps_every_secret_out_and_writes_the_ignore_file() {
     let root = acme_web("secrets");
 
@@ -142,6 +179,20 @@ fn a_dependency_folder_goes_in_only_when_asked_and_its_secrets_still_stay_out() 
     let files = committed(&root);
     assert!(files.contains(&"node_modules/left-pad/index.js".to_string()));
     assert!(!files.contains(&"node_modules/left-pad/test.pem".to_string()));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn an_ignore_file_that_is_not_utf_8_keeps_its_bytes_in_the_first_commit() {
+    let root = acme_web("ignore-bytes");
+    let original: Vec<u8> = b"caf\xe9/\n".to_vec();
+    std::fs::write(root.join(".gitignore"), &original).unwrap();
+
+    make_first_commit_blocking(&args(&root, &[])).unwrap();
+
+    let written = std::fs::read(root.join(".gitignore")).unwrap();
+    assert!(written.starts_with(&original));
+    assert!(written.windows(13).any(|part| part == b"node_modules/"));
     std::fs::remove_dir_all(root).unwrap();
 }
 

@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, FormActions, Kbd, cn, formatError, inlineMarkdownText } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight } from 'lucide-react';
+import {
+  Button,
+  cn,
+  FormActions,
+  formatError,
+  ICON_SIZE,
+  inlineMarkdownText,
+  Kbd,
+} from '@goodboy/ui';
+import { TriangleAlert, ArrowRight } from 'lucide-react';
 import type {
   ProjectId,
   SessionExternalTaskProvider,
@@ -18,10 +26,10 @@ import { LaunchedNotice } from './LaunchedNotice';
 import { BriefStrip } from './BriefStrip';
 import { LaunchMountRow } from './LaunchMountRow';
 import type { LaunchMount } from '../../../inbox/launchMountFor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { PromptField } from '../../../../shared/components/PromptField';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -170,7 +178,7 @@ export const LaunchSessionPanel = ({
         />
       )}
       {briefTitle !== null && (
-        <p className="px-2 text-label font-semibold text-foreground">{briefTitle}</p>
+        <p className="px-2 text-meta font-semibold text-foreground">{briefTitle}</p>
       )}
       {mount !== null && (
         <LaunchMountRow
@@ -200,7 +208,7 @@ export const LaunchSessionPanel = ({
 
       {error != null ? (
         <span role="alert" className="flex items-start gap-1 px-2 text-meta text-danger">
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
+          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
           {error}
         </span>
       ) : null}

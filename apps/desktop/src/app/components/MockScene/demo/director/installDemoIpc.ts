@@ -21,7 +21,9 @@ const METADATA = {
   currentWebview: { windowLabel: 'main', label: 'main' },
 };
 
-const isInvoke = (value: unknown): value is Invoke => typeof value === 'function';
+const isInvoke = ((value: unknown): value is Invoke => typeof value === 'function') satisfies (
+  value: unknown,
+) => boolean;
 
 type OverlaySourceParams = {
   readonly value: unknown;
@@ -102,7 +104,7 @@ export const installDemoIpc = (): void => {
     }
   };
 
-  const invoke: Invoke = async (command, args, options) => {
+  const invoke = (async (command, args, options) => {
     for (const overlay of [...overlays].reverse()) {
       const reply = await ask({ overlay, command, args, options });
       if (reply.isAnswered) {
@@ -116,7 +118,7 @@ export const installDemoIpc = (): void => {
     return new Promise((resolve) => {
       parked.push({ command, args, options, resolve });
     });
-  };
+  }) satisfies Invoke;
 
   const addOverlay = ({ overlay }: OverlayParams): void => {
     overlays.push(overlay);
@@ -136,7 +138,7 @@ export const installDemoIpc = (): void => {
   const internals: DemoInternals & { readonly isGoodboyDemo: true } = {
     isGoodboyDemo: true,
     invoke,
-    transformCallback: (callback, isOnce = false) => {
+    transformCallback: ((callback, isOnce = false) => {
       const id = nextCallback;
       nextCallback += 1;
       callbacks.set(id, (data) => {
@@ -146,14 +148,14 @@ export const installDemoIpc = (): void => {
         return callback?.(data);
       });
       return id;
-    },
-    unregisterCallback: (id) => {
+    }) satisfies DemoInternals['transformCallback'],
+    unregisterCallback: ((id) => {
       callbacks.delete(id);
-    },
-    runCallback: (id, data) => {
+    }) satisfies DemoInternals['unregisterCallback'],
+    runCallback: ((id, data) => {
       callbacks.get(id)?.(data);
-    },
-    convertFileSrc: (path) => path,
+    }) satisfies DemoInternals['runCallback'],
+    convertFileSrc: ((path) => path) satisfies DemoInternals['convertFileSrc'],
     metadata: METADATA,
   };
 
@@ -161,28 +163,28 @@ export const installDemoIpc = (): void => {
     configurable: false,
     enumerable: true,
     get: () => invoke,
-    set: (value: unknown) => {
+    set: ((value: unknown) => {
       if (isInvoke(value) && value !== invoke) {
         addOverlay({ overlay: value });
       }
-    },
+    }) satisfies (value: unknown) => void,
   });
 
   Object.defineProperty(window, INTERNALS_KEY, {
     configurable: false,
     enumerable: true,
     get: () => internals,
-    set: (value: unknown) => {
+    set: ((value: unknown) => {
       const overlay = overlayInvokeOf({ value });
       if (overlay !== null && overlay !== invoke) {
         addOverlay({ overlay });
       }
-    },
+    }) satisfies (value: unknown) => void,
   });
 
   Reflect.set(window, EVENT_INTERNALS_KEY, {
-    unregisterListener: (_event: string, id: number) => {
+    unregisterListener: ((_event: string, id: number) => {
       callbacks.delete(id);
-    },
+    }) satisfies (event: string, id: number) => void,
   });
 };

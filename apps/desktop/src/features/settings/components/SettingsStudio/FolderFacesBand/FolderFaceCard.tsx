@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FolderPurpose, Project } from '@goodboy/types';
-import { SegmentedTabs, formatError } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { formatError, ICON_SIZE, SegmentedTabs } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { tildePath } from '../../../../../shared/components/NewWorkspaceForm/tildePath';
 import { useAppStore } from '../../../../../store';
 import { FOLDER_FACE_COPY } from '../../../../workspace/folderFaceCopy';
@@ -69,7 +69,7 @@ export const FolderFaceCard = ({ folder, home }: Props) => {
           {purpose === null ? FOLDER_FACE_COPY.pickBlock : FOLDER_FACE_COPY[purpose].meaning}
         </p>
         {error === null ? null : (
-          <p role="alert" className="text-label text-danger">
+          <p role="alert" className="text-meta text-danger">
             {error}
           </p>
         )}

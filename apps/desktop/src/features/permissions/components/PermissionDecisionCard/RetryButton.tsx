@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,49 +14,40 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
   const retryBlockedTool = useAppStore((s) => s.retryBlockedTool);
   const isRunning = useAppStore((s) => s.agentTurnState[agentId]?.kind === 'running');
   const reportError = useAppStore((s) => s.reportError);
-  const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const [hasSent, setHasSent] = useState(false);
 
   const handle = async () => {
-    if (busy) {
+    if (isBusy) {
       return;
     }
-    setBusy(true);
+    setIsBusy(true);
     try {
       await retryBlockedTool({ sessionId, agentId, toolName });
-      setSent(true);
+      setHasSent(true);
     } catch (err) {
-      void reportError({ title: `Couldn't retry ${toolName}`, error: err, sessionId });
+      void reportError({ title: `Couldn't continue after ${toolName}`, error: err, sessionId });
     } finally {
-      setBusy(false);
+      setIsBusy(false);
     }
   };
 
-  if (sent) {
-    return <span className="text-meta text-muted-foreground">retry sent</span>;
+  if (hasSent) {
+    return <span className="text-meta text-muted-foreground">Continuing</span>;
   }
 
-  const disabled = busy || isRunning;
-
   return (
-    <Tooltip content="Re-run the turn so the agent retries the tool with the new rule in place">
-      <button
-        type="button"
-        disabled={disabled}
+    <Tooltip content="Start a new turn so the agent retries the call with the new rule in place">
+      <Button
+        variant="secondary"
+        size="xs"
+        isBusy={isBusy}
+        disabled={isRunning}
         onClick={() => void handle()}
-        className={cn(
-          cn(
-            'flex items-center gap-1 rounded-sm border',
-            tintClasses('primary').border,
-            'px-2 py-0.5 text-chip text-primary transition-colors',
-            tintClasses('primary').hoverBg,
-          ),
-          disabled && 'cursor-not-allowed opacity-50',
-        )}
       >
         <RotateCcw size={ICON_SIZE.mark} aria-hidden />
-        retry {toolName}
-      </button>
+        Continue
+      </Button>
     </Tooltip>
   );
 };

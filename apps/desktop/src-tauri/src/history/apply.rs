@@ -441,12 +441,7 @@ fn restore_marked(cwd: &Path, journal: &Path, sha: &str) -> Result<Vec<String>, 
     outcome
 }
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_secs())
-        .unwrap_or_default()
-}
+use crate::util::now_secs;
 
 fn pending_guard(cwd: &Path) -> Option<String> {
     let raw = std::fs::read_to_string(journal_of(cwd)?).ok()?;

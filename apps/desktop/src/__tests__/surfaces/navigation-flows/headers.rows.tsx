@@ -108,7 +108,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       const confirm = await screen.findByRole('group', {
-        name: 'Push 2 commits to hl/fix-duplicate-credit?',
+        name: /^Push 2 commits to hl\/fix-duplicate-credit in \S+\?$/,
       });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       expect(

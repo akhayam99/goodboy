@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { registerEscapeLayer } from './escape';
 
-export const useEscapeLayer = (onEscape: () => void, active = true): void => {
+export const useEscapeLayer = (onEscape: () => void, active = true, isBase = false): void => {
   const handlerRef = useRef(onEscape);
   handlerRef.current = onEscape;
 
@@ -9,6 +9,6 @@ export const useEscapeLayer = (onEscape: () => void, active = true): void => {
     if (!active) {
       return;
     }
-    return registerEscapeLayer(() => handlerRef.current());
-  }, [active]);
+    return registerEscapeLayer(() => handlerRef.current(), isBase);
+  }, [active, isBase]);
 };

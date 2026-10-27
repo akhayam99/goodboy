@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { selectLiveWork } from '../../../store/slices/live-work/selectLiveWork';
+import { selectLiveWork } from '../../../store/runtime/live-work/selectLiveWork';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { changedCount } from '../../../shared/lib/gitStatus';
 import { MoveCard } from '../MoveCard';

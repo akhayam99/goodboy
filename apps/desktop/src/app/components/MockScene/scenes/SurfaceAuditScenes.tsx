@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { brandId } from '@goodboy/types';
 import type {
+  Agent,
+  AgentId,
   MountId,
   PrReviewDraft,
   Project,
@@ -70,13 +73,16 @@ const OVERRIDES = {
   defaultBranchTemplate: null,
 };
 
-const SCRIPTS_WORKSPACE_ID = 'mock-scripts-workspace-harborline' as WorkspaceId;
-const SCRIPTS_SESSION_ID = 'mock-scripts-session-settlement' as SessionId;
-const LEDGER_PROJECT_ID = 'mock-scripts-project-ledger-core' as ProjectId;
-const RELAY_PROJECT_ID = 'mock-scripts-project-notify-relay' as ProjectId;
-const PAYMENTS_PROJECT_ID = 'mock-scripts-project-payments-api' as ProjectId;
-const NORTHWIND_PROJECT_ID = 'mock-scripts-project-northwind-storefront' as ProjectId;
-const LEDGER_MOUNT_ID = 'mock-scripts-mount-ledger' as MountId;
+const SCRIPTS_WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-scripts-workspace-harborline' });
+const SCRIPTS_SESSION_ID = brandId<SessionId>({ value: 'mock-scripts-session-settlement' });
+const SCRIPTS_AGENT_ID = brandId<AgentId>({ value: 'mock-scripts-agent-implementer' });
+const LEDGER_PROJECT_ID = brandId<ProjectId>({ value: 'mock-scripts-project-ledger-core' });
+const RELAY_PROJECT_ID = brandId<ProjectId>({ value: 'mock-scripts-project-notify-relay' });
+const PAYMENTS_PROJECT_ID = brandId<ProjectId>({ value: 'mock-scripts-project-payments-api' });
+const NORTHWIND_PROJECT_ID = brandId<ProjectId>({
+  value: 'mock-scripts-project-northwind-storefront',
+});
+const LEDGER_MOUNT_ID = brandId<MountId>({ value: 'mock-scripts-mount-ledger' });
 
 const SCRIPTS_NOW = scriptsClock.iso({ at: '2026-09-16T11:24:00.000Z' });
 const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
@@ -223,6 +229,17 @@ const SCRIPTS_SESSION: Session = {
   activeProjectId: LEDGER_PROJECT_ID,
   createdAt: SCRIPTS_EARLIER,
   updatedAt: SCRIPTS_NOW,
+};
+
+const SCRIPTS_AGENT: Agent = {
+  id: SCRIPTS_AGENT_ID,
+  sessionId: SCRIPTS_SESSION_ID,
+  ordinal: 0,
+  name: 'Replay the stuck settlement batch',
+  status: 'completed',
+  kind: 'implementer',
+  startedAt: SCRIPTS_EARLIER,
+  completedAt: SCRIPTS_NOW,
 };
 
 const RUNNING_SCRIPT_ID = 'mock-scripts-script-settlement-replay' as ProjectScriptId;
@@ -594,6 +611,8 @@ const seedScriptsScene = (): void => {
     projects: SCRIPTS_PROJECTS,
     sessions: [SCRIPTS_SESSION],
     currentSessionId: SCRIPTS_SESSION_ID,
+    sessionPhaseRuns: { [SCRIPTS_SESSION_ID]: [SCRIPTS_AGENT] },
+    selectedAgentId: { [SCRIPTS_SESSION_ID]: SCRIPTS_AGENT_ID },
     sessionProjectMounts: { [SCRIPTS_SESSION_ID]: SCRIPTS_MOUNTS },
     sessionActiveMount: { [SCRIPTS_SESSION_ID]: LEDGER_MOUNT_ID },
     sessionActiveProject: { [SCRIPTS_SESSION_ID]: LEDGER_PROJECT_ID },

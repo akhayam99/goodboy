@@ -1,6 +1,16 @@
 import { Check, MessageSquare } from 'lucide-react';
-import { FOCUS_RING, ROW_INTERACTIVE, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import {
+  cn,
+  FOCUS_RING,
+  ICON_SIZE,
+  ICON_STROKE,
+  ROW_INTERACTIVE,
+  tintClasses,
+  Tooltip,
+  StatusDot,
+  treeIndentPx,
+} from '@goodboy/ui';
+
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import { kindsLabelOf, type CommentKinds } from '../../lib/commentKinds';
 import { cutFileName } from '../../lib/cutFileName';
@@ -12,7 +22,6 @@ import type { DiffFileActions } from '../DiffView/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { diffFileFactsOf } from './diffFileFactsOf';
 import { Delta } from './Delta';
-import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
 type FileTreeRow = Extract<TreeRow, { readonly kind: 'file' }>;
 
@@ -66,7 +75,6 @@ export const FileRow = ({
     target: { kind: 'diffFile', facts: diffFileFactsOf({ file: row.file, fileActions }) },
     anchorKey: `tree-file:${row.id}`,
   });
-  const indent = TREE_BASE_PX + row.depth * TREE_INDENT_PX;
   const isViewed = state === 'viewed';
   const count = kinds.notes + kinds.host;
   const tone = tintClasses(STATUS_TONE[row.file.status]);
@@ -90,7 +98,10 @@ export const FileRow = ({
         type="button"
         tabIndex={-1}
         onClick={onPick}
-        style={{ paddingLeft: indent + TOGGLE_SLOT_PX, height: rowHeightOf(row) }}
+        style={{
+          paddingLeft: treeIndentPx({ depth: row.depth }) + TOGGLE_SLOT_PX,
+          height: rowHeightOf(row),
+        }}
         className={cn(
           'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body',
           ROW_INTERACTIVE,
@@ -150,7 +161,10 @@ export const FileRow = ({
         </span>
       </button>
       {canToggleViewed ? (
-        <div className="absolute top-1/2 -translate-y-1/2" style={{ left: indent + 2 }}>
+        <div
+          className="absolute top-1/2 -translate-y-1/2"
+          style={{ left: treeIndentPx({ depth: row.depth }) + 2 }}
+        >
           <Tooltip content={viewedTipOf({ state })} anchorClassName="flex">
             <button
               type="button"
@@ -164,10 +178,10 @@ export const FileRow = ({
                 isViewed ? 'border-primary bg-primary' : 'border-border bg-transparent',
               )}
             >
-              {isViewed ? <Check size={ICON_SIZE.mark} strokeWidth={3} aria-hidden /> : null}
-              {state === 'stale' ? (
-                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+              {isViewed ? (
+                <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
               ) : null}
+              {state === 'stale' ? <StatusDot size="sm" tone="warning" /> : null}
             </button>
           </Tooltip>
         </div>

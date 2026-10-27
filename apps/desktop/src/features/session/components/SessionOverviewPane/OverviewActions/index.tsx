@@ -1,10 +1,10 @@
 import { ChevronDown, Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, Button, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
 import { NewFormMenuList } from '../../../../actions/NewFormMenuList';
 import { isSessionIdle } from '../../../isSessionIdle';

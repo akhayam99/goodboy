@@ -1,9 +1,6 @@
-import type { Agent, AgentId, IsoDateTime } from '@goodboy/types';
+import type { Agent, AgentId } from '@goodboy/types';
 import type { TailState } from '../live-state/tailFacts';
-import type {
-  OrchestratorPhase,
-  OrchestratorState,
-} from './components/OrchestratorStrip/orchestratorState';
+import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
 import { modelNamesIn } from './modelNamesIn';
 import type { RunPrimary } from './runPrimaryOf';
 

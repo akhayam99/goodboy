@@ -3,7 +3,7 @@ import { Button, SkeletonRow, formatError } from '@goodboy/ui';
 import type { ArtifactId } from '@goodboy/types';
 import type { ArtifactRevision } from '@goodboy/db';
 import { listArtifactRevisions } from '../../artifacts';
-import { dropLeadingTitleHeading } from '../ArtifactDocument/dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../../../../shared/utils/dropLeadingTitleHeading';
 import { ArtifactProse } from '../ArtifactProse';
 
 type Props = {
@@ -45,7 +45,7 @@ export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurren
 
   return (
     <div data-testid="plan-drawer-past" className="flex min-w-0 flex-col gap-4">
-      <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-hover px-3 py-2 text-label text-muted-foreground">
+      <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-hover px-3 py-2 text-meta text-muted-foreground">
         <span className="min-w-0 truncate">{`Version ${revision}, replaced by v${latest}`}</span>
         <Button variant="ghost" size="sm" onClick={onOpenCurrent}>
           {`Open v${latest}`}
@@ -58,7 +58,7 @@ export const ArtifactPastVersion = ({ artifactId, revision, latest, onOpenCurren
         </span>
       ) : null}
       {state.kind === 'ready' && state.revision === null ? (
-        <p className="text-label text-muted-foreground">This version is no longer stored.</p>
+        <p className="text-meta text-muted-foreground">This version is no longer stored.</p>
       ) : null}
       {state.kind === 'ready' && state.revision !== null ? (
         <ArtifactProse

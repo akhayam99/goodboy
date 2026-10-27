@@ -72,7 +72,7 @@ export const SearchField = ({
         aria-label={ariaLabel}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-label text-foreground outline-none ring-0 placeholder:text-muted-foreground focus-visible:outline-none disabled:text-disabled-foreground [&::-webkit-search-cancel-button]:hidden"
+        className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-ui text-foreground outline-none ring-0 placeholder:text-faint-foreground focus-visible:outline-none disabled:text-disabled-foreground [&::-webkit-search-cancel-button]:hidden"
       />
       {hasValue ? <IconButton size="xs" icon={X} label={clearLabel} onClick={clear} /> : null}
       {!hasValue && hint != null ? (

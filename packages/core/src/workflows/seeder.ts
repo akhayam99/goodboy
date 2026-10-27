@@ -7,6 +7,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import {
   readBuiltinSeedState,
   findActiveWorkflowRunTitle,
@@ -46,8 +47,6 @@ export type SeedWorkflowLibraryDeps = {
 export type SeedResult = {
   readonly seeded: ReadonlyArray<{ slug: string; workflowId: WorkflowId }>;
 };
-
-const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 function makeWorkflowId(slug: string, workspaceId: WorkspaceId): WorkflowId {
   return `wf_seed_${slug}_${workspaceId}` as WorkflowId;

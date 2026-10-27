@@ -3,7 +3,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import type { RestartReason } from './planRestartResume';
 
 export const INTERRUPTED_RUNS_KEY = 'restart.interrupted_runs';
-export const RESTART_REASON_KEY = 'restart.reason';
+const RESTART_REASON_KEY = 'restart.reason';
 
 const REASON_WINDOW_MS = 10 * 60 * 1000;
 

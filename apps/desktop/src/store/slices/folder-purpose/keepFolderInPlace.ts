@@ -1,7 +1,6 @@
-import { setSetting, updateProjectKind } from '@goodboy/db';
+import { setProjectValue, updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectById } from '../projects/projectIndex';
-import { folderGitChoiceKey } from './folderGitChoiceKey';
 import { storeFolderGitChoice } from './storeFolderGitChoice';
 import { storeFolderGitNotice } from './storeFolderGitNotice';
 import { storeProjectKind } from './storeProjectKind';
@@ -13,7 +12,12 @@ export const keepFolderInPlace = ({ set, get }: FolderGitDeps) => {
     if (project === undefined) {
       throw new Error('This folder is no longer in a workspace');
     }
-    await setSetting(tauriDatabase, folderGitChoiceKey({ projectId }), 'in-place');
+    await setProjectValue({
+      db: tauriDatabase,
+      projectId,
+      key: 'folder.git',
+      value: 'in-place',
+    });
     if (project.kind === 'repo') {
       await updateProjectKind({
         db: tauriDatabase,

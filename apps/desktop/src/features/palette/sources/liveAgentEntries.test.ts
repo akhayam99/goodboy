@@ -17,23 +17,20 @@ const verb = (id: string, label: string): PaletteEntry => ({
 });
 
 describe('liveAgentVerbs', () => {
-  it('names the agent in Message and Interrupt and keeps the old label findable', () => {
+  it('names the agent in Message and Stop and keeps the old label findable', () => {
     const verbs = liveAgentVerbs({
       verbs: [
         verb('agent.message', 'Message this agent'),
-        verb('agent.interrupt', 'Interrupt'),
+        verb('agent.stop', 'Stop'),
         verb('agent.close', 'Close'),
       ],
       name: 'Implementer',
     });
 
-    expect(verbs.map((entry) => entry.label)).toEqual([
-      'Message Implementer',
-      'Interrupt Implementer',
-    ]);
+    expect(verbs.map((entry) => entry.label)).toEqual(['Message Implementer', 'Stop Implementer']);
     expect(verbs.map((entry) => entry.key)).toEqual([
       'verb:agent.message:live',
-      'verb:agent.interrupt:live',
+      'verb:agent.stop:live',
     ]);
     expect(verbs[0]?.secondary).toContain('Message this agent');
     expect(verbs.every((entry) => entry.isScopeVerb === true)).toBe(true);
@@ -44,7 +41,7 @@ describe('sessionOwnFirst', () => {
   const row = (item: PaletteEntry) => ({ item, positions: [] as ReadonlyArray<number> });
   const sessionVerbs = [verb('session.diff', 'Review changes'), verb('session.review', 'Review')];
   const live = liveAgentVerbs({
-    verbs: [verb('agent.message', 'Message this agent'), verb('agent.interrupt', 'Interrupt')],
+    verbs: [verb('agent.message', 'Message this agent'), verb('agent.stop', 'Stop')],
     name: 'Implementer',
   });
   const sections = [
@@ -61,7 +58,7 @@ describe('sessionOwnFirst', () => {
     expect(labelsOf(result).slice(0, 4)).toEqual([
       'Review changes',
       'Message Implementer',
-      'Interrupt Implementer',
+      'Stop Implementer',
       'Review',
     ]);
   });

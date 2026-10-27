@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import type { PaletteScope } from '../../types';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 

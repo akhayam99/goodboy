@@ -1,4 +1,5 @@
 import type { ProviderBudgetStatus } from '@goodboy/types';
+import type { Tone } from '@goodboy/ui';
 import { formatDateTime } from '../../shared/utils/time/formatDateTime';
 
 type StatusParams = {
@@ -9,11 +10,15 @@ export const budgetPctUsed = ({ status }: StatusParams): number => Math.round(st
 
 export const budgetRingFraction = ({ status }: StatusParams): number => status.pct / 100;
 
-export const budgetWarnFraction = ({ status }: StatusParams): number | undefined =>
-  status.thresholdPct === null ? undefined : status.thresholdPct / 100;
+export const budgetTone = ({ status }: StatusParams): Tone => {
+  if (status.exceeded) {
+    return 'danger';
+  }
+  return status.overThreshold ? 'warning' : 'primary';
+};
 
 export const budgetResetLabel = ({ status }: StatusParams): string =>
   formatDateTime({ at: status.windowEndMs + 1 });
 
 export const budgetScopeNote = ({ status }: StatusParams): string =>
-  `Across all workspaces. The month resets ${budgetResetLabel({ status })} your time (00:00 UTC).`;
+  `Across all workspaces. The month resets ${budgetResetLabel({ status })} your time.`;

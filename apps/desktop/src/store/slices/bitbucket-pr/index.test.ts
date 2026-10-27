@@ -9,6 +9,8 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { isPullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { AppStore } from '../../store';
 import { overridesWithAttribution } from '../../../__tests__/helpers/attributionOverrides';
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
@@ -75,7 +77,7 @@ vi.mock('@goodboy/db', async () =>
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-const { createBitbucketPrSlice, initialBitbucketPrState } = await import('./index');
+const { createBitbucketPrSlice, bitbucketPrInitialState } = await import('./index');
 
 const SESSION_ID = 'sess-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -143,7 +145,7 @@ const buildStore = ({
   activeMountId = M1,
 }: BuildStoreParams = {}) => {
   let state: TestState = {
-    ...initialBitbucketPrState,
+    ...bitbucketPrInitialState,
     workspaceOverrides,
     sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID, goal: 'ship it' }],
     sessionProjectMounts: {},
@@ -151,6 +153,8 @@ const buildStore = ({
     sessionActiveMount: { [SESSION_ID]: activeMountId },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     recordSessionEventOnce: vi.fn(async () => undefined),
+    hostReachability: {},
+    noteHostAnswer: vi.fn(),
     workspaceIntegrations: {
       [WORKSPACE_ID]: [
         {
@@ -304,6 +308,59 @@ describe('bitbucket-pr write verbs', () => {
     await store.slice.mergeBitbucketPr(TARGET);
 
     expect(writeSpies.merge.mock.calls.at(-1)?.[0]).not.toHaveProperty('strategy');
+  });
+
+  it('passes the reviewed head to the client and sends none when there is none', async () => {
+    const store = buildStore();
+
+    await store.slice.mergeBitbucketPr({ ...TARGET, expectedHeadSha: '6c20f48a9e1d' });
+
+    expect(writeSpies.merge).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pullRequestId: 12, expectedHeadSha: '6c20f48a9e1d' }),
+    );
+
+    await store.slice.mergeBitbucketPr({ ...TARGET, expectedHeadSha: null });
+
+    expect(writeSpies.merge.mock.calls.at(-1)?.[0]).not.toHaveProperty('expectedHeadSha');
+  });
+
+  it('answers a moved head with refresh and review again and re-reads that pull request', async () => {
+    writeSpies.merge.mockRejectedValueOnce(
+      new CommandError({
+        kind: 'stale_head',
+        message: 'the branch changed after it was reviewed: reviewed 6c20f48a9e1d',
+      }),
+    );
+    const store = buildStore();
+
+    const error = await store.slice
+      .mergeBitbucketPr({ ...TARGET, expectedHeadSha: '6c20f48a9e1d' })
+      .then(
+        () => null,
+        (caught: unknown) => (isPullRequestPortError(caught) ? caught : null),
+      );
+
+    expect(error?.kind).toBe('stale_head');
+    expect(error?.message).toBe(STALE_HEAD_MESSAGE);
+    expect(getPullRequestSpy).toHaveBeenCalledWith(expect.objectContaining({ pullRequestId: 12 }));
+  });
+
+  it('merges on a retry after a moved head once the new head is reviewed', async () => {
+    writeSpies.merge.mockRejectedValueOnce(
+      new CommandError({ kind: 'stale_head', message: 'moved' }),
+    );
+    const store = buildStore();
+    await store.slice.mergeBitbucketPr({ ...TARGET, expectedHeadSha: '6c20f48a9e1d' }).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+
+    await store.slice.mergeBitbucketPr({ ...TARGET, expectedHeadSha: '9f3e2d1c0b8a' });
+
+    expect(writeSpies.merge).toHaveBeenCalledTimes(2);
+    expect(writeSpies.merge).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedHeadSha: '9f3e2d1c0b8a' }),
+    );
   });
 
   it('re-reads the pull request it just wrote to, by id, instead of the branch one', async () => {

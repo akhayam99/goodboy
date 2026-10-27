@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Lock } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 
 type WhatGoodboyCanDoLine = {
   readonly icon: ReactNode;

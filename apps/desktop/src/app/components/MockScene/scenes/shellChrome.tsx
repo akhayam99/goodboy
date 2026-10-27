@@ -22,7 +22,7 @@ import { sceneClock } from '../sceneClock';
 import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
 import { useSceneSidebar } from './useSceneSidebar';
-import { isDirectedScene } from '../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../shared/utils/isDirectedScene';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -33,9 +33,6 @@ const CLAUDE_PROVIDER: ProviderDisplayInfo = {
   binary: 'claude',
   capabilities: {
     models: [],
-    supportsTools: true,
-    supportsStream: true,
-    supportsCheapModel: true,
   },
   connection: 'connected',
   version: '1.0.0',

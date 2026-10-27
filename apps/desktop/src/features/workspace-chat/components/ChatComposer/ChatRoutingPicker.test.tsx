@@ -23,7 +23,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import type { ChatRouting } from '../../chatRouting';
+import type { ChatRouting } from '../../../conversation/chatRouting';
 import { ChatRoutingPicker } from './ChatRoutingPicker';
 
 const WORKSPACE = aWorkspace();

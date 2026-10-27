@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -111,7 +113,9 @@ describe('the simulated review fix', () => {
       revision: entry.item.candidateRevision,
       reply: entry.thread.replyDraft ?? '',
     });
-    const preview = await store.getState().preparePublication({ sessionId: SESSION_ID });
+    const preview = await store
+      .getState()
+      .preparePublication({ sessionId: SESSION_ID, mountId: null });
     expect(preview.blocker).toBeNull();
     expect(preview.replies.map((reply) => reply.threadId)).toContain(THREAD);
     expect(preview.commits.flatMap((commit) => commit.threadIds)).toContain(THREAD);

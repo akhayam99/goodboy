@@ -1,4 +1,4 @@
-import { ensure, worktreeStatusKey } from '../worktreeStatuses/cache';
+import { ensure, worktreeStatusKey } from '../../runtime/worktreeStatuses/cache';
 import { changedCount } from '../../../shared/lib/gitStatus';
 import { DirtyTreeError } from './DirtyTreeError';
 import { TreeUnreadableError } from './TreeUnreadableError';

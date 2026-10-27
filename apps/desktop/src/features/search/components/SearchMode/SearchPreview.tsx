@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SearchHit } from '@goodboy/types';
-import { Button, Eyebrow, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, Eyebrow, ICON_SIZE, tintClasses } from '@goodboy/ui';
+
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitHeadline } from '../../hitLabels';
 import type { SearchHitTarget } from '../../searchHitTarget';
@@ -71,10 +71,10 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
           fact.value === null || fact.value.length === 0
             ? []
             : [
-                <dt key={`${fact.label}-t`} className="text-label text-faint-foreground">
+                <dt key={`${fact.label}-t`} className="text-meta text-faint-foreground">
                   {fact.label}
                 </dt>,
-                <dd key={`${fact.label}-d`} className="truncate text-label text-foreground">
+                <dd key={`${fact.label}-d`} className="truncate text-meta text-foreground">
                   {fact.value}
                 </dd>,
               ],
@@ -94,7 +94,7 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
           </span>
         </Button>
         {target.kind === 'blocked' ? (
-          <p className="text-label text-muted-foreground">{target.reason}</p>
+          <p className="text-meta text-muted-foreground">{target.reason}</p>
         ) : null}
       </div>
       {actionTarget === null ? null : (

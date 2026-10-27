@@ -1,4 +1,3 @@
-import type { MountId, SessionId } from '@goodboy/types';
 import { clearGithubToken } from './clearGithubToken';
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';
@@ -13,23 +12,10 @@ import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
 import { selectSessionPr } from './selectSessionPr';
-import { forcePushSessionBranch } from './forcePushSessionBranch';
-import { pushSessionBranch } from './pushSessionBranch';
+import { pushBranch } from './pushBranch';
 import { setGithubToken } from './setGithubToken';
-import { sweepGithub } from './sweepGithub';
 import { refreshDormantPullRequests } from './refreshDormantPullRequests';
 import type { SliceDeps } from '../../slice-types';
-
-type BranchPushParams = {
-  readonly sessionId: SessionId;
-  readonly mountId: MountId;
-  readonly expectedWorktreePath?: string;
-};
-
-type ForcePushParams = BranchPushParams & {
-  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
-  readonly confirmedRemoteSha: string | null;
-};
 
 export const createGithubSlice = ({ set, get }: SliceDeps) => {
   return {
@@ -40,15 +26,7 @@ export const createGithubSlice = ({ set, get }: SliceDeps) => {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     selectSessionPr: selectSessionPr(set, get),
-    pushSessionBranch: ({ sessionId, mountId, expectedWorktreePath }: BranchPushParams) =>
-      pushSessionBranch({ get, sessionId, mountId, expectedWorktreePath }),
-    forcePushSessionBranch: ({
-      sessionId,
-      mountId,
-      confirmedOnlyOnline,
-      confirmedRemoteSha,
-    }: ForcePushParams) =>
-      forcePushSessionBranch({ get, sessionId, mountId, confirmedOnlyOnline, confirmedRemoteSha }),
+    pushBranch: pushBranch({ set, get }),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),
@@ -57,7 +35,6 @@ export const createGithubSlice = ({ set, get }: SliceDeps) => {
     reopenPr: reopenPr(set, get),
     editPr: editPr(set, get),
     requestReview: requestReview(set, get),
-    sweepGithub: sweepGithub(set, get),
     refreshDormantPullRequests: refreshDormantPullRequests(get),
   };
 };

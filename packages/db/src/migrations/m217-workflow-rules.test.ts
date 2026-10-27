@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_WORKFLOW_RULES, type WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { getWorkspaceOverrides, setWorkspaceOverrides } from '../queries/settings-overrides';
+import { getWorkspaceOverrides } from '../queries/settings-overrides';
+import { seedWorkspaceOverrides } from '../test-helpers/seedWorkspaceOverrides';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -46,9 +47,17 @@ describe('m217 workflow rules', () => {
       standingGuidance: '- Group the commits by concern at the end.',
     };
 
-    await setWorkspaceOverrides(db, NORTHWIND, { ...before, workflowRules: rules });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: NORTHWIND,
+      overrides: { ...before, workflowRules: rules },
+    });
     const saved = await getWorkspaceOverrides(db, NORTHWIND);
-    await setWorkspaceOverrides(db, NORTHWIND, { ...before, workflowRules: null });
+    await seedWorkspaceOverrides({
+      db,
+      workspaceId: NORTHWIND,
+      overrides: { ...before, workflowRules: null },
+    });
     const restored = await getWorkspaceOverrides(db, NORTHWIND);
 
     expect(saved?.workflowRules).toEqual(rules);

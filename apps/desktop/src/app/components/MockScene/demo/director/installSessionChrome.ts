@@ -30,12 +30,12 @@ const setPin = ({ store, sessionId, isPinned }: PinParams): void => {
 };
 
 export const installSessionChrome = ({ store }: Params): void => {
-  const pinSession: AppStore['pinSession'] = async (sessionId) => {
+  const pinSession = (async (sessionId) => {
     setPin({ store, sessionId, isPinned: true });
-  };
-  const unpinSession: AppStore['unpinSession'] = async (sessionId) => {
+  }) satisfies AppStore['pinSession'];
+  const unpinSession = (async (sessionId) => {
     setPin({ store, sessionId, isPinned: false });
-  };
+  }) satisfies AppStore['unpinSession'];
   const resyncSession: AppStore['resyncSession'] = async () => undefined;
   store.setState({ pinSession, unpinSession, resyncSession });
 };

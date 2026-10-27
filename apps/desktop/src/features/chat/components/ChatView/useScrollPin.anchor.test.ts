@@ -92,7 +92,9 @@ const openDom = ({ onRevealOverflow, ...geometry }: OpenParams) => {
 
 beforeEach(() => {
   observers.length = 0;
-  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+  vi.useFakeTimers({
+    toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout'],
+  });
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
 });
 
@@ -208,6 +210,9 @@ describe('useScrollPin answer anchor', () => {
     box.scrollTop = 1290;
     act(() => result.current.onScroll());
     expect(result.current.pinned).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
 
     box.scrollHeight = 2000;
     act(() => growth());

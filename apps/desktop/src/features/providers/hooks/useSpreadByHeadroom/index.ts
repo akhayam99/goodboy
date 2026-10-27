@@ -11,6 +11,7 @@ import {
 } from '../../../workflows/rulesHeadroom';
 import { spreadSentence } from '../../../workflows/spreadSentence';
 import { policyRows } from '../../policy/policyRows';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -73,7 +74,12 @@ export const useSpreadByHeadroom = ({ workspaceId }: Params): SpreadByHeadroomMo
         workspaceId,
         patch: { workflowRules: { ...current, spreadByHeadroom } },
       }).catch((error: unknown) => {
-        void reportError({ title: "Couldn't save the workflow rules", error, workspaceId });
+        void reportError({
+          title: "Couldn't save the run defaults",
+          error,
+          workspaceId,
+          recovery: NOTHING_CHANGED,
+        });
       });
     },
     [patchWorkspaceOverrides, reportError, workspaceId],

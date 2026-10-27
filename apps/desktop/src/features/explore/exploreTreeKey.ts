@@ -1,3 +1,4 @@
+import { treeKeyMove, type TreeKeyRow } from '../../shared/utils/treeKeyMove';
 import { entryRowsOf, type ExploreEntryRow, type ExploreRow } from './exploreRows';
 
 export type ExploreKeyResult =
@@ -21,48 +22,41 @@ type FocusParams = {
 const focusOn = ({ row }: FocusParams): ExploreKeyResult =>
   row === undefined ? NONE : { kind: 'focus', id: row.id };
 
+type KeyRowsParams = {
+  readonly entries: ReadonlyArray<ExploreEntryRow>;
+};
+
+const keyRowsOf = ({ entries }: KeyRowsParams): ReadonlyArray<TreeKeyRow> => {
+  const idByPath = new Map(entries.map((row) => [row.entry.relPath, row.id]));
+  return entries.map((row) => ({
+    id: row.id,
+    parentId: idByPath.get(row.parentPath) ?? null,
+    isBranch: row.entry.isDir,
+    isOpen: row.isExpanded,
+  }));
+};
+
 export const exploreTreeKey = ({ rows, activeId, key }: Params): ExploreKeyResult => {
   const entries = entryRowsOf(rows);
   if (entries.length === 0) {
     return NONE;
   }
-  if (key === 'Home') {
+  const hasActive = entries.some((row) => row.id === activeId);
+  if (!hasActive && (key === 'ArrowDown' || key === 'ArrowUp')) {
     return focusOn({ row: entries[0] });
   }
-  if (key === 'End') {
-    return focusOn({ row: entries[entries.length - 1] });
+  const move = treeKeyMove({ key, rows: keyRowsOf({ entries }), activeId });
+  if (move === null) {
+    return NONE;
   }
-  const index = entries.findIndex((row) => row.id === activeId);
-  const current = entries[index];
-  if (current === undefined) {
-    return key === 'ArrowDown' || key === 'ArrowUp' ? focusOn({ row: entries[0] }) : NONE;
+  const row = entries.find((candidate) => candidate.id === move.id);
+  if (move.kind === 'focus') {
+    return { kind: 'focus', id: move.id };
   }
-  if (key === 'ArrowDown') {
-    return focusOn({ row: entries[index + 1] });
+  if (move.kind === 'activate') {
+    return { kind: 'activate', id: move.id };
   }
-  if (key === 'ArrowUp') {
-    return focusOn({ row: entries[index - 1] });
-  }
-  if (key === 'Enter' || key === ' ') {
-    return { kind: 'activate', id: current.id };
-  }
-  if (key === 'ArrowRight') {
-    if (!current.entry.isDir) {
-      return NONE;
-    }
-    if (!current.isExpanded) {
-      return { kind: 'setExpanded', path: current.entry.relPath, isExpanded: true };
-    }
-    const next = entries[index + 1];
-    return next !== undefined && next.parentPath === current.entry.relPath
-      ? focusOn({ row: next })
-      : NONE;
-  }
-  if (key === 'ArrowLeft') {
-    if (current.entry.isDir && current.isExpanded) {
-      return { kind: 'setExpanded', path: current.entry.relPath, isExpanded: false };
-    }
-    return focusOn({ row: entries.find((row) => row.entry.relPath === current.parentPath) });
-  }
-  return NONE;
+  return row === undefined
+    ? NONE
+    : { kind: 'setExpanded', path: row.entry.relPath, isExpanded: move.kind === 'open' };
 };

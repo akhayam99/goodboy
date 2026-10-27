@@ -1,5 +1,6 @@
 import { Input, SegmentedTabs } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
 import type { PolishField, StepPolishFields } from '../../stepPolishFields';
@@ -91,7 +92,7 @@ export const StepEditorFields = ({
               }}
               placeholder="step name"
               disabled={disabled}
-              className="h-7 bg-background text-label"
+              className="h-7 bg-background text-meta"
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
@@ -103,7 +104,7 @@ export const StepEditorFields = ({
           <StepFieldLabel
             htmlFor={idOf('instruction')}
             label="Instruction"
-            hint="Markdown, ⌘↵ saves"
+            hint={`Markdown, ${shortcutGlyphs('composer.submit')} saves`}
             polish={fieldPolish({ polish, field: 'prompt' })}
             isPolishable={step.prompt.trim().length > 0}
             disabled={disabled}
@@ -120,7 +121,7 @@ export const StepEditorFields = ({
             minRows={3}
             maxRows={7}
             disabled={disabled}
-            textClassName="text-label leading-relaxed"
+            textClassName="text-meta leading-relaxed"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -143,7 +144,7 @@ export const StepEditorFields = ({
             minRows={1}
             maxRows={4}
             disabled={disabled}
-            textClassName="text-label leading-relaxed"
+            textClassName="text-meta leading-relaxed"
           />
         </div>
       </div>

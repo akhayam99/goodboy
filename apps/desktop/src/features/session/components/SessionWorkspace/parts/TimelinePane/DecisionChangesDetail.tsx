@@ -27,7 +27,7 @@ export const DecisionChangesDetail = ({
       {detail.lines.map((line) => (
         <div
           key={line.key}
-          className="grid min-w-0 grid-cols-[8px_auto_minmax(0,1fr)] items-baseline gap-x-2 text-label text-muted-foreground"
+          className="grid min-w-0 grid-cols-[8px_auto_minmax(0,1fr)] items-baseline gap-x-2 text-meta text-muted-foreground"
         >
           <span aria-hidden className="text-center text-faint-foreground">
             {line.sign ?? ''}
@@ -40,7 +40,7 @@ export const DecisionChangesDetail = ({
         </div>
       ))}
       {detail.hiddenCount > 0 ? (
-        <p className="pl-4 text-label text-faint-foreground">{`and ${detail.hiddenCount} more`}</p>
+        <p className="pl-4 text-meta text-faint-foreground">{`and ${detail.hiddenCount} more`}</p>
       ) : null}
       <span className="flex items-center">
         <Button variant="ghost" size="xs" onClick={onOpenInContext}>

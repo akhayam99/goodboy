@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { hopTargetOf } from './hopTargetOf';
 import { SpawnedNowRow } from './SpawnedNowRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
 import { spawnedTreeItemsOf } from './spawnedTreeItemsOf';
@@ -18,6 +19,11 @@ type Props = {
 };
 
 const ITEM_SELECTOR = '[role="treeitem"]';
+
+const HOP_KEYS: Readonly<Partial<Record<string, 'next' | 'previous'>>> = {
+  j: 'next',
+  k: 'previous',
+};
 
 type ElementParams = {
   readonly element: HTMLElement;
@@ -62,6 +68,28 @@ export const SpawnedTree = ({ label, children }: Props) => {
       return;
     }
     const items = spawnedTreeItemsOf({ element: root });
+    const direction = HOP_KEYS[event.key];
+    if (direction !== undefined) {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+      const agentItems = items.filter((item) => item.dataset.agentId !== undefined);
+      const selected = agentItems.find((item) => item.getAttribute('aria-selected') === 'true');
+      const targetId = hopTargetOf({
+        ids: agentItems.map((item) => item.dataset.agentId ?? ''),
+        current: selected?.dataset.agentId ?? null,
+        direction,
+      });
+      event.preventDefault();
+      const hopTarget = agentItems.find((item) => item.dataset.agentId === targetId);
+      if (hopTarget === undefined) {
+        return;
+      }
+      hopTarget.click();
+      setActiveId(hopTarget.dataset.treeId ?? '');
+      hopTarget.focus();
+      return;
+    }
     const next = treeKeyTargetOf({
       key: event.key,
       levels: items.map((element) => levelOf({ element })),

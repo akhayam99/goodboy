@@ -21,7 +21,7 @@ export const PullRequestStatusStrip = ({ cells, onOpen }: Props) => (
       const content = (
         <>
           <span className="text-meta text-muted-foreground">{cell.label}</span>
-          <span className="flex min-w-0 items-center gap-2 text-label text-foreground">
+          <span className="flex min-w-0 items-center gap-2 text-meta text-foreground">
             <StatusDot tone={cell.tone} size="sm" />
             <span className="min-w-0 truncate">{cell.word}</span>
           </span>

@@ -1,11 +1,10 @@
 import { Boxes } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
+import { openSettings } from '../../../../settings/openSettings';
 
 export const NoProvidersNotice = () => {
   const openProviderSettings = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
-    );
+    openSettings({ scope: 'providers' });
   };
 
   return (

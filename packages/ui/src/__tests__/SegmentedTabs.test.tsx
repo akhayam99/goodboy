@@ -139,7 +139,7 @@ describe('SegmentedTabs', () => {
       expect(classes).not.toContain('font-semibold');
     });
     const sizeClasses = (classes: ReadonlyArray<string>) =>
-      classes.filter((name) => /^(h|px|py|gap)-|^text-label$/.test(name));
+      classes.filter((name) => /^(h|px|py|gap)-|^text-meta$/.test(name));
     expect(weightsAfter.map(sizeClasses)[0]).toEqual(weightsBefore.map(sizeClasses)[0]);
   });
 

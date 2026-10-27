@@ -1,8 +1,7 @@
+use super::branch_name::branch_name_problem;
 use super::error::WorktreeError;
 use crate::proc::git::Git;
-use regex::Regex;
 use std::path::Path;
-use std::sync::OnceLock;
 
 pub(crate) type RunGit<'a> = &'a mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>;
 
@@ -28,9 +27,26 @@ pub(super) fn commit_exists(cwd: &Path, sha: &str) -> bool {
     git(cwd, &["cat-file", "-e", &format!("{sha}^{{commit}}")]).is_ok()
 }
 
+pub(crate) fn validated_rev(rev: &str) -> Result<&str, WorktreeError> {
+    let trimmed = rev.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "commit sha is empty".to_string(),
+        });
+    }
+    let is_hex =
+        (7..=64).contains(&trimmed.len()) && trimmed.chars().all(|c| c.is_ascii_hexdigit());
+    if is_hex || trimmed == "HEAD" || branch_name_problem(trimmed).is_none() {
+        return Ok(trimmed);
+    }
+    Err(WorktreeError::Git {
+        message: format!("not a commit or branch name: {trimmed}"),
+    })
+}
+
 pub(crate) fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
     let trimmed = sha.trim();
-    if trimmed.is_empty() {
+    if trimmed.is_empty() || trimmed.starts_with('-') {
         return Err(WorktreeError::Git {
             message: "commit sha is empty".to_string(),
         });
@@ -73,13 +89,8 @@ pub(super) fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeEr
     git(cwd, &refs)
 }
 
-static CREDENTIAL_IN_URL: OnceLock<Regex> = OnceLock::new();
-
 pub(crate) fn redact_credentials(raw: &str) -> String {
-    let pattern = CREDENTIAL_IN_URL.get_or_init(|| {
-        Regex::new(r"([A-Za-z][A-Za-z0-9+.\-]*://)[^/@\s]+@").expect("credential pattern compiles")
-    });
-    pattern.replace_all(raw, "$1***@").into_owned()
+    crate::util::redact::redact_text(raw)
 }
 
 pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
@@ -87,6 +98,13 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     git_argv_log::record(args);
 
     Ok(Git::new().cwd(cwd).args(args).batch_auth().stdout()?)
+}
+
+const PLAIN_PATHS: [&str; 2] = ["-c", "core.quotepath=false"];
+
+pub(crate) fn git_plain_paths(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+    let argv: Vec<&str> = PLAIN_PATHS.iter().chain(args.iter()).copied().collect();
+    git(cwd, &argv)
 }
 
 pub(crate) fn git_english(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
@@ -97,7 +115,7 @@ pub(crate) fn git_english(cwd: &Path, args: &[&str]) -> Result<String, WorktreeE
         .cwd(cwd)
         .args(args)
         .batch_auth()
-        .env("LC_ALL", "C")
+        .english()
         .stdout()?)
 }
 

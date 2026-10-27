@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { FileWarning } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -35,13 +35,13 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
     <TranscriptDisclosure
       tone="warning"
       open={open}
-      bodyClassName="gap-2 text-label text-foreground"
+      bodyClassName="gap-2 text-meta text-foreground"
       header={
         <TranscriptRowHeader
           tone="warning"
           icon={<FileWarning size={ICON_SIZE.row} aria-hidden />}
           eyebrow="artifact"
-          preview="artifact block could not be captured"
+          preview="artifact block couldn't be captured"
           data-testid="artifact-capture-notice"
           open={open}
           onToggle={() => setOpen((value) => !value)}

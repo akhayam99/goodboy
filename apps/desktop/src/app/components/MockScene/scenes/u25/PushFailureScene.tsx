@@ -47,7 +47,7 @@ export const PushFailureScene = ({ variant }: Props) => {
   });
   return (
     <div className="flex w-[720px] flex-col gap-2 bg-background p-6">
-      <p className="text-label text-foreground">hl/fix-duplicate-credit</p>
+      <p className="text-meta text-foreground">hl/fix-duplicate-credit</p>
       <ActionStatusLine
         controls={controlsOf({ error })}
         showReasons={false}

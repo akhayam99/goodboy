@@ -2,7 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
-import { ICON_SIZE } from '../../iconSize';
+import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { tintClasses } from '../../tint';
 
@@ -39,13 +39,11 @@ const PLACEMENT_SURFACE = {
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_TITLE = {
-  transcript: 'text-label',
-  inline: 'text-label',
-  banner: 'text-label',
+  transcript: 'text-meta',
+  inline: 'text-meta',
+  banner: 'text-meta',
   floating: 'text-body',
 } as const satisfies Record<NoticePlacement, string>;
-
-const NOTICE_ICON_PX = 16;
 
 type HasContentParams = {
   readonly node: ReactNode;
@@ -100,7 +98,8 @@ export const Notice = ({
         )}
       >
         <Icon
-          size={NOTICE_ICON_PX}
+          size={ICON_SIZE.notice}
+          strokeWidth={ICON_STROKE.notice}
           aria-hidden
           {...(iconTestId !== undefined ? { 'data-testid': iconTestId } : {})}
           className={cn('shrink-0', !isTitleOnly && 'mt-0.5', tint.icon)}
@@ -115,7 +114,7 @@ export const Notice = ({
             {title}
           </p>
           {hasContent({ node: body }) && (
-            <div className="w-full break-words text-label text-muted-foreground">{body}</div>
+            <div className="w-full break-words text-meta text-muted-foreground">{body}</div>
           )}
           {hasDetail && (
             <button

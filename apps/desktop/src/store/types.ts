@@ -7,6 +7,7 @@ import type { BootstrapState } from './slices/bootstrap/state';
 import type { FolderPurposeState } from './slices/folder-purpose/state';
 import type { ReviewBulkState } from './slices/review-bulk/state';
 import type { ReviewLaunchState } from './slices/review-launch/state';
+import type { OutputHandoffsState } from './slices/output-handoffs/state';
 import type { ReviewSelectionState } from './slices/review-selection/state';
 import type { ReviewSourceState } from './slices/review-source/state';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
@@ -18,6 +19,7 @@ import type { PullRequestViewState } from './slices/pull-request-view/state';
 import type { SessionSyncState } from './slices/session-sync/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
+import type { LimitStopsState } from './slices/limitStops/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
 import type { ProjectRelocationState } from './slices/project-relocation/state';
 import type { BackupState } from './slices/backup/state';
@@ -29,9 +31,7 @@ import type {
   MountPullRequestLink,
   PrDetail,
   ProjectId,
-  PrReviewDraft,
   PullRequestState,
-  SessionId,
 } from '@goodboy/types';
 import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type { BudgetSliceState } from './slices/budget/state';
@@ -41,11 +41,9 @@ import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
-import type { NavigationSliceState } from './slices/navigation/types';
+import type { NavigationSliceState } from './slices/navigation/state';
 import type { ChangelogState } from './slices/changelog/state';
-import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
-import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
-import type { ResolveQueueView } from './slices/session-view';
+import type { ReviewDraftsState } from './slices/review-drafts/state';
 import type { UpdaterState } from './slices/updater/state';
 import type { SessionFiltersState } from './slices/sessionFilters/state';
 import type { WorkspacesState } from './slices/workspaces/state';
@@ -54,6 +52,7 @@ import type { SessionsState } from './slices/sessions/state';
 import type { SessionEventsState } from './slices/session-events/state';
 import type { ContextItemsState } from './slices/contextItems/state';
 import type { DormantSpendState } from './slices/dormant-spend/state';
+import type { HostReachabilityState } from './slices/host-reachability/state';
 import type { PresenceState } from './slices/presence/state';
 import type { SettingsState } from './slices/settings/state';
 import type { ProvidersState } from './slices/providers/state';
@@ -69,6 +68,7 @@ import type { SettingsLastPageState } from './slices/settings-last-page/state';
 import type { LocalChecksState } from './slices/local-checks/state';
 import type { ChatLastOpenState } from './slices/chat-last-open/state';
 import type { NextViewState } from './slices/next-view/state';
+import type { TrackerMovesState } from './slices/tracker-moves/state';
 import type { CheckFixCommitsState } from './slices/check-fix-commits/state';
 import type { WorkflowsState } from './slices/workflows/state';
 import type { AgentsState } from './slices/agents/state';
@@ -79,7 +79,6 @@ import type { PlansState } from './slices/plans/state';
 import type { OpenQuestionsState } from './slices/open-questions/state';
 import type { NudgesState } from './slices/nudges/state';
 import type { SlackDraftsState } from './slices/slack-drafts/state';
-import type { WorkflowDraftsState } from './slices/workflowDrafts/state';
 import type { StartHintsState } from './slices/startHints/state';
 import type { RebaseAllState } from './slices/rebaseAll/state';
 import type { ArtifactDraftsState } from './slices/artifactDrafts/state';
@@ -95,9 +94,11 @@ import type { GithubState } from './slices/github/state';
 import type { GitlabMrSliceState } from './slices/gitlab-mr/state';
 import type { BitbucketPrSliceState } from './slices/bitbucket-pr/state';
 import type { NotificationsState } from './slices/notifications/state';
+import type { TaskArrivalsState } from './slices/taskArrivals/state';
 import type { DiffCommentsState } from './slices/diff-comments/state';
 import type { FileVersionsState } from './slices/file-versions/state';
 import type { TerminalState } from './slices/terminal/state';
+import type { EndedWorkState } from './slices/ended-work/state';
 import type { SessionViewState } from './slices/session-view/state';
 import type { SessionPinsState } from './slices/session-pins/state';
 import type { RepoDivergenceState } from './slices/repo-divergence/state';
@@ -136,6 +137,7 @@ type AppSliceState = ArtifactsState &
   ReviewNavigationState &
   ReviewBulkState &
   ReviewLaunchState &
+  OutputHandoffsState &
   ReviewSelectionState &
   ReviewSourceState &
   PrWritesState &
@@ -144,6 +146,7 @@ type AppSliceState = ArtifactsState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
+  LimitStopsState &
   ProjectRelocationState &
   BackupState &
   SentryLinksState &
@@ -164,6 +167,7 @@ type AppSliceState = ArtifactsState &
   ContextItemsState &
   DormantSpendState &
   PresenceState &
+  HostReachabilityState &
   SettingsState &
   ProvidersState &
   CredentialsState &
@@ -182,6 +186,7 @@ type AppSliceState = ArtifactsState &
   LocalChecksState &
   ChatLastOpenState &
   NextViewState &
+  TrackerMovesState &
   CheckFixCommitsState &
   TurnSliceState &
   WorkflowsState &
@@ -193,7 +198,6 @@ type AppSliceState = ArtifactsState &
   OpenQuestionsState &
   NudgesState &
   SlackDraftsState &
-  WorkflowDraftsState &
   StartHintsState &
   RebaseAllState &
   ArtifactDraftsState &
@@ -208,19 +212,13 @@ type AppSliceState = ArtifactsState &
   GitlabMrSliceState &
   BitbucketPrSliceState &
   NotificationsState &
+  TaskArrivalsState &
   DiffCommentsState &
   FileVersionsState &
   TerminalState &
+  EndedWorkState &
   SessionViewState &
   SessionPinsState &
   RepoDivergenceState;
 
-export type AppState = UndoState &
-  AppSliceState & {
-    readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
-    readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
-    readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-    readonly resolveItemDrafts: Readonly<
-      Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
-    >;
-  };
+export type AppState = UndoState & ReviewDraftsState & AppSliceState;

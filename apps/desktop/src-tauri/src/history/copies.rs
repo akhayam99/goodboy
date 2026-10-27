@@ -5,6 +5,7 @@ use super::reservation::{
     reservation_root_of, reservations_dir, COPY_PREFIX, RESERVATION_FILE, RESOLVE_SLUG_PREFIX,
 };
 use super::trial::TRIAL_SLUG_PREFIX;
+use crate::app_paths::AppPathsError;
 use crate::worktree::{git, resolve_commit, WorktreeError};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -20,12 +21,7 @@ pub(super) struct KeptReview {
     pub(super) copy_head: String,
 }
 
-pub(super) fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or_default()
-}
+pub(super) use crate::util::now_secs;
 
 fn review_of(root: &Path) -> Option<KeptReview> {
     let path = root.join(REVIEW_FILE);
@@ -213,8 +209,7 @@ pub(crate) fn clean_stale_copies_in(
 }
 
 pub(crate) fn clean_stale_copies() {
-    let dir = reservations_dir();
-    if dir.is_absolute() {
+    if let Ok(dir) = reservations_dir() {
         clean_stale_copies_in(&dir, STALE_TRIAL_SECS, STALE_REWRITER_SECS);
     }
 }
@@ -295,7 +290,7 @@ pub struct ResolveCopy {
     pub head: String,
 }
 
-pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> PathBuf {
+pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> Result<PathBuf, AppPathsError> {
     copy_path_of(&format!("{RESOLVE_SLUG_PREFIX}{attempt_id}"))
 }
 
@@ -332,10 +327,8 @@ pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, 
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(args.worktree_path));
         }
-        let copy = resolve_copy_path_of(&args.attempt_id);
-        if !copy.is_absolute() {
-            return Err(plan_error("there is no folder for the temporary copy"));
-        }
+        let copy = resolve_copy_path_of(&args.attempt_id)
+            .map_err(|_| plan_error("there is no folder for the temporary copy"))?;
         prepare_resolve_copy_at(&cwd, &copy, args.start_sha.as_deref())
     })
     .await

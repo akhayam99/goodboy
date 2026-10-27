@@ -2,6 +2,7 @@ import type { WorkspaceId } from './ids';
 import type { ProviderPolicy } from './provider-policy';
 import type { ProviderId } from './provider-registry';
 import type { ProviderBindings, RoleModelPreferences, TaskModelPreferences } from './settings';
+import type { WorkflowRules } from './workflow-rules';
 
 export const CONFIG_BUNDLE_SCHEMA_VERSION = 3 as const;
 
@@ -42,7 +43,9 @@ export type ConfigBundleWorkspaceOverrides = Readonly<{
   replyTemplateNoChange: string | null;
   resolveOnGithub: boolean | null;
   resolveCommitStyle: string | null;
+  afterMerge?: string | null;
   defaultBranchTemplate?: string | null;
+  workflowRules?: WorkflowRules | null;
 }>;
 
 export type ConfigBundleWorkspace = Readonly<{
@@ -262,9 +265,29 @@ export type ImportGroupStat = Readonly<{
   updates: number;
 }>;
 
+export type AllowRulePreview = Readonly<{
+  id: string;
+  scope: string;
+  patternTool: string;
+  patternArgsMatcher: string | null;
+  isWildcard: boolean;
+  replacesDecision: string | null;
+}>;
+
+export type ScriptPreview = Readonly<{
+  id: string;
+  projectId: string;
+  name: string;
+  head: string;
+  isUpdate: boolean;
+}>;
+
 export type ImportPreview = Readonly<{
+  sha256: string;
   manifest: ImportManifest;
   workspaceMatches: ReadonlyArray<WorkspaceMatch>;
   projectMatches: ReadonlyArray<ProjectMatch>;
   groupStats: ReadonlyArray<ImportGroupStat>;
+  allowRules: ReadonlyArray<AllowRulePreview>;
+  scripts: ReadonlyArray<ScriptPreview>;
 }>;

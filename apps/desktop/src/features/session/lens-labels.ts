@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { LensKind } from '../../store';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 
 export const LENS_LABEL: Record<LensKind, string> = {
   questions: NAMES.questions,

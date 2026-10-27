@@ -9,13 +9,14 @@ use thiserror::Error;
 use crate::proc::git::Git;
 use crate::repo::{has_commit, repo_state, RepoState};
 
+pub(crate) use plan::is_secret_name;
 pub use plan::PlanEntry;
 
 const DEFAULT_BRANCH: &str = "main";
 const FIRST_COMMIT_MESSAGE: &str = "Initial commit";
 const FALLBACK_AUTHOR_NAME: &str = "Goodboy";
 const FALLBACK_AUTHOR_EMAIL: &str = "goodboy@localhost";
-const GOODBOY_IGNORE: &str = "/.goodboy";
+const GOODBOY_IGNORE: &str = crate::ignore_file::GOODBOY_IGNORE_ENTRY;
 
 static SCRATCH_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -198,10 +199,7 @@ struct ScratchGitDir(PathBuf);
 
 impl ScratchGitDir {
     fn create() -> Result<Self, FolderGitError> {
-        let nanos = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|elapsed| elapsed.as_nanos())
-            .unwrap_or_default();
+        let nanos = crate::util::now_nanos();
         let sequence = SCRATCH_SEQUENCE.fetch_add(1, Ordering::Relaxed);
         let dir = std::env::temp_dir().join(format!(
             "goodboy-first-commit-plan-{}-{nanos}-{sequence}",
@@ -309,7 +307,7 @@ pub(crate) fn first_commit_plan_blocking(path: &str) -> Result<FirstCommitPlan, 
 
 struct Undo {
     created_git: bool,
-    gitignore: Option<String>,
+    gitignore: Option<Vec<u8>>,
     index: Option<Vec<u8>>,
 }
 
@@ -320,7 +318,7 @@ impl Undo {
             .flatten();
         Self {
             created_git: start == PlanStart::NoGit,
-            gitignore: std::fs::read_to_string(root.join(".gitignore")).ok(),
+            gitignore: std::fs::read(root.join(".gitignore")).ok(),
             index,
         }
     }
@@ -389,23 +387,13 @@ fn ignore_lines(entries: &[PlanEntry], include: &[String], root: &Path) -> Vec<S
 }
 
 fn write_ignore(root: &Path, lines: &[String]) -> Result<(), FolderGitError> {
-    let path = root.join(".gitignore");
-    let mut next = std::fs::read_to_string(&path).unwrap_or_default();
-    let mut added = false;
-    for line in lines {
-        if next.lines().any(|existing| existing.trim() == line) {
-            continue;
-        }
-        if !next.is_empty() && !next.ends_with('\n') {
-            next.push('\n');
-        }
-        next.push_str(line);
-        next.push('\n');
-        added = true;
-    }
-    if added {
-        std::fs::write(&path, next)?;
-    }
+    let entries: Vec<&str> = lines.iter().map(String::as_str).collect();
+    crate::ignore_file::append_ignore_entries(&root.join(".gitignore"), &entries).map_err(
+        |error| match error {
+            crate::ignore_file::IgnoreWriteError::Io(inner) => FolderGitError::Io(inner),
+            other => FolderGitError::Io(std::io::Error::other(other.to_string())),
+        },
+    )?;
     Ok(())
 }
 

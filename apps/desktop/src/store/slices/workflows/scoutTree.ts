@@ -3,10 +3,10 @@ import type {
   AgentRole,
   AgentId,
   HandoffDraft,
-  IsoDateTime,
   SessionId,
   WorkflowRoutingProposal,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import {
   FAN_OUT_MAX_CHILDREN,
   SCOUT_DEPTH_CAP,
@@ -41,8 +41,6 @@ import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 const synthesisStarted = new Set<string>();
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const TERMINAL: ReadonlyArray<Agent['status']> = [
   'completed',
@@ -231,7 +229,7 @@ const activateAgent = ({
     ...(select && { selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId } }),
     agentTurnState: {
       ...s.agentTurnState,
-      [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
+      [agentId]: { kind: 'idle' as const, lastActivityAt: isoNow() },
     },
   }));
   openTurnStartWindow({ agentId });
@@ -426,7 +424,7 @@ export const startFanOutChildren = async ({
       const id = childIds[i]!;
       const fields: ChildRoutingFields = batch.entries[i]!;
       transcripts[id] = transcripts[id] ?? [];
-      agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
+      agentTurnState[id] = { kind: 'idle', lastActivityAt: isoNow() };
       agentKindOverride[id] = childKind;
       if (fields.modelOverride !== null) {
         agentModelOverride[id] = fields.modelOverride;
@@ -585,7 +583,7 @@ const settleAgent = async ({
   await invokeAgentUpdateStatus(agentId, {
     status: 'completed',
     outputSummary: summary,
-    completedAt: nowIso(),
+    completedAt: isoNow(),
   });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));

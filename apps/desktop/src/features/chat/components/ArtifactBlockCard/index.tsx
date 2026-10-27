@@ -1,5 +1,5 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import { tintClasses } from '@goodboy/ui';
+import { ICON_SIZE, tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { resolveArtifactForBlock } from '../../../artifacts/resolveArtifactForBlock';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -7,7 +7,7 @@ import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { PlanBlock } from './PlanBlock';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const accent = tintClasses(CONCEPT_TONE.plans);
 
@@ -79,7 +79,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
         data-testid="artifact-block-chip"
         tone={CONCEPT_TONE.plans}
         variant="pill"
-        className={`inline-flex w-fit items-center gap-2 text-label font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+        className={`inline-flex w-fit items-center gap-2 text-meta font-medium transition-opacity hover:opacity-80 ${accent.text}`}
       >
         <CONCEPT_ICONS.artifacts size={ICON_SIZE.row} aria-hidden />
         <span className="min-w-0 truncate">
@@ -106,7 +106,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
                 {previewSentence({ artifactKind: item.artifactKind, complete: item.complete })}
               </span>
               {item.title !== null ? (
-                <span className="min-w-0 truncate text-label font-medium text-foreground">
+                <span className="min-w-0 truncate text-meta font-medium text-foreground">
                   {item.title}
                 </span>
               ) : null}

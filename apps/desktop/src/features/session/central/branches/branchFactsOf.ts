@@ -27,6 +27,13 @@ export type BranchStatusFacts = Readonly<{
   isRebasing: boolean;
 }>;
 
+type BranchSeriesFacts = Readonly<{
+  name: string;
+  position: number;
+  total: number | null;
+  label: string;
+}>;
+
 export type BranchFacts = Readonly<{
   mountId: MountId;
   mountPath: string | null;
@@ -41,6 +48,7 @@ export type BranchFacts = Readonly<{
   liveTitle: string | null;
   isFinished: boolean;
   status: BranchStatusFacts | null;
+  series: BranchSeriesFacts | null;
 }>;
 
 type ChecksParams = {
@@ -119,5 +127,14 @@ export const branchFactsOf = ({
       liveTitle: liveTitleByMountId.get(row.mountId) ?? null,
       isFinished: row.isFinished,
       status: statusByMountId.get(row.mountId) ?? null,
+      series:
+        row.series === null
+          ? null
+          : {
+              name: row.series.name,
+              position: row.series.position,
+              total: row.series.plannedCount,
+              label: row.series.label,
+            },
     };
   });

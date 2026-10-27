@@ -1,5 +1,5 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { ReviewComposeMode } from '../review/reviewRequest';
 
 export const REVIEW_FLOW_LABEL = {
@@ -14,7 +14,6 @@ export const REVIEW_FLOW_LABEL = {
   editReply: 'Edit the reply',
   saveReply: 'Save reply',
   cancel: 'Cancel',
-  keysHint: 'Esc cancels',
   noChangeCaptured: 'The agent changed no code for this comment.',
   tooLarge: 'The change is too large to show here.',
 } as const;

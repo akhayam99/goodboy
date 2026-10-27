@@ -4,6 +4,7 @@ import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import { ROLE_LABEL, kindForRole } from '../../../../session/agent-kind';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { SavedStep } from '../../../savedSteps';
+import { isRoleRepeated } from './isRoleRepeated';
 
 type Props = {
   readonly step: SavedStep;
@@ -33,7 +34,9 @@ export const SavedStepRow = ({ step, note, isExpanded, editor, onToggle }: Props
         )}
       >
         <span className="flex w-24 shrink-0">
-          <AgentKindChip kind={kindForRole({ role: step.role })} label={ROLE_LABEL[step.role]} />
+          {isRoleRepeated({ step }) ? null : (
+            <AgentKindChip kind={kindForRole({ role: step.role })} label={ROLE_LABEL[step.role]} />
+          )}
         </span>
         <span
           className={cn(

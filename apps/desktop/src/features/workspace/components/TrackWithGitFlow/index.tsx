@@ -16,9 +16,10 @@ type Props = {
   readonly project: Project;
   readonly onCancel: () => void;
   readonly onTracked: (converted: ConvertedProject) => void;
+  readonly heading?: string;
 };
 
-export const TrackWithGitFlow = ({ project, onCancel, onTracked }: Props) => {
+export const TrackWithGitFlow = ({ project, onCancel, onTracked, heading }: Props) => {
   const projectId = project.id;
   const headingId = useId();
   const plan = useAppStore((state) => state.firstCommitPlans[projectId] ?? null);
@@ -63,7 +64,7 @@ export const TrackWithGitFlow = ({ project, onCancel, onTracked }: Props) => {
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3 rounded-lg bg-muted p-4">
       <h3 id={headingId} className="text-row text-foreground">
-        Track {project.name} with git
+        {heading ?? `Track ${project.name} with git`}
       </h3>
       {plan === null && isLoading ? (
         <div role="status" aria-label={`Reading ${project.name}`}>
@@ -71,7 +72,7 @@ export const TrackWithGitFlow = ({ project, onCancel, onTracked }: Props) => {
         </div>
       ) : null}
       {plan === null && loadError !== null ? (
-        <FormActions leading={<span className="text-label text-danger">{loadError}</span>}>
+        <FormActions leading={<span className="text-meta text-danger">{loadError}</span>}>
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
@@ -97,7 +98,7 @@ export const TrackWithGitFlow = ({ project, onCancel, onTracked }: Props) => {
               />
             ))}
           </ul>
-          <p className="text-label text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             {plan.hasIgnoreFile
               ? 'Goodboy adds the left out paths to .gitignore, which is part of the commit.'
               : 'Goodboy writes the left out paths to a new .gitignore, which is part of the commit.'}{' '}
@@ -106,11 +107,11 @@ export const TrackWithGitFlow = ({ project, onCancel, onTracked }: Props) => {
           <FormActions
             leading={
               error === null ? (
-                <span className="text-label text-muted-foreground">
+                <span className="text-meta text-muted-foreground">
                   {fileCountLabel({ count })} in the first commit
                 </span>
               ) : (
-                <span role="alert" className="text-label text-danger">
+                <span role="alert" className="text-meta text-danger">
                   {error}
                 </span>
               )

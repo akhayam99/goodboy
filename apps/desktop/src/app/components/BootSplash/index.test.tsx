@@ -34,7 +34,7 @@ describe('BootSplash slow boot recovery', () => {
       vi.advanceTimersByTime(9_000);
     });
 
-    expect(screen.queryByText('this is taking longer than usual')).toBeNull();
+    expect(screen.queryByText('This is taking longer than usual')).toBeNull();
     expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 
@@ -46,7 +46,7 @@ describe('BootSplash slow boot recovery', () => {
       vi.advanceTimersByTime(10_000);
     });
 
-    expect(screen.getByText('this is taking longer than usual')).toBeDefined();
+    expect(screen.getByText('This is taking longer than usual')).toBeDefined();
     expect(screen.getByText('10s in this step')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /restart/i }));
     expect(onRetry).toHaveBeenCalledOnce();
@@ -60,7 +60,7 @@ describe('BootSplash slow boot recovery', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /restart/i }));
 
-    expect(screen.getByText('still working, give it a moment')).toBeDefined();
+    expect(screen.getByText('Still working, give it a moment')).toBeDefined();
     expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe('BootSplash slow boot recovery', () => {
     });
     rerender(<BootSplash phase="detecting-cli" error={null} onRetry={vi.fn()} />);
 
-    expect(screen.queryByText('this is taking longer than usual')).toBeNull();
+    expect(screen.queryByText('This is taking longer than usual')).toBeNull();
     expect(screen.queryByRole('button', { name: /restart/i })).toBeNull();
   });
 });
@@ -250,15 +250,9 @@ describe('BootSplash error screens', () => {
     render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
 
     expect(screen.getByRole('alert')).toBeDefined();
-    expect(screen.getByText('Database failed')).toBeDefined();
-    expect(screen.getByText(/~\/\.goodboy\/data\.db is moved aside/)).toBeDefined();
-  });
-
-  it('offers no retry for a database that cannot be reopened', () => {
-    render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
-
-    expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Report this' })).toBeDefined();
+    expect(screen.getByText("Goodboy can't open its database")).toBeDefined();
+    expect(screen.getByText(/Your data is still in ~\/\.goodboy\/data\.db\./)).toBeDefined();
+    expect(screen.queryByText(/is moved aside/)).toBeNull();
   });
 });
 
@@ -393,12 +387,8 @@ describe('BootSplash newer database', () => {
 });
 
 describe('bootErrorCategory', () => {
-  it('names the database ahead of whichever phase was running', () => {
-    expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: true })).toBe('database');
-  });
-
-  it('keeps the phase category when the database opened fine', () => {
-    expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: false })).toBe('migration');
-    expect(bootErrorCategory({ phase: 'error', isDatabaseFailure: false })).toBe('init');
+  it('names the phase that was running', () => {
+    expect(bootErrorCategory({ phase: 'migrating' })).toBe('migration');
+    expect(bootErrorCategory({ phase: 'error' })).toBe('init');
   });
 });

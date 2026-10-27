@@ -1,5 +1,5 @@
 import { Lock } from 'lucide-react';
-import { Button, ICON_SIZE, StatusDot } from '@goodboy/ui';
+import { Button, ICON_SIZE, ICON_STROKE, StatusDot } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { openPrivacySettings } from '../../lib/privacySettings';
 import { currentPlatform } from '../../platform';
@@ -132,11 +132,11 @@ export const UnreadableFolderRow = ({ folder, draft, home, isBusy, lead, trailin
     <FolderRowFrame
       name={folder.name}
       path={shown}
-      icon={<Lock size={ICON_SIZE.hero} strokeWidth={1.6} aria-hidden />}
+      icon={<Lock size={ICON_SIZE.hero} strokeWidth={ICON_STROKE.hero} aria-hidden />}
       lead={lead}
       trailing={trailing}
       meta={
-        <span className="flex items-center gap-2 text-label text-muted-foreground">
+        <span className="flex items-center gap-2 text-meta text-muted-foreground">
           <StatusDot tone="danger" size="sm" />
           {STATUS_LABEL[folder.problem]}
         </span>

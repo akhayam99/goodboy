@@ -4,7 +4,7 @@ import { Button, ConfirmPopover, ICON_SIZE, Notice, Tooltip, type NoticeTone } f
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { StartHint } from '../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
@@ -17,6 +17,7 @@ import type { RebaseJobControls } from '../useRebaseJob';
 import { JobBannerDetails } from '../JobBanner/JobBannerDetails';
 import { JobBannerReview } from '../JobBanner/JobBannerReview';
 import { RebaseConflictPrompt } from './RebaseConflictPrompt';
+import { REBASE_ABORT_CONFIRM } from './rebaseAbortConfirm';
 import { RebaseOriginCommits } from './RebaseOriginCommits';
 import { RebaseStopFiles, type OpenFileParams } from './RebaseStopFiles';
 
@@ -46,14 +47,6 @@ type VerbConfirm = {
   readonly onConfirm: () => void;
   readonly onCancel?: () => void;
 };
-
-const ABORT_CONFIRM = {
-  title: 'Abort the rebase?',
-  description: 'Your branch goes back to where it was. Conflict fixes are lost.',
-  confirmLabel: 'Abort rebase',
-  role: 'danger',
-  notes: [],
-} satisfies Omit<VerbConfirm, 'onConfirm'>;
 
 type ContinueParams = {
   readonly left: number | null;
@@ -166,7 +159,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             label: 'Abort rebase',
             variant: 'ghost',
             run: actions.abortHere,
-            confirm: { ...ABORT_CONFIRM, onConfirm: actions.abortHere },
+            confirm: { ...REBASE_ABORT_CONFIRM, notes: [], onConfirm: actions.abortHere },
           },
         ];
       case 'auto-resolving':
@@ -459,7 +452,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           {failure === null && registry.failure === null ? null : (
             <div role="alert" className="flex min-w-0 items-center gap-2 text-meta text-danger">
               <span className="min-w-0 flex-1 break-words">
-                {failure?.message ?? registry.failure?.message}
+                {actions.failureLine ?? registry.failure?.message}
               </span>
               <Button
                 size="xs"

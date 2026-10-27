@@ -130,13 +130,13 @@ export const ShippedPanel = ({
             <span>&gt;1d {slowReviews}</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <span className="rounded-md bg-muted px-2 py-2 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-meta">
               Published drafts: {reviewData?.publishedDrafts ?? 0}
             </span>
-            <span className="rounded-md bg-muted px-2 py-2 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-meta">
               Pushed resolutions: {reviewData?.pushedResolutions ?? 0}
             </span>
-            <span className="rounded-md bg-muted px-2 py-2 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-meta">
               Sent to agent: {reviewData?.sentToAgent ?? 0}
             </span>
           </div>
@@ -144,7 +144,7 @@ export const ShippedPanel = ({
         <StudioWidget label="hot files" hint="most resolved review comments">
           <div className="flex flex-col gap-1">
             {reviewData?.hotFiles.map((file) => (
-              <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-label">
+              <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-meta">
                 <span className="min-w-0 flex-1 truncate font-mono">{file.filePath}</span>
                 <span className="tabular-nums text-muted-foreground">{file.comments}</span>
               </div>

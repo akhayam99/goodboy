@@ -1,6 +1,5 @@
 import { Cloud, GitPullRequest } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 export type HistoryRowPillState = {
   readonly isHead: boolean;

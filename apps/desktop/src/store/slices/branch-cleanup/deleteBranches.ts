@@ -29,6 +29,8 @@ export const deleteBranches = (set: SetFn, get: GetFn) => {
         branch: target.branch,
         expectedSha: target.sha,
         alsoOrigin: target.alsoOrigin,
+        workspaceId: project.workspaceId,
+        projectId: project.id,
       }).catch(
         (error: unknown) => asBranchCleanupError(error) ?? { kind: 'git' as const, message: '' },
       );

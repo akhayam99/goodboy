@@ -150,7 +150,7 @@ const mountOf = ({ index }: MountParams): SessionProjectMount => {
   };
 };
 
-describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated document', () => {
+describe('orchestrated rows stay reachable from the orchestrated document', () => {
   it('Orchestrated runs: listed in Runs, and the New menu keeps only Report and Wireframe as forms', async () => {
     await mount('c09-orchestrated-empty');
     expect(screen.getByRole('button', { name: /^Runs/ })).toBeDefined();

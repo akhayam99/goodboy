@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertProject, insertWorkspace, setSetting } from '@goodboy/db';
+import { insertProject, insertWorkspace, setProjectValue } from '@goodboy/db';
 import {
   brandId,
   type FolderFileKind,
@@ -20,7 +20,6 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
-import { folderPurposeKey } from './folderPurposeKey';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -115,8 +114,8 @@ let useAppStore: StoryStore;
 const storedRow = async (): Promise<string | null> =>
   (
     await rowsOf<{ readonly value: string }>({
-      sql: 'SELECT value FROM settings WHERE key = ?',
-      params: [folderPurposeKey({ projectId: NOTES })],
+      sql: 'SELECT value FROM project_values WHERE project_id = ? AND key = ?',
+      params: [NOTES, 'folder.purpose'],
     })
   )[0]?.value ?? null;
 
@@ -141,7 +140,7 @@ beforeEach(async () => {
 });
 
 describe('folder purpose', () => {
-  it('stores the face as one settings row and reads it back on hydrate', async () => {
+  it('stores the face as one project value and reads it back on hydrate', async () => {
     await useAppStore.getState().setFolderPurpose({ projectId: NOTES, purpose: 'documents' });
 
     expect(await storedRow()).toBe('documents');
@@ -154,8 +153,12 @@ describe('folder purpose', () => {
   });
 
   it('skips a row it cannot read', async () => {
-    await setSetting(storySqlite(), folderPurposeKey({ projectId: NOTES }), 'spreadsheet');
-    await setSetting(storySqlite(), 'folder.purpose.', 'code');
+    await setProjectValue({
+      db: storySqlite(),
+      projectId: NOTES,
+      key: 'folder.purpose',
+      value: 'spreadsheet',
+    });
 
     await useAppStore.getState().hydrateFolderPurposes();
 
@@ -164,7 +167,7 @@ describe('folder purpose', () => {
 
   it('keeps the old face when the write fails, and Retry saves the new one', async () => {
     await useAppStore.getState().setFolderPurpose({ projectId: NOTES, purpose: 'documents' });
-    injectDbFault({ match: /UPDATE settings/, message: 'disk I/O error' });
+    injectDbFault({ match: /UPDATE project_values/, message: 'disk I/O error' });
 
     await expect(
       useAppStore.getState().setFolderPurpose({ projectId: NOTES, purpose: 'code' }),
@@ -185,9 +188,9 @@ describe('folder purpose', () => {
     let reads = 0;
     vi.spyOn(db, 'select').mockImplementation(async (sql, params) => {
       const rows = await select(sql, params);
-      if (sql.includes('FROM settings WHERE key') && reads === 0) {
+      if (sql.includes('FROM project_values WHERE') && reads === 0) {
         reads += 1;
-        await setSetting(db, folderPurposeKey({ projectId: NOTES }), 'code');
+        await setProjectValue({ db, projectId: NOTES, key: 'folder.purpose', value: 'code' });
       }
       return rows;
     });
@@ -205,14 +208,17 @@ describe('folder purpose', () => {
     await useAppStore.getState().setFolderPurpose({ projectId: NOTES, purpose: 'code' });
     const db = storySqlite();
     const select = db.select.bind(db);
-    const key = folderPurposeKey({ projectId: NOTES });
     const otherWindow: Array<() => Promise<unknown>> = [
-      () => db.execute('DELETE FROM settings WHERE key = ?', [key]),
-      () => setSetting(db, key, 'code'),
+      () =>
+        db.execute('DELETE FROM project_values WHERE project_id = ? AND key = ?', [
+          NOTES,
+          'folder.purpose',
+        ]),
+      () => setProjectValue({ db, projectId: NOTES, key: 'folder.purpose', value: 'code' }),
     ];
     vi.spyOn(db, 'select').mockImplementation(async (sql, params) => {
       const rows = await select(sql, params);
-      const change = sql.includes('FROM settings WHERE key') ? otherWindow.shift() : undefined;
+      const change = sql.includes('FROM project_values WHERE') ? otherWindow.shift() : undefined;
       if (change !== undefined) {
         await change();
       }
@@ -237,13 +243,19 @@ describe('folder purpose', () => {
   });
 
   it('loads the face another window saved, and drops one it removed', async () => {
-    await setSetting(storySqlite(), folderPurposeKey({ projectId: NOTES }), 'code');
+    await setProjectValue({
+      db: storySqlite(),
+      projectId: NOTES,
+      key: 'folder.purpose',
+      value: 'code',
+    });
 
     expect(await useAppStore.getState().loadFolderPurpose({ projectId: NOTES })).toBe('code');
     expect(useAppStore.getState().folderPurpose[NOTES]).toBe('code');
 
-    await storySqlite().execute('DELETE FROM settings WHERE key = ?', [
-      folderPurposeKey({ projectId: NOTES }),
+    await storySqlite().execute('DELETE FROM project_values WHERE project_id = ? AND key = ?', [
+      NOTES,
+      'folder.purpose',
     ]);
 
     expect(await useAppStore.getState().loadFolderPurpose({ projectId: NOTES })).toBeNull();
@@ -278,7 +290,7 @@ describe('folder purpose', () => {
     await expect(useAppStore.getState().createWorkspaceWithFolders(params)).rejects.toThrow();
 
     expect(
-      await rowsOf({ sql: "SELECT key FROM settings WHERE key LIKE 'folder.purpose.%'" }),
+      await rowsOf({ sql: "SELECT key FROM project_values WHERE key = 'folder.purpose'" }),
     ).toEqual([]);
     expect(useAppStore.getState().folderPurpose).toEqual({});
 
@@ -290,8 +302,8 @@ describe('folder purpose', () => {
     expect(useAppStore.getState().folderPurpose[webId]).toBe('code');
     expect(
       await rowsOf({
-        sql: 'SELECT value FROM settings WHERE key = ?',
-        params: [folderPurposeKey({ projectId: webId })],
+        sql: 'SELECT value FROM project_values WHERE project_id = ? AND key = ?',
+        params: [webId, 'folder.purpose'],
       }),
     ).toEqual([{ value: 'code' }]);
   });

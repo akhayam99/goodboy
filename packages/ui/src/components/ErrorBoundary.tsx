@@ -10,8 +10,13 @@ export type ErrorReportRequest = {
   readonly componentStack: string | null;
 };
 
+export type ErrorFallbackRequest = ErrorReportRequest & {
+  readonly reset: () => void;
+};
+
 type Props = {
   readonly children: ReactNode;
+  readonly renderFallback?: (request: ErrorFallbackRequest) => ReactNode;
   readonly describeError?: (error: Error) => string;
   readonly renderReport?: (request: ErrorReportRequest) => ReactNode;
 };
@@ -48,9 +53,12 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
 
   override render(): ReactNode {
     const { error, componentStack } = this.state;
-    const { describeError, renderReport } = this.props;
+    const { describeError, renderReport, renderFallback } = this.props;
     if (error === null) {
       return this.props.children;
+    }
+    if (renderFallback != null) {
+      return renderFallback({ error, componentStack, reset: this.reset });
     }
 
     return (
@@ -72,7 +80,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             comes back broken.
           </p>
           <ScrollFade className="max-h-40" viewportClassName="rounded-sm bg-muted px-3 py-2">
-            <pre className="whitespace-pre-wrap break-words text-label text-danger">
+            <pre className="whitespace-pre-wrap break-words text-meta text-danger">
               {describeError == null ? error.message : describeError(error)}
             </pre>
           </ScrollFade>
@@ -80,14 +88,14 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             <button
               type="button"
               onClick={this.reset}
-              className="rounded-sm bg-primary px-3 py-2 text-label font-semibold text-on-tone hover:opacity-90"
+              className="rounded-sm bg-primary px-3 py-2 text-meta font-semibold text-on-tone hover:opacity-90"
             >
               Retry
             </button>
             <button
               type="button"
               onClick={this.reload}
-              className="rounded-sm border border-border px-3 py-2 text-label font-semibold text-foreground hover:bg-hover"
+              className="rounded-sm border border-border px-3 py-2 text-meta font-semibold text-foreground hover:bg-hover"
             >
               Reload
             </button>

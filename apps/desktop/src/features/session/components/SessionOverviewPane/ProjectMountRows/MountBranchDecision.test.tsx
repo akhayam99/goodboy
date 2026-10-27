@@ -94,6 +94,13 @@ describe('MountBranchDecision', () => {
     expect(names.map((name) => name.textContent)).toEqual(['ak/part-one', 'ak/part-two']);
   });
 
+  it('wraps the branch names instead of cutting them, so both stay readable beside the buttons', () => {
+    renderDecision();
+
+    const line = screen.getByRole('alert').querySelector('[data-branch-line]');
+    expect(line?.querySelector('.truncate')).toBeNull();
+  });
+
   it('names the mount in the title and the two branches on one line, the buttons carry the choice', async () => {
     renderDecision();
 
@@ -191,9 +198,9 @@ describe('MountBranchDecision', () => {
   it('offers a reread when the directory could not be read', () => {
     renderDecision({ next: { state: 'unavailable', observedBranch: null } });
 
-    expect(screen.getByText("ledger-core's branch could not be read")).toBeDefined();
+    expect(screen.getByText("ledger-core's branch couldn't be read")).toBeDefined();
     expect(sentenceOf({ text: 'Expected ak/part-one' })).toBeDefined();
-    expect(screen.getByText('Its directory could not be read.')).toBeDefined();
+    expect(screen.getByText("Its directory couldn't be read.")).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
       false,
     );

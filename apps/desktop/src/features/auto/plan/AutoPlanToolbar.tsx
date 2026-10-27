@@ -11,7 +11,7 @@ export const AutoPlanToolbar = ({ model }: Props) => {
   const isRevising = model.approval.state === 'revising';
   return (
     <div data-testid="auto-plan-toolbar" className="@container flex min-w-0 items-center gap-2">
-      <Chip kind="state" tone={model.approval.tone} shape="badge" label={model.approval.word} />
+      <Chip kind="state" tone={model.approval.tone} label={model.approval.word} />
       <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
         v{model.version}
       </span>

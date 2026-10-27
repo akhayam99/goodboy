@@ -21,9 +21,6 @@ const clock = sceneClock({ anchor: '2026-10-09T09:00:00.000Z' });
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 type ProviderParams = {

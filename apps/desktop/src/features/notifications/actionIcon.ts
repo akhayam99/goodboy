@@ -12,6 +12,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'retry-orchestrator':
     case 'retry-publication':
     case 'retry-update':
+    case 'retry-push':
       return RotateCcw;
     case 'open-agent':
     case 'open-budget':
@@ -19,6 +20,8 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'open-storage':
     case 'open-lens':
     case 'open-activity':
+    case 'open-settings':
+    case 'reveal-path':
     case 'update-provider-cli':
       return ChevronRight;
     default: {

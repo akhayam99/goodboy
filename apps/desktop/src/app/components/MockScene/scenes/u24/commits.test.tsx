@@ -15,7 +15,8 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
+import { CTX_COMMITS } from '../brand/contextBranch';
 import { U24_COMMITS_SCENES } from './commits';
 
 beforeAll(async () => {
@@ -64,6 +65,20 @@ describe('the u24 commits scenes', () => {
     expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();
     expect(document.querySelector('[data-after-node]')).toBeNull();
+  });
+
+  it('counts the pull request commits and marks the online copy on a pushed commit', async () => {
+    renderScene({ name: 'commits-rest' });
+
+    await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
+    await settle();
+
+    const pushedCount = CTX_COMMITS.filter((commit) => commit.pushed).length;
+    expect(screen.getByText(/wants to merge/).textContent).toContain(`${pushedCount} commits`);
+    expect(screen.getAllByText('Online copy')).toHaveLength(1);
+    expect(screen.getAllByText('Not pushed')).toHaveLength(CTX_COMMITS.length - pushedCount);
+    const rows = screen.getByRole('list', { name: 'Commits' }).textContent ?? '';
+    expect(rows.indexOf('Online copy')).toBeGreaterThan(rows.lastIndexOf('Not pushed'));
   });
 
   it('ignores legacy staged edits and keeps the live branch visible', async () => {

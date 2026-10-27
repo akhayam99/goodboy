@@ -1,5 +1,4 @@
 import { normalizeWorkflowRole } from '@goodboy/core';
-import type { PlannerOutput } from '@goodboy/core';
 import type { Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
 import type { StepDraft, WorkflowDraft, WorkflowDraftErrors } from './types';

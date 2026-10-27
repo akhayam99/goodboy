@@ -1,4 +1,4 @@
-import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
 import {
   classifyWorkflowChain,

@@ -28,7 +28,7 @@ const PAGE_CLASSES = {
 } as const;
 
 const SECTION_CLASSES = {
-  root: 'flex min-h-7 min-w-0 items-center gap-2 text-label',
+  root: 'flex min-h-7 min-w-0 items-center gap-2 text-meta',
   content: 'min-w-0 flex-1',
   title: 'font-medium text-foreground',
   description: 'text-muted-foreground',

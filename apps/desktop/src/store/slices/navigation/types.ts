@@ -91,13 +91,6 @@ export type StudioParams = {
   readonly studio: StudioPlace;
 };
 
-export type NavigationSliceState = {
-  readonly navigation: Readonly<Record<string, NavigationStack>>;
-  readonly appStudio: StudioPlace | null;
-};
-
 export const EMPTY_FOCUS: Focus = { drawer: null, selection: {}, scroll: {}, revealed: [] };
 
 export const HISTORY_LIMIT = 50;
-
-export const initialNavigationState: NavigationSliceState = { navigation: {}, appStudio: null };

@@ -10,15 +10,16 @@ import { createReviewBulkSlice } from './slices/review-bulk';
 import { reviewBulkInitialState } from './slices/review-bulk/state';
 import { createReviewLaunchSlice } from './slices/review-launch';
 import { reviewLaunchInitialState } from './slices/review-launch/state';
+import { createOutputHandoffsSlice } from './slices/output-handoffs';
+import { outputHandoffsInitialState } from './slices/output-handoffs/state';
 import { createReviewSelectionSlice } from './slices/review-selection';
 import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { createReviewSourceSlice, reviewSourceInitialState } from './slices/review-source';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import type { AgentId, SessionId, PrReviewDraft } from '@goodboy/types';
-import type { ExtractedReviewComment } from '@goodboy/core';
 import { createNotificationsSlice } from './slices/notifications';
+import { createTaskArrivalsSlice } from './slices/taskArrivals';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import {
@@ -39,22 +40,18 @@ import { createSessionEventsSlice } from './slices/session-events';
 import { createDormantSpendSlice } from './slices/dormant-spend';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
-import { createGitlabMrSlice, initialGitlabMrState } from './slices/gitlab-mr';
-import { createBitbucketPrSlice, initialBitbucketPrState } from './slices/bitbucket-pr';
-import { createSlackThreadsSlice, initialSlackThreadsState } from './slices/slack-threads';
+import { createGitlabMrSlice, gitlabMrInitialState } from './slices/gitlab-mr';
+import { createBitbucketPrSlice, bitbucketPrInitialState } from './slices/bitbucket-pr';
+import { createSlackThreadsSlice, slackThreadsInitialState } from './slices/slack-threads';
 import { createReviewDraftsSlice } from './slices/review-drafts';
-import type {
-  AddReviewDraftInput,
-  PublishPrReviewOpts,
-  PublishPrReviewResult,
-  ReviewSubmission,
-} from './slices/review-drafts';
+import { reviewDraftsInitialState } from './slices/review-drafts/state';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
 import { createNextViewSlice } from './slices/next-view';
+import { createTrackerMovesSlice } from './slices/tracker-moves';
 import {
   checkFixCommitsInitialState,
   createCheckFixCommitsSlice,
@@ -71,20 +68,20 @@ import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
 import { createTerminalSlice } from './slices/terminal';
+import { createEndedWorkSlice } from './slices/ended-work';
 import { createScriptsSlice } from './slices/scripts';
-import { initialScriptsState } from './slices/scripts/state';
+import { scriptsInitialState } from './slices/scripts/state';
 import { createPermissionsSlice } from './slices/permissions';
 import { createProvidersSlice } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
-import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import { createStartHintsSlice } from './slices/startHints';
 import { createRebaseAllSlice } from './slices/rebaseAll';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
-import { initialWorkflowStudioState } from './slices/workflowStudio/state';
+import { workflowStudioInitialState } from './slices/workflowStudio/state';
 import { createWorkflowRoutingSlice } from './slices/workflowRouting';
-import { initialWorkflowRoutingState } from './slices/workflowRouting/state';
+import { workflowRoutingInitialState } from './slices/workflowRouting/state';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -116,6 +113,8 @@ import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import { createDurationEstimatesSlice } from './slices/durationEstimates';
 import { durationEstimatesInitialState } from './slices/durationEstimates/state';
+import { createLimitStopsSlice } from './slices/limitStops';
+import { limitStopsInitialState } from './slices/limitStops/state';
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
 import { createSentryLinksSlice } from './slices/sentryLinks';
@@ -128,29 +127,30 @@ import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { createAskSlice } from './slices/ask';
 import { handoffsInitialState } from './slices/handoffs/state';
+import { createHostReachabilitySlice } from './slices/host-reachability';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import { createWorktreesSlice } from './slices/worktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
-import { initialUpdaterState } from './slices/updater/state';
+import { updaterInitialState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
-import { initialChangelogState } from './slices/changelog/state';
+import { changelogInitialState } from './slices/changelog/state';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
-import { initialContextDrawerState } from './slices/contextDrawer/state';
+import { contextDrawerInitialState } from './slices/contextDrawer/state';
 import { createContextItemsSlice } from './slices/contextItems';
-import { initialContextItemsState } from './slices/contextItems/state';
+import { contextItemsInitialState } from './slices/contextItems/state';
 import { createDecisionsSlice } from './slices/decisions';
-import { initialDecisionsState } from './slices/decisions/state';
-import { initialSessionDraftState } from './slices/sessionDraft/state';
+import { decisionsInitialState } from './slices/decisions/state';
+import { sessionDraftInitialState } from './slices/sessionDraft/state';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
-import { initialNavigationState } from './slices/navigation/types';
+import { navigationInitialState } from './slices/navigation/state';
 import { askInitialState } from './slices/ask/state';
-import { initialDrawerState } from './slices/drawer/state';
-import { initialBugReportDraftState } from './slices/bugReportDraft/state';
+import { drawerInitialState } from './slices/drawer/state';
+import { bugReportDraftInitialState } from './slices/bugReportDraft/state';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
 import { sessionFiltersInitialState } from './slices/sessionFilters/state';
@@ -159,6 +159,7 @@ import { projectsInitialState } from './slices/projects/state';
 import { sessionsInitialState } from './slices/sessions/state';
 import { sessionEventsInitialState } from './slices/session-events/state';
 import { dormantSpendInitialState } from './slices/dormant-spend/state';
+import { hostReachabilityInitialState } from './slices/host-reachability/state';
 import { presenceInitialState } from './slices/presence/state';
 import { settingsInitialState } from './slices/settings/state';
 import { providersInitialState } from './slices/providers/state';
@@ -173,6 +174,7 @@ import { settingsLastPageInitialState } from './slices/settings-last-page/state'
 import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
 import { nextViewInitialState } from './slices/next-view/state';
+import { trackerMovesInitialState } from './slices/tracker-moves/state';
 import { turnInitialState } from './slices/turn/state';
 import { workflowsInitialState } from './slices/workflows/state';
 import { agentsInitialState } from './slices/agents/state';
@@ -183,7 +185,6 @@ import { plansInitialState } from './slices/plans/state';
 import { openQuestionsInitialState } from './slices/open-questions/state';
 import { nudgesInitialState } from './slices/nudges/state';
 import { slackDraftsInitialState } from './slices/slack-drafts/state';
-import { workflowDraftsInitialState } from './slices/workflowDrafts/state';
 import { startHintsInitialState } from './slices/startHints/state';
 import { rebaseAllInitialState } from './slices/rebaseAll/state';
 import { artifactDraftsInitialState } from './slices/artifactDrafts/state';
@@ -193,34 +194,16 @@ import { storageInitialState } from './slices/storage/state';
 import { skillsInitialState } from './slices/skills/state';
 import { githubInitialState } from './slices/github/state';
 import { notificationsInitialState } from './slices/notifications/state';
+import { taskArrivalsInitialState } from './slices/taskArrivals/state';
 import { diffCommentsInitialState } from './slices/diff-comments/state';
 import { fileVersionsInitialState } from './slices/file-versions/state';
 import { terminalInitialState } from './slices/terminal/state';
+import { endedWorkInitialState } from './slices/ended-work/state';
 export type { ProviderSpendEntry };
-export type { AppState } from './types';
-
-type AppActions = {
-  loadReviewDrafts(sessionId: SessionId): Promise<void>;
-  addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
-  updateReviewDraft(id: string, body: string): Promise<void>;
-  discardReviewDraft(id: string): Promise<void>;
-  queueAgentReviewComments(
-    sessionId: SessionId,
-    agentId: AgentId,
-    markers: ReadonlyArray<ExtractedReviewComment>,
-  ): Promise<void>;
-  publishPrReview(sessionId: SessionId, opts: PublishPrReviewOpts): Promise<PublishPrReviewResult>;
-  setReviewSubmission(params: {
-    readonly sessionId: SessionId;
-    readonly patch: Partial<ReviewSubmission>;
-  }): void;
-  submitReview(params: { readonly sessionId: SessionId }): Promise<PublishPrReviewResult>;
-  discardReview(params: { readonly sessionId: SessionId }): Promise<void>;
-};
 
 export type AppStore = AppState &
   ReturnType<typeof createUndoSlice> &
-  AppActions &
+  ReturnType<typeof createReviewDraftsSlice> &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createArtifactCommentsSlice> &
   ReturnType<typeof createBootstrapSlice> &
@@ -229,6 +212,7 @@ export type AppStore = AppState &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createReviewBulkSlice> &
   ReturnType<typeof createReviewLaunchSlice> &
+  ReturnType<typeof createOutputHandoffsSlice> &
   ReturnType<typeof createReviewSelectionSlice> &
   ReturnType<typeof createReviewSourceSlice> &
   ReturnType<typeof createPrWritesSlice> &
@@ -237,6 +221,7 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createLimitStopsSlice> &
   ReturnType<typeof createProjectRelocationSlice> &
   ReturnType<typeof createBackupSlice> &
   ReturnType<typeof createSentryLinksSlice> &
@@ -262,14 +247,18 @@ export type AppStore = AppState &
   ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
   ReturnType<typeof createNextViewSlice> &
+  ReturnType<typeof createTrackerMovesSlice> &
   ReturnType<typeof createCheckFixCommitsSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
   ReturnType<typeof createPresenceSlice> &
+  ReturnType<typeof createHostReachabilitySlice> &
   ReturnType<typeof createNotificationsSlice> &
+  ReturnType<typeof createTaskArrivalsSlice> &
   ReturnType<typeof createNudgesSlice> &
   ReturnType<typeof createTerminalSlice> &
+  ReturnType<typeof createEndedWorkSlice> &
   ReturnType<typeof createScriptsSlice> &
   ReturnType<typeof createPermissionsSlice> &
   ReturnType<typeof createSessionViewSlice> &
@@ -292,7 +281,6 @@ export type AppStore = AppState &
   ReturnType<typeof createProjectMountsSlice> &
   ReturnType<typeof createMountCleanupSlice> &
   ReturnType<typeof createWorkflowsSlice> &
-  ReturnType<typeof createWorkflowDraftsSlice> &
   ReturnType<typeof createStartHintsSlice> &
   ReturnType<typeof createRebaseAllSlice> &
   ReturnType<typeof createWorkflowStudioSlice> &
@@ -319,19 +307,19 @@ export type AppStore = AppState &
   ReturnType<typeof createHistorySlice> &
   ReturnType<typeof createScribeSlice>;
 
-export const initialState: AppState = {
+const initialState: AppState = {
   ...undoInitialState,
-  ...initialUpdaterState,
-  ...initialChangelogState,
-  ...initialBugReportDraftState,
-  ...initialSessionDraftState,
-  ...initialContextDrawerState,
-  ...initialContextItemsState,
-  ...initialDecisionsState,
+  ...updaterInitialState,
+  ...changelogInitialState,
+  ...bugReportDraftInitialState,
+  ...sessionDraftInitialState,
+  ...contextDrawerInitialState,
+  ...contextItemsInitialState,
+  ...decisionsInitialState,
   ...askInitialState,
-  ...initialDrawerState,
-  ...initialNavigationState,
-  ...initialScriptsState,
+  ...drawerInitialState,
+  ...navigationInitialState,
+  ...scriptsInitialState,
   ...projectRelocationInitialState,
   ...backupInitialState,
   ...budgetInitialState,
@@ -347,6 +335,7 @@ export const initialState: AppState = {
   ...sessionEventsInitialState,
   ...dormantSpendInitialState,
   ...presenceInitialState,
+  ...hostReachabilityInitialState,
   ...sessionsInitialState,
   ...settingsInitialState,
   ...providersInitialState,
@@ -365,6 +354,7 @@ export const initialState: AppState = {
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
+  ...limitStopsInitialState,
   ...sentryLinksInitialState,
   ...handoffsInitialState,
   ...turnInitialState,
@@ -380,13 +370,13 @@ export const initialState: AppState = {
   ...localChecksInitialState,
   ...chatLastOpenInitialState,
   ...nextViewInitialState,
+  ...trackerMovesInitialState,
   ...checkFixCommitsInitialState,
   ...githubInitialState,
-  ...initialGitlabMrState,
-  ...initialBitbucketPrState,
-  ...initialSlackThreadsState,
-  reviewDrafts: {},
-  reviewSubmission: {},
+  ...gitlabMrInitialState,
+  ...bitbucketPrInitialState,
+  ...slackThreadsInitialState,
+  ...reviewDraftsInitialState,
   ...permissionsInitialState,
   ...bootstrapInitialState,
   ...folderPurposeInitialState,
@@ -394,26 +384,28 @@ export const initialState: AppState = {
   ...reviewNavigationInitialState,
   ...reviewBulkInitialState,
   ...reviewLaunchInitialState,
+  ...outputHandoffsInitialState,
   ...reviewSelectionInitialState,
   ...reviewSourceInitialState,
   ...artifactsInitialState,
   ...artifactCommentsInitialState,
-  ...workflowDraftsInitialState,
   ...startHintsInitialState,
   ...rebaseAllInitialState,
   ...artifactDraftsInitialState,
-  ...initialWorkflowStudioState,
-  ...initialWorkflowRoutingState,
+  ...workflowStudioInitialState,
+  ...workflowRoutingInitialState,
   ...agentQueueInitialState,
   ...diffCommentsInitialState,
   ...fileVersionsInitialState,
   ...attachmentsInitialState,
   ...notificationsInitialState,
+  ...taskArrivalsInitialState,
   ...plansInitialState,
   ...nudgesInitialState,
   ...openQuestionsInitialState,
   ...slackDraftsInitialState,
   ...terminalInitialState,
+  ...endedWorkInitialState,
   ...repoDivergenceInitialState,
 };
 
@@ -421,6 +413,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createUndoSlice({ set, get }),
   ...createNotificationsSlice({ set, get }),
+  ...createTaskArrivalsSlice({ set, get }),
   ...createNudgesSlice({ set, get }),
   ...createArtifactsSlice({ set, get }),
   ...createArtifactCommentsSlice({ set, get }),
@@ -447,6 +440,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
   ...createNextViewSlice({ set, get }),
+  ...createTrackerMovesSlice({ set, get }),
   ...createCheckFixCommitsSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
@@ -455,6 +449,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAutoViewSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
+  ...createEndedWorkSlice({ set, get }),
   ...createScriptsSlice({ set, get }),
   ...createPermissionsSlice({ set, get }),
   ...createProvidersSlice({ set, get }),
@@ -466,9 +461,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createReviewNavigationSlice({ set, get }),
   ...createReviewBulkSlice({ set, get }),
   ...createReviewLaunchSlice({ set, get }),
+  ...createOutputHandoffsSlice({ set, get }),
   ...createReviewSelectionSlice({ set, get }),
   ...createReviewSourceSlice({ set, get }),
-  ...createWorkflowDraftsSlice({ set, get }),
   ...createStartHintsSlice({ set, get }),
   ...createRebaseAllSlice({ set, get }),
   ...createArtifactDraftsSlice({ set, get }),
@@ -483,7 +478,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createTranscriptsSlice({ set, get }),
   ...createSummariesSlice({ set, get }),
   ...createSessionsSlice({ set, get }),
-  ...createWorkspacesSlice({ set, get }),
+  ...createWorkspacesSlice({ set, get, initialState }),
   ...createProjectsSlice({ set, get }),
   ...createProjectRelocationSlice({ set, get }),
   ...createProjectMountsSlice({ set, get }),
@@ -497,6 +492,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIssueBriefsSlice({ set, get }),
   ...createDurationEstimatesSlice({ set, get }),
   ...createProviderLimitsSlice({ set, get }),
+  ...createLimitStopsSlice({ set, get }),
   ...createSentryLinksSlice({ set, get }),
   ...createHandoffsSlice({ set, get }),
   ...createSecurityFindingsSlice({ set, get }),
@@ -506,6 +502,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createChatsSlice({ set, get }),
   ...createAskSlice({ set, get }),
   ...createPresenceSlice({ set, get }),
+  ...createHostReachabilitySlice({ set, get }),
   ...createTurnSlice({ set, get }),
   ...createWorktreesSlice({ set, get }),
   ...createBootSlice({ set, get }),

@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { ArrowUp, Square } from 'lucide-react';
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { PromptField } from '../../../../shared/components/PromptField';
+import { SendStopControl } from '../../../../shared/components/SendStopControl';
 import { usePromptFiles, type PromptFileFilter } from '../../../../shared/hooks/usePromptFiles';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { restoreDraftOnFailedSend } from '../../../../shared/utils/restoreDraftOnFailedSend';
 import type { WorkspaceId } from '@goodboy/types';
 import type { PendingAttachment } from '../../../attachments/pendingAttachment';
 import { CHAT_IMAGE_ACCEPT, isChatImage } from '../../chatImageKinds';
-import type { ChatRouting } from '../../chatRouting';
+import type { ChatRouting } from '../../../conversation/chatRouting';
 import { useChatImagesOn } from '../../hooks/useChatImagesOn';
 import { ChatRoutingPicker } from './ChatRoutingPicker';
 
@@ -29,10 +28,6 @@ type Props = {
   readonly onRouting: (routing: ChatRouting) => void;
 };
 
-const SEND_HINT = `Send with ${shortcutGlyphs('composer.send')}, new line with ${shortcutGlyphs('composer.newLine')}`;
-
-const PRIMARY = tintClasses('primary').solid;
-
 const CHAT_IMAGES: PromptFileFilter = {
   accept: CHAT_IMAGE_ACCEPT,
   noun: 'images',
@@ -40,9 +35,6 @@ const CHAT_IMAGES: PromptFileFilter = {
 };
 
 const SEND_FAILED = "Couldn't attach the images. Try again.";
-
-const ROUND_BUTTON =
-  'flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const ChatComposer = ({
   workspaceId,
@@ -75,7 +67,7 @@ export const ChatComposer = ({
       if (isSent) {
         return;
       }
-      setText((current) => (current === '' ? sentText : current));
+      setText((current) => restoreDraftOnFailedSend({ sent: sentText, current }));
       images.setAttachments(sentImages);
       setSendNotice(sentImages.length > 0 ? SEND_FAILED : null);
     });
@@ -104,34 +96,11 @@ export const ChatComposer = ({
           <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
             Read only. Nothing is changed.
           </span>
-          {isStreaming ? (
-            <Tooltip content="Stop the answer">
-              <button
-                type="button"
-                aria-label="Stop the answer"
-                disabled={isStopping}
-                onClick={onStop}
-                className={cn(
-                  ROUND_BUTTON,
-                  'bg-fill text-foreground hover:bg-hover disabled:opacity-50',
-                )}
-              >
-                <Square size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-          ) : (
-            <Tooltip content={SEND_HINT}>
-              <button
-                type="button"
-                aria-label="Send"
-                disabled={!canSend}
-                onClick={send}
-                className={cn(ROUND_BUTTON, canSend ? PRIMARY : 'bg-fill text-faint-foreground')}
-              >
-                <ArrowUp size={ICON_SIZE.control} aria-hidden />
-              </button>
-            </Tooltip>
-          )}
+          <SendStopControl
+            canSend={canSend}
+            stop={isStreaming ? { isStopping, onStop } : undefined}
+            onSend={send}
+          />
         </>
       }
     />

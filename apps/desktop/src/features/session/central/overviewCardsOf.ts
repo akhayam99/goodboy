@@ -1,4 +1,4 @@
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import type { ActionCardModel } from './next/actionCardsOf';
 import { nextRowCountOf } from './next/nextRowCountOf';
 
@@ -21,6 +21,7 @@ const TITLE: Readonly<Record<OverviewCardId, string>> = {
 type Params = {
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly runningCount: number;
+  readonly stuckCount: number;
   readonly branchCount: number;
   readonly doneCount: number;
   readonly isArchived: boolean;
@@ -29,6 +30,7 @@ type Params = {
 export const overviewCardsOf = ({
   cards,
   runningCount,
+  stuckCount,
   branchCount,
   doneCount,
   isArchived,
@@ -42,5 +44,7 @@ export const overviewCardsOf = ({
         ['branches', branchCount],
         ['done', doneCount],
       ];
-  return counts.flatMap(([id, count]) => (count > 0 ? [{ id, title: TITLE[id], count }] : []));
+  return counts.flatMap(([id, count]) =>
+    count > 0 || (id === 'running' && stuckCount > 0) ? [{ id, title: TITLE[id], count }] : [],
+  );
 };

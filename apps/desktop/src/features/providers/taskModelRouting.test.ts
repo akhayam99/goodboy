@@ -1,13 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import {
-  AUTHENTICATION_COOLDOWN_MS,
-  cooldownWindowEnd,
-  RATE_LIMIT_COOLDOWN_MS,
-  USAGE_LIMIT_COOLDOWN_MS,
-  withFailureCooldown,
-  withProviderCooldown,
-} from './taskModelRouting';
+import { cooldownWindowEnd, withFailureCooldown, withProviderCooldown } from './taskModelRouting';
 
 const NOW = 1_800_000_000_000;
 
@@ -63,7 +56,7 @@ describe('withFailureCooldown', () => {
       nowMs: NOW,
     });
 
-    expect(next.anthropic).toBe(NOW + USAGE_LIMIT_COOLDOWN_MS);
+    expect(next.anthropic).toBe(NOW + 30 * 60 * 1000);
   });
 
   it('records a short window for a rate limit', () => {
@@ -74,7 +67,7 @@ describe('withFailureCooldown', () => {
       nowMs: NOW,
     });
 
-    expect(next.codex).toBe(NOW + RATE_LIMIT_COOLDOWN_MS);
+    expect(next.codex).toBe(NOW + 60 * 1000);
   });
 
   it('records a window for an authentication failure', () => {
@@ -85,7 +78,7 @@ describe('withFailureCooldown', () => {
       nowMs: NOW,
     });
 
-    expect(next.gemini).toBe(NOW + AUTHENTICATION_COOLDOWN_MS);
+    expect(next.gemini).toBe(NOW + 5 * 60 * 1000);
   });
 
   it('leaves the cooldowns untouched for a failure the pool cannot help with', () => {

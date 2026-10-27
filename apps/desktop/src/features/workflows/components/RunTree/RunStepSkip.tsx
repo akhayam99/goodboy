@@ -1,9 +1,8 @@
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useState } from 'react';
 import { SkipForward } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { Agent } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type RunStepSkipAction = {
   readonly describe: (agent: Agent) => string;

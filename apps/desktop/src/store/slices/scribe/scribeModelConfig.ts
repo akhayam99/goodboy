@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
-import { selectResolution } from '../models/selectResolution';
+import { selectResolution } from '../../runtime/models/selectResolution';
 import type { GetFn } from './types';
 
 type Params = {

@@ -369,13 +369,23 @@ type SentenceParams = {
   readonly story: BranchStory;
 };
 
+type SeriesWordParams = {
+  readonly series: NonNullable<BranchFacts['series']>;
+};
+
+const seriesPartWordOf = ({ series }: SeriesWordParams): string =>
+  series.total === null
+    ? `part ${series.position} of ${series.name}`
+    : `part ${series.position} of ${series.total}, ${series.name}`;
+
 export const branchSentenceOf = ({ fact, story }: SentenceParams): string => {
   const request = fact.request === null ? '' : `, ${fact.request.noun}${fact.request.number}`;
   const skipped = story.steps.filter((step) => step.state === 'skipped');
   const skippedWords =
     skipped.length === 0 ? '' : ` ${skipped.map((step) => step.name).join(', ')}.`;
   const reason = story.blocker === '' ? '' : `, ${story.blocker}`;
-  return `${fact.branch}, ${fact.projectName}${request}: ${story.word}${reason}.${skippedWords}`;
+  const series = fact.series === null ? '' : `, ${seriesPartWordOf({ series: fact.series })}`;
+  return `${fact.branch}, ${fact.projectName}${series}${request}: ${story.word}${reason}.${skippedWords}`;
 };
 
 export type BranchEntry = Readonly<{

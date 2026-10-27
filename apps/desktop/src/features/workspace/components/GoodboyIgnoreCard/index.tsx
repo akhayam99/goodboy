@@ -73,7 +73,7 @@ export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
     >
       <div className="flex flex-col gap-2">
         {GOODBOY_IGNORE_CHOICES.map((choice) => (
-          <label key={choice.mode} className="flex items-start gap-2 text-label">
+          <label key={choice.mode} className="flex items-start gap-2 text-meta">
             <input
               type="radio"
               name="goodboy-ignore-mode"

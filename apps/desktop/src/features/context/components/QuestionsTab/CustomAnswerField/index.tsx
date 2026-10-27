@@ -3,7 +3,7 @@ import { Pencil } from 'lucide-react';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { AnswerOptionRow } from '../../../../../shared/components/AnswerOptionRow';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly value: string;
@@ -63,7 +63,7 @@ export const CustomAnswerField = ({
           className="relative z-10 w-full bg-background"
         />
       ) : (
-        <span className="text-label text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           {open && value.trim().length > 0 ? value : 'Write your own answer'}
         </span>
       )}

@@ -3,12 +3,19 @@ name: perf
 on:
   push:
     branches: [main]
+  pull_request:
+    paths:
+      - 'apps/desktop/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'bundle-budget.json'
+      - '.github/workflows/perf.yml'
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
 
 concurrency:
-  group: perf-${{ github.ref }}
+  group: perf-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -17,6 +24,7 @@ permissions:
 jobs:
   perf:
     name: perf tests
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -43,7 +51,6 @@ jobs:
     if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
@@ -63,27 +70,61 @@ jobs:
       - name: build
         run: pnpm --filter @goodboy/desktop exec vite build
 
-      - name: report the bundle weight
-        working-directory: apps/desktop/dist
-        run: |
-          raw=0
-          packed=0
-          for file in $(grep -oE '(src|href)="/assets/[^"]+\.(js|css)"' index.html | sed -E 's/^[a-z]+="\/(.*)"$/\1/'); do
-            raw=$((raw + $(wc -c < "$file")))
-            packed=$((packed + $(gzip -9 -c "$file" | wc -c)))
-          done
-          {
-            echo "### Bundle weight"
-            echo ""
-            echo "| | now | reference |"
-            echo "| --- | --- | --- |"
-            echo "| initial load, js and css | $(awk -v b=$raw 'BEGIN { printf "%.2f", b / 1048576 }') MB | 4.9 MB |"
-            echo "| initial load, gzip | $(awk -v b=$packed 'BEGIN { printf "%.2f", b / 1048576 }') MB | 1.44 MB |"
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: check the bundle budget
+        run: node scripts/check-bundle-budget.mjs
+
+  audit:
+    name: nightly audit
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: audit
+        run: node scripts/audit-gate.mjs
 
   report:
-    name: report nightly failure
+    name: report perf failure
     needs: perf
+    if: ${{ failure() && (github.event_name == 'schedule' || github.event_name == 'push') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: scripts
+
+      - name: open or update the perf issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          LABEL: perf
+          TITLE: perf tests are failing
+          MESSAGE: The perf tests failed on ${{ github.event_name }}.
+        run: bash scripts/report-ci-issue.sh
+
+  report-audit:
+    name: report audit failure
+    needs: audit
     if: ${{ failure() && github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -91,17 +132,17 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: open or update the perf issue
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: scripts
+
+      - name: open or update the security issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          gh label create perf --description "nightly perf tests failed" --color d93f0b 2>/dev/null || true
-          existing=$(gh issue list --label perf --state open --limit 1 --json number --jq '.[0].number // empty')
-          body="The nightly perf tests failed. Run: ${RUN_URL}"
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --label perf --title "nightly perf tests are failing" --body "$body"
-          fi
+          LABEL: security
+          TITLE: a production dependency has a known advisory
+          MESSAGE: The nightly pnpm audit found an advisory.
+        run: bash scripts/report-ci-issue.sh

@@ -36,13 +36,13 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       fireEvent.click(scrimOf() as HTMLElement);
+      expect(scrimOf()?.className).toContain('pointer-events-none');
       await settle();
       await waitFor(() => {
         expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
         expect(sidePanel().getAttribute('data-drawer-mode')).toBe('closed');
       }, WAIT);
       expect(pageUnderDrawer().hasAttribute('inert')).toBe(false);
-      expect(scrimOf()?.className).toContain('pointer-events-none');
       await waitFor(() => {
         expect(scrimOf()).toBeNull();
       }, WAIT);

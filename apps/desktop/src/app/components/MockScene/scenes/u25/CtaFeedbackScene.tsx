@@ -1,6 +1,6 @@
 import { ArrowUp } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE } from '@goodboy/ui';
+
 import { actionButtonStateOf } from '../../../../../features/actions/actionButtonStateOf';
 import { ActionStatusLine } from '../../../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ActionControls } from '../../../../../features/actions/useActionControls';
@@ -52,7 +52,7 @@ export const CtaFeedbackScene = ({ variant }: Props) => {
   return (
     <div className="flex w-[720px] flex-col gap-2 bg-background p-6">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-label text-foreground">hl/fix-duplicate-credit</p>
+        <p className="text-meta text-foreground">hl/fix-duplicate-credit</p>
         <Button size="sm" variant="secondary" isBusy={state.isBusy} busyLabel={state.label}>
           <ArrowUp size={ICON_SIZE.control} aria-hidden />
           {state.label}

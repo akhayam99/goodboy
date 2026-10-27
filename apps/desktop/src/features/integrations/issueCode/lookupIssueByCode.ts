@@ -16,9 +16,9 @@ import {
   sentryIssueCandidate,
 } from '../issueCandidateOf';
 import { jiraGetIssue } from '../jira/client';
-import { buildIssueGroups as buildJiraGroups } from '../jira/JiraStudio/useJiraIssues';
+import { buildIssueGroups as buildJiraGroups } from '../jira/JiraStudio/buildIssueGroups';
 import { linearFetchIssue } from '../linear/client';
-import { buildIssueGroups as buildLinearGroups } from '../linear/LinearStudio/useLinearIssues';
+import { buildIssueGroups as buildLinearGroups } from '../linear/LinearStudio/buildIssueGroups';
 import { sentryFetchIssue, sentryResolveShortId } from '../sentry/client';
 import { classifyLookupError, type LookupFailure } from './classifyLookupError';
 import type { LookupTarget } from './routeIssueCode';
@@ -54,7 +54,9 @@ const hitOf = async (target: LookupTarget, deps: LookupDeps): Promise<LookupHit>
   switch (target.provider) {
     case 'linear': {
       const issue = await linearFetchIssue({ workspaceId, issueId: target.identifier });
-      const [record] = adaptLinearIssues({ groups: buildLinearGroups([issue], EMPTY_SESSIONS) });
+      const [record] = adaptLinearIssues({
+        groups: buildLinearGroups({ issues: [issue], sessionIdByExternalId: EMPTY_SESSIONS }),
+      });
       if (record === undefined) {
         throw new Error('not found');
       }

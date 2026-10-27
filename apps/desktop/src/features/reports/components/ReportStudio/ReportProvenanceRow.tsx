@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { cn, Eyebrow, Tooltip } from '@goodboy/ui';
+import { cn, Eyebrow, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { AgentId, ArtifactId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ReportSourceLink } from '../../reportSourceLinks';
 
 type Props = {

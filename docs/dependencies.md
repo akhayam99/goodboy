@@ -81,6 +81,26 @@ Neither is new to the dependency tree: both already resolved as transitive
 deps of `tauri`/`objc2` at the exact versions now pinned directly, so this
 added zero new crates and a two-line `Cargo.lock` diff.
 
+`tauri-plugin-notification` 2.7.0 (crate) and `@tauri-apps/plugin-notification`
+2.7.0 (npm) raise the local banner when an agent needs you while no window is in
+front. Both are pinned exactly and checked on 24 October 2026 against the
+registries:
+
+- **In-house**: no. The banner goes through the operating system's notification
+  service on each platform, which is platform code.
+- **Maintenance and adoption**: the official Tauri plugins workspace, the same
+  organisation as `tauri-plugin-dialog`, `-process` and `-updater` we ship. Last
+  release 14 October 2026, monthly cadence, 8.1M crate downloads. The plugin is
+  older than one year; 2.6.0 added the click report on desktop that we use.
+- **Licence**: `Apache-2.0 OR MIT` for the plugin and `notify-rust`,
+  `mac-notification-sys`, `tauri-winrt-notification`; `zbus`, `zvariant` and
+  their helpers (Linux D-Bus only) are `MIT`.
+- **Network**: none. `src-tauri/tests/outbound_hosts.rs` still passes, and
+  [SECURITY.md](../SECURITY.md) → Alerts while you are away says so.
+- **Lockfile diff**: 12 new crates in `Cargo.lock` (the notification chain and a
+  second `zbus` 5 beside the 4 that `keyring` pulls), one new npm package, no new
+  transitive npm package. `pnpm audit` is clean.
+
 The rules for internal workspace deps (the `workspace:*` protocol, no phantom deps) live in [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
 
 ## Upgrades: stable over newest

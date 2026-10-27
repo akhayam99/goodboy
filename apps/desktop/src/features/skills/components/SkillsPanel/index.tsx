@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { TriangleAlert, Pencil, Trash2 } from 'lucide-react';
 import {
   Button,
   ConfirmPopover,
@@ -8,14 +8,15 @@ import {
   FieldRow,
   FormActions,
   formatError,
+  ICON_SIZE,
   Input,
   SectionHeader,
   Textarea,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
-import { CardActionSlot } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CardActionSlot, FOCUS_RING, cn } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
@@ -216,7 +217,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
           icon={CONCEPT_ICONS.skills}
           tone={CONCEPT_TONE.skills}
           title="No skills yet"
-          description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
+          description="A skill is a reusable prompt fragment agents can opt into by name. A new one is saved in .goodboy/skills in your folder. Rescan picks up files already there, and in the older .kay/skills."
           action={
             <Button size="sm" onClick={openNew}>
               New skill
@@ -254,11 +255,14 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
         <button
           type="button"
           onClick={onEdit}
-          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'flex min-w-0 flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left',
+            FOCUS_RING,
+          )}
         >
           <span className="truncate text-row text-foreground">/{skill.name}</span>
           {skill.description !== '' ? (
-            <span className="truncate text-label text-muted-foreground">{skill.description}</span>
+            <span className="truncate text-meta text-muted-foreground">{skill.description}</span>
           ) : null}
         </button>
         <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-2">
@@ -387,8 +391,8 @@ const SkillEditor = ({
       <FormActions
         leading={
           error === null ? null : (
-            <span role="alert" className="inline-flex items-center gap-1 text-label text-danger">
-              <AlertTriangle size={ICON_SIZE.row} aria-hidden />
+            <span role="alert" className="inline-flex items-center gap-1 text-meta text-danger">
+              <TriangleAlert size={ICON_SIZE.row} aria-hidden />
               {error}
             </span>
           )

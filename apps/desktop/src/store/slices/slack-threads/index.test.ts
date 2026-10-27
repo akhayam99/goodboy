@@ -20,9 +20,9 @@ vi.mock('../../../features/integrations/slack/client', () => ({
   slackAddReaction: (...args: ReadonlyArray<unknown>) => addReactionSpy(...args),
 }));
 
-const { createSlackThreadsSlice, initialSlackThreadsState, slackChannelKey, slackThreadKey } =
+const { createSlackThreadsSlice, slackThreadsInitialState, slackChannelKey, slackThreadKey } =
   await import('./index');
-const { SLACK_THREAD_CACHE_LIMIT, pruneSlackWorkspace } = await import('./state');
+const { pruneSlackWorkspace } = await import('./state');
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const CHANNEL_ID = 'C024BE7LR';
@@ -36,7 +36,7 @@ type BuildStoreParams = {
 };
 
 const buildStore = ({ workspaceOverrides = {} }: BuildStoreParams = {}) => {
-  let state: TestState = { ...initialSlackThreadsState, workspaceOverrides };
+  let state: TestState = { ...slackThreadsInitialState, workspaceOverrides };
   const set = (partial: unknown) => {
     const next = typeof partial === 'function' ? partial(state) : partial;
     state = { ...state, ...(next as TestState) };
@@ -261,7 +261,7 @@ describe('slack-threads slice', () => {
     it('keeps at most the cache limit, evicting the oldest fetched thread', async () => {
       const store = buildStore();
       const seeded: Record<string, unknown> = {};
-      for (let index = 0; index < SLACK_THREAD_CACHE_LIMIT; index += 1) {
+      for (let index = 0; index < 50; index += 1) {
         seeded[
           slackThreadKey({
             workspaceId: WORKSPACE_ID,
@@ -285,7 +285,7 @@ describe('slack-threads slice', () => {
       });
 
       const threads = store.getState().slackThreads as Record<string, unknown>;
-      expect(Object.keys(threads)).toHaveLength(SLACK_THREAD_CACHE_LIMIT);
+      expect(Object.keys(threads)).toHaveLength(50);
       expect(
         threads[
           slackThreadKey({ workspaceId: WORKSPACE_ID, channelId: CHANNEL_ID, threadTs: 'old-0' })

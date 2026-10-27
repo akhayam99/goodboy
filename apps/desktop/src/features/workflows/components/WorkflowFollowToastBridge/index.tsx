@@ -5,6 +5,7 @@ import { isWatchingWorkflowLens } from '../../../../store/slices/workflows/isWat
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { useToast } from '../../../../shared/components/Toast';
 import { isUserStart } from '../../../../shared/lib/userStarts';
+import { dispatchWindowEvent } from '../../../../shared/lib/dispatchWindowEvent';
 
 type StepStartedDetail = {
   readonly sessionId: SessionId;
@@ -48,7 +49,7 @@ export const WorkflowFollowToastBridge = () => {
         message: 'Your workflow is ready.',
         action: {
           label: 'Open',
-          onClick: () => window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio')),
+          onClick: () => dispatchWindowEvent({ name: 'goodboy:open-workflow-studio' }),
         },
       });
     }

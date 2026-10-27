@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ExternalLink } from 'lucide-react';
-import { Button, Disclosure } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SquareArrowOutUpRight } from 'lucide-react';
+import { Button, Disclosure, ICON_SIZE } from '@goodboy/ui';
+
 import { openUrl } from '../../../../shared/lib/editor';
 import { givenOf } from '../../checks/givenOf';
 import { Fact } from './Fact';
@@ -50,7 +50,7 @@ export const GivenFacts = ({ text }: Props) => {
                       onClick={() => void openUrl(check.url ?? '')}
                     >
                       Open check run
-                      <ExternalLink size={ICON_SIZE.row} aria-hidden />
+                      <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
                     </Button>
                   </Fact>,
                 ]),

@@ -297,7 +297,7 @@ describe('mergeWorkspaces', () => {
     ]);
   });
 
-  it('keeps the target profile and drops the source profile and branch prefix', async () => {
+  it('keeps the target profile and values and drops the source profile and values', async () => {
     const db = await seed();
     await db.execute(
       `INSERT INTO workspace_profiles (workspace_id, about_work, updated_at)
@@ -309,16 +309,14 @@ describe('mergeWorkspaces', () => {
        VALUES (?, 'I do not write code.', ?)`,
       [source, NOW],
     );
-    await db.execute('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)', [
-      `workspace.${source}.branch_prefix`,
-      'src',
-      NOW,
-    ]);
-    await db.execute('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)', [
-      `workspace.${target}.branch_prefix`,
-      'tgt',
-      NOW,
-    ]);
+    await db.execute(
+      "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'terminal.workspaceFolder', 'src', ?)",
+      [source, NOW],
+    );
+    await db.execute(
+      "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'terminal.workspaceFolder', 'tgt', ?)",
+      [target, NOW],
+    );
 
     await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
 
@@ -326,10 +324,10 @@ describe('mergeWorkspaces', () => {
       'SELECT workspace_id, about_work FROM workspace_profiles',
     );
     expect(profiles).toEqual([{ workspace_id: target, about_work: 'I write code.' }]);
-    const settings = await db.select<{ key: string; value: string }>(
-      "SELECT key, value FROM settings WHERE key LIKE '%.branch_prefix'",
+    const values = await db.select<{ workspace_id: string; value: string }>(
+      'SELECT workspace_id, value FROM workspace_values',
     );
-    expect(settings).toEqual([{ key: `workspace.${target}.branch_prefix`, value: 'tgt' }]);
+    expect(values).toEqual([{ workspace_id: target, value: 'tgt' }]);
   });
 
   it('merges several sources in one call and leaves session events alone', async () => {

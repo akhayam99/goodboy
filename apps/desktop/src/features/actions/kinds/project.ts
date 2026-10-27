@@ -1,6 +1,6 @@
 import { Plus, Unlink } from 'lucide-react';
 import type { ProjectId, SessionId } from '@goodboy/types';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { projectKindOf } from '../../../store/slices/projects/projectKindOf';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';

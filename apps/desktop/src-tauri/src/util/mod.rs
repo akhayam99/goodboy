@@ -1,4 +1,23 @@
 macro_rules! impl_error_serialize {
+    ($error:ty, failure) => {
+        impl serde::Serialize for $error {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                let mut map = serde_json::Map::new();
+                map.insert(
+                    "kind".to_string(),
+                    serde_json::Value::String(self.kind().to_string()),
+                );
+                map.insert(
+                    "message".to_string(),
+                    serde_json::Value::String(self.to_string()),
+                );
+                if let Some(failure) = self.failure() {
+                    failure.insert_into(&mut map);
+                }
+                serde::Serialize::serialize(&serde_json::Value::Object(map), serializer)
+            }
+        }
+    };
     ($error:ty) => {
         impl serde::Serialize for $error {
             fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -52,13 +71,24 @@ impl_error_serialize!(MessageError);
 
 mod encoding;
 mod ids;
+pub(crate) mod limits;
+mod lock;
+pub(crate) mod open_guard;
+pub(crate) mod redact;
+pub(crate) mod scoped_path;
+#[cfg(test)]
+pub(crate) mod source_scan;
 mod time;
+#[cfg(test)]
+pub(crate) mod wire_shape;
 
 pub(crate) use encoding::percent_encode;
 pub(crate) use ids::uuid_v4;
+pub(crate) use lock::lock_or_recover;
 pub(crate) use time::{
     epoch_seconds_to_year_month, epoch_secs_to_datetime, iso_now, iso_now_whole_seconds, iso_to_ms,
-    ms_to_iso, now_ms, now_secs, optional_ms_to_iso, ymd_to_epoch_ms,
+    ms_to_iso, now_millis_u64, now_ms, now_nanos, now_secs, optional_ms_to_iso, system_now,
+    ymd_to_epoch_ms,
 };
 
 #[cfg(test)]

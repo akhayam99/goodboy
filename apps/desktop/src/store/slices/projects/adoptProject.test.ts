@@ -85,7 +85,7 @@ const harness = (initial: Record<string, unknown>): Harness => {
     projects: [project()],
     currentWorkspaceId: null,
     mergeWorkspaces: vi.fn(async () => undefined),
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    reloadWorkspace: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     ...initial,
   } as unknown as AppStore;
@@ -178,7 +178,7 @@ describe('adoptProject', () => {
 
     await adoptProject(store.set, store.get)({ projectId: PROJECT_ID, targetWorkspaceId: TARGET });
 
-    expect(store.state.setCurrentWorkspace).toHaveBeenCalledWith(TARGET);
+    expect(store.state.reloadWorkspace).toHaveBeenCalledWith({ workspaceId: TARGET });
   });
 
   it('reconnects a disconnected project after moving it', async () => {

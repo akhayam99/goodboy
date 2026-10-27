@@ -10,7 +10,7 @@ export type MountContinuation = Readonly<{
   origin: 'fork' | 'attach' | 'materialize';
 }>;
 
-export const MAX_MOUNT_CONTINUATIONS = 3;
+const MAX_MOUNT_CONTINUATIONS = 3;
 
 export type MountContinuationRefusal = 'already-queued' | 'same-mount' | 'chain-exhausted';
 

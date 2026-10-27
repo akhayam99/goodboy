@@ -35,7 +35,7 @@ export const DelegationLines = ({ sessionId, agents }: Props) => {
           <li
             key={child.id}
             data-delegation={child.id}
-            className="flex h-7 min-w-0 items-center gap-2 text-label"
+            className="flex h-7 min-w-0 items-center gap-2 text-meta"
           >
             <span className="flex size-5 shrink-0 items-center justify-center">
               <WorkNode

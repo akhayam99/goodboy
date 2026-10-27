@@ -22,9 +22,8 @@ import {
   type StoryStore,
 } from './storyHarness';
 import { mountCleanupBlockers } from './slices/mount-cleanup/cleanupPolicy';
-import { requireMountTarget } from './slices/resolve/mountTarget';
+import { namedMountTarget } from './slices/resolve/mountTarget';
 import { listWriteDestinationCandidates } from './slices/project-mounts/writeDestination';
-import { initialState } from './store';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -313,7 +312,7 @@ describe('story: a queued fix stays on the worktree it named', () => {
 
   const restart = async ({ session }: { readonly session: Session }) => {
     await seed({ session, rows: ROWS });
-    useAppStore.setState(initialState);
+    useAppStore.setState(useAppStore.getInitialState());
     await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
     openSession();
   };
@@ -323,9 +322,10 @@ describe('story: a queued fix stays on the worktree it named', () => {
     await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
     openSession();
 
-    const target = requireMountTarget({
+    const target = namedMountTarget({
       get: useAppStore.getState,
       sessionId: SESSION_ID,
+      mountId: undefined,
     });
     expect(target).toEqual({
       mountId: MOUNT_A2,

@@ -87,9 +87,6 @@ beforeEach(async () => {
         identity: null,
         capabilities: {
           models: [],
-          supportsTools: true,
-          supportsStream: true,
-          supportsCheapModel: true,
         },
       },
     ],
@@ -128,12 +125,13 @@ describe('GoalTeaser on the real store', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Goal: Credit each invoice once.' }));
     expect(store.getState().drawer).toEqual(expect.objectContaining({ sessionId: session.id }));
   });
-  it('reads the goal as prose even when it matches the title, which lives in the sidebar', () => {
+  it('does not repeat the goal when it equals the title shown in the header', () => {
     store.setState({
       sessionSlots: { [session.id]: [{ key: 'goal', value: session.goal, enabled: true }] },
     });
     mount();
-    expect(screen.getByRole('button', { name: `Goal: ${session.goal}` })).toBeDefined();
+    expect(screen.queryByRole('button', { name: `Goal: ${session.goal}` })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a goal' })).toBeNull();
   });
   it('offers Add a goal without a linked issue', () => {
     mount();

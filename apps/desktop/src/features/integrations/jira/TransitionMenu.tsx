@@ -5,16 +5,17 @@ import {
   cn,
   Divider,
   formatError,
+  ICON_SIZE,
   ScrollFade,
   tintClasses,
-  useDropdown,
+  Tooltip,
   type MenuEntry,
   type StateTone,
-  Tooltip,
+  useDropdown,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { AppMenuList } from '../../actions/AppMenuList';
 
 type CurrentState = {

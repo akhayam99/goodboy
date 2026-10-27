@@ -12,7 +12,7 @@ export const LiveStateWord = ({ tone, word, autoWord }: Props) => (
     <span
       data-auto-word={autoWord}
       className={cn(
-        'min-w-0 truncate text-ui',
+        'min-w-0 line-clamp-2 text-ui',
         tone === 'neutral' ? 'text-muted-foreground' : tintClasses(tone).text,
       )}
     >

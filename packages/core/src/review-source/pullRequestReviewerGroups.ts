@@ -29,10 +29,13 @@ export const pullRequestReviewerGroupsOf = ({ reviewers }: Params): PullRequestR
   const people = reviewers
     .map((reviewer, index) => ({ reviewer, index }))
     .filter(({ reviewer }) => !isBotComment({ reviewer }))
-    .sort(
-      (left, right) =>
-        ORDER[left.reviewer.state] - ORDER[right.reviewer.state] || left.index - right.index,
-    )
+    .sort((left, right) => {
+      const byState = ORDER[left.reviewer.state] - ORDER[right.reviewer.state];
+      if (byState !== 0) {
+        return byState;
+      }
+      return left.index - right.index;
+    })
     .map(({ reviewer }) => reviewer);
   return { people, bots: reviewers.filter((reviewer) => isBotComment({ reviewer })) };
 };

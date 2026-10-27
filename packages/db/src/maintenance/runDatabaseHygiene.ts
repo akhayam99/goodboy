@@ -7,14 +7,13 @@ import {
   type RemovedOpenQuestion,
 } from '../queries/session-workflow';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const PERMISSION_AUDIT_MAX_ROWS = 5000;
-const TURN_EVENT_MAX_ROWS = 200_000;
-const PROVIDER_RUN_RETENTION_DAYS = 90;
+import { pruneInBatches } from './pruneInBatches';
+import { DATABASE_RETENTION, DAY_MS, PRUNE_BATCH_ROWS } from './retention';
 
 type Params = {
   readonly db: Database;
   readonly now: number;
+  readonly batchRows?: number;
 };
 
 export type DatabaseHygieneResult = {
@@ -32,35 +31,47 @@ type ProviderRunRow = {
   readonly id: ProviderRunId;
 };
 
-export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseHygieneResult> => {
-  const permissionCutoff = now - 30 * DAY_MS;
-  const oldPermissionRows = await db.execute(
-    'DELETE FROM permission_audit_log WHERE requested_at < ?',
-    [permissionCutoff],
-  );
-  const excessPermissionRows = await db.execute(
-    `DELETE FROM permission_audit_log
-     WHERE rowid IN (
-       SELECT rowid FROM permission_audit_log
+export const runDatabaseHygiene = async ({
+  db,
+  now,
+  batchRows = PRUNE_BATCH_ROWS,
+}: Params): Promise<DatabaseHygieneResult> => {
+  const { permissionAuditLog, turnEvents, providerRuns, inFlightProviderRuns } = DATABASE_RETENTION;
+  const oldPermissionRows = await pruneInBatches({
+    db,
+    table: 'permission_audit_log',
+    selectRowids: 'SELECT rowid FROM permission_audit_log WHERE requested_at < ? LIMIT ?',
+    params: [now - permissionAuditLog.maxAgeDays * DAY_MS],
+    batchRows,
+  });
+  const excessPermissionRows = await pruneInBatches({
+    db,
+    table: 'permission_audit_log',
+    selectRowids: `SELECT rowid FROM permission_audit_log
        ORDER BY requested_at DESC, rowid DESC
-       LIMIT -1 OFFSET ?
-     )`,
-    [PERMISSION_AUDIT_MAX_ROWS],
-  );
+       LIMIT ? OFFSET ?`,
+    params: [],
+    batchRows,
+    offsetRows: permissionAuditLog.maxRows,
+  });
 
-  const turnEventCutoff = now - 90 * DAY_MS;
-  const oldTurnEvents = await db.execute('DELETE FROM turn_events WHERE created_at < ?', [
-    turnEventCutoff,
-  ]);
-  const excessTurnEvents = await db.execute(
-    `DELETE FROM turn_events
-     WHERE rowid IN (
-       SELECT rowid FROM turn_events
+  const oldTurnEvents = await pruneInBatches({
+    db,
+    table: 'turn_events',
+    selectRowids: 'SELECT rowid FROM turn_events WHERE created_at < ? LIMIT ?',
+    params: [now - turnEvents.maxAgeDays * DAY_MS],
+    batchRows,
+  });
+  const excessTurnEvents = await pruneInBatches({
+    db,
+    table: 'turn_events',
+    selectRowids: `SELECT rowid FROM turn_events
        ORDER BY created_at DESC, rowid DESC
-       LIMIT -1 OFFSET ?
-     )`,
-    [TURN_EVENT_MAX_ROWS],
-  );
+       LIMIT ? OFFSET ?`,
+    params: [],
+    batchRows,
+    offsetRows: turnEvents.maxRows,
+  });
 
   const githubPrCacheRows = await db.execute(
     `DELETE FROM github_pr_cache
@@ -77,17 +88,21 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
 
   const mergedPullRequestEvents = await backfillMergedPullRequestEvents({ db });
 
-  const orphanProviderRuns = await db.execute(
-    `DELETE FROM provider_runs
-     WHERE status_kind IN ('succeeded', 'failed', 'cancelled')
-       AND created_at < ?
-       AND NOT EXISTS (SELECT 1 FROM telemetry_records t WHERE t.run_id = provider_runs.id)
-       AND NOT EXISTS (SELECT 1 FROM agents a WHERE a.provider_run_id = provider_runs.id)
-       AND NOT EXISTS (SELECT 1 FROM file_versions f WHERE f.provider_run_id = provider_runs.id)`,
-    [now - PROVIDER_RUN_RETENTION_DAYS * DAY_MS],
-  );
+  const orphanProviderRuns = await pruneInBatches({
+    db,
+    table: 'provider_runs',
+    selectRowids: `SELECT rowid FROM provider_runs
+       WHERE status_kind IN ('succeeded', 'failed', 'cancelled')
+         AND created_at < ?
+         AND NOT EXISTS (SELECT 1 FROM telemetry_records t WHERE t.run_id = provider_runs.id)
+         AND NOT EXISTS (SELECT 1 FROM agents a WHERE a.provider_run_id = provider_runs.id)
+         AND NOT EXISTS (SELECT 1 FROM file_versions f WHERE f.provider_run_id = provider_runs.id)
+       LIMIT ?`,
+    params: [now - providerRuns.maxAgeDays * DAY_MS],
+    batchRows,
+  });
 
-  const providerRunCutoff = now - DAY_MS;
+  const providerRunCutoff = now - inFlightProviderRuns.cancelAfterDays * DAY_MS;
   const zombieProviderRuns = await db.select<ProviderRunRow>(
     `SELECT id FROM provider_runs
      WHERE status_kind IN ('pending', 'streaming') AND created_at < ?`,
@@ -106,12 +121,12 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
   }
 
   return {
-    permissionAuditRowsDeleted: oldPermissionRows.rowsAffected + excessPermissionRows.rowsAffected,
-    turnEventRowsDeleted: oldTurnEvents.rowsAffected + excessTurnEvents.rowsAffected,
+    permissionAuditRowsDeleted: oldPermissionRows + excessPermissionRows,
+    turnEventRowsDeleted: oldTurnEvents + excessTurnEvents,
     githubPrCacheRowsDeleted: githubPrCacheRows.rowsAffected,
     mergedPullRequestEventsWritten: mergedPullRequestEvents,
     providerRunsCancelled,
-    providerRunsDeleted: orphanProviderRuns.rowsAffected,
+    providerRunsDeleted: orphanProviderRuns,
     orphanedWorkflowAgentsDeleted: orphanedWorkflowAgents.agentsDeleted,
     orphanedWorkflowQuestions: orphanedWorkflowAgents.removedQuestions,
   };

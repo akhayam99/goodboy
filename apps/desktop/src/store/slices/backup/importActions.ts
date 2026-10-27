@@ -6,6 +6,7 @@ import {
   configImportApply,
   configImportPreview,
 } from '../../../features/settings/config-export';
+import type { WildcardConsentParams } from '../../../features/backup/wildcardConsent';
 import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from '../../slice-types';
@@ -22,7 +23,11 @@ export const loadBackupImportPreview = (set: SetFn, get: GetFn) => {
         path,
         projectParent: get().backupImportProjectParent,
       });
-      set({ backupImportPreview: preview, backupImportPhase: 'idle' });
+      set({
+        backupImportPreview: preview,
+        hasBackupImportWildcardConsent: false,
+        backupImportPhase: 'idle',
+      });
     } catch (error: unknown) {
       set({
         backupImportPhase: 'error',
@@ -43,6 +48,7 @@ export const chooseBackupImportFile = (set: SetFn, get: GetFn) => {
       backupImportPreview: null,
       backupImportWorkspaceTargets: {},
       backupImportResolvedPaths: {},
+      hasBackupImportWildcardConsent: false,
       backupImportResult: null,
       backupImportError: null,
     });
@@ -88,10 +94,21 @@ export const setBackupImportResolvedPath = (set: SetFn, get: GetFn) => {
   };
 };
 
+type SetBackupImportWildcardConsentParams = {
+  readonly set: SetFn;
+};
+
+export const setBackupImportWildcardConsent = ({ set }: SetBackupImportWildcardConsentParams) => {
+  return ({ isAccepted }: WildcardConsentParams): void => {
+    set({ hasBackupImportWildcardConsent: isAccepted });
+  };
+};
+
 export const applyBackupImport = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     const path = get().backupImportPath;
-    if (path === null) {
+    const preview = get().backupImportPreview;
+    if (path === null || preview === null) {
       return;
     }
     set({ backupImportPhase: 'applying', backupImportError: null });
@@ -100,6 +117,8 @@ export const applyBackupImport = (set: SetFn, get: GetFn) => {
         path,
         workspaceTargets: get().backupImportWorkspaceTargets,
         resolvedProjectPaths: get().backupImportResolvedPaths,
+        expectedSha256: preview.sha256,
+        hasWildcardConsent: get().hasBackupImportWildcardConsent,
       });
       set({ backupImportResult: result, backupImportPhase: result.ok ? 'done' : 'error' });
       if (!result.ok) {
@@ -147,6 +166,7 @@ export const resetBackupImport = (set: SetFn) => {
       backupImportPreview: null,
       backupImportWorkspaceTargets: {},
       backupImportResolvedPaths: {},
+      hasBackupImportWildcardConsent: false,
       backupImportPhase: 'idle',
       backupImportError: null,
       backupImportResult: null,

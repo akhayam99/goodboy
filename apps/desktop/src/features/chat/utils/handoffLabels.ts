@@ -1,5 +1,5 @@
 import type { HandoffSection, HandoffSectionKind, HandoffSender } from '@goodboy/types';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { pluralize } from '../../../shared/utils/pluralize';
 
 export type HandoffNames = Readonly<{

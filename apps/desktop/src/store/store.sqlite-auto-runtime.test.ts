@@ -8,8 +8,8 @@ import { currentChecksRerunPort } from '../features/auto/checksRerunPort';
 import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
 import { currentPublishPort } from '../features/auto/publishPort';
 import { currentTreeStopPort } from '../features/auto/treeStopPort';
-import { createAutoScheduler } from './slices/auto/scheduler';
-import { WORLD_TREE } from './slices/auto/testing/autoWorld';
+import { createAutoScheduler } from './runtime/auto/scheduler';
+import { WORLD_TREE } from './runtime/auto/testing/autoWorld';
 import {
   importStore,
   openStorySqlite,
@@ -51,12 +51,12 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
 let useAppStore: StoryStore;
-let startAutoRuntime: typeof import('./slices/auto/startAutoRuntime').startAutoRuntime;
+let startAutoRuntime: typeof import('./runtime/auto/startAutoRuntime').startAutoRuntime;
 const stops: Array<() => void> = [];
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ startAutoRuntime } = await import('./slices/auto/startAutoRuntime'));
+  ({ startAutoRuntime } = await import('./runtime/auto/startAutoRuntime'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -250,7 +250,12 @@ describe('the tree an Auto agent starts with', () => {
     });
     useAppStore.setState({
       sessionBudgets: {
-        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 25, onExceed: 'pause' },
+        [AUTO_SEED_SESSION]: {
+          sessionId: AUTO_SEED_SESSION,
+          softCapUsd: 25,
+          onExceed: 'pause',
+          warnRatio: 0.8,
+        },
       },
     });
 
@@ -268,7 +273,12 @@ describe('the tree an Auto agent starts with', () => {
     });
     useAppStore.setState({
       sessionBudgets: {
-        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 5, onExceed: 'pause' },
+        [AUTO_SEED_SESSION]: {
+          sessionId: AUTO_SEED_SESSION,
+          softCapUsd: 5,
+          onExceed: 'pause',
+          warnRatio: 0.8,
+        },
       },
     });
 
@@ -286,7 +296,12 @@ describe('the tree an Auto agent starts with', () => {
     });
     useAppStore.setState({
       sessionBudgets: {
-        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 5, onExceed: 'warn' },
+        [AUTO_SEED_SESSION]: {
+          sessionId: AUTO_SEED_SESSION,
+          softCapUsd: 5,
+          onExceed: 'warn',
+          warnRatio: 0.8,
+        },
       },
     });
 

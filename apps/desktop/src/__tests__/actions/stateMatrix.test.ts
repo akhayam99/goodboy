@@ -66,6 +66,7 @@ import {
   workflowFixture,
   type ActionSeed,
 } from '../helpers/actionFixtures';
+import { AGENT_STATES, RUNNING, STARTING, standalone } from '../helpers/agentMenuStates';
 
 type BridgeArgs = {
   readonly statements?: ReadonlyArray<unknown>;
@@ -127,13 +128,6 @@ const SESSION_TARGET: ObjectTarget = { kind: 'session', sessionId: SESSION };
 const AGENT_TARGET: ObjectTarget = { kind: 'agent', sessionId: SESSION, agentId: AGENT };
 const RUN_TARGET: ObjectTarget = { kind: 'workflowRun', sessionId: SESSION, runId: RUN };
 
-const RUNNING: TurnState = {
-  kind: 'running',
-  runId: 'provider-run' as never,
-  startedAt: FIXTURE_NOW,
-};
-const STARTING: TurnState = { kind: 'starting', startedAt: FIXTURE_NOW };
-
 const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, ReadonlyArray<string>]> = [
   [
     'draft',
@@ -143,6 +137,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.review',
       'session.diff (Add a folder to this session first)',
       'session.editor (This session has no worktree yet)',
+      'session.terminalApp (This session has no worktree yet)',
       'session.openLog',
       'session.spend',
       'session.rename',
@@ -169,6 +164,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.review',
       'session.diff',
       'session.editor',
+      'session.terminalApp',
       'session.openLog',
       'session.spend',
       'session.openWorktreeTerminal',
@@ -178,6 +174,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.autopilotOn',
       'session.startRun',
       'session.linkIssue',
+      'session.stopAll',
       'session.copyTitle',
       'session.copyWorktreePath',
       'session.copyBranch',
@@ -199,6 +196,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.review',
       'session.diff',
       'session.editor',
+      'session.terminalApp',
       'session.openLog',
       'session.spend',
       'session.openWorktreeTerminal',
@@ -236,6 +234,48 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
   ],
   ['deleted', null, []],
 ];
+
+describe('Stop all running agents', () => {
+  const runningSession = (): void => {
+    seed({
+      agents: [agentFixture({ status: 'running' })],
+      turnStates: { [AGENT]: RUNNING },
+      mounts: [mountFixture()],
+      branch: 'hl/payout-export',
+    });
+  };
+
+  it('counts the running agents in its label and is absent when none run', () => {
+    seed({});
+    expect(matrixOf(SESSION_TARGET)).not.toContain('session.stopAll');
+
+    runningSession();
+    const resolved = bindTarget({
+      state: useAppStore.getState(),
+      target: SESSION_TARGET,
+    })?.resolve();
+
+    expect(resolved?.find((action) => action.id === 'session.stopAll')?.label).toBe(
+      'Stop all running agents (1)',
+    );
+  });
+
+  it('stops each running agent as the user and reports how many stopped', async () => {
+    toasts.length = 0;
+    runningSession();
+    const cancelTurnConfirmed = vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: null }));
+    useAppStore.setState({ cancelTurnConfirmed });
+
+    await run(SESSION_TARGET, 'session.stopAll');
+
+    expect(cancelTurnConfirmed).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      agentId: AGENT,
+      reason: 'user',
+    });
+    expect(toasts).toEqual(['Stopped 1']);
+  });
+});
 
 describe('session menu in every state', () => {
   it.each(SESSION_STATES)('%s', (_state, value, expected) => {
@@ -504,148 +544,6 @@ describe('several sessions', () => {
     ]);
   });
 });
-
-const standalone = (value: Partial<ActionSeed> & { readonly status: string }): ActionSeed => ({
-  agents: [agentFixture({ status: value.status as never, ...(value.agents?.[0] ?? {}) })],
-  mounts: [mountFixture()],
-  ...value,
-});
-
-const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<string>]> = [
-  [
-    'starting',
-    standalone({ status: 'pending', turnStates: { [AGENT]: STARTING } }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.moveToAuto (Wait for the turn to end first.)',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'running',
-    standalone({ status: 'running', turnStates: { [AGENT]: RUNNING } }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.interrupt',
-      'agent.moveToAuto (Wait for the turn to end first.)',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'waiting on you',
-    standalone({
-      status: 'completed',
-      questions: [questionFixture({ createdByAgentId: AGENT })],
-    }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.close',
-      'agent.moveToAuto',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'stopped',
-    standalone({ status: 'stopped' }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.moveToAuto',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'failed',
-    standalone({ status: 'failed' }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.close',
-      'agent.moveToAuto',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'done',
-    standalone({ status: 'completed' }),
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.rename',
-      'agent.moveToAuto',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'closed by you',
-    { agents: [agentFixture({ status: 'failed', doneAt: FIXTURE_NOW })], mounts: [mountFixture()] },
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.rename',
-      'agent.reopen',
-      'agent.moveToAuto',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'a running workflow step',
-    {
-      agents: [agentFixture({ status: 'running', workflowRunId: RUN })],
-      turnStates: { [AGENT]: RUNNING },
-      mounts: [mountFixture()],
-    },
-    [
-      'agent.open',
-      'agent.changes',
-      'agent.message',
-      'agent.interrupt',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-  [
-    'in a session with no project',
-    { agents: [agentFixture({ status: 'completed' })] },
-    [
-      'agent.open',
-      'agent.changes (This session has no folder yet)',
-      'agent.message',
-      'agent.rename',
-      'agent.moveToAuto',
-      'agent.model',
-      'agent.copyName',
-      'agent.delete',
-    ],
-  ],
-];
 
 describe('agent menu in every state', () => {
   it.each(AGENT_STATES)('%s', (_state, value, expected) => {
@@ -1296,6 +1194,7 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
 const WT_TOOLS = [
   'mount.openTerminal menu',
   'mount.openInEditor menu',
+  'mount.openInTerminalApp menu',
   'mount.scripts menu',
   'mount.browseFiles menu',
 ];
@@ -1396,6 +1295,7 @@ const MOUNT_STATES: ReadonlyArray<
       ...WT_PR,
       'mount.openTerminal notice',
       'mount.openInEditor menu',
+      'mount.openInTerminalApp menu',
       'mount.scripts menu',
       'mount.browseFiles menu',
       'mount.abortRebase notice',
@@ -1896,6 +1796,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.terminalApp',
       'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
@@ -1908,6 +1809,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.terminalApp',
       'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
@@ -1921,6 +1823,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.terminalApp',
       'worktree.learn',
       'worktree.stopKeeping',
       'worktree.copyPath',
@@ -1930,7 +1833,13 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
   [
     'worktree in use by a session',
     worktreeTarget({ isInUse: true, isKept: false, removeIntent: null }),
-    ['worktree.reveal', 'worktree.editor', 'worktree.learn', 'worktree.copyPath'],
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.terminalApp',
+      'worktree.learn',
+      'worktree.copyPath',
+    ],
   ],
   [
     'saved script, idle',

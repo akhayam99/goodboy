@@ -1,7 +1,6 @@
 import { MessageSquareReply, TextQuote, X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ReplyTarget } from './useReplyTarget';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly target: ReplyTarget;

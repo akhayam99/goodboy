@@ -2,7 +2,7 @@ import { PageColumn, ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly onClose: () => void;

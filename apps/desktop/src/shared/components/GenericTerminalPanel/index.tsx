@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -11,10 +10,16 @@ import { RotateCcw } from 'lucide-react';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
-import { IconButton } from '@goodboy/ui';
+import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../conceptIcons';
+import { bufferText, registerTerminalText } from './terminalText';
+import { isTerminalTabChord } from './isTerminalTabChord';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
+import type { TerminalFileLink } from './fileLinkProvider';
+import { loadWebglRenderer } from './loadWebglRenderer';
+import { registerFileLinks } from './registerFileLinks';
 
 export type TerminalChunk = {
   readonly bytes: Uint8Array;
@@ -35,6 +40,15 @@ export type TerminalDriver = {
   snapshot?(): Promise<TerminalSnapshot | null>;
 };
 
+type SelectionTextParams = {
+  readonly text: string;
+};
+
+export type TerminalSelectionAction = {
+  readonly label: string;
+  readonly onAct: (params: SelectionTextParams) => void;
+};
+
 type Props = {
   readonly terminalId: string;
   readonly driver: TerminalDriver;
@@ -43,18 +57,8 @@ type Props = {
   readonly exitMessage?: string;
   readonly onRestart?: () => void;
   readonly onExit?: (exitCode: number) => void;
-};
-
-type WebglParams = { readonly term: Terminal };
-
-const loadWebglRenderer = ({ term }: WebglParams): void => {
-  try {
-    const webgl = new WebglAddon();
-    webgl.onContextLoss(() => webgl.dispose());
-    term.loadAddon(webgl);
-  } catch {
-    return;
-  }
+  readonly selectionAction?: TerminalSelectionAction;
+  readonly onOpenFileLink?: (link: TerminalFileLink) => void;
 };
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
@@ -67,6 +71,8 @@ export const GenericTerminalPanel = ({
   exitMessage = DEFAULT_EXIT_MESSAGE,
   onRestart,
   onExit,
+  selectionAction,
+  onOpenFileLink,
 }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -74,7 +80,10 @@ export const GenericTerminalPanel = ({
   const searchRef = useRef<SearchAddon | null>(null);
   const isFindOpenRef = useRef(false);
   const findTermRef = useRef('');
+  const openFileLinkRef = useRef(onOpenFileLink);
+  openFileLinkRef.current = onOpenFileLink;
   const [findStep, setFindStep] = useState<number | null>(null);
+  const [hasSelection, setHasSelection] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -99,10 +108,14 @@ export const GenericTerminalPanel = ({
     term.unicode.activeVersion = '11';
     term.loadAddon(new ClipboardAddon());
     term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
+    registerFileLinks({ term, openRef: openFileLinkRef });
     const searchAddon = new SearchAddon();
     term.loadAddon(searchAddon);
     searchRef.current = searchAddon;
     term.attachCustomKeyEventHandler((event) => {
+      if (isTerminalTabChord({ event })) {
+        return false;
+      }
       const key = terminalFindKey({ event, isOpen: isFindOpenRef.current });
       if (key === null) {
         return true;
@@ -141,6 +154,11 @@ export const GenericTerminalPanel = ({
 
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
+    const unregisterText = registerTerminalText({
+      terminalId,
+      reader: () => bufferText({ buffer: term.buffer.active }),
+    });
+    const selectionDisposable = term.onSelectionChange(() => setHasSelection(term.hasSelection()));
 
     const dataDisposable = readOnly
       ? null
@@ -244,6 +262,8 @@ export const GenericTerminalPanel = ({
 
     return () => {
       mounted = false;
+      unregisterText();
+      selectionDisposable.dispose();
       dataDisposable?.dispose();
       unlistenOutput?.();
       unlistenExit?.();
@@ -325,6 +345,23 @@ export const GenericTerminalPanel = ({
       {findStep === null ? null : (
         <TerminalFindBar controller={findController} step={findStep} onClose={closeFind} />
       )}
+      {selectionAction !== undefined && hasSelection && isActive ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="absolute bottom-2 right-3 z-10"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            const text = termRef.current?.getSelection() ?? '';
+            if (text.trim() !== '') {
+              selectionAction.onAct({ text });
+            }
+          }}
+        >
+          <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
+          {selectionAction.label}
+        </Button>
+      ) : null}
       {onRestart && findStep === null ? (
         <IconButton
           icon={RotateCcw}

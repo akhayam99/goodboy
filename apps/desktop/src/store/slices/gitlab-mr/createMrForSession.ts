@@ -1,7 +1,11 @@
 import { findPrSeriesMembership, upsertMountPullRequestLink } from '@goodboy/db';
-import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
+import type { IsoDateTime, MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { gitlabCreateMr } from '../../../features/integrations/gitlab/client';
+import {
+  gitlabCreateMr,
+  gitlabMrForBranch,
+  type GitlabMergeRequest,
+} from '../../../features/integrations/gitlab/client';
 import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
 import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
@@ -24,6 +28,37 @@ export type CreateMrInput = {
   readonly referenceMode?: CreateMrReferenceMode;
 };
 
+export type CreatedMr = {
+  readonly number: number;
+  readonly url: string;
+};
+
+const OPEN_STATES: ReadonlySet<string> = new Set(['opened', 'locked']);
+
+type LookupParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly branch: string;
+  readonly projectId: ProjectId;
+};
+
+const lookupOpenMr = async ({
+  workspaceId,
+  host,
+  projectPath,
+  branch,
+  projectId,
+}: LookupParams): Promise<GitlabMergeRequest | null> => {
+  let found: GitlabMergeRequest | null = null;
+  try {
+    found = await gitlabMrForBranch(workspaceId, host, projectPath, branch, projectId);
+  } catch {
+    found = null;
+  }
+  return found !== null && OPEN_STATES.has(found.state) ? found : null;
+};
+
 export const createMrForSession = (_set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
@@ -33,7 +68,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
     targetBranch,
     draft,
     referenceMode,
-  }: CreateMrInput): Promise<void> => {
+  }: CreateMrInput): Promise<CreatedMr> => {
     const target = resolveSessionMrTarget({
       get,
       sessionId,
@@ -79,63 +114,95 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       references: [],
       lines: [...taskLines, ...seriesLines],
     });
-    let created;
+    const existing = await lookupOpenMr({
+      workspaceId: context.workspaceId,
+      host: context.host,
+      projectPath: context.projectPath,
+      branch: mount.branch,
+      projectId: mount.projectId,
+    });
+    const isAdopted = existing !== null;
+    const openMr = async (): Promise<GitlabMergeRequest> => {
+      try {
+        return await gitlabCreateMr({
+          workspaceId: context.workspaceId,
+          host: context.host,
+          projectPath: context.projectPath,
+          sourceBranch: mount.branch,
+          targetBranch: base,
+          title: resolvedTitle,
+          description: resolvedDescription,
+          draft: isDraft,
+        });
+      } catch (err) {
+        const errMsg = formatError(err);
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'error',
+          title: "Couldn't create the merge request",
+          body: errMsg,
+          sessionId,
+          workspaceId: context.workspaceId,
+        });
+        throw err;
+      }
+    };
+    const created = existing ?? (await openMr());
+    let unrecorded: { readonly error: unknown } | null = null;
     try {
-      created = await gitlabCreateMr({
-        workspaceId: context.workspaceId,
+      const observedAt = new Date().toISOString() as IsoDateTime;
+      const link = toMountMrLink({
+        mountId: mount.id,
         host: context.host,
         projectPath: context.projectPath,
-        sourceBranch: mount.branch,
-        targetBranch: base,
-        title: resolvedTitle,
-        description: resolvedDescription,
-        draft: isDraft,
+        mr: created,
+        existing: null,
+        observedAt,
       });
-    } catch (err) {
-      const errMsg = formatError(err);
+      await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
+      await get().recordSessionEventOnce({
+        sessionId,
+        kind: 'pr_created',
+        payload: mountRequestEventPayload({
+          mountId: mount.id,
+          projectId: mount.projectId,
+          identity: gitlabRequestIdentity({
+            host: context.host,
+            projectPath: context.projectPath,
+            mr: created,
+          }),
+          title: resolvedTitle,
+          url: created.webUrl,
+          branch: mount.branch,
+        }),
+      });
+    } catch (error) {
+      unrecorded = { error };
+    }
+    try {
+      await get().refreshSessionMr(sessionId, { force: true, mountId: mount.id });
+    } catch (error) {
+      unrecorded ??= { error };
+    }
+    if (unrecorded !== null) {
       void get().emitNotification({
         kind: 'error',
-        severity: 'error',
-        title: "Couldn't create the merge request",
-        body: errMsg,
+        severity: 'warning',
+        title: `Opened !${created.iid}, but Goodboy could not save the link`,
+        body: `Refresh to pick it up. ${formatError(unrecorded.error)}`,
         sessionId,
         workspaceId: context.workspaceId,
       });
-      throw err;
     }
-    const observedAt = new Date().toISOString() as IsoDateTime;
-    const link = toMountMrLink({
-      mountId: mount.id,
-      host: context.host,
-      projectPath: context.projectPath,
-      mr: created,
-      existing: null,
-      observedAt,
-    });
-    await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
-    await get().recordSessionEventOnce({
-      sessionId,
-      kind: 'pr_created',
-      payload: mountRequestEventPayload({
-        mountId: mount.id,
-        projectId: mount.projectId,
-        identity: gitlabRequestIdentity({
-          host: context.host,
-          projectPath: context.projectPath,
-          mr: created,
-        }),
-        title: resolvedTitle,
-        url: created.webUrl,
-        branch: mount.branch,
-      }),
-    });
-    await get().refreshSessionMr(sessionId, { force: true, mountId: mount.id });
     void get().emitNotification({
       kind: 'pr-created',
       severity: 'success',
-      title: `Merge request created for ${context.goal}`,
+      title: isAdopted
+        ? `Linked the existing merge request for ${context.goal}`
+        : `Merge request created for ${context.goal}`,
       sessionId,
       workspaceId: context.workspaceId,
     });
+    return { number: created.iid, url: created.webUrl };
   };
 };

@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Switch, formatError, useDropdown } from '@goodboy/ui';
 import type { ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { undoable } from '../../../../shared/utils/undoable';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-import { toggledProviderPool } from '../WorkflowBuilderView/providerPool';
+import { toggledProviderPool } from '../../providerPool';
 import type { RunSettingWords } from './runSettingsOf';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 
@@ -33,6 +33,8 @@ export const RunModelsSetting = ({ sessionId, run, providers, words }: Props) =>
   const dropdown = useDropdown({ expectedHeight: 220, expectedWidth: 320, width: 'w-80' });
   const setWorkflowRunProviderPool = useAppStore((state) => state.setWorkflowRunProviderPool);
   const [error, setError] = useState<string | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+  const isWritingRef = useRef(false);
   const pool = run.providerPool ?? null;
   const shown = pool ?? providers;
 
@@ -59,12 +61,23 @@ export const RunModelsSetting = ({ sessionId, run, providers, words }: Props) =>
   };
 
   const toggle = async ({ provider }: ToggleParams) => {
+    if (isWritingRef.current) {
+      return;
+    }
     const previous = pool;
     const next = toggledProviderPool({ providers, pool, provider });
     if (keyOf({ pool: next }) === keyOf({ pool: previous })) {
       return;
     }
-    const isApplied = await write({ pool: next });
+    isWritingRef.current = true;
+    setIsWriting(true);
+    let isApplied = false;
+    try {
+      isApplied = await write({ pool: next });
+    } finally {
+      isWritingRef.current = false;
+      setIsWriting(false);
+    }
     if (!isApplied) {
       return;
     }
@@ -87,7 +100,7 @@ export const RunModelsSetting = ({ sessionId, run, providers, words }: Props) =>
             label={PROVIDER_LABEL[provider]}
             ariaLabel={PROVIDER_LABEL[provider]}
             checked={shown.includes(provider)}
-            disabled={providers.length < 2}
+            disabled={providers.length < 2 || isWriting}
             onChange={() => void toggle({ provider })}
           />
         ))}

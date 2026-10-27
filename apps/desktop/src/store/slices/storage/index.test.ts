@@ -1,9 +1,16 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MonitorSnapshot } from '@goodboy/core';
-import type { MountId, MountOperation, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type MountId,
+  type MountOperation,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { AppStore } from '../../store';
-import type { StorageFolder } from './types';
+import type { TerminalTabId } from '../../../shared/types/terminal';
+import type { StorageFolder, StorageRemovalSummary, StorageRestoreTarget } from './types';
 
 const {
   listArchivedSessionRefs,
@@ -14,6 +21,7 @@ const {
   setWorktreeLedgerKeep,
   removeWorktreeChecked,
   removeWorktreeFolder,
+  restoreWorktreeFolder,
   worktreeWriterStatus,
   operations,
 } = vi.hoisted(() => ({
@@ -29,6 +37,7 @@ const {
   ),
   removeWorktreeChecked: vi.fn(),
   removeWorktreeFolder: vi.fn(),
+  restoreWorktreeFolder: vi.fn(),
   worktreeWriterStatus: vi.fn(),
 }));
 
@@ -36,7 +45,6 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     listArchivedSessionRefs,
     deleteTurnEventsForSessions,
-    vacuumDatabase,
     updateSessionMountLifecycle,
     deleteWorktreeLedgerEntries,
     setWorktreeLedgerKeep,
@@ -49,11 +57,12 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 
-vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {}, vacuumDatabase }));
 
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktreeChecked,
   removeWorktreeFolder,
+  restoreWorktreeFolder,
   worktreeWriterStatus,
 }));
 
@@ -61,6 +70,7 @@ import { keepStorageFolder } from './keepStorageFolder';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeStorageFolders } from './removeStorageFolders';
 import { STORAGE_KEPT_ARCHIVED_KEY } from './storageSettings';
+import { undoStorageRemoval } from './undoStorageRemoval';
 
 const ARCHIVED_SESSION = 'session-archived' as SessionId;
 
@@ -97,17 +107,47 @@ const orphan = folder({
   sizeBytes: 1000,
 });
 
+const ARCHIVED_RESTORE: StorageRestoreTarget = {
+  path: '/repo/.goodboy/worktrees/archived',
+  repoRoot: '/repo',
+  branch: 'goodboy/archived',
+  origin: 'archived',
+  sessionId: ARCHIVED_SESSION,
+  mountId: brandId<MountId>({ value: 'wt-archived' }),
+  revision: 4,
+};
+
+const ORPHAN_RESTORE: StorageRestoreTarget = {
+  path: '/repo/.goodboy/worktrees/ghost',
+  repoRoot: '/repo',
+  branch: 'goodboy/ghost',
+  origin: 'ledger',
+  sessionId: null,
+  mountId: null,
+  revision: null,
+};
+
+const outcomeOf = (restorable: ReadonlyArray<StorageRestoreTarget>): StorageRemovalSummary => ({
+  removed: restorable.length,
+  freedBytes: 0,
+  kept: [],
+  restorable,
+  undo: null,
+  isUndoing: false,
+});
+
 type Harness = {
   state: {
     storageFolders: ReadonlyArray<StorageFolder>;
     storageRemovingPaths: Readonly<Record<string, true>>;
-    storageOutcome: unknown;
+    storageOutcome: StorageRemovalSummary | null;
     settings: Readonly<Record<string, string>>;
     monitorSnapshot?: MonitorSnapshot | null;
     monitorError?: string | null;
   };
   refreshMonitorSnapshot: ReturnType<typeof vi.fn>;
   loadStorage: ReturnType<typeof vi.fn>;
+  reportError: ReturnType<typeof vi.fn>;
   saveSetting: ReturnType<typeof vi.fn>;
 };
 
@@ -130,6 +170,7 @@ const makeHarness = (folders: ReadonlyArray<StorageFolder>): Harness => {
     },
     refreshMonitorSnapshot: vi.fn(async () => undefined),
     loadStorage: vi.fn(async () => undefined),
+    reportError: vi.fn(),
     saveSetting: vi.fn(async () => undefined),
   };
   harness.refreshMonitorSnapshot.mockImplementation(async () => {
@@ -153,6 +194,7 @@ const wire = (harness: Harness) => {
       sessions: [],
       terminalTabs: {},
       loadStorage: harness.loadStorage,
+      reportError: harness.reportError,
       refreshMonitorSnapshot: harness.refreshMonitorSnapshot,
       saveSetting: harness.saveSetting,
     }) as unknown as AppStore;
@@ -173,6 +215,10 @@ beforeEach(() => {
   }));
   removeWorktreeFolder.mockImplementation(async ({ path }: { path: string }) => ({
     kind: 'removed',
+    path,
+  }));
+  restoreWorktreeFolder.mockImplementation(async ({ path }: { path: string }) => ({
+    kind: 'restored',
     path,
   }));
   worktreeWriterStatus.mockImplementation(async ({ path }: { path: string }) => ({
@@ -214,7 +260,14 @@ describe('removeStorageFolders', () => {
       allowLocalCommits: true,
     });
     expect(deleteWorktreeLedgerEntries).toHaveBeenCalledWith({ db: {}, ids: ['ledger-ghost'] });
-    expect(summary).toEqual({ removed: 2, freedBytes: 5096, kept: [] });
+    expect(summary).toEqual({
+      removed: 2,
+      freedBytes: 5096,
+      kept: [],
+      restorable: [ARCHIVED_RESTORE, ORPHAN_RESTORE],
+      undo: null,
+      isUndoing: false,
+    });
     expect(harness.state.storageFolders).toEqual([]);
     expect(harness.loadStorage).toHaveBeenCalled();
   });
@@ -342,6 +395,42 @@ describe('removeStorageFolders', () => {
     expect(removeWorktreeFolder).not.toHaveBeenCalled();
   });
 
+  it('keeps a ledger folder a shell opened in after the click and says so', async () => {
+    const harness = makeHarness([orphan]);
+    const { set, get } = wire(harness);
+    const withShell = () => ({
+      ...get(),
+      terminalTabs: {
+        'session-1': [
+          {
+            id: brandId<TerminalTabId>({ value: 'terminal-1' }),
+            owner: { kind: 'session' as const, sessionId: ARCHIVED_SESSION },
+            title: 'dev server',
+            cwd: orphan.path,
+            status: 'running' as const,
+            createdAt: 1,
+          },
+        ],
+      },
+    });
+
+    const summary = await removeStorageFolders(
+      set,
+      withShell,
+    )({ paths: [orphan.path], mode: 'safe' });
+
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
+    expect(summary.removed).toBe(0);
+    expect(summary.kept).toEqual([
+      expect.objectContaining({
+        kind: 'kept',
+        path: orphan.path,
+        message: 'a terminal is open in the worktree',
+      }),
+    ]);
+    expect(summary.restorable).toEqual([]);
+  });
+
   it('reports a thrown removal as failed and never touches a folder in use', async () => {
     removeWorktreeFolder.mockRejectedValueOnce(new Error('git failed'));
     const inUse = folder({ path: '/repo/.goodboy/worktrees/live', origin: 'in-use' });
@@ -358,6 +447,170 @@ describe('removeStorageFolders', () => {
 
     expect(summary.kept.map((outcome) => outcome.kind)).toEqual(['failed', 'kept']);
     expect(removeWorktreeChecked).not.toHaveBeenCalled();
+  });
+});
+
+describe('undoStorageRemoval', () => {
+  it('brings an archived folder back on its branch and puts the session mount row back', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ARCHIVED_RESTORE]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(restoreWorktreeFolder).toHaveBeenCalledWith({
+      repoPath: '/repo',
+      path: ARCHIVED_RESTORE.path,
+      branch: 'goodboy/archived',
+    });
+    expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: ARCHIVED_SESSION,
+        mountId: 'wt-archived',
+        worktreePath: ARCHIVED_RESTORE.path,
+        isAttached: true,
+        diskState: 'present',
+        expectedRevision: 4,
+      }),
+    );
+    expect(harness.state.storageOutcome).toMatchObject({
+      restorable: [],
+      undo: { restored: 1, failed: [] },
+      isUndoing: false,
+    });
+    expect(harness.loadStorage).toHaveBeenCalled();
+  });
+
+  it('brings a ledger folder back without touching any session row', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ORPHAN_RESTORE]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(restoreWorktreeFolder).toHaveBeenCalledWith({
+      repoPath: '/repo',
+      path: ORPHAN_RESTORE.path,
+      branch: 'goodboy/ghost',
+    });
+    expect(updateSessionMountLifecycle).not.toHaveBeenCalled();
+    expect(harness.state.storageOutcome?.undo).toEqual({ restored: 1, failed: [] });
+  });
+
+  it('keeps a refused folder in the list so the undo can be tried again, and never overwrites', async () => {
+    restoreWorktreeFolder.mockResolvedValueOnce({ kind: 'restored', path: ARCHIVED_RESTORE.path });
+    restoreWorktreeFolder.mockResolvedValueOnce({
+      kind: 'refused',
+      path: ORPHAN_RESTORE.path,
+      reason: 'path-taken',
+    });
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ARCHIVED_RESTORE, ORPHAN_RESTORE]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.state.storageOutcome).toMatchObject({
+      restorable: [ORPHAN_RESTORE],
+      undo: {
+        restored: 1,
+        failed: [{ path: ORPHAN_RESTORE.path, message: 'a folder already exists there' }],
+      },
+    });
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(restoreWorktreeFolder).toHaveBeenCalledTimes(3);
+    expect(harness.state.storageOutcome?.undo).toEqual({
+      restored: 1,
+      failed: [],
+    });
+  });
+
+  it('reports a thrown restore and still restores the others', async () => {
+    restoreWorktreeFolder.mockRejectedValueOnce(new Error('git failed: worktree add'));
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ORPHAN_RESTORE, ARCHIVED_RESTORE]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.state.storageOutcome?.undo?.restored).toBe(1);
+    expect(harness.state.storageOutcome?.undo?.failed).toEqual([
+      { path: ORPHAN_RESTORE.path, message: expect.stringContaining('git failed') },
+    ]);
+    expect(harness.state.storageOutcome?.restorable).toEqual([ORPHAN_RESTORE]);
+  });
+
+  it('says so when the session row moved while the folder came back', async () => {
+    updateSessionMountLifecycle.mockResolvedValueOnce(false);
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ARCHIVED_RESTORE]);
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.state.storageOutcome?.undo?.failed).toEqual([
+      {
+        path: ARCHIVED_RESTORE.path,
+        message: 'the folder is back, but its session changed in the meantime',
+      },
+    ]);
+  });
+
+  it('drops a late answer when the notice was dismissed or replaced meanwhile', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ORPHAN_RESTORE]);
+    const { set, get } = wire(harness);
+    restoreWorktreeFolder.mockImplementationOnce(async ({ path }: { path: string }) => {
+      harness.state.storageOutcome = null;
+      return { kind: 'restored', path };
+    });
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.state.storageOutcome).toBeNull();
+    expect(harness.loadStorage).toHaveBeenCalled();
+  });
+
+  it('reports a failed refresh instead of swallowing it', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = outcomeOf([ORPHAN_RESTORE]);
+    harness.loadStorage.mockRejectedValueOnce(new Error('database is locked'));
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    expect(harness.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't refresh Storage" }),
+    );
+    expect(harness.state.storageOutcome?.undo).toEqual({ restored: 1, failed: [] });
+  });
+
+  it('ignores a second click while the first undo runs and an empty list', async () => {
+    const harness = makeHarness([]);
+    harness.state.storageOutcome = { ...outcomeOf([ORPHAN_RESTORE]), isUndoing: true };
+    const { set, get } = wire(harness);
+
+    await undoStorageRemoval({ set, get })();
+
+    harness.state.storageOutcome = outcomeOf([]);
+    await undoStorageRemoval({ set, get })();
+
+    expect(restoreWorktreeFolder).not.toHaveBeenCalled();
+  });
+});
+
+describe('removal and its undo target', () => {
+  it('offers no undo for a folder whose branch is unknown', async () => {
+    const nameless = folder({ branch: '', path: '/repo/.goodboy/worktrees/nameless' });
+    const harness = makeHarness([nameless]);
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [nameless.path], mode: 'safe' });
+
+    expect(summary.removed).toBe(1);
+    expect(summary.restorable).toEqual([]);
   });
 });
 

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Undo2 } from 'lucide-react';
-import { Button, ConfirmPopover, Notice } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { worktreeAbortRebase } from '../../../../worktree/worktree';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
-import { ensure, worktreeStatusKey } from '../../../../../store/slices/worktreeStatuses/cache';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ensure, worktreeStatusKey } from '../../../../../store/runtime/worktreeStatuses/cache';
+
 import { rebaseStoppedBody } from './rebaseStoppedBody';
 
 type Props = {

@@ -255,6 +255,30 @@ export const listTurnEventsForAgent = async (
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
 };
 
+export type StoredTurnEvent = {
+  readonly id: string;
+  readonly event: TurnEvent;
+};
+
+type ListEntriesParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+};
+
+export const listTurnEventEntriesForAgent = async ({
+  db,
+  agentId,
+}: ListEntriesParams): Promise<ReadonlyArray<StoredTurnEvent>> => {
+  const rows = await db.select<TurnEventRow>(
+    'SELECT * FROM turn_events WHERE agent_id = ? ORDER BY created_at ASC, rowid ASC',
+    [agentId],
+  );
+  return rows.flatMap((row) => {
+    const event = rowToEvent(row);
+    return event === null ? [] : [{ id: row.id, event }];
+  });
+};
+
 export const listTurnEventsForSession = async (
   db: Database,
   sessionId: SessionId,

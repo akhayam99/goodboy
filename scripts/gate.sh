@@ -90,13 +90,14 @@ check_rust_quick() {
 
 check_lint_ts() {
   local files
-  if changed_files | grep -qE '^(eslint\.config\.mjs|eslint-suppressions\.json|pnpm-lock\.yaml)$'; then
-    pnpm run lint:ts
+  if changed_files | grep -qE '^(eslint\.config\.mjs|eslint\.strict\.config\.mjs|eslint-suppressions(-strict)?\.json|pnpm-lock\.yaml)$'; then
+    pnpm run lint:ts && pnpm run lint:ts:strict
     return $?
   fi
   files=$(changed_files | grep -E '^(apps/desktop/src|packages/[^/]+/src|website/src)/.*\.tsx?$')
   [ -z "$files" ] && return 0
-  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored
+  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored || return 1
+  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js -c eslint.strict.config.mjs --suppressions-location eslint-suppressions-strict.json --no-warn-ignored
 }
 
 check_related_tests() {
@@ -140,6 +141,7 @@ else
   echo "gate note: check:baselines is not in this tree yet, skipped" > "$LOG_DIR/baselines.log"
 fi
 step typecheck pnpm turbo run typecheck
+step website-deps pnpm install --ignore-workspace --dir website --frozen-lockfile
 step lint-ts pnpm run lint:ts
 step website-drift check_website_drift
 step tauri-commands pnpm run check:tauri-commands

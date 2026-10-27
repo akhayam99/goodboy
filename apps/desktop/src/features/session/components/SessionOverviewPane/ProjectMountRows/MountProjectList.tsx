@@ -1,9 +1,17 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
-import { ROW_INTERACTIVE, EmptyLine, Eyebrow, ScrollFade, cn, formatError } from '@goodboy/ui';
+import {
+  cn,
+  EmptyLine,
+  Eyebrow,
+  formatError,
+  ICON_SIZE,
+  ROW_INTERACTIVE,
+  ScrollFade,
+} from '@goodboy/ui';
 import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
 import { MountPreflightCard } from './MountPreflightCard';
 import { mountFailure, type MountFailure } from './mountFailure';
@@ -124,7 +132,7 @@ export const MountProjectList = ({
         />
       ) : null}
       {projects.length === 0 ? (
-        <p className="px-3 py-2 text-label text-muted-foreground">{emptyHint}</p>
+        <p className="px-3 py-2 text-meta text-muted-foreground">{emptyHint}</p>
       ) : filtered.length === 0 ? (
         <EmptyLine className="px-3">No matching folders</EmptyLine>
       ) : (

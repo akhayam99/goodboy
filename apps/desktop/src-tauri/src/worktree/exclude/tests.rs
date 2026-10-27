@@ -1,4 +1,5 @@
 use super::tidy_goodboy_dir;
+use crate::ignore_file::GOODBOY_IGNORE_ENTRY;
 use crate::worktree::create::worktree_create_blocking;
 use crate::worktree::git::git;
 use crate::worktree::remove::remove_worktree_checked_with;
@@ -85,7 +86,10 @@ fn the_exclude_entry_is_written_once_and_survives_a_detach() {
     let exclude_path = root.join(".git").join("info").join("exclude");
     let exclude = std::fs::read_to_string(&exclude_path).unwrap();
     assert_eq!(
-        exclude.lines().filter(|line| *line == ".goodboy/").count(),
+        exclude
+            .lines()
+            .filter(|line| *line == GOODBOY_IGNORE_ENTRY)
+            .count(),
         1
     );
 
@@ -93,7 +97,13 @@ fn the_exclude_entry_is_written_once_and_survives_a_detach() {
 
     assert!(!Path::new(&created.worktree_path).exists());
     let after = std::fs::read_to_string(&exclude_path).unwrap();
-    assert_eq!(after.lines().filter(|line| *line == ".goodboy/").count(), 1);
+    assert_eq!(
+        after
+            .lines()
+            .filter(|line| *line == GOODBOY_IGNORE_ENTRY)
+            .count(),
+        1
+    );
     std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -111,7 +121,10 @@ fn deleting_the_last_mount_tidies_the_goodboy_dir_and_the_exclude_entry() {
     let exclude_path = root.join(".git").join("info").join("exclude");
     let exclude = std::fs::read_to_string(&exclude_path).unwrap();
     assert_eq!(
-        exclude.lines().filter(|line| *line == ".goodboy/").count(),
+        exclude
+            .lines()
+            .filter(|line| *line == GOODBOY_IGNORE_ENTRY)
+            .count(),
         0
     );
     std::fs::remove_dir_all(root).unwrap();
@@ -132,7 +145,10 @@ fn tidy_keeps_the_goodboy_dir_and_the_exclude_entry_while_another_mount_remains(
     let exclude_path = root.join(".git").join("info").join("exclude");
     let exclude = std::fs::read_to_string(&exclude_path).unwrap();
     assert_eq!(
-        exclude.lines().filter(|line| *line == ".goodboy/").count(),
+        exclude
+            .lines()
+            .filter(|line| *line == GOODBOY_IGNORE_ENTRY)
+            .count(),
         1
     );
     std::fs::remove_dir_all(root).unwrap();

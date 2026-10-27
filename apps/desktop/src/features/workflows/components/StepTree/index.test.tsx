@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StepDraft } from '../../engine';
 import { savedStepGroups } from '../../savedSteps';
 import { StepRow } from './StepRow';
-import { StepTree } from '.';
+import { StepTree } from './index';
 
 type StepParams = {
   readonly key: string;
@@ -88,7 +88,6 @@ const renderRow = ({
         provider="anthropic"
         model="opus"
         effort="medium"
-        estimate={undefined}
         span="origin"
         identityIndex={0}
         isExpanded={isExpanded}

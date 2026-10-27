@@ -12,7 +12,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../features/actions/components/ObjectMenuProvider';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 
@@ -30,7 +30,6 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
   { row: 'rail session', scene: 'rail-pinned', selector: '[data-rail-session]' },
   { row: 'project folder', scene: 'c04-session-worktrees', selector: '[data-project-row] > *' },
   { row: 'central branch', scene: 'u27-central-branch-menu', selector: '[data-list-grid-row]' },
-  { row: 'done', scene: 'u26-central-done-mid-light', selector: '[data-done-row] > button' },
   {
     row: 'changed file and folder',
     scene: 'branch-files',
@@ -186,7 +185,7 @@ describe('every object row answers right click with our menu', () => {
   });
 
   it('lets prose the user selected before the right click keep the native menu', async () => {
-    await mount({ scene: 'u26-spawned-transcript-light' });
+    await mount({ scene: 'c07-auto-child' });
     const prose = document.querySelector('[data-reading-region] p');
     if (prose === null) {
       throw new Error('the transcript scene shows no prose');

@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, PopoverBody, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, ICON_SIZE, PopoverBody, useDropdown } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
@@ -8,7 +8,6 @@ import {
   routingLabelParts,
   routingNameText,
 } from '../../../../shared/components/RoutingPicker/routingSummary';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly suggested: AgentKindRouting;
@@ -49,7 +48,7 @@ export const ModelChipPicker = ({
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
           aria-label={`Model ${name}`}
-          className="inline-flex items-center gap-0.5 rounded-md bg-subtle px-2 py-0.5 text-label text-foreground transition-colors hover:bg-hover disabled:opacity-60"
+          className="inline-flex items-center gap-0.5 rounded-md bg-subtle px-2 py-0.5 text-meta text-foreground transition-colors hover:bg-hover disabled:opacity-60"
         >
           {name}
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />

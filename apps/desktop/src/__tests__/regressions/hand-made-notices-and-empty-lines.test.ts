@@ -91,10 +91,10 @@ describe('hand-made notices and bare empty lines only ever shrink', () => {
       countEmptyLines({ text: '<p className="text-meta text-faint-foreground">Nothing yet.' }),
     ).toBe(1);
     expect(
-      countEmptyLines({ text: '<p className="text-label text-muted-foreground">None found' }),
+      countEmptyLines({ text: '<p className="text-meta text-muted-foreground">None found' }),
     ).toBe(1);
     expect(
-      countEmptyLines({ text: '<p className="text-label text-muted-foreground">Notes saved' }),
+      countEmptyLines({ text: '<p className="text-meta text-muted-foreground">Notes saved' }),
     ).toBe(0);
     expect(countEmptyLines({ text: '<EmptyLine>No notes on this screen.</EmptyLine>' })).toBe(0);
   });
@@ -132,7 +132,7 @@ describe('hand-made notices and bare empty lines only ever shrink', () => {
     if (grown.length > 0) {
       throw new Error(
         `Hand-made notices or bare empty lines grew. Use Notice or EmptyLine from @goodboy/ui ` +
-          `(DESIGN-SYSTEM.md, Empty states). A cleanup regenerates the baseline with ` +
+          `(packages/ui/design/feedback.md, Empty states). A cleanup regenerates the baseline with ` +
           `GOODBOY_UPDATE_BASELINE=1.\n\n${grown.join('\n')}`,
       );
     }

@@ -1,5 +1,6 @@
 import {
   brandId,
+  NEW_WORKSPACE_PERMISSION_MODE,
   type BootstrapPhase,
   type FolderPurpose,
   type IsoDateTime,
@@ -28,7 +29,6 @@ import {
   serializeBootstrapPhase,
 } from '../bootstrap/phase';
 import { projectById } from '../projects/projectIndex';
-import { folderPurposeKey } from '../folder-purpose/folderPurposeKey';
 import { prepareLinkedFolder } from '../file-versions/prepareLinkedFolder';
 import { refuseAdoptionWhileAgentsRun } from '../projects/refuseAdoptionWhileAgentsRun';
 import { nowIso } from '../project-mounts/nowIso';
@@ -295,6 +295,7 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
       name: trimmedName,
       slug: workspaceSlug({ name: trimmedName, id: workspaceId }),
       overrides: EMPTY_OVERRIDES,
+      defaultPermissionMode: NEW_WORKSPACE_PERMISSION_MODE,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,
@@ -332,11 +333,12 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
           key: bootstrapPhaseKey(projectId),
           value: serializeBootstrapPhase(phase),
         })),
-        ...purposes.map(({ projectId, purpose }) => ({
-          key: folderPurposeKey({ projectId }),
-          value: purpose,
-        })),
       ],
+      projectValues: purposes.map(({ projectId, purpose }) => ({
+        projectId,
+        key: 'folder.purpose' as const,
+        value: purpose,
+      })),
     });
 
     const projects = [...kept, ...inserted];

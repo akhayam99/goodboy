@@ -1,6 +1,6 @@
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { ArtifactState } from '../../artifactStateOf';
 
 type Props = {

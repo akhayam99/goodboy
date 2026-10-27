@@ -16,7 +16,7 @@ import {
   type BranchTab,
   type ClassifiedBranch,
 } from '../../branches/classifyBranch';
-import { useBranchProjects } from '../../useBranchProjects';
+import { useBranchProjects } from '../../hooks/useBranchProjects';
 import { BranchBulkBar, type SelectedBranch } from './BranchBulkBar';
 import { BranchRow } from './BranchRow';
 
@@ -250,14 +250,14 @@ export const BranchesSection = ({ scope }: Props) => {
       />
       <Band>
         {visibleGroups.length === 0 ? (
-          <p className="px-2 py-2 text-label text-muted-foreground">
+          <p className="px-2 py-2 text-meta text-muted-foreground">
             {isLoading ? 'Checking…' : EMPTY_COPY[tab]}
           </p>
         ) : (
           <div className="flex flex-col">
             {visibleGroups.map((group) =>
               group.scan?.status === 'failed' ? (
-                <p key={group.project.id} className="px-2 py-1 text-label text-danger">
+                <p key={group.project.id} className="px-2 py-1 text-meta text-danger">
                   {group.scan.message}
                 </p>
               ) : (

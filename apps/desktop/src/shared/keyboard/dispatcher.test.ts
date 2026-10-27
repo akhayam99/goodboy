@@ -170,7 +170,7 @@ describe('shortcut dispatcher off darwin', () => {
     bind('lens.agents', onAgents);
 
     press({ key: '{', code: 'BracketLeft', ctrlKey: true, shiftKey: true });
-    press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+    press({ key: 'A', code: 'KeyA', ctrlKey: true, shiftKey: true, altKey: true });
 
     expect(onPrev).toHaveBeenCalledOnce();
     expect(onAgents).toHaveBeenCalledOnce();
@@ -278,9 +278,18 @@ describe('typing wins over the lens plane off darwin', () => {
     const onAgents = vi.fn();
     bind('lens.agents', onAgents);
 
-    press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+    press({ key: 'A', code: 'KeyA', ctrlKey: true, shiftKey: true, altKey: true });
 
     expect(onAgents).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a bare Ctrl+Alt chord to the desktop', () => {
+    const onAgents = vi.fn();
+    bind('lens.agents', onAgents);
+
+    press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+
+    expect(onAgents).not.toHaveBeenCalled();
   });
 
   it('keeps the darwin option plane working inside a textarea', () => {

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { Button, ScrollFade, tintClasses } from '@goodboy/ui';
+import { Button, ICON_SIZE, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -60,13 +60,13 @@ export const ChatArchivedView = ({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search archived"
           aria-label="Search archived"
-          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
+          className="min-w-0 flex-1 bg-transparent text-meta text-foreground outline-none placeholder:text-faint-foreground"
         />
       </label>
       <ScrollFade className="flex-1">
         <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-4">
           {shown.length === 0 ? (
-            <p className="px-2 py-4 text-label text-faint-foreground">
+            <p className="px-2 py-4 text-meta text-faint-foreground">
               {chats.length === 0 ? 'No archived chats' : 'No archived chats match'}
             </p>
           ) : (

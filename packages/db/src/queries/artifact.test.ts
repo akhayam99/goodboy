@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
@@ -87,6 +87,29 @@ describe('artifact queries', () => {
     });
     const forSession = await listArtifactsForSession({ db, sessionId });
     expect(forSession.map((artifact) => artifact.id)).toEqual(['report-1', 'wireframe-1']);
+  });
+
+  it('lists the readable rows when one of three is broken, and logs its id', async () => {
+    const db = await seed();
+    await insertReport(db, 'report-1');
+    await insertReport(db, 'report-2');
+    await insertReport(db, 'report-3');
+    await db.execute("UPDATE session_artifacts SET metadata_json = '{}' WHERE id = 'report-2'");
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const forSession = await listArtifactsForSession({ db, sessionId });
+    expect(forSession.map((artifact) => artifact.id)).toEqual(['report-1', 'report-3']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('report-2');
+    warn.mockRestore();
+  });
+
+  it('still throws when a single broken artifact is read', async () => {
+    const db = await seed();
+    const inserted = await insertReport(db, 'report-1');
+    await db.execute("UPDATE session_artifacts SET metadata_json = '{}' WHERE id = 'report-1'");
+    await expect(getArtifact({ db, artifactId: inserted.id })).rejects.toThrow(
+      'Invalid report artifact metadata',
+    );
   });
 
   it('rejects metadata that does not match the kind', async () => {
@@ -190,6 +213,22 @@ describe('listArtifactMirrorPage', () => {
     expect(sizes).toEqual([2, 2, 1]);
     expect([...seen].sort()).toEqual(['report-1', 'report-2', 'report-3', 'report-4', 'report-5']);
     expect(page.rows[0]?.workspaceSlug).toBe('workspace');
+  });
+
+  it('skips a broken row and still advances the cursor past it', async () => {
+    const db = await seed();
+    for (const id of ['report-1', 'report-2', 'report-3']) {
+      await insertReport(db, id);
+    }
+    await db.execute("UPDATE session_artifacts SET metadata_json = '{}' WHERE id = 'report-2'");
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const first = await listArtifactMirrorPage({ db, after: null, limit: 2 });
+    expect(first.next).not.toBeNull();
+    const second = await listArtifactMirrorPage({ db, after: first.next, limit: 2 });
+    const seen = [...first.rows, ...second.rows].map((row) => row.artifact.id);
+    expect([...seen].sort()).toEqual(['report-1', 'report-3']);
+    expect(second.next).toBeNull();
+    warn.mockRestore();
   });
 
   it('ends at once on an empty database', async () => {

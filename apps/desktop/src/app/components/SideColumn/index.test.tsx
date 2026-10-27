@@ -113,8 +113,8 @@ describe('SideColumn', () => {
     expect(doorNames(nav)).toEqual([
       'board',
       'inbox',
-      'chat',
       'workflows',
+      'chat',
       'terminal',
       'impact',
       'monitoring',
@@ -176,6 +176,18 @@ describe('SideColumn', () => {
 
     expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
     expect(document.querySelector('[data-door-signal]')).toBeNull();
+  });
+
+  it('draws Impact and Monitoring quieter than the daily doors, in the same list', () => {
+    mountColumn();
+    const nav = navLayer();
+    const toneOf = (id: string): string =>
+      nav.querySelector(`[data-column-door="${id}"]`)?.className ?? '';
+
+    expect(toneOf('impact')).toContain('text-faint-foreground');
+    expect(toneOf('monitoring')).toContain('text-faint-foreground');
+    expect(toneOf('workflows')).not.toContain('text-faint-foreground');
+    expect(toneOf('board')).not.toContain('text-faint-foreground');
   });
 
   it('renders one row per door and keeps each plus inside its own row', () => {
@@ -348,6 +360,23 @@ describe('SideColumn', () => {
     ).not.toBeNull();
   });
 
+  it('dots Tasks with the arrivals of the current workspace and names how many', () => {
+    useAppStore.setState({ taskNewKeys: { [WORKSPACE.id]: ['linear:issue:412', 'github:pr:57'] } });
+    mountColumn({ place: 'board' });
+
+    const tasks = screen.getByRole('button', { name: 'Tasks, 2 new' });
+    expect(
+      tasks.querySelector('[data-door-slot="signal"] [data-door-signal="unread"]'),
+    ).not.toBeNull();
+    cleanup();
+    useAppStore.setState({ taskNewKeys: { [WORKSPACE.id]: [] } });
+    mountColumn({ place: 'board' });
+
+    expect(
+      screen.getByRole('button', { name: 'Tasks' }).querySelector('[data-door-signal]'),
+    ).toBeNull();
+  });
+
   it('puts New session first, above the doors, with no separator anywhere', () => {
     mountColumn();
     const row = within(navLayer()).getByRole('button', { name: 'New session' });
@@ -457,8 +486,8 @@ describe('ColumnRail', () => {
       'new',
       'board',
       'inbox',
-      'chat',
       'workflows',
+      'chat',
       'terminal',
       'impact',
       'monitoring',

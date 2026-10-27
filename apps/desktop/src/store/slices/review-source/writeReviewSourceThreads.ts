@@ -10,11 +10,15 @@ const EMPTY_SOURCE_THREADS: ReviewSourceThreads = {
   error: null,
 };
 
+type PatchParams = {
+  readonly current: ReviewSourceThreads;
+};
+
 type Params = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly key: string;
-  readonly patch: (current: ReviewSourceThreads) => ReviewSourceThreads;
+  readonly patch: (params: PatchParams) => ReviewSourceThreads;
 };
 
 export const writeReviewSourceThreads = ({ set, sessionId, key, patch }: Params): void =>
@@ -23,7 +27,9 @@ export const writeReviewSourceThreads = ({ set, sessionId, key, patch }: Params)
       ...state.reviewSourceThreads,
       [sessionId]: {
         ...state.reviewSourceThreads[sessionId],
-        [key]: patch(state.reviewSourceThreads[sessionId]?.[key] ?? EMPTY_SOURCE_THREADS),
+        [key]: patch({
+          current: state.reviewSourceThreads[sessionId]?.[key] ?? EMPTY_SOURCE_THREADS,
+        }),
       },
     },
   }));

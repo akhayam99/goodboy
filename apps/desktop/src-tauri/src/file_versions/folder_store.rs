@@ -143,6 +143,8 @@ pub struct FolderSkip {
     pub(super) relative_path: String,
     pub(super) reason: String,
     pub(super) size_bytes: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) omitted: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -360,6 +362,22 @@ fn try_clone(_source: &Path, _target: &Path) -> bool {
     false
 }
 
+pub(super) fn copy_atomic(source: &Path, target: &Path) -> Result<(), FileVersionsError> {
+    let parent = target
+        .parent()
+        .ok_or(FileVersionsError::InvalidRelativePath)?;
+    let temp = parent.join(format!(".gb-{}.tmp", crate::util::uuid_v4()));
+    if let Err(error) = fs::copy(source, &temp) {
+        let _ = fs::remove_file(&temp);
+        return Err(FileVersionsError::Io(error));
+    }
+    if let Err(error) = fs::rename(&temp, target) {
+        let _ = fs::remove_file(&temp);
+        return Err(FileVersionsError::Io(error));
+    }
+    Ok(())
+}
+
 pub(super) fn copy_file_into(
     source: &Path,
     target: &Path,
@@ -395,6 +413,7 @@ fn push_skip(walk: &mut Walk, relative_path: String, reason: &str, size_bytes: O
         relative_path,
         reason: reason.to_string(),
         size_bytes,
+        omitted: None,
     });
 }
 
@@ -410,12 +429,21 @@ fn is_session_folder(path: &Path) -> bool {
 }
 
 pub(super) fn walk_folder(root: &Path, size_cap_bytes: u64) -> Result<Walk, FileVersionsError> {
+    walk_folder_within(root, size_cap_bytes, MAX_FOLDER_FILES)
+}
+
+pub(super) fn walk_folder_within(
+    root: &Path,
+    size_cap_bytes: u64,
+    max_files: usize,
+) -> Result<Walk, FileVersionsError> {
     let mut walk = Walk {
         files: Vec::new(),
         skipped: Vec::new(),
         total_bytes: 0,
     };
-    let mut is_full = false;
+    let mut first_over_limit: Option<String> = None;
+    let mut omitted_by_limit: u64 = 0;
     let mut stack = vec![root.to_path_buf()];
     while let Some(dir) = stack.pop() {
         let entries = match fs::read_dir(&dir) {
@@ -452,7 +480,7 @@ pub(super) fn walk_folder(root: &Path, size_cap_bytes: u64) -> Result<Walk, File
                 if SILENT_FOLDERS.contains(&name.as_str()) {
                     continue;
                 }
-                if crate::folder_signals::SKIPPED_FOLDERS.contains(&name.as_str()) {
+                if crate::reproducible_dirs::is_skipped_in_walk(name.as_str()) {
                     push_skip(&mut walk, relative, "skipped_folder", None);
                     continue;
                 }
@@ -475,12 +503,14 @@ pub(super) fn walk_folder(root: &Path, size_cap_bytes: u64) -> Result<Walk, File
                 push_skip(&mut walk, relative, "too_large", Some(size));
                 continue;
             }
-            if is_full {
-                continue;
-            }
-            if walk.files.len() >= MAX_FOLDER_FILES || walk.total_bytes + size > MAX_FOLDER_BYTES {
-                is_full = true;
-                push_skip(&mut walk, relative, "folder_limit", None);
+            if first_over_limit.is_some()
+                || walk.files.len() >= max_files
+                || walk.total_bytes + size > MAX_FOLDER_BYTES
+            {
+                omitted_by_limit += 1;
+                if first_over_limit.is_none() {
+                    first_over_limit = Some(relative);
+                }
                 continue;
             }
             walk.total_bytes += size;
@@ -492,6 +522,14 @@ pub(super) fn walk_folder(root: &Path, size_cap_bytes: u64) -> Result<Walk, File
         }
         subfolders.reverse();
         stack.extend(subfolders);
+    }
+    if let Some(relative_path) = first_over_limit {
+        walk.skipped.push(FolderSkip {
+            relative_path,
+            reason: "folder_limit".to_string(),
+            size_bytes: None,
+            omitted: Some(omitted_by_limit),
+        });
     }
     walk.files
         .sort_by(|left, right| left.relative_path.cmp(&right.relative_path));

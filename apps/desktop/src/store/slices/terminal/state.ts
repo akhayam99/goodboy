@@ -1,14 +1,14 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { TerminalSelection, TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 
-export const SETTING_TERMINAL_NAMES = 'terminal.names';
-
-type FolderKeyParams = {
-  readonly workspaceId: WorkspaceId;
+export type TerminalFinish = {
+  readonly terminalId: TerminalTabId;
+  readonly title: string;
+  readonly command: string | null;
+  readonly durationMs: number;
 };
 
-export const settingTerminalFolder = ({ workspaceId }: FolderKeyParams) =>
-  `terminal.workspaceFolder.${workspaceId}`;
+export const SETTING_TERMINAL_NAMES = 'terminal.names';
 
 export type TerminalState = {
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
@@ -20,6 +20,7 @@ export type TerminalState = {
   readonly terminalOrdinals: Readonly<Record<string, number>>;
   readonly terminalFolderOverrides: Readonly<Record<WorkspaceId, string | null>>;
   readonly terminalScopes: Readonly<Record<SessionId, string>>;
+  readonly terminalFinishes: Readonly<Record<SessionId, TerminalFinish>>;
 };
 
 export const terminalInitialState: TerminalState = {
@@ -32,4 +33,5 @@ export const terminalInitialState: TerminalState = {
   terminalOrdinals: {},
   terminalFolderOverrides: {},
   terminalScopes: {},
+  terminalFinishes: {},
 };

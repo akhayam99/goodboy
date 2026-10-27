@@ -1,11 +1,7 @@
 import type { AutoBridgeCall, AutoBridgeRequest } from './autoBridgeProtocol';
+import { isRecord } from '@goodboy/types/helpers';
 
 const PUBLISH_ACTS = ['confirm', 'decline', 'retry', 'put_back'] as const;
-
-type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value !== '';
 

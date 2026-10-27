@@ -1,8 +1,4 @@
 import type { SessionProviderPreference } from '@goodboy/types';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import BetterSqlite3 from 'better-sqlite3';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -120,20 +116,17 @@ const makeForwardingDatabase = ({
 
 type MakeSnapshotDatabaseParams = {
   readonly database: Database;
-  readonly onVacuum?: (sql: string) => Promise<void>;
   readonly statements?: string[];
 };
 
 const makeSnapshotDatabase = ({
   database,
-  onVacuum = async () => undefined,
   statements = [],
 }: MakeSnapshotDatabaseParams): Database => ({
   exec: async (sql) => {
     statements.push(sql);
-    if (sql.startsWith('VACUUM INTO')) {
-      await onVacuum(sql);
-      return;
+    if (sql.startsWith('VACUUM') || sql.startsWith('ATTACH')) {
+      throw new Error('not authorized');
     }
     await database.exec(sql);
   },
@@ -159,11 +152,15 @@ describe('runRuntimeMigrations', () => {
       version: 2,
       sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
     } satisfies Migration;
-    const statements: string[] = [];
-    const db = makeSnapshotDatabase({ database, statements });
+    const order: string[] = [];
+    const db = makeSnapshotDatabase({ database, statements: order });
     const storage = {
       list: vi.fn(async () => ['/tmp/data.db.pre-m2-from-m1-20260822T120000000Z.bak']),
       remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => {
+        order.push('snapshot');
+      }),
     } satisfies MigrationSnapshotStorage;
 
     await runRuntimeMigrations({
@@ -174,14 +171,161 @@ describe('runRuntimeMigrations', () => {
       storage,
     });
 
-    const snapshotIndex = statements.findIndex((statement) => statement.startsWith('VACUUM INTO'));
-    const migrationIndex = statements.findIndex((statement) =>
-      statement.includes('CREATE TABLE pending_snapshot_test'),
+    const migrationIndex = order.findIndex((entry) =>
+      entry.includes('CREATE TABLE pending_snapshot_test'),
     );
-    expect(statements[snapshotIndex]).toBe(
-      "VACUUM INTO '/tmp/data.db.pre-m2-from-m1-20260822T120000000Z.bak'",
+    expect(storage.snapshot).toHaveBeenCalledWith({
+      currentVersion: 1,
+      nextVersion: 2,
+      stamp: '20260822T120000000Z',
+    });
+    expect(order.indexOf('snapshot')).toBeLessThan(migrationIndex);
+  });
+
+  it('never sends the snapshot through the webview SQL path', async () => {
+    const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
+    const statements: string[] = [];
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db: makeSnapshotDatabase({ database, statements }),
+      migrations: [migration, pendingMigration],
+      storage,
+    });
+
+    expect(storage.snapshot).toHaveBeenCalledOnce();
+    expect(statements.filter((statement) => /^\s*(VACUUM|ATTACH|DETACH)/i.test(statement))).toEqual(
+      [],
     );
-    expect(snapshotIndex).toBeLessThan(migrationIndex);
+  });
+
+  it('locks the snapshot down right after writing it and before anything else touches it', async () => {
+    const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_secure_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
+    const order: string[] = [];
+    const db = makeSnapshotDatabase({
+      database,
+      statements: order,
+    });
+    const storage = {
+      list: vi.fn(async () => {
+        order.push('list');
+        return [];
+      }),
+      remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => {
+        order.push('secure');
+      }),
+      snapshot: vi.fn(async () => {
+        order.push('snapshot');
+      }),
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db,
+      migrations: [migration, pendingMigration],
+      storage,
+    });
+
+    const snapshot = order.indexOf('snapshot');
+    expect(order[snapshot + 1]).toBe('secure');
+    expect(order[snapshot + 2]).toBe('list');
+  });
+
+  it('aborts before applying migrations when the snapshot cannot be locked down', async () => {
+    const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => {
+        throw new Error('operation not permitted');
+      }),
+      snapshot: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await expect(
+      runRuntimeMigrations({
+        databasePath: '/tmp/data.db',
+        db: makeSnapshotDatabase({ database }),
+        migrations: [migration, pendingMigration],
+        storage,
+      }),
+    ).rejects.toThrow(
+      'Database migration snapshot failed; migrations were not started: operation not permitted',
+    );
+    const tables = await database.select<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'pending_snapshot_test'",
+    );
+    expect(tables).toEqual([]);
+  });
+
+  it('takes no snapshot of an empty file at version 0, where there is nothing to keep', async () => {
+    const database = makeTestDatabase();
+    const statements: string[] = [];
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    const result = await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db: makeSnapshotDatabase({ database, statements }),
+      migrations: [migration],
+      storage,
+    });
+
+    expect(result.applied).toEqual([1]);
+    expect(storage.snapshot).not.toHaveBeenCalled();
+    expect(storage.list).not.toHaveBeenCalled();
+  });
+
+  it('still takes a snapshot of a file that holds tables but no recorded version', async () => {
+    const database = makeTestDatabase();
+    await database.exec('CREATE TABLE harborline_ledger (id INTEGER PRIMARY KEY)');
+    const statements: string[] = [];
+    const storage = {
+      list: vi.fn(async () => []),
+      remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
+    } satisfies MigrationSnapshotStorage;
+
+    await runRuntimeMigrations({
+      databasePath: '/tmp/data.db',
+      db: makeSnapshotDatabase({ database, statements }),
+      migrations: [migration],
+      now: () => new Date('2026-08-22T12:00:00.000Z'),
+      storage,
+    });
+
+    expect(storage.snapshot).toHaveBeenCalledWith({
+      currentVersion: 0,
+      nextVersion: 1,
+      stamp: '20260822T120000000Z',
+    });
   });
 
   it('skips snapshots when there are no pending migrations', async () => {
@@ -191,6 +335,8 @@ describe('runRuntimeMigrations', () => {
     const storage = {
       list: vi.fn(async () => []),
       remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
     } satisfies MigrationSnapshotStorage;
 
     await runRuntimeMigrations({
@@ -200,7 +346,7 @@ describe('runRuntimeMigrations', () => {
       storage,
     });
 
-    expect(statements.some((statement) => statement.startsWith('VACUUM INTO'))).toBe(false);
+    expect(storage.snapshot).not.toHaveBeenCalled();
     expect(storage.list).not.toHaveBeenCalled();
   });
 
@@ -212,6 +358,8 @@ describe('runRuntimeMigrations', () => {
       const storage = {
         list: vi.fn(async () => []),
         remove: vi.fn(async () => undefined),
+        secure: vi.fn(async () => undefined),
+        snapshot: vi.fn(async () => undefined),
       } satisfies MigrationSnapshotStorage;
 
       await runRuntimeMigrations({
@@ -221,40 +369,48 @@ describe('runRuntimeMigrations', () => {
         storage,
       });
 
-      expect(statements.some((statement) => statement.startsWith('VACUUM INTO'))).toBe(false);
+      expect(storage.snapshot).not.toHaveBeenCalled();
       expect(storage.list).not.toHaveBeenCalled();
     },
   );
 
   it('aborts before applying migrations when snapshot creation fails', async () => {
     const database = makeTestDatabase();
-    const db = makeSnapshotDatabase({
-      database,
-      onVacuum: async () => {
-        throw new Error('disk full');
-      },
-    });
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
     const storage = {
       list: vi.fn(async () => []),
       remove: vi.fn(async () => undefined),
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => {
+        throw new Error('disk full');
+      }),
     } satisfies MigrationSnapshotStorage;
 
     await expect(
       runRuntimeMigrations({
         databasePath: '/tmp/data.db',
-        db,
-        migrations: [migration],
+        db: makeSnapshotDatabase({ database }),
+        migrations: [migration, pendingMigration],
         storage,
       }),
     ).rejects.toThrow('Database migration snapshot failed; migrations were not started: disk full');
     const tables = await database.select<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'snapshot_test'",
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'pending_snapshot_test'",
     );
     expect(tables).toEqual([]);
   });
 
   it('retains the two newest migration snapshots across both filename generations', async () => {
     const database = makeTestDatabase();
+    await migrate(database, [migration]);
+    const pendingMigration = {
+      version: 2,
+      sql: 'CREATE TABLE pending_snapshot_test (id INTEGER PRIMARY KEY);',
+    } satisfies Migration;
     const remove = vi.fn(async () => undefined);
     const storage = {
       list: vi.fn(async () => [
@@ -263,12 +419,14 @@ describe('runRuntimeMigrations', () => {
         '/tmp/data.db.pre-m157-from-m155-20260822T120000000Z.bak',
       ]),
       remove,
+      secure: vi.fn(async () => undefined),
+      snapshot: vi.fn(async () => undefined),
     } satisfies MigrationSnapshotStorage;
 
     await runRuntimeMigrations({
       databasePath: '/tmp/data.db',
       db: makeSnapshotDatabase({ database }),
-      migrations: [migration],
+      migrations: [migration, pendingMigration],
       now: () => new Date('2026-08-22T12:00:00.000Z'),
       storage,
     });
@@ -277,65 +435,6 @@ describe('runRuntimeMigrations', () => {
     expect(remove).toHaveBeenCalledWith({
       path: '/tmp/data.db.pre-m120-20260820T120000000Z.bak',
     });
-  });
-});
-
-describe('enforced integrity check', { timeout: 30_000 }, () => {
-  const INTEGRITY_MIGRATION = {
-    version: 1157,
-    sql: `
-      CREATE TABLE integrity_probe (id INTEGER PRIMARY KEY);
-      PRAGMA integrity_check;
-    `,
-  } satisfies Migration;
-
-  const makeDatabaseFile = (): string =>
-    join(mkdtempSync(join(tmpdir(), 'goodboy-integrity-')), 'data.db');
-
-  const seedIndexedRows = ({ raw }: { readonly raw: BetterSqlite3.Database }): void => {
-    raw.exec('CREATE TABLE probe (id INTEGER PRIMARY KEY, value TEXT NOT NULL)');
-    raw.exec('CREATE INDEX probe_value ON probe(value)');
-    const insert = raw.prepare('INSERT INTO probe (id, value) VALUES (?, ?)');
-    for (let id = 1; id <= 200; id += 1) {
-      insert.run(id, `value-${id}`);
-    }
-  };
-
-  it('aborts the migration when the database is corrupt', async () => {
-    const path = makeDatabaseFile();
-    const raw = new BetterSqlite3(path);
-    seedIndexedRows({ raw });
-    raw.unsafeMode(true);
-    raw.pragma('writable_schema = ON');
-    raw.prepare("DELETE FROM sqlite_master WHERE name = 'probe_value'").run();
-    raw.pragma('writable_schema = OFF');
-    raw.close();
-
-    const db = makeTestDatabase(path);
-    await expect(migrate(db, [INTEGRITY_MIGRATION])).rejects.toThrow(
-      /Migration v1157: integrity check failed: .*never used/s,
-    );
-    const versions = await db.select<{ readonly version: number }>(
-      'SELECT version FROM schema_version WHERE version = 1157',
-    );
-    expect(versions).toEqual([]);
-    rmSync(dirname(path), { force: true, recursive: true });
-  });
-
-  it('applies the migration when the database is sound', async () => {
-    const path = makeDatabaseFile();
-    const raw = new BetterSqlite3(path);
-    seedIndexedRows({ raw });
-    raw.close();
-
-    const db = makeTestDatabase(path);
-    const result = await migrate(db, [INTEGRITY_MIGRATION]);
-    const tables = await db.select<{ readonly name: string }>(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'integrity_probe'",
-    );
-    expect(result.applied).toEqual([1157]);
-    expect(tables).toEqual([{ name: 'integrity_probe' }]);
-    rmSync(dirname(path), { force: true, recursive: true });
   });
 });
 

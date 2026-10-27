@@ -2,6 +2,7 @@ import {
   buildClaudeFlags,
   resolveModeFor,
   composeHandoffBody,
+  providerFlags,
   renderCurrentPlan,
   type ClaudeFlagSet,
   type HandoffBodyLayers,
@@ -15,7 +16,14 @@ import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
-import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
+import {
+  buildContextPreamble,
+  buildPriorTurnsBlock,
+  getModelContextWindow,
+  PRIOR_TURNS_BUDGET_TOKENS,
+} from './preamble';
+import { handoffNoticeMessage } from './handoffNoticeMessage';
+import { movedProviderOf } from './movedProviderOf';
 import { buildGoalAttachmentsBlock } from './turnHelpers';
 import { resolveTurnAudience } from './turnAudience';
 import { briefSlotsOf } from './briefSlotsOf';
@@ -86,12 +94,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
   const earlyAgentKind = turnAgentKind;
   const turnRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
-  const audience = await resolveTurnAudience({
-    sessionId,
-    role: turnRole,
-    kind: earlyAgentKind,
-    settings: get().settings,
-  });
+  const audience = await resolveTurnAudience({ sessionId, role: turnRole });
   const contextPreamble = buildContextPreamble(
     sharedSlots,
     briefSlotsOf({
@@ -149,10 +152,12 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     isKickoff,
   });
 
-  const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';
-  const priorTurns = needsTextHistory
-    ? buildPriorTurnsBlock(get().transcripts[activeAgentId] ?? [], 8000)
-    : '';
+  const priorTurns = providerFlags({ id: provider }).shouldReplayHistoryAsText
+    ? buildPriorTurnsBlock({
+        transcripts: get().transcripts[activeAgentId] ?? [],
+        maxTokens: PRIOR_TURNS_BUDGET_TOKENS,
+      })
+    : null;
 
   const agentRowForVerbosity =
     (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === activeAgentId) ?? null;
@@ -172,10 +177,36 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     clusterBoundary,
     currentPlan: currentPlan === null ? '' : renderCurrentPlan(currentPlan),
     goalAttachments: goalAttachmentsBlock,
-    priorTurns,
+    priorTurns: priorTurns?.text ?? '',
     verbosity: verbosityHint,
   };
   resolvedPrompt = composeHandoffBody(handoffBodyLayers);
+
+  const isMovedTurn =
+    ctx.isHandoffTurn ||
+    movedProviderOf({
+      history: get().agentRunHistory[activeAgentId] ?? [],
+      routing: get().runRouting[activeAgentId] ?? {},
+      provider,
+    });
+  const handoffNotice =
+    priorTurns === null || !isMovedTurn
+      ? null
+      : handoffNoticeMessage({
+          carriedTurns: priorTurns.carried,
+          leftOutTurns: priorTurns.leftOut,
+          isShortened: priorTurns.isShortened,
+          hasPlan: currentPlan !== null,
+          noteCount: audience.items.length,
+        });
+  if (handoffNotice !== null) {
+    get().appendTurnEvent(activeAgentId, sessionId, {
+      kind: 'decision_note',
+      runId: ctx.runId,
+      message: handoffNotice,
+      at: ctx.now(),
+    });
+  }
 
   const estimated = estimateTokens(resolvedPrompt);
   const ctxWindow = getModelContextWindow(model);

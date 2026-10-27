@@ -9,8 +9,8 @@ struct BranchCase {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct BranchFixture {
-    #[serde(rename = "maxLength")]
     max_length: usize,
     cases: Vec<BranchCase>,
 }

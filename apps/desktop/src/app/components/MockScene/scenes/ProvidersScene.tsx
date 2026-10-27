@@ -1,4 +1,4 @@
-import type { IsoDateTime, OverrideSettings } from '@goodboy/types';
+import type { OverrideSettings } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { SettingsFrame } from './audit/SettingsFrame';
@@ -6,9 +6,6 @@ import { SETTINGS_WORKSPACE } from './audit/settingsSeed';
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [

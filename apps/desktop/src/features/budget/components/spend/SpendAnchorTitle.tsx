@@ -12,7 +12,7 @@ export const SpendAnchorTitle = ({ glyph, title, meta, actions }: Props) => (
     {glyph ?? null}
     <div className="flex min-w-0 flex-1 flex-col">
       <h2 className="truncate text-heading text-foreground">{title}</h2>
-      <span className="text-label text-muted-foreground">{meta}</span>
+      <span className="text-meta text-muted-foreground">{meta}</span>
     </div>
     {actions ?? null}
   </div>

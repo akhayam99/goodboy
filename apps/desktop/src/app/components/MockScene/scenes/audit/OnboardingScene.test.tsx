@@ -16,6 +16,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { useAppStore } from '../../../../../store';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { OnboardingScene } from './OnboardingScene';
 
@@ -37,7 +38,11 @@ type MountParams = {
 
 const mount = async ({ query }: MountParams): Promise<void> => {
   window.history.replaceState(null, '', `/?scene=onboarding${query}`);
-  render(<OnboardingScene />);
+  render(
+    <ToastProvider>
+      <OnboardingScene />
+    </ToastProvider>,
+  );
   await act(async () => undefined);
 };
 
@@ -45,6 +50,18 @@ const shownStep = (): string | null =>
   screen.queryByRole('dialog', { name: 'Goodboy setup' })?.getAttribute('data-step') ?? null;
 
 const SCENE_OPEN_MS = 150;
+
+const mountOpen = async ({ query }: MountParams): Promise<void> => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    await mount({ query });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SCENE_OPEN_MS);
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+};
 
 type ButtonParams = {
   readonly name: string | RegExp;
@@ -85,8 +102,7 @@ describe('onboarding scene', () => {
   });
 
   it('connects Linear with a mock account and asks for no key', async () => {
-    await mount({ query: '&step=tools' });
-    await act(() => new Promise((resolve) => setTimeout(resolve, SCENE_OPEN_MS)));
+    await mountOpen({ query: '&step=tools' });
     expect(shownStep()).toBe('tools');
 
     fireEvent.click(await enabledButton({ name: 'Connect Linear' }));
@@ -111,8 +127,7 @@ describe('onboarding scene', () => {
   });
 
   it('walks from the folder pick to a running first session with no native call', async () => {
-    await mount({ query: '&step=workspace' });
-    await act(() => new Promise((resolve) => setTimeout(resolve, SCENE_OPEN_MS)));
+    await mountOpen({ query: '&step=workspace' });
     expect(shownStep()).toBe('workspace');
 
     fireEvent.click(await enabledButton({ name: /Choose folder/ }));
@@ -131,6 +146,8 @@ describe('onboarding scene', () => {
     await waitFor(() => expect(shownStep()).toBe('first-session'));
 
     fireEvent.click(await enabledButton({ name: 'Find one small bug' }));
+    const demoAnchor = '[data-step="first-session"] [data-demo-anchor="setup-first-start"]';
+    expect(document.querySelector(demoAnchor)?.textContent).toContain('Start');
     fireEvent.click(await enabledButton({ name: /^Start/ }));
 
     await waitFor(() => expect(shownStep()).toBeNull());

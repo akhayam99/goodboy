@@ -1,21 +1,19 @@
-import { cn, Eyebrow, tintClasses } from '@goodboy/ui';
-import { spendTone } from './lib';
+import { cn, Eyebrow, tintClasses, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly pct: number;
   readonly centerLabel: string;
   readonly subLabel?: string;
   readonly size?: number;
-  readonly warnAt?: number;
+  readonly tone: Tone;
 };
 
-export const CostRing = ({ pct, centerLabel, subLabel, size = 132, warnAt }: Props) => {
+export const CostRing = ({ pct, centerLabel, subLabel, size = 132, tone }: Props) => {
   const stroke = Math.round(size / 12);
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const filled = Math.min(Math.max(pct, 0), 1) * c;
   const center = size / 2;
-  const tone = spendTone(warnAt === undefined ? { pct } : { pct, warnAt });
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>

@@ -21,7 +21,6 @@ const { hookState, setupStore, storeActions, firstSession } = vi.hoisted(() => (
     providers: [],
   },
   firstSession: {
-    startFirstScout: vi.fn(),
     handOffFirstSession: vi.fn(),
   },
 }));
@@ -43,7 +42,7 @@ vi.mock('./useStepTransition', () => ({
     removeOutgoing: () => undefined,
   }),
 }));
-vi.mock('../onboarding-store', () => setupStore);
+vi.mock('../onboardingSettings', () => setupStore);
 vi.mock('./Stepper', () => ({
   Stepper: ({ current }: { current: string }) => <div data-testid="stepper">{current}</div>,
 }));
@@ -90,11 +89,13 @@ vi.mock('./steps/WorkspaceStep', () => ({
   WorkspaceStep: ({
     onCreated,
     onBack,
+    error,
   }: {
     onCreated: (params: { workspaceId: WorkspaceId }) => void;
     onBack: (() => void) | null;
+    error: string | null;
   }) => (
-    <div data-testid="WorkspaceStep">
+    <div data-testid="WorkspaceStep" data-error={error ?? ''}>
       <button type="button" onClick={() => onCreated({ workspaceId: WORKSPACE.id })}>
         create workspace
       </button>
@@ -132,18 +133,14 @@ vi.mock('./steps/FirstSessionStep', () => ({
   FirstSessionStep: ({
     workspaceId,
     folder,
-    onStart,
+    onStarted,
     onDraft,
     onSkip,
     onOpenTools,
   }: {
     workspaceId: WorkspaceId;
     folder: Project | null;
-    onStart: (params: {
-      workspaceId: WorkspaceId;
-      projectId: string | null;
-      prompt: string;
-    }) => Promise<void>;
+    onStarted: () => void;
     onDraft: (params: {
       workspaceId: WorkspaceId;
       projectId: string | null;
@@ -153,17 +150,8 @@ vi.mock('./steps/FirstSessionStep', () => ({
     onOpenTools: (() => void) | null;
   }) => (
     <div data-testid="FirstSessionStep">
-      <button
-        type="button"
-        onClick={() =>
-          void onStart({
-            workspaceId,
-            projectId: folder?.id ?? null,
-            prompt: 'Explain how ledger-core is organized',
-          }).catch(() => undefined)
-        }
-      >
-        start scout
+      <button type="button" onClick={onStarted}>
+        session started
       </button>
       <button
         type="button"
@@ -261,7 +249,6 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 beforeEach(() => {
   Object.values(setupStore).forEach((spy) => spy.mockClear());
   closeWizard.mockClear();
-  firstSession.startFirstScout.mockReset().mockResolvedValue(undefined);
   firstSession.handOffFirstSession.mockReset();
   Object.assign(hookState, baseState);
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
@@ -443,6 +430,23 @@ describe('OnboardingWizard', () => {
       expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
     });
 
+    it('hands the failure of making the workspace current to the form, to draw in its action row', async () => {
+      storeActions.setCurrentWorkspace.mockRejectedValue(new Error('the folder moved'));
+      setHook(readyState({ kind: 'repo' }));
+      render(<OnboardingWizard />);
+      click(/get started/i);
+      click(/^continue$/i);
+      click(/create workspace/i);
+
+      await waitFor(() =>
+        expect(screen.getByTestId('WorkspaceStep').getAttribute('data-error')).toContain(
+          'the folder moved',
+        ),
+      );
+      expect(stepOf()).toBe('workspace');
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
     it('takes the form Back to the agents step', () => {
       setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
@@ -490,25 +494,16 @@ describe('OnboardingWizard', () => {
 
     it('finishes setup only after the first session started', async () => {
       await reachFirstSession();
-      click(/start scout/i);
+      expect(setupStore.finishWizard).not.toHaveBeenCalled();
+      click(/session started/i);
       await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
         timeout: 1000,
-      });
-      expect(firstSession.startFirstScout).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        projectId: 'project-1',
-        prompt: 'Explain how ledger-core is organized',
       });
       expect(hookState.close).toHaveBeenCalledOnce();
     });
 
-    it('keeps setup open when the first session fails to start', async () => {
-      firstSession.startFirstScout.mockRejectedValue(
-        new Error('the worktree could not be created'),
-      );
+    it('keeps setup open while the first session has not started', async () => {
       await reachFirstSession();
-      click(/start scout/i);
-      await waitFor(() => expect(firstSession.startFirstScout).toHaveBeenCalledOnce());
       await new Promise((resolve) => setTimeout(resolve, 300));
       expect(setupStore.finishWizard).not.toHaveBeenCalled();
       expect(stepOf()).toBe('first-session');

@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
+
 import { agentKindPalette, type AgentKind } from '../session/agent-kind';
 import { NEXT_STEP_CELLS } from './nextStepGrid';
 

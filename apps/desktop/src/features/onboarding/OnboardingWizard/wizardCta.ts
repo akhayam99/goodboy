@@ -6,9 +6,9 @@ export type WizardCta = {
   readonly reason: string | null;
 };
 
-export const RETRY_LABEL = 'Retry';
+const RETRY_LABEL = 'Retry';
 
-export const AGENT_GATE_REASON = 'Get one agent ready to continue.';
+const AGENT_GATE_REASON = 'Get one agent ready to continue.';
 
 type Params = {
   readonly step: WizardStepId;
@@ -47,9 +47,6 @@ export const wizardCta = ({
     case 'tools':
       return cta({ primary: mode === 'single' ? 'Done' : 'Continue' });
     case 'first-session':
-      if (hasFailed) {
-        return cta({ primary: RETRY_LABEL, skip: 'Skip' });
-      }
       return cta({ primary: isIssuePick ? 'Draft the brief' : 'Start', skip: 'Skip' });
     default: {
       const exhaustive: never = step;

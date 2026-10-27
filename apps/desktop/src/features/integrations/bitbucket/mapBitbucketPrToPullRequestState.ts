@@ -24,7 +24,7 @@ export const mapBitbucketPrToPullRequestState = ({
     number: pr.id,
     title: pr.title,
     url: pr.webUrl ?? '',
-    state: bitbucketPrStateKind({ state: pr.state }),
+    state: bitbucketPrStateKind({ state: pr.state, requestState: pr.requestState }),
     mergeable: null,
     checks,
     baseBranch: pr.destinationBranch,

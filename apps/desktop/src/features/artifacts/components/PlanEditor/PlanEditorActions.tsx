@@ -1,6 +1,6 @@
 import { Undo2 } from 'lucide-react';
-import { Button, ConfirmPopover, HeaderActions } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, HeaderActions, ICON_SIZE } from '@goodboy/ui';
+
 import type { PlanEditorModel } from './usePlanEditor';
 
 const SAVE_BLOCKED_REASON = 'A newer version exists. Copy your text, discard, then edit again.';

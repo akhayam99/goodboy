@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Button, ConfirmPopover, Disclosure } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, Disclosure, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { historyVersionWhy } from '../../historyVersionWhy';
 import { versionCommitDiff } from '../../versionCommitDiff';
-import type { HistoryVersion } from '../../useHistoryVersions';
+import type { HistoryVersion } from '../../hooks/useHistoryVersions';
 
 type Props = {
   readonly version: HistoryVersion;

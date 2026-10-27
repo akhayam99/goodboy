@@ -5,7 +5,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { useIdleCounts } from '../../hooks/useIdleCounts';
 import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
-import { useMonitorPolling } from '../../hooks/useMonitorPolling';
+import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import type { PortSummary } from '../../portSummary';
 import { summaryMeta } from '../../summaryMeta';
 import { ColumnHeader } from './ColumnHeader';
@@ -88,7 +88,7 @@ export const MonitoringPage = () => {
             icon={CONCEPT_ICONS.monitoring}
             tone={CONCEPT_TONE.monitoring}
             title="No ports in use"
-            description="Ports opened by agents, terminals and scripts appear here, with their process."
+            description="Ports opened by agents, terminals and scripts are listed with their process."
             action={<PinPortPopover align="start" />}
             size="page"
             headingLevel={2}

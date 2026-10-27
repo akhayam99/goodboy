@@ -33,7 +33,7 @@ export const DemoClosing = () => (
       target="_blank"
       rel="noreferrer"
       aria-label={`What is new in ${APP_VERSION}`}
-      className="rounded-md text-label text-muted-foreground hover:text-foreground"
+      className="rounded-md text-meta text-muted-foreground hover:text-foreground"
     >
       Version {APP_VERSION}
     </a>

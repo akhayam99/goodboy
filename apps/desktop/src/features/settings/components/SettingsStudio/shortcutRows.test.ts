@@ -98,6 +98,6 @@ describe('shortcutRows', () => {
   });
 
   it('counts the rows the page renders, not the registry entries', () => {
-    expect(SHORTCUT_ROW_COUNT).toBe(Object.keys(SHORTCUTS).length - 8);
+    expect(SHORTCUT_ROW_COUNT).toBe(Object.keys(SHORTCUTS).length - 16);
   });
 });

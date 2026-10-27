@@ -41,7 +41,7 @@ export const DemoTopBar = ({
           <BrandTile size={BRAND_TILE_PX} className="ring-1 ring-inset ring-frame-edge" />
           <span className="text-heading">Goodboy</span>
         </a>
-        <span className="hidden text-label text-muted-foreground sm:inline">Playground</span>
+        <span className="hidden text-meta text-muted-foreground sm:inline">Playground</span>
         <div
           data-quiet={isQuiet ? 'true' : 'false'}
           className={cn('flex min-w-0 items-center gap-3', quietClasses({ isQuiet }))}

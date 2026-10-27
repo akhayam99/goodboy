@@ -50,7 +50,7 @@ const renderWorkflows = async (): Promise<void> => {
 
 const grid = (): HTMLElement => screen.getByRole('list', { name: 'Workflows' });
 
-describe('SPEC3 9.9 Workflows rows stay reachable from the Workflows grid', () => {
+describe('Workflows rows stay reachable from the Workflows grid', () => {
   it('keeps the Run defaults and Saved steps tabs in the switch', async () => {
     await renderWorkflows();
 

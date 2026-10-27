@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
-import { Band, BandRow, Button, ConfirmPopover, SectionHeader } from '@goodboy/ui';
+import { Band, BandRow, Button, ConfirmPopover, ICON_SIZE, SectionHeader } from '@goodboy/ui';
 import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { pluralize } from '../../../../shared/utils/pluralize';

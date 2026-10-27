@@ -6,6 +6,8 @@ import type { InboxRecord } from '../../types';
 import { InboxRow, inboxOptionId } from './InboxRow';
 import { TASK_ROW_HEIGHT } from './taskColumns';
 
+const NO_NEW_KEYS: ReadonlySet<string> = new Set();
+
 export type TaskLine = {
   readonly key: string;
   readonly text: string;
@@ -22,6 +24,7 @@ type Props = {
   readonly action?: ReactNode;
   readonly selectedKey: string | null;
   readonly cursorKey: string | null;
+  readonly newKeys?: ReadonlySet<string>;
   readonly onExpand: () => void;
   readonly onCollapse: () => void;
   readonly onSelect: (record: InboxRecord) => void;
@@ -49,6 +52,7 @@ export const TaskGroupRows = ({
   action,
   selectedKey,
   cursorKey,
+  newKeys = NO_NEW_KEYS,
   onExpand,
   onCollapse,
   onSelect,
@@ -136,6 +140,7 @@ export const TaskGroupRows = ({
           record={record}
           selected={record.key === selectedKey}
           isCursor={record.key === cursorKey}
+          isNew={newKeys.has(record.key)}
           onSelect={onSelect}
           onActivate={onActivate}
           isStarred={starOf(record)}

@@ -26,9 +26,9 @@ vi.mock('@tauri-apps/api/window', () => ({
   }),
 }));
 
-import { PLAIN_INSET, TITLEBAR_INSET_VAR, TRAFFIC_LIGHT_INSET, useTitlebarInset } from './index';
+import { useTitlebarInset } from './index';
 
-const inset = () => document.documentElement.style.getPropertyValue(TITLEBAR_INSET_VAR);
+const inset = () => document.documentElement.style.getPropertyValue('--titlebar-inset');
 
 const flush = async () => {
   await act(async () => {
@@ -47,7 +47,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
-  document.documentElement.style.removeProperty(TITLEBAR_INSET_VAR);
+  document.documentElement.style.removeProperty('--titlebar-inset');
 });
 
 describe('useTitlebarInset', () => {
@@ -55,7 +55,7 @@ describe('useTitlebarInset', () => {
     renderHook(() => useTitlebarInset());
     await flush();
 
-    expect(inset()).toBe(TRAFFIC_LIGHT_INSET);
+    expect(inset()).toBe('72px');
   });
 
   it('drops to the plain inset in full screen and back when the window leaves it', async () => {
@@ -65,12 +65,12 @@ describe('useTitlebarInset', () => {
     windowState.isFullscreen = true;
     windowState.resized?.();
     await flush();
-    expect(inset()).toBe(PLAIN_INSET);
+    expect(inset()).toBe('0px');
 
     windowState.isFullscreen = false;
     windowState.resized?.();
     await flush();
-    expect(inset()).toBe(TRAFFIC_LIGHT_INSET);
+    expect(inset()).toBe('72px');
   });
 
   it('leaves other systems on the stylesheet default', async () => {

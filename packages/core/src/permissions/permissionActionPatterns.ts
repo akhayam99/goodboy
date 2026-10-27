@@ -96,6 +96,7 @@ export const oncePatternText = ({ toolName, input }: ActionTarget): string => {
 
 export type PrefixRule = {
   readonly pattern: PermissionRulePattern;
+  readonly subject: string;
   readonly label: string;
 };
 
@@ -105,10 +106,11 @@ export const prefixRuleFor = ({ toolName, input }: ActionTarget): PrefixRule => 
     const prefix = commandPrefix({ command });
     return {
       pattern: { tool: 'Bash', argsMatcher: `${prefix} *` },
+      subject: `"${prefix}"`,
       label: `Always allow "${prefix}"`,
     };
   }
-  return { pattern: { tool: toolName }, label: 'Always allow edits' };
+  return { pattern: { tool: toolName }, subject: 'edits', label: 'Always allow edits' };
 };
 
 export const isFilePathTool = ({ toolName }: { readonly toolName: string }): boolean =>

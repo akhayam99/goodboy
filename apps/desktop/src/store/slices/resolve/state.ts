@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  MountId,
   ResolveAttempt,
   ResolveBatch,
   ResolveCandidate,
@@ -26,7 +27,17 @@ export type ThreadRecheck = Readonly<{
   isQueued?: boolean;
 }>;
 
+export type LaneRebuildFailure = Readonly<{
+  worktreePath: string;
+  mountId: MountId;
+  candidateIds: ReadonlyArray<string>;
+  message: string;
+}>;
+
 export type ResolveState = {
+  readonly sessionLaneRebuildFailures: Readonly<
+    Record<SessionId, ReadonlyArray<LaneRebuildFailure>>
+  >;
   readonly sessionResolveThreads: Readonly<Record<SessionId, ReadonlyArray<ResolveThread>>>;
   readonly sessionResolveAttempts: Readonly<Record<SessionId, ReadonlyArray<ResolveAttempt>>>;
   readonly sessionResolveBatches: Readonly<Record<SessionId, ReadonlyArray<ResolveBatch>>>;
@@ -56,6 +67,7 @@ export type ResolveState = {
 };
 
 export const resolveInitialState: ResolveState = {
+  sessionLaneRebuildFailures: {},
   sessionResolveThreads: {},
   sessionResolveAttempts: {},
   sessionResolveBatches: {},

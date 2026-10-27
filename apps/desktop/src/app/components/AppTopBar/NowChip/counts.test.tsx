@@ -44,7 +44,7 @@ afterEach(cleanup);
 
 const asking = sessionOf({ goal: 'Running and asking', state: runningState() });
 const planHeld: Session = {
-  ...sessionOf({ goal: 'Plan held' }),
+  ...sessionOf({ goal: 'Plan held', updatedAt: '2026-10-06T09:00:00.000Z' }),
   workflowRuns: [
     aWorkflowRun({
       id: 'run-plan-held' as WorkflowRunId,
@@ -58,7 +58,7 @@ const seed = (sessions: ReadonlyArray<Session>, questions: ReadonlyArray<Session
   seedColumn({ store: useAppStore, sessions, questions });
 };
 
-const trigger = () => screen.getByRole('button', { name: /running/ });
+const trigger = () => screen.getByRole('button', { name: /^\d+ (needs?|sessions?|scripts?) / });
 
 const noop = () => undefined;
 
@@ -101,15 +101,15 @@ const sessionsDoor = (): HTMLElement => {
 };
 
 describe('the Sessions door and the Now chip count sessions by their stage', () => {
-  it('marks a running session that has a question on the Sessions door, not in the top bar', () => {
+  it('marks a running session that has a question on the Sessions door and in the Now chip', () => {
     seed([asking], [asking]);
-    const { container } = renderShell();
+    renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
       'Sessions, 1 needs you: 1 question for you',
     );
     expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
-    expect(container.textContent).not.toContain('need you');
+    expect(trigger().getAttribute('aria-label')).toBe('1 needs you');
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
@@ -122,17 +122,18 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     );
   });
 
-  it('keeps a running session with nothing waiting on you under running in the Now chip', async () => {
+  it('lists a running session that has a question under needs you, not under running', async () => {
     seed([asking, working], [asking]);
     renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 session running');
+    expect(trigger().getAttribute('aria-label')).toBe('1 needs you, 1 session running');
     await act(async () => {
       fireEvent.click(trigger());
     });
     const panel = screen.getByRole('dialog', { name: 'Now' });
     const running = within(within(panel).getByRole('list', { name: 'Running' }));
-    expect(within(panel).queryByRole('list', { name: 'Needs you' })).toBeNull();
+    const needsYou = within(within(panel).getByRole('list', { name: 'Needs you' }));
+    needsYou.getByText('Running and asking');
     expect(running.queryByText('Running and asking')).toBeNull();
     expect(running.getByText('Running and quiet')).toBeDefined();
   });

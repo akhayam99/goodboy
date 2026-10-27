@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { MessageCircle, SkipForward } from 'lucide-react';
-import { Button, ConfirmPopover, Notice } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { QuietStep } from '../../hooks/useQuietStep';
 import { skipStepDescription, skipStepTitle } from '../../skipStepCopy';
 

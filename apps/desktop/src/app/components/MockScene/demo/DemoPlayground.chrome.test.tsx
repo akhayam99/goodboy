@@ -134,7 +134,7 @@ describe('demo playground chrome', () => {
         .getByRole('link', { name: /Download for macOS/ })
         .getAttribute('href'),
     ).toBe('https://goodboy-ai.dev');
-    expect(within(closing).getByRole('link', { name: /Star on GitHub/ })).not.toBeNull();
+    within(closing).getByRole('link', { name: /Star on GitHub/ });
     expect(within(closing).getByRole('link', { name: /What is new in/ }).textContent).toContain(
       'Version',
     );

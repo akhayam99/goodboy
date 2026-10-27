@@ -17,10 +17,6 @@ const HEIGHT_TOKEN = /(?<![\w-])(?:h|size)-[5-8](?![\w.-])/g;
 const CONTROL_TAGS = ['button', 'Button', 'IconButton'] as const;
 
 const OWNERS: ReadonlyArray<readonly [string, string]> = [
-  [
-    'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx',
-    'd5-overview',
-  ],
   ['apps/desktop/src/features/session/components/AgentDetailPane/', 'd6-agent-lists'],
   ['apps/desktop/src/features/session/components/NeedsYouBlock', 'd6-agent-lists'],
 ];

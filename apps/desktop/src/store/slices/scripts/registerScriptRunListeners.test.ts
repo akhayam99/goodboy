@@ -1,4 +1,4 @@
-// @vitest-environment node
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ScriptRunRecord } from '../../../features/scripts/scripts';
@@ -42,6 +42,15 @@ const makeStore = () => {
   return {
     params: { set: set as never, get: get as never },
     read: () => state.scriptRuns[SESSION_ID]?.lint,
+    stop: () => {
+      const current = state.scriptRuns[SESSION_ID]?.lint;
+      if (current !== undefined) {
+        state = {
+          ...state,
+          scriptRuns: { [SESSION_ID]: { lint: { ...current, status: 'cancelled' } } },
+        };
+      }
+    },
   };
 };
 
@@ -260,5 +269,98 @@ describe('registerScriptRunListeners, UTF-8 output', () => {
     handlers.exit?.({ runId: 'run-1', exitCode: 1 });
 
     expect(store.read()?.result?.stdout).toBe('a\uFFFD');
+  });
+
+  it('keeps the last frame of a redrawn line and never fills the cap with spinner frames', async () => {
+    const store = makeStore();
+    await register(store);
+
+    for (let step = 0; step < 3000; step += 1) {
+      handlers.output?.({
+        runId: 'run-1',
+        data: btoa(`\x1B[2Kresolving ${step}%\r`),
+        offset: 0,
+      });
+    }
+    vi.advanceTimersByTime(100);
+    expect(store.read()?.output?.length).toBeLessThan(40);
+    expect(store.read()?.output).toContain('resolving 2999%');
+
+    handlers.output?.({ runId: 'run-1', data: btoa('\x1B[2Kdone\r\nnext\n'), offset: 0 });
+    handlers.exit?.({ runId: 'run-1', exitCode: 0 });
+    expect(store.read()?.result?.stdout).toBe('done\nnext\n');
+  });
+});
+
+describe('registerScriptRunListeners, announcing the end', () => {
+  const ended: Array<unknown> = [];
+  const listener = (event: Event): void => {
+    ended.push(event instanceof CustomEvent ? event.detail : null);
+  };
+
+  beforeEach(() => {
+    ended.length = 0;
+    window.addEventListener('goodboy:script-ended', listener);
+  });
+
+  afterEach(() => {
+    window.removeEventListener('goodboy:script-ended', listener);
+  });
+
+  it('announces a script that exits on its own, once, with the run it belongs to', async () => {
+    const store = makeStore();
+    await register(store);
+
+    handlers.exit?.({ runId: 'run-1', exitCode: 1 });
+
+    expect(ended).toEqual([{ sessionId: SESSION_ID, scriptKey: 'lint', runId: 'run-1' }]);
+  });
+
+  it('does not announce a script the person stopped', async () => {
+    const store = makeStore();
+    await register(store);
+    store.stop();
+
+    handlers.exit?.({ runId: 'run-1', exitCode: 143 });
+
+    expect(store.read()?.status).toBe('cancelled');
+    expect(ended).toEqual([]);
+  });
+
+  it('does not announce a run that had already ended when the app came back', async () => {
+    const store = makeStore();
+    vi.mocked(invokeScriptSnapshot).mockResolvedValueOnce({
+      data: btoa('done\n'),
+      offset: 0,
+      exitCode: 0,
+    });
+
+    await register(store, { shouldReplay: true });
+
+    expect(store.read()?.status).toBe('ok');
+    expect(ended).toEqual([]);
+  });
+
+  it('announces an exit that lands while the snapshot is being read', async () => {
+    const store = makeStore();
+    vi.mocked(invokeScriptSnapshot).mockResolvedValueOnce({
+      data: btoa('built\n'),
+      offset: 0,
+      exitCode: null,
+    });
+    await register(store, { shouldReplay: true });
+
+    handlers.exit?.({ runId: 'run-1', exitCode: 0 });
+
+    expect(ended).toHaveLength(1);
+  });
+
+  it('does not announce an exit of another run', async () => {
+    const store = makeStore();
+    await register(store);
+
+    handlers.exit?.({ runId: 'run-2', exitCode: 1 });
+
+    expect(ended).toEqual([]);
   });
 });

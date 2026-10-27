@@ -40,7 +40,7 @@ export const CreateMrForm = ({
 
   const create = useCallback(
     async ({ title, body, base, isDraft }: CreateReviewInput): Promise<CreatedReview> => {
-      await createMrForSession({
+      const created = await createMrForSession({
         sessionId,
         ...(mountId === null ? {} : { mountId }),
         title: title.trim(),
@@ -49,7 +49,7 @@ export const CreateMrForm = ({
         draft: isDraft,
       });
       showToast({ kind: 'success', message: 'Merge request opened' });
-      return { number: null, url: null };
+      return created;
     },
     [createMrForSession, mountId, sessionId, showToast],
   );

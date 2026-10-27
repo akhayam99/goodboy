@@ -33,7 +33,7 @@ export const WireframeImportNotice = ({
         tone="warning"
         placement="inline"
         role="alert"
-        title={`${pending.fileName} is not a wireframe Goodboy can read.`}
+        title={`${pending.fileName} isn't a wireframe Goodboy can read.`}
         body={
           <ul className="flex flex-col gap-0.5" data-testid="wireframe-import-issues">
             {pending.issues.slice(0, MAX_LISTED).map((issue) => (

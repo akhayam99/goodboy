@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { PageColumn, Eyebrow } from '@goodboy/ui';
+import { Eyebrow, ICON_SIZE, PageColumn } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
 import { AnsweredCard } from '../../../../features/chat/components/ChatView/AnsweredCard';
@@ -12,7 +12,7 @@ import { UserText } from '../../../../features/chat/components/TranscriptCards/U
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { QuestionCard } from '../../../../features/context/components/QuestionsTab/QuestionCard';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-22T09:12:00.000Z' });
@@ -62,6 +62,7 @@ const PERMISSION_DECISION = {
   key: 'perm-dec-1',
   toolUseId: 'tu-1',
   toolName: 'Bash',
+  subject: 'pnpm test --filter @goodboy/core',
   runId: 'run-1' as ProviderRunId,
   decision: 'allow',
   scope: 'session',

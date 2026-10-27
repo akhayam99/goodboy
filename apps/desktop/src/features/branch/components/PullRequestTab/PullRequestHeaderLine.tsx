@@ -1,5 +1,5 @@
 import type { PullRequestHost, PullRequestState } from '@goodboy/types';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestNumberLabel } from '../../pullRequestNumberLabel';
 import { BranchStateChip } from '../BranchHeader/BranchStateChip';
 
@@ -26,7 +26,7 @@ export const PullRequestHeaderLine = ({ pr, host, commitCount }: Props) => {
   return (
     <span
       data-pr-header-line=""
-      className="flex min-w-0 flex-wrap items-center gap-x-2 text-label text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground"
     >
       <BranchStateChip state={state} host={host} />
       <span className="tabular-nums">{pullRequestNumberLabel({ host, number: pr.number })}</span>

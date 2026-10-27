@@ -24,7 +24,7 @@ export const FolderNotice = ({ tone, title, body, actions }: Props) => {
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
       data-tone={tone}
-      className="flex items-start gap-2 rounded-lg bg-muted p-3 text-label text-muted-foreground motion-safe:animate-fade-in"
+      className="flex items-start gap-2 rounded-lg bg-muted p-3 text-meta text-muted-foreground motion-safe:animate-fade-in"
     >
       <span className="flex h-4 shrink-0 items-center">
         <Icon size={ICON_SIZE.control} aria-hidden className={cn(tintClasses(tone).icon)} />

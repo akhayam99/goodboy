@@ -399,3 +399,63 @@ fn confirmed_removal_forces_a_dirty_worktree_that_safe_mode_keeps() {
         40
     );
 }
+
+mod verdict {
+    use crate::worktree::folder_verdict;
+    use crate::worktree::types::{FolderVerdict, WorktreeRemovalReason};
+
+    #[test]
+    fn a_registered_folder_with_no_reason_is_safe() {
+        assert_eq!(folder_verdict(&[], 0, true), FolderVerdict::Safe);
+    }
+
+    #[test]
+    fn each_change_reason_makes_the_folder_dirty() {
+        for reason in [
+            WorktreeRemovalReason::StagedChanges,
+            WorktreeRemovalReason::UnstagedChanges,
+            WorktreeRemovalReason::UntrackedFiles,
+        ] {
+            assert_eq!(folder_verdict(&[reason], 1, true), FolderVerdict::Dirty);
+        }
+    }
+
+    #[test]
+    fn a_lease_beats_every_other_reason() {
+        let reasons = [
+            WorktreeRemovalReason::UntrackedFiles,
+            WorktreeRemovalReason::WriterLeaseHeld,
+            WorktreeRemovalReason::NotRegistered,
+        ];
+        assert_eq!(folder_verdict(&reasons, 3, true), FolderVerdict::Writing);
+    }
+
+    #[test]
+    fn an_operation_or_conflict_is_an_operation() {
+        assert_eq!(
+            folder_verdict(&[WorktreeRemovalReason::OperationInProgress], 0, true),
+            FolderVerdict::Operation
+        );
+        assert_eq!(
+            folder_verdict(&[WorktreeRemovalReason::UnmergedConflicts], 1, true),
+            FolderVerdict::Operation
+        );
+    }
+
+    #[test]
+    fn an_unregistered_folder_is_not_tracked() {
+        assert_eq!(
+            folder_verdict(&[WorktreeRemovalReason::NotRegistered], 0, false),
+            FolderVerdict::NotTracked
+        );
+    }
+
+    #[test]
+    fn a_status_failure_or_an_unknown_folder_is_never_safe() {
+        assert_eq!(
+            folder_verdict(&[WorktreeRemovalReason::StatusUnavailable], 0, true),
+            FolderVerdict::Unavailable
+        );
+        assert_eq!(folder_verdict(&[], 0, false), FolderVerdict::Unavailable);
+    }
+}

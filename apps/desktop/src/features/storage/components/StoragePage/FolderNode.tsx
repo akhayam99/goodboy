@@ -1,4 +1,4 @@
-import { Check, CircleHelp, FolderOpen, TriangleAlert } from 'lucide-react';
+import { Check, CircleHelp, FolderOpen, SquareTerminal, TriangleAlert } from 'lucide-react';
 import { WORK_NODE_GLYPH_SIZE, WorkNode, type WorkNodeMark, type WorkNodeState } from '@goodboy/ui';
 import type { StorageFolderStatus } from '../../../../store/slices/storage/types';
 
@@ -19,6 +19,13 @@ const NODE = {
   safe: {
     state: 'done',
     mark: { kind: 'glyph', glyph: <Check size={WORK_NODE_GLYPH_SIZE} className="text-success" /> },
+  },
+  'terminal-open': {
+    state: 'question',
+    mark: {
+      kind: 'glyph',
+      glyph: <SquareTerminal size={WORK_NODE_GLYPH_SIZE} className="text-muted-foreground" />,
+    },
   },
   dirty: {
     state: 'question',

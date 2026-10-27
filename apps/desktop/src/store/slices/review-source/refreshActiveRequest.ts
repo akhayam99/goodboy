@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../slice-types';
+import { refreshMountRequests } from './refreshMountRequests';
 import { requestHostOf } from './requestHostOf';
 
 type Params = Readonly<{
@@ -15,13 +16,5 @@ export const refreshActiveRequest = async ({ get, sessionId, mountId }: Params):
     sessionId,
     ...(mountId === undefined ? {} : { mountId }),
   });
-  if (host === 'bitbucket') {
-    await get().refreshSessionBitbucketPr(sessionId, options);
-    return;
-  }
-  if (host === 'gitlab') {
-    await get().refreshSessionMr(sessionId, options);
-    return;
-  }
-  await get().refreshSessionPr(sessionId, options);
+  await refreshMountRequests({ get, host, sessionId, options });
 };

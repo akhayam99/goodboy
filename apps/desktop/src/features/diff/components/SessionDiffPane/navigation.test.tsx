@@ -29,7 +29,7 @@ vi.mock('../../hooks/useDiffTokens', () => ({
   tokensForLine: () => null,
 }));
 
-vi.mock('../../../permissions/components/DiffViewSelector', () => ({
+vi.mock('../DiffViewSelector', () => ({
   DiffViewSelector: () => <button type="button">Comparing</button>,
 }));
 

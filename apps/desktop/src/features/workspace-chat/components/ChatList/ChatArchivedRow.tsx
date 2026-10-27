@@ -38,7 +38,7 @@ const ChatArchivedRowView = ({
         <span className="flex min-w-0 items-center gap-2 pr-14">
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-label',
+              'min-w-0 flex-1 truncate text-meta',
               isSelected ? 'text-foreground' : 'text-muted-foreground',
             )}
           >

@@ -11,7 +11,7 @@ import { useAppStore } from '../../../../store';
 import type { AskHandle } from '../../../../features/session/ask/askHandles';
 import { buildAskPack } from '../../../../features/session/ask/buildAskPack';
 import { collectAskPackInput } from '../../../../features/session/ask/collectAskPackInput';
-import { mockAskAnswer } from '../../../../features/session/ask/mockAskAnswer';
+import { mockAskAnswer } from '../backends/ask/mockAskAnswer';
 import { SESSION } from './activityRunSeed';
 
 export const ASK_SCENE_STATES = [

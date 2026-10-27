@@ -34,6 +34,31 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string>>> = {
   SESSION_PAGE_INTRO: Object.values(SESSION_PAGE_INTRO).flat(),
 };
 
+const LOWERCASE_BRAND = /(?<![\w./:@-])goodboy(?![\w./:@-])/;
+
+describe('on-screen copy writes the product name with its capital', () => {
+  it.each(['so goodboy stopped it', 'before goodboy started keeping'])('flags %s', (text) => {
+    expect(LOWERCASE_BRAND.test(text)).toBe(true);
+  });
+
+  it.each([
+    'Goodboy stopped it',
+    'the ~/.goodboy folder',
+    'goodboy:open-settings',
+    'a goodboy-ai.dev link',
+  ])('leaves %s alone', (text) => {
+    expect(LOWERCASE_BRAND.test(text)).toBe(false);
+  });
+
+  it('has no goodboy in lowercase outside a code span', () => {
+    const offenders = scanCopy()
+      .filter((copy) => LOWERCASE_BRAND.test(copy.text.replace(/`[^`]*`/g, '')))
+      .map((copy) => describeCopy({ copy }));
+
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('on-screen copy says no internal word', () => {
   it('keeps every named copy map free of internal words', () => {
     const offenders = Object.entries(NAMED_COPY).flatMap(([map, values]) =>

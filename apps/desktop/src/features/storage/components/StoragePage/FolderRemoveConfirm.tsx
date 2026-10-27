@@ -4,7 +4,7 @@ import type { WorktreeRemovalMode } from '@goodboy/types';
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { storageFolderLastChange } from '../../../../store/slices/storage/classifyStorageFolder';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';

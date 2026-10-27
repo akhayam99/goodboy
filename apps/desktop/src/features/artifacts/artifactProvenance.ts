@@ -19,7 +19,7 @@ import {
   updateArtifactRun as dbUpdateArtifactRun,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
-import { readMockArtifactProvenance } from '../../store/mock-data';
+import { readMockArtifactProvenance } from '../../shared/lib/mockFixtures';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 
 export type ArtifactEvidenceInventoryArgs = {
@@ -156,7 +156,7 @@ export const completeArtifactRun = async ({
 export const loadArtifactProvenance = async (
   agentId: AgentId,
 ): Promise<ArtifactProvenance | null> => {
-  const mocked = readMockArtifactProvenance(agentId);
+  const mocked = readMockArtifactProvenance({ agentId });
   if (mocked !== null) {
     return mocked;
   }

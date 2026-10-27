@@ -4,10 +4,12 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openPaneOf } from '../../panes/openPaneOf';
 import { togglePane } from '../../panes/togglePane';
-import { SESSION_TOOLS } from './sessionTools';
+import { SESSION_TOOLS, type SessionTool } from './sessionTools';
 import { SessionToolButton } from './SessionToolButton';
 import { toolbarIndexAfter } from './toolbarIndexAfter';
-import { useToolSignal } from './useToolSignal';
+import { useScriptsSignal } from './useScriptsSignal';
+import { useTerminalFinishSignal } from './useTerminalFinishSignal';
+import { useToolSignal, type ToolSignal } from './useToolSignal';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -16,6 +18,16 @@ type Props = {
 export const SessionTools = ({ sessionId }: Props) => {
   const openPane = useAppStore((state) => openPaneOf({ state, sessionId }));
   const contextSignal = useToolSignal({ sessionId, isContextOpen: openPane === 'context' });
+  const scriptsSignal = useScriptsSignal({ sessionId });
+  const terminalSignal = useTerminalFinishSignal({
+    sessionId,
+    isTerminalOpen: openPane === 'terminal',
+  });
+  const signalOf: Readonly<Partial<Record<SessionTool['pane'], ToolSignal | null>>> = {
+    context: contextSignal,
+    scripts: scriptsSignal,
+    terminal: terminalSignal,
+  };
   const [focusIndex, setFocusIndex] = useState(0);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const next = toolbarIndexAfter({
@@ -47,7 +59,7 @@ export const SessionTools = ({ sessionId }: Props) => {
           key={tool.pane}
           tool={tool}
           isOpen={openPane === tool.pane}
-          signal={tool.pane === 'context' ? contextSignal : null}
+          signal={signalOf[tool.pane] ?? null}
           tabIndex={index === focusIndex ? 0 : -1}
           onFocus={() => setFocusIndex(index)}
           onToggle={() => togglePane({ sessionId, pane: tool.pane })}

@@ -1,10 +1,18 @@
-import { AlertTriangle, GitBranch } from 'lucide-react';
+import { TriangleAlert, GitBranch } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, Button, FactCard, StatusDot, cn, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  cn,
+  FactCard,
+  ICON_SIZE,
+  StatusDot,
+  useDropdown,
+} from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { workspaceReposOf } from '../../../../store/slices/repo-divergence/workspaceReposOf';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useRepoDivergenceCheck } from '../../hooks/useRepoDivergenceCheck';
 import { RepoEntryPanel } from './RepoEntryPanel';
 import { repoEntryCardOf } from './repoEntryCardOf';
@@ -60,7 +68,7 @@ export const RepoEntry = ({ workspaceId }: Props) => {
             )}
           >
             {facts.isFailed ? (
-              <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+              <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             ) : (
               <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             )}

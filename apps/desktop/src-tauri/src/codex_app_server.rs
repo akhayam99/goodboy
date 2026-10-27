@@ -285,7 +285,7 @@ sleep 5"#;
         let _ = std::fs::remove_file(&pid_file);
         let mut alive = true;
         for _ in 0..20 {
-            if unsafe { libc::kill(helper, 0) } != 0 {
+            if !crate::proc::signal::exists(helper as u32) {
                 alive = false;
                 break;
             }

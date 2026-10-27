@@ -1,5 +1,5 @@
 import {
-  ExternalLink,
+  SquareArrowOutUpRight,
   GitBranch,
   GitPullRequestCreate,
   GitPullRequestDraft,
@@ -9,13 +9,14 @@ import {
   ScrollText,
   Send,
   UserPlus,
-  XCircle,
+  CircleX,
 } from 'lucide-react';
 import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { PrMergeMethod, PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
+import { pullRequestViewOf } from '../../../store/slices/pull-request-view/pullRequestViewOf';
 import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import type { PrWriteOptions } from '../../../store/slices/github/prWriteOptions';
@@ -39,7 +40,7 @@ import {
   mergeabilityNoteOf,
 } from '../../review/prMergeReadiness';
 import { FOLLOW_LABEL } from '../../../shared/lib/followToast';
-import { hostIconOf } from '../../../shared/hostIconOf';
+import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { isOverlayDrawerOpen } from '../../../shared/hooks/useFollowToast';
 import { isTargetShown } from '../../../shared/hooks/useFollowToast/isTargetShown';
 import { branchPlace } from '../../../store/slices/navigation/place';
@@ -240,7 +241,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     label: 'Open',
     shortLabel: () => 'Open',
     ariaLabel: ({ facts }) => `Open on ${hostLabel({ facts })}`,
-    icon: ExternalLink,
+    icon: SquareArrowOutUpRight,
     iconOf: ({ facts }) => hostIconOf({ host: facts.host }),
     group: 'open',
     when: hasPr,
@@ -343,7 +344,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
               facts.sessionId,
               number,
               isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
-              options,
+              { ...options, expectedHeadSha: facts.pr?.headSha ?? null },
             ),
       });
       env.showToast({
@@ -458,7 +459,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   {
     id: 'pullRequest.close',
     label: ({ facts }) => `Close ${nounsOf({ facts }).long}`,
-    icon: XCircle,
+    icon: CircleX,
     group: 'danger',
     when: ({ facts }) => isLive({ facts }) && facts.isOwn && can({ facts, capability: 'canClose' }),
     blockedReason: writeBlock,
@@ -482,7 +483,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   {
     id: 'pullRequest.cancelAutoMerge',
     label: 'Cancel auto-merge',
-    icon: XCircle,
+    icon: CircleX,
     group: 'act',
     when: ({ facts }) =>
       facts.pr?.isAutoMerge === true && can({ facts, capability: 'canCancelAutoMerge' }),
@@ -560,8 +561,13 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
     const signals = fixSignalsOf({
       threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
     });
-    const entry = state.pullRequestViews?.[target.sessionId] ?? null;
-    const view = pr !== null && entry?.prNumber === pr.number ? entry.view : null;
+    const view =
+      pullRequestViewOf({
+        state,
+        sessionId: target.sessionId,
+        mountId,
+        prNumber: pr?.number ?? null,
+      })?.view ?? null;
     const portChecks = host !== 'github' && view !== null ? view.checks : null;
     return pullRequestFacts({
       sessionId: target.sessionId,
@@ -591,8 +597,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
       isRebaseStopOpen: hasOpenRebaseStopOf({
         state,
         sessionId: target.sessionId,
-        mountId,
-        status: null,
+        mountId: mountId ?? selectActiveMountId({ state, sessionId: target.sessionId }),
       }),
       ...signals,
       ...(view === null

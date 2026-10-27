@@ -17,6 +17,8 @@ import type {
 } from '@goodboy/types';
 import type { RunPlanResult } from '../../../store/slices/plans/types';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
+import { brandId, type PrSeriesId } from '@goodboy/types';
+import { aTrackerMove } from '../../../store/slices/tracker-moves/testing/aTrackerMove';
 
 const { storeState, spies, fixable } = vi.hoisted(() => {
   const noRebaseAllRuns: Record<string, { readonly phase: string } | undefined> = {};
@@ -43,14 +45,27 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     scope: 'workflow',
   }));
   const showToast = vi.fn();
-  const pushSessionBranch = vi.fn(async () => ({ ok: true as const }));
+  const pushBranch = vi.fn(async () => ({ ok: true as const }));
   const openRewriteHistory = vi.fn();
   const createPrForSession = vi.fn(async () => undefined);
   const markPrReady = vi.fn(async () => undefined);
   const mergePr = vi.fn(async () => undefined);
   const resolveMountCleanup = vi.fn(async () => undefined);
+  const mergeSeriesInOrder = vi.fn(async (_params: unknown) => ({ kind: 'gone' }));
+  const moveTrackerItem = vi.fn(async (_params: unknown) => ({ kind: 'gone' }));
+  const undoTrackerMove = vi.fn(async (_params: unknown) => undefined);
   const attachWorkflowToSession = vi.fn(async () => undefined);
   const resumeStoppedAgents = vi.fn(async (_params: unknown) => 2);
+  const archiveSessions = vi.fn(
+    async (
+      _params: unknown,
+    ): Promise<{ archived: ReadonlyArray<unknown>; failed: ReadonlyArray<unknown> }> => ({
+      archived: [],
+      failed: [],
+    }),
+  );
+  const bulkArchiveTask = vi.fn(async () => ({ succeeded: [] }));
+  const bulkUnarchiveTask = vi.fn(async () => ({ succeeded: [] }));
   const requestReviewLaunch = vi.fn();
   const openMountTerminal = vi.fn();
   const readWorktreeStatus = vi.fn(async (_params: unknown) => null);
@@ -71,14 +86,18 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       navigate,
       rebaseRun,
       runPlan,
-      pushSessionBranch,
+      pushBranch,
       openRewriteHistory,
       createPrForSession,
       markPrReady,
       mergePr,
       resolveMountCleanup,
+      mergeSeriesInOrder,
+      moveTrackerItem,
+      undoTrackerMove,
       attachWorkflowToSession,
       resumeStoppedAgents,
+      archiveSessions,
       showToast,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseBranch: vi.fn((_params: unknown) => ({
@@ -104,14 +123,19 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       spawnAgent,
       runPlan,
       navigate,
-      pushSessionBranch,
+      pushBranch,
       openRewriteHistory,
       createPrForSession,
       markPrReady,
       mergePr,
       resolveMountCleanup,
+      mergeSeriesInOrder,
+      moveTrackerItem,
+      undoTrackerMove,
       attachWorkflowToSession,
       resumeStoppedAgents,
+      bulkArchiveTask,
+      bulkUnarchiveTask,
       openMountTerminal,
       requestOpenQuestionScroll: vi.fn(),
       requestReviewLaunch,
@@ -162,9 +186,11 @@ vi.mock('../../worktree/worktree', async (importOriginal) => ({
   worktreeStatus: spies.readWorktreeStatus,
 }));
 vi.mock('../../session/contextWindowFor', () => ({ contextWindowFor: () => null }));
+vi.mock('../../session/sessionArchive', () => ({ archiveSessions: spies.archiveSessions }));
 
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/diff';
+import { everySuggestionKind } from './testing/everySuggestionKind';
 import { useSuggestionActions } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -202,6 +228,8 @@ const suggestionBase = {
   fingerprint: 'test-fingerprint',
   targetKey: null,
 };
+
+const SERIES_ID = brandId<PrSeriesId>({ value: 'series-ledger-rounding' });
 
 beforeEach(() => {
   fixable.ids = [];
@@ -773,9 +801,10 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Push');
     actions.primary?.run();
 
-    expect(spies.pushSessionBranch).toHaveBeenCalledWith({
+    expect(spies.pushBranch).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: WEB_MOUNT_ID,
+      mode: 'plain',
     });
   });
 
@@ -803,7 +832,7 @@ describe('useSuggestionActions', () => {
     actions.primary?.run();
 
     expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web');
-    expect(spies.pushSessionBranch).not.toHaveBeenCalled();
+    expect(spies.pushBranch).not.toHaveBeenCalled();
   });
 
   describe('open-pr', () => {
@@ -979,154 +1008,14 @@ describe('useSuggestionActions', () => {
   });
 });
 
-const EVERY_KIND = {
-  'workflow-next-step': {
-    ...suggestionBase,
-    id: 'workflow-next-step:run-1',
-    kind: 'workflow-next-step',
-    payload: { runId: RUN_ID, stepId: STEP_ID },
-  },
-  'plan-ready': {
-    ...suggestionBase,
-    id: 'plan-ready:plan-1',
-    kind: 'plan-ready',
-    payload: { planId: 'plan-1' as PlanId },
-  },
-  'resolve-threads': {
-    ...suggestionBase,
-    id: 'resolve-threads:session-1',
-    kind: 'resolve-threads',
-    payload: { eligibleThreadCount: 0 },
-  },
-  'rebase-project': {
-    ...suggestionBase,
-    id: 'rebase-project:session-1',
-    kind: 'rebase-project',
-    payload: { targets: [] },
-  },
-  'answer-questions': {
-    ...suggestionBase,
-    id: 'answer-questions:session-1',
-    kind: 'answer-questions',
-    payload: { count: 1, firstQuestion: null, rootAgentId: null },
-  },
-  'mount-project': {
-    ...suggestionBase,
-    id: 'mount-project:project-web',
-    kind: 'mount-project',
-    payload: {
-      projectId: WEB_ID,
-      projectName: 'web',
-      reason: 'needs the router',
-      agentId: AGENT_ID,
-      eventId: 'event-1' as SessionEventId,
-    },
-  },
-  'approve-tool': {
-    ...suggestionBase,
-    id: 'approve-tool:agent-1',
-    kind: 'approve-tool',
-    payload: { agentId: AGENT_ID, agentLabel: 'Tester', toolUseId: 'tool-1', toolName: 'pnpm' },
-  },
-  'sign-in': {
-    ...suggestionBase,
-    id: 'sign-in:agent-1',
-    kind: 'sign-in',
-    payload: { agentId: AGENT_ID, agentLabel: 'Implementer', providerId: 'anthropic' },
-  },
-  'retry-agent': {
-    ...suggestionBase,
-    id: 'retry-agent:agent-1',
-    kind: 'retry-agent',
-    payload: { agentId: AGENT_ID, agentKind: 'debugger' },
-  },
-  'resume-agents': {
-    ...suggestionBase,
-    id: 'resume-agents:session-1',
-    kind: 'resume-agents',
-    payload: { agentIds: [AGENT_ID, 'agent-2' as AgentId] },
-  },
-  'fix-checks': {
-    ...suggestionBase,
-    id: 'fix-checks:mount-web',
-    kind: 'fix-checks',
-    payload: { mountId: WEB_MOUNT_ID, projectName: 'web', prNumber: 618 },
-  },
-  'push-branch': {
-    ...suggestionBase,
-    id: 'push-branch:mount-web',
-    kind: 'push-branch',
-    payload: {
-      mountId: WEB_MOUNT_ID,
-      projectId: WEB_ID,
-      projectName: 'web',
-      branch: 'feature/web',
-      worktreePath: '/tmp/web',
-      state: 'ahead',
-      ahead: 1,
-      behind: 0,
-    },
-  },
-  'open-pr': {
-    ...suggestionBase,
-    id: 'open-pr:mount-web',
-    kind: 'open-pr',
-    payload: {
-      mountId: WEB_MOUNT_ID,
-      projectId: WEB_ID,
-      projectName: 'web',
-      branch: 'feature/web',
-      worktreePath: '/tmp/web',
-      ahead: 1,
-      scribe: null,
-      targets: [],
-    },
-  },
-  'mark-ready': {
-    ...suggestionBase,
-    id: 'mark-ready:mount-web',
-    kind: 'mark-ready',
-    payload: { mountId: WEB_MOUNT_ID, projectName: 'web', prNumber: 618 },
-  },
-  'merge-pr': {
-    ...suggestionBase,
-    id: 'merge-pr:mount-web',
-    kind: 'merge-pr',
-    payload: {
-      mountId: WEB_MOUNT_ID,
-      projectName: 'web',
-      prNumber: 618,
-      defaultMethod: 'squash',
-    },
-  },
-  'check-changes': {
-    ...suggestionBase,
-    id: 'check-changes:agent-1',
-    kind: 'check-changes',
-    payload: { agentId: AGENT_ID },
-  },
-  'close-worktree': {
-    ...suggestionBase,
-    id: 'close-worktree:mount-web',
-    kind: 'close-worktree',
-    payload: {
-      worktrees: [
-        {
-          mountId: WEB_MOUNT_ID,
-          requestId: 'cleanup:mount-web',
-          branch: 'feature/web',
-          prNumber: null,
-        },
-      ],
-    },
-  },
-  'continue-with-workflow': {
-    ...suggestionBase,
-    id: 'continue-with-workflow:agent-1',
-    kind: 'continue-with-workflow',
-    payload: { workflowId: 'workflow-1' as WorkflowId, workflowName: 'Plan and ship' },
-  },
-} satisfies { readonly [K in SuggestionKind]: Extract<SessionSuggestion, { readonly kind: K }> };
+const EVERY_KIND = everySuggestionKind({
+  sessionId: SESSION_ID,
+  runId: RUN_ID,
+  stepId: STEP_ID,
+  agentId: AGENT_ID,
+  webId: WEB_ID,
+  webMountId: WEB_MOUNT_ID,
+});
 
 describe('every suggestion kind', () => {
   it.each(SUGGESTION_KINDS.filter((kind) => kind !== 'fix-checks'))(
@@ -1145,6 +1034,25 @@ describe('every suggestion kind', () => {
     },
   );
 
+  it('archives the session on one click, through the shared archive with its Undo', async () => {
+    const actions = actionsFor({ suggestion: EVERY_KIND['archive-session'] });
+
+    expect(actions.primary?.label).toBe('Archive');
+    expect(actions.primary?.requiresConfirm).toBeUndefined();
+    await actions.primary?.run();
+
+    expect(spies.archiveSessions).toHaveBeenCalledWith(
+      expect.objectContaining({ sessions: [SESSION], showToast: spies.showToast }),
+    );
+  });
+
+  it('fails loudly when the archive leaves the session where it was', async () => {
+    spies.archiveSessions.mockResolvedValueOnce({ archived: [], failed: [SESSION] });
+    const actions = actionsFor({ suggestion: EVERY_KIND['archive-session'] });
+
+    await expect(actions.primary?.run()).rejects.toThrow('The session stays where it was.');
+  });
+
   it('resumes every agent the restart stopped in one action', async () => {
     const actions = actionsFor({ suggestion: EVERY_KIND['resume-agents'] });
 
@@ -1155,7 +1063,11 @@ describe('every suggestion kind', () => {
   });
 
   it('hands a failed push back as a rejection so the row logs it once', async () => {
-    spies.pushSessionBranch.mockResolvedValueOnce({ ok: false, error: 'rejected' } as never);
+    spies.pushBranch.mockResolvedValueOnce({
+      ok: false,
+      error: 'rejected',
+      reason: 'failed',
+    } as never);
     const actions = actionsFor({ suggestion: EVERY_KIND['push-branch'] });
 
     await expect(actions.primary?.run()).rejects.toThrow('rejected');

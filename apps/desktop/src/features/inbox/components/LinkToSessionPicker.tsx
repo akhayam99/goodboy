@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
-import { Listbox, type ListboxOption } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
+
 import { useAppStore } from '../../../store';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import type { LaunchExternalTask } from '../launchSpecFor';
 
 type Props = {

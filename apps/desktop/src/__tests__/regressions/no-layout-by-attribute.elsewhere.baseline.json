@@ -1,0 +1,10 @@
+{
+  "apps/desktop/src/app/components/MockScene/scenes/u23/frame.test.tsx": 4,
+  "apps/desktop/src/app/components/MockScene/scenes/u25/r4-layout.test.tsx": 4,
+  "apps/desktop/src/app/components/StudioFrame/index.test.tsx": 3,
+  "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/index.test.tsx": 1,
+  "apps/desktop/src/features/branch/components/BranchPage/index.test.tsx": 3,
+  "apps/desktop/src/features/settings/components/GuideStudio/index.test.tsx": 1,
+  "packages/ui/src/__tests__/FormActions.test.tsx": 1,
+  "packages/ui/src/components/PaneShell/PageHeader.test.tsx": 2
+}

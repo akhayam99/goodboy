@@ -1,4 +1,4 @@
-import type { IssueTypeValue } from '../../../features/settings/reportIssueTypes';
+import type { IssueTypeValue } from '../../../features/bug-report/reportIssueTypes';
 import type { GetFn, SetFn } from './types';
 
 export type Params = {

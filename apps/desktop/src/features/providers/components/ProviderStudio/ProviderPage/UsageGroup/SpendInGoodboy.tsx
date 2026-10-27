@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { ProviderBudgetStatus, ProviderId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Button, cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Button, cn, formatUsd, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import { ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../../../../../store';
 import { openImpactStudio } from '../../../../../impact/openImpactStudio';
@@ -10,7 +10,6 @@ import {
   budgetResetLabel,
   budgetScopeNote,
 } from '../../../../../budget/providerBudgetView';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -45,7 +44,7 @@ export const SpendInGoodboy = ({ providerId, hasImpactLink }: Props) => {
   return (
     <section
       aria-label="Spend in Goodboy"
-      className={cn(BAND_ROW_CLASS, 'flex-wrap gap-x-4 bg-muted text-label')}
+      className={cn(BAND_ROW_CLASS, 'flex-wrap gap-x-4 bg-muted text-meta')}
     >
       {status === null || text === null ? null : (
         <Tooltip content={budgetScopeNote({ status })}>

@@ -1,8 +1,16 @@
 import { CircleDollarSign } from 'lucide-react';
-import { AnchoredPopover, Button, cn, formatUsd, PopoverBody, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  cn,
+  formatUsd,
+  ICON_SIZE,
+  PopoverBody,
+  useDropdown,
+  FOCUS_RING,
+} from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { useRunSpendUsd } from '../../../../store/slices/sessions/selectors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { RunLimitFields } from '../RunSettingsLine/RunLimitFields';
 import { useRunLimitDraft } from '../RunSettingsLine/useRunLimitDraft';
 
@@ -13,8 +21,10 @@ type Props = {
   readonly buttonVariant?: 'primary' | 'secondary';
 };
 
-const FOOT_TRIGGER =
-  'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const FOOT_TRIGGER = cn(
+  'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const RunSpendLimitPopover = ({
   sessionId,
@@ -58,7 +68,8 @@ export const RunSpendLimitPopover = ({
             aria-expanded={open}
             data-testid="run-spend-limit-trigger"
             className={cn(
-              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-meta motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-meta motion-safe:transition-colors',
+              FOCUS_RING,
               limitUsd == null
                 ? 'text-faint-foreground hover:bg-hover hover:text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',

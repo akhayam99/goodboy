@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 
 type Params = {
   readonly isCollapsed: boolean;

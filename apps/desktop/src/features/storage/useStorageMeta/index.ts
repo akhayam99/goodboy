@@ -2,7 +2,7 @@ import { useAppStore, useWorkspaces } from '../../../store';
 import { resolveStorageScope } from '../resolveStorageScope';
 import { storageMetaOf } from '../storageMetaOf';
 import { storageTotalBytes } from '../storageTotalBytes';
-import { useStorageSummary } from '../useStorageSummary';
+import { useStorageSummary } from '../hooks/useStorageSummary';
 
 export const useStorageMeta = (): string | undefined => {
   const stats = useAppStore((state) => state.storageStats);

@@ -6,11 +6,32 @@ use crate::proc::probe;
 
 const TEST_TIMEOUT: Duration = Duration::from_secs(15);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectionOutcome {
+    Answered,
+    TimedOut,
+    Empty,
+    Unsupported,
+    Refused,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ConnectionTestResult {
     pub ok: bool,
     pub millis: u128,
+    pub outcome: ConnectionOutcome,
+    pub secs: Option<u64>,
     pub detail: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Probed {
+    Answered,
+    TimedOut { secs: u64 },
+    Empty,
+    Unsupported,
+    Refused { detail: String },
 }
 
 fn has_model(output: &str) -> bool {
@@ -43,36 +64,50 @@ fn has_model(output: &str) -> bool {
     false
 }
 
-fn cursor_test(binary: &str, timeout: Duration) -> Result<String, String> {
+fn cursor_test(binary: &str, timeout: Duration) -> Probed {
     let mut command = crate::path_env::command(binary);
     command.arg("models");
     crate::aux_spawn::scrub_nested_session_env(&mut command);
-    let output = probe::run(command, Instant::now() + timeout).map_err(|e| e.to_string())?;
+    let output = match probe::run(command, Instant::now() + timeout) {
+        Ok(output) => output,
+        Err(error) => {
+            return Probed::Refused {
+                detail: error.to_string(),
+            }
+        }
+    };
     if output.timed_out {
-        return Err("Probe timed out after 15 seconds".to_string());
+        return Probed::TimedOut {
+            secs: timeout.as_secs(),
+        };
     }
     if output.code == Some(0) && has_model(&output.stdout) {
-        return Ok("Models answered".to_string());
+        return Probed::Answered;
     }
     let detail = output.primary_text();
     if detail.is_empty() {
-        return Err("Cursor returned no models".to_string());
+        return Probed::Empty;
     }
-    Err(super::strip_ansi(detail))
+    Probed::Refused {
+        detail: super::strip_ansi(detail),
+    }
 }
 
-fn result_of(started: Instant, result: Result<String, String>) -> ConnectionTestResult {
-    match result {
-        Ok(detail) => ConnectionTestResult {
-            ok: true,
-            millis: started.elapsed().as_millis(),
-            detail,
-        },
-        Err(detail) => ConnectionTestResult {
-            ok: false,
-            millis: started.elapsed().as_millis(),
-            detail,
-        },
+fn result_of(started: Instant, probed: Probed) -> ConnectionTestResult {
+    let millis = started.elapsed().as_millis();
+    let (outcome, secs, detail) = match probed {
+        Probed::Answered => (ConnectionOutcome::Answered, None, String::new()),
+        Probed::TimedOut { secs } => (ConnectionOutcome::TimedOut, Some(secs), String::new()),
+        Probed::Empty => (ConnectionOutcome::Empty, None, String::new()),
+        Probed::Unsupported => (ConnectionOutcome::Unsupported, None, String::new()),
+        Probed::Refused { detail } => (ConnectionOutcome::Refused, None, detail),
+    };
+    ConnectionTestResult {
+        ok: outcome == ConnectionOutcome::Answered,
+        millis,
+        outcome,
+        secs,
+        detail,
     }
 }
 
@@ -83,17 +118,23 @@ pub async fn provider_test_connection(provider_id: String) -> ConnectionTestResu
         "cursor" => {
             tauri::async_runtime::spawn_blocking(|| cursor_test("cursor-agent", TEST_TIMEOUT))
                 .await
-                .unwrap_or_else(|e| Err(e.to_string()))
+                .unwrap_or_else(|e| Probed::Refused {
+                    detail: e.to_string(),
+                })
         }
-        "anthropic" => crate::usage_probe::claude_usage_probe()
-            .await
-            .map(|_| "Usage answered".to_string())
-            .map_err(|e| e.to_string()),
-        "codex" => crate::codex_app_server::codex_rate_limits_probe(false)
-            .await
-            .map(|_| "Limits answered".to_string())
-            .map_err(|e| e.to_string()),
-        _ => Err("This provider has no account test".to_string()),
+        "anthropic" => match crate::usage_probe::claude_usage_probe().await {
+            Ok(_) => Probed::Answered,
+            Err(error) => Probed::Refused {
+                detail: error.to_string(),
+            },
+        },
+        "codex" => match crate::codex_app_server::codex_rate_limits_probe(false).await {
+            Ok(_) => Probed::Answered,
+            Err(error) => Probed::Refused {
+                detail: error.to_string(),
+            },
+        },
+        _ => Probed::Unsupported,
     };
     result_of(started, result)
 }
@@ -123,6 +164,7 @@ mod tests {
             cursor_test(&fake.binary("cursor-agent"), TEST_TIMEOUT),
         );
         assert!(!result.ok);
+        assert_eq!(result.outcome, ConnectionOutcome::Refused);
         assert!(result.detail.contains("Not logged in"));
     }
 
@@ -131,7 +173,11 @@ mod tests {
         let fake = FakeCli::stage("slow");
         let binary = fake.binary("cursor-agent");
         let result = cursor_test(&binary, Duration::from_millis(1500));
-        assert!(result.expect_err("timeout").contains("timed out"));
+        assert_eq!(result, Probed::TimedOut { secs: 1 });
+        let reported = result_of(Instant::now(), result);
+        assert_eq!(reported.outcome, ConnectionOutcome::TimedOut);
+        assert_eq!(reported.secs, Some(1));
+        assert!(reported.detail.is_empty());
         let pid = std::fs::read_to_string(
             std::path::Path::new(&binary)
                 .parent()

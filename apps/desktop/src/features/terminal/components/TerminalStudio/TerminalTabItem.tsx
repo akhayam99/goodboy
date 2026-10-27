@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react';
-import { Chip, IconButton, StateDot, cn } from '@goodboy/ui';
+import { Chip, IconButton, StateDot, Tooltip, cn } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { CloseTerminal } from './CloseTerminal';
 import { TerminalRowName } from './TerminalRowName';
@@ -58,11 +58,15 @@ export const TerminalTabItem = ({
         onSelect={onSelect}
         onRename={onRename}
       />
+      {isBusyNow && command !== null && command !== tab.title ? (
+        <Tooltip content={command}>
+          <span className="min-w-0 shrink truncate text-code text-faint-foreground">{command}</span>
+        </Tooltip>
+      ) : null}
       {isExited ? (
         <Chip
           tone="danger"
           kind="state"
-          size="3xs"
           label={tab.openError === undefined ? 'exited' : 'failed'}
         />
       ) : null}

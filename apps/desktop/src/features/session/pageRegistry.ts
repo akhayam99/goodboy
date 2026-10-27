@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { LensKind } from '../../store';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../shared/keyboard/registry';
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { LensDestination } from './lens-destinations';
 import { LENS_ICON, LENS_LABEL, lensLabelFor } from './lens-labels';
 import type { CountedPageId } from './pageCountWord';

@@ -42,7 +42,8 @@ const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/;
 const OLIST_RE = /^(\s*)(\d+)\.\s+(.*)$/;
 const QUOTE_RE = /^>\s?(.*)$/;
 const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
-const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
+const TABLE_DIVIDER_CELL_RE = /^:?-{2,}:?$/;
+const MAX_CALLOUT_DEPTH = 6;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
 const TREE_RE = /[├└│┌┐┘┤┬┼]/;
 const PAGEBREAK_RE = /^<<page-?break>>\s*$/i;
@@ -111,9 +112,10 @@ const COMPARE_LABEL_RE = /^(before|after)\s*:\s*(.*)$/i;
 
 type CompareParams = {
   readonly content: string;
+  readonly depth: number;
 };
 
-const compareBlock = ({ content }: CompareParams): Block => {
+const compareBlock = ({ content, depth }: CompareParams): Block => {
   const before: string[] = [];
   const after: string[] = [];
   let side: 'before' | 'after' | null = null;
@@ -138,25 +140,31 @@ const compareBlock = ({ content }: CompareParams): Block => {
 
   return {
     kind: 'compare',
-    before: parseBlocks(before.join('\n').trim()),
-    after: parseBlocks(after.join('\n').trim()),
+    before: parseBlocks({ input: before.join('\n').trim(), depth }),
+    after: parseBlocks({ input: after.join('\n').trim(), depth }),
   };
 };
 
 type CalloutParams = {
   readonly tag: string;
   readonly content: string;
+  readonly depth: number;
 };
 
-const calloutBlock = ({ tag, content }: CalloutParams): Block => {
+const calloutBlock = ({ tag, content, depth }: CalloutParams): Block => {
   if (tag.toLowerCase() === 'compare') {
-    return compareBlock({ content });
+    return compareBlock({ content, depth: depth + 1 });
   }
   const kit = kitTagFor({ tag });
   if (kit !== null) {
     return parseKitBlock({ tag: kit, content });
   }
-  return { kind: 'callout', tag, content, blocks: parseBlocks(content) };
+  return {
+    kind: 'callout',
+    tag,
+    content,
+    blocks: parseBlocks({ input: content, depth: depth + 1 }),
+  };
 };
 
 const TASK_RE = /^\[([ xX~-])\](?:\s+([\s\S]*))?$/;
@@ -219,6 +227,13 @@ function splitTableCells(line: string): ReadonlyArray<string> {
   return trimmed.split('|').map((c) => c.trim());
 }
 
+type DividerParams = {
+  readonly line: string;
+};
+
+const isTableDivider = ({ line }: DividerParams): boolean =>
+  splitTableCells(line).every((cell) => TABLE_DIVIDER_CELL_RE.test(cell));
+
 function parseAlign(divider: string): ReadonlyArray<CellAlign> {
   return splitTableCells(divider).map((c) => {
     const left = c.startsWith(':');
@@ -271,7 +286,7 @@ const startsBlock = ({ line, nextLine }: BlockStartParams): boolean =>
   QUOTE_RE.test(line) ||
   PAGEBREAK_RE.test(line) ||
   CALLOUT_OPEN_RE.test(line) ||
-  (TABLE_ROW_RE.test(line) && TABLE_DIVIDER_RE.test(nextLine));
+  (TABLE_ROW_RE.test(line) && isTableDivider({ line: nextLine }));
 
 type CollectParams = {
   readonly raws: ReadonlyArray<RawListItem>;
@@ -390,7 +405,12 @@ const stripHtml = (input: string): string => {
   return out.replace(/&nbsp;/g, ' ');
 };
 
-function parseBlocks(input: string): ReadonlyArray<Block> {
+type BlocksParams = {
+  readonly input: string;
+  readonly depth: number;
+};
+
+const parseBlocks = ({ input, depth }: BlocksParams): ReadonlyArray<Block> => {
   const lines = input.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
   let i = 0;
@@ -435,7 +455,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
     if (
       TABLE_ROW_RE.test(line) &&
       i + 1 < lines.length &&
-      TABLE_DIVIDER_RE.test(lines[i + 1] ?? '')
+      isTableDivider({ line: lines[i + 1] ?? '' })
     ) {
       const headers = splitTableCells(line);
       const align = parseAlign(lines[i + 1] ?? '');
@@ -455,7 +475,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    const calloutOpen = line.match(CALLOUT_OPEN_RE);
+    const calloutOpen = depth < MAX_CALLOUT_DEPTH ? line.match(CALLOUT_OPEN_RE) : null;
     if (calloutOpen) {
       const tag = calloutOpen[1]!;
       const closeRe = new RegExp(`<{1,2}/${tag}>>?`);
@@ -465,7 +485,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       if (firstClose && firstClose.index !== undefined) {
         buf.push(firstLineRest.slice(0, firstClose.index));
         i++;
-        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim() }));
+        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim(), depth }));
         continue;
       }
       if (firstLineRest.length > 0) {
@@ -490,7 +510,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         i++;
       }
       if (closed || buf.length > 0) {
-        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim() }));
+        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim(), depth }));
         continue;
       }
     }
@@ -573,7 +593,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   }
 
   return blocks;
-}
+};
 
 const toSections = (blocks: ReadonlyArray<Block>): ReadonlyArray<ReadonlyArray<Block>> => {
   const sections: Block[][] = [];
@@ -608,6 +628,6 @@ type MarkdownParams = {
 };
 
 export const parseMarkdown = ({ text }: MarkdownParams): MarkdownDocument => {
-  const blocks = parseBlocks(stripHtml(text));
+  const blocks = parseBlocks({ input: stripHtml(text), depth: 0 });
   return { blocks, sections: toSections(blocks) };
 };

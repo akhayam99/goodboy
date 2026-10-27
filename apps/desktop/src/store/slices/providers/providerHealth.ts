@@ -1,4 +1,5 @@
 import type { ProviderHealthStanding, ProviderId } from '@goodboy/types';
+import { authReasonSentence } from '../../../features/providers/authReasonSentence';
 import type { AuthState, ProviderStatus } from '../../../features/providers/providers';
 
 const PROBE_FAILURE_WINDOW_MS = 10 * 60_000;
@@ -24,7 +25,7 @@ type ProbeOutcomeKind = ProbeOutcome['kind'];
 
 export type RunOutcome = 'accepted' | 'refused';
 
-export type HealthEvidence = {
+type HealthEvidence = {
   readonly localTokens: boolean;
   readonly serverAccepted: boolean;
   readonly lastProbeAt: number | null;
@@ -399,7 +400,10 @@ export const probeOutcomeOf = ({
     };
   }
   if (auth === null || auth.state === 'unknown') {
-    return { kind: 'no_answer', reason: auth?.reason ?? null };
+    return {
+      kind: 'no_answer',
+      reason: auth?.reason == null ? null : authReasonSentence({ reason: auth.reason }),
+    };
   }
   if (auth.state === 'disconnected') {
     return { kind: 'signed_out' };

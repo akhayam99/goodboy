@@ -1,6 +1,10 @@
 import { WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core';
 import type { Agent, IsoDateTime, Session, SessionArtifact, TurnEvent } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
+import {
+  lastAssistantMessage,
+  type AssistantMessage,
+} from '../../shared/utils/lastAssistantMessage';
 import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief, formatBriefCount } from '../artifacts/artifactBrief';
 import {
   artifactAttachmentsSection,
@@ -74,36 +78,9 @@ export type WireframeContext = Readonly<{
   inventory: ReadonlyArray<ArtifactContextInventoryRow>;
 }>;
 
-const isAssistantTextEvent = (
-  event: TurnEvent,
-): event is Extract<TurnEvent, { kind: 'assistant_text' }> => event.kind === 'assistant_text';
-
-type AgentMessage = Readonly<{ text: string; at: IsoDateTime }>;
-
-const lastAssistantMessage = ({
-  events,
-}: {
-  readonly events: ReadonlyArray<TurnEvent>;
-}): AgentMessage | null => {
-  const assistantEvents = events.filter(isAssistantTextEvent);
-  const lastEvent = assistantEvents[assistantEvents.length - 1];
-  if (lastEvent === undefined) {
-    return null;
-  }
-  const joined = assistantEvents
-    .filter((event) => event.runId === lastEvent.runId)
-    .map((event) => event.delta)
-    .join('');
-  const trimmed = joined.trim();
-  if (trimmed.length === 0) {
-    return null;
-  }
-  return { text: trimmed, at: lastEvent.at };
-};
-
 type PreparedAgents = Readonly<{
   kept: ReadonlyArray<Agent>;
-  messages: ReadonlyMap<string, AgentMessage | null>;
+  messages: ReadonlyMap<string, AssistantMessage | null>;
   candidates: ReadonlyArray<ReportAgentCandidate>;
   total: number;
 }>;
@@ -127,7 +104,7 @@ const prepareAgents = ({
       `agents: kept the last ${kept.length} of ${ordered.length}; earlier agents are missing`,
     );
   }
-  const messages = new Map<string, AgentMessage | null>();
+  const messages = new Map<string, AssistantMessage | null>();
   kept.forEach((agent) => {
     const message = lastAssistantMessage({ events: transcripts[agent.id] ?? [] });
     messages.set(

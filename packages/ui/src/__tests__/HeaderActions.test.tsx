@@ -12,15 +12,15 @@ afterEach(() => {
 });
 
 const TWO = [
-  { kind: 'item' as const, key: 'one', label: 'One', onClick: vi.fn() },
-  { kind: 'item' as const, key: 'two', label: 'Two', onClick: vi.fn() },
+  { kind: 'item' as const, key: 'one', label: 'One', onSelect: vi.fn() },
+  { kind: 'item' as const, key: 'two', label: 'Two', onSelect: vi.fn() },
 ];
 
 describe('HeaderActions', () => {
   it('draws secondary, button, primary and overflow in that order whatever the props order', () => {
     render(
       <HeaderActions
-        overflow={<OverflowMenu items={TWO} size="control" />}
+        overflow={<OverflowMenu entries={TWO} size="control" />}
         primary={<Button variant="primary">Merge</Button>}
         button={<Button variant="secondary">Abort</Button>}
         secondary={<input aria-label="Filter" />}
@@ -54,7 +54,7 @@ describe('HeaderActions', () => {
   it('draws no overflow content for an overflow without items', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
-      <HeaderActions primary={<Button>Merge</Button>} overflow={<OverflowMenu items={[]} />} />,
+      <HeaderActions primary={<Button>Merge</Button>} overflow={<OverflowMenu entries={[]} />} />,
     );
 
     const slot = document.querySelector('[data-slot="header-actions-overflow"]');
@@ -65,7 +65,7 @@ describe('HeaderActions', () => {
 
   it('hides the whole group when its only content renders nothing', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(<HeaderActions overflow={<OverflowMenu items={[]} />} />);
+    render(<HeaderActions overflow={<OverflowMenu entries={[]} />} />);
 
     const group = document.querySelector('[data-slot="header-actions"]');
     expect(group?.className).toContain('hidden');
@@ -78,7 +78,7 @@ describe('HeaderActions', () => {
         secondary={<span>filter</span>}
         button={<Button variant="secondary">Abort</Button>}
         primary={<Button variant="primary">Merge</Button>}
-        overflow={<OverflowMenu items={TWO} size="control" />}
+        overflow={<OverflowMenu entries={TWO} size="control" />}
       />,
     );
 

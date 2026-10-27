@@ -20,10 +20,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/features/diff/components/DiffView/CommentComposer.tsx': {
-    count: 1,
-    reason: 'diff-comment',
-  },
   'apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx': {
     count: 1,
     reason: 'diff-comment',
@@ -117,7 +113,7 @@ describe('a tone is an inner line, never an outer edge', () => {
       .map(([path, count]) => `${path}: ${count} (allowed ${ALLOWED[path]?.count ?? 0})`);
     expect(
       offenders,
-      `A tone on a card is one inner line: render a Notice, or a ToneBar inside the padding (DESIGN-SYSTEM.md, Notices). An outer left edge is only for a quote rail:\n${offenders.join('\n')}`,
+      `A tone on a card is one inner line: render a Notice, or a ToneBar inside the padding (packages/ui/design/feedback.md, Notices). An outer left edge is only for a quote rail:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 

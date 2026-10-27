@@ -200,9 +200,6 @@ const seedShellChrome = () => {
         binary: 'claude',
         capabilities: {
           models: [],
-          supportsTools: true,
-          supportsStream: true,
-          supportsCheapModel: true,
         },
         connection: 'connected',
         version: '1.0.0',

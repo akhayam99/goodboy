@@ -11,7 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { AgentKind } from '../features/session/agent-kind';
-import { SETTING_CONTEXT_LEARNINGS, SETTING_CONTEXT_ROLE_MAP } from '../features/settings/settings';
+import { SETTING_CONTEXT_LEARNINGS } from '../features/settings/settings';
 import { learningQueues } from './slices/turn/learningQueue';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import {
@@ -241,13 +241,13 @@ describe('role context on sqlite', () => {
     expect(prompt).not.toContain(NOTE);
   });
 
-  it('goes back to the kind map with context.roleMap off', async () => {
-    useAppStore.setState({ settings: { [SETTING_CONTEXT_ROLE_MAP]: 'false' } });
+  it('starts from the old shape: a stored context.roleMap of false no longer switches the role map off', async () => {
+    useAppStore.setState({ settings: { 'context.roleMap': 'false' } });
 
     const prompt = await promptOf(await startSession({ kind: 'reviewer' }));
 
-    expect(prompt).not.toContain(NOTE);
-    expect(prompt).not.toContain(DECISION);
+    expect(prompt).toContain(NOTE);
+    expect(prompt).toContain(DECISION);
   });
 });
 

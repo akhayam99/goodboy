@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import type { ProjectId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { hostPollDelayMs } from '../../../../shared/utils/hostPollDelayMs';
 
-const POLL_MS = 60_000;
-const SLOW_POLL_MS = 300_000;
 const FOCUS_DEBOUNCE_MS = 400;
-const SLOW_AFTER_UNREACHABLE = 3;
 
 type Params = {
   readonly projectId: ProjectId | null;
@@ -29,8 +27,6 @@ export const useBootstrapWatch = ({ projectId, enabled }: Params): void => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let focusTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const delay = (): number => (unreachable >= SLOW_AFTER_UNREACHABLE ? SLOW_POLL_MS : POLL_MS);
-
     const check = async (): Promise<void> => {
       const probe = await probeProjectRemote({ projectId });
       if (stopped) {
@@ -50,7 +46,7 @@ export const useBootstrapWatch = ({ projectId, enabled }: Params): void => {
             schedule();
           }
         });
-      }, delay());
+      }, hostPollDelayMs({ unreachable }));
     };
 
     const onFocus = (): void => {

@@ -97,7 +97,9 @@ describe('isBudgetBlocked', () => {
     expect(
       isBudgetBlocked({
         alerts: [budgetAlert({ sessionId: SESSION_ID })],
-        budgets: { [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' } },
+        budgets: {
+          [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn', warnRatio: 0.8 },
+        },
         sessionId: SESSION_ID,
       }),
     ).toBe(false);
@@ -116,7 +118,7 @@ describe('isBudgetBlocked', () => {
     };
     state['loadSessionBudget'] = vi.fn(async () => {
       state['sessionBudgets'] = {
-        [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' },
+        [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn', warnRatio: 0.8 },
       };
     });
 
@@ -161,6 +163,28 @@ describe('resolveSpendLimitStop', () => {
     const { get } = stateWith(2);
 
     expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') })).toBe(null);
+  });
+
+  it('stops a run whose spend equals its limit exactly', () => {
+    const { get } = stateWith(5);
+
+    expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') })?.kind).toBe(
+      'pause',
+    );
+  });
+
+  it('stays silent one cent under its limit', () => {
+    const { get } = stateWith(4.99);
+
+    expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') })).toBe(null);
+  });
+
+  it('stops a run with a limit of zero before it spends anything', () => {
+    const { get } = stateWith(0);
+
+    expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(0, 'pause') })?.kind).toBe(
+      'pause',
+    );
   });
 
   it('stays silent for a run without a limit', () => {

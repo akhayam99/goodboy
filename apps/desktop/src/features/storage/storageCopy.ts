@@ -32,9 +32,10 @@ const filesNotCommitted = ({ count }: CountParams): string =>
 
 type StatusParams = FolderParams & {
   readonly status: StorageFolderStatus;
+  readonly liveTerminals: number;
 };
 
-export const folderStatusLabel = ({ folder, status }: StatusParams): string => {
+export const folderStatusLabel = ({ folder, status, liveTerminals }: StatusParams): string => {
   switch (status) {
     case 'in-use':
       return 'In use';
@@ -42,6 +43,10 @@ export const folderStatusLabel = ({ folder, status }: StatusParams): string => {
       return 'Checking…';
     case 'safe':
       return 'Safe to remove';
+    case 'terminal-open':
+      return liveTerminals === 1
+        ? 'A terminal is open here'
+        : `${liveTerminals} terminals open here`;
     case 'dirty':
       return filesNotCommitted({ count: Math.max(1, folder.facts?.changedFiles ?? 1) });
     case 'writing':

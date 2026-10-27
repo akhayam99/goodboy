@@ -1,6 +1,6 @@
-import { SectionHeader } from '@goodboy/ui';
+import { ICON_SIZE, SectionHeader } from '@goodboy/ui';
 import type { BranchCommit, FileDiff } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { MountDiffStat } from '../../../../store';
@@ -11,7 +11,7 @@ type Props = {
   readonly stat: MountDiffStat | null;
 };
 
-const ROW = 'flex min-h-7 min-w-0 items-center gap-3 text-label';
+const ROW = 'flex min-h-7 min-w-0 items-center gap-3 text-meta';
 
 type CountParams = {
   readonly count: number;

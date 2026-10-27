@@ -2,7 +2,10 @@ import type { Session, SessionStageInfo, TurnState } from '@goodboy/types';
 import { latestStampMs } from './latestStampMs';
 import { INACTIVE_AFTER_MS, RECENTLY_OPENED_MS } from './types';
 
-type InactivityStageInfo = Pick<SessionStageInfo, 'stage' | 'attention' | 'otherReasons'> & {
+type InactivityStageInfo = Pick<
+  SessionStageInfo,
+  'stage' | 'attention' | 'otherReasons' | 'prState'
+> & {
   readonly isRunning?: boolean;
 };
 
@@ -20,6 +23,8 @@ type Params = {
   readonly isQueued: boolean;
   readonly hasDraft: boolean;
   readonly seenActivityAt: number | null;
+  readonly requestEndedAt?: number | null;
+  readonly personTurnAt?: number | null;
 };
 
 type StateParams = {
@@ -50,6 +55,20 @@ const stateStampOf = ({ state }: StateParams): string | null => {
   }
 };
 
+const RESUME_GRACE_MS = 5 * 60_000;
+
+type SettledParams = {
+  readonly info: InactivityStageInfo;
+  readonly requestEndedAt: number | null;
+  readonly personTurnAt: number | null;
+};
+
+const isSettledByRequest = ({ info, requestEndedAt, personTurnAt }: SettledParams): boolean =>
+  info.stage === 'done' &&
+  (info.prState === 'merged' || info.prState === 'closed') &&
+  requestEndedAt !== null &&
+  (personTurnAt === null || personTurnAt <= requestEndedAt + RESUME_GRACE_MS);
+
 const isQuiet = ({ info }: QuietParams): boolean =>
   info.stage !== 'attention' &&
   info.stage !== 'running' &&
@@ -57,18 +76,13 @@ const isQuiet = ({ info }: QuietParams): boolean =>
   info.attention === null &&
   (info.otherReasons ?? []).length === 0;
 
-export const sessionInactivityOf = ({
-  session,
-  info,
-  now,
-  isPinned,
-  isCurrent,
-  isQueued,
-  hasDraft,
-  seenActivityAt,
-}: Params): SessionInactivity => {
-  const openedAt = latestStampMs({ stamps: [session.lastOpenedAt] });
-  const lastActivityAt = latestStampMs({
+type ActivityParams = {
+  readonly session: Session;
+  readonly seenActivityAt: number | null;
+};
+
+export const sessionLastActivityMs = ({ session, seenActivityAt }: ActivityParams): number | null =>
+  latestStampMs({
     stamps: [
       session.createdAt,
       session.updatedAt,
@@ -81,6 +95,21 @@ export const sessionInactivityOf = ({
       seenActivityAt,
     ],
   });
+
+export const sessionInactivityOf = ({
+  session,
+  info,
+  now,
+  isPinned,
+  isCurrent,
+  isQueued,
+  hasDraft,
+  seenActivityAt,
+  requestEndedAt = null,
+  personTurnAt = null,
+}: Params): SessionInactivity => {
+  const openedAt = latestStampMs({ stamps: [session.lastOpenedAt] });
+  const lastActivityAt = sessionLastActivityMs({ session, seenActivityAt });
   const active: SessionInactivity = { isInactive: false, lastActivityAt };
   if (isPinned || isCurrent || isQueued || hasDraft) {
     return active;
@@ -90,6 +119,9 @@ export const sessionInactivityOf = ({
   }
   if (openedAt !== null && now - openedAt <= RECENTLY_OPENED_MS) {
     return active;
+  }
+  if (isSettledByRequest({ info, requestEndedAt, personTurnAt })) {
+    return { isInactive: true, lastActivityAt };
   }
   if (lastActivityAt === null || now - lastActivityAt <= INACTIVE_AFTER_MS) {
     return active;

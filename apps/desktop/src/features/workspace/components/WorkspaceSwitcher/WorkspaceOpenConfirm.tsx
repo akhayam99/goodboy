@@ -1,6 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, InlineConfirm } from '@goodboy/ui';
 
 type Props = {
   readonly targetName: string;

@@ -1,7 +1,7 @@
 import type { HiddenModels } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
-import type { ChatRouting } from './chatRouting';
-import { defaultChatModel } from './defaultChatModel';
+import type { ChatRouting } from '../conversation/chatRouting';
+import { defaultChatModel } from '../conversation/defaultChatModel';
 
 type Params = {
   readonly connected: ReadonlyArray<ProviderId>;

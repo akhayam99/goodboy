@@ -156,6 +156,8 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
     mountGitlabMr: {},
     sessionGitlabMr: {},
     recordSessionEventOnce: vi.fn(async () => undefined),
+    hostReachability: {},
+    noteHostAnswer: vi.fn(),
     emitNotification: vi.fn(async () => undefined),
   };
   const set = ((updater: unknown) => {
@@ -176,6 +178,8 @@ const mountMrOf = (state: Record<string, unknown>, mountId: MountId) =>
         mr: GitlabMergeRequest | null;
         mrs: ReadonlyArray<GitlabMergeRequest>;
         error: string | null;
+        fetchedAt: string | null;
+        failedAt: string | null;
       }
     >
   )[mountId];
@@ -321,6 +325,23 @@ describe('refreshSessionMr across mounts', () => {
     expect(mountMrOf(state, M2)?.mr?.iid).toBe(12);
   });
 
+  it('stamps a quiet failure and clears the stamp once the host answers again', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.mrForBranch.mockRejectedValueOnce(new Error('gitlab is down'));
+
+    await refreshSessionMr(set, get)(SESSION_ID, { silent: true });
+
+    expect(mountMrOf(state, M1)?.error).toBeNull();
+    expect(mountMrOf(state, M1)?.failedAt).not.toBeNull();
+    expect(mountMrOf(state, M1)?.fetchedAt).toBeNull();
+
+    h.mrForBranch.mockResolvedValueOnce(makeMr({ iid: 11, branch: 'ak/part-one' }));
+    await refreshSessionMr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountMrOf(state, M1)?.failedAt).toBeNull();
+    expect(mountMrOf(state, M1)?.fetchedAt).not.toBeNull();
+  });
+
   it('keeps polling the sibling mount after the other one merged', async () => {
     const { state, set, get } = harness([
       mountView({ id: M1, branch: 'ak/part-one' }),
@@ -384,9 +405,13 @@ describe('createMrForSession per mount', () => {
       mountView({ id: M1, branch: 'ak/part-one' }),
       mountView({ id: M2, branch: 'ak/part-two' }),
     ]);
-    h.createMr.mockResolvedValue(makeMr({ iid: 12, branch: 'ak/part-two' }));
+    let isCreated = false;
+    h.createMr.mockImplementation(async () => {
+      isCreated = true;
+      return makeMr({ iid: 12, branch: 'ak/part-two' });
+    });
     h.mrForBranch.mockImplementation((async (_ws, _host, _path, branch) =>
-      branch === 'ak/part-two' ? makeMr({ iid: 12, branch }) : null) as ForBranch);
+      isCreated && branch === 'ak/part-two' ? makeMr({ iid: 12, branch }) : null) as ForBranch);
 
     await createMrForSession(set, get)({ sessionId: SESSION_ID, mountId: M2 });
 

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button, ConfirmPopover } from '@goodboy/ui';
+import { TriangleAlert } from 'lucide-react';
+import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAnswerQuestion } from '../../useAnswerQuestion';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { NextAction } from '../../resolveNextAction';
 
 type Props = {
@@ -74,7 +74,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
           </Button>
           <ConfirmPopover
             role="alert"
-            icon={<AlertTriangle size={ICON_SIZE.row} />}
+            icon={<TriangleAlert size={ICON_SIZE.row} />}
             title={`Skip ${action.step.name}?`}
             description={`${action.step.name} is marked Skipped. Its changes stay in the worktree.`}
             confirmLabel="Skip step"

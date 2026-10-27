@@ -1,4 +1,10 @@
-import type { ClaudePermissionMode, IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import {
+  FAIL_CLOSED_PERMISSION_MODE,
+  type ClaudePermissionMode,
+  type IsoDateTime,
+  type Workspace,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { setWorkspacePermissionDefault as setWorkspacePermissionDefaultRow } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
@@ -14,7 +20,7 @@ export const setWorkspacePermissionDefault = (set: SetFn, get: GetFn) => {
     if (workspace == null) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
-    if ((workspace.defaultPermissionMode ?? 'bypassPermissions') === mode) {
+    if ((workspace.defaultPermissionMode ?? FAIL_CLOSED_PERMISSION_MODE) === mode) {
       return workspace;
     }
 

@@ -1,6 +1,6 @@
 import type { MountId } from '@goodboy/types';
 import { pushFailures } from './pushFailures';
-import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOnline';
+import type { OnlineCommit } from '../../../store/runtime/worktreeStatuses/onlyOnline';
 
 type Params = {
   readonly message: string;

@@ -52,6 +52,7 @@ const row = ({ overrides }: RowParams): Notification => ({
   read: false,
   action: null,
   coalesceKey: null,
+  actedAt: null,
   ...overrides,
 });
 

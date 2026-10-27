@@ -1,8 +1,7 @@
-import { StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE, StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import type { AgentStatus } from '@goodboy/types';
 import { describeAgentStatus } from '../../agent-status';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly status: AgentStatus;

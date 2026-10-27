@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { cn, tintClasses, IconButton } from '@goodboy/ui';
+import { Button, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
@@ -58,7 +58,7 @@ export const NudgeCard = ({
   }, [autoFocusPrimary]);
 
   return (
-    <TranscriptShell tone={severity} variant="boxed" emphasis className="relative text-label">
+    <TranscriptShell tone={severity} variant="boxed" emphasis className="relative text-meta">
       <section data-testid={testId} aria-label={ariaLabel} className="flex flex-col gap-2">
         {onDismiss ? (
           <IconButton
@@ -79,43 +79,40 @@ export const NudgeCard = ({
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-0.5">
               <p className="text-body font-medium leading-relaxed text-foreground">{title}</p>
-              {body ? <p className="text-label text-muted-foreground">{body}</p> : null}
+              {body ? <p className="text-meta text-muted-foreground">{body}</p> : null}
             </div>
             {primary || secondary || tertiary ? (
               <div className="flex flex-wrap items-center gap-2">
                 {primary ? (
-                  <button
+                  <Button
                     ref={primaryBtnRef}
-                    type="button"
+                    size="xs"
                     onClick={primary.onClick}
                     data-testid={primary.testId}
-                    className={cn(
-                      'rounded-md px-2 py-0.5 text-meta font-semibold hover:opacity-90',
-                      tint.solid,
-                    )}
+                    className={tint.solid}
                   >
                     {primary.label}
-                  </button>
+                  </Button>
                 ) : null}
                 {secondary ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="xs"
                     onClick={secondary.onClick}
                     data-testid={secondary.testId}
-                    className="rounded-md border border-border px-2 py-0.5 text-chip font-semibold text-foreground hover:bg-hover"
                   >
                     {secondary.label}
-                  </button>
+                  </Button>
                 ) : null}
                 {tertiary ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="quiet"
+                    size="xs"
                     onClick={tertiary.onClick}
                     data-testid={tertiary.testId}
-                    className="rounded-md px-2 py-0.5 text-chip font-semibold text-muted-foreground hover:bg-hover hover:text-foreground"
                   >
                     {tertiary.label}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             ) : null}

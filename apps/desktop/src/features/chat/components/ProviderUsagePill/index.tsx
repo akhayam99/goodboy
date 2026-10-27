@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Gauge } from 'lucide-react';
-import { FactCard, cn } from '@goodboy/ui';
+import { cn, FactCard, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { budgetPctUsed } from '../../../budget/providerBudgetView';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { usageCardOf } from './usageCardOf';
 
 type Props = {

@@ -91,7 +91,7 @@ const mountsOf = ({ id, input, store }: MountParams): ReadonlyArray<SessionProje
 
 export const installIssueStart = ({ store }: Params): void => {
   installBoardActions({ store });
-  const createSession: AppStore['createSession'] = async (input) => {
+  const createSession = (async (input) => {
     const at = nowIso({});
     const id = brandId<SessionId>({ value: `demo-issue-session-${Date.now()}` });
     const session = sessionOf({ id, input, at });
@@ -113,6 +113,6 @@ export const installIssueStart = ({ store }: Params): void => {
       currentSessionId: id,
     }));
     return { session };
-  };
+  }) satisfies AppStore['createSession'];
   store.setState({ createSession });
 };

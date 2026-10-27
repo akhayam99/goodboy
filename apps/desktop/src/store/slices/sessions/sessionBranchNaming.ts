@@ -1,5 +1,5 @@
 import { NO_TASK_BRANCH_TEMPLATE, slugify, trimSlugAtWord, type BranchValues } from '@goodboy/core';
-import { UNTITLED_BASE } from '../../../features/session/sessionTitle';
+import { UNTITLED_BASE } from '../../../shared/utils/sessionTitle';
 
 const SLUG_MAX_LENGTH = 40;
 const UNTITLED_SLUG = 'session';

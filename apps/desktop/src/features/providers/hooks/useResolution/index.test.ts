@@ -31,7 +31,7 @@ const providerInfo = ({
 }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection,
   version: null,
   identity: null,

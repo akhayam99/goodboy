@@ -16,8 +16,8 @@ import {
   REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
 } from '../../resolve/replySettings';
 import { COMMIT_STYLE_LABEL, VOICE_LABEL } from '../../resolve/replySettingsCopy';
-import { NAMES } from '../../../shared/names';
-import { AFTER_MERGE_SHORT_LABEL } from '../components/SettingsStudio/afterMergeCopy';
+import { NAMES } from '../../../shared/utils/names';
+import { AFTER_MERGE_SHORT_LABEL } from '../../../shared/utils/afterMergeCopy';
 import { canonicalWorkflowRules, workflowRulesSummary } from '../../workflows/workflowRulesCopy';
 import { FIELD_PAGE, type WorkspaceSettingField } from '../pageKeys';
 import { DEFAULT_BRANCH_PREFIX } from '../settings';

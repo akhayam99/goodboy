@@ -112,7 +112,7 @@ export const ProjectGroups = ({
             <button
               type="button"
               onClick={() => setIsAllExpanded(true)}
-              className="col-span-full self-start justify-self-start px-2 py-2 text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="col-span-full self-start justify-self-start px-2 py-2 text-meta text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               Show {hiddenCount} more
             </button>

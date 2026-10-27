@@ -7,7 +7,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { ResolverCommitChip } from './ResolverCommitChip';
 import type { ResolverThreadVerdict } from './resolverThreadVerdicts';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly verdict: ResolverThreadVerdict;
@@ -46,7 +46,7 @@ export const ResolverThreadVerdictRow = ({
       <span className="shrink-0 text-meta text-faint-foreground">thread {position}</span>
       <span
         className={cn(
-          'min-w-0 flex-1 text-label text-foreground',
+          'min-w-0 flex-1 text-meta text-foreground',
           isReasonKind({ verdict }) ? 'line-clamp-2' : 'truncate',
         )}
       >
@@ -97,7 +97,7 @@ export const ResolverThreadVerdictRow = ({
     >
       {reply !== null && (
         <div className="flex min-w-0 flex-col gap-2">
-          <Markdown text={reply} className="text-label" />
+          <Markdown text={reply} className="text-meta" />
           {onOpen !== null && (
             <button
               type="button"

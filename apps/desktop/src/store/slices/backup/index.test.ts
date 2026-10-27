@@ -43,6 +43,7 @@ import {
   applyBackupImport,
   chooseBackupImportFile,
   chooseBackupImportProjectParent,
+  setBackupImportWildcardConsent,
   setBackupImportWorkspaceTarget,
 } from './importActions';
 
@@ -98,6 +99,9 @@ beforeEach(() => {
   h.chooseExportFile.mockResolvedValue('/tmp/goodboy-setup.json');
   h.chooseImportFile.mockResolvedValue('/tmp/import.json');
   h.configImportPreview.mockResolvedValue({
+    sha256: 'sha-harborline',
+    allowRules: [],
+    scripts: [],
     manifest: {
       schemaVersion: 3,
       exportedAt: '2026-09-26T00:00:00.000Z',
@@ -214,10 +218,71 @@ describe('backup import', () => {
       path: '/tmp/import.json',
       workspaceTargets: {},
       resolvedProjectPaths: {},
+      expectedSha256: 'sha-harborline',
+      hasWildcardConsent: false,
     });
     expect(store.state.backupImportResult?.ok).toBe(true);
     expect(store.state.backupImportPhase).toBe('done');
     expect(h.listWorkspaces).toHaveBeenCalled();
+  });
+
+  it('sends the wildcard consent only after the person gives it', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: true });
+
+    await applyBackupImport(store.set, store.get)();
+
+    expect(h.configImportApply).toHaveBeenCalledWith(
+      expect.objectContaining({ hasWildcardConsent: true }),
+    );
+  });
+
+  it('drops the wildcard consent when a new preview loads', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    setBackupImportWildcardConsent({ set: store.set })({ isAccepted: true });
+    h.dialogOpen.mockResolvedValueOnce('/new/parent');
+
+    await chooseBackupImportProjectParent(store.set, store.get)();
+
+    expect(store.state.hasBackupImportWildcardConsent).toBe(false);
+  });
+
+  it('keeps the preview and shows the error when the file changed after the preview', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportApply.mockRejectedValueOnce({
+      kind: 'file_changed',
+      message: 'the backup file changed after the preview',
+    });
+
+    await applyBackupImport(store.set, store.get)();
+
+    expect(store.state.backupImportPhase).toBe('error');
+    expect(store.state.backupImportError).toBe('the backup file changed after the preview');
+    expect(store.state.backupImportResult).toBeNull();
+    expect(store.state.backupImportPreview).not.toBeNull();
+    expect(h.listWorkspaces).not.toHaveBeenCalled();
+  });
+
+  it('retries from a fresh preview after the file changed', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportApply.mockRejectedValueOnce({ kind: 'file_changed', message: 'changed' });
+    await applyBackupImport(store.set, store.get)();
+    h.configImportPreview.mockResolvedValueOnce({
+      ...(await h.configImportPreview()),
+      sha256: 'sha-second',
+    });
+
+    await chooseBackupImportFile(store.set, store.get)();
+    await applyBackupImport(store.set, store.get)();
+
+    expect(h.configImportApply).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedSha256: 'sha-second' }),
+    );
+    expect(store.state.backupImportPhase).toBe('done');
   });
 });
 

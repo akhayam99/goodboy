@@ -1,11 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type {
-  BudgetAlert,
-  BudgetRule,
-  ProviderBudgetStatus,
-  ProviderName,
-  SessionId,
-} from '@goodboy/types';
+import type { BudgetAlert, BudgetRule, ProviderBudgetStatus, ProviderName } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,

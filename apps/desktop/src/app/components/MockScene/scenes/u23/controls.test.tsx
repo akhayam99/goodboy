@@ -172,7 +172,7 @@ describe('controls hints', () => {
 
     const row = rowOf('Session tools and Search side by side');
     const ask = within(row).getByTestId('pane-toggle-ask');
-    const search = within(row).getByRole('button', { name: /^Search \(/ });
+    const search = within(row).getByRole('button', { name: /^Search or run \(/ });
     expect(ask.textContent).toBe('');
     expect(ask.getAttribute('aria-label')).toBe('Ask');
     expect(ask.querySelector('kbd')).toBeNull();

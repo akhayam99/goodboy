@@ -238,7 +238,7 @@ describe('useRebaseAgent', () => {
       expect(state.reportError).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Couldn't rebase the branch",
-          action: { kind: 'open-agent', sessionId, agentId: 'agent-1' },
+          recovery: { action: { kind: 'open-agent', sessionId, agentId: 'agent-1' } },
         }),
       ),
     );

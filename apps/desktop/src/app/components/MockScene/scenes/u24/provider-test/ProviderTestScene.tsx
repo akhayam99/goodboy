@@ -21,7 +21,7 @@ const provider: ProviderDisplayInfo = {
   identity: 'mara@harborline.test',
   error: null,
   docsUrl: '',
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
 };
 
 export const ProviderTestScene = () => {
@@ -70,8 +70,14 @@ export const ProviderTestScene = () => {
           isTesting: false,
           result:
             scene === 'providertest-refused'
-              ? { isOk: false, millis: 80, detail: 'Not logged in. Sign in again' }
-              : { isOk: true, millis: 800, detail: 'Models answered' },
+              ? {
+                  isOk: false,
+                  millis: 80,
+                  outcome: 'refused',
+                  secs: null,
+                  detail: 'Not logged in. Sign in again',
+                }
+              : { isOk: true, millis: 800, outcome: 'answered', secs: null, detail: '' },
         },
       },
       refreshProviders: async () => undefined,

@@ -11,7 +11,7 @@ import {
 import {
   OPEN_WIZARD_EVENT,
   type OpenWizardDetail,
-} from '../../../../../features/onboarding/onboarding-store';
+} from '../../../../../features/onboarding/onboardingSettings';
 import {
   SETTLED_MOTION,
   WIZARD_SCENE_AGENTS,
@@ -23,7 +23,7 @@ import {
 import { sampleScoutRuns } from '../onboarding/sampleScoutRuns';
 import { connectDemoTool } from '../onboarding/connectDemoTool';
 import { InstantToolConnectContext } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 import { sceneParam } from './sceneParams';
 
 type PickParams<T extends string> = {

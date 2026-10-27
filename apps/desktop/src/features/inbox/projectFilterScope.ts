@@ -1,4 +1,4 @@
-import { integrationLabel } from '../integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../shared/utils/integrationLabel';
 import { INBOX_KIND_PROVIDERS, isProjectMappedProvider, type InboxFilters } from './kindFilter';
 import type { InboxProvider } from './types';
 

@@ -1,6 +1,6 @@
 import { formatError } from '@goodboy/ui';
-import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
-import { worktreeStatus } from '../../../features/worktree/worktree';
+import { restoreHistoryBackup } from '../../../features/history/historyEngine';
+import { readWorktreeStatusNow } from '../../runtime/worktreeStatuses/cache';
 import { assertCleanTree } from './assertCleanTree';
 import { identityOf, identityChange } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
@@ -49,10 +49,10 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       await reportHistoryStop({ get, set, target, origin, stop, planId: null });
       return 'stopped';
     };
-    const status = await worktreeStatus({
+    const status = await readWorktreeStatusNow({
       worktreePath: target.worktreePath,
       baseBranch: target.baseBranch,
-    }).catch(() => null);
+    });
     if (status === null || status.head === null) {
       return stopWith({
         reason: 'failed',
@@ -251,22 +251,26 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         sha: remote.stop.sha,
       });
     }
-    const pushed = await pushWithLease({
-      worktreePath: target.worktreePath,
-      branch: target.branch,
-      expectedRemoteSha: remoteSha,
-      workspaceId: target.workspaceId,
-      projectId: target.projectId,
-    }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
-    if (pushed.kind === 'pushed') {
+    const pushed = await get().pushBranch({
+      sessionId,
+      mountId,
+      mode: 'lease',
+      guard: {
+        kind: 'expected',
+        expectedRemoteSha: remoteSha,
+        worktreePath: target.worktreePath,
+        branch: target.branch,
+      },
+    });
+    if (pushed.ok) {
       return 'pushed';
     }
     return stopWith({
-      reason: pushed.kind === 'stale' ? 'origin-moved' : 'failed',
+      reason: pushed.reason === 'moved' ? 'origin-moved' : 'failed',
       message:
-        pushed.kind === 'stale'
+        pushed.reason === 'moved'
           ? 'Origin moved since the rewrite. The old history is back here, nothing was pushed.'
-          : pushed.message,
+          : pushed.error,
       files: [],
       sha: null,
     });

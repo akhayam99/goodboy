@@ -104,6 +104,26 @@ fake_version() {
   esac
 }
 
+fake_reads_prompt_from_stdin() {
+  previous=
+  for arg in "$@"; do
+    if [ "$previous" = "-p" ]; then
+      case "$arg" in
+        -*) return 0 ;;
+        *) return 1 ;;
+      esac
+    fi
+    previous=$arg
+  done
+  [ "$previous" = "-p" ] || [ "$previous" = "-" ]
+}
+
+fake_record_stdin() {
+  if fake_reads_prompt_from_stdin "$@"; then
+    cat > "$PWD/fake-cli-stdin.txt"
+  fi
+}
+
 fake_usage_error() {
   printf "error: unrecognized subcommand '%s'\n" "$1" >&2
   exit 2

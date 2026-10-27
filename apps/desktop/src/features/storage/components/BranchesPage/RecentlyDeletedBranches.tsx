@@ -2,14 +2,14 @@ import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
 import { DELETED_BRANCH_KEEP_DAYS } from '@goodboy/types';
-import { EmptyLine, Band, cn } from '@goodboy/ui';
+import { Band, cn, EmptyLine, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useToast } from '../../../../shared/components/Toast';
 import { useNow } from '../../../../shared/hooks/useNow';
 import type { BranchScope } from '../../branches/branchScope';
-import { useRecentlyDeletedBranches } from '../../useRecentlyDeletedBranches';
+import { useRecentlyDeletedBranches } from '../../hooks/useRecentlyDeletedBranches';
 import { DeletedBranchRow } from './DeletedBranchRow';
 
 type Props = {
@@ -67,7 +67,10 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
         aria-expanded={isOpen}
         aria-controls={bodyId}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex min-h-9 items-center justify-between gap-2 rounded-sm px-1 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'flex min-h-9 items-center justify-between gap-2 rounded-sm px-1 text-left hover:bg-hover',
+          FOCUS_RING,
+        )}
       >
         <span className="flex items-center gap-2">
           <ChevronRight
@@ -89,7 +92,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
         <Band>
           <div id={bodyId} className="flex flex-col gap-1 pb-1">
             {entries.length === 0 ? (
-              <EmptyLine className="px-2 py-2 text-label text-muted-foreground">
+              <EmptyLine className="px-2 py-2 text-meta text-muted-foreground">
                 Nothing deleted in the last {DELETED_BRANCH_KEEP_DAYS} days.
               </EmptyLine>
             ) : (

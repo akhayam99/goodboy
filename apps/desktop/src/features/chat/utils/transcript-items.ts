@@ -13,6 +13,7 @@ import type {
   UserTurnSentVia,
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
+import { permissionSubjectOf } from '../../permissions/permissionSubjectOf';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
 import { isRepeatedStepTransition, repeatsEarlierFallbackNotice } from './repeatedNotices';
 import { splitArtifactText } from './split-artifact-blocks';
@@ -138,6 +139,7 @@ export type TranscriptItem =
       toolUseId: string;
       toolName: string;
       runId: ProviderRunId;
+      subject: string | null;
       decision: 'allow' | 'deny';
       scope?: PermissionScope;
       ruleId: PermissionRuleId | null;
@@ -166,6 +168,7 @@ type ReduceSnapshot = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly callIndex: ReadonlyMap<string, number>;
   readonly permToolNames: ReadonlyMap<string, string>;
+  readonly permSubjects: ReadonlyMap<string, string | null>;
   readonly textBuffer: string;
   readonly textKey: string | null;
   readonly textScan: ArtifactScanState | null;
@@ -267,6 +270,10 @@ export const reduceTranscript = (
     resumed !== null ? new Map<string, number>(resumed.callIndex) : new Map<string, number>();
   const permToolNames =
     resumed !== null ? new Map<string, string>(resumed.permToolNames) : new Map<string, string>();
+  const permSubjects =
+    resumed !== null
+      ? new Map<string, string | null>(resumed.permSubjects)
+      : new Map<string, string | null>();
   let textBuffer = resumed !== null ? resumed.textBuffer : '';
   let textKey: string | null = resumed !== null ? resumed.textKey : null;
   let textScan: ArtifactScanState | null = resumed !== null ? resumed.textScan : null;
@@ -510,6 +517,10 @@ export const reduceTranscript = (
         break;
       case 'permission_request':
         permToolNames.set(event.toolUseId, event.toolName);
+        permSubjects.set(
+          event.toolUseId,
+          permissionSubjectOf({ toolName: event.toolName, input: event.input }),
+        );
         items.push({
           kind: 'permission_request',
           key: `perm-req-${event.toolUseId}-${i}`,
@@ -526,6 +537,7 @@ export const reduceTranscript = (
           key: `perm-dec-${event.toolUseId}-${i}`,
           toolUseId: event.toolUseId,
           toolName: permToolNames.get(event.toolUseId) ?? event.toolUseId,
+          subject: permSubjects.get(event.toolUseId) ?? null,
           runId: event.runId,
           decision: event.decision,
           ...(event.scope !== undefined && { scope: event.scope }),
@@ -552,6 +564,7 @@ export const reduceTranscript = (
       items,
       callIndex,
       permToolNames,
+      permSubjects,
       textBuffer,
       textKey,
       textScan,

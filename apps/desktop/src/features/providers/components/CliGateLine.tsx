@@ -1,7 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import type { CliGate } from '@goodboy/core';
-import { cn, FOCUS_RING, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { cn, FOCUS_RING, ICON_SIZE, tintClasses } from '@goodboy/ui';
+
 import { CLI_LABEL } from '../cliLabel';
 
 type Props = {

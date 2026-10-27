@@ -1,4 +1,5 @@
 import type { ChecksNotRunReason, ResultCheck, ResultChecksRun } from './result';
+import { isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_CHECK_TIMEOUT_MS = 5 * 60_000;
 
@@ -104,11 +105,6 @@ export type CanRerunParams = Readonly<{
 
 export const canRerunChecks = ({ run }: CanRerunParams): boolean =>
   run.commit !== null && run.reason !== 'none_ticked' && run.reason !== 'tree_dirty';
-
-type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const REASONS: ReadonlyArray<ChecksNotRunReason> = [
   'none_ticked',

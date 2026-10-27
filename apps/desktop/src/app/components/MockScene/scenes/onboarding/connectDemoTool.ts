@@ -4,16 +4,12 @@ import {
   type IntegrationBindingId,
   type IntegrationCredentialId,
   type IsoDateTime,
-  type WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
-import type { InstantTool } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
+import type { InstantToolConnect } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
 
-type Params = {
-  readonly workspaceId: WorkspaceId;
-  readonly tool: InstantTool;
-};
+type Params = Parameters<NonNullable<InstantToolConnect>>[0];
 
 type BindingParams = Params & {
   readonly at: IsoDateTime;

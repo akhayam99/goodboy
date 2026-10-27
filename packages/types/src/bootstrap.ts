@@ -9,6 +9,7 @@ export type BootstrapPhase = {
   readonly snapshotId: string | null;
   readonly worktreePath: string | null;
   readonly branch: string | null;
+  readonly branchTip?: string | null;
   readonly updatedAt: IsoDateTime;
 };
 
@@ -24,6 +25,7 @@ export type BootstrapPrepared = {
   readonly snapshotId: string;
   readonly snapshotRef: string;
   readonly branch: string;
+  readonly branchTip: string;
   readonly baseBranch: string;
   readonly files: ReadonlyArray<BootstrapMovedFile>;
   readonly largeFiles: ReadonlyArray<string>;
@@ -31,6 +33,18 @@ export type BootstrapPrepared = {
     readonly count: number;
     readonly samples: ReadonlyArray<string>;
   };
+};
+
+export type BootstrapNotUndone =
+  | { readonly kind: 'branch-moved'; readonly actual: string }
+  | { readonly kind: 'branch-tip-unknown' }
+  | { readonly kind: 'worktree-not-removed'; readonly message: string }
+  | { readonly kind: 'folder-not-removed'; readonly message: string }
+  | { readonly kind: 'prune-failed'; readonly message: string }
+  | { readonly kind: 'branch-not-deleted'; readonly message: string };
+
+export type BootstrapRollbackReport = {
+  readonly notUndone: ReadonlyArray<BootstrapNotUndone>;
 };
 
 export type BootstrapClearReport = {

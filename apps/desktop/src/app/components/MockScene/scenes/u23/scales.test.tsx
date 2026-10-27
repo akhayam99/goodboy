@@ -33,16 +33,17 @@ describe('the scale scenes', () => {
     });
   });
 
-  it('sets a Button, an icon button, a Chip and a row of every ladder size side by side', () => {
+  it('sets a Button, an icon button, a Chip, a Meter and a row of every ladder size side by side', () => {
     const Scene = U23_SCALES_SCENES['design-controls-scale'];
     render(<Scene />);
 
     ['xs', 'sm', 'md'].forEach((size) => {
       screen.getByRole('button', { name: `Button ${size}` });
     });
-    ['3xs', 'xs', 'sm', 'md', 'control'].forEach((size) => {
-      screen.getByText(`Chip ${size}`);
+    ['state', 'reference', 'id', 'count'].forEach((kind) => {
+      screen.getByText(`Chip ${kind}`);
     });
+    expect(screen.getAllByRole('meter')).toHaveLength(3);
     expect(screen.getAllByText(/^Row \d+px, Northwind release$/)).toHaveLength(6);
   });
 });

@@ -1,4 +1,5 @@
 use super::{branch_checkout_path_with, with_fetch_cause, worktree_create_blocking};
+use crate::ignore_file::GOODBOY_IGNORE_ENTRY;
 use crate::worktree::error::WorktreeError;
 use crate::worktree::git::git;
 use crate::worktree::status::resolve_upstream;
@@ -371,7 +372,10 @@ fn a_session_mount_lands_under_goodboy_worktrees_and_stays_out_of_status() {
     );
     let exclude = std::fs::read_to_string(root.join(".git").join("info").join("exclude")).unwrap();
     assert_eq!(
-        exclude.lines().filter(|line| *line == ".goodboy/").count(),
+        exclude
+            .lines()
+            .filter(|line| *line == GOODBOY_IGNORE_ENTRY)
+            .count(),
         1
     );
     let status = git_ok(&root, &["status", "--porcelain"]);

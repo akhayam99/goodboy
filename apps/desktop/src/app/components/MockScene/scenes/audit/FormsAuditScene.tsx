@@ -73,7 +73,7 @@ const RUN = {
   spendLimitMode: 'pause',
 } as unknown as WorkflowRun;
 
-const LIMIT = { softCapUsd: 20, onExceed: 'pause' } as unknown as SessionBudget;
+const LIMIT = { softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 } as unknown as SessionBudget;
 
 const PROJECTS = [
   {

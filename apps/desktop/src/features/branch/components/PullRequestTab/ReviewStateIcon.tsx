@@ -1,17 +1,18 @@
-import { AlertCircle, CheckCheck, CircleDashed, MessageSquare, MinusCircle } from 'lucide-react';
+import { CircleAlert, CheckCheck, CircleDashed, MessageSquare, MinusCircle } from 'lucide-react';
 import type { PrReviewState } from '@goodboy/types';
+import { ICON_SIZE } from '@goodboy/ui';
 
 type Props = {
   readonly state: PrReviewState;
   readonly size?: number;
 };
 
-export const ReviewStateIcon = ({ state, size = 10 }: Props) => {
+export const ReviewStateIcon = ({ state, size = ICON_SIZE.mark }: Props) => {
   if (state === 'approved') {
     return <CheckCheck size={size} aria-hidden className="shrink-0 text-success" />;
   }
   if (state === 'changes_requested') {
-    return <AlertCircle size={size} aria-hidden className="shrink-0 text-danger" />;
+    return <CircleAlert size={size} aria-hidden className="shrink-0 text-danger" />;
   }
   if (state === 'commented') {
     return <MessageSquare size={size} aria-hidden className="shrink-0 text-muted-foreground" />;

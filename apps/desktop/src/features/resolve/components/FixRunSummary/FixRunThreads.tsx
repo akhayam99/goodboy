@@ -1,4 +1,4 @@
-import { Band, Button, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Band, Button, Chip, cn, inlineMarkdownText, FOCUS_RING } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openReview } from '../../../review/openReview';
 import { noteIdOfThread } from '../../notes/noteThread';
@@ -23,8 +23,10 @@ type Props = {
   readonly onOpen: (threadId: string) => void;
 };
 
-const ROW_CLASS =
-  'grid w-full min-w-0 grid-cols-subgrid items-center rounded-sm py-1 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const ROW_CLASS = cn(
+  'grid w-full min-w-0 grid-cols-subgrid items-center rounded-sm py-1 text-left text-body hover:bg-hover',
+  FOCUS_RING,
+);
 
 const titleOf = ({ entry }: { readonly entry: ReviewEntry }): string => {
   const note = entry.row.reviewerNote;

@@ -41,13 +41,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-import {
-  RELOAD_GAP_MESSAGE,
-  RUN_GONE_MESSAGE,
-  attachTurn,
-  lookupDeliveryRun,
-  runTurn,
-} from './turn';
+import { RELOAD_GAP_MESSAGE, attachTurn, lookupDeliveryRun, runTurn } from './turn';
 import { readTurnCursor, type TurnOwner } from './turnCursor';
 
 const OWNER: TurnOwner = {
@@ -321,6 +315,7 @@ describe('runTurn', () => {
       done: false,
       value: { kind: 'error', message: 'stream\ndropped' },
     });
+    await iterator.return?.();
   });
 
   it('turns what the backend stopped at the end of the turn into one event', async () => {
@@ -478,7 +473,7 @@ describe('attachTurn', () => {
       cursor: { seq: 4, index: 0, owner: OWNER },
     })[Symbol.asyncIterator]();
 
-    await expect(iterator.next()).rejects.toThrow(RUN_GONE_MESSAGE);
+    await expect(iterator.next()).rejects.toThrow('This run ended while the window reloaded.');
   });
 });
 

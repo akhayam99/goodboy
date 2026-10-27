@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import { createLatestOnly } from '../../../store/slices/state-writes/latestOnly';
+import { createLatestOnly } from '../../../store/runtime/state-writes/latestOnly';
 import { useActionEnv } from '../useActionEnv';
 import { useObjectActions } from '../useObjectActions';
 import type { ActionSlot, ObjectTarget, ResolvedAction } from '../types';

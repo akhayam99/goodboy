@@ -102,7 +102,8 @@ describe('the one drawer rule', () => {
   it('times the css exit of the overlay as long as the timer that keeps it mounted', () => {
     const css = readFileSync(join(DESKTOP_SRC, 'styles.css'), 'utf8');
 
-    expect(css).toContain(`--animate-drawer-overlay-out: drawer-overlay-out ${DRAWER_EXIT_MS}ms`);
-    expect(css).toContain(`--animate-drawer-fade-out: drawer-fade-out ${DRAWER_EXIT_MS}ms`);
+    expect(css).toContain(`--duration-quick: ${DRAWER_EXIT_MS}ms`);
+    expect(css).toContain('--animate-drawer-overlay-out: drawer-overlay-out var(--duration-quick)');
+    expect(css).toContain('--animate-drawer-fade-out: drawer-fade-out var(--duration-quick)');
   });
 });

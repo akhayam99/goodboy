@@ -39,6 +39,8 @@ const LIVE: SessionFacts = {
   worktreePaths: ['/worktrees/ledger-core'],
   prUrl: 'https://example.test/harborline/ledger-core/pull/318',
   runningAgentCount: 0,
+  hasUnread: false,
+  canMarkUnread: false,
 };
 
 const AGENT: AgentFacts = {
@@ -151,6 +153,7 @@ describe('palette verbs follow the session state', () => {
       'Open comments',
       'Open files',
       'Open in editor',
+      'Open in terminal app',
       'Open the full log',
       'Spend and limit',
       'Open ledger-core in terminal',
@@ -233,10 +236,8 @@ describe('palette verbs follow the session state', () => {
 });
 
 describe('palette verbs follow the agent state', () => {
-  it('offers Interrupt only while a turn runs', () => {
-    expect(agentView({ facts: { ...AGENT, isTurnRunning: true }, query: '' })).toContain(
-      'Interrupt',
-    );
+  it('offers Stop only while a turn runs', () => {
+    expect(agentView({ facts: { ...AGENT, isTurnRunning: true }, query: '' })).toContain('Stop');
     expect(agentView({ facts: AGENT, query: 'interrupt' })).toEqual([]);
   });
 
@@ -470,11 +471,11 @@ describe('the empty palette ranks the session verbs by state', () => {
     ]);
   });
 
-  it('live: interrupt and message the running agent first', () => {
+  it('live: stop and message the running agent first', () => {
     const screen = emptyScreen({ tier: 'live', agent: { ...AGENT, isTurnRunning: true } });
 
     expect(labelsOf(screen, 'For this session').slice(0, 5)).toEqual([
-      'Interrupt Implementer',
+      'Stop Implementer',
       'Message Implementer',
       'Open files',
       'Open ledger-core in terminal',

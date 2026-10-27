@@ -25,4 +25,4 @@ Number owner (one function computes it), late response.
 
 ## Guards
 
-`hook-folder`, `inline-object-param`, `export-default`, `knip:production`.
+`hook-folder`, `param-shape`, `export-default`, `knip:production`.

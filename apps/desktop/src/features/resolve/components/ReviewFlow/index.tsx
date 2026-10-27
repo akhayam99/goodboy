@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, MessageSquare } from 'lucide-react';
+import { TriangleAlert, MessageSquare } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -20,7 +20,7 @@ import {
   formatError,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import type { Session, SessionId } from '@goodboy/types';
+import type { MountId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
@@ -40,6 +40,7 @@ import { fixRunOf } from '../../fixRun';
 import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
+import { LaneNotices } from './LaneNotices';
 import { useReviewCommentDrawerSlot } from '../../hooks/useReviewCommentDrawerSlot';
 import { openReviewComment } from '../../openReviewComment';
 import { reviewCommentDrawerSlot } from '../../reviewCommentDrawerSlot';
@@ -67,6 +68,7 @@ import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
 type Props = {
   readonly session: Session;
+  readonly mountId?: MountId | null;
   readonly push: ReviewPush;
 };
 
@@ -112,7 +114,7 @@ const focusedRowId = (): string | null =>
 
 const DOCK_BOTTOM_OFFSET = 24;
 
-export const ReviewFlow = ({ session, push }: Props) => {
+export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const {
@@ -120,7 +122,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     groups: branchGroups,
     all: laneEntries,
     counts,
-  } = useReviewEntries({ sessionId, scope: 'branch' });
+  } = useReviewEntries({ sessionId, scope: 'branch', mountId });
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [pickedState, setCommentState] = useState<CommentState>('open');
@@ -195,7 +197,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     [fixableIds, shownEntries],
   );
   const selectAllFixable = () => setReviewSelection({ sessionId, threadIds: shownFixableIds });
-  const { source } = useActiveReviewSource({ sessionId });
+  const { source } = useActiveReviewSource({ sessionId, mountId });
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const openThreadId = useAppStore((s) => {
@@ -576,7 +578,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     if (isWholeError && refreshError !== null) {
       return (
         <EmptyState
-          icon={AlertTriangle}
+          icon={TriangleAlert}
           tone="danger"
           title={`Couldn't read comments from ${provider ?? 'GitHub'}`}
           description={refreshError}
@@ -715,11 +717,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
           />
         )}
-        {lane?.rebuildLine != null && (
-          <p role="status" className="text-meta text-muted-foreground">
-            {lane.rebuildLine}
-          </p>
-        )}
+        <LaneNotices sessionId={sessionId} lane={lane} />
         {acceptError !== null && (
           <Notice
             tone="danger"

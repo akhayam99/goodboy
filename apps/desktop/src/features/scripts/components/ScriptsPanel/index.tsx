@@ -3,16 +3,17 @@ import type { ScriptActionTarget } from '../../../actions/types';
 import { Pin, Plus } from 'lucide-react';
 import {
   Button,
+  DrawerFrame,
   EmptyLine,
   EmptyState,
-  Notice,
   formatError,
+  ICON_SIZE,
+  Notice,
   splitErrorMessage,
   useCopyLink,
-  DrawerFrame,
 } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
@@ -25,37 +26,41 @@ import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsed
 import { useScriptKeys } from '../../hooks/useScriptKeys';
 import { useScriptLive } from '../../hooks/useScriptLive';
 import { useScriptPins } from '../../hooks/useScriptPins';
+import { useServiceStarts } from '../../hooks/useServiceStarts';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { scriptPinId } from '../../scriptPinId';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { NAMES } from '../../../../shared/utils/names';
 import {
   readPackagesCollapsedOverrides,
   writePackagesCollapsedOverrides,
 } from '../../packagesCollapsedStorage';
-import type { ScriptRunRecord } from '../../scripts';
+import { scriptRunRecordFor } from '../../scriptRunRecordFor';
+import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
+import { scriptRecordOutput } from '../../scriptRecordOutput';
 import { startRunnableScript } from '../../startRunnableScript';
+import {
+  NO_OUTPUT_REASON,
+  useHandOutputToAgent,
+} from '../../../../shared/hooks/useHandOutputToAgent';
 import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
 import { SuggestedRow } from '../ScriptRow/SuggestedRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
+import { EndedServicesRow } from './EndedServicesRow';
 import { ScriptBand } from './ScriptBand';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
 import { ScriptPinPicker } from './ScriptPinPicker';
+import { StartAllServices } from './StartAllServices';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
-import { UnmountedScriptsNote, type UnmountedScriptsEntry } from './UnmountedScriptsNote';
+import { UnmountedScriptsNote } from './UnmountedScriptsNote';
+import { packageSectionKey } from './packageSectionKey';
+import { unmountedScriptsOf } from './unmountedScriptsOf';
 import { useScriptDraft } from './useScriptDraft';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-
-const packageSectionKey = ({
-  mountId,
-  sectionKey,
-}: {
-  readonly mountId: MountId;
-  readonly sectionKey: string;
-}): string => `${mountId}:${sectionKey}`;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -66,20 +71,6 @@ type Props = {
 type RowParams = {
   readonly group: SessionScriptGroup;
   readonly script: RunnableScript;
-};
-
-type RecordParams = {
-  readonly runs: Readonly<Record<string, ScriptRunRecord>> | undefined;
-  readonly group: SessionScriptGroup;
-  readonly script: RunnableScript;
-};
-
-const recordFor = ({ runs, group, script }: RecordParams): ScriptRunRecord | null => {
-  const record = runs?.[script.key] ?? null;
-  if (record === null || record.mountId === undefined) {
-    return record;
-  }
-  return record.mountId === group.mountId ? record : null;
 };
 
 export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
@@ -122,6 +113,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
   const draft = useScriptDraft({ workspaceId });
   const { copy } = useCopyLink();
+  const handOutput = useHandOutputToAgent({ sessionId });
 
   const workspaceProjects = useMemo(
     () => allProjects.filter((project) => project.workspaceId === workspaceId),
@@ -134,16 +126,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     [runs],
   );
   const now = useNow(runningCount > 0 ? 1_000 : 30_000);
-  const unmounted = useMemo<ReadonlyArray<UnmountedScriptsEntry>>(() => {
-    const mounted = new Set(groups.map((group) => group.projectId));
-    return workspaceProjects.flatMap((project) => {
-      if (mounted.has(project.id)) {
-        return [];
-      }
-      const count = saved.filter((script) => script.projectId === project.id).length;
-      return count === 0 ? [] : [{ projectName: project.name, count }];
-    });
-  }, [groups, saved, workspaceProjects]);
+  const unmounted = useMemo(
+    () => unmountedScriptsOf({ groups, saved, projects: workspaceProjects }),
+    [groups, saved, workspaceProjects],
+  );
   const pins = useScriptPins({ projectIds: groups.map((group) => group.projectId) });
   const isPinned = ({ group, script }: RowParams): boolean =>
     (pins[group.projectId] ?? []).includes(scriptPinId(script));
@@ -235,11 +221,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
 
   const onRun = useCallback(
     ({ group, script }: RowParams) => {
-      openDrawer({
-        kind: 'scriptRun',
-        sessionId,
-        payload: { scriptKey: script.key, mountId: group.mountId, from: 'scripts' },
-      });
+      if (!isService({ script })) {
+        openDrawer({
+          kind: 'scriptRun',
+          sessionId,
+          payload: { scriptKey: script.key, mountId: group.mountId, from: 'scripts' },
+        });
+      }
       void startRunnableScript({
         sessionId,
         script,
@@ -249,6 +237,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     },
     [openDrawer, sessionId],
   );
+
+  const { onStartAll, ended } = useServiceStarts({ sessionId, groups, runs, onRun });
 
   const onStop = useCallback(
     ({ script }: { readonly script: RunnableScript }) => {
@@ -298,12 +288,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
       relDir: script.relDir,
       name: script.name,
     });
+    const record = scriptRunRecordFor({ runs, group, script });
+    const output = scriptRecordOutput({ record });
     return {
       kind: 'script',
       facts: {
         name: script.name,
         command: savedId === null ? invocation : script.invocation,
-        isRunning: recordFor({ runs, group, script })?.status === 'pending',
+        isRunning: scriptRunRecordFor({ runs, group, script })?.status === 'pending',
         runBlockedReason: group.isReady ? null : `${group.projectName} is still preparing`,
         onShowOutput: () => onOpen({ group, script }),
         onRun: () => onRun({ group, script }),
@@ -338,6 +330,23 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
           isPinned: isPinned({ group, script }),
           onToggle: () => togglePin({ group, script }),
         },
+        ...(handOutput.canHandOff && {
+          ask: {
+            label: handOutput.askLabel,
+            blockedReason: output === '' ? NO_OUTPUT_REASON : null,
+            onAsk: () =>
+              handOutput.handOff({
+                subject: script.name,
+                outcome: scriptOutcomeLabel({
+                  status: record?.status ?? 'idle',
+                  exitCode: record?.result?.exitCode ?? null,
+                }),
+                projectName: group.projectName,
+                branch: group.branch === '' ? null : group.branch,
+                output,
+              }),
+          },
+        }),
       },
     };
   };
@@ -377,7 +386,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     }
     if (!group.isReady) {
       return (
-        <p className="px-2 py-2 text-label text-faint-foreground">
+        <p className="px-2 py-2 text-meta text-faint-foreground">
           {group.projectName} is still preparing.
         </p>
       );
@@ -409,7 +418,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     }
     if (discovered?.[group.worktreePath] === undefined) {
       return (
-        <p className="px-2 py-2 text-label text-faint-foreground">
+        <p className="px-2 py-2 text-meta text-faint-foreground">
           Reading scripts in {group.projectName}…
         </p>
       );
@@ -470,7 +479,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const rowKey = `${group.mountId}:${script.key}`;
     orderedKeys.push(rowKey);
     rowsByKey.set(rowKey, { group, script });
-    const record = recordFor({ runs, group, script });
+    const record = scriptRunRecordFor({ runs, group, script });
     const projectId = group.projectId;
     const port =
       isService({ script }) && script.kind === 'manifest'
@@ -523,7 +532,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const startedAtByKey: Record<string, number> = {};
     const runningKeys = new Set<string>();
     for (const script of scripts) {
-      const record = recordFor({ runs, group, script });
+      const record = scriptRunRecordFor({ runs, group, script });
       if (record === null) {
         continue;
       }
@@ -585,27 +594,39 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
     const services = group.scripts.filter((script) => isService({ script }));
     const tasks = group.scripts.filter((script) => !isService({ script }));
-    const groupScope =
-      group.branch === '' ? group.projectName : `${group.projectName} · ${group.branch}`;
     const hasManifestScripts = (discovered?.[group.worktreePath] ?? []).some(
       (entry) => entry.scripts.length > 0,
     );
     return (
       <>
         {services.length === 0 ? null : (
-          <ScriptBand label="Services" scope={groupScope} count={services.length}>
+          <ScriptBand
+            label="Services"
+            group={group}
+            count={services.length}
+            action={
+              services.length > 1 && group.isReady && query.trim() === '' ? (
+                <StartAllServices
+                  group={group}
+                  services={services}
+                  runs={runs}
+                  onStart={onStartAll}
+                />
+              ) : null
+            }
+          >
             {renderScripts({ group, scripts: services, band: 'services' })}
           </ScriptBand>
         )}
         {tasks.length === 0 ? null : (
-          <ScriptBand label="Tasks" scope={groupScope} count={tasks.length}>
+          <ScriptBand label={NAMES.commands} group={group} count={tasks.length}>
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
         {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
           <ScriptBand
             label="Suggested"
-            scope={groupScope}
+            group={group}
             count={group.suggested.length}
             hint="Pin the ones you run here."
             action={
@@ -697,7 +718,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
       if (row === undefined) {
         return;
       }
-      if (recordFor({ runs, ...row })?.status === 'pending') {
+      if (scriptRunRecordFor({ runs, ...row })?.status === 'pending') {
         void onRestart(row);
         return;
       }
@@ -705,7 +726,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     },
     onStop: (key) => {
       const row = rowsByKey.get(key);
-      if (row !== undefined && recordFor({ runs, ...row })?.status === 'pending') {
+      if (row !== undefined && scriptRunRecordFor({ runs, ...row })?.status === 'pending') {
         onStop({ script: row.script });
       }
     },
@@ -739,8 +760,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             }
           />
         ) : null}
+        {ended.count === 0 ? null : <EndedServicesRow {...ended} />}
         {pageError === null ? null : (
-          <p role="alert" className="text-label text-danger">
+          <p role="alert" className="text-meta text-danger">
             {pageError}
           </p>
         )}

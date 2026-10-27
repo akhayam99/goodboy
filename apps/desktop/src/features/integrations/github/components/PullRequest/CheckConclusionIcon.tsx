@@ -1,12 +1,12 @@
 import type { PrCheckConclusion } from '@goodboy/types';
 import {
-  AlertCircle,
+  CircleAlert,
   Check,
   CircleSlash,
   Clock,
   HelpCircle,
   MinusCircle,
-  XCircle,
+  CircleX,
 } from 'lucide-react';
 
 type Props = {
@@ -20,7 +20,7 @@ export const CheckConclusionIcon = ({ conclusion }: Props) => {
     return <Check {...ICON_PROPS} className="shrink-0 text-success" />;
   }
   if (conclusion === 'failure') {
-    return <XCircle {...ICON_PROPS} className="shrink-0 text-danger" />;
+    return <CircleX {...ICON_PROPS} className="shrink-0 text-danger" />;
   }
   if (conclusion === 'pending') {
     return <Clock {...ICON_PROPS} className="shrink-0 text-info" />;
@@ -32,7 +32,7 @@ export const CheckConclusionIcon = ({ conclusion }: Props) => {
     return <MinusCircle {...ICON_PROPS} className="shrink-0 text-muted-foreground" />;
   }
   if (conclusion === 'action_required') {
-    return <AlertCircle {...ICON_PROPS} className="shrink-0 text-warning" />;
+    return <CircleAlert {...ICON_PROPS} className="shrink-0 text-warning" />;
   }
   return <HelpCircle {...ICON_PROPS} className="shrink-0 text-muted-foreground" />;
 };

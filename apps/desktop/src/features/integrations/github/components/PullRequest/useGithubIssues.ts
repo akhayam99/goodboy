@@ -7,31 +7,19 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { issueBranchSlug } from '../../../../../shared/utils/issueBranchSlug';
 import { ghAssignedIssues, tauriGhRunner } from '../../github';
-import { linkedTaskKey, useLinkedExternalIds } from '../../../hooks/useLinkedExternalIds';
-import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
+import { useLatestFetch } from '../../../hooks/useLatestFetch';
+import { useLinkedExternalIds } from '../../../hooks/useLinkedExternalIds';
+import { groupIssuesBy, type IssueGroup } from '../../../shared/groupIssuesBy';
+import { sessionByExternalId } from '../../../shared/sessionByExternalId';
 
 const GITHUB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['github'];
 
-type GithubIssueRow = Readonly<{
-  issue: GithubIssue;
-  sessionId: SessionId | null;
-}>;
-
-export type GithubIssueGroup = Readonly<{
-  key: string;
-  label: string;
-  rows: ReadonlyArray<GithubIssueRow>;
-}>;
+export type GithubIssueGroup = IssueGroup<string, GithubIssue>;
 
 type GroupsParams = {
   readonly issues: ReadonlyArray<GithubIssue>;
   readonly linkedSessions: ReadonlyMap<string, SessionId>;
-};
-
-type BranchParams = {
-  readonly issue: GithubIssue;
 };
 
 type HookParams = {
@@ -48,24 +36,26 @@ type Result = Readonly<{
   refetch: () => void;
 }>;
 
-export const githubBranchSlug = ({ issue }: BranchParams): string =>
-  issueBranchSlug({ prefix: String(issue.number), title: issue.title });
-
 export const buildGithubIssueGroups = ({
   issues,
   linkedSessions,
-}: GroupsParams): ReadonlyArray<GithubIssueGroup> => {
-  const rows = [...issues]
-    .sort((left, right) => compareIsoDesc({ left: left.updatedAt, right: right.updatedAt }))
-    .map((issue) => ({
-      issue,
-      sessionId:
-        linkedSessions.get(
-          linkedTaskKey({ provider: 'github', externalId: String(issue.number) }),
-        ) ?? null,
-    }));
-  return rows.length === 0 ? [] : [{ key: 'open', label: 'Open', rows }];
-};
+}: GroupsParams): ReadonlyArray<GithubIssueGroup> =>
+  groupIssuesBy<GithubIssue, string>({
+    issues,
+    sessionIdByExternalId: sessionByExternalId({
+      issues,
+      sessions: [],
+      linkedSessions,
+      provider: 'github',
+      externalIdOf: ({ issue }) => String(issue.number),
+      isSessionOfIssue: () => false,
+    }),
+    externalIdOf: ({ issue }) => String(issue.number),
+    keyOf: () => 'open',
+    labelOf: () => 'Open',
+    updatedAtOf: ({ issue }) => issue.updatedAt,
+    order: ['open'],
+  });
 
 export const useGithubIssues = ({
   workspaceId,
@@ -77,8 +67,10 @@ export const useGithubIssues = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasRemote, setHasRemote] = useState<boolean | null>(null);
+  const beginFetch = useLatestFetch();
 
   const fetchIssues = useCallback(async () => {
+    const isStale = beginFetch();
     if (!isEnabled) {
       setIssues([]);
       setLoading(false);
@@ -89,18 +81,30 @@ export const useGithubIssues = ({
     setError(null);
     try {
       const slug = await detectRepoSlug(tauriGhRunner, rootPath, workspaceId);
+      if (isStale()) {
+        return;
+      }
       setHasRemote(slug != null);
       if (slug == null) {
         setIssues([]);
         return;
       }
-      setIssues(await ghAssignedIssues(slug, { cwd: rootPath, workspaceId }));
+      const rows = await ghAssignedIssues(slug, { cwd: rootPath, workspaceId });
+      if (isStale()) {
+        return;
+      }
+      setIssues(rows);
     } catch (fetchError) {
+      if (isStale()) {
+        return;
+      }
       setError(formatError(fetchError));
     } finally {
-      setLoading(false);
+      if (!isStale()) {
+        setLoading(false);
+      }
     }
-  }, [isEnabled, rootPath, workspaceId]);
+  }, [beginFetch, isEnabled, rootPath, workspaceId]);
 
   useEffect(() => {
     void fetchIssues();

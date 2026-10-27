@@ -11,6 +11,32 @@ export const getSetting = async (db: Database, key: string): Promise<string | nu
   return rows[0]?.value ?? null;
 };
 
+const SETTINGS_READ_CHUNK = 500;
+
+type GetSettingsParams = {
+  readonly db: Database;
+  readonly keys: ReadonlyArray<string>;
+};
+
+export const getSettings = async ({
+  db,
+  keys,
+}: GetSettingsParams): Promise<ReadonlyMap<string, string>> => {
+  const found = new Map<string, string>();
+  for (let start = 0; start < keys.length; start += SETTINGS_READ_CHUNK) {
+    const chunk = keys.slice(start, start + SETTINGS_READ_CHUNK);
+    const marks = chunk.map(() => '?').join(', ');
+    const rows = await db.select<SettingsRow>(
+      `SELECT * FROM settings WHERE key IN (${marks})`,
+      chunk,
+    );
+    for (const row of rows) {
+      found.set(row.key, row.value);
+    }
+  }
+  return found;
+};
+
 export type SettingWrite = {
   readonly key: string;
   readonly value: string;

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,8 +16,10 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { sceneInvoke } from '../../../../../test/sceneInvoke';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { U25_B_RESOLVE_FIX_SCENES } from '../../scenes/u25/b-resolve-fix';
 import { BrandDiffScene } from '../../scenes/brand/DiffScene';
@@ -41,6 +44,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) =>
+    sceneInvoke({ command: String(command), args }),
+  );
   vi.useFakeTimers({
     toFake: [
       'setTimeout',
@@ -210,7 +216,7 @@ describe('the Review and ship steps', () => {
     await settle({ ms: 1500 });
     expect(tried()).toEqual(['review-storage']);
     expect(store.getState().storageFolders.map((folder) => folder.origin)).toEqual(['in-use']);
-    expect(screen.getByText(/Removed 3 folders/)).toBeDefined();
+    screen.getByText(/Removed 3 folders/);
     engine.dispose();
   });
 

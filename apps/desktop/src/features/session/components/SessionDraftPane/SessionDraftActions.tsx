@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Button, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

@@ -1,9 +1,9 @@
 import { Settings2 } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { MODELS_SECTION } from '../../../features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/constants';
-import { ICON_SIZE } from '../conceptIcons';
+import { openSettings } from '../../../features/settings/openSettings';
 
 type Props = {
   readonly provider: ProviderId;
@@ -20,11 +20,7 @@ export const ModelVisibilityLink = ({ provider, onNavigate }: Props) => {
       iconSize={ICON_SIZE.control}
       onClick={() => {
         onNavigate();
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-settings', {
-            detail: { scope: 'providers', provider, section: MODELS_SECTION },
-          }),
-        );
+        openSettings({ scope: 'providers', provider, section: MODELS_SECTION });
       }}
       className="size-5"
     />

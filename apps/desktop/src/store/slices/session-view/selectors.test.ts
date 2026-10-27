@@ -1,15 +1,19 @@
 import { act, renderHook } from '@testing-library/react';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace, TEST_NOW } from '@goodboy/types/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  IsoDateTime,
-  MountId,
-  Session,
-  SessionId,
-  Project,
-  ProjectId,
-  Workspace,
-  WorkspaceId,
+import {
+  brandId,
+  type GitlabIntegrationBinding,
+  type IntegrationBindingId,
+  type IntegrationCredentialId,
+  type IsoDateTime,
+  type MountId,
+  type Session,
+  type SessionId,
+  type Project,
+  type ProjectId,
+  type Workspace,
+  type WorkspaceId,
 } from '@goodboy/types';
 
 type StoreState = Record<string, unknown>;
@@ -110,6 +114,8 @@ beforeEach(() => {
     agentQueue: {},
     sessionGitlabMr: {},
     mountGitlabMr: {},
+    mountBitbucketPr: {},
+    workspaceIntegrations: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     sessionGroupExpanded: {},
@@ -153,8 +159,8 @@ describe('useSessionStageInfo pull request freshness', () => {
   it('claims no PR once that session fetch has landed with none', () => {
     const session = repoSession();
     store.state.githubStatus = { available: true };
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
@@ -174,8 +180,8 @@ describe('useSessionStageInfo pull request freshness', () => {
   it('says GitHub is unreachable when every attempt for that session failed', () => {
     const session = repoSession();
     store.state.githubStatus = { available: true };
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
     };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
@@ -263,8 +269,8 @@ describe('useSessionStageInfo settled request state', () => {
 
   it('carries a closed gitlab merge request onto the stage too', () => {
     const session = repoSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
     store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('closed') } };
 
@@ -276,8 +282,8 @@ describe('useSessionStageInfo settled request state', () => {
 
   it('carries a merged gitlab merge request as merged, never as closed', () => {
     const session = repoSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
     store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('merged') } };
 
@@ -289,8 +295,8 @@ describe('useSessionStageInfo settled request state', () => {
 
   it('leaves the request state null when there is no request at all', () => {
     const session = repoSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
@@ -612,5 +618,103 @@ describe('shared project filtering', () => {
     );
     expect(sidebarIds).toEqual([SESSION_ID]);
     expect(boardIds).toEqual([SESSION_ID]);
+  });
+});
+
+describe('useSessionStageInfo on a GitLab mount without a merge request', () => {
+  const GITLAB: GitlabIntegrationBinding = {
+    id: brandId<IntegrationBindingId>({ value: 'binding-gitlab' }),
+    workspaceId: WORKSPACE_ID,
+    projectId: null,
+    credentialId: brandId<IntegrationCredentialId>({ value: 'credential-gitlab' }),
+    provider: 'gitlab',
+    config: { host: 'gitlab.com', userName: 'kenji-w', userId: '7' },
+    createdAt: TEST_NOW,
+    updatedAt: TEST_NOW,
+  };
+
+  const gitlabSession = () => {
+    const session = createSession(SESSION_ID);
+    store.state.sessions = [session];
+    setProjectScope();
+    store.state.projects = [
+      aProject({
+        id: PROJECT_ID,
+        workspaceId: WORKSPACE_ID,
+        rootPath: '/tmp/ws',
+        name: 'notify-relay',
+        remoteUrl: 'https://gitlab.com/harborline/notify-relay.git',
+      }),
+    ];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
+    store.state.githubStatus = { available: true };
+    store.state.workspaceIntegrations = { [WORKSPACE_ID]: [GITLAB] };
+    return session;
+  };
+
+  const gitlabEntry = ({
+    fetchedAt,
+    failedAt,
+  }: {
+    readonly fetchedAt: string | null;
+    readonly failedAt: string | null;
+  }) => ({ mr: null, fetchedAt, failedAt, loading: false, error: null });
+
+  it('says it is checking GitLab, never GitHub, before the first answer', () => {
+    const session = gitlabSession();
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('checking GitLab');
+  });
+
+  it('says GitLab is unreachable when the host reachability says it did not answer', () => {
+    const session = gitlabSession();
+    store.state.mountGitlabMr = {
+      [MOUNT_ID]: gitlabEntry({ fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' }),
+    };
+    store.state.hostReachability = {
+      gitlab: { status: 'unreachable', since: 1, failures: 1, lastFailureAt: 1, reason: 'network' },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('GitLab unreachable');
+  });
+
+  it('claims no merge request once GitLab answered with none', () => {
+    const session = gitlabSession();
+    store.state.mountGitlabMr = {
+      [MOUNT_ID]: gitlabEntry({ fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null }),
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no MR yet');
+  });
+
+  it('claims no merge request right away when GitLab is not connected', () => {
+    const session = gitlabSession();
+    store.state.workspaceIntegrations = {};
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no MR yet');
+  });
+
+  it('ignores a failed gh status for a GitLab mount', () => {
+    const session = gitlabSession();
+    store.state.githubStatus = { available: false };
+    store.state.mountGithub = {
+      [MOUNT_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    };
+    store.state.mountGitlabMr = {
+      [MOUNT_ID]: gitlabEntry({ fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null }),
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no MR yet');
   });
 });

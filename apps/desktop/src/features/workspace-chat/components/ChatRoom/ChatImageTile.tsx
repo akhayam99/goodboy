@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ImageIcon, ImageOff } from 'lucide-react';
 import type { ChatMessageAttachment } from '@goodboy/types';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { useChatImageUrl } from '../../hooks/useChatImageUrl';
 
 type Props = {

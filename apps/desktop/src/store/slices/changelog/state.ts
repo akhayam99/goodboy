@@ -21,7 +21,7 @@ export type ChangelogState = {
   readonly changelogUpcoming: ChangelogUpcoming | null;
 };
 
-export const initialChangelogState: ChangelogState = {
+export const changelogInitialState: ChangelogState = {
   changelogReleases: CHANGELOG_RELEASES,
   changelogDates: {},
   changelogDatesStatus: 'idle',

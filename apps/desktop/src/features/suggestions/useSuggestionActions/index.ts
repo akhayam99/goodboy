@@ -1,13 +1,8 @@
-import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
-import { failingChecksOf } from '../../branch/checks/failingChecksOf';
-import { pushCheckFix } from '../../branch/checks/pushCheckFix';
-import { startCheckFix } from '../../branch/checks/startCheckFix';
-import { checkFixTargetOf } from '../checkFixTargetOf';
-import { NAMES } from '../../../shared/names';
+import { NAMES } from '../../../shared/utils/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
+import type { Agent, ProviderId, Session, SessionProjectMount } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { startRebaseTarget } from '../startRebaseTarget';
@@ -28,15 +23,17 @@ import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { continueWithRole } from '../../session/startRun/continueWithRole';
+import { openSettings } from '../../settings/openSettings';
+import { useShowToast } from '../../../shared/components/Toast/useShowToast';
+import { archiveSessionAction } from './archiveSessionAction';
+import { fixChecksActions } from './fixChecksActions';
+import { mergeSeriesAction } from './mergeSeriesAction';
+import { moveTrackerAction } from './moveTrackerAction';
 
 const REVIEW_THE_CHANGES = 'Review the changes';
 
-const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-settings', {
-      detail: { scope: 'providers', provider: providerId, action: 'login' },
-    }),
-  );
+const openProviderSignIn = ({ providerId }: { readonly providerId: ProviderId }) =>
+  openSettings({ scope: 'providers', provider: providerId, action: 'login' });
 
 type Params = {
   readonly session: Session;
@@ -73,10 +70,6 @@ export type SuggestionActionResolver = (params: {
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
 
-type AnalyzeParams = {
-  readonly routing?: AgentKindRouting;
-};
-
 type StartRebaseParams = {
   readonly target: RebaseSuggestionTarget;
 };
@@ -106,11 +99,18 @@ export const useSuggestionActions = ({
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
-  const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
+  const pushBranch = useAppStore((state) => state.pushBranch);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
+  const mergeSeriesInOrder = useAppStore((state) => state.mergeSeriesInOrder);
+  const moveTrackerItem = useAppStore((state) => state.moveTrackerItem);
+  const undoTrackerMove = useAppStore((state) => state.undoTrackerMove);
+  const reportError = useAppStore((state) => state.reportError);
+  const bulkArchiveTask = useAppStore((state) => state.bulkArchiveTask);
+  const bulkUnarchiveTask = useAppStore((state) => state.bulkUnarchiveTask);
+  const showToast = useShowToast();
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
   const announcePlanRun = usePlanRunToast();
 
@@ -383,94 +383,7 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      const readFailing = () =>
-        failingChecksOf({
-          state: useAppStore.getState(),
-          sessionId,
-          mountId: suggestion.payload.mountId,
-          prNumber: suggestion.payload.prNumber,
-        });
-      const analyze = async ({ routing }: AnalyzeParams = {}) => {
-        const state = useAppStore.getState();
-        const github = state.mountGithub[suggestion.payload.mountId];
-        if (
-          github?.pr?.number === suggestion.payload.prNumber &&
-          (github.detail === null || github.detail.prNumber !== suggestion.payload.prNumber)
-        ) {
-          await state.refreshSessionPrDetail(sessionId, {
-            mountId: suggestion.payload.mountId,
-            force: true,
-          });
-        }
-        const failing = readFailing();
-        if (failing === null) {
-          throw new Error('Refresh the failing checks and try Analyze again.');
-        }
-        await analyzeFailingChecks({
-          sessionId,
-          mountId: suggestion.payload.mountId,
-          pullRequest: failing.pullRequest,
-          checks: failing.checks,
-          ...(routing !== undefined && { routing }),
-        });
-      };
-      const chain = suggestion.payload.progress?.chain ?? 'none';
-      const { mountId } = suggestion.payload;
-      if (chain === 'proposal') {
-        return {
-          primary: {
-            label: 'Start fix',
-            agentKind: 'implementer',
-            isDisabled: false,
-            failureTitle: "Couldn't start the Implementer",
-            run: async () => {
-              const target = checkFixTargetOf({
-                state: useAppStore.getState(),
-                sessionId,
-                mountId,
-              });
-              if (target === null) {
-                throw new Error('Refresh the failing checks and try Start fix again.');
-              }
-              await startCheckFix({ sessionId, url: target.url, mountId });
-            },
-          },
-          onDismiss: null,
-        };
-      }
-      if (chain === 'fixed-local') {
-        return {
-          primary: {
-            label: 'Push',
-            isDisabled: false,
-            failureTitle: "Couldn't push the branch",
-            run: async () => {
-              const target = checkFixTargetOf({
-                state: useAppStore.getState(),
-                sessionId,
-                mountId,
-              });
-              await pushCheckFix({ sessionId, mountId, fixAgentId: target?.fixAgentId });
-            },
-          },
-          onDismiss: null,
-        };
-      }
-      const isAnalyzedBefore = chain === 'fixed-pushed' || chain === 'fix-failed';
-      return {
-        primary: {
-          label: isAnalyzedBefore ? 'Analyze again' : 'Analyze',
-          agentKind: 'debugger',
-          isDisabled: false,
-          failureTitle: "Couldn't start the Debugger",
-          run: () => analyze(),
-          runsOn: {
-            kind: 'debugger',
-            runWith: (routing) => analyze({ routing }),
-          },
-        },
-        onDismiss: null,
-      };
+      return fixChecksActions({ sessionId, payload: suggestion.payload });
     }
     if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
       return {
@@ -491,9 +404,10 @@ export const useSuggestionActions = ({
           isDisabled: false,
           failureTitle: "Couldn't push the branch",
           run: async () => {
-            const result = await pushSessionBranch({
+            const result = await pushBranch({
               sessionId,
               mountId: suggestion.payload.mountId,
+              mode: 'plain',
             });
             if (!result.ok) {
               throw new Error(result.error);
@@ -559,6 +473,27 @@ export const useSuggestionActions = ({
         onDismiss: null,
       };
     }
+    if (suggestion.kind === 'merge-series') {
+      const { seriesId, name } = suggestion.payload;
+      return {
+        primary: mergeSeriesAction({ sessionId, seriesId, name, mergeSeriesInOrder, showToast }),
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'move-tracker-item') {
+      const { move } = suggestion.payload;
+      return {
+        primary: moveTrackerAction({
+          sessionId,
+          move,
+          moveTrackerItem,
+          undoTrackerMove,
+          reportError,
+          showToast,
+        }),
+        onDismiss: null,
+      };
+    }
     if (suggestion.kind === 'close-worktree') {
       const worktrees = suggestion.payload.worktrees;
       const isMany = worktrees.length > 1;
@@ -579,6 +514,12 @@ export const useSuggestionActions = ({
             }
           },
         },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'archive-session') {
+      return {
+        primary: archiveSessionAction({ session, bulkArchiveTask, bulkUnarchiveTask, showToast }),
         onDismiss: null,
       };
     }

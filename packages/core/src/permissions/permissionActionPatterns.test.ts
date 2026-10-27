@@ -52,12 +52,14 @@ describe('prefixRuleFor', () => {
     });
     expect(rule.pattern).toEqual({ tool: 'Bash', argsMatcher: 'pnpm test *' });
     expect(rule.label).toBe('Always allow "pnpm test"');
+    expect(rule.subject).toBe('"pnpm test"');
   });
 
   it('builds a bare-tool pattern for a file edit', () => {
     const rule = prefixRuleFor({ toolName: 'Edit', input: { file_path: '/repo/src/refund.ts' } });
     expect(rule.pattern).toEqual({ tool: 'Edit' });
     expect(rule.label).toBe('Always allow edits');
+    expect(rule.subject).toBe('edits');
   });
 });
 

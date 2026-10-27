@@ -89,7 +89,7 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
       }}
       className={cn(
         FLOATING_SURFACE,
-        'fixed z-popover flex max-h-80 flex-col text-label motion-safe:animate-popover-in',
+        'fixed z-popover flex max-h-80 flex-col text-meta motion-safe:animate-popover-in',
       )}
     >
       <ScrollFade

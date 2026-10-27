@@ -9,14 +9,14 @@ import {
 import { saveResolveThread } from './saveResolveThread';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { drainResolveQueue } from './drainResolveQueue';
-import { reconcileInterruptedPublications } from './reconcileInterruptedPublications';
+import { reconcileInterruptedPublications } from './publication/reconcileInterruptedPublications';
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { importLegacyResolve } from './importLegacyResolve';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveBatchesInto } from './resolveBatches';
 import { loadResolveSourceSnapshotsInto } from './loadResolveSourceSnapshotsInto';
 import { projectResolveRows } from './projectResolveRows';
-import { loadPublicationsInto } from './publicationState';
+import { loadPublicationsInto } from './publication/publicationState';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
 import { syncNoteThreads } from './syncNoteThreads';
 import type { SessionParams, SliceParams } from './types';

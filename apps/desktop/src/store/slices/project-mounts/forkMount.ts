@@ -5,6 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
+import { prepareNewWorktree } from './prepareNewWorktree';
 import { allocateMountDirName } from './allocateMountDirName';
 import { branchInUseError, mountError, worktreeErrorKind } from './mountErrors';
 import { withMountLock, withRepositoryAndMountLock } from './mountLocks';
@@ -236,6 +237,14 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                 branch: created.branchName,
                 worktreePath: created.worktreePath,
               },
+            });
+            void prepareNewWorktree({
+              saveSetting: get().saveSetting,
+              reportError: get().reportError,
+              sessionId,
+              mountId,
+              project,
+              created,
             });
             const nextViews = await loadMountViews({ get, sessionId });
             applyMountViews({ set, sessionId, views: nextViews });

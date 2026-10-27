@@ -49,6 +49,7 @@ const STATES: ReadonlyArray<{
     facts: facts({ name: 'apps', relPath: 'apps', isDir: true }),
     expected: [
       'exploreFile.openInEditor hover',
+      'exploreFile.openInTerminalApp menu',
       'exploreFile.reveal hover',
       'exploreFile.copyPath menu',
     ],
@@ -62,7 +63,11 @@ const STATES: ReadonlyArray<{
       openLabel: null,
       editorLabel: null,
     }),
-    expected: ['exploreFile.reveal hover', 'exploreFile.copyPath menu'],
+    expected: [
+      'exploreFile.openInTerminalApp menu',
+      'exploreFile.reveal hover',
+      'exploreFile.copyPath menu',
+    ],
   },
   {
     name: 'a row with no handlers wired',

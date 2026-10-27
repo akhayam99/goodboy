@@ -1,14 +1,20 @@
 import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { GripVertical } from 'lucide-react';
-import { Tooltip, WORK_META_COLUMN, WorkMeta, WorkNode, cn } from '@goodboy/ui';
+import {
+  cn,
+  ICON_SIZE,
+  Tooltip,
+  WORK_META_COLUMN,
+  WorkMeta,
+  WorkNode,
+  StatusDot,
+} from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
-import { WorkTimeCell } from '../../../workTreeModel/components/WorkTimeCell';
-import type { PlanStepEstimate } from '../WorkflowBuilderView/planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingModelBlock } from '../../../../shared/components/RoutingModelBlock';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { StepTreeGutter } from './StepTreeGutter';
 import type { StepLaneSpan } from './StepTreeLane';
 
@@ -19,7 +25,6 @@ type Props = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
-  readonly estimate: PlanStepEstimate | null | undefined;
   readonly span: StepLaneSpan;
   readonly identityIndex: number;
   readonly isExpanded: boolean;
@@ -41,7 +46,6 @@ export const StepRow = ({
   provider,
   model,
   effort,
-  estimate,
   span,
   identityIndex,
   isExpanded,
@@ -112,14 +116,14 @@ export const StepRow = ({
             </span>
             {isEdited ? (
               <span className="inline-flex shrink-0 items-center">
-                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                <StatusDot size="sm" tone="warning" />
                 <span className="sr-only">Edited</span>
               </span>
             ) : null}
             {isPinned ? (
               <Tooltip content="Pinned model">
                 <span className="inline-flex shrink-0 items-center">
-                  <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+                  <StatusDot size="sm" tone="primary" />
                   <span className="sr-only">Pinned model</span>
                 </span>
               </Tooltip>
@@ -127,14 +131,9 @@ export const StepRow = ({
           </button>
           <WorkMeta
             isPlanned
-            isCostRange={estimate !== undefined}
             routing={
               <RoutingModelBlock isPlanned provider={provider} model={model} effort={effort} />
             }
-            time={
-              estimate === undefined ? undefined : <WorkTimeCell time={estimate?.time ?? null} />
-            }
-            cost={estimate === undefined ? undefined : (estimate?.cost ?? null)}
           />
           <span className={WORK_META_COLUMN.menu}>
             <Tooltip content="Drag or use the arrow keys to reorder">

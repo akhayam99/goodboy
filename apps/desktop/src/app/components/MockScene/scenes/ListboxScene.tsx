@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Monitor, Moon, Search, Sun } from 'lucide-react';
-import { Eyebrow, Listbox, ListboxList, filterOptions } from '@goodboy/ui';
+import { Eyebrow, filterOptions, ICON_SIZE, Listbox, ListboxList } from '@goodboy/ui';
 import type { ListboxOption } from '@goodboy/ui';
 import { ListboxScenePanel } from './ListboxScenePanel';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const THEMES: ReadonlyArray<ListboxOption<string>> = [
   { value: 'system', label: 'Match system', leading: <Monitor size={ICON_SIZE.row} /> },

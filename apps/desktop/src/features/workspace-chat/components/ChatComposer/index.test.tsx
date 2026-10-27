@@ -104,7 +104,7 @@ describe('ChatComposer', () => {
     fireEvent.keyDown(field(), { key: 'Enter' });
     expect(sent).toEqual([]);
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop the answer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(stops).toEqual([1]);
   });
 

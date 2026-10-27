@@ -24,10 +24,11 @@ export const Hero = () => {
         <div className="heroCopy">
           <Eyebrow text="Free desktop ADE, built in public" kind="page" className="rise" />
           <h1 id="hero-title" className="display rise" style={rise(1)}>
-            Give your agents a structure to work in
+            Give every task a structure to work in
           </h1>
           <p className="lead rise" style={rise(2)}>
-            Run Claude Code, Codex and Cursor on one task, with the subscriptions you already have.
+            Goodboy runs coding agents side by side on your own repositories, one session for each
+            goal.
           </p>
           <div className="ctaRow onlyFine rise" style={rise(3)}>
             <a className="btn" href={primary.href} data-download>

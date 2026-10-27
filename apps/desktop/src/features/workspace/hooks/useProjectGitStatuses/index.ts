@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+import { usePoll } from '../../../../shared/lib/usePoll';
 import { useAppStore } from '../../../../store';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -31,26 +31,16 @@ export const useProjectGitStatuses = ({
   const projectIds = projects.map((project) => project.id);
   const projectIdsKey = projectIds.join('\u0000');
 
-  useEffect(() => {
-    if (projectIds.length === 0) {
-      return;
-    }
-    const refresh = (): void => {
-      if (document.visibilityState !== 'visible') {
-        return;
-      }
+  usePoll({
+    run: () => {
       for (const projectId of projectIds) {
         void loadProjectGitStatus({ projectId });
       }
-    };
-    refresh();
-    const intervalId = window.setInterval(refresh, POLL_INTERVAL_MS);
-    document.addEventListener('visibilitychange', refresh);
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', refresh);
-    };
-  }, [loadProjectGitStatus, projectIdsKey]);
+    },
+    everyMs: POLL_INTERVAL_MS,
+    isEnabled: projectIds.length > 0,
+    restartKey: projectIdsKey,
+  });
 
   return projects.map((project, index) => ({ project, status: statuses[index] ?? null }));
 };

@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import type { StorageArtifact, StorageFolder } from '../../../../store/slices/storage/types';
 import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
@@ -19,6 +20,7 @@ const facts = (path: string, overrides: Partial<NonNullable<StorageFolder['facts
   changedFiles: 0,
   changedSample: null,
   reasons: [],
+  verdict: 'safe' as const,
   ...overrides,
 });
 
@@ -75,6 +77,7 @@ const dirty = folder('ledger-close', {
     changedFiles: 12,
     changedSample: 'src/settle/close.rs',
     reasons: ['unstaged-changes'],
+    verdict: 'dirty',
   }),
 });
 const untracked = folder('fx-rates', {
@@ -83,6 +86,7 @@ const untracked = folder('fx-rates', {
     isRegistered: false,
     lastCommitAt: null,
     reasons: ['not-registered'],
+    verdict: 'not-tracked',
   }),
 });
 const recent = folder('charge-reconcile', {
@@ -157,6 +161,9 @@ beforeEach(() => {
     ],
     storageFocus: null,
     storageOutcome: null,
+    terminalTabs: {},
+    closeTerminalTab: vi.fn(),
+    undoStorageRemoval: vi.fn(async () => undefined),
     storageRemovingPaths: {},
     storageMeasuringPath: null,
     settings: {},
@@ -194,6 +201,139 @@ describe('StoragePage', () => {
     expect(screen.getByText("Git doesn't track this folder")).toBeDefined();
     expect(screen.getByText(/2 commits only on this Mac/)).toBeDefined();
     expect(screen.getByText(/idle under 30 days/)).toBeDefined();
+  });
+
+  it('names a safe folder in the status column and shows saved versions once', () => {
+    render(<StoragePage />);
+
+    expect(screen.getAllByText('Safe to remove').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Saved versions')).toHaveLength(1);
+    const history = within(screen.getByRole('region', { name: 'Transcripts and app data' }));
+    history.getByText('Saved versions');
+    history.getByText('18 MB');
+  });
+
+  it('sums the transcripts, saved versions and app data rows into the section total', () => {
+    render(<StoragePage />);
+
+    const history = screen.getByRole('region', { name: 'Transcripts and app data' });
+    const rowBytes = 212 + 18 + (187 + 204);
+    within(history).getByText(`Transcripts and app data · ${rowBytes} MB`);
+  });
+
+  it('keeps the saved versions row when a folder size read is rejected', () => {
+    const rejectedRead = vi.fn(async () => {
+      throw new Error('folder unreadable');
+    });
+    Object.assign(state, {
+      projects: [
+        aProject({ name: 'acme-notes', kind: 'folder', rootPath: '/mock/Documents/acme-notes' }),
+      ],
+      loadFolderHistorySize: rejectedRead,
+    });
+    render(<StoragePage />);
+
+    const history = within(screen.getByRole('region', { name: 'Transcripts and app data' }));
+    history.getByText('Saved versions');
+    history.getByText('18 MB');
+  });
+
+  it('proposes the safe folders and removes nothing until the person clicks', () => {
+    render(<StoragePage />);
+
+    screen.getByRole('button', { name: /Remove 1 safe folder ·/ });
+    expect(state.removeStorageFolders).not.toHaveBeenCalled();
+    expect(state.keepStorageFolder).not.toHaveBeenCalled();
+  });
+
+  it('keeps a folder out of the safe list while a terminal is open in it, and closes the terminal on a click', () => {
+    state.terminalTabs = {
+      'session-1': [
+        {
+          id: 'terminal-1',
+          owner: { kind: 'session', sessionId: 'session-1' },
+          title: 'dev server',
+          cwd: safeIdle.path,
+          status: 'running',
+          createdAt: NOW,
+        },
+      ],
+    };
+    render(<StoragePage />);
+
+    expect(screen.queryByRole('button', { name: /Remove 1 safe folder/ })).toBeNull();
+    const row = screen
+      .getAllByTestId('storage-folder-row')
+      .find((candidate) => candidate.getAttribute('data-status') === 'terminal-open');
+    within(row!).getByText('A terminal is open here');
+    expect(within(row!).queryByRole('checkbox')).toBeNull();
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'Close 1 terminal' }));
+    const confirm = screen.getByRole('group', { name: /Close 1 terminal in this folder/ });
+    within(confirm).getByText(/Stops dev server/);
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Close terminals' }));
+
+    expect(state.closeTerminalTab).toHaveBeenCalledWith({
+      owner: { kind: 'session', sessionId: 'session-1' },
+      tabId: 'terminal-1',
+    });
+  });
+
+  it('offers Undo on the removal notice and runs it once', () => {
+    state.storageOutcome = {
+      removed: 1,
+      freedBytes: 1024,
+      kept: [],
+      restorable: [
+        {
+          path: safeIdle.path,
+          repoRoot: safeIdle.repoRoot,
+          branch: safeIdle.branch,
+          origin: 'ledger',
+          sessionId: null,
+          mountId: null,
+          revision: null,
+        },
+      ],
+      undo: null,
+      isUndoing: false,
+    };
+    render(<StoragePage />);
+
+    screen.getByText(/Removed 1 folder/);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+
+    expect(state.undoStorageRemoval).toHaveBeenCalledTimes(1);
+  });
+
+  it('says what came back and what did not, and lets the person try again', () => {
+    state.storageOutcome = {
+      removed: 2,
+      freedBytes: 1024,
+      kept: [],
+      restorable: [
+        {
+          path: safeIdle.path,
+          repoRoot: safeIdle.repoRoot,
+          branch: safeIdle.branch,
+          origin: 'ledger',
+          sessionId: null,
+          mountId: null,
+          revision: null,
+        },
+      ],
+      undo: {
+        restored: 1,
+        failed: [{ path: safeIdle.path, message: 'a folder already exists there' }],
+      },
+      isUndoing: false,
+    };
+    render(<StoragePage />);
+
+    screen.getByText('Brought back 1 folder.');
+    screen.getByText(/a folder already exists there/);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(state.undoStorageRemoval).toHaveBeenCalledTimes(1);
   });
 
   it('puts Remove and its sentence in the Worktrees header and the row menu in a hover cell', () => {

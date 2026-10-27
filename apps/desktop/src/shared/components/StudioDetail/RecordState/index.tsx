@@ -1,6 +1,6 @@
 import { Circle, CircleCheck, Contrast, TriangleAlert, type LucideIcon } from 'lucide-react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../conceptIcons';
+import { cn, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
+
 import type { InboxState } from '../../../../features/inbox/types';
 
 type Presentation = {

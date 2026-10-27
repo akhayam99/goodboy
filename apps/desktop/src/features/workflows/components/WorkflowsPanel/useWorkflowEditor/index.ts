@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
 import { undoable } from '../../../../../shared/utils/undoable';
 import { deleteWorkflowWithUndo } from '../../../deleteWorkflowWithUndo';
-import { editedStepKeys } from '../../WorkflowBuilderView/presetEdits';
+import { editedStepKeys } from '../../../presetEdits';
 import type { WorkflowDraft } from '../../../engine';
 import { draftFromWorkflow, upsertArgsFromDraft, validateDraft } from '../../../engine';
 import { useWorkflowDraft } from '../../../engine/useWorkflowDraft';

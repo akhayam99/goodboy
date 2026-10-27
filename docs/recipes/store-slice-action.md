@@ -6,9 +6,21 @@
 ## Steps
 
 1. Pick the slice folder under `apps/desktop/src/store/slices/`. A new domain is a new folder with `index.ts`, `state.ts` and `types.ts`, never an addition to the monolith ([file-system.md](../file-system.md)).
-2. One action per file, named for the verb (`setSessionBudget.ts`). It takes one destructured `Params` object and names its target.
+2. One action per file, named for the verb (`setSessionBudget.ts`). The action is a closure over the store: `export const setSessionBudget = (set: SetFn, get: GetFn) => async ({ sessionId, limit }: Params) => ...`. The outer `(set, get)` keeps zustand's own signature (the callback exception in [components.md](../typescript/components.md)); the returned action takes one destructured `Params` object and names its target. That closure form is the canonical one. The older actions that take positional values (`updateReviewDraft(id, body)`) are legacy: convert one when you touch it, never copy it. A slice that reads no state takes only `set`.
 3. Apply state only after the async step succeeded; on failure keep the old state and surface the error.
-4. Register the action in the slice `index.ts`.
+4. Register the action in the slice `index.ts` factory (`createXSlice = ({ set, get }: SliceDeps) => ({ ... })`). That is all the action needs: `AppStore` is the intersection of `ReturnType<typeof createXSlice>`, so no signature is written twice.
+
+## Compose a new slice
+
+A new slice touches these files, and only these:
+
+1. `slices/<domain>/state.ts`: the state type and `<domain>InitialState`. Every state key lives here, never inline in `types.ts` or `store.ts`.
+2. `slices/<domain>/index.ts`: `create<Domain>Slice = ({ set, get }: SliceDeps) => ({ ...actions })`.
+3. `store/store.ts`: one import, one `ReturnType<typeof create<Domain>Slice>` line in `AppStore`, one `...<domain>InitialState` in `initialState`, one `...create<Domain>Slice({ set, get })` in the store.
+4. `store/types.ts`: the state type in `AppSliceState`.
+5. `store/sessionEviction.ts`, when a state key is keyed by session, agent or workflow run.
+
+`store-state-keys-are-unique.test.ts` fails when two slices own one key or a key is written inline in `store.ts`, and `store-has-no-runtime-cycle.test.ts` fails when a file the store loads imports the store back. A slice never imports a hook or component file: pure helpers a slice needs sit in their own file next to the hook.
 
 ## Test
 
@@ -24,4 +36,4 @@ Target, when state changes, failure shown, retry and undo, second window, late r
 
 ## Guards
 
-`ambient-target`, `catch-swallow`, `store-mocks`, `inline-object-param` (`pnpm run check:rules`, `pnpm run check:baselines`).
+`ambient-target`, `catch-swallow`, `store-mocks`, `param-shape`, `store-state-keys-are-unique`, `store-has-no-runtime-cycle` (`pnpm run check:rules`, `pnpm run check:baselines`).

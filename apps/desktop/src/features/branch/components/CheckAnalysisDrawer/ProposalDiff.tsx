@@ -18,7 +18,7 @@ export const ProposalDiff = ({ text }: Props) => {
       aria-label={`Proposed diff for ${file}`}
       className="flex min-w-0 flex-col gap-2 rounded-md bg-fill p-2"
     >
-      <div className="flex items-center gap-2 text-label">
+      <div className="flex items-center gap-2 text-meta">
         <span className="min-w-0 flex-1 truncate">{file}</span>
         {additions === 0 ? null : <span className="text-success tabular-nums">+{additions}</span>}
         {deletions === 0 ? null : <span className="text-danger tabular-nums">−{deletions}</span>}

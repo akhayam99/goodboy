@@ -75,9 +75,24 @@ describe('bootstrap phase storage', () => {
       snapshotId: 'snap-1',
       worktreePath: null,
       branch: null,
+      branchTip: 'b'.repeat(40),
       updatedAt: TEST_NOW,
     };
     expect(parseBootstrapPhase(serializeBootstrapPhase(phase))).toEqual(phase);
+  });
+
+  it('reads a phase saved before the branch tip was recorded as having no tip', () => {
+    const saved = JSON.stringify({
+      stage: 'moving',
+      firstLapSessionId: null,
+      bootstrapSessionId: null,
+      snapshotId: 'snap-1',
+      worktreePath: null,
+      branch: 'goodboy/bootstrap',
+      updatedAt: TEST_NOW,
+    });
+
+    expect(parseBootstrapPhase(saved)?.branchTip).toBeNull();
   });
 
   it('ignores a corrupt row', () => {

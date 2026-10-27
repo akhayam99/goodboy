@@ -8,6 +8,7 @@ import type {
   WorktreeRemovalMode,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
+import { terminalsInFolder } from '../../../features/terminal/terminalsInFolder';
 import { removeWorktreeChecked } from '../../../features/worktree/worktree';
 import type { AppState } from '../../types';
 import { trimTrailingSeparators } from '../terminal/terminalOwner';
@@ -117,10 +118,12 @@ export const mountCleanupBlockers = ({
   if (holdsTurn({ state, sessionId, mountId }) || holdsAttempt({ state, sessionId, mountId })) {
     blockers.push('agent-running');
   }
-  const usesMount = Object.values(state.terminalTabs ?? {}).some((tabs) =>
-    tabs.some((tab) => tab.mountId === mountId || tab.cwd === worktreePath),
-  );
-  if (usesMount) {
+  const terminals = terminalsInFolder({
+    tabs: state.terminalTabs ?? {},
+    path: worktreePath,
+    mountId,
+  });
+  if (terminals.length > 0) {
     blockers.push('terminal-open');
   }
   if (processesInWorktree({ snapshot: state.monitorSnapshot, worktreePath }).length > 0) {

@@ -102,7 +102,7 @@ const branchLabelFor = ({
   return 'this worktree';
 };
 
-export type Measured = {
+type Measured = {
   readonly branch: string;
   readonly path: string;
   readonly isAbsent: boolean;
@@ -153,14 +153,14 @@ export const measure = ({ branch, assessment }: MountAssessment): Measured | nul
   }
 };
 
-export const isMountRisky = ({ measured }: MountRiskParams): boolean =>
+const isMountRisky = ({ measured }: MountRiskParams): boolean =>
   !measured.isAbsent &&
   (measured.affectedFiles > 0 ||
     measured.localOnlyCommits > 0 ||
     !measured.hasUpstream ||
     measured.ignoredFiles > 0);
 
-export const ignoredFilesLine = ({ measured }: MeasuredListParams): string | null => {
+const ignoredFilesLine = ({ measured }: MeasuredListParams): string | null => {
   const count = measured.reduce((total, entry) => total + entry.ignoredFiles, 0);
   if (count === 0) {
     return null;
@@ -199,7 +199,7 @@ const integrationDetailOf = ({ measured }: MountRiskParams): string => {
 const unmergedVerb = ({ count }: { readonly count: number }): string =>
   count === 1 ? 'is' : 'are';
 
-export const integrationLine = ({ measured }: MeasuredListParams): string | null => {
+const integrationLine = ({ measured }: MeasuredListParams): string | null => {
   const present = presentOf({ measured });
   const only = present[0];
   if (only === undefined) {

@@ -131,7 +131,7 @@ export const IdentifierPeek = ({
             onKeyDown={onKeyDown}
             className="flex min-h-0 flex-col gap-3 p-1 outline-none"
           >
-            <div className="flex flex-col gap-1 px-2 py-1 text-label text-muted-foreground">
+            <div className="flex flex-col gap-1 px-2 py-1 text-meta text-muted-foreground">
               <div className="flex min-w-0 items-baseline gap-2">
                 <span className="truncate text-code text-foreground">{word}</span>
                 {groups.kind !== null ? <span className="text-meta">{groups.kind}</span> : null}
@@ -178,7 +178,7 @@ export const IdentifierPeek = ({
                     onClick={() => setIsExpanded(true)}
                     className={cn(
                       ROW_INTERACTIVE,
-                      'min-h-8 rounded-sm px-2 text-left text-label text-muted-foreground',
+                      'min-h-8 rounded-sm px-2 text-left text-meta text-muted-foreground',
                     )}
                   >
                     Show {groups.hiddenCount} more

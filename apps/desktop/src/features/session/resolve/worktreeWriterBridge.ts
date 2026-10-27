@@ -1,6 +1,7 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
+import { isTauriRuntime } from '../../../shared/lib/isTauriRuntime';
 
 const WRITER_EVENT = 'worktree_writer_event';
 const RECONCILE_INTERVAL_MS = 60_000;
@@ -11,10 +12,8 @@ type WriterLeaseEvent = {
   readonly reason: string;
 };
 
-const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-
 export const startWorktreeWriterBridge = async (): Promise<UnlistenFn> => {
-  if (!inTauri() || !isMainWindow()) {
+  if (!isTauriRuntime() || !isMainWindow()) {
     return () => undefined;
   }
   const unlisten = await listen<WriterLeaseEvent>(WRITER_EVENT, (event) => {

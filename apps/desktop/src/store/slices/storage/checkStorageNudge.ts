@@ -6,6 +6,7 @@ import {
   storedNumberOf,
   suggestAfterDaysOf,
 } from './storageSettings';
+import { liveTerminalsByFolder } from '../../../features/storage/liveTerminalsByFolder';
 import { summarizeStorage } from './summarizeStorage';
 import type { GetFn, SetFn } from './types';
 
@@ -19,7 +20,12 @@ export const checkStorageNudge = (_set: SetFn, get: GetFn) => {
     const state = get();
     const suggestAfterDays = suggestAfterDaysOf({ settings: state.settings });
     const now = Date.now();
-    const summary = summarizeStorage({ folders: state.storageFolders, now, suggestAfterDays });
+    const summary = summarizeStorage({
+      folders: state.storageFolders,
+      now,
+      suggestAfterDays,
+      terminals: liveTerminalsByFolder({ folders: state.storageFolders, tabs: state.terminalTabs }),
+    });
     const nudge = evaluateStorageNudge({
       canGoBytes: summary.canGo.bytes,
       canGoCount: summary.canGo.count,

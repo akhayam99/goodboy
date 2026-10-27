@@ -1,9 +1,10 @@
 import { listExternalTasksForWorkspace } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { invalidateLocalBranchesCache } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
+import { currentThreadKeysOf } from '../review-source/currentThreadKeysOf';
 import type { GetFn, ResyncSessionParams, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -73,6 +74,15 @@ const firstRequestError = ({ get, sessionId }: ReadParams): string | null => {
       return error;
     }
   }
+  if (state.currentSessionId !== sessionId) {
+    return null;
+  }
+  for (const key of currentThreadKeysOf({ state, sessionId })) {
+    const error = state.reviewSourceThreads[sessionId]?.[key]?.error ?? null;
+    if (error !== null) {
+      return error;
+    }
+  }
   return null;
 };
 
@@ -87,15 +97,8 @@ export const resyncSession = (set: SetFn, get: GetFn) => {
       await Promise.all([
         reloadLinkedTasks({ set, get, sessionId }),
         refreshLocalGit({ get, sessionId }),
-        get().githubStatus?.available === true
-          ? get().refreshSessionPr(sessionId, { force: true })
-          : Promise.resolve(),
-        get().refreshSessionMr(sessionId, { force: true }),
-        get().refreshSessionBitbucketPr(sessionId, { force: true }),
+        get().sweepRequests({ sessionId, isForced: true }),
       ]);
-      if (get().currentSessionId === sessionId && get().sessionGithub[sessionId]?.pr != null) {
-        await get().refreshSessionPrDetail(sessionId, { force: true });
-      }
       const error = firstRequestError({ get, sessionId });
       if (error !== null) {
         throw new Error(error);

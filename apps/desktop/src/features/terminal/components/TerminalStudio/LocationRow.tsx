@@ -1,5 +1,5 @@
 import { Folder } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { PathLine } from '../PathLine';
 
 type Props = {

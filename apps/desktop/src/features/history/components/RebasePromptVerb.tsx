@@ -1,5 +1,5 @@
-import { Button, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import { actionButtonStateOf } from '../../actions/actionButtonStateOf';
 import type { ResolvedAction } from '../../actions/types';
 import type { ActionControls } from '../../actions/useActionControls';

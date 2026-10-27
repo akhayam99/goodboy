@@ -10,12 +10,9 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import type {
-  ChatResponder,
-  ChatResponderParams,
-} from '../../../features/workspace-chat/createMemoryChatBackend';
+import type { ChatResponder, ChatResponderParams } from '../../../test/createMemoryChatBackend';
 import type { ChatBackend } from '../../../features/workspace-chat/chatBackend';
-import { createMemoryChatBackend } from '../../../features/workspace-chat/createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../../test/createMemoryChatBackend';
 
 const { holder } = vi.hoisted(() => ({
   holder: { backend: null as ChatBackend | null, respond: null as ChatResponder | null },
@@ -32,7 +29,6 @@ vi.mock('../../../features/workspace-chat/activeChatBackend', () => ({
 }));
 
 import { createChatsSlice } from './index';
-import { NO_PROJECT_MESSAGE } from './planChatTurn';
 import { selectChatGroups } from './selectChatGroups';
 
 const WORKSPACE = 'ws-harborline' as WorkspaceId;
@@ -340,7 +336,10 @@ describe('chats slice', () => {
     await slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
 
     const [, reply] = read().chatMessages[chatId] ?? [];
-    expect(reply).toMatchObject({ status: 'failed', error: NO_PROJECT_MESSAGE });
+    expect(reply).toMatchObject({
+      status: 'failed',
+      error: 'Add a folder to this workspace to ask about its code.',
+    });
   });
 
   it('ignores an empty message and a second message while one is answering', async () => {

@@ -77,17 +77,3 @@ describe('the force stop scene', () => {
     );
   });
 });
-
-describe('the cleanup blocked scene', () => {
-  it('blocks removing a worktree a process runs in and offers Stop it', async () => {
-    renderScene('cleanup-process-blocked');
-
-    expect(
-      await screen.findByText(
-        'A process is running in payments-api; stop it before removing this worktree.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByText('Running: node.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Stop it' })).toBeDefined();
-  });
-});

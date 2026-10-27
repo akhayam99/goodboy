@@ -1,8 +1,8 @@
 import type { Session } from '@goodboy/types';
 import type { NavigationLocation } from '../../../../store';
 import { LENS_LABEL } from '../../../../features/session/lens-labels';
-import { NAMES } from '../../../../shared/names';
-import { sessionTitle } from '../../../../features/session/sessionTitle';
+import { NAMES } from '../../../../shared/utils/names';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 

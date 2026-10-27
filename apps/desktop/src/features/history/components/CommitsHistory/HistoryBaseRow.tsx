@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Button, ConfirmPopover, Listbox } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, Listbox } from '@goodboy/ui';
 import type { HistoryGraph, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { useAppStore } from '../../../../store';
 import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import { BRANCH_PICKER_MAX_WIDTH, branchPickerOption } from '../../../worktree/branchPicker';

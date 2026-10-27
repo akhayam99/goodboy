@@ -29,6 +29,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../testing/sessionColumn';
+import { NEEDS_YOU_FEEDBACK_EVENT } from './needsYouFeedbackEvent';
 import { nextNeedsYou } from './nextNeedsYou';
 import { SessionSwitcher } from '.';
 
@@ -43,7 +44,14 @@ beforeEach(async () => {
   localStorage.clear();
 });
 
-afterEach(cleanup);
+const cleanups: Array<() => void> = [];
+
+afterEach(() => {
+  cleanup();
+  for (const undo of cleanups.splice(0)) {
+    undo();
+  }
+});
 
 const quiet = sessionOf({ goal: 'Quiet one', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
 const waitedLong = sessionOf({ goal: 'Waited long', updatedAt: '2026-10-01T09:00:00.000Z' });
@@ -63,6 +71,18 @@ const seed = (currentSessionId: SessionId | null) =>
     ],
   });
 
+const listenForFeedback = (): (() => ReadonlyArray<string>) => {
+  const texts: string[] = [];
+  const onFeedback = (event: Event) => {
+    if (event instanceof CustomEvent && typeof event.detail?.text === 'string') {
+      texts.push(event.detail.text);
+    }
+  };
+  window.addEventListener(NEEDS_YOU_FEEDBACK_EVENT, onFeedback);
+  cleanups.push(() => window.removeEventListener(NEEDS_YOU_FEEDBACK_EVENT, onFeedback));
+  return () => texts;
+};
+
 describe('the next session that needs you', () => {
   it('is none when nothing needs you', () => {
     seedColumn({ store: useAppStore, sessions: [quiet], currentSessionId: idOf(quiet) });
@@ -71,7 +91,7 @@ describe('the next session that needs you', () => {
 
   it('starts with the oldest wait when the open session is calm', () => {
     seed(idOf(quiet));
-    expect(nextNeedsYou({ state: useAppStore.getState() })).toEqual({
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
       sessionId: idOf(waitedLong),
       reason: 'open-question',
     });
@@ -93,6 +113,45 @@ describe('the next session that needs you', () => {
       });
     });
     expect(nextNeedsYou({ state: useAppStore.getState() })?.sessionId).toBe(idOf(waitedShort));
+  });
+
+  it('falls through to the sessions outside the filter once the ones inside are done', () => {
+    seed(idOf(waitedShort));
+    act(() => {
+      useAppStore.getState().setSelectedProjectIds({
+        workspaceId: quiet.workspaceId,
+        selectedProjectIds: [paymentsApi.id],
+      });
+    });
+
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
+      sessionId: idOf(waitedLong),
+      isOutsideFilter: true,
+      isOnlyOne: false,
+    });
+  });
+
+  it('marks a session inside the filter as such', () => {
+    seed(idOf(quiet));
+
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
+      isOutsideFilter: false,
+      isOnlyOne: false,
+    });
+  });
+
+  it('says the open session is the only one that waits', () => {
+    seedColumn({
+      store: useAppStore,
+      sessions: [quiet, waitedLong],
+      currentSessionId: idOf(waitedLong),
+      questions: [waitedLong],
+    });
+
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
+      sessionId: idOf(waitedLong),
+      isOnlyOne: true,
+    });
   });
 });
 
@@ -119,11 +178,49 @@ describe('the key for the next session that needs you', () => {
     expect(useAppStore.getState().currentSessionId).toBe(idOf(waitedShort));
   });
 
-  it('does nothing when no session needs you', () => {
+  it('does not move when no session needs you, and says so in the top bar', () => {
     seedColumn({ store: useAppStore, sessions: [quiet], currentSessionId: idOf(quiet) });
+    const said = listenForFeedback();
     render(<SessionSwitcher />);
     press();
     expect(useAppStore.getState().currentSessionId).toBe(idOf(quiet));
+    expect(said()).toEqual(['Nothing needs you in Harborline']);
+  });
+
+  it('says this is the only one when the open session is the one that waits', () => {
+    seedColumn({
+      store: useAppStore,
+      sessions: [quiet, waitedLong],
+      currentSessionId: idOf(waitedLong),
+      questions: [waitedLong],
+    });
+    const said = listenForFeedback();
+    render(<SessionSwitcher />);
+    press();
+    expect(said()).toEqual(['This is the only one']);
+  });
+
+  it('names the session it opened outside the project filter', () => {
+    seed(idOf(waitedShort));
+    act(() => {
+      useAppStore.getState().setSelectedProjectIds({
+        workspaceId: quiet.workspaceId,
+        selectedProjectIds: [paymentsApi.id],
+      });
+    });
+    const said = listenForFeedback();
+    render(<SessionSwitcher />);
+    press();
+    expect(useAppStore.getState().currentSessionId).toBe(idOf(waitedLong));
+    expect(said()).toEqual(['Opened Waited long, outside your project filter']);
+  });
+
+  it('says nothing when it simply moves to the next one', () => {
+    seed(idOf(quiet));
+    const said = listenForFeedback();
+    render(<SessionSwitcher />);
+    press();
+    expect(said()).toEqual([]);
   });
 });
 
@@ -134,7 +231,7 @@ describe('sessions that wait on you while work goes on', () => {
     updatedAt: '2026-10-02T09:00:00.000Z',
   });
   const planHeld = {
-    ...sessionOf({ goal: 'Plan held', updatedAt: '2026-10-03T09:00:00.000Z' }),
+    ...sessionOf({ goal: 'Plan held', updatedAt: '2026-10-06T09:00:00.000Z' }),
     workflowRuns: [
       aWorkflowRun({
         id: 'run-plan-held' as WorkflowRunId,
@@ -158,7 +255,7 @@ describe('sessions that wait on you while work goes on', () => {
 
   it('reaches a running session that has a question', () => {
     seedWork(idOf(quiet));
-    expect(nextNeedsYou({ state: useAppStore.getState() })).toEqual({
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
       sessionId: idOf(runningAsking),
       reason: 'open-question',
     });
@@ -166,7 +263,7 @@ describe('sessions that wait on you while work goes on', () => {
 
   it('reaches a session whose plan waits for approval, then wraps back', () => {
     seedWork(idOf(runningAsking));
-    expect(nextNeedsYou({ state: useAppStore.getState() })).toEqual({
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toMatchObject({
       sessionId: idOf(planHeld),
       reason: 'plan-approval',
     });

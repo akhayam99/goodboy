@@ -56,6 +56,38 @@ describe('parseToolPattern', () => {
     const m = parseToolPattern({ pattern: 'Edit(/src/**)' });
     expect(m.matches({ toolName: 'Edit', input: { file_path: '/src/a/b/c/d.ts' } })).toBe(true);
   });
+
+  it.each([
+    'git status; rm -rf ~',
+    'git status && rm -rf ~',
+    'git status || rm -rf ~',
+    'git status | sh',
+    'git status\nrm -rf ~',
+    'git status `rm -rf ~`',
+    'git status & rm -rf ~',
+  ])('single * does not cross a chain operator: %j', (command) => {
+    const m = parseToolPattern({ pattern: 'Bash(git *)' });
+    expect(m.matches({ toolName: 'Bash', input: { command } })).toBe(false);
+  });
+
+  it('** still crosses a chain operator when a rule asks for it', () => {
+    const m = parseToolPattern({ pattern: 'Bash(git **)' });
+    expect(m.matches({ toolName: 'Bash', input: { command: 'git status && ls' } })).toBe(true);
+  });
+
+  it('a star between literals backtracks to the segment that fits', () => {
+    const m = parseToolPattern({ pattern: 'Bash(npm run * --watch *)' });
+    expect(m.matches({ toolName: 'Bash', input: { command: 'npm run a --watch --watch b' } })).toBe(
+      true,
+    );
+    expect(m.matches({ toolName: 'Bash', input: { command: 'npm run a --watch' } })).toBe(false);
+  });
+
+  it('answers a six-wildcard rule on a hostile command', () => {
+    const m = parseToolPattern({ pattern: 'Bash(*a*a*a*a*a*a*b)' });
+    const command = 'a'.repeat(5_000);
+    expect(m.matches({ toolName: 'Bash', input: { command } })).toBe(false);
+  });
 });
 
 describe('formatToolPattern round-trip', () => {

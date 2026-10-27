@@ -1009,7 +1009,7 @@ describe('Branch page', () => {
     expect(store.getState().branchThreadId[S1]).toBe('thread-9');
   });
 
-  it('brings the write destination back to the branch Back returns to', () => {
+  it('never moves the write destination when Back returns to a branch', () => {
     const mountOn = ({ id, path }: { readonly id: string; readonly path: string }) =>
       ({
         mountId: id as MountId,
@@ -1043,7 +1043,8 @@ describe('Branch page', () => {
     store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-b' }) });
     expect(setSessionActiveMount).not.toHaveBeenCalled();
     store.getState().back();
-    expect(setSessionActiveMount).toHaveBeenCalledWith({ sessionId: S1, mountId: 'mount-a' });
+    expect(setSessionActiveMount).not.toHaveBeenCalled();
+    expect(store.getState().sessionActiveMount[S1]).toBe('mount-b');
   });
 
   it('switches tabs in place so Back does not walk them', () => {

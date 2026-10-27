@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import type { CiFixStage, CiFixStageStatus } from '../../../../../branch/checks/ciFixStages';
 import { CiFixStageGlyph } from './CiFixStageGlyph';
 

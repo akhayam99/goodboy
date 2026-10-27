@@ -1,4 +1,4 @@
-import { wordDiff, type WordSegment } from '../resolve/wordDiff';
+import { wordDiff, type WordSegment } from '../resolve/wordSegments';
 import { lineDiff, type LineEdit } from './lineDiff';
 
 export type TextChangeLine = Readonly<{

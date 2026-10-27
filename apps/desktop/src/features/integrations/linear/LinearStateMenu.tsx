@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { formatError, tintClasses, type MenuEntry } from '@goodboy/ui';
+import { formatError, SkeletonRow, tintClasses, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamStates, type LinearWorkflowState } from './client';
 import { AppMenuList } from '../../actions/AppMenuList';
 import { INBOX_STATE_PRESENTATION } from '../../../shared/components/StudioDetail/RecordState';
-import { linearStateCategory } from '../../../shared/detail-fields/linearIssueFields';
+import { linearStateCategory } from '../../../shared/detail-fields/linearStateCategory';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -69,7 +69,7 @@ export const LinearStateMenu = ({
   }, [workspaceId, issueId, projectId]);
 
   if (loaded.kind === 'loading') {
-    return <p className="px-3 py-2 text-faint-foreground italic">Loading states</p>;
+    return <SkeletonRow label="Loading states" />;
   }
   if (loaded.kind === 'failed') {
     return (

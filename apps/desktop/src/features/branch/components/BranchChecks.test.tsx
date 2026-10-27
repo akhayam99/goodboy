@@ -34,6 +34,7 @@ import {
 } from '../../../store/storyHarness';
 import type { SessionGithubState } from '../../../store/types';
 import { ToastProvider } from '../../../shared/components/Toast';
+import { withPullRequestViewEntry } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import { openUrl } from '../../../shared/lib/editor';
 import { seedResolveBitbucketScene } from '../../../app/components/MockScene/scenes/resolveBitbucketSeed';
 import { seedResolveGitlabScene } from '../../../app/components/MockScene/scenes/resolveGitlabSeed';
@@ -396,17 +397,22 @@ describe('Checks tab on Bitbucket', () => {
     mergeMethodReasons: {},
   };
 
-  const viewEntry = (view: PullRequestView | null) => ({
-    [SESSION.id]: {
-      prNumber: 12,
-      mountId: useAppStore.getState().sessionActiveMount?.[SESSION.id] ?? null,
-      view,
-      isLoading: false,
-      error: null,
-      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
-      edits: [],
-    },
-  });
+  const viewEntry = (view: PullRequestView | null) => {
+    const mountId = useAppStore.getState().sessionActiveMount?.[SESSION.id] ?? null;
+    return withPullRequestViewEntry({
+      views: {},
+      sessionId: SESSION.id,
+      entry: {
+        prNumber: 12,
+        mountId,
+        view,
+        isLoading: false,
+        error: null,
+        fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+        edits: [],
+      },
+    });
+  };
 
   beforeEach(() => {
     seedResolveBitbucketScene({ selected: 'bitbucket' });
@@ -563,13 +569,15 @@ describe('Checks tab on the second of two Bitbucket mounts', () => {
       },
       pullRequestViews: {
         [SESSION.id]: {
-          prNumber: 34,
-          mountId: MOUNT_B,
-          view: VIEW_B,
-          isLoading: false,
-          error: null,
-          fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
-          edits: [],
+          [MOUNT_B]: {
+            prNumber: 34,
+            mountId: MOUNT_B,
+            view: VIEW_B,
+            isLoading: false,
+            error: null,
+            fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
+            edits: [],
+          },
         },
       },
       loadPullRequestView: load,
@@ -593,7 +601,7 @@ describe('Checks tab on the second of two Bitbucket mounts', () => {
     await settle();
 
     expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_B });
-    expect(screen.getByText('ledger-e2e')).toBeDefined();
+    screen.getByText('ledger-e2e');
     expect(screen.queryByText('lint')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Analyze' }));
@@ -648,13 +656,15 @@ describe('Checks tab on a host that reads its own checks', () => {
 
   const viewEntry = (view: PullRequestView | null) => ({
     [SESSION.id]: {
-      prNumber: 57,
-      mountId: null,
-      view,
-      isLoading: false,
-      error: null,
-      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
-      edits: [],
+      none: {
+        prNumber: 57,
+        mountId: null,
+        view,
+        isLoading: false,
+        error: null,
+        fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+        edits: [],
+      },
     },
   });
 
@@ -739,14 +749,16 @@ describe('Checks tab on a host that reads its own checks', () => {
     useAppStore.setState({
       pullRequestViews: {
         [SESSION.id]: {
-          prNumber: 57,
-          mountId: null,
-          view: null,
-          isLoading: false,
-          error: 'http error 500: boom',
-          errorKind: 'failed',
-          fetchedAt: null,
-          edits: [],
+          none: {
+            prNumber: 57,
+            mountId: null,
+            view: null,
+            isLoading: false,
+            error: 'http error 500: boom',
+            errorKind: 'failed',
+            fetchedAt: null,
+            edits: [],
+          },
         },
       },
       loadPullRequestView: load,

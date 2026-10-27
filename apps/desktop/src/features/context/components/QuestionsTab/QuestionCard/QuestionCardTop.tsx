@@ -30,7 +30,7 @@ export const QuestionCardTop = ({
     return null;
   }
   return (
-    <div className="flex min-h-6 min-w-0 items-center gap-2 text-label text-muted-foreground">
+    <div className="flex min-h-6 min-w-0 items-center gap-2 text-meta text-muted-foreground">
       {hasAsker ? (
         <>
           <AgentKindChip kind={askerKind ?? 'generic'} />

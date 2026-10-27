@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import { ListGrid, ListGridRow, SegmentedTabs, StateDot, formatUsd } from '@goodboy/ui';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { runHistoryState, type RunHistoryStateKey } from '../../runHistoryState';

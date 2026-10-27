@@ -7,7 +7,6 @@ import {
   ROW_INTERACTIVE,
   cn,
   ScrollFade,
-  tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
 import {
@@ -39,10 +38,17 @@ import { sessionGroupPresentation } from './groupPresentation';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem, type EditingChange } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
+import { LassoBox } from './LassoBox';
+import { SelectionClearance } from './SelectionClearance';
 
 const SELECTION_HINT = 'Shift click for a range, Option click to add one';
 const SUB_ROW_INSET = 'pl-7';
-const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
+const SELECTION_VERB_IDS = [
+  'sessions.markRead',
+  'sessions.archive',
+  'sessions.restore',
+  'sessions.delete',
+];
 
 const EMPTY_SESSIONS: ReadonlyArray<Session> = [];
 
@@ -140,6 +146,7 @@ export const SessionActivityBar = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
   const { selectIds, toggle, selectRange, selectAll } = selection;
+  const [dockHeight, setDockHeight] = useState(0);
   const selectedIds = useMemo(
     () => selectedSessions.map((session) => session.id as SessionId),
     [selectedSessions],
@@ -326,7 +333,7 @@ export const SessionActivityBar = ({
           }}
           data-selecting={selectedIds.length > 0}
           className={cn(
-            'group/select-list relative flex flex-col data-[selecting=true]:pb-24',
+            'group/select-list relative flex flex-col',
             PANE_RHYTHM.sessionList.listGap,
             PANE_RHYTHM.sessionList.pad,
           )}
@@ -387,22 +394,7 @@ export const SessionActivityBar = ({
             </div>
           ) : null}
 
-          {lasso.rect != null ? (
-            <div
-              aria-hidden
-              style={{
-                left: lasso.rect.left,
-                top: lasso.rect.top,
-                width: lasso.rect.width,
-                height: lasso.rect.height,
-              }}
-              className={cn(
-                'pointer-events-none absolute z-10 rounded-sm border',
-                tintClasses('primary').border,
-                tintClasses('primary').bg,
-              )}
-            />
-          ) : null}
+          {lasso.rect != null ? <LassoBox rect={lasso.rect} /> : null}
 
           {total === 0 && shownArchived.length === 0 ? (
             <EmptyState
@@ -412,14 +404,10 @@ export const SessionActivityBar = ({
               title={column.hiddenByFilters > 0 ? 'No sessions match' : 'No sessions yet'}
             />
           ) : null}
+
+          {selectedIds.length > 0 ? <SelectionClearance dockHeight={dockHeight} /> : null}
         </div>
       </ScrollFade>
-
-      {hasSelection || total + shownArchived.length < 2 ? null : (
-        <p data-selection-hint="" className="px-2 text-meta text-faint-foreground">
-          {SELECTION_HINT}
-        </p>
-      )}
 
       <SessionHoverCard
         session={hoveredSession}
@@ -441,6 +429,8 @@ export const SessionActivityBar = ({
         onSelectAll={selectAll}
         onDone={clearSelection}
         onFocusReturn={focusFirstRow}
+        hint={SELECTION_HINT}
+        onHeightChange={setDockHeight}
       />
     </div>
   );

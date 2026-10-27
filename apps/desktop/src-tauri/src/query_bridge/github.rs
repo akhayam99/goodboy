@@ -3,7 +3,8 @@ use tauri::AppHandle;
 
 use super::dispatch::Scope;
 use super::mount::MountRow;
-use crate::github::{read_token, run_gh, run_git_authenticated, GhRunResult};
+use crate::github::{read_token, run_gh, GhRunResult};
+use crate::remote_auth::run_git_authenticated;
 
 const NOT_CONNECTED: &str =
     "github is not connected: paste a personal API key in Goodboy, or sign in with `gh auth login`";
@@ -279,6 +280,7 @@ async fn context(_app: &AppHandle, scope: &Scope<'_>) -> Result<Ctx, String> {
     let gate_project = project.clone();
     let (has_token, is_gh_cli_signed_in) = tauri::async_runtime::spawn_blocking(move || {
         let has_token = read_token(Some(&gate_workspace), gate_project.as_deref())
+            .map_err(|error| error.to_string())?
             .filter(|token| !token.is_empty())
             .is_some();
         if has_token {
@@ -306,8 +308,9 @@ impl Ctx {
         let project = self.project.clone();
         let cwd = self.cwd.clone();
         tauri::async_runtime::spawn_blocking(move || {
-            let token =
-                read_token(Some(&workspace), project.as_deref()).filter(|token| !token.is_empty());
+            let token = read_token(Some(&workspace), project.as_deref())
+                .map_err(|error| error.to_string())?
+                .filter(|token| !token.is_empty());
             let refs: Vec<&str> = args.iter().map(String::as_str).collect();
             run_gh(&refs, Some(&cwd), token.as_deref()).map_err(|error| error.to_string())
         })
@@ -614,8 +617,9 @@ pub(super) async fn push(
     let project = ctx.project.clone();
     let cwd = worktree_path;
     let res = tauri::async_runtime::spawn_blocking(move || {
-        let token =
-            read_token(Some(&workspace), project.as_deref()).filter(|token| !token.is_empty());
+        let token = read_token(Some(&workspace), project.as_deref())
+            .map_err(|error| error.to_string())?
+            .filter(|token| !token.is_empty());
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
         run_git_authenticated(&refs, &cwd, token.as_deref()).map_err(|error| error.to_string())
     })

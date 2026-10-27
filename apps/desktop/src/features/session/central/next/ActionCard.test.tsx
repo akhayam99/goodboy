@@ -17,6 +17,7 @@ import {
   importStore,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
+  stubStoryInvoke,
 } from '../../../../store/storyHarness';
 import type { SessionSuggestion } from '../../../suggestions/types';
 import type { NeedsYouOwner } from '../../timeline/needsYou';
@@ -75,6 +76,7 @@ import { useNextCards } from './useNextCards';
 import { useAppStore } from '../../../../store';
 import type { AppStore } from '../../../../store/store';
 import type { HistoryRun, HistoryStop } from '../../../../store/slices/history/types';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
 import { aRebaseRun } from '../../../history/testing/aRebaseRun';
 
@@ -190,6 +192,7 @@ const MODEL: SessionWorkModel = {
   resolveFactsByAgentId: new Map(),
   jobFactsByAgentId: new Map(),
   autoFactsByAgentId: new Map(),
+  turnByAgentId: new Map(),
   isLoaded: true,
 };
 
@@ -450,6 +453,7 @@ describe('a stopped rebase in Next', () => {
 
   beforeEach(() => {
     suggestionState.list = [];
+    stubStoryInvoke({ worktree_status: () => null });
   });
 
   it('titles the row by its branch, says what stopped in one sentence, and leads with Resolve with Auto', () => {
@@ -519,6 +523,43 @@ describe('a stopped rebase in Next', () => {
       mountId: MEMBERS_MOUNT.mountId,
     });
     within(stopCard()).getByText('git is busy');
+  });
+
+  it('starts the push fix from the row with the hint typed for it, as the banner does', async () => {
+    const fixPushWithAgent = vi.fn<AppStore['fixPushWithAgent']>(async (params) => {
+      params.onAccepted?.();
+    });
+    useAppStore.setState({ fixPushWithAgent });
+    useAppStore.getState().setStartHint({
+      sessionId: SESSION.id,
+      scope: START_HINT_SCOPES.pushFix({ mountId: MEMBERS_MOUNT.mountId }),
+      text: 'Keep the lockfile as it is',
+    });
+    seedStop({
+      stop: { reason: 'push-failed', message: 'remote unreachable', files: [], sha: null },
+    });
+    showStop();
+
+    await act(async () => {
+      fireEvent.click(
+        within(stopCard()).getByRole('button', {
+          name: 'Fix with agent on hl/feat-center-members-page',
+        }),
+      );
+    });
+
+    expect(fixPushWithAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION.id,
+        mountId: MEMBERS_MOUNT.mountId,
+        hint: 'Keep the lockfile as it is',
+      }),
+    );
+    expect(
+      useAppStore.getState().startHints[SESSION.id]?.[
+        START_HINT_SCOPES.pushFix({ mountId: MEMBERS_MOUNT.mountId })
+      ],
+    ).toBeUndefined();
   });
 
   it('folds the diverged card of the same branch into the stop, never as And 1 more', () => {

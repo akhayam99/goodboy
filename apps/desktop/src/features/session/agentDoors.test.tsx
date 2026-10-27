@@ -117,6 +117,7 @@ const notificationFor = (agentId: AgentId): Notification => ({
   body: null,
   severity: 'warning',
   workspaceId: null,
+  actedAt: null,
   action: { kind: 'retry-step-summary', sessionId: SESSION, agentId },
 });
 

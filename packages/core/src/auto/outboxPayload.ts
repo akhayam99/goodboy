@@ -1,4 +1,5 @@
 import type { MessageAttachment } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { DelegationResultV1 } from './result';
 import type { AutoDelegationRole } from './roles';
 import type { AutoSubstepRole } from './substep';
@@ -66,9 +67,6 @@ export const EMPTY_USER_FACTS: UserFacts = {
 type ValueParams = {
   readonly value: unknown;
 };
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const isResultsPayload = (value: unknown): value is ResultsPayload =>
   isRecord(value) &&

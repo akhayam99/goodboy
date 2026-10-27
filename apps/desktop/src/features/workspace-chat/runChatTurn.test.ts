@@ -165,7 +165,7 @@ describe('runChatTurn', () => {
   it('fails with the refusal when the provider cannot be read-only', async () => {
     invokeMock.mockRejectedValue({
       kind: 'not_read_only',
-      message: 'Chat needs a provider that can run read-only: Claude or Codex',
+      message: 'chat cannot run read-only on cursor',
     });
 
     const outcome = await runChatTurn({

@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { booleanNameLines } from './ast/booleanName.mjs';
+import { BOOLEAN_PREFIXES } from './ast/booleanPrefixes.mjs';
+import { paramShapeLines } from './ast/paramShape.mjs';
+import { unbracedIfLines } from './ast/unbracedIf.mjs';
+import { unusedImportLines } from './ast/unusedImport.mjs';
 
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -47,6 +52,12 @@ const isConfigPath = ({ path, name }) => {
 
 const kindOf = ({ path, name, area }) => {
   const extension = extensionOf({ name });
+  if (extension === '.md') {
+    return 'doc';
+  }
+  if (extension === '.json') {
+    return 'data';
+  }
   if (area === 'scripts') {
     return extension === '.mjs' ? 'script' : null;
   }
@@ -112,6 +123,7 @@ export const collectSources = () => {
     join(REPO_ROOT, 'apps', 'desktop', 'src-tauri', 'src'),
     join(REPO_ROOT, 'website', 'src'),
     join(REPO_ROOT, 'scripts'),
+    join(REPO_ROOT, 'docs'),
     join(REPO_ROOT, '.github'),
     ...packageSources,
   ];
@@ -132,7 +144,7 @@ const STRING_LITERAL = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g;
 const TOOLING_DIRECTIVE =
   /[/][/]\s*@(?:vitest-environment|ts-expect-error|ts-ignore)|[/][/][/]\s*<reference|[/]\*\s*@vite-ignore\s*\*[/]/;
 
-const EM_DASH = String.fromCharCode(0x2014);
+const DASHES = [String.fromCharCode(0x2013), String.fromCharCode(0x2014)];
 
 export const withoutStrings = (line) => line.replace(STRING_LITERAL, '""');
 
@@ -148,6 +160,8 @@ const hasCodeComment = (line) => {
 
 const hasCssComment = (line) => line.includes('/*');
 
+const ENTITY_KEYED_SETTING =
+  /`[a-z][A-Za-z0-9_]*(?:[.][A-Za-z0-9_]+)+[.]\$\{(?:[A-Za-z]+[.])?(?:workspaceId|projectId|sessionId)\}/;
 const RAW_FONT_WEIGHT = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold)(?![\w-])/;
 const RAW_LEADING = /(?<![\w-])(?:[\w-]+:)*leading-(?:\d|\[|[a-z])/;
 const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
@@ -211,45 +225,13 @@ const countClassLines = ({ file, pattern }) =>
 const TOP_LEVEL_COMPONENT =
   /^(?:export )?(?:const [A-Z][a-z][A-Za-z0-9]* = (?:memo\()?\(|function [A-Z])/;
 
-export const INLINE_OBJECT_PARAM = /\(\s*(?:\{[^{}]*\}|\w+)\??\s*:\s*(?:Readonly<\s*)?\{[^{}]*\}/;
-const POSITIONAL_DB_SAME_LINE =
-  /^(?:export )?(?:const \w+ = (?:async )?|(?:async )?function \w+)\(\s*db\s*[:,)]/;
-const POSITIONAL_DB_OPENER = /^(?:export )?(?:const \w+ = (?:async )?|(?:async )?function \w+)\($/;
-const POSITIONAL_DB_NEXT = /^\s*db\s*[:,]/;
-const USE_STATE_BOOLEAN =
-  /\bconst \[\s*(\w+)\s*,[^\]]*\]\s*=\s*useState(?:<boolean>\(|\((?:true|false)\))/;
-const BOOLEAN_MEMBER = /^\s*(?:readonly\s+)?(\w+)\??:\s*boolean\s*[;,]?\s*$/;
-const BOOLEAN_NAME = /^(?:is|has|can|should|was|will)[A-Z0-9]/;
 const RUST_ELSE = /\}\s*else\b/;
 const SIBLING_MARGIN =
   /(?<![\w-])(?:[\w-]+:)*-?m(?:[trbl]|[xy](?!-auto\b))?-(?:\d|\[|px\b|auto\b|\()/;
+const OPTICAL_NUDGE = /(?<![\w-])(?:[\w-]+:)*-?m[trbl]-(?:0\.5|px)(?![\w.-])/g;
+
+const withoutNudges = (line) => line.replace(OPTICAL_NUDGE, ' ');
 const HOOK_FILE = /^(use[A-Z][A-Za-z0-9]*)\.tsx?$/;
-
-const isPositionalDb = ({ lines, index }) => {
-  const line = lines[index] ?? '';
-  if (POSITIONAL_DB_SAME_LINE.test(line)) {
-    return true;
-  }
-  return POSITIONAL_DB_OPENER.test(line) && POSITIONAL_DB_NEXT.test(lines[index + 1] ?? '');
-};
-
-const countPositionalDb = (file) =>
-  file.lines.filter((_, index) => isPositionalDb({ lines: file.lines, index })).length;
-
-const unprefixedBoolean = ({ line, isTsx }) => {
-  const state = USE_STATE_BOOLEAN.exec(line);
-  if (state !== null) {
-    return !BOOLEAN_NAME.test(state[1] ?? '');
-  }
-  const member = isTsx ? BOOLEAN_MEMBER.exec(line) : null;
-  return member !== null && !BOOLEAN_NAME.test(member[1] ?? '');
-};
-
-const countBooleanPrefix = (file) =>
-  countLines({
-    file,
-    matches: (line) => unprefixedBoolean({ line, isTsx: file.path.endsWith('.tsx') }),
-  });
 
 export const componentNameOf = ({ path }) => {
   const segments = path.split('/');
@@ -280,6 +262,15 @@ export const isFlatHook = ({ path }) => {
   return segments[segments.length - 2] !== hook.slice(3);
 };
 
+const astRule = ({ id, lines, hint }) => ({
+  id,
+  kinds: ['ts'],
+  ledger: 'own',
+  lines,
+  count: (file) => lines({ file }).length,
+  hint,
+});
+
 const lineRule = ({ id, matches, hint, kinds = ['ts'], ...rest }) => ({
   id,
   kinds,
@@ -291,9 +282,15 @@ const lineRule = ({ id, matches, hint, kinds = ['ts'], ...rest }) => ({
 
 export const RULES = [
   lineRule({ id: 'else-branch', matches: (line) => /\}\s*else\b/.test(line) }),
-  lineRule({
-    id: 'unbraced-if',
-    matches: (line) => /^\s*if \(.*\)\s*(?:return|continue|break|throw)\b/.test(line),
+  astRule({
+    id: 'if-without-braces',
+    lines: unbracedIfLines,
+    hint: 'put the body of every if in braces, whatever the statement (AGENTS.md rule 6)',
+  }),
+  astRule({
+    id: 'unused-import',
+    lines: unusedImportLines,
+    hint: 'delete the import: nothing in the file reads it (AGENTS.md rule 8)',
   }),
   {
     id: 'extra-component-per-file',
@@ -317,9 +314,9 @@ export const RULES = [
   lineRule({ id: 'config-comment', kinds: ['config'], matches: (line) => /^\s*#/.test(line) }),
   lineRule({
     id: 'em-dash',
-    kinds: ['ts', 'rust', 'config', 'css', 'script'],
+    kinds: ['ts', 'rust', 'config', 'css', 'script', 'doc', 'data'],
     includeTests: true,
-    matches: (line) => line.includes(EM_DASH),
+    matches: (line) => DASHES.some((dash) => line.includes(dash)),
   }),
   lineRule({
     id: 'interface',
@@ -397,7 +394,7 @@ export const RULES = [
   lineRule({
     id: 'footer-cta-bar',
     matches: (line) => FOOTER_CTA_BAR.test(line),
-    hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (DESIGN-SYSTEM.md, Form actions)',
+    hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (packages/ui/design/layout.md, Form actions)',
   }),
   {
     id: 'half-step-spacing',
@@ -408,29 +405,24 @@ export const RULES = [
   lineRule({
     id: 'role-weight-override',
     matches: (line) => ROLE_CLASS.test(line) && WEIGHT_CLASS.test(line),
-    hint: 'a type role carries its own weight: drop font-medium, font-semibold or font-bold next to text-row, text-label, text-heading and text-title',
+    hint: 'a type role carries its own weight: drop font-medium, font-semibold or font-bold next to text-row, text-meta, text-heading and text-title',
+  }),
+  astRule({
+    id: 'param-shape',
+    lines: paramShapeLines,
+    hint: 'take one destructured object with a named Params or Props type: no positional parameter, no bare name, no inline object type in the signature (AGENTS.md rule 1)',
+  }),
+  astRule({
+    id: 'boolean-name',
+    lines: booleanNameLines,
+    hint: `name a boolean ${BOOLEAN_PREFIXES.join(', ')} plus a capital, optional and nullable ones included, for a prop, a field and useState (AGENTS.md rule 2)`,
   }),
   lineRule({
-    id: 'inline-object-param',
-    ledger: 'guards',
-    matches: (line) => INLINE_OBJECT_PARAM.test(withoutStrings(line)),
-    hint: 'take one destructured object with a named Params or Props type, never an inline object type in the signature (AGENTS.md rule 1)',
+    id: 'entity-keyed-setting',
+    ledger: 'own',
+    matches: (line) => ENTITY_KEYED_SETTING.test(line),
+    hint: 'a value that belongs to one workspace, project or session goes in workspace_values or project_values (or a column), never in a settings key built with its id (docs/file-system.md, Where a preference lives)',
   }),
-  {
-    id: 'positional-param',
-    kinds: ['ts'],
-    ledger: 'guards',
-    roots: ['packages/db/src/queries/'],
-    count: countPositionalDb,
-    hint: 'a query takes one object ({ db, ...rest }: Params), never db as the first positional parameter (AGENTS.md rule 1)',
-  },
-  {
-    id: 'boolean-prefix',
-    kinds: ['ts'],
-    ledger: 'guards',
-    count: countBooleanPrefix,
-    hint: 'name a boolean isX, hasX, canX or shouldX, for a prop and for useState (AGENTS.md rule 2)',
-  },
   lineRule({
     id: 'rust-else',
     kinds: ['rust'],
@@ -442,8 +434,15 @@ export const RULES = [
     id: 'sibling-margin',
     kinds: ['ts', 'css'],
     ledger: 'guards',
-    matches: (line) => SIBLING_MARGIN.test(line),
+    matches: (line) => SIBLING_MARGIN.test(withoutNudges(line)),
     hint: 'the parent gap spaces siblings: drop the margin and set gap on the parent (AGENTS.md rule 3)',
+  }),
+  lineRule({
+    id: 'optical-nudge',
+    kinds: ['ts', 'css'],
+    ledger: 'guards',
+    matches: (line) => withoutNudges(line) !== line,
+    hint: 'a one or two pixel margin that aligns an icon with its text line: it only falls, so give the row an icon slot or align the items instead (AGENTS.md rule 3)',
   }),
   {
     id: 'hook-folder',
@@ -471,29 +470,54 @@ export const applies = ({ rule, file }) => {
   return rule.roots === undefined || rule.roots.some((root) => file.path.startsWith(root));
 };
 
-export const ledgerOf = ({ rule, file }) =>
-  rule.ledger === 'guards' || file.scope === 'extended' ? 'guards' : 'core';
+const OWN_PREFIX = 'rule:';
+
+export const ledgerOf = ({ rule, file }) => {
+  if (rule.ledger === 'own') {
+    return `${OWN_PREFIX}${rule.id}`;
+  }
+  return rule.ledger === 'guards' || file.scope === 'extended' ? 'guards' : 'core';
+};
+
+export const ledgerPath = ({ ledger }) =>
+  ledger.startsWith(OWN_PREFIX)
+    ? join(
+        dirname(BASELINE_FILES.core),
+        `forbidden-patterns.${ledger.slice(OWN_PREFIX.length)}.baseline.json`,
+      )
+    : BASELINE_FILES[ledger];
+
+const ledgerNames = ({ rules }) => [
+  ...Object.keys(BASELINE_FILES),
+  ...rules.filter((rule) => rule.ledger === 'own').map((rule) => `${OWN_PREFIX}${rule.id}`),
+];
 
 export const countFor = ({ rule, file }) => (applies({ rule, file }) ? rule.count(file) : 0);
 
-export const matchedLineNumbers = ({ rule, file }) =>
-  rule.matches === undefined
+export const matchedLineNumbers = ({ rule, file }) => {
+  if (rule.lines !== undefined) {
+    return [...new Set(rule.lines({ file }))];
+  }
+  return rule.matches === undefined
     ? []
     : file.lines.flatMap((line, index) => (rule.matches(line) ? [index + 1] : []));
+};
 
 const sortedEntries = ({ entries }) => entries.sort(([left], [right]) => left.localeCompare(right));
 
-export const measure = ({ sources }) => {
-  const ledgers = { core: {}, guards: {} };
-  for (const rule of RULES) {
-    const perLedger = { core: [], guards: [] };
+export const measure = ({ sources, rules = RULES }) => {
+  const ledgers = Object.fromEntries(ledgerNames({ rules }).map((ledger) => [ledger, {}]));
+  for (const rule of rules) {
+    const perLedger = Object.fromEntries(Object.keys(ledgers).map((ledger) => [ledger, []]));
     for (const file of sources) {
       const count = countFor({ rule, file });
       if (count > 0) {
         perLedger[ledgerOf({ rule, file })].push([file.path, count]);
       }
     }
-    for (const ledger of ['core', 'guards']) {
+    const ledgerKey = ledgerOf({ rule, file: { scope: 'core' } });
+    const homes = rule.ledger === 'own' ? [ledgerKey] : ['core', 'guards'];
+    for (const ledger of homes) {
       if (ledger === 'guards' || rule.ledger !== 'guards') {
         ledgers[ledger][rule.id] = Object.fromEntries(
           sortedEntries({ entries: perLedger[ledger] }),
@@ -516,10 +540,10 @@ const isCounts = (value) =>
       Object.values(files).every((count) => typeof count === 'number'),
   );
 
-export const readBaselines = ({ root = REPO_ROOT } = {}) =>
+export const readBaselines = ({ root = REPO_ROOT, rules = RULES } = {}) =>
   Object.fromEntries(
-    Object.entries(BASELINE_FILES).map(([ledger, relativePath]) => {
-      const full = join(root, relativePath);
+    ledgerNames({ rules }).map((ledger) => {
+      const full = join(root, ledgerPath({ ledger }));
       if (!existsSync(full)) {
         return [ledger, {}];
       }
@@ -531,14 +555,27 @@ export const readBaselines = ({ root = REPO_ROOT } = {}) =>
 export const hintOf = ({ ruleId }) => RULES.find((rule) => rule.id === ruleId)?.hint;
 
 export const grownOffenses = ({ counts, baselines }) =>
-  ['core', 'guards'].flatMap((ledger) =>
-    Object.entries(counts[ledger] ?? {}).flatMap(([ruleId, files]) =>
+  Object.keys(counts).flatMap((ledger) =>
+    Object.entries(counts[ledger]).flatMap(([ruleId, files]) =>
       Object.entries(files).flatMap(([path, count]) => {
         const allowed = baselines[ledger]?.[ruleId]?.[path] ?? 0;
         return count > allowed ? [{ ruleId, path, count, allowed, hint: hintOf({ ruleId }) }] : [];
       }),
     ),
   );
+
+export const shrunkOffenses = ({ counts, baselines }) =>
+  Object.entries(baselines).flatMap(([ledger, rules]) =>
+    Object.entries(rules).flatMap(([ruleId, files]) =>
+      Object.entries(files).flatMap(([path, allowed]) => {
+        const count = counts[ledger]?.[ruleId]?.[path] ?? 0;
+        return count < allowed ? [{ ruleId, path, count, allowed }] : [];
+      }),
+    ),
+  );
+
+export const describeSlack = ({ offense }) =>
+  `  - ${offense.ruleId} ${offense.path}: now ${offense.count}, baseline ${offense.allowed}`;
 
 export const offensesFor = ({ sources, baselines }) =>
   sources.flatMap((file) =>

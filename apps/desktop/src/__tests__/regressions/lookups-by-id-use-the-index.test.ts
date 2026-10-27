@@ -12,12 +12,8 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'app/components/MockScene/scenes/brand/brandChrome.ts': 2,
   'features/impact/components/ImpactStudio/index.tsx': 1,
   'features/integrations/bitbucket/useWorkspaceBitbucketRepo/index.ts': 1,
-  'features/integrations/gitlab/MergeRequest/useGitlabIssues.ts': 1,
-  'features/integrations/jira/JiraStudio/useJiraIssues.ts': 1,
-  'features/integrations/linear/LinearStudio/useLinearIssues.ts': 1,
   'features/search/grammar.ts': 1,
   'store/slices/sessions/deleteTask.ts': 1,
-  'store/slices/turn/resolveSkillPrompt.ts': 1,
   'store/slices/turn/turnHelpers.ts': 1,
   'store/slices/worktrees/reconcileOrphanWorktrees.ts': 1,
 };
@@ -44,7 +40,7 @@ const isProductSource = (path: string): boolean =>
   !path.startsWith('__tests__/') &&
   !path.startsWith('test/') &&
   !path.endsWith('/storyHarness.ts') &&
-  !path.endsWith('/mock-data.ts');
+  !path.endsWith('/mockFixtureData.ts');
 
 const productSources = (): ReadonlyArray<string> =>
   walk(DESKTOP_SRC).map(toPath).filter(isProductSource);

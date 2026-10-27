@@ -6,7 +6,7 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_B_LIVE_EDIT_SCENES } from './b-live-edit';
 

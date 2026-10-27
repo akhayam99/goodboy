@@ -17,7 +17,7 @@ export const BranchTemplatePreview = ({ fromTask, withoutTask, isValid, note }: 
       <dt className="text-meta text-muted-foreground">From a task</dt>
       <dd
         className={
-          isValid ? 'truncate font-mono text-code text-foreground' : 'text-label text-danger'
+          isValid ? 'truncate font-mono text-code text-foreground' : 'text-meta text-danger'
         }
       >
         {isValid ? fromTask : NOT_VALID}
@@ -25,7 +25,7 @@ export const BranchTemplatePreview = ({ fromTask, withoutTask, isValid, note }: 
       <dt className="text-meta text-muted-foreground">Without a task</dt>
       <dd
         className={
-          isValid ? 'truncate font-mono text-code text-foreground' : 'text-label text-danger'
+          isValid ? 'truncate font-mono text-code text-foreground' : 'text-meta text-danger'
         }
       >
         {isValid ? withoutTask : NOT_VALID}

@@ -189,7 +189,7 @@ describe('pullRequestPortFor', () => {
   });
 
   it('writes the pull request it is asked for, not the displayed one', async () => {
-    await portOf({ prNumber: 44 })?.merge({ method: 'rebase' });
+    await portOf({ prNumber: 44 })?.merge({ method: 'rebase', expectedHeadSha: null });
 
     expect(h.run).toHaveBeenCalledWith(
       ['pr', 'merge', '44', '--rebase'],
@@ -261,12 +261,13 @@ describe('pullRequestPortFor', () => {
     });
 
     it('merges with the strategy of the chosen method', async () => {
-      await portOf()?.merge({ method: 'merge' });
+      await portOf()?.merge({ method: 'merge', expectedHeadSha: null });
 
       expect(bb.merge).toHaveBeenCalledWith({
         ...BITBUCKET_REPO,
         pullRequestId: 42,
         strategy: 'merge_commit',
+        expectedHeadSha: null,
       });
     });
 

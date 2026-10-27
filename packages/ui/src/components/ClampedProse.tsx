@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { Markdown } from './Markdown';
 
 export type ClampLines = 1 | 2 | 3 | 4 | 5 | 6;
@@ -52,7 +53,10 @@ export const ClampedProse = ({ text, lines = 3, className }: ClampedProseProps) 
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
-        className="w-fit rounded-sm text-chip text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'w-fit rounded-sm text-chip text-muted-foreground transition-colors hover:text-foreground',
+          FOCUS_RING,
+        )}
       >
         {expanded ? 'Show less' : 'Show more'}
       </button>

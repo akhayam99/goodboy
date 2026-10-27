@@ -1,6 +1,6 @@
 import type { FileDiff } from '@goodboy/types';
 
-export const INLINE_CHANGE_LINE_LIMIT = 40;
+const INLINE_CHANGE_LINE_LIMIT = 40;
 
 const TEST_PATH =
   /(^|\/)__tests__\/|(^|\/)tests?\/|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|_test\.[a-z]+$|(^|\/)test_[^/]+\.py$/;

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { setAutoTreeCap } from '../../../../store/slices/auto/setAutoTreeCap';
+import { setAutoTreeCap } from '../../../../store/runtime/auto/setAutoTreeCap';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { currentAutoDrivePort } from '../../autoDrivePort';
 import { AUTO_LIMIT_COPY } from '../autoLimitCopy';

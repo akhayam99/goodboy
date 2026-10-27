@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RaiseCapPrimary } from '../../components/AgentTree/RunHeader/RaiseCapPrimary';
 import { RunPrimaryAction } from '../../components/AgentTree/RunHeader/RunPrimaryAction';
 import { useRunView } from '../../components/AgentTree/useRunView';

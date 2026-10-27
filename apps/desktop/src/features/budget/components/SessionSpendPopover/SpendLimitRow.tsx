@@ -1,6 +1,6 @@
-import { EmptyLine, Button, cn, formatUsd, tintClasses } from '@goodboy/ui';
+import { EmptyLine, Button, Meter, formatUsd } from '@goodboy/ui';
 import type { SessionBudget, SessionId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { SPEND_LIMIT_BEHAVIOR_LABEL } from '../../spendLimitBehavior';
 import { sessionSpendPresentation } from '../../sessionSpendPresentation';
 import { SpendLimitEditor } from './SpendLimitEditor';
@@ -21,7 +21,6 @@ export const SpendLimitRow = ({
   onEditingChange,
 }: Props) => {
   const presentation = sessionSpendPresentation({ totalUsd, limit });
-  const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
 
   return (
     <section aria-label={NAMES.spendCap} className="flex flex-col gap-2">
@@ -43,24 +42,13 @@ export const SpendLimitRow = ({
         <EmptyLine className="text-meta text-muted-foreground">No limit</EmptyLine>
       ) : (
         <div className="flex flex-col gap-2">
-          <div
-            role="meter"
-            aria-label="Spent of the limit"
-            aria-valuemin={0}
-            aria-valuemax={limit.softCapUsd}
-            aria-valuenow={Math.min(totalUsd, limit.softCapUsd)}
-            className="h-1.5 w-full overflow-hidden rounded-full bg-fill"
-          >
-            <div
-              className={cn(
-                'h-full rounded-full',
-                presentation.tone === 'neutral'
-                  ? 'bg-primary'
-                  : tintClasses(presentation.tone).solid,
-              )}
-              style={{ width: `${fill}%` }}
-            />
-          </div>
+          <Meter
+            label="Spent of the limit"
+            value={totalUsd}
+            max={limit.softCapUsd}
+            tone={presentation.tone === 'neutral' ? 'primary' : presentation.tone}
+            className="w-full"
+          />
           <p className="text-meta tabular-nums text-muted-foreground">
             {`${formatUsd(totalUsd)} of ${formatUsd(limit.softCapUsd)} · ${SPEND_LIMIT_BEHAVIOR_LABEL[limit.onExceed]}`}
           </p>

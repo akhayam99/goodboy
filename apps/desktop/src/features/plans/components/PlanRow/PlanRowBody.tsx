@@ -1,8 +1,8 @@
 import { CircleDot } from 'lucide-react';
-import { Chip, tintClasses } from '@goodboy/ui';
+import { Chip, ICON_SIZE, tintClasses, FOCUS_RING, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ArtifactStateChip } from '../../../artifacts/artifactSurfaces';
 import { NEW_VERSION_LABEL } from '../../planRevising';
 import type { PlanModel } from '../../usePlanModel';
@@ -35,7 +35,10 @@ export const PlanRowBody = ({ sessionId, model }: Props) => {
             payload: { artifactId: plan.id, revision: null },
           })
         }
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-sm py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-2 rounded-sm py-1 text-left',
+          FOCUS_RING,
+        )}
       >
         <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
         <span className="min-w-0 truncate text-row text-foreground">Plan · {plan.title}</span>
@@ -43,8 +46,8 @@ export const PlanRowBody = ({ sessionId, model }: Props) => {
         <ArtifactStateChip state={state} />
         {revising.kind === 'newVersion' ? (
           <Chip
+            kind="state"
             tone="info"
-            size="xs"
             bordered={false}
             icon={<CircleDot size={ICON_SIZE.row} aria-hidden />}
             label={NEW_VERSION_LABEL}

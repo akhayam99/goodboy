@@ -1,10 +1,10 @@
 import { createPortal } from 'react-dom';
 import { GripVertical } from 'lucide-react';
-import { cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, FLOATING_SURFACE, ICON_SIZE } from '@goodboy/ui';
+
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import { quoted } from '../../historyEditText';
-import type { HistoryDragState } from '../../useHistoryDrag';
+import type { HistoryDragState } from '../../hooks/useHistoryDrag';
 
 type Props = {
   readonly drag: HistoryDragState;
@@ -35,7 +35,10 @@ export const HistoryDragGhost = ({ drag, title, titleOf }: Props) => {
         top: drag.y - drag.offsetY,
         width: Math.min(drag.width, GHOST_MAX_WIDTH),
       }}
-      className="pointer-events-none fixed z-drag flex items-center gap-3 rounded-lg border border-border bg-floating px-3 py-2 shadow-md"
+      className={cn(
+        FLOATING_SURFACE,
+        'pointer-events-none fixed z-drag flex items-center gap-3 px-3 py-2',
+      )}
     >
       <GripVertical
         size={ICON_SIZE.control}

@@ -1,12 +1,11 @@
-use std::io::Read;
-use std::process::{Command, Stdio};
-use std::time::{Duration, Instant};
+use std::process::Command;
+use std::time::Duration;
 
 use serde::Serialize;
 use thiserror::Error;
 
 use crate::integration_credentials;
-use crate::proc::git::{Git, GitError};
+use crate::proc::git::GitError;
 use crate::secrets;
 
 const GITHUB_PROVIDER: &str = "github";
@@ -29,7 +28,6 @@ const TIMEOUT_MESSAGE: &str =
 const GH_BIN: &str = "gh";
 const GH_TIMEOUT: Duration = Duration::from_secs(60);
 const GH_PROBE_TIMEOUT: Duration = Duration::from_secs(10);
-const GH_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 const CERTIFICATE_MARKERS: &[&str] = &["x509", "certificate", "unknown authority"];
 
@@ -144,6 +142,17 @@ pub enum GithubError {
     TokenRejected(String),
     #[error("{}", TIMEOUT_MESSAGE)]
     Timeout,
+    #[error("{0}")]
+    Git(String),
+}
+
+impl From<GitError> for GithubError {
+    fn from(error: GitError) -> Self {
+        match error {
+            GitError::Spawn(inner) => GithubError::Spawn(inner),
+            other => GithubError::Git(other.to_string()),
+        }
+    }
 }
 
 impl GithubError {
@@ -156,6 +165,7 @@ impl GithubError {
             GithubError::Validation(_) => "validation",
             GithubError::TokenRejected(_) => "token_rejected",
             GithubError::Timeout => "timeout",
+            GithubError::Git(_) => "git",
         }
     }
 }
@@ -187,7 +197,7 @@ fn command_succeeds(cmd: Command, timeout: Duration) -> bool {
         .unwrap_or(false)
 }
 
-fn gh_available() -> bool {
+pub(crate) fn gh_available() -> bool {
     let mut cmd = crate::path_env::command(GH_BIN);
     cmd.arg("--version");
     command_succeeds(cmd, GH_PROBE_TIMEOUT)
@@ -229,86 +239,17 @@ pub(crate) fn run_gh(
     run_binary(GH_BIN, GH_TIMEOUT, args, cwd, token)
 }
 
-fn drain<R: Read + Send + 'static>(stream: Option<R>) -> std::thread::JoinHandle<Vec<u8>> {
-    std::thread::spawn(move || {
-        let mut buffer = Vec::new();
-        if let Some(mut stream) = stream {
-            let _ = stream.read_to_end(&mut buffer);
-        }
-        buffer
-    })
-}
-
-fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<GhRunResult, GithubError> {
-    let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
-    let stdout = drain(child.stdout.take());
-    let stderr = drain(child.stderr.take());
-    let deadline = Instant::now() + timeout;
-    loop {
-        if let Some(status) = child.try_wait()? {
-            let out = stdout.join().unwrap_or_default();
-            let err = stderr.join().unwrap_or_default();
-            return Ok(GhRunResult {
-                stdout: String::from_utf8_lossy(&out).to_string(),
-                stderr: String::from_utf8_lossy(&err).to_string(),
-                exit_code: status.code().unwrap_or(-1),
-            });
-        }
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            let _ = stdout.join();
-            let _ = stderr.join();
-            return Err(GithubError::Timeout);
-        }
-        std::thread::sleep(GH_POLL_INTERVAL);
+fn run_with_timeout(cmd: Command, timeout: Duration) -> Result<GhRunResult, GithubError> {
+    match crate::proc::git::run_with_timeout(cmd, timeout) {
+        Ok(output) => Ok(GhRunResult {
+            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            exit_code: output.status.code().unwrap_or(-1),
+        }),
+        Err(crate::proc::git::GitError::Timeout { .. }) => Err(GithubError::Timeout),
+        Err(crate::proc::git::GitError::Spawn(error)) => Err(GithubError::Spawn(error)),
+        Err(other) => Err(GithubError::Spawn(std::io::Error::other(other))),
     }
-}
-
-pub(crate) fn run_git_authenticated(
-    args: &[&str],
-    cwd: &str,
-    token: Option<&str>,
-) -> Result<GhRunResult, GithubError> {
-    run_git_authenticated_within(args, cwd, token, None)
-}
-
-pub(crate) fn run_git_authenticated_within(
-    args: &[&str],
-    cwd: &str,
-    token: Option<&str>,
-    timeout: Option<std::time::Duration>,
-) -> Result<GhRunResult, GithubError> {
-    let mut git = Git::new().login_env();
-    if let Some(limit) = timeout {
-        git = git.timeout(limit);
-    }
-    if gh_available() {
-        git = git.args([
-            "-c",
-            "credential.https://github.com.helper=",
-            "-c",
-            "credential.https://github.com.helper=!gh auth git-credential",
-        ]);
-    }
-    git = git.args(args);
-    if !cwd.is_empty() {
-        git = git.cwd(cwd);
-    }
-    if let Some(t) = token {
-        if !t.is_empty() {
-            git = git.env("GH_TOKEN", t).env("GITHUB_TOKEN", t);
-        }
-    }
-    let output = git.output().map_err(|error| match error {
-        GitError::Spawn(inner) => GithubError::Spawn(inner),
-        _ => GithubError::Timeout,
-    })?;
-    Ok(GhRunResult {
-        stdout: output.stdout_lossy(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
-    })
 }
 
 fn parse_version(stdout: &str) -> Option<String> {
@@ -323,10 +264,13 @@ fn read_token_with<F, G>(
     project_id: Option<&str>,
     mut read_binding: F,
     mut read_global: G,
-) -> Option<String>
+) -> Result<Option<String>, integration_credentials::IntegrationCredentialError>
 where
-    F: FnMut(&str, Option<&str>) -> Option<String>,
-    G: FnMut() -> Option<String>,
+    F: FnMut(
+        &str,
+        Option<&str>,
+    ) -> Result<Option<String>, integration_credentials::IntegrationCredentialError>,
+    G: FnMut() -> Result<Option<String>, integration_credentials::IntegrationCredentialError>,
 {
     if let Some(workspace_id) = workspace_id.filter(|id| !id.is_empty()) {
         return read_binding(workspace_id, project_id.filter(|id| !id.is_empty()));
@@ -334,8 +278,11 @@ where
     read_global()
 }
 
-pub(crate) fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -> Option<String> {
-    let cache = integration_credentials::SecretCache::default();
+pub(crate) fn read_token(
+    workspace_id: Option<&str>,
+    project_id: Option<&str>,
+) -> Result<Option<String>, GithubError> {
+    let cache = integration_credentials::shared_cache();
     read_token_with(
         workspace_id,
         project_id,
@@ -344,21 +291,19 @@ pub(crate) fn read_token(workspace_id: Option<&str>, project_id: Option<&str>) -
                 GITHUB_PROVIDER,
                 workspace_id,
                 project_id,
-                &cache,
+                cache,
             )
-            .ok()
-            .flatten()
         },
-        || {
-            integration_credentials::read_global(GITHUB_PROVIDER, &cache)
-                .ok()
-                .flatten()
-        },
+        || integration_credentials::read_global(GITHUB_PROVIDER, cache),
     )
+    .map_err(|error| GithubError::Credential(error.to_string()))
 }
 
 pub(crate) fn token_for_workspace(workspace_id: Option<&str>) -> Option<String> {
-    read_token(workspace_id, None).filter(|t| !t.is_empty())
+    read_token(workspace_id, None)
+        .ok()
+        .flatten()
+        .filter(|t| !t.is_empty())
 }
 
 fn absent_status() -> GhStatus {
@@ -380,7 +325,19 @@ fn status_blocking(workspace_id: Option<String>, project_id: Option<String>) -> 
         Err(_) => None,
     };
 
-    let pat = read_token(ws, project_id.as_deref());
+    let Ok(pat) = read_token(ws, project_id.as_deref()) else {
+        return GhStatus {
+            available: true,
+            mode: "absent".to_string(),
+            version,
+            user: None,
+            scopes: Vec::new(),
+            scoped: ws
+                .filter(|s| !s.is_empty())
+                .map(integration_credentials::github_scoped)
+                .unwrap_or(false),
+        };
+    };
     let token_ref = pat.as_deref();
     let scoped = ws
         .filter(|s| !s.is_empty())
@@ -468,7 +425,7 @@ pub async fn gh_run(
     project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
     })
@@ -511,11 +468,15 @@ pub async fn git_push(
     project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         let owned =
             push_args(branch.as_deref(), sha.as_deref()).map_err(GithubError::Validation)?;
         let args: Vec<&str> = owned.iter().map(String::as_str).collect();
-        run_git_authenticated(&args, &cwd, token.as_deref())
+        Ok(crate::remote_auth::run_git_authenticated(
+            &args,
+            &cwd,
+            token.as_deref(),
+        )?)
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
@@ -531,7 +492,8 @@ pub enum LeasePushOutcome {
 
 pub(crate) fn lease_argument(branch: &str, expected_remote_sha: Option<&str>) -> String {
     format!(
-        "--force-with-lease=refs/heads/{branch}:{}",
+        "--force-with-lease={}:{}",
+        crate::remote::lease_ref(branch),
         expected_remote_sha.unwrap_or_default()
     )
 }
@@ -582,7 +544,7 @@ pub(crate) fn push_with_lease_blocking(
     let owned = lease_push_args(branch, expected_remote_sha, source_sha)
         .map_err(GithubError::Validation)?;
     let args: Vec<&str> = owned.iter().map(String::as_str).collect();
-    let result = run_git_authenticated(&args, cwd, token)?;
+    let result = crate::remote_auth::run_git_authenticated(&args, cwd, token)?;
     Ok(lease_push_outcome(&result))
 }
 
@@ -596,7 +558,7 @@ pub async fn git_push_with_lease(
     project_id: Option<String>,
 ) -> Result<LeasePushOutcome, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         push_with_lease_blocking(
             &cwd,
             &branch,
@@ -618,7 +580,7 @@ pub async fn gh_pr_diff(
     project_id: Option<String>,
 ) -> Result<String, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         let pr_str = pr.to_string();
         let res = run_gh(
             &["pr", "diff", &pr_str, "--repo", &repo],
@@ -647,6 +609,38 @@ mod tests {
     use std::time::{Duration, Instant};
 
     const MISSING_BIN: &str = "goodboy-no-such-binary";
+
+    #[test]
+    fn a_failed_git_run_is_labelled_git_and_never_the_gh_timeout() {
+        use crate::proc::git::{GitClass, GitError};
+
+        let failed = GithubError::from(GitError::Failed {
+            message: "git push origin failed: remote rejected".to_string(),
+        });
+        let timed_out = GithubError::from(GitError::Timeout {
+            args: "push origin".to_string(),
+            secs: 1800,
+            class: GitClass::Network,
+        });
+
+        assert_eq!(
+            serde_json::to_value(&failed).unwrap(),
+            serde_json::json!({"kind": "git", "message": "git push origin failed: remote rejected"})
+        );
+        assert_eq!(
+            serde_json::to_value(&timed_out).unwrap(),
+            serde_json::json!({"kind": "git", "message": "git push origin timed out after 1800s"})
+        );
+    }
+
+    #[test]
+    fn a_git_spawn_failure_stays_a_spawn_error() {
+        use crate::proc::git::GitError;
+
+        let error = GithubError::from(GitError::Spawn(std::io::Error::other("no git")));
+
+        assert!(matches!(error, GithubError::Spawn(_)));
+    }
 
     #[test]
     fn the_gh_call_path_gives_up_on_a_command_that_never_returns() {
@@ -975,12 +969,12 @@ mod tests {
             |workspace_id, project_id| {
                 assert_eq!(workspace_id, "workspace-1");
                 assert_eq!(project_id, Some("project-1"));
-                Some("project-token".to_string())
+                Ok(Some("project-token".to_string()))
             },
             || panic!("a scoped read must not use the global credential"),
         );
 
-        assert_eq!(token.as_deref(), Some("project-token"));
+        assert_eq!(token.unwrap().as_deref(), Some("project-token"));
     }
 
     #[test]
@@ -989,10 +983,66 @@ mod tests {
             None,
             Some("project-1"),
             |_, _| panic!("a project cannot resolve without a workspace"),
-            || Some("global-token".to_string()),
+            || Ok(Some("global-token".to_string())),
         );
 
-        assert_eq!(token.as_deref(), Some("global-token"));
+        assert_eq!(token.unwrap().as_deref(), Some("global-token"));
+    }
+
+    fn store_failure() -> crate::integration_credentials::IntegrationCredentialError {
+        crate::integration_credentials::IntegrationCredentialError::Store(
+            "keychain locked".to_string(),
+        )
+    }
+
+    #[test]
+    fn a_keychain_failure_on_a_scoped_read_is_an_error_not_a_missing_token() {
+        let token = read_token_with(
+            Some("workspace-1"),
+            None,
+            |_, _| Err(store_failure()),
+            || panic!("a scoped read must not use the global credential"),
+        );
+
+        assert!(token.is_err());
+    }
+
+    #[test]
+    fn a_missing_secret_on_a_scoped_read_is_an_error() {
+        let token = read_token_with(
+            Some("workspace-1"),
+            None,
+            |_, _| {
+                Err(
+                    crate::integration_credentials::IntegrationCredentialError::MissingSecret {
+                        provider: "github".to_string(),
+                        credential_id: "cred-1".to_string(),
+                    },
+                )
+            },
+            || panic!("a scoped read must not use the global credential"),
+        );
+
+        assert!(token.is_err());
+    }
+
+    #[test]
+    fn a_keychain_failure_on_the_global_read_is_an_error() {
+        let token = read_token_with(
+            None,
+            None,
+            |_, _| panic!("no workspace, no binding read"),
+            || Err(store_failure()),
+        );
+
+        assert!(token.is_err());
+    }
+
+    #[test]
+    fn an_unbound_scope_reads_ok_none_so_the_machine_login_stays_reachable() {
+        let token = read_token_with(Some("workspace-1"), None, |_, _| Ok(None), || Ok(None));
+
+        assert_eq!(token.unwrap(), None);
     }
 
     #[test]
@@ -1021,5 +1071,47 @@ mod tests {
         assert!(push_args(None, Some("c81e5aa0f3")).is_err());
         assert!(push_args(Some("hl/fix"), Some("HEAD")).is_err());
         assert!(push_args(Some("hl/fix"), Some("c81e5aa --force")).is_err());
+    }
+
+    #[test]
+    fn a_grandchild_holding_the_pipe_cannot_outlive_the_timeout() {
+        let pid_file = std::env::temp_dir().join(format!(
+            "goodboy-gh-grandchild-{}-{}.pid",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let script = format!(
+            "sleep 30 & echo $! > {}; echo started; exit 0",
+            pid_file.display()
+        );
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", &script]);
+        let started = Instant::now();
+
+        let result = run_with_timeout(cmd, Duration::from_millis(400));
+
+        assert!(matches!(result, Err(GithubError::Timeout)));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        let sleeper = std::fs::read_to_string(&pid_file)
+            .expect("the grandchild wrote its pid")
+            .trim()
+            .to_string();
+        let _ = std::fs::remove_file(&pid_file);
+        let mut alive = true;
+        for _ in 0..60 {
+            let probe = Command::new("kill")
+                .args(["-0", &sleeper])
+                .output()
+                .unwrap();
+            if !probe.status.success() {
+                alive = false;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(!alive, "the grandchild of a timed-out gh must not survive");
     }
 }

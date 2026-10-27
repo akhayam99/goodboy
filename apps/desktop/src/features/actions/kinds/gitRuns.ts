@@ -1,9 +1,9 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ReviewTargetOutcome } from '../../../store/slices/review-navigation/types';
-import { readOnlineRemoteSha } from '../../../store/slices/worktreeStatuses/onlyOnline';
+import { readOnlineRemoteSha } from '../../../store/runtime/worktreeStatuses/onlyOnline';
 import { pushFailedError } from './pushFailedError';
-import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOnline';
-import { ensure, worktreeStatusKey } from '../../../store/slices/worktreeStatuses/cache';
+import type { OnlineCommit } from '../../../store/runtime/worktreeStatuses/onlyOnline';
+import { ensure, worktreeStatusKey } from '../../../store/runtime/worktreeStatuses/cache';
 import { REVIEW_TARGET_REASON_COPY } from '../../review/reviewTargetCopy';
 import { worktreeAbortRebase } from '../../worktree/worktree';
 import type { ActionConfirm, ActionEnv, ActionRunOutcome } from '../types';
@@ -60,11 +60,12 @@ const lostCommitsNotes = ({ subjects }: SubjectsParams) => {
   return rest > 0 ? [...listed, `and ${rest} more`] : listed;
 };
 
-export const pushConfirm = ({ facts }: PushParams): ActionConfirm | null => {
-  if (!canForcePush({ facts })) {
-    return null;
-  }
-  const lost = facts.onlyOnline ?? [];
+type ForceConfirmParams = {
+  readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
+};
+
+export const forcePushConfirm = ({ onlyOnline }: ForceConfirmParams): ActionConfirm => {
+  const lost = onlyOnline ?? [];
   if (lost.length > 0) {
     return {
       title: `Replace the online copy and drop ${plural({ count: lost.length, one: 'commit', many: 'commits' })}?`,
@@ -77,13 +78,16 @@ export const pushConfirm = ({ facts }: PushParams): ActionConfirm | null => {
   return {
     title: 'Replace the online copy?',
     description:
-      facts.onlyOnline === null
+      onlyOnline === null
         ? 'This machine has not checked the online copy yet. Anything pushed there since is lost.'
         : 'The online copy has no commits you lack. Nothing online is lost.',
     confirmLabel: 'Force push',
     role: 'danger',
   };
 };
+
+export const pushConfirm = ({ facts }: PushParams): ActionConfirm | null =>
+  canForcePush({ facts }) ? forcePushConfirm({ onlyOnline: facts.onlyOnline }) : null;
 
 export const pushLabel = ({ facts }: PushParams): string => {
   const own = facts.isDiverged && facts.ahead > 0 ? facts.ahead : facts.unpushed;
@@ -139,14 +143,20 @@ export const pushMount = async ({
   confirmedOnlyOnline,
 }: PushMountParams): Promise<void> => {
   const confirmedRemoteSha = isForce ? readOnlineRemoteSha({ mountId }) : null;
-  const result = isForce
-    ? await env.getState().forcePushSessionBranch({
-        sessionId,
-        mountId,
-        confirmedOnlyOnline: confirmedOnlyOnline?.map((commit) => commit.sha) ?? null,
-        confirmedRemoteSha,
-      })
-    : await env.getState().pushSessionBranch({ sessionId, mountId });
+  const result = await env.getState().pushBranch(
+    isForce
+      ? {
+          sessionId,
+          mountId,
+          mode: 'lease',
+          guard: {
+            kind: 'confirmed',
+            confirmedOnlyOnline: confirmedOnlyOnline?.map((commit) => commit.sha) ?? null,
+            confirmedRemoteSha,
+          },
+        }
+      : { sessionId, mountId, mode: 'plain' },
+  );
   if (!result.ok) {
     throw pushFailedError({
       message: result.error,

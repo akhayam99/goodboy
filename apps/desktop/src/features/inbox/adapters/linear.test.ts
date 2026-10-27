@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { LinearIssue } from '../../integrations/linear/client';
-import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/useLinearIssues';
+import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/buildIssueGroups';
 import { adaptLinearIssues } from './linear';
 
 const issue = (overrides: Partial<LinearIssue> = {}): LinearIssue => ({

@@ -19,7 +19,7 @@ describe('FormActions', () => {
     const discard = screen.getByRole('button', { name: 'Discard' });
     const start = screen.getByRole('button', { name: 'Start' });
     expect(discard.parentElement).toBe(start.parentElement);
-    expect(discard.parentElement?.className).toContain('ml-auto');
+    expect(discard.parentElement?.parentElement?.className).toContain('justify-end');
     expect(discard.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

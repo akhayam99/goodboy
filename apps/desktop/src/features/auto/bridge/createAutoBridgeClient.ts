@@ -11,6 +11,7 @@ import {
   type AutoBridgePorts,
   type AutoBridgeRequest,
 } from './autoBridgeProtocol';
+import { isRecord } from '@goodboy/types/helpers';
 
 const AUTO_BRIDGE_TIMEOUT_MS = 30_000;
 
@@ -23,11 +24,6 @@ const STOP_RESULTS: ReadonlyArray<TreeStopResult> = ['stopped', 'stuck', 'not_ow
 const TURN_RESULTS: ReadonlyArray<AutoUserTurnResult> = ['queued', 'lost'];
 
 const DECISION_RESULTS: ReadonlyArray<DelegationDecisionResult> = ['confirmed', 'declined', 'lost'];
-
-type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isStopResult = (value: unknown): value is TreeStopResult =>
   STOP_RESULTS.some((result) => result === value);

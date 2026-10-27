@@ -3,8 +3,6 @@ import { PaneShell, ScrollFade } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
 import { SceneRunsSurface } from '../SceneRunsSurface';
-import { NeedsYouBlock } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock';
-import type { NeedsYouOwner } from '../../../../../features/session/timeline/needsYou';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
 import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
 import { TaskGroupRows } from '../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
@@ -137,35 +135,6 @@ const NO_GROUP_HANDLERS = {
   onToggleStar: noop,
 };
 
-const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
-  {
-    id: 'mock-states-owner-pr',
-    kind: 'fixRun',
-    text: '#318 · 5 to review · 1 question',
-    where: null,
-    at: null,
-    item: null,
-    question: null,
-    questionIds: [],
-    prNumber: 318,
-    owed: null,
-    mountId: null,
-  },
-  {
-    id: 'mock-states-owner-rebase',
-    kind: 'rebase',
-    text: 'Rebase of hl/fix-duplicate-credit stopped',
-    where: null,
-    at: null,
-    item: null,
-    question: null,
-    questionIds: [],
-    prNumber: null,
-    owed: null,
-    mountId: null,
-  },
-];
-
 export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'runs-list-empty': () => (
     <StateScene lens="workflows">
@@ -247,11 +216,6 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
           />
         </InboxList>
       </PaneShell>
-    </StateScene>
-  ),
-  'needs-you-card': () => (
-    <StateScene frame="plain">
-      <NeedsYouBlock owners={NEEDS_YOU_OWNERS} onOpen={noop} />
     </StateScene>
   ),
 };

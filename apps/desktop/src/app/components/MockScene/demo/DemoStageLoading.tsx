@@ -15,6 +15,6 @@ export const DemoStageLoading = ({ label }: Props) => (
       size={TILE_PX}
       className="ring-1 ring-inset ring-frame-edge motion-safe:animate-soft-pulse"
     />
-    <span className="text-label text-muted-foreground">Loading {label}</span>
+    <span className="text-meta text-muted-foreground">Loading {label}</span>
   </div>
 );

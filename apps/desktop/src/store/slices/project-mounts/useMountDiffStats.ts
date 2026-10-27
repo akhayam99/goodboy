@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
-import { readMockMountDiffStat } from '../../mock-data';
+import { readMockMountDiffStat } from '../../../shared/lib/mockFixtures';
 import { useAppStore } from '../../store';
 import { loadMountChangedFiles } from './loadMountChangedFiles';
 import { selectMountBaseBranch } from './selectors';
@@ -27,7 +27,7 @@ const loadMountDiffStat = async ({
   baseBranch,
   revision,
 }: LoadMountDiffStatParams): Promise<MountDiffStat> => {
-  const mocked = readMockMountDiffStat(worktreePath);
+  const mocked = readMockMountDiffStat({ worktreePath });
   if (mocked !== null) {
     return mocked;
   }

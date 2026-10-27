@@ -703,7 +703,7 @@ describe('demo playground', () => {
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
-    expect(within(topBar()).getByRole('button', { name: 'Hide hints' })).not.toBeNull();
+    within(topBar()).getByRole('button', { name: 'Hide hints' });
     expect(instruction()).toBe(chapterOf({ id: 'setup' }).hints[0]?.instruction);
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
     expect(screen.queryByRole('note')).not.toBeNull();
@@ -717,7 +717,7 @@ describe('demo playground', () => {
     hint({ frame, hintId: first?.id ?? '' });
     fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
     expect(screen.queryByRole('note')).toBeNull();
-    expect(within(topBar()).getByRole('button', { name: 'Hide hints' })).not.toBeNull();
+    within(topBar()).getByRole('button', { name: 'Hide hints' });
     expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
     tried({ frame, hintId: first?.id ?? '' });
     elapse({ ms: RESULT_DWELL_MS });
@@ -731,7 +731,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     const first = chapterOf({ id: 'setup' }).hints[0]?.id ?? '';
     hint({ frame, hintId: first });
-    expect(screen.getByRole('note')).not.toBeNull();
+    screen.getByRole('note');
     fireEvent.click(within(topBar()).getByRole('button', { name: 'Hide hints' }));
     expect(screen.queryByRole('note')).toBeNull();
     view.unmount();
@@ -740,7 +740,7 @@ describe('demo playground', () => {
     hint({ frame: visibleFrame(), hintId: first });
     expect(screen.queryByRole('note')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show hints' }));
-    expect(screen.getByRole('note')).not.toBeNull();
+    screen.getByRole('note');
   });
 
   it('keeps progress in the tab and never in the shared storage', () => {

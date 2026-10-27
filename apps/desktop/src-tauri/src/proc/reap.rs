@@ -20,6 +20,35 @@ pub(crate) struct ReapParams<'a> {
     pub(crate) spawn_id: Option<&'a str>,
 }
 
+pub(crate) const STALE_TURN_DIR_AGE: std::time::Duration = std::time::Duration::from_secs(6 * 3600);
+
+pub(crate) fn sweep_stale_turn_dirs(
+    temp: &std::path::Path,
+    now: std::time::SystemTime,
+    max_age: std::time::Duration,
+) -> usize {
+    let mut removed = 0;
+    for base in [crate::chat_images::TURN_DIR, crate::chat::ASK_DIR] {
+        let Ok(entries) = std::fs::read_dir(temp.join(base)) else {
+            continue;
+        };
+        for path in entries.flatten().map(|entry| entry.path()) {
+            let age = std::fs::metadata(&path)
+                .and_then(|meta| meta.modified())
+                .ok()
+                .and_then(|modified| now.duration_since(modified).ok());
+            if age.is_none_or(|age| age < max_age) {
+                continue;
+            }
+            crate::chat_images::remove_turn_root(&path);
+            if !path.exists() {
+                removed += 1;
+            }
+        }
+    }
+    removed
+}
+
 #[cfg(not(unix))]
 pub(crate) fn reap(_params: ReapParams<'_>) -> ReapReport {
     ReapReport::default()
@@ -35,8 +64,13 @@ pub(crate) fn tree_cpu(_leader_pid: u32) -> Option<u64> {
     None
 }
 
+#[cfg(not(unix))]
+pub(crate) fn trees_cpu(_leader_pids: &[u32]) -> std::collections::HashMap<u32, u64> {
+    std::collections::HashMap::new()
+}
+
 #[cfg(unix)]
-pub(crate) use unix::{reap, sweep_orphans, tree_cpu};
+pub(crate) use unix::{reap, sweep_orphans, tree_cpu, trees_cpu};
 
 #[cfg(unix)]
 pub(crate) mod unix {
@@ -52,6 +86,7 @@ pub(crate) mod unix {
     const KILL_GRACE: Duration = Duration::from_millis(200);
     const POLL_INTERVAL: Duration = Duration::from_millis(25);
     const MAX_ROUNDS: usize = 6;
+    const TABLE_DEADLINE: Duration = Duration::from_secs(5);
     const SHELL_NAMES: [&str; 6] = ["sh", "bash", "zsh", "fish", "dash", "env"];
 
     #[derive(Debug, Clone, PartialEq, Eq)]
@@ -177,14 +212,25 @@ pub(crate) mod unix {
         }
     }
 
+    fn table_command() -> Command {
+        let mut command = ps();
+        command.args(["-A", "-o", "pid=,ppid=,pgid=,uid=,stat=,comm="]);
+        command
+    }
+
+    pub(crate) fn read_table(command: Command, deadline: Duration) -> Option<String> {
+        let output = crate::proc::probe::run(command, Instant::now() + deadline).ok()?;
+        match output.timed_out {
+            true => None,
+            false => Some(output.stdout),
+        }
+    }
+
     fn live_table() -> Vec<ProcRow> {
-        let Ok(output) = ps()
-            .args(["-A", "-o", "pid=,ppid=,pgid=,uid=,stat=,comm="])
-            .output()
-        else {
+        let Some(text) = read_table(table_command(), TABLE_DEADLINE) else {
             return Vec::new();
         };
-        parse_table(&String::from_utf8_lossy(&output.stdout))
+        parse_table(&text)
             .into_iter()
             .filter_map(|mut row| {
                 let Some(identity) = kernel::identity(row.pid) else {
@@ -197,6 +243,14 @@ pub(crate) mod unix {
                 row.start = identity.start;
                 Some(row)
             })
+            .collect()
+    }
+
+    pub(crate) fn started_with_app(table: &[ProcRow], me: &Me) -> Vec<ProcRow> {
+        table
+            .iter()
+            .filter(|row| me.app_start == 0 || row.start >= me.app_start)
+            .cloned()
             .collect()
     }
 
@@ -538,7 +592,7 @@ pub(crate) mod unix {
             }
             is_scanned = true;
             let tagged = match params.spawn_id {
-                Some(_) => scan_tagged(probe, &table, &me),
+                Some(_) => scan_tagged(probe, &started_with_app(&table, &me), &me),
                 None => Vec::new(),
             };
             let selection = select_targets(&table, &tagged, &params, &me);
@@ -595,6 +649,29 @@ pub(crate) mod unix {
             .filter_map(|row| kernel::cpu_time(row.pid))
             .fold(0u64, u64::saturating_add);
         Some(total)
+    }
+
+    pub(crate) fn trees_cpu(leader_pids: &[u32]) -> HashMap<u32, u64> {
+        let table = (LIVE.table)();
+        trees_cpu_in(&table, leader_pids, kernel::cpu_time)
+    }
+
+    pub(crate) fn trees_cpu_in(
+        table: &[ProcRow],
+        leader_pids: &[u32],
+        cpu_of: impl Fn(u32) -> Option<u64>,
+    ) -> HashMap<u32, u64> {
+        leader_pids
+            .iter()
+            .filter_map(|&leader_pid| {
+                let leader = table.iter().find(|row| row.pid == leader_pid)?;
+                let total = std::iter::once(leader)
+                    .chain(descendants(table, leader_pid))
+                    .filter_map(|row| cpu_of(row.pid))
+                    .fold(0u64, u64::saturating_add);
+                Some((leader_pid, total))
+            })
+            .collect()
     }
 
     fn is_app_alive(probe: &Probe, pid: u32, start: u64) -> bool {
@@ -760,7 +837,7 @@ pub(crate) mod unix {
 #[cfg(all(test, unix))]
 mod tests {
     use std::collections::HashMap;
-    use std::process::Child;
+    use std::process::{Child, Command};
     use std::sync::Mutex;
     use std::time::{Duration, Instant};
 
@@ -769,8 +846,9 @@ mod tests {
         HELPER_MODE_ENV, HELPER_TEST,
     };
     use super::unix::{
-        live_identity_if_same, orphans, parse_table, reap_with, select_targets, signal_selected,
-        sweep_with, tag_from_env, Me, Probe, ProcRow, Selected, TagInfo, LIVE,
+        live_identity_if_same, orphans, parse_table, read_table, reap_with, select_targets,
+        signal_selected, started_with_app, sweep_with, tag_from_env, trees_cpu_in, Me, Probe,
+        ProcRow, Selected, TagInfo, LIVE,
     };
     use super::*;
     use crate::aux_spawn::{app_start, APP_PID_ENV, APP_START_ENV, SPAWN_ID_ENV, SPAWN_KIND_ENV};
@@ -1525,6 +1603,114 @@ mod tests {
         let _ = member.wait();
         assert!(report.stopped.iter().any(|process| process.pid == pid));
         assert!(is_gone(pid));
+    }
+
+    static ENV_READS: Mutex<Vec<u32>> = Mutex::new(Vec::new());
+
+    fn recording_environ(pid: u32) -> Option<Vec<String>> {
+        ENV_READS.lock().expect("reads").push(pid);
+        kernel::environ(pid)
+    }
+
+    #[test]
+    fn only_rows_started_with_this_app_are_scanned_for_a_tag() {
+        let row = |pid: u32, start: u64| ProcRow {
+            pid,
+            ppid: 1,
+            pgid: pid,
+            uid: 501,
+            stat: "S".to_string(),
+            name: "node".to_string(),
+            start,
+        };
+        let me = Me {
+            pid: 10,
+            uid: 501,
+            pgid: 10,
+            app_start: 1_000,
+        };
+        let table = [row(20, 999), row(21, 1_000), row(22, 5_000), row(23, 0)];
+
+        let kept: Vec<u32> = started_with_app(&table, &me)
+            .iter()
+            .map(|row| row.pid)
+            .collect();
+        assert_eq!(kept, vec![21, 22]);
+
+        let unknown = Me { app_start: 0, ..me };
+        assert_eq!(started_with_app(&table, &unknown).len(), 4);
+    }
+
+    #[test]
+    fn a_reap_reads_no_environment_of_a_process_older_than_the_app() {
+        let id = unique_id("env-scope");
+        let helper = spawn_tagged_helper(&id, std::process::id(), "turn");
+        let probe = Probe {
+            environ: recording_environ,
+            ..LIVE
+        };
+        ENV_READS.lock().expect("reads").clear();
+
+        let report = reap_with(&probe, params(None, Some(&id)));
+
+        let app_start = Me::current().app_start;
+        let reads = ENV_READS.lock().expect("reads").clone();
+        assert!(reads.contains(&helper.id()));
+        assert!(report
+            .stopped
+            .iter()
+            .any(|process| process.pid == helper.id()));
+        for pid in reads {
+            if let Some(identity) = kernel::identity(pid) {
+                assert!(
+                    identity.start >= app_start,
+                    "read the environment of {pid}, which began before the app"
+                );
+            }
+        }
+        cleanup(helper);
+    }
+
+    #[test]
+    fn a_process_table_that_does_not_answer_in_time_reads_as_empty() {
+        let mut slow = Command::new("/bin/sh");
+        slow.args(["-c", "sleep 20"]);
+        let started = Instant::now();
+
+        let text = read_table(slow, Duration::from_millis(300));
+
+        assert!(text.is_none());
+        assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn one_table_gives_the_cpu_of_every_leader_and_its_descendants() {
+        let table = vec![
+            row(10, 1, 10, 501, "claude"),
+            row(11, 10, 10, 501, "node"),
+            row(12, 11, 10, 501, "tsc"),
+            row(20, 1, 20, 501, "codex"),
+            row(30, 1, 30, 501, "other"),
+        ];
+        let cpu = |pid: u32| match pid {
+            10 => Some(5),
+            11 => Some(7),
+            12 => Some(11),
+            20 => Some(2),
+            _ => None,
+        };
+
+        let totals = trees_cpu_in(&table, &[10, 20, 99], cpu);
+
+        assert_eq!(totals.get(&10), Some(&23));
+        assert_eq!(totals.get(&20), Some(&2));
+        assert_eq!(totals.get(&99), None);
+    }
+
+    #[test]
+    fn the_live_table_lists_this_test_process() {
+        let me = std::process::id();
+        assert!((LIVE.table)().iter().any(|row| row.pid == me));
     }
 
     #[test]

@@ -22,25 +22,20 @@ export const TaskDragLayer = () => {
           data-testid="task-drag-ghost"
           aria-hidden
           style={{ left: drag.x + GHOST_OFFSET_PX, top: drag.y + GHOST_OFFSET_PX }}
-          className="pointer-events-none fixed z-50 flex items-center gap-2"
+          className="pointer-events-none fixed z-drag flex items-center gap-2"
         >
-          <span
-            className={cn(
-              'shadow-md',
-              chipClasses({ tone: 'neutral', shape: 'badge', size: 'control' }),
-            )}
-          >
+          <span className={cn('shadow-md', chipClasses({ tone: 'neutral', kind: 'reference' }))}>
             {drag.task.identifier}
           </span>
           {drag.intent === null ? null : (
             <span
               className={cn(
-                'text-label',
+                'text-meta',
                 chipClasses({
                   tone: drag.intent.kind === 'refused' ? 'danger' : 'neutral',
-                  shape: 'pill',
-                  size: 'control',
+                  kind: 'reference',
                 }),
+                'rounded-full',
               )}
             >
               {drag.intent.text}

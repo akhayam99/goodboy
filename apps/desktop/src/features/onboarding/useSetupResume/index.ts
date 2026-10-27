@@ -1,5 +1,5 @@
 import { useOnboardingProgress } from '../hooks/useOnboardingProgress';
-import { getWizardStep, resumeSetup } from '../onboarding-store';
+import { getWizardStep, resumeSetup } from '../onboardingSettings';
 import { WIZARD_STEP_LABEL, resumeStep } from '../OnboardingWizard/wizardSteps';
 
 type Params = {

@@ -1,5 +1,6 @@
 import { IconButton } from '@goodboy/ui';
 import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';
+import { ROW_MENU_TOOLTIP } from '../../../actions/rowMenuTooltip';
 import type { NotificationActionTarget } from '../../../actions/types';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
@@ -32,6 +33,7 @@ export const NotificationRowActions = ({ target, anchorKey }: Props) => {
       <ObjectOverflowMenu
         target={target}
         label={`Actions for "${target.facts.title}"`}
+        tooltip={ROW_MENU_TOOLTIP}
         anchorKey={anchorKey}
         hideWhenEmpty
       />

@@ -1,8 +1,15 @@
-import { ErrorStrip, PanelLoading, SectionHeader, StudioWidget, formatUsd } from '@goodboy/ui';
+import {
+  ErrorStrip,
+  formatUsd,
+  ICON_SIZE,
+  PanelLoading,
+  SectionHeader,
+  StudioWidget,
+} from '@goodboy/ui';
 import type { BudgetAlert, ProviderName } from '@goodboy/types';
 import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
-import { budgetPctUsed } from '../../providerBudgetView';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { budgetPctUsed, budgetTone } from '../../providerBudgetView';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
@@ -82,6 +89,7 @@ export const SpendSection = ({
                 valueLabel={formatUsd(entry.spentUsd)}
                 metaLabel={limitLabel({ entry })}
                 pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
+                tone={entry.budget === null ? 'primary' : budgetTone({ status: entry.budget })}
                 icon={<ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />}
                 onClick={() => onSelectProvider(entry.provider)}
               />

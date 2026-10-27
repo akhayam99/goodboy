@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, History } from 'lucide-react';
-import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { EmptyLine, Eyebrow, ICON_SIZE, SelectableRow } from '@goodboy/ui';
+
 import { RailSearch } from '../../../../shared/components/RailSearch';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
 import type { ReleaseEntry } from '../../parseChangelog';
@@ -109,7 +109,7 @@ export const ChangelogRail = ({
         </SelectableRow>
       ) : null}
       {releases.length === 0 ? (
-        <EmptyLine className="px-2 py-2 text-label text-faint-foreground">
+        <EmptyLine className="px-2 py-2 text-meta text-faint-foreground">
           No release mentions "{query}".
         </EmptyLine>
       ) : null}

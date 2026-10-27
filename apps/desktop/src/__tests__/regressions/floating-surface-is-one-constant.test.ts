@@ -7,7 +7,43 @@ import { FLOATING_SURFACE } from '@goodboy/ui';
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const UI_SRC = join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src');
 
+const REPO_ROOT = join(DESKTOP_SRC, '..', '..', '..');
+
 const read = (path: string): string => readFileSync(path, 'utf8');
+
+const HAND_PAINTED_FILL_BASELINE: ReadonlyArray<string> = [
+  'apps/desktop/src/app/components/MockScene/scenes/DesignScaleScene.tsx',
+  'apps/desktop/src/app/components/MockScene/scenes/ListboxScenePanel.tsx',
+  'apps/desktop/src/app/components/MockScene/scenes/audit/FormsAuditScene.tsx',
+  'apps/desktop/src/app/components/MockScene/scenes/u23/topbar/WorkspaceSwitcherSingleScene.tsx',
+  'apps/desktop/src/app/components/MockScene/scenes/u24/settings-projects/PickerStarredScene.tsx',
+  'apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx',
+  'apps/desktop/src/features/workspace/components/SidebarPeekOverlay/index.tsx',
+  'packages/ui/src/components/Dialog.tsx',
+];
+
+type SourceParams = {
+  readonly root: string;
+};
+
+const sourceFiles = ({ root }: SourceParams): ReadonlyArray<string> =>
+  readdirSync(root, { recursive: true, encoding: 'utf8' })
+    .filter(
+      (path) => path.endsWith('.tsx') && !path.includes('.test.') && !path.includes('__tests__'),
+    )
+    .map((path) => join(root, path));
+
+describe('the floating fill', () => {
+  it('is painted by a tsx file only through the constant, but for a fixed baseline that only falls', () => {
+    const painters = [DESKTOP_SRC, UI_SRC]
+      .flatMap((root) => sourceFiles({ root }))
+      .filter((path) => /bg-floating/.test(read(path)) && !/FLOATING_SURFACE/.test(read(path)))
+      .map((path) => path.slice(REPO_ROOT.length + 1))
+      .sort();
+
+    expect(painters).toEqual(HAND_PAINTED_FILL_BASELINE);
+  });
+});
 
 describe('the floating surface', () => {
   it('is one border, one fill and one shadow', () => {

@@ -15,7 +15,7 @@ import { conversationSourceOfThread } from './notes/conversationSource';
 import {
   isDeliveryComplete,
   resolveDeliveryReceiptsFor,
-} from '../../store/slices/resolve/deliveryReceipts';
+} from '../../store/slices/resolve/publication/deliveryReceipts';
 import {
   resolveProposalKind,
   type ResolveProposalKind,

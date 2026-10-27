@@ -17,7 +17,7 @@ export const setGithubToken = (set: SetFn, get: GetFn) => {
       }));
     }
     await refreshEveryGithubConnection({ get });
-    get().sweepGithub();
+    void get().sweepRequests();
     return status;
   };
 };

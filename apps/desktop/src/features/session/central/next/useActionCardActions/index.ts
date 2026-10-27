@@ -21,8 +21,7 @@ import { autoUnavailableReason } from '../../../../auto/autoUnavailableReason';
 import type { RebaseStopRow } from '../../../../history/rebaseStopRowOf';
 import { useRebaseStopRows } from '../../../../history/useRebaseStopRows';
 import { selectWritableMounts } from '../../../../../store/slices/project-mounts/selectors';
-import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
-import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
+import { rebaseStopVerbs } from '../../../../../store/slices/history/rebaseStopVerbs';
 import { useIsAutoOn } from '../../../../auto/useIsAutoOn';
 import { pendingChoiceIds } from '../../../../suggestions/pendingChoiceIds';
 import { useSuggestionRunner } from '../../../../suggestions/useSuggestionRunner';
@@ -312,51 +311,21 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       });
 
   const stopMainOf = ({ row, owner, mountId, key }: StopVerbParams): Omit<VerbParams, 'isBusy'> => {
-    const store = useAppStore.getState;
+    const verbs = rebaseStopVerbs({ get: useAppStore.getState, sessionId, mountId });
     const runIt = ({ task }: TaskParams) => runLater({ key, task });
     switch (row.verb) {
       case 'resolve-auto':
         return {
           label: 'Resolve with Auto',
           isDisabled: autoBlockedReason !== null,
-          run: runIt({
-            task: () => {
-              const state = store();
-              const capture = captureStartHint({
-                state,
-                sessionId,
-                scope: START_HINT_SCOPES.rebase({ mountId }),
-              });
-              return state.resolveRebaseWithAuto({
-                sessionId,
-                mountIds: [mountId],
-                hint: capture.text,
-                onAccepted: () => store().settleStartHint({ capture }),
-              });
-            },
-          }),
+          run: runIt({ task: verbs.resolveWithAuto }),
         };
       case 'bring-in':
-        return {
-          label: 'Bring them in',
-          run: runIt({ task: () => store().bringOriginInAndPush({ sessionId, mountId }) }),
-        };
+        return { label: 'Bring them in', run: runIt({ task: verbs.bringIn }) };
       case 'retry-rebase':
-        return {
-          label: 'Retry rebase',
-          run: runIt({ task: () => store().rebaseBranch({ sessionId, mountId }) }),
-        };
+        return { label: 'Retry rebase', run: runIt({ task: verbs.retryRebase }) };
       case 'fix-push':
-        return {
-          label: 'Fix with agent',
-          run: runIt({
-            task: () => {
-              const state = store();
-              state.adoptRebaseStop({ sessionId, mountId });
-              return state.fixPushWithAgent({ sessionId, mountId });
-            },
-          }),
-        };
+        return { label: 'Fix with agent', run: runIt({ task: verbs.fixPush }) };
       case 'open':
         return { label: ownerVerbOf({ owner }), run: () => openNeedsYou({ owner }) };
       default: {
@@ -377,7 +346,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     const mountId = mount.mountId;
     const key = card.id;
     const isBusy = busyIds.has(key);
-    const store = useAppStore.getState;
+    const stopVerbs = rebaseStopVerbs({ get: useAppStore.getState, sessionId, mountId });
     const later = ({ task }: TaskParams) => runLater({ key, task });
     const main = stopMainOf({ row, owner, mountId, key });
     const verbs: ReadonlyArray<FoldedVerb> = [
@@ -386,7 +355,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
             {
               id: `${key}:myself`,
               label: 'Resolve myself',
-              run: later({ task: () => store().resolveRebaseMyself({ sessionId, mountId }) }),
+              run: later({ task: stopVerbs.resolveMyself }),
             },
           ]
         : []),
@@ -395,21 +364,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
             {
               id: `${key}:undo`,
               label: 'Undo rebase',
-              run: later({
-                task: async () => {
-                  const state = store();
-                  const run = state.adoptRebaseStop({ sessionId, mountId });
-                  if (run === null || run.backupRef === null) {
-                    return;
-                  }
-                  await state.restoreHistory({
-                    sessionId,
-                    mountId,
-                    backupRef: run.backupRef,
-                    shouldPush: false,
-                  });
-                },
-              }),
+              run: later({ task: stopVerbs.undoRebase }),
             },
           ]
         : []),
@@ -418,7 +373,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
             {
               id: `${key}:keep`,
               label: 'Keep branch as it was',
-              run: later({ task: () => store().keepRebaseStop({ sessionId, mountId }) }),
+              run: later({ task: stopVerbs.keep }),
             },
           ]
         : []),

@@ -7,8 +7,10 @@ import {
   type ErrorReportRequest,
 } from '@goodboy/ui';
 import { App } from './App';
+import { installBackends } from './app/installBackends';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
-import { MOCK_ENABLED } from './store/mock-data';
+import { MOCK_ENABLED } from './shared/lib/mockMode';
+import { bootstrapContrast } from './shared/lib/contrast';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './shared/lib/highlight/codeHighlighter';
@@ -22,13 +24,17 @@ import {
 import './styles.css';
 
 bootstrapTheme();
+bootstrapContrast();
 installCrashCapture();
 
-const MockEntry = lazy(() =>
-  import('./app/components/MockScene/MockEntry').then((module) => ({
-    default: module.MockEntry,
-  })),
-);
+const MockEntry = lazy(async () => {
+  const [entry, runtime] = await Promise.all([
+    import('./app/components/MockScene/MockEntry'),
+    import('./app/components/MockScene/installMockRuntime'),
+  ]);
+  installBackends(runtime.mockRuntime());
+  return { default: entry.MockEntry };
+});
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport

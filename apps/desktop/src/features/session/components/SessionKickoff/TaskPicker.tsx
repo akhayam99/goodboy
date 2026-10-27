@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { Listbox, type ListboxOption } from '@goodboy/ui';
+import { ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useInboxRecords } from '../../../inbox/useInboxRecords';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import { candidateOfRecord } from '../../../integrations/starred/candidateOfRecord';

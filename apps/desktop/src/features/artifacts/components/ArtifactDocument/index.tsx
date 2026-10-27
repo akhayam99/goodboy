@@ -2,10 +2,10 @@ import type { SessionArtifact } from '@goodboy/types';
 import { Markdown } from '@goodboy/ui';
 import { artifactMetaFields } from './artifactMetaFields';
 import { CONTENTS_MIN_SECTIONS, documentOutline } from './documentOutline';
-import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../../../../shared/utils/dropLeadingTitleHeading';
 import { PrintContents } from './PrintContents';
 import { PrintLetterhead } from './PrintLetterhead';
-import { splitLead } from './splitLead';
+import { splitLead } from '../../../../shared/utils/splitLead';
 import './artifactDocument.css';
 
 type ArtifactDocumentMedium = 'screen' | 'file';

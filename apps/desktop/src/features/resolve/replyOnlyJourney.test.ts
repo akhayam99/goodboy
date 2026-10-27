@@ -693,14 +693,18 @@ describe('a reply-only answer on the Comments page', () => {
     await syncSourceThreads({
       get: useAppStore.getState,
       sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
       kind: 'github',
       prNumber: 318,
       projectId: PROJECT_ID,
       comments,
+      isCurrent: () => true,
     });
 
     expect(calls).toEqual(['threads', 'materialize', 'reconcile', 'snapshots']);
-    expect(reconciled).toEqual([{ sessionId: SESSION_ID, prNumber: 318, comments }]);
+    expect(reconciled).toEqual([
+      { sessionId: SESSION_ID, prNumber: 318, comments, isCurrent: expect.any(Function) },
+    ]);
   });
 
   it('leaves hand-posted reply reconciliation to GitHub threads', async () => {
@@ -718,10 +722,12 @@ describe('a reply-only answer on the Comments page', () => {
     await syncSourceThreads({
       get: useAppStore.getState,
       sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
       kind: 'gitlab',
       prNumber: 318,
       projectId: PROJECT_ID,
       comments: [headOf({ threadId: REPLY_THREAD })],
+      isCurrent: () => true,
     });
 
     expect(calls).toEqual([]);

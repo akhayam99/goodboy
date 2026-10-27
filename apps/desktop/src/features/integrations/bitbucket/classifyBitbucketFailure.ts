@@ -1,33 +1,37 @@
-import { PullRequestPortError, type PullRequestFailureKind } from '@goodboy/core';
+import { PullRequestPortError } from '@goodboy/core';
 import { CommandError } from '../../../shared/lib/invokeCommand';
-
-type BitbucketFailureReason = 'bad_credentials' | 'denied' | 'rate_limited' | 'network' | 'failed';
+import type { HostFailureKind } from '../../../shared/lib/hostFailure';
+import { pullRequestFailureKindOf } from '../../../shared/lib/pullRequestFailureKindOf';
+import { staleHeadErrorOf } from '../../../shared/lib/staleHeadErrorOf';
 
 type BitbucketFailure = Readonly<{
-  reason: BitbucketFailureReason;
-  message: string;
+  kind: HostFailureKind;
+  status: number | null;
+  retryAfterSeconds: number | null;
   detail: string;
-}>;
-
-type Params = Readonly<{
-  status: number;
-  body: string;
 }>;
 
 const BAD_CREDENTIALS_MESSAGE = 'Check the email and API token';
 const DENIED_MESSAGE = 'The API token lacks the pull request scope';
-const RATE_LIMITED_MESSAGE = 'Bitbucket is limiting requests, try again in a minute';
 const NETWORK_MESSAGE = 'Bitbucket did not answer, check the connection';
 
-const KIND_OF_REASON: Readonly<Record<BitbucketFailureReason, PullRequestFailureKind>> = {
-  bad_credentials: 'denied',
-  denied: 'denied',
-  rate_limited: 'rate_limited',
-  network: 'network',
-  failed: 'failed',
+type BodyParams = {
+  readonly body: string;
 };
 
-const hostTextOf = ({ body }: { readonly body: string }): string => {
+type RetryParams = {
+  readonly retryAfterSeconds: number | null;
+};
+
+type ErrorParams = {
+  readonly error: unknown;
+};
+
+type FailureParams = {
+  readonly failure: BitbucketFailure;
+};
+
+const hostTextOf = ({ body }: BodyParams): string => {
   try {
     const parsed: unknown = JSON.parse(body);
     const error: unknown =
@@ -45,67 +49,67 @@ const hostTextOf = ({ body }: { readonly body: string }): string => {
   }
 };
 
-const classifyBitbucketFailure = ({ status, body }: Params): BitbucketFailure => {
-  const detail = hostTextOf({ body });
-  if (status === 401) {
-    return { reason: 'bad_credentials', message: BAD_CREDENTIALS_MESSAGE, detail };
-  }
-  if (status === 403) {
-    return { reason: 'denied', message: DENIED_MESSAGE, detail };
-  }
-  if (status === 429) {
-    return { reason: 'rate_limited', message: RATE_LIMITED_MESSAGE, detail };
-  }
-  if (status === 0) {
-    return { reason: 'network', message: NETWORK_MESSAGE, detail };
+const rateLimitedMessageOf = ({ retryAfterSeconds }: RetryParams): string =>
+  retryAfterSeconds === null
+    ? 'Bitbucket is limiting requests, try again in a minute'
+    : `Bitbucket is limiting requests, try again in ${retryAfterSeconds} seconds`;
+
+const failureOf = ({ error }: ErrorParams): BitbucketFailure => {
+  if (error instanceof CommandError) {
+    const failure = error.failure;
+    return {
+      kind: failure?.kind ?? 'failed',
+      status: failure?.status ?? null,
+      retryAfterSeconds: failure?.retryAfterSeconds ?? null,
+      detail: hostTextOf({ body: failure?.detail ?? error.message }),
+    };
   }
   return {
-    reason: 'failed',
-    message: detail === '' ? `Bitbucket answered ${status}` : detail,
-    detail,
+    kind: 'failed',
+    status: null,
+    retryAfterSeconds: null,
+    detail: hostTextOf({ body: error instanceof Error ? error.message : String(error) }),
   };
 };
 
-const HTTP_MESSAGE = /^http error (\d+): ([\s\S]*)$/;
-
-const STATUS_BY_KIND: Readonly<Record<string, number>> = {
-  auth: 401,
-  no_token: 401,
-  forbidden: 403,
-  not_found: 404,
-  timeout: 0,
+const messageOf = ({ failure }: FailureParams): string => {
+  switch (failure.kind) {
+    case 'bad_credentials':
+      return BAD_CREDENTIALS_MESSAGE;
+    case 'denied':
+      return DENIED_MESSAGE;
+    case 'rate_limited':
+      return rateLimitedMessageOf({ retryAfterSeconds: failure.retryAfterSeconds });
+    case 'network':
+    case 'timeout':
+      return NETWORK_MESSAGE;
+    case 'not_found':
+    case 'failed':
+      if (failure.detail !== '') {
+        return failure.detail;
+      }
+      return failure.status === null
+        ? 'Bitbucket did not answer'
+        : `Bitbucket answered ${failure.status}`;
+    default: {
+      const exhaustive: never = failure.kind;
+      return exhaustive;
+    }
+  }
 };
 
-const targetOf = ({ error }: { readonly error: CommandError }): Params => {
-  const known = STATUS_BY_KIND[error.kind];
-  if (known !== undefined) {
-    return { status: known, body: error.message };
-  }
-  const http = HTTP_MESSAGE.exec(error.message);
-  if (error.kind === 'http' && http !== null) {
-    return { status: Number(http[1]), body: http[2] ?? '' };
-  }
-  return { status: 500, body: error.message };
-};
-
-export const bitbucketFailureOf = ({
-  error,
-}: {
-  readonly error: unknown;
-}): PullRequestPortError => {
+export const bitbucketFailureOf = ({ error }: ErrorParams): PullRequestPortError => {
   if (error instanceof PullRequestPortError) {
     return error;
   }
-  const failure =
-    error instanceof CommandError
-      ? classifyBitbucketFailure(targetOf({ error }))
-      : classifyBitbucketFailure({
-          status: 500,
-          body: error instanceof Error ? error.message : String(error),
-        });
+  const stale = staleHeadErrorOf({ error });
+  if (stale !== null) {
+    return stale;
+  }
+  const failure = failureOf({ error });
   return new PullRequestPortError({
-    kind: KIND_OF_REASON[failure.reason],
-    message: failure.message,
+    kind: pullRequestFailureKindOf({ kind: failure.kind }),
+    message: messageOf({ failure }),
     details: failure.detail,
   });
 };

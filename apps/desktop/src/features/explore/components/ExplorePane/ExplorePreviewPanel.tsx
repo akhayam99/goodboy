@@ -70,7 +70,7 @@ export const ExplorePreviewPanel = ({
     if (content.type === 'text') {
       const isTruncated = content.truncated;
       const truncatedLine = isTruncated ? (
-        <p className="text-label text-muted-foreground">{TRUNCATED_LINE}</p>
+        <p className="text-meta text-muted-foreground">{TRUNCATED_LINE}</p>
       ) : null;
       if (previewKind === 'markdown' && view === 'preview') {
         return (
@@ -103,7 +103,7 @@ export const ExplorePreviewPanel = ({
       return (
         <>
           {isTruncated ? (
-            <p className="px-4 pb-2 text-label text-muted-foreground">{TRUNCATED_LINE}</p>
+            <p className="px-4 pb-2 text-meta text-muted-foreground">{TRUNCATED_LINE}</p>
           ) : null}
           <SourceView text={content.text} path={entry.name} isWrapped={isWrapped} line={line} />
         </>
@@ -123,7 +123,7 @@ export const ExplorePreviewPanel = ({
     if (previewKind === 'pdf' && content.type === 'dataUrl') {
       return (
         <div className="flex flex-col items-start gap-2 px-4 pb-3">
-          <p className="text-label text-muted-foreground">PDF previews open in a focused viewer.</p>
+          <p className="text-meta text-muted-foreground">PDF previews open in a focused viewer.</p>
           <Button size="sm" variant="secondary" onClick={() => setIsPdfViewerOpen(true)}>
             Open PDF preview
           </Button>
@@ -139,7 +139,7 @@ export const ExplorePreviewPanel = ({
       );
     }
     return (
-      <p className="px-4 pb-3 text-label text-muted-foreground">
+      <p className="px-4 pb-3 text-meta text-muted-foreground">
         This file is binary. Open it in the app that owns it.
       </p>
     );

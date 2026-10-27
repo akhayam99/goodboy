@@ -39,15 +39,27 @@ export const testProviderConnection =
           >('provider_test_connection', {
             providerId,
           });
-          result = { isOk: response.ok, millis: response.millis, detail: response.detail };
+          result = {
+            isOk: response.ok,
+            millis: response.millis,
+            outcome: response.outcome,
+            secs: response.secs,
+            detail: response.detail,
+          };
         } catch (error) {
-          result = { isOk: false, millis: 0, detail: formatError(error) };
+          result = {
+            isOk: false,
+            millis: 0,
+            outcome: 'refused',
+            secs: null,
+            detail: formatError(error),
+          };
         }
         const state = get();
         const at = Date.now();
         const previous = state.providerHealth[providerId];
         const isRefusal =
-          !result.isOk &&
+          result.outcome === 'refused' &&
           classifyProviderError({ message: result.detail }).kind === 'authentication';
         const reduced =
           result.isOk || isRefusal
@@ -69,7 +81,7 @@ export const testProviderConnection =
             ? 'Test connection passed'
             : isRefusal
               ? 'Test connection refused'
-              : result.detail.toLowerCase().includes('timed out')
+              : result.outcome === 'timed_out'
                 ? 'Probe timed out'
                 : 'Test connection failed',
         };

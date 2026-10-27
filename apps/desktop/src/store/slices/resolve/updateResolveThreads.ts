@@ -15,8 +15,12 @@ export const updateResolveThreads = async ({
   sessionId,
   updates,
   keepsDraft = false,
+  isCurrent = () => true,
 }: Params): Promise<void> => {
   const rows = [...(await listResolveThreads({ db: tauriDatabase, sessionId }))];
+  if (!isCurrent()) {
+    return;
+  }
   const changes = typeof updates === 'function' ? updates({ rows }) : updates;
   let hasKept = false;
   for (const update of changes) {
@@ -28,6 +32,9 @@ export const updateResolveThreads = async ({
     ) {
       continue;
     }
+    if (!isCurrent()) {
+      return;
+    }
     const row = { ...previous, ...update.patch, updatedAt: Date.now() };
     if (
       await saveResolveThread({
@@ -35,9 +42,13 @@ export const updateResolveThreads = async ({
         row,
         expectedRevision: previous.revision,
         previous,
+        isCurrent,
       })
     ) {
       rows[index] = { ...withNextStage({ previous, row }), revision: previous.revision + 1 };
+      if (!isCurrent()) {
+        return;
+      }
       if (
         keepsDraft &&
         (await keepResolveDraftCurrent({
@@ -52,8 +63,14 @@ export const updateResolveThreads = async ({
     }
   }
   if (hasKept) {
-    await loadResolveQueueItemsInto({ set, sessionId });
-    await loadResolveCandidatesInto({ set, sessionId });
+    if (!isCurrent()) {
+      return;
+    }
+    await loadResolveQueueItemsInto({ set, sessionId, isCurrent });
+    await loadResolveCandidatesInto({ set, sessionId, isCurrent });
+  }
+  if (!isCurrent()) {
+    return;
   }
   projectResolveRows({
     set,

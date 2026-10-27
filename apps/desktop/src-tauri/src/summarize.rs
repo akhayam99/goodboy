@@ -1,16 +1,14 @@
-use std::process::Stdio;
 use std::sync::Arc;
-use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
+use crate::aux_spawn::SpawnKind;
 use crate::live_child::{
-    drain_lossy_active, drain_tail_active, run_to_exit, LiveChild, LiveChildRegistry,
-    MAX_STDERR_BYTES, SIDE_JOB_IDLE,
+    run_side_job, LiveChildRegistry, RunSideJobParams, MAX_SIDE_JOB_STDOUT_BYTES, SIDE_JOB_IDLE,
 };
-use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
+use crate::providers::cli_args::{side_job_args, side_job_stdin, ArgsError, Job, SideJob};
 
 #[derive(Debug, Error)]
 pub enum SummarizeError {
@@ -110,60 +108,22 @@ pub(crate) fn run_summarize(
     let mut cli_args = build_cli_args(&args)?;
     let trust = crate::providers::cli_probe::workspace_trust_args(&args.binary, &cli_args);
     cli_args.extend(trust);
-
-    let mut command = crate::path_env::command(&args.binary);
-    crate::aux_spawn::scrub_nested_session_env(&mut command);
-    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Summary);
-    crate::process_group::isolate(&mut command);
-    if let Some(dir) = args.working_dir.as_deref() {
-        if !dir.is_empty() {
-            command.current_dir(dir);
-        }
-    }
-
-    let mut child = command
-        .args(&cli_args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stderr")))?;
-
-    let key = args
-        .run_id
-        .clone()
-        .unwrap_or_else(|| crate::live_child::anonymous_key("summary"));
-    let live = LiveChild::tagged(
-        child,
-        &tag,
-        crate::proc::ledger::LedgerContext::from_command(&command),
-    );
-    crate::live_child::register(registry, &key, &live);
-
-    let stdout_activity = live.activity.clone();
-    let stderr_activity = live.activity.clone();
-    let stdout_handle = thread::spawn(move || drain_lossy_active(stdout, &stdout_activity));
-    let stderr_handle =
-        thread::spawn(move || drain_tail_active(stderr, MAX_STDERR_BYTES, &stderr_activity));
-    let ((stdout_buf, stderr_buf), exited) =
-        run_to_exit(&live, registry, &key, Some(SIDE_JOB_IDLE), || {
-            (
-                stdout_handle.join().unwrap_or_default(),
-                stderr_handle.join().unwrap_or_default(),
-            )
-        });
-
+    let output = run_side_job(RunSideJobParams {
+        registry,
+        kind: SpawnKind::Summary,
+        binary: &args.binary,
+        cli_args: &cli_args,
+        working_dir: args.working_dir.as_deref(),
+        prompt: side_job_stdin(&side_job_of(&args)),
+        run_id: args.run_id.as_deref(),
+        idle: SIDE_JOB_IDLE,
+        max_stdout_bytes: MAX_SIDE_JOB_STDOUT_BYTES,
+    })?;
     Ok(SummarizeResult {
-        stdout: stdout_buf,
-        stderr: stderr_buf,
-        exit_code: exited.code,
-        is_timed_out: exited.is_timed_out,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        exit_code: output.exit_code,
+        is_timed_out: output.is_timed_out,
     })
 }
 
@@ -171,8 +131,8 @@ fn kill_run(registry: &ChildRegistry, run_id: &str) {
     crate::live_child::kill_one(registry, run_id);
 }
 
-fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
-    side_job_args(&SideJob {
+fn side_job_of(args: &SummarizeArgs) -> SideJob<'_> {
+    SideJob {
         job: Job::Summarizer,
         provider_id: &args.provider_id,
         model: &args.model,
@@ -181,15 +141,20 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
         working_dir: args.working_dir.as_deref(),
         tools_disabled: true,
         effort: args.effort.as_deref(),
-    })
-    .map_err(SummarizeError::from)
+    }
+}
+
+fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
+    side_job_args(&side_job_of(args)).map_err(SummarizeError::from)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::live_child::LiveChild;
     use std::collections::HashMap;
     use std::sync::Mutex;
+    use std::thread;
 
     fn make_args(provider_id: &str) -> SummarizeArgs {
         SummarizeArgs {

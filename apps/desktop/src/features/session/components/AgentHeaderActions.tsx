@@ -7,13 +7,13 @@ import type { ArmedAction } from '../../../shared/components/HeaderConfirm/armed
 import { useActionEnv } from '../../actions/useActionEnv';
 import { useObjectActions } from '../../actions/useObjectActions';
 
-const STATE_BUTTONS = ['agent.interrupt', 'agent.close', 'agent.reopen'];
+const STATE_BUTTONS = ['agent.stop', 'agent.close', 'agent.reopen'];
 const DELETE_ACTION = 'agent.delete';
 
 type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
-  readonly allowInterrupt?: boolean;
+  readonly allowStop?: boolean;
   readonly hasStateButton?: boolean;
   readonly omit?: ReadonlyArray<string>;
   readonly onDeleted?: () => void;
@@ -22,7 +22,7 @@ type Props = {
 export const AgentHeaderActions = ({
   agent,
   sessionId,
-  allowInterrupt = false,
+  allowStop = false,
   hasStateButton = true,
   omit,
   onDeleted,
@@ -39,7 +39,7 @@ export const AgentHeaderActions = ({
   const stateIds = hasStateButton ? STATE_BUTTONS : [];
   const stateAction =
     stateIds.flatMap((id) => {
-      if (id === 'agent.interrupt' && !allowInterrupt) {
+      if (id === 'agent.stop' && !allowStop) {
         return [];
       }
       const found = actions.find((action) => action.id === id);

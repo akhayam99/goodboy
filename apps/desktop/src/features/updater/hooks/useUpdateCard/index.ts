@@ -1,5 +1,5 @@
 import type { ButtonVariant } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { updateCardCopy, type UpdateCardCopy } from '../../updateCardCopy';
 import type { UpdateCardState } from '../../updateCardState';

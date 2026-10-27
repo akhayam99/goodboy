@@ -22,12 +22,14 @@ export type ScriptsSliceState = {
     Record<SessionId, Readonly<Record<string, DiscoveredScriptScan>>>
   >;
   readonly projectRootScripts: Readonly<Record<string, ProjectRootScripts>>;
+  readonly scriptRunsSeen: Readonly<Record<SessionId, Readonly<Record<string, string>>>>;
 };
 
-export const initialScriptsState: ScriptsSliceState = {
+export const scriptsInitialState: ScriptsSliceState = {
   projectScripts: {},
   scriptRuns: {},
   discoveredScripts: {},
   discoveredScriptScans: {},
   projectRootScripts: {},
+  scriptRunsSeen: {},
 };

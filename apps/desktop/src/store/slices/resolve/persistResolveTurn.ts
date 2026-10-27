@@ -11,7 +11,7 @@ import {
 import { saveResolveThread } from './saveResolveThread';
 import { extractMarkers } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
+import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';

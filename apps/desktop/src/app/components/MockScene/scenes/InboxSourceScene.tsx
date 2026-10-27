@@ -14,7 +14,7 @@ import {
 import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
 import type { InboxProvider } from '../../../../features/inbox/types';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
-import { buildIssueGroups } from '../../../../features/integrations/linear/LinearStudio/useLinearIssues';
+import { buildIssueGroups } from '../../../../features/integrations/linear/LinearStudio/buildIssueGroups';
 import type { SentryIssue } from '../../../../features/integrations/sentry/client';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { seedStudioChrome } from './shellChrome';
@@ -273,7 +273,9 @@ export const InboxSourceScene = () => {
           ...adaptSentryIssues({
             rows: SENTRY_ISSUES.map((issue) => ({ issue, sessionId: null })),
           }),
-          ...adaptLinearIssues({ groups: buildIssueGroups(LINEAR_ISSUES, new Map()) }),
+          ...adaptLinearIssues({
+            groups: buildIssueGroups({ issues: LINEAR_ISSUES, sessionIdByExternalId: new Map() }),
+          }),
         ],
         projects,
         links: LINKS,

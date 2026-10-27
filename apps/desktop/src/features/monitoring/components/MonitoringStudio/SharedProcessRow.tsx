@@ -38,7 +38,7 @@ export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: 
   return (
     <li data-shared-pid={pid} className="flex flex-col">
       <div className={cn('group/row relative rounded-md', ROW_HOVER)}>
-        <div className={cn(PORT_GRID, 'min-h-8 text-label')}>
+        <div className={cn(PORT_GRID, 'min-h-8 text-meta')}>
           <ChevronRight
             size={ICON_SIZE.row}
             aria-hidden

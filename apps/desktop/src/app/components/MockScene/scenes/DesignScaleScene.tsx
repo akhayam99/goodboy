@@ -15,7 +15,7 @@ const ROLE_SAMPLES = [
     className: 'text-prose',
     sample: 'The ledger-core cache keeps a failed lookup for the whole session.',
   },
-  { role: 'text-label', className: 'text-label', sample: 'Step 3 ready' },
+  { role: 'text-ui', className: 'text-ui', sample: 'Search sessions and branches' },
   { role: 'text-meta', className: 'text-meta', sample: 'PR #231 awaiting review' },
   { role: 'text-eyebrow', className: 'text-eyebrow', sample: 'In review' },
   { role: 'text-chip', className: 'text-chip', sample: 'Needs you' },

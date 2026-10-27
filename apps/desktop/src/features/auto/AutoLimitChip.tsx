@@ -50,7 +50,7 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
         />
       }
     >
-      <label htmlFor={INPUT_ID} className="text-label text-foreground">
+      <label htmlFor={INPUT_ID} className="text-meta text-foreground">
         Limit for this Auto run
       </label>
       <p className="text-meta text-muted-foreground">

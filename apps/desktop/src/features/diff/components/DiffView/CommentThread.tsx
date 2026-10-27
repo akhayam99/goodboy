@@ -2,20 +2,22 @@ import { useState, type ReactNode } from 'react';
 import { Lock, Trash2 } from 'lucide-react';
 import {
   Chip,
+  cn,
   ConfirmPopover,
+  formatError,
+  ICON_SIZE,
   Markdown,
   OptionalTooltip,
-  cn,
-  formatError,
   tintClasses,
 } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import type { DiffComments, DiffThread } from './types';
 import { THREAD_ACTION_CLASS as ACTION_CLASS } from './threadActionClass';
 import { ThreadActionButton } from './ThreadActionButton';
 import { CommentComposer } from './CommentComposer';
-import { ThreadReplies, repliesLabel } from './ThreadReplies';
+import { ThreadReplies } from '../../../../shared/components/ThreadReplies';
+import { repliesLabel } from '../../../../shared/utils/repliesLabel';
 import { ThreadKindChip } from './ThreadKindChip';
 import { ThreadWho } from './ThreadWho';
 import { kindLabelOf } from './threadKind';
@@ -97,7 +99,7 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
         initialBody={thread.body}
         isBusy={isSaving}
         error={editError}
-        onSubmit={(body) => {
+        onSubmit={({ body }) => {
           setIsSaving(true);
           setEditError(null);
           void Promise.resolve(comments.onEdit?.(thread.id, body))
@@ -220,14 +222,14 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
       <div className="min-w-0 text-body text-foreground">
         <Markdown text={thread.body} variant="preview" />
       </div>
-      {replyCount > 0 ? <ThreadReplies replies={thread.replies ?? []} /> : null}
+      {replyCount > 0 ? <ThreadReplies replies={thread.replies ?? []} mode="collapsed" /> : null}
       {verbs.isReplying ? (
         <CommentComposer
           label={`Reply to ${thread.author}`}
           submitLabel="Reply"
           isBusy={verbs.isBusy}
           error={verbs.error}
-          onSubmit={verbs.sendReply}
+          onSubmit={({ body }) => verbs.sendReply(body)}
           onCancel={verbs.cancelReply}
         />
       ) : null}

@@ -7,7 +7,7 @@ import type {
   WorkflowModelPick,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import { selectResolution } from '../models/selectResolution';
+import { selectResolution } from '../../runtime/models/selectResolution';
 import type { AppStore } from '../../store';
 
 type Params = {

@@ -1,4 +1,6 @@
 import { UndoToastBridge } from './app/components/UndoToastBridge';
+import { AnnouncementRegion } from './app/components/AnnouncementRegion';
+import { NeedsYouAnnouncementBridge } from './app/components/NeedsYouAnnouncementBridge';
 import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -12,29 +14,34 @@ import { StageBoard } from './features/workspace/components/StageBoard';
 import { ToastProvider } from './shared/components/Toast';
 import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
+import { AwayAlertsBridge } from './features/notifications/components/AwayAlertsBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
+import { ScriptEndToastBridge } from './features/scripts/components/ScriptEndToastBridge';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
 import { SessionDraftPane } from './features/session/components/SessionDraftPane';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
+import { RowActionsCueBridge } from './app/components/RowActionsCueBridge';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
 import { SessionFrame } from './app/components/SessionRail/SessionFrame';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
+import { useViewedOnReturn } from './app/hooks/useViewedOnReturn';
 import { useWindowLayout } from './features/workspace/hooks/useWindowLayout';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { openRunningScript } from './features/scripts/openRunningScript';
-import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
 import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
+import { listenSettingChanges } from './features/settings/listenSettingChanges';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
-import { startAutoRuntime } from './store/slices/auto/startAutoRuntime';
+import { startAutoRuntime } from './store/runtime/auto/startAutoRuntime';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
+import { useHiddenWindowPause } from './shared/hooks/useHiddenWindowPause';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
@@ -61,10 +68,6 @@ import { ReportSheetHost } from './features/bug-report/components/ReportSheetHos
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
 const KEEP_ALIVE_CAP = 5;
-
-const openScript = (run: RunningScript) => {
-  void openRunningScript({ run });
-};
 
 export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
@@ -177,10 +180,12 @@ export const App = () => {
   useRunWatchdog();
   useSessionFocusRecheck();
   useSessionPinsSync();
+  useHiddenWindowPause();
   useProviderRefreshOnFocus();
   useProviderLimitsProbe();
   useUpdaterPolling();
   useWindowPresence();
+  useViewedOnReturn();
   useWindowLayout();
   useWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
@@ -190,6 +195,7 @@ export const App = () => {
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenOrphansSwept });
+  useAsyncSubscription({ start: listenSettingChanges });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
   useAsyncSubscription({ start: listenMountCommands });
   useAsyncSubscription({ start: startAutoRuntime });
@@ -261,6 +267,8 @@ export const App = () => {
     return (
       <ToastProvider>
         <UndoToastBridge />
+        <AnnouncementRegion />
+        <NeedsYouAnnouncementBridge />
         <ObjectMenuProvider>
           <NotificationToastBridge />
           <ReportSheetHost />
@@ -275,21 +283,26 @@ export const App = () => {
   return (
     <ToastProvider>
       <UndoToastBridge />
+      <AnnouncementRegion />
+      <NeedsYouAnnouncementBridge />
       <ObjectMenuProvider>
         <NotificationToastBridge />
+        <AwayAlertsBridge />
         <ReportSheetHost />
         <LastCrashBridge />
         <WorkflowFollowToastBridge />
+        <ScriptEndToastBridge />
         <NewSessionBridge />
         <SessionArchiveBridge />
         <SessionRefreshBridge />
+        <RowActionsCueBridge />
         <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
         <AppShell
           topBar={
             <AppTopBar
               sidebar={{ isCollapsed: sessionSidebar.isCollapsed, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
-              onOpenScript={openScript}
+              onOpenScript={(run) => void openRunningScript({ run })}
               openProviderId={settingsProviderId}
             />
           }

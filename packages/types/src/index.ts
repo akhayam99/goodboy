@@ -84,11 +84,9 @@ export type {
 } from './integration-draft';
 export { MATERIALIZATION_DEFERRAL_CAUSES, SESSION_EVENT_KINDS } from './session-event';
 export {
-  CHAT_IDLE_AFTER_MS,
   CHAT_MESSAGE_ROLES,
   CHAT_MESSAGE_STATUSES,
   CHAT_PROVIDER_IDS,
-  CHAT_PROVIDER_REFUSAL,
   CHAT_SESSION_LINK_KINDS,
   isChatProvider,
 } from './chat';
@@ -235,6 +233,7 @@ export type {
   AgentTurnSpanRoute,
   MeasuredTurnSpan,
 } from './agent-turn-span';
+export type { TurnFile, TurnFileSet, TurnFileStatus } from './turn-file-set';
 export type {
   EffortLevel,
   ModelCostTier,
@@ -439,6 +438,8 @@ export type {
   ImportGroupStat,
   ImportManifest,
   ImportPreview,
+  AllowRulePreview,
+  ScriptPreview,
   LeftOutFinding,
   ProjectMatch,
   ProjectMatchVerdict,
@@ -446,6 +447,8 @@ export type {
   WorkspaceMatchAction,
 } from './config-bundle';
 export { CONFIG_BUNDLE_SCHEMA_VERSION, DEFAULT_EXPORT_GROUPS } from './config-bundle';
+export type { OverrideColumn } from './override-columns';
+export { OVERRIDE_COLUMNS, OVERRIDE_COLUMN_OF_KEY } from './override-columns';
 export type {
   ClaudePermissionMode,
   PermissionAuditEntry,
@@ -459,7 +462,12 @@ export type {
   PermissionRuleScope,
   PermissionScope,
 } from './permission';
-export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
+export {
+  CLAUDE_PERMISSION_MODES,
+  FAIL_CLOSED_PERMISSION_MODE,
+  NEW_WORKSPACE_PERMISSION_MODE,
+  isClaudePermissionMode,
+} from './permission';
 export type {
   ArtifactComment,
   ArtifactCommentAnchor,
@@ -539,6 +547,7 @@ export type {
   PullRequestChecks,
   PullRequestState,
   PullRequestStateKind,
+  RequestStateName,
 } from './github';
 export type {
   PullRequestChecksRead,
@@ -560,7 +569,9 @@ export type {
   BootstrapFileChange,
   BootstrapMovedFile,
   BootstrapPhase,
+  BootstrapNotUndone,
   BootstrapPrepared,
+  BootstrapRollbackReport,
   BootstrapRecoverState,
   BootstrapStage,
 } from './bootstrap';

@@ -159,7 +159,7 @@ describe('the description', () => {
     await show();
     startEditing();
     typeBody('Half written.');
-    expect(screen.getByRole('textbox', { name: 'Description, markdown' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Description, markdown' });
 
     const [first] = useAppStore.getState().sessionProjectMounts[SESSION.id] ?? [];
     if (first === undefined) {
@@ -199,7 +199,7 @@ describe('the description', () => {
     expect(screen.queryByRole('textbox', { name: 'Description, markdown' })).toBeNull();
     expect(within(description()).getByText('three').tagName).toBe('STRONG');
     fireEvent.click(screen.getByRole('tab', { name: 'Write' }));
-    expect(screen.getByRole('textbox', { name: 'Description, markdown' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Description, markdown' });
   });
 
   it('reads body headings as bold lead-ins under the one Description heading', async () => {
@@ -215,7 +215,7 @@ describe('the description', () => {
 
     await waitFor(() => expect(within(description()).getByText('Scope').tagName).toBe('STRONG'));
     expect(within(description()).getAllByRole('heading')).toHaveLength(1);
-    expect(within(description()).getByText('Splits the route.')).toBeDefined();
+    within(description()).getByText('Splits the route.');
   });
 
   it('keeps the source headings in the edit preview', async () => {
@@ -225,7 +225,7 @@ describe('the description', () => {
     typeBody('## Scope\nThe guard.');
     fireEvent.click(screen.getByRole('tab', { name: 'Preview' }));
 
-    expect(within(description()).getByRole('heading', { name: 'Scope' })).toBeDefined();
+    within(description()).getByRole('heading', { name: 'Scope' });
   });
 
   it('cancels with the button or Escape and writes nothing', async () => {
@@ -273,9 +273,9 @@ describe('the description', () => {
       patchShownPr({ patch: (pr) => ({ ...pr, body: '' }) });
     });
 
-    expect(within(description()).getByText('No description yet')).toBeDefined();
+    within(description()).getByText('No description yet');
     fireEvent.click(within(description()).getByRole('button', { name: 'Add description' }));
-    expect(screen.getByRole('textbox', { name: 'Description, markdown' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Description, markdown' });
   });
 
   it('shows no edit affordance on a pull request that is not yours', async () => {
@@ -375,7 +375,7 @@ describe('the keys', () => {
 
     fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
 
-    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Pull request title' });
   });
 
   it('leaves the title alone on E while Comments is the section', async () => {
@@ -537,7 +537,7 @@ describe('the Overview grid', () => {
     expect(rows[0]?.textContent).toContain('Asked');
     expect(within(reviewers).queryByText('portal-preview[bot]')).toBeNull();
     const bots = screen.getByRole('region', { name: 'Bots that commented' });
-    expect(within(bots).getByText('portal-preview[bot]')).toBeDefined();
+    within(bots).getByText('portal-preview[bot]');
     expect(within(bots).queryByText('Commented')).toBeNull();
   });
 

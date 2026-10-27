@@ -95,7 +95,7 @@ describe('store mocks in desktop tests only ever shrink', () => {
     expect(
       count(call('mock', '../../../store').replace("('", "(import('").replace("',", "'),")),
     ).toBe(1);
-    expect(count(call('mock', '../../../features/onboarding/onboarding-store'))).toBe(0);
+    expect(count(call('mock', '../../../features/onboarding/onboardingSettings'))).toBe(0);
     expect(count(call('mock', '../../../store/sessionEviction'))).toBe(0);
     expect(count(call('mock', '../../../shared/lib/db'))).toBe(0);
     expect(count(call('mock', '@goodboy/db'))).toBe(0);

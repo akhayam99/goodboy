@@ -2,7 +2,7 @@ import { tintClasses } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../session/session-stage';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import type { PaletteEntry } from '../types';
 
 type NeedsYouItem = {

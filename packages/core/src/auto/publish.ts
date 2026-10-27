@@ -1,3 +1,5 @@
+import { isRecord } from '@goodboy/types/helpers';
+
 export type PublishMode = 'push' | 'force';
 
 export type DelegatePublish = Readonly<{
@@ -25,11 +27,6 @@ export type ResultPublish = Readonly<{
 }>;
 
 export const PUBLISH_MAX_TRIES = 2;
-
-type RecordValue = Readonly<Record<string, unknown>>;
-
-const isRecord = (value: unknown): value is RecordValue =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 type TextParams = {
   readonly value: unknown;

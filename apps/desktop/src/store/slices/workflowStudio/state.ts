@@ -1,6 +1,6 @@
 import type { WorkflowStudioState } from './types';
 
-export const initialWorkflowStudioState: WorkflowStudioState = {
+export const workflowStudioInitialState: WorkflowStudioState = {
   workflowStudioDrafts: {},
   workflowGenerations: {},
   visibleWorkflowStudioWorkspaceId: null,

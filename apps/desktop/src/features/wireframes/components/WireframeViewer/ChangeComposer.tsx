@@ -1,7 +1,7 @@
 import { Crosshair, X } from 'lucide-react';
-import { Button, Chip, Kbd, SegmentedTabs } from '@goodboy/ui';
+import { Button, Chip, ICON_SIZE, Kbd, SegmentedTabs } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { PromptField } from '../../../../shared/components/PromptField';
 

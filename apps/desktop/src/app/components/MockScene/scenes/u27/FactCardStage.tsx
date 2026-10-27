@@ -1,10 +1,9 @@
 import { Gauge, GitBranch } from 'lucide-react';
-import { FactCard } from '@goodboy/ui';
+import { FactCard, ICON_SIZE } from '@goodboy/ui';
 import type { FactCardSpec } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const TRIGGER_CLASSES =
-  'inline-flex h-7 items-center justify-center rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground';
+  'inline-flex h-7 items-center justify-center rounded-md border border-border-soft px-2 text-meta text-muted-foreground hover:bg-hover hover:text-foreground';
 
 const LIMITS_CARD: FactCardSpec = {
   glyph: <Gauge size={ICON_SIZE.row} />,

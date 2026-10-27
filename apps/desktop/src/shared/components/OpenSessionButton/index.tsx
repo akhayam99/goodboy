@@ -1,8 +1,7 @@
 import type { SessionId } from '@goodboy/types';
-import { Button, type ButtonSize, type ButtonVariant } from '@goodboy/ui';
+import { Button, ICON_SIZE, type ButtonSize, type ButtonVariant } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import { useOpenSession } from '../../hooks/useOpenSession';
-import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;

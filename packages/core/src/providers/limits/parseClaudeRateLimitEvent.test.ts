@@ -31,6 +31,26 @@ describe('readClaudeRateLimitLine', () => {
     });
   });
 
+  it.each(['__proto__', 'constructor', 'toString'])(
+    'drops a status named after the inherited key %s',
+    (status) => {
+      const line = JSON.stringify({
+        type: 'rate_limit_event',
+        rate_limit_info: { status, rateLimitType: 'five_hour' },
+      });
+      expect(readClaudeRateLimitLine({ line, observedAt: OBSERVED_AT })).toEqual({ limits: null });
+    },
+  );
+
+  it('keeps the window unknown when the limit type is an inherited key', () => {
+    const line = JSON.stringify({
+      type: 'rate_limit_event',
+      rate_limit_info: { status: 'rejected', rateLimitType: 'constructor' },
+    });
+    const parsed = readClaudeRateLimitLine({ line, observedAt: OBSERVED_AT });
+    expect(JSON.stringify(parsed)).not.toContain('function');
+  });
+
   it('keeps the fraction unknown when Claude says only that the turn is allowed', () => {
     const read = readClaudeRateLimitLine({
       line: RATE_LIMIT_FIXTURES.claudeFiveHourAllowed,

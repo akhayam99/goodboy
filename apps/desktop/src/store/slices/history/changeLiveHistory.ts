@@ -3,7 +3,7 @@ import { readLiveHistoryOutcome } from './readLiveHistoryOutcome';
 import { historyDraftReads } from './historyDraftReads';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { historyThreadSnapshots } from './historyThreadSnapshots';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import type { SliceDeps } from '../../slice-types';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange, identityOf } from './historyIdentity';

@@ -2,11 +2,9 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use thiserror::Error;
 
-const APP_DIR: &str = ".goodboy";
 const BREADCRUMB_FILE: &str = "boot-breadcrumbs.log";
 const MAX_FILE_SIZE: u64 = 64 * 1024;
 const PHASES: [&str; 13] = [
@@ -98,17 +96,13 @@ fn sanitize_detail(detail: Option<&str>) -> Option<&str> {
 }
 
 fn resolve_path() -> Result<PathBuf, BreadcrumbError> {
-    let home = dirs::home_dir().ok_or(BreadcrumbError::NoHomeDir)?;
-    let directory = home.join(APP_DIR);
+    let directory = crate::app_paths::data_dir().map_err(|_| BreadcrumbError::NoHomeDir)?;
     fs::create_dir_all(&directory)?;
     Ok(directory.join(BREADCRUMB_FILE))
 }
 
 fn unix_millis() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
+    u128::from(crate::util::now_millis_u64())
 }
 
 fn launch_id() -> &'static str {

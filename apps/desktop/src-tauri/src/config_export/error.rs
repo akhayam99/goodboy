@@ -12,6 +12,8 @@ pub enum ConfigExportError {
     Validation(String),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("the backup file changed after the preview")]
+    FileChanged,
 }
 
 crate::util::impl_error_serialize!(ConfigExportError);
@@ -24,6 +26,7 @@ impl ConfigExportError {
             ConfigExportError::SchemaMismatch { .. } => "schema_mismatch",
             ConfigExportError::Validation(_) => "validation",
             ConfigExportError::Json(_) => "json",
+            ConfigExportError::FileChanged => "file_changed",
         }
     }
 }

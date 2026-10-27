@@ -19,7 +19,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { useRunningHere } from '../../store/slices/live-work/selectors';
+import { useRunningHere } from '../../store/runtime/live-work/selectors';
 import {
   useSessionStageInfo,
   useStageGroupedSessions,
@@ -285,7 +285,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBeNull();
+    expect(view.chipLabel()).toBe('1 needs you');
   });
 
   it('reads a Bitbucket-only session from its request instead of leaving it on no PR yet', () => {
@@ -316,7 +316,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBeNull();
+    expect(view.chipLabel()).toBe('1 needs you');
   });
 
   it('asks for the changes a Bitbucket reviewer requested', () => {
@@ -416,7 +416,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'needs-approval' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBeNull();
+    expect(view.chipLabel()).toBe('1 needs you');
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });
@@ -444,7 +444,7 @@ describe('live work across every mount of a session', () => {
     });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBeNull();
+    expect(view.chipLabel()).toBe('1 needs you');
   });
 
   it('shows work that is only deciding its next step on the stage, the board and the chip', () => {

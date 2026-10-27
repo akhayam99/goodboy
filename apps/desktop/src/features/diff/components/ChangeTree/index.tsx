@@ -8,7 +8,14 @@ import {
   type RefObject,
 } from 'react';
 import { PanelRightClose } from 'lucide-react';
-import { EmptyLine, Button, IconButton, ScrollFade, useEscapeLayer } from '@goodboy/ui';
+import {
+  EmptyLine,
+  Button,
+  IconButton,
+  ScrollFade,
+  treeIndentPx,
+  useEscapeLayer,
+} from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import {
@@ -30,7 +37,6 @@ import {
 import { FileRow } from './FileRow';
 import { FolderRow } from './FolderRow';
 import { KeyHints } from './KeyHints';
-import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 import { TreeHead } from './TreeHead';
 import { treeKeyAction } from './treeKeys';
 
@@ -158,8 +164,7 @@ export const ChangeTree = ({
         return null;
       }
       const fixed =
-        TREE_BASE_PX +
-        depth * TREE_INDENT_PX +
+        treeIndentPx({ depth }) +
         TOGGLE_SLOT_PX +
         STATUS_PX +
         GUTTER_PX +

@@ -107,6 +107,43 @@ describe('parseUnifiedDiff', () => {
     expect(files[0]?.path).toBe('new-name.ts');
   });
 
+  it('reads the pure rename GitLab sends as a rename with no hunks', () => {
+    const diff = [
+      'diff --git a/src/old.ts b/src/new.ts',
+      'similarity index 100%',
+      'rename from src/old.ts',
+      'rename to src/new.ts',
+      '',
+    ].join('\n');
+
+    const files = parseUnifiedDiff(diff);
+    expect(files).toHaveLength(1);
+    expect(files[0]?.status).toBe('renamed');
+    expect(files[0]?.oldPath).toBe('src/old.ts');
+    expect(files[0]?.path).toBe('src/new.ts');
+    expect(files[0]?.hunks).toEqual([]);
+  });
+
+  it('reads a GitLab rename that also edits the file', () => {
+    const diff = [
+      'diff --git a/src/old.ts b/src/new.ts',
+      'rename from src/old.ts',
+      'rename to src/new.ts',
+      '--- a/src/old.ts',
+      '+++ b/src/new.ts',
+      '@@ -1 +1 @@',
+      '-a',
+      '+b',
+      '',
+    ].join('\n');
+
+    const files = parseUnifiedDiff(diff);
+    expect(files[0]?.status).toBe('renamed');
+    expect(files[0]?.oldPath).toBe('src/old.ts');
+    expect(files[0]?.additions).toBe(1);
+    expect(files[0]?.deletions).toBe(1);
+  });
+
   it('sets binary:true for binary files', () => {
     const diff = [
       'diff --git a/image.png b/image.png',

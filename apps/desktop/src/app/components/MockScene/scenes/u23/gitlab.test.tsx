@@ -4,11 +4,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { mockWindows } from '@tauri-apps/api/mocks';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 
 const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
@@ -18,8 +18,10 @@ import { findSectionRow } from '../../../../../test/branchRail';
 import { U23_GITLAB_SCENES } from './gitlab';
 import { clearGitlabSceneWrites, gitlabSceneWrites } from './gitlabSeed';
 
+let store: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -142,8 +144,11 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab-none creates the merge request from the shown branch', async () => {
     draw({ name: 'branch-pr-gitlab-none' });
     const title = await screen.findByRole('textbox', { name: 'Merge request title' });
-    const createMrForSession = vi.fn(async () => undefined);
-    act(() => useAppStore.setState({ createMrForSession }));
+    const createMrForSession = vi.fn(async () => ({
+      number: 51,
+      url: 'https://gitlab.com/northwind/ledger-core/-/merge_requests/51',
+    }));
+    act(() => store.setState({ createMrForSession }));
 
     fireEvent.change(title, { target: { value: 'Stop a retried webhook posting twice' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create merge request' }));

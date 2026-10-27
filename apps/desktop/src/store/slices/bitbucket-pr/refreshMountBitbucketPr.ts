@@ -24,6 +24,7 @@ import {
   pullRequestFromLink,
   toMountBitbucketPrLink,
 } from './bitbucketPrLink';
+import { nowIso } from '../project-mounts/nowIso';
 import { applyMountBitbucketPr } from './mountBitbucketPr';
 import { resolveBitbucketPrContext, type BitbucketPrContext } from './resolveBitbucketPrContext';
 import type { GetFn, SetFn } from './types';
@@ -32,6 +33,7 @@ export type RefreshSessionBitbucketPrOptions = {
   readonly mountId?: MountId;
   readonly force?: boolean;
   readonly silent?: boolean;
+  readonly retries?: number;
 };
 
 type Params = {
@@ -101,6 +103,7 @@ export const refreshMountBitbucketPr = async ({
     sessionId,
     mount,
     opts,
+    host: 'bitbucket',
     adapter: {
       read: (state) => state.mountBitbucketPr?.[mountId],
       apply: ({ state, entry }) =>
@@ -126,6 +129,7 @@ export const refreshMountBitbucketPr = async ({
         reviewDecision: existing?.reviewDecision ?? null,
         pr: existing?.pr ?? null,
         fetchedAt: existing?.fetchedAt ?? null,
+        failedAt: existing?.failedAt ?? null,
         loading: true,
         error: null,
       }),
@@ -184,12 +188,18 @@ export const refreshMountBitbucketPr = async ({
                   links,
                   pr,
                   fetchedAt: observedAt,
+                  failedAt: null,
                   loading: false,
                   error: null,
                 },
         };
       },
-      failedEntry: ({ current, error }) => ({ ...current, loading: false, error }),
+      failedEntry: ({ current, error }) => ({
+        ...current,
+        failedAt: nowIso({}),
+        loading: false,
+        error,
+      }),
     },
   });
 };

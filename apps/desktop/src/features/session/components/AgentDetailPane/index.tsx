@@ -29,6 +29,7 @@ import { AgentSettingsLine } from '../AgentSettingsLine';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
+import { AgentLiveChip } from './AgentLiveChip';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
@@ -242,6 +243,9 @@ export const AgentDetailPane = ({
           }
           actions={
             <>
+              {runStep === undefined ? (
+                <AgentLiveChip sessionId={session.id} agent={agent} />
+              ) : null}
               {isAutoRoot ? (
                 <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
               ) : null}

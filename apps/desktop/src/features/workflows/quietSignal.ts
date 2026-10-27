@@ -1,4 +1,5 @@
 import type { TurnEvent, TurnState } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 
 const QUIET_AFTER_MS = 15 * 60 * 1000;
 
@@ -22,9 +23,6 @@ type SignalParams = {
 };
 
 const DETAIL_KEYS = ['file_path', 'path', 'command', 'pattern', 'url'] as const;
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null;
 
 const toolDetail = ({ input }: { readonly input: unknown }): string | null => {
   if (!isRecord(input)) {

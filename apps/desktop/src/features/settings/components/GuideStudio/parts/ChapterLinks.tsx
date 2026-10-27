@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
-import { FOCUS_RING, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { cn, FOCUS_RING, ICON_SIZE } from '@goodboy/ui';
+
 import type { GuideLink, GuideTarget } from '../guideTarget';
 
 type Props = {

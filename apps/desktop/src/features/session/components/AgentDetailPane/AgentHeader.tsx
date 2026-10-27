@@ -15,9 +15,9 @@ export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef
         <div
           data-testid="agent-header-title-row"
           data-slot="pane-title-row"
-          className="flex h-8 min-w-0 items-center justify-between gap-4"
+          className="flex min-h-8 min-w-0 items-center justify-between gap-4"
         >
-          <h1 className="flex min-w-0 flex-1 truncate text-title text-foreground">{title}</h1>
+          <h1 className="flex min-w-0 flex-1 text-title text-foreground">{title}</h1>
           {actions != null ? (
             <div className="flex shrink-0 items-center gap-2">{actions}</div>
           ) : null}

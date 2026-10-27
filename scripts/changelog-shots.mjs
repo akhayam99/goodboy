@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DEV_URL = process.env.GOODBOY_SHOT_URL ?? 'http://localhost:1421';
+const DEV_URL = process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230';
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const CSS_WIDTH = 680;
 const CSS_HEIGHT = 425;

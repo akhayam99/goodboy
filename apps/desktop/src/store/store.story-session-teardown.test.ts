@@ -467,11 +467,11 @@ describe('story: a branchless folder session lives and dies without git', () => 
 
     expect(removeWorktreeChecked).not.toHaveBeenCalled();
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: CONTAINER_PATH,
+      sessionId: SESSION_ID,
       path: `${CONTAINER_PATH}/project`,
     });
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: '/tmp/sessions',
+      sessionId: SESSION_ID,
       path: CONTAINER_PATH,
     });
     expect(fileVersionsPurgeSession).toHaveBeenCalledWith({ sessionId: SESSION_ID });
@@ -520,7 +520,7 @@ describe('story: a repo-backed session keeps its git lifecycle', () => {
       mode: 'safe',
     });
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: '/tmp/sessions',
+      sessionId: SESSION_ID,
       path: CONTAINER_PATH,
     });
     expect(fileVersionsPurgeSession).not.toHaveBeenCalled();
@@ -675,7 +675,7 @@ describe('story: a two-project session routes git work through the active mount'
     expect(tidyRepoGoodboyDir).toHaveBeenCalledWith({ repoPath: API_REPO_ROOT });
     expect(tidyRepoGoodboyDir).toHaveBeenCalledWith({ repoPath: WEB_REPO_ROOT });
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: '/tmp/sessions',
+      sessionId: SESSION_ID,
       path: CONTAINER_PATH,
     });
     expect(purgeSessionForDelete).toHaveBeenCalledOnce();
@@ -729,7 +729,7 @@ describe('story: deleting a session created before project mounts existed', () =
       mode: 'safe',
     });
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: '/tmp/sessions',
+      sessionId: SESSION_ID,
       path: CONTAINER_PATH,
     });
     expect(purgeSessionForDelete).toHaveBeenCalledOnce();
@@ -748,11 +748,11 @@ describe('story: deleting a session created before project mounts existed', () =
 
     expect(removeWorktreeChecked).not.toHaveBeenCalled();
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: CONTAINER_PATH,
+      sessionId: SESSION_ID,
       path: `${CONTAINER_PATH}/mystery`,
     });
     expect(removeSessionDirectory).toHaveBeenCalledWith({
-      basePath: '/tmp/sessions',
+      sessionId: SESSION_ID,
       path: CONTAINER_PATH,
     });
     expect(purgeSessionForDelete).toHaveBeenCalledOnce();

@@ -8,7 +8,7 @@ import {
   getWizardState,
   getWizardStep,
   type OpenWizardDetail,
-} from '../../onboarding-store';
+} from '../../onboardingSettings';
 import { resumeStep, type WizardMode, type WizardStepId } from '../wizardSteps';
 
 export type OnboardingWizardState = {

@@ -90,6 +90,40 @@ const seedOrchestratedRun = ({ sessionId }: SeedParams): void => {
   });
 };
 
+const RUNNING_AGENT_ID = brandId<AgentId>({ value: 'overview-running-agent' });
+const RUNNING_AGENT_NAME = 'Add the limit check to payout creation';
+
+const seedRunningAgent = ({ sessionId }: SeedParams): void => {
+  const state = useAppStore.getState();
+  const agent: Agent = {
+    id: RUNNING_AGENT_ID,
+    sessionId,
+    ordinal: 90,
+    name: RUNNING_AGENT_NAME,
+    kind: 'implementer',
+    status: 'running',
+    startedAt: STARTED_AT,
+  };
+  useAppStore.setState({
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [sessionId]: [...(state.sessionPhaseRuns[sessionId] ?? []), agent],
+    },
+    agentTurnState: {
+      ...state.agentTurnState,
+      [RUNNING_AGENT_ID]: { kind: 'running', runId: 'overview-running-run', startedAt: STARTED_AT },
+    },
+  });
+};
+
+const archiveSession = ({ sessionId }: SeedParams): void => {
+  useAppStore.setState((state) => ({
+    sessions: state.sessions.map((candidate) =>
+      candidate.id === sessionId ? { ...candidate, archivedAt: STARTED_AT } : candidate,
+    ),
+  }));
+};
+
 export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
   {
     name: 'overview: an orchestrated run opens its own page and Back returns to Overview',
@@ -148,6 +182,47 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await screen.findByRole('region', { name: 'Log entries' }, WAIT)).toBeDefined();
       expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
+    },
+  },
+  {
+    name: 'overview: an agent in Running opens its chat and Back returns to Overview',
+    covers: ['navigate', 'overview:running-agent'],
+    open: async ({ sessionId }) => {
+      seedRunningAgent({ sessionId });
+      await settle();
+      await clickButton(`Open ${RUNNING_AGENT_NAME}`);
+    },
+    lands: async () => {
+      expect(
+        await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT),
+      ).toBeDefined();
+      const back = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
+      ).find((candidate) => (candidate.getAttribute('aria-label') ?? '').startsWith('Back'));
+      if (back === undefined) {
+        throw new Error('the navigation cluster has no Back button');
+      }
+      await click(back);
+      await waitFor(
+        () => expect(document.querySelector('[data-page="overview"]')).not.toBeNull(),
+        WAIT,
+      );
+    },
+  },
+  {
+    name: 'overview: an archived session keeps the Done card with its Full log',
+    covers: ['overview:archived-done-only'],
+    open: async ({ sessionId }) => {
+      archiveSession({ sessionId });
+      await settle();
+    },
+    lands: async () => {
+      await screen.findByRole('region', { name: 'Done' }, WAIT);
+      const ids = Array.from(document.querySelectorAll('[data-overview-card]')).map((card) =>
+        card.getAttribute('data-overview-card'),
+      );
+      expect(ids).toEqual(['done']);
+      expect(screen.getByRole('button', { name: 'Full log' })).toBeDefined();
     },
   },
 ];

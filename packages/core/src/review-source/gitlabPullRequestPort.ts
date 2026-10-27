@@ -8,9 +8,12 @@ import type {
   PullRequestReviewer,
   PullRequestStateKind,
   PullRequestView,
+  RequestStateName,
 } from '@goodboy/types';
 import { parseUnifiedDiff } from '../github/diff';
+import { ownValue } from '../ownValue';
 import { gitlabDraftTitle, stripGitlabDraftPrefix } from './gitlabDraftTitle';
+import { requestStateKind } from './requestStateKind';
 import {
   PULL_REQUEST_NOUNS,
   PullRequestPortError,
@@ -40,6 +43,7 @@ export type GitlabMergeRequestPayload = Readonly<{
   isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: string | null;
+  requestState?: RequestStateName;
   updatedAt: string;
   createdAt?: string | null;
   sha?: string | null;
@@ -94,7 +98,10 @@ export type GitlabPullRequestTransport = Readonly<{
     readonly reviewerIds?: ReadonlyArray<number>;
   }) => Promise<void>;
   setState: (params: { readonly stateEvent: GitlabMergeStateEvent }) => Promise<void>;
-  merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  merge: (params: {
+    readonly method: PrMergeMethod;
+    readonly expectedHeadSha: string | null;
+  }) => Promise<void>;
   cancelAutoMerge: () => Promise<void>;
   projectMergeSettings: () => Promise<GitlabMergeSettingsPayload>;
   searchUsers: (params: { readonly query: string }) => Promise<ReadonlyArray<GitlabPersonPayload>>;
@@ -134,7 +141,7 @@ export const gitlabJobConclusion = ({
   readonly status: string;
   readonly allowFailure?: boolean;
 }): PrCheckConclusion => {
-  const conclusion = JOB_CONCLUSIONS[status] ?? 'unknown';
+  const conclusion = ownValue({ table: JOB_CONCLUSIONS, key: status }) ?? 'unknown';
   return conclusion === 'failure' && allowFailure ? 'neutral' : conclusion;
 };
 
@@ -142,17 +149,20 @@ type StateKindParams = {
   readonly state: string;
   readonly draft: boolean;
   readonly isMergeWhenPipelineSucceeds?: boolean;
+  readonly requestState?: RequestStateName | undefined;
 };
 
 export const gitlabStateKindOf = ({
   state,
   draft,
   isMergeWhenPipelineSucceeds = false,
+  requestState,
 }: StateKindParams): PullRequestStateKind => {
-  if (state === 'merged') {
+  const settled = requestState === undefined ? null : requestStateKind({ requestState });
+  if (settled === 'merged' || state === 'merged') {
     return 'merged';
   }
-  if (state === 'closed') {
+  if (settled === 'closed' || state === 'closed') {
     return 'closed';
   }
   if (state === 'locked' || isMergeWhenPipelineSucceeds) {
@@ -226,6 +236,18 @@ export const gitlabMergeMethodsOf = ({
 const FALLBACK_MERGE_METHODS: Pick<PullRequestView, 'mergeMethods' | 'mergeMethodReasons'> = {
   mergeMethods: HOST_CAPABILITIES.gitlab.fallbackMergeMethods,
   mergeMethodReasons: {},
+};
+
+type DefaultMergeMethodParams = {
+  readonly settings: GitlabMergeSettingsPayload | null;
+};
+
+export const gitlabDefaultMergeMethodOf = ({
+  settings,
+}: DefaultMergeMethodParams): PrMergeMethod => {
+  const { mergeMethods } =
+    settings === null ? FALLBACK_MERGE_METHODS : gitlabMergeMethodsOf({ settings });
+  return mergeMethods[0] ?? HOST_CAPABILITIES.gitlab.fallbackMergeMethods[0] ?? 'merge';
 };
 
 const personOf = ({ person }: { readonly person: GitlabPersonPayload }): PullRequestPerson => ({
@@ -372,6 +394,7 @@ export const gitlabPullRequestPort = ({
           state: mr.state,
           draft: mr.draft,
           isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
+          requestState: mr.requestState,
         }),
         isAutoMerge: mr.isMergeWhenPipelineSucceeds ?? false,
         isDraft: mr.draft,
@@ -450,8 +473,8 @@ export const gitlabPullRequestPort = ({
       const title = await draftTitleOf({ isDraft });
       await write(() => transport.updateMergeRequest({ title }));
     },
-    merge: async ({ method }) => {
-      await write(() => transport.merge({ method }));
+    merge: async ({ method, expectedHeadSha }) => {
+      await write(() => transport.merge({ method, expectedHeadSha }));
     },
     cancelAutoMerge: async () => {
       requirePullRequestCapability({ capabilities, capability: 'canCancelAutoMerge' });

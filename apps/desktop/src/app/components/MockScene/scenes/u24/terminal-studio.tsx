@@ -165,21 +165,37 @@ type TabParams = {
   readonly cwd: string;
   readonly mountId?: string;
   readonly isExited?: boolean;
+  readonly isRestored?: boolean;
 };
 
-const tabOf = ({ id, owner, title, cwd, mountId, isExited = false }: TabParams): TerminalTab => ({
+const tabOf = ({
+  id,
+  owner,
+  title,
+  cwd,
+  mountId,
+  isExited = false,
+  isRestored = false,
+}: TabParams): TerminalTab => ({
   id,
   owner,
   title,
   cwd,
   ...(mountId === undefined ? {} : { mountId: brandedId<MountId>({ value: mountId }) }),
   status: isExited ? 'exited' : 'running',
+  ...(isRestored ? { isRestored: true } : {}),
   ...(isExited ? { openError: 'The folder no longer exists' } : {}),
   createdAt: CREATED_AT,
 });
 
 const BUSY_LEDGER = [
-  { id: PAYMENTS_TERMINAL, cwd: PAYMENTS_TREE, pid: 4100, foregroundPid: 4188 },
+  {
+    id: PAYMENTS_TERMINAL,
+    cwd: PAYMENTS_TREE,
+    pid: 4100,
+    foregroundPid: 4188,
+    foregroundCommand: 'pnpm dev',
+  },
   { id: PAYMENTS_SECOND_TERMINAL, cwd: PAYMENTS_TREE, pid: 4110, foregroundPid: 4110 },
   { id: WORKSPACE_TERMINAL, cwd: FOLDER, pid: 4000, foregroundPid: 4000 },
 ];
@@ -316,9 +332,10 @@ const recordOf = ({ sessionId, projectId, name, worktreePath, branch }: RecordPa
 
 type SeedParams = {
   readonly hasTerminals: boolean;
+  readonly hasEndedWork?: boolean;
 };
 
-const seed = ({ hasTerminals }: SeedParams): void => {
+const seed = ({ hasTerminals, hasEndedWork = false }: SeedParams): void => {
   trackTerminalInput({ terminalId: PAYMENTS_TERMINAL, data: 'pnpm dev\r' });
   useAppStore.setState({
     workspaces: [WORKSPACE],
@@ -433,6 +450,7 @@ const seed = ({ hasTerminals }: SeedParams): void => {
               title: 'shell',
               cwd: PAYMENTS_TREE,
               mountId: 'mock-u24-mount-payments',
+              isRestored: hasEndedWork,
             }),
           ],
           [OTHER_SESSION_ID]: [
@@ -451,6 +469,9 @@ const seed = ({ hasTerminals }: SeedParams): void => {
       ? { [`${SESSION_ID}#m:mock-u24-mount-payments`]: PAYMENTS_TERMINAL }
       : {},
     terminalSelection: null,
+    endedWork: hasEndedWork
+      ? { at: 1, terminals: { [PAYMENTS_SECOND_TERMINAL]: 'pnpm dev' }, scripts: [] }
+      : null,
     monitorSnapshot: hasTerminals ? MONITOR_SNAPSHOT : null,
     refreshMonitorSnapshot: async () => undefined,
     loadWatchedPorts: async () => undefined,
@@ -459,7 +480,7 @@ const seed = ({ hasTerminals }: SeedParams): void => {
 
 const NOOP = () => undefined;
 
-type Variant = 'list' | 'newmenu' | 'closeconfirm' | 'empty';
+type Variant = 'list' | 'newmenu' | 'closeconfirm' | 'empty' | 'restored';
 
 type Props = {
   readonly variant: Variant;
@@ -476,6 +497,7 @@ const clickLabelOf = ({ variant }: Props): ReadonlyArray<string> => {
     case 'newmenu':
     case 'list':
     case 'empty':
+    case 'restored':
       return [];
     default: {
       const unreachable: never = variant;
@@ -490,11 +512,16 @@ const TerminalStudioScene = ({ variant }: Props) => {
 
   useEffect(() => {
     mockSceneIpc(sceneAnswer);
-    seed({ hasTerminals: variant !== 'empty' });
+    seed({ hasTerminals: variant !== 'empty', hasEndedWork: variant === 'restored' });
     useAppStore.getState().openStudio({
       studio: {
         kind: 'terminal',
-        terminalId: variant === 'empty' ? null : PAYMENTS_TERMINAL,
+        terminalId:
+          variant === 'empty'
+            ? null
+            : variant === 'restored'
+              ? PAYMENTS_SECOND_TERMINAL
+              : PAYMENTS_TERMINAL,
         sessionId: SESSION_ID,
         worktree: variant === 'empty' ? null : `${SESSION_ID}#m:mock-u24-mount-payments`,
       },
@@ -551,4 +578,5 @@ export const U24_TERMINAL_STUDIO_SCENES = {
   'terminal-studio-newmenu': () => <TerminalStudioScene variant="newmenu" />,
   'terminal-studio-closeconfirm': () => <TerminalStudioScene variant="closeconfirm" />,
   'terminal-studio-empty': () => <TerminalStudioScene variant="empty" />,
+  'terminal-studio-restored': () => <TerminalStudioScene variant="restored" />,
 };

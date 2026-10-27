@@ -40,7 +40,10 @@ export type BitbucketPullRequestTransport = Readonly<{
     readonly description?: string;
     readonly reviewerUuids?: ReadonlyArray<string>;
   }) => Promise<void>;
-  merge: (params: { readonly strategy: BitbucketMergeStrategy }) => Promise<void>;
+  merge: (params: {
+    readonly strategy: BitbucketMergeStrategy;
+    readonly expectedHeadSha: string | null;
+  }) => Promise<void>;
   decline: () => Promise<void>;
   searchMembers: (params: { readonly query: string }) => Promise<ReadonlyArray<BitbucketPortUser>>;
 }>;
@@ -134,7 +137,7 @@ export const bitbucketPullRequestPort = ({
       title: raw.title,
       body: raw.description,
       url: raw.webUrl ?? prUrl ?? '',
-      state: bitbucketPrStateKind({ state: raw.state }),
+      state: bitbucketPrStateKind({ state: raw.state, requestState: raw.requestState }),
       isDraft: false,
       author: raw.author === null ? null : personOf({ user: raw.author }),
       baseBranch: raw.destinationBranch,
@@ -207,8 +210,8 @@ export const bitbucketPullRequestPort = ({
   setDraft: async () => {
     throw new PullRequestPortUnsupported({ capability: 'canSetDraft' });
   },
-  merge: async ({ method }) => {
-    await transport.merge({ strategy: MERGE_STRATEGY[method] });
+  merge: async ({ method, expectedHeadSha }) => {
+    await transport.merge({ strategy: MERGE_STRATEGY[method], expectedHeadSha });
   },
   close: async () => {
     requirePullRequestCapability({ capabilities, capability: 'canClose' });

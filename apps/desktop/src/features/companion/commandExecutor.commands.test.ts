@@ -158,7 +158,7 @@ vi.mock('../integrations/linear/client', () => ({
     return hit;
   },
 }));
-vi.mock('../integrations/linear/goal-from-issue', () => ({
+vi.mock('../integrations/linear/linearGoalFromIssue', () => ({
   goalFromIssue: ({ issue }: { issue: { identifier: string; title: string } }) =>
     `[${issue.identifier}] ${issue.title}`,
 }));
@@ -166,7 +166,7 @@ vi.mock('../integrations/sentry/client', () => ({
   sentryFetchIssues: integ.sentryFetch,
   sentryFetchIssueDetail: vi.fn(async () => null),
 }));
-vi.mock('../integrations/sentry/goal-from-sentry', () => ({
+vi.mock('../integrations/sentry/goalFromSentry', () => ({
   goalFromSentry: ({ issue }: { issue: { title: string } }) => issue.title,
 }));
 vi.mock('../integrations/gitlab/client', () => ({
@@ -174,14 +174,14 @@ vi.mock('../integrations/gitlab/client', () => ({
   issueIdentifier: (i: { references?: { full?: string }; iid: number }) =>
     i.references?.full ?? `#${i.iid}`,
 }));
-vi.mock('../integrations/gitlab/goal-from-issue', () => ({
+vi.mock('../integrations/gitlab/gitlabGoalFromIssue', () => ({
   goalFromIssue: ({ issue }: { issue: { title: string } }) => issue.title,
 }));
 vi.mock('../integrations/jira/client', () => ({
   jiraListIssues: integ.jiraListFetch,
   jiraGetIssue: integ.jiraGetFetch,
 }));
-vi.mock('../integrations/jira/goal-from-issue', () => ({
+vi.mock('../integrations/jira/jiraGoalFromIssue', () => ({
   goalFromIssue: (i: { issue: { key: string; summary: string } }) =>
     `[${i.issue.key}] ${i.issue.summary}`,
 }));
@@ -621,20 +621,28 @@ describe('mergePr (write path, security-gated)', () => {
     const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
     expect(res.ok).toBe(true);
     // The server PR number (7) is used, not anything the phone supplied.
-    expect(h.mergePr).toHaveBeenCalledWith('s1', 7, 'squash');
+    expect(h.mergePr).toHaveBeenCalledWith('s1', 7, 'squash', { expectedHeadSha: null });
   });
 
   it('passes the merge|rebase method through to the store', async () => {
     h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
     await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'rebase' }));
-    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'rebase']);
+    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'rebase', { expectedHeadSha: null }]);
   });
 
   it('defaults to squash when the phone omits a method', async () => {
     h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr() } } });
     const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash']);
+    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash', { expectedHeadSha: null }]);
+  });
+
+  it('pins the merge to the head the desktop shows for that PR', async () => {
+    h.state.value = makeStore({
+      sessionGithub: { s1: { pr: eligiblePr({ headSha: '6c20f48a9e1d' }) } },
+    });
+    await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
+    expect(lastCall(h.mergePr)).toEqual(['s1', 7, 'squash', { expectedHeadSha: '6c20f48a9e1d' }]);
   });
 
   it('re-validates server-side: refuses while changes are requested', async () => {
@@ -1382,5 +1390,67 @@ describe('spawnWorkflow (mobile companion bridge)', () => {
       triggerMode: 'manual',
       navigate: false,
     });
+  });
+});
+
+describe('send agentId belongs to the session', () => {
+  const withAgents = () =>
+    makeStore({
+      sessions: [
+        { id: 's1', workspaceId: 'w1', activeProjectId: 'project-1', workflowRuns: [] },
+        { id: 's2', workspaceId: 'w1', activeProjectId: 'project-1', workflowRuns: [] },
+      ],
+      sessionPhaseRuns: { s1: [{ id: 'agent-harborline' }], s2: [{ id: 'agent-northwind' }] },
+    });
+
+  it('forwards an agent that belongs to the session', async () => {
+    h.state.value = withAgents();
+    const res = await executeBridgeCommand(
+      cmd('send', { sessionId: 's1', content: 'go', agentId: 'agent-harborline' }),
+    );
+    expect(res.ok).toBe(true);
+    expect(h.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: 'agent-harborline' }),
+    );
+  });
+
+  it('refuses an agent that belongs to another session', async () => {
+    h.state.value = withAgents();
+    const res = await executeBridgeCommand(
+      cmd('send', { sessionId: 's1', content: 'go', agentId: 'agent-northwind' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unknown agent/i);
+    expect(h.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('refuses an invented agent id', async () => {
+    h.state.value = withAgents();
+    const res = await executeBridgeCommand(
+      cmd('send', { sessionId: 's1', content: 'go', agentId: 'made-up' }),
+    );
+    expect(res.ok).toBe(false);
+    expect(h.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('refuses an agent id longer than the cap and one that is not a string', async () => {
+    h.state.value = withAgents();
+    const long = await executeBridgeCommand(
+      cmd('send', { sessionId: 's1', content: 'go', agentId: 'a'.repeat(65) }),
+    );
+    const wrongType = await executeBridgeCommand(
+      cmd('send', { sessionId: 's1', content: 'go', agentId: 7 }),
+    );
+    expect(long.ok).toBe(false);
+    expect(long.error).toMatch(/invalid agentId/);
+    expect(wrongType.ok).toBe(false);
+    expect(h.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('still sends to the selected agent when no agentId is given', async () => {
+    h.state.value = withAgents();
+    const res = await executeBridgeCommand(cmd('send', { sessionId: 's1', content: 'go' }));
+    expect(res.ok).toBe(true);
+    expect(h.sendTurn).toHaveBeenCalledTimes(1);
   });
 });

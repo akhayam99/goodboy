@@ -8,7 +8,7 @@
 
 The query bridge lets an agent working in a Goodboy session use the tools your workspace is connected to. The agent asks Goodboy, Goodboy makes the call with your connection, and the answer comes back to the agent.
 
-Your tokens and keys stay inside Goodboy the whole time. The agent never sees them.
+Your provider keys and the bridge's own credentials stay inside Goodboy. The agent never sees them. One exception holds today: a turn you start by hand gets your GitHub connection's token in its environment as `GH_TOKEN` and `GITHUB_TOKEN`, so `gh` and `git push` work in it. Auto children never get it.
 
 Auto hands work to other agents with a block at the end of its turn, not through the bridge; [auto.md](auto.md) says how and what a person sees of it.
 
@@ -68,7 +68,7 @@ Each running copy of Goodboy has its own bridge, so an installed build and a dev
 
 ### Design rules
 
-**A secret never leaves the Goodboy process.** The agent never gets a token, a key, a header or a URL that carries one. It names a workspace, a provider and a verb. Goodboy finds the credential, makes the call and returns the result. Nothing may hand an agent a usable credential, not even indirectly.
+**A secret never leaves the Goodboy process, except one.** For every verb the agent names a workspace, a provider and a verb, and Goodboy finds the credential, makes the call and returns the result. No new verb may hand an agent a usable credential, not even indirectly. The one exception is the GitHub token of a hand started turn: `apply_git_host_access` in `turn.rs` puts it in `GH_TOKEN` and `GITHUB_TOKEN` for every turn except an Auto child and a turn whose push is blocked, and a test pins all three kinds. It leaves the turn environment once the bridge publishes on all three hosts (GitHub, GitLab, Bitbucket).
 
 That is why the bridge is not an MCP server or an injected environment variable. It talks over a Unix socket that only your OS user can read. So the line of trust is your OS account, not a token the agent could copy, log or forward.
 
@@ -78,7 +78,9 @@ That is why the bridge is not an MCP server or an injected environment variable.
 
 **Read and write are separate paths.** Reading an issue changes nothing. Posting a comment, merging, approving or moving a ticket is visible to other people. Running the command again does not undo it. Each verb declares its `Access`. Reads and writes go through separate arms of the dispatcher, so no write can come in through the read path.
 
-**The bridge is the boundary for acts.** The bridge never takes the caller's word for who it is. `turn_spawn` records the pid of every turn process it starts, Auto child or hand started, under one lock held across the spawn (`spawn_turn` in `query_bridge/auto_child.rs`). On each connection the listener reads the pid of the process on the other end from the socket itself (`peer_cred`), walks its parent chain and takes the first recorded turn it meets, with the start time checked so a reused pid does not count. `dispatch` then refuses every verb in `ACT_VERBS` before the arm for its access runs: with `auto_child_act` for a descendant of an Auto child, and with `caller_unknown` when the chain reaches no recorded turn (a process that left its turn's tree, or anything outside Goodboy). Only a descendant of a hand started turn acts. `GOODBOY_RUN_ID` and `--run` play no part in this. A new act verb that publishes work joins `ACT_VERBS`; a test checks each entry is a catalogued write.
+**The bridge is the boundary for acts.** The bridge never takes the caller's word for who it is. `turn_spawn` records the pid of every turn process it starts, Auto child or hand started, under one lock held across the spawn (`spawn_turn` in `query_bridge/auto_child.rs`). On each connection the listener reads the pid of the process on the other end from the socket itself (`peer_cred`), walks its parent chain and takes the first recorded turn it meets, with the start time checked so a reused pid does not count. The record holds the turn's kind, its workspace and its session. `dispatch` then refuses, before the arm for the verb's access runs: every verb with `caller_unknown` when the chain reaches no recorded turn (a process that left its turn's tree, or anything outside Goodboy), so no credential or mount verb is served to an unknown caller; every verb declared `Access::Publish` with `auto_child_act` for a descendant of an Auto child; and any request whose workspace or session is not the recorded one with `scope_mismatch`, so a turn in workspace Acme cannot use the credentials of workspace Northwind by passing `--workspace`. Only a descendant of a hand started turn publishes. `GOODBOY_RUN_ID` and `--run` play no part in this. The publishing set is not a second list: it is every `VerbSpec` declared `Access::Publish`, and a test names the 14 verbs, so a new publishing verb is a conscious addition.
+
+The socket has limits too. A line is read up to 1 MiB and a longer one is refused with an error and the connection closed. A connection from another user id than the app's effective one is dropped, at most 32 connections are served at once, and a connection that sends no complete line within 5 minutes is closed (`query_bridge/limits.rs`).
 
 **The credential stays with the person.** Connect, disconnect and validate are left out of the catalog on purpose.
 
@@ -119,7 +121,8 @@ Every response has the shape `{ok, data, error}`. When the bridge refuses, it ca
 - `operation_pending`: the request may have run, so read it back
 - `request_conflict`: same request id, different arguments
 - `auto_child_act`: the request came from inside an Auto child's process tree, and push, open a pull or merge request, approve, request changes, decline and mark ready are not available to it
-- `caller_unknown`: one of those acts came from a process that is not inside a turn Goodboy started, so it is refused
+- `caller_unknown`: the request came from a process that is not inside a turn Goodboy started, so every verb is refused
+- `scope_mismatch`: the request named a workspace or session other than the one the turn was started for
 - `fork_unsatisfied`: the fork came back as the source mount, or on another branch, so no new turn starts
 
 New codes can be added over time. The response shape stays the same.

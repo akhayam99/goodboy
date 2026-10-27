@@ -1,6 +1,6 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
 import type { InboxRecord } from '../../../inbox/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly record: InboxRecord;

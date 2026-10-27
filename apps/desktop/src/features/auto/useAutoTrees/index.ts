@@ -1,12 +1,17 @@
 import { useEffect, useRef } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { AgentStatus, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { classifyAgent } from '../../session/agent-kind';
 import { isAutoTreeActive } from '../autoTreePhases';
 import { useAutoTreeViews } from '../useAutoTreeViews';
+import { startSharedPoll } from './sharedPoll';
 
-const POLL_MS = 2000;
+const LIVE_STATUSES: ReadonlySet<AgentStatus> = new Set<AgentStatus>([
+  'pending',
+  'running',
+  'blocked',
+]);
 
 type Params = {
   readonly sessionId: SessionId;
@@ -16,15 +21,16 @@ export const useAutoTrees = ({ sessionId }: Params): ReadonlyArray<AutoTreeView>
   const views = useAutoTreeViews({ sessionId });
   const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
   const reportError = useAppStore((state) => state.reportError);
-  const hasAutoAgent = useAppStore((state) =>
+  const hasLiveAutoAgent = useAppStore((state) =>
     (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).some(
       (agent) =>
+        LIVE_STATUSES.has(agent.status) &&
         classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null }) === 'auto',
     ),
   );
   const hasReported = useRef(false);
   const isPolling =
-    hasAutoAgent || views.some((view) => isAutoTreeActive({ phase: view.tree.phase }));
+    hasLiveAutoAgent || views.some((view) => isAutoTreeActive({ phase: view.tree.phase }));
 
   useEffect(() => {
     const load = () => {
@@ -44,8 +50,7 @@ export const useAutoTrees = ({ sessionId }: Params): ReadonlyArray<AutoTreeView>
     if (!isPolling) {
       return;
     }
-    const id = window.setInterval(load, POLL_MS);
-    return () => window.clearInterval(id);
+    return startSharedPoll({ sessionId, load });
   }, [isPolling, loadAutoTrees, reportError, sessionId]);
 
   return views;

@@ -94,6 +94,22 @@ describe('LinearFormBody', () => {
     expect(onConnected).not.toHaveBeenCalled();
   });
 
+  it('checks only the last key typed when the key changes before the check starts', async () => {
+    const onConnected = vi.fn();
+    render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'lin_api_one' } });
+    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'lin_api_two' } });
+
+    await waitFor(() => expect(onConnected).toHaveBeenCalledOnce(), { timeout: 2000 });
+
+    expect(state.connectLinear).toHaveBeenCalledTimes(1);
+    expect(state.connectLinear).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      token: 'lin_api_two',
+      credentialId: null,
+    });
+  });
+
   it('names the exact Linear buttons to press', () => {
     render(<LinearFormBody workspaceId={WS_ID} />);
     expect(screen.getByText(/security & access/i)).toBeDefined();

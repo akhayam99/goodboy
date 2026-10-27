@@ -1,7 +1,7 @@
 import type { ChatMessage } from '@goodboy/types';
 import { buildChatTurnPrompt } from '../../workspace-chat/buildChatTurnPrompt';
 
-export const ASK_QUESTION_MARKER = 'New question:\n';
+const ASK_QUESTION_MARKER = 'New question:\n';
 
 type Params = {
   readonly pack: string;

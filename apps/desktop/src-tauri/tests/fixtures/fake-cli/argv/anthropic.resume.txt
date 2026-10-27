@@ -1,0 +1,16 @@
+cli-version: 2.1.4 (Claude Code)
+--resume
+session-ledger-core-1
+-p
+--output-format
+stream-json
+--verbose
+--model
+fake-model
+--permission-mode
+default
+--setting-sources
+project,local
+--disallowedTools
+mcp__*
+--include-partial-messages

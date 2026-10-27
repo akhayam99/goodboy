@@ -188,7 +188,7 @@ settings table, then calls `restart_prepare`, which records the live turns in
 window settles them as failed. Only then does it relaunch; a failed relaunch
 calls `restart_abort`. The next launch resumes those agents and reopens every window
 ([turns.md](turns.md#surviving-a-reload-or-a-restart),
-[navigation.md](navigation.md#addresses-and-history)).
+[navigation/model.md](navigation/model.md#addresses-and-history)).
 
 This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer

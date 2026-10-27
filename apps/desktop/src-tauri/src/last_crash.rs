@@ -2,12 +2,10 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-const APP_DIR: &str = ".goodboy";
 const CRASH_FILE: &str = "last-crash.json";
 const MAX_MESSAGE: usize = 1000;
 const MAX_STACK: usize = 4000;
@@ -48,6 +46,7 @@ impl LastCrashError {
 
 const KIND_ERROR: &str = "error";
 const KIND_PANIC: &str = "panic";
+const KIND_FREEZE: &str = "freeze";
 
 fn error_kind() -> String {
     KIND_ERROR.to_string()
@@ -82,10 +81,7 @@ pub struct LastCrashInput {
 }
 
 fn unix_millis() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
+    u128::from(crate::util::now_millis_u64())
 }
 
 fn capped(text: &str, limit: usize) -> String {
@@ -93,8 +89,7 @@ fn capped(text: &str, limit: usize) -> String {
 }
 
 fn resolve_path() -> Result<PathBuf, LastCrashError> {
-    let home = dirs::home_dir().ok_or(LastCrashError::NoHomeDir)?;
-    let directory = home.join(APP_DIR);
+    let directory = crate::app_paths::data_dir().map_err(|_| LastCrashError::NoHomeDir)?;
     fs::create_dir_all(&directory)?;
     Ok(directory.join(CRASH_FILE))
 }
@@ -273,6 +268,34 @@ fn panic_record(message: &str, backtrace: &str, home: Option<&str>, now: u128) -
     }
 }
 
+pub(crate) fn freeze_record(label: &str, silent_for: std::time::Duration, now: u128) -> LastCrash {
+    LastCrash {
+        kind: KIND_FREEZE.to_string(),
+        source: "window".to_string(),
+        message: format!(
+            "The window stopped answering for {} seconds.",
+            silent_for.as_secs()
+        ),
+        stack: String::new(),
+        screen: Some(capped(label, MAX_SCREEN)),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        actions: Vec::new(),
+        occurred_at: u64::try_from(now).unwrap_or(u64::MAX),
+        shown: false,
+    }
+}
+
+pub(crate) fn note_freeze(label: &str, silent_for: std::time::Duration) {
+    let record = freeze_record(label, silent_for, unix_millis());
+    match resolve_path() {
+        Ok(path) => crate::logging::note_failure("freeze record", write_first_at(&path, &record)),
+        Err(error) => log::warn!(
+            "[freeze] record not written: {}",
+            crate::logging::detail(&error)
+        ),
+    }
+}
+
 pub fn install_panic_hook() {
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -370,6 +393,39 @@ mod tests {
 
         assert!(claim_at(&path, EXPIRY_MS + 10).unwrap().is_none());
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn a_freeze_is_a_bounded_window_record_with_the_silence_in_seconds() {
+        let record = freeze_record(&"w".repeat(500), std::time::Duration::from_secs(47), 9);
+
+        assert_eq!(record.kind, "freeze");
+        assert_eq!(record.source, "window");
+        assert_eq!(
+            record.message,
+            "The window stopped answering for 47 seconds."
+        );
+        assert_eq!(
+            record.screen.map(|screen| screen.chars().count()),
+            Some(MAX_SCREEN)
+        );
+        assert_eq!(record.stack, "");
+        assert_eq!(record.occurred_at, 9);
+        assert!(!record.shown);
+    }
+
+    #[test]
+    fn a_freeze_waits_for_the_first_report_like_any_unshown_error() {
+        let path = temp_path("freeze");
+        let now = u64::try_from(unix_millis()).unwrap();
+        write_first_at(&path, &crash_at(now)).unwrap();
+        write_first_at(
+            &path,
+            &freeze_record("main", std::time::Duration::from_secs(40), u128::from(now)),
+        )
+        .unwrap();
+
+        assert_eq!(read_from(&path).unwrap().kind, "error");
     }
 
     #[test]

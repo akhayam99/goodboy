@@ -46,6 +46,7 @@ export const deliverQueuedTurn = async ({
       agentId,
       content: turn.content,
       origin: 'operator',
+      deliveryId: `queue:${turn.id}`,
       ...(turn.attachments.length > 0 && {
         attachments: turn.attachments.map(storedToAttachmentInput),
       }),
@@ -60,7 +61,7 @@ export const deliverQueuedTurn = async ({
       await hold();
       return 'held';
     }
-    if (isAccepted || result.isLaneQueued === true) {
+    if (isAccepted || result.isLaneQueued === true || result.isAlreadySent === true) {
       await accept();
       return 'delivered';
     }

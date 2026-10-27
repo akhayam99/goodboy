@@ -1,0 +1,16 @@
+antigravity.google | no request by the app: the provider install command the user runs in the terminal, as before this round
+api.anthropic.com | chosen provider: key check against the provider the user connected
+api.bitbucket.org | integration: Bitbucket Cloud API with the user's own credentials
+api.github.com | integration and release feed: GitHub API and the releases list
+api.linear.app | integration: Linear API with the user's own credentials
+api.moonshot.ai | chosen provider: key check against the provider the user connected
+api.openai.com | chosen provider: key check against the provider the user connected
+cursor.com | no request by the app: the provider install command the user runs in the terminal, as before this round
+example.com | no request: a placeholder URL handed to the macOS proxy lookup in artifact_mirror.rs
+gbframe.localhost | no request: the sandboxed frame scheme named in its CSP
+generativelanguage.googleapis.com | chosen provider: key check against the provider the user connected
+github.com.helper | no request: a git config key that selects the credential helper for github.com
+openrouter.ai | chosen provider: key check against the provider the user connected
+raw.githubusercontent.com | release feed: changelog text and images of a published release
+sentry.io | integration: Sentry issues with the user's own token
+slack.com | integration: Slack API with the user's own token

@@ -1,10 +1,10 @@
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestHost } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../../../shared/pullRequestPresentation';
+} from '../../../../shared/utils/pullRequestPresentation';
 import { pullRequestStateWordOf } from '../../pullRequestStateWordOf';
 
 type Props = {

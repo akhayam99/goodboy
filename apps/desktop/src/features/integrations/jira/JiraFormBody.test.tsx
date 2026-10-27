@@ -127,7 +127,7 @@ describe('JiraFormBody', () => {
   it('says what Goodboy can do and that only Jira Cloud works', () => {
     render(<JiraFormBody workspaceId={WS_ID} />);
     expect(screen.getByText('Comments as you')).toBeDefined();
-    expect(screen.getByText(/Data Center and Server are not supported/)).toBeDefined();
+    expect(screen.getByText(/Data Center and Server aren't supported/)).toBeDefined();
   });
 
   describe('when connected', () => {

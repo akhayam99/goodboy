@@ -1,6 +1,6 @@
-import { ExternalLink } from 'lucide-react';
-import { Button, CopyButton, Notice } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { SquareArrowOutUpRight } from 'lucide-react';
+import { Button, CopyButton, ICON_SIZE, Notice } from '@goodboy/ui';
+
 import { currentPlatform } from '../../../shared/platform';
 
 type Props = {
@@ -33,9 +33,9 @@ export const GhInstallHelp = ({ isChecking, onCheckAgain }: Props) => (
         href={INSTALL_URL}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1 text-label text-foreground underline underline-offset-2"
+        className="inline-flex items-center gap-1 text-meta text-foreground underline underline-offset-2"
       >
-        Install gh <ExternalLink size={ICON_SIZE.row} aria-hidden />
+        Install gh <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
       </a>
     )}
   </Notice>

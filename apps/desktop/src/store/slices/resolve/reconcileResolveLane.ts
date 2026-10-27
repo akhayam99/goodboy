@@ -5,7 +5,9 @@ import {
   listResolveQueueItems,
   setResolveCandidateState,
 } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type {
+  PrComment,
   ResolveAttempt,
   ResolveCandidate,
   ResolveLaunchChoice,
@@ -19,11 +21,15 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { deferResolveQueueItem } from './deferResolveQueueItem';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { isLaneSourceMember } from './rebuildFailure/isLaneSourceMember';
+import { recordLaneRebuildFailure } from './rebuildFailure/recordLaneRebuildFailure';
+import { namedMountTarget } from './mountTarget';
+import { isStaleMountError } from './rebuildFailure/isStaleMountError';
 import { attemptOfCandidate, laneChainOf } from './resolveLane';
 import { takeUpResolveQueueItem } from './takeUpResolveQueueItem';
-import type { SessionParams, SliceParams } from './types';
+import type { LaneParams, LaneSource, SessionParams, SliceParams } from './types';
 
-type Params = SliceParams & SessionParams;
+type Params = SliceParams & LaneParams;
 
 const REBUILDABLE = new Set(['none', 'deferred']);
 
@@ -56,37 +62,60 @@ const knownChoiceOf = ({ attempts, broken }: KnownChoiceParams): ResolveLaunchCh
   return null;
 };
 
+type PathParams = SliceParams &
+  SessionParams & {
+    readonly source: LaneSource;
+    readonly comments?: ReadonlyArray<PrComment>;
+    readonly worktreePath: string;
+  };
+
 const reconcileLanePath = async ({
   set,
   get,
   sessionId,
+  source,
+  comments,
   worktreePath,
-}: Params & { readonly worktreePath: string }): Promise<boolean> => {
+}: PathParams): Promise<boolean> => {
   const db = tauriDatabase;
   const candidates = await listResolveCandidates({ db, sessionId });
-  const { broken } = laneChainOf({
+  const laneBroken = laneChainOf({
     candidates: candidates.map((candidate) => ({ candidate })),
     worktreePath,
-  });
+  }).broken;
+  const broken = laneBroken.filter(
+    ({ candidate }) => candidate.mountTarget?.mountId === source.mountId,
+  );
   if (broken.length === 0) {
     return false;
   }
   const entries = await listResolveQueueItems({ db, sessionId });
   const rebuild = new Map<string, ResolveQueueItemWithThread>();
+  const brokenCandidates: Array<ResolveCandidate> = [];
   for (const { candidate } of broken) {
     const members = await listResolveCandidateItems({ db, candidateId: candidate.id });
-    for (const member of members) {
+    const memberEntries = members.flatMap((member) => {
       const entry = entries.find(({ item }) => item.id === member.queueItemId);
-      if (
-        entry !== undefined &&
-        REBUILDABLE.has(entry.item.approvalState) &&
-        entry.thread.state !== 'closed'
-      ) {
+      return entry === undefined || !isLaneSourceMember({ entry, source }) ? [] : [entry];
+    });
+    if (source.kind !== undefined && memberEntries.length === 0) {
+      continue;
+    }
+    brokenCandidates.push(candidate);
+    for (const entry of memberEntries) {
+      if (REBUILDABLE.has(entry.item.approvalState) && entry.thread.state !== 'closed') {
         rebuild.set(entry.thread.threadId, entry);
       }
     }
   }
-  const brokenCandidates = broken.map(({ candidate }) => candidate);
+  if (brokenCandidates.length === 0) {
+    return false;
+  }
+  const mountRevision = namedMountTarget({
+    get,
+    sessionId,
+    mountId: source.mountId,
+  })?.mountRevision;
   const attempts = await listResolveAttempts({ db, sessionId });
   for (const candidate of brokenCandidates) {
     await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
@@ -101,6 +130,7 @@ const reconcileLanePath = async ({
         hint: null,
       });
     const takenUp: Array<string> = [];
+    const progress = { hasWritten: false };
     try {
       for (const { item } of rebuild.values()) {
         if (item.approvalState === 'deferred') {
@@ -108,32 +138,81 @@ const reconcileLanePath = async ({
           takenUp.push(item.id);
         }
       }
+      await loadResolveQueueItemsInto({ set, sessionId });
       await startBatch({
         getState: get,
         sessionId,
         threadIds: [...rebuild.keys()],
         launchChoice: rebuildChoiceOf({ choice, broken: brokenCandidates }),
+        mountId: source.mountId,
+        ...(mountRevision !== undefined && { expectedMountRevision: mountRevision }),
+        onWrite: () => {
+          progress.hasWritten = true;
+        },
+        ...(comments !== undefined && { comments }),
       });
-    } catch {
+    } catch (error) {
       for (const itemId of takenUp) {
-        await deferResolveQueueItem({ set, get, sessionId, itemId }).catch(() => undefined);
+        await deferResolveQueueItem({
+          set,
+          get,
+          sessionId,
+          itemId,
+          expectedState: 'none',
+        }).catch(() => undefined);
       }
+      const isStale = isStaleMountError({ error });
+      if (!progress.hasWritten || isStale) {
+        for (const candidate of brokenCandidates) {
+          await setResolveCandidateState({ db, candidateId: candidate.id, state: candidate.state });
+        }
+      }
+      if (progress.hasWritten && !isStale) {
+        recordLaneRebuildFailure({
+          set,
+          sessionId,
+          failure: {
+            worktreePath,
+            mountId: source.mountId,
+            candidateIds: brokenCandidates.map((candidate) => candidate.id),
+            message: formatError(error),
+          },
+        });
+      }
+      await loadResolveCandidatesInto({ set, sessionId });
     }
   }
   await loadResolveQueueItemsInto({ set, sessionId });
   return true;
 };
 
-export const reconcileResolveLane = async ({ set, get, sessionId }: Params): Promise<void> => {
+export const reconcileResolveLane = async ({
+  set,
+  get,
+  sessionId,
+  source: named,
+  comments,
+}: Params): Promise<void> => {
   const candidates = await listResolveCandidates({ db: tauriDatabase, sessionId });
-  const paths = [
-    ...new Set(
-      candidates
-        .filter((candidate) => candidate.state === 'ready')
-        .map((candidate) => candidate.worktreePath),
-    ),
-  ];
-  for (const worktreePath of paths) {
-    await reconcileLanePath({ set, get, sessionId, worktreePath });
+  const lanes = new Map<string, LaneSource>();
+  for (const candidate of candidates) {
+    const mountId = candidate.mountTarget?.mountId;
+    if (candidate.state !== 'ready' || mountId === undefined) {
+      continue;
+    }
+    if (named !== undefined && named.mountId !== mountId) {
+      continue;
+    }
+    lanes.set(`${mountId}\n${candidate.worktreePath}`, named ?? { mountId });
+  }
+  for (const [key, source] of lanes) {
+    await reconcileLanePath({
+      set,
+      get,
+      sessionId,
+      source,
+      worktreePath: key.slice(key.indexOf('\n') + 1),
+      ...(comments !== undefined && { comments }),
+    });
   }
 };

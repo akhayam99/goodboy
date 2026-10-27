@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, FOCUS_RING } from '@goodboy/ui';
 import { LINE_FILL, SIGN_TEXT } from '../../diff/lib/lineTone';
 import { threadLocationOf } from '../../resolve/threadLocationOf';
 import type { ResolveQueueRow } from '../../resolve/buildResolveQueueRows';
@@ -43,7 +43,7 @@ export const ThreadHunk = ({ row, onOpenInDiff }: Props) => {
           <button
             type="button"
             onClick={onOpenInDiff}
-            className="max-w-full rounded-sm text-left hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn('max-w-full rounded-sm text-left hover:text-foreground', FOCUS_RING)}
           >
             {header}
           </button>

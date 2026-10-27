@@ -32,6 +32,7 @@ const QUIET: InactivityStageInfo = {
   stage: 'building',
   attention: null,
   otherReasons: [],
+  prState: null,
   isRunning: false,
 };
 
@@ -66,6 +67,8 @@ type DecideParams = {
   readonly isQueued?: boolean;
   readonly hasDraft?: boolean;
   readonly seenActivityAt?: number | null;
+  readonly requestEndedAt?: number | null;
+  readonly personTurnAt?: number | null;
 };
 
 const decide = ({
@@ -77,6 +80,8 @@ const decide = ({
   isQueued = false,
   hasDraft = false,
   seenActivityAt = null,
+  requestEndedAt = null,
+  personTurnAt = null,
 }: DecideParams = {}) =>
   sessionInactivityOf({
     session,
@@ -87,6 +92,8 @@ const decide = ({
     isQueued,
     hasDraft,
     seenActivityAt,
+    requestEndedAt,
+    personTurnAt,
   });
 
 const runOf = ({ createdMs, hintMs }: { readonly createdMs: number; readonly hintMs?: number }) =>
@@ -252,5 +259,71 @@ describe('sessionInactivityOf', () => {
       decide({ session, info: { ...QUIET, stage: 'running', isRunning: true } }).isInactive,
     ).toBe(false);
     expect(decide({ session, hasDraft: true }).isInactive).toBe(false);
+  });
+
+  describe('a session whose pull request ended', () => {
+    const MERGED: InactivityStageInfo = { ...QUIET, stage: 'done', prState: 'merged' };
+    const CLOSED: InactivityStageInfo = { ...QUIET, stage: 'done', prState: 'closed' };
+    const FRESH = sessionOf({ lastActivityMs: HOUR_MS });
+    const ENDED_AT = NOW - HOUR_MS;
+
+    it('leaves the live list at once, not after three days', () => {
+      expect(decide({ session: FRESH, info: MERGED, requestEndedAt: ENDED_AT }).isInactive).toBe(
+        true,
+      );
+      expect(decide({ session: FRESH, info: CLOSED, requestEndedAt: ENDED_AT }).isInactive).toBe(
+        true,
+      );
+    });
+
+    it('stays when the person wrote after the end, and leaves again when only agents ran before it', () => {
+      expect(
+        decide({
+          session: FRESH,
+          info: MERGED,
+          requestEndedAt: ENDED_AT,
+          personTurnAt: ENDED_AT + 30 * 60_000,
+        }).isInactive,
+      ).toBe(false);
+      expect(
+        decide({
+          session: FRESH,
+          info: MERGED,
+          requestEndedAt: ENDED_AT,
+          personTurnAt: ENDED_AT - HOUR_MS,
+        }).isInactive,
+      ).toBe(true);
+    });
+
+    it('forgives the last turn that was still finishing when the request ended', () => {
+      expect(
+        decide({
+          session: FRESH,
+          info: MERGED,
+          requestEndedAt: ENDED_AT,
+          personTurnAt: ENDED_AT + 60_000,
+        }).isInactive,
+      ).toBe(true);
+    });
+
+    it('keeps every guard: pinned, open, queued, draft, running and recently opened', () => {
+      const merged = { session: FRESH, info: MERGED, requestEndedAt: ENDED_AT };
+
+      expect(decide({ ...merged, isPinned: true }).isInactive).toBe(false);
+      expect(decide({ ...merged, isCurrent: true }).isInactive).toBe(false);
+      expect(decide({ ...merged, isQueued: true }).isInactive).toBe(false);
+      expect(decide({ ...merged, hasDraft: true }).isInactive).toBe(false);
+      expect(
+        decide({ ...merged, info: { ...MERGED, stage: 'running', isRunning: true } }).isInactive,
+      ).toBe(false);
+      expect(
+        decide({ ...merged, session: sessionOf({ lastActivityMs: HOUR_MS, openedMs: HOUR_MS }) })
+          .isInactive,
+      ).toBe(false);
+    });
+
+    it('does not apply to a done session without an ended request, such as an answer', () => {
+      expect(decide({ session: FRESH, info: { ...QUIET, stage: 'done' } }).isInactive).toBe(false);
+    });
   });
 });

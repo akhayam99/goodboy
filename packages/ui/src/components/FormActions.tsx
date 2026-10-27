@@ -21,11 +21,16 @@ export const FormActions = ({
   className,
 }: Props) => (
   <div data-slot="form-actions" className={cn('flex flex-col gap-2', className)}>
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div
+      className={cn(
+        'flex flex-wrap items-center gap-3',
+        leading === null ? 'justify-end' : 'justify-between',
+      )}
+    >
       {leading === null ? null : (
         <div className="flex min-w-0 flex-wrap items-center gap-2">{leading}</div>
       )}
-      <div className="ml-auto flex max-w-full shrink-0 items-center gap-2">{children}</div>
+      <div className="flex max-w-full shrink-0 items-center gap-2">{children}</div>
     </div>
     {error === null ? null : (
       <div

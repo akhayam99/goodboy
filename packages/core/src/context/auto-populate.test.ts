@@ -88,6 +88,27 @@ describe('autoPopulateContext', () => {
     );
   });
 
+  it('takes the id of a new open question from the id source it is given', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = brandId<SessionId>({ value: 'task_ap_newid' });
+    await seedSession(db, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText: '<<ctx-question>>which region ships first?<</ctx-question>>',
+      newId: () => 'question-harborline-1',
+    });
+
+    const rows = await db.select<{ readonly id: string }>(
+      'SELECT id FROM open_questions WHERE session_id = ?',
+      [sessionId],
+    );
+    expect(rows.map((row) => row.id)).toEqual(['question-harborline-1']);
+  });
+
   it('keeps the question of an Auto child out of the open questions, files and decisions still land', async () => {
     const db = makeDb();
     await migrate(db);

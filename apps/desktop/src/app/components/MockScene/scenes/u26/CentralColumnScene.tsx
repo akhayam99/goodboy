@@ -17,6 +17,7 @@ type Props = {
   readonly kind: ColumnKind;
   readonly isLogOpen?: boolean;
   readonly isArchived?: boolean;
+  readonly search?: string;
 };
 
 const arrangement = shellArrangement({ hasWorkspace: true, isSidebarCollapsed: true });
@@ -31,6 +32,7 @@ export const CentralColumnScene = ({
   kind,
   isLogOpen = false,
   isArchived = false,
+  search,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
@@ -55,6 +57,18 @@ export const CentralColumnScene = ({
     }
     setIsReady(true);
   }, [theme, kind, isLogOpen, isArchived]);
+  useEffect(() => {
+    if (!isReady || search === undefined) {
+      return;
+    }
+    const field = document.querySelector<HTMLInputElement>('input[type="search"]');
+    if (field === null) {
+      return;
+    }
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    setter?.call(field, search);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  }, [isReady, search]);
   if (!isReady) {
     return null;
   }

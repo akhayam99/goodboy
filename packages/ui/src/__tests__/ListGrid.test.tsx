@@ -135,6 +135,38 @@ describe('ListGrid', () => {
     expect(list.querySelector('[data-list-grid-cell="title"]')?.className).toContain('col-start-2');
   });
 
+  it('lets a title cell take the empty cells after it when the column opts in', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true, canSpanEmpty: true },
+      { key: 'note', width: 120 },
+      { key: 'time', width: 56, align: 'end' },
+    ];
+    render(
+      <ListGrid label="Questions" columns={columns}>
+        <ListGridRow
+          key="open"
+          cells={['Which queue should the delivery retries run on?', '', '40m']}
+        />
+        <ListGridRow
+          key="done"
+          cells={['Should a stuck delivery page someone?', 'You: daily digest', '1h']}
+        />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Questions' });
+    const [open, done] = Array.from(list.querySelectorAll('li'));
+    const openTitle = open?.querySelector<HTMLElement>('[data-list-grid-cell="title"]');
+    expect(openTitle?.style.gridColumnEnd).toBe('span 2');
+    expect(openTitle?.style.gridColumnStart).toBe('');
+    expect(openTitle?.style.gridColumn).not.toContain('span 2 /');
+    expect(openTitle?.className).toContain('col-start-2');
+    expect(open?.querySelectorAll('[data-list-grid-cell="note"]')).toHaveLength(0);
+    const doneTitle = done?.querySelector<HTMLElement>('[data-list-grid-cell="title"]');
+    expect(doneTitle?.style.gridColumnEnd).toBe('');
+    expect(doneTitle?.style.gridColumnStart).toBe('');
+    expect(done?.querySelectorAll('[data-list-grid-cell="note"]')).toHaveLength(1);
+  });
+
   it('keeps a hiding column on every row as soon as one row fills it', () => {
     const columns: ReadonlyArray<ListGridColumn> = [
       { key: 'title', width: 'fill', isTitle: true },

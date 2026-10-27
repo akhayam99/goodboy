@@ -1,4 +1,5 @@
-import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
+import type { AgentId, MountId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import {
   buildResolverAgentArgs,
   buildResolverKickoff,
@@ -25,6 +26,8 @@ type SpawnAgentArgs = {
   readonly sourceKind: 'review_comment' | 'comment_recheck';
   readonly focus: 'none';
   readonly parentAgentId?: AgentId;
+  readonly mountId?: MountId;
+  readonly expectedMountRevision?: number;
   readonly resolveBatch?: ResolveAttemptBatch;
   readonly resolveLaunch?: ResolveAttemptLaunch;
 };
@@ -53,6 +56,8 @@ type Params = {
   readonly batch?: ResolveAttemptBatch | null;
   readonly name?: string;
   readonly parentAgentId?: AgentId;
+  readonly mountId?: MountId;
+  readonly expectedMountRevision?: number;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -80,6 +85,8 @@ export const startFixAttempt = async ({
   batch = null,
   name,
   parentAgentId,
+  mountId,
+  expectedMountRevision,
   spawnAgent,
   setAgentConfig,
 }: Params): Promise<StartedFix> => {
@@ -139,6 +146,8 @@ export const startFixAttempt = async ({
     const agentId = await spawnAgent(sessionId, {
       name: name ?? (threads.length > 1 ? `Resolve: ${threads.length} review comments` : args.name),
       ...(parentAgentId !== undefined && { parentAgentId }),
+      ...(mountId !== undefined && { mountId }),
+      ...(expectedMountRevision !== undefined && { expectedMountRevision }),
       ...(choice.model !== undefined && { model: choice.model }),
       ...(choice.provider !== undefined && { provider: choice.provider }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
@@ -156,7 +165,7 @@ export const startFixAttempt = async ({
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),
       ...(choice.model !== undefined && { modelOverride: choice.model }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
-    });
+    }).catch((error: unknown) => console.warn(`[fix-attempt] ${sessionId}: ${formatError(error)}`));
     return { launchId: resolveLaunch.launchId, agentId };
   } catch (error) {
     dropLaunchTurns({ launchId: resolveLaunch.launchId });

@@ -284,7 +284,7 @@ describe('the empty page', () => {
     expect(heading).toBeDefined();
     expect(
       screen.getByText(
-        'Ports opened by agents, terminals and scripts appear here, with their process.',
+        'Ports opened by agents, terminals and scripts are listed with their process.',
       ),
     ).toBeDefined();
     expect(screen.getByText('Nothing tracked')).toBeDefined();

@@ -23,6 +23,8 @@ export const BackupPage = () => {
   const importPath = useAppStore((state) => state.backupImportPath);
   const importPreview = useAppStore((state) => state.backupImportPreview);
   const importWorkspaceTargets = useAppStore((state) => state.backupImportWorkspaceTargets);
+  const hasWildcardConsent = useAppStore((state) => state.hasBackupImportWildcardConsent);
+  const setWildcardConsent = useAppStore((state) => state.setBackupImportWildcardConsent);
   const importPhase = useAppStore((state) => state.backupImportPhase);
   const importError = useAppStore((state) => state.backupImportError);
   const importResult = useAppStore((state) => state.backupImportResult);
@@ -49,6 +51,10 @@ export const BackupPage = () => {
 
   const isExporting = exportPhase === 'writing';
   const isImporting = importPhase === 'applying';
+  const isMissingWildcardConsent =
+    importPreview !== null &&
+    importPreview.allowRules.some((rule) => rule.isWildcard) &&
+    !hasWildcardConsent;
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,7 +62,7 @@ export const BackupPage = () => {
         <h2 id="backup-export" className="flex items-center gap-2">
           <Eyebrow label="Export" />
         </h2>
-        <p className="text-label text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           Move your setup to another Mac, or keep a copy. This never contains keys or tokens.
         </p>
         <ExportGroupsSection
@@ -76,7 +82,7 @@ export const BackupPage = () => {
           />
         )}
         {exportError !== null && (
-          <p role="alert" className="text-label text-danger">
+          <p role="alert" className="text-meta text-danger">
             {exportError}
           </p>
         )}
@@ -98,7 +104,7 @@ export const BackupPage = () => {
         <h2 id="backup-import" className="flex items-center gap-2">
           <Eyebrow label="Import" />
         </h2>
-        <p className="text-label text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           Import adds and updates. It never deletes anything.
         </p>
         <FieldRow label="Setup file">
@@ -107,10 +113,21 @@ export const BackupPage = () => {
           </Button>
         </FieldRow>
         {importError !== null && (
-          <p role="alert" className="text-label text-danger">
+          <p role="alert" className="text-meta text-danger">
             {importError}
           </p>
         )}
+        {importResult !== null &&
+          !importResult.ok &&
+          importResult.errors.map((error) => (
+            <p
+              key={`${error.field}-${error.message}`}
+              role="alert"
+              className="text-meta text-danger"
+            >
+              {error.message}
+            </p>
+          ))}
         {importPath !== null && importPreview !== null && importResult === null && (
           <>
             <ImportPreviewSection
@@ -118,6 +135,8 @@ export const BackupPage = () => {
               workspaceTargets={importWorkspaceTargets}
               onWorkspaceTargetChange={setWorkspaceTarget}
               onChooseProjectParent={() => void chooseImportProjectParent()}
+              hasWildcardConsent={hasWildcardConsent}
+              onWildcardConsentChange={setWildcardConsent}
               disabled={isImporting}
             />
             <FormActions>
@@ -132,6 +151,7 @@ export const BackupPage = () => {
               <Button
                 isBusy={isImporting}
                 busyLabel="Importing…"
+                disabled={isMissingWildcardConsent}
                 onClick={() => void applyImport()}
               >
                 Import now

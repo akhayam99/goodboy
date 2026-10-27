@@ -3,6 +3,7 @@ import { Band, FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy
 import { useAppStore } from '../../../../store';
 import { SETTING_REPO_CHECK_MINUTES } from '../../settings';
 import { repoCheckMinutesOf } from '../../../workspace/repoCheckMinutesOf';
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 const INTERVAL_OPTIONS: ReadonlyArray<SegmentedTabOption<string>> = [
   { value: '0', label: 'Off' },
@@ -37,7 +38,11 @@ export const RepoCheckBand = () => {
     try {
       await saveSetting(SETTING_REPO_CHECK_MINUTES, next);
     } catch (error) {
-      void reportError({ title: "Couldn't save how often to check the repositories", error });
+      void reportError({
+        title: "Couldn't save how often to check the repositories",
+        error,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setIsSaving(false);
     }

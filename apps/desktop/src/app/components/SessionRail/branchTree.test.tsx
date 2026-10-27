@@ -33,7 +33,7 @@ import {
 } from '../../../store/storyHarness';
 import { branchPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { RebaseAllBranchState, RebaseAllRun } from '../../../store/slices/rebaseAll/types';
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { worktreeStatusOf } from '../../../test/worktreeStatusOf';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';

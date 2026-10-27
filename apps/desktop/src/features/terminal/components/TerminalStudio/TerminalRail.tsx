@@ -29,6 +29,7 @@ export const TerminalRail = ({ model }: Props) => {
               busyIds={model.busyIds}
               portsByTerminal={portsByTerminal}
               onSelect={model.selectWorktree}
+              onCloseAll={model.closeGroup}
             />
           ))}
         </ListGrid>

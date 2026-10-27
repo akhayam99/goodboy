@@ -1,5 +1,11 @@
-import type { Agent, DiffComment, OpenQuestion, ResolveQueueItemWithThread } from '@goodboy/types';
-import { agentIdOf } from '../../../../../shared/lib/brandedIds';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type DiffComment,
+  type OpenQuestion,
+  type ResolveQueueItemWithThread,
+} from '@goodboy/types';
 import { noteThreadId } from '../../../../../features/resolve/notes/noteThread';
 import { useAppStore } from '../../../../../store';
 import { openFixComments } from '../../../../../store/slices/resolve/openFixComments';
@@ -15,7 +21,7 @@ type Params = {
   readonly phase: CommentsTriagePhase;
 };
 
-const AGENT_ID = agentIdOf({ value: 'mock-bulk-agent' });
+const AGENT_ID = brandId<AgentId>({ value: 'mock-bulk-agent' });
 const NOTE_ID = 'mock-note-triage-cap';
 const QUESTION_TEXT =
   'Which MAX_RETRY_ATTEMPTS should stay, the one in retryPolicy.ts or config.ts?';

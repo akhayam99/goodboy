@@ -90,7 +90,7 @@ export const TurnsTable = ({
       ) : (
         <div className="flex max-w-full flex-col gap-1">
           <div className="max-w-full overflow-x-auto">
-            <table className={cn('w-full min-w-[36rem] text-left text-label', STRIPED_TABLE)}>
+            <table className={cn('w-full min-w-[36rem] text-left text-meta', STRIPED_TABLE)}>
               <thead className="text-eyebrow text-faint-foreground">
                 <tr>
                   <th className="px-2 py-2">Type</th>
@@ -116,12 +116,11 @@ export const TurnsTable = ({
                     <td className="px-2 py-2">
                       <span>
                         <Chip
+                          kind="state"
                           tone={record.kind === 'turn' ? 'primary' : 'neutral'}
-                          size="xs"
-                          shape="badge"
                           label={record.kind}
                           width="md"
-                          className="uppercase"
+                          className="uppercase rounded-md"
                         />
                       </span>
                     </td>

@@ -5,11 +5,11 @@
 
 ## Steps
 
-1. Check [DESIGN-SYSTEM.md](../../packages/ui/DESIGN-SYSTEM.md) for an existing primitive or type role first. A second primitive for the same job is a bug.
+1. Check [DESIGN-SYSTEM.md](../../packages/ui/DESIGN-SYSTEM.md) and its pages in `packages/ui/design/` for an existing primitive or type role first. A second primitive for the same job is a bug.
 2. Add the component file under `packages/ui/src/components/` with a local `type Props`, one export, no default export.
 3. Take values from tokens and the type scale; the parent's `gap` spaces siblings.
 4. An icon-only control carries a tooltip through `IconButton` or `Tooltip`, never a native `title`.
-5. Export it from the package entry and document its use in [DESIGN-SYSTEM.md](../../packages/ui/DESIGN-SYSTEM.md).
+5. Export it from the package entry and document its use in the page of `packages/ui/design/` that owns its family, or in [DESIGN-SYSTEM.md](../../packages/ui/DESIGN-SYSTEM.md) when it is a token or a scale.
 
 ## Test
 

@@ -71,7 +71,7 @@ export const DemoCompactNav = ({
         )}
       </div>
       {chapter === undefined || steps.activeHint === undefined ? null : (
-        <p aria-label="Current step" className="text-label text-muted-foreground">
+        <p aria-label="Current step" className="text-meta text-muted-foreground">
           Step {steps.activeIndex + 1} of {chapter.hints.length}: {steps.activeHint.label}
         </p>
       )}

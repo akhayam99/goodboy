@@ -31,6 +31,8 @@ export type GithubIssueComment = {
 
 export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
 
+export type RequestStateName = 'open' | 'merged' | 'closed' | 'draft' | 'unknown';
+
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;
 
 export type PrMergeMethod = 'squash' | 'merge' | 'rebase';

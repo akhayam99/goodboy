@@ -14,6 +14,7 @@ import {
   listResolveQueueItems,
   markResolveQueueItemDelivered,
   rebaseResolveQueueItem,
+  refuseResolveQueueItem,
   reopenResolveQueueItem,
   setResolveQueueItemApproval,
   undeferResolveQueueItem,
@@ -139,6 +140,28 @@ describe('resolve queue item queries', () => {
     );
     await undeferResolveQueueItem({ db, sessionId, itemId: item.id });
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
+  });
+
+  it('defers an item only while its approval state is the one the caller took up', async () => {
+    await expect(
+      deferResolveQueueItem({ db, sessionId, itemId: item.id, expectedState: 'none' }),
+    ).resolves.toBe(true);
+    await undeferResolveQueueItem({ db, sessionId, itemId: item.id });
+    await refuseResolveQueueItem({
+      db,
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      replyHash: 'refused',
+    });
+    await expect(
+      deferResolveQueueItem({ db, sessionId, itemId: item.id, expectedState: 'none' }),
+    ).resolves.toBe(false);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      approvalState: 'wont_fix',
+      approvedRevision: 2,
+      approvedReplyHash: 'refused',
+    });
   });
 
   it('supersedes the old item when opening a new generation', async () => {

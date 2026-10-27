@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { sentryFetchIssues, type SentryIssue, type SentryIssuesPage } from '../client';
+import { useLatestFetch } from '../../hooks/useLatestFetch';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const SENTRY_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['sentry'];
@@ -60,13 +61,11 @@ export const useSentryIssues = (
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const generation = useRef(0);
+  const beginFetch = useLatestFetch();
 
   const load = useCallback(
     async (nextCursor: string | null, reset: boolean) => {
-      const current = generation.current + 1;
-      generation.current = current;
-      const isStale = (): boolean => generation.current !== current;
+      const isStale = beginFetch();
       if (!isEnabled) {
         setIssues([]);
         setCursor(null);
@@ -106,7 +105,7 @@ export const useSentryIssues = (
         setLoading(false);
       }
     },
-    [isEnabled, isReady, linkedKey, workspaceId],
+    [beginFetch, isEnabled, isReady, linkedKey, workspaceId],
   );
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createPrSeries } from './createPrSeries';
 import { loadPrSeries } from './loadPrSeries';
+import { mergeSeriesInOrder } from './mergeSeriesInOrder';
 import { setPrSeriesMember } from './setPrSeriesMember';
 import type { SliceDeps } from '../../slice-types';
 
@@ -10,5 +11,6 @@ export const createPrSeriesSlice = ({ set, get }: SliceDeps) => {
     createPrSeries: createPrSeries(set, get),
     setPrSeriesMember: setPrSeriesMember(set, get),
     loadPrSeries: loadPrSeries(set, get),
+    mergeSeriesInOrder: mergeSeriesInOrder({ get }),
   };
 };

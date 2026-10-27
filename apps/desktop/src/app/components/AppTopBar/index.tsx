@@ -7,11 +7,12 @@ import { useCurrentWorkspace } from '../../../store';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
 import { CommandCenter } from './CommandCenter';
+import { HostReachabilityLine } from './HostReachabilityLine';
 import { LimitsStrip } from './LimitsStrip';
+import { NeedsYouFeedback } from './NeedsYouFeedback';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
-import { ThemeToggle } from './ThemeToggle';
 
 type SidebarToggle = {
   readonly isCollapsed: boolean;
@@ -55,17 +56,18 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
         </div>
 
         <div className="col-start-3 flex items-center justify-end gap-1">
+          <NeedsYouFeedback />
+
           <NowChip onOpenScript={onOpenScript} />
 
           <LimitsStrip openProviderId={openProviderId} />
 
           <SpendButton onOpenSpend={onOpenSpend} />
 
-          <ThemeToggle />
-
           <NotificationCenter />
         </div>
       </div>
+      <HostReachabilityLine />
     </>
   );
 };

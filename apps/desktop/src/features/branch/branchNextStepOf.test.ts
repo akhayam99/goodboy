@@ -87,4 +87,27 @@ describe('branchNextStepOf', () => {
       submit: 'primary',
     });
   });
+
+  it('names a rebased branch that origin also moved as diverged, with the commits to force push', () => {
+    const step = branchNextStepOf({
+      status: statusOf({ ahead: 5, behind: 0, upstream: { kind: 'known', ahead: 2, behind: 1 } }),
+      hasConflictStop: false,
+    });
+
+    expect(step).toMatchObject({
+      state: 'unpushed',
+      header: 'push',
+      unpushed: 2,
+      diverged: { yours: 2, online: 1 },
+    });
+  });
+
+  it('has no diverged distance on a branch that only runs ahead', () => {
+    expect(
+      branchNextStepOf({
+        status: statusOf({ ahead: 5, behind: 0, upstream: { kind: 'known', ahead: 2, behind: 0 } }),
+        hasConflictStop: false,
+      }).diverged,
+    ).toBeNull();
+  });
 });

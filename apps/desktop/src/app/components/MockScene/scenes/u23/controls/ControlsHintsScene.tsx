@@ -38,11 +38,11 @@ export const ControlsHintsScene = () => (
       </Button>
     </SceneRow>
     <SceneRow name="Menu row hint">
-      <div className="flex w-64 items-center justify-between gap-3 rounded-md bg-hover px-3 py-1 text-label text-foreground">
+      <div className="flex w-64 items-center justify-between gap-3 rounded-md bg-hover px-3 py-1 text-meta text-foreground">
         <span>Rename</span>
         <Kbd look="inline">R</Kbd>
       </div>
-      <div className="flex w-64 items-center justify-between gap-3 rounded-md px-3 py-1 text-label text-foreground">
+      <div className="flex w-64 items-center justify-between gap-3 rounded-md px-3 py-1 text-meta text-foreground">
         <span>Link work</span>
         <Kbd look="inline">L</Kbd>
       </div>

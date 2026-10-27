@@ -8,16 +8,17 @@ import type {
   TurnState,
   WorkspaceId,
 } from '@goodboy/types';
-import { aSession, aWorkflowRun, anAgent, TEST_NOW } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, anAgent, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
 import { createPresenceSlice } from './index';
 
-const { focusWindow, spawnWorkspaceWindow } = vi.hoisted(() => ({
+const { focusWindow, spawnWorkspaceWindow, windowLabel } = vi.hoisted(() => ({
   focusWindow: vi.fn(async (_label: string): Promise<boolean> => true),
   spawnWorkspaceWindow: vi.fn(async (_id: string, _title: string): Promise<void> => undefined),
+  windowLabel: { current: 'main' },
 }));
 
 vi.mock('../../../features/workspace/window', () => ({
-  currentWindowLabel: () => 'main',
+  currentWindowLabel: () => windowLabel.current,
   focusWindow,
   setWindowTitle: vi.fn(async () => undefined),
   spawnWorkspaceWindow,
@@ -84,9 +85,44 @@ const blockedTurn: TurnState = {
 };
 
 beforeEach(() => {
-  focusWindow.mockClear();
+  focusWindow.mockReset();
+  focusWindow.mockImplementation(async () => true);
   spawnWorkspaceWindow.mockClear();
+  windowLabel.current = 'main';
 });
+
+type TwoWindows = {
+  readonly main: ReturnType<typeof harness>;
+  readonly second: ReturnType<typeof harness>;
+  readonly announce: (params: { from: 'main' | 'win-1'; workspaceId: WorkspaceId | null }) => void;
+  readonly close: (params: { label: 'main' | 'win-1' }) => void;
+  readonly inWindow: <T>(params: { label: 'main' | 'win-1'; run: () => T }) => T;
+};
+
+const twoWindows = (initial: {
+  readonly main?: Partial<FakeState>;
+  readonly second?: Partial<FakeState>;
+}): TwoWindows => {
+  const main = harness({ currentWorkspaceId: wsA, ...initial.main });
+  const second = harness({ currentWorkspaceId: wsB, ...initial.second });
+  const stores = { main, 'win-1': second };
+  return {
+    main,
+    second,
+    announce: ({ from, workspaceId }) => {
+      stores.main.slice.setWindowPresence(from, workspaceId);
+      stores['win-1'].slice.setWindowPresence(from, workspaceId);
+    },
+    close: ({ label }) => {
+      stores.main.slice.removeWindowPresence(label);
+      stores['win-1'].slice.removeWindowPresence(label);
+    },
+    inWindow: ({ label, run }) => {
+      windowLabel.current = label;
+      return run();
+    },
+  };
+};
 
 describe('presence slice', () => {
   it('records and removes window presence by label', () => {
@@ -195,5 +231,104 @@ describe('presence slice', () => {
     const { slice } = harness({ sessions: [runningSession()], setCurrentWorkspace });
     await slice.switchWorkspaceHere({ id: wsB, title: 'B' });
     expect(setCurrentWorkspace).toHaveBeenCalledWith(wsB);
+  });
+});
+
+describe('presence slice across two windows', () => {
+  it('window B learns what window A shows from the presence announcement', () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    expect(windows.second.get().windowPresence).toEqual({ main: wsA, 'win-1': wsB });
+    expect(windows.main.get().windowPresence).toEqual({ main: wsA, 'win-1': wsB });
+  });
+
+  it('window B focuses window A instead of loading the workspace A shows', async () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    const result = await windows.inWindow({
+      label: 'win-1',
+      run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
+    });
+    expect(focusWindow).toHaveBeenCalledWith('main');
+    expect(windows.second.get().setCurrentWorkspace).not.toHaveBeenCalled();
+    expect(result).toEqual({ kind: 'opened' });
+  });
+
+  it('after A leaves its workspace, B loads that workspace in place instead of focusing A', async () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    windows.announce({ from: 'main', workspaceId: null });
+    const result = await windows.inWindow({
+      label: 'win-1',
+      run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
+    });
+    expect(focusWindow).not.toHaveBeenCalled();
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(result).toEqual({ kind: 'opened' });
+  });
+
+  it('after A closes, B no longer focuses it and opens the workspace in place', async () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    windows.close({ label: 'main' });
+    expect(windows.second.get().windowPresence).toEqual({ 'win-1': wsB });
+    await windows.inWindow({
+      label: 'win-1',
+      run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
+    });
+    expect(focusWindow).not.toHaveBeenCalled();
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+  });
+
+  it('a closing event for a window B never heard of leaves the map unchanged', () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    const before = windows.second.get().windowPresence;
+    windows.close({ label: 'main' });
+    expect(windows.second.get().windowPresence).toBe(before);
+  });
+
+  it('falls through to loading in place when A is announced but its window is gone', async () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    focusWindow.mockImplementation(async () => false);
+    const result = await windows.inWindow({
+      label: 'win-1',
+      run: () => windows.second.slice.openWorkspace({ id: wsA, title: 'A' }),
+    });
+    expect(focusWindow).toHaveBeenCalledWith('main');
+    expect(windows.second.get().setCurrentWorkspace).toHaveBeenCalledWith(wsA);
+    expect(result).toEqual({ kind: 'opened' });
+  });
+
+  it('agents running in A are not counted by B, so B switches without asking', async () => {
+    const windows = twoWindows({ main: { sessions: [runningSession()] } });
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    const wsC = nextWorkspaceId();
+    const askedInB = await windows.inWindow({
+      label: 'win-1',
+      run: () => windows.second.slice.openWorkspace({ id: wsC, title: 'C' }),
+    });
+    expect(askedInB).toEqual({ kind: 'opened' });
+    const askedInA = await windows.inWindow({
+      label: 'main',
+      run: () => windows.main.slice.openWorkspace({ id: wsC, title: 'C' }),
+    });
+    expect(askedInA).toEqual({ kind: 'needs-confirm', running: 1 });
+  });
+
+  it('the presence of B is untouched by a workspace change in A', () => {
+    const windows = twoWindows({});
+    windows.announce({ from: 'win-1', workspaceId: wsB });
+    windows.announce({ from: 'main', workspaceId: wsA });
+    windows.announce({ from: 'main', workspaceId: wsB });
+    expect(windows.second.get().windowPresence['win-1']).toBe(wsB);
+    expect(windows.second.get().currentWorkspaceId).toBe(wsB);
   });
 });

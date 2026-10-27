@@ -1,9 +1,9 @@
 import type { KeyboardEvent } from 'react';
 import { Copy } from 'lucide-react';
-import { Button, FormActions } from '@goodboy/ui';
+import { Button, FormActions, ICON_SIZE } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { StepEditorFields } from '../../StepTree/StepEditorFields';
 
 type Mode = 'builtin' | 'saved' | 'new';

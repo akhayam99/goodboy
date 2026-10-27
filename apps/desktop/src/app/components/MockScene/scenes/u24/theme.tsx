@@ -4,7 +4,7 @@ import {
   switchTheme,
   type ThemePreference,
 } from '../../../../../shared/lib/theme';
-import { ThemeToggle } from '../../../AppTopBar/ThemeToggle';
+import { ThemePreferenceField } from '../../../../../features/settings/components/SettingsStudio/ThemePreferenceField';
 
 type FrameProps = {
   readonly preference: ThemePreference;
@@ -20,16 +20,15 @@ const ThemeFrame = ({ preference, applied }: FrameProps) => {
 
   return (
     <main className="flex h-screen flex-col bg-background text-foreground">
-      <div className="flex h-9 shrink-0 items-center justify-end gap-1 px-2">
-        <span className="text-meta text-muted-foreground">Top bar</span>
-        <ThemeToggle />
+      <div className="flex w-full max-w-xl flex-col p-6">
+        <ThemePreferenceField />
       </div>
     </main>
   );
 };
 
 export const U24_THEME_SCENES: Readonly<Record<string, ComponentType>> = {
-  'topbar-theme-dark': () => <ThemeFrame preference="dark" applied="dark" />,
-  'topbar-theme-light': () => <ThemeFrame preference="light" applied="light" />,
-  'topbar-theme-system': () => <ThemeFrame preference="system" applied="dark" />,
+  'settings-theme-dark': () => <ThemeFrame preference="dark" applied="dark" />,
+  'settings-theme-light': () => <ThemeFrame preference="light" applied="light" />,
+  'settings-theme-system': () => <ThemeFrame preference="system" applied="dark" />,
 };

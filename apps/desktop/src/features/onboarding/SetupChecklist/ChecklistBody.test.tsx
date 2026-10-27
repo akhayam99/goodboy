@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { OPEN_WIZARD_EVENT, type OnboardingStepId } from '../onboarding-store';
+import { OPEN_WIZARD_EVENT, type OnboardingStepId } from '../onboardingSettings';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { setupProgress } from '../setupProgress';
 import { ChecklistBody } from './ChecklistBody';

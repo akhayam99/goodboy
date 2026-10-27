@@ -12,7 +12,7 @@ import { turnStats } from '../../utils/turnStats';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { Sparkline } from '@goodboy/ui';
+import { Meter, Sparkline } from '@goodboy/ui';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 type Props = {
@@ -79,16 +79,15 @@ export const EfficiencySection = ({
           <div className="flex flex-col gap-2">
             {cache?.map((entry) => (
               <div key={entry.provider} className="flex flex-col gap-1">
-                <div className="flex items-center gap-3 text-label">
+                <div className="flex items-center gap-3 text-meta">
                   <span className="min-w-0 flex-1 capitalize">{entry.provider}</span>
                   <span className="tabular-nums">{Math.round(entry.hitRatio * 100)}%</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-success"
-                    style={{ width: `${entry.hitRatio * 100}%` }}
-                  />
-                </div>
+                <Meter
+                  label={`Cache reuse for ${entry.provider}`}
+                  value={entry.hitRatio * 100}
+                  tone="success"
+                />
               </div>
             ))}
           </div>
@@ -114,7 +113,7 @@ export const EfficiencySection = ({
         <StudioWidget label="Right-size nudges" hint="Outcomes after a routing suggestion.">
           <div className="flex flex-col gap-1">
             {nudgeData?.map((entry) => (
-              <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-label">
+              <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-meta">
                 <span className="min-w-0 flex-1 capitalize">{entry.outcome ?? 'pending'}</span>
                 <span className="tabular-nums">{entry.count}</span>
               </div>

@@ -8,6 +8,7 @@ import { branchPlace, sessionPlace } from '../navigation/place';
 import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectMountById } from '../project-mounts/selectors';
+import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
@@ -127,16 +128,15 @@ export const openExternalTaskLens = (get: GetFn) => {
   return (sessionId: SessionId, task: SessionExternalTask): void => {
     if (task.provider === 'sentry') {
       const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-inbox', {
-          detail: {
-            workspaceId,
-            provider: 'sentry',
-            recordKey: sentryRecordKey({ issueId: task.externalId }),
-            sessionId,
-          },
-        }),
-      );
+      dispatchWindowEvent({
+        name: 'goodboy:open-inbox',
+        detail: {
+          workspaceId,
+          provider: 'sentry',
+          recordKey: sentryRecordKey({ issueId: task.externalId }),
+          sessionId,
+        },
+      });
       return;
     }
     const lens = PROVIDER_LENS[task.provider];

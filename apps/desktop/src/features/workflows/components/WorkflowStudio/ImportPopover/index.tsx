@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Download, Search } from 'lucide-react';
-import { AnchoredPopover, Button, FormActions, Input, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FormActions, ICON_SIZE, Input, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
 import { useWorkflowImport } from '../../WorkflowsPanel/useWorkflowImport';
 import { ImportGroupSection } from './ImportGroupSection';
 import { catalogCount, importedToast, selectionSummary } from './importCopy';
@@ -107,7 +107,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search workflows"
-            className="h-7 pl-7 text-label"
+            className="h-7 pl-7 text-meta"
           />
         </label>
         {total > 0 ? (
@@ -132,7 +132,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
             ))}
           </div>
         ) : (
-          <p className="px-2 py-2 text-label text-muted-foreground">{emptyText}</p>
+          <p className="px-2 py-2 text-meta text-muted-foreground">{emptyText}</p>
         )}
         <FormActions
           className="px-2"

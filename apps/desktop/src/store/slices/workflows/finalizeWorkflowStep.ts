@@ -1,4 +1,5 @@
-import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { extractStepDone, runsForWorkflowRun } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -12,8 +13,6 @@ import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { pendingMountContinuations } from '../turn/mountContinuations';
 import { sessionById } from '../sessions/sessionIndex';
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const composeStepContinue = (agentId: AgentId): string =>
   [
@@ -32,7 +31,7 @@ const startStep = (
   set((s) => ({
     agentTurnState: {
       ...s.agentTurnState,
-      [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
+      [agentId]: { kind: 'idle' as const, lastActivityAt: isoNow() },
     },
   }));
   void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
@@ -103,7 +102,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     await invokeAgentUpdateStatus(agentId, {
       status: 'completed',
       outputSummary,
-      completedAt: nowIso(),
+      completedAt: isoNow(),
     });
     const refreshed = await invokeAgentList(sessionId);
     const workflowRunId = agent.workflowRunId;
@@ -112,7 +111,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       const target = sessionById(state.sessions, sessionId);
       const runId = target?.workflowRuns.some((r) => r.id === workflowRunId) ? workflowRunId : null;
       if (runId) {
-        void updateSessionWorkflowStep(tauriDatabase, sessionId, runId, ordinal, nowIso());
+        void updateSessionWorkflowStep(tauriDatabase, sessionId, runId, ordinal, isoNow());
       }
       return {
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },

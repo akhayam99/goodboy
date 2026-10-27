@@ -4,6 +4,8 @@ import { RESOLVE_VOCAB, applyFixesLabel } from './commentProjection';
 export const LANE_REBUILD_HINT =
   'An earlier fix on this branch was dropped or changed, so this fix is rebuilt on top of the branch as it is now. Start from the earlier attempt and adapt it to the current code.';
 
+export const LANE_REBUILD_FAILED_LABEL = "A fix couldn't be rebuilt on top of the branch";
+
 export const LANE_QUEUED_SENTENCE = 'Queued, after the current fix';
 
 export const isLaneRebuildAttempt = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>

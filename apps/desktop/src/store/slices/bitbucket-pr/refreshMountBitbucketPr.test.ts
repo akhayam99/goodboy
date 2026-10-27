@@ -155,6 +155,8 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
     sessionBitbucketPr: {},
     sessionBitbucketRepo: {},
     recordSessionEventOnce: vi.fn(async () => undefined),
+    hostReachability: {},
+    noteHostAnswer: vi.fn(),
   };
   const set = ((updater: unknown) => {
     const changes =
@@ -175,6 +177,8 @@ const mountPrOf = (state: Record<string, unknown>, mountId: MountId) =>
         prs: ReadonlyArray<BitbucketPullRequest>;
         repository: string | null;
         error: string | null;
+        fetchedAt: string | null;
+        failedAt: string | null;
         checks: 'pending' | 'success' | 'failure' | null;
         reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
       }
@@ -249,6 +253,23 @@ describe('refreshSessionBitbucketPr across mounts', () => {
     expect(mountPrOf(state, M1)?.error).toBe('bitbucket is down');
     expect(mountPrOf(state, M2)?.error).toBeNull();
     expect(mountPrOf(state, M2)?.pr?.id).toBe(12);
+  });
+
+  it('stamps a quiet failure and clears the stamp once the host answers again', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.forBranch.mockRejectedValueOnce(new Error('bitbucket is down'));
+
+    await refreshSessionBitbucketPr(set, get)(SESSION_ID, { silent: true });
+
+    expect(mountPrOf(state, M1)?.error).toBeNull();
+    expect(mountPrOf(state, M1)?.failedAt).not.toBeNull();
+    expect(mountPrOf(state, M1)?.fetchedAt).toBeNull();
+
+    h.forBranch.mockResolvedValueOnce(makePr({ id: 12, branch: 'ak/part-one' }));
+    await refreshSessionBitbucketPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountPrOf(state, M1)?.failedAt).toBeNull();
+    expect(mountPrOf(state, M1)?.fetchedAt).not.toBeNull();
   });
 
   it('keeps polling the sibling mount after the other one merged', async () => {

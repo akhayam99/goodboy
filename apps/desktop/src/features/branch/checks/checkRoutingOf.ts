@@ -1,7 +1,7 @@
 import { resolveSlot } from '@goodboy/core';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
-import { selectModelContext } from '../../../store/slices/models/selectModelContext';
+import { selectModelContext } from '../../../store/runtime/models/selectModelContext';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 
 type Params = {

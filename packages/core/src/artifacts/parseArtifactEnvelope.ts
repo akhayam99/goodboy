@@ -5,6 +5,7 @@ import type {
   ReportArtifactMetadata,
   WireframeArtifactMetadata,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { readClusterChecks } from '../context/clusterChecks';
 import { readEnvelopeBody } from './envelopeBody';
 import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION } from './grammar';
@@ -27,9 +28,6 @@ const fail = (code: ArtifactCaptureError['code'], message: string): ArtifactCapt
   code,
   message,
 });
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const byteLength = (value: string): number => new TextEncoder().encode(value).byteLength;
 

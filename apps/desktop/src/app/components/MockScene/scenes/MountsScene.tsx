@@ -21,13 +21,16 @@ import type {
   Session,
   SessionId,
   SessionMountView,
-  SessionProjectMount,
   Workspace,
   WorkspaceId,
   SessionExternalTask,
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import {
+  applyMountViews,
+  toProjectMounts,
+} from '../../../../store/slices/project-mounts/mountViews';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
 import { overviewFullSeed } from './overviewFullSeed';
@@ -42,15 +45,25 @@ const RELAY_ID = 'mock-project-notify-relay' as ProjectId;
 const SERIES_ID = 'mock-series-ledger-reconciliation' as PrSeriesId;
 const NOW = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
-const ROUNDING_MOUNT = 'mock-mount-ledger-rounding' as MountId;
-const POSTINGS_MOUNT = 'mock-mount-ledger-postings' as MountId;
-const BACKFILL_MOUNT = 'mock-mount-ledger-backfill' as MountId;
-const RELAY_MOUNT = 'mock-mount-relay-backoff' as MountId;
+type MockMountIdParams = {
+  readonly name: string;
+};
+
+const mockMountId = ({ name }: MockMountIdParams): MountId => `mock-mount-${name}` as MountId;
+
+const ROUNDING_MOUNT = mockMountId({ name: 'ledger-rounding' });
+const POSTINGS_MOUNT = mockMountId({ name: 'ledger-postings' });
+const BACKFILL_MOUNT = mockMountId({ name: 'ledger-backfill' });
+const RELAY_MOUNT = mockMountId({ name: 'relay-backoff' });
+const BOUNDARIES_MOUNT = mockMountId({ name: 'ledger-boundaries' });
+const LEDGERBOOK_MOUNT = mockMountId({ name: 'ledger-ledgerbook' });
 
 const ROUNDING_BRANCH = 'fix/ledger-reconciliation-rounding-drift';
 const POSTINGS_BRANCH = 'fix/ledger-reconciliation-idempotent-postings';
 const BACKFILL_BRANCH = 'fix/ledger-reconciliation-statement-backfill';
 const RELAY_BRANCH = 'fix/notify-relay-webhook-rate-limit-backoff';
+const BOUNDARIES_BRANCH = 'fix/ledger-reconciliation-settlement-boundaries';
+const LEDGERBOOK_BRANCH = 'fix/ledger-reconciliation-ledgerbook-writes';
 
 const LEDGER_ROOT = '~/code/harborline/ledger-core';
 const RELAY_ROOT = '~/code/harborline/notify-relay';
@@ -166,6 +179,28 @@ const MOUNT_SEEDS: ReadonlyArray<MountSeed> = [
     isAttached: true,
     parallelIndex: 0,
   },
+  {
+    id: BOUNDARIES_MOUNT,
+    projectId: LEDGER_ID,
+    mountName: 'ledger-core',
+    branch: BOUNDARIES_BRANCH,
+    repoRoot: LEDGER_ROOT,
+    worktreePath: null,
+    lastWorktreePath: `${LEDGER_ROOT}-boundaries`,
+    isAttached: false,
+    parallelIndex: 3,
+  },
+  {
+    id: LEDGERBOOK_MOUNT,
+    projectId: LEDGER_ID,
+    mountName: 'ledger-core',
+    branch: LEDGERBOOK_BRANCH,
+    repoRoot: LEDGER_ROOT,
+    worktreePath: `${LEDGER_ROOT}-ledgerbook`,
+    lastWorktreePath: `${LEDGER_ROOT}-ledgerbook`,
+    isAttached: true,
+    parallelIndex: 4,
+  },
 ];
 
 const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
@@ -267,23 +302,6 @@ const viewsOf = (seeds: ReadonlyArray<MountSeed>): ReadonlyArray<SessionMountVie
     revision: 4,
     createdAt: NOW,
     updatedAt: NOW,
-  }));
-
-const projectMountsOf = (seeds: ReadonlyArray<MountSeed>): ReadonlyArray<SessionProjectMount> =>
-  seeds.map((seed) => ({
-    mountId: seed.id,
-    projectId: seed.projectId,
-    mountName: seed.mountName,
-    worktreePath: seed.worktreePath ?? seed.lastWorktreePath ?? seed.repoRoot,
-    lastWorktreePath: seed.lastWorktreePath,
-    repoRoot: seed.repoRoot,
-    branch: seed.branch,
-    baseBranch: 'main',
-    parallelIndex: seed.parallelIndex,
-    diskState: 'present',
-    revision: 4,
-    sessionId: SESSION_ID,
-    isAttached: true,
   }));
 
 const SESSION: Session = {
@@ -470,6 +488,18 @@ const POSTINGS_PR = pullRequest({
   headBranch: POSTINGS_BRANCH,
   state: 'open',
 });
+const BOUNDARIES_PR = pullRequest({
+  number: 415,
+  title: 'Settle entries on the correct side of the period boundary',
+  headBranch: BOUNDARIES_BRANCH,
+  state: 'merged',
+});
+const LEDGERBOOK_PR = pullRequest({
+  number: 421,
+  title: 'Write reconciled entries to the ledgerbook in one transaction',
+  headBranch: LEDGERBOOK_BRANCH,
+  state: 'open',
+});
 const RELAY_PR = pullRequest({
   number: 96,
   title: 'Back off webhook delivery when the relay is rate limited',
@@ -554,12 +584,12 @@ const SERIES: PrSeriesView = {
     }),
     seriesMember({
       ordinal: 2,
-      mountId: null,
-      branch: 'fix/ledger-reconciliation-settlement-boundaries',
+      mountId: BOUNDARIES_MOUNT,
+      branch: BOUNDARIES_BRANCH,
       request: seriesLink({
         id: 'mock-link-2',
-        mountId: null,
-        headBranch: 'fix/ledger-reconciliation-settlement-boundaries',
+        mountId: BOUNDARIES_MOUNT,
+        headBranch: BOUNDARIES_BRANCH,
         prNumber: 415,
         state: 'merged',
       }),
@@ -578,12 +608,12 @@ const SERIES: PrSeriesView = {
     }),
     seriesMember({
       ordinal: 4,
-      mountId: null,
-      branch: 'fix/ledger-reconciliation-ledgerbook-writes',
+      mountId: LEDGERBOOK_MOUNT,
+      branch: LEDGERBOOK_BRANCH,
       request: seriesLink({
         id: 'mock-link-4',
-        mountId: null,
-        headBranch: 'fix/ledger-reconciliation-ledgerbook-writes',
+        mountId: LEDGERBOOK_MOUNT,
+        headBranch: LEDGERBOOK_BRANCH,
         prNumber: 421,
         state: 'open',
       }),
@@ -712,6 +742,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
               ? []
               : MOUNT_SEEDS;
   const views = viewsOf(seeds);
+  const projectMounts = toProjectMounts(views);
   const session = sessionOf({ variant });
 
   useEffect(() => {
@@ -722,7 +753,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       sessions: [session],
       currentSessionId: SESSION_ID,
       sessionMounts: { [SESSION_ID]: views },
-      sessionProjectMounts: { [SESSION_ID]: projectMountsOf(seeds) },
+      sessionProjectMounts: { [SESSION_ID]: projectMounts },
       sessionSyncing: variant === 'refreshing' ? { [SESSION_ID]: true } : {},
       ...(variant === 'full' &&
         overviewFullSeed({ workspaceId: WORKSPACE_ID, sessionId: SESSION_ID, now: NOW })),
@@ -764,6 +795,20 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
           repository: 'harborline/ledger-core',
           pr: POSTINGS_PR,
         }),
+        [BOUNDARIES_MOUNT]: mountGithubEntry({
+          mountId: BOUNDARIES_MOUNT,
+          projectId: LEDGER_ID,
+          branch: BOUNDARIES_BRANCH,
+          repository: 'harborline/ledger-core',
+          pr: BOUNDARIES_PR,
+        }),
+        [LEDGERBOOK_MOUNT]: mountGithubEntry({
+          mountId: LEDGERBOOK_MOUNT,
+          projectId: LEDGER_ID,
+          branch: LEDGERBOOK_BRANCH,
+          repository: 'harborline/ledger-core',
+          pr: LEDGERBOOK_PR,
+        }),
         [RELAY_MOUNT]: mountGithubEntry({
           mountId: RELAY_MOUNT,
           projectId: RELAY_ID,
@@ -774,24 +819,6 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       },
       mountGitlabMr: {},
       mountBitbucketPr: {},
-      sessionWorktrees: {
-        [SESSION_ID]: seeds.flatMap((seed) =>
-          seed.worktreePath === null ? [] : [seed.worktreePath],
-        ),
-      },
-      sessionWorktreeRecords: {
-        [SESSION_ID]: seeds.map((seed, index) => ({
-          id: `mock-worktree-${index}`,
-          sessionId: SESSION_ID,
-          worktreePath: seed.worktreePath ?? seed.lastWorktreePath ?? seed.repoRoot,
-          branch: seed.branch,
-          parallelIndex: seed.parallelIndex,
-          projectId: seed.projectId,
-          mountName: seed.mountName,
-          repoSlug: `harborline/${seed.mountName}`,
-          createdAt: Date.parse(NOW),
-        })),
-      },
       sessionSlots: {
         [SESSION_ID]:
           variant === 'blank' ? CONTEXT_SLOTS.filter((slot) => slot.key !== 'goal') : CONTEXT_SLOTS,
@@ -870,6 +897,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       loadPrSeries: async () => [SERIES],
       loadMountCleanupProposals: async () => [],
     });
+    applyMountViews({ set: useAppStore.setState, sessionId: SESSION_ID, views });
     seedShellChrome({
       session,
       siblings: SIBLINGS,

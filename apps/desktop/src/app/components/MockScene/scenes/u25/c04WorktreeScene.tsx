@@ -10,7 +10,7 @@ import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { useSceneRailFold } from '../useSceneRailFold';
 import { useSceneFileRailFold } from '../useSceneFileRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
-import { CTX_STATUS } from '../brand/contextBranch';
+import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
@@ -90,8 +90,12 @@ type StatusParams = {
 
 const statusOf = ({ gitState }: StatusParams): WorktreeStatus => ({
   ...CTX_STATUS,
-  mainDistance: { kind: 'known', ahead: 5, behind: gitState === 'behind' ? 6 : 0 },
-  upstreamDistance: { kind: 'known', ahead: 2, behind: 0 },
+  mainDistance: { kind: 'known', ahead: CTX_COMMITS.length, behind: gitState === 'behind' ? 6 : 0 },
+  upstreamDistance: {
+    kind: 'known',
+    ahead: CTX_COMMITS.filter((commit) => !commit.pushed).length,
+    behind: 0,
+  },
   workingTree:
     gitState === 'rebasing'
       ? { kind: 'known', staged: 0, unstaged: 1, untracked: 0, unmerged: 1, changed: 1 }

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Check, RotateCcw, X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, formatError, IconButton } from '@goodboy/ui';
+import { Button, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { pluralize } from '../../../../shared/utils/pluralize';
 import {
   applyWorkspaceSettings,
@@ -152,11 +152,11 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
     return (
       <div
         role="status"
-        className="flex flex-wrap items-center gap-2 rounded-lg bg-fill px-3 py-2 text-label text-foreground"
+        className="flex flex-wrap items-center gap-2 rounded-lg bg-fill px-3 py-2 text-meta text-foreground"
       >
         <Check size={ICON_SIZE.row} aria-hidden className="text-success" />
         <span className="min-w-0 flex-1">{done.message}</span>
-        {error === null ? null : <span className="text-label text-danger">{error}</span>}
+        {error === null ? null : <span className="text-meta text-danger">{error}</span>}
         <Button variant="ghost" size="sm" disabled={isBusy} onClick={() => void undo()}>
           <RotateCcw size={ICON_SIZE.row} aria-hidden />
           Undo
@@ -197,7 +197,7 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
       )}
 
       {error === null ? null : (
-        <p role="alert" className="text-label text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}

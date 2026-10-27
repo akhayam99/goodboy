@@ -5,6 +5,7 @@ import { TwoWays } from './sections/TwoWays';
 import { SharedContext } from './sections/SharedContext';
 import { Tour } from './sections/Tour';
 import { Install } from './sections/Install';
+import { BrandLine } from './sections/BrandLine';
 import { Footer } from './sections/Footer';
 import { useReveal } from './hooks/useReveal';
 
@@ -19,6 +20,7 @@ export const App = () => {
         <SharedContext />
         <Tour />
         <Install />
+        <BrandLine />
       </main>
       <Footer />
       <Analytics />

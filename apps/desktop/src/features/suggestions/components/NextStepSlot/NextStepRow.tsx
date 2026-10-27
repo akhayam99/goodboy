@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, ConfirmPopover, cn, type ConfirmRole } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, ConfirmPopover, ICON_SIZE, type ConfirmRole } from '@goodboy/ui';
+
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
@@ -141,7 +141,7 @@ export const NextStepRow = ({
         <span data-column="text" className={NEXT_STEP_CELLS.text}>
           <span className="truncate text-row text-foreground">{suggestion.title}</span>
           {!compact && suggestion.detail != null && (
-            <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
+            <span className="truncate text-meta text-muted-foreground">{suggestion.detail}</span>
           )}
           {!compact && runsOn !== null && (
             <NextStepRunsOn

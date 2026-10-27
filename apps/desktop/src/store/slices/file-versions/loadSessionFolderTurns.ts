@@ -5,7 +5,7 @@ import {
 } from '../../../features/file-versions/fileVersions';
 import { restoredChanges } from '../../../features/file-versions/restoredChanges';
 import { turnChanges } from '../../../features/file-versions/turnChanges';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { historyCandidatesOf } from '../project-mounts/inPlaceFoldersOf';
 import type { SliceDeps } from '../../slice-types';
 

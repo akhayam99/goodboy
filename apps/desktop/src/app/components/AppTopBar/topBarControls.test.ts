@@ -10,16 +10,14 @@ const CONTROL_SOURCES: ReadonlyArray<string> = [
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
   'app/components/AppTopBar/CommandCenter.tsx',
   'app/components/AppTopBar/SpendButton.tsx',
-  'app/components/AppTopBar/ThemeToggle.tsx',
   'app/components/AppTopBar/NowChip/index.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsChip.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsOverflowPopover.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu.tsx',
-  'features/notifications/components/NotificationCenter/index.tsx',
+  'features/notifications/components/NotificationCenter/BellButton.tsx',
 ];
 
 const BAR_SIZES = /(?<![\w-])(?:h|size)-(?:5|6|8|9)(?![\w.-])/;
-const NEGATIVE_OFFSET = /'[^']*(?<![\w-])-(?:top|right|bottom|left)-(?!0\.5(?![\d]))[^\s']+/;
 
 const sourceOf = ({ path }: { readonly path: string }): string =>
   readFileSync(join(SRC, path), 'utf8');
@@ -51,16 +49,14 @@ describe('every control in the top bar is 28 high with a 6px radius', () => {
     expect(sourceOf({ path: 'app/components/AppTopBar/index.tsx' })).toContain('h-9');
   });
 
-  it('marks unread with a 6px dot inside the bell box, never a colored count', () => {
+  it('lays the unread count beside the bell so it never covers the icon', () => {
     const bell = sourceOf({
-      path: 'features/notifications/components/NotificationCenter/index.tsx',
+      path: 'features/notifications/components/NotificationCenter/BellButton.tsx',
     });
     const dot = bell.split('\n').find((line) => line.includes('data-bell-dot'));
-    const box = bell.split('\n').find((line) => line.includes('absolute right-1 top-1'));
 
     expect(dot).toBeDefined();
-    expect(box).toBeDefined();
-    expect(NEGATIVE_OFFSET.test(box ?? '')).toBe(false);
+    expect(bell).not.toContain('absolute');
     expect(bell).not.toContain('bg-warning');
   });
 });

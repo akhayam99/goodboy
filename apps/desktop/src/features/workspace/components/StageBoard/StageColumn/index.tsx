@@ -1,4 +1,4 @@
-import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, Tooltip } from '@goodboy/ui';
+import { cn, EmptyState, Eyebrow, ScrollFade, SkeletonRow, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -7,6 +7,7 @@ import {
 } from '../../../../../shared/utils/statePresentation';
 import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
 import { StageBoardCard } from '../StageBoardCard';
+import { DoneLaneMenu } from './DoneLaneMenu';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -91,8 +92,11 @@ export const StageColumn = ({
         isHalf && (isEmpty ? 'flex-none' : 'flex-initial'),
       )}
     >
-      <div className="flex h-6 shrink-0 items-center">
-        <Tooltip content={stateDescription({ presentation: view.presentation })}>
+      <div className="flex h-6 shrink-0 items-center justify-between">
+        <Tooltip
+          content={stateDescription({ presentation: view.presentation })}
+          {...(view.key === 'attention' && { shortcut: 'session.nextNeedsYou' })}
+        >
           <span className="flex items-center gap-2">
             <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
             {!isEmpty && (
@@ -102,9 +106,10 @@ export const StageColumn = ({
             )}
           </span>
         </Tooltip>
+        {view.key === 'done' && !isEmpty && !isLoading && <DoneLaneMenu sessions={sessions} />}
       </div>
 
-      {isLoading && <EmptyLine>Loading</EmptyLine>}
+      {isLoading && <SkeletonRow label="Loading sessions" />}
 
       {!isLoading && isEmpty && (
         <EmptyState

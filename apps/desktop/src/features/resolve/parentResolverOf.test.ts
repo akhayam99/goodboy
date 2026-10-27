@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, ResolveAttempt } from '@goodboy/types';
-import { agentIdOf } from '../../shared/lib/brandedIds';
+import { agentIdOf } from '../../__tests__/helpers/brandedIds';
 import { sceneClock } from '../../app/components/MockScene/sceneClock';
 import { SESSION_ID } from '../../app/components/MockScene/scenes/resolveSeed';
 import { parentResolverOf } from './parentResolverOf';

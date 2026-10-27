@@ -1,4 +1,10 @@
-import type { SessionAttentionReason, SessionPrFetchState, SessionStageInfo } from '@goodboy/types';
+import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import type {
+  PullRequestHost,
+  SessionAttentionReason,
+  SessionPrFetchState,
+  SessionStageInfo,
+} from '@goodboy/types';
 import {
   couldntFixWords,
   needsYouWords,
@@ -7,16 +13,20 @@ import {
 import {
   attentionFactsOf,
   internReasons,
+  isErrorReason,
   isHumanInputReason,
   type AttentionFactsParams,
 } from './attentionFactsOf';
+import type { SettledOutcome } from './settledOutcomeOf';
 
 type Params = AttentionFactsParams & {
+  readonly settledOutcome?: SettledOutcome | null;
   readonly hasRunningAgent?: boolean;
   readonly isDecidingWorkflow?: boolean;
   readonly isPrReview?: boolean;
   readonly requestLabel?: string;
   readonly prFetchState?: SessionPrFetchState;
+  readonly requestHost?: PullRequestHost;
   readonly remainingWork?: number;
   readonly remainingReason?: string | null;
   readonly hasRun?: boolean;
@@ -53,6 +63,18 @@ const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => 
   'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
   'unread-reply': () => 'unread agent reply',
+  'run-stopped': () => 'a run stopped',
+  'run-paused-at-limit': () => 'a run paused at its limit',
+  'run-waits-for-go': () => 'a run waits for you to continue',
+  'auto-needs-you': () => 'Auto waits for you',
+  'slack-reply-waiting': () => 'a Slack reply waits for your OK',
+};
+
+const SETTLED_TEXT: Record<SettledOutcome, string> = {
+  answered: 'answered',
+  finished: 'finished',
+  'report-ready': 'report ready',
+  'plan-ready': 'plan ready',
 };
 
 const deriveStage = (params: Params): StageWithoutRequest => {
@@ -70,10 +92,12 @@ const deriveStage = (params: Params): StageWithoutRequest => {
     isPrReview = false,
     requestLabel,
     prFetchState = 'known',
+    requestHost = 'github',
     remainingWork = 0,
     remainingReason = null,
     hasRun = true,
     isBranchless = false,
+    settledOutcome = null,
   } = params;
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   const facts = attentionFactsOf(params);
@@ -90,14 +114,14 @@ const deriveStage = (params: Params): StageWithoutRequest => {
       noteCouldntFixCount,
     });
   const blocker = facts.find(
-    (reason) => reason === 'agent-error' || isHumanInputReason({ reason }),
+    (reason) => isErrorReason({ reason }) || isHumanInputReason({ reason }),
   );
   if (blocker !== undefined && (blocker === winner || isLive)) {
     return {
       stage: 'attention',
       reason: reasonText(blocker),
       attention: blocker,
-      isRunning: blocker !== 'agent-error' && isLive,
+      isRunning: !isErrorReason({ reason: blocker }) && isLive,
     };
   }
   if (hasRunningAgent) {
@@ -123,6 +147,9 @@ const deriveStage = (params: Params): StageWithoutRequest => {
   if (winner !== undefined) {
     return { stage: 'attention', reason: reasonText(winner), attention: winner };
   }
+  if (isBranchless && settledOutcome !== null) {
+    return { stage: 'done', reason: SETTLED_TEXT[settledOutcome], attention: null };
+  }
   if (isBranchless) {
     return {
       stage: 'building',
@@ -134,14 +161,30 @@ const deriveStage = (params: Params): StageWithoutRequest => {
     return { stage: 'review', reason: 'reviewing an external PR', attention: null };
   }
   if (pr === null && prFetchState === 'unknown') {
-    return { stage: 'building', reason: 'checking GitHub', attention: null };
+    return {
+      stage: 'building',
+      reason: `checking ${REVIEW_SOURCE_LABEL[requestHost]}`,
+      attention: null,
+    };
   }
   if (pr === null && prFetchState === 'unreachable') {
-    return { stage: 'building', reason: 'GitHub unreachable', attention: null };
+    return {
+      stage: 'building',
+      reason: `${REVIEW_SOURCE_LABEL[requestHost]} unreachable`,
+      attention: null,
+    };
+  }
+  if (pr === null && settledOutcome !== null) {
+    return { stage: 'done', reason: SETTLED_TEXT[settledOutcome], attention: null };
   }
   if (pr === null) {
     return hasRun
-      ? { stage: 'building', reason: 'no PR yet', attention: null, isStageDefault: true }
+      ? {
+          stage: 'building',
+          reason: `no ${PULL_REQUEST_NOUNS[requestHost].short} yet`,
+          attention: null,
+          isStageDefault: true,
+        }
       : { stage: 'building', reason: 'not started', attention: null };
   }
   if (pr.state === 'merged' || pr.state === 'closed') {

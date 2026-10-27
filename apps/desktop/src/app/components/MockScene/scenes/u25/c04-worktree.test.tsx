@@ -15,7 +15,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { sectionNames } from '../../../../../test/branchRail';
 import { MOCK_SCENES } from '../..';

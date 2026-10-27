@@ -1,5 +1,5 @@
-import { Chip, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
+
 import type { UpdateCardState } from '../../updateCardState';
 import { UpdateCardMark } from '../UpdateCardMark';
 
@@ -19,9 +19,9 @@ const TONE_BY_STATE = {
 export const UpdatePillVisual = ({ state, version }: Props) => (
   <span className="inline-flex min-w-0 max-w-full rounded-full motion-safe:animate-studio-body-in">
     <Chip
+      kind="state"
       tone={TONE_BY_STATE[state]}
       emphasis="soft"
-      shape="pill"
       icon={
         <span className="flex shrink-0">
           <UpdateCardMark state={state} size={ICON_SIZE.mark} />

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
   MountId,
@@ -11,7 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
-import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, aWorkspace, anAgent } from '@goodboy/types/testing';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from './types';
 
@@ -78,6 +78,7 @@ vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
 import { invokeSkillList } from '../../../features/skills/skills';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { listSessionsForWorkspace } from '@goodboy/db';
 import { reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
@@ -310,5 +311,72 @@ describe('setCurrentWorkspace stops all live work', () => {
 
     expect(cancelTurn).not.toHaveBeenCalled();
     expect(stopWorkflowRunNow).not.toHaveBeenCalled();
+  });
+});
+
+describe('setCurrentWorkspace latest only and read first', () => {
+  const HARBORLINE_ID = aWorkspace({ name: 'Harborline' }).id;
+  const NORTHWIND_ID = aWorkspace({ name: 'Northwind', slug: 'northwind' }).id;
+
+  afterEach(() => {
+    vi.mocked(listSessionsForWorkspace).mockImplementation(async () => h.sessions);
+  });
+
+  it('keeps only the rows of the newest switch when an older answer arrives late', async () => {
+    const harborlineRow = aSession({ workspaceId: HARBORLINE_ID });
+    const northwindRow = aSession({ workspaceId: NORTHWIND_ID });
+    let releaseHarborline: (rows: ReadonlyArray<Session>) => void = () => undefined;
+    vi.mocked(listSessionsForWorkspace).mockImplementation(async (_db, workspaceId) => {
+      if (workspaceId === HARBORLINE_ID) {
+        return new Promise<ReadonlyArray<Session>>((resolve) => {
+          releaseHarborline = resolve;
+        });
+      }
+      return [northwindRow];
+    });
+    const store = harness();
+
+    const switchTo = setCurrentWorkspace(store.set, store.get);
+
+    const first = switchTo(HARBORLINE_ID);
+    const second = switchTo(NORTHWIND_ID);
+    await second;
+    releaseHarborline([harborlineRow]);
+    await first;
+
+    expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
+    expect(store.state.sessions.map((row) => row.id)).toEqual([northwindRow.id]);
+  });
+
+  it('leaves the previous workspace in place and rejects when a read fails', async () => {
+    const harborlineRow = aSession({ workspaceId: HARBORLINE_ID });
+    vi.mocked(listSessionsForWorkspace).mockRejectedValueOnce(new Error('disk read failed'));
+    const store = harness({
+      currentWorkspaceId: HARBORLINE_ID,
+      sessions: [harborlineRow],
+      boardReady: true,
+    });
+
+    await expect(setCurrentWorkspace(store.set, store.get)(NORTHWIND_ID)).rejects.toThrow(
+      'disk read failed',
+    );
+
+    expect(store.state.currentWorkspaceId).toBe(HARBORLINE_ID);
+    expect(store.state.sessions).toEqual([harborlineRow]);
+    expect(store.state.boardReady).toBe(true);
+  });
+
+  it('switches on the retry after a failed read', async () => {
+    const northwindRow = aSession({ workspaceId: NORTHWIND_ID });
+    vi.mocked(listSessionsForWorkspace).mockRejectedValueOnce(new Error('disk read failed'));
+    vi.mocked(listSessionsForWorkspace).mockResolvedValueOnce([northwindRow]);
+    const store = harness({ currentWorkspaceId: HARBORLINE_ID });
+    const switchTo = setCurrentWorkspace(store.set, store.get);
+
+    await expect(switchTo(NORTHWIND_ID)).rejects.toThrow('disk read failed');
+    await switchTo(NORTHWIND_ID);
+
+    expect(store.state.currentWorkspaceId).toBe(NORTHWIND_ID);
+    expect(store.state.sessions.map((row) => row.id)).toEqual([northwindRow.id]);
   });
 });

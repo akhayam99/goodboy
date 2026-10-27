@@ -25,6 +25,7 @@ type Params = {
 export type NextStepGateState = {
   readonly outcomes: ReadonlyArray<NextStepOutcome>;
   readonly dismissedFingerprints: ReadonlySet<string>;
+  readonly loadedFor: SessionId | null;
 };
 
 const EMPTY_OUTCOMES: ReadonlyArray<NextStepOutcome> = [];
@@ -32,6 +33,7 @@ const EMPTY_OUTCOMES: ReadonlyArray<NextStepOutcome> = [];
 const EMPTY_GATE_STATE: NextStepGateState = {
   outcomes: EMPTY_OUTCOMES,
   dismissedFingerprints: new Set<string>(),
+  loadedFor: null,
 };
 
 export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState => {
@@ -52,6 +54,7 @@ export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState =>
         setState({
           outcomes: toNextStepOutcomes({ events }),
           dismissedFingerprints: dismissedFingerprintsFromEvents({ events }),
+          loadedFor: sessionId,
         });
       })
       .catch(() => undefined);

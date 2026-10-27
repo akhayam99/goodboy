@@ -113,6 +113,26 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const TAB_TWO: TerminalTab = {
+  ...TAB,
+  id: brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` }),
+  title: 'payments-api 2',
+};
+
+const seedTwoTabs = (): void => {
+  store.setState({
+    terminalTabs: { [SESSION_ID]: [TAB, TAB_TWO] },
+    activeTerminalTab: { [SESSION_ID]: TAB_ID },
+  });
+};
+
+const activeTab = (): TerminalTabId | null | undefined =>
+  store.getState().activeTerminalTab[SESSION_ID];
+
+const focusSelectedTab = (): void => {
+  screen.getByRole('tab', { selected: true }).focus();
+};
+
 const tabCount = (): number => store.getState().terminalTabs[SESSION_ID]?.length ?? 0;
 
 const mountPage = (): void => {
@@ -187,7 +207,7 @@ describe('the terminal keys inside the session drawer', () => {
     expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
   });
 
-  it('closes the last tab on cmd+w and then the drawer', () => {
+  it('closes the drawer on cmd+w and keeps the last idle shell alive', () => {
     const onClose = vi.fn();
     render(
       <TerminalDrawerBody
@@ -200,8 +220,26 @@ describe('the terminal keys inside the session drawer', () => {
 
     fireEvent.keyDown(window, { code: 'KeyW', metaKey: true });
 
-    expect(tabCount()).toBe(0);
-    expect(onClose).toHaveBeenCalled();
+    expect(tabCount()).toBe(1);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('still closes the selected tab on cmd+w while another tab remains', () => {
+    seedTwoTabs();
+    const onClose = vi.fn();
+    render(
+      <TerminalDrawerBody
+        workspaceId={WORKSPACE_ID}
+        sessionId={SESSION_ID}
+        worktreeKey={WORKTREE_KEY}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.keyDown(window, { code: 'KeyW', metaKey: true });
+
+    expect(tabCount()).toBe(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('opens the picker on cmd+n and never starts a session', () => {
@@ -229,5 +267,55 @@ describe('the terminal keys inside the session drawer', () => {
     expect(cwds).toContain('/work');
     expect(store.getState().drawer?.kind).toBe('terminal');
     expect(screen.queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
+  });
+});
+
+describe('the terminal tab chords', () => {
+  beforeEach(seedTwoTabs);
+
+  it('moves to the next and the previous tab while the strip has focus', () => {
+    mountDrawer();
+    focusSelectedTab();
+
+    fireEvent.keyDown(window, { code: 'BracketRight', metaKey: true, shiftKey: true });
+    expect(activeTab()).toBe(TAB_TWO.id);
+
+    focusSelectedTab();
+    fireEvent.keyDown(window, { code: 'BracketLeft', metaKey: true, shiftKey: true });
+    expect(activeTab()).toBe(TAB_ID);
+  });
+
+  it('leaves the session chord alone when nothing in the terminal has focus', () => {
+    mountDrawer();
+    const nextSession = vi.fn();
+    const stop = registerShortcut('session.next', nextSession);
+
+    fireEvent.keyDown(window, { code: 'BracketRight', metaKey: true, shiftKey: true });
+    stop();
+
+    expect(nextSession).toHaveBeenCalledOnce();
+    expect(activeTab()).toBe(TAB_ID);
+  });
+
+  it('selects tab N on ctrl and a digit, and ignores a digit past the last tab', () => {
+    mountDrawer();
+
+    fireEvent.keyDown(window, { code: 'Digit2', ctrlKey: true });
+    expect(activeTab()).toBe(TAB_TWO.id);
+
+    fireEvent.keyDown(window, { code: 'Digit9', ctrlKey: true });
+    expect(activeTab()).toBe(TAB_TWO.id);
+
+    fireEvent.keyDown(window, { code: 'Digit1', ctrlKey: true });
+    expect(activeTab()).toBe(TAB_ID);
+  });
+
+  it('renames the focused tab on F2', () => {
+    mountDrawer();
+    focusSelectedTab();
+
+    fireEvent.keyDown(screen.getByRole('tab', { selected: true }), { code: 'F2', key: 'F2' });
+
+    screen.getByRole('textbox', { name: 'Rename payments-api' });
   });
 });

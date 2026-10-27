@@ -4,6 +4,7 @@ import type {
   PullRequestState,
   PullRequestStateKind,
 } from '@goodboy/types';
+import { ownValue } from '../ownValue';
 import { classifyGhFailure } from './classifyGhFailure';
 import type { GhJsonShape, GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
@@ -192,7 +193,9 @@ export const toPullRequestState = ({
   isDraft: raw.isDraft,
   isAutoMerge: raw.autoMergeRequest != null,
   reviewDecision:
-    raw.reviewDecision != null ? (REVIEW_DECISIONS[raw.reviewDecision] ?? null) : null,
+    raw.reviewDecision != null
+      ? (ownValue({ table: REVIEW_DECISIONS, key: raw.reviewDecision }) ?? null)
+      : null,
   body: raw.body ?? '',
   updatedAt: raw.updatedAt,
   mergeQueue,

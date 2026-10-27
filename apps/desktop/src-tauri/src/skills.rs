@@ -4,42 +4,89 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, State};
 
 use crate::db::{Db, DbError};
+use crate::util::scoped_path::resolve_within;
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
+fn goodboy_skills_dir(root: &Path) -> PathBuf {
+    root.join(".goodboy").join("skills")
+}
+
+fn kay_skills_dir(root: &Path) -> PathBuf {
+    root.join(".kay").join("skills")
+}
+
+fn script_skills_dirs(root: &Path) -> [PathBuf; 2] {
+    [goodboy_skills_dir(root), kay_skills_dir(root)]
+}
+
+fn markdown_files_in(directory: &Path) -> Result<Vec<PathBuf>, SkillError> {
+    if !directory.exists() {
+        return Ok(Vec::new());
+    }
+    let entries = std::fs::read_dir(directory).map_err(|e| SkillError::Io(e.to_string()))?;
+    let mut files = Vec::new();
+    for entry in entries {
+        let path = entry.map_err(|e| SkillError::Io(e.to_string()))?.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("md") {
+            files.push(path);
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn claude_skill_files_in(directory: &Path) -> Result<Vec<PathBuf>, SkillError> {
+    if !directory.exists() {
+        return Ok(Vec::new());
+    }
+    let entries = std::fs::read_dir(directory).map_err(|e| SkillError::Io(e.to_string()))?;
+    let mut files = Vec::new();
+    for entry in entries {
+        let dir = entry.map_err(|e| SkillError::Io(e.to_string()))?.path();
+        if !dir.is_dir() {
+            continue;
+        }
+        let candidate = dir.join("SKILL.md");
+        if candidate.exists() {
+            files.push(candidate);
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn skill_files_of(roots: &[PathBuf]) -> Result<Vec<PathBuf>, SkillError> {
+    let mut files = Vec::new();
+    for root in roots {
+        files.extend(markdown_files_in(&goodboy_skills_dir(root))?);
+        files.extend(markdown_files_in(&kay_skills_dir(root))?);
+        files.extend(claude_skill_files_in(&root.join(".claude").join("skills"))?);
+    }
+    Ok(files)
+}
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SkillRow {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    #[serde(rename = "filePath")]
     pub file_path: String,
     pub body: String,
-    #[serde(rename = "frontmatterJson")]
     pub frontmatter_json: String,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SkillUpsertInput {
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    #[serde(rename = "frontmatterJson")]
     pub frontmatter_json: String,
     pub body: String,
-    /// Pre-serialized markdown (frontmatter + body). Written verbatim to disk.
     pub markdown: String,
-    /// Optional explicit file path; if absent, derived from workspace root.
-    #[serde(rename = "filePath")]
     pub file_path: Option<String>,
 }
 
@@ -48,11 +95,6 @@ pub struct SkillRunScriptResult {
     pub stdout: String,
 }
 
-// ---------------------------------------------------------------------------
-// Path helpers
-// ---------------------------------------------------------------------------
-
-/// Returns the workspace root_path for a given workspace id.
 fn workspace_roots(
     conn: &rusqlite::Connection,
     workspace_id: &str,
@@ -73,11 +115,7 @@ fn workspace_roots(
     Ok(roots)
 }
 
-/// Canonicalize `path` and verify it sits under `allowed_prefix`.
-/// Returns the canonical path string.
 fn guard_path(path: &Path, allowed_prefix: &Path) -> Result<PathBuf, SkillError> {
-    // Ensure the parent directory exists so canonicalize works on the file too.
-    // For files that don't yet exist we canonicalize the parent and then re-append.
     let canonical = if path.exists() {
         path.canonicalize()
             .map_err(|e| SkillError::Io(e.to_string()))?
@@ -104,10 +142,6 @@ fn guard_path(path: &Path, allowed_prefix: &Path) -> Result<PathBuf, SkillError>
     Ok(canonical)
 }
 
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, thiserror::Error)]
 pub enum SkillError {
     #[error("db error: {0}")]
@@ -124,7 +158,7 @@ pub enum SkillError {
     Io(String),
     #[error("script error (exit {exit_code}): {stderr}")]
     Script { exit_code: i32, stderr: String },
-    #[error("Scripts run only from {root}/.kay/skills; skills discovered under .claude/skills are prompt-only")]
+    #[error("Scripts run only from {root}/.goodboy/skills; skills discovered under .claude/skills are prompt-only")]
     PromptOnlySkill { root: String },
 }
 
@@ -154,10 +188,6 @@ impl From<DbError> for SkillError {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// Commands — CRUD
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub async fn skill_list(
@@ -235,7 +265,7 @@ fn skill_upsert_blocking(state: &Db, input: SkillUpsertInput) -> Result<SkillRow
 
     let skills_dirs = roots
         .iter()
-        .map(|root| root.join(".kay").join("skills"))
+        .flat_map(|root| script_skills_dirs(root))
         .collect::<Vec<_>>();
     let default_skills_dir = skills_dirs
         .first()
@@ -361,7 +391,8 @@ fn skill_delete_blocking(state: &Db, skill_id: String) -> Result<(), SkillError>
     let path = PathBuf::from(&file_path);
     let allowed_dirs = roots.iter().flat_map(|root| {
         [
-            root.join(".kay").join("skills"),
+            goodboy_skills_dir(root),
+            kay_skills_dir(root),
             root.join(".claude").join("skills"),
         ]
     });
@@ -409,37 +440,7 @@ fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRo
         workspace_roots(&conn, &workspace_id)?
     };
 
-    let mut md_files: Vec<PathBuf> = Vec::new();
-
-    for root in roots {
-        let kay_dir = root.join(".kay").join("skills");
-        let claude_dir = root.join(".claude").join("skills");
-        if kay_dir.exists() {
-            let entries = std::fs::read_dir(&kay_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-            for entry in entries {
-                let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
-                let p = entry.path();
-                if p.extension().and_then(|s| s.to_str()) == Some("md") {
-                    md_files.push(p);
-                }
-            }
-        }
-        if claude_dir.exists() {
-            let entries =
-                std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
-            for entry in entries {
-                let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
-                let dir = entry.path();
-                if !dir.is_dir() {
-                    continue;
-                }
-                let candidate = dir.join("SKILL.md");
-                if candidate.exists() {
-                    md_files.push(candidate);
-                }
-            }
-        }
-    }
+    let md_files = skill_files_of(&roots)?;
 
     let now_ms = crate::util::now_ms();
 
@@ -459,6 +460,7 @@ fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRo
         .collect();
 
     let mut scanned_paths = std::collections::HashSet::new();
+    let mut seen_names = std::collections::HashSet::new();
     let mut parsed_entries: Vec<(String, String, String, String, String, String)> = Vec::new();
 
     for file_path in &md_files {
@@ -473,6 +475,9 @@ fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRo
             std::fs::read_to_string(&canonical).map_err(|e| SkillError::Io(e.to_string()))?;
 
         let (name, description, body, frontmatter_json) = parse_skill_markdown_rust(&content)?;
+        if !seen_names.insert(name.clone()) {
+            continue;
+        }
 
         let id = existing_by_path
             .get(&fp_str)
@@ -549,49 +554,65 @@ fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRo
     rows.collect::<Result<Vec<_>, _>>().map_err(SkillError::Db)
 }
 
-// ---------------------------------------------------------------------------
-// Command — script runner (for TS SkillExecutor)
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SkillRunScriptInput {
-    #[serde(rename = "scriptPath")]
     pub script_path: String,
     pub args: Vec<String>,
-    #[serde(rename = "workingDir")]
     pub working_dir: String,
-    /// Project root, used to derive the allowed prefix for path guard.
-    #[serde(rename = "projectRoot")]
-    pub project_root: String,
+    pub skill_id: String,
+}
+
+fn skill_workspace_roots(
+    conn: &rusqlite::Connection,
+    skill_id: &str,
+) -> Result<Vec<PathBuf>, SkillError> {
+    let workspace_id: String = conn
+        .query_row(
+            "SELECT workspace_id FROM skills WHERE id = ?1",
+            rusqlite::params![skill_id],
+            |row| row.get(0),
+        )
+        .map_err(|error| match error {
+            rusqlite::Error::QueryReturnedNoRows => SkillError::NotFound(skill_id.to_string()),
+            other => SkillError::Db(other),
+        })?;
+    workspace_roots(conn, &workspace_id)
 }
 
 #[tauri::command]
 pub async fn skill_run_script(
+    state: State<'_, Db>,
     input: SkillRunScriptInput,
 ) -> Result<SkillRunScriptResult, SkillError> {
-    tauri::async_runtime::spawn_blocking(move || skill_run_script_blocking(input))
+    let roots = {
+        let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
+        skill_workspace_roots(&conn, &input.skill_id)?
+    };
+    tauri::async_runtime::spawn_blocking(move || skill_run_script_blocking(&roots, input))
         .await
         .map_err(|e| SkillError::Io(e.to_string()))?
 }
 
 fn skill_run_script_blocking(
+    roots: &[PathBuf],
     input: SkillRunScriptInput,
 ) -> Result<SkillRunScriptResult, SkillError> {
-    let project_root = PathBuf::from(&input.project_root);
     let script_path = PathBuf::from(&input.script_path);
-    if script_path.starts_with(project_root.join(".claude").join("skills")) {
+    if let Some(root) = roots
+        .iter()
+        .find(|root| script_path.starts_with(root.join(".claude").join("skills")))
+    {
         return Err(SkillError::PromptOnlySkill {
-            root: input.project_root.clone(),
+            root: root.to_string_lossy().to_string(),
         });
     }
 
-    let allowed_prefix = project_root.join(".kay").join("skills");
-
-    if !allowed_prefix.exists() {
-        return Err(SkillError::PathTraversal(input.script_path.clone()));
-    }
-
-    let canonical = guard_path(&script_path, &allowed_prefix)?;
+    let canonical = roots
+        .iter()
+        .flat_map(|root| script_skills_dirs(root))
+        .find_map(|prefix| resolve_within(&prefix, &script_path).ok())
+        .ok_or_else(|| SkillError::PathTraversal(input.script_path.clone()))?;
 
     let output = skill_script_command(&canonical)
         .args(&input.args)
@@ -615,13 +636,7 @@ fn skill_script_command(script: &Path) -> std::process::Command {
     command
 }
 
-// ---------------------------------------------------------------------------
-// Minimal frontmatter parser (mirrors TS parser, subset)
-// ---------------------------------------------------------------------------
-
-/// Returns (name, description, body, frontmatter_json).
 fn parse_skill_markdown_rust(raw: &str) -> Result<(String, String, String, String), SkillError> {
-    // Match opening/closing --- delimiters.
     let after_first = raw
         .strip_prefix("---")
         .and_then(|s| s.strip_prefix('\n').or_else(|| s.strip_prefix("\r\n")));
@@ -631,7 +646,6 @@ fn parse_skill_markdown_rust(raw: &str) -> Result<(String, String, String, Strin
         None => return Err(SkillError::Io("missing frontmatter delimiters".to_string())),
     };
 
-    // Find closing ---
     let close_marker = "\n---";
     let close_pos = after_first
         .find(close_marker)
@@ -639,10 +653,8 @@ fn parse_skill_markdown_rust(raw: &str) -> Result<(String, String, String, Strin
 
     let frontmatter_block = &after_first[..close_pos];
     let after_close = &after_first[close_pos + close_marker.len()..];
-    // Trim leading newlines from body.
     let body = after_close.trim_start_matches('\n').to_string();
 
-    // Parse key: value lines.
     let mut fields: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     for line in frontmatter_block.lines() {
         let trimmed = line.trim();
@@ -670,7 +682,6 @@ fn parse_skill_markdown_rust(raw: &str) -> Result<(String, String, String, Strin
             SkillError::Io("frontmatter missing required field: description".to_string())
         })?;
 
-    // Build frontmatter_json from parsed fields.
     let mut fm_map = serde_json::Map::new();
     fm_map.insert("name".to_string(), serde_json::Value::String(name.clone()));
     fm_map.insert(
@@ -716,13 +727,15 @@ fn parse_yaml_list(raw: &str) -> Vec<String> {
             .filter(|s| !s.is_empty())
             .collect();
     }
-    // Inline YAML list on single line (shouldn't happen for multiline here, but handle gracefully)
     trimmed
         .split(',')
         .map(|s| unquote_str(s.trim()))
         .filter(|s| !s.is_empty())
         .collect()
 }
+
+#[cfg(test)]
+mod wire_shape;
 
 #[cfg(test)]
 mod tests {
@@ -744,18 +757,174 @@ mod tests {
 
     #[test]
     fn claude_skill_scripts_are_refused_with_the_rule() {
-        let result = skill_run_script_blocking(SkillRunScriptInput {
-            script_path: "/repo/.claude/skills/deploy/run.sh".to_string(),
-            args: Vec::new(),
-            working_dir: "/repo".to_string(),
-            project_root: "/repo".to_string(),
-        });
+        let result = skill_run_script_blocking(
+            &[PathBuf::from("/repo")],
+            script_input("/repo/.claude/skills/deploy/run.sh"),
+        );
         let Err(error) = result else {
             panic!("a .claude/skills script must be refused");
         };
         assert_eq!(
             error.to_string(),
-            "Scripts run only from /repo/.kay/skills; skills discovered under .claude/skills are prompt-only"
+            "Scripts run only from /repo/.goodboy/skills; skills discovered under .claude/skills are prompt-only"
         );
+    }
+
+    fn script_input(script_path: &str) -> SkillRunScriptInput {
+        SkillRunScriptInput {
+            script_path: script_path.to_string(),
+            args: Vec::new(),
+            working_dir: "/".to_string(),
+            skill_id: "skill".to_string(),
+        }
+    }
+
+    fn skills_root(name: &str) -> PathBuf {
+        let root =
+            std::env::temp_dir().join(format!("goodboy-skills-{name}-{}", rand::random::<u64>()));
+        std::fs::create_dir_all(root.join(".kay").join("skills")).unwrap();
+        std::fs::canonicalize(root).unwrap()
+    }
+
+    #[test]
+    fn a_script_inside_the_skills_root_runs() {
+        let root = skills_root("inside");
+        let script = root.join(".kay").join("skills").join("hello.sh");
+        std::fs::write(&script, "echo harborline").unwrap();
+        let result = skill_run_script_blocking(
+            std::slice::from_ref(&root),
+            script_input(script.to_str().unwrap()),
+        )
+        .unwrap();
+        assert_eq!(result.stdout.trim(), "harborline");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_script_outside_the_skills_root_is_refused() {
+        let root = skills_root("outside");
+        let other = skills_root("other");
+        let sibling = root.join("run.sh");
+        let foreign = other.join(".kay").join("skills").join("run.sh");
+        std::fs::write(&sibling, "echo no").unwrap();
+        std::fs::write(&foreign, "echo no").unwrap();
+        for path in [
+            sibling.to_str().unwrap(),
+            foreign.to_str().unwrap(),
+            "/bin/sh",
+        ] {
+            let result = skill_run_script_blocking(std::slice::from_ref(&root), script_input(path));
+            assert!(matches!(result, Err(SkillError::PathTraversal(_))));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(other).unwrap();
+    }
+
+    #[test]
+    fn a_script_in_the_goodboy_folder_runs_and_so_does_one_in_the_old_kay_folder() {
+        let root = skills_root("both");
+        let goodboy = root.join(".goodboy").join("skills");
+        std::fs::create_dir_all(&goodboy).unwrap();
+        let new_script = goodboy.join("new.sh");
+        let old_script = root.join(".kay").join("skills").join("old.sh");
+        std::fs::write(&new_script, "echo northwind").unwrap();
+        std::fs::write(&old_script, "echo harborline").unwrap();
+        for (script, expected) in [(&new_script, "northwind"), (&old_script, "harborline")] {
+            let result = skill_run_script_blocking(
+                std::slice::from_ref(&root),
+                script_input(script.to_str().unwrap()),
+            )
+            .unwrap();
+            assert_eq!(result.stdout.trim(), expected);
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn the_scan_reads_goodboy_skills_first_then_kay_then_claude() {
+        let root = skills_root("scan");
+        let goodboy = root.join(".goodboy").join("skills");
+        let claude = root.join(".claude").join("skills").join("deploy");
+        std::fs::create_dir_all(&goodboy).unwrap();
+        std::fs::create_dir_all(&claude).unwrap();
+        std::fs::write(goodboy.join("release.md"), "---\nname: release\n---\n").unwrap();
+        std::fs::write(
+            root.join(".kay").join("skills").join("release.md"),
+            "---\nname: release\n---\n",
+        )
+        .unwrap();
+        std::fs::write(claude.join("SKILL.md"), "---\nname: deploy\n---\n").unwrap();
+        let files = skill_files_of(std::slice::from_ref(&root)).unwrap();
+        let places: Vec<String> = files
+            .iter()
+            .map(|file| {
+                file.strip_prefix(&root)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/")
+            })
+            .collect();
+        assert_eq!(
+            places,
+            vec![
+                ".goodboy/skills/release.md",
+                ".kay/skills/release.md",
+                ".claude/skills/deploy/SKILL.md"
+            ]
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_workspace_with_only_the_old_kay_folder_still_lists_its_skills() {
+        let root = skills_root("old-form");
+        std::fs::write(
+            root.join(".kay").join("skills").join("release.md"),
+            "---\nname: release\n---\n",
+        )
+        .unwrap();
+        let files = skill_files_of(std::slice::from_ref(&root)).unwrap();
+        assert_eq!(files.len(), 1);
+        assert!(files[0].ends_with(".kay/skills/release.md"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_script_symlinked_out_of_the_skills_root_is_refused() {
+        let root = skills_root("link");
+        let other = skills_root("link-target");
+        let target = other.join("run.sh");
+        std::fs::write(&target, "echo no").unwrap();
+        let link = root.join(".kay").join("skills").join("run.sh");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+        let result = skill_run_script_blocking(
+            std::slice::from_ref(&root),
+            script_input(link.to_str().unwrap()),
+        );
+        assert!(matches!(result, Err(SkillError::PathTraversal(_))));
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(other).unwrap();
+    }
+
+    #[test]
+    fn the_skills_root_comes_from_the_registered_skill() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE skills (id TEXT, workspace_id TEXT);
+             CREATE TABLE projects (id TEXT, workspace_id TEXT, root_path TEXT, created_at INTEGER);
+             INSERT INTO skills VALUES ('skill-1', 'ws-1');
+             INSERT INTO projects VALUES ('p1', 'ws-1', '/work/harborline', 1);
+             INSERT INTO projects VALUES ('p2', 'ws-2', '/work/northwind', 1);",
+        )
+        .unwrap();
+        assert_eq!(
+            skill_workspace_roots(&conn, "skill-1").unwrap(),
+            vec![PathBuf::from("/work/harborline")]
+        );
+        assert!(matches!(
+            skill_workspace_roots(&conn, "unknown"),
+            Err(SkillError::NotFound(_))
+        ));
     }
 }

@@ -25,7 +25,7 @@ import {
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
 
-type C07Place = 'auto' | 'list' | 'start' | 'session';
+type C07Place = 'auto' | 'list' | 'start' | 'session' | 'child';
 
 export type C07Seed = Readonly<{
   state: AutoSceneState;
@@ -305,17 +305,20 @@ export const seedC07 = ({
         place === 'auto' ? { kind: 'spawned', sessionId: AUTO_SESSION.id, payload: null } : null,
     });
   }
+  if (place === 'child') {
+    store.navigate({
+      to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: CHILD_ID[pane ?? 'implementer'] }),
+      drawer: { kind: 'spawned', sessionId: AUTO_SESSION.id, payload: null },
+    });
+  }
   if (place === 'list' || place === 'start') {
     store.navigate({ to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'auto' }) });
   }
-  if (pane !== undefined) {
+  if (pane !== undefined && place !== 'child') {
     useAppStore.getState().openDrawer({
       kind: 'auto-child',
       sessionId: AUTO_SESSION.id,
-      payload:
-        place === 'auto'
-          ? { agentId: CHILD_ID[pane], from: 'spawned' }
-          : { agentId: CHILD_ID[pane] },
+      payload: { agentId: CHILD_ID[pane] },
     });
   }
 };

@@ -97,11 +97,51 @@ describe('bulk selection in the session list', () => {
     expect(within(list).getAllByRole('option')).toHaveLength(3);
   });
 
-  it('says how to select more while nothing is selected, and drops the hint once something is', () => {
+  it('shows no hint with nothing selected, and says how to extend once a row is selected', () => {
     mount();
-    expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
-    fireEvent.click(rowAt(0), { altKey: true });
     expect(screen.queryByText('Shift click for a range, Option click to add one')).toBeNull();
+    fireEvent.click(rowAt(0), { altKey: true });
+    const hint = screen.getByText('Shift click for a range, Option click to add one');
+    expect(hint.hasAttribute('data-selection-hint')).toBe(true);
+    expect(hint.closest('[data-selection-dock]')).not.toBeNull();
+  });
+
+  it('reserves under the last row as much room as the selection dock is tall', () => {
+    const observers: Array<(entries: ReadonlyArray<{ contentRect: { height: number } }>) => void> =
+      [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(
+          callback: (entries: ReadonlyArray<{ contentRect: { height: number } }>) => void,
+        ) {
+          observers.push(callback);
+        }
+        observe = (): void => undefined;
+        disconnect = (): void => undefined;
+      },
+    );
+    mount();
+    expect(screen.queryByTestId('session-list-clearance')).toBeNull();
+    fireEvent.click(rowAt(0), { altKey: true });
+    expect(screen.getByTestId('session-list-clearance').style.height).toBe('0px');
+    act(() => {
+      for (const notify of observers) {
+        notify([{ contentRect: { height: 96 } }]);
+      }
+    });
+    expect(Number.parseInt(screen.getByTestId('session-list-clearance').style.height, 10)).toBe(
+      120,
+    );
+    act(() => {
+      for (const notify of observers) {
+        notify([{ contentRect: { height: 140 } }]);
+      }
+    });
+    expect(Number.parseInt(screen.getByTestId('session-list-clearance').style.height, 10)).toBe(
+      164,
+    );
+    vi.unstubAllGlobals();
   });
 
   it('starts a selection from an Option click without opening the session', () => {

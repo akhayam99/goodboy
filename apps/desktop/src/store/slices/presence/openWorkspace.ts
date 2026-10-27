@@ -4,7 +4,7 @@ import {
   focusWindow,
   spawnWorkspaceWindow,
 } from '../../../features/workspace/window';
-import { selectLiveWork } from '../live-work/selectLiveWork';
+import { selectLiveWork } from '../../runtime/live-work/selectLiveWork';
 import type { GetFn } from './types';
 
 type OpenWorkspaceTarget = 'auto' | 'new-window';

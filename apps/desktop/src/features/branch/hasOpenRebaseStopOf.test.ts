@@ -6,6 +6,7 @@ import type {
   SessionEvent,
   SessionEventId,
   SessionProjectMount,
+  WorktreeStatus,
 } from '@goodboy/types';
 import { aProject, aSession, nextProjectId, nextSessionId } from '@goodboy/types/testing';
 
@@ -22,8 +23,14 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../store/storyHarness';
+import {
+  ensure,
+  resetWorktreeStatusCache,
+  worktreeStatusKey,
+} from '../../store/runtime/worktreeStatuses/cache';
 import { hasOpenRebaseStopOf } from './hasOpenRebaseStopOf';
 
 const SESSION_ID = nextSessionId();
@@ -69,6 +76,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  resetWorktreeStatusCache();
   store.setState({
     sessions: [aSession({ id: SESSION_ID })],
     projects: [aProject({ id: PROJECT_ID, name: 'ledger-core' })],
@@ -134,5 +142,47 @@ describe('hasOpenRebaseStopOf', () => {
         status: null,
       }),
     ).toBe(false);
+  });
+});
+
+const gitStatusOf = ({ inProgress }: OpenParams): WorktreeStatus => ({
+  branch: MOUNT.branch,
+  head: 'c0ffee1',
+  headSubject: 'Round rates half to even',
+  upstream: null,
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+  mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  inProgress,
+});
+
+describe('hasOpenRebaseStopOf without a status handed in', () => {
+  const readFromGit = async ({ inProgress }: OpenParams): Promise<boolean> => {
+    stubStoryInvoke({ worktree_status: () => gitStatusOf({ inProgress }) });
+    await ensure({
+      key: worktreeStatusKey({ worktreePath: MOUNT.worktreePath, baseBranch: 'main' }),
+      worktreePath: MOUNT.worktreePath,
+      baseBranch: 'main',
+      maxAgeMs: 0,
+    });
+    return hasOpenRebaseStopOf({
+      state: store.getState(),
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+  };
+
+  it('is open for a rebase started in a terminal, with no Goodboy run or event', async () => {
+    expect(await readFromGit({ inProgress: 'rebase' })).toBe(true);
+  });
+
+  it('is closed when git is not rebasing and Goodboy holds no stop', async () => {
+    expect(await readFromGit({ inProgress: null })).toBe(false);
+  });
+
+  it('answers the same as the page does with the live status handed in', async () => {
+    const isOpenFromCache = await readFromGit({ inProgress: 'rebase' });
+
+    expect(isOpenFromCache).toBe(isOpen({ inProgress: 'rebase' }));
   });
 });

@@ -111,3 +111,22 @@ fn workspace_overrides_json_accepts_the_legacy_string_encoded_shape() {
         Some(serde_json::json!({"anthropic": "acct-legacy"}))
     );
 }
+
+#[test]
+fn the_backup_bundle_struct_carries_exactly_the_declared_override_columns() {
+    use crate::settings_overrides::{wire_key, OVERRIDE_COLUMNS};
+
+    let encoded = serde_json::to_value(super::WorkspaceOverridesBundle::default())
+        .expect("serialize bundle overrides");
+    let mut carried: Vec<String> = encoded
+        .as_object()
+        .expect("the bundle overrides are an object")
+        .keys()
+        .cloned()
+        .collect();
+    carried.sort();
+    let mut declared: Vec<String> = OVERRIDE_COLUMNS.iter().map(|c| wire_key(c)).collect();
+    declared.sort();
+
+    assert_eq!(carried, declared);
+}

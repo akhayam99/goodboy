@@ -1,7 +1,16 @@
 import { ChevronDown } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { AnchoredPopover, Eyebrow, FieldRow, cn, useDropdown } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import {
+  AnchoredPopover,
+  cn,
+  Eyebrow,
+  FieldRow,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  useDropdown,
+} from '@goodboy/ui';
+
 import { ProviderGlyph } from '../../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { useProviderPolicy } from '../../../hooks/useProviderPolicy';
 import { PROVIDER_LABEL } from '../../../providerLabel';
@@ -12,14 +21,13 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-const PANEL_WIDTH = 500;
 const PANEL_HEIGHT = 430;
 
 export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const { summary } = useProviderPolicy({ workspaceId });
   const dropdown = useDropdown({
-    width: 'w-[500px]',
-    expectedWidth: PANEL_WIDTH,
+    width: POPOVER_WIDTH_CLASS.studio,
+    expectedWidth: POPOVER_WIDTH_PX.studio,
     expectedHeight: PANEL_HEIGHT,
   });
   const firstOn = summary.on[0] ?? null;
@@ -42,7 +50,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
             onClick={dropdown.toggle}
-            className="flex max-w-80 min-w-0 items-center gap-2 rounded-md border border-border-soft px-2 py-1 text-label text-foreground hover:bg-hover"
+            className="flex max-w-80 min-w-0 items-center gap-2 rounded-md border border-border-soft px-2 py-1 text-meta text-foreground hover:bg-hover"
           >
             <span className="flex shrink-0 items-center gap-0.5">
               {summary.on.slice(0, 3).map((id) => (

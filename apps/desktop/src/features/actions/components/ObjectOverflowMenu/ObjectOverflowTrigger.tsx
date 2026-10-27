@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import {
   AnchoredPopover,
+  ICON_SIZE,
   MENU_MAX_WIDTH,
   MenuTriggerButton,
-  useDropdown,
   type MenuTriggerSize,
+  useDropdown,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ObjectOverflowList } from './ObjectOverflowList';
@@ -21,6 +22,7 @@ export type ObjectOverflowMenuProps = ObjectOverflowTriggerProps & {
 export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
   readonly target: ObjectTarget;
   readonly label: string;
+  readonly tooltip?: string;
   readonly trigger?: ReactNode;
   readonly triggerClassName?: string;
   readonly size?: MenuTriggerSize;
@@ -35,6 +37,7 @@ export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
 export const ObjectOverflowTrigger = ({
   target,
   label,
+  tooltip,
   trigger,
   triggerClassName,
   size = 'compact',
@@ -63,6 +66,7 @@ export const ObjectOverflowTrigger = ({
       trigger={
         <MenuTriggerButton
           label={label}
+          tooltip={tooltip}
           isOpen={dropdown.open}
           size={size}
           disabled={disabled}

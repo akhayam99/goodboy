@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { prViewsOf } from '../prViewsOf';
 import { useAppStore } from '../../../../../store';
 import type { HistoryDraft, HistoryRun } from '../../../../../store/slices/history/types';
 import type { MountGithubState } from '../../../../../store/types';
@@ -27,6 +28,15 @@ export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
       historyDrafts: { [CTX_PAYMENTS_MOUNT_ID]: draft },
       historyRuns: run === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: run },
       mountGithub: github === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: github },
+      pullRequestViews:
+        github?.pr == null
+          ? {}
+          : prViewsOf({
+              sessionId: CTX_SESSION_ID,
+              mountId: CTX_PAYMENTS_MOUNT_ID,
+              pr: github.pr,
+              commits: draft.commits,
+            }),
       loadHistoryDraft: async () => undefined,
     });
     setIsReady(true);
@@ -36,5 +46,5 @@ export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
     return null;
   }
 
-  return <ShellFrame session={CTX_SESSION} main={<HistoryStage />} />;
+  return <ShellFrame session={CTX_SESSION} main={<HistoryStage commits={draft.commits} />} />;
 };

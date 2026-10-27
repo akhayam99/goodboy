@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
+
 import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
 import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
@@ -87,7 +87,7 @@ export const UserText = ({
           aria-expanded={false}
           onClick={() => setIsBriefOpen(true)}
           onContextMenu={menu.onContextMenu}
-          className="flex min-w-0 max-w-full items-center gap-1 rounded-lg bg-elevated px-3 py-1 text-label text-muted-foreground ring-1 ring-border-soft hover:text-foreground"
+          className="flex min-w-0 max-w-full items-center gap-1 rounded-lg bg-elevated px-3 py-1 text-meta text-muted-foreground ring-1 ring-border-soft hover:text-foreground"
         >
           <span className="min-w-0 truncate">Asked: {firstLine}</span>
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />

@@ -7,6 +7,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { GENERATED_ARTIFACT_KINDS } from '../../../features/artifacts/artifactCollection';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
@@ -32,9 +33,6 @@ type WriteParams = Params &
   }>;
 
 const EPOCH = new Date(0).toISOString() as IsoDateTime;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
 
 const storageKey = ({ sessionId }: Params): string =>
   `${STORAGE_PREFIXES.artifactDrafts}${sessionId}`;

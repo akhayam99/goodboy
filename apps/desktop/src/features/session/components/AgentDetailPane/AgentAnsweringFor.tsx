@@ -1,4 +1,4 @@
-import { Markdown, Band, cn } from '@goodboy/ui';
+import { Markdown, Band, cn, FOCUS_RING } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
@@ -37,7 +37,7 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
             className={cn(
               'self-start rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
               'transition-colors duration-150 hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              FOCUS_RING,
             )}
           >
             asked by {asker.name}

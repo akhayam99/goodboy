@@ -11,6 +11,6 @@ export const clearGithubToken = (_set: SetFn, get: GetFn) => {
   return async ({ workspaceId }: Params): Promise<void> => {
     await ghClearToken(workspaceId ?? undefined);
     await refreshEveryGithubConnection({ get });
-    get().sweepGithub();
+    await get().sweepRequests();
   };
 };

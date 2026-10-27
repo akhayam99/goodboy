@@ -87,12 +87,24 @@ describe('buildContextPreamble', () => {
   });
 });
 
+const prior = (transcripts: ReadonlyArray<TurnEvent>, maxTokens: number) =>
+  buildPriorTurnsBlock({ transcripts, maxTokens });
+
+const userSays = (text: string): TurnEvent => ({ kind: 'user_text', runId: RUN, text, at: NOW });
+
+const assistantSays = (delta: string): TurnEvent => ({
+  kind: 'assistant_text',
+  runId: RUN,
+  delta,
+  at: NOW,
+});
+
 describe('buildPriorTurnsBlock', () => {
-  it('empty transcripts → empty string', () => {
-    expect(buildPriorTurnsBlock([], 1000)).toBe('');
+  it('empty transcripts carry nothing and leave nothing out', () => {
+    expect(prior([], 1000)).toEqual({ text: '', carried: 0, leftOut: 0, isShortened: false });
   });
 
-  it('only tool events (no text) → empty string', () => {
+  it('only tool events (no text) carry nothing', () => {
     const events: TurnEvent[] = [
       {
         kind: 'tool_call_start',
@@ -103,26 +115,27 @@ describe('buildPriorTurnsBlock', () => {
         at: NOW,
       },
     ];
-    expect(buildPriorTurnsBlock(events, 1000)).toBe('');
+    expect(prior(events, 1000).text).toBe('');
   });
 
-  it('groups assistant deltas, preserves chronological order', () => {
+  it('groups assistant deltas, preserves chronological order and counts every turn', () => {
     const events: TurnEvent[] = [
-      { kind: 'user_text', runId: RUN, text: 'hello', at: NOW },
-      { kind: 'assistant_text', runId: RUN, delta: 'hi ', at: NOW },
-      { kind: 'assistant_text', runId: RUN, delta: 'there', at: NOW },
-      { kind: 'user_text', runId: RUN, text: 'bye', at: NOW },
+      userSays('hello'),
+      assistantSays('hi '),
+      assistantSays('there'),
+      userSays('bye'),
     ];
-    const out = buildPriorTurnsBlock(events, 1000);
-    expect(out).toContain('prior turns');
-    expect(out.indexOf('hello')).toBeLessThan(out.indexOf('hi there'));
-    expect(out.indexOf('hi there')).toBeLessThan(out.indexOf('bye'));
+    const out = prior(events, 1000);
+    expect(out.text).toContain('prior turns');
+    expect(out.text.indexOf('hello')).toBeLessThan(out.text.indexOf('hi there'));
+    expect(out.text.indexOf('hi there')).toBeLessThan(out.text.indexOf('bye'));
+    expect(out).toMatchObject({ carried: 3, leftOut: 0, isShortened: false });
   });
 
   it('renders workflow handoffs in chronological position', () => {
     const events: TurnEvent[] = [
-      { kind: 'user_text', runId: RUN, text: 'implement', at: NOW },
-      { kind: 'assistant_text', runId: RUN, delta: 'implementation complete', at: NOW },
+      userSays('implement'),
+      assistantSays('implementation complete'),
       {
         kind: 'step_transition',
         runId: RUN,
@@ -131,14 +144,71 @@ describe('buildPriorTurnsBlock', () => {
         carryForwardContext: 'changed `src/auth.ts`',
         at: NOW,
       },
-      { kind: 'user_text', runId: RUN, text: 'review', at: NOW },
+      userSays('review'),
     ];
 
-    const out = buildPriorTurnsBlock(events, 1000);
+    const out = prior(events, 1000).text;
 
     expect(out).toContain('workflow handoff (carried forward): changed `src/auth.ts`');
     expect(out.indexOf('implementation complete')).toBeLessThan(out.indexOf('workflow handoff'));
     expect(out.indexOf('workflow handoff')).toBeLessThan(out.indexOf('review'));
+  });
+
+  it('always carries the original request and says how many older turns it left out', () => {
+    const longText = 'x'.repeat(4000);
+    const events: TurnEvent[] = [
+      userSays('Reconcile the Harborline ledger export for Northwind'),
+      assistantSays(`old-${longText}`),
+      userSays(`mid-${longText}`),
+      assistantSays(`recent-${longText}`),
+      userSays('new question'),
+    ];
+
+    const out = prior(events, 1500);
+
+    expect(out.text).toContain('user: Reconcile the Harborline ledger export for Northwind');
+    expect(out.text).toContain('new question');
+    expect(out.text).not.toContain('old-');
+    expect(out.text).toContain('[2 older turns left out]');
+    expect(out).toMatchObject({ carried: 3, leftOut: 2 });
+    expect(out.text.indexOf('Reconcile')).toBeLessThan(out.text.indexOf('left out'));
+    expect(out.text.indexOf('left out')).toBeLessThan(out.text.indexOf('new question'));
+  });
+
+  it('shortens a latest message that alone is over the budget, with a marker', () => {
+    const events: TurnEvent[] = [
+      userSays('Summarize the payments-api incident'),
+      assistantSays('Here is the summary.'),
+      userSays(`pasted log ${'y'.repeat(60_000)}`),
+    ];
+
+    const out = prior(events, 2000);
+
+    expect(out.isShortened).toBe(true);
+    expect(out.text).toContain('pasted log');
+    expect(out.text).toMatch(/\[shortened: \d+ characters left out\]/);
+    expect(out.text.length / 4).toBeLessThanOrEqual(2000 + 20);
+    expect(out.text).toContain('Summarize the payments-api incident');
+  });
+
+  it('shortens an oversize original request to a quarter of the budget', () => {
+    const events: TurnEvent[] = [
+      userSays(`spec ${'z'.repeat(40_000)}`),
+      assistantSays('Understood.'),
+      userSays('go'),
+    ];
+
+    const out = prior(events, 2000);
+
+    expect(out.isShortened).toBe(true);
+    expect(out.text).toContain('spec zzz');
+    expect(out.text).toContain('go');
+    expect(out.text.length / 4).toBeLessThanOrEqual(2000 + 20);
+  });
+
+  it('a budget too small to carry anything leaves everything out', () => {
+    const events: TurnEvent[] = [userSays('x'.repeat(4000))];
+    expect(prior(events, 10)).toEqual({ text: '', carried: 0, leftOut: 1, isShortened: false });
   });
 
   it('applies the prior-turn token budget to workflow handoffs', () => {
@@ -153,26 +223,7 @@ describe('buildPriorTurnsBlock', () => {
       },
     ];
 
-    expect(buildPriorTurnsBlock(events, 10)).toBe('');
-  });
-
-  it('drops oldest first when over budget', () => {
-    const longText = 'x'.repeat(4000);
-    const events: TurnEvent[] = [
-      { kind: 'user_text', runId: RUN, text: `old-${longText}`, at: NOW },
-      { kind: 'user_text', runId: RUN, text: `mid-${longText}`, at: NOW },
-      { kind: 'user_text', runId: RUN, text: `new-${longText}`, at: NOW },
-    ];
-    const out = buildPriorTurnsBlock(events, 1500);
-    expect(out).toContain('new-');
-    expect(out).not.toContain('old-');
-  });
-
-  it('budget too small for any turn → empty', () => {
-    const events: TurnEvent[] = [
-      { kind: 'user_text', runId: RUN, text: 'x'.repeat(4000), at: NOW },
-    ];
-    expect(buildPriorTurnsBlock(events, 10)).toBe('');
+    expect(prior(events, 10).text).toBe('');
   });
 });
 

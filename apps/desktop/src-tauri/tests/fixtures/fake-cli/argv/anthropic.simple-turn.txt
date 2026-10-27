@@ -1,0 +1,14 @@
+cli-version: 2.1.4 (Claude Code)
+-p
+--output-format
+stream-json
+--verbose
+--model
+fake-model
+--permission-mode
+default
+--setting-sources
+project,local
+--disallowedTools
+mcp__*
+--include-partial-messages

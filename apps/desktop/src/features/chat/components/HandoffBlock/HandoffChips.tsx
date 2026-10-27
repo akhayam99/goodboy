@@ -1,9 +1,8 @@
 import { ChevronDown } from 'lucide-react';
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, ICON_SIZE } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind } from '@goodboy/types';
 import { handoffChipLabel } from '../../utils/handoffLabels';
 import type { HandoffActive } from './useHandoffDisclosure';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sections: ReadonlyArray<HandoffSection>;

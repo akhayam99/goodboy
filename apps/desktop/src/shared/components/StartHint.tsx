@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { Button, IconButton, useEscapeLayer } from '@goodboy/ui';
+import { Button, ICON_SIZE, IconButton, useEscapeLayer } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { START_HINT_LIMITS } from '../../store/slices/startHints/startHintLimits';
 import { startHintCounterOf } from '../../store/slices/startHints/startHintCounterOf';
 import { startHintTextOf } from '../../store/slices/startHints/startHintTextOf';
-import { CONCEPT_ICONS, ICON_SIZE } from './conceptIcons';
+import { CONCEPT_ICONS } from './conceptIcons';
 import { PromptField } from './PromptField';
 
 type Props = {

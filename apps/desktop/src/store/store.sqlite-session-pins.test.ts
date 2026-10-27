@@ -1,11 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import {
-  getSetting,
+  getWorkspaceValue,
   insertSession,
   insertWorkspace,
   purgeSessionForDelete,
-  setSetting,
+  setWorkspaceValue,
 } from '@goodboy/db';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import {
@@ -54,8 +54,6 @@ vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoM
 
 const HARBORLINE_ID = 'workspace-harborline' as WorkspaceId;
 const NORTHWIND_ID = 'workspace-northwind' as WorkspaceId;
-const HARBORLINE_KEY = `sessions.pinned.${HARBORLINE_ID}`;
-const NORTHWIND_KEY = `sessions.pinned.${NORTHWIND_ID}`;
 
 const harborline = buildStoryWorkspace({
   id: HARBORLINE_ID,
@@ -124,8 +122,21 @@ type PinsReader = {
 const pinnedIds = (store: PinsReader = useAppStore): ReadonlyArray<string> =>
   (store.getState().sessionPins[HARBORLINE_ID] ?? []).map((pin) => pin.id);
 
-const storedIds = async (key: string = HARBORLINE_KEY): Promise<ReadonlyArray<string>> => {
-  const raw = await getSetting(storySqlite(), key);
+const readPins = (workspaceId: WorkspaceId = HARBORLINE_ID): Promise<string | null> =>
+  getWorkspaceValue({ db: storySqlite(), workspaceId, key: 'sessions.pinned' });
+
+const writePins = (value: string): Promise<void> =>
+  setWorkspaceValue({
+    db: storySqlite(),
+    workspaceId: HARBORLINE_ID,
+    key: 'sessions.pinned',
+    value,
+  });
+
+const storedIds = async (
+  workspaceId: WorkspaceId = HARBORLINE_ID,
+): Promise<ReadonlyArray<string>> => {
+  const raw = await readPins(workspaceId);
   if (raw === null) {
     return [];
   }
@@ -145,10 +156,10 @@ describe('store on sqlite: pinned sessions', () => {
 
     expect(pinnedIds()).toEqual([LEDGER.id]);
     const rows = await rowsOf<{ key: string; value: string }>({
-      sql: "SELECT key, value FROM settings WHERE key LIKE 'sessions.pinned.%'",
+      sql: "SELECT workspace_id AS key, value FROM workspace_values WHERE key = 'sessions.pinned'",
     });
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.key).toBe(HARBORLINE_KEY);
+    expect(rows[0]?.key).toBe(HARBORLINE_ID);
     expect(JSON.parse(rows[0]?.value ?? '[]')).toEqual([{ id: LEDGER.id, at: expect.any(Number) }]);
 
     forgetPinsInMemory();
@@ -197,12 +208,12 @@ describe('store on sqlite: pinned sessions', () => {
   it('leaves the row alone when it unpins a session that was never pinned', async () => {
     await useAppStore.getState().unpinSession(LEDGER.id as SessionId);
 
-    expect(await getSetting(storySqlite(), HARBORLINE_KEY)).toBeNull();
+    expect(await readPins()).toBeNull();
     expect(pinnedIds()).toEqual([]);
   });
 
   it('reads malformed JSON as no pins and overwrites it on the next pin', async () => {
-    await setSetting(storySqlite(), HARBORLINE_KEY, '{ not json');
+    await writePins('{ not json');
 
     await useAppStore.getState().loadSessionPins({ workspaceId: HARBORLINE_ID });
     expect(pinnedIds()).toEqual([]);
@@ -214,7 +225,7 @@ describe('store on sqlite: pinned sessions', () => {
   });
 
   it('reads a value that is not a list as no pins', async () => {
-    await setSetting(storySqlite(), HARBORLINE_KEY, JSON.stringify({ id: LEDGER.id, at: 1 }));
+    await writePins(JSON.stringify({ id: LEDGER.id, at: 1 }));
 
     await useAppStore.getState().loadSessionPins({ workspaceId: HARBORLINE_ID });
 
@@ -222,9 +233,7 @@ describe('store on sqlite: pinned sessions', () => {
   });
 
   it('drops entries that are not an id with a time', async () => {
-    await setSetting(
-      storySqlite(),
-      HARBORLINE_KEY,
+    await writePins(
       JSON.stringify([{ id: LEDGER.id, at: 5 }, { id: 7, at: 1 }, { id: RELAY.id }, 'text', null]),
     );
 
@@ -234,9 +243,7 @@ describe('store on sqlite: pinned sessions', () => {
   });
 
   it('collapses duplicate ids to the oldest pin', async () => {
-    await setSetting(
-      storySqlite(),
-      HARBORLINE_KEY,
+    await writePins(
       JSON.stringify([
         { id: RELAY.id, at: 30 },
         { id: LEDGER.id, at: 20 },
@@ -284,8 +291,8 @@ describe('store on sqlite: pinned sessions', () => {
     useAppStore.setState({ sessions: [ONBOARDING], currentWorkspaceId: NORTHWIND_ID });
     await useAppStore.getState().pinSession(ONBOARDING.id as SessionId);
 
-    expect(await storedIds(HARBORLINE_KEY)).toEqual([LEDGER.id]);
-    expect(await storedIds(NORTHWIND_KEY)).toEqual([ONBOARDING.id]);
+    expect(await storedIds(HARBORLINE_ID)).toEqual([LEDGER.id]);
+    expect(await storedIds(NORTHWIND_ID)).toEqual([ONBOARDING.id]);
     forgetPinsInMemory();
     await useAppStore.getState().loadSessionPins({ workspaceId: HARBORLINE_ID });
     await useAppStore.getState().loadSessionPins({ workspaceId: NORTHWIND_ID });
@@ -363,7 +370,7 @@ describe('store on sqlite: moving pinned sessions', () => {
 
   it('leaves the row alone at the ends', async () => {
     await pinThree();
-    const before = await getSetting(storySqlite(), HARBORLINE_KEY);
+    const before = await readPins();
 
     await useAppStore
       .getState()
@@ -372,7 +379,7 @@ describe('store on sqlite: moving pinned sessions', () => {
       .getState()
       .moveSessionPin({ sessionId: PAYMENTS.id as SessionId, direction: 'down' });
 
-    expect(await getSetting(storySqlite(), HARBORLINE_KEY)).toBe(before);
+    expect(await readPins()).toBe(before);
   });
 
   it('keeps both moves when two stores move different pins at the same time', async () => {
@@ -399,7 +406,7 @@ describe('store on sqlite: moving pinned sessions', () => {
 
   it('reports a move that cannot be written and shows what the row holds', async () => {
     await pinThree();
-    injectDbFault({ match: /UPDATE settings SET value/, message: 'disk full' });
+    injectDbFault({ match: /UPDATE workspace_values SET value/, message: 'disk full' });
 
     await useAppStore
       .getState()
@@ -413,18 +420,18 @@ describe('store on sqlite: moving pinned sessions', () => {
 
 describe('store on sqlite: a pin that cannot be written', () => {
   it('leaves the store and the row empty when the first write fails and reports it', async () => {
-    injectDbFault({ match: /INSERT INTO settings/, message: 'disk full' });
+    injectDbFault({ match: /INSERT INTO workspace_values/, message: 'disk full' });
 
     await useAppStore.getState().pinSession(LEDGER.id as SessionId);
 
     expect(pinnedIds()).toEqual([]);
-    expect(await getSetting(storySqlite(), HARBORLINE_KEY)).toBeNull();
+    expect(await readPins()).toBeNull();
     expect(await errorTitles()).toEqual(["Couldn't pin the session"]);
   });
 
   it('leaves the store equal to the row when a later write fails', async () => {
     await useAppStore.getState().pinSession(LEDGER.id as SessionId);
-    injectDbFault({ match: /UPDATE settings SET value/, message: 'disk full' });
+    injectDbFault({ match: /UPDATE workspace_values SET value/, message: 'disk full' });
 
     await useAppStore.getState().pinSession(RELAY.id as SessionId);
 
@@ -435,7 +442,7 @@ describe('store on sqlite: a pin that cannot be written', () => {
 
   it('leaves the store equal to the row when an unpin fails', async () => {
     await useAppStore.getState().pinSession(LEDGER.id as SessionId);
-    injectDbFault({ match: /UPDATE settings SET value/, message: 'disk full' });
+    injectDbFault({ match: /UPDATE workspace_values SET value/, message: 'disk full' });
 
     await useAppStore.getState().unpinSession(LEDGER.id as SessionId);
 
@@ -448,8 +455,8 @@ describe('store on sqlite: a pin that cannot be written', () => {
     await useAppStore.getState().pinSession(LEDGER.id as SessionId);
     forgetPinsInMemory();
     await storySqlite().exec(
-      `CREATE TRIGGER pins_always_lose BEFORE UPDATE ON settings
-       WHEN OLD.key LIKE 'sessions.pinned.%'
+      `CREATE TRIGGER pins_always_lose BEFORE UPDATE ON workspace_values
+       WHEN OLD.key = 'sessions.pinned'
        BEGIN SELECT RAISE(IGNORE); END`,
     );
 
@@ -465,8 +472,8 @@ describe('store on sqlite: a pin that cannot be written', () => {
     await storySqlite().exec('CREATE TABLE lost_writes (n INTEGER)');
     await storySqlite().exec('INSERT INTO lost_writes (n) VALUES (1)');
     await storySqlite().exec(
-      `CREATE TRIGGER pins_lose_once BEFORE UPDATE ON settings
-       WHEN OLD.key LIKE 'sessions.pinned.%' AND (SELECT COUNT(*) FROM lost_writes) > 0
+      `CREATE TRIGGER pins_lose_once BEFORE UPDATE ON workspace_values
+       WHEN OLD.key = 'sessions.pinned' AND (SELECT COUNT(*) FROM lost_writes) > 0
        BEGIN
          DELETE FROM lost_writes;
          SELECT RAISE(IGNORE);

@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSlotHistory } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import type { ContextSlotKey } from './contextTabs';
 

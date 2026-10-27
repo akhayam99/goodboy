@@ -164,7 +164,7 @@ describe('bitbucketPullRequestPort writes', () => {
     ['rebase', 'rebase_merge'],
   ] as const)('merges with %s as the %s strategy', async (method, strategy) => {
     const { port, calls } = built();
-    await port.merge({ method });
+    await port.merge({ method, expectedHeadSha: null });
     expect(calls.merges).toEqual([strategy]);
   });
 
@@ -185,7 +185,7 @@ describe('bitbucketPullRequestPort writes', () => {
   it('keeps the host message when the merge is refused', async () => {
     const text = 'Merge strategy squash is not allowed for this repository';
     const { port } = built({ failWrites: { kind: 'failed', text } });
-    const error = await port.merge({ method: 'squash' }).then(
+    const error = await port.merge({ method: 'squash', expectedHeadSha: null }).then(
       () => null,
       (caught: unknown) => caught,
     );

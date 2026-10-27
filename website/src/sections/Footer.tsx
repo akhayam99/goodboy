@@ -41,7 +41,7 @@ const COLUMNS: readonly Column[] = [
       { label: 'GitHub', href: SITE.repo },
       { label: 'Follow on X', href: SITE.x },
       { label: 'Releases', href: SITE.releases },
-      { label: 'Security', href: SITE.security },
+      { label: 'Your data and security', href: `${SITE.security}#your-data` },
       { label: 'Report a bug', href: SITE.newIssue },
     ],
   },

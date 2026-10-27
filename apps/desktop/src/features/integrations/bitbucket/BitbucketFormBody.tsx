@@ -84,7 +84,7 @@ export const BitbucketFormBody = ({
       isConfigComplete={normalizedSlug !== '' && trimmedEmail !== ''}
       note={{
         label: 'Bitbucket Cloud only',
-        body: "Data Center and Server are not supported; an older app password works in the same field. The secret carries your own Bitbucket permissions, is stored encrypted in your operating system keychain, and is sent directly to Bitbucket over HTTPS; it never touches Goodboy's own servers.",
+        body: "Data Center and Server aren't supported; an older app password works in the same field. The secret carries your own Bitbucket permissions, is stored encrypted in your operating system keychain, and is sent directly to Bitbucket over HTTPS; it never touches Goodboy's own servers.",
       }}
       shouldAutoFocus={shouldAutoFocus}
       onCredentialSelect={(credential) => {

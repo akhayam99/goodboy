@@ -1,5 +1,5 @@
-import { Chip, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Chip, cn, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { BranchRowChip as BranchRowChipView } from './branchRowChipOf';
 
 type Props = {
@@ -23,8 +23,8 @@ export const BranchRowChip = ({ chip }: Props) => {
       )}
     >
       <Chip
+        kind="state"
         tone={chip.tone}
-        size="3xs"
         label={chip.text}
         icon={Icon === null ? undefined : <Icon size={ICON_SIZE.mark} aria-hidden />}
         bordered={false}

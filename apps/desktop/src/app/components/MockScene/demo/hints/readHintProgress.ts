@@ -1,4 +1,4 @@
-import { isHintId } from '../director/isHintId';
+import { readHintId } from '../director/readHintId';
 import { HINT_PROGRESS_KEY } from './hintProgressKey';
 import type { ChapterHintProgress, HintProgress } from './hintProgressTypes';
 
@@ -11,7 +11,12 @@ type Params = {
 };
 
 const idsOf = ({ value }: ValueParams): ReadonlyArray<string> =>
-  Array.isArray(value) ? value.filter((entry) => isHintId(entry)) : [];
+  Array.isArray(value)
+    ? value.flatMap((entry) => {
+        const id = readHintId({ value: entry });
+        return id === null ? [] : [id];
+      })
+    : [];
 
 const epochOf = ({ value }: ValueParams): number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0;
@@ -38,7 +43,7 @@ export const readHintProgress = ({ fallback }: Params): HintProgress => {
     }
     return Object.fromEntries(
       Object.entries(parsed)
-        .filter(([chapterId]) => isHintId(chapterId))
+        .filter(([chapterId]) => readHintId({ value: chapterId }) !== null)
         .map(([chapterId, value]) => [chapterId, chapterOf({ value })]),
     );
   } catch {

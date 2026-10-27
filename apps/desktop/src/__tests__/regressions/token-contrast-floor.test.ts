@@ -182,12 +182,6 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(READ_SURFACES)('delineates controls with border at 3:1 on %s', (surface) => {
-    expect(contrast(swatch(palette, 'border'), swatch(palette, surface))).toBeGreaterThanOrEqual(
-      LARGE_FLOOR,
-    );
-  });
-
   it.each(READ_SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
     const failures = TONES.map((tone) => ({
       tone,
@@ -453,6 +447,7 @@ type OverlayFloor = {
 };
 
 const OVERLAY_FLOORS: ReadonlyArray<OverlayFloor> = [
+  { token: 'border', surfaces: READ_SURFACES, floor: LARGE_FLOOR },
   { token: 'frame-edge', surfaces: ['chrome', 'background'], floor: 1.2 },
   { token: 'scrollbar-thumb', surfaces: ['background', 'subtle', 'floating'], floor: 1.8 },
   { token: 'scrollbar-thumb-active', surfaces: ['background', 'subtle', 'floating'], floor: 3 },

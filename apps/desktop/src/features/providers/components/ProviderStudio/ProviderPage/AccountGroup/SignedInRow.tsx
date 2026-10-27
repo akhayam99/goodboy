@@ -49,7 +49,7 @@ export const SignedInRow = ({ info, planLabel, target }: AccountGroupProps) => {
           <span className="truncate text-meta text-muted-foreground">{detail}</span>
         )}
       </span>
-      {chip === null ? null : <Chip tone={chip.tone} size="xs" label={chip.label} />}
+      {chip === null ? null : <Chip kind="state" tone={chip.tone} label={chip.label} />}
       {isSignInNeeded ? <ObjectActionVerb target={target} actionId="provider.reauth" /> : null}
     </ConnectionTest>
   );

@@ -46,7 +46,7 @@ type ColumnProps = {
 const Column = ({ title, hint, children }: ColumnProps) => (
   <section className="flex w-96 shrink-0 flex-col gap-3">
     <header className="flex flex-col gap-0.5">
-      <h2 className="text-label font-semibold text-foreground">{title}</h2>
+      <h2 className="text-meta font-semibold text-foreground">{title}</h2>
       <p className="text-meta text-muted-foreground">{hint}</p>
     </header>
     {children}

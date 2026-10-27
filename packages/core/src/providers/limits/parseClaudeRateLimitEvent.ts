@@ -5,6 +5,7 @@ import type {
   ProviderLimitWindowKind,
   ProviderLimits,
 } from '@goodboy/types';
+import { ownValue } from '../../ownValue';
 import { epochSecondsToIso } from './epochSecondsToIso';
 import { sortLimitWindows } from './sortLimitWindows';
 
@@ -57,7 +58,7 @@ const unifiedWindowsOf = ({
   }
   return UNIFIED_WINDOW_KEYS.flatMap((key) => {
     const entry: unknown = Reflect.get(unified, key);
-    const window = CLAUDE_WINDOWS[key];
+    const window = ownValue({ table: CLAUDE_WINDOWS, key });
     if (typeof entry !== 'object' || entry === null || window === undefined) {
       return [];
     }
@@ -95,8 +96,10 @@ export const parseClaudeRateLimitEvent = ({ value, observedAt }: Params): Provid
   }
   const rawStatus: unknown = Reflect.get(info, 'status');
   const rawType: unknown = Reflect.get(info, 'rateLimitType');
-  const status = typeof rawStatus === 'string' ? CLAUDE_STATUS[rawStatus] : undefined;
-  const window = typeof rawType === 'string' ? CLAUDE_WINDOWS[rawType] : undefined;
+  const status =
+    typeof rawStatus === 'string' ? ownValue({ table: CLAUDE_STATUS, key: rawStatus }) : undefined;
+  const window =
+    typeof rawType === 'string' ? ownValue({ table: CLAUDE_WINDOWS, key: rawType }) : undefined;
   if (status === undefined) {
     return null;
   }

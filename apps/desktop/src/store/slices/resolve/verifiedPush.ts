@@ -4,7 +4,6 @@ import {
   worktreeRemoteHead,
   worktreeStatus,
 } from '../../../features/worktree/worktree';
-import { pushSessionBranch } from '../github/pushSessionBranch';
 import { remoteCarriesWorkError, remoteMovedError } from './remoteMovedError';
 import type { GetFn } from './types';
 
@@ -46,10 +45,10 @@ export const verifiedPush = async ({
   }
   const status = await worktreeStatus({ worktreePath }).catch(() => null);
   const isExact = status?.head != null && status.head !== publication.localHead;
-  const push = await pushSessionBranch({
-    get,
+  const push = await get().pushBranch({
     sessionId,
     mountId: target.mountId,
+    mode: 'plain',
     expectedWorktreePath: target.worktreePath,
     ...(isExact && { sha: publication.localHead }),
   });

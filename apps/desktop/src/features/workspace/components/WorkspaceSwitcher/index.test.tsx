@@ -19,6 +19,14 @@ const { state } = vi.hoisted(() => ({
     currentWorkspace: null as Workspace | null,
     windowPresence: {} as Record<string, WorkspaceId | null>,
     running: 0,
+    attention: new Map<
+      string,
+      {
+        count: number;
+        tone: 'danger' | 'warning';
+        reasonWords: ReadonlyArray<string>;
+      }
+    >(),
     openWorkspace: vi.fn<() => Promise<OpenWorkspaceResult>>(async () => ({ kind: 'opened' })),
     switchWorkspaceHere: vi.fn(async () => undefined),
     reconnectWorkspaceById: vi.fn(async () => undefined),
@@ -31,6 +39,8 @@ vi.mock('../../../../store', () => ({
   useDisconnectedWorkspaces: () => state.disconnectedWorkspaces,
   useCurrentWorkspace: () => state.currentWorkspace,
   useWorkspaceHasUnread: () => false,
+  useWorkspaceAttentionEntry: ({ workspaceId }: { readonly workspaceId: string }) =>
+    state.attention.get(workspaceId) ?? null,
   useRunningHere: () => state.running,
   useAppStore: (
     selector: (s: {
@@ -72,6 +82,7 @@ beforeEach(() => {
   state.currentWorkspace = state.workspaces[0] ?? null;
   state.windowPresence = {};
   state.running = 0;
+  state.attention = new Map();
   state.openWorkspace = vi.fn(async () => ({ kind: 'opened' as const }));
   state.switchWorkspaceHere = vi.fn(async () => undefined);
   state.reconnectWorkspaceById = vi.fn(async () => undefined);
@@ -83,6 +94,43 @@ afterEach(() => {
 });
 
 describe('WorkspaceSwitcher', () => {
+  it('says how many sessions need you in another workspace, and why', () => {
+    state.attention = new Map([
+      [
+        'ws-b',
+        { count: 2, tone: 'warning', reasonWords: ['1 question for you', 'Checks failing'] },
+      ],
+    ]);
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: 'Switch to bravo, 2 need you' });
+    expect(row.textContent).toContain('2 need you');
+    expect(row.textContent).toContain('1 question for you, Checks failing');
+    expect(
+      row.querySelector('[data-workspace-attention]')?.getAttribute('data-workspace-attention'),
+    ).toBe('warning');
+  });
+
+  it('says it in red when what waits is broken, and in the singular for one session', () => {
+    state.attention = new Map([
+      ['ws-b', { count: 1, tone: 'danger', reasonWords: ['Checks failing'] }],
+    ]);
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: 'Switch to bravo, 1 needs you' });
+    expect(
+      row.querySelector('[data-workspace-attention]')?.getAttribute('data-workspace-attention'),
+    ).toBe('danger');
+  });
+
+  it('keeps the folder line and no number for a workspace that waits on nothing', () => {
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: 'Switch to bravo' });
+    expect(row.querySelector('[data-workspace-attention]')).toBeNull();
+    expect(row.textContent).toContain('1 folder');
+  });
+
   it('lists other workspaces and opens one on click', async () => {
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);

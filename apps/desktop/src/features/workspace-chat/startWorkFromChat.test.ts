@@ -11,7 +11,7 @@ import type {
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import type { AppStore } from '../../store/store';
-import { createMemoryChatBackend } from './createMemoryChatBackend';
+import { createMemoryChatBackend } from '../../test/createMemoryChatBackend';
 import { startWorkFromChat } from './startWorkFromChat';
 import { summarizeChatForWork } from './summarizeChatForWork';
 import type { WorkBrief } from './workBrief';

@@ -25,7 +25,7 @@ export const SpawnedPanelScene = ({ theme, view }: Props) => {
       seed={
         view === 'auto'
           ? { state: 'working', place: 'auto' }
-          : { state: 'working', place: 'auto', pane: 'implementer' }
+          : { state: 'working', place: 'child', pane: 'implementer' }
       }
     />
   );

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { FOLD_MS } from '@goodboy/ui';
+import { DURATION_BASE_MS } from '@goodboy/ui';
 import { FileRail } from './FileRail';
 
 type MotionParams = {
@@ -76,7 +76,7 @@ describe('the diff file rail fold', () => {
     expect(aside().hasAttribute('inert')).toBe(true);
     expect(aside().textContent).toContain('ledger-core/src/f00.ts');
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(aside().getAttribute('data-fold')).toBe('folded');
     expect(aside().textContent).toBe('');
@@ -96,7 +96,7 @@ describe('the diff file rail fold', () => {
       'ledger-core/src/f00.ts',
     );
 
-    advance(FOLD_MS);
+    advance(DURATION_BASE_MS);
 
     expect(aside().getAttribute('data-fold')).toBe('open');
   });

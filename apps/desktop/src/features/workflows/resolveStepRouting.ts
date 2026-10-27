@@ -7,7 +7,7 @@ import {
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { KIND_TO_ROLE, type AgentKind } from '../session/agent-kind';
 
-export type RoutedStep = Pick<
+type RoutedStep = Pick<
   Step,
   | 'role'
   | 'size'

@@ -1,6 +1,6 @@
 import { Button } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { WorkspaceTile } from './WorkspaceTile';
 
@@ -14,7 +14,7 @@ export const DisconnectedWorkspaceRow = ({ workspace, onReconnect }: Props) => {
   const since =
     workspace.disconnectedAt === undefined || workspace.disconnectedAt === null
       ? ''
-      : ` ${formatSpan({ from: workspace.disconnectedAt, to: now })}`;
+      : ` ${formatAdaptiveAge({ at: workspace.disconnectedAt, now })}`;
   return (
     <div
       data-workspace-row={workspace.name}

@@ -134,7 +134,7 @@ export const SourceView = ({ text, path, isWrapped, line: targetLine }: Props) =
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-3">
       {plainReason === null ? null : (
-        <p className="text-label text-muted-foreground">{plainReason}</p>
+        <p className="text-meta text-muted-foreground">{plainReason}</p>
       )}
       <ScrollFade
         className="min-h-0 flex-1 rounded-md bg-muted"

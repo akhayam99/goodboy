@@ -1,8 +1,8 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { GripVertical } from 'lucide-react';
 import type { ProviderPolicyState } from '@goodboy/types';
-import { Button, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
+
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { PROVIDER_LABEL } from '../../providerLabel';
 import type { PolicyRow } from '../../policy/policyRows';
@@ -49,10 +49,7 @@ export const ProviderPolicyRow = ({
       data-dropindex={dropIndex}
       aria-label={`${name}, position ${rank} of ${total}, ${stateLabel}. Alt plus arrow up or down moves it.`}
       onKeyDown={onKeyDown}
-      className={cn(
-        'flex flex-col rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        isDragging && 'opacity-50',
-      )}
+      className={cn('flex flex-col rounded-md', FOCUS_RING, isDragging && 'opacity-50')}
     >
       <div className="flex min-w-0 items-center gap-2 px-1 py-2">
         <Tooltip content={`Drag to reorder ${name}`}>
@@ -88,7 +85,7 @@ export const ProviderPolicyRow = ({
               </span>
             ) : null}
           </span>
-          <span className="w-full text-label text-muted-foreground">
+          <span className="w-full text-meta text-muted-foreground">
             {status.text}
             {status.limit === null ? null : (
               <span className={tintClasses('warning').text}> · {status.limit}</span>

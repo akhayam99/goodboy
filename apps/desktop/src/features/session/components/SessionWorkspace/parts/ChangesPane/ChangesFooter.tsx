@@ -1,7 +1,8 @@
 import { Lock } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '@goodboy/ui';
 import { formatBytes } from '../../../../../../shared/utils/formatBytes';
 import { useAppStore } from '../../../../../../store';
 import type { ChangeTurn } from '../../../../../file-versions/changeTurnsOf';

@@ -9,7 +9,7 @@ import { InboxList } from '../../../../../../features/inbox/components/InboxStud
 import { InboxListHeader } from '../../../../../../features/inbox/components/InboxStudio/InboxListHeader';
 import { InboxStudioLayout } from '../../../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { TaskGroupRows } from '../../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
-import { integrationLabel } from '../../../../../../features/integrations/components/IntegrationGlyph';
+import { integrationLabel } from '../../../../../../shared/utils/integrationLabel';
 import { isForMeRecord } from '../../../../../../features/inbox/isForMeRecord';
 import {
   NO_INBOX_FILTERS,
@@ -18,7 +18,7 @@ import {
 } from '../../../../../../features/inbox/kindFilter';
 import { openCountWord } from '../../../../../../features/inbox/openCountWord';
 import { taskGroupTotalsOf } from '../../../../../../features/inbox/taskGroupTotalsOf';
-import { NAMES } from '../../../../../../shared/names';
+import { NAMES } from '../../../../../../shared/utils/names';
 import { sourceFailureLine } from '../../../../../../features/inbox/sourceFailureLine';
 import { taskGroupsOf, type TaskGroupBy } from '../../../../../../features/inbox/taskGroups';
 import type { TaskScope } from '../../../../../../features/inbox/taskListViewStorage';
@@ -33,6 +33,8 @@ import { StudioFrame as AppStudioFrame } from '../../../../StudioFrame';
 import { seedStudioChrome } from '../../shellChrome';
 
 const noop = () => undefined;
+
+const NO_NEW_KEYS: ReadonlySet<string> = new Set();
 
 const NOT_LOADING: Readonly<Record<InboxProvider, boolean>> = {
   github: false,
@@ -52,6 +54,7 @@ type Props = {
   readonly expandedKey?: string | null;
   readonly selectedKey?: string | null;
   readonly cursorKey?: string | null;
+  readonly newKeys?: ReadonlySet<string>;
   readonly failures?: Partial<Record<InboxProvider, string>>;
   readonly query?: string;
   readonly lookup?: ReactNode;
@@ -69,6 +72,7 @@ export const TasksStage = ({
   expandedKey = null,
   selectedKey = null,
   cursorKey = null,
+  newKeys = NO_NEW_KEYS,
   failures = {},
   query = '',
   lookup = null,
@@ -125,6 +129,7 @@ export const TasksStage = ({
   const handlers = {
     selectedKey,
     cursorKey,
+    newKeys,
     onSelect: noop,
     onActivate: noop,
     starOf: isStarred,
@@ -161,7 +166,7 @@ export const TasksStage = ({
     <PaneShell
       scroll="body"
       title={NAMES.tasks}
-      meta={openCountWord({ records: inScope })}
+      meta={openCountWord({ records: inScope, newKeys })}
       actions={
         <InboxListHeader
           query={query}

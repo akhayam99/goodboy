@@ -1,4 +1,5 @@
-import type { HistoryBackup } from '@goodboy/types';
+import { useMemo } from 'react';
+import type { BranchCommit, HistoryBackup } from '@goodboy/types';
 import { historyBackupRef } from '../../../../../features/history/historyBackupRef';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { BRAND_SESSION } from './canon';
@@ -18,13 +19,33 @@ const BACKUPS: ReadonlyArray<HistoryBackup> = [
   },
 ];
 
-const HANDLERS: FakeHandlers = {
-  worktree_status: () => CTX_STATUS,
-  worktree_commits: () => CTX_COMMITS,
-  history_backups_list: () => BACKUPS,
+type HandlerParams = {
+  readonly commits: ReadonlyArray<BranchCommit>;
 };
 
-export const HistoryStage = () => {
-  useFakeTauri({ handlers: HANDLERS, holdMs: 4000 });
+const handlersOf = ({ commits }: HandlerParams): FakeHandlers => {
+  const status = {
+    ...CTX_STATUS,
+    upstreamDistance: {
+      kind: 'known',
+      ahead: commits.filter((commit) => !commit.pushed).length,
+      behind: 0,
+    },
+    mainDistance: { kind: 'known', ahead: commits.length, behind: 0 },
+  } as const;
+  return {
+    worktree_status: () => status,
+    worktree_commits: () => commits,
+    history_backups_list: () => BACKUPS,
+  };
+};
+
+type Props = {
+  readonly commits?: ReadonlyArray<BranchCommit>;
+};
+
+export const HistoryStage = ({ commits = CTX_COMMITS }: Props) => {
+  const handlers = useMemo(() => handlersOf({ commits }), [commits]);
+  useFakeTauri({ handlers, holdMs: 4000 });
   return <BranchPage session={CTX_SESSION} workingDir={CTX_PAYMENTS_WORKTREE} />;
 };

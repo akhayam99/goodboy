@@ -2,18 +2,17 @@ import { memo, useId } from 'react';
 import { cn, Input, Tooltip, InlineMarkdown, inlineMarkdownText, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { useSessionSummary } from '../../../hooks/useSessionSummary';
-import { CardAction, CardActionSlot } from '@goodboy/ui';
+import { CardAction, CardActionSlot, FOCUS_RING } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
-import { sessionRowTitle } from '../../../../session/sessionTitle';
 import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
+import { useAttentionAction } from './useAttentionAction';
 import { useDynamicActions } from './useDynamicActions';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../actions/useRenameRequest';
 import { useSelectRequest } from '../../../../actions/useSelectRequest';
-import { sessionNodeOf } from '../../../../session/sessionNode';
+import { useSessionRowFacts } from '../../../hooks/useSessionRowFacts';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
@@ -63,19 +62,17 @@ export const StageBoardCard = memo(function StageBoardCard({
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
   const stateWordId = useId();
-  const summary = useSessionSummary({ session });
-  const { stage } = summary;
-  const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
-  const { title } = rowTitle;
   const isArchived = archived === true;
-  const node = sessionNodeOf({ info: summary.info, isArchived });
+  const { summary, node, rowTitle, title } = useSessionRowFacts({ session, isArchived });
+  const { stage } = summary;
   const signal = useSessionSignal({ session, isArchived });
   const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const projectLine = projectLineOf({ mounts });
   const dynamicActions = useDynamicActions(session, nav, stage);
+  const attentionAction = useAttentionAction({ session, info: summary.info });
 
-  const [visibleAction] = dynamicActions;
+  const [visibleAction = attentionAction ?? undefined] = dynamicActions;
   const anchorKey = `board:${id}`;
   const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
@@ -127,7 +124,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none',
+        'group/session-card grid min-h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none',
         sessionCardShell({ selected }),
       )}
     >
@@ -151,6 +148,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             aria-pressed={selected === true}
             aria-describedby={stateWordId}
             aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
+            onFocus={(event) =>
+              onHoverEnter?.({
+                sessionId: id,
+                anchor: event.currentTarget.closest('article') ?? event.currentTarget,
+              })
+            }
+            onBlur={() => onHoverLeave?.()}
             onKeyDown={(event) => {
               menu.onKeyDown(event);
               if (event.key !== 'Enter' && event.key !== ' ') {
@@ -166,7 +170,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               }
               nav.selectCard(session);
             }}
-            className="min-w-0 cursor-pointer self-start rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn('min-w-0 cursor-pointer self-start rounded-sm text-left', FOCUS_RING)}
           >
             <InlineMarkdown text={title} className="line-clamp-2 text-row text-foreground" />
           </button>
@@ -198,18 +202,20 @@ export const StageBoardCard = memo(function StageBoardCard({
         </CardActionSlot>
       </span>
 
-      <span
-        data-slot="card-project"
-        className="col-start-1 row-start-2 min-w-0 truncate text-meta text-muted-foreground"
-      >
-        {projectLine}
-      </span>
-      <span
-        data-slot="card-signal"
-        className="col-start-2 row-start-2 flex min-w-0 items-center justify-end"
-      >
-        <SessionSignal signal={signal} onOpenRequest={handlePrClick} />
-      </span>
+      <div className="col-span-full row-start-2 flex min-h-5 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span
+          data-slot="card-project"
+          className="min-w-0 break-words text-meta text-muted-foreground"
+        >
+          {projectLine}
+        </span>
+        <span
+          data-slot="card-signal"
+          className="flex min-w-fit max-w-full flex-1 items-center justify-end"
+        >
+          <SessionSignal signal={signal} onOpenRequest={handlePrClick} />
+        </span>
+      </div>
     </article>
   );
 });

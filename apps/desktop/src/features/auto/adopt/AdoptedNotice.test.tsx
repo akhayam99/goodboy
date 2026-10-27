@@ -22,7 +22,7 @@ import {
 } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { adoptAgent } from '../../../store/slices/auto/adoptAgent';
+import { adoptAgent } from '../../../store/runtime/auto/adoptAgent';
 import { AdoptedNotice } from './AdoptedNotice';
 
 const SOURCE = brandId<AgentId>({ value: 'agent-source' });

@@ -17,7 +17,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
 import { useAppStore } from '../../../../../store';
-import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
@@ -29,6 +29,7 @@ const KEYS = [
   ...KINDS.flatMap((kind) => [`u26-central-${kind}-light`, `u26-central-${kind}-dark`]),
   'u26-central-log-light',
   'u26-central-log-dark',
+  'u26-central-log-search-light',
 ];
 
 beforeAll(async () => {
@@ -79,6 +80,13 @@ describe('the central column scenes', () => {
 
     screen.getByRole('region', { name: 'Log' });
     screen.getByRole('region', { name: 'Running' });
+  });
+
+  it('opens the log drawer on the search scene', async () => {
+    await show({ name: 'u26-central-log-search-light' });
+
+    screen.getByRole('region', { name: 'Log' });
+    screen.getByRole('searchbox', { name: 'Search the log' });
   });
 
   it('draws the Running, Next and Done cards on the mid scene, the run gate on its row', async () => {

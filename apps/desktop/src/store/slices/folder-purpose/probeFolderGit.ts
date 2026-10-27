@@ -1,11 +1,11 @@
-import type { FolderGitProbe } from '@goodboy/types';
-import { getSetting, updateProjectKind } from '@goodboy/db';
+import type { FolderGitProbe, ProjectId } from '@goodboy/types';
+import { getProjectValue, updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { folderGitProbe } from '../../../shared/lib/folderGit';
 import { worktreeWriterStatus } from '../../../features/worktree/worktree';
 import { nowIso } from '../project-mounts/nowIso';
 import { projectById } from '../projects/projectIndex';
-import { folderGitChoiceKey, parseFolderGitChoice } from './folderGitChoiceKey';
+import { parseFolderGitChoice } from './parseFolderGitChoice';
 import { folderGitDecision } from './folderGitDecision';
 import type { FolderGitChoice } from './state';
 import { storeFolderGitChoice } from './storeFolderGitChoice';
@@ -21,12 +21,14 @@ type ProbeRead = {
 
 type ReadParams = {
   readonly path: string;
-  readonly choiceKey: string;
+  readonly projectId: ProjectId;
 };
 
-const readProbe = async ({ path, choiceKey }: ReadParams): Promise<ProbeRead> => {
+const readProbe = async ({ path, projectId }: ReadParams): Promise<ProbeRead> => {
   const probe = await folderGitProbe({ path });
-  const choice = parseFolderGitChoice({ raw: await getSetting(tauriDatabase, choiceKey) });
+  const choice = parseFolderGitChoice({
+    raw: await getProjectValue({ db: tauriDatabase, projectId, key: 'folder.git' }),
+  });
   if (probe.state !== 'tracked') {
     return { probe, choice, isWriting: false };
   }
@@ -43,8 +45,7 @@ export const probeFolderGit = ({ set, get, latest }: FolderSignalsDeps) => {
     const box: { value: ProbeRead | null } = { value: null };
     const outcome = await latest.run({
       key: `git:${projectId}`,
-      request: () =>
-        readProbe({ path: project.rootPath, choiceKey: folderGitChoiceKey({ projectId }) }),
+      request: () => readProbe({ path: project.rootPath, projectId }),
       apply: (value) => {
         box.value = value;
         set((state) => ({ folderGit: { ...state.folderGit, [projectId]: value.probe } }));

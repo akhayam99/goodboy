@@ -1,17 +1,22 @@
-import { Copy } from 'lucide-react';
+import { Copy, Mail, MailOpen } from 'lucide-react';
 import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { sessionTitle } from '../../session/sessionTitle';
+import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
-import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
-import type { ActionEnv, ObjectKindDefinition, SessionsActionTarget } from '../types';
+import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
+import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
+import type { ObjectKindDefinition, SessionsActionTarget } from '../types';
+import { lifecyclePortsOf } from './lifecyclePortsOf';
 
 export type SessionsFacts = {
   readonly sessions: ReadonlyArray<Session>;
   readonly active: ReadonlyArray<Session>;
   readonly archived: ReadonlyArray<Session>;
   readonly runningAgentCount: number;
+  readonly unread: ReadonlyArray<Session>;
+  readonly markable: ReadonlyArray<Session>;
 };
 
 const countLabel = ({ verb, count }: { readonly verb: string; readonly count: number }): string =>
@@ -31,11 +36,13 @@ const notArchivedMessage = ({ failed, archivedCount }: NotArchivedParams): strin
   return `Couldn't archive ${names}. ${rest} archived.`;
 };
 
-const lifecyclePorts = ({ env }: { readonly env: ActionEnv }) => ({
-  bulkArchiveTask: env.getState().bulkArchiveTask,
-  bulkUnarchiveTask: env.getState().bulkUnarchiveTask,
-  showToast: env.showToast,
-});
+type MarkLabelParams = {
+  readonly count: number;
+  readonly verb: string;
+};
+
+const markLabel = ({ count, verb }: MarkLabelParams): string =>
+  count === 1 ? `Mark as ${verb}` : `Mark ${count} as ${verb}`;
 
 export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsFacts> = {
   noun: 'sessions',
@@ -57,6 +64,12 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
         (count, session) => count + runningAgentCountOf({ state, sessionId: session.id }),
         0,
       ),
+      unread: active.filter((session) => sessionHasUnread({ state, sessionId: session.id })),
+      markable: active.filter(
+        (session) =>
+          !sessionHasUnread({ state, sessionId: session.id }) &&
+          unreadTargetOf({ state, sessionId: session.id }) !== null,
+      ),
     };
   },
   actions: [
@@ -70,6 +83,29 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
         env.copyText({
           text: facts.sessions.map((session) => sessionTitle({ session })).join('\n'),
         }),
+    },
+    {
+      id: 'sessions.markRead',
+      label: ({ facts }) => markLabel({ count: facts.unread.length, verb: 'read' }),
+      shortLabel: () => 'Mark as read',
+      icon: MailOpen,
+      group: 'act',
+      when: ({ facts }) => facts.unread.length > 0,
+      run: ({ facts, env }) =>
+        env.getState().markSessionsRead({ sessionIds: facts.unread.map((session) => session.id) }),
+    },
+    {
+      id: 'sessions.markUnread',
+      label: ({ facts }) => markLabel({ count: facts.markable.length, verb: 'unread' }),
+      shortLabel: () => 'Mark as unread',
+      icon: Mail,
+      group: 'act',
+      when: ({ facts }) => facts.markable.length > 0,
+      run: async ({ facts, env }) => {
+        for (const session of facts.markable) {
+          await env.getState().markSessionUnread({ sessionId: session.id });
+        }
+      },
     },
     {
       id: 'sessions.archive',
@@ -87,7 +123,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       run: async ({ facts, env }) => {
         const { archived, failed } = await archiveSessions({
           sessions: facts.active,
-          ...lifecyclePorts({ env }),
+          ...lifecyclePortsOf({ env }),
         });
         if (failed.length > 0) {
           throw new Error(notArchivedMessage({ failed, archivedCount: archived.length }));
@@ -101,8 +137,9 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       icon: CONCEPT_ICONS.restore,
       group: 'act',
       when: ({ facts }) => facts.archived.length > 0,
-      run: ({ facts, env }) =>
-        restoreSessions({ sessions: facts.archived, ...lifecyclePorts({ env }) }),
+      run: async ({ facts, env }) => {
+        await restoreSessions({ sessions: facts.archived, ...lifecyclePortsOf({ env }) });
+      },
     },
     {
       id: 'sessions.delete',
@@ -114,7 +151,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       confirm: ({ facts }) => ({
         title: `${countLabel({ verb: 'Delete', count: facts.sessions.length })}?`,
         description:
-          'Removes these sessions and their transcripts from this device. This cannot be undone.',
+          "Removes these sessions and their transcripts from this device. This can't be undone.",
         confirmLabel: countLabel({ verb: 'Delete', count: facts.sessions.length }),
         role: 'danger',
         goes: 'The sessions and their transcripts, from this device.',

@@ -56,7 +56,7 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
           {row.title}
         </TruncatedText>
         {doneWhen.length === 0 ? null : (
-          <TruncatedText tooltip={doneWhen} className="truncate text-label text-faint-foreground">
+          <TruncatedText tooltip={doneWhen} className="truncate text-meta text-faint-foreground">
             {`Done when: ${doneWhen}`}
           </TruncatedText>
         )}

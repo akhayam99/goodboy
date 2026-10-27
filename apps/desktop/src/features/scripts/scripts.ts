@@ -1,5 +1,6 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
+import { createOutputStream } from '../../shared/lib/createOutputStream';
 import type { MountId, ProjectScriptId, SessionId } from '@goodboy/types';
 
 export type ScriptRunResult = {
@@ -53,6 +54,13 @@ export type ScriptExitPayload = {
   readonly runId: string;
   readonly exitCode: number;
 };
+
+const scriptStream = createOutputStream<'runId', ScriptOutputPayload, ScriptExitPayload>({
+  outputEvent: 'script-output',
+  exitEvent: 'script-exit',
+  idField: 'runId',
+  isStartRequired: true,
+});
 
 export type LiveScriptRun = {
   readonly runId: string;
@@ -176,14 +184,16 @@ export const invokeScriptCancel = (runId: string): Promise<void> => {
   return invokeCommand<void>('workspace_script_cancel', { runId });
 };
 
-export const listenScriptOutput = (
+export const listenScriptOutput = async (
   handler: (payload: ScriptOutputPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<ScriptOutputPayload>('script-output', (e) => handler(e.payload));
+  await scriptStream.register();
+  return scriptStream.listenAll({ onOutput: handler });
 };
 
-export const listenScriptExit = (
+export const listenScriptExit = async (
   handler: (payload: ScriptExitPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<ScriptExitPayload>('script-exit', (e) => handler(e.payload));
+  await scriptStream.register();
+  return scriptStream.listenAll({ onExit: handler });
 };

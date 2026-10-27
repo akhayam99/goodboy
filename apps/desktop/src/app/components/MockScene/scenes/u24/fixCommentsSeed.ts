@@ -1,5 +1,4 @@
-import type { Agent, ResolveAttempt } from '@goodboy/types';
-import { agentIdOf } from '../../../../../shared/lib/brandedIds';
+import { brandId, type Agent, type AgentId, type ResolveAttempt } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { openFixComments } from '../../../../../store/slices/resolve/openFixComments';
 import { sceneClock } from '../../sceneClock';
@@ -8,7 +7,7 @@ import { BULK_LAUNCH_THREAD_IDS, seedBulkScene } from '../bulkSeed';
 
 const clock = sceneClock({ anchor: '2026-10-10T09:40:00.000Z' });
 const startedAt = clock.iso({ at: '2026-10-10T09:36:00.000Z' });
-const RESOLVER_ID = agentIdOf({ value: 'agent-fix-comments-1' });
+const RESOLVER_ID = brandId<AgentId>({ value: 'agent-fix-comments-1' });
 
 export type FixCommentsPhase = 'list' | 'selected' | 'running';
 

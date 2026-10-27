@@ -7,7 +7,7 @@ import type { ProviderDisplayInfo } from '../../../features/providers/providers'
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import { useAppStore } from '../../store';
 import { selectKindRouting } from '../agents/selectKindRouting';
-import { selectTaskModel } from '../models/selectTaskModel';
+import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { selectHiddenModels } from './selectHiddenModels';
 
 const SESSION_ID = 'ses-ledger' as SessionId;

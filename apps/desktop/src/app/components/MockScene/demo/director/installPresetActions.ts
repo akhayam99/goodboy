@@ -77,7 +77,7 @@ export const installPresetActions = ({ store }: Params): void => {
       },
     }));
   };
-  const savePhaseTemplate: AppStore['savePhaseTemplate'] = async (template) => {
+  const savePhaseTemplate = (async (template) => {
     const at = nowIso({});
     const id = template.id ?? brandId<WorkflowId>({ value: `demo-preset-${Date.now()}` });
     const saved: Workflow = {
@@ -108,7 +108,7 @@ export const installPresetActions = ({ store }: Params): void => {
     }, OPEN_STUDIO_MS);
     untrack = demoRuns.track({ cancel: () => window.clearTimeout(timer) });
     return saved;
-  };
+  }) satisfies AppStore['savePhaseTemplate'];
   const loadWorkflowRunHistory: AppStore['loadWorkflowRunHistory'] = async ({ workspaceId }) => {
     showHistory({ workspaceId });
   };

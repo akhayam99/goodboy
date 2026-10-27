@@ -1,6 +1,7 @@
 import { useAppStore } from '../../store';
+import { dispatchWindowEvent } from '../../shared/lib/dispatchWindowEvent';
 
 export const openWorkflowRules = (): void => {
   useAppStore.getState().setWorkflowStudioView('rules');
-  window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio'));
+  dispatchWindowEvent({ name: 'goodboy:open-workflow-studio' });
 };

@@ -4,8 +4,6 @@ import type { TimelineEventEntry, TimelineTopLevelEntry } from './buildTimelineG
 
 export type ActivityView = 'activity' | 'log';
 
-export const ACTIVITY_VIEWS: ReadonlyArray<ActivityView> = ['activity', 'log'];
-
 export const ACTIVITY_VIEW_LABEL: Readonly<Record<ActivityView, string>> = {
   activity: 'Activity',
   log: 'Log',

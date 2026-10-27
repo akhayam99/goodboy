@@ -1,7 +1,7 @@
 import { formatUsd, useDropdown } from '@goodboy/ui';
 import type { AutoBudgetFacts } from '@goodboy/core';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { undoable } from '../../../../shared/utils/undoable';
 import { useAppStore } from '../../../../store';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';

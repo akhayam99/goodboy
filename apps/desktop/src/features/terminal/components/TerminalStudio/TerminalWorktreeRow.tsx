@@ -1,6 +1,6 @@
 import { Folder, GitBranch } from 'lucide-react';
-import { ListGridRow, StateDot, TEXT_ROLE, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, ListGridRow, StateDot, TEXT_ROLE } from '@goodboy/ui';
+
 import type { TerminalWorktree } from '../../terminalWorktrees';
 
 type Props = {

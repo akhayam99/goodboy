@@ -21,12 +21,4 @@ const TONE_BY_ICON: ReadonlyMap<LucideIcon, Tone> = Object.entries(CONCEPT_ICONS
   new Map<LucideIcon, Tone>(),
 );
 
-const NAV_TONE_BY_ICON: ReadonlyMap<LucideIcon, Tone> = new Map<LucideIcon, Tone>([
-  [CONCEPT_ICONS.agents, 'info'],
-  [CONCEPT_ICONS.auto, 'info'],
-  [CONCEPT_ICONS.plans, 'merged'],
-  [CONCEPT_ICONS.artifacts, 'merged'],
-]);
-
-export const navEntryToneOf = ({ icon }: Params): Tone =>
-  NAV_TONE_BY_ICON.get(icon) ?? TONE_BY_ICON.get(icon) ?? FALLBACK;
+export const navEntryToneOf = ({ icon }: Params): Tone => TONE_BY_ICON.get(icon) ?? FALLBACK;

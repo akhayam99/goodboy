@@ -1,18 +1,12 @@
 {
   "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListRow.tsx": 1,
-  "apps/desktop/src/features/chat/components/ChatInput/parts/SendControl.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
   "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": 1,
   "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": 1,
-  "apps/desktop/src/features/inbox/components/InboxStudio/StarredSnapshotRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderPolicyList/ProviderPolicyRow.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
-  "apps/desktop/src/features/session/ask/components/AskDrawer/AskComposer.tsx": 2,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/versionHistoryList.tsx": 1,
-  "apps/desktop/src/features/workflows/components/StepTree/StepRow.tsx": 1,
-  "apps/desktop/src/features/workspace-chat/components/ChatComposer/index.tsx": 2,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/PagesChevron.tsx": 1,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/PinSlotButton.tsx": 1
+  "apps/desktop/src/features/workflows/components/StepTree/StepRow.tsx": 1
 }

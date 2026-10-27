@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { AlertCircle, ArrowUp, Check, GitCommitHorizontal } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { CircleAlert, ArrowUp, Check, GitCommitHorizontal } from 'lucide-react';
+import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { REMOTE_LABEL } from '../../reviewRemote';
 import { ThreadGitFact as Fact } from './ThreadGitFact';
@@ -79,7 +79,7 @@ const facts = ({ entry }: { readonly entry: ReviewEntry }): ReactNode => {
     );
   }
   if (entry.remote === 'missing' && git.missing !== null) {
-    const warning = <AlertCircle size={ICON_SIZE.control} />;
+    const warning = <CircleAlert size={ICON_SIZE.control} />;
     return (
       <>
         <Fact icon={warning} tone="text-warning">

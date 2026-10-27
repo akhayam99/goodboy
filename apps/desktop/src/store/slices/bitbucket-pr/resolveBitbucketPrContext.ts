@@ -1,7 +1,8 @@
 import type { BitbucketIntegrationBinding, MountId, SessionId } from '@goodboy/types';
 import type { BitbucketRepo } from '../../../features/integrations/bitbucket/client';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
-import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
+import { projectPathFromRemoteUrl } from '../../../shared/utils/remoteHost';
+import { requestHostOfRemote } from '../review-source/requestHostOfRemote';
 import {
   listMountFetches,
   resolveMountFetch,
@@ -40,6 +41,9 @@ export const resolveBitbucketPrContext = async ({
     return null;
   }
   const remoteUrl = await worktreeRemoteUrl(target.mount.repoRoot);
+  if (requestHostOfRemote({ url: remoteUrl, gitlabHosts: [] }) !== 'bitbucket') {
+    return null;
+  }
   const repoSlug = bitbucketRepoSlug({ projectPath: projectPathFromRemoteUrl(remoteUrl) });
   if (repoSlug == null) {
     return null;

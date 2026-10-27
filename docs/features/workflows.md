@@ -8,7 +8,7 @@ A workflow run starts from the New session page: pick **Workflow**, then **Orche
 
 ### Orchestrated
 
-Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.
+Give a goal and a model picks each next step, with its role, model, effort and a reason. It stops when done or blocked.
 
 ### A preset as the plan a run starts from
 
@@ -18,6 +18,8 @@ A run started from a preset in **Start a run** follows that preset as a plan, an
 
 A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above; a run you like can be saved as a preset from its page with **Save as preset**.
 
+A preset is not a skill. A skill is a markdown file next to your code that you call by name with `/skill-name`, for a way of working you repeat; a preset is a run you want again, with its steps in order. Where skills live, and the older `.kay` folder Goodboy still reads, is in [concepts.md](../concepts.md#skills).
+
 ### Built-in workflows
 
 Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**, which keeps your existing workflows as they are.
@@ -25,6 +27,8 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 ### Runs of a workflow
 
 The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. A workflow with no runs offers **Start from this preset**, which opens the New session page on the Preset form with that preset picked. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+
+A run that stopped on a failure, paused at its limit or finished a step and waits for you to continue puts its session in **Needs you** on the board, in the sidebar and for the next-session key, with the same words as the run's row.
 
 ### Saved steps
 
@@ -51,33 +55,15 @@ Choose how often a run stops for you: **Every step**, **After the plan** to appr
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab, on the same chips a run page shows: how it asks, the limit, the models, the **Auto limit** and shared **Guidance** for the agents that write code. A change reaches new runs only. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
+Set what every new run starts with in the **Run defaults** tab. It uses the same chips a run page shows: how it asks, the limit, the models, the **Auto limit** and shared **Guidance** for the agents that write code. A change reaches new runs only. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
 
 ### Limit
 
 Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. Amounts take cents, such as `2.50`, and Enter applies them. A paused run offers **Raise limit**.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-light.webp" alt="The Limit popover of the workflow form, switched on at $25 with Pause runs and Warn only, and the Limit chip reading $25.00 Pause">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
-
-### Chained starts
-
-Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run queued until you start it, or **After** another workflow, which starts once that one completes.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-starts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-starts-light.webp" alt="The Starts menu of the workflow form open with Now, Manually and After Harden an endpoint, each with its line of explanation">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
-
 ### Workflow run
 
-Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for. The run header holds the one button that moves it on, such as **Start step 3**, **Review plan**, **Answer** or **Raise limit**, or **Pause run** while nothing waits on you (once paused, **Resume run** takes its place). Everything else sits in the run's **⋯** in one order: see, steer, settings, copy, then **Stop run** (it asks first), **Archive run** and **Delete run**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with one chip each for when it asks you, its limit and its models (each opens only its own setting, applied as you pick it), one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Resume all** restarts every stopped agent.
+Follow a run step by step, with its sub-agents under their agent and one button that moves it on. Open a preset run and the session rail steps into it. The rail shows **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for. The run header holds the one button that moves it on, such as **Start step 3**, **Review plan**, **Answer** or **Raise limit**, or **Pause run** while nothing waits on you (once paused, **Resume run** takes its place). Everything else sits in the run's **⋯** in one order: see, steer, settings, copy, then **Stop run** (it asks first), **Archive run** and **Delete run**. An orchestrated run opens from **Runs** in the session and reads as one document: the goal with one chip each for when it asks you, its limit and its models (each opens only its own setting, applied as you pick it), one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Resume all** restarts every stopped agent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
@@ -103,14 +89,14 @@ See why each step was picked. A short **Recap** says what is done and what is le
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The Orchestrated page of a finished run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The page of a finished orchestrated run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Step handoff summary
 
-Each step starts from a short brief instead of the whole previous chat. If the summary fails, Goodboy tries the other models you allow, and only then keeps the start and end of the chat and marks the brief as degraded, with **Retry**.
+Each step starts from a short brief instead of the whole previous chat. When a step runs on a model that does not keep the conversation (Cursor, Codex, Gemini), its history comes as at most 8,000 estimated tokens with the original request always included, and the step's transcript says what was carried over and what was left out. If the summary fails, Goodboy tries the other models you allow, and only then keeps the start and end of the chat and marks the brief as degraded, with **Retry**.
 
 ### Open questions
 
@@ -136,4 +122,10 @@ Hand a question to another agent with a hint and a model from **Let an agent dec
 
 ### Import workflows
 
-Bring custom workflows over from your other workspaces with **Import** in the Workflows studio. Edits are reversible with the **Undo** toast or Cmd+Z outside text fields.
+Bring custom workflows over from your other workspaces with **Import** in the Workflows studio. Edits are reversible with the **Undo** toast or **⌘Z** outside text fields.
+
+## Under the hood
+
+This part is for contributors and agents who change the feature.
+
+- Carried history: `PRIOR_TURNS_BUDGET_TOKENS` sets the 8,000 token budget.

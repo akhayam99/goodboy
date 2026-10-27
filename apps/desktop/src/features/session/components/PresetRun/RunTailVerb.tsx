@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { runPlace } from '../../../workflows/runPlace';
@@ -20,8 +20,10 @@ type PressParams = {
   readonly failure: string;
 };
 
-const QUIET_VERB =
-  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const QUIET_VERB = cn(
+  'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+);
 
 export const RunTailVerb = ({ session, view, verb }: Props) => {
   const sessionId = session.id;

@@ -1,5 +1,5 @@
 import type { Project, ProjectId } from '@goodboy/types';
-import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../shared/lib/remoteHost';
+import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../shared/utils/remoteHost';
 import { remoteHostNameOf } from '../../shared/lib/remoteHostNameOf';
 import type { InboxProvider } from './types';
 

@@ -2,6 +2,7 @@ import { PageHeader, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui'
 import type { Session, SessionPageView, WorkspaceId } from '@goodboy/types';
 import { SessionFilterPopover } from '../SessionActivityBar/SessionFilterPopover';
 import { HiddenByFilters } from './HiddenByFilters';
+import { NeedsYouElsewhere } from './NeedsYouElsewhere';
 
 const VIEW_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionPageView>> = [
   { value: 'board', label: 'Board' },
@@ -16,6 +17,7 @@ type Props = {
   readonly archivedCount: number;
   readonly onArchivedShownChange: (isShown: boolean) => void;
   readonly hiddenCount: number;
+  readonly needsYouElsewhere: number;
   readonly onClearFilters: () => void;
 };
 
@@ -27,6 +29,7 @@ export const SessionsHeader = ({
   archivedCount,
   onArchivedShownChange,
   hiddenCount,
+  needsYouElsewhere,
   onClearFilters,
 }: Props) => (
   <PageHeader
@@ -36,6 +39,7 @@ export const SessionsHeader = ({
     title="Sessions"
     actions={
       <>
+        <NeedsYouElsewhere count={needsYouElsewhere} onClear={onClearFilters} />
         <HiddenByFilters count={hiddenCount} onClear={onClearFilters} />
         <SegmentedTabs
           size="xs"

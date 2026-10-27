@@ -10,7 +10,7 @@ import {
   resolveOrchestratorState,
   type OrchestratorState,
   type PlanSignal,
-} from '../components/OrchestratorStrip/orchestratorState';
+} from '../orchestratorState';
 
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 

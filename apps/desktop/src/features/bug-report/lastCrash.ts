@@ -2,7 +2,7 @@ import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 type LastCrashSource = 'window' | 'promise' | 'rust';
 
-export type LastCrashKind = 'panic' | 'error';
+export type LastCrashKind = 'panic' | 'error' | 'freeze';
 
 export type LastCrash = {
   readonly kind: LastCrashKind;
@@ -26,6 +26,7 @@ export type LastCrashInput = {
 export const LAST_CRASH_TITLE: Readonly<Record<LastCrashKind, string>> = {
   panic: 'Goodboy closed unexpectedly last time',
   error: 'Goodboy hit an error last time',
+  freeze: 'Goodboy stopped answering',
 };
 
 export const writeLastCrash = async (crash: LastCrashInput): Promise<void> => {

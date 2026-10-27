@@ -27,7 +27,7 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { RESTART_RESUME_PROMPT } from './planRestartResume';
-import { INTERRUPTED_RUNS_KEY, RESTART_REASON_KEY } from './restartMarker';
+import { INTERRUPTED_RUNS_KEY } from './restartMarker';
 import { resumeInterruptedAgents } from './resumeInterruptedAgents';
 
 const AT = '2026-09-27T10:00:00.000Z' as IsoDateTime;
@@ -139,7 +139,7 @@ describe('resumeInterruptedAgents', () => {
   it('names the update when the updater restarted the app', async () => {
     const at = Date.now();
     writeMarker(['run-a'], at);
-    h.settings.set(RESTART_REASON_KEY, JSON.stringify({ reason: 'update', at: at - 1000 }));
+    h.settings.set('restart.reason', JSON.stringify({ reason: 'update', at: at - 1000 }));
     const store = buildStore({ agents: [agentOf('agent-a', 'run-a')] });
 
     await resumeInterruptedAgents({ get: store.get });

@@ -31,7 +31,7 @@ export const TimelineMoreRow = ({ item, rail, railWidth, lanes = null, onShowAll
         type="button"
         onClick={() => onShowAll({ id: item.explode.groupId })}
         className={cn(
-          'flex min-w-0 items-center rounded-md pl-2 pr-2 text-label text-muted-foreground hover:text-foreground',
+          'flex min-w-0 items-center rounded-md pl-2 pr-2 text-meta text-muted-foreground hover:text-foreground',
           ROW_INTERACTIVE,
         )}
         style={{ height: TIMELINE_RHYTHM.grade.fact.height }}

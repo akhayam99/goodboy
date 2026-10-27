@@ -1,6 +1,6 @@
 import { PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import {
   type ProviderId,
   type ProviderLifecycleAction,
@@ -51,7 +51,6 @@ export const resolveLifecycleCommand = (
 export const invokeProviderLifecycleRun = async (args: {
   providerId: ProviderId;
   action: ProviderLifecycleAction;
-  command: string;
   runId: string;
   cols: number;
   rows: number;
@@ -77,14 +76,16 @@ export const invokeProviderLifecycleCancel = (runId: string): Promise<void> => {
   return invokeCommand<void>('provider_lifecycle_cancel', { runId });
 };
 
-export const listenLifecycleOutput = (
+export const listenLifecycleOutput = async (
   handler: (payload: LifecycleOutputPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<LifecycleOutputPayload>('provider-lifecycle-output', (e) => handler(e.payload));
+  await lifecycleOutputBuffer.register();
+  return lifecycleOutputBuffer.listenAll({ onOutput: handler });
 };
 
-export const listenLifecycleExit = (
+export const listenLifecycleExit = async (
   handler: (payload: LifecycleExitPayload) => void,
 ): Promise<UnlistenFn> => {
-  return listen<LifecycleExitPayload>('provider-lifecycle-exit', (e) => handler(e.payload));
+  await lifecycleOutputBuffer.register();
+  return lifecycleOutputBuffer.listenAll({ onExit: handler });
 };

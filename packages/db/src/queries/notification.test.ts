@@ -13,6 +13,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
   markNotificationUnread,
+  markNotificationsActed,
   type Notification,
 } from './notification';
 
@@ -56,6 +57,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   read: false,
   action: null,
   coalesceKey: null,
+  actedAt: null,
   ...overrides,
 });
 
@@ -81,6 +83,45 @@ describe('notification queries', () => {
     const rows = await listNotifications({ db, workspaceId: null });
     expect(rows.find((row) => row.id === 'n1')?.read).toBe(true);
     expect(rows.find((row) => row.id === 'n2')?.read).toBe(false);
+  });
+
+  it('stamps acted_at and read on the given ids once and leaves the others', async () => {
+    const db = await seed({});
+    await insertNotification(
+      db,
+      buildNotification({ id: 'n1', action: { kind: 'open-budget', sessionId: null } }),
+    );
+    await insertNotification(db, buildNotification({ id: 'n2', ts: tsAt({ second: 5 }) }));
+    await markNotificationsActed({ db, ids: ['n1'], at: tsAt({ second: 10 }) });
+
+    await markNotificationsActed({ db, ids: ['n1'], at: tsAt({ second: 20 }) });
+
+    const rows = await listNotifications({ db, workspaceId: null });
+    const first = rows.find((row) => row.id === 'n1');
+    expect(first?.actedAt).toBe(tsAt({ second: 10 }));
+    expect(first?.read).toBe(true);
+    const second = rows.find((row) => row.id === 'n2');
+    expect(second?.actedAt).toBeNull();
+    expect(second?.read).toBe(false);
+  });
+
+  it('writes nothing for an empty list of ids', async () => {
+    const db = await seed({});
+    await insertNotification(db, buildNotification({ id: 'n1' }));
+
+    await markNotificationsActed({ db, ids: [], at: tsAt({ second: 10 }) });
+
+    expect((await listNotifications({ db, workspaceId: null }))[0]?.actedAt).toBeNull();
+  });
+
+  it('keeps acted_at when a deleted row is put back', async () => {
+    const db = await seed({});
+    const acted = buildNotification({ id: 'n1', actedAt: tsAt({ second: 10 }), read: true });
+    await insertNotification(db, acted);
+
+    const rows = await listNotifications({ db, workspaceId: null });
+
+    expect(rows[0]?.actedAt).toBe(tsAt({ second: 10 }));
   });
 
   it('marks one notification unread again and leaves the others', async () => {
@@ -217,7 +258,14 @@ describe('notification queries', () => {
     expect(buckets).toHaveLength(3);
     expect(buckets).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: 'error', hasAction: true, inWorkspace: true, count: 1 }),
+        expect.objectContaining({
+          kind: 'error',
+          hasAction: true,
+          actionKind: 'retry-update',
+          isActed: false,
+          inWorkspace: true,
+          count: 1,
+        }),
         expect.objectContaining({ kind: 'error', hasAction: false, inWorkspace: true, count: 1 }),
         expect.objectContaining({
           kind: 'pr-created',
@@ -226,6 +274,32 @@ describe('notification queries', () => {
           inWorkspace: false,
           count: 1,
         }),
+      ]),
+    );
+  });
+
+  it('splits the buckets by the kind of action and by whether it was acted on', async () => {
+    const db = await seed({});
+    await insertNotification(
+      db,
+      buildNotification({ id: 'a1', action: { kind: 'open-budget', sessionId: null } }),
+    );
+    await insertNotification(
+      db,
+      buildNotification({
+        id: 'a2',
+        action: { kind: 'open-budget', sessionId: null },
+        actedAt: tsAt({ second: 3 }),
+      }),
+    );
+
+    const buckets = await countNotifications({ db, workspaceId: null });
+
+    expect(buckets).toHaveLength(2);
+    expect(buckets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ actionKind: 'open-budget', isActed: false, count: 1 }),
+        expect.objectContaining({ actionKind: 'open-budget', isActed: true, count: 1 }),
       ]),
     );
   });

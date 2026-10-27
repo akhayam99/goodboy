@@ -1,5 +1,5 @@
 import type { PrCheckRun, PullRequestReviewer, PullRequestState } from '@goodboy/types';
-import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
 import { checksCountsOf, checksGroupsOf } from '../../../integrations/github/checksRollup';
 import type { PrMergeReadiness } from '../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../review/prMergeReadiness';
@@ -32,7 +32,7 @@ const checksCell = ({ runs, isChecksUnread }: ChecksParams): StatusCell => {
   const cell = { id: 'checks' as const, label: 'Checks', opens: 'checks' as const };
   if (runs === null || runs.length === 0) {
     return isChecksUnread
-      ? { ...cell, word: 'Unknown', detail: 'could not read them', tone: 'neutral' }
+      ? { ...cell, word: 'Unknown', detail: "couldn't read them", tone: 'neutral' }
       : { ...cell, word: 'No checks', detail: null, tone: 'neutral' };
   }
   const counts = checksCountsOf({ checks: runs });
@@ -233,9 +233,20 @@ const branchCell = ({ state, pr, branch }: BranchParams): StatusCell => {
   return { ...cell, word: 'Up to date', detail: `with ${base}`, tone: 'neutral' };
 };
 
-export const pullRequestCellsOf = (params: Params): ReadonlyArray<StatusCell> => [
-  checksCell(params),
-  reviewCell(params),
-  mergeCell(params),
-  branchCell(params),
+export const pullRequestCellsOf = ({
+  state,
+  pr,
+  runs,
+  isChecksUnread,
+  people,
+  readiness,
+  hasConflicts,
+  mergeWord,
+  queueLine,
+  branch,
+}: Params): ReadonlyArray<StatusCell> => [
+  checksCell({ runs, isChecksUnread }),
+  reviewCell({ state, pr, people }),
+  mergeCell({ state, pr, readiness, hasConflicts, mergeWord, queueLine }),
+  branchCell({ state, pr, branch }),
 ];

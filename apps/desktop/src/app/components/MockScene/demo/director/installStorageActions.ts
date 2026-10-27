@@ -45,6 +45,9 @@ export const installStorageActions = ({ store }: Params): void => {
           removed: folders.length,
           freedBytes: folders.reduce((sum, folder) => sum + (folder.sizeBytes ?? 0), 0),
           kept: [],
+          restorable: [],
+          undo: null,
+          isUndoing: false,
         };
         clearRemoving({ store, paths: removed });
         store.setState((state) => ({

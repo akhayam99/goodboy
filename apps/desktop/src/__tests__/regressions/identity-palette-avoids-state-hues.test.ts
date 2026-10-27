@@ -33,4 +33,31 @@ describe('identity palette', () => {
       }
     }
   });
+
+  it('gives every agent token a value no other agent, tone or accent shares', () => {
+    const css = readFileSync(STYLES, 'utf8');
+    const lightStart = css.indexOf("html[data-theme='light'] {");
+    const themes = [css.slice(0, lightStart), css.slice(lightStart)];
+    const tokens = [
+      ...new Set([...css.matchAll(/--color-(agent-[a-z-]+):/g)].map((match) => match[1] ?? '')),
+    ];
+    const reserved = ['primary', 'info', 'merged', 'draft', 'success', 'warning', 'danger'];
+
+    expect(tokens.length).toBeGreaterThan(10);
+    for (const scope of themes) {
+      const values = [...scope.matchAll(/--color-([a-z0-9-]+): (oklch\([^)]+\))/g)].map(
+        (match) => ({ token: match[1] ?? '', value: match[2] ?? '' }),
+      );
+      for (const token of tokens) {
+        const own = values.filter((entry) => entry.token === token).map((entry) => entry.value);
+        const clashes = values.filter(
+          (entry) =>
+            entry.token !== token &&
+            (entry.token.startsWith('agent-') || reserved.includes(entry.token)) &&
+            own.includes(entry.value),
+        );
+        expect(clashes.map((entry) => `${token}=${entry.token}`)).toEqual([]);
+      }
+    }
+  });
 });

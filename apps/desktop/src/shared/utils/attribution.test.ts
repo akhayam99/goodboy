@@ -1,12 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { OverrideSettings } from '@goodboy/types';
-import {
-  appendAttribution,
-  ATTRIBUTION_TEXT,
-  insertBeforeAttribution,
-  isAttributionEnabled,
-} from './attribution';
+import { appendAttribution, insertBeforeAttribution, isAttributionEnabled } from './attribution';
 
 const overridesWith = (attributionFooter: boolean | null): OverrideSettings => ({
   defaultProviderId: null,
@@ -76,7 +71,7 @@ describe('appendAttribution', () => {
   });
 
   it('recognizes a body already signed with the old plain line', () => {
-    const signed = `looks good\n\n${ATTRIBUTION_TEXT}`;
+    const signed = `looks good\n\nWritten by Goodboy`;
     expect(appendAttribution({ body: signed, isEnabled: true, syntax: 'markdown' })).toBe(signed);
     expect(appendAttribution({ body: signed, isEnabled: true, syntax: 'mrkdwn' })).toBe(signed);
   });
@@ -93,9 +88,9 @@ describe('appendAttribution', () => {
   });
 
   it('treats a body that is already only the footer as done', () => {
-    expect(appendAttribution({ body: ATTRIBUTION_TEXT, isEnabled: true, syntax: 'markdown' })).toBe(
-      ATTRIBUTION_TEXT,
-    );
+    expect(
+      appendAttribution({ body: 'Written by Goodboy', isEnabled: true, syntax: 'markdown' }),
+    ).toBe('Written by Goodboy');
     expect(
       appendAttribution({
         body: '*Written by Goodboy*',

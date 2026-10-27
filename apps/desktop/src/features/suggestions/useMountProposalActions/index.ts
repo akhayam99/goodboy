@@ -33,7 +33,7 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
           kind: 'error',
           severity: 'error',
           title: "Couldn't add the folder",
-          body: `Could not add ${projectName}. Try again. ${formatError(error)}`,
+          body: `Couldn't add ${projectName}. Try again. ${formatError(error)}`,
           sessionId,
         });
         throw new ReportedError(formatError(error));

@@ -1,8 +1,7 @@
 import type { ChangeEvent, RefObject } from 'react';
 import { Paperclip } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly worktree: string | null;

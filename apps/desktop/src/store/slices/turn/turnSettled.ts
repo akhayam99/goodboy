@@ -11,7 +11,7 @@ type ActiveTurn = {
   processGoneSince: number | null;
 };
 
-export const SETTLE_CEILING_MS = 5 * 60 * 1000;
+const SETTLE_CEILING_MS = 5 * 60 * 1000;
 
 const active = new Map<AgentId, ActiveTurn>();
 

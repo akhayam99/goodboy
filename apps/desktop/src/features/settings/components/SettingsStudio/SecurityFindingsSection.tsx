@@ -4,7 +4,6 @@ import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { Band, Button, EmptyLine, SectionHeader } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
 
 type Props = {
@@ -68,7 +67,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
     <section aria-label={SECURITY_FINDINGS_LABEL} className="flex flex-col gap-2">
       {header}
       {open.length > 0 && (
-        <p className="text-label text-faint-foreground">
+        <p className="text-meta text-faint-foreground">
           Keep the value in your shell or in a .env file git ignores, and use its name instead:{' '}
           <code>$DEPLOY_TOKEN</code>.
         </p>
@@ -99,7 +98,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
           <button
             type="button"
             onClick={() => setIsDismissedOpen((value) => !value)}
-            className="self-start text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="self-start text-meta text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             {`Dismissed ${dismissed.length}`}
           </button>
@@ -107,7 +106,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
             dismissed.map((finding) => (
               <div
                 key={finding.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 text-label text-muted-foreground"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 text-meta text-muted-foreground"
               >
                 <span className="font-mono">
                   {SECRET_KIND_LABEL[finding.secretKind]} ending ••••{finding.last4}

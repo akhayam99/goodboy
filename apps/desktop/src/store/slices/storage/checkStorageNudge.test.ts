@@ -35,6 +35,7 @@ const idleFolder = (name: string): StorageFolder => ({
     changedFiles: 0,
     changedSample: null,
     reasons: [],
+    verdict: 'safe',
   },
   keptAt: null,
   keptUntil: null,
@@ -42,6 +43,7 @@ const idleFolder = (name: string): StorageFolder => ({
 
 const makeState = (settings: Record<string, string>) => ({
   storageFolders: [idleFolder('a'), idleFolder('b')],
+  terminalTabs: {},
   storageStats: null,
   settings,
   loadSetting: vi.fn(async () => null),

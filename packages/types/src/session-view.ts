@@ -31,7 +31,12 @@ export type SessionAttentionReason =
   | 'pr-queued'
   | 'pr-approved'
   | 'needs-approval'
-  | 'plan-approval';
+  | 'plan-approval'
+  | 'run-stopped'
+  | 'run-paused-at-limit'
+  | 'run-waits-for-go'
+  | 'auto-needs-you'
+  | 'slack-reply-waiting';
 
 export type SessionPrFetchState = 'unknown' | 'unreachable' | 'known';
 
@@ -40,6 +45,7 @@ export type SessionStageInfo = Readonly<{
   reason: string;
   addsFact: boolean;
   attention: SessionAttentionReason | null;
+  attentionSince?: number | null;
   prState: PullRequestStateKind | null;
   isRunning?: boolean;
   otherReasons?: ReadonlyArray<SessionAttentionReason>;

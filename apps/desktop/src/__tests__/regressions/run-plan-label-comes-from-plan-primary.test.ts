@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist', 'test']);
-const PRODUCERS = new Set(['shared/names.ts', 'features/plans/planPrimaryOf.ts']);
+const PRODUCERS = new Set(['shared/utils/names.ts', 'features/plans/planPrimaryOf.ts']);
 
 const RUN_PLAN_NAME = /NAMES\.runPlan|['"`]Run plan['"`]/;
 

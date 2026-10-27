@@ -1,21 +1,21 @@
 import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
 import {
-  ROW_INTERACTIVE,
   AnchoredPopover,
-  FOCUS_RING,
-  TOP_BAR_CONTROL,
   cn,
+  FOCUS_RING,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  SelectableRow,
+  TOP_BAR_CONTROL,
   useDropdown,
 } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
-import {
-  PROVIDER_BRAND,
-  brandColor,
-} from '../../../../features/providers/components/provider-brand';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { LimitsBars } from './LimitsBars';
 
 type Props = {
@@ -26,8 +26,6 @@ type Props = {
   readonly onOpen: (chip: LimitsChip) => void;
 };
 
-const PANEL_WIDTH = 320;
-const ROW_HEIGHT = 32;
 const MAX_MARKS = 3;
 
 type ValueParams = {
@@ -58,9 +56,8 @@ export const LimitsOverflowPopover = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-80',
-    expectedWidth: PANEL_WIDTH,
-    expectedHeight: hidden.length * ROW_HEIGHT + 12,
+    width: POPOVER_WIDTH_CLASS.standard,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
   });
   const { open: isOpen, close, toggle } = dropdown;
   const worst = worstLimitsChip({ chips: hidden });
@@ -92,19 +89,11 @@ export const LimitsOverflowPopover = ({
           <span>{hasShownChips ? `+${hidden.length}` : 'Limits'}</span>
           {hasShownChips ? (
             <span data-limits-overflow-marks="" className="flex items-center gap-0.5">
-              {hidden.slice(0, MAX_MARKS).map((chip) => {
-                const Glyph = PROVIDER_BRAND[chip.providerId].icon;
-                return (
-                  <Glyph
-                    key={chip.providerId}
-                    data-limits-mark={chip.providerId}
-                    size={ICON_SIZE.row}
-                    aria-hidden
-                    className="shrink-0"
-                    style={{ color: brandColor(chip.providerId) }}
-                  />
-                );
-              })}
+              {hidden.slice(0, MAX_MARKS).map((chip) => (
+                <span key={chip.providerId} data-limits-mark={chip.providerId} className="flex">
+                  <ProviderGlyph id={chip.providerId} size={ICON_SIZE.row} />
+                </span>
+              ))}
             </span>
           ) : null}
           {worst === null ? null : (
@@ -120,26 +109,17 @@ export const LimitsOverflowPopover = ({
     >
       <ul aria-label="More provider limits" className="flex flex-col p-2">
         {hidden.map((chip) => {
-          const Glyph = PROVIDER_BRAND[chip.providerId].icon;
           return (
             <li key={chip.providerId}>
-              <button
-                type="button"
+              <SelectableRow
+                selected={false}
                 onClick={() => {
                   close();
                   onOpen(chip);
                 }}
-                className={cn(
-                  'flex min-h-8 w-full items-center gap-2 rounded-sm px-2 text-label',
-                  ROW_INTERACTIVE,
-                )}
+                className="min-h-8 items-center gap-2 rounded-sm px-2 text-meta"
               >
-                <Glyph
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0"
-                  style={{ color: brandColor(chip.providerId) }}
-                />
+                <ProviderGlyph id={chip.providerId} size={ICON_SIZE.row} />
                 <span className="w-21 truncate text-left text-foreground">
                   {PROVIDER_LABEL[chip.providerId]}
                 </span>
@@ -152,7 +132,7 @@ export const LimitsOverflowPopover = ({
                 <span className="flex-1 truncate text-right text-meta text-faint-foreground">
                   {rowValue({ chip, nowMs })}
                 </span>
-              </button>
+              </SelectableRow>
             </li>
           );
         })}

@@ -60,14 +60,19 @@ const toolEnd = ({ toolUseId, isError = false }: ToolEndParams): TurnEvent => ({
 type PermRequestParams = {
   readonly toolUseId: string;
   readonly toolName: string;
+  readonly input?: unknown;
 };
 
-const permRequest = ({ toolUseId, toolName }: PermRequestParams): TurnEvent => ({
+const permRequest = ({
+  toolUseId,
+  toolName,
+  input = { cmd: 'rm' },
+}: PermRequestParams): TurnEvent => ({
   kind: 'permission_request',
   runId: RUN,
   toolUseId,
   toolName,
-  input: { cmd: 'rm' },
+  input,
   at: AT,
 });
 
@@ -336,6 +341,19 @@ describe('reduceTranscript incremental resume', () => {
     expect(decision?.kind).toBe('permission_decision');
     expect(decision?.kind === 'permission_decision' && decision.toolName).toBe('Edit');
     expect(items).toEqual(freshPass({ events }));
+  });
+
+  it('carries the command of the request onto its decision, also across chunks', () => {
+    const events: ReadonlyArray<TurnEvent> = [
+      permRequest({ toolUseId: 'p10', toolName: 'Bash', input: { command: 'pnpm test' } }),
+      assistantText({ delta: 'thinking' }),
+      permDecision({ toolUseId: 'p10', decision: 'allow' }),
+    ];
+
+    reduceTranscript(events.slice(0, 2));
+    const decision = reduceTranscript(events)[2];
+
+    expect(decision?.kind === 'permission_decision' && decision.subject).toBe('pnpm test');
   });
 
   it('keeps two interleaved event streams independent', () => {

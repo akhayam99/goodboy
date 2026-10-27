@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextAgentId } from '@goodboy/types/testing';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
@@ -49,6 +50,7 @@ const { useAttachments } = await import('./useAttachments');
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_A = 'agent-a' as AgentId;
+const AGENT_B = nextAgentId();
 const showToast = vi.fn();
 
 const draft = {
@@ -182,5 +184,72 @@ describe('useAttachments', () => {
     expect(deleteAttachmentSpy).toHaveBeenCalledTimes(1);
     expect(deleteAttachmentSpy).toHaveBeenCalledWith('/tmp/wt', 'attachments/a.png');
     expect(clearAgentAttachments).toHaveBeenCalledWith(AGENT_A);
+  });
+
+  it('is not ready until the stored draft has been restored for the selected agent', async () => {
+    const { result, rerender } = mount({ worktree: '/tmp/wt' });
+    expect(result.current.isRestored).toBe(false);
+    rerender({ selectedAgentId: AGENT_A });
+    await waitFor(() => {
+      expect(result.current.isRestored).toBe(true);
+    });
+    rerender({ selectedAgentId: null });
+    expect(result.current.isRestored).toBe(false);
+  });
+
+  it('adds an output handoff as a text file saved in the worktree', async () => {
+    const { result, rerender } = mount({ worktree: '/tmp/wt' });
+    rerender({ selectedAgentId: AGENT_A });
+    await waitFor(() => {
+      expect(result.current.isRestored).toBe(true);
+    });
+    let isApplied = false;
+    await act(async () => {
+      isApplied = await result.current.attachOutputHandoffs({
+        agentId: AGENT_A,
+        handoffs: [
+          {
+            id: 'handoff-1',
+            title: 'Output of Check posting drift, Exit 1',
+            fileName: 'Output of Check posting drift, Exit 1.txt',
+            text: 'Output of Check posting drift, Exit 1\n\nFAIL postings\n',
+            isTruncated: false,
+          },
+        ],
+      });
+    });
+    expect(isApplied).toBe(true);
+    expect(result.current.attachments).toHaveLength(1);
+    expect(result.current.attachments[0]?.fileName).toBe(
+      'Output of Check posting drift, Exit 1.txt',
+    );
+    expect(result.current.attachments[0]?.mimeType).toBe('text/plain');
+    expect(await result.current.attachments[0]?.blob.text()).toContain('FAIL postings');
+    expect(writeAttachmentSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a handoff that finishes after the composer moved to another agent', async () => {
+    const { result, rerender } = mount({ worktree: '/tmp/wt' });
+    rerender({ selectedAgentId: AGENT_A });
+    await waitFor(() => {
+      expect(result.current.isRestored).toBe(true);
+    });
+    let isApplied = true;
+    await act(async () => {
+      isApplied = await result.current.attachOutputHandoffs({
+        agentId: AGENT_B,
+        handoffs: [
+          {
+            id: 'handoff-1',
+            title: 'Output of x',
+            fileName: 'Output of x.txt',
+            text: 'x',
+            isTruncated: false,
+          },
+        ],
+      });
+    });
+    expect(isApplied).toBe(false);
+    expect(result.current.attachments).toEqual([]);
   });
 });

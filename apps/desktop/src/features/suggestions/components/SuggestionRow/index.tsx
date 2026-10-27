@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
-import { Button, cn, IconButton, PANE_RHYTHM } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, ICON_SIZE, IconButton, PANE_RHYTHM } from '@goodboy/ui';
+
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { SessionSuggestion } from '../../types';
 
@@ -41,7 +41,7 @@ export const SuggestionRow = ({
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-body text-foreground">{suggestion.title}</span>
         {suggestion.detail != null ? (
-          <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
+          <span className="truncate text-meta text-muted-foreground">{suggestion.detail}</span>
         ) : null}
       </span>
       <Button

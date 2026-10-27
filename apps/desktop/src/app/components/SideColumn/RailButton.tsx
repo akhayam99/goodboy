@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, PANE_RHYTHM, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
 import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
 
 type Props = {
@@ -20,8 +20,10 @@ type Props = {
   readonly onSelect: () => void;
 };
 
-const RAIL_BUTTON_BASE =
-  'relative flex shrink-0 items-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const RAIL_BUTTON_BASE = cn(
+  'relative flex shrink-0 items-center rounded-md motion-safe:transition-colors',
+  FOCUS_RING,
+);
 
 const RAIL_BUTTON_CURRENT = 'cursor-default bg-selected text-foreground';
 

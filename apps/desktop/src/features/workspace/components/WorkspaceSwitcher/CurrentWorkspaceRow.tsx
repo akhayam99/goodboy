@@ -1,9 +1,9 @@
 import { FolderPlus } from 'lucide-react';
-import { Button, IconButton } from '@goodboy/ui';
+import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useRunningHere } from '../../../../store';
 import { folderCountLabel } from '../../folderCountLabel';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { WorkspaceTile } from './WorkspaceTile';
 
 type Props = {

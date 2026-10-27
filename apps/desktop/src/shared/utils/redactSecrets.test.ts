@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { REDACTED, redactSecrets } from './redactSecrets';
+import { redactSecrets } from './redactSecrets';
 
 describe('redactSecrets', () => {
   it('removes the token after an authorization scheme, not just the scheme word', () => {
     const text = redactSecrets({ text: 'Authorization: Bearer abcdefghijklmnop' });
     expect(text).not.toContain('abcdefghijklmnop');
-    expect(text).toBe(`Authorization: ${REDACTED}`);
+    expect(text).toBe('Authorization: [redacted]');
   });
 
   it('removes a basic credential whose scheme word is shorter than the value bound', () => {
@@ -64,6 +64,26 @@ describe('redactSecrets', () => {
     const text = redactSecrets({ text: `token ${jwt}` });
     expect(text).not.toContain('eyJhbGciOiJIUzI1NiJ9');
     expect(text).not.toContain('dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk');
+  });
+
+  it('removes values behind json quoted keys', () => {
+    const body = JSON.stringify({
+      password: 'hunter2hunter2',
+      api_key: 'abcdef123456',
+      token: 'tok-northwind-9981',
+      nested: { client_secret: 'cascadia-secret-77' },
+    });
+    const text = redactSecrets({ text: body });
+    expect(text).not.toContain('hunter2hunter2');
+    expect(text).not.toContain('abcdef123456');
+    expect(text).not.toContain('tok-northwind-9981');
+    expect(text).not.toContain('cascadia-secret-77');
+    expect(text).toContain('"password"');
+  });
+
+  it('removes values behind single quoted keys', () => {
+    const text = redactSecrets({ text: "{'access_token': 'harborline-token-1'}" });
+    expect(text).not.toContain('harborline-token-1');
   });
 
   it('leaves prose that merely mentions a label untouched', () => {

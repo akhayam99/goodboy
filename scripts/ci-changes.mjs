@@ -4,12 +4,18 @@ import { fileURLToPath } from 'node:url';
 
 const WEBSITE_PATHS_READ_BY_TESTS = [
   'website/src/components/Logo.tsx',
+  'website/src/sections/Hero.tsx',
   'website/src/styles.css',
   'website/public/favicon.svg',
   'website/scripts/build-brand-assets.mjs',
 ];
 
-const DOC_PATHS_READ_BY_TESTS = ['docs/architecture.md', 'docs/concepts.md', 'docs/features'];
+const DOC_PATHS_READ_BY_TESTS = [
+  'docs/architecture.md',
+  'docs/concepts.md',
+  'docs/features',
+  'docs/versioning.md',
+];
 
 const INERT_PATTERNS = [
   /^docs\/(?!changelog(?:\/|$))/,

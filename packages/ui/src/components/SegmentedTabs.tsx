@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { DISABLED } from '../disabledStyle';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
@@ -154,7 +155,7 @@ export const SegmentedTabs = <T extends string>({
               onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
               style={activeStyle}
               className={cn(
-                'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-label motion-safe:transition-colors',
+                'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-meta motion-safe:transition-colors',
                 fill && 'w-full',
                 TAB_CLASSES[step],
                 FOCUS_RING,
@@ -162,7 +163,7 @@ export const SegmentedTabs = <T extends string>({
                   ? 'bg-selected text-foreground'
                   : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                 option.disabled === true &&
-                  'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
+                  cn(DISABLED, 'hover:bg-transparent hover:text-disabled-foreground'),
               )}
             >
               {mark}

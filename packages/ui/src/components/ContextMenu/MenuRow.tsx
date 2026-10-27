@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronRight, SquareArrowOutUpRight } from 'lucide-react';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import { tintClasses } from '../../tint';
@@ -80,7 +80,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
           <kbd className="shrink-0 text-meta text-faint-foreground">{entry.hint}</kbd>
         )}
         {entry.isExternal === true ? (
-          <ExternalLink
+          <SquareArrowOutUpRight
             size={ICON_SIZE.row}
             aria-hidden
             className="shrink-0 text-faint-foreground"

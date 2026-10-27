@@ -403,7 +403,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: 'History rewriter needs you',
-        line: `It could not merge ${conflictFilesLabelOf({ files: stop?.files ?? [] })}.`,
+        line: `It couldn't merge ${conflictFilesLabelOf({ files: stop?.files ?? [] })}.`,
       };
     case 'no-provider':
       return {

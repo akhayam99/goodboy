@@ -1,14 +1,12 @@
 import type {
-  EffortLevel,
-  ProviderId,
   WorkflowModelPick,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
-  WorkflowTaskDifficulty,
   WorkflowTaskProfile,
-  WorkflowTaskType,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
+import { parseJsonStrict } from '../shared/parseJsonColumn';
 
 const PROVIDERS: ReadonlySet<string> = new Set([
   'anthropic',
@@ -52,9 +50,6 @@ const ADJUSTMENTS: ReadonlySet<string> = new Set([
   'hidden',
   'unsupported_effort',
 ]);
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const hasOnlyKeys = ({
   value,
@@ -152,16 +147,7 @@ export const parseRoutingJson = <T>({ value, isValid, field }: ParseParams<T>): 
   if (value === null || value === undefined) {
     return null;
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error(`Invalid ${field}`);
-  }
-  if (!isValid(parsed)) {
-    throw new Error(`Invalid ${field}`);
-  }
-  return parsed;
+  return parseJsonStrict({ value, isValid, label: field });
 };
 
 type StringifyParams<T> = {

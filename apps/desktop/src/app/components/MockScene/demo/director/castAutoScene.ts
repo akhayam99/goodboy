@@ -19,8 +19,14 @@ type TaskParams = {
   readonly files?: ReadonlyArray<string>;
 };
 
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+type ValueParams = {
+  readonly value: unknown;
+};
+
+const recordOf = ({ value }: ValueParams): Readonly<Record<string, unknown>> | null =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value))
+    : null;
 
 const resultOf = ({
   delegation,
@@ -28,12 +34,13 @@ const resultOf = ({
   files,
 }: Pick<TaskParams, 'delegation' | 'summary' | 'files'>): unknown => {
   const { result } = delegation;
-  if (!isRecord(result) || summary === undefined) {
+  const record = recordOf({ value: result });
+  if (record === null || summary === undefined) {
     return result;
   }
-  const verified = isRecord(result.verified) ? result.verified : null;
+  const verified = recordOf({ value: record.verified });
   return {
-    ...result,
+    ...record,
     declared: { summary },
     ...(verified !== null && files !== undefined
       ? {

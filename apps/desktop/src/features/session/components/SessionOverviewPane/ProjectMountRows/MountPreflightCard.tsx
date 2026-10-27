@@ -1,7 +1,7 @@
-import { AlertTriangle } from 'lucide-react';
-import { Button, FormActions, cn, Eyebrow, TruncatedText } from '@goodboy/ui';
+import { TriangleAlert } from 'lucide-react';
+import { Button, cn, Eyebrow, FormActions, ICON_SIZE, TruncatedText } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
-import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import type { MountFailure } from './mountFailure';
 import type { MountPreflightState } from './useMountPreflight';
 
@@ -73,7 +73,7 @@ export const MountPreflightCard = ({
         <span className="min-w-0 truncate text-body text-foreground">{project.name}</span>
       </header>
       {preflight === null ? (
-        <p className="text-label text-muted-foreground">Preparing the plan…</p>
+        <p className="text-meta text-muted-foreground">Preparing the plan…</p>
       ) : (
         <dl className="flex flex-col gap-1">
           {preflight.branch === null ? null : (
@@ -109,7 +109,7 @@ export const MountPreflightCard = ({
       {failure === null ? null : (
         <div role="alert" className="flex flex-col gap-1">
           <p className="flex items-start gap-1 text-meta text-danger">
-            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-px shrink-0" />
+            <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-px shrink-0" />
             <span className="min-w-0 flex-1">{failure.cause}</span>
           </p>
           <details className="text-meta text-muted-foreground">

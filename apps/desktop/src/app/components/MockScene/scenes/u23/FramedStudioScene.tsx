@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { StudioKind } from '../../../../../store';
 import { StudioFrame as AppStudioFrame } from '../../../StudioFrame';
 import { StudioFrame as ShellStudioFrame } from '../StudioFrame';
-import { seedWorkflowBuilder } from '../flow-audit/seeds';
+import { seedFlowSession } from '../flow-audit/seeds';
 import { seedStudioChrome } from '../shellChrome';
 
 const noop = () => undefined;
@@ -18,7 +18,7 @@ export const FramedStudioScene = ({ kind, place, seed, children }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedWorkflowBuilder();
+    seedFlowSession();
     seedStudioChrome();
     seed?.();
     setIsReady(true);

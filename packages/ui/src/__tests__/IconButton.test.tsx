@@ -120,7 +120,7 @@ describe('IconButton', () => {
     render(<IconButton icon={RefreshCw} label="Refresh issues" disabled />);
 
     const classes = screen.getByRole('button', { name: 'Refresh issues' }).className;
-    expect(classes).toContain('disabled:text-disabled-foreground');
+    expect(classes).toContain('text-disabled-foreground');
     expect(classes).not.toContain('opacity-50');
   });
 });

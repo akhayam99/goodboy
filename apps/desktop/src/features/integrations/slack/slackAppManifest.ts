@@ -10,7 +10,7 @@ export const SLACK_APPS_URL = 'https://api.slack.com/apps';
 
 export const SLACK_NEW_APP_URL = 'https://api.slack.com/apps/new';
 
-export const SLACK_MANIFEST_URL_LIMIT = 8000;
+const SLACK_MANIFEST_URL_LIMIT = 8000;
 
 const MANIFEST_MAJOR_VERSION = 2;
 

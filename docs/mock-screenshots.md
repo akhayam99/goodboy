@@ -21,9 +21,10 @@ byte, that the served source is correct. Nobody found out why. Every
 diagnostic was tried, then the hunt was dropped. No root cause was found, and
 the fix was to stop using the desktop shell entirely.
 
-Run `pnpm dev` in `apps/desktop` and open its URL in an ordinary browser. It
-starts the Vite dev server on the port set by `tauri.conf.json`'s `devUrl`,
-currently 1421. The app's own code only needs the Tauri runtime when a
+Run `VITE_PORT=5230 pnpm dev` in `apps/desktop` and open
+`http://localhost:5230` in an ordinary browser. Every screenshot script on this
+page expects that one port. Without `VITE_PORT` Vite uses 1421, the port of
+`tauri.conf.json`'s `devUrl`, which no script here reads. The app's own code only needs the Tauri runtime when a
 component calls `invoke()` directly. The mock scenes below never do, so this
 works as is. The browser's own devtools (console, network, DOM) also let you
 see things the Tauri webview hides.
@@ -33,7 +34,7 @@ see things the Tauri webview hides.
 - Set `VITE_GOODBOY_MOCK=1` in the shell that starts `pnpm dev`, or put it in
   the gitignored `apps/desktop/.env.local`. Vite reads either form before the
   app starts.
-- `apps/desktop/src/store/mock-data.ts` exports `MOCK_ENABLED =
+- `apps/desktop/src/shared/lib/mockMode.ts` exports `MOCK_ENABLED =
 import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   The test-mode half is not optional. Vitest reads the same `.env.local`.
   Without that half, every suite that renders `App` gets a mock scene instead.
@@ -46,6 +47,7 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   data are a separate chunk that a production build never fetches. `App.tsx`
   itself has no mock branch, so a hot-reload never has to reconcile a
   different hook count between the two.
+- Before it renders, `main.tsx` takes `mockRuntime()` from the scene chunk (`installMockRuntime.ts`) and hands the in-memory chat and ask backends and the mock fixtures to `installBackends` (`app/installBackends.ts`), which registers them (`registerChatBackend`, `registerAskBackend`, `registerMockFixtures`). Production code starts on the Tauri backends and reads no fixture; no in-memory backend, seed or fixture is in the main bundle.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
   screenshot. To add a scene, follow [recipes/mock-scene.md](recipes/mock-scene.md).
@@ -230,7 +232,7 @@ shell against the same localhost URL:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
   --force-device-scale-factor=2 --window-size=1440,900 --virtual-time-budget=4000 \
-  --screenshot=out.png "http://localhost:1421/?scene=board-shell"
+  --screenshot=out.png "http://localhost:5230/?scene=board-shell"
 ```
 
 `--window-size=1440,900` matches the Tauri window's fixed default size in
@@ -265,7 +267,7 @@ looks easy, the product looks like it's only for easy tasks.
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
 screenshot. Each one is registered by its id through the `scenes/u*/` glob ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
-from `apps/desktop/src/store/mock-data.ts` plus its own seed module. Read
+from `apps/desktop/src/app/components/MockScene/mockFixtureData.ts` plus its own seed module. Read
 `scenes.txt` before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
 `VITE_GOODBOY_MOCK` is unset.
@@ -788,7 +790,7 @@ push the new files to goodboy-media first, then the text here. Reusing a name
 replaces the picture in place, within the five minutes GitHub caches it.
 
 Every figure has one caption line under its `<picture>`, after a blank line:
-`<sub>Screenshot from Goodboy 0.23.0</sub>`. `docs/figures.json` is the one
+`<sub>Screenshot from Goodboy <version></sub>`. `docs/figures.json` is the one
 source of that version, keyed `features/<name>` for a guide figure and
 `readme/readme-hero` for the README hero. `pnpm features:shots` and
 `pnpm readme:hero` write the entry when a capture ends, with the shot args as
@@ -801,6 +803,41 @@ from its entry, or when an entry is newer than the repo version.
 the manifest. In a worktree, `../goodboy-media` does not resolve: set
 `GOODBOY_MEDIA_DIR` to the checkout of goodboy-media.
 
+All capture scripts start headless Chrome from
+`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`. Set
+`GOODBOY_CHROME` to another binary on Linux or a non-standard install.
+
+### Reshoot every figure
+
+Start the dev server on 5230 with mock mode on, then run:
+
+```bash
+pnpm features:reshoot
+```
+
+It replays the `recipe` of every guide figure in `docs/figures.json` through
+`scripts/feature-shots.mjs`, one after the other, then the README hero through
+`scripts/readme-hero.mjs`. Each finished figure moves to the version of the
+checkout. A failed figure is named at the end and the exit code is 1; the rest
+still run.
+
+- `--area <guide>` shoots the figures named `<guide>` or `<guide>-*`, such as
+  `--area inbox`. `--area readme` shoots only the hero.
+- `--theme dark|light` shoots one theme. A figure with one new theme and one
+  old theme would lie about its version, so versions do not move.
+- `--out-dir <folder>` writes under `<folder>/features` and skips the hero.
+  Versions do not move. Use it for a trial run.
+- `--dry-run` lists what would be shot. A figure with no recipe is listed as
+  "shoot by hand".
+- `--base`, `--version` and `--wait` pass through to the shot scripts.
+
+`node scripts/check-figure-versions.mjs --report-stale` lists each figure shot
+before the newest change of its guide: it reads the `area=` meta of every
+`CHANGELOG.md` entry, maps the area to the guides it touches (the table in
+`scripts/lib/staleFigures.mjs`) and compares. The `app`, `integrations` and
+`scripts` areas map to no guide and never mark a figure old. The report never
+fails the check; run it before a reshoot to see what to redo.
+
 A figure shows exactly the feature named by the heading it sits under, and its
 alt text names what is visible.
 
@@ -810,7 +847,7 @@ A changelog entry can carry a before/after picture (`image=<name>` in
 `CHANGELOG.md`, see `docs/release-command.md` Format). These come from the
 same mock scenes, captured a different way: `scripts/changelog-shots.mjs
 <scene> <name> <before|after>` drives headless Chrome over CDP against the
-scene at `http://localhost:1421/?scene=<scene>&theme=<dark|light>` (start
+scene at `http://localhost:5230/?scene=<scene>&theme=<dark|light>` (start
 `pnpm dev` in `apps/desktop` first, same as everywhere else on this page), and
 saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
 

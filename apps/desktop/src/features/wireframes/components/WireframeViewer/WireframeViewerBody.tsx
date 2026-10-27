@@ -9,8 +9,8 @@ import {
 import { Button, cn, Eyebrow, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
-import { useFrameMessages } from '../../useFrameMessages';
-import { useFrameStage } from '../../useFrameStage';
+import { useFrameMessages } from '../../hooks/useFrameMessages';
+import { useFrameStage } from '../../hooks/useFrameStage';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import { screenLinks, screenNodeNotes } from '../../wireframeNotes';
 import { pageOfPath, screenPagePath, type WireframePage } from '../../wireframePagePath';

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button, ConfirmPopover, OptionalTooltip, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../conceptIcons';
+import { Button, cn, ConfirmPopover, ICON_SIZE, OptionalTooltip } from '@goodboy/ui';
+
 import { runRecordVerb } from './runRecordVerb';
 import type { RecordSecondaryVerbs, RecordVerb } from './types';
 

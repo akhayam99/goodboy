@@ -1,6 +1,6 @@
 import { SLOT_KEYS, type SlotKey } from '@goodboy/core';
 import type { AgentRole } from '@goodboy/types';
-import { ROLE_SLOTS } from '../../../providers/slot-routing';
+import { ROLE_SLOTS } from '../../../context/slotRouting';
 import { ROLE_LABEL } from '../../agent-kind';
 
 export type VisibilityChip = {

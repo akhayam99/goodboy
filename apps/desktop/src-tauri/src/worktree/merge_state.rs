@@ -5,21 +5,32 @@ use serde::Serialize;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum BranchMergeState {
     Unknown,
     Protected,
     MergedViaMerge,
     MergedViaRebase,
     MergedViaPr,
-    MergedThen {
-        #[serde(rename = "newCommits")]
-        new_commits: u32,
-    },
+    MergedThen { new_commits: u32 },
     NoOwnCommits,
-    NotMerged {
-        ahead: u32,
-    },
+    NotMerged { ahead: u32 },
+}
+
+impl BranchMergeState {
+    pub(crate) fn is_safe_to_delete(&self) -> bool {
+        matches!(
+            self,
+            BranchMergeState::MergedViaMerge
+                | BranchMergeState::MergedViaRebase
+                | BranchMergeState::MergedViaPr
+                | BranchMergeState::NoOwnCommits
+        )
+    }
 }
 
 const PROTECTED_BRANCH_NAMES: [&str; 3] = ["main", "master", "develop"];
@@ -133,3 +144,6 @@ pub(crate) fn branch_merge_state(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod wire_shape;

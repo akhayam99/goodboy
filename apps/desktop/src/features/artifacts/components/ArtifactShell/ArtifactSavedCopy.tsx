@@ -1,6 +1,6 @@
-import { ExternalLink, FolderOpen } from 'lucide-react';
-import { Button, SectionHeader, TruncatedText } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SquareArrowOutUpRight, FolderOpen } from 'lucide-react';
+import { Button, ICON_SIZE, SectionHeader, TruncatedText } from '@goodboy/ui';
+
 import type { ArtifactSavedCopy as SavedCopy } from '../../hooks/useArtifactSavedCopy';
 
 type Props = {
@@ -28,7 +28,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
             onClick={openInBrowser}
             data-testid="artifact-saved-copy-open"
           >
-            <ExternalLink size={ICON_SIZE.row} aria-hidden />
+            <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
             Open in browser
           </Button>
         ) : null}

@@ -237,7 +237,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         title: "Couldn't rebase the branch",
         error: 'The rebase agent stopped before finishing.',
         sessionId,
-        action: { kind: 'open-agent', sessionId, agentId },
+        recovery: { action: { kind: 'open-agent', sessionId, agentId } },
       });
       return;
     }

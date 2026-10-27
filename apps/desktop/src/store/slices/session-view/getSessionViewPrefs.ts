@@ -1,5 +1,5 @@
 import type { SessionViewPrefs, WorkspaceId } from '@goodboy/types';
-import { readFromStorage } from './storage';
+import { readSessionViewPrefs } from './storage';
 import type { GetFn, SetFn } from './types';
 
 export const getSessionViewPrefs = (set: SetFn, get: GetFn) => {
@@ -8,7 +8,7 @@ export const getSessionViewPrefs = (set: SetFn, get: GetFn) => {
     if (cached) {
       return cached;
     }
-    const prefs = readFromStorage(workspaceId);
+    const prefs = readSessionViewPrefs({ workspaceId });
     set((s) => ({
       sessionViewPrefs: { ...s.sessionViewPrefs, [workspaceId]: prefs },
     }));

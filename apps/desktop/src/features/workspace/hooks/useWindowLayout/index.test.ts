@@ -26,7 +26,7 @@ vi.mock('../../window', () => ({
 }));
 
 import { useAppStore } from '../../../../store';
-import { WINDOW_LAYOUT_SAVE_DELAY_MS, useWindowLayout } from '.';
+import { useWindowLayout } from '.';
 
 const WS = 'ws-harborline' as WorkspaceId;
 const SESSION = 'session-ledger' as SessionId;
@@ -51,7 +51,7 @@ describe('useWindowLayout', () => {
       useAppStore.setState({ activeLens: { [SESSION]: 'review' } });
     });
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(WINDOW_LAYOUT_SAVE_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(500);
     });
 
     expect(h.saved).toHaveLength(1);
@@ -67,14 +67,14 @@ describe('useWindowLayout', () => {
   it('ignores store writes that do not move the window', async () => {
     renderHook(() => useWindowLayout());
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(WINDOW_LAYOUT_SAVE_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(500);
     });
     h.saved = [];
     act(() => {
       useAppStore.setState({ transcripts: {} });
     });
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(WINDOW_LAYOUT_SAVE_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(500);
     });
 
     expect(h.saved).toEqual([]);
@@ -88,7 +88,7 @@ describe('useWindowLayout', () => {
 
     await expect(
       act(async () => {
-        await vi.advanceTimersByTimeAsync(WINDOW_LAYOUT_SAVE_DELAY_MS);
+        await vi.advanceTimersByTimeAsync(500);
       }),
     ).resolves.toBeUndefined();
     expect(h.saved).toEqual([]);

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import type { ShortcutId } from '../../keyboard/registry';
 import { ChevronDown } from 'lucide-react';
 import { MODEL_CATALOGS } from '@goodboy/core';
-import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
+import { AnchoredPopover, cn, ICON_SIZE, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';
 import { TriggerLabel } from './TriggerLabel';
 import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
@@ -13,7 +13,6 @@ import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { RoutingPickerBody, type EffortSetting, type PickerCommit } from './RoutingPickerBody';
 import type { PickedRoute } from './PickedRoute';
-import { ICON_SIZE } from '../conceptIcons';
 
 export type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -203,7 +202,7 @@ export const RoutingPicker = ({
               aria-expanded={open}
               aria-label={`${ariaLabel != null ? `${ariaLabel}: ` : ''}${summary}${isPinned ? ', pinned' : ''}`}
               className={cn(
-                'items-center gap-2 text-label transition-colors',
+                'items-center gap-2 text-meta transition-colors',
                 variant === 'pill'
                   ? 'inline-flex min-w-0 whitespace-nowrap rounded-full px-3 py-0.5 @max-sm:px-2'
                   : 'flex w-full rounded-md border px-2 py-2 text-left',

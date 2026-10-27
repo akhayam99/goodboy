@@ -21,7 +21,7 @@ vi.mock('../../../../store', () => ({
 import { SpendLimitEditor } from './SpendLimitEditor';
 
 const SESSION_ID = 'session-1' as SessionId;
-const LIMIT = { softCapUsd: 20, onExceed: 'pause' } as unknown as SessionBudget;
+const LIMIT = { softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 } as unknown as SessionBudget;
 
 afterEach(() => {
   cleanup();

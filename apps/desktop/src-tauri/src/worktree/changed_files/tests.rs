@@ -1,4 +1,5 @@
-use super::{worktree_changed_files_blocking, ChangedEntry};
+use super::{worktree_changed_files_blocking, ChangedEntry, UNTRACKED_COUNT_LIMIT_BYTES};
+use crate::worktree::error::WorktreeError;
 use crate::worktree::git::git;
 use std::path::{Path, PathBuf};
 
@@ -196,6 +197,96 @@ fn names_the_status_of_every_changed_file() {
     assert_eq!(
         out.numstat,
         "1\t0\tcommitted.txt\n1\t0\tdirty.txt\n0\t4\tgone.txt\n0\t0\told.txt => new.txt\n2\t0\tfresh.txt"
+    );
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+fn changed(root: &Path) -> Result<super::ChangedFilesSummary, WorktreeError> {
+    worktree_changed_files_blocking(root.to_string_lossy().to_string(), Some("main".to_string()))
+}
+
+#[test]
+fn reads_non_ascii_paths_as_they_are_spelled() {
+    let root = init_repo("changed-files-non-ascii");
+    std::fs::write(root.join("riepilogo.txt"), "uno\n").unwrap();
+    git_ok(&root, &["add", "riepilogo.txt"]);
+    git_ok(&root, &["commit", "-m", "summary"]);
+    git_ok(&root, &["checkout", "-b", "feature"]);
+    std::fs::write(root.join("riepilogo.txt"), "uno\ndue\n").unwrap();
+    std::fs::write(root.join("caff\u{e8} e t\u{e9}.txt"), "a\nb\n").unwrap();
+    std::fs::write(root.join("\u{65e5}\u{672c}.txt"), "x\n").unwrap();
+
+    let out = changed(&root).unwrap();
+
+    assert_eq!(
+        out.paths,
+        vec![
+            "caff\u{e8} e t\u{e9}.txt".to_string(),
+            "riepilogo.txt".to_string(),
+            "\u{65e5}\u{672c}.txt".to_string(),
+        ]
+    );
+    assert_eq!(out.additions, 4);
+    assert!(out.numstat.contains("2\t0\tcaff\u{e8} e t\u{e9}.txt"));
+    assert!(out.numstat.contains("1\t0\t\u{65e5}\u{672c}.txt"));
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_rename_of_a_non_ascii_path_keeps_both_names() {
+    let root = init_repo("changed-files-non-ascii-rename");
+    std::fs::write(root.join("vecchio.txt"), "uno\ndue\ntre\nquattro\n").unwrap();
+    git_ok(&root, &["add", "vecchio.txt"]);
+    git_ok(&root, &["commit", "-m", "old"]);
+    git_ok(&root, &["checkout", "-b", "feature"]);
+    git_ok(&root, &["mv", "vecchio.txt", "citt\u{e0}.txt"]);
+
+    let out = changed(&root).unwrap();
+
+    assert_eq!(
+        out.entries,
+        vec![entry("citt\u{e0}.txt", "renamed", Some("vecchio.txt"))]
+    );
+    assert_eq!(out.paths, vec!["citt\u{e0}.txt".to_string()]);
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_git_failure_is_returned_instead_of_reading_as_no_changes() {
+    let root = init_repo("changed-files-git-failure");
+    git_ok(&root, &["checkout", "-b", "feature"]);
+    std::fs::write(root.join("feature.txt"), "a\n").unwrap();
+    git_ok(&root, &["add", "feature.txt"]);
+    git_ok(&root, &["commit", "-m", "feature"]);
+    let git_dir = PathBuf::from(git_ok(&root, &["rev-parse", "--absolute-git-dir"]));
+    std::fs::write(git_dir.join("index"), "invalid index").unwrap();
+
+    let result = changed(&root);
+
+    assert!(matches!(result, Err(WorktreeError::Git { .. })));
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn an_untracked_file_over_the_limit_is_not_read_into_memory() {
+    let root = init_repo("changed-files-large-untracked");
+    git_ok(&root, &["checkout", "-b", "feature"]);
+    let line = "0123456789abcdef\n";
+    let big = line.repeat((UNTRACKED_COUNT_LIMIT_BYTES as usize / line.len()) + 2);
+    std::fs::write(root.join("dump.log"), big).unwrap();
+    std::fs::write(root.join("small.txt"), "a\nb\n").unwrap();
+
+    let out = changed(&root).unwrap();
+
+    assert_eq!(out.additions, 2);
+    assert_eq!(out.numstat, "-\t-\tdump.log\n2\t0\tsmall.txt");
+    assert_eq!(
+        out.paths,
+        vec!["dump.log".to_string(), "small.txt".to_string()]
     );
 
     std::fs::remove_dir_all(root).unwrap();

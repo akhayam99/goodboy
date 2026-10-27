@@ -343,7 +343,7 @@ export const Tooltip = ({
               className={cn(
                 'pointer-events-none z-tooltip',
                 FLOATING_SURFACE,
-                'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-label font-medium text-foreground motion-safe:animate-popover-in',
+                'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
               )}
             >
               {keys === '' ? (

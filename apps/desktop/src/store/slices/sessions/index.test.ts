@@ -38,7 +38,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -1050,7 +1050,7 @@ describe('store contract', () => {
       expect(session.permissionMode).toBe('plan');
     });
 
-    it('starts a session with full access when the workspace set no default', async () => {
+    it('starts a session on Ask first when the workspace set no default', async () => {
       const store = useAppStore;
       storySpies.listProjectsForWorkspace.mockResolvedValueOnce([]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [], workspaces: [buildWorkspace()] });
@@ -1059,7 +1059,7 @@ describe('store contract', () => {
         .getState()
         .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
-      expect(session.permissionMode).toBe('bypassPermissions');
+      expect(session.permissionMode).toBe('default');
     });
 
     it('creates a bare session in a workspace with no project', async () => {

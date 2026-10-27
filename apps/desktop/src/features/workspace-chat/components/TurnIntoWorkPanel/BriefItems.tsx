@@ -19,7 +19,7 @@ export const BriefItems = ({
   onRemove,
 }: Props) => (
   <div className="flex flex-col gap-2">
-    <span className="text-label text-muted-foreground">{label}</span>
+    <span className="text-meta text-muted-foreground">{label}</span>
     {items.length === 0 ? (
       <p className="text-meta text-faint-foreground">{emptyLabel}</p>
     ) : (
@@ -32,7 +32,7 @@ export const BriefItems = ({
             <span
               className={cn(
                 'min-w-0 flex-1 text-foreground',
-                isCode ? 'truncate text-code' : 'text-label',
+                isCode ? 'truncate text-code' : 'text-meta',
               )}
             >
               {item}

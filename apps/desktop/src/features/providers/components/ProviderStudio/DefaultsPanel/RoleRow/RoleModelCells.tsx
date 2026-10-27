@@ -1,7 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { Chip, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import { PROVIDER_BRAND } from '../../../provider-brand';
 import {
   routingLabelParts,
@@ -28,7 +28,7 @@ export const RoleModelCells = ({
   const label = routingLabelParts({ provider, model, effort });
   const ProviderGlyph = PROVIDER_BRAND[provider].icon;
   return (
-    <span className="flex shrink-0 items-center gap-3 text-label">
+    <span className="flex shrink-0 items-center gap-3 text-meta">
       <span data-role-summary className="flex w-44 min-w-0 items-center gap-2">
         <ProviderGlyph
           size={ICON_SIZE.row}

@@ -1,5 +1,5 @@
 import { SegmentedTabs } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import type { StudioHomeView } from '../../studioHomeView';
 
 type Props = {

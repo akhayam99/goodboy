@@ -64,19 +64,16 @@ describe('the u23 top bar scenes', () => {
     expect(Object.keys(U23_TOPBAR_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('draws Now, Limits, Spend and the bell with the theme toggle, no needs you and no Impact icon', async () => {
+  it('draws the needs you count, Now, Limits, Spend and the bell, no theme switch and no Impact icon', async () => {
     await renderScene('topbar-states');
 
     const bar = document.querySelector('[data-top-bar]') as HTMLElement;
-    expect(within(bar).queryByRole('button', { name: /need/ })).toBeNull();
-    expect(bar.textContent).not.toMatch(/need you/);
+    within(bar).getByRole('button', { name: /^2 need you/ });
     expect(within(bar).getByRole('toolbar', { name: 'Provider limits' })).toBeDefined();
     expect(within(bar).getByRole('button', { name: 'Spend today. Open Impact' })).toBeDefined();
     expect(within(bar).queryByRole('button', { name: 'Impact' })).toBeNull();
-    expect(
-      within(bar).getByRole('button', { name: /theme\. Switch to (light|dark)/ }),
-    ).toBeDefined();
-    expect(within(bar).getByRole('button', { name: /^Search \(/ })).toBeDefined();
+    expect(within(bar).queryByRole('button', { name: /theme/i })).toBeNull();
+    expect(within(bar).getByRole('button', { name: /^Search or run \(/ })).toBeDefined();
   });
 
   it('shows the Limits overflow as +N with the hidden provider marks', async () => {

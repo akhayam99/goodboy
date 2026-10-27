@@ -33,5 +33,3 @@ export const resolveSessionPrFetch = (params: Params): MountPrFetch | null =>
 
 export const listSessionPrFetches = (params: SessionParams): ReadonlyArray<MountPrFetch> =>
   listMountFetches(params);
-
-export const isSessionPrFetchable = (params: Params): boolean => resolveMountFetch(params) !== null;

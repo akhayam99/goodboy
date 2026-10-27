@@ -13,7 +13,7 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { recordProviderRun } from '../providers/recordProviderRun';
-import { routeQuestions } from '../auto/routeQuestions';
+import { routeQuestions } from '../../runtime/auto/routeQuestions';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { captureMaterializeRequestsFromTurn } from './turnHelpers';
@@ -54,6 +54,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
     isSessionDirScope,
     turnSpanBase,
     touchedMountsForTurn,
+    recordTurnFiles,
   } = ctx;
   const { assistantText, receivedProviderError, receivedStreamError, filesTouchedThisTurn } =
     progress;
@@ -85,6 +86,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
       touchedMountIds: await touchedMountsForTurn(),
     },
   });
+  void recordTurnFiles();
   if (receivedProviderError === false && wasCancelled === false && assistantText.length > 0) {
     recordProviderRun({ set, get, providerId: provider, runId, outcome: 'accepted' });
   }

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../../store';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import type { PaletteScope } from '../../../palette/types';
 import type { SearchProjectOption } from '../../grammar';
 import type { SearchScope } from '../../searchScope';

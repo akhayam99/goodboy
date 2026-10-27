@@ -37,7 +37,7 @@ const settleFix = ({ store, sessionId, agentId, attemptId, threadIds }: SettlePa
     store,
     sessionId,
     threadIds,
-    patch: (thread) => ({
+    patch: ({ thread }) => ({
       ...thread,
       state: 'fixed',
       stage: 'proposed',

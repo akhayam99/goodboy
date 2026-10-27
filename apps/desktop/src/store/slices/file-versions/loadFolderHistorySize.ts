@@ -1,7 +1,7 @@
 import type { Project } from '@goodboy/types';
 import { fileVersionsFolderSize } from '../../../features/file-versions/fileVersions';
 import { folderHistorySize } from '../../../features/file-versions/folderHistorySize';
-import { createLatestOnly } from '../state-writes/latestOnly';
+import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import type { SliceDeps } from '../../slice-types';
 
 type Params = Readonly<{

@@ -20,7 +20,8 @@ vi.mock('../../../features/worktree/worktree', () => ({
   worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings' })),
 }));
 
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { pushBranch } from '../github/pushBranch';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import { useAppStore, type AppStore } from '../../store';
 import { fixPushWithAgent } from './fixPushWithAgent';
 import { settlePushFix } from './settlePushFix';
@@ -123,6 +124,7 @@ const harness = ({ run }: HarnessParams): Harness => {
   const get = () => state;
   state = {
     ...state,
+    pushBranch: pushBranch({ set, get }),
     pushHistoryRewrite: async (input) => {
       const { pushHistoryRewrite } = await import('./applyHistoryRewrite');
       return pushHistoryRewrite(set, get)(input);

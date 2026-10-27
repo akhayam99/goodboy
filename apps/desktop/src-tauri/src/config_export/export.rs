@@ -6,6 +6,7 @@ use crate::config_export::bundle::{
 use crate::config_export::convert::ms_col_to_iso;
 use crate::config_export::error::ConfigExportError;
 use crate::config_export::groups::{ExportGroups, LeftOutFinding};
+use crate::settings_overrides::override_select_list;
 use std::collections::HashSet;
 
 pub(super) fn open_findings_for_groups(
@@ -69,17 +70,13 @@ pub(super) fn build_bundle(
         leave_out_subject_ids(conn, "profile", leave_out)?;
 
     let workspaces = if groups.workspaces {
-        let mut stmt = conn.prepare(
-            "SELECT id, name, created_at, updated_at,
-                    default_provider_id, default_branch_prefix, default_verbosity,
-                    provider_bindings, task_models, role_models, parallel_agents,
-                    provider_pool, attribution_footer, reply_voice, reply_style_note,
-                    reply_template_fixed, reply_template_no_change, resolve_on_github,
-                    resolve_commit_style, default_branch_template, workflow_rules
+        let mut stmt = conn.prepare(&format!(
+            "SELECT id, name, created_at, updated_at, {}
              FROM workspaces
              WHERE deleted_at IS NULL AND disconnected_at IS NULL
              ORDER BY created_at ASC",
-        )?;
+            override_select_list()
+        ))?;
         let rows = stmt.query_map([], |row| {
             Ok(WorkspaceBundle {
                 id: row.get(0)?,
@@ -104,8 +101,9 @@ pub(super) fn build_bundle(
                     reply_template_no_change: row.get(16)?,
                     resolve_on_github: row.get::<_, Option<i64>>(17)?.map(|v| v != 0),
                     resolve_commit_style: row.get(18)?,
-                    default_branch_template: row.get(19)?,
-                    workflow_rules: json_text_to_value(row.get(20)?),
+                    after_merge: row.get(19)?,
+                    default_branch_template: row.get(20)?,
+                    workflow_rules: json_text_to_value(row.get(21)?),
                 },
                 profile: None,
             })

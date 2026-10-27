@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { makeGate } from '../../../../store/slices/auto/testing/makeGate';
+import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
 import { registerChecksRerunPort, type ChecksRerunPort } from '../../checksRerunPort';
 import { useChecksRerun } from './index';
 

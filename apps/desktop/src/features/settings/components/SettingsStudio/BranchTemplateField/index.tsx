@@ -19,6 +19,7 @@ import {
   SAMPLE_TASK_ID,
 } from './branchPreviewSource';
 import { branchTemplateProblemCopy } from './branchTemplateProblemCopy';
+import { NOTHING_CHANGED } from '../../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -110,7 +111,12 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
         patch: { defaultBranchTemplate: next === DEFAULT_BRANCH_TEMPLATE ? null : next },
       });
     } catch (error) {
-      void reportError({ title: "Couldn't save the branch name", error, workspaceId });
+      void reportError({
+        title: "Couldn't save the branch name",
+        error,
+        workspaceId,
+        recovery: NOTHING_CHANGED,
+      });
     } finally {
       setIsBusy(false);
     }
@@ -213,7 +219,6 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
                 key={placeholder}
                 as="button"
                 tone="neutral"
-                shape="badge"
                 kind="reference"
                 ariaLabel={`Add {${placeholder}}`}
                 onClick={() => insertPlaceholder(placeholder)}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { EmptyLine, SelectionCheckbox, cn } from '@goodboy/ui';
+import { cn, EmptyLine, ICON_SIZE, SelectionCheckbox } from '@goodboy/ui';
 import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';
 import {
@@ -10,7 +10,7 @@ import {
   storageArtifactLastUsed,
 } from '../../../../store/slices/storage/classifyStorageArtifact';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ARTIFACT_KIND_LABEL } from '../../storageCopy';

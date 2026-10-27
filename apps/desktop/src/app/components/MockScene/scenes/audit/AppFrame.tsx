@@ -21,7 +21,7 @@ import { selectDrawerPlacement } from '../../../../../store/slices/drawer/select
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
 import { useSceneShortcuts } from '../useSceneShortcuts';
-import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { isDirectedScene } from '../../../../../shared/utils/isDirectedScene';
 
 const noop = () => undefined;
 

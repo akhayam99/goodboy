@@ -1,6 +1,6 @@
 import { formatError, formatUsd, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore, useSessionCost } from '../../../../store';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
 import { SettingChip } from '../../../../shared/components/SettingChip';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { classifyRemoteHost, type RemoteHostKind } from '../../shared/lib/remoteHost';
+import { classifyRemoteHost, type RemoteHostKind } from '../../shared/utils/remoteHost';
 import { worktreeRemoteUrl } from './worktree';
 
 const cache = new Map<string, RemoteHostKind>();

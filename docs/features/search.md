@@ -4,7 +4,31 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left: **New session**, then **Sessions**, **Tasks**, **Chat** and **Terminal** (each with a **+** to start one), **Workflows**, **Impact** and **Monitoring**, then your pinned and recent sessions, and **Settings**. The sidebar looks the same on every screen. Click a session and its row stays selected while the session opens with its own rail at the left of the page: **Pin**, **Refresh** and **⋯** on top, then its pages (**Overview**, **Runs**, **Agents**, **Artifacts** and **Questions**) with their counts, a **Folders** card that folds each folder and branch, every branch led by its pull request icon in its color and holding its pull request, comments, files and checks, a **Linked** card with the work linked to it. The **⋯** holds **Spend and limit**, **Archive** and **Delete** with the session's other actions. At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Ask**, **Terminal**, **Explore**, **Context**, **Agents** and **Scripts**. A branch, a run or **Auto** steps the rail one level in, and **‹** steps back out. **⌘B** folds the sidebar into a slim bar of icons, and **⌥⌘B** or the rail's own button folds the rail, the same key that folds the list beside Chat, Terminal, the Guide and Settings. In a narrow window the sidebar folds first, then the rail. An amber dot on **Sessions** says sessions need you, and one on **Monitoring** names the pinned port that is down.
+Every place you go sits in one sidebar on the left. It looks the same on every screen. From top to bottom:
+
+- **New session**
+- **Sessions** and **Tasks** (the work of your other tools)
+- **Workflows**, **Chat** and **Terminal**. Chat and Terminal each have a **+** to start one.
+- the quieter **Impact** and **Monitoring**
+- your pinned and recent sessions
+- **Settings**
+
+Click a session and its row stays selected. The session opens with its own rail at the left of the page. From top to bottom:
+
+- **Pin**, **Refresh** and **⋯**
+- its pages (**Overview**, **Runs**, **Artifacts** and **Questions**) with their counts
+- a **Projects** card that folds each folder and branch. Every branch is led by its pull request icon in its color and holds its pull request, comments, files and checks.
+- a **Linked** card with the work linked to it
+
+The **⋯** holds **Spend and limit**, **Archive** and **Delete** with the session's other actions.
+
+At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Ask**, **Terminal**, **Explore**, **Context**, **Agents** and **Scripts**.
+
+A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
+
+**⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. In a narrow window the sidebar folds first, then the rail.
+
+An amber dot on **Sessions** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
 
 ### Go anywhere
 

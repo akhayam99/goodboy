@@ -408,13 +408,15 @@ export const applyBitbucketPageSeed = ({
         ? {}
         : {
             [SESSION_ID]: {
-              prNumber: view.number,
-              mountId: MOUNT_ID,
-              view,
-              isLoading: false,
-              error: null,
-              fetchedAt: NOW_ISO as IsoDateTime,
-              edits: [],
+              [MOUNT_ID]: {
+                prNumber: view.number,
+                mountId: MOUNT_ID,
+                view,
+                isLoading: false,
+                error: null,
+                fetchedAt: NOW_ISO as IsoDateTime,
+                edits: [],
+              },
             },
           },
     sessionResolveQueueItems: { [SESSION_ID]: [] },

@@ -1,8 +1,6 @@
 import { memo, useEffect, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
-import { useSessionSummary } from '../../hooks/useSessionSummary';
-import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
@@ -10,7 +8,7 @@ import { useSelectRequest } from '../../../actions/useSelectRequest';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
-import { sessionNodeOf } from '../../../session/sessionNode';
+import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { overviewTitleHost } from '../../../session/overviewTitleHost';
 import { TitleField } from '../../../../shared/components/TitleField';
 import { StateNode } from '../../../../shared/components/StateNode';
@@ -63,10 +61,7 @@ const SessionActivityItemView = ({
   onRowEnter,
   onRowLeave,
 }: Props) => {
-  const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({ info: summary.info, isArchived });
-  const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
-  const { keys, title } = rowTitle;
+  const { summary, node, rowTitle, keys, title } = useSessionRowFacts({ session, isArchived });
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
   const anchorKey = `sidebar:${sessionId}`;

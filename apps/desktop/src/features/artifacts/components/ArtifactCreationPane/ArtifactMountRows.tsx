@@ -73,7 +73,7 @@ export const ArtifactMountRows = ({ options, value, onChange }: Props) => {
             onClick={() => onChange(option.mountId)}
             className="w-auto items-baseline gap-2 border border-border-soft bg-elevated px-3 py-2 data-[selected=true]:border-transparent"
           >
-            <span className="truncate text-label font-medium">{option.mountName}</span>
+            <span className="truncate text-meta font-medium">{option.mountName}</span>
             <span className="truncate text-meta font-normal text-muted-foreground">
               {option.branch}
             </span>

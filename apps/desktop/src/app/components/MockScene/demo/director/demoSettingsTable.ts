@@ -4,12 +4,16 @@ type Row = {
   readonly updated_at: number;
 };
 
+type ValueRow = {
+  readonly value: string;
+};
+
 type SqlParams = {
   readonly sql: string;
   readonly params: ReadonlyArray<unknown>;
 };
 
-export type SettingsSelect = ReadonlyArray<Row> | null;
+export type SettingsSelect = ReadonlyArray<Row> | ReadonlyArray<ValueRow> | null;
 
 export type SettingsExecute = {
   readonly rowsAffected: number;
@@ -33,13 +37,22 @@ type WriteParams = {
   readonly value: string;
 };
 
+type ValueKeyParams = {
+  readonly params: ReadonlyArray<unknown>;
+  readonly at: number;
+};
+
 const textAt = ({ params, index }: TextParams): string => {
   const value = params[index];
   return typeof value === 'string' ? value : String(value);
 };
 
+const valueKeyOf = ({ params, at }: ValueKeyParams): string =>
+  `${textAt({ params, index: at })}:${textAt({ params, index: at + 1 })}`;
+
 export const createDemoSettingsTable = () => {
   const rows = new Map<string, Row>();
+  const workspaceValues = new Map<string, string>();
 
   const write = ({ key, value }: WriteParams): void => {
     rows.set(key, { key, value, updated_at: Date.now() });
@@ -47,6 +60,10 @@ export const createDemoSettingsTable = () => {
 
   const select = ({ sql, params }: SqlParams): SettingsSelect => {
     const text = normalized({ sql });
+    if (text.includes('FROM WORKSPACE_VALUES WHERE WORKSPACE_ID = ? AND KEY = ?')) {
+      const value = workspaceValues.get(valueKeyOf({ params, at: 0 }));
+      return value === undefined ? [] : [{ value }];
+    }
     if (!text.includes('FROM SETTINGS')) {
       return null;
     }
@@ -66,6 +83,22 @@ export const createDemoSettingsTable = () => {
   const execute = ({ sql, params }: SqlParams): SettingsExecute => {
     const text = normalized({ sql });
     const done = ({ count }: CountParams): SettingsExecute => ({ rowsAffected: count, rows: [] });
+    if (text.startsWith('INSERT INTO WORKSPACE_VALUES')) {
+      const key = valueKeyOf({ params, at: 0 });
+      if (text.includes('DO NOTHING') && workspaceValues.has(key)) {
+        return done({ count: 0 });
+      }
+      workspaceValues.set(key, textAt({ params, index: 2 }));
+      return done({ count: 1 });
+    }
+    if (text.startsWith('UPDATE WORKSPACE_VALUES')) {
+      const key = valueKeyOf({ params, at: 2 });
+      if (workspaceValues.get(key) !== textAt({ params, index: 4 })) {
+        return done({ count: 0 });
+      }
+      workspaceValues.set(key, textAt({ params, index: 0 }));
+      return done({ count: 1 });
+    }
     if (text.startsWith('INSERT INTO SETTINGS')) {
       const key = textAt({ params, index: 0 });
       const value = textAt({ params, index: 1 });

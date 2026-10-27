@@ -4,43 +4,109 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### Start a run
 
-Write what you want done and press Start; Goodboy picks how to run it. The **Start a run** field sits at the top of a session's Runs page, and on the **New session** page **Not sure? Describe it and Auto picks** routes the task you wrote the same way, with the Limit and Start under it. Its hint reads "Auto picks a workflow or an agent. Type ~preset or @role." ↵ starts, ⇧↵ adds a line. The pick is a rule table in the app, with no model call, read top to bottom until a row holds:
+Write what you want done and press Start. Goodboy picks how to run it.
 
-1. You said it: `~Fix a layout` follows that preset, `@Scout` starts that role at once; or a default you set in Settings (**New runs start as** for the workspace, **New runs in this session start as** for the open session). A session default wins over the workspace one.
-2. The ask names a preset of the workspace, or shares at least two words of its description and step titles (a name match ranks first, then the one last used in the session): a Preset workflow that adapts as it goes.
-3. A task is linked, or the ask is a list or names many places ("every page"): an Orchestrated workflow.
-4. The session's open pull request fails its checks or has changes requested, and the ask is about it: an Auto agent.
-5. A question, a check or one file: an Auto agent.
-6. Nothing above: an Auto agent first.
+- The **Start a run** field sits at the top of a session's Runs page.
+- On the **New session** page, **Not sure? Describe it and Auto picks** routes the goal you wrote the same way, with the Limit and Start under it.
+- Its hint reads "Auto picks a workflow or an agent. Type ~preset or @role."
+- ↵ starts, ⇧↵ adds a line.
 
-A workflow starts an orchestrated run; a preset seeds that run with its steps, in order; an agent starts Auto (or the role you named). The reason is kept with the run. If the start fails, the field keeps your text and Start becomes **Retry**. Moving to another session while a start is on its way drops the late answer, so its text or error never lands on the other session. **Start a run** in a session's New menu and ⌘K opens the field, and ⌘K offers **Start from** each preset, which opens it with `~` and the preset name. Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
+The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
+
+| Order | If                                                                                                       | Goodboy starts                                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1     | You said it: `~Fix a layout` or `@Scout`, or a default you set in Settings                               | That preset, or that role at once. A session default wins over the workspace one.                             |
+| 2     | The ask names a preset of the workspace, or shares at least two words of its description and step titles | A Preset workflow that adapts as it goes. A name match ranks first, then the preset last used in the session. |
+| 3     | A task is linked, or the ask is a list or names many places ("every page")                               | An Orchestrated workflow                                                                                      |
+| 4     | The session's open pull request fails its checks or has changes requested, and the ask is about it       | An Auto agent                                                                                                 |
+| 5     | A question, a check or one file                                                                          | An Auto agent                                                                                                 |
+| 6     | Nothing above                                                                                            | An Auto agent first                                                                                           |
+
+- **New runs start as** sets the default for the workspace. **New runs in this session start as** sets it for the open session. Both are in Settings.
+- A workflow starts an orchestrated run. A preset seeds that run with its steps, in order. An agent starts Auto (or the role you named).
+- The reason is kept with the run.
+- If the start fails, the field keeps your text and Start becomes **Retry**.
+- Moving to another session while a start is on its way drops the late answer, so its text or error never lands on the other session.
+- **Start a run** in a session's New menu and ⌘K opens the field. ⌘K offers **Start from** each preset, which opens it with `~` and the preset name.
+- Outside a session, ⌘K **Start a run** opens the New session page on Auto picks.
+- Setup's last step draws this field too, pinned to Scout, so the first start teaches the second.
 
 ### The Kind chip
 
-Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs, in the names of the New session page ("Workflow · Orchestrated", "Workflow · Preset Fix a layout", "Agent · Auto agent", "Agent · Scout"). The words come from one function, `runKindLineOf`, which the Runs list reads too. The chip opens one popover: the kind and "set at start", one line on what that kind does, why it was picked ("you picked it" when you chose it on the page) with how many steps Auto changed in the preset, **With the preset** (Follow it, Adapt as it goes) on a preset run, and the other kinds a run can be (Workflow · Orchestrated, each preset, Agent · Auto agent). Its last line says what a pick does.
+Every run started from the field or the New session page leads its settings line with a **Kind** chip that names what runs. The names are those of the New session page: "Workflow · Orchestrated", "Workflow · Preset Fix a layout", "Agent · Auto agent" and "Agent · Scout".
+
+The chip opens one popover. It shows:
+
+- the kind and "set at start";
+- one line on what that kind does;
+- why it was picked ("you picked it" when you chose it on the page), with how many steps Auto changed in the preset;
+- **With the preset** (Follow it, Adapt as it goes) on a preset run;
+- the other kinds a run can be (Workflow · Orchestrated, each preset, Agent · Auto agent).
+
+Its last line says what a pick does.
 
 - Follow and Adapt switch in place at any time.
 - Before the first step starts, the list reads **Change it to** and a pick applies to the same run, so nothing is spent twice. A plan with no step yet that becomes one agent is replaced by that agent.
 - Once work started, the list reads **Start a new run as**: a pick "Starts a second run with the same goal. This one keeps going." The second run gets the same ask and what the first found; both stay in the list. If the second run fails to start, the popover stays open with the reason and the first is left as it was.
-- The session default is not on the chip: set it in Settings, **New runs in this session start as**.
+- The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
 ### The New session page
 
-The **New session** page starts from the task. The first field is **Task** ("Describe a task, or pick one from Tasks"): write it, or press **Pick from Tasks** in its bottom row to pick an open issue, which fills the task when it is empty and links the issue to the session. Next to it, **Where** reads **Auto picks**: the session runs on the workspace, agents read every folder, and the folders the task needs are mounted on start: the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the task names by their exact name. Later an agent mounts the folder it must edit by itself. Both share one allowance (the active folder, a folder linked by the task and up to two more per session; more wait for your approval), see [mounts.md](../mounts.md#who-picks-the-folders). Open **Where** to pin folders yourself, and clear it to give the choice back. A picked issue whose repository Goodboy recognizes pins that repository in **Where**.
+Start a session from your goal: write it or pick an issue, then choose the kind of run.
 
-Under the task the page asks one question: **What kind of run?** Two cards, **Workflow** (steps you can see and steer, one agent on each) and **Agent** (one agent works on it in one conversation), each with one line and one example. Picking one folds both cards to a line and asks the second question under them: **Which workflow?** (**Orchestrated**, Auto plans each next step as it goes, or **Preset**, a saved list of steps) or **Which agent?** (**Agent**, one role on one model, or **Auto agent**, which starts helpers under your limit). A click on the other card switches; the task and **Where** stay.
+- The first field is **Goal** ("Describe the goal, or pick one from Tasks"). Write it, or press **Pick from Tasks** in its bottom row to pick an open issue. The issue fills the goal when it is empty and links to the session.
+- Next to it, **Where** reads **Auto picks**. The session runs on the workspace, and agents read every folder.
+- The folders the goal needs are mounted on start. They are the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the goal names by their exact name.
+- Later an agent mounts the folder it must edit by itself.
+- Both share one allowance: the active folder, a folder linked by the issue and up to two more per session. More wait for your approval. See [mounts.md](../mounts.md#who-picks-the-folders).
+- Open **Where** to pin folders yourself. Clear it to give the choice back.
+- A picked issue whose repository Goodboy recognizes pins that repository in **Where**.
 
-Picking a kind shows only that kind's controls: a one-line hint on what you see while it runs, then the preset picker with its steps and **Follow it** or **Adapt as it goes** for a Preset, **Role** and **Model** for an Agent, and the **Limit** for the others. Both workflow kinds also show **Asks you** (Every step, After the plan, Never), the same chip and popover as the run's settings line (`AsksYouChip`); it opens on Every step, what a run started here got before, and the run starts with the pick. An agent has no step to stop at, so the agent kinds have no Asks you. The primary names what starts: **Start workflow**, **Start Scout** (the role you picked) or **Start Auto agent**. Start sends the route you picked, so the router does not guess, and the run's line says "you picked it". The task is required on every kind. If the start fails, the page keeps everything and Start becomes **Retry**; leaving the page while a start is on its way drops the late answer.
+Under the task the page asks one question: **What kind of run?** It has two cards. Each has one line and one example.
 
-**Not sure? Describe it and Auto picks** sits under the two cards before you pick. It swaps the cards for the Limit and Start of **Start a run**, which routes the task you wrote, with **Pick it yourself** to go back. The page remembers the last kind you started in this workspace (the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds) and opens on it folded next time; the first visit and **Pick it yourself** show the full cards. Each window keeps its own pick while it is open. ⌘K **New workflow session** and **New agent session** open the page on that card.
+- **Workflow**: steps you can see and steer, one agent on each.
+- **Agent**: one agent works on it in one conversation.
+
+Picking one folds both cards to a line and asks a second question under them.
+
+- **Which workflow?** **Orchestrated**: Auto plans each next step as it goes. **Preset**: a saved list of steps.
+- **Which agent?** **Agent**: one role on one model. **Auto agent**: it starts helpers under your limit.
+
+A click on the other card switches. The task and **Where** stay.
+
+Picking a kind shows only that kind's controls.
+
+- A one-line hint says what you see while it runs.
+- A Preset shows the preset picker with its steps, and **Follow it** or **Adapt as it goes**.
+- An Agent shows **Role** and **Model**. The others show the **Limit**.
+- Both workflow kinds also show **Asks you** (Every step, After the plan, Never). It is the same chip and popover as the run's settings line. It opens on Every step, what a run started here got before, and the run starts with the pick.
+- An agent has no step to stop at, so the agent kinds have no Asks you.
+- The primary names what starts: **Start workflow**, **Start Scout** (the role you picked) or **Start Auto agent**.
+- Start sends the route you picked, so the router does not guess. The run's line says "you picked it".
+- The goal is required on every kind.
+- If the start fails, the page keeps everything and Start becomes **Retry**. Leaving the page while a start is on its way drops the late answer.
+
+**Not sure? Describe it and Auto picks** sits under the two cards before you pick.
+
+- It swaps the cards for the Limit and Start of **Start a run**, which routes the goal you wrote. **Pick it yourself** goes back.
+- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind, folded, next time. The first visit and **Pick it yourself** show the full cards.
+- Each window keeps its own pick while it is open.
+- ⌘K **New workflow session** and **New agent session** open the page on that card.
 
 **Start blank** sits in the page header, and **Discard** sits next to Start once you wrote something. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text.
 
-**Where** is optional. Search it by name, even with 50 folders in the workspace. The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All folders by name. It reads **Auto picks**, the folder you pinned, or how many you pinned. A pin always wins: with a folder pinned, nothing else is mounted on start. An Auto agent that has to write and finds no folder picks one the same way, inside the same allowance, and asks where it should work only when the task names no folder of the workspace or the allowance is spent.
+**Where** is optional. Search it by name, even with 50 folders in the workspace.
+
+- The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All folders by name.
+- It reads **Auto picks**, the folder you pinned, or how many you pinned.
+- A pin always wins. With a folder pinned, nothing else is mounted on start.
+- An Auto agent that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
 
 ### Start on a task
 
-**Start** on an issue in Tasks opens the New session page with the issue above the task field (remove it with its ×), its goal written in, and the kind you started last. A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start: the session is created with the issue linked, and the run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
+Start a session from an issue in Tasks, with the issue linked and its goal written in. **Start session** on an issue (or **Start from HBL-412** in its menu) opens the New session page. The issue sits above the goal field, and you can remove it with its ×. The goal is written in, and the kind is the one you started last.
+
+A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start. The session is created with the issue linked. The run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
 
 ### Review a pull request
 
@@ -48,9 +114,43 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 ### Start more work in a session
 
-**New** in a session opens a menu: **Start a run**, **Write a report** and **Draw a wireframe**. Start a run opens Runs with the field focused; Report and Wireframe draft one from the session in the drawer. Inside a session the field keeps routing on its own: write the ask, or type `@Scout` or `~Fix a layout` in the field. ⌘K offers the same **Start a run** and **Start from** each preset. A run you like can be kept from its page with **Save as preset**. The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel, and stay put while the rail steps into a branch: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C), **Agents** (⌘⌥L) and **Scripts** (⌘⌥S). Hover one to read its name and key; the one whose panel is open shows pressed. **Agents** lists what a run or Auto started as a tree that follows the run or Auto you have open, or every launch of the session when nothing is open; click an agent, or press Enter on it, to read its conversation in the panel, then **Back to agents**. On a narrow window the panel lies over the page, and Esc closes it. While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
+**New** in a session opens a menu: **Start a run**, **Write a report** and **Draw a wireframe**.
 
-All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started, one row per request, newest first, each saying what it was ("Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto agent", "Agent · Scout"), the same words as the New session page. An old Orchestrated, Agents or Auto agents link opens Runs. The page says what it holds in two lines under its title, whether it is empty or full; the lines live in `SESSION_PAGE_INTRO` (`apps/desktop/src/features/session/sessionPageIntro.ts`), drawn by `SessionPageIntro` in the page header. An empty Runs page is the Start a run field alone.
+- **Start a run** opens Runs with the field focused.
+- Report and Wireframe draft one from the session in the drawer.
+- Inside a session the field keeps routing on its own. Write the ask, or type `@Scout` or `~Fix a layout` in the field.
+- ⌘K offers the same **Start a run** and **Start from** each preset.
+- A run you like can be kept from its page with **Save as preset**.
+- While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
+
+**Tools beside the page**
+
+The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put while the rail steps into a branch.
+
+| Tool         | Key |
+| ------------ | --- |
+| **Ask**      | ⌘L  |
+| **Terminal** | ⌘⌥T |
+| **Explore**  | ⌘⌥X |
+| **Context**  | ⌘⌥C |
+| **Agents**   | ⌘⌥L |
+| **Scripts**  | ⌘⌥S |
+
+- Hover one to read its name and key. The one whose panel is open shows pressed.
+- **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
+- The tree follows the run or Auto you have open, or shows every launch of the session when nothing is open.
+- Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
+- **j** and **k** with focus on a row open the next and the previous agent.
+- A session without agents says "No agents in this session yet".
+- On a narrow window the panel lies over the page, and Esc closes it.
+
+**Runs**
+
+All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started. One row per request, newest first.
+
+- Each row says what it was, in the same words as the New session page: "Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto agent" and "Agent · Scout".
+- The page says what it holds in two lines under its title, whether it is empty or full.
+- An empty Runs page is the Start a run field alone.
 
 ### Start blank
 
@@ -66,8 +166,17 @@ Get a short title without writing one. A new session is named for you and marked
 
 ### Undo an unlink
 
-Unlinking a task from a session acts at once, with a 10-second **Undo** toast, and **Cmd+Z** works too. The unlink stays in the log with **Re-link**. Unlinking the issue you have open takes you back to its list; the breadcrumb above the issue does the same. If you moved elsewhere before the unlink finished, you stay where you went.
+Unlinking a task from a session acts at once, with a 10-second **Undo** toast, and **⌘Z** works too. The unlink stays in the log with **Re-link**. Unlinking the issue you have open takes you back to its list; the breadcrumb above the issue does the same. If you moved elsewhere before the unlink finished, you stay where you went.
 
 ### Move an issue between the session and a branch
 
 Choose where an issue belongs with **Move to** in its chip menu: the session or one of the open branches of its project. You can also drag the chip onto a branch row, and hold Alt to copy it instead. Every move has one Undo.
+
+## Under the hood
+
+This part is for contributors and agents who change the feature.
+
+- Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
+- Asks you chip: `AsksYouChip` is shared with the run's settings line.
+- Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
+- Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.

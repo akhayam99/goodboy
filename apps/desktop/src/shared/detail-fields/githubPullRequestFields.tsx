@@ -1,8 +1,8 @@
-import { AlertCircle, CheckCheck, CircleDashed, GitBranch, ListChecks } from 'lucide-react';
+import { CircleAlert, CheckCheck, CircleDashed, GitBranch, ListChecks } from 'lucide-react';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
-import { pullRequestKindOf } from '../pullRequestKind';
-import { PULL_REQUEST_PRESENTATION } from '../pullRequestPresentation';
+import { pullRequestKindOf } from '../utils/pullRequestKind';
+import { PULL_REQUEST_PRESENTATION } from '../utils/pullRequestPresentation';
 import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';
 
@@ -18,7 +18,7 @@ type Decision = NonNullable<PullRequestState['reviewDecision']>;
 
 const DECISION = {
   approved: { label: 'Approved', icon: CheckCheck },
-  changes_requested: { label: 'Changes requested', icon: AlertCircle },
+  changes_requested: { label: 'Changes requested', icon: CircleAlert },
   review_required: { label: 'Review required', icon: CircleDashed },
 } satisfies Record<Decision, { readonly label: string; readonly icon: typeof CheckCheck }>;
 

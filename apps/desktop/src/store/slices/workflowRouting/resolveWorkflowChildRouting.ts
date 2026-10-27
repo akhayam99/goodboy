@@ -2,7 +2,6 @@ import type {
   AgentRole,
   ProviderId,
   SessionId,
-  WorkflowModelPick,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
   WorkflowRunId,

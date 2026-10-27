@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { SessionEventKind } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
 import { RUN_KIND_GLYPH } from '../components/SessionWorkspace/parts/TimelinePane/runKindGlyph';
 import { activityRowConcept, type ActivityRowKind } from './activityRowConcept';
 import { sessionEventGlyph } from './sessionEventPresentation';

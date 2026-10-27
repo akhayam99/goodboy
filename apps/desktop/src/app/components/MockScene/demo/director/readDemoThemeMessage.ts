@@ -1,15 +1,24 @@
 import type { DemoThemeMessage } from './demoProtocol';
-import { isDemoEnvelope } from './isDemoEnvelope';
-import { isDemoTheme } from '../isDemoTheme';
+import { readDemoEnvelope } from './readDemoEnvelope';
+import { readDemoThemeValue } from '../readDemoThemeValue';
 
 type Params = {
   readonly data: unknown;
 };
 
 export const readDemoThemeMessage = ({ data }: Params): DemoThemeMessage | null => {
-  if (!isDemoEnvelope(data) || data.type !== 'theme') {
+  const envelope = readDemoEnvelope({ data });
+  if (envelope === null || envelope.type !== 'theme') {
     return null;
   }
-  const theme: unknown = Reflect.get(data, 'theme');
-  return isDemoTheme(theme) ? { ...data, type: 'theme', theme } : null;
+  const theme = readDemoThemeValue({ value: Reflect.get(envelope.data, 'theme') });
+  return theme === null
+    ? null
+    : {
+        channel: envelope.channel,
+        version: envelope.version,
+        generation: envelope.generation,
+        type: 'theme',
+        theme,
+      };
 };

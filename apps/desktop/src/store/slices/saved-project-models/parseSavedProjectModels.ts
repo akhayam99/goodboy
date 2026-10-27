@@ -8,6 +8,7 @@ import {
   type TaskModelPreferences,
 } from '@goodboy/types';
 import type { SavedProjectModels } from './state';
+import { isRecord } from '@goodboy/types/helpers';
 
 type RawParams = {
   readonly raw: string;
@@ -16,9 +17,6 @@ type RawParams = {
 type MapParams = {
   readonly value: unknown;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isPreference = (value: unknown): value is TaskModelPreference =>
   isRecord(value) &&

@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../features/worktree/worktree', () => ({
+  carryIntoWorktree: vi.fn(async () => []),
+  worktreeSetupProposal: vi.fn(async () => null),
   inspectWorktree: vi.fn(async () => h.inspection),
   sessionDirExists: vi.fn(async () => false),
   worktreeStatus: vi.fn(async () => ({
@@ -50,6 +52,7 @@ vi.mock('../features/worktree/worktree', () => ({
 }));
 vi.mock('@goodboy/db', async () =>
   (await import('../test/dbMock')).createDbMock({
+    getProjectValue: vi.fn(async () => null),
     registerWorktreeRoot: vi.fn(async () => undefined),
     listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
     deleteSessionMount: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>

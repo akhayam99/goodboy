@@ -10,8 +10,8 @@ import { useBranchTab } from '../../../../features/branch/hooks/useBranchTab';
 import { useWorktreeEntryFacts } from '../../../../features/branch/hooks/useWorktreeEntryFacts';
 import { WorktreeEntrySlot } from '../../../../features/branch/components/WorktreeEntrySlot';
 import { WORKTREE_ENTRY_ICONS } from '../../../../features/branch/worktreeEntryIcons';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SelectableRow } from '@goodboy/ui';
+
+import { ICON_SIZE, SelectableRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 
 type Props = {

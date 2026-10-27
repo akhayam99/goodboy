@@ -12,15 +12,22 @@ type Params = {
   readonly workspaceLimitUsd: number | null;
 };
 
-const isUsable = (value: number | null): value is number =>
-  value !== null && Number.isFinite(value) && value > 0;
+type UsableParams = {
+  readonly value: number | null;
+};
+
+const usableUsdOf = ({ value }: UsableParams): number | null =>
+  value !== null && Number.isFinite(value) && value > 0 ? value : null;
 
 export const autoTreeLimitOf = ({ sessionCapUsd, workspaceLimitUsd }: Params): AutoTreeLimit => {
-  const auto: AutoTreeLimit = isUsable(workspaceLimitUsd)
-    ? { usd: workspaceLimitUsd, source: 'workspace' }
-    : { usd: AUTO_DEFAULT_TREE_CAP_USD, source: 'default' };
-  if (isUsable(sessionCapUsd) && sessionCapUsd < auto.usd) {
-    return { usd: sessionCapUsd, source: 'session' };
+  const workspaceUsd = usableUsdOf({ value: workspaceLimitUsd });
+  const sessionUsd = usableUsdOf({ value: sessionCapUsd });
+  const auto: AutoTreeLimit =
+    workspaceUsd === null
+      ? { usd: AUTO_DEFAULT_TREE_CAP_USD, source: 'default' }
+      : { usd: workspaceUsd, source: 'workspace' };
+  if (sessionUsd !== null && sessionUsd < auto.usd) {
+    return { usd: sessionUsd, source: 'session' };
   }
   return auto;
 };

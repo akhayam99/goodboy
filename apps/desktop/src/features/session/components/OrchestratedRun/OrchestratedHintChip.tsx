@@ -1,4 +1,4 @@
-import { StatusDot, Tooltip, inlineMarkdownText } from '@goodboy/ui';
+import { StatusDot, Tooltip, inlineMarkdownText, FOCUS_RING, cn } from '@goodboy/ui';
 import type { OrchestratorHint } from '@goodboy/types';
 
 type Props = {
@@ -7,8 +7,11 @@ type Props = {
   readonly onRemove: () => void;
 };
 
-const REMOVE =
-  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-50';
+const REMOVE = cn(
+  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
+  FOCUS_RING,
+  'disabled:pointer-events-none disabled:opacity-50',
+);
 
 export const OrchestratedHintChip = ({ hint, isReading, onRemove }: Props) => {
   const remove = (

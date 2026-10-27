@@ -15,6 +15,7 @@ export type BitbucketPrWriteParams = {
 
 export type BitbucketPrMergeParams = BitbucketPrWriteParams & {
   readonly strategy?: BitbucketMergeStrategyName;
+  readonly expectedHeadSha?: string | null;
 };
 
 export type BitbucketPrCommentParams = BitbucketPrWriteParams & {

@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { EmptyLine, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, EmptyLine, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
+
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { planSize } from '../../workspaceSettings/plan';
 import type { FlowSource } from '../../workspaceSettings/sources';
@@ -32,7 +32,8 @@ export const FlowSourcePicker = ({ sources, sourceId, onPick }: Props) => {
             aria-checked={isPicked}
             onClick={() => onPick(candidate.id)}
             className={cn(
-              'flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-meta motion-safe:transition-colors hover:bg-hover',
+              FOCUS_RING,
               isPicked && 'bg-selected',
             )}
           >

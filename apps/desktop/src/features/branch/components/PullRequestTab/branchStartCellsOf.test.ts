@@ -81,4 +81,29 @@ describe('branchStartCellsOf', () => {
       tone: 'warning',
     });
   });
+
+  it('never reads Pushed for a diverged branch and counts both sides in warning', () => {
+    const diverged = branchNextStepOf({
+      status: {
+        mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+        upstreamDistance: { kind: 'known', ahead: 2, behind: 1 },
+        inProgress: null,
+      },
+      hasConflictStop: false,
+    });
+
+    const remote = branchStartCellsOf({
+      step: diverged,
+      baseBranch: 'main',
+      conflictCount: 0,
+      localCheck: null,
+      now: NOW,
+    }).find((cell) => cell.id === 'remote');
+
+    expect(remote).toMatchObject({
+      word: 'Diverged',
+      detail: '2 yours and 1 online',
+      tone: 'warning',
+    });
+  });
 });

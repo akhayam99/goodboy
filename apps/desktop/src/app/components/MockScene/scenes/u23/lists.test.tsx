@@ -90,14 +90,16 @@ describe('the u23 list scenes', () => {
     expect(trigger.textContent).not.toMatch(/^Model/);
   });
 
-  it('puts Stop as a word on the tail of a running agent, never in the header', async () => {
+  it('puts Stop as one word on the tail, the composer and the live chip of a running agent', async () => {
     renderScene('agent-running-stop');
 
-    const stop = await screen.findByRole('button', { name: 'Stop' });
-    expect(stop.textContent).toBe('Stop');
-    expect(stop.closest('[data-conversation-tail]')).not.toBeNull();
+    const stops = await screen.findAllByRole('button', { name: 'Stop' });
+    expect(stops.every((stop) => stop.textContent === 'Stop' || stop.textContent === '')).toBe(
+      true,
+    );
+    expect(stops.some((stop) => stop.closest('[data-conversation-tail]') !== null)).toBe(true);
     const row = screen.getByTestId('agent-header-title-row');
-    expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(within(row).getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
     expect(within(row).queryByText('Next turn:')).toBeNull();
   });
 

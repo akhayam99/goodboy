@@ -324,10 +324,10 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
           </div>
         ) : null}
         {status !== undefined ? (
-          <div className="px-3 py-2 text-label text-muted-foreground">{status}</div>
+          <div className="px-3 py-2 text-meta text-muted-foreground">{status}</div>
         ) : null}
         {status === undefined && isEmpty ? (
-          <div className="px-3 py-2 text-label text-faint-foreground">
+          <div className="px-3 py-2 text-meta text-faint-foreground">
             {hasQuery
               ? (noMatchLabel ?? `No ${noun} matches "${trimmedQuery}"`)
               : (emptyLabel ?? `No ${noun}s yet`)}

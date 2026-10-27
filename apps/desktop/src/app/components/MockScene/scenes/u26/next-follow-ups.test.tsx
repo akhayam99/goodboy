@@ -57,9 +57,9 @@ describe('next follow-ups scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
     expect(within(needsYou()).getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
     expect(
-      within(screen.getByRole('region', { name: 'Running' })).getAllByText(
-        'CI fix · payments-api / test · #318',
-      ).length,
+      within(screen.getByRole('region', { name: 'Running' })).getAllByRole('button', {
+        name: 'Open CI fix · payments-api / test · #318',
+      }).length,
     ).toBeGreaterThan(0);
   });
   it('offers Push once, on the Fix row of Needs you, once the fix committed on the branch', () => {

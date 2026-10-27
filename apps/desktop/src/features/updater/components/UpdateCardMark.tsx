@@ -1,5 +1,5 @@
-import { AlertCircle, ArrowUpCircle, Clock } from 'lucide-react';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CircleAlert, ArrowUpCircle, Clock } from 'lucide-react';
+import { ICON_SIZE } from '@goodboy/ui';
 import type { UpdateCardState } from '../updateCardState';
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
 
 export const UpdateCardMark = ({ state, size = ICON_SIZE.control }: Props) => {
   if (state === 'failed') {
-    return <AlertCircle size={size} aria-hidden />;
+    return <CircleAlert size={size} aria-hidden />;
   }
   if (state === 'queued') {
     return <Clock size={size} aria-hidden />;

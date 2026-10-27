@@ -29,7 +29,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { OPEN_WIZARD_EVENT } from '../../../onboarding/onboarding-store';
+import { OPEN_WIZARD_EVENT } from '../../../onboarding/onboardingSettings';
 import type { CreateWorkspaceWithFoldersParams } from '../../../../store/slices/workspaces/createWorkspaceWithFolders';
 import { WorkspaceLinkStudio } from './index';
 

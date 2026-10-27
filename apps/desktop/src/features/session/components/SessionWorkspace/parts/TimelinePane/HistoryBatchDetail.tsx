@@ -20,7 +20,7 @@ export const HistoryBatchDetail = ({ id, rowId, detail, onMeasured }: Props) => 
         {detail.events.map((event) => (
           <li
             key={event.id}
-            className="flex min-w-0 items-baseline overflow-hidden text-label text-muted-foreground"
+            className="flex min-w-0 items-baseline overflow-hidden text-meta text-muted-foreground"
           >
             {sessionEventLabel({ event }).map((segment, index) =>
               segment.kind === 'value' ? (

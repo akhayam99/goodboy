@@ -1,5 +1,5 @@
 import type { PrCheckRun } from '@goodboy/types';
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { countSlotText } from '../../shared/utils/countSlotText';
 import { joinFacts } from '../../shared/utils/joinFacts';

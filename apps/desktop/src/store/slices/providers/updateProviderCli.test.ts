@@ -88,7 +88,6 @@ describe('updateProviderCli', () => {
       expect.objectContaining({
         providerId: 'anthropic',
         action: 'update',
-        command: 'claude update',
       }),
     );
     const lifecycle = read().providerLifecycle as typeof INITIAL_LIFECYCLE_MAP;

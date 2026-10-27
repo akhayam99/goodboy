@@ -1,13 +1,7 @@
 import { MODEL_CATALOGS } from '@goodboy/core';
-import {
-  PROVIDER_IDS,
-  isChatProvider,
-  isEffortLevel,
-  type EffortLevel,
-  type ProviderId,
-  type WorkspaceId,
-} from '@goodboy/types';
-import type { ChatModelChoice } from './defaultChatModel';
+import { isChatProvider, isEffortLevel, type EffortLevel, type WorkspaceId } from '@goodboy/types';
+import { isProviderId } from '@goodboy/types/helpers';
+import type { ChatModelChoice } from '../conversation/defaultChatModel';
 
 export type WorkDrafterChoice = ChatModelChoice & {
   readonly effort?: EffortLevel;
@@ -23,9 +17,6 @@ export const workDrafterSettingKey = ({ workspaceId }: KeyParams): string =>
 type ParseParams = {
   readonly raw: string | null;
 };
-
-const isProviderId = (value: unknown): value is ProviderId =>
-  typeof value === 'string' && PROVIDER_IDS.some((candidate) => candidate === value);
 
 export const parseWorkDrafter = ({ raw }: ParseParams): WorkDrafterChoice | null => {
   if (raw === null || raw === '') {

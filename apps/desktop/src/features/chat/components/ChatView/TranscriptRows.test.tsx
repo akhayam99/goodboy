@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { ReactNode } from 'react';
@@ -43,6 +43,7 @@ const renderRows = (
   rows: ReadonlyArray<TranscriptRow>,
   oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<never>> = new Map(),
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>,
+  newFromKey: string | null = null,
 ) =>
   render(
     <ul>
@@ -55,15 +56,24 @@ const renderRows = (
         onRefreshAuth={() => undefined}
         onOpenDiff={() => undefined}
         isThinking={false}
-        thinkingContext="think"
+        thinkingPhrase="Thinking"
         onRetryRun={retryErrorSpy}
         retryingRunId={null}
         mountSuggestionsByRun={mountSuggestionsByRun}
+        newFromKey={newFromKey}
       />
     </ul>,
   );
 
-afterEach(cleanup);
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 20, 12, 0, 0));
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const RUN_ID = 'run-1' as ProviderRunId;
 
@@ -253,5 +263,33 @@ describe('TranscriptRows', () => {
     expect(sizes).toHaveLength(2);
     expect(sizes[0]).not.toBe(sizes[1]);
     expect(sizes.every((size) => size.startsWith('auto '))).toBe(true);
+  });
+});
+
+describe('the New divider', () => {
+  const rows = [
+    itemRow(userText('user-1', new Date(2026, 4, 15, 9, 0, 0))),
+    itemRow({ kind: 'assistant_text', key: 'reply-1', text: 'Seen reply.' }),
+    itemRow(userText('user-2', new Date(2026, 4, 15, 10, 0, 0))),
+    itemRow({ kind: 'assistant_text', key: 'reply-2', text: 'Unseen reply.' }),
+  ];
+
+  it('draws one hairline with the word New before the first unseen row', () => {
+    renderRows(rows, new Map(), undefined, 'user-2');
+
+    const divider = screen.getByTestId('transcript-new');
+    expect(divider.textContent).toBe('New');
+    expect(divider.querySelector('[role="separator"]')).not.toBeNull();
+    expect(divider.previousElementSibling?.textContent).toBe('assistant_text');
+    expect(divider.nextElementSibling?.textContent).toBe('user_text');
+  });
+
+  it('draws nothing without a boundary, or when the boundary names no row', () => {
+    const first = renderRows(rows);
+    expect(screen.queryByTestId('transcript-new')).toBeNull();
+    first.unmount();
+
+    renderRows(rows, new Map(), undefined, 'user-gone');
+    expect(screen.queryByTestId('transcript-new')).toBeNull();
   });
 });

@@ -14,8 +14,14 @@ vi.mock('../../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
-import type { SessionId } from '@goodboy/types';
+import { anAgent, aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -72,6 +78,13 @@ const TURN_2 = testTurn({
   changes: [{ relativePath: 'interviews/summary.md', change: 'added' }],
 });
 
+const TURN_1 = testTurn({
+  runId: 'run-1',
+  finishedAtMs: Date.now() - 1_800_000,
+  folderPath: NOTES_PATH,
+  changes: [{ relativePath: 'launch-memo.md' }],
+});
+
 type RestoreArgs = Readonly<{
   args: Readonly<{
     runId: string;
@@ -95,6 +108,8 @@ type World = {
 const world: World = { turns: [], restores: [], changedSince: [], failNext: null };
 
 const TEXTS: Readonly<Record<string, string>> = {
+  'run-1 launch-memo.md before': MEMO_BEFORE,
+  'run-1 launch-memo.md after': MEMO_AFTER,
   'run-3 launch-memo.md before': MEMO_BEFORE,
   'run-3 launch-memo.md after': MEMO_AFTER,
   'run-3 faq.md before': 'Pricing is per team.\n',
@@ -198,6 +213,40 @@ describe('ChangesPane', () => {
     const added = memo.querySelector('[data-line-kind="add"]');
     expect(added?.querySelector('[class*="bg-success"]')?.textContent).toContain('5 to 200 people');
     expect(screen.getByText('Saved versions use 18 MB of 1.0 GB')).toBeDefined();
+  });
+
+  it('names the other agent that wrote the file since, in the question that asks', async () => {
+    const auto = brandId<AgentId>({ value: 'agent-auto' });
+    const scout = brandId<AgentId>({ value: 'agent-scout' });
+    const opened = (runId: string) =>
+      ({
+        kind: 'user_text',
+        runId: brandId<ProviderRunId>({ value: runId }),
+        text: 'go',
+        at: brandId<IsoDateTime>({ value: '2026-10-01T10:00:00.000Z' }),
+      }) as const;
+    world.turns = [TURN_3, TURN_1];
+    world.changedSince = ['launch-memo.md'];
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [sessionId]: [
+          anAgent({ id: auto, sessionId, name: 'Auto' }),
+          anAgent({ id: scout, sessionId, name: 'Scout' }),
+        ],
+      },
+      transcripts: { [auto]: [opened('run-1')], [scout]: [opened('run-3')] },
+    });
+    render(<ChangesPane sessionId={sessionId} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'launch-memo.md, turn 1' }));
+    fireEvent.click(
+      await (
+        await detail({ name: 'launch-memo.md' })
+      ).findByRole('button', { name: /Restore to before turn 1/ }),
+    );
+
+    await screen.findByText('launch-memo.md changed after this turn.');
+    screen.getByText(/Scout wrote there after turn 1/);
   });
 
   it('asks before restoring over newer text, restores anyway, then undoes the restore', async () => {

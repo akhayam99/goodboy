@@ -818,7 +818,10 @@ describe('spawnAgent runs what every launch point shows', () => {
     );
 
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'No model is allowed for this agent' }),
+      expect.objectContaining({
+        title: 'No model is allowed for this agent',
+        recovery: { action: { kind: 'open-settings', scope: 'providers' } },
+      }),
     );
     expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
   });

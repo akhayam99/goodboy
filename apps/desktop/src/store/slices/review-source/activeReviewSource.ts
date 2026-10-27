@@ -1,6 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { AppState } from '../../types';
+import { branchGithubOf } from '../github/branchGithubOf';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { openBitbucketPullRequestsOf, reviewSourceEntriesOf } from './reviewSourceEntries';
 import type { ActiveReviewSource, ReviewSourceEntry } from './types';
@@ -56,13 +57,17 @@ export const selectedReviewEntryOf = ({
   );
 };
 
-export const activeReviewSourceOf = ({ state, sessionId }: Params): ActiveReviewSource | null => {
-  const entry = selectedReviewEntryOf({ state, sessionId });
+export const activeReviewSourceOf = ({
+  state,
+  sessionId,
+  mountId = null,
+}: SelectedParams): ActiveReviewSource | null => {
+  const entry = selectedReviewEntryOf({ state, sessionId, mountId });
   if (entry === null) {
     return null;
   }
   if (entry.kind === 'github' && entry.number !== null) {
-    const github = state.sessionGithub?.[sessionId] ?? null;
+    const github = branchGithubOf({ state, sessionId, mountId: entry.mountId });
     const pr = github?.pr ?? null;
     const isDisplayed = pr !== null && pr.number === entry.number;
     return {
@@ -83,7 +88,10 @@ export const activeReviewSourceOf = ({ state, sessionId }: Params): ActiveReview
     };
   }
   if (entry.kind === 'gitlab' && entry.number !== null) {
-    const mr = state.sessionGitlabMr?.[sessionId]?.mr ?? null;
+    const mr =
+      entry.mountId === null
+        ? (state.sessionGitlabMr?.[sessionId]?.mr ?? null)
+        : (state.mountGitlabMr?.[entry.mountId]?.mr ?? null);
     const threads =
       entry.url === null ? undefined : state.reviewSourceThreads?.[sessionId]?.[entry.url];
     return {

@@ -206,6 +206,25 @@ describe('Impact studio spend scopes', () => {
     expect(screen.getByLabelText('Monthly limit')).toBeDefined();
   });
 
+  it('stacks the crumb trail above a record so the panel keeps the whole width', () => {
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
+    const view = document.querySelector<HTMLElement>('[data-record-view]');
+    if (view === null) {
+      throw new Error('the provider record has no view container');
+    }
+    within(view).getByLabelText('Monthly limit');
+  });
+
+  it('puts the crumb trail in its own row above the panel', () => {
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
+
+    const view = document.querySelector<HTMLElement>('[data-record-view]');
+    const row = view?.firstElementChild ?? null;
+    expect(row?.textContent).toContain('Spend');
+    expect(row?.contains(screen.getByLabelText('Monthly limit'))).toBe(false);
+  });
+
   it('opens the session panel when the studio is asked for a session scope', () => {
     renderStudio({ initialScope: { kind: 'session', sessionId: SESSION_ID } });
 
@@ -370,7 +389,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'codex' } });
 
     expect(
-      screen.getByText('No price for 1 of 3 turns, so a limit cannot include them'),
+      screen.getByText("No price for 1 of 3 turns, so a limit can't include them"),
     ).toBeDefined();
     expect(screen.getAllByText('unpriced')).toHaveLength(1);
     expect(screen.queryByText('approx')).toBeNull();
@@ -426,7 +445,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'opencode' } });
 
     expect(
-      screen.getByText('No price for 2 of 3 turns, so a limit cannot include them'),
+      screen.getByText("No price for 2 of 3 turns, so a limit can't include them"),
     ).toBeDefined();
   });
 

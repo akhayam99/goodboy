@@ -1,9 +1,10 @@
 import { Button, Eyebrow } from '@goodboy/ui';
-import { PROFILE_SUGGESTION, finish, resumeSetup } from '../onboarding-store';
+import { PROFILE_SUGGESTION, finish, resumeSetup } from '../onboardingSettings';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { ChecklistBody } from './ChecklistBody';
 import { CompletedBody } from './CompletedBody';
 import { StepRow } from './StepRow';
+import { openSettings } from '../../settings/openSettings';
 
 type Props = {
   readonly progress: OnboardingProgress;
@@ -15,12 +16,7 @@ type LeaveParams = {
   readonly action: () => void;
 };
 
-const openProfile = () =>
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-settings', {
-      detail: { scope: 'workspace', section: 'profile' },
-    }),
-  );
+const openProfile = () => openSettings({ scope: 'workspace', section: 'profile' });
 
 export const SetupSection = ({ progress, isMainWindow, onLeave }: Props) => {
   const { setup } = progress;

@@ -1,4 +1,4 @@
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, FormActions, Input, SegmentedTabs } from '@goodboy/ui';
@@ -114,7 +114,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
               event.preventDefault();
               void create();
             }}
-            className="h-8 w-full text-label"
+            className="h-8 w-full text-meta"
           />
           <span className="text-meta text-muted-foreground">
             {`Leave it empty to use ${preview ?? 'an automatic name'}.`}

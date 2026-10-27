@@ -23,6 +23,8 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
 }));
 
 import { TerminalStudio } from './index';
+import { forgetTerminalCommand, trackTerminalInput } from '../../commandTracker';
+import { storySpies } from '../../../../store/storyHarness';
 import { brandedId } from '../../../../features/history/testing/brandedId';
 
 const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
@@ -150,5 +152,74 @@ describe('a terminal that fails to open', () => {
     const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
     expect(tabs).toHaveLength(1);
     expect(tabs[0]?.id).not.toBe(TAB_ID);
+  });
+});
+
+describe('an exited terminal that ran a command', () => {
+  const writesOf = () =>
+    storySpies.tauriInvoke.mock.calls.filter(([name]) => String(name) === 'terminal_write');
+
+  beforeEach(() => {
+    stubStoryInvoke({
+      terminal_open: null,
+      terminal_write: null,
+      terminal_list_live: [],
+      terminal_close: null,
+      db_execute: { rowsAffected: 0 },
+      db_select: [],
+      monitor_snapshot: { listeners: [], processes: [], takenAt: 0, isPlatformSupported: true },
+      process_ledger_list: [],
+      monitor_watched_ports: [],
+    });
+    store.setState({
+      terminalTabs: { [SESSION_ID]: [{ ...TAB, status: 'exited' }] },
+    });
+  });
+
+  afterEach(() => {
+    forgetTerminalCommand({ terminalId: TAB_ID });
+  });
+
+  it('runs the same command in the fresh terminal when Restart is pressed', async () => {
+    trackTerminalInput({ terminalId: TAB_ID, data: 'pnpm test\r' });
+    render(
+      <TerminalStudio
+        workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
+        sessionId={SESSION_ID}
+        onClose={() => undefined}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restart payments-api' }));
+
+    await waitFor(() => expect(writesOf()).toHaveLength(1));
+    expect(writesOf()).toEqual([
+      [
+        'terminal_write',
+        { sessionId: expect.not.stringMatching(TAB_ID), data: btoa('pnpm test\r') },
+      ],
+    ]);
+  });
+
+  it('opens an empty prompt when nothing was typed in the exited terminal', async () => {
+    render(
+      <TerminalStudio
+        workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
+        sessionId={SESSION_ID}
+        onClose={() => undefined}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restart payments-api' }));
+
+    await waitFor(() =>
+      expect(store.getState().terminalTabs[SESSION_ID]?.[0]?.id).not.toBe(TAB_ID),
+    );
+    await waitFor(() =>
+      expect(storySpies.tauriInvoke).toHaveBeenCalledWith('terminal_open', expect.anything()),
+    );
+    expect(writesOf()).toHaveLength(0);
   });
 });

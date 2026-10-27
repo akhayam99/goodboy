@@ -158,7 +158,7 @@ describe('StageBoard selection bar', () => {
       const signal = card?.querySelector<HTMLElement>('[data-slot="card-signal"]') ?? null;
       expect(
         signal === null ? null : within(signal).getByRole('img').getAttribute('aria-label'),
-      ).toBe('1 open question');
+      ).toBe('1 question for you');
     }
   });
 

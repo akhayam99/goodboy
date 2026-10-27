@@ -1,8 +1,7 @@
 import type { PointerEvent } from 'react';
 import { Plus } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { DiffCommentSide } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly className?: string;
@@ -64,7 +63,9 @@ export const LineGutter = ({
         }}
         className={cn(
           base,
-          'block h-full w-full cursor-pointer transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
+          'block h-full w-full cursor-pointer transition-colors hover:text-foreground',
+          FOCUS_RING,
+          'focus-visible:ring-inset',
           isSelected && 'text-primary',
         )}
       >

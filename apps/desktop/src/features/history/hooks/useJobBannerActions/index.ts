@@ -1,19 +1,19 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { useShallow } from 'zustand/react/shallow';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
-import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
+import { rebaseStopVerbs } from '../../../../store/slices/history/rebaseStopVerbs';
 import { rebasePlanArgs } from '../../../../store/slices/history/rebaseBranch';
 import {
   selectMountBaseBranch,
   selectMountForPath,
+  selectWritableMounts,
 } from '../../../../store/slices/project-mounts/selectors';
 import { usePendingAction, type PendingActionRun } from '../../../../shared/hooks/usePendingAction';
 import { ReportedError } from '../../../../store/slices/notifications/reportedError';
-import { refreshWorktreeStatuses } from '../../../../store/slices/worktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../../../../store/runtime/worktreeStatuses/cache';
 import { worktreeAbortRebase, worktreeContinueRebase } from '../../../worktree/worktree';
 import { discardHistoryCopy, readRebasePlan } from '../../historyEngine';
 
@@ -30,7 +30,12 @@ type RetryWithNoteParams = {
 export type JobBannerFailure = {
   readonly key: string;
   readonly message: string;
+  readonly mountName: string;
 };
+
+const NO_FAILURES: Readonly<Record<string, JobBannerFailure>> = {};
+
+const NO_MOUNT = 'none';
 
 export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params) => {
   const mount = useAppStore(
@@ -45,30 +50,64 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
   );
   const pending = usePendingAction({ sessionId });
   const mountId = mount?.mountId ?? null;
-  const [failure, setFailure] = useState<JobBannerFailure | null>(null);
-  const failedRun = useRef<PendingActionRun | null>(null);
-  const attempt = (params: Parameters<typeof pending.run>[0]): void => {
-    void pending.run(params);
+  const mountName = mount?.mountName ?? '';
+  const verbs = useMemo(
+    () =>
+      mountId === null ? null : rebaseStopVerbs({ get: useAppStore.getState, sessionId, mountId }),
+    [mountId, sessionId],
+  );
+  const owner = mountId ?? NO_MOUNT;
+  const scope = `${owner}:`;
+  const [failures, setFailures] = useState<Readonly<Record<string, JobBannerFailure>>>(NO_FAILURES);
+  const failedRuns = useRef(new Map<string, PendingActionRun>());
+  const failure = failures[owner] ?? null;
+  const hasManyMounts = useAppStore(
+    (s) => selectWritableMounts({ state: s, sessionId }).length > 1,
+  );
+  const failureLine =
+    failure === null
+      ? null
+      : hasManyMounts
+        ? `${failure.mountName}: ${failure.message}`
+        : failure.message;
+  const pendingKeys = useMemo<ReadonlySet<string>>(
+    () =>
+      new Set(
+        Array.from(pending.pendingKeys)
+          .filter((key) => key.startsWith(scope))
+          .map((key) => key.slice(scope.length)),
+      ),
+    [pending.pendingKeys, scope],
+  );
+  const attempt = (params: PendingActionRun): void => {
+    void pending.run({ ...params, key: `${scope}${params.key}` });
   };
   const runInline = useCallback(
     (params: PendingActionRun): void => {
-      setFailure(null);
-      failedRun.current = null;
+      setFailures((current) => {
+        const { [owner]: _cleared, ...rest } = current;
+        return rest;
+      });
+      failedRuns.current.delete(owner);
       void pending.run({
         ...params,
+        key: `${scope}${params.key}`,
         task: async () => {
           try {
             await params.task();
           } catch (error) {
             const message = formatError(error);
-            failedRun.current = params;
-            setFailure({ key: params.key, message });
+            failedRuns.current.set(owner, params);
+            setFailures((current) => ({
+              ...current,
+              [owner]: { key: params.key, message, mountName },
+            }));
             throw new ReportedError(message);
           }
         },
       });
     },
-    [pending],
+    [mountName, owner, pending, scope],
   );
   const refreshHere = async (): Promise<void> => {
     if (worktreePath !== null) {
@@ -77,55 +116,43 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
   };
   return {
     mountId,
-    pendingKeys: pending.pendingKeys,
+    pendingKeys,
     failure,
+    failureLine,
     retryFailed: () => {
-      const params = failedRun.current;
-      if (params !== null) {
+      const params = failedRuns.current.get(owner);
+      if (params !== undefined) {
         runInline(params);
       }
     },
     resolveWithAuto: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'resolve-auto',
         failureTitle: "Couldn't start Auto.",
-        task: async () => {
-          const state = useAppStore.getState();
-          const capture = captureStartHint({
-            state,
-            sessionId,
-            scope: START_HINT_SCOPES.rebase({ mountId }),
-          });
-          await state.resolveRebaseWithAuto({
-            sessionId,
-            mountIds: [mountId],
-            hint: capture.text,
-            onAccepted: () => useAppStore.getState().settleStartHint({ capture }),
-          });
-        },
+        task: verbs.resolveWithAuto,
       });
     },
     resolveMyself: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'resolve-myself',
         failureTitle: "Couldn't start the rebase in the worktree.",
-        task: () => useAppStore.getState().resolveRebaseMyself({ sessionId, mountId }),
+        task: verbs.resolveMyself,
       });
     },
     keep: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'keep',
         failureTitle: "Couldn't keep the branch as it was.",
-        task: () => useAppStore.getState().keepRebaseStop({ sessionId, mountId }),
+        task: verbs.keep,
       });
     },
     continueRebase: () => {
@@ -155,35 +182,23 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       });
     },
     bringIn: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'bring-in',
         failureTitle: "Couldn't bring the online commits in.",
-        task: () => useAppStore.getState().bringOriginInAndPush({ sessionId, mountId }),
+        task: verbs.bringIn,
       });
     },
     undoRebase: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'undo-rebase',
         failureTitle: "Couldn't undo the rebase.",
-        task: async () => {
-          const state = useAppStore.getState();
-          const run = state.adoptRebaseStop({ sessionId, mountId });
-          if (run === null || run.backupRef === null) {
-            return;
-          }
-          await state.restoreHistory({
-            sessionId,
-            mountId,
-            backupRef: run.backupRef,
-            shouldPush: false,
-          });
-        },
+        task: verbs.undoRebase,
       });
     },
     stashAndMove: () => {
@@ -223,62 +238,33 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       void copyText({ text: `git stash apply ${run.savedStash.sha}` });
     },
     retryRebase: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'retry-rebase',
         failureTitle: "Couldn't retry the rebase.",
-        task: () => useAppStore.getState().rebaseBranch({ sessionId, mountId }),
+        task: verbs.retryRebase,
       });
     },
     fixPush: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'fix-push',
         failureTitle: "Couldn't start the agent.",
-        task: () => {
-          const state = useAppStore.getState();
-          state.adoptRebaseStop({ sessionId, mountId });
-          const capture = captureStartHint({
-            state,
-            sessionId,
-            scope: START_HINT_SCOPES.pushFix({ mountId }),
-          });
-          return state.fixPushWithAgent({
-            sessionId,
-            mountId,
-            hint: capture.text,
-            onAccepted: () => state.settleStartHint({ capture }),
-          });
-        },
+        task: verbs.fixPush,
       });
     },
     retryPush: () => {
-      if (mountId === null) {
+      if (verbs === null) {
         return;
       }
       runInline({
         key: 'retry-push',
         failureTitle: "Couldn't retry the push.",
-        task: async () => {
-          const state = useAppStore.getState();
-          const run = state.historyRuns[mountId];
-          if (run === undefined) {
-            return;
-          }
-          await state.pushHistoryRewrite({
-            sessionId,
-            mountId,
-            origin: run.origin,
-            planId: run.planId,
-            expectedRemoteSha: run.remoteSha,
-            identity: run.identity,
-          });
-          await state.loadHistoryDraft({ sessionId, mountId });
-        },
+        task: verbs.retryPush,
       });
     },
     retryWithNote: ({ note }: RetryWithNoteParams) => {

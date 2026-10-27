@@ -11,10 +11,13 @@ import {
 import {
   SETTING_CHAT_IMAGES,
   SETTING_CONTEXT_LEARNINGS,
-  SETTING_CONTEXT_ROLE_MAP,
   SETTING_EDITOR_BINARY,
+  SETTING_HIDDEN_MODELS,
+  SETTING_LAST_SESSION_ID,
+  SETTING_LAST_WORKSPACE_ID,
+  SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
-import { isLearningsOn, isRoleMapOn } from '../../../features/context/contextSwitches';
+import { isLearningsOn } from '../../../features/context/contextSwitches';
 import { isChatImagesOn } from '../chats/isChatImagesOn';
 import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
 import { NewerDatabaseError } from '../../../shared/lib/newerDatabase';
@@ -45,7 +48,7 @@ vi.mock('../../../shared/lib/db', async () =>
 vi.mock('../../../shared/lib/dbBoot', async () =>
   (await import('../../storyHarness')).dbBootModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -439,29 +442,46 @@ describe('store contract', () => {
       expect(storySpies.listNotifications).toHaveBeenCalled();
     });
 
-    it('keeps the context and chat image switches off after a restart when they were turned off', async () => {
+    it('reads every boot setting in one call', async () => {
       const store = useAppStore;
-      const off = new Set<string>([
+      const bootKeys = [
+        SETTING_EDITOR_BINARY,
+        SETTING_LAST_WORKSPACE_ID,
+        SETTING_LAST_SESSION_ID,
+        SETTING_REOPEN_LAST,
+        SETTING_HIDDEN_MODELS,
         SETTING_CONTEXT_LEARNINGS,
-        SETTING_CONTEXT_ROLE_MAP,
         SETTING_CHAT_IMAGES,
-      ]);
+      ];
+      storySpies.getSettings.mockClear();
+
+      await store.getState().hydrate();
+
+      expect(storySpies.getSettings).toHaveBeenCalledTimes(1);
+      expect(storySpies.getSettings).toHaveBeenCalledWith({
+        db: expect.anything(),
+        keys: bootKeys,
+      });
+    });
+
+    it('keeps the learnings and chat image switches off after a restart when they were turned off', async () => {
+      const store = useAppStore;
+      const off = new Set<string>([SETTING_CONTEXT_LEARNINGS, SETTING_CHAT_IMAGES]);
       storySpies.getSetting.mockImplementation(async (_db: unknown, key: string) =>
         off.has(key) ? 'false' : null,
       );
       let switchesAtWorkspaces: ReadonlyArray<boolean> = [];
       storySpies.listWorkspaces.mockImplementationOnce(async () => {
         const settings = store.getState().settings;
-        switchesAtWorkspaces = [isLearningsOn({ settings }), isRoleMapOn({ settings })];
+        switchesAtWorkspaces = [isLearningsOn({ settings })];
         return [];
       });
 
       await store.getState().hydrate();
 
       const state = store.getState();
-      expect(switchesAtWorkspaces).toEqual([false, false]);
+      expect(switchesAtWorkspaces).toEqual([false]);
       expect(isLearningsOn({ settings: state.settings })).toBe(false);
-      expect(isRoleMapOn({ settings: state.settings })).toBe(false);
       expect(isChatImagesOn({ state })).toBe(false);
     });
 

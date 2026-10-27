@@ -96,6 +96,8 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
       branch,
       expectedSha: sha,
       alsoOrigin,
+      workspaceId: project.workspaceId,
+      projectId: project.id,
       ...(mergedHeadSha === null ? {} : { originLeaseSha: mergedHeadSha }),
     }).catch(
       (error: unknown) => asBranchCleanupError(error) ?? { kind: 'git' as const, message: '' },

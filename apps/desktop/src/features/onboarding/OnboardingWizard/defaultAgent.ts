@@ -1,12 +1,10 @@
 import { getSetting, setSetting } from '@goodboy/db';
-import { PROVIDER_IDS, type ProviderId, type WorkspaceId } from '@goodboy/types';
+import { type ProviderId, type WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../../store';
+import { isProviderId } from '@goodboy/types/helpers';
 
 const SETTING_DEFAULT_AGENT = 'agents.default';
-
-const isProviderId = (value: string): value is ProviderId =>
-  PROVIDER_IDS.some((id) => id === value);
 
 export const loadDefaultAgent = async (): Promise<ProviderId | null> => {
   const raw = await getSetting(tauriDatabase, SETTING_DEFAULT_AGENT);

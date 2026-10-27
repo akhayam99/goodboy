@@ -21,6 +21,7 @@ import type { ConversationSource } from '../../../../shared/components/Conversat
 import { LINEAR_CAPABILITIES, linearConversation } from '../linearConversation';
 import { useLinearIssueComments } from '../useLinearIssueComments';
 import { useLinearIssueDescription } from '../useLinearIssueDescription';
+import { hostErrorRecoveryOf } from '../../../../store/slices/notifications/hostErrorRecovery';
 
 type Props = {
   readonly issue: LinearIssue;
@@ -60,7 +61,12 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
               currentName={state.name}
               onPick={(stateId) =>
                 void change(stateId).catch((error: unknown) =>
-                  reportError({ title: "Couldn't change the status", error, workspaceId }),
+                  reportError({
+                    title: "Couldn't change the status",
+                    error,
+                    workspaceId,
+                    recovery: hostErrorRecoveryOf({ error, tool: 'linear' }),
+                  }),
                 )
               }
               onClose={close}
@@ -79,7 +85,12 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
               currentName={assignee?.name ?? null}
               onPick={(assigneeId) =>
                 void changeAssignee(assigneeId).catch((error: unknown) =>
-                  reportError({ title: "Couldn't change the assignee", error, workspaceId }),
+                  reportError({
+                    title: "Couldn't change the assignee",
+                    error,
+                    workspaceId,
+                    recovery: hostErrorRecoveryOf({ error, tool: 'linear' }),
+                  }),
                 )
               }
               onClose={close}

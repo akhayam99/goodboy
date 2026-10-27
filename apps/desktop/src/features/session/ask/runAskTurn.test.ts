@@ -20,7 +20,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: listenMock }));
 
-import { resolveChatModel } from '../../workspace-chat/resolveChatModel';
+import { resolveChatModel } from '../../conversation/resolveChatModel';
 import { runAskTurn } from './runAskTurn';
 
 const RUN = 'run-ask' as ProviderRunId;

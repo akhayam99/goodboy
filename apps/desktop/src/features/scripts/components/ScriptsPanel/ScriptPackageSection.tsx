@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevronRight, Package } from 'lucide-react';
-import { StatusDot, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, StatusDot, FOCUS_RING } from '@goodboy/ui';
+
 import type { ScriptPackageSection as Section } from '../../groupScriptsByPackage';
 
 type Props = {
@@ -24,7 +24,7 @@ export const ScriptPackageSection = ({
       type="button"
       aria-expanded={!isCollapsed}
       onClick={onToggle}
-      className="flex h-7 min-w-0 items-center gap-2 rounded-sm px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+      className={cn('flex h-7 min-w-0 items-center gap-2 rounded-sm px-2 text-left', FOCUS_RING)}
     >
       <ChevronRight
         size={ICON_SIZE.row}

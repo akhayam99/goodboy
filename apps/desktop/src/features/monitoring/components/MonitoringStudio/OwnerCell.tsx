@@ -1,4 +1,4 @@
-import { Tooltip, TruncatedText, cn } from '@goodboy/ui';
+import { Tooltip, TruncatedText, cn, FOCUS_RING } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -43,7 +43,10 @@ export const OwnerCell = ({ row }: Props) => {
         <button
           type="button"
           aria-label={`Open session: ${presentation.label}`}
-          className="relative z-10 flex min-w-0 max-w-full text-left text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className={cn(
+            'relative z-10 flex min-w-0 max-w-full text-left text-muted-foreground hover:text-foreground',
+            FOCUS_RING,
+          )}
           onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
         >
           {text}

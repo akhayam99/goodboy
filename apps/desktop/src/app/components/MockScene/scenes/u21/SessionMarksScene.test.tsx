@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -172,7 +172,48 @@ describe('the session marks scene', () => {
     expect(unseen.map((node) => node.getAttribute('aria-label'))).toEqual(['New reply, unseen']);
   });
 
-  it('keeps red for the error, a push that failed and failing checks only', async () => {
+  it('clears the unread reply with Mark all as read in the Sessions options menu, then turns the button off', async () => {
+    render(
+      <ToastProvider>
+        <SessionMarksScene />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(rowOf('Review the Acme import mapper')).toBeDefined());
+    const unseenCount = () =>
+      screen
+        .getAllByRole('img', { hidden: true })
+        .filter((node) => (node.getAttribute('aria-label') ?? '').endsWith(', unseen')).length;
+    expect(unseenCount()).toBe(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
+    const menu = screen.getByRole('dialog', { name: 'Filter sessions' });
+    await act(async () => {
+      fireEvent.click(within(menu).getByRole('button', { name: 'Mark all as read' }));
+    });
+
+    expect(unseenCount()).toBe(0);
+    expect(
+      within(menu).getByRole('button', { name: 'Mark all as read' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('counts the sessions that need you on the Sessions door and in the top bar, red as one is broken', async () => {
+    render(
+      <ToastProvider>
+        <SessionMarksScene />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(rowOf('Billing export fails on large files')).toBeDefined());
+
+    const pill = document.querySelector('[data-column-door="board"] [data-door-pill]');
+    expect(pill?.textContent).toBe('9+');
+    expect(pill?.getAttribute('data-door-signal')).toBe('danger');
+    const segment = document.querySelector('[data-top-bar] [data-now-needs-you]');
+    expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 need you/);
+    expect(segment?.querySelector('.bg-danger')).not.toBeNull();
+  });
+
+  it('keeps red for the error, a stopped run, a push that failed and failing checks only', async () => {
     render(
       <ToastProvider>
         <SessionMarksScene />
@@ -189,6 +230,7 @@ describe('the session marks scene', () => {
         'Send the Harborline ledger fixes',
         'Ship the refund webhook',
         'Stop notify-relay retries on a 409',
+        'Sync the Northwind ledger nightly',
       ].sort(),
     );
   });

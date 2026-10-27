@@ -2,7 +2,7 @@ import { StatusDot, type ListboxOption } from '@goodboy/ui';
 import type { Session, SessionId, SessionProjectMount, SessionStage } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { STAGE_TONE, SESSION_STAGE_META } from '../../../session/session-stage';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 
 type Params = {
   readonly sessions: ReadonlyArray<Session>;

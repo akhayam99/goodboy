@@ -10,6 +10,7 @@ import {
 import { ChevronRight, List } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { Divider, Eyebrow, ScrollFade, EmptyState } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
@@ -27,6 +28,7 @@ import { askInChat } from '../../../workspace-chat/askInChat';
 import { useAppStore } from '../../../../store';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
+import { useListboxCursor } from '../../../../shared/hooks/useListboxCursor';
 import { useNeedsYouEntries } from '../../hooks/useNeedsYouEntries';
 import type { SessionPalette } from '../../hooks/useSessionPalette';
 import { runObjectAction } from '../../../actions/registry';
@@ -68,8 +70,6 @@ type Props = PaletteModeProps & {
   readonly palette: SessionPalette | null;
 };
 
-const DEFAULT_PLACEHOLDER = 'Search or ask';
-
 const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
 
 const ALL_ACTIONS_KEY = 'level:session-actions';
@@ -110,7 +110,6 @@ export const CommandsBody = ({
   const [level, setLevel] = useState<Level | null>(null);
   const [filter, setFilter] = useState('');
   const [confirming, setConfirming] = useState<PaletteEntry | null>(null);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const scopeInfo = useScopeInfo(scope);
   const scopeTarget: ObjectTarget | null =
@@ -424,31 +423,23 @@ export const CommandsBody = ({
     [scope?.kind, level, query, builtSections],
   );
   const rows = useMemo(() => flattenRows(sections), [sections]);
-  const activeKey =
-    selectedKey ?? (level === null ? defaultCommandKey({ query, rows, askKeys: ASK_KEYS }) : null);
-  const selectedIndex = Math.max(
-    0,
-    rows.findIndex((row) => row.item.key === activeKey),
-  );
-  const selected: CommandRow | null = rows[selectedIndex] ?? null;
-  const optionId = (key: string): string => `${listboxId}-${key}`;
+  const rowKeys = useMemo(() => rows.map((row) => row.item.key), [rows]);
+  const cursor = useListboxCursor({
+    ids: rowKeys,
+    listRef,
+    listboxId,
+    defaultId: level === null ? defaultCommandKey({ query, rows, askKeys: ASK_KEYS }) : null,
+  });
+  const { optionId, select: selectRow } = cursor;
+  const selected: CommandRow | null = rows[cursor.selectedIndex] ?? null;
 
   useEffect(() => {
-    setSelectedKey(null);
-  }, [query, filter, level]);
+    selectRow({ id: null });
+  }, [query, filter, level, selectRow]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [level, confirming]);
-
-  useEffect(() => {
-    if (selected === null) {
-      return;
-    }
-    listRef.current
-      ?.querySelector(`[data-key="${CSS.escape(selected.item.key)}"]`)
-      ?.scrollIntoView?.({ block: 'nearest' });
-  }, [selected]);
 
   const subject = level?.title ?? scopeInfo?.title ?? null;
   const layout = paletteBodyLayoutOf({
@@ -531,13 +522,6 @@ export const CommandsBody = ({
     setFilter('');
   };
 
-  const move = (delta: number): void => {
-    const next = rows[Math.min(Math.max(selectedIndex + delta, 0), rows.length - 1)];
-    if (next !== undefined) {
-      setSelectedKey(next.item.key);
-    }
-  };
-
   const altOf = (entry: PaletteEntry): PaletteEntry | null => {
     const altId = confirmOf(entry)?.altActionId;
     if (altId === undefined) {
@@ -552,11 +536,11 @@ export const CommandsBody = ({
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        move(1);
+        cursor.move({ delta: 1 });
         return;
       case 'ArrowUp':
         event.preventDefault();
-        move(-1);
+        cursor.move({ delta: -1 });
         return;
       case 'Enter':
         event.preventDefault();
@@ -638,7 +622,7 @@ export const CommandsBody = ({
       ? 'Filter actions…'
       : prefix !== null
         ? `Search ${prefix.hint}…`
-        : DEFAULT_PLACEHOLDER;
+        : NAMES.searchOrRun;
   const chip =
     level !== null ? (
       <ScopeChip icon={ChevronRight} label={level.title} hint="← or Backspace goes back" />
@@ -656,7 +640,7 @@ export const CommandsBody = ({
         placeholder={placeholder}
         ariaLabel="Command palette search"
         listboxId={listboxId}
-        activeDescendant={selected === null ? undefined : optionId(selected.item.key)}
+        activeDescendant={selected === null ? undefined : optionId({ id: selected.item.key })}
         chip={chip}
         modeSwitch={modeSwitch}
         onChange={level === null ? onQueryChange : setFilter}
@@ -719,9 +703,9 @@ export const CommandsBody = ({
                       <CommandRowView
                         key={`${sectionIndex}:${row.item.key}`}
                         row={row}
-                        id={optionId(row.item.key)}
+                        id={optionId({ id: row.item.key })}
                         isSelected={row.item.key === selected?.item.key}
-                        onHover={() => setSelectedKey(row.item.key)}
+                        onHover={() => selectRow({ id: row.item.key })}
                         onRun={() => activate(row.item)}
                       />
                     )),

@@ -9,8 +9,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readRepoFile = ({ path }) => readFileSync(resolve(ROOT, path), 'utf8');
 
 const SKIPPED_STEPS = {
-  audit: 'network advisory lookup that never blocks',
-  'audit warning': 'prints a CI annotation',
+  audit: 'network advisory lookup, only on a pull request that changes the lockfile',
+  'lockfile changed': 'decides whether the audit runs',
   'detect rust changes': 'the gate decides with git diff against the base',
   'toolchain pin': 'compares workflow files, not a code check',
   'stub frontend dist': 'ensure_frontend_dist in scripts/gate.sh',

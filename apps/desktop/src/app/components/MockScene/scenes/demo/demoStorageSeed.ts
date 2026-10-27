@@ -59,7 +59,11 @@ const STORY_FOLDER_SPECS: ReadonlyArray<FolderSpec> = [
   },
 ];
 
-const rootOf = (projectId: ProjectId): string =>
+type RootParams = {
+  readonly projectId: ProjectId;
+};
+
+const rootOf = ({ projectId }: RootParams): string =>
   SETTINGS_PROJECTS.find((project) => project.id === projectId)?.rootPath ?? '';
 
 type FolderParams = {
@@ -69,7 +73,7 @@ type FolderParams = {
 };
 
 const folderOf = ({ spec, index, nowMs }: FolderParams): StorageFolder => {
-  const repoRoot = rootOf(spec.projectId);
+  const repoRoot = rootOf({ projectId: spec.projectId });
   const path = `${repoRoot}/.goodboy/worktrees/${spec.slug}`;
   const activityAt = nowMs - spec.days * DAY_MS;
   return {
@@ -97,6 +101,7 @@ const folderOf = ({ spec, index, nowMs }: FolderParams): StorageFolder => {
       changedFiles: 0,
       changedSample: null,
       reasons: [],
+      verdict: 'safe',
     },
     keptAt: null,
     keptUntil: null,

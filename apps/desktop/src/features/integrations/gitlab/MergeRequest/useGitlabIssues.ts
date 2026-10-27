@@ -7,17 +7,15 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { issueBranchMatches, issueBranchSlug } from '../../../../shared/utils/issueBranchSlug';
+import { issueBranchMatches } from '../../../../shared/utils/issueBranchSlug';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
-import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
-import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
+import { useLatestFetch } from '../../hooks/useLatestFetch';
+import { useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { groupIssuesBy, type IssueGroup } from '../../shared/groupIssuesBy';
+import { sessionByExternalId } from '../../shared/sessionByExternalId';
 
 const GITLAB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['gitlab'];
-
-export const gitlabBranchSlug = (issue: GitlabIssue): string => {
-  return issueBranchSlug({ prefix: String(issue.iid), title: issue.title });
-};
 
 export const projectPathFromIssue = (issue: GitlabIssue): string => {
   const full = issue.references?.full ?? '';
@@ -26,75 +24,54 @@ export const projectPathFromIssue = (issue: GitlabIssue): string => {
   return path || 'issues';
 };
 
-type GitlabIssueRow = {
-  readonly issue: GitlabIssue;
-  readonly sessionId: SessionId | null;
+export type GitlabIssueGroup = IssueGroup<string, GitlabIssue>;
+
+type GroupParams = {
+  readonly issues: ReadonlyArray<GitlabIssue>;
+  readonly sessionIdByExternalId: ReadonlyMap<string, SessionId>;
 };
 
-export type GitlabIssueGroup = {
-  readonly key: string;
-  readonly label: string;
-  readonly rows: ReadonlyArray<GitlabIssueRow>;
+export const buildIssueGroups = ({
+  issues,
+  sessionIdByExternalId,
+}: GroupParams): ReadonlyArray<GitlabIssueGroup> =>
+  groupIssuesBy({
+    issues,
+    sessionIdByExternalId,
+    externalIdOf: ({ issue }) => String(issue.id),
+    keyOf: ({ issue }) => projectPathFromIssue(issue),
+    labelOf: ({ key }) => key,
+    updatedAtOf: ({ issue }) => issue.updatedAt,
+    order: null,
+  });
+
+type ResolveParams = {
+  readonly issues: ReadonlyArray<GitlabIssue>;
+  readonly sessions: ReadonlyArray<Session>;
+  readonly sessionBranches: Readonly<Record<string, string>>;
+  readonly linkedSessions: ReadonlyMap<string, SessionId>;
 };
 
-export const buildIssueGroups = (
-  issues: ReadonlyArray<GitlabIssue>,
-  sessionIdByExternalId: ReadonlyMap<string, SessionId>,
-): ReadonlyArray<GitlabIssueGroup> => {
-  const buckets = new Map<string, GitlabIssueRow[]>();
-  for (const issue of issues) {
-    const key = projectPathFromIssue(issue);
-    const row: GitlabIssueRow = {
-      issue,
-      sessionId: sessionIdByExternalId.get(String(issue.id)) ?? null,
-    };
-    const arr = buckets.get(key);
-    if (arr) {
-      arr.push(row);
-    } else {
-      buckets.set(key, [row]);
-    }
-  }
-  const sortRows = (rows: GitlabIssueRow[]): GitlabIssueRow[] =>
-    rows.sort((a, b) => compareIsoDesc({ left: a.issue.updatedAt, right: b.issue.updatedAt }));
-  return [...buckets.keys()]
-    .sort((a, b) => a.localeCompare(b))
-    .map((key) => ({ key, label: key, rows: sortRows(buckets.get(key)!) }));
-};
-
-const sessionMatchesIssue = (
-  session: Session,
-  issue: GitlabIssue,
-  sessionBranches: Readonly<Record<string, string>>,
-): boolean => {
-  const branch = sessionBranches[session.id];
-  if (!branch) {
-    return false;
-  }
-  return issueBranchMatches({ branch, prefix: String(issue.iid), title: issue.title });
-};
-
-export const resolveIssueSessions = (
-  issues: ReadonlyArray<GitlabIssue>,
-  sessions: ReadonlyArray<Session>,
-  sessionBranches: Readonly<Record<string, string>>,
-  linkedSessions: ReadonlyMap<string, SessionId>,
-): Map<string, SessionId> => {
-  const byIssue = new Map<string, SessionId>();
-  for (const issue of issues) {
-    const key = String(issue.id);
-    const linked = linkedSessions.get(linkedTaskKey({ provider: 'gitlab', externalId: key }));
-    if (linked !== undefined) {
-      byIssue.set(key, linked);
-      continue;
-    }
-    const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches));
-    if (match) {
-      byIssue.set(key, match.id);
-    }
-  }
-  return byIssue;
-};
+export const resolveIssueSessions = ({
+  issues,
+  sessions,
+  sessionBranches,
+  linkedSessions,
+}: ResolveParams): Map<string, SessionId> =>
+  sessionByExternalId({
+    issues,
+    sessions,
+    linkedSessions,
+    provider: 'gitlab',
+    externalIdOf: ({ issue }) => String(issue.id),
+    isSessionOfIssue: ({ issue, session }) => {
+      const branch = sessionBranches[session.id];
+      if (!branch) {
+        return false;
+      }
+      return issueBranchMatches({ branch, prefix: String(issue.iid), title: issue.title });
+    },
+  });
 
 export type UseGitlabIssues = {
   readonly groups: ReadonlyArray<GitlabIssueGroup>;
@@ -121,8 +98,10 @@ export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): 
   const [issues, setIssues] = useState<ReadonlyArray<GitlabIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const beginFetch = useLatestFetch();
 
   const fetchIssues = useCallback(async () => {
+    const isStale = beginFetch();
     if (!isEnabled) {
       setIssues([]);
       setLoading(false);
@@ -137,25 +116,33 @@ export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): 
     setError(null);
     try {
       const rows = await gitlabFetchAssignedIssues(workspaceId, host);
+      if (isStale()) {
+        return;
+      }
       setIssues(rows);
     } catch (err) {
+      if (isStale()) {
+        return;
+      }
       setError(formatError(err));
     } finally {
-      setLoading(false);
+      if (!isStale()) {
+        setLoading(false);
+      }
     }
-  }, [workspaceId, host, isEnabled]);
+  }, [beginFetch, workspaceId, host, isEnabled]);
 
   useEffect(() => {
     void fetchIssues();
   }, [fetchIssues]);
 
   const sessionIdByIssueId = useMemo(
-    () => resolveIssueSessions(issues, sessions, sessionBranches, linkedSessions),
+    () => resolveIssueSessions({ issues, sessions, sessionBranches, linkedSessions }),
     [issues, sessions, sessionBranches, linkedSessions],
   );
 
   const groups = useMemo(
-    () => buildIssueGroups(issues, sessionIdByIssueId),
+    () => buildIssueGroups({ issues, sessionIdByExternalId: sessionIdByIssueId }),
     [issues, sessionIdByIssueId],
   );
 

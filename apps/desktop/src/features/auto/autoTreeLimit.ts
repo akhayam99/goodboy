@@ -1,20 +1,13 @@
 import { AUTO_DEFAULT_TREE_CAP_USD } from '@goodboy/core';
 import {
-  getSetting,
-  insertSettingIfAbsent,
-  replaceSettingIfUnchanged,
+  getWorkspaceValue,
+  insertWorkspaceValueIfAbsent,
+  replaceWorkspaceValueIfUnchanged,
   type Database,
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 
 export const AUTO_TREE_LIMIT_DEFAULT_USD = AUTO_DEFAULT_TREE_CAP_USD;
-
-type KeyParams = {
-  readonly workspaceId: WorkspaceId;
-};
-
-export const autoTreeLimitKey = ({ workspaceId }: KeyParams): string =>
-  `auto.treeLimitUsd.${workspaceId}`;
 
 type RawParams = {
   readonly raw: string | null | undefined;
@@ -34,7 +27,9 @@ type ReadParams = {
 };
 
 export const readAutoTreeLimit = async ({ db, workspaceId }: ReadParams): Promise<number | null> =>
-  parseAutoTreeLimit({ raw: await getSetting(db, autoTreeLimitKey({ workspaceId })) });
+  parseAutoTreeLimit({
+    raw: await getWorkspaceValue({ db, workspaceId, key: 'auto.treeLimitUsd' }),
+  });
 
 type WriteParams = {
   readonly db: Database;
@@ -48,17 +43,17 @@ export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams):
   if (!Number.isFinite(usd) || usd <= 0) {
     throw new Error('The Auto limit must be more than zero');
   }
-  const key = autoTreeLimitKey({ workspaceId });
+  const key = 'auto.treeLimitUsd';
   const value = String(usd);
   for (let tries = 0; tries < MAX_ATTEMPTS; tries += 1) {
-    const raw = await getSetting(db, key);
+    const raw = await getWorkspaceValue({ db, workspaceId, key });
     if (raw === value) {
       return;
     }
     const isWritten =
       raw === null
-        ? await insertSettingIfAbsent({ db, key, value })
-        : await replaceSettingIfUnchanged(db, { key, expected: raw, value });
+        ? await insertWorkspaceValueIfAbsent({ db, workspaceId, key, value })
+        : await replaceWorkspaceValueIfUnchanged({ db, workspaceId, key, expected: raw, value });
     if (isWritten) {
       return;
     }

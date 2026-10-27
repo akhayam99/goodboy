@@ -1,7 +1,6 @@
 import { useId, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Markdown } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE, Markdown, FOCUS_RING, cn } from '@goodboy/ui';
 
 type Props = {
   readonly items: ReadonlyArray<string>;
@@ -45,7 +44,10 @@ export const KeyLineList = ({ items, label }: Props) => {
             aria-expanded={isOpen}
             aria-controls={listId}
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1 self-start rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'flex items-center gap-1 self-start rounded-sm text-meta text-muted-foreground hover:text-foreground',
+              FOCUS_RING,
+            )}
           >
             {isOpen ? (
               <ChevronDown size={ICON_SIZE.row} aria-hidden />

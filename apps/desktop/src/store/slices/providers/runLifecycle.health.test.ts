@@ -77,6 +77,30 @@ beforeEach(async () => {
   });
 });
 
+describe('a lifecycle run whose listener cannot attach', () => {
+  it('leaves the provider in error and retryable, with the attached listener released', async () => {
+    const unlistenOutput = vi.fn();
+    lifecycleMocks.listenLifecycleOutput.mockImplementationOnce(async () => unlistenOutput);
+    lifecycleMocks.listenLifecycleExit.mockRejectedValueOnce(new Error('event bus unavailable'));
+
+    await runLifecycle(useAppStore.setState, useAppStore.getState, {
+      providerId: 'cursor',
+      action: 'login',
+    });
+
+    expect(useAppStore.getState().providerLifecycle.cursor.phase).toBe('error');
+    expect(unlistenOutput).toHaveBeenCalledTimes(1);
+    expect(lifecycleMocks.invokeProviderLifecycleRun).not.toHaveBeenCalled();
+
+    await runLifecycle(useAppStore.setState, useAppStore.getState, {
+      providerId: 'cursor',
+      action: 'login',
+    });
+
+    expect(lifecycleMocks.invokeProviderLifecycleRun).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('a lifecycle exit', () => {
   it('signs a provider out at once after a Goodboy sign-out, without waiting for a second answer', async () => {
     await runLifecycle(useAppStore.setState, useAppStore.getState, {

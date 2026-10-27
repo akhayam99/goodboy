@@ -68,7 +68,8 @@ characters; a description stays under 160.
 
 - `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
   Its sections live in `website/src/sections/`, in this order: Nav, Hero,
-  TwoWays, SharedContext, Tour, Install, Footer.
+  TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
+  brand line alone, the last block before the footer.
 - `/features`, one cluster per topic, from `website/features.html` and
   `website/src/pages/features/`. The clusters, their groups and their copy come
   from `features.data.json` in that folder. Vite builds both pages as inputs,
@@ -97,12 +98,14 @@ the browser. HTML comments come out with a character scanner
 (`website/src/server/stripComments.ts`), not a regex. A doc's
 `<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
 images, one per site theme, so the header toggle picks the screenshot, not the
-system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests.
+system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests, and
+`website/scripts/site-copy.test.mjs` holds the site copy to the retired names list and the
+dash rule ([docs/testing.md](../docs/testing.md)).
 
 Each cluster shows its main features, not all of them. In `features.data.json`
 every item of the guide stays in the file: 3 to 5 items per cluster carry
 `main: true` and render as cards (four columns, two on a tablet, a swipe row on
-a phone); every other item carries an `also` noun, and the nouns of the items
+a phone); the text of a card is the first sentence of its item in the area file, 25 words or fewer, and `node scripts/split-features.mjs --write` writes it; every other item carries an `also` noun, and the nouns of the items
 marked `shown: true` render as one plain "Also:" line of two lines at most (the
 rest live in the area files). `guides` lists one `{ area, label }` per area file, shown as
 "In the guide:" links to its `/docs/<area>` page through `SITE.doc(area)`. A main item must also be a main item of that area in
@@ -127,7 +130,9 @@ any zoom, follows the theme and ships no raster file.
   It holds a dark and a light `img`, each marked `data-hero-shot`, and shows the
   one that matches `data-theme`. `pnpm readme:hero` writes their files to
   `website/public/hero/` at 1, 2 and 3 times the 1208 px it is drawn at, from
-  one 4x capture, together with the README pair. The site keeps the top 840 of
+  one 4x capture, together with the README pair. Neither `img` is lazy, because
+  the hero is above the fold, and both carry `fetchpriority="high"`: the one
+  the theme hides is fetched too, about 50 KB at 1x. The site keeps the top 840 of
   the 1200 px window, so the hero stays inside its 1100 px section budget.
 - On `/` and `/features` the only other images are brand assets, see
   [docs/brand.md](../docs/brand.md). The `/docs` pages show the guide's own

@@ -1,5 +1,5 @@
-import { linearStateCategory } from '../../../shared/detail-fields/linearIssueFields';
-import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/useLinearIssues';
+import { linearStateCategory } from '../../../shared/detail-fields/linearStateCategory';
+import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/buildIssueGroups';
 import type { InboxRecord } from '../types';
 
 type Params = { readonly groups: ReadonlyArray<LinearIssueGroup> };

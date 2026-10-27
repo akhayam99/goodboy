@@ -1,5 +1,5 @@
 import type { SessionStage } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Params = {
   readonly stage: SessionStage;

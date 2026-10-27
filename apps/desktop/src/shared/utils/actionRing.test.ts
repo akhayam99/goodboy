@@ -19,7 +19,7 @@ describe('actionRing', () => {
       });
     }
 
-    expect(ring.recentActions()).toHaveLength(ring.ACTION_RING_LIMIT);
+    expect(ring.recentActions()).toHaveLength(10);
     expect(ring.recentActions().at(-1)).toBe('screen.board');
     expect(ring.recentActions()).not.toContain('palette.open');
   });

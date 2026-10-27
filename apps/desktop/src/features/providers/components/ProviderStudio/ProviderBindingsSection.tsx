@@ -1,10 +1,9 @@
 import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
 import { useMemo } from 'react';
-import { BAND_ROW_CLASS, Band, Listbox, cn } from '@goodboy/ui';
+import { Band, BAND_ROW_CLASS, cn, ICON_SIZE, Listbox } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;

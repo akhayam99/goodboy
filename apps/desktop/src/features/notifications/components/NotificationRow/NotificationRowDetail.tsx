@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Bug, SlidersHorizontal } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { cn, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, Tooltip } from '@goodboy/ui';
+
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
@@ -34,7 +34,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
   return (
     <div className="flex flex-col gap-2 pb-3 pl-10 pr-3">
       {hasBody && (
-        <p className="whitespace-pre-wrap break-words text-label text-muted-foreground">
+        <p className="whitespace-pre-wrap break-words text-meta text-muted-foreground">
           {latest.body}
         </p>
       )}

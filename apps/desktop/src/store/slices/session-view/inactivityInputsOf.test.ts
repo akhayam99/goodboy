@@ -154,6 +154,8 @@ describe('inactivityInputsOf', () => {
 
     expect(result).toEqual({
       seenActivityAt: Date.parse('2026-10-02T09:00:00.000Z'),
+      requestEndedAt: null,
+      personTurnAt: Date.parse('2026-10-02T09:00:00.000Z'),
       isQueued: false,
       hasDraft: false,
     });
@@ -255,6 +257,84 @@ describe('inactivityInputsOf', () => {
         state: stateOf({ patch: { sessionPhaseRuns: {} } }),
         sessionId: SESSION_ID,
       }),
-    ).toEqual({ seenActivityAt: null, isQueued: false, hasDraft: false });
+    ).toEqual({
+      seenActivityAt: null,
+      requestEndedAt: null,
+      personTurnAt: null,
+      isQueued: false,
+      hasDraft: false,
+    });
+  });
+
+  it('takes the end of a merged or closed pull request, never an open one', () => {
+    const open = githubOf({ updatedAt: '2026-10-05T09:00:00.000Z' });
+    const merged: SessionGithubState = {
+      ...open,
+      pr: {
+        ...prOf({ updatedAt: '2026-10-07T09:00:00.000Z' }),
+        state: 'merged',
+        mergedAt: '2026-10-06T09:00:00.000Z',
+      },
+    };
+
+    expect(
+      inactivityInputsOf({
+        state: stateOf({ patch: { sessionGithub: { [SESSION_ID]: open } } }),
+        sessionId: SESSION_ID,
+      }).requestEndedAt,
+    ).toBeNull();
+    expect(
+      inactivityInputsOf({
+        state: stateOf({ patch: { sessionGithub: { [SESSION_ID]: merged } } }),
+        sessionId: SESSION_ID,
+      }).requestEndedAt,
+    ).toBe(Date.parse('2026-10-06T09:00:00.000Z'));
+  });
+
+  it('takes the end of a closed GitLab merge request on a mount', () => {
+    const closed: MountGitlabMrState = {
+      ...mountGitlabOf({ updatedAt: '2026-10-08T09:00:00.000Z' }),
+      mrs: [{ ...mrOf({ updatedAt: '2026-10-08T09:00:00.000Z' }), state: 'closed' }],
+    };
+    const state = stateOf({
+      patch: {
+        sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
+        mountGitlabMr: { [MOUNT_ID]: closed },
+      },
+    });
+
+    expect(inactivityInputsOf({ state, sessionId: SESSION_ID }).requestEndedAt).toBe(
+      Date.parse('2026-10-08T09:00:00.000Z'),
+    );
+  });
+
+  it('counts the turns of a conversation agent as the person writing, not a background one', () => {
+    const state = stateOf({
+      patch: {
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            agentOf(),
+            agentOf({
+              patch: {
+                id: brandId<AgentId>({ value: 'agent-resolver' }),
+                kind: 'resolver',
+                lastFinishedAt: brandId<IsoDateTime>({ value: '2026-10-09T09:00:00.000Z' }),
+              },
+            }),
+            agentOf({
+              patch: {
+                id: brandId<AgentId>({ value: 'agent-child' }),
+                parentAgentId: AGENT_ID,
+                lastFinishedAt: brandId<IsoDateTime>({ value: '2026-10-10T09:00:00.000Z' }),
+              },
+            }),
+          ],
+        },
+      },
+    });
+
+    expect(inactivityInputsOf({ state, sessionId: SESSION_ID }).personTurnAt).toBe(
+      Date.parse('2026-10-02T09:00:00.000Z'),
+    );
   });
 });

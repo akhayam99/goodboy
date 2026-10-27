@@ -4,6 +4,7 @@ import type { MountId, PullRequestView, SessionId } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
+import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';
 import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 
 type Params = {
@@ -30,7 +31,6 @@ export const usePullRequestView = ({
   isEnabled,
   fallbackNumber = null,
 }: Params): PullRequestViewRead => {
-  const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const load = useAppStore((state) => state.loadPullRequestView);
   const hostNumber = useAppStore(
     (state) =>
@@ -56,13 +56,13 @@ export const usePullRequestView = ({
     });
   }, [displayedMountId, load, sessionId]);
 
-  const isCurrent = entry !== null && entry.prNumber === prNumber && entry.mountId === mountId;
+  const entry = useAppStore((state) => pullRequestViewOf({ state, sessionId, mountId, prNumber }));
   return {
-    view: isCurrent ? entry.view : null,
-    isLoading: isCurrent && entry.isLoading,
-    error: isCurrent ? entry.error : null,
-    errorKind: isCurrent ? (entry.errorKind ?? null) : null,
-    edits: isCurrent ? entry.edits : NO_EDITS,
+    view: entry?.view ?? null,
+    isLoading: entry?.isLoading ?? false,
+    error: entry?.error ?? null,
+    errorKind: entry?.errorKind ?? null,
+    edits: entry?.edits ?? NO_EDITS,
     reload,
   };
 };

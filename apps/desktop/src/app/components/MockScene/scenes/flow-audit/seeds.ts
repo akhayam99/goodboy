@@ -7,7 +7,6 @@ import {
 import {
   AGENT_BACKFILL_ID,
   AGENT_ROUNDING_ID,
-  BUILDER_DRAFT,
   CHAT_AGENTS,
   CHAT_AGENT_RESOLVER_ID,
   CHAT_ARTIFACTS,
@@ -45,7 +44,6 @@ import {
   THREAD_SPELLING,
   WORKSPACE,
   WORKSPACE_ID,
-  noop,
 } from './fixtures';
 import { sceneClock } from '../../sceneClock';
 import { FINISHED_AGENTS, FINISHED_SESSION } from './finishedRun';
@@ -179,11 +177,10 @@ const seedFlowAuditBase = () => {
   });
 };
 
-export const seedWorkflowBuilder = () => {
+export const seedFlowSession = () => {
   seedFlowAuditBase();
   useAppStore.setState({
     currentSessionId: FLOW_SESSION_ID,
-    workflowDrafts: { [FLOW_SESSION_ID]: BUILDER_DRAFT },
     sessionPhaseRuns: { [FLOW_SESSION_ID]: FLOW_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
     sessionWorkflows: { [FLOW_SESSION_ID]: [DYNAMIC_WORKFLOW] },
     sessionTelemetry: { [FLOW_SESSION_ID]: FLOW_TELEMETRY },

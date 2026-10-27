@@ -16,20 +16,12 @@ import { pushMount } from './gitRuns';
 const SESSION_ID = nextSessionId();
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-payments-api'));
 
-type PushFn = AppStore['pushSessionBranch'];
-type ForcePushFn = AppStore['forcePushSessionBranch'];
+type PushFn = AppStore['pushBranch'];
 
-const envWith = ({
-  forcePushSessionBranch,
-  pushSessionBranch,
-}: {
-  readonly forcePushSessionBranch: ForcePushFn;
-  readonly pushSessionBranch: PushFn;
-}): ActionEnv => {
+const envWith = ({ pushBranch }: { readonly pushBranch: PushFn }): ActionEnv => {
   const state: AppStore = {
     ...useAppStore.getInitialState(),
-    forcePushSessionBranch,
-    pushSessionBranch,
+    pushBranch,
   };
   return {
     getState: () => state,
@@ -47,11 +39,10 @@ describe('pushMount', () => {
   });
 
   it('hands the force push the exact shas the confirm listed', async () => {
-    const forcePushSessionBranch = vi.fn<ForcePushFn>(async () => ({ ok: true }));
-    const pushSessionBranch = vi.fn<PushFn>(async () => ({ ok: true }));
+    const pushBranch = vi.fn<PushFn>(async () => ({ ok: true }));
 
     await pushMount({
-      env: envWith({ forcePushSessionBranch, pushSessionBranch }),
+      env: envWith({ pushBranch }),
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       worktreePath: '/work/payments-api',
@@ -63,20 +54,23 @@ describe('pushMount', () => {
       ],
     });
 
-    expect(forcePushSessionBranch).toHaveBeenCalledWith({
+    expect(pushBranch).toHaveBeenCalledExactlyOnceWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
-      confirmedOnlyOnline: ['a1', 'b2'],
-      confirmedRemoteSha: null,
+      mode: 'lease',
+      guard: {
+        kind: 'confirmed',
+        confirmedOnlyOnline: ['a1', 'b2'],
+        confirmedRemoteSha: null,
+      },
     });
-    expect(pushSessionBranch).not.toHaveBeenCalled();
   });
 
   it('hands the force push null when the confirm said not checked yet', async () => {
-    const forcePushSessionBranch = vi.fn<ForcePushFn>(async () => ({ ok: true }));
+    const pushBranch = vi.fn<PushFn>(async () => ({ ok: true }));
 
     await pushMount({
-      env: envWith({ forcePushSessionBranch, pushSessionBranch: vi.fn<PushFn>() }),
+      env: envWith({ pushBranch }),
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       worktreePath: '/work/payments-api',
@@ -85,21 +79,41 @@ describe('pushMount', () => {
       confirmedOnlyOnline: null,
     });
 
-    expect(forcePushSessionBranch).toHaveBeenCalledWith({
+    expect(pushBranch).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
+      mode: 'lease',
+      guard: { kind: 'confirmed', confirmedOnlyOnline: null, confirmedRemoteSha: null },
+    });
+  });
+
+  it('pushes plainly when the branch only runs ahead', async () => {
+    const pushBranch = vi.fn<PushFn>(async () => ({ ok: true }));
+
+    await pushMount({
+      env: envWith({ pushBranch }),
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      worktreePath: '/work/payments-api',
+      baseBranch: null,
+      isForce: false,
       confirmedOnlyOnline: null,
-      confirmedRemoteSha: null,
+    });
+
+    expect(pushBranch).toHaveBeenCalledExactlyOnceWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      mode: 'plain',
     });
   });
 
   it('keeps the remote sha the confirm listed on the failure it throws', async () => {
-    const onlineModule = await import('../../../store/slices/worktreeStatuses/onlyOnline');
-    const forcePushSessionBranch = vi.fn<ForcePushFn>(async () => ({ ok: false, error: 'stale' }));
+    const onlineModule = await import('../../../store/runtime/worktreeStatuses/onlyOnline');
+    const pushBranch = vi.fn<PushFn>(async () => ({ ok: false, error: 'stale', reason: 'moved' }));
     vi.spyOn(onlineModule, 'readOnlineRemoteSha').mockReturnValue('confirmed-sha');
 
     const failure = await pushMount({
-      env: envWith({ forcePushSessionBranch, pushSessionBranch: vi.fn<PushFn>() }),
+      env: envWith({ pushBranch }),
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       worktreePath: '/work/payments-api',
@@ -112,14 +126,15 @@ describe('pushMount', () => {
   });
 
   it('throws the refusal so the user sees it', async () => {
-    const forcePushSessionBranch = vi.fn<ForcePushFn>(async () => ({
+    const pushBranch = vi.fn<PushFn>(async () => ({
       ok: false,
       error: 'The online copy changed. Check again before force pushing.',
+      reason: 'moved',
     }));
 
     await expect(
       pushMount({
-        env: envWith({ forcePushSessionBranch, pushSessionBranch: vi.fn<PushFn>() }),
+        env: envWith({ pushBranch }),
         sessionId: SESSION_ID,
         mountId: MOUNT_ID,
         worktreePath: '/work/payments-api',

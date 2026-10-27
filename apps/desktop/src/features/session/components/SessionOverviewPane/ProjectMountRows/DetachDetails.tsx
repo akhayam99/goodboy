@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { DetachDetails as Details } from './detachPlan';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly projectName: string;

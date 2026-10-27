@@ -8,58 +8,49 @@ use tokio::sync::{oneshot, watch, Mutex};
 
 use super::commands::{CmdResult, CommandEvent, MobileAction, Origin, PendingMap, ACK_TIMEOUT};
 use super::frame::{read_frame, write_frame, NOISE_MAX};
+use super::gate::{HandshakeGate, HandshakePermit, MAX_UNAUTHENTICATED};
 use super::identity::Identity;
 use super::snapshot::{self, Snapshot};
 use super::tokens::TokenStore;
 use super::{noise_params, BridgeError};
 
-// Server -> client opcodes.
 const OP_HELLO: u8 = 0x01;
 const OP_SNAPSHOT_BEGIN: u8 = 0x02;
 const OP_SNAPSHOT_CHUNK: u8 = 0x03;
 const OP_SNAPSHOT_END: u8 = 0x04;
 const OP_PING: u8 = 0x07;
 const OP_ACK: u8 = 0x08;
-/// Result of a read-only mobile query (e.g. the provider/model menu). Distinct
-/// from OP_ACK so the phone routes it to a data continuation, not the
-/// write-command ACK handler.
 const OP_QUERY_RESULT: u8 = 0x0A;
-// Client -> server opcodes.
 const OP_PONG: u8 = 0x80;
 const OP_SUBSCRIBE: u8 = 0x81;
 const OP_RESNAPSHOT: u8 = 0x82;
-// Client -> server WRITE opcodes (0x83..=0x86) are decoded via
-// `MobileAction::from_opcode`; the closed set lives in `commands.rs`.
 
 const PING_INTERVAL: Duration = Duration::from_secs(20);
-/// How often the bridge checks the DB for changes to auto-push to the phone.
-/// Doubles as a debounce: at most one snapshot push per interval even under a
-/// burst of writes (e.g. streaming turn events).
+const SILENCE_LIMIT: Duration = Duration::from_secs(60);
+const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 const SYNC_POLL_INTERVAL: Duration = Duration::from_secs(2);
 
-/// Shared handles the per-connection task needs.
 pub struct ServerCtx {
     pub identity: Arc<Mutex<Identity>>,
     pub tokens: Arc<TokenStore>,
     pub device_name: String,
-    /// Used to forward mobile commands to the trusted frontend executor.
     pub app: AppHandle,
-    /// In-flight mobile commands awaiting a frontend result.
     pub pending: PendingMap,
-    /// Tripped (or dropped) when the bridge stops or revokes; every live
-    /// connection bails at once so a forgotten phone cannot keep observing or
-    /// sending commands.
     pub shutdown: watch::Receiver<bool>,
 }
 
-/// Accepts connections until `listener` is dropped (bridge stop drops the task).
 pub async fn serve(listener: TcpListener, ctx: Arc<ServerCtx>) {
+    let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
     loop {
         match listener.accept().await {
-            Ok((stream, _peer)) => {
+            Ok((stream, peer)) => {
+                let Some(permit) = gate.try_enter(peer.ip()) else {
+                    log::debug!("[bridge] refused {}: handshake slots busy", peer.ip());
+                    continue;
+                };
                 let ctx = ctx.clone();
                 tokio::spawn(async move {
-                    if let Err(e) = handle_conn(stream, ctx).await {
+                    if let Err(e) = handle_conn(stream, ctx, permit).await {
                         log::debug!("[bridge] connection ended: {e}");
                     }
                 });
@@ -72,10 +63,15 @@ pub async fn serve(listener: TcpListener, ctx: Arc<ServerCtx>) {
     }
 }
 
-async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), BridgeError> {
-    let mut transport = authorize_handshake(&mut stream, &ctx.identity, &ctx.tokens).await?;
+async fn handle_conn(
+    mut stream: TcpStream,
+    ctx: Arc<ServerCtx>,
+    permit: HandshakePermit,
+) -> Result<(), BridgeError> {
+    let mut transport =
+        authorize_within(&mut stream, &ctx.identity, &ctx.tokens, HANDSHAKE_TIMEOUT).await?;
+    drop(permit);
 
-    // ---- App layer: HELLO then the initial snapshot ----
     let snap = snapshot::build()?;
     send_app(
         &mut stream,
@@ -92,22 +88,17 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
     stream_snapshot(&mut stream, &mut transport, &snap).await?;
     log::info!("[bridge] phone synced; head {}", snap.head_migration);
 
-    // A desktop stop/revoke trips this; the live loop bails at once. Catch the
-    // already-shut-down case before entering the loop, then race it below.
     let mut shutdown = ctx.shutdown.clone();
     if *shutdown.borrow() {
         return Ok(());
     }
 
-    // Live loop: PING heartbeat + DB-change auto-sync + handle client frames.
     let mut ping = tokio::time::interval(PING_INTERVAL);
     ping.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    // Auto-sync: poll the DB's data_version and push a fresh snapshot when the
-    // desktop writes, so the phone stays current without manual pull-to-refresh.
-    // If the probe can't open (rare), we degrade to RESNAPSHOT-only behavior.
     let mut probe = snapshot::ChangeProbe::new().ok();
     let mut sync = tokio::time::interval(SYNC_POLL_INTERVAL);
     sync.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut last_heard = tokio::time::Instant::now();
     loop {
         tokio::select! {
             _ = shutdown.changed() => {
@@ -115,6 +106,9 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
                 return Ok(());
             }
             _ = ping.tick() => {
+                if last_heard.elapsed() > SILENCE_LIMIT {
+                    return Err(BridgeError::Protocol("phone stopped answering pings".into()));
+                }
                 send_app(&mut stream, &mut transport, OP_PING, &json!({ "at": crate::util::iso_now_whole_seconds() })).await?;
             }
             _ = sync.tick() => {
@@ -124,6 +118,7 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
             }
             frame = read_frame(&mut stream) => {
                 let frame = frame?;
+                last_heard = tokio::time::Instant::now();
                 let mut buf = vec![0u8; NOISE_MAX];
                 let n = transport
                     .read_message(&frame, &mut buf)
@@ -131,14 +126,11 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
                 if n == 0 { continue; }
                 let opcode = buf[0];
                 match opcode {
-                    OP_PONG | OP_SUBSCRIBE => { /* read-only: liveness / filter only */ }
+                    OP_PONG | OP_SUBSCRIBE => {}
                     OP_RESNAPSHOT => {
                         send_snapshot(&mut stream, &mut transport).await?;
                     }
                     op => match MobileAction::from_opcode(op) {
-                        // Mobile action: stamp origin server-side, forward to the
-                        // trusted frontend, then reply. Writes get an ACK; read-only
-                        // queries get their result frame carrying `data`.
                         Some(action) => {
                             let data: Value = if n > 1 {
                                 serde_json::from_slice(&buf[1..n]).unwrap_or(Value::Null)
@@ -157,12 +149,22 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
     }
 }
 
+async fn authorize_within(
+    stream: &mut TcpStream,
+    identity: &Mutex<Identity>,
+    tokens: &TokenStore,
+    deadline: Duration,
+) -> Result<snow::TransportState, BridgeError> {
+    tokio::time::timeout(deadline, authorize_handshake(stream, identity, tokens))
+        .await
+        .map_err(|_| BridgeError::Protocol("handshake timed out".into()))?
+}
+
 async fn authorize_handshake(
     stream: &mut TcpStream,
     identity: &Mutex<Identity>,
     tokens: &TokenStore,
 ) -> Result<snow::TransportState, BridgeError> {
-    // ---- Noise_XK responder handshake ----
     let static_priv = { identity.lock().await.static_priv()? };
     let mut hs = snow::Builder::new(noise_params())
         .local_private_key(&static_priv)
@@ -171,7 +173,6 @@ async fn authorize_handshake(
 
     let mut scratch = vec![0u8; NOISE_MAX];
 
-    // msg1: -> e, es  (payload = enrollment token, or empty for re-dial)
     let msg1 = read_frame(stream).await?;
     let n = hs
         .read_message(&msg1, &mut scratch)
@@ -193,13 +194,11 @@ async fn authorize_handshake(
         }
     };
 
-    // msg2: <- e, ee
     let len = hs
         .write_message(&[], &mut scratch)
         .map_err(|e| BridgeError::Noise(e.to_string()))?;
     write_frame(stream, &scratch[..len]).await?;
 
-    // msg3: -> s, se  (phone reveals its static)
     let msg3 = read_frame(stream).await?;
     hs.read_message(&msg3, &mut scratch)
         .map_err(|e| BridgeError::Noise(e.to_string()))?;
@@ -208,7 +207,6 @@ async fn authorize_handshake(
         .ok_or_else(|| BridgeError::Protocol("missing phone static after msg3".into()))?
         .to_vec();
 
-    // Authorize: enrollment adds to allow-list; re-dial requires membership.
     {
         let mut id = identity.lock().await;
         if enrolling {
@@ -222,13 +220,7 @@ async fn authorize_handshake(
         .map_err(|e| BridgeError::Noise(e.to_string()))
 }
 
-/// Forwards a mobile-originated command to the trusted frontend executor and
-/// awaits its result. `origin` is stamped `Mobile` here — server-side and
-/// unforgeable — so the frontend guard applies the locked-down profile. The
-/// phone only ever supplies `data` (and an optional correlation id).
 async fn run_command(ctx: &Arc<ServerCtx>, action: MobileAction, data: Value) -> Value {
-    // The phone may supply a correlation id so it can match this ACK; otherwise
-    // mint one. This is the only phone-controlled field we read here.
     let id = data
         .get("cmdId")
         .and_then(|v| v.as_str())
@@ -262,7 +254,6 @@ async fn run_command(ctx: &Arc<ServerCtx>, action: MobileAction, data: Value) ->
     }
 }
 
-/// Encrypts `[opcode || json]` and writes it as one framed Noise message.
 async fn send_app(
     stream: &mut TcpStream,
     transport: &mut snow::TransportState,
@@ -279,7 +270,6 @@ async fn send_app(
     write_frame(stream, &ct[..len]).await
 }
 
-/// Builds a fresh snapshot and streams it (used for RESNAPSHOT).
 async fn send_snapshot(
     stream: &mut TcpStream,
     transport: &mut snow::TransportState,
@@ -288,7 +278,6 @@ async fn send_snapshot(
     stream_snapshot(stream, transport, &snap).await
 }
 
-/// BEGIN -> CHUNK* -> END for an already-built snapshot.
 async fn stream_snapshot(
     stream: &mut TcpStream,
     transport: &mut snow::TransportState,
@@ -481,6 +470,77 @@ mod tests {
             Err(BridgeError::Unauthorized(reason)) => Some(reason.as_str()),
             _ => None,
         }
+    }
+
+    #[tokio::test]
+    async fn a_silent_socket_is_dropped_when_the_handshake_deadline_passes() {
+        let desktop = Desktop::new("silent", TokenStore::new());
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let identity = desktop.identity.clone();
+        let tokens = desktop.tokens.clone();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            authorize_within(&mut stream, &identity, &tokens, Duration::from_millis(200))
+                .await
+                .map(|_| ())
+        });
+        let _silent = TcpStream::connect(addr).await.unwrap();
+
+        let result = tokio::time::timeout(Duration::from_secs(5), server)
+            .await
+            .expect("the deadline fired")
+            .unwrap();
+
+        assert!(matches!(
+            result,
+            Err(BridgeError::Protocol(ref reason)) if reason == "handshake timed out"
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_phone_that_stalls_after_the_first_message_is_dropped_at_the_deadline() {
+        let desktop = Desktop::new("stalled", TokenStore::new());
+        let phone = new_phone();
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let identity = desktop.identity.clone();
+        let tokens = desktop.tokens.clone();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            authorize_within(&mut stream, &identity, &tokens, Duration::from_millis(200))
+                .await
+                .map(|_| ())
+        });
+        let mut stream = TcpStream::connect(addr).await.unwrap();
+        let mut hs = snow::Builder::new(noise_params())
+            .local_private_key(&phone.private)
+            .remote_public_key(&desktop.static_pub)
+            .build_initiator()
+            .unwrap();
+        let mut buf = vec![0u8; NOISE_MAX];
+        let len = hs.write_message(&[], &mut buf).unwrap();
+        write_frame(&mut stream, &buf[..len]).await.unwrap();
+
+        let result = tokio::time::timeout(Duration::from_secs(5), server)
+            .await
+            .expect("the deadline fired")
+            .unwrap();
+
+        assert!(matches!(result, Err(BridgeError::Protocol(_))));
+    }
+
+    #[tokio::test]
+    async fn a_flood_of_silent_sockets_is_refused_past_the_gate() {
+        let gate = HandshakeGate::new(MAX_UNAUTHENTICATED);
+        let held: Vec<_> = (1..=MAX_UNAUTHENTICATED as u8)
+            .map(|n| gate.try_enter(std::net::IpAddr::from([10, 0, 0, n])))
+            .collect();
+
+        assert!(held.iter().all(Option::is_some));
+        assert!(gate
+            .try_enter(std::net::IpAddr::from([10, 0, 0, 99]))
+            .is_none());
     }
 
     #[tokio::test]

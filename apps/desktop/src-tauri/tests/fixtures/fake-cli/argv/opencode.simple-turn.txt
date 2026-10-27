@@ -1,0 +1,13 @@
+cli-version: 1.4.2
+run
+--format
+json
+-m
+fake-model
+--dir
+{work_dir}
+--dangerously-skip-permissions
+--agent
+plan
+--
+{prompt}

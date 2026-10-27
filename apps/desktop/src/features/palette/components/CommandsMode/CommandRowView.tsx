@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
-import { KeyHint, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn, ICON_SIZE, KeyHint } from '@goodboy/ui';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { CommandRow } from '../../commandList';
 import type { PaletteKind } from '../../types';
@@ -79,7 +79,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
         {item.detail !== undefined && item.detail !== '' && (
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-label',
+              'min-w-0 flex-1 truncate text-meta',
               isBlocked ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >
@@ -92,7 +92,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
           <KeyHint keys={shortcutGlyphs(item.shortcut)} />
         </span>
       ) : item.tag !== undefined ? (
-        <span className="shrink-0 text-label text-faint-foreground">{item.tag}</span>
+        <span className="shrink-0 text-meta text-faint-foreground">{item.tag}</span>
       ) : null}
       {hasLevel && (
         <ChevronRight

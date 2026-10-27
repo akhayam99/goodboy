@@ -4,17 +4,14 @@ import type { SessionId, TurnEvent } from '@goodboy/types';
 import {
   Button,
   EmptyState,
+  ICON_SIZE,
   Notice,
   PageColumn,
   PaneShell,
   ScrollFade,
   SkeletonText,
 } from '@goodboy/ui';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../../../shared/hooks/useNow';
 import { formatAdaptiveAge } from '../../../../../../shared/utils/time/formatAdaptiveAge';
 import { useAppStore } from '../../../../../../store';
@@ -141,7 +138,7 @@ export const ChangesPane = ({ sessionId }: Props) => {
             tone={CONCEPT_TONE.diff}
             icon={CONCEPT_ICONS.diff}
             title="No changes yet"
-            description={`What agents change in ${folders[0]?.name ?? 'this folder'} shows here, ready to restore.`}
+            description={`Agent changes in ${folders[0]?.name ?? 'this folder'} are ready to restore.`}
           />
         </PageColumn>
       );

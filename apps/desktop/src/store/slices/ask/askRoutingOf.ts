@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { defaultChatModel } from '../../../features/workspace-chat/defaultChatModel';
+import { defaultChatModel } from '../../../features/conversation/defaultChatModel';
 import type { AppStore } from '../../store';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';

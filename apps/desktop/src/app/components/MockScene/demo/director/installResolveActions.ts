@@ -5,7 +5,6 @@ import {
   type ProviderRunId,
   type ResolveAttempt,
   type ResolveQueueItemWithThread,
-  type ResolveThread,
   type SessionId,
 } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
@@ -103,7 +102,7 @@ const stopFix = ({ store, sessionId, agentId }: StopParams): void => {
     store,
     sessionId,
     threadIds,
-    patch: (thread: ResolveThread) => ({
+    patch: ({ thread }) => ({
       ...thread,
       state: 'open',
       stage: 'new',
@@ -154,7 +153,7 @@ const spawnResolver = ({ store, sessionId, threadIds, name, prompt }: SpawnParam
     store,
     sessionId,
     threadIds,
-    patch: (thread: ResolveThread) => ({
+    patch: ({ thread }) => ({
       ...thread,
       state: 'working',
       stage: 'working',
@@ -178,10 +177,14 @@ const refusePublish = (): never => {
   throw new ReportedError(PUBLISH_NOTICE);
 };
 
+type EntryParams = {
+  readonly entry: ResolveQueueItemWithThread;
+};
+
 type PatchItemParams = {
   readonly sessionId: SessionId;
   readonly itemId: string;
-  readonly change: (entry: ResolveQueueItemWithThread) => ResolveQueueItemWithThread;
+  readonly change: (params: EntryParams) => ResolveQueueItemWithThread;
 };
 
 const RESOLVE_ANSWERS: Readonly<Record<string, unknown>> = {
@@ -193,7 +196,7 @@ export const installResolveActions = ({ store }: Params): void => {
   installDemoWorld({ store });
   addDemoOverlay({ answers: RESOLVE_ANSWERS });
   const simulatedSpawn = store.getState().spawnAgent;
-  const spawnAgent: AppStore['spawnAgent'] = async (sessionId, options) => {
+  const spawnAgent = (async (sessionId, options) => {
     if (options?.kindOverride !== 'resolver') {
       return simulatedSpawn(sessionId, options);
     }
@@ -204,7 +207,7 @@ export const installResolveActions = ({ store }: Params): void => {
       name: options.name ?? 'Resolve a review comment',
       prompt: options.humanPrompt ?? options.initialPrompt ?? 'Fix this review comment.',
     });
-  };
+  }) satisfies AppStore['spawnAgent'];
   const createResolveBatch: AppStore['createResolveBatch'] = async ({
     sessionId,
     threadIds,
@@ -255,7 +258,7 @@ export const installResolveActions = ({ store }: Params): void => {
       sessionResolveQueueItems: {
         ...current.sessionResolveQueueItems,
         [sessionId]: (current.sessionResolveQueueItems[sessionId] ?? []).map((entry) =>
-          entry.item.id === itemId ? change(entry) : entry,
+          entry.item.id === itemId ? change({ entry }) : entry,
         ),
       },
     }));
@@ -269,7 +272,7 @@ export const installResolveActions = ({ store }: Params): void => {
     patchItem({
       sessionId,
       itemId,
-      change: (entry) => ({
+      change: ({ entry }) => ({
         item: { ...entry.item, approvalState: 'accepted', approvedRevision: revision },
         thread: {
           ...entry.thread,
@@ -287,7 +290,7 @@ export const installResolveActions = ({ store }: Params): void => {
     patchItem({
       sessionId,
       itemId,
-      change: (entry) => ({
+      change: ({ entry }) => ({
         item: { ...entry.item, approvalState: 'none', approvedRevision: null },
         thread: { ...entry.thread, stage: 'proposed' },
       }),
@@ -300,7 +303,7 @@ export const installResolveActions = ({ store }: Params): void => {
     patchItem({
       sessionId,
       itemId,
-      change: (entry) => ({
+      change: ({ entry }) => ({
         ...entry,
         item: { ...entry.item, approvalState: 'deferred', deferredAt: Date.now() },
       }),
@@ -313,15 +316,15 @@ export const installResolveActions = ({ store }: Params): void => {
     patchItem({
       sessionId,
       itemId,
-      change: (entry) => ({
+      change: ({ entry }) => ({
         ...entry,
         item: { ...entry.item, approvalState: 'none', deferredAt: null },
       }),
     });
   };
-  const forceCloseResolver: AppStore['forceCloseResolver'] = async (sessionId, agentId) => {
+  const forceCloseResolver = (async (sessionId, agentId) => {
     stopFix({ store, sessionId, agentId });
-  };
+  }) satisfies AppStore['forceCloseResolver'];
   const stopResolveLane: AppStore['stopResolveLane'] = async ({ sessionId }) => {
     const running = (store.getState().sessionResolveAttempts[sessionId] ?? []).filter(
       (attempt) => attempt.phase === 'running',
@@ -362,7 +365,7 @@ export const installResolveActions = ({ store }: Params): void => {
       store,
       sessionId,
       threadIds,
-      patch: (thread) => ({
+      patch: ({ thread }) => ({
         ...thread,
         state: 'closed',
         stage: 'resolved',

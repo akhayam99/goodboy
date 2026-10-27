@@ -85,7 +85,7 @@ export const adoptProject = (set: SetFn, get: GetFn) => {
     }));
     await reconnectIfNeeded();
     if (get().currentWorkspaceId === targetWorkspaceId) {
-      await get().setCurrentWorkspace(targetWorkspaceId);
+      await get().reloadWorkspace({ workspaceId: targetWorkspaceId });
     }
     return { ...result, mergedWorkspace: false };
   };

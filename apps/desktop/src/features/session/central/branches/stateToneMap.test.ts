@@ -5,7 +5,7 @@ import {
   PR_GROUP_PRESENTATION,
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
-} from '../../../../shared/pullRequestPresentation';
+} from '../../../../shared/utils/pullRequestPresentation';
 import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { ATTENTION_REASON_META } from '../../session-stage';
 import { BRANCH_STATE_TONE, type BranchState } from './branchStateTone';

@@ -21,7 +21,7 @@ let useAppStore: StoryStore;
 const connected = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected',
   version: '99.0.0',
   identity: null,

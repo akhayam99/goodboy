@@ -1,11 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Database, StatementResult, TransactionOutcome } from '@goodboy/db';
+import { isRecord } from '@goodboy/types/helpers';
 
 const UNMANAGED_STATE_MARKER = 'state not managed';
 
-export const DATABASE_FILE_HINT = '~/.goodboy/data.db';
+const DATABASE_FILE_HINT = '~/.goodboy/data.db';
 
-export const DATABASE_UNAVAILABLE_MESSAGE = `Goodboy could not open its database, so it started with nothing loaded. It cannot run until ${DATABASE_FILE_HINT} is moved aside; a fresh one is created on the next launch.`;
+export const DATABASE_UNAVAILABLE_MESSAGE = `Goodboy could not open its database, so it started with nothing loaded. Your data is still in ${DATABASE_FILE_HINT}.`;
 
 class DatabaseUnavailableError extends Error {
   constructor() {
@@ -34,9 +35,6 @@ export const invokeDb = async <T>(command: string, args: Record<string, unknown>
   }
 };
 
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 const isStatementResult = (value: unknown): value is StatementResult =>
   isRecord(value) &&
   typeof value.rowsAffected === 'number' &&
@@ -55,6 +53,10 @@ const isTransactionOutcome = (value: unknown): value is TransactionOutcome => {
     typeof value.abortCode === 'string' &&
     typeof value.index === 'number'
   );
+};
+
+export const vacuumDatabase = async (): Promise<void> => {
+  await invokeDb('db_vacuum', {});
 };
 
 export const tauriDatabase: Database = {

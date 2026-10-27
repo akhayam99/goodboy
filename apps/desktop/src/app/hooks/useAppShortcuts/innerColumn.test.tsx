@@ -10,7 +10,12 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { innerColumnStore, useInnerColumn } from '@goodboy/ui';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+} from '../../../store/storyHarness';
 import { pressShortcut } from '../../../__tests__/helpers/pressKey';
 import { useAppShortcuts } from './index';
 
@@ -20,6 +25,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({ db_select: [] });
 });
 
 afterEach(cleanup);

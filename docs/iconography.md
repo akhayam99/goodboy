@@ -7,8 +7,9 @@
 One meaning, one glyph. The registry in
 [`apps/desktop/src/shared/components/conceptIcons.ts`](../apps/desktop/src/shared/components/conceptIcons.ts)
 is the contract. `CONCEPT_ICONS` maps a concept to its glyph. `CONCEPT_TONE`
-maps the same concept to its tone. `ICON_SIZE` gives the only four sizes the
-app draws icons at. This document is the readable version of that file. The
+maps the same concept to its tone. `ICON_SIZE` and `ICON_STROKE`, in
+`packages/ui/src/iconSize.ts` and imported from `@goodboy/ui`, give the only
+five sizes and the stroke weights the app draws icons with. This document is the readable version of that file. The
 code is right when they disagree: a change to the registry, `LENS_LABEL` or
 `LENS_ICON` updates this document in the same pull request.
 
@@ -30,14 +31,23 @@ Rules that hold everywhere:
 
 ## Sizes
 
-Four tokens, exported from `conceptIcons.ts`:
+Five tokens, exported from `@goodboy/ui`:
 
-| Token               | px  | Use                                                    |
-| ------------------- | --- | ------------------------------------------------------ |
-| `ICON_SIZE.mark`    | 10  | A glyph inside a chip, a dot or an xs control          |
-| `ICON_SIZE.row`     | 12  | Leading and trailing glyphs inside list and table rows |
-| `ICON_SIZE.control` | 14  | Buttons, menu triggers, rail tabs, form adornments     |
-| `ICON_SIZE.hero`    | 18  | Empty states, studio headers, choice tiles             |
+| Token               | px  | Stroke | Use                                                    |
+| ------------------- | --- | ------ | ------------------------------------------------------ |
+| `ICON_SIZE.mark`    | 10  | 2      | A glyph inside a chip, a dot or an xs control          |
+| `ICON_SIZE.row`     | 12  | 2      | Leading and trailing glyphs inside list and table rows |
+| `ICON_SIZE.control` | 14  | 1.75   | Buttons, menu triggers, rail tabs, form adornments     |
+| `ICON_SIZE.notice`  | 16  | 1.75   | The tone icon of a `Notice`                            |
+| `ICON_SIZE.hero`    | 18  | 1.5    | Empty states, studio headers, choice tiles             |
+
+A check mark takes `ICON_STROKE.check` (2.5) at any size. Import one spelling per
+glyph: `TriangleAlert`, `CircleAlert`, `CircleX`, `CircleCheck` and
+`SquareArrowOutUpRight` (the older aliases of those glyphs and the plain external-link glyph are
+banned by `lucide-one-spelling-per-glyph.test.ts`). Failure has three glyphs, one place
+each: `CircleAlert` in a `Notice` of tone danger, `TriangleAlert` in a danger
+zone, `CircleX` for a failed run. `ArrowUpRight` means open in a larger view and
+never an external link.
 
 Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
 `WorkNode` at 20 px), so an odd glyph lands on a half pixel and looks off
@@ -63,12 +73,12 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
 | --------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------ |
-| Context                     | `context`      | `Brain`                 | info    | always                                     |
+| Context                     | `context`      | `Library`               | info    | always                                     |
 | Workflows                   | `workflows`    | `Waypoints`             | primary | always                                     |
 | Agents                      | `agents`       | `Bot`                   | primary | always                                     |
 | Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
 | Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
-| Review                      | `review`       | `MessageSquareDiff`     | primary | with a branch                              |
+| Review                      | `review`       | `MessageSquareQuote`    | primary | with a branch                              |
 | Diff                        | `diff`         | `FileDiff`              | info    | with a branch                              |
 | Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
 | Scripts                     | `scripts`      | `ListVideo`             | info    | with a branch                              |
@@ -88,13 +98,13 @@ The glyph is only for surfaces that explain the stage in prose.
 `SESSION_STAGE_ICON` in `features/session/session-stage.ts` owns that mapping.
 The stage board section of the guide uses it.
 
-| Stage       | Glyph         | Tone    |
-| ----------- | ------------- | ------- |
-| `attention` | `CircleHelp`  | warning |
-| `running`   | `CirclePlay`  | info    |
-| `review`    | `Eye`         | success |
-| `building`  | `Hammer`      | neutral |
-| `done`      | `CircleCheck` | merged  |
+| Stage       | Glyph                         | Tone    |
+| ----------- | ----------------------------- | ------- |
+| `attention` | `CircleHelp`                  | warning |
+| `running`   | `CirclePlay` (`stageRunning`) | info    |
+| `review`    | `Eye`                         | success |
+| `building`  | `Hammer`                      | neutral |
+| `done`      | `CircleCheck`                 | merged  |
 
 The left column, the switcher and the hover card draw a session's state as a
 `WorkNode` mark, not as the stage glyph. The mark follows the reason that
@@ -208,16 +218,17 @@ color when the integration is connected, muted when it is not. `providers`
 The settings rail and the panel sections read these, so an item and its
 section share one glyph.
 
-| Concept      | Glyph                       | Tone    | Meaning                                      |
-| ------------ | --------------------------- | ------- | -------------------------------------------- |
-| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance |
-| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                  |
-| `editor`     | `SquareCode`                | neutral | The default editor                           |
-| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
-| `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
-| `storage`    | `Database`                  | neutral | Local database and archived sessions         |
-| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
-| `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
+| Concept      | Glyph                       | Tone    | Meaning                                       |
+| ------------ | --------------------------- | ------- | --------------------------------------------- |
+| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance  |
+| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                   |
+| `editor`     | `SquareCode`                | neutral | The default editor                            |
+| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                            |
+| `backup`     | `DatabaseBackup`            | neutral | Config export and import                      |
+| `storage`    | `Database`                  | neutral | Local database and archived sessions          |
+| `sessions`   | `SquareKanban`              | primary | A session: the Sessions door, search, palette |
+| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback                |
+| `danger`     | `TriangleAlert`             | danger  | A danger zone                                 |
 
 ## Actions
 

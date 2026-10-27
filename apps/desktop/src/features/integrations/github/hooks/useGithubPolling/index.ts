@@ -1,11 +1,19 @@
 import { useEffect } from 'react';
+import { usePoll } from '../../../../../shared/lib/usePoll';
 import { useAppStore, useSessions } from '../../../../../store';
 
 const POLL_INTERVAL_MS = 5 * 60_000;
 
 export const useGithubPolling = (): void => {
-  const sweepGithub = useAppStore((s) => s.sweepGithub);
+  const sweepRequests = useAppStore((s) => s.sweepRequests);
   const githubAvailable = useAppStore((s) => s.githubStatus?.available ?? false);
+  const hostBindingSignature = useAppStore((s) =>
+    Object.values(s.workspaceIntegrations)
+      .flat()
+      .filter((binding) => binding.provider === 'gitlab' || binding.provider === 'bitbucket')
+      .map((binding) => binding.id)
+      .join(';'),
+  );
   const sessions = useSessions();
   const branchSignature = useAppStore((s) => {
     let acc = '';
@@ -17,20 +25,12 @@ export const useGithubPolling = (): void => {
   });
 
   useEffect(() => {
-    sweepGithub();
-  }, [sweepGithub, githubAvailable, branchSignature]);
+    void sweepRequests();
+  }, [sweepRequests, githubAvailable, hostBindingSignature, branchSignature]);
 
-  useEffect(() => {
-    const sweepIfVisible = (): void => {
-      if (document.visibilityState === 'visible') {
-        sweepGithub({ skipUnknownPr: true });
-      }
-    };
-    const intervalId = window.setInterval(sweepIfVisible, POLL_INTERVAL_MS);
-    document.addEventListener('visibilitychange', sweepIfVisible);
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', sweepIfVisible);
-    };
-  }, [sweepGithub]);
+  usePoll({
+    run: () => sweepRequests({ shouldSkipUnknownRequest: true }),
+    everyMs: POLL_INTERVAL_MS,
+    isImmediate: false,
+  });
 };

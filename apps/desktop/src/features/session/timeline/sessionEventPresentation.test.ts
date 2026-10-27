@@ -3,11 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import { SESSION_EVENT_KINDS } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
 import {
   decisionDiff,
   isEmptyDecisionDiff,
-  TIMELINE_PROJECT_NAME_LIMIT,
   segmentsToText,
   sessionEventEmphasis,
   sessionEventGlyph,
@@ -434,7 +433,7 @@ describe('sessionEventProjectRunLabel', () => {
     );
   });
 
-  it(`names ${TIMELINE_PROJECT_NAME_LIMIT} projects and counts the rest`, () => {
+  it(`names ${3} projects and counts the rest`, () => {
     expect(
       segmentsToText({
         segments: sessionEventProjectRunLabel({

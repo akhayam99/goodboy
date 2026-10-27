@@ -30,7 +30,7 @@ vi.mock('../../../features/history/historyEngine', async (importOriginal) => ({
   tryHistoryPlan: vi.fn(async () => ({ stop: null, head: null, map: [] })),
 }));
 
-import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../runtime/worktreeStatuses/cache';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

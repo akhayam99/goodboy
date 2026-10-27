@@ -1,6 +1,6 @@
 import { DEMO_THEME_KEY } from './demoThemeKey';
 import type { DemoTheme } from './director/demoProtocol';
-import { isDemoTheme } from './isDemoTheme';
+import { readDemoThemeValue } from './readDemoThemeValue';
 
 type Params = {
   readonly search: string;
@@ -8,17 +8,13 @@ type Params = {
 
 const readStored = (): DemoTheme | null => {
   try {
-    const stored = window.localStorage.getItem(DEMO_THEME_KEY);
-    return isDemoTheme(stored) ? stored : null;
+    return readDemoThemeValue({ value: window.localStorage.getItem(DEMO_THEME_KEY) });
   } catch {
     return null;
   }
 };
 
 export const readDemoTheme = ({ search }: Params): DemoTheme => {
-  const requested = new URLSearchParams(search).get('theme');
-  if (isDemoTheme(requested)) {
-    return requested;
-  }
-  return readStored() ?? 'dark';
+  const requested = readDemoThemeValue({ value: new URLSearchParams(search).get('theme') });
+  return requested ?? readStored() ?? 'dark';
 };

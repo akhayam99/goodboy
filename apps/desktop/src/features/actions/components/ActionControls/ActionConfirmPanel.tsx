@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChoiceCards, ConfirmPopover } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ChoiceCards, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+
 import type { ActionControls } from '../../useActionControls';
 
 type Props = {

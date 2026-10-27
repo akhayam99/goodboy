@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PullRequestStateKind } from '@goodboy/types';
 import type { BitbucketPullRequestState } from './client';
-import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
+import { PULL_REQUEST_PRESENTATION } from '../../../shared/utils/pullRequestPresentation';
 import { BITBUCKET_PR_PRESENTATION } from './bitbucketPrPresentation';
 import { BITBUCKET_PR_STATE_KIND, bitbucketPrStateKind } from '@goodboy/core';
 

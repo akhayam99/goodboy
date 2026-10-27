@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { AlertCircle, RefreshCw, SquareTerminal } from 'lucide-react';
-import { Button, KeyHint } from '@goodboy/ui';
+import { CircleAlert, RefreshCw, SquareTerminal } from 'lucide-react';
+import { Button, ICON_SIZE, KeyHint, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { modelLabel } from '../../../chat/utils/chat-constants';
@@ -79,7 +79,7 @@ export const FailedRun = ({
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-foreground">
         <p className="flex min-w-0 items-start gap-2">
-          <AlertCircle
+          <CircleAlert
             size={ICON_SIZE.control}
             aria-hidden
             className="mt-0.5 shrink-0 text-danger"
@@ -96,7 +96,10 @@ export const FailedRun = ({
               <button
                 type="button"
                 onClick={() => onRun('reviewComment.transcript')}
-                className="ml-auto shrink-0 rounded-sm text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn(
+                  'ml-auto shrink-0 rounded-sm text-foreground underline-offset-2 hover:underline',
+                  FOCUS_RING,
+                )}
               >
                 {FAILED_RUN_COPY.openTranscript}
               </button>

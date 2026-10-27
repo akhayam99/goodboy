@@ -42,7 +42,7 @@ export const Popover = ({
       style={style}
       className={cn(
         FLOATING_SURFACE,
-        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto text-label',
+        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto text-meta',
         className,
       )}
     >

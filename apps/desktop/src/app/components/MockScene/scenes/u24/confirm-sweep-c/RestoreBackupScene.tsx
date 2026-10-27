@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, ConfirmPopover, Eyebrow } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Button, ConfirmPopover, Eyebrow, ICON_SIZE } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 
 export const RestoreBackupScene = () => {
   const [isRestored, setIsRestored] = useState(false);

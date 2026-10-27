@@ -44,7 +44,7 @@ const rootTurnsOf = ({ state, isApproval }: TurnParams): ReadonlySet<string> => 
   );
 };
 
-type NewTurnParams = HintProbe & {
+type NewTurnParams = Pick<HintProbe, 'state' | 'start'> & {
   readonly isApproval: boolean;
 };
 
@@ -75,7 +75,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     side: 'bottom',
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_START }),
-    doneWhen: (probe) => hasNewRootTurn({ ...probe, isApproval: false }),
+    doneWhen: ({ state, start }) => hasNewRootTurn({ state, start, isApproval: false }),
   },
   {
     id: 'auto-approve',
@@ -87,7 +87,7 @@ export const ORCHESTRATE_HINTS: ReadonlyArray<DemoHint> = [
     anchor: AUTO_APPROVE,
     revealWhen: ({ state, root }) =>
       isAutoSession({ state }) && hasElement({ root, selector: AUTO_APPROVE }),
-    doneWhen: (probe) => hasNewRootTurn({ ...probe, isApproval: true }),
+    doneWhen: ({ state, start }) => hasNewRootTurn({ state, start, isApproval: true }),
   },
   {
     id: 'auto-child',

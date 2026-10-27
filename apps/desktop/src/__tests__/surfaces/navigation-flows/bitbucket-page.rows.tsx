@@ -18,6 +18,7 @@ import {
   settle,
   useAppStore,
 } from './harness';
+import { aMountGithub } from '../../../store/slices/github/testing/aMountGithub';
 import { bitbucketWrites, resetBitbucketBridge } from './bitbucket-page.runner';
 
 const TITLE = 'Stop retried webhooks posting a second credit';
@@ -50,7 +51,23 @@ const connectBitbucket = async ({
     config: { workspaceSlug: 'harborline', email: 'nadia@harborline.test' },
   };
   resetBitbucketBridge({ branch: mount.branch, statuses });
+  const siblingMounts = Object.values(state.sessionProjectMounts)
+    .flat()
+    .flatMap((candidate) =>
+      candidate.mountId === undefined || candidate.mountId === mount.mountId
+        ? []
+        : [{ mountId: candidate.mountId, projectId: candidate.projectId }],
+    );
   useAppStore.setState({
+    mountGithub: {
+      ...state.mountGithub,
+      ...Object.fromEntries(
+        siblingMounts.map(({ mountId, projectId }) => [
+          mountId,
+          aMountGithub({ mountId, projectId }),
+        ]),
+      ),
+    },
     workspaceIntegrations: { ...state.workspaceIntegrations, [session.workspaceId]: [binding] },
     refreshSessionPr: async () => undefined,
     refreshSessionPrDetail: async () => undefined,

@@ -1,7 +1,7 @@
-import { Button } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionArchive } from '../../hooks/useSessionArchive';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 
 type Props = {

@@ -32,8 +32,9 @@ export const RunningCard = ({
   leadRunId,
 }: Props) => {
   const stuck = stuckAutoOf({ groups, cards, views: model.autoTrees });
+  const stuckCount = groups.filter((group) => group.state === 'stuck').length;
   return (
-    <OverviewCard card={card}>
+    <OverviewCard card={card} countNote={stuckCount === 0 ? null : `${stuckCount} stuck`}>
       {stuck === null ? null : (
         <StuckActions
           sessionId={session.id}

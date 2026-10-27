@@ -1,4 +1,4 @@
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { MergeReadinessFacts, PrMergeReadiness } from '../review/prMergeReadiness';
 import { mergeIsClear } from '../review/prMergeReadiness';
 
@@ -24,13 +24,15 @@ type Params = {
   readonly isStopOpen: boolean;
 };
 
+type OpenParams = Omit<Params, 'state'>;
+
 const openStepOf = ({
   facts,
   readiness,
   hasReviewer,
   behind,
   isStopOpen,
-}: Params): PullRequestNextStep => {
+}: OpenParams): PullRequestNextStep => {
   if (isStopOpen) {
     return null;
   }
@@ -55,8 +57,15 @@ const openStepOf = ({
   return behind > 0 ? 'rebase' : null;
 };
 
-export const pullRequestNextStepOf = (params: Params): PullRequestNextStep => {
-  switch (params.state) {
+export const pullRequestNextStepOf = ({
+  state,
+  facts,
+  readiness,
+  hasReviewer,
+  behind,
+  isStopOpen,
+}: Params): PullRequestNextStep => {
+  switch (state) {
     case 'none':
     case 'merged':
     case 'queued':
@@ -67,9 +76,9 @@ export const pullRequestNextStepOf = (params: Params): PullRequestNextStep => {
       return 'reopen';
     case 'open':
     case 'approved':
-      return openStepOf(params);
+      return openStepOf({ facts, readiness, hasReviewer, behind, isStopOpen });
     default: {
-      const unexpected: never = params.state;
+      const unexpected: never = state;
       return unexpected;
     }
   }

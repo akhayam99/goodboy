@@ -1,7 +1,7 @@
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { cn, FOCUS_RING, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 
 type Props = {

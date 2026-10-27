@@ -59,6 +59,7 @@ const foldedRowOf = ({ batch, model }: BatchParams) => {
     at: newest.createdAt,
     mountId: null,
     retryAgentId: null,
+    agentIds: [],
     detail: {
       model: null,
       effort: null,
@@ -68,6 +69,7 @@ const foldedRowOf = ({ batch, model }: BatchParams) => {
       steps: NO_STEPS,
       auto: null,
       branches: lines,
+      files: null,
     },
   };
   return { row, firstId: first.id, rewriteIds: rewrites.map((event) => event.id) };

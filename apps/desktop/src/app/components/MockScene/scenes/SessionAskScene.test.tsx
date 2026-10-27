@@ -268,7 +268,7 @@ describe('the session Ask scene', () => {
 
   it('streams an answer with the composer offering Stop', async () => {
     await renderState('streaming');
-    expect(await screen.findByLabelText('Stop the answer')).toBeDefined();
+    expect(await screen.findByLabelText('Stop')).toBeDefined();
     expect(screen.queryByTestId('ask-footer')).toBeNull();
   });
 });

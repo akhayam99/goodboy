@@ -1,11 +1,11 @@
 import type {
   ArtifactComment,
-  IsoDateTime,
   PlanWithCount,
   ProviderRunId,
   SessionArtifact,
   SessionId,
 } from '@goodboy/types';
+import { isoNow } from '@goodboy/types/helpers';
 import { useAppStore } from '../../../../store';
 import type {
   AddArtifactCommentParams,
@@ -23,8 +23,6 @@ type Options = {
   readonly isReplyOnly?: boolean;
   readonly reviseMs?: number;
 };
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const wait = (ms: number): Promise<void> =>
   new Promise<void>((resolve) => {
@@ -79,14 +77,14 @@ const landRevision = ({
     sessionPlans: {
       ...state.sessionPlans,
       [sessionId]: (state.sessionPlans[sessionId] ?? []).map((candidate) =>
-        candidate.id === plan.id ? { ...candidate, title, bodyMd, updatedAt: nowIso() } : candidate,
+        candidate.id === plan.id ? { ...candidate, title, bodyMd, updatedAt: isoNow() } : candidate,
       ),
     },
     sessionArtifacts: {
       ...state.sessionArtifacts,
       [sessionId]: (state.sessionArtifacts[sessionId] ?? []).map((artifact) =>
         artifact.id === plan.id
-          ? { ...artifact, title, sourceText: bodyMd, revision, updatedAt: nowIso() }
+          ? { ...artifact, title, sourceText: bodyMd, revision, updatedAt: isoNow() }
           : artifact,
       ),
     },
@@ -108,7 +106,7 @@ const settleTurn = ({
       artifactCommentSends: sends,
       agentTurnState: {
         ...state.agentTurnState,
-        [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
+        [agentId]: { kind: 'idle' as const, lastActivityAt: isoNow() },
       },
     };
   });
@@ -142,7 +140,7 @@ export const installScenePlanEngine = ({
       return null;
     }
     const id = `scene-comment-${commentsOf({ sessionId }).length + 1}-${Date.now()}`;
-    const at = nowIso();
+    const at = isoNow();
     putComments({
       sessionId,
       update: (comments) => [
@@ -176,7 +174,7 @@ export const installScenePlanEngine = ({
       sessionId,
       update: (comments) =>
         comments.map((comment) =>
-          comment.id === commentId ? { ...comment, body: text, updatedAt: nowIso() } : comment,
+          comment.id === commentId ? { ...comment, body: text, updatedAt: isoNow() } : comment,
         ),
     });
     return true;
@@ -221,7 +219,7 @@ export const installScenePlanEngine = ({
         [plan.agentId]: {
           kind: 'running' as const,
           runId: `scene-revise-${turns}` as ProviderRunId,
-          startedAt: nowIso(),
+          startedAt: isoNow(),
         },
       },
     }));

@@ -14,9 +14,6 @@ const HOUR_MS = 60 * MINUTE_MS;
 
 const CAPABILITIES = {
   models: [],
-  supportsTools: true,
-  supportsStream: true,
-  supportsCheapModel: true,
 };
 
 type ProviderParams = {

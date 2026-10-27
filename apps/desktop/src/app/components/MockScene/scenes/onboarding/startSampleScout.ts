@@ -7,6 +7,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import type { AppStore } from '../../../../../store/store';
 import type { StartSessionFromDraftParams } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
@@ -185,12 +186,12 @@ export const startSampleScout = async ({
     loadAgentTranscript: async () => undefined,
     markAgentViewed: async () => undefined,
     recordSessionEvent: async () => undefined,
-    cancelCurrentTurn: async (targetSessionId) => {
+    cancelCurrentTurn: (async (targetSessionId) => {
       if (targetSessionId !== sessionId) {
         return;
       }
       stopScout({ sessionId, agentId });
-    },
+    }) satisfies AppStore['cancelCurrentTurn'],
   });
   sampleScoutRuns.enqueue({
     agentId,

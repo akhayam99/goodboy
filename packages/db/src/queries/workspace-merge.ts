@@ -1,5 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
 import type { Database, GuardedStatement, Statement } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type BindingRow = {
   readonly id: string;
@@ -25,11 +26,20 @@ const configsMatch = ({ left, right }: ConfigsMatchParams): boolean => {
   if (left === right) {
     return true;
   }
-  try {
-    return JSON.stringify(JSON.parse(left)) === JSON.stringify(JSON.parse(right));
-  } catch {
+  const leftValue = parseJsonColumn<unknown>({
+    value: left,
+    isValid: isJsonValue,
+    fallback: undefined,
+  });
+  const rightValue = parseJsonColumn<unknown>({
+    value: right,
+    isValid: isJsonValue,
+    fallback: undefined,
+  });
+  if (leftValue === undefined || rightValue === undefined) {
     return false;
   }
+  return JSON.stringify(leftValue) === JSON.stringify(rightValue);
 };
 
 const WORKSPACE_CHANGED = 'WORKSPACE_CHANGED';
@@ -241,10 +251,6 @@ const planBindingMerge = ({
       },
       { sql: 'DELETE FROM workspace_starred_issues WHERE workspace_id = ?', params: [source.id] },
       { sql: 'DELETE FROM workspace_profiles WHERE workspace_id = ?', params: [source.id] },
-      {
-        sql: 'DELETE FROM settings WHERE key = ?',
-        params: [`workspace.${source.id}.branch_prefix`],
-      },
       { sql: 'DELETE FROM workspaces WHERE id = ?', params: [source.id] },
     );
   }

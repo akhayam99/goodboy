@@ -1,4 +1,4 @@
-import { NAMES } from '../../shared/names';
+import { NAMES } from '../../shared/utils/names';
 import type { HistoryStep } from '@goodboy/types';
 import { moveFacts, type MoveFact } from './historyEdits';
 import { isFolded, messageOf, targetOf, type CombineMode } from './historyPlan';

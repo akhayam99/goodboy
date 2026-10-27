@@ -1,10 +1,24 @@
 import { ChevronsUpDown } from 'lucide-react';
-import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown, Tooltip } from '@goodboy/ui';
-import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
+import {
+  AnchoredPopover,
+  cn,
+  ICON_SIZE,
+  ROW_INTERACTIVE,
+  StatusDot,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
+import {
+  useAppStore,
+  useAttentionElsewhere,
+  useCurrentWorkspace,
+  useHasUnreadElsewhere,
+} from '../../../../store';
 import { folderCountLabel } from '../../folderCountLabel';
+import { needYouWords } from '../../needYouWords';
+import { WorkspaceAttentionMark } from '../WorkspaceAttentionMark';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
@@ -12,6 +26,7 @@ export const WorkspaceIdentityRow = () => {
     folderCountLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
   );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
+  const elsewhere = useAttentionElsewhere({ currentId: currentWorkspace?.id ?? null });
   const dropdown = useDropdown({
     width: 'w-96',
     expectedWidth: 340,
@@ -33,7 +48,11 @@ export const WorkspaceIdentityRow = () => {
         hasBackdrop
         trigger={
           <Tooltip
-            content={`${currentWorkspace.name}, ${subtitle}`}
+            content={
+              elsewhere.count === 0
+                ? `${currentWorkspace.name}, ${subtitle}`
+                : `${currentWorkspace.name}, ${subtitle}. ${needYouWords({ count: elsewhere.count })} in other workspaces`
+            }
             shortcut="workspace.switcher"
             isSuppressed={dropdown.open}
           >
@@ -41,7 +60,11 @@ export const WorkspaceIdentityRow = () => {
               type="button"
               onClick={dropdown.toggle}
               data-tauri-drag-region="false"
-              aria-label={`Switch workspace: ${currentWorkspace.name}`}
+              aria-label={
+                elsewhere.count === 0
+                  ? `Switch workspace: ${currentWorkspace.name}`
+                  : `Switch workspace: ${currentWorkspace.name}, ${needYouWords({ count: elsewhere.count })} in other workspaces`
+              }
               aria-expanded={dropdown.open}
               className={cn(
                 'group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors',
@@ -50,6 +73,13 @@ export const WorkspaceIdentityRow = () => {
             >
               <WorkspaceTile workspace={currentWorkspace} />
               <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
+              {elsewhere.tone !== null ? (
+                <WorkspaceAttentionMark
+                  count={elsewhere.count}
+                  tone={elsewhere.tone}
+                  variant="pill"
+                />
+              ) : null}
               {hasUnreadElsewhere ? (
                 <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
               ) : null}

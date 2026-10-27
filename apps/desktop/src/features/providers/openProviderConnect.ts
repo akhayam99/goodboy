@@ -1,4 +1,5 @@
 import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
+import { openSettings } from '../settings/openSettings';
 
 type Params = {
   readonly providerId: ProviderId;
@@ -6,14 +7,10 @@ type Params = {
 };
 
 export const openProviderConnect = ({ providerId, connection }: Params): void => {
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-settings', {
-      detail: {
-        scope: 'providers',
-        provider: providerId,
-        action: connection === 'missing' ? 'install' : 'login',
-        door: true,
-      },
-    }),
-  );
+  openSettings({
+    scope: 'providers',
+    provider: providerId,
+    action: connection === 'missing' ? 'install' : 'login',
+    door: true,
+  });
 };

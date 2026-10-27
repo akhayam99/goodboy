@@ -1,4 +1,4 @@
-import { NAMES } from '../names';
+import { NAMES } from '../utils/names';
 export const FOLLOW_LABEL = NAMES.follow;
 
 type FollowKeyParams = {

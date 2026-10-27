@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -11,8 +11,8 @@ import {
   type MountCleanupBlocker,
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../../shared/names';
+
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   PROJECT_DETACH_EVENT,
   projectKeyOf,

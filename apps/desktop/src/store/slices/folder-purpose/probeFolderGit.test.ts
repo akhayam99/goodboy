@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertProject, insertWorkspace, setSetting } from '@goodboy/db';
+import { insertProject, insertWorkspace, setProjectValue } from '@goodboy/db';
 import { brandId, type FolderGitProbe, type ProjectId, type WorkspaceId } from '@goodboy/types';
 import {
   buildStoryProject,
@@ -14,7 +14,6 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
-import { folderGitChoiceKey } from './folderGitChoiceKey';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -197,8 +196,8 @@ describe('probeFolderGit', () => {
     expect(kindInStore()).toBe('folder');
     expect(await storedKind()).toBe('folder');
     const choice = await rowsOf<{ readonly value: string }>({
-      sql: 'SELECT value FROM settings WHERE key = ?',
-      params: [folderGitChoiceKey({ projectId: WEB })],
+      sql: 'SELECT value FROM project_values WHERE project_id = ? AND key = ?',
+      params: [WEB, 'folder.git'],
     });
     expect(choice[0]?.value).toBe('in-place');
   });
@@ -214,7 +213,12 @@ describe('probeFolderGit', () => {
       validate_git_repo: () => ({ isRepo: true, rootPath: '/work/acme', defaultBranch: 'main' }),
     });
     useAppStore.setState({ folderPurpose: { [WEB]: 'documents' } });
-    await setSetting(storySqlite(), folderGitChoiceKey({ projectId: WEB }), 'in-place');
+    await setProjectValue({
+      db: storySqlite(),
+      projectId: WEB,
+      key: 'folder.git',
+      value: 'in-place',
+    });
 
     await useAppStore.getState().probeFolderGit({ projectId: WEB });
     await useAppStore.getState().switchFolderToRepo({ projectId: WEB });

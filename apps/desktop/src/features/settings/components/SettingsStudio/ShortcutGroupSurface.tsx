@@ -1,8 +1,9 @@
-import { KeyHint, Band } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/names';
-import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
+import { Band } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import type { ShortcutGroup } from '../../../../shared/keyboard/registry';
+import { ShortcutRowKeys } from './ShortcutRowKeys';
 import { groupWhere, shortcutRows } from './shortcutRows';
+import type { ShortcutRecorder } from './useShortcutRecorder';
 
 const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   general: 'General',
@@ -19,9 +20,11 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
 
 type Props = {
   readonly group: ShortcutGroup;
+  readonly overrides: Readonly<Record<string, string>>;
+  readonly recorder: ShortcutRecorder;
 };
 
-export const ShortcutGroupSurface = ({ group }: Props) => {
+export const ShortcutGroupSurface = ({ group, overrides, recorder }: Props) => {
   const sharedWhere = groupWhere({ group });
   return (
     <Band
@@ -32,16 +35,21 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
     >
       <ul className="flex flex-col gap-2">
         {shortcutRows({ group }).map((row) => (
-          <li key={row.key} className="flex items-center justify-between gap-3 text-label">
+          <li
+            key={row.key}
+            className="group/shortcut flex items-center justify-between gap-3 text-meta"
+          >
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-muted-foreground">{row.label}</span>
               {sharedWhere === null && row.where !== null ? (
                 <span className="truncate text-meta text-faint-foreground">{row.where}</span>
               ) : null}
             </span>
-            <span className="shrink-0">
-              <KeyHint keys={shortcutRangeGlyphs({ first: row.first, last: row.last })} />
-            </span>
+            <ShortcutRowKeys
+              row={row}
+              isOverridden={Object.hasOwn(overrides, row.first)}
+              recorder={recorder}
+            />
           </li>
         ))}
       </ul>

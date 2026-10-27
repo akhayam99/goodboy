@@ -1,12 +1,12 @@
 use super::error::WorktreeError;
 use super::git::git;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-const SNAPSHOT_FILE_LIMIT: usize = 2000;
+pub(super) const SNAPSHOT_FILE_LIMIT: usize = 2000;
 const DELETED: &str = "deleted";
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotEntry {
     pub path: String,
@@ -41,7 +41,7 @@ pub(super) fn dirty_paths(porcelain_z: &str) -> Vec<String> {
     paths
 }
 
-fn hash_of(cwd: &Path, path: &str) -> String {
+pub(super) fn hash_of(cwd: &Path, path: &str) -> String {
     if !cwd.join(path).is_file() {
         return DELETED.to_string();
     }

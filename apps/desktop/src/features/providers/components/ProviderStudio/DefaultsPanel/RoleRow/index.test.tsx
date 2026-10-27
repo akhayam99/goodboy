@@ -46,7 +46,7 @@ const CLAUDE_ON: ProviderPolicy = [
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
   binary: id,
-  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  capabilities: { models: [] },
   connection: 'connected' satisfies ProviderConnectionState,
   version: null,
   identity: null,

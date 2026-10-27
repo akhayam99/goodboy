@@ -35,7 +35,7 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/onboarding/onboarding-store', async () =>
+vi.mock('../../../features/onboarding/onboardingSettings', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
 vi.mock('../../../features/chat/turn', async () =>
@@ -674,14 +674,14 @@ describe('store contract', () => {
       expect(store.getState().sessionGithub[SESSION_ID]?.fetchedAt).not.toBeNull();
     });
 
-    it('sweepGithub is a no-op when github is unavailable', async () => {
+    it('sweepRequests asks no host when github is unavailable and none is connected', async () => {
       const store = useAppStore;
       store.setState({
         githubStatus: { available: false, mode: 'absent', scopes: [] } as never,
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'main' },
       });
-      store.getState().sweepGithub();
+      await store.getState().sweepRequests();
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
     });
   });

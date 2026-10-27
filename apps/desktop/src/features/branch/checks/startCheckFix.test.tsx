@@ -53,7 +53,7 @@ import { buildTimelineGroups } from '../../session/timeline/buildTimelineGroups'
 import { buildTimelineStream } from '../../session/timeline/buildTimelineStream';
 import { needsYouOwners } from '../../session/timeline/needsYou';
 import { dayLabel } from '../../session/timeline/dayLabel';
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 
 let store: StoryStore;
 let seed: ReturnType<typeof checksAnalyzeSeed>;

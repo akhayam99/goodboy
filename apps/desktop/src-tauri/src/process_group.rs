@@ -19,18 +19,18 @@ pub fn isolate(_command: &mut Command) {}
 
 #[cfg(unix)]
 pub fn terminate(pid: u32) {
-    let group = pid as libc::pid_t;
-    if unsafe { libc::killpg(group, libc::SIGTERM) } != 0 {
-        unsafe { libc::kill(group, libc::SIGKILL) };
+    use crate::proc::signal::{self, Signal};
+    if signal::send_to_group(pid, Signal::Terminate).is_err() {
+        let _ = signal::send(pid, Signal::Kill);
         return;
     }
     for _ in 0..GROUP_DRAIN_POLLS {
         std::thread::sleep(GROUP_DRAIN_INTERVAL);
-        if !group_alive(group) {
+        if !signal::group_has_members(pid) {
             return;
         }
     }
-    unsafe { libc::killpg(group, libc::SIGKILL) };
+    let _ = signal::send_to_group(pid, Signal::Kill);
 }
 
 #[cfg(not(unix))]
@@ -38,19 +38,14 @@ pub fn terminate(_pid: u32) {}
 
 #[cfg(unix)]
 pub fn kill(pid: u32) {
-    let group = pid as libc::pid_t;
-    if unsafe { libc::killpg(group, libc::SIGKILL) } != 0 {
-        unsafe { libc::kill(group, libc::SIGKILL) };
+    use crate::proc::signal::{self, Signal};
+    if signal::send_to_group(pid, Signal::Kill).is_err() {
+        let _ = signal::send(pid, Signal::Kill);
     }
 }
 
 #[cfg(not(unix))]
 pub fn kill(_pid: u32) {}
-
-#[cfg(unix)]
-fn group_alive(group: libc::pid_t) -> bool {
-    unsafe { libc::kill(-group, 0) == 0 }
-}
 
 #[cfg(windows)]
 pub use job::Job;
@@ -118,7 +113,7 @@ mod tests {
     use std::process::Stdio;
 
     fn is_alive(pid: libc::pid_t) -> bool {
-        unsafe { libc::kill(pid, 0) == 0 }
+        crate::proc::signal::exists(pid as u32)
     }
 
     #[test]

@@ -15,7 +15,7 @@ type Params = {
 const CTX_TAG_RE = /^([a-zA-Z][a-zA-Z0-9_-]*)(?::[^\S\n]*([^<>\n]{1,48}?))?[^\S\n]*$/;
 const CTX_CODE_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/;
 const EM_BOUNDARY_RE = /\s|[(\[{,.!?]/;
-const SAFE_LINK_RE = /^(https?:|mailto:)/i;
+const SAFE_LINK_RE = /^https?:/i;
 
 export const parseInline = ({ text }: Params): ReadonlyArray<InlineNode> => {
   const out: InlineNode[] = [];

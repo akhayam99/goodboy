@@ -99,7 +99,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'auto-child';
-      readonly payload: { readonly agentId: AgentId; readonly from?: 'spawned' };
+      readonly payload: { readonly agentId: AgentId };
     }
   | {
       readonly kind: 'spawned';
@@ -114,7 +114,6 @@ export type DrawerContent =
       readonly payload: {
         readonly runId: WorkflowRunId;
         readonly agentId: AgentId;
-        readonly from?: 'spawned';
       };
     }
   | {
@@ -164,6 +163,6 @@ export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
 };
 
-export const initialDrawerState: DrawerSliceState = {
+export const drawerInitialState: DrawerSliceState = {
   drawer: null,
 };

@@ -7,15 +7,16 @@ import {
   BandStack,
   Button,
   ConfirmPopover,
+  EmptyState,
   Eyebrow,
   FieldRow,
+  ICON_SIZE,
   PaneShell,
-  EmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { NAMES } from '../../../../../shared/names';
+import { NAMES } from '../../../../../shared/utils/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
@@ -26,14 +27,10 @@ import { ProvidersInOrder } from './ProvidersInOrder';
 import { PinnedOffLine } from './PinnedOffLine';
 import { SavedModelsNotice } from './SavedModelsNotice';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useModelScope } from '../../../hooks/useModelScope';
-import { resolutionOf } from '../../../../../store/slices/models/selectResolution';
+import { resolutionOf } from '../../../../../store/runtime/models/selectResolution';
 import { isPinUnrunnable } from './resolutionNote';
 
 type Props = {
@@ -238,7 +235,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         </BandStack>
       </section>
 
-      {error != null ? <p className="text-label text-danger">{error}</p> : null}
+      {error != null ? <p className="text-meta text-danger">{error}</p> : null}
     </PaneShell>
   );
 };

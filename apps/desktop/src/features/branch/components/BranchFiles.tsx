@@ -4,7 +4,7 @@ import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
-import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
+import { WriteReview } from '../../review/components/WriteReview';
 import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {

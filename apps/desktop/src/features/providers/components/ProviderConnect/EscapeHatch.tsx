@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, formatError, Tooltip } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import { Button, formatError, ICON_SIZE, Tooltip } from '@goodboy/ui';
+import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { useAppStore } from '../../../../store';
 import { CopyButton } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { SETTING_TERMINAL_APP } from '../../../settings/settings';
+import { commandTerminalLabel } from '../../commandTerminalLabel';
 
 type Props = {
   readonly command: string;
   readonly providerId: ProviderId;
+  readonly action: ProviderLifecycleAction;
 };
 
 type PollParams = {
@@ -21,11 +24,22 @@ const POLL_DELAYS_MS = [3_000, 6_000, 12_000, 24_000] as const;
 const MAX_POLL_DELAY_MS = 24_000;
 const POLL_DURATION_MS = 120_000;
 
-export const EscapeHatch = ({ command, providerId }: Props) => {
+export const EscapeHatch = ({ command, providerId, action }: Props) => {
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const refreshProviders = useAppStore((state) => state.refreshProviders);
+  const terminalLabel = useAppStore((state) =>
+    commandTerminalLabel({
+      saved: state.settings[SETTING_TERMINAL_APP],
+      detected: state.detectedTerminals,
+    }),
+  );
+  const loadDetectedTerminals = useAppStore((state) => state.loadDetectedTerminals);
   const pollTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    void loadDetectedTerminals();
+  }, [loadDetectedTerminals]);
 
   useEffect(() => {
     return () => {
@@ -39,7 +53,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
     setLaunching(true);
     setLaunchError(null);
     try {
-      await openCommandInExternalTerminal(command);
+      await openCommandInExternalTerminal({ providerId, action });
       if (pollTimer.current !== null) {
         window.clearTimeout(pollTimer.current);
       }
@@ -85,12 +99,12 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             presentation="icon"
             value={command}
             label="copy command"
-            className="h-7 gap-2 border border-border bg-muted px-3 text-label font-medium text-foreground hover:bg-hover hover:text-foreground"
+            className="h-7 gap-2 border border-border bg-muted px-3 text-meta font-medium text-foreground hover:bg-hover hover:text-foreground"
           >
             <span>Copy command</span>
           </CopyButton>
         </Tooltip>
-        <Tooltip content="Open in your system terminal" side="top">
+        <Tooltip content={`Open in ${terminalLabel}`} side="top">
           <Button
             variant="secondary"
             size="sm"
@@ -98,7 +112,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             onClick={() => void onLaunch()}
           >
             <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
-            <span>Run in terminal</span>
+            <span>Open in {terminalLabel}</span>
           </Button>
         </Tooltip>
       </div>

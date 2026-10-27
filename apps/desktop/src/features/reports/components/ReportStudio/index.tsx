@@ -4,7 +4,7 @@ import type { ReportArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { buildReportOutline } from '../../reportOutline';
 import { ArtifactDocument } from '../../../artifacts/components/ArtifactDocument';
-import { dropLeadingTitleHeading } from '../../../artifacts/components/ArtifactDocument/dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../../../../shared/utils/dropLeadingTitleHeading';
 import { ReportContentsMenu } from './ReportContentsMenu';
 import { ReportOutlineNav } from './ReportOutlineNav';
 import { useOutlinePlacement } from './useOutlinePlacement';

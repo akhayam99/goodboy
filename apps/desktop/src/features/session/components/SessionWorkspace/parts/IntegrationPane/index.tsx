@@ -25,6 +25,7 @@ import { isTaskOnScreen } from './isTaskOnScreen';
 import { TaskPlacementMenu } from './TaskPlacementMenu';
 import { RecordFrameContext } from '../../../../../../shared/components/StudioDetail/RecordFrameContext';
 import type { RecordFrame } from '../../../../../../shared/components/StudioDetail/RecordActions/types';
+import { NAMES } from '../../../../../../shared/utils/names';
 import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
 import { PROVIDER_LENS } from '../../../../../integrations/providerLens';
@@ -170,12 +171,12 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       sessionVerbs: [
         {
           key: 'unlink-session',
-          label: 'Unlink from session',
+          label: NAMES.removeLinkFromSession,
           icon: Unlink,
           isBusy: isUnlinking,
           blockedReason: null,
           confirm: {
-            title: `Unlink ${focusedTask.identifier} from this session?`,
+            title: `Remove the link to ${focusedTask.identifier} from this session?`,
             description: `The issue stays in ${meta.label}. Link it again from Link work.`,
             confirmLabel: 'Unlink',
           },
@@ -196,7 +197,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <RecordFrameContext.Provider value={frame}>
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           {unlinkError != null ? (
-            <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
+            <p className={cn('shrink-0 pt-3 text-meta text-danger', PANE_RHYTHM.inset)}>
               {unlinkError}
             </p>
           ) : null}
@@ -252,7 +253,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           onSelect={(taskKey) => openTask({ taskKey })}
         />
       ) : null}
-      {unlinkError != null ? <p className="text-label text-danger">{unlinkError}</p> : null}
+      {unlinkError != null ? <p className="text-meta text-danger">{unlinkError}</p> : null}
     </PaneShell>
   );
 };

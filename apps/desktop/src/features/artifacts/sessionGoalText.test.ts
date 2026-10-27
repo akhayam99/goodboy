@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot, Session } from '@goodboy/types';
-import { REDACTED } from '../../shared/utils/redactSecrets';
 import { SESSION_GOAL_LIMITS, sessionGoalText } from './sessionGoalText';
 
 const TITLE = 'Fix the rounding drift in ledger-core postings';
@@ -118,7 +117,7 @@ describe('sessionGoalText secrets', () => {
     expect(result.editorText).toBe(value);
     expect(result.editorText).toContain('harborline-test-value');
     expect(result.packText).not.toContain('harborline-test-value');
-    expect(result.packText).toContain(REDACTED);
+    expect(result.packText).toContain('[redacted]');
   });
 
   it('measures the clip against the redacted text, not the raw text', () => {

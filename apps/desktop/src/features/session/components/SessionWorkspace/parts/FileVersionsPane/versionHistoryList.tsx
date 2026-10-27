@@ -1,11 +1,7 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, EmptyState, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Button, cn, EmptyState, ICON_SIZE, tintClasses, Tooltip } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { AuthorshipChip } from '../AuthorshipChip';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../../../shared/utils/time/formatDateTime';

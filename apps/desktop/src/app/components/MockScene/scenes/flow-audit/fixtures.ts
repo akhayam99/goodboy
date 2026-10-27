@@ -33,7 +33,6 @@ import type {
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
-import type { WorkflowBuilderDraft } from '../../../../../store/slices/workflowDrafts/types';
 import type { TranscriptRow } from '../../../../../features/chat/utils/cluster-operations';
 import { sceneClock } from '../../sceneClock';
 
@@ -278,9 +277,6 @@ export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'claude',
     capabilities: {
       models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: true,
     },
     connection: 'connected',
     version: '2.1.296',
@@ -294,9 +290,6 @@ export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'codex',
     capabilities: {
       models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: true,
     },
     connection: 'connected',
     version: '0.58.0',
@@ -310,9 +303,6 @@ export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'cursor-agent',
     capabilities: {
       models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: true,
     },
     connection: 'connected',
     version: '2.1.12',
@@ -890,7 +880,7 @@ export const FLOW_SESSION: Session = sessionOf({
 
 export const CHAT_SESSION: Session = sessionOf({
   id: CHAT_SESSION_ID,
-  goal: 'Stop retried webhooks posting a second credit',
+  goal: 'Show the retry state on the Deliveries screen',
   state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }) },
   workflowRuns: [],
   activeProjectId: RELAY_PROJECT_ID,
@@ -992,26 +982,6 @@ export const SCRIPTS: ReadonlyArray<ProjectScript> = [
     updatedAt: EARLIER,
   },
 ];
-
-export const BUILDER_DRAFT: WorkflowBuilderDraft = {
-  mode: 'dynamic',
-  goalText:
-    'Stop retried webhooks posting a second credit, and let support see when a delivery retried',
-  goalHistory: ['Fix the duplicate credit bug'],
-  selectedPresetId: null,
-  basePresetId: null,
-  guidance:
-    'Find where a redelivered event posts a credit, decide on one place to dedupe, fix it there, then record every retry in notify-relay. Stop and ask before any change to ledger-core.',
-  steps: [],
-  autoRun: true,
-  title: 'Duplicate credit fix',
-  orchestratorModel: {
-    providerOverride: 'codex',
-    modelOverride: 'gpt-5.6-sol',
-    effortOverride: 'high',
-  },
-  providerPool: null,
-};
 
 export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   {

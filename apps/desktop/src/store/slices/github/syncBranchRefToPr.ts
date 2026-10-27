@@ -1,6 +1,7 @@
+import { formatError } from '@goodboy/ui';
 import type { ProjectId, PullRequestState, WorkspaceId } from '@goodboy/types';
-import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
-import { worktreeSyncBranchRef } from '../../../features/worktree/worktree';
+import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
+import { worktreeSyncBranchRef, type BranchRefSync } from '../../../features/worktree/worktree';
 
 type Params = {
   readonly cwd: string;
@@ -10,6 +11,8 @@ type Params = {
   readonly projectId: ProjectId;
 };
 
+const UNCHANGED: BranchRefSync = { kind: 'unchanged' };
+
 const SETTLED_STATES: ReadonlyArray<PullRequestState['state']> = ['merged', 'closed'];
 
 export const syncBranchRefToPr = async ({
@@ -18,28 +21,27 @@ export const syncBranchRefToPr = async ({
   pr,
   workspaceId,
   projectId,
-}: Params): Promise<boolean> => {
+}: Params): Promise<BranchRefSync> => {
   if (pr === null || pr.headBranch !== branch || SETTLED_STATES.includes(pr.state)) {
-    return false;
+    return UNCHANGED;
   }
   const expectedSha = pr.headSha ?? null;
   if (expectedSha === null || expectedSha === '') {
-    return false;
+    return UNCHANGED;
   }
   try {
-    const hasMoved = await worktreeSyncBranchRef({
+    const outcome = await worktreeSyncBranchRef({
       worktreePath: cwd,
       branch,
       expectedSha,
       workspaceId,
       projectId,
     });
-    if (!hasMoved) {
-      return false;
+    if (outcome.kind === 'updated') {
+      await refreshWorktreeStatuses({ worktreePaths: [cwd] });
     }
-    await refreshWorktreeStatuses({ worktreePaths: [cwd] });
-    return true;
-  } catch {
-    return false;
+    return outcome;
+  } catch (error) {
+    return { kind: 'failed', message: formatError(error) };
   }
 };

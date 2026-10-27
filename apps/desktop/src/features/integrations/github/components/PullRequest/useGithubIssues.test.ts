@@ -1,7 +1,52 @@
-import { describe, expect, it } from 'vitest';
-import type { GithubIssue, IsoDateTime, SessionExternalTask, SessionId } from '@goodboy/types';
-import { buildGithubIssueGroups } from './useGithubIssues';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { detectRepoSlug } from '@goodboy/core';
+import type {
+  GithubIssue,
+  IsoDateTime,
+  SessionExternalTask,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import { buildGithubIssueGroups, useGithubIssues } from './useGithubIssues';
+import { ghAssignedIssues } from '../../github';
 import { collectLinkedExternalIds } from '../../../hooks/useLinkedExternalIds';
+import { deferred } from '../../../testing/deferred';
+import {
+  importStore,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+} from '../../../../../store/storyHarness';
+
+const WS_ONE = brandId<WorkspaceId>({ value: 'workspace-1' });
+const WS_TWO = brandId<WorkspaceId>({ value: 'workspace-2' });
+
+vi.mock('@goodboy/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core')>()),
+  detectRepoSlug: vi.fn(),
+}));
+
+vi.mock('../../github', () => ({
+  ghAssignedIssues: vi.fn(),
+  tauriGhRunner: {},
+}));
+
+const detectSlug = vi.mocked(detectRepoSlug);
+const assignedIssues = vi.mocked(ghAssignedIssues);
+
+beforeAll(async () => {
+  await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  detectSlug.mockReset();
+  detectSlug.mockResolvedValue('harborline/ledger-core');
+  assignedIssues.mockReset();
+});
+
+afterEach(cleanup);
 
 type IssueParams = {
   readonly number: number;
@@ -60,5 +105,79 @@ describe('buildGithubIssueGroups', () => {
 
     expect(groups[0]?.rows.map((row) => row.issue.number)).toEqual([42, 43, 41]);
     expect(groups[0]?.rows.map((row) => row.sessionId)).toEqual([sessionId, null, null]);
+  });
+});
+
+describe('useGithubIssues late answers', () => {
+  const idsOf = (groups: ReturnType<typeof useGithubIssues>['groups']) =>
+    groups.flatMap((group) => group.rows.map((row) => row.issue.number));
+
+  it('drops the answer of the workspace the user left', async () => {
+    const slow = deferred<ReadonlyArray<GithubIssue>>();
+    assignedIssues
+      .mockReturnValueOnce(slow.promise)
+      .mockResolvedValueOnce([makeIssue({ number: 2, updatedAt: '2026-07-22T10:00:00Z' })]);
+    const { result, rerender } = renderHook(
+      ({ workspaceId }: { readonly workspaceId: WorkspaceId }) =>
+        useGithubIssues({ workspaceId, rootPath: '/repos/ledger-core' }),
+      { initialProps: { workspaceId: WS_ONE } },
+    );
+
+    await waitFor(() => expect(assignedIssues).toHaveBeenCalledOnce());
+
+    rerender({ workspaceId: WS_TWO });
+    await waitFor(() => expect(idsOf(result.current.groups)).toEqual([2]));
+    await act(async () => {
+      slow.resolve([makeIssue({ number: 1, updatedAt: '2026-07-21T10:00:00Z' })]);
+    });
+
+    expect(idsOf(result.current.groups)).toEqual([2]);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('drops an answer that lands after the source was switched off', async () => {
+    const slow = deferred<ReadonlyArray<GithubIssue>>();
+    assignedIssues.mockReturnValueOnce(slow.promise);
+    const { result, rerender } = renderHook(
+      ({ isEnabled }: { readonly isEnabled: boolean }) =>
+        useGithubIssues({
+          workspaceId: WS_ONE,
+          rootPath: '/repos/ledger-core',
+          isEnabled,
+        }),
+      { initialProps: { isEnabled: true } },
+    );
+    await waitFor(() => expect(assignedIssues).toHaveBeenCalledOnce());
+
+    rerender({ isEnabled: false });
+    await act(async () => {
+      slow.resolve([makeIssue({ number: 1, updatedAt: '2026-07-21T10:00:00Z' })]);
+    });
+
+    expect(result.current.groups).toEqual([]);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('drops the failure of a load that a newer one replaced', async () => {
+    const slow = deferred<ReadonlyArray<GithubIssue>>();
+    assignedIssues
+      .mockReturnValueOnce(slow.promise)
+      .mockResolvedValueOnce([makeIssue({ number: 2, updatedAt: '2026-07-22T10:00:00Z' })]);
+    const { result } = renderHook(() =>
+      useGithubIssues({
+        workspaceId: WS_ONE,
+        rootPath: '/repos/ledger-core',
+      }),
+    );
+    await waitFor(() => expect(assignedIssues).toHaveBeenCalledOnce());
+
+    act(() => result.current.refetch());
+    await waitFor(() => expect(idsOf(result.current.groups)).toEqual([2]));
+    await act(async () => {
+      slow.reject(new Error('429 Too Many Requests'));
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(idsOf(result.current.groups)).toEqual([2]);
   });
 });

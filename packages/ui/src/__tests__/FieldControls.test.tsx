@@ -25,20 +25,20 @@ const fieldOf = ({ input }: FieldOfParams): HTMLElement => {
 const classesOf = (element: HTMLElement): ReadonlyArray<string> => element.className.split(' ');
 
 describe('Input', () => {
-  it('defaults to a 28 field with 12px text and a 6px radius', () => {
+  it('defaults to a 28 field with 13px text and a 6px radius', () => {
     render(<Input aria-label="Name" />);
 
     const input = screen.getByRole('textbox', { name: 'Name' });
-    expect(classesOf(input)).toEqual(expect.arrayContaining(['h-7', 'text-label', 'rounded-md']));
+    expect(classesOf(input)).toEqual(expect.arrayContaining(['h-7', 'text-ui', 'rounded-md']));
     expect(classesOf(input)).not.toContain('h-8');
     expect(classesOf(input)).not.toContain('text-body');
   });
 
-  it('offers md at 32 with the same 12px text', () => {
+  it('offers md at 32 with the same 13px text', () => {
     render(<Input size="md" aria-label="Name" />);
 
     const input = screen.getByRole('textbox', { name: 'Name' });
-    expect(classesOf(input)).toEqual(expect.arrayContaining(['h-8', 'text-label']));
+    expect(classesOf(input)).toEqual(expect.arrayContaining(['h-8', 'text-ui']));
   });
 
   it('shows a disabled field as the fill with the disabled label, never half opacity', () => {
@@ -51,11 +51,11 @@ describe('Input', () => {
 });
 
 describe('Textarea', () => {
-  it('uses the 12px field text on a 6px radius', () => {
+  it('uses the 13px field text on a 6px radius', () => {
     render(<Textarea aria-label="Notes" />);
 
     const area = screen.getByRole('textbox', { name: 'Notes' });
-    expect(classesOf(area)).toEqual(expect.arrayContaining(['text-label', 'rounded-md']));
+    expect(classesOf(area)).toEqual(expect.arrayContaining(['text-ui', 'rounded-md']));
   });
 });
 
@@ -64,7 +64,7 @@ describe('SearchField', () => {
     render(<SearchField ariaLabel="Search scripts" value="" onChange={vi.fn()} />);
 
     const input = screen.getByRole('searchbox', { name: 'Search scripts' });
-    expect(classesOf(input)).toContain('text-label');
+    expect(classesOf(input)).toContain('text-ui');
     expect(classesOf(fieldOf({ input }))).toEqual(
       expect.arrayContaining(['h-7', 'rounded-md', 'border']),
     );

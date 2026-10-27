@@ -1,3 +1,4 @@
+import type { TerminalTab } from '../../../../shared/types/terminal';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import type { WorktreeActionTarget } from '../../../actions/types';
@@ -7,13 +8,14 @@ import { STORAGE_COLUMN } from './storageColumns';
 type Props = {
   readonly folder: StorageFolder;
   readonly status: StorageFolderStatus;
+  readonly terminals: ReadonlyArray<TerminalTab>;
   readonly target: WorktreeActionTarget;
   readonly onEditor: () => void;
 };
 
-export const WorktreeRowActions = ({ folder, status, target, onEditor }: Props) => (
+export const WorktreeRowActions = ({ folder, status, terminals, target, onEditor }: Props) => (
   <span className={STORAGE_COLUMN.actions}>
-    <RowPrimaryAction folder={folder} status={status} onEditor={onEditor} />
+    <RowPrimaryAction folder={folder} status={status} terminals={terminals} onEditor={onEditor} />
     <span data-slot="worktree-row-actions" className="row-actions flex w-7 justify-center">
       <ObjectOverflowMenu
         target={target}

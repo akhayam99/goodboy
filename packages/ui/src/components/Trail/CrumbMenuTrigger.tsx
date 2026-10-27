@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../../cn';
+import { FOCUS_RING } from '../../focusRing';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
 import { Tooltip } from '../Tooltip';
@@ -8,12 +9,7 @@ import type { CrumbMenuModel } from './crumbMenuTypes';
 import type { TrailSegmentModel } from './types';
 import { CrumbMenu } from './CrumbMenu';
 import { TrailLabel } from './TrailLabel';
-import {
-  TRAIL_CRUMB_CLASS,
-  TRAIL_CURRENT_CLASS,
-  TRAIL_LINK_CLASS,
-  TRAIL_TAIL_CLASS,
-} from './trailClasses';
+import { TRAIL_CRUMB_CLASS, TRAIL_CURRENT_CLASS, TRAIL_TAIL_CLASS } from './trailClasses';
 import { ICON_SIZE } from '../../iconSize';
 
 const WIDTH: Record<CrumbMenuModel['width'], { readonly className: string; readonly px: number }> =
@@ -152,7 +148,8 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
           data-crumb-trigger={segment.id}
           className={cn(
             TRAIL_TAIL_CLASS,
-            'group-hover/crumb:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'group-hover/crumb:text-foreground focus-visible:text-foreground',
+            FOCUS_RING,
             open && 'text-foreground',
           )}
         >

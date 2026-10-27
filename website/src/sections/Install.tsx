@@ -10,9 +10,7 @@ const COPIED_MS = 1500;
 export const Install = () => {
   const { platform, urls, primary } = useDownloads();
   const step =
-    platform === 'linux'
-      ? 'An .AppImage, or a .deb or .rpm package.'
-      : 'A .dmg for Apple silicon and Intel.';
+    platform === 'linux' ? 'Get Goodboy for your Linux computer.' : 'Get Goodboy for your Mac.';
   const [isCopied, setIsCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,7 +47,7 @@ export const Install = () => {
         eyebrow: 'Install',
         eyebrowKind: 'page',
         heading: 'Get Goodboy running',
-        lead: 'Three steps, about five minutes.',
+        lead: 'Three steps.',
       }}
     >
       <div className="install">
@@ -75,12 +73,9 @@ export const Install = () => {
                   </a>
                 </>
               ) : (
-                <>
-                  One app for Apple silicon and Intel.{' '}
-                  <a href={urls.appimage} data-download>
-                    Linux build
-                  </a>
-                </>
+                <a href={urls.appimage} data-download>
+                  Linux build
+                </a>
               )}
             </p>
             {platform === 'mac' ? (
@@ -114,10 +109,10 @@ export const Install = () => {
           </li>
           <li>
             <b>Sign in to a provider</b>
-            <span>Claude, Codex, Cursor, Gemini and more. Your plan, your keys.</span>
+            <span>Claude, Codex, Cursor, Gemini and more. Use the plans you already pay for.</span>
           </li>
           <li>
-            <b>Open a folder</b>
+            <b>New workspace</b>
             <span>
               Pick a repo you work on. Your first task starts from an issue or a sentence.
             </span>

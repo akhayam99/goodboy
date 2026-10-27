@@ -1,6 +1,5 @@
 import { Bot, Search } from 'lucide-react';
-import { Button, Tooltip } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 
 const ICON_BUTTON_CLASSES =
   'inline-flex size-7 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-hover hover:text-foreground';
@@ -17,7 +16,7 @@ export const TooltipLabelsStage = () => (
         </button>
       </Tooltip>
       <Tooltip content="Last run finished at 14:02, 3 minutes ago" side="bottom" isOpen>
-        <span tabIndex={0} className="text-label text-faint-foreground">
+        <span tabIndex={0} className="text-meta text-faint-foreground">
           3 min
         </span>
       </Tooltip>

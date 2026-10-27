@@ -8,13 +8,19 @@ import { mergeWorkspaces } from './mergeWorkspaces';
 import { reconnectMovedProject } from './reconnectMovedProject';
 import { reconnectWorkspaceById } from './reconnectWorkspaceById';
 import { renameWorkspace } from './renameWorkspace';
+import { reloadWorkspace } from './reloadWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { setWorkspacePermissionDefault } from './setWorkspacePermissionDefault';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
 import type { SliceDeps } from '../../slice-types';
+import type { AppState } from '../../types';
 
-export const createWorkspacesSlice = ({ set, get }: SliceDeps) => {
+type WorkspacesDeps = SliceDeps & {
+  readonly initialState: AppState;
+};
+
+export const createWorkspacesSlice = ({ set, get, initialState }: WorkspacesDeps) => {
   return {
     addWorkspace: addWorkspace(set, get),
     checkReconnectCandidate: checkReconnectCandidate(get),
@@ -27,8 +33,9 @@ export const createWorkspacesSlice = ({ set, get }: SliceDeps) => {
     mergeWorkspaces: mergeWorkspaces(set, get),
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),
+    reloadWorkspace: reloadWorkspace({ set, get }),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
     setWorkspacePermissionDefault: setWorkspacePermissionDefault(set, get),
-    wipeLocalDatabase: wipeLocalDatabase(set, get),
+    wipeLocalDatabase: wipeLocalDatabase(set, get, initialState),
   };
 };

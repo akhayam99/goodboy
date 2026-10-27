@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
-import { Chip, tintClasses, type Tone } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Chip, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { AskHandle, AskTarget } from '../../askHandles';
 
 type Props = {
@@ -28,9 +28,9 @@ export const AskChip = ({ handle, onOpen }: Props) => {
   const Icon = glyph.icon;
   return (
     <Chip
+      kind="state"
       as="button"
       tone="neutral"
-      size="xs"
       testId="ask-chip"
       ariaLabel={`Open ${handle.label}`}
       icon={<Icon size={ICON_SIZE.row} aria-hidden className={tintClasses(glyph.tone).icon} />}
