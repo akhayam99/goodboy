@@ -1661,6 +1661,29 @@ mod tests {
         assert!(run_batch(&mut conn, "PRAGMA journal_mode = DELETE").is_err());
     }
 
+    #[derive(serde::Deserialize)]
+    struct FixtureMigration {
+        version: u32,
+        sql: String,
+    }
+
+    #[test]
+    fn webview_sql_runs_every_migration_from_an_empty_database() {
+        let migrations: Vec<FixtureMigration> =
+            serde_json::from_str(include_str!("test_support/migrations.json")).unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
+        for migration in &migrations {
+            let result = run_batch(&mut conn, &migration.sql);
+            assert!(
+                result.is_ok(),
+                "m{} under the authorizer: {:?}",
+                migration.version,
+                result.err()
+            );
+        }
+        assert!(migrations.len() > 200);
+    }
+
     #[test]
     fn webview_sql_drops_a_column_through_the_quick_check_sqlite_runs() {
         let mut conn = memory_db();
