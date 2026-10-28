@@ -51,7 +51,7 @@ const ROWS: &[Row] = &[
     same("codex", "login", "codex login"),
     same("codex", "logout", "codex logout"),
     same("copilot", "install", NPM_COPILOT),
-    same("copilot", "update", "copilot update"),
+    same("copilot", "update", "npm install -g @github/copilot@latest"),
     same("copilot", "login", "copilot login"),
     same("gemini", "install", CURL_GEMINI),
     same(
@@ -164,7 +164,7 @@ mod tests {
         );
         assert_eq!(
             lifecycle_command("copilot", "update").unwrap(),
-            "copilot update"
+            "npm install -g @github/copilot@latest"
         );
         assert_eq!(
             lifecycle_command("copilot", "login").unwrap(),

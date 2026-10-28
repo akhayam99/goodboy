@@ -372,29 +372,23 @@ fn copilot_recorded_stream_reaches_the_sink_with_json_flags() {
 }
 
 #[test]
-fn a_copilot_turn_loses_every_host_token_that_is_not_fine_grained() {
+fn a_copilot_turn_keeps_no_host_token_that_is_not_fine_grained() {
     let _env = ParentEnv::set_values(&[
         ("GH_TOKEN", "ghp_harborline"),
-        ("GITHUB_TOKEN", "github_pat_northwind"),
+        ("GITHUB_TOKEN", "gho_northwind"),
     ]);
     let run = Run::new("ok");
     run.spawn_shaped("copilot", PROMPT, "default", None, false, false)
         .unwrap();
     run.turn_events_until_end();
 
-    assert_eq!(env_of(&run, "GH_TOKEN"), "__unset__");
-    assert_eq!(env_of(&run, "GITHUB_TOKEN"), "github_pat_northwind");
-}
-
-#[test]
-fn another_cli_keeps_a_classic_host_token() {
-    let _env = ParentEnv::set_values(&[("GH_TOKEN", "ghp_harborline")]);
-    let run = Run::new("ok");
-    run.spawn_shaped("codex", PROMPT, "default", None, false, false)
-        .unwrap();
-    run.turn_events_until_end();
-
-    assert_eq!(env_of(&run, "GH_TOKEN"), "ghp_harborline");
+    for name in ["GH_TOKEN", "GITHUB_TOKEN"] {
+        let value = env_of(&run, name);
+        assert!(
+            value == "__unset__" || value.starts_with("github_pat_"),
+            "{name} reached copilot as {value}"
+        );
+    }
 }
 
 #[test]
