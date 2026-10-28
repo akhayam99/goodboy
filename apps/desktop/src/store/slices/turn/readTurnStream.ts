@@ -17,6 +17,7 @@ import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
+import { copilotTurnUsage } from './copilotTurnUsage';
 import type { GetFn, SetFn } from './types';
 import { confinedRoleOf, READ_ONLY_ANSWER_ROLE } from './confinedRoleOf';
 import { isAutoChildTurn } from './isAutoChildTurn';
@@ -159,7 +160,12 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     const event: TurnEvent =
       resolvedEvent.kind === 'provider_session_init'
         ? { ...resolvedEvent, provider }
-        : resolvedEvent;
+        : resolvedEvent.kind === 'usage'
+          ? copilotTurnUsage({
+              event: resolvedEvent,
+              events: get().transcripts[activeAgentId] ?? [],
+            })
+          : resolvedEvent;
     if (event.kind === 'error') {
       revealPacer.flushRun({ runId, agentId: activeAgentId });
     }
