@@ -9,6 +9,7 @@ export type LatestDoneItem = Readonly<{
 
 export type LatestDone = Readonly<{
   items: ReadonlyArray<LatestDoneItem>;
+  unreadItems: ReadonlyArray<LatestDoneItem>;
   unreadCount: number;
 }>;
 
@@ -33,6 +34,7 @@ export const latestDoneOf = ({ days, unreadAgentIds }: Params): LatestDone => {
   }));
   return {
     items: marked.slice(0, LATEST_DONE_LIMIT),
-    unreadCount: marked.filter((item) => item.isUnread).length,
+    unreadItems: marked.filter((item) => item.isUnread),
+    unreadCount: unreadAgentIds.size,
   };
 };

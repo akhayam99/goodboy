@@ -2,7 +2,7 @@ import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { dispatchAfterNavigation } from '../../../actions/dispatchAfterNavigation';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useCallback } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
@@ -72,11 +72,21 @@ type TargetParams = {
   readonly entry: TimelineStreamEntry;
 };
 
+const seenAgentIdsOf = ({ entry }: TargetParams): ReadonlyArray<AgentId> => {
+  if (entry.kind === 'agent') {
+    return [entry.agent.id];
+  }
+  if (entry.kind === 'run') {
+    return entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent.id] : []));
+  }
+  return [];
+};
+
 export const useTimelineOpen = ({
   sessionId,
 }: Params): ((params: TargetParams) => TimelineOpenTarget | null) => {
   const showToast = useShowToast();
-  return useCallback(
+  const targetOf = useCallback(
     ({ entry }: TargetParams): TimelineOpenTarget | null => {
       const store = useAppStore.getState();
       if (entry.kind === 'run') {
@@ -267,5 +277,27 @@ export const useTimelineOpen = ({
       };
     },
     [sessionId, showToast],
+  );
+  return useCallback(
+    ({ entry }: TargetParams): TimelineOpenTarget | null => {
+      const target = targetOf({ entry });
+      if (target === null) {
+        return null;
+      }
+      const agentIds = seenAgentIdsOf({ entry });
+      if (agentIds.length === 0) {
+        return target;
+      }
+      return {
+        label: target.label,
+        open: () => {
+          target.open();
+          for (const agentId of agentIds) {
+            void useAppStore.getState().markAgentSeen(sessionId, agentId);
+          }
+        },
+      };
+    },
+    [sessionId, targetOf],
   );
 };

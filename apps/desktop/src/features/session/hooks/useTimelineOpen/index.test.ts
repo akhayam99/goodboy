@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   setActiveLens: vi.fn(),
   navigate: vi.fn(),
   openDrawer: vi.fn(),
+  markAgentSeen: vi.fn(),
 }));
 
 vi.mock('../../../../store', async () => {
@@ -80,6 +81,18 @@ describe('useTimelineOpen', () => {
     expect(state.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId, agentId: 'agent-1' },
     });
+  });
+
+  it('marks the agent seen when its target is opened, and not when the target is only shown', () => {
+    const sessionId = typedString<SessionId>({ value: 'session-1' });
+    state.markAgentSeen.mockClear();
+    const { result } = renderHook(() => useTimelineOpen({ sessionId }));
+    const target = result.current({ entry: agentEntry({ agentKind: 'implementer' }) });
+
+    expect(target?.label).toBe('Open chat');
+    expect(state.markAgentSeen).not.toHaveBeenCalled();
+    target?.open();
+    expect(state.markAgentSeen).toHaveBeenCalledWith(sessionId, 'agent-1');
   });
 
   it('opens any other agent on its chat without asking for a tab', () => {

@@ -1,5 +1,5 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
 import { StateNode } from '../../../shared/components/StateNode';
@@ -27,9 +27,10 @@ export const RailSessionButton = ({
   onLeave,
   onKeyDown,
 }: Props) => {
-  const { summary, node, plainTitle: text } = useSessionRowFacts({ session });
+  const { summary, node, plainTitle: text, unreadLabel } = useSessionRowFacts({ session });
   const words = summary.words ?? summary.reason;
-  const label = words === '' ? text : `${text}, ${words}`;
+  const base = words === '' ? text : `${text}, ${words}`;
+  const label = unreadLabel === null ? base : `${base}, ${unreadLabel}`;
   const isCurrent = sign === 'current';
   const menu = useObjectMenuTrigger({
     target: { kind: 'session', sessionId: session.id },
@@ -63,7 +64,15 @@ export const RailSessionButton = ({
         sign === 'remembered' && 'text-foreground',
       )}
     >
-      <StateNode node={node} isOnSelectedRow={isCurrent} />
+      {unreadLabel === null ? (
+        <StateNode node={node} isOnSelectedRow={isCurrent} />
+      ) : (
+        <Tooltip content={unreadLabel} side="right">
+          <span className="inline-flex">
+            <StateNode node={node} isOnSelectedRow={isCurrent} />
+          </span>
+        </Tooltip>
+      )}
     </button>
   );
 };

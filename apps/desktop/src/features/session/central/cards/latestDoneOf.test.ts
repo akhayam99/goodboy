@@ -58,20 +58,25 @@ describe('latestDoneOf', () => {
     expect(items.map((item) => item.row.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('marks a row unread when any of its agents is, and counts every unread row, shown or not', () => {
-    const { items, unreadCount } = latestDoneOf({
+  it('marks a row unread when any of its agents is, and lists every unread row newest first, shown or not', () => {
+    const { items, unreadItems, unreadCount } = latestDoneOf({
       days: DAYS,
       unreadAgentIds: new Set(['agent-b2', 'agent-e']),
     });
 
     expect(items.map((item) => item.isUnread)).toEqual([false, true, false]);
+    expect(unreadItems.map((item) => item.row.id)).toEqual(['b', 'e']);
     expect(unreadCount).toBe(2);
   });
 
-  it('never reads a row without agents as unread, and says nothing for no rows', () => {
-    expect(latestDoneOf({ days: DAYS, unreadAgentIds: new Set(['agent-x']) }).unreadCount).toBe(0);
+  it('counts unread agents like the rail does, and lists no row for an agent outside the rows', () => {
+    const unread = latestDoneOf({ days: DAYS, unreadAgentIds: new Set(['agent-x']) });
+
+    expect(unread.unreadCount).toBe(1);
+    expect(unread.unreadItems).toEqual([]);
     expect(latestDoneOf({ days: [], unreadAgentIds: new Set() })).toEqual({
       items: [],
+      unreadItems: [],
       unreadCount: 0,
     });
   });

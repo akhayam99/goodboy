@@ -3,13 +3,13 @@ import { useOpenStopMountIds } from '../../hooks/useOpenStopMountIds';
 import type { Session, SessionEvent, SessionId, TurnState } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
-  agentHasUnread,
   useAppStore,
   useIsSessionCollectionLoaded,
   useSessionAnsweredQuestions,
   useSessionDismissedQuestions,
   useSessionOpenQuestions,
 } from '../../../../store';
+import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { autoRowFacts, type AutoRowFacts } from '../../../auto/autoRowFacts';
 import { useAutoTrees } from '../../../auto/useAutoTrees';
 import { withoutAutoChildren } from '../../../auto/withoutAutoChildren';
@@ -155,15 +155,10 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
   const turnByAgentId = useLiveAgentTurns({ agents });
 
-  const unreadAgentIds = useMemo(() => {
-    const unread = new Set<string>();
-    for (const agent of agents) {
-      if (agentHasUnread(agent, false)) {
-        unread.add(agent.id);
-      }
-    }
-    return unread;
-  }, [agents]);
+  const unreadAgentIds = useMemo(
+    () => new Set<string>(unreadAgentsOf({ agents }).map((agent) => agent.id)),
+    [agents],
+  );
 
   const liveAgentIds = useMemo(
     () => (hasLoadedAgents ? new Set(agents.map((agent) => agent.id)) : undefined),

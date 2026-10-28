@@ -87,8 +87,15 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - It says in one line which branches merged or closed and how many runs and agents finished.
 - It then lists the last three finished items, newest first. Each shows who did it, the outcome in one sentence, how long ago, and a dot when the reply was not read yet.
 - A click opens the agent or run.
-- The header counts the unread ones, as in "Done 5, 1 unread". **Mark all seen** sits beside **Full log** while any is unread.
+- The header counts the unread ones, as in "Done 5, 1 unread".
 - An archived session keeps this card with its list.
+
+**New since you last looked**
+
+- It sits above everything else while something is unread, and lists each unread item, newest first, so you do not need the full log to see what is new.
+- A click opens the item and marks it seen. Showing it does not.
+- **Mark all seen** clears them all.
+- The blue dot on a session in the sidebar says what is new when you hover it, as in "1 new: Step 1 result of the Harborline ledger". It counts the same items as this card.
 
 **Branches**
 
