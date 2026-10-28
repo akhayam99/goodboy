@@ -119,7 +119,7 @@ describe('the u26 shell scenes', () => {
 
     const door = document.querySelector('[data-side-column] [data-column-door="board"]');
     expect(door?.getAttribute('aria-label')).toMatch(/^Sessions, 2 need you: /);
-    expect(door?.querySelector('[data-door-pill]')?.textContent).toBe('2');
+    expect(door?.querySelector('[data-door-count]')?.textContent).toBe('2');
     expect(
       document
         .querySelector('[data-top-bar] [data-now-needs-you]')

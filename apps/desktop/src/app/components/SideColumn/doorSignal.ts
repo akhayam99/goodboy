@@ -6,10 +6,10 @@ export type DoorSignal = {
   readonly isUnread: boolean;
   readonly fact: string;
   readonly tone?: DoorTone;
-  readonly pill?: string;
+  readonly countText?: string;
 };
 
-const DOOR_PILL_CAP = 9;
+const DOOR_COUNT_CAP = 9;
 
 type TerminalParams = {
   readonly kind: 'terminal';
@@ -73,16 +73,12 @@ type BoardParams = {
 
 type Params = TerminalParams | InboxParams | ChatParams | MonitoringParams | BoardParams;
 
-type PillParams = {
+type CountTextParams = {
   readonly count: number;
 };
 
-const pillOf = ({ count }: PillParams): string | undefined => {
-  if (count < 2) {
-    return undefined;
-  }
-  return count > DOOR_PILL_CAP ? `${DOOR_PILL_CAP}+` : String(count);
-};
+const countTextOf = ({ count }: CountTextParams): string =>
+  count > DOOR_COUNT_CAP ? `${DOOR_COUNT_CAP}+` : String(count);
 
 type FactParams = {
   readonly lead: string;
@@ -119,13 +115,12 @@ export const doorSignalOf = ({
         }),
       };
     }
-    const pill = pillOf({ count });
     return {
       count,
       isWarning: true,
       isUnread: false,
       tone: tone ?? 'warning',
-      ...(pill !== undefined && { pill }),
+      countText: countTextOf({ count }),
       fact: factOf({ lead: `${count} ${count === 1 ? 'needs' : 'need'} you`, reasons }),
     };
   }

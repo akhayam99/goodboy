@@ -205,9 +205,9 @@ describe('the session marks scene', () => {
     );
     await waitFor(() => expect(rowOf('Billing export fails on large files')).toBeDefined());
 
-    const pill = document.querySelector('[data-column-door="board"] [data-door-pill]');
-    expect(pill?.textContent).toBe('9+');
-    expect(pill?.getAttribute('data-door-signal')).toBe('danger');
+    const count = document.querySelector('[data-column-door="board"] [data-door-count]');
+    expect(count?.textContent).toBe('9+');
+    expect(count?.getAttribute('data-door-signal')).toBe('danger');
     const segment = document.querySelector('[data-top-bar] [data-now-needs-you]');
     expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 need you/);
     expect(segment?.querySelector('.bg-danger')).not.toBeNull();

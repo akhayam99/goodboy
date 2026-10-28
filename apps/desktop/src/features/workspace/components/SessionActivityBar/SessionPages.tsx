@@ -1,7 +1,8 @@
-import { ICON_SIZE, SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE, SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
+import { TONE_COUNT_CLASS } from '../../../../shared/components/toneCountClass';
 import { openSessionPage } from '../../../session/openSessionPage';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import type { Page } from '../../../session/pageRegistry';
@@ -34,7 +35,7 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
           <span
             data-page-value={page.id}
             data-tone={slot.tone ?? 'count'}
-            className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground empty:hidden"
+            className={cn(TONE_COUNT_CLASS, 'empty:hidden')}
           >
             {slot.tone === null ? null : <StatusDot tone={slot.tone} size="sm" />}
             {slot.text === null ? null : <span>{slot.text}</span>}

@@ -1,4 +1,5 @@
-import { cn, StatusDot, tintClasses } from '@goodboy/ui';
+import { StatusDot } from '@goodboy/ui';
+import { TONE_COUNT_CLASS } from '../../../shared/components/toneCountClass';
 import type { DoorSignal } from './doorSignal';
 
 type Props = {
@@ -7,18 +8,11 @@ type Props = {
 
 export const DoorSignalMark = ({ signal }: Props) => {
   const tone = signal.tone ?? 'warning';
-  if (signal.pill !== undefined) {
+  if (signal.countText !== undefined) {
     return (
-      <span
-        aria-hidden
-        data-door-signal={tone}
-        data-door-pill=""
-        className={cn(
-          'flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-meta tabular-nums',
-          tintClasses(tone === 'danger' ? 'danger' : 'warning').solid,
-        )}
-      >
-        {signal.pill}
+      <span aria-hidden data-door-signal={tone} data-door-count="" className={TONE_COUNT_CLASS}>
+        <StatusDot tone={tone === 'danger' ? 'danger' : 'warning'} size="sm" />
+        <span>{signal.countText}</span>
       </span>
     );
   }
