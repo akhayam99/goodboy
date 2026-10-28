@@ -104,6 +104,74 @@ describe('useReviewPush on a page that shows one mount', () => {
     expect(retry).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_LEDGER });
   });
 
+  it('says nothing is waiting only when the last push did not fail', async () => {
+    retry.mockResolvedValueOnce({ ...PREVIEW, publicationId: null, commits: [] });
+    const { result } = renderHook(() =>
+      useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }),
+    );
+
+    await act(async () => {
+      await result.current.press({ isRetry: true });
+    });
+
+    expect(result.current.phase).toEqual({
+      kind: 'result',
+      result: { tone: 'done', sentence: 'Nothing is waiting for the push.' },
+    });
+  });
+
+  it('shows the failed push, its check and an agent target when the retry finds nothing new', async () => {
+    const error = '$ yarn knip --cache\nUnused files (15)\nerror: failed to push some refs';
+    useAppStore.setState({
+      sessionResolvePublications: {
+        [SESSION.id]: [
+          {
+            id: 'pub-ledger',
+            sessionId: SESSION.id,
+            repo: 'harborline/ledger-core',
+            prNumber: 12,
+            branch: 'hl/ledger-core',
+            targetRef: 'main',
+            localHead: 'a41c9e2aaaa',
+            remoteHead: '7d02b11bbbb',
+            commitShas: ['a41c9e2aaaa', 'b52d0f3bbbb'],
+            candidateIds: [],
+            approvedItemIds: [],
+            requiresPush: true,
+            mountTarget: null,
+            phase: 'failed',
+            pushedHead: null,
+            confirmedAt: 2,
+            completedAt: 3,
+            holder: null,
+            heartbeatAt: null,
+            error,
+            createdAt: 1,
+          },
+        ],
+      },
+    });
+    retry.mockResolvedValueOnce({ ...PREVIEW, publicationId: null, commits: [] });
+    const { result } = renderHook(() =>
+      useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }),
+    );
+
+    await act(async () => {
+      await result.current.press({ isRetry: true });
+    });
+
+    expect(result.current.phase).toEqual({
+      kind: 'result',
+      result: {
+        tone: 'failed',
+        sentence: 'Nothing was pushed: yarn knip --cache failed. The comments stay as they were.',
+        failure: { output: error },
+      },
+    });
+    expect(result.current.fixTarget?.mountId).toBe(MOUNT_LEDGER);
+    expect(result.current.fixTarget?.pending).toContain('pull request #12 with 2 fix commits');
+  });
+
   it('closes an open confirm when the page moves to another mount', async () => {
     const { result, rerender } = renderHook(
       ({ mountId }: { readonly mountId: MountId }) =>

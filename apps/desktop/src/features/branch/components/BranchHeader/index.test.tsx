@@ -745,7 +745,7 @@ describe('BranchHeader push failure', () => {
     return { fixBranchPushWithAgent, prefillBranchPushTerminal };
   };
 
-  it('offers Fix with agent and Open terminal here beside Retry when a plain push fails', async () => {
+  it('offers Let an agent fix the push and Open terminal here beside Retry when a plain push fails', async () => {
     withRequest(open);
     status = upstreamAt({ ahead: 2, behind: 0 });
     const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
@@ -757,7 +757,7 @@ describe('BranchHeader push failure', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('pre-push hook declined');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
     await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledTimes(1));
     expect(fixBranchPushWithAgent).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -791,7 +791,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
       target: { value: 'Keep the pre-push hook as it is.' },
     });
-    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
 
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
@@ -813,7 +813,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Force push$/ }));
     const alert = await screen.findByRole('alert');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
         expect.objectContaining({ isForce: true, message: 'stale info' }),

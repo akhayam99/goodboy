@@ -8,6 +8,7 @@ type Props = {
   readonly showReasons?: boolean;
   readonly failureActions?: ReactNode;
   readonly failureHint?: ReactNode;
+  readonly failureDetail?: ReactNode;
 };
 
 export const ActionStatusLine = ({
@@ -15,6 +16,7 @@ export const ActionStatusLine = ({
   showReasons = true,
   failureActions = null,
   failureHint = null,
+  failureDetail = null,
 }: Props) => {
   const visible = showReasons
     ? [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })]
@@ -69,7 +71,7 @@ export const ActionStatusLine = ({
                   ? 'Push failed'
                   : "Couldn't finish"
             }
-            body={controls.failure.message}
+            body={failureDetail ?? controls.failure.message}
             actions={
               <>
                 {failureActions}

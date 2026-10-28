@@ -20,7 +20,9 @@ import { signScribeBody } from '../scribe/scribeSignature';
 import { readOnlineRemoteSha } from '../../runtime/worktreeStatuses/onlyOnline';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { githubRequestHost } from './mountPrLink';
+import { PrPushFailedError } from './PrPushFailedError';
 import { ScribeWritingError } from './ScribeWritingError';
+import { pushFailureReason } from '../../../features/resolve/pushFailureReason';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
@@ -217,11 +219,15 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
         kind: 'error',
         severity: 'error',
         title: "Couldn't push the branch",
-        body: pushed.error,
+        body: pushFailureReason({ error: pushed.error }),
         sessionId,
         workspaceId: workspace.id,
       });
-      throw new ReportedError(`Couldn't push ${mount.branch}: ${pushed.error}`);
+      throw new PrPushFailedError({
+        branch: mount.branch,
+        mountId: mount.id,
+        output: pushed.error,
+      });
     }
     onPushed?.();
 

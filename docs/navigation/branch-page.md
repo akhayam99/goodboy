@@ -103,6 +103,18 @@ confirm showed, `PushFailedError.confirmedRemoteSha`; when the online copy moved
 typed and the header says `The online copy changed. Check again before force pushing.`, and a
 prefill always opens a new terminal tab). A retry that pushed clears the failure line
 (`settledBranchPushes`).
+A push failure keeps its cause. `git_push` returns stdout and stderr with credentials and home
+paths masked (`redact_output`), `pushOutputOf` joins both and bounds them (head plus the git
+verdict), and `pushFailureDigest` reads the failing hook or command and the first findings that
+`PushFailureBlock` shows on the failure card, the Comments banner (`PushBanner`) and the create
+form. The label is `Let an agent fix the push` (`PushFixAgentAction`): it calls
+`fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
+publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
+brief tells the agent not to do itself and never to skip a hook. The action tracks the agent
+(`branchPushFixAgentOf`) and, when `settledBranchPushes` rises, the banner re-arms the publication
+(`retryAfterFix`) and the create form runs its create again. A retry that finds nothing new while
+the last publication failed on its push shows that failure, never `Nothing is waiting for the push`
+(`failedPushPublication`).
 Only the header pushes everything: a thread has no
 Push, Push again or Sync button. The header reads `Push N fixes` (N counts every
 accepted thread, the opened one never narrows it) and one click prepares the

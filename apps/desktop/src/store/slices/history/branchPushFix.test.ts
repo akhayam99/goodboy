@@ -16,7 +16,7 @@ const h = vi.hoisted(() => ({
     remoteSha: 'remote-sha',
     onlyOnline: [],
   })),
-  gitPush: vi.fn<() => Promise<unknown>>(async () => ({ exitCode: 0, stderr: '' })),
+  gitPush: vi.fn<() => Promise<unknown>>(async () => ({ exitCode: 0, stdout: '', stderr: '' })),
 }));
 
 vi.mock('../../../features/history/historyEngine', () => ({
@@ -147,7 +147,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   resetWorktreeStatusCache();
   h.pushWithLease.mockResolvedValue({ kind: 'pushed' });
-  h.gitPush.mockResolvedValue({ exitCode: 0, stderr: '' });
+  h.gitPush.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
   h.readOriginAhead.mockResolvedValue({
     knownRemoteSha: 'remote-sha',
     remoteSha: 'remote-sha',
@@ -430,7 +430,7 @@ describe('settleBranchPushFix', () => {
   });
 
   it('keeps the failure when the retry fails again', async () => {
-    h.gitPush.mockResolvedValue({ exitCode: 1, stderr: 'hook declined' });
+    h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'hook declined' });
     const { read } = harness();
     await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
 
@@ -444,7 +444,7 @@ describe('settleBranchPushFix', () => {
   });
 
   it('reports a push that fails again and keeps no pending fix', async () => {
-    h.gitPush.mockResolvedValue({ exitCode: 1, stderr: 'hook declined' });
+    h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'hook declined' });
     const { read } = harness();
     await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
 

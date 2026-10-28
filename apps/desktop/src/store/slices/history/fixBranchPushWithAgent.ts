@@ -11,6 +11,7 @@ import type { BranchPushInput } from './types';
 type Params = BranchPushInput & {
   readonly message: string;
   readonly hint?: string;
+  readonly pending?: string;
   readonly onAccepted?: () => void;
 };
 
@@ -23,6 +24,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
     confirmedRemoteSha,
     message,
     hint,
+    pending,
     onAccepted,
   }: Params): Promise<void> => {
     const isBusy = Object.values(get().branchPushFixes).some(
@@ -59,6 +61,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
           command: pushFixCommand({ branch: target.branch, remoteSha }),
           output: message,
           ...(hint !== undefined && { hint }),
+          ...(pending !== undefined && { pending }),
         }),
         ...(onAccepted !== undefined && { onAccepted }),
         isStillValid: () => identityChange({ get, sessionId, mountId, identity }) === null,
@@ -67,6 +70,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
             branchPushFixes: {
               ...current.branchPushFixes,
               [agentId]: {
+                agentId,
                 sessionId,
                 mountId,
                 identity,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowUpToLine } from 'lucide-react';
-import { Button, ICON_SIZE, InlineConfirm, Notice, Tooltip, formatError } from '@goodboy/ui';
+import { Button, ICON_SIZE, InlineConfirm, Tooltip, formatError } from '@goodboy/ui';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { taskModelAgentSpawnConfig } from '../../../session/taskModelAgentSpawnConfig';
@@ -25,6 +25,7 @@ import {
 } from '../../../../store/runtime/worktreeStatuses/onlyOnline';
 import { SCRIBE_WRITING_REASON } from '../../../../store/slices/scribe/scribeWritingReason';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { CreateFailureNotice } from './CreateFailureNotice';
 import { ReviewSettings } from './ReviewSettings';
 import { ReviewTextCard } from './ReviewTextCard';
 import { ScribeBar } from './ScribeBar';
@@ -62,7 +63,7 @@ type Props = {
 type Phase =
   | { readonly kind: 'idle' }
   | { readonly kind: 'creating'; readonly isPushed: boolean }
-  | { readonly kind: 'failed'; readonly message: string };
+  | { readonly kind: 'failed'; readonly error: unknown };
 
 type CreateParams = {
   readonly forcePush: ForcePushInput | null;
@@ -339,7 +340,7 @@ export const CreateReviewForm = ({
       setPhase(IDLE);
       onCreated(created);
     } catch (error) {
-      setPhase({ kind: 'failed', message: formatError(error) });
+      setPhase({ kind: 'failed', error });
     }
   };
 
@@ -391,13 +392,12 @@ export const CreateReviewForm = ({
           />
         </ReviewTextCard>
         {phase.kind === 'failed' && (
-          <Notice
-            tone="danger"
-            placement="inline"
-            role="alert"
-            title={`Couldn't open the ${nouns.long}`}
-            body="The text is kept."
-            detail={phase.message}
+          <CreateFailureNotice
+            sessionId={sessionId}
+            nouns={nouns}
+            error={phase.error}
+            draft={{ title, body, base, isDraft: canSetDraft && isDraft }}
+            onRetry={() => void onCreate({ forcePush: null })}
           />
         )}
         {!hasPushStep && unpushed > 0 && (

@@ -62,7 +62,7 @@ describe('the u25 integration fix scenes', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('seenEvents is assigned but never used');
-    expect(within(alert).getByRole('button', { name: 'Fix with agent' })).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Let an agent fix the push' })).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
   });
@@ -71,7 +71,7 @@ describe('the u25 integration fix scenes', () => {
     await renderScene({ name: 'branch-force-push-failed' });
 
     const alert = await screen.findByRole('alert');
-    expect(within(alert).getByRole('button', { name: 'Fix with agent' })).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Let an agent fix the push' })).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
   });
 });

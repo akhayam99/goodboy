@@ -180,6 +180,27 @@ describe('pushSessionBranch', () => {
     expect(state.refreshSessionPr).not.toHaveBeenCalled();
   });
 
+  it('keeps the hook output ahead of the git verdict when a hook stops the push', async () => {
+    const state = makeState();
+    h.gitPush.mockResolvedValue({
+      exitCode: 1,
+      stdout: '$ yarn knip --cache\nUnused files (15)',
+      stderr: 'husky - pre-push script failed (code 1)\nerror: failed to push some refs',
+    });
+
+    const result = await pushSessionBranch({
+      get: () => state,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'husky - pre-push script failed (code 1)\nerror: failed to push some refs\n$ yarn knip --cache\nUnused files (15)',
+    });
+  });
+
   it('refuses a mount the session does not hold', async () => {
     const state = makeState();
 
