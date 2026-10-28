@@ -6,7 +6,9 @@ import type {
   HistoryRewriterBinding,
   HistoryRun,
   PushContinuation,
+  PushFixOutcome,
 } from './types';
+import { readPushFixMemory } from './pushFix/pushFixMemory';
 
 export type HistoryState = {
   readonly historyRuns: Readonly<Record<MountId, HistoryRun>>;
@@ -15,15 +17,19 @@ export type HistoryState = {
   readonly branchPushFixes: Readonly<Record<AgentId, BranchPushFix>>;
   readonly settledBranchPushes: Readonly<Record<MountId, number>>;
   readonly pushContinuations: Readonly<Record<MountId, PushContinuation>>;
+  readonly pushFixOutcomes: Readonly<Record<MountId, PushFixOutcome>>;
   readonly historyLiveSessions: Readonly<Record<MountId, HistoryLiveSession>>;
 };
+
+const remembered = readPushFixMemory();
 
 export const historyInitialState: HistoryState = {
   historyRuns: {},
   historyRewriters: {},
   historyDrafts: {},
-  branchPushFixes: {},
+  branchPushFixes: remembered.fixes,
   settledBranchPushes: {},
   pushContinuations: {},
+  pushFixOutcomes: remembered.outcomes,
   historyLiveSessions: {},
 };

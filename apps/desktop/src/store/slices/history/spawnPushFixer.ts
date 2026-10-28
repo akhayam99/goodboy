@@ -1,9 +1,8 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { selectKindRouting } from '../agents/selectKindRouting';
 import type { SendTurnResult } from '../turn/types';
+import { PUSH_FIXER_NAME } from './pushFix/pushFixerName';
 import type { GetFn } from './types';
-
-const PUSH_FIXER_NAME = 'Fix the push';
 
 type RefusalParams = {
   readonly result: SendTurnResult;

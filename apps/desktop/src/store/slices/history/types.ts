@@ -178,13 +178,32 @@ export type BranchPushFix = {
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
   readonly confirmedRemoteSha: string | null;
+  readonly startedAt: number;
+};
+
+export type PushFixFollowUp = {
+  readonly tone: 'done' | 'failed';
+  readonly sentence: string;
+};
+
+export type PushFixOutcomeKind = 'pushed' | 'agent_failed' | 'push_failed';
+
+export type PushFixOutcome = {
+  readonly agentId: AgentId;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly kind: PushFixOutcomeKind;
+  readonly reason: string | null;
+  readonly settledAt: number;
+  readonly isClaimed: boolean;
+  readonly followUp: PushFixFollowUp | null;
 };
 
 export type PushContinuation = {
   readonly agentId: AgentId;
   readonly sessionId: SessionId;
   readonly mountId: MountId;
-  readonly resume: () => void;
+  readonly resume: () => void | Promise<PushFixFollowUp | undefined>;
 };
 
 export type BranchPushInput = HistoryMountInput & {

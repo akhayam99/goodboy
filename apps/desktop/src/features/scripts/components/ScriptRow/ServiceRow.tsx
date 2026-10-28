@@ -1,7 +1,7 @@
 import { Chip, FactCard, InteractiveRow, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
 import { openUrl } from '../../../../shared/lib/editor';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { lastOutputLine } from '../../lastOutputLine';
+import { lastOutputLine } from '../../../../shared/utils/lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { describeLastRun } from './describeLastRun';
 import { RunToggle } from './RunToggle';

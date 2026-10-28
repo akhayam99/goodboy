@@ -14,6 +14,9 @@ const BECAUSE = /\b(?:because|since)\b/i;
 
 const CLAUSE_END = /,\s*(?:so|but|then|and so)\b/i;
 
+const DEPS_WORD =
+  /\b(?:deps?|dependenc(?:y|ies)|node_modules|install(?:ed|ing)?|packages?|vendor)\b/i;
+
 const TRAILING = /[\s.,;:!]+$/;
 
 type SentenceParams = {
@@ -58,3 +61,9 @@ type SkippedParams = {
 
 export const checksSkippedLine = ({ skipped }: SkippedParams): string =>
   `Checks were skipped: ${skipped.reason}`;
+
+type ReasonParams = {
+  readonly reason: string;
+};
+
+export const isMissingDepsReason = ({ reason }: ReasonParams): boolean => DEPS_WORD.test(reason);

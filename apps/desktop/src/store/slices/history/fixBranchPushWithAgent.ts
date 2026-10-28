@@ -5,15 +5,17 @@ import { identityChange, identityOf } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import { spawnPushFixer } from './spawnPushFixer';
 import { pushFixInFlight } from './pushFixInFlight';
+import { persistPushFixes } from './pushFix/persistPushFixes';
+import { pushFixStateOf } from './pushFix/pushFixStateOf';
 import type { SliceDeps } from '../../slice-types';
-import type { BranchPushInput } from './types';
+import type { BranchPushInput, PushContinuation } from './types';
 
 type Params = BranchPushInput & {
   readonly message: string;
   readonly hint?: string;
   readonly pending?: string;
   readonly onAccepted?: () => void;
-  readonly onSettled?: () => void;
+  readonly onSettled?: PushContinuation['resume'];
 };
 
 export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
@@ -29,10 +31,14 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
     onAccepted,
     onSettled,
   }: Params): Promise<void> => {
-    const isBusy = Object.values(get().branchPushFixes).some(
-      (fix) => fix.sessionId === sessionId && fix.mountId === mountId,
-    );
-    if (isBusy) {
+    const current = pushFixStateOf({
+      fixes: get().branchPushFixes,
+      outcomes: get().pushFixOutcomes,
+      agents: get().sessionPhaseRuns[sessionId],
+      sessionId,
+      mountId,
+    });
+    if (current.kind === 'working') {
       return;
     }
     const key = `branch:${mountId}`;
@@ -68,9 +74,13 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
         ...(onAccepted !== undefined && { onAccepted }),
         isStillValid: () => identityChange({ get, sessionId, mountId, identity }) === null,
         bind: ({ agentId }) => {
-          set((current) => ({
+          set((state) => ({
             branchPushFixes: {
-              ...current.branchPushFixes,
+              ...Object.fromEntries(
+                Object.entries(state.branchPushFixes).filter(
+                  ([, fix]) => fix.sessionId !== sessionId || fix.mountId !== mountId,
+                ),
+              ),
               [agentId]: {
                 agentId,
                 sessionId,
@@ -79,28 +89,34 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
                 isForce,
                 confirmedOnlyOnline,
                 confirmedRemoteSha,
+                startedAt: Date.now(),
               },
             },
+            pushFixOutcomes: Object.fromEntries(
+              Object.entries(state.pushFixOutcomes).filter(([key]) => key !== mountId),
+            ),
             pushContinuations:
               onSettled === undefined
-                ? current.pushContinuations
+                ? state.pushContinuations
                 : {
-                    ...current.pushContinuations,
+                    ...state.pushContinuations,
                     [mountId]: { agentId, sessionId, mountId, resume: onSettled },
                   },
           }));
+          persistPushFixes({ get });
         },
         unbind: ({ agentId }) => {
-          set((current) => ({
+          set((state) => ({
             branchPushFixes: Object.fromEntries(
-              Object.entries(current.branchPushFixes).filter(([key]) => key !== agentId),
+              Object.entries(state.branchPushFixes).filter(([key]) => key !== agentId),
             ),
             pushContinuations: Object.fromEntries(
-              Object.entries(current.pushContinuations).filter(
+              Object.entries(state.pushContinuations).filter(
                 ([, continuation]) => continuation.agentId !== agentId,
               ),
             ),
           }));
+          persistPushFixes({ get });
         },
       });
     } finally {

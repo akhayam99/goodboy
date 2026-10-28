@@ -1,11 +1,12 @@
 import { CircleAlert, GitMerge, X } from 'lucide-react';
 import { cn, GhostActionButton, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
-import { PushFixAgentAction } from '../../../../shared/components/PushFixAgentAction';
-import { SYNC_COPY } from '../../failedRunCopy';
-import type { PushResult } from '../../reviewPushCopy';
-import type { ReviewPush } from './useReviewPush';
+import { PushFailureBlock } from '../../../../../shared/components/PushFailureBlock';
+import { PushFixAgentAction } from '../../../../../shared/components/PushFixAgentAction';
+import { StaleDepsAction } from '../../../../../shared/components/StaleDepsAction';
+import { SYNC_COPY } from '../../../failedRunCopy';
+import type { PushResult } from '../../../reviewPushCopy';
+import type { ReviewPush } from '../useReviewPush';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,6 +37,13 @@ export const PushFailureCard = ({ sessionId, push, result }: Props) => {
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {result.canSync === true && (
           <GhostActionButton icon={GitMerge} label={SYNC_COPY.action} onClick={push.askSync} />
+        )}
+        {fixTarget !== null && (
+          <StaleDepsAction
+            sessionId={sessionId}
+            mountId={fixTarget.mountId}
+            onInstalled={push.retryAfterDeps}
+          />
         )}
         {fixTarget !== null && (
           <PushFixAgentAction

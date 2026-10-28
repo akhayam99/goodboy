@@ -365,6 +365,8 @@
     "worktree_commits",
     "worktree_continue_rebase",
     "worktree_create",
+    "worktree_deps_check",
+    "worktree_deps_unlink",
     "worktree_detach_assessment",
     "worktree_diff",
     "worktree_diff_commit",

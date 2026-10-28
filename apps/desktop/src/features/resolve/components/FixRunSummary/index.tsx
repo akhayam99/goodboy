@@ -120,7 +120,9 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
         hasStateColumn={shared === null}
         onOpen={openThread}
       />
-      {status === 'ended' && <ChecksSkippedNotice text={outcome.text} />}
+      {status === 'ended' && (
+        <ChecksSkippedNotice text={outcome.text} sessionId={sessionId} mountId={mountId} />
+      )}
       {status === 'ended' && outcome.text !== '' && (
         <FixRunNote label={FIX_RUN_COPY.didHeading}>
           <div

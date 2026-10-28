@@ -111,13 +111,40 @@ form. The label is `Let an agent fix the push` (`PushFixAgentAction`): it calls
 `fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
 publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
 brief tells the agent not to do itself and never to skip a hook. The action tracks the agent
-(`branchPushFixAgentOf`) and hands the store its continuation (`onSettled`, kept in
-`pushContinuations` by mount). When the fix pushed, `settleBranchPushFix` runs it from the store,
-once, wherever the user is: the banner re-arms the publication (`retryAfterFix`) and the create
-form runs its create again, with the latest text of the screen that registered it. A failed agent
-or a push that fails again drops it. A retry that finds nothing new while
-the last publication failed on its push shows that failure, never `Nothing is waiting for the push`
-(`failedPushPublication`).
+and hands the store its continuation (`onSettled`, kept in `pushContinuations` by mount). When
+the fix pushed, `settleBranchPushFix` runs it from the store, once, wherever the user is: the
+banner re-arms the publication (`retryAfterFix`) and the create form runs its create again, with
+the latest text of the screen that registered it. A continuation may return what it did
+(`PushFixFollowUp`: `Pull request #318 is open.`, `The fix is pushed. Nothing else is waiting.`,
+or the reason it failed). A retry that finds nothing new while the last publication failed on its
+push shows that failure, never `Nothing is waiting for the push` (`failedPushPublication`).
+The card does not depend on staying mounted. The fix of a branch is kept in the store
+(`branchPushFixes`) and its result in `pushFixOutcomes` by mount (`pushed`, `agent_failed` or
+`push_failed`, with the reason and the follow up), both written through to browser storage
+(`pushFixMemory`, six hours, read when the store starts) so a window reload keeps them.
+`pushFixStateOf` reads one answer from them and from the saved agents, so a running `Fix the
+push` agent of the branch is found again even when the window forgot the fix: `working`, `pushed`,
+`failed` or `none`. Every push surface draws it with `usePushFix` and `PushFixStatusLine`: the
+failure card and the header line replace their button while the agent works and show why it
+stopped or what stopped the push after it; the Comments banner (`PushFixIdle`), the header
+(`PushFixStatus`) and the create form (`CreateNotices`) show the same line when no failure is on
+screen, so leaving the page and coming back shows the agent, its progress and its result. A
+result nobody took (the fix pushed while no continuation was registered) is claimed once by the
+first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. A new fix on
+the branch clears the old result, and the line can be dismissed (`dismissPushFixOutcome`).
+Stale dependencies are caught before the push. `worktree_deps_check` reads the lockfile to pick
+the package manager (`worktree_setup_proposal` tables), and reports a worktree whose install
+folder is missing (`missing`) or whose install folder, a nested one or a workspace package link
+resolves outside the worktree (`outside`; the usual case is `node_modules` linked to another
+checkout, so the push hook and the checks read that checkout's code). `StaleDepsNotice` shows it
+above the push surfaces (the Comments page through `LaneNotices`, the Branch header when Push is
+next, the create form) and `StaleDepsAction` sits beside Retry on the push failure cards.
+**Reinstall dependencies** (`reinstallWorktreeDeps`, `ReinstallDepsAction`) runs the install of
+the lockfile in that worktree as the script `deps-install:<mount>` (progress and result stay on
+`scriptRuns`, so a card that comes back still shows the install running), checks again, and then
+retries the push (`retryAfterDeps`, the header Retry, the create again). When the whole install
+folder is a link to another folder, `worktree_deps_unlink` removes only that link before the
+install and never the folder it points to; nothing else is deleted.
 Only the header pushes everything: a thread has no
 Push, Push again or Sync button. The header reads `Push N fixes` (N counts every
 accepted thread, the opened one never narrows it) and one click prepares the
