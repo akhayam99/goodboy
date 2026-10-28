@@ -244,7 +244,7 @@ describe('the session tools column at the right of the content', () => {
       within(elementOf('[data-testid="session-tools"]'))
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')?.split(',')[0]),
-    ).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Agents', 'Scripts']);
+    ).toEqual(['Explore', 'Context', 'Ask', 'Agents', 'Scripts', 'Terminal']);
   });
 
   it('stays put while the folded rail drills into a level', () => {
