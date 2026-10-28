@@ -37,6 +37,7 @@ import {
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
 import { fixRunOf } from '../../fixRun';
+import { heldLaunchIdOf } from '../../../../store/slices/resolve/launchTurns';
 import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
@@ -158,6 +159,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           threadId: entry.threadId,
           word: entry.resolveWord,
           attempt: entry.row.attempt,
+          heldLaunchId: heldLaunchIdOf({ threadId: entry.threadId }),
         })),
       }),
     [entries],

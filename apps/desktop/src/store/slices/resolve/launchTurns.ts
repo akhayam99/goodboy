@@ -30,6 +30,19 @@ export const takeLaunchTurn = ({ launchId }: { readonly launchId: string }): Lau
   return next;
 };
 
+type HeldParams = {
+  readonly threadId: string;
+};
+
+export const heldLaunchIdOf = ({ threadId }: HeldParams): string | null => {
+  for (const [launchId, turns] of turnsByLaunch) {
+    if (turns.some((turn) => turn.threadIds.includes(threadId))) {
+      return launchId;
+    }
+  }
+  return null;
+};
+
 export const dropLaunchTurns = ({ launchId }: { readonly launchId: string }): void => {
   turnsByLaunch.delete(launchId);
 };

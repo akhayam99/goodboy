@@ -8,6 +8,7 @@ export type FixRunSource = {
   readonly threadId: string;
   readonly word: ResolveWord;
   readonly attempt: ResolveAttempt | null;
+  readonly heldLaunchId?: string | null;
 };
 
 export type FixRun = {
@@ -38,8 +39,12 @@ export const fixRunOf = ({
   readonly sources: ReadonlyArray<FixRunSource>;
 }): FixRun | null => {
   const byLaunch = new Map<string, Array<FixRunSource & { readonly attempt: ResolveAttempt }>>();
+  const held = new Map<string, Array<FixRunSource>>();
   for (const source of sources) {
     if (source.attempt === null) {
+      if (source.heldLaunchId != null) {
+        held.set(source.heldLaunchId, [...(held.get(source.heldLaunchId) ?? []), source]);
+      }
       continue;
     }
     const key = launchKeyOf({ attempt: source.attempt });
@@ -51,7 +56,10 @@ export const fixRunOf = ({
     const newest = members.reduce((first, member) =>
       member.attempt.createdAt >= first.attempt.createdAt ? member : first,
     );
-    const tally = reviewTallyOfWords({ words: members.map((member) => member.word) });
+    const waiting = held.get(launchId) ?? [];
+    const tally = reviewTallyOfWords({
+      words: [...members, ...waiting].map((member) => member.word),
+    });
     if (!isShown({ tally }) || newest.attempt.createdAt < latestAt) {
       continue;
     }
@@ -60,8 +68,8 @@ export const fixRunOf = ({
       launchId,
       agentId: newest.attempt.agentId,
       attempt: newest.attempt,
-      threadIds: members.map((member) => member.threadId),
-      total: members.length,
+      threadIds: [...members, ...waiting].map((member) => member.threadId),
+      total: members.length + waiting.length,
       tally,
       isLive: tally.working > 0,
       model: fixRunModelLabel({ attempt: newest.attempt }),

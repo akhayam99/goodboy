@@ -318,8 +318,9 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   (`launchTurns`). When a turn ends, `feedLaunchTurns` sends the next chunk as
   another turn of the same agent in the same copy, and stops when the run
   failed, the owner stopped it or a turn was refused. A comment in a chunk not
-  yet fed reads Open. Held chunks live in memory, so a restart leaves the unfed
-  comments Open to start again.
+  yet fed reads Fixing and counts in the fix run (`heldLaunchIdOf`), so a run of
+  13 or more comments shows every comment. Held chunks live in memory, so a
+  restart leaves the unfed comments Open to start again.
   `startFixAttempt` mints the `resolve_attempts.launch_id` (m222) once per call
   and `startBatch` returns the run (`batchId`, `launchId`) and the single
   `agentId`. Every later turn of that agent is another attempt row that inherits

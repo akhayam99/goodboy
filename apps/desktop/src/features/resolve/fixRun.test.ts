@@ -50,6 +50,30 @@ const source = (
 ): FixRunSource => ({ threadId, word: resolveWordOfState({ state }), attempt: from });
 
 describe('fixRunOf', () => {
+  it('counts the comments a launch still holds for a later turn, beyond the first twelve', () => {
+    const fed = Array.from({ length: 12 }, (_, index) => source(`t${index}`, 'drafting', FIRST));
+    const held = ['t12', '  t13'].map((threadId): FixRunSource => ({
+      ...source(threadId.trim(), 'drafting', null),
+      heldLaunchId: 'launch-1',
+    }));
+
+    const run = fixRunOf({ sources: [...fed, ...held] });
+
+    expect(run?.total).toBe(14);
+    expect(run?.threadIds).toContain('t13');
+    expect(run?.tally.working).toBe(14);
+    expect(run?.isLive).toBe(true);
+  });
+
+  it('does not make a run out of held comments alone', () => {
+    const held: FixRunSource = {
+      ...source('t1', 'drafting', null),
+      heldLaunchId: 'launch-1',
+    };
+
+    expect(fixRunOf({ sources: [held] })).toBeNull();
+  });
+
   it('is null when no comment belongs to a fix run', () => {
     expect(
       fixRunOf({ sources: [source('t1', 'new', null), source('t2', 'pushed', null)] }),
