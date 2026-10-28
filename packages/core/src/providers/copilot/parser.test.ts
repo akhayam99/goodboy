@@ -24,7 +24,11 @@ const delta = ({ messageId, deltaContent }: DeltaParams) => ({
   data: { messageId, deltaContent },
 });
 
-const textOf = (events: ReadonlyArray<TurnEvent>): string =>
+type TextParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+};
+
+const textOf = ({ events }: TextParams): string =>
   events.map((event) => (event.kind === 'assistant_text' ? event.delta : '')).join('');
 
 const CHECKPOINT = {
@@ -105,15 +109,15 @@ describe('parseJsonLine, copilot 1.0.105', () => {
     const first = parse({ payload: delta({ messageId: 'm1', deltaContent: 'Reading the file.' }) });
     parse({ payload: { type: 'assistant.message', data: { messageId: 'm1', content: 'x' } } });
     const second = parse({ payload: delta({ messageId: 'm2', deltaContent: 'Done.' }) });
-    expect(textOf(first)).toBe('Reading the file.');
-    expect(textOf(second)).toBe('\n\nDone.');
+    expect(textOf({ events: first })).toBe('Reading the file.');
+    expect(textOf({ events: second })).toBe('\n\nDone.');
   });
 
   it('does not repeat the blank line inside one message', () => {
     resetCopilotParseState({ runId: RUN_ID });
     parse({ payload: delta({ messageId: 'm1', deltaContent: 'One' }) });
     const next = parse({ payload: delta({ messageId: 'm1', deltaContent: ' two' }) });
-    expect(textOf(next)).toBe(' two');
+    expect(textOf({ events: next })).toBe(' two');
   });
 
   it('maps a tool call to a start and an end', () => {
@@ -299,7 +303,7 @@ describe('parseJsonLine, copilot 1.0.105', () => {
     parse({ payload: CHECKPOINT });
     parse({ payload: { type: 'result', sessionId: 's' } });
     const next = parse({ payload: delta({ messageId: 'm1', deltaContent: 'Again' }) });
-    expect(textOf(next)).toBe('Again');
+    expect(textOf({ events: next })).toBe('Again');
     expect(parse({ payload: { type: 'result' } })).toEqual([]);
   });
 
