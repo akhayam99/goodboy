@@ -51,14 +51,16 @@ throw. `run` releases the writer lease and drains the resolve queue, opens the
 mount continuation and drains the agent queue after `runOnce` returns or
 throws.
 
-A message the operator sends to an agent waits for that agent's previous turn
-to settle (`waitTurnSettledFor`, at most 30 s) before its own turn starts.
-The `done` event already flips the agent to idle, so without the wait a
-message typed in the seconds between a result and the end of its stream
-started a second CLI on the same session while the first still ran. Only
-`origin: 'operator'` waits: a turn sent from inside the agent's own finalize
-(a question delegate, a workflow continue) would wait for itself.
-`store.send-after-result.test.ts` pins the order.
+A message the operator sends to an agent first stops a process that lingers
+after its result (`stopLingeringTurn`, through the run registered by
+`lingeringTurns`), then waits for that agent's previous turn to settle
+(`waitTurnSettledFor`, at most 30 s) before its own turn starts. The `done`
+event already flips the agent to idle, so without this a message typed in
+the seconds or minutes between a result and the end of its stream started a
+second CLI on the same session while the first still ran. Only
+`origin: 'operator'` does this: a turn sent from inside the agent's own
+finalize (a question delegate, a workflow continue) would wait for itself.
+`store.send-after-result.test.ts` pins the order and the stop.
 
 The provider run row is closed on these paths only: `succeeded` when the stream
 and its finalize step complete (`failed` with "cancelled by user" when a stop
@@ -495,19 +497,30 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
 - **A result ends the turn even when the process stays alive.** Claude and
   Cursor print a `result` line (the `done` event) and normally exit. When the
   agent moved a tool to the background (a Bash that hit its timeout), Claude
-  keeps the process alive for that task and the stream never closes, so the
+  keeps the process alive for that task and the stream never closed, so the
   turn end was never processed: no span, no message, no step completion, and
-  the run sat silent. `streamTurn` now arms a timer on every `done`
-  (`TURN_END_MS.grace`, 5 s in `features/chat/turnEndGrace.ts`). A line that
-  starts new work (`isTurnActivity`: anything but usage, done, unknown payload,
-  stopped processes and notes) cancels it, so a process that starts another
-  turn after an empty result keeps streaming. When it fires, the process is
-  stopped through `turn_cancel` (the same reap as a normal exit, so the
-  transcript still lists the stopped processes) and the stream ends normally;
-  if the end envelope does not arrive within `TURN_END_MS.force` (2 s) the
-  stream ends anyway. The next turn resumes the session and may mention the
-  background task. Other providers end by exiting, so the timer only applies
-  to the `done` event.
+  the run sat silent. In real usage about 3 percent of runs printed more than
+  one `done`, and a new turn started up to 15 minutes after the first.
+  `createTurnResultWatch` (`features/chat/turnResultWatch.ts`) arms a timer on
+  every `done`:
+  - **5 s** (`TURN_END_MS.grace`) when the turn closed its work (a step-done
+    or cluster-done marker, or a blocking question), or when no tool was moved
+    to the background. This is the owner's lost turn: the marker was there, the
+    process stayed.
+  - **12 min** (`TURN_END_MS.background`) when a tool was moved to the
+    background and the turn did not close its work. The agent may be waiting
+    for that task, and Claude wakes it with a new turn when the task ends (it
+    stops a task after 10 minutes), so the stream keeps going. The operator
+    can cut the wait by writing to the agent (below).
+  - Any line that starts new work (`isTurnActivity`: anything but usage, done,
+    unknown payload, stopped processes and notes) cancels the timer and starts
+    a new segment, so a process that starts another turn keeps streaming.
+    When the timer fires, the process is stopped through `turn_cancel` (the same
+    reap as a normal exit, so the transcript still lists the stopped processes)
+    and the stream ends normally; if the end envelope does not arrive within
+    `TURN_END_MS.force` (2 s) the stream ends anyway. The next turn resumes the
+    session and may mention the background task. Other providers end by
+    exiting, so the timer only applies to the `done` event.
 - **One listener per window.** Every envelope arrives on the `turn_event`
   channel of the window; `features/chat/createRunEventRouter.ts` holds the one
   listener and hands the envelope to the handler of its run

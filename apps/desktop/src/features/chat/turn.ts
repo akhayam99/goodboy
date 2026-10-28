@@ -13,8 +13,7 @@ import { classifyProviderError } from './classifyProviderError';
 import { createRunEventRouter } from './createRunEventRouter';
 import { parseProviderLine } from './parseProviderLine';
 import { clearTurnCursor, writeTurnCursor, type TurnCursor, type TurnOwner } from './turnCursor';
-import { TURN_END_MS } from './turnEndGrace';
-import { isTurnActivity } from './isTurnActivity';
+import { createTurnResultWatch } from './turnResultWatch';
 
 const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
@@ -206,15 +205,6 @@ async function* streamTurn({
   let rejector: ((err: unknown) => void) | null = null;
   let ended = false;
   let error: unknown = null;
-  let graceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const clearGrace = () => {
-    if (graceTimer !== null) {
-      clearTimeout(graceTimer);
-      graceTimer = null;
-    }
-  };
-
   const flush = () => {
     if (!resolver) {
       return;
@@ -239,19 +229,19 @@ async function* streamTurn({
     }
   };
 
-  const armGrace = () => {
-    clearGrace();
-    graceTimer = setTimeout(() => {
+  const resultWatch = createTurnResultWatch({
+    runId,
+    agentId: owner?.agentId ?? null,
+    stop: () => {
       void invokeCommand('turn_cancel', { runId }).catch((cancelError: unknown) => {
         console.warn('stopping the process left running after its result failed', cancelError);
       });
-      graceTimer = setTimeout(() => {
-        graceTimer = null;
-        ended = true;
-        flush();
-      }, TURN_END_MS.force);
-    }, TURN_END_MS.grace);
-  };
+    },
+    finish: () => {
+      ended = true;
+      flush();
+    },
+  });
 
   const isResumed = resumeFrom !== null && resumeFrom.seq > 0;
   let receivedAnyEvent = isResumed;
@@ -283,9 +273,7 @@ async function* streamTurn({
       unparsedOutput.push(line.trim());
     }
     for (const ev of parsedEvents) {
-      if (isTurnActivity({ event: ev })) {
-        clearGrace();
-      }
+      resultWatch.observe({ event: ev });
       if (
         ev.kind === 'error' &&
         classifyProviderError({ message: ev.message }).kind === 'usage_limit'
@@ -299,9 +287,6 @@ async function* streamTurn({
         receivedResponseEvent = true;
       }
       push({ event: ev });
-      if (ev.kind === 'done') {
-        armGrace();
-      }
     }
   };
 
@@ -337,7 +322,7 @@ async function* streamTurn({
         break;
       }
       case 'end': {
-        clearGrace();
+        resultWatch.clear();
         for (const line of assembler.flush()) {
           handleLine({ line });
         }
@@ -378,7 +363,7 @@ async function* streamTurn({
         break;
       }
       case 'error':
-        clearGrace();
+        resultWatch.clear();
         error = new Error(envelope.message);
         ended = true;
         flush();
@@ -454,7 +439,7 @@ async function* streamTurn({
       }
     }
   } finally {
-    clearGrace();
+    resultWatch.clear();
     activeStreams.delete(runId);
     unlisten();
     clearTurnCursor({ runId });

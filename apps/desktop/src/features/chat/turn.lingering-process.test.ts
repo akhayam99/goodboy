@@ -30,12 +30,30 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type ProviderRunId, type TurnEvent } from '@goodboy/types';
+import { brandId, type AgentId, type ProviderRunId, type TurnEvent } from '@goodboy/types';
+import { TEST_NOW, aSession, aWorkspace } from '@goodboy/types/testing';
 import { resetStorySpies, storySpies, stubStoryInvoke } from '../../store/storyHarness';
 import { runTurn } from './turn';
 import { TURN_END_MS } from './turnEndGrace';
+import { stopLingeringTurn } from './stopLingeringTurn';
+import type { TurnOwner } from './turnCursor';
 
 const RUN_ID = brandId<ProviderRunId>({ value: 'run-harborline-scout' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-harborline-scout' });
+
+const OWNER: TurnOwner = {
+  agentId: AGENT_ID,
+  sessionId: aSession().id,
+  workspaceId: aWorkspace().id,
+  workflowRunId: null,
+  stepRole: 'scout',
+  provider: 'anthropic',
+  model: 'claude-sonnet-5-5',
+  effort: null,
+  startedAt: TEST_NOW,
+  workingDir: '/tmp/harborline',
+  mountId: null,
+};
 
 const initLine = (sessionId: string): string =>
   JSON.stringify({ type: 'system', subtype: 'init', session_id: sessionId });
@@ -101,14 +119,18 @@ const startTurn = () => {
   const outcome: { isFinished: boolean; error: unknown } = { isFinished: false, error: null };
   const finished = (async () => {
     try {
-      for await (const event of runTurn({
-        runId: RUN_ID,
-        provider: 'anthropic',
-        model: 'claude-sonnet-5-5',
-        workingDir: '/tmp/harborline',
-        writableRoots: [],
-        prompt: 'scout the ledger-core pages',
-      })) {
+      for await (const event of runTurn(
+        {
+          runId: RUN_ID,
+          provider: 'anthropic',
+          model: 'claude-sonnet-5-5',
+          workingDir: '/tmp/harborline',
+          writableRoots: [],
+          prompt: 'scout the ledger-core pages',
+        },
+        undefined,
+        { owner: OWNER },
+      )) {
         seen.push(event);
       }
     } catch (error) {
@@ -249,5 +271,88 @@ describe('a provider process that stays alive after its result', () => {
     ]);
     const toolEnd = turn.seen.find((event) => event.kind === 'tool_call_end');
     expect(JSON.stringify(toolEnd)).toContain('moved to the background');
+  });
+
+  it('keeps waiting for a background task when the turn did not close the step', async () => {
+    const turn = startTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    emitLine(initLine('session-1'));
+    emitLine(bashStartLine());
+    emitLine(backgroundedLine());
+    emitLine(textLine('Waiting for the search to finish before I report.'));
+    emitLine(resultLine(900));
+    await vi.advanceTimersByTimeAsync(TURN_END_MS.background - 1);
+    expect(calledCommands()).not.toContain('turn_cancel');
+    expect(turn.outcome.isFinished).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calledCommands()).toContain('turn_cancel');
+    emitEnd();
+    await turn.finished;
+    expect(turn.outcome.error).toBeNull();
+  });
+
+  it('reads the turn the process starts when the background task finishes', async () => {
+    const turn = startTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    emitLine(initLine('session-1'));
+    emitLine(bashStartLine());
+    emitLine(backgroundedLine());
+    emitLine(textLine('Waiting for the search to finish before I report.'));
+    emitLine(resultLine(900));
+    await vi.advanceTimersByTimeAsync(6 * 60 * 1000);
+    emitLine(initLine('session-1'));
+    emitLine(
+      textLine('The search finished: three callers.\n<<step-done id="agent-harborline-scout">>'),
+    );
+    emitLine(resultLine(300));
+    await vi.advanceTimersByTimeAsync(TURN_END_MS.grace);
+    expect(calledCommands()).toContain('turn_cancel');
+    emitEnd();
+    await turn.finished;
+
+    expect(turn.seen.map((event) => event.kind)).toEqual([
+      'provider_session_init',
+      'tool_call_start',
+      'tool_call_end',
+      'assistant_text',
+      'usage',
+      'done',
+      'provider_session_init',
+      'assistant_text',
+      'usage',
+      'done',
+    ]);
+  });
+
+  it('stops a process that lingers after its result as soon as the operator writes', async () => {
+    const turn = startTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    emitLine(initLine('session-1'));
+    emitLine(bashStartLine());
+    emitLine(backgroundedLine());
+    emitLine(textLine('Waiting for the search to finish before I report.'));
+    emitLine(resultLine(900));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(calledCommands()).not.toContain('turn_cancel');
+
+    await stopLingeringTurn({ agentId: AGENT_ID });
+    expect(calledCommands()).toContain('turn_cancel');
+    emitEnd();
+    await turn.finished;
+    expect(turn.outcome.error).toBeNull();
+  });
+
+  it('has nothing to stop once the process ended', async () => {
+    const turn = startTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    emitLine(initLine('session-1'));
+    emitLine(textLine('Short answer.'));
+    emitLine(resultLine(9));
+    emitEnd();
+    await turn.finished;
+
+    await stopLingeringTurn({ agentId: AGENT_ID });
+    expect(calledCommands()).not.toContain('turn_cancel');
   });
 });
