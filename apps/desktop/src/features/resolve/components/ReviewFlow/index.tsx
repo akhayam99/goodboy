@@ -36,8 +36,6 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
-import { fixRunOf } from '../../fixRun';
-import { heldLaunchIdOf } from '../../../../store/slices/resolve/launchTurns';
 import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
@@ -152,21 +150,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       }))
       .filter((group) => group.entries.length > 0);
   }, [branchGroups, commentState, scope]);
-  const run = useMemo(
-    () =>
-      fixRunOf({
-        sources: entries.map((entry) => ({
-          threadId: entry.threadId,
-          word: entry.resolveWord,
-          attempt: entry.row.attempt,
-          heldLaunchId: heldLaunchIdOf({ threadId: entry.threadId }),
-        })),
-      }),
-    [entries],
-  );
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const { groups, fixRunReady, isRunLive } = useFixRunGroups({
-    run,
+  const { run, groups, fixRunReady, isRunLive } = useFixRunGroups({
     lane,
     entries,
     groups: allGroups,

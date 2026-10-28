@@ -63,12 +63,12 @@ import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
-import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
+import { formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { clearHintsReading, markHintsReading } from './orchestratorReadingHints';
-import { updateOrchestratorHints } from './updateOrchestratorHints';
+import { consumeReadOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
@@ -831,24 +831,16 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
-      const consumeReadHints = async (): Promise<void> => {
-        if (readHintIds.size === 0) {
-          return;
-        }
-        await updateOrchestratorHints({
+      const consumeReadHints = (): Promise<void> =>
+        consumeReadOrchestratorHints({
           set,
           get,
           sessionId,
           workflowRunId,
-          update: (hints) =>
-            consumeOrchestratorHints({
-              hints,
-              readIds: readHintIds,
-              consumedAt: new Date().toISOString() as IsoDateTime,
-              step: workflow.steps.length + 1,
-            }),
+          readIds: readHintIds,
+          step: workflow.steps.length + 1,
+          consumedAt: new Date().toISOString() as IsoDateTime,
         });
-      };
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       } catch (error) {

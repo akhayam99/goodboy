@@ -260,7 +260,6 @@ export {
   setProjectValue,
   setWorkspaceValue,
   type ProjectValueKey,
-  type ProjectValueWrite,
   type WorkspaceValueKey,
 } from './queries/entity-value';
 export {

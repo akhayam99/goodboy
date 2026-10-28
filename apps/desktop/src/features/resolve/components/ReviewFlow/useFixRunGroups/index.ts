@@ -1,23 +1,36 @@
 import { useMemo } from 'react';
-import type { FixRun } from '../../../fixRun';
+import { fixRunOf, type FixRun } from '../../../fixRun';
+import { heldLaunchIdOf } from '../../../../../store/slices/resolve/launchTurns';
 import { fixRunReadyOf, type FixRunReady } from '../../../fixRunReady';
 import type { LaneStatus } from '../../../laneStatus';
 import type { ReviewEntry, ReviewGroup } from '../useReviewEntries';
 
 type Params = {
-  readonly run: FixRun | null;
   readonly lane: LaneStatus | null;
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
 };
 
 type FixRunGroups = {
+  readonly run: FixRun | null;
   readonly groups: ReadonlyArray<ReviewGroup>;
   readonly fixRunReady: FixRunReady | null;
   readonly isRunLive: boolean;
 };
 
-export const useFixRunGroups = ({ run, lane, entries, groups }: Params): FixRunGroups => {
+export const useFixRunGroups = ({ lane, entries, groups }: Params): FixRunGroups => {
+  const run = useMemo(
+    () =>
+      fixRunOf({
+        sources: entries.map((entry) => ({
+          threadId: entry.threadId,
+          word: entry.resolveWord,
+          attempt: entry.row.attempt,
+          heldLaunchId: heldLaunchIdOf({ threadId: entry.threadId }),
+        })),
+      }),
+    [entries],
+  );
   const isRunLive = run !== null && (run.isLive || lane !== null);
   const fixRunReady = useMemo(
     () => fixRunReadyOf({ run, entries, isLive: isRunLive }),
@@ -44,5 +57,5 @@ export const useFixRunGroups = ({ run, lane, entries, groups }: Params): FixRunG
         .filter((rest) => rest.entries.length > 0),
     ];
   }, [fixRunReady, groups, run]);
-  return { groups: grouped, fixRunReady, isRunLive };
+  return { run, groups: grouped, fixRunReady, isRunLive };
 };

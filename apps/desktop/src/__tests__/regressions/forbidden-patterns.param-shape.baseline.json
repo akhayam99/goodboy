@@ -1914,7 +1914,7 @@
     "apps/desktop/src/store/slices/workflows/loadPhaseTemplates.ts": 1,
     "apps/desktop/src/store/slices/workflows/loadStepLibrary.ts": 1,
     "apps/desktop/src/store/slices/workflows/maybeAutoAdvanceWorkflow.ts": 1,
-    "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 9,
+    "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 8,
     "apps/desktop/src/store/slices/workflows/patchWorkflowRun.ts": 1,
     "apps/desktop/src/store/slices/workflows/pauseWorkflowRun.ts": 1,
     "apps/desktop/src/store/slices/workflows/presetChangeCopy.ts": 3,
