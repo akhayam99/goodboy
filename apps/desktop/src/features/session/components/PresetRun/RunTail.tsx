@@ -7,6 +7,8 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
+import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
+import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunTailVerb } from './RunTailVerb';
 import { runTailOf } from './runTailOf';
 
@@ -77,6 +79,12 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     selectedRoot !== null &&
     selectedRoot.status === 'pending' &&
     run.orchestrationStop?.kind === 'budget';
+  const blockedStep =
+    tail.verb?.kind === 'recover'
+      ? (advance.runAgents.find(
+          (agent) => agent.parentAgentId == null && agent.status === 'blocked',
+        ) ?? null)
+      : null;
   return (
     <section
       aria-label="Run state"
@@ -99,10 +107,21 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         onAction={() => undefined}
         verbs={
           tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
-            <RunTailVerb session={session} view={view} verb={tail.verb} />
+            <RunTailVerb
+              session={session}
+              view={view}
+              verb={tail.verb}
+              isSecondary={blockedStep !== null}
+            />
           )
         }
       />
+      {tail.verb?.kind === 'answer' ? (
+        <RunOpenQuestion sessionId={session.id} question={tail.verb.question} />
+      ) : null}
+      {blockedStep === null ? null : (
+        <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
+      )}
     </section>
   );
 };

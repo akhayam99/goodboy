@@ -27,9 +27,9 @@ export const RunHeaderPrimary = ({ session, view, target, header }: Props) => {
       return <RaiseCapPrimary session={session} view={view} variant="primary" />;
     case 'answer':
       return (
-        <Button size="sm" variant="primary" onClick={() => answer({ question: header.question })}>
+        <Button size="sm" variant="secondary" onClick={() => answer({ question: header.question })}>
           <QuestionIcon size={ICON_SIZE.control} aria-hidden />
-          Answer
+          Open question
         </Button>
       );
     case 'live':

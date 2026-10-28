@@ -96,7 +96,8 @@ goal by the `agent_naming` task model when the run starts. The title is cleaned
 (`cleanWorkflowRunTitle` in `@goodboy/db`): a `Title:` label, quotes and markdown
 marks go, a reply that reads as a sentence is dropped, and a title never ends in
 the middle of a word. When nothing usable is left it is the first line of the
-ask, cut at a word. A title stored before this reads cleaned too: the same
+ask, cut at a word. A session or agent title goes through the same cleaning at
+the parse boundary (`parseGeneratedTitle`, with the ask as the fallback). A title stored before this reads cleaned too: the same
 function runs when the run rows load, and never touches a name you chose. The activity feed,
 the workflow detail and the breadcrumb show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
@@ -356,7 +357,13 @@ read top to bottom at the conversation measure:
   on a question with the question inline (what the step agent closed with,
   `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
   field with **Answer** as its primary action, **Restart step** as a secondary
-  button and **Open agent chat** next to it. **Answer** sends the text to the
+  button and **Open agent chat** next to it. A real open question (phase
+  `needs-answer`, a preset run's tail too) shows the same way: the question
+  inline, an **Answer the question** field and **Answer** as the primary action
+  (`RunOpenQuestion`, `answerOpenQuestions`); the header keeps **Open question**
+  for the drawer. A preset run's blocked step gets the inline question and a
+  secondary **Restart step**, and the restart prompt asks the agent to repeat a
+  question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
@@ -366,7 +373,9 @@ read top to bottom at the conversation measure:
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
-  the hint; the queued hints are not marked read by a blocked decision). Under
+  the hint; a hint is marked read only once a step started with it, so a
+  blocked decision, a step that was not created and a next step the routing
+  refused all leave the queued hints unread). Under
   the line, a folded **Why this step** (`Disclosure`) opens the latest decision's
   reason as markdown, hidden while the run is failed or blocked; older reasons sit at the top of each step's pane. While the
   plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through

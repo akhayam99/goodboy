@@ -48,6 +48,8 @@ export const ORCHESTRATED_COPY = {
   hintLabel: 'Add a hint and continue',
   blockedAnswerLabel: 'Answer the step',
   blockedAnswerAction: 'Answer',
+  questionAnswerLabel: 'Answer the question',
+  questionAsks: 'The run asks',
   blockedAnswerFailed: "Couldn't send the answer",
   blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
   blockedAsks: ({ isQuestion }: AsksParams): string =>
