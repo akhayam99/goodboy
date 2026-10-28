@@ -3,10 +3,15 @@ import { ICON_SIZE } from '@goodboy/ui';
 import { BrandTile } from '../../../../shared/components/BrandTile';
 import { DemoLink } from './DemoLink';
 import { DEMO_LINKS } from './demoLinks';
+import type { ClosingCopy } from './closingCopyOf';
 
 const BRAND_TILE_PX = 56;
 
-export const DemoClosing = () => (
+type Props = {
+  readonly copy: ClosingCopy;
+};
+
+export const DemoClosing = ({ copy }: Props) => (
   <section
     aria-label="Get Goodboy"
     data-testid="demo-closing"
@@ -19,9 +24,15 @@ export const DemoClosing = () => (
         Your issue, your decisions, a reviewed fix pushed.
       </p>
     </div>
-    <DemoLink href={DEMO_LINKS.download} variant="primary" size="md">
-      <Download size={ICON_SIZE.control} />
-      Download for macOS
-    </DemoLink>
+    {copy.download === undefined ? (
+      <p role="note" className="text-body text-muted-foreground">
+        Goodboy for Windows is on the way.
+      </p>
+    ) : (
+      <DemoLink href={DEMO_LINKS.download} variant="primary" size="md">
+        <Download size={ICON_SIZE.control} />
+        {copy.download}
+      </DemoLink>
+    )}
   </section>
 );

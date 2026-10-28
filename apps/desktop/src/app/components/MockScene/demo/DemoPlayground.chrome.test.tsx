@@ -50,6 +50,16 @@ const ready = ({ frame }: { readonly frame: HTMLIFrameElement }) =>
     data: { generation: 0, type: 'ready', elapsedMs: 0, durationMs: 0, cueIndex: 0 },
   });
 
+type AgentParams = {
+  readonly userAgent: string;
+};
+
+const visitOn = ({ userAgent }: AgentParams) => {
+  vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+};
+
+const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15';
+
 const rootOf = (): HTMLElement => {
   const root = screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('[tabindex="-1"]');
   if (root === null) {
@@ -107,6 +117,7 @@ describe('demo playground chrome', () => {
 
   it('offers Download for macOS in exactly one place, the Get Goodboy screen', () => {
     seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: MAC_AGENT });
     const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
     for (const id of groupIds) {
       window.history.replaceState(null, '', `/?scene=demo#${id}`);
@@ -122,6 +133,7 @@ describe('demo playground chrome', () => {
 
   it('closes on a calm Get Goodboy screen with one line and the download action', () => {
     seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: MAC_AGENT });
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
@@ -131,9 +143,35 @@ describe('demo playground chrome', () => {
       within(closing)
         .getByRole('link', { name: /Download for macOS/ })
         .getAttribute('href'),
-    ).toBe('https://goodboy-ai.dev');
+    ).toBe('https://goodboy-ai.dev/#install');
     expect(within(closing).queryAllByRole('link')).toHaveLength(1);
     expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('offers the Linux download to a Linux visitor', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0)' });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const closing = screen.getByTestId('demo-closing');
+    expect(
+      within(closing)
+        .getByRole('link', { name: /Download for Linux/ })
+        .getAttribute('href'),
+    ).toBe('https://goodboy-ai.dev/#install');
+    expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
+  });
+
+  it('tells a Windows visitor that Windows is on the way, with no download', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const closing = screen.getByTestId('demo-closing');
+    expect(within(closing).queryAllByRole('link')).toHaveLength(0);
+    expect(within(closing).getByRole('note').textContent).toBe(
+      'Goodboy for Windows is on the way.',
+    );
   });
 
   it('keeps the Get Goodboy row out of the group count and below the groups', () => {

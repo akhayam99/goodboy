@@ -380,8 +380,10 @@ group and goes back to the first step of Bring your repositories. The rail is hi
 `lg` breakpoint; `DemoCompactNav` then shows the group switcher (Next group is
 disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
-carry the current `?theme=`). Download for macOS lives only on
-the Get Goodboy screen (`DemoClosing`). The page behind the stage uses the
+carry the current `?theme=`). The download lives only on the Get Goodboy
+screen (`DemoClosing`) and follows the visitor's system (`currentPlatform`,
+`closingCopyOf`): Download for macOS, Download for Linux, or on Windows a note
+that Windows is on the way and no button. The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.
 

@@ -8,6 +8,8 @@ import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
 import { DemoClosing } from './DemoClosing';
+import { closingCopyOf } from './closingCopyOf';
+import { currentPlatform } from '../../../../shared/platform';
 import { DemoStage, type ShortcutRequest } from './DemoStage';
 import { DemoCompactNav } from './DemoCompactNav';
 import { useBeatPlayer } from './useBeatPlayer';
@@ -47,10 +49,10 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 
 const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.id), CLOSING_ID];
 
-const CLOSING_INSTRUCTION = 'Press **Download for macOS** to get Goodboy.';
-
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [platform] = useState(currentPlatform);
+  const closingCopy = closingCopyOf({ platform });
   const { theme, choose: chooseTheme, toggle: swapTheme } = useDemoTheme();
   const [shortcut, setShortcut] = useState<ShortcutRequest | undefined>(undefined);
   const progressControls = useHintProgress();
@@ -208,7 +210,7 @@ export const DemoPlayground = () => {
             title={isClosing ? CLOSING_TITLE : chapter.title}
             instruction={
               isClosing
-                ? CLOSING_INSTRUCTION
+                ? closingCopy.instruction
                 : headerInstruction({
                     chapter,
                     held: hints.held,
@@ -219,7 +221,7 @@ export const DemoPlayground = () => {
             }
           />
           {isClosing ? (
-            <DemoClosing />
+            <DemoClosing copy={closingCopy} />
           ) : (
             <DemoStage
               theme={theme}
