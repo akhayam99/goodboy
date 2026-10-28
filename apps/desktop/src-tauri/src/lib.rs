@@ -60,6 +60,7 @@ mod provider_commands;
 mod provider_credentials;
 mod provider_lifecycle;
 mod provider_standing_log;
+mod render_crash_log;
 mod providers;
 mod pty_ring;
 mod publish;
@@ -457,6 +458,7 @@ pub fn run() {
             providers::check_provider_auth,
             providers::test_connection::provider_test_connection,
             provider_standing_log::log_provider_standing,
+            render_crash_log::log_render_crash,
             step_end_log::log_step_end,
             provider_credentials::provider_api_key_validate,
             provider_lifecycle::provider_lifecycle_run,

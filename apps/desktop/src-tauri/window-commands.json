@@ -226,6 +226,7 @@
     "load_tool_image",
     "local_image_read",
     "log_provider_standing",
+    "log_render_crash",
     "log_step_end",
     "monitor_snapshot",
     "monitor_stop",

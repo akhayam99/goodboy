@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { invoke } from '@tauri-apps/api/core';
 import { PanelBoundary } from './index';
 
 type BoomProps = {
@@ -45,6 +46,20 @@ afterEach(() => {
 });
 
 describe('PanelBoundary', () => {
+  it('writes the crash to the app log with name, message and stacks', () => {
+    render(<Host state={{ isBroken: true }} onLeave={() => undefined} />);
+
+    expect(invoke).toHaveBeenCalledWith(
+      'log_render_crash',
+      expect.objectContaining({
+        name: 'Error',
+        message: 'Harborline pane exploded',
+        stack: expect.stringContaining('Harborline pane exploded'),
+        componentStack: expect.stringContaining('Boom'),
+      }),
+    );
+  });
+
   it('keeps the rail and the top bar alive when a panel throws', () => {
     render(<Host state={{ isBroken: true }} onLeave={() => undefined} />);
 

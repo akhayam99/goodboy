@@ -14,6 +14,7 @@ import { bootstrapContrast } from './shared/lib/contrast';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './shared/lib/highlight/codeHighlighter';
+import { logRenderCrash } from './features/bug-report/logRenderCrash';
 import { CrashReport } from './features/bug-report/components/CrashReport';
 import {
   crashKind,
@@ -51,7 +52,11 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <ErrorBoundary describeError={describeCrash} renderReport={renderCrashReport}>
+    <ErrorBoundary
+      describeError={describeCrash}
+      renderReport={renderCrashReport}
+      onCatch={logRenderCrash}
+    >
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>

@@ -64,8 +64,9 @@ export const OtherToolsSection = () => {
         <BandRow>
           <Info size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           <span className="text-meta text-faint-foreground">
-            Goodboy reads sizes and folder names, never the files inside. These tools keep their own
-            history, so nothing here is offered for cleanup. Tools under 100 MB are left out.
+            Goodboy reads sizes and folder names, never the files inside. Sizes are each tool's
+            saved sessions (transcripts), not worktrees. These tools keep their own history, so
+            nothing here is offered for cleanup. Tools under 100 MB are left out.
           </span>
         </BandRow>
       </Band>
