@@ -28,7 +28,7 @@ fn pending() -> &'static Pending {
 }
 
 fn handoff_id() -> String {
-    use rand::RngCore;
+    use rand::Rng;
     let mut bytes = [0u8; 16];
     rand::rng().fill_bytes(&mut bytes);
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
