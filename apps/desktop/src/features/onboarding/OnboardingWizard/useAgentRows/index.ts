@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import { AGENT_ROW_IDS } from '../agentRowIds';
 import { agentRowOf, type AgentRow } from '../agentRowOf';
 import { readyAgents } from '../readyAgents';
+import { statusOfInfo } from '../statusOfInfo';
 import { useAgentDetection, type AgentDetection } from '../useAgentDetection';
 
 export type AgentRows = {
@@ -22,16 +23,18 @@ export const useAgentRows = (): AgentRows => {
       codex: state.codexStatus,
       cursor: state.cursorStatus,
       gemini: state.geminiStatus,
+      copilot: null,
     })),
   );
-  const rows = AGENT_ROW_IDS.map((id) =>
-    agentRowOf({
+  const rows = AGENT_ROW_IDS.map((id) => {
+    const info = providers.find((provider) => provider.id === id) ?? null;
+    return agentRowOf({
       id,
-      info: providers.find((provider) => provider.id === id) ?? null,
-      status: statuses[id],
+      info,
+      status: id === 'copilot' ? statusOfInfo({ id, info }) : statuses[id],
       connect: connect[id],
       check: detection.checks[id],
-    }),
-  );
+    });
+  });
   return { rows, ready: readyAgents({ providers }), detection };
 };
