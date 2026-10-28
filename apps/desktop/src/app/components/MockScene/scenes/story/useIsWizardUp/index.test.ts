@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { nextWorkspaceId } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -32,7 +33,7 @@ describe('useIsWizardUp', () => {
     const { result } = renderHook(() => useIsWizardUp());
     expect(result.current).toBe(true);
     act(() => {
-      store.setState({ openSessionDraftWorkspaceId: 'ws-1' });
+      store.setState({ openSessionDraftWorkspaceId: nextWorkspaceId() });
     });
     expect(result.current).toBe(false);
     act(() => {
