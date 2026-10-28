@@ -1,8 +1,14 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Eyebrow } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
+import { planPartOrder } from '../../waves/planPartOrder';
 import type { PlanPartRow as Row } from './planPartRows';
 import { PlanPartRow } from './PlanPartRow';
+import { PlanPartWaves } from './PlanPartWaves';
+
+type RowParams = Readonly<{
+  row: Row;
+}>;
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,9 +29,28 @@ export const PlanParts = ({
   onOpenPart,
   frameRow,
 }: Props) => {
+  const order = useMemo(() => planPartOrder({ rows }), [rows]);
   if (rows.length === 0) {
     return null;
   }
+  const renderRow = ({ row }: RowParams): ReactNode => {
+    const content = (
+      <PlanPartRow
+        row={row}
+        hasRun={hasRun}
+        onOpen={() => onOpenPart(row)}
+        target={{
+          kind: 'planPart',
+          sessionId,
+          planId,
+          index: row.index,
+          instructions: row.instructions,
+          agentId: row.agentId,
+        }}
+      />
+    );
+    return frameRow === undefined ? content : frameRow({ row, children: content });
+  };
   return (
     <section aria-label="Parts" data-testid="plan-parts" className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-baseline gap-2">
@@ -35,30 +60,17 @@ export const PlanParts = ({
         <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
       {hasRun ? null : <p className="text-meta text-muted-foreground">{splitSentence}</p>}
-      <ol className="flex min-w-0 flex-col">
-        {rows.map((row) => {
-          const content = (
-            <PlanPartRow
-              row={row}
-              hasRun={hasRun}
-              onOpen={() => onOpenPart(row)}
-              target={{
-                kind: 'planPart',
-                sessionId,
-                planId,
-                index: row.index,
-                instructions: row.instructions,
-                agentId: row.agentId,
-              }}
-            />
-          );
-          return (
+      {order.hasGroups ? (
+        <PlanPartWaves order={order} renderRow={renderRow} />
+      ) : (
+        <ol className="flex min-w-0 flex-col">
+          {rows.map((row) => (
             <li key={row.index} className="min-w-0">
-              {frameRow === undefined ? content : frameRow({ row, children: content })}
+              {renderRow({ row })}
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ol>
+      )}
     </section>
   );
 };

@@ -3,6 +3,7 @@ import type { ImplementationCluster } from '@goodboy/types';
 import { clusterAncestors } from './clusterAncestors';
 import { clusterTouchesOverlap } from './clusterTouchesOverlap';
 import { concurrentClusters } from './concurrentClusters';
+import { hasWaveGroups } from './hasWaveGroups';
 import { planClusterWaves } from './planClusterWaves';
 import { readyClusterIndexes } from './readyClusterIndexes';
 
@@ -249,6 +250,48 @@ describe('clusterAncestors and concurrentClusters', () => {
     expect(concurrentClusters({ plan, index: 1 })).toEqual([2, 3]);
     expect(concurrentClusters({ plan, index: 3 })).toEqual([1]);
     expect(concurrentClusters({ plan, index: 0 })).toEqual([]);
+  });
+});
+
+describe('hasWaveGroups', () => {
+  it('is false for a plain chain of parts on separate files', () => {
+    const chain = planClusterWaves({
+      clusters: [
+        part('A', { id: 'a', touches: ['src/a'] }),
+        part('B', { id: 'b', after: ['a'], touches: ['src/b'] }),
+      ],
+    });
+    expect(hasWaveGroups({ plan: chain })).toBe(false);
+  });
+
+  it('is true when parts run together, share a file, run alone or lost their order', () => {
+    expect(
+      hasWaveGroups({
+        plan: planClusterWaves({
+          clusters: [part('A', { touches: ['a'] }), part('B', { touches: ['b'] })],
+        }),
+      }),
+    ).toBe(true);
+    expect(
+      hasWaveGroups({
+        plan: planClusterWaves({
+          clusters: [part('A', { touches: ['a'] }), part('B', { touches: ['a'] })],
+        }),
+      }),
+    ).toBe(true);
+    expect(hasWaveGroups({ plan: planClusterWaves({ clusters: [part('A'), part('B')] }) })).toBe(
+      true,
+    );
+    expect(
+      hasWaveGroups({
+        plan: planClusterWaves({
+          clusters: [
+            part('A', { id: 'a', after: ['ghost'], touches: ['a'] }),
+            part('B', { touches: ['b'] }),
+          ],
+        }),
+      }),
+    ).toBe(true);
   });
 });
 

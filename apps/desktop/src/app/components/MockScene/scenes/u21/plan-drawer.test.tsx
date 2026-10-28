@@ -165,6 +165,9 @@ describe('the plan drawer scenes', () => {
     const body = screen.getByTestId('plan-body');
     expect(within(body).getAllByText('Replace the CSV query with the ledger view')).toHaveLength(1);
     expect(within(body).getAllByRole('heading', { name: /^Parts/ })).toHaveLength(1);
+    within(body).getByText('Runs first');
+    within(body).getByText('Then, in parallel');
+    expect(within(body).getAllByTestId('plan-part-block')).toHaveLength(3);
   });
 
   it('every scene prints no plan marker and no raw tag', async () => {

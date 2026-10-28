@@ -932,7 +932,18 @@ edits (route tables, config, shared types) in their own first part that the
 others come after, and for a folder only when the whole folder belongs to one
 part. `readyClusterIndexes` picks the parts to start: the first wave at fan-out,
 then every part whose blockers just finished. A part that is started by hand
-while an overlapping part of the same plan is still running waits and names it.
+while an overlapping part of the same plan is still running waits and names it
+(the same band as a writer wait, `agentWriterWait` with `blockedPart`; **Cancel**
+ends the wait).
+
+The plan page shows the same waves. When some parts run together, share a file,
+run alone or lost their planner order, `PlanParts` groups them under **Runs
+first** and **Then**, with **, in parallel** when a wave holds several parts
+(`planPartOrder`, `hasWaveGroups`). Each part is its own block that lists the
+files it touches, a line names each shared file and the order it forces, and a
+note says why the planner's order was dropped. A plain chain of parts on
+separate files stays a flat list. On the run, each subagent that carries a part
+of such a plan shows its wave next to its name (`waveLabelsOf`, `RunTree`).
 
 You change a plan with **comments**, from the plan document itself (the
 Artifacts page, and any surface that shows the same plan document). A comment

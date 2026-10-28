@@ -39,6 +39,7 @@ import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
+import { RunTreeContextNote } from './RunTreeContextNote';
 import { rowSlotWidth } from './rowSlotWidth';
 import type { RunTreeDensity } from './runTreeDensity';
 
@@ -61,6 +62,7 @@ type Props = {
   readonly isNested: boolean;
   readonly hasActionColumn: boolean;
   readonly plan: PlanWithCount | null;
+  readonly waveLabel?: string | null;
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
@@ -105,6 +107,7 @@ export const RunTreeRow = ({
   isNested,
   hasActionColumn,
   plan,
+  waveLabel = null,
   parentStepName,
   isSelected,
   isHighlighted,
@@ -130,6 +133,7 @@ export const RunTreeRow = ({
         });
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isPage && isQuestionDelegate({ agent }) ? parentStepName : null;
+  const waveNote = isNested && isPage ? waveLabel : null;
   const isFixed = density !== 'rail';
   const boxHeight = isFixed ? TIMELINE_RHYTHM.grade[item.grade].height : item.height;
   const slot = rowSlotWidth({ rail, railWidth, isNested, isFixed });
@@ -246,11 +250,7 @@ export const RunTreeRow = ({
                           </span>
                         </Tooltip>
                       )}
-                      {answersFor === null ? null : (
-                        <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
-                          {`answering for ${answersFor}`}
-                        </span>
-                      )}
+                      <RunTreeContextNote answersFor={answersFor} waveLabel={waveNote} />
                     </span>
                     {state}
                     {isPage ? meta : null}

@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import type { AgentId, OpenQuestion, SessionId, WorkflowRunId } from '@goodboy/types';
 import { useSessionPlans } from '../../../../store';
+import { waveLabelsOf } from '../../../plans/waves/waveLabelsOf';
 import type { RunTreeRouting } from './RunTreeRow';
 import { RunTreeRows } from './RunTreeRows';
 import type { RunTreeInsert } from '../../runTreeInsert';
@@ -44,6 +45,19 @@ export const RunTree = ({
   const folded = useFoldedRunTree({ tree });
   const sessionPlans = useSessionPlans(sessionId);
   const plans = useMemo(() => plansByAgentId({ plans: sessionPlans }), [sessionPlans]);
+  const waveLabels = useMemo(
+    () =>
+      waveLabelsOf({
+        plans: sessionPlans,
+        agents:
+          tree === null
+            ? []
+            : tree.stream.items.flatMap((item) =>
+                item.kind === 'row' && item.entry.kind === 'agent' ? [item.entry.agent] : [],
+              ),
+      }),
+    [sessionPlans, tree],
+  );
   if (folded === null) {
     return null;
   }
@@ -61,6 +75,7 @@ export const RunTree = ({
       skip={skip}
       folds={folded.folds}
       plans={plans}
+      waveLabels={waveLabels}
       {...(beforeRow !== undefined && { beforeRow })}
       {...(trailing !== undefined && { trailing })}
       onHighlight={onHighlight}
