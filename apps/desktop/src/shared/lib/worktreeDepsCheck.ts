@@ -1,6 +1,6 @@
 import { invokeCommand } from './invokeCommand';
 
-export type WorktreeDepsState = 'ready' | 'missing' | 'outside' | 'not-applicable';
+type WorktreeDepsState = 'ready' | 'missing' | 'outside' | 'not-applicable';
 
 export type WorktreeDepsCheck = {
   readonly state: WorktreeDepsState;

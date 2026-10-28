@@ -4,7 +4,7 @@ import { cleanUpRefusalOf } from './cleanUpRefusalOf';
 import { mergedMountsOf } from './mergedMountsOf';
 import type { SessionFacts } from './session';
 
-export const CLEAN_UP_MERGED_MIN_BRANCHES = 2;
+const CLEAN_UP_MERGED_MIN_BRANCHES = 2;
 
 export const SESSION_CLEANUP_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {

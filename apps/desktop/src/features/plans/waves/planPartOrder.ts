@@ -4,12 +4,12 @@ import type { PlanPartRow } from '../components/PlanParts/planPartRows';
 import { partNumbers } from './partNumbers';
 import { waveLabel } from './waveLabel';
 
-export type PlanPartWave = Readonly<{
+type PlanPartWave = Readonly<{
   label: string;
   rows: ReadonlyArray<PlanPartRow>;
 }>;
 
-export type SharedPartLine = Readonly<{
+type SharedPartLine = Readonly<{
   path: string;
   rest: string;
 }>;

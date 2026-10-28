@@ -33,7 +33,7 @@ type LiveParams = {
 
 const WORKING_STATUSES: ReadonlySet<Agent['status']> = new Set(['pending', 'running']);
 
-export const isPushFixAgentLive = ({ agents, agentId }: LiveParams): boolean => {
+const isPushFixAgentLive = ({ agents, agentId }: LiveParams): boolean => {
   if (agents === undefined) {
     return true;
   }
