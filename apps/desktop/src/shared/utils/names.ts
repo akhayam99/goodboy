@@ -108,6 +108,7 @@ export const NAMES = {
   resolve: 'Resolve',
   publishReply: 'Publish reply',
   retryPush: 'Retry push',
+  fixPushWithAgent: 'Let an agent fix the push',
   openSettings: 'Open settings',
   showInFinder: 'Show in Finder',
   newBranch: 'New branch',

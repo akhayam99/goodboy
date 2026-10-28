@@ -12,6 +12,8 @@ import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_CLOSED_MESSAGE = 'Closed by you';
 
+export type CloseWorkflowRunOutcome = 'closed' | 'failed';
+
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -99,9 +101,13 @@ const runClose = async ({ set, get, sessionId, workflowRunId }: Params): Promise
 };
 
 export const closeWorkflowRun = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void> => {
+  return async (
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+  ): Promise<CloseWorkflowRunOutcome> => {
     try {
       await runClose({ set, get, sessionId, workflowRunId });
+      return 'closed';
     } catch (error) {
       void get().emitNotification({
         kind: 'error',
@@ -110,6 +116,7 @@ export const closeWorkflowRun = (set: SetFn, get: GetFn) => {
         body: formatError(error),
         sessionId,
       });
+      return 'failed';
     }
   };
 };

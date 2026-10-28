@@ -111,6 +111,7 @@ const primaryTailOf = ({
       return { state: 'waiting', phrase: 'Waiting for your answer', stepAgentId: null, verb };
     case 'continue':
     case 'retry':
+    case 'hint':
     case 'decide-next':
     case 'restore':
       return { state: 'idle', phrase: primary.label, stepAgentId: null, verb };

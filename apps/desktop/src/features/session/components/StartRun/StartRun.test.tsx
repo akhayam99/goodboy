@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getSetting, insertWorkspace, setSetting } from '@goodboy/db';
+import { getSetting, getWorkspaceValue, insertWorkspace, setSetting } from '@goodboy/db';
 import {
   brandId,
   type AgentId,
@@ -351,5 +351,185 @@ describe('StartRun', () => {
     );
 
     await waitFor(() => expect(field()).toHaveProperty('value', QUESTION));
+  });
+});
+
+type PickParams = {
+  readonly label: string;
+};
+
+const pickFromMenu = ({ label }: PickParams) => {
+  fireEvent.mouseDown(screen.getByText(label));
+};
+
+const routeLine = () => document.querySelector('[data-run-route-line]')?.textContent ?? '';
+
+describe('StartRun run as', () => {
+  it('opens the role menu on @ and starts the role it picked', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: '@' } });
+    pickFromMenu({ label: 'Scout' });
+
+    expect(field()).toHaveProperty('value', '');
+    screen.getByRole('button', { name: 'Run as: Agent · Scout' });
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION.id,
+      expect.objectContaining({ kindOverride: 'scout', initialPrompt: QUESTION }),
+    );
+  });
+
+  it('opens the preset menu on ~ and starts a plan from the preset it picked', async () => {
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: '~' } });
+    pickFromMenu({ label: 'Fix a layout' });
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      rulesSnapshot: { route: { row: 1, presetName: 'Fix a layout', closeness: 'follow' } },
+    });
+  });
+
+  it('says what Start will do before it is pressed and follows the Run as chip', () => {
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: QUESTION } });
+    expect(routeLine()).toContain('Starts as Agent · Auto');
+    expect(routeLine()).toContain('A question or a check, and no preset fits');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    expect(routeLine()).toBe('Starts as Workflow · Orchestrated · you picked it');
+    screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
+  });
+
+  it('lists Auto, Orchestrated, every preset and every role in the chip', () => {
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+
+    screen.getByRole('button', { name: 'Let Auto pick' });
+    screen.getByRole('button', { name: 'Workflow · Orchestrated' });
+    screen.getByRole('button', { name: 'Workflow · Preset Fix a layout' });
+    screen.getByRole('button', { name: 'Agent · Scout' });
+  });
+
+  it('keeps a typed token ahead of the chip', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    ask({ text: `@Scout ${QUESTION}` });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'scout' });
+  });
+
+  it('writes no Auto limit when a run starts and the person set none', async () => {
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession: vi.fn<AttachFn>(async () => undefined),
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(field()).toHaveProperty('value', ''));
+    expect(
+      await getWorkspaceValue({
+        db: storySqlite(),
+        workspaceId: WORKSPACE.id,
+        key: 'auto.treeLimitUsd',
+      }),
+    ).toBeNull();
+  });
+});
+
+type ImageParams = {
+  readonly name: string;
+};
+
+const image = ({ name }: ImageParams): File =>
+  new File([new Uint8Array(4)], name, { type: 'image/png' });
+
+describe('StartRun attachments', () => {
+  it('attaches a pasted image and sends it with the run kickoff', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const addGoalAttachments = vi.fn<StoryState['addGoalAttachments']>(async () => undefined);
+    useAppStore.setState({ spawnAgent, addGoalAttachments });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.paste(field(), { clipboardData: { files: [image({ name: 'shot.png' })] } });
+    await screen.findByText('shot.png');
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(addGoalAttachments).toHaveBeenCalledWith({ type: 'session', id: SESSION.id }, [
+      expect.objectContaining({ fileName: 'shot.png', mimeType: 'image/png' }),
+    ]);
+    expect(addGoalAttachments.mock.invocationCallOrder[0]).toBeLessThan(
+      spawnAgent.mock.invocationCallOrder[0] ?? 0,
+    );
+    await waitFor(() => expect(screen.queryByText('shot.png')).toBeNull());
+  });
+
+  it('hands attachments to an orchestrated run too', async () => {
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(screen.getByLabelText('Choose files to attach'), {
+      target: { files: [image({ name: 'layout.png' })] },
+    });
+    await screen.findByText('layout.png');
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.attachmentInputs).toEqual([
+      expect.objectContaining({ fileName: 'layout.png' }),
+    ]);
+  });
+
+  it('keeps the attachment and shows the error when the start fails, so Retry sends it again', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const addGoalAttachments = vi
+      .fn<StoryState['addGoalAttachments']>()
+      .mockRejectedValueOnce(new Error('session worktree not available'))
+      .mockResolvedValue(undefined);
+    useAppStore.setState({ spawnAgent, addGoalAttachments });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.paste(field(), { clipboardData: { files: [image({ name: 'shot.png' })] } });
+    await screen.findByText('shot.png');
+
+    ask({ text: QUESTION });
+
+    await screen.findByText(/worktree not available/);
+    expect(spawnAgent).not.toHaveBeenCalled();
+    screen.getByText('shot.png');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(addGoalAttachments).toHaveBeenCalledTimes(2);
   });
 });

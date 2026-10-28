@@ -231,7 +231,7 @@ export type NewAutoTree = Readonly<{
   rootAgentId: AgentId;
   sessionId: SessionId;
   primaryMountId: string | null;
-  capUsd: number;
+  capUsd: number | null;
   nowMs: number;
   hardDeadlineAt: number;
 }>;

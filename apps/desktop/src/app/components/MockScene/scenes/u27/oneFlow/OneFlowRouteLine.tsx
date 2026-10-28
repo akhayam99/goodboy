@@ -45,7 +45,7 @@ export const OneFlowRouteLine = ({ route, changeCount }: Props) => {
         target={target}
         route={stored}
         changeCount={changeCount}
-        hasStarted
+        phase="finished"
       />
     </div>
   );

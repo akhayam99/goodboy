@@ -726,6 +726,10 @@ resolve-run-answered
 resolve-run-question
 resolve-run-working
 resolve-select
+resolve-state-failed
+resolve-state-ready
+resolve-state-skipped
+resolve-state-working
 resolve-transcript-drawer
 resolve-transcript-drawer-multi
 resolve-transcript-drawer-multi-done
@@ -1059,8 +1063,15 @@ u28-away-alerts-on-dark
 u28-away-alerts-on-light
 u28-bell-opened
 u28-bell-overflow
+u28-run-kind-ended
+u28-run-kind-live
+u28-run-orch-blocked
+u28-run-step-blocked
 u28-running-list-dark
 u28-running-list-light
+u28-start-run-no-limit
+u28-start-run-route-line
+u28-start-run-run-as-menu
 u28-tasks-new
 u28-workspace-attention
 update-card

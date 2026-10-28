@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { CircleStop } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, useAppStore } from '../../../../store';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
 import type { OrchestratedVerb } from '../../../workflows/orchestratedTailOf';
 import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
@@ -32,6 +34,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const readQueuedWorkflowHints = useAppStore((state) => state.readQueuedWorkflowHints);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const navigate = useAppStore((state) => state.navigate);
   const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const reportError = useAppStore((state) => state.reportError);
@@ -119,6 +122,19 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
         >
           View transcript
         </button>
+      );
+    case 'openAgentChat':
+      return (
+        <Button
+          size="xs"
+          variant="quiet"
+          onClick={() => {
+            navigate({ to: agentPlace({ sessionId, agentId: verb.agentId }) });
+            window.dispatchEvent(openAgentRevealEvent());
+          }}
+        >
+          {ORCHESTRATED_COPY.openAgentChat}
+        </Button>
       );
     case 'readQueued':
       return (

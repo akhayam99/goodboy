@@ -20,6 +20,7 @@ import type {
 } from '@goodboy/types';
 import type { Database, PlainStatement, TransactionOutcome } from '../client';
 import { PURGED_QUESTION_TEXTS_INDEX, agentPurgeStatements } from './agent';
+import { cleanWorkflowRunTitle } from './workflow-run-title';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 import { serializeProviderPool, toProviderPool } from './provider-pool-column';
 
@@ -107,6 +108,10 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   const orchestratorHints = toOrchestratorHintLog({ value: row.orchestrator_hint_log });
   const providerPool = toProviderPool({ value: row.provider_pool });
   const rulesSnapshot = parseWorkflowRulesText({ text: row.rules_snapshot });
+  const title =
+    row.title_user_edited === 0 && row.title != null && row.title !== ''
+      ? cleanWorkflowRunTitle({ title: row.title, goal: row.goal })
+      : (row.title ?? '');
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -131,7 +136,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
-    ...(row.title != null && row.title !== '' && { title: row.title }),
+    ...(title !== '' && { title }),
     ...(row.title_user_edited !== 0 && { titleUserEdited: true }),
     ...(providerPool != null && { providerPool }),
     ...(rulesSnapshot != null && { rulesSnapshot }),
@@ -615,18 +620,6 @@ type WorkflowRunTitleParams = {
   readonly db: Database;
   readonly workflowRunId: WorkflowRunId;
   readonly title: string;
-};
-
-export const updateGeneratedWorkflowRunTitle = async ({
-  db,
-  workflowRunId,
-  title,
-}: WorkflowRunTitleParams): Promise<boolean> => {
-  const { rowsAffected } = await db.execute(
-    'UPDATE session_workflows SET title = ? WHERE workflow_run_id = ? AND title_user_edited = 0',
-    [title, workflowRunId],
-  );
-  return rowsAffected > 0;
 };
 
 export const updateUserWorkflowRunTitle = async ({

@@ -290,7 +290,7 @@ describe('New session page', () => {
 
     expect(screen.queryByRole('tablist', { name: KINDS })).toBeNull();
     const auto = within(screen.getByRole('region', { name: 'Start a run' }));
-    auto.getByText('Auto picks a workflow or an agent. Type ~preset or @role.');
+    auto.getByText('Auto picks how to run it. ~ lists presets, @ lists roles.');
     expect(textBox('Goal')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Pick it yourself' }));
     await settle();

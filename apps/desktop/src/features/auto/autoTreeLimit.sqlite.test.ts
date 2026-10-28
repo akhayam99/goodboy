@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { setWorkspaceValue, type Database } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import { brandId, type WorkspaceId } from '@goodboy/types';
-import {
-  AUTO_TREE_LIMIT_DEFAULT_USD,
-  parseAutoTreeLimit,
-  readAutoTreeLimit,
-  writeAutoTreeLimit,
-} from './autoTreeLimit';
+import { parseAutoTreeLimit, readAutoTreeLimit, writeAutoTreeLimit } from './autoTreeLimit';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 const NORTHWIND = brandId<WorkspaceId>({ value: 'workspace-northwind' });
@@ -23,11 +18,21 @@ const migratedWithWorkspaces = async (): Promise<Database> => {
 };
 
 describe('the Auto tree limit of a workspace', () => {
-  it('proposes 5 USD, and is unset until the person confirms one', async () => {
+  it('is unset until the person sets one', async () => {
     const db = await migratedWithWorkspaces();
 
-    expect(AUTO_TREE_LIMIT_DEFAULT_USD).toBe(5);
     expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+  });
+
+  it('removes the limit of one workspace and keeps the others', async () => {
+    const db = await migratedWithWorkspaces();
+    await writeAutoTreeLimit({ db, workspaceId: HARBORLINE, usd: 8 });
+    await writeAutoTreeLimit({ db, workspaceId: NORTHWIND, usd: 3 });
+
+    await writeAutoTreeLimit({ db, workspaceId: HARBORLINE, usd: null });
+
+    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+    expect(await readAutoTreeLimit({ db, workspaceId: NORTHWIND })).toBe(3);
   });
 
   it('stores one limit per workspace and swaps it against what it read', async () => {

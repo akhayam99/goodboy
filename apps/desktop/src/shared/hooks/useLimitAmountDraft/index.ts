@@ -95,6 +95,10 @@ export const useLimitAmountDraft = ({
     isInvalid,
     error: isInvalid ? INVALID : failure,
     setAmount: ({ amount: next }: AmountParams) => setAmountState(next),
+    clear: () => {
+      setAmountState('');
+      void commit({ amount: '', isClosing: false });
+    },
     submit: ({ event }: SubmitParams) => {
       event.preventDefault();
       if (isDirty && !isInvalid) {

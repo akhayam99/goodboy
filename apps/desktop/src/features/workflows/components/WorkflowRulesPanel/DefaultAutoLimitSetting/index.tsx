@@ -20,7 +20,7 @@ type ApplyParams = {
 const LABEL = 'Auto limit';
 
 const HELP =
-  'What a new Auto and its agents may spend. The smaller of this and the session limit pauses it.';
+  'What a new Auto and its agents may spend. Empty means no limit. The smaller of this and the session limit pauses it.';
 
 export const DefaultAutoLimitSetting = ({ workspaceId, workspaceName }: Props) => {
   const dropdown = useDropdown({ expectedHeight: 220, expectedWidth: 320, width: 'w-80' });
@@ -28,9 +28,6 @@ export const DefaultAutoLimitSetting = ({ workspaceId, workspaceName }: Props) =
   const loadWorkspaceValue = useAppStore((state) => state.loadWorkspaceValue);
   const reportError = useAppStore((state) => state.reportError);
   const apply = async ({ usd }: ApplyParams): Promise<string | null> => {
-    if (usd === null) {
-      return 'A new Auto always starts with a limit. Enter an amount over zero.';
-    }
     try {
       await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd });
     } catch (error) {
@@ -58,11 +55,20 @@ export const DefaultAutoLimitSetting = ({ workspaceId, workspaceName }: Props) =
     <SettingChip
       dropdown={dropdown}
       label={LABEL}
-      words={{
-        value: formatUsd(limit.usd),
-        source: limit.isStored ? `from ${workspaceName}` : 'default',
-        chain: `A new Auto starts on ${formatUsd(limit.usd)}, or the session limit when that is smaller. An Auto already going keeps its own.`,
-      }}
+      words={
+        limit.usd === null
+          ? {
+              value: 'none',
+              source: '',
+              chain:
+                'A new Auto has no limit unless the session has one. An Auto already going keeps its own.',
+            }
+          : {
+              value: formatUsd(limit.usd),
+              source: `from ${workspaceName}`,
+              chain: `A new Auto starts on ${formatUsd(limit.usd)}, or the session limit when that is smaller. An Auto already going keeps its own.`,
+            }
+      }
       help={HELP}
       error={draft.error}
     >
@@ -70,6 +76,7 @@ export const DefaultAutoLimitSetting = ({ workspaceId, workspaceName }: Props) =
         label="Limit for a new Auto"
         inputId={`default-auto-limit-${workspaceId}`}
         draft={draft}
+        clearLabel="No limit"
       />
     </SettingChip>
   );

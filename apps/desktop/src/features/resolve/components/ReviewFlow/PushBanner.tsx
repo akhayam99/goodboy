@@ -20,6 +20,7 @@ import {
 } from '../../../../store/slices/project-mounts/selectors';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { PushFailureCard } from './PushFailureCard';
 import { SYNC_COPY } from '../../failedRunCopy';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
@@ -88,6 +89,10 @@ export const PushBanner = ({ sessionId, mountId = null, push }: Props) => {
         {SYNC_COPY.working}
       </p>
     );
+  }
+
+  if (phase.kind === 'result' && phase.result.failure !== undefined) {
+    return <PushFailureCard sessionId={sessionId} push={push} result={phase.result} />;
   }
 
   if (phase.kind === 'result') {

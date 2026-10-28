@@ -12,7 +12,7 @@ type Props = {
   readonly choices: ReadonlyArray<RunKindChoice>;
   readonly closeness: RunRouteCloseness | null;
   readonly presetId: WorkflowId | null;
-  readonly hasStarted: boolean;
+  readonly heading: string;
   readonly isBusy: boolean;
   readonly onChoose: (params: ChooseParams) => void;
 };
@@ -23,11 +23,10 @@ export const RunKindChoices = ({
   choices,
   closeness,
   presetId,
-  hasStarted,
+  heading,
   isBusy,
   onChoose,
 }: Props) => {
-  const heading = hasStarted ? RUN_ROUTE_COPY.startNewAs : RUN_ROUTE_COPY.changeTo;
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {closeness === null || presetId === null ? null : (

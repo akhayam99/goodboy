@@ -290,21 +290,21 @@ describe('accept in bulk', () => {
       fireEvent.click(box);
     }
     const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
-    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
+    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply and resolve 7' }));
 
     await waitFor(() => expect(acceptReviewComments).toHaveBeenCalledOnce());
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).toHaveLength(7);
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).not.toContain('PRRT_bulk_f1');
   });
 
-  it('says Apply 3 fixes in the selection bar when three ready rows are selected, with Fix left out', async () => {
+  it('says Apply and resolve 3 in the selection bar when three ready rows are selected, with Fix left out', async () => {
     const acceptReviewComments = acceptStub();
     await mount({ stage: 'review' });
 
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
     expect(within(bar).getByText('3 selected')).toBeDefined();
     expect(within(bar).queryByRole('button', { name: /^Fix \d/ })).toBeNull();
-    fireEvent.click(within(bar).getByRole('button', { name: 'Apply 3 fixes' }));
+    fireEvent.click(within(bar).getByRole('button', { name: 'Apply and resolve 3' }));
 
     await waitFor(() => expect(acceptReviewComments).toHaveBeenCalledOnce());
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).toEqual([
@@ -398,7 +398,7 @@ describe('accept in bulk', () => {
       fireEvent.click(box);
     }
     const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
-    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
+    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply and resolve 7' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('1 comment not accepted');

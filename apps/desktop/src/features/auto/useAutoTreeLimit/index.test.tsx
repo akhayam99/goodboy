@@ -34,11 +34,14 @@ const Probe = ({ sessionId = null }: ProbeParams) => {
   const limit = useAutoTreeLimit({ workspaceId: HARBORLINE, sessionId });
   return (
     <div>
-      <p data-testid="usd">{limit.usd}</p>
+      <p data-testid="usd">{String(limit.usd)}</p>
       <p data-testid="stored">{String(limit.isStored)}</p>
       <p data-testid="session">{String(limit.isFromSession)}</p>
       <button type="button" onClick={() => limit.change(9)}>
         change
+      </button>
+      <button type="button" onClick={() => limit.change(null)}>
+        clear
       </button>
       <button type="button" onClick={() => void limit.persist()}>
         persist
@@ -59,10 +62,10 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('useAutoTreeLimit', () => {
-  it('proposes 5 USD until a limit is stored, then reads the stored one', async () => {
+  it('has no limit until one is stored, then reads the stored one', async () => {
     render(<Probe />);
 
-    expect(screen.getByTestId('usd').textContent).toBe('5');
+    expect(screen.getByTestId('usd').textContent).toBe('null');
     expect(screen.getByTestId('stored').textContent).toBe('false');
     await act(async () => {
       await db.execute(
@@ -78,13 +81,30 @@ describe('useAutoTreeLimit', () => {
     expect(screen.getByTestId('stored').textContent).toBe('true');
   });
 
-  it('stores the proposal the first time it is persisted, so the next start is not asked', async () => {
+  it('stores nothing when the person set nothing, so no limit appears on its own', async () => {
     render(<Probe />);
 
     fireEvent.click(screen.getByText('persist'));
+    await act(async () => undefined);
 
-    await waitFor(() => expect(screen.getByTestId('stored').textContent).toBe('true'));
-    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBe(5);
+    expect(screen.getByTestId('stored').textContent).toBe('false');
+    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+  });
+
+  it('removes a stored limit when the person clears it', async () => {
+    await db.execute(
+      "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
+      [HARBORLINE, '7'],
+    );
+    render(<Probe />);
+    await waitFor(() => expect(screen.getByTestId('usd').textContent).toBe('7'));
+
+    fireEvent.click(screen.getByText('clear'));
+    fireEvent.click(screen.getByText('persist'));
+
+    await waitFor(() => expect(screen.getByTestId('stored').textContent).toBe('false'));
+    expect(screen.getByTestId('usd').textContent).toBe('null');
+    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
   });
 
   it('stores the amount the person chose', async () => {
@@ -136,7 +156,7 @@ describe('useAutoTreeLimit', () => {
     });
     render(<Probe sessionId={SESSION} />);
 
-    expect(screen.getByTestId('usd').textContent).toBe('5');
+    expect(screen.getByTestId('usd').textContent).toBe('null');
     expect(screen.getByTestId('session').textContent).toBe('false');
   });
 
@@ -146,9 +166,13 @@ describe('useAutoTreeLimit', () => {
         [SESSION]: { sessionId: SESSION, softCapUsd: 25, onExceed: 'pause', warnRatio: 0.8 },
       },
     });
+    await db.execute(
+      "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
+      [HARBORLINE, '5'],
+    );
     render(<Probe sessionId={SESSION} />);
 
-    expect(screen.getByTestId('usd').textContent).toBe('5');
+    await waitFor(() => expect(screen.getByTestId('usd').textContent).toBe('5'));
     expect(screen.getByTestId('session').textContent).toBe('false');
   });
 });

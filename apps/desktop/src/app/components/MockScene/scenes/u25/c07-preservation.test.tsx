@@ -52,12 +52,12 @@ const autoLevel = async (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Agents' }, WAIT);
 
 describe('Auto: every capability keeps a home in Auto', () => {
-  it('Start Auto from the Start a run field on the Runs page, with the Limit of the workspace', async () => {
+  it('Start Auto from the Start a run field on the Runs page, with the Limit chip', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 
     const start = await screen.findByRole('region', { name: 'Start a run' }, WAIT);
     expect(within(start).getByRole('textbox', { name: 'Start a run' })).toBeDefined();
-    expect(within(start).getByText(/^Limit \$/)).toBeDefined();
+    expect(within(start).getByText('No limit')).toBeDefined();
     expect(screen.queryByText(/Spend cap/)).toBeNull();
   });
 

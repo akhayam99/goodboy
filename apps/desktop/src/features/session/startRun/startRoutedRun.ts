@@ -2,6 +2,7 @@ import {
   DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
+  type AttachmentInput,
   type IsoDateTime,
   type SessionId,
   type Workflow,
@@ -24,6 +25,7 @@ type Params = {
   readonly findings?: string;
   readonly routing?: AgentKindRouting | null;
   readonly autonomy?: WorkflowAutonomy | null;
+  readonly attachments?: ReadonlyArray<AttachmentInput>;
 };
 
 export type RoutedRun =
@@ -35,6 +37,7 @@ export const startRoutedRun = async ({
   findings = '',
   routing = null,
   autonomy = null,
+  attachments = [],
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -45,6 +48,9 @@ export const startRoutedRun = async ({
   const route = { ...result.route, ask };
   const work = findings === '' ? ask : `${ask}\n\n${findings}`;
   if (route.shape === 'lead') {
+    if (attachments.length > 0) {
+      await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
+    }
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
       initialPrompt: work,
@@ -89,6 +95,7 @@ export const startRoutedRun = async ({
     navigate: true,
     autoRun: asks !== 'step',
     goal: work,
+    ...(attachments.length > 0 && { attachmentInputs: attachments }),
     executionMode: 'dynamic',
     rulesSnapshot: {
       ...rules,
