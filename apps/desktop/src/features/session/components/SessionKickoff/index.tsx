@@ -5,7 +5,9 @@ import { selectSessionDraft } from '../../../../store/slices/sessionDraft/select
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
+import { useRunModel } from '../StartRun/useRunModel';
 import { useStartRun } from '../StartRun/useStartRun';
+import { runModelSlotOfShape } from '../../startRun/runModelSlotOf';
 import { AutoPicksActions } from './AutoPicksActions';
 import { StartKindChoice } from './StartKindChoice';
 import { StartShapeForm } from './StartShapeForm';
@@ -44,7 +46,18 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
   const prefilledRef = useRef<string | null>(null);
   useRestoreLastStart({ workspaceId });
   const limit = useAutoTreeLimit({ workspaceId });
-  const shapeRun = useStartShape({ workspaceId, mount, prepare: limit.persist });
+  const agentKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).agentKind);
+  const shapeModel = useRunModel({
+    workspaceId,
+    sessionId: null,
+    slot: runModelSlotOfShape({ shape: startShape ?? 'orchestrated', agentKind }),
+  });
+  const shapeRun = useStartShape({
+    workspaceId,
+    mount,
+    prepare: limit.persist,
+    model: shapeModel,
+  });
   const autoRun = useStartRun({ workspaceId, sessionId: null, mount, prepare: limit.persist });
 
   useEffect(() => {
@@ -77,7 +90,13 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         <AutoPicksActions workspaceId={workspaceId} run={autoRun} limit={limit} />
       ) : null}
       {isShaped && startShape !== null ? (
-        <StartShapeForm workspaceId={workspaceId} shape={startShape} run={shapeRun} limit={limit} />
+        <StartShapeForm
+          workspaceId={workspaceId}
+          shape={startShape}
+          run={shapeRun}
+          limit={limit}
+          model={shapeModel}
+        />
       ) : null}
       {notice === undefined || notice === null ? null : (
         <div data-slot="kickoff-notice">{notice}</div>

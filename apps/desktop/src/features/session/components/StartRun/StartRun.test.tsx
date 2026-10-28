@@ -17,6 +17,7 @@ import {
   brandId,
   type AgentId,
   type IsoDateTime,
+  type ProviderId,
   type SessionId,
   type StepId,
   type Workflow,
@@ -32,6 +33,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
 import { StartRun } from './StartRun';
@@ -413,7 +415,7 @@ describe('StartRun run as', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
 
-    expect(routeLine()).toBe('Starts as Workflow · Orchestrated · you picked it');
+    expect(routeLine()).toMatch(/^Starts as Workflow · Orchestrated · .+ · you picked it$/);
     screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
   });
 
@@ -531,5 +533,129 @@ describe('StartRun attachments', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(addGoalAttachments).toHaveBeenCalledTimes(2);
+  });
+});
+
+const modelChip = () => screen.getByRole('button', { name: /^Model:/ });
+
+const providerOf = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
+  id,
+  label: id,
+  error: null,
+  docsUrl: 'https://example.com/docs',
+  binary: id,
+  capabilities: { models: [] },
+  connection: 'connected',
+  version: null,
+  identity: null,
+});
+
+const connectProviders = () =>
+  useAppStore.setState({
+    providers: [providerOf({ id: 'anthropic' }), providerOf({ id: 'cursor' })],
+  });
+
+describe('StartRun model', () => {
+  it('shows the model the run will use, Auto until one is picked for this run', () => {
+    connectProviders();
+    renderField({ sessionId: SESSION.id });
+
+    expect(modelChip().getAttribute('aria-label')).toMatch(/, Auto$/);
+    expect(modelChip().getAttribute('data-run-model')).toBe('auto');
+  });
+
+  it('puts the model in the route line and follows the Run as chip', () => {
+    connectProviders();
+    renderField({ sessionId: SESSION.id });
+    fireEvent.change(field(), { target: { value: QUESTION } });
+    const agentLine = routeLine();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    expect(agentLine).toContain('Starts as Agent · Auto agent · ');
+    expect(routeLine()).toContain('Starts as Workflow · Orchestrated · ');
+    expect(modelChip().getAttribute('aria-label')).toContain('Model: ');
+  });
+
+  it('starts the Auto agent on the model picked for this run only', async () => {
+    connectProviders();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.change(field(), { target: { value: QUESTION } });
+
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
+    fireEvent.click(screen.getByRole('button', { name: /^(Start|Retry)/ }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      provider: 'cursor',
+    });
+    await waitFor(() => expect(modelChip().getAttribute('data-run-model')).toBe('auto'));
+  });
+
+  it('starts an orchestrated run with the orchestrator model picked for this run', async () => {
+    connectProviders();
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    fireEvent.change(field(), { target: { value: 'center every member page' } });
+
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    fireEvent.click(screen.getByRole('button', { name: /^(Start|Retry)/ }));
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      executionMode: 'dynamic',
+      orchestratorRouting: { providerId: 'cursor' },
+    });
+  });
+
+  it('keeps a model picked for one kind off the other kind', async () => {
+    connectProviders();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agent · Auto agent' }));
+
+    expect(modelChip().getAttribute('data-run-model')).toBe('auto');
+    ask({ text: QUESTION });
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('provider');
+  });
+
+  it('links the picker to the default in Settings', () => {
+    connectProviders();
+    const opened = vi.fn<(event: Event) => void>();
+    window.addEventListener('goodboy:open-settings', opened);
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Change the default in Settings' }));
+
+    expect(opened).toHaveBeenCalledTimes(1);
+    const event = opened.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toMatchObject({
+      scope: 'providers',
+    });
+    window.removeEventListener('goodboy:open-settings', opened);
   });
 });

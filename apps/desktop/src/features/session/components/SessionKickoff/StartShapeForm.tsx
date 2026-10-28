@@ -9,6 +9,8 @@ import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { AGENT_KIND_META } from '../../agent-kind';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
+import { RunModelChip } from '../StartRun/RunModelChip';
+import type { RunModelView } from '../StartRun/useRunModel';
 import { hasAsksGate } from './hasAsksGate';
 import { StartAgentFields } from './StartAgentFields';
 import { StartAsksSetting } from './StartAsksSetting';
@@ -20,6 +22,7 @@ type Props = {
   readonly shape: StartShape;
   readonly run: StartShapeModel;
   readonly limit: AutoTreeLimitModel;
+  readonly model: RunModelView;
 };
 
 type LabelParams = {
@@ -49,7 +52,7 @@ const reasonOf = ({ hasGoal, isPresetMissing }: ReasonParams): string | null => 
   return null;
 };
 
-export const StartShapeForm = ({ workspaceId, shape, run, limit }: Props) => {
+export const StartShapeForm = ({ workspaceId, shape, run, limit, model }: Props) => {
   const hasGoal = useAppStore(
     (state) => selectSessionDraft({ state, workspaceId }).workflowGoal.trim() !== '',
   );
@@ -84,6 +87,7 @@ export const StartShapeForm = ({ workspaceId, shape, run, limit }: Props) => {
               {hasAsksGate({ shape }) ? (
                 <StartAsksSetting workspaceId={workspaceId} isDisabled={run.isStarting} />
               ) : null}
+              <RunModelChip model={model} isDisabled={run.isStarting} />
               <AutoLimitChip
                 usd={limit.usd}
                 isFromSession={limit.isFromSession}

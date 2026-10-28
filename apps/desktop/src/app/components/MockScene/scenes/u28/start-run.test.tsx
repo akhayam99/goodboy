@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -71,6 +71,35 @@ describe('the u28 start run scenes', () => {
     await screen.findByRole('button', { name: 'Workflow · Orchestrated' }, WAIT);
     screen.getByRole('button', { name: 'Workflow · Preset Fix a layout' });
     screen.getByRole('button', { name: 'Agent · Scout' });
+  });
+
+  it('names the model of the Auto agent next to Run as, and in the route line', async () => {
+    mount({ id: 'u28-start-run-route-line' });
+
+    const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
+    const chip = screen.getByRole('button', { name: /^Model:/ });
+    expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
+    expect(line.textContent).toMatch(
+      /^Starts[ ]as[ ]Agent · Auto agent · .+ · A question or a check/,
+    );
+  });
+
+  it('opens the Model menu with the picker and the link to the default', async () => {
+    mount({ id: 'u28-start-run-model-menu' });
+
+    const menu = await screen.findByRole('dialog', { name: 'Auto agent model' }, WAIT);
+    within(menu).getByRole('button', { name: /^Auto, now / });
+    within(menu).getByRole('button', { name: 'Change the default in Settings' });
+  });
+
+  it('names the orchestrator when the ask becomes an orchestrated run', async () => {
+    mount({ id: 'u28-start-run-orchestrated' });
+
+    const line = await screen.findByText(/^Starts[ ]as.*Orchestrated/, {}, WAIT);
+    expect(line.textContent).toContain('A task with an end');
+    expect(screen.getByRole('button', { name: /^Model:/ }).getAttribute('data-run-model')).toBe(
+      'auto',
+    );
   });
 
   it('shows No limit on the Limit chip when none is set', async () => {

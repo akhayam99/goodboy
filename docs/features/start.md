@@ -11,7 +11,9 @@ Write what you want done and press Start. Goodboy picks how to run it.
 - Its hint reads "Auto picks how to run it. ~ lists presets, @ lists roles."
 - Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and the **Run as** chip shows it.
 - The **Run as** chip sits next to **Limit**: **Let Auto pick**, **Agent · Auto agent**, **Workflow · Orchestrated**, each preset and each role. A name typed in the text still wins over the chip.
-- Under the box, a line reads "Starts as ..." with the reason. It changes as you type or pick, before you press Start.
+- The **Model** chip sits next to **Run as**. It names the model of the Auto agent or the orchestrator of this run. Until you pick another it shows the default from Settings, marked **Auto**.
+- A pick on the **Model** chip is for this run only. **Change the default in Settings** opens **Settings › Models › Runs**.
+- Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type or pick, before you press Start.
 - The paperclip, paste and drop attach files and images. They go with the run to its first agent.
 - ↵ starts, ⇧↵ adds a line.
 
@@ -55,6 +57,14 @@ Its last line says what a pick does.
 - Once the run is finished, the list reads **Start a new run as**. A last line reads "Starts a new run with the same goal." and the new run gets what the first found. The finished run stays in the list.
 - The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
+### The model of a run
+
+The settings line of a run names the model that runs it, next to the **Kind** chip.
+
+- An orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
+- An Auto agent shows **Auto agent** in front of the model pill of its box. A pick there applies from the next turn of that agent.
+- The default of each is in **Settings › Models › Runs**.
+
 ### The New session page
 
 Start a session from your goal: write it or pick an issue, then choose the kind of run.
@@ -84,6 +94,7 @@ Picking a kind shows only that kind's controls.
 - A one-line hint says what you see while it runs.
 - A Preset shows the preset picker with its steps, and **Follow it** or **Adapt as it goes**.
 - An Agent shows **Role** and **Model**. The others show the **Limit**.
+- Orchestrated, Preset and Auto agent also show the **Model** chip of the Start a run field. It names the orchestrator or the Auto agent for this run.
 - Both workflow kinds also show **Asks you** (Every step, After the plan, Never). It is the same chip and popover as the run's settings line. It opens on Every step, what a run started here got before, and the run starts with the pick.
 - An agent has no step to stop at, so the agent kinds have no Asks you.
 - The primary names what starts: **Start workflow**, **Start Scout** (the role you picked) or **Start Auto agent**.
@@ -93,7 +104,7 @@ Picking a kind shows only that kind's controls.
 
 **Not sure? Describe it and Auto picks** sits under the two cards before you pick.
 
-- It swaps the cards for the Limit and Start of **Start a run**, which routes the goal you wrote. **Pick it yourself** goes back.
+- It swaps the cards for the **Run as**, **Model**, Limit and Start of **Start a run**, which routes the goal you wrote. **Pick it yourself** goes back.
 - The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind, folded, next time. The first visit and **Pick it yourself** show the full cards.
 - Each window keeps its own pick while it is open.
 - ⌘K **New workflow session** and **New agent session** open the page on that card.
@@ -182,6 +193,9 @@ Choose where an issue belongs with **Move to** in its chip menu: the session or 
 This part is for contributors and agents who change the feature.
 
 - Run as chip: `RunAsChip` lists `runAsChoicesOf`, and `runAsRouteOf` turns the pick into the route Start uses, with a typed token ahead of the chip. `useStartRun` builds the live "Starts as" line from the same function.
+- Model chip: `RunModelChip` is the one control. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
+- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. `AgentSettingsLine` draws the Auto agent label in front of the composer's model slot, and hides it with the slot when the box has no pill.
+- Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.

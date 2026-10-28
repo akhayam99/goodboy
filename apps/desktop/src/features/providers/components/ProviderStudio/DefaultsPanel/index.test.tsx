@@ -196,17 +196,61 @@ const TASK_LABELS = [
   'Plan drafting',
   'Prose polish',
   'Agent naming',
-  'Workflow orchestrator',
+  'Orchestrator',
   'History rewriter',
 ];
 
 const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
   'Plan drafting',
-  'Workflow orchestrator',
+  'Orchestrator',
   'History rewriter',
 ]);
 
 describe('DefaultsPanel', () => {
+  it('opens with a Runs section that holds the Auto agent and the Orchestrator', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    const sections = screen
+      .getAllByRole('region')
+      .map((region) => region.getAttribute('aria-label'));
+    expect(sections.indexOf('Runs')).toBeGreaterThanOrEqual(0);
+    expect(sections.indexOf('Runs')).toBeLessThan(sections.indexOf('Providers'));
+    const runs = screen.getByRole('region', { name: 'Runs' });
+    within(runs).getByText('Auto agent');
+    within(runs).getByText('Orchestrator');
+    expect(runs.querySelector('[aria-label="Orchestrator routing model"]')).not.toBeNull();
+  });
+
+  it('reads the Auto agent pin from roleModels.auto and marks it Pinned', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: { auto: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' } },
+      },
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(roleRow('Auto agent').textContent).toContain('Pinned');
+    expect(roleRow('Auto agent').textContent).toContain('Opus 5.5');
+  });
+
+  it('keeps the stored keys: the Orchestrator row writes taskModels', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+    const runs = within(screen.getByRole('region', { name: 'Runs' }));
+
+    fireEvent.click(runs.getByRole('button', { name: 'Orchestrator routing model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing high effort' }));
+
+    expect(state.writeRow).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        taskModels: expect.objectContaining({
+          workflow_orchestrator: expect.objectContaining({ effort: 'high' }),
+        }),
+      }),
+    );
+  });
+
   it('sums up the provider policy and names the provider new work starts on', () => {
     state.workspaceOverrides = {
       'ws-1': {
@@ -285,10 +329,8 @@ describe('DefaultsPanel', () => {
   it('persists an effort for a task model', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow orchestrator routing model' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Workflow orchestrator routing high effort' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Orchestrator routing high effort' }));
 
     expect(state.writeRow).toHaveBeenLastCalledWith(
       'ws-1',
@@ -644,13 +686,15 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByRole('tab')).toBeNull();
   });
 
-  it('renders 11 roles and 11 tasks inside their groups', () => {
+  it('renders 11 roles and 10 tasks inside their groups, and the two run models apart', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     const agents = screen.getByRole('region', { name: 'Agents' });
     const tasks = screen.getByRole('region', { name: 'Background tasks' });
     expect(within(agents).getAllByRole('button', { expanded: false })).toHaveLength(11);
-    expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(11);
+    expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(10);
+    expect(within(tasks).queryByText('Orchestrator')).toBeNull();
+    expect(within(agents).queryByText('Auto agent')).toBeNull();
     for (const group of DEFAULT_GROUPS.tasks) {
       const node = screen.getByRole('group', { name: group.label });
       for (const id of group.members) {

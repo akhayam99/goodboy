@@ -6,12 +6,19 @@ export type DefaultsGroup<Id extends string> = {
   readonly members: ReadonlyArray<Id>;
 };
 
+export type RunDefaults = {
+  readonly agents: ReadonlyArray<AgentRole>;
+  readonly tasks: ReadonlyArray<AuxTaskId>;
+};
+
 export type DefaultGroups = {
+  readonly runs: RunDefaults;
   readonly agents: ReadonlyArray<DefaultsGroup<AgentRole>>;
   readonly tasks: ReadonlyArray<DefaultsGroup<AuxTaskId>>;
 };
 
 export const DEFAULT_GROUPS: DefaultGroups = {
+  runs: { agents: ['auto'], tasks: ['workflow_orchestrator'] },
   agents: [
     { id: 'explore', label: 'Explore and plan', members: ['scout', 'investigator', 'planner'] },
     { id: 'build', label: 'Build', members: ['implementer', 'tester', 'resolver'] },
@@ -38,7 +45,7 @@ export const DEFAULT_GROUPS: DefaultGroups = {
     {
       id: 'workflows',
       label: 'Running workflows',
-      members: ['summarizer', 'workflow_orchestrator', 'question_delegate'],
+      members: ['summarizer', 'question_delegate'],
     },
     { id: 'git', label: 'Git', members: ['rebase'] },
     { id: 'review-checks', label: 'Review', members: ['recheck'] },

@@ -193,6 +193,11 @@ uses when you leave a model on **Auto**. It is one page in three parts.
   reports them. This is the one home of the provider policy: Run defaults shows
   the summary and a link here in its **Models** chip. The page header names its scope: the workspace
   name, or **All workspaces** when none is open
+- **Runs**: the two models a run starts with, first on the page. **Auto agent** is the
+  `auto` role (`roleModels.auto`, narrowed to the providers Auto can run on, as
+  `kindRouting` does at spawn) and **Orchestrator** is the `workflow_orchestrator` task
+  (`taskModels.workflow_orchestrator`). `DEFAULT_GROUPS.runs` lists them and the Agents
+  and Background tasks groups leave them out
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role
 - **Background tasks**: one row per side job, grouped as Writing for you, Running

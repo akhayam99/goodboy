@@ -274,8 +274,13 @@ blocked.
 - It keeps a running recap of what is done and what is left
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-You choose the model the orchestrator runs on in the launch form, and the
-providers it may pick from with **Can use**.
+The model of the orchestrator has three homes. The workspace default is the
+**Orchestrator** row of **Settings › Models › Runs**. A run takes it from the
+**Model** chip of Start a run, and the run page shows it as the **Orchestrator**
+chip in the settings line, the composer row beside the hint box changes the same
+value. The chips write `orchestratorRouting` of the run (`useOrchestratorModel`
+through `setWorkflowOrchestratorRouting`), and a run with none follows the
+default. The providers it may pick from are set with **Can use**.
 
 ### The orchestrated document
 
