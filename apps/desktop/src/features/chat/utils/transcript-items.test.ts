@@ -128,11 +128,11 @@ const errorEvent = ({ message }: ErrorParams): TurnEvent => ({
   at: AT,
 });
 
-const premiumUsageEvent = ({
-  premiumRequests,
-}: {
+type PremiumUsageParams = {
   readonly premiumRequests: number;
-}): TurnEvent => ({
+};
+
+const premiumUsageEvent = ({ premiumRequests }: PremiumUsageParams): TurnEvent => ({
   kind: 'usage',
   runId: RUN,
   usage: {

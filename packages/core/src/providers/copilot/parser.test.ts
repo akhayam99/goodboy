@@ -14,7 +14,12 @@ type Params = {
 const parse = ({ payload, ctx = CTX }: Params) =>
   parseJsonLine({ line: JSON.stringify(payload), ctx });
 
-const delta = (messageId: string, deltaContent: string) => ({
+type DeltaParams = {
+  readonly messageId: string;
+  readonly deltaContent: string;
+};
+
+const delta = ({ messageId, deltaContent }: DeltaParams) => ({
   type: 'assistant.message_delta',
   data: { messageId, deltaContent },
 });
@@ -53,8 +58,10 @@ const CHECKPOINT = {
 describe('parseJsonLine, copilot 1.0.105', () => {
   it('streams a reply as partial deltas and drops the final message that repeats them', () => {
     resetCopilotParseState({ runId: RUN_ID });
-    const first = parse({ payload: delta('m1', 'Hi! What') });
-    const second = parse({ payload: delta('m1', ' would you like to work on?') });
+    const first = parse({ payload: delta({ messageId: 'm1', deltaContent: 'Hi! What' }) });
+    const second = parse({
+      payload: delta({ messageId: 'm1', deltaContent: ' would you like to work on?' }),
+    });
     const final = parse({
       payload: {
         type: 'assistant.message',
@@ -95,17 +102,17 @@ describe('parseJsonLine, copilot 1.0.105', () => {
 
   it('puts a blank line between two messages of one turn', () => {
     resetCopilotParseState({ runId: RUN_ID });
-    const first = parse({ payload: delta('m1', 'Reading the file.') });
+    const first = parse({ payload: delta({ messageId: 'm1', deltaContent: 'Reading the file.' }) });
     parse({ payload: { type: 'assistant.message', data: { messageId: 'm1', content: 'x' } } });
-    const second = parse({ payload: delta('m2', 'Done.') });
+    const second = parse({ payload: delta({ messageId: 'm2', deltaContent: 'Done.' }) });
     expect(textOf(first)).toBe('Reading the file.');
     expect(textOf(second)).toBe('\n\nDone.');
   });
 
   it('does not repeat the blank line inside one message', () => {
     resetCopilotParseState({ runId: RUN_ID });
-    parse({ payload: delta('m1', 'One') });
-    const next = parse({ payload: delta('m1', ' two') });
+    parse({ payload: delta({ messageId: 'm1', deltaContent: 'One' }) });
+    const next = parse({ payload: delta({ messageId: 'm1', deltaContent: ' two' }) });
     expect(textOf(next)).toBe(' two');
   });
 
@@ -288,10 +295,10 @@ describe('parseJsonLine, copilot 1.0.105', () => {
 
   it('forgets the run at the result so a second turn starts clean', () => {
     resetCopilotParseState({ runId: RUN_ID });
-    parse({ payload: delta('m1', 'First') });
+    parse({ payload: delta({ messageId: 'm1', deltaContent: 'First' }) });
     parse({ payload: CHECKPOINT });
     parse({ payload: { type: 'result', sessionId: 's' } });
-    const next = parse({ payload: delta('m1', 'Again') });
+    const next = parse({ payload: delta({ messageId: 'm1', deltaContent: 'Again' }) });
     expect(textOf(next)).toBe('Again');
     expect(parse({ payload: { type: 'result' } })).toEqual([]);
   });

@@ -36,7 +36,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const mount = (name: string) => {
+type MountParams = {
+  readonly name: string;
+};
+
+const mount = ({ name }: MountParams) => {
   const Scene = U28_RAIL_ORDER_BADGE_SCENES[name];
   if (Scene === undefined) {
     throw new Error(`no scene ${name}`);
@@ -56,7 +60,7 @@ describe('rail order and badge scenes', () => {
   });
 
   it('session-tools-order reads files and context, then talk and work, then the terminal', () => {
-    mount('session-tools-order');
+    mount({ name: 'session-tools-order' });
 
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(
@@ -68,7 +72,7 @@ describe('rail order and badge scenes', () => {
   });
 
   it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {
-    mount('sessions-door-counts');
+    mount({ name: 'sessions-door-counts' });
 
     const counts = Array.from(document.querySelectorAll('[data-door-count]'));
     expect(counts.map((count) => count.textContent)).toEqual(['1', '3', '9+']);
@@ -84,7 +88,7 @@ describe('rail order and badge scenes', () => {
   it.each(Object.keys(U28_RAIL_ORDER_BADGE_SCENES))(
     '%s has no accessibility violation',
     async (name) => {
-      const container = mount(name);
+      const container = mount({ name });
 
       const { violations } = await runA11yCheck(container);
 
