@@ -48,6 +48,7 @@ type ReviewPushPhase =
 
 type ArmParams = {
   readonly isRetry: boolean;
+  readonly isAfterFix?: boolean;
   readonly threadIds?: ReadonlyArray<string> | undefined;
 };
 
@@ -275,7 +276,7 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
   );
 
   const arm = useCallback(
-    async ({ isRetry, threadIds }: ArmParams): Promise<void> => {
+    async ({ isRetry, threadIds, isAfterFix = false }: ArmParams): Promise<void> => {
       if (IN_FLIGHT.has(phaseRef.current.kind)) {
         return;
       }
@@ -306,12 +307,17 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
           preview.publicationId === null && preview.blocker === null && preview.drift.length === 0;
         if (isEmpty) {
           const publications = useAppStore.getState().sessionResolvePublications[sessionId] ?? [];
-          const lastFailure = failedPushPublication({ publications });
+          const lastFailure = isAfterFix ? null : failedPushPublication({ publications });
           move(
             lastFailure?.error == null
               ? {
                   kind: 'result',
-                  result: { tone: 'done', sentence: 'Nothing is waiting for the push.' },
+                  result: {
+                    tone: 'done',
+                    sentence: isAfterFix
+                      ? 'The fix is pushed. Nothing else is waiting.'
+                      : 'Nothing is waiting for the push.',
+                  },
                 }
               : failedWith({
                   sentence: pushFailedSentence({ error: lastFailure.error }),
@@ -400,7 +406,7 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
 
   const retryAfterFix = useCallback((): void => {
     move(IDLE);
-    void arm({ isRetry: true, threadIds: armedThreadIds.current });
+    void arm({ isRetry: true, threadIds: armedThreadIds.current, isAfterFix: true });
   }, [arm, move]);
 
   const recover = useCallback(

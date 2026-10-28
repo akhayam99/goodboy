@@ -172,6 +172,52 @@ describe('useReviewPush on a page that shows one mount', () => {
     expect(result.current.fixTarget?.pending).toContain('pull request #12 with 2 fix commits');
   });
 
+  it('says the fix is pushed, not the old failure, when nothing else waits after an agent fix', async () => {
+    useAppStore.setState({
+      sessionResolvePublications: {
+        [SESSION.id]: [
+          {
+            id: 'pub-ledger',
+            sessionId: SESSION.id,
+            repo: 'harborline/ledger-core',
+            prNumber: 12,
+            branch: 'hl/ledger-core',
+            targetRef: 'main',
+            localHead: 'a41c9e2aaaa',
+            remoteHead: '7d02b11bbbb',
+            commitShas: ['a41c9e2aaaa'],
+            candidateIds: [],
+            approvedItemIds: [],
+            requiresPush: true,
+            mountTarget: null,
+            phase: 'failed',
+            pushedHead: null,
+            confirmedAt: 2,
+            completedAt: 3,
+            holder: null,
+            heartbeatAt: null,
+            error: '$ yarn knip\nerror: failed to push some refs',
+            createdAt: 1,
+          },
+        ],
+      },
+    });
+    retry.mockResolvedValueOnce({ ...PREVIEW, publicationId: null, commits: [] });
+    const { result } = renderHook(() =>
+      useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }),
+    );
+
+    await act(async () => {
+      result.current.retryAfterFix();
+    });
+
+    expect(retry).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_LEDGER });
+    expect(result.current.phase).toEqual({
+      kind: 'result',
+      result: { tone: 'done', sentence: 'The fix is pushed. Nothing else is waiting.' },
+    });
+  });
+
   it('closes an open confirm when the page moves to another mount', async () => {
     const { result, rerender } = renderHook(
       ({ mountId }: { readonly mountId: MountId }) =>
