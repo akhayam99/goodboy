@@ -44,7 +44,7 @@ Open a fix run from Activity or from a comment to see what the agent did. A draw
 
 A comment a fix run covers says where it stands on its row. While the run works the row reads **Fixing in the fix run**. When the fix is ready it reads **Fixed in 90b1d57 · Review the fix**. A **See diff** link opens the Files of the branch on that commit. A comment the run could not fix says why in one sentence. The state comes from the thread, so it is still there when you leave the Comments tab and come back. Starting a fix takes its comments out of the selection. Leaving the list drops a selection that sits on comments nobody can act on.
 
-When the run has finished with fixes ready, its comments move into one group, **Fix run**, above the rest of the list. The header reads **Fix run finished: N fixes ready for you**. It says what Apply does: it accepts the fixes, then the next push sends them, replies to the threads and resolves them where the host can. It holds **Apply and resolve N**. Comments no run covers stay in their normal groups.
+When the run has finished with fixes ready, its comments move into one group above the rest of the list. The header reads **Fix run finished: N fixes ready for you**. It says what Apply does: it accepts the fixes, then the next push sends them, replies to the threads and resolves them where the host can. It holds **Apply and resolve N**. Comments no run covers stay in their normal groups.
 
 When the agent says its checks did not run, the group and the Fix tab of the run drawer show **Checks were skipped: <reason>**. An example is dependencies missing from its copy. Goodboy reads the agent's final message for it.
 
@@ -156,7 +156,7 @@ This part is for contributors and agents who change the feature.
 
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N comments**.
 - Comment drawer: `ReviewCommentDrawer` and `CommentDrawerActions`.
-- Fix run state: `rowFixOf` gives a row its Fixing, Fixed in sha or failed line, `fixRunReadyOf` picks the fixes the **Fix run** group header offers, `dropLaunchedSelection` runs in `startBatch`, and `checksSkippedOf` reads the skipped checks.
+- Fix run state: `rowFixOf` gives a row its Fixing, Fixed in sha or failed line. `fixRunReadyOf` picks the fixes the fix run group header offers. `dropLaunchedSelection` runs in `startBatch`. `checksSkippedOf` reads the skipped checks.
 - Add a hint: `apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx` (Fix comments), `apps/desktop/src/features/branch/components/CheckAnalysisDrawer/ProposedFix.tsx` (**Start fix**) and `apps/desktop/src/features/branch/components/CheckAnalysisHint.tsx` (**Analyze again**).
 - Fact cards: `fileCardOf` builds the card on a file path and `checkCardOf` the card on a check row.
 - Checks: `PrChecks` and `CheckRunRow` draw the grid, and `features/branch/components/AnalyzedCheckRow.tsx` reads the state of an analyzed row. `pushCheckFix.ts` pushes the fix, `ciFixOutcomeOf.ts` writes the outcome line and `ciFixStepsOf.ts` the steps. `checksWordOf` words the checks over `pullRequestRunsOf`.
