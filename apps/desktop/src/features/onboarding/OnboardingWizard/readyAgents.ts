@@ -6,7 +6,13 @@ type Params = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
 };
 
-const ORDER: ReadonlyArray<ProviderId> = [...AGENT_ROW_IDS, 'opencode', 'openrouter', 'moonshot'];
+const ORDER: ReadonlyArray<ProviderId> = [
+  ...AGENT_ROW_IDS,
+  'copilot',
+  'opencode',
+  'openrouter',
+  'moonshot',
+];
 
 export const readyAgents = ({ providers }: Params): ReadonlyArray<ProviderId> =>
   ORDER.filter((id) =>

@@ -19,6 +19,7 @@ import {
   resetStoryStore,
 } from '../../../../store/storyHarness';
 import { TurnFooterDetail } from './TurnFooterDetail';
+import { UsageStatsRow } from './UsageStatsRow';
 import type { TurnFooterData } from './useTurnFooter';
 
 const FULL: TurnFooterData = {
@@ -31,6 +32,7 @@ const FULL: TurnFooterData = {
   cacheCreationInputTokens: 9100,
   contextTokens: 12400,
   estimatedCostUsd: 0.07,
+  premiumRequests: null,
 };
 
 const NO_CACHE: TurnFooterData = {
@@ -108,6 +110,13 @@ describe('TurnFooterDetail', () => {
     expect(screen.queryByText('from cache')).toBeNull();
   });
 
+  it('lists premium requests in place of a cost, and no cost footnote', () => {
+    mount({ data: { ...FULL, provider: 'copilot', estimatedCostUsd: null, premiumRequests: 2 } });
+    expect(valueOf({ label: 'Premium requests' }).textContent).toBe('2');
+    expect(screen.queryByText('Cost')).toBeNull();
+    expect(screen.queryByText('Cost estimated at API prices')).toBeNull();
+  });
+
   it('names a missing context size instead of leaving the value blank', () => {
     mount({ data: { ...FULL, contextTokens: null } });
     within(valueOf({ label: 'Context window' })).getByText('context size not reported yet');
@@ -130,5 +139,31 @@ describe('TurnFooterDetail', () => {
   it('leaves the context window row out when the model reports none', () => {
     mount({ data: { ...FULL, model: null } });
     expect(screen.queryByText('Context window')).toBeNull();
+  });
+});
+
+describe('UsageStatsRow premium requests', () => {
+  const PREMIUM: TurnFooterData = {
+    ...FULL,
+    provider: 'copilot',
+    model: 'claude-sonnet-5.5',
+    estimatedCostUsd: null,
+    premiumRequests: 1,
+  };
+
+  it('names one premium request in the singular and never shows a price', () => {
+    render(<UsageStatsRow data={PREMIUM} contextPct={null} />);
+    screen.getByText(/1 premium request$/);
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('names several premium requests in the plural', () => {
+    render(<UsageStatsRow data={{ ...PREMIUM, premiumRequests: 4 }} contextPct={null} />);
+    screen.getByText(/4 premium requests$/);
+  });
+
+  it('leaves the fact out for a turn that billed none', () => {
+    render(<UsageStatsRow data={{ ...PREMIUM, premiumRequests: null }} contextPct={null} />);
+    expect(screen.queryByText(/premium/)).toBeNull();
   });
 });

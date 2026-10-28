@@ -19,6 +19,7 @@ export type TurnFooterData = {
   readonly cacheCreationInputTokens: number;
   readonly contextTokens: number | null;
   readonly estimatedCostUsd: number | null;
+  readonly premiumRequests: number | null;
 };
 
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
@@ -62,6 +63,7 @@ export const useTurnFooter = ({
         cacheCreationInputTokens: fallbackUsage.cacheCreationInputTokens ?? 0,
         contextTokens: fallbackUsage.contextTokens ?? null,
         estimatedCostUsd: cost > 0 ? cost : null,
+        premiumRequests: fallbackUsage.premiumRequests ?? null,
       };
     }
 
@@ -87,6 +89,7 @@ export const useTurnFooter = ({
       cacheCreationInputTokens,
       contextTokens: last?.contextTokens ?? null,
       estimatedCostUsd: estimatedCostUsd > 0 ? estimatedCostUsd : null,
+      premiumRequests: fallbackUsage.premiumRequests ?? null,
     };
   }, [records, routing, runId, fallbackUsage]);
 };

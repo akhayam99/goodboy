@@ -15,6 +15,7 @@ export const SUPPORT_COLUMNS = [
   'codex',
   'cursor',
   'gemini',
+  'copilot',
   'opencode',
 ] as const satisfies ReadonlyArray<ProviderId>;
 

@@ -41,6 +41,7 @@ const core = vi.hoisted(() => {
     cursor: { models: [{ id: 'composer-2.5', label: 'Composer 2.5', tier: 'turn' }] },
     codex: { models: [{ id: 'gpt-5-codex', label: 'Codex', tier: 'turn' }] },
     gemini: { models: [{ id: 'gemini-2-pro', label: 'Gemini Pro', tier: 'turn' }] },
+    copilot: { models: [{ id: 'auto', label: 'Auto', tier: 'turn' }] },
     opencode: {
       models: [{ id: 'opencode/big-pickle', label: 'Big Pickle', tier: 'turn' }],
     },
@@ -282,15 +283,15 @@ describe('queryProviders (read-only menu RPC)', () => {
     const res = await executeBridgeCommand(cmd('queryProviders', {}));
     expect(res.ok).toBe(true);
     const providers = (res.data as { providers: Array<{ id: string }> }).providers;
-    expect(providers.map((p) => p.id)).toEqual([
-      'anthropic',
-      'cursor',
-      'codex',
-      'gemini',
-      'opencode',
-      'openrouter',
-      'moonshot',
-    ]);
+    expect(providers.map((p) => p.id)).toEqual(PROVIDER_MENU_ORDER);
+  });
+
+  it('lists copilot with auto as its default model', async () => {
+    const res = await executeBridgeCommand(cmd('queryProviders', {}));
+    expect(res.ok).toBe(true);
+    expect(res.data).toMatchObject({
+      providers: expect.arrayContaining([expect.objectContaining({ defaultModel: 'auto' })]),
+    });
   });
 
   it('reflects live connection state from the store and lists models per provider', async () => {
@@ -422,7 +423,7 @@ describe('provider/model override coercion', () => {
     );
   });
 
-  it.each(['anthropic', 'cursor', 'codex', 'gemini', 'opencode', 'openrouter', 'moonshot'])(
+  it.each(BRIDGE_PROVIDER_ALLOWLIST)(
     'accepts %s as a whitelisted override provider',
     async (providerId) => {
       await executeBridgeCommand(cmd('send', { sessionId: 's1', content: 'go', providerId }));

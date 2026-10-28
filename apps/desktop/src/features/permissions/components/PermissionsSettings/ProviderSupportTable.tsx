@@ -31,6 +31,7 @@ const COLUMN_LABEL = {
   codex: PROVIDER_LABEL.codex,
   cursor: PROVIDER_LABEL.cursor,
   gemini: PROVIDER_LABEL.gemini,
+  copilot: PROVIDER_LABEL.copilot,
   opencode: 'OpenCode family',
 } satisfies Record<(typeof SUPPORT_COLUMNS)[number], string>;
 

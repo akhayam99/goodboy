@@ -17,6 +17,7 @@ const ANTHROPIC_DOCS = 'https://docs.claude.com/en/docs/claude-code/overview';
 const CURSOR_DOCS = 'https://docs.cursor.com/en/cli/installation';
 const CODEX_DOCS = 'https://github.com/openai/codex#installation';
 const GEMINI_DOCS = 'https://antigravity.google/cli';
+const COPILOT_DOCS = 'https://docs.github.com/copilot/how-tos/copilot-cli';
 const OPENCODE_DOCS = 'https://opencode.ai/docs';
 const OPENROUTER_DOCS = 'https://openrouter.ai/docs';
 
@@ -101,6 +102,26 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Antigravity CLI docs',
   },
+  copilot: {
+    headline: 'Install Copilot CLI',
+    subscription: 'A Copilot plan on github.com.',
+    steps: [
+      {
+        title: 'npm global install',
+        body: 'Installs `@github/copilot` and adds the `copilot` command.',
+      },
+      {
+        title: 'PATH check',
+        body: "Restart Goodboy if `copilot` isn't found after the install.",
+      },
+      {
+        title: 'Then sign in',
+        body: 'Next you sign in once, in your browser or with a device code.',
+      },
+    ],
+    docsUrl: COPILOT_DOCS,
+    docsLabel: 'Copilot CLI docs',
+  },
   opencode: {
     headline: 'Install OpenCode',
     subscription: 'OpenCode includes a curated set of zero-key models.',
@@ -183,6 +204,34 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     ],
     docsUrl: GEMINI_DOCS,
     docsLabel: 'Antigravity CLI auth',
+  },
+  copilot: {
+    headline: 'Sign in to Copilot',
+    subscription: 'Your GitHub account with a Copilot plan.',
+    steps: [
+      {
+        title: 'Sign in in the browser',
+        body: 'It opens your browser, or prints a device code on a remote shell.',
+      },
+      {
+        title: "Goodboy can't check the sign-in",
+        body: 'Copilot has no status command, so Goodboy shows it as connected.',
+      },
+      {
+        title: 'When you are signed out',
+        body: "The first turn fails with the CLI's own message.",
+      },
+      {
+        title: 'Tokens in your shell',
+        body: 'A `GH_TOKEN` or `GITHUB_TOKEN` beats the saved sign-in.',
+      },
+      {
+        title: 'Classic tokens',
+        body: 'Copilot refuses `ghp_` tokens, so Goodboy leaves them out of a run.',
+      },
+    ],
+    docsUrl: COPILOT_DOCS,
+    docsLabel: 'Copilot CLI docs',
   },
   opencode: {
     headline: 'Connect OpenCode',

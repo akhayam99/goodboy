@@ -54,6 +54,7 @@ const effortsFor = ({ model, selection, fallback }: EffortParams): ReadonlyArray
     case 'anthropic':
     case 'codex':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

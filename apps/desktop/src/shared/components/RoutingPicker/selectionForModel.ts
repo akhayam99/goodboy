@@ -10,6 +10,7 @@ export const selectionForModel = ({ model, effort }: Params): ModelSelection => 
   const tuning = modelHasEffortAxis({ model }) ? { effort } : {};
   switch (model.provider) {
     case 'anthropic':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

@@ -38,6 +38,7 @@ const seedClaude = ({ version }: { readonly version: string }) => {
         cursor: null,
         codex: null,
         gemini: null,
+        copilot: null,
         opencode: null,
         openrouter: null,
         moonshot: null,

@@ -1,5 +1,6 @@
 import {
   parseCodexJsonLine,
+  parseCopilotJsonLine,
   parseCursorStreamLine,
   parseGeminiJsonLine,
   parseOpenCodeJsonLine,
@@ -24,6 +25,8 @@ export const parseProviderLine = ({ provider, line, ctx }: Params): ReadonlyArra
       return parseCodexJsonLine(line, ctx);
     case 'gemini':
       return parseGeminiJsonLine(line, ctx);
+    case 'copilot':
+      return parseCopilotJsonLine({ line, ctx });
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

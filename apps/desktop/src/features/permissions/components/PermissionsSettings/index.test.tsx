@@ -117,9 +117,9 @@ describe('PermissionsSettings', () => {
       }),
     );
     const askFirst = screen.getByRole('row', { name: /ask first/i });
-    expect(within(askFirst).getAllByText('Runs Read only')).toHaveLength(4);
+    expect(within(askFirst).getAllByText('Runs Read only')).toHaveLength(5);
     const rulesRow = screen.getByRole('row', { name: /^rules/i });
-    expect(within(rulesRow).getAllByText('Ignored')).toHaveLength(4);
+    expect(within(rulesRow).getAllByText('Ignored')).toHaveLength(5);
   });
 
   it('puts the providers that follow and ignore each rule next to it', async () => {

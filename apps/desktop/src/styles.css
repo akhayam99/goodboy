@@ -75,6 +75,7 @@
   --color-provider-cursor: oklch(0.7 0.16 290);
   --color-provider-codex: oklch(0.72 0.16 150);
   --color-provider-gemini: oklch(0.72 0.16 240);
+  --color-provider-copilot: oklch(0.88 0 0);
   --color-provider-opencode: #fab283;
   --color-provider-openrouter: #676af6;
   --color-provider-moonshot: #1783ff;
@@ -624,6 +625,7 @@ html[data-theme='light'] {
   --color-provider-cursor: oklch(0.5 0.17 290);
   --color-provider-codex: oklch(0.48 0.15 148);
   --color-provider-gemini: oklch(0.5 0.16 240);
+  --color-provider-copilot: oklch(0.24 0 0);
   --color-provider-opencode: #bc6d37;
   --color-provider-openrouter: #5558d9;
   --color-provider-moonshot: #1280fb;

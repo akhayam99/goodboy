@@ -190,6 +190,7 @@ const BASE_AGENTS: Agents = {
     codex: CODEX_FOUND,
     cursor: missing({ id: 'cursor', binary: 'cursor-agent' }),
     gemini: missing({ id: 'gemini', binary: 'agy' }),
+    copilot: missing({ id: 'copilot', binary: 'copilot' }),
     ...NO_API,
   },
   auth: { anthropic: SIGNED_IN, codex: SIGNED_OUT },

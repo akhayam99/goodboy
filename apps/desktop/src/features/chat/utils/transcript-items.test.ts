@@ -128,6 +128,23 @@ const errorEvent = ({ message }: ErrorParams): TurnEvent => ({
   at: AT,
 });
 
+const premiumUsageEvent = ({
+  premiumRequests,
+}: {
+  readonly premiumRequests: number;
+}): TurnEvent => ({
+  kind: 'usage',
+  runId: RUN,
+  usage: {
+    inputTokens: 4,
+    outputTokens: 2,
+    cachedInputTokens: 0,
+    premiumRequests,
+    estimatedCostUsd: 0,
+  },
+  at: AT,
+});
+
 const doneEvent = (): TurnEvent => ({ kind: 'done', runId: RUN, at: AT });
 
 type FreshPassParams = {
@@ -761,5 +778,22 @@ describe('reduceTranscript handoff', () => {
     ]);
 
     expect(items.map((item) => item.kind)).toEqual(['handoff', 'assistant_text']);
+  });
+});
+
+describe('reduceTranscript usage', () => {
+  it('adds the premium requests of the usage events of one run', () => {
+    const items = reduceTranscript([
+      premiumUsageEvent({ premiumRequests: 1 }),
+      premiumUsageEvent({ premiumRequests: 2 }),
+    ]);
+    const usage = items.find((item) => item.kind === 'usage');
+    expect(usage?.kind === 'usage' ? usage.usage.premiumRequests : null).toBe(3);
+  });
+
+  it('leaves premium requests out of a run that billed none', () => {
+    const items = reduceTranscript([usageEvent(), usageEvent()]);
+    const usage = items.find((item) => item.kind === 'usage');
+    expect(usage?.kind === 'usage' ? 'premiumRequests' in usage.usage : null).toBe(false);
   });
 });

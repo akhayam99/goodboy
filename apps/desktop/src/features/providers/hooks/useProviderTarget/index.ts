@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
+import { PROVIDER_CONNECT_CAPABILITIES, canLogout, isApiProvider } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import type { ProviderActionTarget } from '../../../actions/types';
 import { canTestConnection } from '../../components/ProviderStudio/ProviderPage/AccountGroup/ConnectionTest/canTestConnection';
@@ -51,7 +51,7 @@ export const useProviderTarget = ({ info, isReady }: Params): ProviderTarget => 
         isChecking,
         canReauth: isReady && !isApi && capability.tier !== 'manual',
         willSignOutOnReauth: capability.reauthSignsOut === true,
-        canDisconnect: isReady && !isApi,
+        canDisconnect: isReady && !isApi && canLogout({ id }),
         onCheck: async () => {
           await refresh();
           if (canTestConnection({ providerId: id })) {

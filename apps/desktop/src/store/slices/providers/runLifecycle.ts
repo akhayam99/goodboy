@@ -111,6 +111,7 @@ const statusesAfterExit = ({ providerId, status, state }: StatusesParams): Provi
     cursor: statusOf('cursor'),
     codex: statusOf('codex'),
     gemini: statusOf('gemini'),
+    copilot: statusOf('copilot'),
     opencode: statusOf('opencode'),
     openrouter: statusOf('openrouter'),
     moonshot: statusOf('moonshot'),

@@ -5,6 +5,7 @@ export const CLI_LABEL: Record<ProviderId, string> = {
   cursor: 'Cursor CLI',
   codex: 'Codex CLI',
   gemini: 'Gemini CLI',
+  copilot: 'Copilot CLI',
   opencode: 'OpenCode CLI',
   openrouter: 'OpenCode CLI',
   moonshot: 'OpenCode CLI',

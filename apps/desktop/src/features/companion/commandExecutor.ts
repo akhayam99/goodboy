@@ -17,6 +17,11 @@ import type {
   ProviderId,
   SessionId,
   TurnProviderOverride,
+  JiraIntegrationConfig,
+  SessionExternalTaskProvider,
+  WorkspaceId,
+  IntegrationBindingProvider,
+  WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
 import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
@@ -32,13 +37,6 @@ import {
   evaluateMobileSpawnWorkflow,
 } from './mobileConfinement';
 import type { AgentKind } from '../session/agent-kind';
-import type {
-  JiraIntegrationConfig,
-  SessionExternalTaskProvider,
-  WorkspaceId,
-  IntegrationBindingProvider,
-  WorkspaceIntegrationProvider,
-} from '@goodboy/types';
 import {
   linearFetchAssignedIssues,
   linearFetchIssue,
@@ -71,6 +69,7 @@ export const BRIDGE_PROVIDER_ALLOWLIST = [
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',
@@ -81,6 +80,7 @@ export const PROVIDER_MENU_ORDER = [
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

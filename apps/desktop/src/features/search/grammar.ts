@@ -49,6 +49,7 @@ const PROVIDER_ALIASES: Readonly<
   codex: { provider: 'codex', label: 'Codex' },
   cursor: { provider: 'cursor', label: 'Cursor' },
   gemini: { provider: 'gemini', label: 'Gemini' },
+  copilot: { provider: 'copilot', label: 'Copilot' },
   opencode: { provider: 'opencode', label: 'OpenCode' },
   openrouter: { provider: 'openrouter', label: 'OpenRouter' },
   moonshot: { provider: 'moonshot', label: 'Moonshot' },

@@ -28,6 +28,7 @@ const FULL: TurnFooterData = {
   cacheCreationInputTokens: 9100,
   contextTokens: 12400,
   estimatedCostUsd: 0.07,
+  premiumRequests: null,
 };
 
 const NO_CACHE: TurnFooterData = {
@@ -52,6 +53,20 @@ const NO_USAGE: TurnFooterData = {
   estimatedCostUsd: null,
 };
 
+const PREMIUM: TurnFooterData = {
+  ...FULL,
+  provider: 'copilot',
+  model: 'claude-sonnet-5.5',
+  effort: 'medium',
+  inputTokens: 8,
+  outputTokens: 302,
+  cachedInputTokens: 70839,
+  cacheCreationInputTokens: 7708,
+  contextTokens: 26419,
+  estimatedCostUsd: null,
+  premiumRequests: 1,
+};
+
 const LONG_TITLE: TurnFooterData = {
   ...FULL,
   model: 'claude-opus-5-5-extended-context-preview-for-long-running-agents',
@@ -62,6 +77,7 @@ const CARDS: ReadonlyArray<Card> = [
   { id: 'full', data: FULL, duration: '42s', turns: 3 },
   { id: 'no-cache', data: NO_CACHE, duration: null, turns: null },
   { id: 'no-usage', data: NO_USAGE, duration: null, turns: null },
+  { id: 'premium', data: PREMIUM, duration: '6s', turns: 3 },
   { id: 'long-title', data: LONG_TITLE, duration: null, turns: null },
 ];
 

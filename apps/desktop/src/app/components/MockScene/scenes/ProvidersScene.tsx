@@ -54,6 +54,17 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     docsUrl: 'https://antigravity.google/cli',
   },
   {
+    id: 'copilot',
+    binary: 'copilot',
+    capabilities: CAPABILITIES,
+    connection: 'connected',
+    version: '1.0.105',
+    identity: null,
+    label: 'Copilot',
+    error: null,
+    docsUrl: 'https://docs.github.com/copilot/how-tos/copilot-cli',
+  },
+  {
     id: 'opencode',
     binary: 'opencode',
     capabilities: CAPABILITIES,

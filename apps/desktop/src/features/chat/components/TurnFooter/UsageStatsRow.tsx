@@ -19,6 +19,10 @@ export const UsageStatsRow = ({ data, contextPct }: Props) => {
     data.estimatedCostUsd != null && data.estimatedCostUsd >= CENT
       ? formatUsd(data.estimatedCostUsd)
       : null;
+  const premium =
+    data.premiumRequests === null
+      ? null
+      : `${data.premiumRequests} premium ${data.premiumRequests === 1 ? 'request' : 'requests'}`;
   const context =
     contextPct === null || Math.round(contextPct * 100) === 0
       ? null
@@ -26,7 +30,7 @@ export const UsageStatsRow = ({ data, contextPct }: Props) => {
   return (
     <>
       <ProviderIcon provider={data.provider} size={ICON_SIZE.row} />
-      <span>{joinFacts({ facts: [model, cost, context] })}</span>
+      <span>{joinFacts({ facts: [model, cost, premium, context] })}</span>
     </>
   );
 };

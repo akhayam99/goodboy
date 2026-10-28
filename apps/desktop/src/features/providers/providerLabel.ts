@@ -5,6 +5,7 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
   cursor: 'Cursor',
   codex: 'Codex',
   gemini: 'Gemini',
+  copilot: 'Copilot',
   opencode: 'OpenCode',
   openrouter: 'OpenRouter',
   moonshot: 'Moonshot',
