@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
+import { OrchestratorModelScene } from './OrchestratorModelScene';
 
 export const U28_RUN_PAGE_SCENES = {
   'u28-run-step-blocked': () => <C09OrchestratedScene state="step-blocked" page="document" />,
@@ -7,9 +8,7 @@ export const U28_RUN_PAGE_SCENES = {
   'u28-run-kind-live': () => (
     <C09OrchestratedScene state="running" page="document" click="kind" isRouted />
   ),
-  'u28-run-orchestrator-model': () => (
-    <C09OrchestratedScene state="running" page="document" click="model" isRouted />
-  ),
+  'u28-run-orchestrator-model': OrchestratorModelScene,
   'u28-run-kind-ended': () => (
     <C09OrchestratedScene state="failed" page="document" click="kind" isRouted />
   ),

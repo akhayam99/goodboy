@@ -18,7 +18,7 @@ import { TaskModelRow } from './TaskModelRow';
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
 
 const RUNS_HELP =
-  'The models a new run starts with. Start a run and the run page let one run use another.';
+  'The models a new run starts with. Start a run, or the run page, can pick another for that run only.';
 
 type RoleChangeParams = {
   readonly role: AgentRole;
