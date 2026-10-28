@@ -28,7 +28,7 @@ type RefusalParams = {
   readonly result: SendTurnResult;
 };
 
-const refusalOf = ({ result }: RefusalParams): string | null => {
+const answerRefusalOf = ({ result }: RefusalParams): string | null => {
   if (result.blockedOverBudget) {
     return OVER_BUDGET;
   }
@@ -63,7 +63,7 @@ export const answerBlockedStep = ({ get }: FactoryParams) => {
       content: answerPrompt({ agentId, answer }),
       origin: 'workflow',
     });
-    const refusal = refusalOf({ result });
+    const refusal = answerRefusalOf({ result });
     if (refusal !== null) {
       throw new Error(refusal);
     }
