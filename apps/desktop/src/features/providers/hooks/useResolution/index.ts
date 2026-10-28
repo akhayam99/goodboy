@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Resolution, ResolvePins, ResolveSlot } from '@goodboy/core';
-import type { AgentRole, AuxTaskId, StepSize } from '@goodboy/types';
+import type { AgentRole, AuxTaskId, ProviderId, StepSize } from '@goodboy/types';
 import { resolutionOf } from '../../../../store/runtime/models/selectResolution';
 import { useModelScope, type ScopeProps } from '../useModelScope';
 
@@ -13,6 +13,7 @@ type Props = SlotProps &
     readonly pins?: ResolvePins;
     readonly size?: StepSize | null;
     readonly isAutoOnly?: boolean;
+    readonly providers?: ReadonlyArray<ProviderId>;
   };
 
 export const useResolution = ({
@@ -23,6 +24,7 @@ export const useResolution = ({
   pins,
   size,
   isAutoOnly,
+  providers,
 }: Props): Resolution => {
   const scope = useModelScope({ sessionId, workspaceId });
   const slot = useMemo(
@@ -38,7 +40,8 @@ export const useResolution = ({
         ...(pins !== undefined && { pins }),
         ...(size !== undefined && { size }),
         ...(isAutoOnly !== undefined && { isAutoOnly }),
+        ...(providers !== undefined && { providers }),
       }),
-    [scope, slot, pins, size, isAutoOnly],
+    [scope, slot, pins, size, isAutoOnly, providers],
   );
 };

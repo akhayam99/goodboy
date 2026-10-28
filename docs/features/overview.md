@@ -66,7 +66,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Running**
 
-- It groups the agents and runs by what you do next. **Waiting for you** waits on you (the **Needs you** card above holds the asks, this group holds the live items that paused), **Running** works or decides, **Stopped** failed or was stopped by you. A group with nothing in it is not drawn, and a waiting or stopped item never sits under **Running**. Inside a group the items keep the order they started in.
+- It groups the agents and runs by what you do next. **Waiting for you** paused for an answer (the **Needs you** card above holds the asks), **Running** works or decides, **Stopped** failed or was stopped by you. A group with nothing in it is not drawn, and a waiting or stopped item never sits under **Running**. Inside a group the items keep the order they started in.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to. It is blank when the run writes nowhere. It shows the project only across two projects.
 - The row then shows its status as a short muted word next to one colored dot, or the run's own next move. Its time sits in a right column that lines up for child agents too. The cause, such as "Origin moved" or "Waits for your go on step 2", sits on a second muted line only for a row that waits or stopped.

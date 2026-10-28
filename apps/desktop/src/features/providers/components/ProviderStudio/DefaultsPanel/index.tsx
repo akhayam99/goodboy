@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
+import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS, isAutoOwnProvider } from '@goodboy/core';
 import {
   Band,
   BandStack,
@@ -41,6 +41,9 @@ type Props = {
 
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
 
+const RUNS_HELP =
+  'The models a new run starts with. Start a run and the run page let one run use another.';
+
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
   defaultBranchPrefix: null,
@@ -62,14 +65,16 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 };
 
 export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: Props) => {
+  const runsRef = useRef<HTMLElement>(null);
   const tasksRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
       return;
     }
-    tasksRef.current
-      ?.querySelector(`[data-default-row="${focusSection}"]`)
-      ?.scrollIntoView({ block: 'center' });
+    const selector = `[data-default-row="${focusSection}"]`;
+    (
+      runsRef.current?.querySelector(selector) ?? tasksRef.current?.querySelector(selector)
+    )?.scrollIntoView({ block: 'center' });
   }, [focusSection]);
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
@@ -142,6 +147,52 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         isDisabled={busy}
         onConfirm={() => clearRoleModels({ roles: unrunnableRoles })}
       />
+
+      <section ref={runsRef} aria-label={NAMES.runs} className="flex flex-col gap-2">
+        <Eyebrow label={NAMES.runs} />
+        <p className="text-meta text-muted-foreground">{RUNS_HELP}</p>
+        <BandStack>
+          <Band>
+            {DEFAULT_GROUPS.runs.agents.map((role) => (
+              <RoleRow
+                key={role}
+                workspaceId={workspaceId}
+                role={role}
+                label={ROLE_LABEL[role]}
+                help={ROLE_REGISTRY[role].summary}
+                preference={overrides.roleModels?.[role] ?? null}
+                isParallelOn={overrides.parallelAgents === true}
+                connectedProviderIds={
+                  role === 'auto'
+                    ? connectedProviderIds.filter((id) => isAutoOwnProvider({ provider: id }))
+                    : connectedProviderIds
+                }
+                disabled={busy}
+                onChange={(preference) => persistRoleModel({ role, preference })}
+              />
+            ))}
+            {DEFAULT_GROUPS.runs.tasks.map((taskId) => {
+              const task = TASK_BY_ID.get(taskId);
+              if (task == null) {
+                return null;
+              }
+              return (
+                <TaskModelRow
+                  key={task.id}
+                  workspaceId={workspaceId}
+                  task={task.id}
+                  label={task.label}
+                  help={task.description}
+                  preference={overrides.taskModels?.[task.id] ?? null}
+                  connectedProviderIds={connectedProviderIds}
+                  disabled={busy}
+                  onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                />
+              );
+            })}
+          </Band>
+        </BandStack>
+      </section>
 
       <section aria-label="Providers" className="flex flex-col gap-1">
         <Eyebrow label="Providers" />
