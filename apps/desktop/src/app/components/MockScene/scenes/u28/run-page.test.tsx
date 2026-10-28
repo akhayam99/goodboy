@@ -152,7 +152,7 @@ describe('the u28 run page scenes', () => {
 
     const planned = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row="left"]')];
     expect(planned.map((row) => row.textContent)).toEqual(['DocsWrite the export notes']);
-    expect(within(checklist()).queryByText('Run the export benchmark on 12k rows')).toBeNull();
+    expect(within(checklist()).getAllByText('Run the 12k export benchmark')).toHaveLength(1);
     const notes = within(checklist()).getByRole('button', { name: 'Left open (1)' });
     expect(within(checklist()).queryByText('Stream rows to CSV')).toBeNull();
     act(() => {

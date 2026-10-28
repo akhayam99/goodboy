@@ -98,22 +98,22 @@ describe('orchestratedChecklistOf', () => {
     expect(list.notes).toEqual(['Stream rows to CSV']);
   });
 
-  it('shows a planned step once when it repeats a step that already exists', () => {
-    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR for feat-settings' };
+  it('shows a planned step once when it repeats the name of a step that already exists', () => {
+    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR' };
     const list = orchestratedChecklistOf({
       agents: [verify],
       hints: [],
       summary: {
         done: [],
         left: [
-          'Verify the checks, push and open the draft PR for feat-settings',
+          'verify the checks, and open the draft PR.',
           'Prove the batching',
-          'Prove the batching again',
+          'Prove the  batching',
         ],
         leftRoles: {
-          'Verify the checks, push and open the draft PR for feat-settings': 'implementer',
+          'verify the checks, and open the draft PR.': 'implementer',
           'Prove the batching': 'tester',
-          'Prove the batching again': 'tester',
+          'Prove the  batching': 'tester',
         },
       },
       isDeciding: false,
@@ -123,19 +123,43 @@ describe('orchestratedChecklistOf', () => {
     expect(list.notes).toEqual([]);
   });
 
-  it('drops a roleless note that repeats a done step', () => {
-    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR for feat-settings' };
+  it('drops a roleless note that repeats a done step word for word', () => {
+    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR' };
     const list = orchestratedChecklistOf({
       agents: [verify],
       hints: [],
       summary: {
         done: [],
-        left: ['Verify the checks, push and open the draft PR for feat-settings'],
+        left: ['Verify the checks and open the draft PR'],
         leftRoles: {},
       },
       isDeciding: false,
       isDone: false,
     });
     expect(list.notes).toEqual([]);
+  });
+
+  it('never hides unfinished work that only looks like a step that exists', () => {
+    const logging = { ...FIRST, name: 'Enable logging' };
+    const payments = { ...SECOND, name: 'Add tests for valid payments' };
+    const list = orchestratedChecklistOf({
+      agents: [logging, payments],
+      hints: [],
+      summary: {
+        done: [],
+        left: ['Disable logging', 'Add tests for invalid payments', 'Prove the batching again'],
+        leftRoles: {
+          'Disable logging': 'implementer',
+          'Add tests for invalid payments': 'tester',
+        },
+      },
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.left.map((item) => item.text)).toEqual([
+      'Disable logging',
+      'Add tests for invalid payments',
+    ]);
+    expect(list.notes).toEqual(['Prove the batching again']);
   });
 });

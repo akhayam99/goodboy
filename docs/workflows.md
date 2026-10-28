@@ -331,9 +331,9 @@ read top to bottom at the conversation measure:
   **Left** items that name a role as dashed rows, so the plan and the progress
   are one list (`orchestratedChecklistOf`). A Left entry with no role is not a
   step: it sits in a folded **Left open (2)** list under the steps
-  (`OrchestratedNotes`). An entry that restates a step already on the list, or
-  one listed before it, shows once (`isSameIntent`: the shared word stems of the
-  two texts, 60 percent). A Left entry the orchestrator planned for a
+  (`OrchestratedNotes`). An entry that repeats a step already on the list, or
+  one listed before it, shows once (`isSameIntent`: the same text apart from
+  case, spacing and punctuation). A reworded entry is never hidden. A Left entry the orchestrator planned for a
   role (`{"text": ..., "role": "tester"}` in the run summary, kept in
   `leftRoles`; an unknown role is dropped) shows that role's glyph and word in
   the same role column as the decided steps; a plain string entry leaves the

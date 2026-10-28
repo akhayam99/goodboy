@@ -194,7 +194,7 @@ const SUMMARY_RUNNING = JSON.stringify({
 const SUMMARY_BLOCKED = JSON.stringify({
   done: ['Found one query per row in the export', 'Batched the row reads in payments-api'],
   left: [
-    'Run the export benchmark on 12k rows',
+    'Run the 12k export benchmark',
     { text: 'Write the export notes', role: 'docs' },
     'Stream rows to CSV',
   ],
