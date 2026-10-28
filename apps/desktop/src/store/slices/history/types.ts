@@ -171,6 +171,7 @@ export type HistoryRewriterBinding = {
 };
 
 export type BranchPushFix = {
+  readonly agentId: AgentId;
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly identity: HistoryIdentity;

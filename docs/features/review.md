@@ -66,6 +66,8 @@ If a fix commit is no longer on the branch, for example after a squash done else
 
 Finish a review with **Push N fixes** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix and hides while the preview is open. A reply with no code change goes out right away when no fix is waiting.
 
+When a check of the repository stops the push, the failure card names the check and shows its first findings. **Let an agent fix the push** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent. When it finishes, Goodboy pushes and sends the replies, or opens the pull request with the text you wrote.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The header of the Branch page with its Fix 1 comment, Push 1 fix and Merge buttons, and under it a confirm: Push 2 commits to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 1 comment needs you first, with Cancel and Push buttons">

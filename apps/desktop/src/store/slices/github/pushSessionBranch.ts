@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { gitPush } from '../../../features/integrations/github/github';
+import { pushOutputOf } from '../../../shared/utils/pushOutputOf';
 import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
@@ -50,7 +51,9 @@ export const pushSessionBranch = async ({
     sha,
   });
   if (push.exitCode !== 0) {
-    const error = push.stderr.trim() || `git push exited with ${push.exitCode}`;
+    const error =
+      pushOutputOf({ stdout: push.stdout, stderr: push.stderr }) ||
+      `git push exited with ${push.exitCode}`;
     get().recordLocalCheck({ mountId, answer: { error }, at: Date.now() });
     return { ok: false, error };
   }

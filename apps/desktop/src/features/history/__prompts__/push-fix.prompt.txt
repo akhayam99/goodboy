@@ -7,5 +7,6 @@ $ pnpm lint
 seenEvents is assigned but never used
 
 If a hook stopped the push (pre-push, commitlint, lint, tests), fix what it reports and commit the fix on this branch.
+Never skip a hook: no --no-verify, no disabled check, no edited hook config. If dependencies are missing or stale, install them in this worktree with its package manager.
 Never run git push or git push --force yourself, never edit the remote, and never rewrite commits that are already online. Goodboy pushes again with its lease checks when you finish.
 End with one line saying what you changed.

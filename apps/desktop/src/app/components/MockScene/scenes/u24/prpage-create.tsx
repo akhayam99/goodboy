@@ -18,6 +18,7 @@ import { CreatePrPanel } from '../../../../../features/integrations/github/compo
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { useAppStore } from '../../../../../store';
 import type { CreatePrInput } from '../../../../../store/slices/github/createPrForSession';
+import { PrPushFailedError } from '../../../../../store/slices/github/PrPushFailedError';
 import type { ScribeWork } from '../../../../../store/slices/scribe/types';
 import { sceneClock } from '../../sceneClock';
 import { mockSceneIpc } from '../mockSceneIpc';
@@ -37,7 +38,15 @@ const WORKTREE = `${ROOT}-credit`;
 const BRANCH = 'hl/fix-duplicate-credit';
 const GOAL = 'Fix duplicate credit on settlement retries';
 
-const PRPAGE_CREATE_STATES = ['empty', 'typing', 'writing', 'ready', 'creating', 'failed'] as const;
+const PRPAGE_CREATE_STATES = [
+  'empty',
+  'typing',
+  'writing',
+  'ready',
+  'creating',
+  'failed',
+  'hook-failed',
+] as const;
 
 type PrpageCreateState = (typeof PRPAGE_CREATE_STATES)[number];
 
@@ -248,6 +257,16 @@ const answerOf = ({ command, payload }: AnswerParams): unknown => {
   return { stdout: '', stderr: '', exitCode: 0 };
 };
 
+const HOOK_OUTPUT = [
+  '$ pnpm knip',
+  'Unused files (3)',
+  'src/legacy/settlementExport.ts',
+  'src/legacy/notifyRelayClient.ts',
+  'src/legacy/ledgerCoreShim.ts',
+  'husky - pre-push script failed (code 1)',
+  `error: failed to push some refs to 'github.com:harborline/payments-api.git'`,
+].join('\n');
+
 const NEVER = (): Promise<never> => new Promise<never>(() => undefined);
 
 const seed = ({ state }: StateParams): void => {
@@ -275,6 +294,17 @@ const seed = ({ state }: StateParams): void => {
           createPrForSession: async ({ onPushed }: CreatePrInput) => {
             onPushed?.();
             return NEVER();
+          },
+        }
+      : {}),
+    ...(state === 'hook-failed'
+      ? {
+          createPrForSession: async () => {
+            throw new PrPushFailedError({
+              branch: BRANCH,
+              mountId: MOUNT_ID,
+              output: HOOK_OUTPUT,
+            });
           },
         }
       : {}),
@@ -309,7 +339,7 @@ const CreateScene = ({ host }: SceneProps) => {
   }, [state]);
 
   useEffect(() => {
-    if (!isReady || (state !== 'creating' && state !== 'failed')) {
+    if (!isReady || (state !== 'creating' && state !== 'failed' && state !== 'hook-failed')) {
       return undefined;
     }
     const timer = window.setTimeout(() => {
@@ -325,7 +355,8 @@ const CreateScene = ({ host }: SceneProps) => {
     return null;
   }
 
-  const hasBody = state === 'typing' || state === 'creating' || state === 'failed';
+  const hasBody =
+    state === 'typing' || state === 'creating' || state === 'failed' || state === 'hook-failed';
 
   return (
     <ScrollFade className="h-screen bg-background py-8 text-foreground">

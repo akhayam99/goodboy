@@ -12,6 +12,8 @@ import { agentPlace } from '../../../../../store/slices/navigation/place';
 import { selectActiveMount } from '../../../../../store/slices/project-mounts/selectors';
 import { isRemoteMovedError } from '../../../../../store/slices/resolve/remoteMovedError';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
+import { failedPushPublication } from '../../../../../store/slices/resolve/publication/failedPushPublication';
+import { pendingPublicationBrief } from '../../../pendingPublicationBrief';
 import { SYNC_COPY } from '../../../failedRunCopy';
 import { useActiveReviewSource } from '../../../hooks/useActiveReviewSource';
 import { driftSentence, type BlockerCopy } from '../../../resolvePublishCopy';
@@ -46,6 +48,7 @@ type ReviewPushPhase =
 
 type ArmParams = {
   readonly isRetry: boolean;
+  readonly isAfterFix?: boolean;
   readonly threadIds?: ReadonlyArray<string> | undefined;
 };
 
@@ -53,8 +56,15 @@ type PressParams = {
   readonly isRetry: boolean;
 };
 
+export type FixTarget = {
+  readonly mountId: MountId;
+  readonly pending?: string;
+};
+
 export type ReviewPush = {
   readonly phase: ReviewPushPhase;
+  readonly fixTarget: FixTarget | null;
+  readonly retryAfterFix: () => void;
   readonly arm: (params: ArmParams) => Promise<void>;
   readonly press: (params: PressParams) => Promise<void>;
   readonly confirm: () => Promise<void>;
@@ -83,10 +93,24 @@ type ClosePreparationParams = {
   readonly publicationId: string;
 };
 
-const failed = (sentence: string, canSync = false): ReviewPushPhase => ({
+type FailedParams = {
+  readonly sentence: string;
+  readonly canSync?: boolean;
+  readonly output?: string;
+};
+
+const failedWith = ({ sentence, canSync = false, output }: FailedParams): ReviewPushPhase => ({
   kind: 'result',
-  result: { tone: 'failed', sentence, ...(canSync && { canSync }) },
+  result: {
+    tone: 'failed',
+    sentence,
+    ...(canSync && { canSync }),
+    ...(output !== undefined && { failure: { output } }),
+  },
 });
+
+const failed = (sentence: string, canSync = false): ReviewPushPhase =>
+  failedWith({ sentence, canSync });
 
 type SyncMountParams = {
   readonly sessionId: SessionId;
@@ -108,6 +132,25 @@ const syncMountIdOf = ({ sessionId, mountId }: SyncMountParams): MountId | null 
     null,
   );
   return latest?.mountTarget?.mountId ?? selectActiveMount({ state, sessionId })?.mountId ?? null;
+};
+
+type FixTargetParams = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+};
+
+const fixTargetOf = ({ sessionId, mountId }: FixTargetParams): FixTarget | null => {
+  const target = syncMountIdOf({ sessionId, mountId });
+  if (target === null) {
+    return null;
+  }
+  const publication = failedPushPublication({
+    publications: useAppStore.getState().sessionResolvePublications[sessionId] ?? [],
+  });
+  return {
+    mountId: target,
+    ...(publication !== null && { pending: pendingPublicationBrief({ publication }) }),
+  };
 };
 
 type PushParams = {
@@ -195,10 +238,11 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
             return;
           case 'push_failed':
             move(
-              failed(
-                pushFailedSentence({ error: result.error }),
-                isRemoteMovedError({ error: result.error }),
-              ),
+              failedWith({
+                sentence: pushFailedSentence({ error: result.error }),
+                canSync: isRemoteMovedError({ error: result.error }),
+                output: result.error,
+              }),
             );
             return;
           case 'busy':
@@ -232,7 +276,7 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
   );
 
   const arm = useCallback(
-    async ({ isRetry, threadIds }: ArmParams): Promise<void> => {
+    async ({ isRetry, threadIds, isAfterFix = false }: ArmParams): Promise<void> => {
       if (IN_FLIGHT.has(phaseRef.current.kind)) {
         return;
       }
@@ -262,10 +306,25 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
         const isEmpty =
           preview.publicationId === null && preview.blocker === null && preview.drift.length === 0;
         if (isEmpty) {
-          move({
-            kind: 'result',
-            result: { tone: 'done', sentence: 'Nothing is waiting for the push.' },
-          });
+          const publications = useAppStore.getState().sessionResolvePublications[sessionId] ?? [];
+          const lastFailure = isAfterFix ? null : failedPushPublication({ publications });
+          move(
+            lastFailure?.error == null
+              ? {
+                  kind: 'result',
+                  result: {
+                    tone: 'done',
+                    sentence: isAfterFix
+                      ? 'The fix is pushed. Nothing else is waiting.'
+                      : 'Nothing is waiting for the push.',
+                  },
+                }
+              : failedWith({
+                  sentence: pushFailedSentence({ error: lastFailure.error }),
+                  canSync: isRemoteMovedError({ error: lastFailure.error }),
+                  output: lastFailure.error,
+                }),
+          );
           return;
         }
         if (!previewNeedsDecision({ preview })) {
@@ -345,6 +404,11 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
     }
   }, [arm, mountId, move, sessionId, syncBranchWithRemote]);
 
+  const retryAfterFix = useCallback((): void => {
+    move(IDLE);
+    void arm({ isRetry: true, threadIds: armedThreadIds.current, isAfterFix: true });
+  }, [arm, move]);
+
   const recover = useCallback(
     (action: NonNullable<BlockerCopy['action']>): void => {
       if (action === 'see_missing') {
@@ -382,8 +446,15 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
     [cancel, move, navigate, openDiffLens, sessionId],
   );
 
+  const fixTarget =
+    phase.kind === 'result' && phase.result.failure !== undefined
+      ? fixTargetOf({ sessionId, mountId })
+      : null;
+
   return {
     phase,
+    fixTarget,
+    retryAfterFix,
     arm,
     press,
     confirm,
