@@ -94,8 +94,10 @@
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
   its tooltip and accessible name, never a colored number. Sessions is the one
-  exception: it carries the number of sessions that need you, a dot for one and a
-  pill from two, amber or red, named "Sessions, 2 need you: Checks failing, 1
+  exception: it carries the number of sessions that need you, drawn like the
+  count on the Runs page entry (a 6px dot in the tone, amber or red, and the
+  number muted beside it, 9+ above nine, `TONE_COUNT_CLASS`; red only when one
+  of them is broken), named "Sessions, 2 need you: Checks failing, 1
   question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
   project filter, and the first segment of the Now chip reads it too. The palette's

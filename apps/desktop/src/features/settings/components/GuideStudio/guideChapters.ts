@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, named on hover, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, in three groups, named on hover, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('ask.open')} opens Ask, ${shortcutGlyphs('session.terminal')} Terminal, ${shortcutGlyphs('lens.explore')} Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('session.spawned')} Agents and ${shortcutGlyphs('lens.scripts')} Scripts.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal.`,
       },
       {
         term: 'Terminal',

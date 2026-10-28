@@ -78,7 +78,7 @@ export const ColumnDoorRow = ({
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-left">{label}</span>
       </span>
-      <span data-door-slot="signal" className="flex w-5 shrink-0 items-center justify-end">
+      <span data-door-slot="signal" className="flex min-w-5 shrink-0 items-center justify-end">
         {signal === undefined ? null : <DoorSignalMark signal={signal} />}
       </span>
       <span data-door-slot="action" aria-hidden className="size-6 shrink-0" />

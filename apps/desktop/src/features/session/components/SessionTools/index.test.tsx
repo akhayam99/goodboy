@@ -23,6 +23,7 @@ import {
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { SessionTools } from '.';
+import { SESSION_TOOLS } from './sessionTools';
 
 let useAppStore: StoryStore;
 
@@ -67,22 +68,61 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts as icons in a vertical toolbar', () => {
+  it('stacks Explore, Context, Ask, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
     const buttons = within(toolbar).getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
-      'Ask',
-      'Terminal',
       'Explore',
       'Context',
+      'Ask',
       'Agents',
       'Scripts',
+      'Terminal',
     ]);
     expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '']);
     expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
     expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
+  });
+
+  it('keeps each tool on its pane id and chord whatever its place in the column', () => {
+    renderCluster();
+    expect(SESSION_TOOLS.map((tool) => [tool.pane, tool.shortcut])).toEqual([
+      ['explore', 'lens.explore'],
+      ['context', 'lens.context'],
+      ['ask', 'ask.open'],
+      ['spawned', 'session.spawned'],
+      ['scripts', 'lens.scripts'],
+      ['terminal', 'session.terminal'],
+    ]);
+    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    for (const pane of ['explore', 'context', 'ask', 'spawned', 'scripts', 'terminal']) {
+      within(toolbar).getByTestId(`pane-toggle-${pane}`);
+    }
+  });
+
+  it('draws one separator between the reading, working and tool groups, and no more', () => {
+    renderCluster();
+    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    const order = Array.from(
+      toolbar.querySelectorAll(
+        '[data-testid^="pane-toggle-"], [data-testid="session-tools-separator"]',
+      ),
+    ).map((node) => node.getAttribute('data-testid')?.replace('pane-toggle-', ''));
+    expect(order).toEqual([
+      'explore',
+      'context',
+      'session-tools-separator',
+      'ask',
+      'spawned',
+      'scripts',
+      'session-tools-separator',
+      'terminal',
+    ]);
+    const separators = within(toolbar).getAllByRole('separator');
+    expect(separators.every((separator) => separator.tagName === 'SPAN')).toBe(true);
+    expect(within(toolbar).getAllByRole('button').length).toBe(6);
   });
 
   it('names each icon with its label and chord in the tooltip on the left', () => {
