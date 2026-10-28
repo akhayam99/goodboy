@@ -128,7 +128,7 @@ describe('AgentsStep', () => {
     const makeDefault = await screen.findByRole('button', {
       name: 'Make Copilot the default agent',
     });
-    expect(screen.getByText(/Copilot 1\.0\.105/)).toBeDefined();
+    screen.getByText(/Copilot 1\.0\.105/);
 
     fireEvent.click(makeDefault);
     fireEvent.click(continueButton());
