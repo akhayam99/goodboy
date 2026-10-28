@@ -216,8 +216,8 @@ describe('DefaultsPanel', () => {
     expect(sections.indexOf('Runs')).toBeGreaterThanOrEqual(0);
     expect(sections.indexOf('Runs')).toBeLessThan(sections.indexOf('Providers'));
     const runs = screen.getByRole('region', { name: 'Runs' });
-    expect(within(runs).getByText('Auto agent')).toBeDefined();
-    expect(within(runs).getByText('Orchestrator')).toBeDefined();
+    within(runs).getByText('Auto agent');
+    within(runs).getByText('Orchestrator');
     expect(runs.querySelector('[aria-label="Orchestrator routing model"]')).not.toBeNull();
   });
 
