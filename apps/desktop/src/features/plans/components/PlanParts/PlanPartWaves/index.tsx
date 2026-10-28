@@ -32,8 +32,9 @@ export const PlanPartWaves = ({ order, renderRow }: Props) => (
       </ul>
     )}
     {order.waves.map((wave) => (
-      <section
+      <div
         key={wave.rows[0]?.index}
+        role="group"
         aria-label={wave.label}
         data-testid="plan-part-wave"
         className="flex min-w-0 flex-col gap-2"
@@ -53,7 +54,7 @@ export const PlanPartWaves = ({ order, renderRow }: Props) => (
             </li>
           ))}
         </ol>
-      </section>
+      </div>
     ))}
   </div>
 );
