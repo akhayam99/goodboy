@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -8,7 +8,11 @@ import { createLatestOnly } from '../../../../../store/runtime/state-writes/late
 import { agentKindPalette, visibleAgentKinds, type AgentKind } from '../../../agent-kind';
 import { useStartFromDraft } from '../../SessionKickoff/useStartFromDraft';
 import { roleRunOf } from '../../../startRun/roleRunOf';
-import { runRouteOf, type RunRouteFacts } from '../../../startRun/runRouteOf';
+import { AUTO_RUN_AS, runAsRouteOf, type RunAs } from '../../../startRun/runAsOf';
+import { RUN_ROUTE_COPY } from '../../../startRun/runRouteCopy';
+import type { RunRouteFacts, RunRouteResult } from '../../../startRun/runRouteOf';
+import { usePromptFiles } from '../../../../../shared/hooks/usePromptFiles';
+import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
@@ -37,6 +41,12 @@ export type StartRunModel = Readonly<{
   start: () => Promise<void>;
   isStarting: boolean;
   error: string | null;
+  runAs: RunAs;
+  setRunAs: (runAs: RunAs) => void;
+  route: RunRouteResult;
+  presets: ReadonlyArray<Workflow>;
+  files: ReturnType<typeof usePromptFiles>['files'];
+  filesNotice: string | null;
 }>;
 
 const NO_WORKFLOWS: ReadonlyArray<Workflow> = [];
@@ -55,6 +65,8 @@ type FactsParams = {
   readonly session: Session | null;
   readonly fileCount: number;
   readonly hasPickedTask: boolean;
+  readonly presets: ReadonlyArray<Workflow>;
+  readonly settings: Readonly<Record<string, string | undefined>>;
 };
 
 const factsOf = ({
@@ -63,12 +75,11 @@ const factsOf = ({
   session,
   fileCount,
   hasPickedTask,
+  presets,
+  settings,
 }: FactsParams): RunRouteFacts => {
   const state = useAppStore.getState();
   const sessionId = session?.id ?? null;
-  const presets = (state.phaseTemplates[workspaceId] ?? NO_WORKFLOWS).filter(
-    (workflow) => workflow.isPreset === true,
-  );
   const lastPresetRun = [...(session?.workflowRuns ?? [])]
     .reverse()
     .find((run) => run.executionMode !== 'dynamic');
@@ -80,7 +91,7 @@ const factsOf = ({
       .filter((kind) => kind !== 'auto')
       .map((kind) => ({ kind, label: agentKindPalette({ kind }).label })),
     lastPresetId: lastPresetRun?.workflowId ?? null,
-    defaultShape: runDefaultOf({ settings: state.settings, workspaceId, sessionId }),
+    defaultShape: runDefaultOf({ settings, workspaceId, sessionId }),
     hasTask:
       hasPickedTask ||
       (sessionId !== null && (state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY).length > 0),
@@ -132,6 +143,54 @@ export const useStartRun = ({
   const [file, setFile] = useState<StartRunFile | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
+  const promptFiles = usePromptFiles({ note: RUN_ROUTE_COPY.attachFiles, isEnabled: !isStarting });
+  const { attachments: stagedFiles, setAttachments: setStagedFiles } = promptFiles;
+  const clearFilesRef = useRef(promptFiles.clear);
+  clearFilesRef.current = promptFiles.clear;
+  const templates = useAppStore((state) => state.phaseTemplates[workspaceId]);
+  const workspaceDefaultKey = runDefaultKey({ scope: { kind: 'workspace', workspaceId } });
+  const sessionDefaultKey =
+    sessionId === null ? null : runDefaultKey({ scope: { kind: 'session', sessionId } });
+  const workspaceDefaultRaw = useAppStore((state) => state.settings[workspaceDefaultKey]);
+  const sessionDefaultRaw = useAppStore((state) =>
+    sessionDefaultKey === null ? undefined : state.settings[sessionDefaultKey],
+  );
+  const settings = useMemo(
+    () => ({
+      [workspaceDefaultKey]: workspaceDefaultRaw,
+      ...(sessionDefaultKey !== null && { [sessionDefaultKey]: sessionDefaultRaw }),
+    }),
+    [sessionDefaultKey, sessionDefaultRaw, workspaceDefaultKey, workspaceDefaultRaw],
+  );
+  const sessionRow = useAppStore((state) =>
+    sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null),
+  );
+  const pickedCount = useAppStore((state) =>
+    sessionId === null ? selectSessionDraft({ state, workspaceId }).pickedIssues.length : 0,
+  );
+  const presets = useMemo(
+    () => (templates ?? NO_WORKFLOWS).filter((workflow) => workflow.isPreset === true),
+    [templates],
+  );
+  const route = useMemo(() => {
+    const asked = text.trim();
+    if (role !== null) {
+      return roleRunOf({ text: asked, role });
+    }
+    return runAsRouteOf({
+      runAs,
+      facts: factsOf({
+        text: asked,
+        workspaceId,
+        session: sessionRow,
+        fileCount: file === null ? 0 : 1,
+        hasPickedTask: pickedCount > 0,
+        presets,
+        settings,
+      }),
+    });
+  }, [file, pickedCount, presets, role, runAs, sessionRow, settings, text, workspaceId]);
   const isStartingRef = useRef(false);
   const startFromDraft = useStartFromDraft();
   const latestRef = useRef(createLatestOnly());
@@ -143,6 +202,8 @@ export const useStartRun = ({
       isStartingRef.current = false;
       setLocalText('');
       setFile(null);
+      setRunAs(AUTO_RUN_AS);
+      clearFilesRef.current();
       setError(null);
       setIsStarting(false);
     };
@@ -188,18 +249,26 @@ export const useStartRun = ({
         sessionId === null
           ? selectSessionDraft({ state: useAppStore.getState(), workspaceId }).pickedIssues
           : NO_ISSUES;
+      const state = useAppStore.getState();
       const routed =
         role === null
-          ? runRouteOf({
+          ? runAsRouteOf({
+              runAs,
               facts: factsOf({
                 text: asked,
                 workspaceId,
                 session,
                 fileCount: file === null ? 0 : 1,
                 hasPickedTask: picked.length > 0,
+                presets: (state.phaseTemplates[workspaceId] ?? NO_WORKFLOWS).filter(
+                  (workflow) => workflow.isPreset === true,
+                ),
+                settings: state.settings,
               }),
             })
           : roleRunOf({ text: asked, role });
+      const staged = stagedFiles;
+      const attachments = await toAttachmentInputs(staged);
       const result =
         file === null
           ? routed
@@ -212,20 +281,22 @@ export const useStartRun = ({
               }),
             };
       const run = async (created: Session): Promise<void> => {
-        await startRoutedRun({ sessionId: created.id, result });
+        await startRoutedRun({ sessionId: created.id, result, attachments });
       };
       await (sessionId === null
         ? startFromDraft({
             workspaceId,
             start: draftStartOf({ picked, mount, ask: result.ask, run }),
           })
-        : startRoutedRun({ sessionId, result }));
+        : startRoutedRun({ sessionId, result, attachments }));
       if (sessionId === null) {
         rememberLastStart({ workspaceId, last: 'auto' });
       }
       if (claim.isCurrent()) {
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
+        setRunAs(AUTO_RUN_AS);
+        setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
       }
     } catch (cause) {
@@ -245,11 +316,29 @@ export const useStartRun = ({
     onStarted,
     prepare,
     role,
+    runAs,
     sessionId,
+    setStagedFiles,
+    stagedFiles,
     startFromDraft,
     text,
     workspaceId,
   ]);
 
-  return { text, setText, discard, file, setFile, start, isStarting, error };
+  return {
+    text,
+    setText,
+    discard,
+    file,
+    setFile,
+    start,
+    isStarting,
+    error,
+    runAs,
+    setRunAs,
+    route,
+    presets,
+    files: promptFiles.files,
+    filesNotice: promptFiles.notice,
+  };
 };

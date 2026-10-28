@@ -1,3 +1,4 @@
+import { answerBlockedStep } from './answerBlockedStep';
 import { clearAgentAttachments } from './clearAgentAttachments';
 import { clearAgentDone } from './clearAgentDone';
 import { clearAgentDraft } from './clearAgentDraft';
@@ -41,5 +42,6 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     startFollowUp: startFollowUp(get),
     deleteAgent: deleteAgent(set, get),
     forceCloseResolver: forceCloseResolver(set, get),
+    answerBlockedStep: answerBlockedStep({ get }),
   };
 };

@@ -41,6 +41,10 @@ const TOKEN_LABEL_PATTERN: &str = r#"(?i)(token|bearer)(\s*[:=]\s*)(?:(?:bearer|
 
 const MIN_LOOSE_VALUE: usize = 6;
 
+const HOME_PATH_PATTERN: &str = r"(?:/Users|/home)/[^/\s:]+";
+
+const HOME_MASK: &str = "~";
+
 fn compiled(source: &'static str) -> Regex {
     Regex::new(source).expect("redaction pattern compiles")
 }
@@ -78,6 +82,16 @@ fn labelled() -> &'static Regex {
 fn token_label() -> &'static Regex {
     static TOKEN: OnceLock<Regex> = OnceLock::new();
     TOKEN.get_or_init(|| compiled(TOKEN_LABEL_PATTERN))
+}
+
+fn home_path() -> &'static Regex {
+    static HOME: OnceLock<Regex> = OnceLock::new();
+    HOME.get_or_init(|| compiled(HOME_PATH_PATTERN))
+}
+
+pub(crate) fn redact_output(raw: &str) -> String {
+    let redacted = redact_text(raw);
+    home_path().replace_all(&redacted, HOME_MASK).into_owned()
 }
 
 pub(crate) fn redact_text(raw: &str) -> String {
@@ -142,6 +156,19 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn output_redaction_masks_credentials_and_home_paths() {
+        let raw = "remote: https://u:ghp_abcdefghijklmnopqrstuvwx@github.com/acme/ledger-core.git\nsh: /Users/mara/code/harborline/ledger-core/.husky/pre-push: failed\n/home/ci/work/payments-api";
+        let out = redact_output(raw);
+
+        assert!(!out.contains("ghp_abcdefghijklmnopqrstuvwx"));
+        assert!(!out.contains("/Users/mara"));
+        assert!(!out.contains("/home/ci"));
+        assert!(out.contains("~/code/harborline/ledger-core/.husky/pre-push: failed"));
+        assert!(out.contains("~/work/payments-api"));
+        assert_eq!(redact_output(&out), out);
     }
 
     #[test]

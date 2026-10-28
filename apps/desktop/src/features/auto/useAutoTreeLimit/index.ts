@@ -3,22 +3,20 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { pausingSessionCapOf } from '../../budget/pausingSessionCapOf';
-import {
-  AUTO_TREE_LIMIT_DEFAULT_USD,
-  parseAutoTreeLimit,
-  writeAutoTreeLimit,
-} from '../autoTreeLimit';
+import { parseAutoTreeLimit, writeAutoTreeLimit } from '../autoTreeLimit';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
   readonly sessionId?: SessionId | null;
 };
 
+type Draft = Readonly<{ usd: number | null }>;
+
 export type AutoTreeLimitModel = Readonly<{
-  usd: number;
+  usd: number | null;
   isFromSession: boolean;
   isStored: boolean;
-  change: (usd: number) => void;
+  change: (usd: number | null) => void;
   persist: () => Promise<void>;
 }>;
 
@@ -31,7 +29,7 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
   );
   const loadWorkspaceValue = useAppStore((state) => state.loadWorkspaceValue);
   const reportError = useAppStore((state) => state.reportError);
-  const [draftUsd, setDraftUsd] = useState<number | null>(null);
+  const [draft, setDraft] = useState<Draft | null>(null);
   const storedUsd = parseAutoTreeLimit({ raw });
 
   useEffect(() => {
@@ -43,24 +41,29 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
     });
   }, [workspaceId, loadWorkspaceValue, reportError]);
 
-  const usd = draftUsd ?? storedUsd ?? AUTO_TREE_LIMIT_DEFAULT_USD;
-  const isFromSession = sessionCapUsd !== null && sessionCapUsd < usd;
+  const usd = draft === null ? storedUsd : draft.usd;
+  const isFromSession = sessionCapUsd !== null && (usd === null || sessionCapUsd < usd);
+
+  const change = useCallback((next: number | null): void => setDraft({ usd: next }), []);
 
   const persist = useCallback(async (): Promise<void> => {
-    const isNothingToSave = draftUsd === null && storedUsd !== null;
-    if (workspaceId === null || isFromSession || isNothingToSave) {
+    if (workspaceId === null || isFromSession || draft === null) {
       return;
     }
-    await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd });
+    if (draft.usd === storedUsd) {
+      setDraft(null);
+      return;
+    }
+    await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd: draft.usd });
     await loadWorkspaceValue({ workspaceId, key: 'auto.treeLimitUsd' });
-    setDraftUsd(null);
-  }, [draftUsd, isFromSession, loadWorkspaceValue, storedUsd, usd, workspaceId]);
+    setDraft(null);
+  }, [draft, isFromSession, loadWorkspaceValue, storedUsd, workspaceId]);
 
   return {
     usd: isFromSession ? sessionCapUsd : usd,
     isFromSession,
     isStored: storedUsd !== null,
-    change: setDraftUsd,
+    change,
     persist,
   };
 };

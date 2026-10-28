@@ -472,14 +472,19 @@ pub async fn git_push(
         let owned =
             push_args(branch.as_deref(), sha.as_deref()).map_err(GithubError::Validation)?;
         let args: Vec<&str> = owned.iter().map(String::as_str).collect();
-        Ok(crate::remote_auth::run_git_authenticated(
-            &args,
-            &cwd,
-            token.as_deref(),
-        )?)
+        let result = crate::remote_auth::run_git_authenticated(&args, &cwd, token.as_deref())?;
+        Ok(redacted_push_result(result))
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
+}
+
+pub(crate) fn redacted_push_result(result: GhRunResult) -> GhRunResult {
+    GhRunResult {
+        stdout: crate::util::redact::redact_output(&result.stdout),
+        stderr: crate::util::redact::redact_output(&result.stderr),
+        exit_code: result.exit_code,
+    }
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -599,8 +604,8 @@ pub async fn gh_pr_diff(
 #[cfg(test)]
 mod tests {
     use super::{
-        command_succeeds, push_args, read_token_with, run_binary, run_with_timeout,
-        token_failure_message, validate_token_with, GhRunResult, GithubError,
+        command_succeeds, push_args, read_token_with, redacted_push_result, run_binary,
+        run_with_timeout, token_failure_message, validate_token_with, GhRunResult, GithubError,
         BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE,
         GH_PROBE_TIMEOUT, GH_TIMEOUT, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE,
         UNVERIFIED_MESSAGE,
@@ -609,6 +614,23 @@ mod tests {
     use std::time::{Duration, Instant};
 
     const MISSING_BIN: &str = "goodboy-no-such-binary";
+
+    #[test]
+    fn a_failed_push_keeps_the_hook_output_with_credentials_and_home_paths_masked() {
+        let result = redacted_push_result(GhRunResult {
+            stdout: "$ yarn knip --cache\nUnused files (15)\n".to_string(),
+            stderr: "sh: /Users/mara/work/payments-api/.husky/pre-push\nremote: https://u:ghp_abcdefghijklmnopqrstuvwx@github.com/acme/payments-api.git\nerror: failed to push some refs".to_string(),
+            exit_code: 1,
+        });
+
+        assert_eq!(result.exit_code, 1);
+        assert!(result.stdout.contains("Unused files (15)"));
+        assert!(result
+            .stderr
+            .contains("~/work/payments-api/.husky/pre-push"));
+        assert!(!result.stderr.contains("ghp_abcdefghijklmnopqrstuvwx"));
+        assert!(result.stderr.contains("error: failed to push some refs"));
+    }
 
     #[test]
     fn a_failed_git_run_is_labelled_git_and_never_the_gh_timeout() {

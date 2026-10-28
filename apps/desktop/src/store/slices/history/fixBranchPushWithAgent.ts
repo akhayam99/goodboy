@@ -11,7 +11,9 @@ import type { BranchPushInput } from './types';
 type Params = BranchPushInput & {
   readonly message: string;
   readonly hint?: string;
+  readonly pending?: string;
   readonly onAccepted?: () => void;
+  readonly onSettled?: () => void;
 };
 
 export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
@@ -23,7 +25,9 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
     confirmedRemoteSha,
     message,
     hint,
+    pending,
     onAccepted,
+    onSettled,
   }: Params): Promise<void> => {
     const isBusy = Object.values(get().branchPushFixes).some(
       (fix) => fix.sessionId === sessionId && fix.mountId === mountId,
@@ -59,6 +63,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
           command: pushFixCommand({ branch: target.branch, remoteSha }),
           output: message,
           ...(hint !== undefined && { hint }),
+          ...(pending !== undefined && { pending }),
         }),
         ...(onAccepted !== undefined && { onAccepted }),
         isStillValid: () => identityChange({ get, sessionId, mountId, identity }) === null,
@@ -67,6 +72,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
             branchPushFixes: {
               ...current.branchPushFixes,
               [agentId]: {
+                agentId,
                 sessionId,
                 mountId,
                 identity,
@@ -75,12 +81,24 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
                 confirmedRemoteSha,
               },
             },
+            pushContinuations:
+              onSettled === undefined
+                ? current.pushContinuations
+                : {
+                    ...current.pushContinuations,
+                    [mountId]: { agentId, sessionId, mountId, resume: onSettled },
+                  },
           }));
         },
         unbind: ({ agentId }) => {
           set((current) => ({
             branchPushFixes: Object.fromEntries(
               Object.entries(current.branchPushFixes).filter(([key]) => key !== agentId),
+            ),
+            pushContinuations: Object.fromEntries(
+              Object.entries(current.pushContinuations).filter(
+                ([, continuation]) => continuation.agentId !== agentId,
+              ),
             ),
           }));
         },

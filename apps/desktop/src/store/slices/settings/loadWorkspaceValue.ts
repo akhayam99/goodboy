@@ -15,11 +15,15 @@ type Deps = {
 export const loadWorkspaceValue = ({ set }: Deps) => {
   return async ({ workspaceId, key }: Params): Promise<string | null> => {
     const value = await getWorkspaceValue({ db: tauriDatabase, workspaceId, key });
-    if (value === null) {
-      return value;
-    }
     set((state) => {
       const held = state.workspaceValues[workspaceId] ?? {};
+      if (value === null) {
+        if (held[key] === undefined) {
+          return state;
+        }
+        const { [key]: _removed, ...rest } = held;
+        return { workspaceValues: { ...state.workspaceValues, [workspaceId]: rest } };
+      }
       if (held[key] === value) {
         return state;
       }

@@ -12,6 +12,7 @@ import {
   type TelemetryRecordId,
   type TurnEvent,
   type TurnState,
+  type RunRoute,
   type Workflow,
   type WorkflowId,
   type WorkflowRun,
@@ -52,7 +53,8 @@ const IMPLEMENT_RUN = idOf<ProviderRunId>('mock-c09-provider-implement');
 const TEST_RUN = idOf<ProviderRunId>('mock-c09-provider-test');
 const DOCS_RUN = idOf<ProviderRunId>('mock-c09-provider-docs');
 
-export type C09State = 'running' | 'reading' | 'ready' | 'failed' | 'done' | 'archived';
+export type C09State =
+  'running' | 'reading' | 'ready' | 'failed' | 'done' | 'archived' | 'step-blocked' | 'blocked';
 
 export type C09Page = 'document' | 'list' | 'empty' | 'step';
 
@@ -60,6 +62,7 @@ type SeedParams = {
   readonly state: C09State;
   readonly page: C09Page;
   readonly isGuidanceRepeated?: boolean;
+  readonly isRouted?: boolean;
 };
 
 const STANDING_GUIDANCE = 'Keep every change behind the existing export flag.';
@@ -188,6 +191,18 @@ const SUMMARY_RUNNING = JSON.stringify({
   ],
 });
 
+const SUMMARY_BLOCKED = JSON.stringify({
+  done: ['Found one query per row in the export', 'Batched the row reads in payments-api'],
+  left: [
+    'Run the 12k export benchmark',
+    { text: 'Write the export notes', role: 'docs' },
+    'Stream rows to CSV',
+  ],
+});
+
+const BLOCKED_REASON =
+  '**Needs a human call.** The export notes must name a teammate.\n\n- Ask them to confirm the `payments-api` numbers\n- Then continue';
+
 const SUMMARY_DONE = JSON.stringify({
   done: [
     'Found one query per row in the export',
@@ -206,15 +221,38 @@ const stopOf = ({ state }: StateParams): Pick<WorkflowRun, 'orchestrationStop'> 
     : {};
 
 const outcomeOf = ({ state }: StateParams): Partial<WorkflowRun> =>
-  isFinished({ state })
-    ? {
-        orchestrationOutcome: 'done',
-        orchestrationReason:
-          'The export takes 4.1s on 12,000 rows and the notes hold the numbers. Streaming to CSV is a separate change.',
-      }
-    : {};
+  state === 'blocked'
+    ? { orchestrationOutcome: 'blocked', orchestrationReason: BLOCKED_REASON }
+    : isFinished({ state })
+      ? {
+          orchestrationOutcome: 'done',
+          orchestrationReason:
+            'The export takes 4.1s on 12,000 rows and the notes hold the numbers. Streaming to CSV is a separate change.',
+        }
+      : {};
 
-const runOf = ({ state }: StateParams): WorkflowRun => ({
+const summaryOf = ({ state }: StateParams): string => {
+  if (isFinished({ state })) {
+    return SUMMARY_DONE;
+  }
+  return state === 'step-blocked' || state === 'blocked' ? SUMMARY_BLOCKED : SUMMARY_RUNNING;
+};
+
+type RunParams = StateParams & {
+  readonly isRouted: boolean;
+};
+
+const ORCHESTRATED_ROUTE: RunRoute = {
+  shape: 'plan',
+  row: 1,
+  presetName: null,
+  closeness: null,
+  role: null,
+  choice: 'Workflow \u00b7 Orchestrated',
+  why: 'you picked it',
+};
+
+const runOf = ({ state, isRouted }: RunParams): WorkflowRun => ({
   id: C09_RUN_ID,
   workflowId: WORKFLOW_ID,
   ordinal: 2,
@@ -232,9 +270,10 @@ const runOf = ({ state }: StateParams): WorkflowRun => ({
     ...DEFAULT_WORKFLOW_RULES,
     autonomy: state === 'ready' ? 'step' : 'plan',
     standingGuidance: STANDING_GUIDANCE,
+    ...(isRouted ? { route: ORCHESTRATED_ROUTE } : {}),
   },
   orchestratorHints: hintsOf({ state }),
-  orchestratorSummary: isFinished({ state }) ? SUMMARY_DONE : SUMMARY_RUNNING,
+  orchestratorSummary: summaryOf({ state }),
   ...stopOf({ state }),
   ...outcomeOf({ state }),
   ...(state === 'archived' ? { discardedAt: at('11:30') } : {}),
@@ -300,6 +339,9 @@ const testerStatusOf = ({ state }: StateParams): Agent['status'] => {
   if (state === 'reading') {
     return 'skipped';
   }
+  if (state === 'step-blocked') {
+    return 'blocked';
+  }
   return 'completed';
 };
 
@@ -333,6 +375,7 @@ const agentsOf = ({ state }: StateParams): ReadonlyArray<Agent> => {
   if (isReady) {
     return steps;
   }
+  const isStepBlocked = state === 'step-blocked';
   const tester = agentOf({
     id: C09_TESTER_ID,
     runId: C09_RUN_ID,
@@ -344,32 +387,34 @@ const agentsOf = ({ state }: StateParams): ReadonlyArray<Agent> => {
     startedMinute: '09:30',
     ...(testerStatus === 'completed' ? { completedMinute: '10:50' } : {}),
   });
-  const children: ReadonlyArray<Agent> = [
-    agentOf({
-      id: FIXTURE_ID,
-      runId: C09_RUN_ID,
-      stepId: TEST_STEP,
-      ordinal: 3,
-      name: 'Build the 12k row fixture',
-      kind: 'scout',
-      status: 'completed',
-      startedMinute: '09:35',
-      completedMinute: '10:05',
-      parentAgentId: C09_TESTER_ID,
-    }),
-    agentOf({
-      id: BENCH_ID,
-      runId: C09_RUN_ID,
-      stepId: TEST_STEP,
-      ordinal: 4,
-      name: 'Time the export five times',
-      kind: 'scout',
-      status: testerStatus,
-      startedMinute: '10:10',
-      ...(testerStatus === 'completed' ? { completedMinute: '10:45' } : {}),
-      parentAgentId: C09_TESTER_ID,
-    }),
-  ];
+  const children: ReadonlyArray<Agent> = isStepBlocked
+    ? []
+    : [
+        agentOf({
+          id: FIXTURE_ID,
+          runId: C09_RUN_ID,
+          stepId: TEST_STEP,
+          ordinal: 3,
+          name: 'Build the 12k row fixture',
+          kind: 'scout',
+          status: 'completed',
+          startedMinute: '09:35',
+          completedMinute: '10:05',
+          parentAgentId: C09_TESTER_ID,
+        }),
+        agentOf({
+          id: BENCH_ID,
+          runId: C09_RUN_ID,
+          stepId: TEST_STEP,
+          ordinal: 4,
+          name: 'Time the export five times',
+          kind: 'scout',
+          status: testerStatus,
+          startedMinute: '10:10',
+          ...(testerStatus === 'completed' ? { completedMinute: '10:45' } : {}),
+          parentAgentId: C09_TESTER_ID,
+        }),
+      ];
   const docs: ReadonlyArray<Agent> = isFinished({ state })
     ? [
         agentOf({
@@ -454,6 +499,15 @@ const TESTER_WORKING: ReadonlyArray<TurnEvent> = [
   },
 ];
 
+const TESTER_BLOCKED = finishedTurn({
+  runId: TEST_RUN,
+  user: 'Run the export on 12,000 rows five times and report the median.',
+  answer:
+    'The fixture is ready and the first run took 4.2s.\n\nThe benchmark script writes its report next to the CSV. Should I keep the report in the repo or only attach it to the notes?',
+  startMinute: '09:30',
+  endMinute: '10:50',
+});
+
 const TESTER_DONE = finishedTurn({
   runId: TEST_RUN,
   user: 'Run the export on 12,000 rows five times and report the median.',
@@ -461,6 +515,13 @@ const TESTER_DONE = finishedTurn({
   startMinute: '09:30',
   endMinute: '10:50',
 });
+
+const testerTranscriptOf = ({ state }: StateParams): ReadonlyArray<TurnEvent> => {
+  if (state === 'running') {
+    return TESTER_WORKING;
+  }
+  return state === 'step-blocked' ? TESTER_BLOCKED : TESTER_DONE;
+};
 
 const transcriptsOf = ({
   state,
@@ -479,7 +540,7 @@ const transcriptsOf = ({
     startMinute: '03:40',
     endMinute: '09:10',
   }),
-  [C09_TESTER_ID]: state === 'running' ? TESTER_WORKING : TESTER_DONE,
+  [C09_TESTER_ID]: testerTranscriptOf({ state }),
   [DOCS_ID]: finishedTurn({
     runId: DOCS_RUN,
     user: 'Write the export notes.',
@@ -513,11 +574,11 @@ const turnStateOf = ({ state }: StateParams): TurnState =>
     ? { kind: 'running', runId: TEST_RUN, startedAt: at('09:30') }
     : { kind: 'idle', lastActivityAt: C09_NOW };
 
-type SessionParams = StateParams & {
+type SessionParams = RunParams & {
   readonly page: C09Page;
 };
 
-const sessionOf = ({ state, page }: SessionParams): Session => ({
+const sessionOf = ({ state, page, isRouted }: SessionParams): Session => ({
   id: C09_SESSION_ID,
   workspaceId: C09_WORKSPACE_ID,
   goal: 'Ledger export speed up',
@@ -525,15 +586,20 @@ const sessionOf = ({ state, page }: SessionParams): Session => ({
   contextSlots: [],
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
   permissionMode: 'default',
-  workflowRuns: page === 'empty' ? [PRESET_RUN] : [runOf({ state }), PRESET_RUN],
+  workflowRuns: page === 'empty' ? [PRESET_RUN] : [runOf({ state, isRouted }), PRESET_RUN],
   autoRun: false,
   titleUserEdited: true,
   createdAt: at('00:00'),
   updatedAt: C09_NOW,
 });
 
-export const seedC09 = ({ state, page, isGuidanceRepeated = false }: SeedParams): Session => {
-  const session = sessionOf({ state, page });
+export const seedC09 = ({
+  state,
+  page,
+  isGuidanceRepeated = false,
+  isRouted = false,
+}: SeedParams): Session => {
+  const session = sessionOf({ state, page, isRouted });
   const isDocument = page === 'document' || page === 'step';
   useAppStore.setState({
     currentWorkspaceId: C09_WORKSPACE_ID,

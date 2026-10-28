@@ -60,7 +60,7 @@ export type AdoptAgentParams = Readonly<{
   instruction: string;
   autoRouting: AdoptAutoRouting;
   primaryMountId: string | null;
-  capUsd: number;
+  capUsd: number | null;
   nowMs: number;
   newId: () => string;
 }>;

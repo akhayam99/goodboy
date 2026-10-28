@@ -39,6 +39,7 @@ import {
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
 import { isFixableThread } from '../../../fixableComments';
+import { rowFixOf, type RowFix } from '../../../rowFix';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 
 export type ReviewEntry = {
@@ -59,10 +60,12 @@ export type ReviewEntry = {
   readonly checkAgentId: AgentId | null;
   readonly isFixable: boolean;
   readonly isAcceptable: boolean;
+  readonly fix: RowFix | null;
 };
 
 export type ReviewGroup = {
   readonly group: ResolveGroup;
+  readonly isRun?: boolean;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 
@@ -153,6 +156,7 @@ export const useReviewEntries = ({
         checkAgentId: recheck?.agentId ?? null,
         isFixable: isFixableThread({ thread: row.thread }),
         isAcceptable: isBulkAcceptable({ state, remote }),
+        fix: rowFixOf({ state, row, projection }),
       };
     });
   }, [candidates, changes, checkRuns, drafts, rechecks, rows, threadGit]);

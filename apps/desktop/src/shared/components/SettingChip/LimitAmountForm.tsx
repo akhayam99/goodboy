@@ -1,13 +1,14 @@
-import { Input } from '@goodboy/ui';
+import { Button, Input } from '@goodboy/ui';
 import type { useLimitAmountDraft } from '../../hooks/useLimitAmountDraft';
 
 type Props = {
   readonly label: string;
   readonly inputId: string;
   readonly draft: ReturnType<typeof useLimitAmountDraft>;
+  readonly clearLabel?: string;
 };
 
-export const LimitAmountForm = ({ label, inputId, draft }: Props) => (
+export const LimitAmountForm = ({ label, inputId, draft, clearLabel }: Props) => (
   <form
     aria-label={label}
     onSubmit={(event) => draft.submit({ event })}
@@ -25,5 +26,12 @@ export const LimitAmountForm = ({ label, inputId, draft }: Props) => (
       disabled={draft.isBusy}
       onChange={(event) => draft.setAmount({ amount: event.target.value })}
     />
+    {clearLabel === undefined || draft.amount.trim() === '' ? null : (
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" disabled={draft.isBusy} onClick={draft.clear}>
+          {clearLabel}
+        </Button>
+      </div>
+    )}
   </form>
 );

@@ -8,7 +8,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { generateTitleText } from './generateTitleText';
 import { patchWorkflowRun } from './patchWorkflowRun';
-import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -65,20 +64,15 @@ export const generateWorkflowRunTitle = async ({
     if (!chain.ok) {
       throw new Error(chain.error);
     }
-    const generated = chain.value;
-    const title = clampWorkflowTitle(generated);
-    if (title.length === 0) {
-      throw new Error('the model returned an empty workflow run title');
-    }
     if (findRun({ get, sessionId, workflowRunId })?.titleUserEdited === true) {
       return;
     }
-    const isWritten = await updateGeneratedWorkflowRunTitle({
+    const title = await updateGeneratedWorkflowRunTitle({
       db: tauriDatabase,
       workflowRunId,
-      title,
+      title: chain.value,
     });
-    if (!isWritten) {
+    if (title === null) {
       return;
     }
     patchWorkflowRun({

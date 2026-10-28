@@ -20,8 +20,9 @@ const h = vi.hoisted(() => ({
     fetchError: null,
   })),
   pushWithLease: vi.fn<(params: unknown) => Promise<unknown>>(async () => ({ kind: 'pushed' })),
-  gitPush: vi.fn<() => Promise<{ exitCode: number; stderr: string }>>(async () => ({
+  gitPush: vi.fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>(async () => ({
     exitCode: 0,
+    stdout: '',
     stderr: '',
   })),
   worktreeStatus: vi.fn<() => Promise<WorktreeStatus>>(),
@@ -130,7 +131,7 @@ beforeEach(async () => {
   resetWorktreeStatusCache();
   seed();
   h.pushWithLease.mockResolvedValue({ kind: 'pushed' });
-  h.gitPush.mockResolvedValue({ exitCode: 0, stderr: '' });
+  h.gitPush.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
   h.readOriginAhead.mockResolvedValue({
     remoteSha: 'origin-sha',
     knownRemoteSha: 'origin-sha',
@@ -156,7 +157,7 @@ describe('pushBranch plain', () => {
   });
 
   it('hands back the git line as a failure', async () => {
-    h.gitPush.mockResolvedValue({ exitCode: 1, stderr: 'rejected: non-fast-forward' });
+    h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'rejected: non-fast-forward' });
 
     const result = await push({ sessionId: SESSION_ID, mountId: MOUNT_ID, mode: 'plain' });
 

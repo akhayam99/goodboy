@@ -78,7 +78,7 @@ export const PushFailureActions = ({
   return (
     <>
       <Button size="sm" variant="secondary" isBusy={isFixing} onClick={() => void fixWithAgent()}>
-        Fix with agent
+        Let an agent fix the push
       </Button>
       <Button size="sm" variant="ghost" isBusy={isOpening} onClick={() => void openTerminal()}>
         Open terminal here

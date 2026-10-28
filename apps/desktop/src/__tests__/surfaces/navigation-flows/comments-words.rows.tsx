@@ -315,9 +315,7 @@ export const applyNeedsYou = async ({ count }: ApplyParams): Promise<void> => {
     await click(box);
   }
   const bar = await screen.findByRole('toolbar', { name: 'Selected comments' }, WAIT);
-  await click(
-    within(bar).getByRole('button', { name: count === 1 ? 'Apply fix' : `Apply ${count} fixes` }),
-  );
+  await click(within(bar).getByRole('button', { name: `Apply and resolve ${count}` }));
 };
 
 export const openComments = async (ctx: Ctx): Promise<void> => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Disclosure } from '@goodboy/ui';
+import { Disclosure, Markdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
@@ -9,6 +9,7 @@ import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
+import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
 import { OrchestratedTailVerb } from './OrchestratedTailVerb';
 
 type Props = {
@@ -46,15 +47,21 @@ export const OrchestratedTail = ({ session, view }: Props) => {
   }
   const tailVerbs = tail.verbs.filter((verb) => verb.kind !== 'primary');
   const phase = view.orchestrator.state.phase;
-  const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
+  const entries = decisionEntries({ run, steps: workflow.steps });
+  const latest = entries.decisions[0] ?? null;
+  const blockedReason = phase === 'blocked' ? (entries.closing?.reason ?? '') : '';
   const isReasonShown =
-    latest !== null && phase !== 'done' && phase !== 'failed' && phase !== 'step-failed';
+    latest !== null &&
+    phase !== 'done' &&
+    phase !== 'failed' &&
+    phase !== 'step-failed' &&
+    phase !== 'blocked';
 
   return (
     <section
       aria-label="Run state"
       data-orchestrated-tail={view.orchestrator.state.phase}
-      className="flex min-w-0 flex-col"
+      className="flex min-w-0 flex-col gap-1"
     >
       <TailLine
         facts={{
@@ -73,6 +80,14 @@ export const OrchestratedTail = ({ session, view }: Props) => {
               ))
         }
       />
+      {tail.blockedAgentId === null ? null : (
+        <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
+      )}
+      {blockedReason === '' ? null : (
+        <div data-orchestrated-block="" className="min-w-0 px-2">
+          <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
+        </div>
+      )}
       {isReasonShown ? (
         <Disclosure
           label={
@@ -82,9 +97,9 @@ export const OrchestratedTail = ({ session, view }: Props) => {
           onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
           className="self-start"
         >
-          <p data-orchestrated-reason="" className="min-w-0 text-ui text-muted-foreground">
-            {latest.reason}
-          </p>
+          <div data-orchestrated-reason="" className="min-w-0">
+            <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
+          </div>
         </Disclosure>
       ) : null}
     </section>

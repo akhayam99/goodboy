@@ -279,6 +279,31 @@ describe('the create form', () => {
     ).toBe(false);
   });
 
+  it('shows the check that stopped the push and starts an agent that carries the pull request text', async () => {
+    const fixBranchPushWithAgent = vi.fn(async (_input: unknown) => undefined);
+    renderScene({ name: 'branch-create', state: 'hook-failed' });
+    store.setState({ fixBranchPushWithAgent });
+
+    const alert = await screen.findByRole('alert', {}, { timeout: 3_000 });
+
+    within(alert).getByText('pre-push: pnpm knip failed');
+    expect(within(alert).getByText(/Unused files \(3\)/).textContent).toContain(
+      'settlementExport.ts',
+    );
+    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+
+    expect(fixBranchPushWithAgent).toHaveBeenCalledOnce();
+    const call = fixBranchPushWithAgent.mock.calls[0]?.[0];
+    expect(call).toEqual(
+      expect.objectContaining({
+        message: expect.stringContaining('Unused files (3)'),
+        pending: expect.stringContaining('Open a pull request titled'),
+        onSettled: expect.any(Function),
+      }),
+    );
+    expect(descriptionValue()).toContain('Settlement retries');
+  });
+
   it('offers Opens as and Reviewers on GitHub and no Reviewers on GitLab', async () => {
     const github = renderScene({ name: 'branch-create', state: 'empty' });
     await titleField();

@@ -6,19 +6,31 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ResolvePublicationPreview } from '@goodboy/types';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  brandId,
+  type AgentId,
+  type ProjectId,
+  type ResolvePublicationPreview,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../store/storyHarness';
-import { SESSION, seedResolveScene } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import {
+  MOUNT_TARGET,
+  SESSION,
+  seedResolveScene,
+} from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { PushBanner } from './PushBanner';
 import type { ReviewPush } from './useReviewPush';
 
+let store: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -59,6 +71,8 @@ const PREVIEW: ResolvePublicationPreview = {
 
 const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
   phase: { kind: 'idle' },
+  fixTarget: null,
+  retryAfterFix: vi.fn(),
   arm: vi.fn(async () => undefined),
   press: vi.fn(async () => undefined),
   confirm: vi.fn(async () => undefined),
@@ -180,5 +194,135 @@ describe('PushBanner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync and try again' }));
     expect(askSync).toHaveBeenCalledOnce();
+  });
+
+  it('shows the failing check and its first findings, and starts an agent that carries the pending replies', () => {
+    const fixBranchPushWithAgent = vi.fn(async () => undefined);
+    store.setState({ fixBranchPushWithAgent });
+    const output = [
+      '$ yarn knip --cache',
+      'Unused files (15)',
+      'src/legacy/ledgerExport.ts',
+      'husky - pre-push script failed (code 1)',
+      'error: failed to push some refs',
+    ].join('\n');
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: {
+            kind: 'result',
+            result: { tone: 'failed', sentence: 'Nothing was pushed.', failure: { output } },
+          },
+          fixTarget: { mountId: MOUNT_TARGET.mountId, pending: 'Replies for #318 wait.' },
+        })}
+      />,
+    );
+
+    screen.getByText('pre-push: yarn knip --cache failed');
+    expect(screen.getByText(/Unused files \(15\)/).textContent).toContain('ledgerExport.ts');
+    fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+
+    expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION.id,
+        mountId: MOUNT_TARGET.mountId,
+        isForce: false,
+        message: output,
+        pending: 'Replies for #318 wait.',
+      }),
+    );
+  });
+
+  it('hands the store the retry, and the store still runs the latest one after the card is gone', async () => {
+    const fixBranchPushWithAgent = vi.fn<
+      (input: { readonly onSettled?: () => void }) => Promise<void>
+    >(async () => undefined);
+    store.setState({ fixBranchPushWithAgent });
+    const failed = {
+      kind: 'result' as const,
+      result: {
+        tone: 'failed' as const,
+        sentence: 'Nothing was pushed.',
+        failure: { output: 'boom' },
+      },
+    };
+    const first = vi.fn();
+    const latest = vi.fn();
+    const view = render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: failed,
+          fixTarget: { mountId: MOUNT_TARGET.mountId },
+          retryAfterFix: first,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+    await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledOnce());
+    const onSettled = fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled;
+
+    view.rerender(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: failed,
+          fixTarget: { mountId: MOUNT_TARGET.mountId },
+          retryAfterFix: latest,
+        })}
+      />,
+    );
+    view.unmount();
+    onSettled?.();
+
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledOnce();
+  });
+
+  it('tracks the running agent instead of offering a second one', () => {
+    const retryAfterFix = vi.fn();
+    const agentId = brandId<AgentId>({ value: 'agent-push-fix' });
+    store.setState({
+      branchPushFixes: {
+        [agentId]: {
+          agentId,
+          sessionId: SESSION.id,
+          mountId: MOUNT_TARGET.mountId,
+          identity: {
+            worktreePath: MOUNT_TARGET.worktreePath,
+            branch: 'hl/fix-duplicate-credit',
+            projectId: brandId<ProjectId>({ value: 'mock-resolve-project-payments-api' }),
+          },
+          isForce: false,
+          confirmedOnlyOnline: null,
+          confirmedRemoteSha: null,
+        },
+      },
+    });
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: {
+            kind: 'result',
+            result: {
+              tone: 'failed',
+              sentence: 'Nothing was pushed.',
+              failure: { output: 'boom' },
+            },
+          },
+          fixTarget: { mountId: MOUNT_TARGET.mountId },
+          retryAfterFix,
+        })}
+      />,
+    );
+
+    screen.getByText('An agent is fixing the push');
+    expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
+    act(() => {
+      store.setState({ settledBranchPushes: { [MOUNT_TARGET.mountId]: 1 } });
+    });
+    expect(retryAfterFix).not.toHaveBeenCalled();
   });
 });

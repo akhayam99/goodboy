@@ -12,6 +12,41 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.4
+
+Runs, start a run, review comments and failed pushes now say what is going on and what you can do next.
+
+### Improved
+
+#### Start a run says what it starts
+<!-- gb area=sessions -->
+
+Start a run has a Run as choice (Auto, Orchestrated, a preset or a role) and the same ~ and @ menus as the chat box, and the line under the box says what Start does. It also takes images and files with the paperclip, paste or drop.
+
+#### A blocked run shows its question
+<!-- gb area=workflows -->
+
+A step that stopped on a question shows it on the run page with an Answer field, Restart step as a secondary button and Open agent chat. A run the orchestrator stopped on a human call says why and offers Add a hint and continue instead of Retry.
+
+#### Fix run comments show where they stand
+<!-- gb area=review -->
+
+Comments covered by a fix run say Fixing, Fixed in a commit with See diff, or why the fix failed. A finished fix run groups its comments under "Fix run finished: N fixes ready for you" with Apply and resolve, and warns when its checks were skipped.
+
+#### A failed push says why
+<!-- gb area=review -->
+
+When a push stops on a repository check, the failure names the check and shows its first findings, and Let an agent fix the push starts an agent on the same branch that fixes it without skipping the check.
+
+### Fixed
+
+- An Auto run no longer gets a 5 dollar limit you never set: a limit exists only when you set one, and No limit removes it. <!-- gb area=agents -->
+- A run's title no longer shows a leaked reply such as "Title: the user asked for a"; titles already saved are cleaned when they load. <!-- gb area=workflows -->
+- Items under Left that name no role no longer show as steps, and a planned step that repeats an existing one shows once. <!-- gb area=workflows -->
+- The Kind menu of a running run is read-only, and Restart as on a stopped run ends it instead of starting a second run on the same branch. <!-- gb area=workflows -->
+- Comments you just sent to a fix run no longer come back selected when the fix is ready. <!-- gb area=review -->
+- The Comments view no longer says "Nothing is waiting for the push" right after a push failed. <!-- gb area=review -->
+
 ## Goodboy v0.28.3
 
 Files you drop on a message box attach again.

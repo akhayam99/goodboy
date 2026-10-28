@@ -37,7 +37,7 @@ export type AdoptAgentStatementsParams = Readonly<{
   autoAgent: AgentInsertInput & Readonly<{ id: AgentId }>;
   treeId: AutoTreeId;
   primaryMountId: string | null;
-  capUsd: number;
+  capUsd: number | null;
   hardDeadlineAt: number;
   delegation: Readonly<{
     id: AutoDelegationId;

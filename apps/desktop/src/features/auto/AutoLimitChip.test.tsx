@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AutoLimitChip } from './AutoLimitChip';
 
@@ -46,6 +46,29 @@ describe('AutoLimitChip', () => {
     expect(screen.getByText('Enter an amount more than zero.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Use this limit' })).toHaveProperty('disabled', true);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('shows no limit when none is set and offers no clear action', () => {
+    render(
+      <AutoLimitChip usd={null} isFromSession={false} isDisabled={false} onChange={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
+
+    expect(screen.getByRole('textbox')).toHaveProperty('value', '');
+    expect(
+      within(screen.getByRole('dialog')).queryByRole('button', { name: 'No limit' }),
+    ).toBeNull();
+  });
+
+  it('removes the limit with the No limit action', () => {
+    const onChange = vi.fn();
+    render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'No limit' }));
+
+    expect(onChange).toHaveBeenCalledWith(null);
   });
 
   it('is a plain chip when the budget of the session sets the limit', () => {

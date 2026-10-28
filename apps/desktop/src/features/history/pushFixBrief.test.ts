@@ -19,6 +19,16 @@ describe('the push fix brief', () => {
     ).toMatchFileSnapshot('./__prompts__/push-fix-hint.prompt.txt');
   });
 
+  it('names the work waiting on the push and keeps it before the closing line', () => {
+    const pending = 'Open a draft pull request titled "Fix duplicate credit".';
+    const brief = pushFixBrief({ ...base, pending });
+
+    expect(brief).toContain(`Waiting on this push:\n${pending}`);
+    expect(brief).toContain('Never skip a hook: no --no-verify');
+    expect(brief.indexOf('Waiting on this push')).toBeLessThan(brief.indexOf('End with one line'));
+    expect(pushFixBrief({ ...base, pending: '  ' })).toBe(pushFixBrief(base));
+  });
+
   it('adds nothing for a blank hint', () => {
     expect(pushFixBrief({ ...base, hint: '  ' })).toBe(pushFixBrief(base));
   });

@@ -16,9 +16,17 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
     if (fix === undefined || fix.sessionId !== sessionId) {
       return;
     }
+    const continuation = Object.values(get().pushContinuations).find(
+      (candidate) => candidate.agentId === agentId,
+    );
     set((state) => ({
       branchPushFixes: Object.fromEntries(
         Object.entries(state.branchPushFixes).filter(([key]) => key !== agentId),
+      ),
+      pushContinuations: Object.fromEntries(
+        Object.entries(state.pushContinuations).filter(
+          ([, candidate]) => candidate.agentId !== agentId,
+        ),
       ),
     }));
     if (hasFailed) {
@@ -59,5 +67,18 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
         [mountId]: (state.settledBranchPushes[mountId] ?? 0) + 1,
       },
     }));
+    if (continuation === undefined) {
+      return;
+    }
+    try {
+      continuation.resume();
+    } catch (error) {
+      await get().reportError({
+        title: "Couldn't continue after the fix.",
+        error,
+        sessionId,
+        recovery: WORK_KEPT,
+      });
+    }
   };
 };
