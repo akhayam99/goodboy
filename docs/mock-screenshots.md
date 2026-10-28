@@ -350,18 +350,17 @@ leaves it and the app fills the stage: a frame's viewport is the stage box
 divided by a scale that is the one of a 1440 by 900 app fitted to the box and
 never above 1 (`appSize.ts`, `stageFitOf.ts`, measured by `useStageBox`), so the
 app is never zoomed: a bigger stage shows more room, not bigger type. Every
-group, Set up included, uses the same scale. The stage has no inset and sits on
+group uses the same scale. The stage has no inset and sits on
 the same grid as the top of the rail, with narrow gutters, so the app is a bit
 bigger only because its box is.
 `#<group id>` in the URL opens a group the visitor may open, and anything else
-opens Set up (`defaultGroupId.ts`).
+opens Bring your repositories (`defaultGroupId.ts`).
 
 The rail is one vertical spine drawn with the app's own primitives: rows go
 through `layoutTimelineRail`, drawn by `TimelineRail` in a `SpawnedRailCell`,
 with `WorkNode` markers, the same ones as the Spawned panel (`demoRailOf.ts`,
 `DemoRail.tsx`, `DemoRailGroupRow.tsx`, `DemoRailStep.tsx`). Each group is a
-heading on the spine with its title, an "Optional" tag for Set up and a quiet
-"n of m" count. The open group lists its steps under it, indented on an elbow:
+heading on the spine with its title and a quiet "n of m" count. The open group lists its steps under it, indented on an elbow:
 a done step is a check, the step in progress is the live marker, the steps after
 it are dashed. A step is never a button: the path only moves forward. The
 rail is the only place that shows the position: the header and the coach mark
@@ -369,16 +368,15 @@ carry no dots and no "Step n of m" (the compact switcher, which replaces the
 rail on narrow windows, keeps its own). Get Goodboy closes the same spine.
 
 The path is sequential (`hints/groupAccessOf.ts`). A group is `done` once all its
-steps are, `locked` while a group before it that is not optional is not done,
-and `open` otherwise; Set up is optional, so it is always open and never holds
-the others back, and the first required group is open from the start. A locked
+steps are, `locked` while a group before it is not done, and `open` otherwise;
+the first group is open from the start. A locked
 group row is muted, disabled and has no hover state. A done group stays open to
 revisit, on its last frame with every step checked. A hash that names a locked
-group opens Set up. Get Goodboy is locked until every required group is done.
+group opens Bring your repositories. Get Goodboy is locked until every group is done.
 "Up next" (`data-up-next="ready"`, a solid ring and a soft glow for three cycles,
 then rest) appears only on the group after the open one, and only once the open
 group has every step done; before that nothing glows. Restart clears every
-group and goes back to the first step of Set up. The rail is hidden below the
+group and goes back to the first step of Bring your repositories. The rail is hidden below the
 `lg` breakpoint; `DemoCompactNav` then shows the group switcher (Next group is
 disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
@@ -404,9 +402,8 @@ Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
 it, `MockScene` mounts `demo/DemoDirector`, which waits for fonts and two
 painted frames, then builds the scene's timeline from the seeded store
-(`demo/director/demoTimelines.ts`: `chat-shell`, the `c07-auto-*` beats,
-`board-shell`, the artifact, diff and resolve beats; any other scene gets an
-empty one). A timeline rewinds the
+(`demo/director/demoTimelines.ts`: `story-direction`, `story-plan`,
+`story-review` and `demo-storage`; any other scene gets an empty one). A timeline rewinds the
 seeded state in `prepare` and replays it as cues `{ atMs, apply }` against the
 real `useAppStore`, on a playback clock that leaves pauses out. Assistant text
 marks the live text registry first, so it streams through the product's own
@@ -425,7 +422,7 @@ of the step before it was shown. The frame shown is the one named by the step in
 progress (`useDemoHints` returns `beatIndex`; `useBeatPlayer` only loads it), so
 a state earlier than one already reached is never shown again. Several steps can
 share a frame, and then the visitor's own actions in the app move the scene
-(Set up and Orchestrate are one frame each). Replay loads the group's frame in a
+(each of the first three groups is one frame, Review and ship has two). Replay loads the group's frame in a
 fresh frame and clears its progress. A pointer or key press inside
 a frame settles its cues at once (`settle` in `createSceneDirector.ts` applies
 every cue left and reports `complete`), so the scene never writes over the
@@ -454,70 +451,15 @@ accepts writes, answers a few list and status commands, and parks every other
 read until a scene handler can answer it, so a seeded store is never wiped and
 nothing throws. Commands that would leave the mock world (`git_push`, GitHub
 writes, links, editor and Finder opens, chat replies) show a calm Demo playground
-notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline's
-`setup` swaps the store actions a flow needs for local simulations that change
-the real store only as their simulated step lands: Auto start, approval, stop
-and retry (`autoTimeline.ts`),
-board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
-report and wireframe runs that always save a sample artifact (`installDemoWorld.ts`), review comment fixes from working to a
-drafted reply that stays ready to publish, and Keep the draft on an edited
-comment, which clears the change in place (`installResolveActions.ts`), and the
-limits handoff, where Claude hits its usage limit and Codex finishes the same
-brief once the visitor sends a message and the composer then shows the Codex
-model (`agentTimeline.ts`, `limitsHandoffCues.ts`). The Auto frame tells the next
-step of the same Harborline story: `autoStory.ts` fixes its goal (make every
-webhook consumer idempotent across payments-api and ledger-core, with a replay
-test), and `installAutoWorld.ts` replaces what the seeded run world says (two
-payments-api branches, `hl/event-guard` and `hl/replay-tests`, and `ledger-core`
-on `hl/event-guard`, no pull request yet, HBL-412 and its Sentry issue as the
-only links, no earlier presets). The saved preset carries the run it came from,
-so the Workflows studio lists 1 run (`installPresetActions.ts`). The limits
-popover shows the share of each window used (`policyRows.ts`). `castAutoScene.ts` retells the delegations (Planner, Implementer,
-Tester, a Ledger implementer on ledger-core and the Reviewer) and the replies
-and notes come from `autoStory.ts`, so the shared u24 and c07 seeds stay as
-they are. Work with an agent starts on a frame of its own, `demo-issue`
-(`scenes/demo/DemoIssueScene.tsx`, `demoIssueSeed.ts`): the real shell with the
-real Tasks studio open on HBL-412, fed by the Linear fixtures of the kickoff
-brand scene, with the story's own session left out so the row offers Start
-session. Pressing it runs the product's path: `pickIssue` fills the draft and
-`goodboy:new-session` opens the real New session page with HBL-412 picked and its
-description as the brief. Its timeline (`issueTimeline.ts`,
-`installIssueStart.ts`) swaps only `createSession` for a local one that adds the
-session with HBL-412 as its linked task and opens it; the agent start after it is
-the simulated spawn every directed frame has. The rest of the group continues on
-the `chat-shell` frame, where the same session is already linked to HBL-412. The
-last Orchestrate step, Save it as a workflow, has a frame of its
-own: `demo-run` (`scenes/demo/DemoRunScene.tsx`, `demoRunSeed.ts`) is the real
-run page of an orchestrated run of the same goal, finished, with the Planner,
-the payments-api Implementer and Tester and the ledger-core Implementer, because
-Save as preset belongs to the run page of a workflow and an Auto run has none.
-Its timeline (`presetTimeline.ts`, `installPresetActions.ts`) swaps
-`savePhaseTemplate` for a local save that adds the preset to the workspace and
-opens the Workflows studio a moment later, where it lands first in the list.
-Find and Review tell the same story on the frames they already have:
-`installStoryWorld.ts` casts the current session (the HBL-412 goal, its mounts,
-tasks and pull request), `installBoardStory.ts` adds the board card's open
-question, agent and transcript (`BOARD_STORY_SESSION` in `BoardScene.tsx`),
-`libraryTimeline.ts` casts the library session, and `installReviewStory.ts`
-renames the resolve session and sets its Linear and Sentry links. A step with a
-`progress` line shows it in the header between its press and its result (Add
-note, Start fix, the second press of the storage cleanup). The review step opens
-`brand-diff-unpushed` (the branch is not pushed yet: "Not pushed, 5 ahead" and
-Push 5 commits) and its comments are about this change, three of them (retry,
-idempotency key, event id logging; `director/resolveStory.ts`, patched in by
-`installReviewStory.ts`, with the diff the fix proposes). Push and publish
-first preview the approved fixes and drafted replies from the simulated store
-(`demoPublicationPreview.ts`) and then land: the replies are posted, the threads
-close and the panel says so. Review and ship
-ends in Settings, Storage: `demo-storage` (`scenes/demo/DemoStorageScene.tsx`)
-is the real Storage page with the three safe worktree folders of older merged
-Harborline branches (`hl/retry-credit-notes` 18 days and `hl/surface-retry-state`
-24 days on payments-api, `hl/refactor-rate-table` 31 days on ledger-core) and one
-folder in use; the story's own branches are not listed, as the pull request is
-only pushed. Its timeline
-(`storageTimeline.ts`, `installStorageActions.ts`) swaps `removeStorageFolders`
-for a timed local removal that drops the folders and sets the outcome notice, so
-the size in Storage falls. `&theme=dark`
+notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline's `setup` swaps the store actions a flow needs for local simulations that change the real store only as their simulated step lands. The demo tells one story, HBL-412 (retried webhooks credit an account twice), in four groups; the copy of every step is in `demo/hints/`, the story's own text in `scenes/story/storyContent.ts`.
+
+Bring your repositories is the real setup wizard (`onboarding`, `pick=folder`): the folder is already chosen, so the first press is Create. Set the direction is `story-direction` (`StorySessionScene.tsx`, `storyWorld.ts`): a Harborline workspace with payments-api, ledger-core and notify-relay and Linear connected, the wizard open on Pick up an issue with HBL-412 selected, and the real New session page behind it. `installStoryDirection.ts` prepares the draft (Orchestrated, Asks you After the plan) when the wizard hands the issue over, swaps `startSessionFromDraft` for a local one that opens one issue-linked session on the planner's question, and swaps `answerOpenQuestions` for `createStoryAnswer.ts`: the answer starts the handoff (`limitsHandoffCues.ts`: Claude hits its limit, the decision note records the move, Codex runs a read and returns the plan as an artifact), and the plan lands in the session once the reply ends (`registerStoryPlan.ts`).
+
+Guide the work is `story-plan`: the same session after the handoff (`applyStoryAnswer.ts` replays the cues at once). The plan drawer is the real one; `installPlanCommentPrefill.ts` puts the example comment in the editor, and `replayAnchorOf.ts` shows the Comment button of the replay-test paragraph by sending it the hover. `installStoryPlan.ts` swaps `sendTurn`: a comment to the planner runs `storyRevisionCues.ts` (a Codex reply with plan v2, which adds the simultaneous retries test, then the comment turns addressed through the send's `onSettled`), and `Approved plan v2.` runs `storyWorkCues.ts` (a Codex implementer in payments-api and a tester that reads and runs the checks in ledger-core without changing its files; `castAutoScene.ts` retells the delegations of the shared Auto seed). Nothing in the story opens the pull request: dana-r did, before the review checkpoint.
+
+Review and ship starts on `story-review` (`StoryReviewScene.tsx`, `storyReviewSeed.ts`): the real Branch page of the resolve seed cut down to one comment from nadia-p on a pull request dana-r opened, with the real fix drawer open on it. `installStoryReview.ts` runs the resolve simulation (`installResolveActions.ts`, `resolveFixCues.ts`), opens the comment once its fix and drafted reply exist and closes it on Apply fix, then answers `worktree_status` by phase (`storyReviewGit.ts`): three behind main, then rebased and diverged from origin. `rebaseBranch` records a run that reads Rebased on main with Origin still has the old copy and opens the real Force push confirmation (`openStoryPushConfirm.ts`); `pushBranch` lands the push, publishes the drafted reply and closes the thread. The last step is `demo-storage` (`scenes/demo/DemoStorageScene.tsx`): the real Storage page with the three safe folders of older archived Harborline branches and the story's own folder in use; `installStorageActions.ts` opens the removal confirmation and swaps `removeStorageFolders` for a timed local removal that drops the three folders and sets the outcome notice.
+
+A hint can name the controls its step does not want pressed (`isBlocked`): the guard stops a click, Enter or Space on them, so one press moves a step. A step with a `progress` line shows it in the header between its press and its result. The scene hides the Run started and Session started toasts of a directed frame, so a toast never sits under a coach mark. the size in Storage falls. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
@@ -694,9 +636,10 @@ streams a reply picked by `sampleScoutReply.ts` (the bug starter finds the
 retried webhook that posts a second credit and names HBL-412, the issue the
 next group starts from), and `OnboardingScene` shows that session in the app
 shell once the wizard closes. The Linear issues the wizard lists are Harborline's
-(HBL-412 first); Draft the brief, which the app answers with a session draft,
-starts the same sample Scout on the issue (`openSessionDraft` in
-`seedWizardScene`). A directed `OnboardingScene` reopens the wizard on its
+(HBL-412 first, from `scenes/story/storyIssues.ts`). In the demo, Draft the brief
+belongs to the `story-direction` frame, where the app answers it with the real
+New session page; the standalone `onboarding` scene still starts the same sample
+Scout on the issue (`openSessionDraft` in `seedWizardScene`). A directed `OnboardingScene` reopens the wizard on its
 first-session step when it is closed with no session (Skip, Set up later), so
 Set up never ends on an empty page. The reply runs on
 `sampleScoutRuns`: Stop cancels its timers and marks Scout stopped, so a
