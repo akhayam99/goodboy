@@ -47,8 +47,8 @@ Its last line says what a pick does.
 
 - Before the first step starts, the list reads **Change it to** and a pick applies to the same run, so nothing is spent twice. A plan with no step yet that becomes one agent is replaced by that agent. Follow and Adapt switch in place.
 - While the run is going, the popover is read-only: it says what the run is and why, and offers no other kind ("Fixed while the run is going. Stop it to restart as something else."). Two runs never work on the same branch at once.
-- When the run is stopped, failed or blocked, the list reads **Restart as**: a pick "Ends this run and starts a new one with what it did so far." The new run gets the same ask and what the first found, then the first run closes. If the new run fails to start, the popover stays open with the reason and the first run is left as it was.
-- Once the run is finished, the list reads **Start a new run as**: a pick "Starts a new run with the same goal." with what the first found; the finished run stays in the list.
+- When the run is stopped, failed or blocked, the list reads **Restart as**. A last line reads "Ends this run and starts a new one with what it did so far." The new run gets the same ask and what the first found. Then the first run closes. If the new run fails to start, the popover stays open with the reason and the first run is left as it was.
+- Once the run is finished, the list reads **Start a new run as**. A last line reads "Starts a new run with the same goal." and the new run gets what the first found. The finished run stays in the list.
 - The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
 ### The New session page
