@@ -46,8 +46,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Draft issue brief',
     copy: 'Draft the issue brief',
     instruction: 'Press **Draft the brief** to use HBL-412 as the task.',
-    result:
-      'New session opens with HBL-412 linked, its goal filled in and the prepared **Orchestrated** workflow selected.',
+    result: 'The brief is drafted from HBL-412, with the **Orchestrated** workflow ready.',
     beat: 0,
     anchor: DRAFT,
     focus: '[data-testid="wizard-column"]',
@@ -60,8 +59,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Start issue work',
     copy: 'Start work on this issue',
     instruction: 'Press **Start workflow** to begin work on HBL-412.',
-    result:
-      'One issue-linked session starts; Claude\'s planner asks, "What should a repeated webhook return?"',
+    result: "Work started. Claude's planner has one question before it writes the plan.",
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherControl,
@@ -76,7 +74,7 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Choose the recommended answer',
     instruction:
       'Select **Return the original credit** so a retry succeeds without another credit.',
-    result: 'That answer is selected; the question still waits for submission.',
+    result: 'You picked it: a repeated webhook returns the original credit.',
     beat: 0,
     isDimmed: false,
     isBlocked: isOtherControl,
@@ -91,9 +89,8 @@ export const DIRECTION_HINTS: ReadonlyArray<DemoHint> = [
     copy: 'Send your answer',
     progressCopy: 'Codex is taking over',
     instruction: 'Press **Answer** to let the planner continue with that decision.',
-    progress: 'Claude reached its limit. Codex carries on with the same task and writes the plan.',
-    result:
-      'Claude hits its limit on continuation; the chat records the move to Codex, which carries on planning the same task and returns the plan.',
+    progress: 'Claude hit its limit. Codex is carrying on with the same task and writing the plan.',
+    result: 'Claude hit its limit, so Codex picked up the same task and wrote the plan.',
     beat: 0,
     dwellMs: 4500,
     isDimmed: false,
