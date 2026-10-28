@@ -1,6 +1,6 @@
 [package]
 name = "goodboy-desktop"
-version = "0.28.0"
+version = "0.28.4"
 description = "Goodboy desktop app"
 authors = ["Amin Khayam"]
 license = "FSL-1.1-MIT"
@@ -37,7 +37,7 @@ tauri-plugin-log = "2"
 keyring = { version = "3", features = ["apple-native", "sync-secret-service", "crypto-rust", "windows-native"] }
 thiserror = "2"
 rusqlite = { version = "0.40", features = ["bundled", "hooks"] }
-dirs = "6"
+dirs = "7"
 regex = "1"
 sha2 = "0.10"
 base64 = "0.22"
@@ -51,7 +51,7 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
 snow = "0.9"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-rand = "0.9"
+rand = "0.10"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

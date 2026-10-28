@@ -3,26 +3,38 @@ import { AnchoredPopover, Button, Chip, Input, formatUsd, useDropdown } from '@g
 import { parseSpendLimit } from '../budget/parseSpendLimit';
 
 type Props = {
-  readonly usd: number;
+  readonly usd: number | null;
   readonly isFromSession: boolean;
   readonly isDisabled: boolean;
-  readonly onChange: (usd: number) => void;
+  readonly onChange: (usd: number | null) => void;
+};
+
+type TextParams = {
+  readonly usd: number | null;
 };
 
 const INPUT_ID = 'auto-tree-limit';
 
+const NO_LIMIT = 'No limit';
+
+const chipLabelOf = ({ usd }: TextParams): string =>
+  usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`;
+
+const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
+
 export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Props) => {
   const dropdown = useDropdown({ disabled: isDisabled, width: 'w-80' });
   const { open: isOpen, toggle, close } = dropdown;
-  const [draft, setDraft] = useState(String(usd));
+  const [draft, setDraft] = useState(amountTextOf({ usd }));
   const parsed = parseSpendLimit(draft);
+  const isInvalid = draft.trim() !== '' && parsed === null;
 
   if (isFromSession) {
     return (
       <Chip
         tone="neutral"
         kind="reference"
-        label={`Limit ${formatUsd(usd)}`}
+        label={chipLabelOf({ usd })}
         title="From the budget of this session"
       />
     );
@@ -39,12 +51,12 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
           tone="neutral"
           kind="reference"
           as="button"
-          label={`Limit ${formatUsd(usd)}`}
+          label={chipLabelOf({ usd })}
           expanded={isOpen}
           hasPopup="dialog"
           disabled={isDisabled}
           onClick={() => {
-            setDraft(String(usd));
+            setDraft(amountTextOf({ usd }));
             toggle();
           }}
         />
@@ -54,21 +66,31 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
         Limit for this Auto run
       </label>
       <p className="text-meta text-muted-foreground">
-        The most Auto and the agents it starts may spend. Auto stops starting work when it is spent.
-        Other Auto runs in this workspace start from the same limit.
+        The most Auto and the agents it starts may spend. Without a limit, Auto only stops when the
+        work is done. Other Auto runs in this workspace start from the same limit.
       </p>
       <Input
         id={INPUT_ID}
         type="text"
         inputMode="decimal"
         value={draft}
-        aria-invalid={parsed === null}
+        aria-invalid={isInvalid}
         onChange={(event) => setDraft(event.target.value)}
       />
-      {parsed === null ? (
-        <p className="text-meta text-danger">Enter an amount more than zero.</p>
-      ) : null}
-      <div className="flex justify-end">
+      {isInvalid ? <p className="text-meta text-danger">Enter an amount more than zero.</p> : null}
+      <div className="flex justify-end gap-2">
+        {usd === null ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onChange(null);
+              close();
+            }}
+          >
+            {NO_LIMIT}
+          </Button>
+        )}
         <Button
           size="sm"
           disabled={parsed === null}

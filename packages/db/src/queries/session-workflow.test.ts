@@ -24,9 +24,9 @@ import {
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunProviderPool,
   updateWorkflowRunSpendLimit,
-  updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './session-workflow';
+import { updateGeneratedWorkflowRunTitle } from './generated-workflow-run-title';
 import { getSessionById, listSessionsForWorkspace } from './session';
 
 const workspaceId = 'ws-1' as WorkspaceId;
@@ -717,13 +717,13 @@ describe('session_workflows trigger-mode queries', () => {
 
     it('stores a generated title while the user has not named the run', async () => {
       await attachRun();
-      const isWritten = await updateGeneratedWorkflowRunTitle({
+      const written = await updateGeneratedWorkflowRunTitle({
         db,
         workflowRunId: 'run-1' as WorkflowRunId,
         title: 'Fix login redirect loop',
       });
       const runs = await readRunsNewestFirst({ db });
-      expect(isWritten).toBe(true);
+      expect(written).toBe('Fix login redirect loop');
       expect(runs[0]!.title).toBe('Fix login redirect loop');
       expect(runs[0]!.titleUserEdited).toBeUndefined();
     });
@@ -735,13 +735,13 @@ describe('session_workflows trigger-mode queries', () => {
         workflowRunId: 'run-1' as WorkflowRunId,
         title: 'Login loop',
       });
-      const isWritten = await updateGeneratedWorkflowRunTitle({
+      const written = await updateGeneratedWorkflowRunTitle({
         db,
         workflowRunId: 'run-1' as WorkflowRunId,
         title: 'Fix login redirect loop',
       });
       const runs = await readRunsNewestFirst({ db });
-      expect(isWritten).toBe(false);
+      expect(written).toBeNull();
       expect(runs[0]!.title).toBe('Login loop');
       expect(runs[0]!.titleUserEdited).toBe(true);
     });

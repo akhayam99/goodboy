@@ -4,6 +4,7 @@ import type { PublicationOutcome } from '../../store/slices/resolve/publication/
 import { NAMES } from '../../shared/utils/names';
 import { openSettings } from '../settings/openSettings';
 import { closingThreadCount } from './closingThreadCount';
+import { pushFailureReason } from './pushFailureReason';
 
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count === 1 ? one : many}`;
@@ -110,6 +111,7 @@ export type PushResult = {
   readonly tone: PushResultTone;
   readonly sentence: string;
   readonly canSync?: boolean;
+  readonly failure?: { readonly output: string };
 };
 
 const shortSha = (sha: string): string => sha.slice(0, 7);
@@ -171,4 +173,4 @@ export const pushFixCount = ({
 export const PUSH_BUSY = 'Another push is already running for this pull request.';
 
 export const pushFailedSentence = ({ error }: { readonly error: string }): string =>
-  `Nothing was pushed: ${error}. The comments stay as they were.`;
+  `Nothing was pushed: ${pushFailureReason({ error })}. The comments stay as they were.`;

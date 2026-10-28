@@ -16,6 +16,8 @@ import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { rowQualifierOf } from './rowQualifier';
+import { RowFixDiffLink } from './RowFixDiffLink';
+import { RowFixLine } from './RowFixLine';
 import type { ReviewEntry } from './useReviewEntries';
 
 type RowSelection = {
@@ -135,8 +137,12 @@ export const ReviewListRow = ({
           >
             {title}
           </TruncatedText>
+          {entry.fix === null ? null : <RowFixLine fix={entry.fix} />}
         </span>
       </button>
+      {entry.fix?.kind === 'fixed' ? (
+        <RowFixDiffLink sessionId={sessionId} entry={entry} commit={entry.fix.commit} />
+      ) : null}
       {selection !== null && (
         <SelectionCheckbox
           checked={selection.isChecked}

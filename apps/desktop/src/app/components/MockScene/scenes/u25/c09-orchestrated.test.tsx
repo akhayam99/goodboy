@@ -165,11 +165,9 @@ describe('the c09 orchestrated scenes', () => {
     act(() => {
       within(tail()).getByRole('button', { name: 'Why this step' }).click();
     });
-    expect(
-      screen.getByText('The batching must be proven on 12,000 rows before any CSV work.', {
-        selector: '[data-orchestrated-reason]',
-      }),
-    ).toBeDefined();
+    within(nodeOf('[data-orchestrated-reason]')).getByText(
+      'The batching must be proven on 12,000 rows before any CSV work.',
+    );
     const pane = nodeOf('[data-run-step-pane]');
     expect(within(pane).queryByRole('button', { name: 'View transcript' })).toBeNull();
     fireEvent.click(within(pane).getByRole('button', { name: 'More actions' }));

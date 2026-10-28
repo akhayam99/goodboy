@@ -61,4 +61,19 @@ describe('where the Auto limit comes from', () => {
       source: '',
     });
   });
+
+  it('reads a workspace without an Auto limit as none, not as a made-up amount', () => {
+    expect(
+      autoLimitWordsOf({
+        facts: factsOf({ capUsd: null }),
+        sessionCapUsd: null,
+        workspaceLimitUsd: null,
+        workspaceName: 'Harborline',
+      }),
+    ).toEqual({
+      value: '$0.85 spent',
+      source: '',
+      chain: 'This Auto none, then session none, then Harborline none. Nothing stops this Auto.',
+    });
+  });
 });

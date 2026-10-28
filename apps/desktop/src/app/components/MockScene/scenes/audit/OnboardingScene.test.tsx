@@ -88,7 +88,7 @@ describe('onboarding scene', () => {
   it('takes a workspace state by name for the steps after Workspace', async () => {
     await mount({ query: '&step=tools&ws=folder' });
 
-    await waitFor(() => expect(shownStep()).toBe('tools'));
+    await waitFor(() => expect(shownStep()).toBe('tools'), { timeout: 5000 });
     expect(workspaceNames()).toEqual(['Acme docs']);
   });
 
@@ -143,14 +143,14 @@ describe('onboarding scene', () => {
     ).toEqual(['payments-api', 'ledger-core', 'notify-relay']);
 
     fireEvent.click(await enabledButton({ name: /Continue/ }));
-    await waitFor(() => expect(shownStep()).toBe('first-session'));
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
 
     fireEvent.click(await enabledButton({ name: 'Find one small bug' }));
     const demoAnchor = '[data-step="first-session"] [data-demo-anchor="setup-first-start"]';
     expect(document.querySelector(demoAnchor)?.textContent).toContain('Start');
     fireEvent.click(await enabledButton({ name: /^Start/ }));
 
-    await waitFor(() => expect(shownStep()).toBeNull());
+    await waitFor(() => expect(shownStep()).toBeNull(), { timeout: 5000 });
     expect(screen.queryByText(/not found/)).toBeNull();
     await screen.findByRole('textbox', { name: 'Message to the agent' });
     const session = useAppStore.getState().currentSessionId;

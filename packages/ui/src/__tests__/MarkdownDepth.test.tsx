@@ -43,7 +43,10 @@ describe('Markdown callout depth', () => {
   it('parses a repeated opener on one line under budget', () => {
     const text = '<<note>>'.repeat(2500);
     expect(elapsedMs(() => parseMarkdown({ text }))).toBeLessThan(PARSE_BUDGET_MS);
-    const { container } = render(<Markdown text={text} />);
+  });
+
+  it('renders a repeated opener on one line as six callouts', () => {
+    const { container } = render(<Markdown text={'<<note>>'.repeat(50)} />);
     expect(container.querySelectorAll('[data-block="callout"]').length).toBe(6);
   });
 

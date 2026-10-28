@@ -485,7 +485,8 @@ pub struct ExecResult {
     pub rows_affected: i64,
 }
 
-const ALLOWED_PRAGMAS: [&str; 11] = [
+const ALLOWED_PRAGMAS: [&str; 13] = [
+    "data_version",
     "foreign_keys",
     "foreign_key_check",
     "foreign_key_list",
@@ -494,6 +495,7 @@ const ALLOWED_PRAGMAS: [&str; 11] = [
     "integrity_check",
     "page_count",
     "page_size",
+    "quick_check",
     "table_info",
     "table_xinfo",
     "user_version",
@@ -1630,5 +1632,92 @@ mod tests {
         open_connection(&path).unwrap();
         assert_eq!(mode_of(&dir), 0o755);
         assert_eq!(mode_of(&path), 0o600);
+    }
+
+    const HYGIENE_PR_CACHE_DELETE: &str = "DELETE FROM github_pr_cache
+         WHERE NOT EXISTS (
+           SELECT 1
+           FROM session_worktrees sw
+           JOIN sessions s ON s.id = sw.session_id
+           WHERE sw.branch = github_pr_cache.branch
+             AND sw.repo_slug IS github_pr_cache.repo_slug
+             AND s.deleted_at IS NULL
+             AND s.archived_at IS NULL
+         )";
+
+    const PR_CACHE_INSERT: &str =
+        "INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+         VALUES ('feat/payout-export', 'harborline/ledger-core', '{\"number\": 7, \"state\": \"open\", \"title\": \"Payout export\"}', 1)";
+
+    fn search_doc_count(conn: &Connection) -> i64 {
+        conn.query_row("SELECT COUNT(*) FROM search_docs", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn webview_sql_allows_the_data_version_read_only_pragma() {
+        let mut conn = memory_db();
+        run_batch(&mut conn, "PRAGMA data_version").unwrap();
+        assert!(run_batch(&mut conn, "PRAGMA journal_mode = DELETE").is_err());
+    }
+
+    #[derive(serde::Deserialize)]
+    struct FixtureMigration {
+        version: u32,
+        sql: String,
+    }
+
+    #[test]
+    fn webview_sql_runs_every_migration_from_an_empty_database() {
+        let migrations: Vec<FixtureMigration> =
+            serde_json::from_str(include_str!("test_support/migrations.json")).unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
+        for migration in &migrations {
+            let result = run_batch(&mut conn, &migration.sql);
+            assert!(
+                result.is_ok(),
+                "m{} under the authorizer: {:?}",
+                migration.version,
+                result.err()
+            );
+        }
+        assert!(migrations.len() > 200);
+    }
+
+    #[test]
+    fn webview_sql_drops_a_column_through_the_quick_check_sqlite_runs() {
+        let mut conn = memory_db();
+        run_batch(
+            &mut conn,
+            "CREATE TABLE notes (id TEXT PRIMARY KEY, body TEXT, legacy TEXT); ALTER TABLE notes DROP COLUMN legacy;",
+        )
+        .unwrap();
+        run_batch(&mut conn, "PRAGMA quick_check").unwrap();
+    }
+
+    #[test]
+    fn webview_sql_writes_through_the_search_index_triggers() {
+        let mut conn = memory_db();
+        run_batch(&mut conn, PR_CACHE_INSERT).unwrap();
+        assert_eq!(search_doc_count(&conn), 1);
+        run_batch(&mut conn, HYGIENE_PR_CACHE_DELETE).unwrap();
+        assert_eq!(search_doc_count(&conn), 0);
+    }
+
+    #[test]
+    fn webview_sql_runs_the_boot_hygiene_on_a_database_already_at_the_latest_schema() {
+        let dir = scratch_dir("boot-retry");
+        let mut conn = open_connection(&dir.join("data.db")).unwrap();
+        crate::test_support::apply_migrated_schema(&conn);
+        for _ in 0..2 {
+            run_batch(&mut conn, PR_CACHE_INSERT).unwrap();
+            run_batch(&mut conn, HYGIENE_PR_CACHE_DELETE).unwrap();
+            let rows = run_webview_sql(&mut conn, |conn| {
+                select_rows(conn, "SELECT COUNT(*) AS n FROM sqlite_master", &[])
+            })
+            .unwrap();
+            assert_eq!(rows.len(), 1);
+        }
+        assert_eq!(search_doc_count(&conn), 0);
     }
 }

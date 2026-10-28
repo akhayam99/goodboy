@@ -175,7 +175,7 @@ describe('the triage actions', () => {
     const accept = spyAccept();
     await mount({ phase: 'mixed' });
 
-    fireEvent.click(within(drawer()).getByRole('button', { name: 'Apply 2 fixes' }));
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Apply and resolve 2' }));
 
     await waitFor(() => expect(accept).toHaveBeenCalledTimes(2));
   });

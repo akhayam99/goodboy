@@ -9,6 +9,7 @@ import type {
 import type { LaunchNoun } from './reviewLaunchCopy';
 import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
+import { dropLaunchedSelection } from './dropLaunchedSelection';
 import { launchThreadsOf } from './launchThreadsOf';
 import { startResolve } from './startResolve';
 
@@ -85,5 +86,6 @@ export const startBatch = async ({
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,
   });
+  dropLaunchedSelection({ state: getState(), sessionId, threadIds });
   return { batchId: batch.id, launchId, agentId };
 };

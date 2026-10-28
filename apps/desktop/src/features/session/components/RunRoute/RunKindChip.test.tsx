@@ -32,6 +32,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { RunKindChip } from './RunKindChip';
+import type { RunKindPhase } from './runKindPhaseOf';
 
 const WORKSPACE = aWorkspace({ name: 'Northwind' });
 const SESSION = aSession({ workspaceId: WORKSPACE.id, goal: 'Member pages' });
@@ -77,17 +78,17 @@ let useAppStore: StoryStore;
 type StoryState = ReturnType<StoryStore['getState']>;
 
 type RenderParams = {
-  readonly hasStarted: boolean;
+  readonly phase: RunKindPhase;
 };
 
-const openChip = ({ hasStarted }: RenderParams) => {
+const openChip = ({ phase }: RenderParams) => {
   render(
     <RunKindChip
       workspaceId={WORKSPACE.id}
       target={TARGET}
       route={ROUTE}
       changeCount={1}
-      hasStarted={hasStarted}
+      phase={phase}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: CHIP }));
@@ -97,9 +98,11 @@ const openChip = ({ hasStarted }: RenderParams) => {
 const seedWork = () => {
   const spawnAgent = vi.fn<StoryState['spawnAgent']>(async () => NEW_AGENT);
   const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => undefined);
+  const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => 'closed');
   useAppStore.setState({
     spawnAgent,
     stopWorkflowRunNow,
+    closeWorkflowRun,
     sessionPhaseRuns: {
       [SESSION.id]: [
         anAgent({
@@ -112,7 +115,7 @@ const seedWork = () => {
       ],
     },
   });
-  return { spawnAgent, stopWorkflowRunNow };
+  return { spawnAgent, stopWorkflowRunNow, closeWorkflowRun };
 };
 
 beforeAll(async () => {
@@ -144,7 +147,7 @@ afterEach(cleanup);
 
 describe('RunKindChip', () => {
   it('names the kind with the start page words and keeps why and closeness in its popover', () => {
-    const popover = openChip({ hasStarted: true });
+    const popover = openChip({ phase: 'finished' });
 
     expect(popover.querySelector('[data-run-kind-why]')?.textContent).toBe(
       'Why: Your ask matches the preset · 1 change',
@@ -160,21 +163,19 @@ describe('RunKindChip', () => {
         .getAllByRole('button')
         .map((row) => row.textContent),
     ).toEqual(['Workflow · Orchestrated', 'Agent · Auto agent']);
-    expect(popover.textContent).toContain(
-      'Starts a second run with the same goal. This one keeps going.',
-    );
+    expect(popover.textContent).toContain('Starts a new run with the same goal.');
     expect(popover.textContent).not.toContain('Start every run in this session');
   });
 
   it('says the change applies to this run before its first step', () => {
-    const popover = openChip({ hasStarted: false });
+    const popover = openChip({ phase: 'unstarted' });
 
     within(popover).getByRole('group', { name: 'Change it to' });
     expect(popover.textContent).toContain('Changes this run before its first step.');
   });
 
   it('switches to Follow it in place and keeps the run', async () => {
-    const popover = openChip({ hasStarted: true });
+    const popover = openChip({ phase: 'finished' });
 
     fireEvent.click(within(popover).getByRole('tab', { name: 'Follow it' }));
 
@@ -186,9 +187,9 @@ describe('RunKindChip', () => {
     expect(useAppStore.getState().sessions[0]?.workflowRuns[0]?.id).toBe(RUN_ID);
   });
 
-  it('starts a second run as the picked kind and leaves this one running', async () => {
+  it('starts a new run as the picked kind and leaves a finished run as it was', async () => {
     const engines = seedWork();
-    const popover = openChip({ hasStarted: true });
+    const popover = openChip({ phase: 'finished' });
 
     await act(async () => {
       fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
@@ -199,6 +200,7 @@ describe('RunKindChip', () => {
       'Six pages share one wrapper',
     );
     expect(engines.stopWorkflowRunNow).not.toHaveBeenCalled();
+    expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
     expect(useAppStore.getState().sessions[0]?.workflowRuns[0]?.rulesSnapshot?.route).toEqual(
       ROUTE,
     );
@@ -208,7 +210,7 @@ describe('RunKindChip', () => {
   it('keeps the popover open with the reason when the second run cannot start', async () => {
     const engines = seedWork();
     engines.spawnAgent.mockRejectedValueOnce(new Error('No provider is connected'));
-    const popover = openChip({ hasStarted: true });
+    const popover = openChip({ phase: 'ended' });
 
     await act(async () => {
       fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
@@ -218,5 +220,40 @@ describe('RunKindChip', () => {
       "Couldn't change the run: No provider is connected",
     );
     screen.getByRole('dialog', { name: 'Kind' });
+    expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it('is read-only while the run is going: what it is and why, no way to start another', () => {
+    const popover = openChip({ phase: 'live' });
+
+    expect(popover.querySelector('[data-run-kind-why]')?.textContent).toBe(
+      'Why: Your ask matches the preset · 1 change',
+    );
+    expect(within(popover).queryByRole('group')).toBeNull();
+    expect(within(popover).queryAllByRole('tab')).toHaveLength(0);
+    expect(within(popover).queryAllByRole('button')).toHaveLength(0);
+    expect(popover.textContent).toContain(
+      'Fixed while the run is going. Stop it to restart as something else.',
+    );
+  });
+
+  it('offers Restart as on a stopped run, and ends the run once the new one started', async () => {
+    const engines = seedWork();
+    const popover = openChip({ phase: 'ended' });
+
+    within(popover).getByRole('group', { name: 'Restart as' });
+    expect(popover.textContent).toContain(
+      'Ends this run and starts a new one with what it did so far.',
+    );
+    await act(async () => {
+      fireEvent.click(within(popover).getByRole('button', { name: 'Agent · Auto agent' }));
+    });
+
+    await waitFor(() => expect(engines.spawnAgent).toHaveBeenCalledTimes(1));
+    expect(engines.spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain(
+      'Six pages share one wrapper',
+    );
+    await waitFor(() => expect(engines.closeWorkflowRun).toHaveBeenCalledWith(SESSION.id, RUN_ID));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Kind' })).toBeNull());
   });
 });

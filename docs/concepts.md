@@ -1176,7 +1176,7 @@ the Fix comments drawer in its place, with **Back to the comment** at its top
 (the launch request carries `fromThreadId`). They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
-opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
+opens the panel for the fixable pick and `Apply and resolve 3` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
@@ -1271,7 +1271,7 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
   where each question has its recommended option chosen, `Drop` leaves one in
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
   launch (the same agent, no new one); `Retry N that couldn't fix` calls
-  `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
+  `retryCouldntFix` with every could-not-fix comment of the launch. `Apply and resolve N`
   in the selection bar (group labels carry no verbs) calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
   through the same accept as the single `Accept` (`acceptReviewItem`), skips

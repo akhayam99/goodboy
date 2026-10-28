@@ -16,6 +16,7 @@ import {
   acquireWorktreeWriter,
   releaseWorktreeWriter,
 } from '../../../../features/worktree/worktree';
+import { pushFailureReason } from '../../../../features/resolve/pushFailureReason';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { createDedupeByKey } from '../../../../shared/utils/createDedupeByKey';
 import { activeReviewSourceOf } from '../../review-source/activeReviewSource';
@@ -224,7 +225,7 @@ const publishOnce = async ({
                 kind: 'error',
                 severity: 'error',
                 title: 'Nothing was pushed',
-                body: `${error}. The conversations stayed as they were.`,
+                body: `${pushFailureReason({ error })}. The conversations stayed as they were.`,
                 sessionId,
                 action: { kind: 'retry-publication', sessionId },
               });

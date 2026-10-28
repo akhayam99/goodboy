@@ -10,6 +10,11 @@ import { entriesOfView } from '../../../../features/session/timeline/activityVie
 import { dayLabel } from '../../../../features/session/timeline/dayLabel';
 import { SESSION, SESSION_ID, seedActivityRunScene } from './activityRunSeed';
 
+vi.hoisted(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 23, 12, 0, 0));
+});
+
 const streamOfScene = ({ expandAll }: { readonly expandAll: boolean }) => {
   seedActivityRunScene();
   const state = useAppStore.getState();

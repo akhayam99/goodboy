@@ -5,5 +5,7 @@ export type AutoTreeCapParams = Readonly<{
   workspaceLimitUsd: number | null;
 }>;
 
-export const autoTreeCapUsd = ({ sessionCapUsd, workspaceLimitUsd }: AutoTreeCapParams): number =>
-  autoTreeLimitOf({ sessionCapUsd, workspaceLimitUsd }).usd;
+export const autoTreeCapUsd = ({
+  sessionCapUsd,
+  workspaceLimitUsd,
+}: AutoTreeCapParams): number | null => autoTreeLimitOf({ sessionCapUsd, workspaceLimitUsd }).usd;

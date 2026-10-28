@@ -10,6 +10,7 @@ import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { orchestratedChecklistOf } from '../../../workflows/orchestratedChecklistOf';
 import type { AgentKind } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
+import { OrchestratedNotes } from './OrchestratedNotes';
 import { OrchestratedPlanRow } from './OrchestratedPlanRow';
 
 type Props = {
@@ -102,6 +103,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
   if (
     agents.length === 0 &&
     checklist.left.length === 0 &&
+    checklist.notes.length === 0 &&
     skipped.length === 0 &&
     !checklist.isNextShown
   ) {
@@ -109,7 +111,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
   }
 
   return (
-    <section aria-label={ORCHESTRATED_COPY.checklist} className="flex min-w-0 flex-col">
+    <section aria-label={ORCHESTRATED_COPY.checklist} className="flex min-w-0 flex-col gap-2">
       {agents.length > 0 ? (
         <RunTree
           density="checklist"
@@ -136,6 +138,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
       ) : (
         trailing({ agentId: null, slotWidth: CHECKLIST_EMPTY_SLOT })
       )}
+      <OrchestratedNotes notes={checklist.notes} />
     </section>
   );
 };

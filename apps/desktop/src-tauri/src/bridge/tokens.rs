@@ -31,7 +31,7 @@ impl TokenStore {
 
     /// Mints a fresh 256-bit single-use token and stores it with a TTL.
     pub fn mint(&self) -> Vec<u8> {
-        use rand::RngCore;
+        use rand::Rng;
         let mut token = vec![0u8; 32];
         rand::rng().fill_bytes(&mut token);
         let mut guard = self.entries.lock().unwrap();

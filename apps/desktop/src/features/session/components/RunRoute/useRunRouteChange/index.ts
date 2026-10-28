@@ -13,6 +13,7 @@ type Params = {
 
 type ChooseParams = {
   readonly choice: RunRouteChoice;
+  readonly shouldEndRun?: boolean;
 };
 
 export type RunRouteChangeModel = Readonly<{
@@ -26,11 +27,11 @@ export const useRunRouteChange = ({ target }: Params): RunRouteChangeModel => {
   const [error, setError] = useState<string | null>(null);
 
   const choose = useCallback(
-    async ({ choice }: ChooseParams): Promise<RunRouteChange | null> => {
+    async ({ choice, shouldEndRun = false }: ChooseParams): Promise<RunRouteChange | null> => {
       setIsBusy(true);
       setError(null);
       try {
-        return await changeRunRoute({ target, choice });
+        return await changeRunRoute({ target, choice, shouldEndRun });
       } catch (cause) {
         setError(formatError(cause));
         return null;

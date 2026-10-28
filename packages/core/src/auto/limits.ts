@@ -4,8 +4,6 @@ export const AUTO_GATES = { isDelegationEnabled: true } as const;
 
 export const AUTO_TURN_CEILING_USD = 0.5;
 
-export const AUTO_DEFAULT_TREE_CAP_USD = 5;
-
 export const AUTO_DELEGATION_DEADLINE_MINUTES = 30;
 
 export const AUTO_CHILD_IDLE_MINUTES = 30;

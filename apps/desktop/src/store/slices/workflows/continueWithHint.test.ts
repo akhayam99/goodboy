@@ -105,6 +105,24 @@ describe('continueWithHint', () => {
     expect(orchestrateNextStep).toHaveBeenCalledWith(session.id, doneRun.id);
   });
 
+  it('queues the hint on a blocked run, clears the block, then lets the orchestrator decide', async () => {
+    const blockedRun = aWorkflowRun({
+      id: doneRun.id,
+      executionMode: 'dynamic',
+      orchestrationOutcome: 'blocked',
+      orchestrationReason: 'The ticket copy needs a named teammate.',
+    });
+    seed({ run: blockedRun });
+
+    await useAppStore.getState().continueWithHint(session.id, blockedRun.id, { text: HINT_TEXT });
+
+    expect(runNow()?.orchestratorHints?.map((hint) => hint.text)).toEqual([HINT_TEXT]);
+    expect(runNow()?.orchestratorHints?.[0]?.consumedAt).toBeUndefined();
+    expect(outcomeWrites).toEqual([null]);
+    expect(runNow()?.orchestrationOutcome).toBeUndefined();
+    expect(orchestrateNextStep).toHaveBeenCalledWith(session.id, blockedRun.id);
+  });
+
   it('takes the hint back and keeps the run complete when the reopen fails', async () => {
     outcomeFailures.push(new Error('database is locked'));
 

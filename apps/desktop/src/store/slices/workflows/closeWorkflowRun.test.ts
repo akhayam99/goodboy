@@ -171,8 +171,9 @@ describe('closeWorkflowRun', () => {
     const state = baseState();
     const { set, get } = harness(state);
 
-    await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
+    const outcome = await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
 
+    expect(outcome).toBe('closed');
     expect(state['cancelCurrentTurn']).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID);
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       RUNNING_ID,
@@ -249,8 +250,9 @@ describe('closeWorkflowRun', () => {
     updateStopSpy.mockRejectedValueOnce(new Error('disk full'));
     const { set, get } = harness(state);
 
-    await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
+    const outcome = await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
 
+    expect(outcome).toBe('failed');
     expect(state['emitNotification']).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't stop this run" }),
     );
