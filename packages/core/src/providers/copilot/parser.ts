@@ -206,6 +206,7 @@ const toolEndEvents = ({ data, ctx, at }: EventParams): ReadonlyArray<TurnEvent>
       output:
         valueAt({ value: data, path: ['result', 'content'] }) ??
         valueAt({ value: data, path: ['result', 'detailedContent'] }) ??
+        valueAt({ value: data, path: ['error', 'message'] }) ??
         null,
       isError: data['success'] === false,
       at,
@@ -280,8 +281,11 @@ const usageFrom = ({ checkpoint, premiumRequests }: UsageFromParams): ProviderUs
     cachedInputTokens,
     cacheCreationInputTokens,
     ...(lastInput !== undefined && { contextTokens: lastInput + lastOutput }),
-    ...(premium !== undefined && { premiumRequests: premium }),
-    ...(checkpoint.nanoAiu !== undefined && { nanoAiu: checkpoint.nanoAiu }),
+    ...(premium !== undefined && { premiumRequests: premium, sessionPremiumRequests: premium }),
+    ...(checkpoint.nanoAiu !== undefined && {
+      nanoAiu: checkpoint.nanoAiu,
+      sessionNanoAiu: checkpoint.nanoAiu,
+    }),
     estimatedCostUsd: 0,
   };
 };
