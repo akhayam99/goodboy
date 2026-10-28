@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, IsoDateTime, TurnState } from '@goodboy/types';
 import { aSession, anAgent, nextProviderRunId } from '@goodboy/types/testing';
+import type { SendTurnResult } from '../turn/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -27,7 +28,7 @@ const session = aSession();
 const blockedAgent: Agent = anAgent({ sessionId: session.id, status: 'blocked' });
 
 let useAppStore: StoryStore;
-const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+const sendTurn = vi.fn(async (): Promise<SendTurnResult> => ({ blockedOverBudget: false }));
 
 const STARTED_AT: IsoDateTime = JSON.parse('"2026-10-16T15:00:00.000Z"');
 
@@ -115,6 +116,26 @@ describe('answerBlockedStep', () => {
         .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
     ).rejects.toThrow('no longer waiting for an answer');
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('refuses the answer when the session budget stopped the turn, so the text stays with the caller', async () => {
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: true });
+
+    await expect(
+      useAppStore
+        .getState()
+        .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
+    ).rejects.toThrow('session budget is reached');
+  });
+
+  it('refuses the answer when another agent holds the folder, so the text stays with the caller', async () => {
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: false, isWriterLeaseDenied: true });
+
+    await expect(
+      useAppStore
+        .getState()
+        .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
+    ).rejects.toThrow('Another agent is writing');
   });
 
   it('passes a failed send to the caller to report and retry', async () => {

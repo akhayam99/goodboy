@@ -358,7 +358,7 @@ read top to bottom at the conversation measure:
   field with **Answer** as its primary action, **Restart step** as a secondary
   button and **Open agent chat** next to it. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
-  send that fails keeps the text and says so inline. A stopped step with
+  send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
   a restart stopped with **Resume**, "Run complete" on a
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after

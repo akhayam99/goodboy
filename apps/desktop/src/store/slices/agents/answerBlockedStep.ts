@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { composeStepBoundary } from '../turn/kickoff';
+import type { SendTurnResult } from '../turn/types';
 import type { GetFn } from './types';
 
 type Params = {
@@ -18,6 +19,21 @@ type PromptParams = {
 };
 
 const NOT_BLOCKED = 'This step is no longer waiting for an answer.';
+
+const OVER_BUDGET = 'The session budget is reached. Raise it, then send the answer again.';
+
+const WRITER_BUSY = 'Another agent is writing in this folder. Send the answer again in a moment.';
+
+type RefusalParams = {
+  readonly result: SendTurnResult;
+};
+
+const refusalOf = ({ result }: RefusalParams): string | null => {
+  if (result.blockedOverBudget) {
+    return OVER_BUDGET;
+  }
+  return result.isWriterLeaseDenied === true ? WRITER_BUSY : null;
+};
 
 const answerPrompt = ({ agentId, answer }: PromptParams): string =>
   [
@@ -41,11 +57,15 @@ export const answerBlockedStep = ({ get }: FactoryParams) => {
     if (agent === undefined || agent.status !== 'blocked' || isTurnLive) {
       throw new Error(NOT_BLOCKED);
     }
-    await get().sendTurn({
+    const result = await get().sendTurn({
       sessionId,
       agentId,
       content: answerPrompt({ agentId, answer }),
       origin: 'workflow',
     });
+    const refusal = refusalOf({ result });
+    if (refusal !== null) {
+      throw new Error(refusal);
+    }
   };
 };
