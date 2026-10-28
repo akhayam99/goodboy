@@ -22,10 +22,6 @@ export const groupAccessOf = ({ chapters, progress }: Params): Access => {
       groups.set(chapter.id, 'done');
       continue;
     }
-    if (chapter.isOptional === true) {
-      groups.set(chapter.id, 'open');
-      continue;
-    }
     groups.set(chapter.id, isBlocked ? 'locked' : 'open');
     isBlocked = true;
   }

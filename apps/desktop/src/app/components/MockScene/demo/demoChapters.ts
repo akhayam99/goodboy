@@ -1,9 +1,8 @@
 import type { DemoHint } from './hints/demoHintTypes';
-import { ONBOARDING_HINTS } from './hints/onboardingHints';
-import { AGENT_HINTS } from './hints/agentHints';
-import { ORCHESTRATE_HINTS } from './hints/orchestrateHints';
-import { FIND_HINTS } from './hints/findHints';
-import { REVIEW_HINTS } from './hints/reviewHints';
+import { BRING_HINTS } from './hints/bringHints';
+import { DIRECTION_HINTS } from './hints/directionHints';
+import { GUIDE_HINTS } from './hints/guideHints';
+import { SHIP_HINTS } from './hints/shipHints';
 import { DEMO_GROUPS, type DemoGroup } from './demoGroups';
 
 export type DemoBeat = {
@@ -19,40 +18,27 @@ export type DemoChapter = DemoGroup & {
 
 export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>] = [
   {
-    ...DEMO_GROUPS.setup,
-    hints: ONBOARDING_HINTS,
-    beats: [{ label: 'Set up', scene: 'onboarding', params: { step: 'welcome' } }],
-  },
-  {
-    ...DEMO_GROUPS.agent,
-    hints: AGENT_HINTS,
+    ...DEMO_GROUPS.bring,
+    hints: BRING_HINTS,
     beats: [
-      { label: 'Tasks', scene: 'demo-issue' },
-      { label: 'Agent session', scene: 'chat-shell' },
+      { label: 'Set up', scene: 'onboarding', params: { step: 'workspace', pick: 'folder' } },
     ],
   },
   {
-    ...DEMO_GROUPS.orchestrate,
-    hints: ORCHESTRATE_HINTS,
-    beats: [
-      { label: 'Auto run', scene: 'c07-auto-start' },
-      { label: 'Finished run', scene: 'demo-run' },
-    ],
+    ...DEMO_GROUPS.direction,
+    hints: DIRECTION_HINTS,
+    beats: [{ label: 'Issue session', scene: 'story-direction' }],
   },
   {
-    ...DEMO_GROUPS.find,
-    hints: FIND_HINTS,
-    beats: [
-      { label: 'Board', scene: 'board-shell' },
-      { label: 'Library', scene: 'artifacts-lens-shell' },
-    ],
+    ...DEMO_GROUPS.guide,
+    hints: GUIDE_HINTS,
+    beats: [{ label: 'Plan', scene: 'story-plan' }],
   },
   {
-    ...DEMO_GROUPS.review,
-    hints: REVIEW_HINTS,
+    ...DEMO_GROUPS.ship,
+    hints: SHIP_HINTS,
     beats: [
-      { label: 'Diff', scene: 'brand-diff-unpushed' },
-      { label: 'Review comments', scene: 'resolve-fix-ready' },
+      { label: 'Review comment', scene: 'story-review' },
       { label: 'Storage', scene: 'demo-storage' },
     ],
   },

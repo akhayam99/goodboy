@@ -1,7 +1,6 @@
 import { Download } from 'lucide-react';
-import { GithubIcon, ICON_SIZE } from '@goodboy/ui';
+import { ICON_SIZE } from '@goodboy/ui';
 import { BrandTile } from '../../../../shared/components/BrandTile';
-import { APP_VERSION } from '../../../../shared/lib/appVersion';
 import { DemoLink } from './DemoLink';
 import { DEMO_LINKS } from './demoLinks';
 
@@ -14,28 +13,15 @@ export const DemoClosing = () => (
     className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 rounded-lg border border-frame-edge bg-background px-6 shadow-md"
   >
     <BrandTile size={BRAND_TILE_PX} className="ring-1 ring-inset ring-frame-edge" />
-    <p className="max-w-md text-center text-heading text-foreground">
-      You took HBL-412 from a Linear issue to a pushed fix and a clean disk, with agents doing the
-      work and you making every call.
-    </p>
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      <DemoLink href={DEMO_LINKS.download} variant="primary" size="md">
-        <Download size={ICON_SIZE.control} />
-        Download for macOS
-      </DemoLink>
-      <DemoLink href={DEMO_LINKS.github} variant="secondary" size="md">
-        <GithubIcon size={ICON_SIZE.control} />
-        Star on GitHub
-      </DemoLink>
+    <div className="flex max-w-md flex-col items-center gap-2 text-center">
+      <h2 className="text-display text-foreground">Get Goodboy</h2>
+      <p className="text-heading text-muted-foreground">
+        Your issue, your decisions, a reviewed fix pushed.
+      </p>
     </div>
-    <a
-      href={DEMO_LINKS.changelog}
-      target="_blank"
-      rel="noreferrer"
-      aria-label={`What is new in ${APP_VERSION}`}
-      className="rounded-md text-meta text-muted-foreground hover:text-foreground"
-    >
-      Version {APP_VERSION}
-    </a>
+    <DemoLink href={DEMO_LINKS.download} variant="primary" size="md">
+      <Download size={ICON_SIZE.control} />
+      Download for macOS
+    </DemoLink>
   </section>
 );

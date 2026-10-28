@@ -170,8 +170,9 @@ import { BrandHistoryTrialScene } from '../scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from '../scenes/brand/LimitsScene';
 import { BrandCodexScene } from '../scenes/brand/CodexScene';
 import { BrandStorageScene } from '../scenes/brand/StorageScene';
-import { DemoIssueScene } from '../scenes/demo/DemoIssueScene';
-import { DemoRunScene } from '../scenes/demo/DemoRunScene';
+import { StoryDirectionScene } from '../scenes/story/StoryDirectionScene';
+import { StoryPlanScene } from '../scenes/story/StoryPlanScene';
+import { StoryReviewScene } from '../scenes/story/StoryReviewScene';
 import { DemoStorageScene } from '../scenes/demo/DemoStorageScene';
 import { BrandSecurityFindingsScene } from '../scenes/brand/SecurityFindingsScene';
 import { BrandToolsScene } from '../scenes/brand/ToolsScene';
@@ -494,8 +495,9 @@ export const BASE_SCENES = {
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,
-  'demo-issue': DemoIssueScene,
-  'demo-run': DemoRunScene,
+  'story-direction': StoryDirectionScene,
+  'story-plan': StoryPlanScene,
+  'story-review': StoryReviewScene,
   'demo-storage': DemoStorageScene,
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,

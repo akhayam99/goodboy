@@ -1,4 +1,4 @@
-import { brandId, type AgentId, type ProviderRunId, type SessionId } from '@goodboy/types';
+import { type AgentId, type ProviderRunId, type SessionId } from '@goodboy/types';
 import { fallbackNoticeMessage } from '../../../../../store/slices/turn/fallbackNoticeMessage';
 import { BRAND_MODELS } from '../../scenes/brand/canon';
 import type { DemoCue } from './directorTypes';
@@ -10,35 +10,42 @@ import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
 
-const SUITE_COMMAND = 'pnpm --filter payments-api test webhooks';
 const CODEX = BRAND_MODELS.implement;
 const CLAUDE = BRAND_MODELS.scout;
+
+const NOTICE_AT_MS = 1500;
+const TOOL_START_AT_MS = 2400;
+const TOOL_END_AT_MS = 3900;
+const REPLY_AT_MS = 4600;
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly text: string;
   readonly reply: string;
+  readonly command: string;
+  readonly output: string;
+  readonly artifact: string;
+  readonly claudeRun: ProviderRunId;
+  readonly codexRun: ProviderRunId;
+  readonly onDone: DemoCue['apply'];
 };
-
-type RunParams = {
-  readonly label: string;
-};
-
-const runOf = ({ label }: RunParams): ProviderRunId =>
-  brandId<ProviderRunId>({ value: `demo-limits-${label}-${crypto.randomUUID()}` });
 
 export const limitsHandoffCues = ({
   sessionId,
   agentId,
   text,
   reply,
+  command,
+  output,
+  artifact,
+  claudeRun,
+  codexRun,
+  onDone,
 }: Params): ReadonlyArray<DemoCue> => {
-  const claudeRun = runOf({ label: 'claude' });
-  const codexRun = runOf({ label: 'codex' });
-  const toolUseId = `demo-limits-suite-${codexRun}`;
-  const replyAt = 4600;
-  const doneAt = textCuesEndMs({ atMs: replyAt, text: reply }) + 500;
+  const toolUseId = `demo-limits-tool-${codexRun}`;
+  const replyEndAt = textCuesEndMs({ atMs: REPLY_AT_MS, text: reply });
+  const doneAt = replyEndAt + 700;
   return [
     {
       atMs: 0,
@@ -61,7 +68,7 @@ export const limitsHandoffCues = ({
       },
     },
     {
-      atMs: 1500,
+      atMs: NOTICE_AT_MS,
       apply: ({ store, at }) => {
         appendTurnEvents({
           store,
@@ -89,7 +96,7 @@ export const limitsHandoffCues = ({
       },
     },
     eventCue({
-      atMs: 2400,
+      atMs: TOOL_START_AT_MS,
       agentId,
       events: ({ at }) => [
         {
@@ -97,31 +104,32 @@ export const limitsHandoffCues = ({
           runId: codexRun,
           toolUseId,
           toolName: 'Bash',
-          input: { command: SUITE_COMMAND },
+          input: { command },
           at,
         },
       ],
     }),
     eventCue({
-      atMs: 3900,
+      atMs: TOOL_END_AT_MS,
       agentId,
       events: ({ at }) => [
-        {
-          kind: 'tool_call_end',
-          runId: codexRun,
-          toolUseId,
-          output: 'Test Files  4 passed (4)\n     Tests  31 passed (31)',
-          isError: false,
-          at,
-        },
+        { kind: 'tool_call_end', runId: codexRun, toolUseId, output, isError: false, at },
       ],
     }),
-    ...textCues({ atMs: replyAt, agentId, runId: codexRun, text: reply }),
+    ...textCues({ atMs: REPLY_AT_MS, agentId, runId: codexRun, text: reply }),
+    eventCue({
+      atMs: replyEndAt,
+      agentId,
+      events: ({ at }) => [
+        { kind: 'assistant_text', runId: codexRun, delta: `\n\n${artifact}`, at },
+      ],
+    }),
     {
       atMs: doneAt,
-      apply: ({ store, at }) => {
+      apply: ({ store, at, hint }) => {
         appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId: codexRun, at }] });
         finishAgentTurn({ store, sessionId, agentId, at, isViewed: true });
+        onDone({ store, at, hint });
       },
     },
   ];

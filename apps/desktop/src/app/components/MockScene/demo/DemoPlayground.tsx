@@ -47,7 +47,7 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 
 const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.id), CLOSING_ID];
 
-const CLOSING_INSTRUCTION = 'Download Goodboy for macOS, or star it on GitHub.';
+const CLOSING_INSTRUCTION = "Press **Download for macOS** to open Goodboy's download destination.";
 
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -206,7 +206,6 @@ export const DemoPlayground = () => {
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 lg:pl-2 lg:pr-5">
           <DemoChapterHeader
             title={isClosing ? CLOSING_TITLE : chapter.title}
-            isOptional={!isClosing && chapter.isOptional === true}
             instruction={
               isClosing
                 ? CLOSING_INSTRUCTION

@@ -11,6 +11,10 @@ type SettleParams = {
   readonly root: Document;
 };
 
+export type BlockParams = {
+  readonly target: Element;
+};
+
 export type HintCheck = (probe: HintProbe) => boolean;
 
 type HintAnchor = string | ((probe: HintProbe) => string | null);
@@ -33,6 +37,7 @@ export type DemoHint = {
   readonly dwellMs?: number;
   readonly isDimmed?: boolean;
   readonly settle?: (params: SettleParams) => void;
+  readonly isBlocked?: (params: BlockParams) => boolean;
   readonly revealWhen: HintCheck;
   readonly doneWhen: HintCheck;
 };

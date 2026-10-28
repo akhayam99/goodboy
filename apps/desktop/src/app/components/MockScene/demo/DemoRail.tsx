@@ -101,7 +101,6 @@ export const DemoRail = ({
                   rail={rowRail}
                   railWidth={rail.width}
                   access={access.groups.get(chapter.id) ?? 'locked'}
-                  isOptional={chapter.isOptional === true}
                   isActive={isActive}
                   isUpNext={chapter.id === upNextId}
                   tally={tallyOf({ chapter })}

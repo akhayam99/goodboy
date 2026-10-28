@@ -21,7 +21,7 @@ import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
 import { installDemoWorld } from './installDemoWorld';
-import { STORY_FIX_DIFF } from './resolveStory';
+import { STORY_REVIEW } from '../../scenes/story/storyContent';
 import { addDemoOverlay } from './addDemoOverlay';
 import { demoPublicationPreview } from './demoPublicationPreview';
 
@@ -188,8 +188,8 @@ type PatchItemParams = {
 };
 
 const RESOLVE_ANSWERS: Readonly<Record<string, unknown>> = {
-  worktree_diff: STORY_FIX_DIFF,
-  worktree_diff_range: STORY_FIX_DIFF,
+  worktree_diff: STORY_REVIEW.diff,
+  worktree_diff_range: STORY_REVIEW.diff,
 };
 
 export const installResolveActions = ({ store }: Params): void => {

@@ -1,6 +1,7 @@
 import type { AppStore } from '../../../../../store/store';
 import type { StorageRemovalSummary } from '../../../../../store/slices/storage/types';
 import { demoRuns } from './demoRunRegistry';
+import { openStorageRemoveConfirm } from './openStorageRemoveConfirm';
 import type { DirectorStore } from './directorTypes';
 
 type Params = {
@@ -65,4 +66,5 @@ export const installStorageActions = ({ store }: Params): void => {
       });
     });
   store.setState({ removeStorageFolders });
+  openStorageRemoveConfirm();
 };

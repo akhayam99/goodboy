@@ -429,6 +429,15 @@ export const createHintEngine = ({
       return;
     }
     const { target } = event;
+    const isActivation =
+      event.type === 'click' ||
+      (event instanceof KeyboardEvent && (event.key === 'Enter' || event.key === ' '));
+    if (isActivation && target instanceof Element && active.isBlocked?.({ target }) === true) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onReport({ report: { ...envelope(), type: 'blocked', hintId: active.id } });
+      return;
+    }
     const skipping = hints
       .slice(hints.indexOf(active) + 1)
       .map((hint) => anchorOf({ hint, probe: probeOf({ hint, state }) }))

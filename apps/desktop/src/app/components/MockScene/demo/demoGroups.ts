@@ -2,34 +2,27 @@ export type DemoGroup = {
   readonly id: string;
   readonly title: string;
   readonly line: string;
-  readonly isOptional?: boolean;
 };
 
 export const DEMO_GROUPS = {
-  setup: {
-    id: 'setup',
-    title: 'Set up',
-    line: 'Prepare your agents and a workspace, then start a first task',
-    isOptional: true,
+  bring: {
+    id: 'bring',
+    title: 'Bring your repositories',
+    line: 'Put the code and its issue tracker together',
   },
-  agent: {
-    id: 'agent',
-    title: 'Work with an agent',
-    line: 'Start from an issue, answer a question and continue with another model',
+  direction: {
+    id: 'direction',
+    title: 'Set the direction',
+    line: 'Start from the issue and answer the decision that blocks work',
   },
-  orchestrate: {
-    id: 'orchestrate',
-    title: 'Orchestrate',
-    line: 'Plan with Auto, follow its helpers and save the run as a workflow',
+  guide: {
+    id: 'guide',
+    title: 'Guide the work',
+    line: 'Improve one plan before agents implement it',
   },
-  find: {
-    id: 'find',
-    title: 'Find work and results',
-    line: 'Open a session that needs you and find its saved report',
-  },
-  review: {
-    id: 'review',
+  ship: {
+    id: 'ship',
     title: 'Review and ship',
-    line: 'Inspect a change, prepare a review fix to publish and free the old folders',
+    line: "Accept a reviewer's requested change, publish it and reclaim space",
   },
 } as const satisfies Readonly<Record<string, DemoGroup>>;

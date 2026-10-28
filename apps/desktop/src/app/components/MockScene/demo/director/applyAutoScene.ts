@@ -1,32 +1,25 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import {
-  AUTO_PLAN,
-  AUTO_PLAN_STORED,
-  AUTO_SESSION,
   IMPLEMENTER_ID,
   TESTER_ID,
   autoSceneOf,
+  type AutoSceneData,
   type AutoSceneState,
 } from '../../scenes/u24/autoSceneSeed';
-import { AUTO_STORY, LEDGER_ID } from './autoStory';
+import { STORY_PLAN } from '../../scenes/story/storyContent';
+import { STORY_SESSION_ID } from '../../scenes/story/storyWorld';
 import { castAutoScene } from './castAutoScene';
 import type { DirectorStore } from './directorTypes';
 
 const SCENE_TURNS = 4;
-
-const STORY_PLAN = { ...AUTO_PLAN, title: AUTO_STORY.planTitle, bodyMd: AUTO_STORY.planBody };
-const STORY_PLAN_STORED = {
-  ...AUTO_PLAN_STORED,
-  title: AUTO_STORY.planTitle,
-  sourceText: AUTO_STORY.planBody,
-};
 
 type Params = {
   readonly store: DirectorStore;
   readonly state: AutoSceneState;
   readonly at: IsoDateTime;
   readonly implementerRunId: ProviderRunId;
+  readonly revision: 1 | 2;
 };
 
 type TurnParams = {
@@ -52,41 +45,59 @@ const settledResultOf = ({ result }: ResultParams): unknown => {
   return { ...result, verified };
 };
 
-export const applyAutoScene = ({ store, state, at, implementerRunId }: Params): void => {
+type SceneParams = {
+  readonly scene: AutoSceneData;
+  readonly revision: 1 | 2;
+};
+
+export const storySceneViewOf = ({ scene, revision }: SceneParams): AutoSceneData['view'] => ({
+  ...scene.view,
+  tree: { ...scene.view.tree, turnsUsed: SCENE_TURNS },
+  artifacts: scene.view.artifacts.map((row) => ({
+    ...row,
+    title: STORY_PLAN.title,
+    revision,
+    artifact: {
+      ...row.artifact,
+      approvedRevision: row.artifact.approvedRevision === null ? null : revision,
+    },
+  })),
+  delegations: scene.view.delegations.map((delegation) => ({
+    ...delegation,
+    result: settledResultOf({ result: delegation.result }),
+  })),
+});
+
+export const applyAutoScene = ({ store, state, at, implementerRunId, revision }: Params): void => {
   const scene = castAutoScene({ scene: autoSceneOf({ state }) });
-  const sessionId = AUTO_SESSION.id;
   const isImplementing = scene.agents.some(
     (agent) => agent.id === IMPLEMENTER_ID && agent.status === 'running',
   );
   const turn = helperTurnOf({ isRunning: isImplementing, at, runId: implementerRunId });
   store.setState((current) => ({
-    sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: scene.agents },
+    sessionPhaseRuns: {
+      ...current.sessionPhaseRuns,
+      [STORY_SESSION_ID]: scene.agents.map((agent) => {
+        const kept = (current.sessionPhaseRuns[STORY_SESSION_ID] ?? []).find(
+          (entry) => entry.id === agent.id,
+        );
+        return kept?.providerOverride === undefined
+          ? agent
+          : {
+              ...agent,
+              providerOverride: kept.providerOverride,
+              modelOverride: kept.modelOverride,
+            };
+      }),
+    },
     autoTreeViews: {
       ...current.autoTreeViews,
-      [sessionId]: [
-        {
-          ...scene.view,
-          tree: { ...scene.view.tree, turnsUsed: SCENE_TURNS },
-          delegations: scene.view.delegations.map((delegation) => ({
-            ...delegation,
-            result: settledResultOf({ result: delegation.result }),
-          })),
-        },
-      ],
+      [STORY_SESSION_ID]: [storySceneViewOf({ scene, revision })],
     },
     agentTurnState: {
       ...current.agentTurnState,
       [IMPLEMENTER_ID]: turn,
       [TESTER_ID]: turn,
-      [LEDGER_ID]: turn,
-    },
-    sessionPlans: {
-      ...current.sessionPlans,
-      [sessionId]: scene.hasPlanArtifact ? [STORY_PLAN] : [],
-    },
-    sessionArtifacts: {
-      ...current.sessionArtifacts,
-      [sessionId]: scene.hasPlanArtifact ? [STORY_PLAN_STORED] : [],
     },
   }));
 };

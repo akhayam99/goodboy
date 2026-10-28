@@ -50,9 +50,9 @@ const STORY_FOLDER_SPECS: ReadonlyArray<FolderSpec> = [
   },
   {
     projectId: STORY_PROJECTS.payments,
-    branch: 'hl/per-tenant-limits',
-    slug: 'per-tenant-limits-a1d',
-    goal: 'Per-tenant limits on the public API',
+    branch: 'hl/fix-duplicate-credit',
+    slug: 'fix-duplicate-credit-a1d',
+    goal: 'Retried webhooks credit an account twice',
     days: 0,
     sizeBytes: 1.2 * GB,
     isInUse: true,
@@ -114,14 +114,5 @@ export const seedDemoStorage = (): void => {
   useAppStore.setState((state) => ({
     storageFolders: STORY_FOLDER_SPECS.map((spec, index) => folderOf({ spec, index, nowMs })),
     settings: { ...state.settings, [STORAGE_SUGGEST_AFTER_KEY]: '7' },
-    folderHistorySizes: {
-      [STORY_PROJECTS.runbooks]: {
-        usedBytes: 18 * MB,
-        capBytes: 1024 * MB,
-        usedShare: 18 / 1024,
-        versionCount: 12,
-      },
-    },
-    loadFolderHistorySize: async () => undefined,
   }));
 };

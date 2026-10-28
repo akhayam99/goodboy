@@ -16,7 +16,7 @@ import {
   type ProviderStatus,
   type ProviderStatuses,
 } from '../../../../../features/providers/providers';
-import type { LinearIssue } from '../../../../../features/integrations/linear/client';
+import { storyIssuesOf } from '../story/storyIssues';
 import { SETTING_NEW_PROJECT_PARENT } from '../../../../../features/settings/settings';
 import { IDLE_CONNECT, INITIAL_CONNECT_MAP } from '../../../../../store/slices/providers/types';
 import { useAppStore } from '../../../../../store';
@@ -124,28 +124,6 @@ const LINEAR_BINDING: IntegrationBinding = {
   createdAt: NOW,
   updatedAt: NOW,
 };
-
-type IssueParams = {
-  readonly id: string;
-  readonly title: string;
-};
-
-const linearIssue = ({ id, title }: IssueParams): LinearIssue => ({
-  id: `mock-linear-${id}`,
-  identifier: id,
-  title,
-  description: null,
-  url: `https://example.invalid/linear/${id}`,
-  state: { name: 'Todo', type: 'unstarted' },
-  team: { key: 'HBL' },
-  updatedAt: NOW,
-});
-
-const LINEAR_ISSUES: ReadonlyArray<LinearIssue> = [
-  linearIssue({ id: 'HBL-412', title: 'Retried webhooks post a second credit' }),
-  linearIssue({ id: 'HBL-409', title: 'Settlement export rounds a cent off' }),
-  linearIssue({ id: 'HBL-397', title: 'Rotate the processor signing secret' }),
-];
 
 type StatusParams = {
   readonly id: string;
@@ -258,7 +236,7 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
         case 'worktree_remote_url':
           return 'git@github.com:harborline/payments-api.git';
         case 'linear_fetch_assigned_issues':
-          return LINEAR_ISSUES;
+          return storyIssuesOf();
         default:
           return setupSceneAnswer({ command, payload });
       }

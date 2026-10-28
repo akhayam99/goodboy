@@ -1,12 +1,12 @@
 import type { AutoDelegation } from '@goodboy/db';
-import { brandId, type Agent, type AutoDelegationId } from '@goodboy/types';
+import type { Agent } from '@goodboy/types';
 import {
   IMPLEMENTER_ID,
   PLANNER_ID,
   TESTER_ID,
   type AutoSceneData,
 } from '../../scenes/u24/autoSceneSeed';
-import { AUTO_STORY, LEDGER_ID } from './autoStory';
+import { AUTO_STORY } from './autoStory';
 
 type Params = {
   readonly scene: AutoSceneData;
@@ -59,24 +59,6 @@ const retold = ({ delegation, task, summary, files }: TaskParams): AutoDelegatio
   result: resultOf({ delegation, summary, files }),
 });
 
-type LedgerParams = {
-  readonly tester: AutoDelegation;
-};
-
-const ledgerOf = ({ tester }: LedgerParams): AutoDelegation => ({
-  ...retold({
-    delegation: tester,
-    task: AUTO_STORY.ledgerTask,
-    summary: AUTO_STORY.ledgerSummary,
-    files: ['src/postings/postEntry.ts'],
-  }),
-  id: brandId<AutoDelegationId>({ value: 'mock-auto-delegation-ledger' }),
-  childAgentId: LEDGER_ID,
-  role: 'implementer',
-  slot: 1,
-  target: { mountName: 'ledger-core' },
-});
-
 type DelegationsParams = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
 };
@@ -88,49 +70,53 @@ const delegationsOf = ({ delegations }: DelegationsParams) =>
     }
     if (delegation.childAgentId === IMPLEMENTER_ID) {
       return [
-        retold({
-          delegation,
-          task: AUTO_STORY.implementerTask,
-          summary: AUTO_STORY.implementerSummary,
-          files: ['src/webhooks/eventGuard.ts', 'src/webhooks/applyWebhook.ts'],
-        }),
+        {
+          ...retold({
+            delegation,
+            task: AUTO_STORY.implementerTask,
+            summary: AUTO_STORY.implementerSummary,
+            files: ['src/webhooks/eventGuard.ts', 'src/webhooks/applyWebhook.ts'],
+          }),
+          routing: { ...delegation.routing, provider: 'codex', model: 'gpt-5.6-sol' },
+        },
       ];
     }
     if (delegation.childAgentId === TESTER_ID) {
-      const tester = retold({
-        delegation: {
-          ...delegation,
-          state: delegation.state === 'accepted' ? 'running' : delegation.state,
-        },
-        task: AUTO_STORY.testerTask,
-        summary: AUTO_STORY.testerSummary,
-      });
-      return [tester, ledgerOf({ tester })];
-    }
-    if (delegation.role === 'reviewer') {
-      return [retold({ delegation, task: AUTO_STORY.reviewerTask })];
-    }
-    return [delegation];
-  });
-
-type AgentsParams = {
-  readonly agents: ReadonlyArray<Agent>;
-};
-
-const agentsOf = ({ agents }: AgentsParams) =>
-  agents.flatMap((agent): ReadonlyArray<Agent> => {
-    if (agent.id === TESTER_ID) {
-      const tester: Agent = agent.status === 'pending' ? { ...agent, status: 'running' } : agent;
       return [
-        tester,
-        { ...tester, id: LEDGER_ID, name: 'Ledger implementer', kind: 'implementer' },
+        {
+          ...retold({
+            delegation: {
+              ...delegation,
+              state: delegation.state === 'accepted' ? 'running' : delegation.state,
+            },
+            task: AUTO_STORY.testerTask,
+            summary: AUTO_STORY.testerSummary,
+            files: [],
+          }),
+          target: { mountName: 'ledger-core' },
+        },
       ];
     }
-    return [agent];
+    if (delegation.role === 'reviewer') {
+      return [];
+    }
+    return [delegation];
   });
 
 export const castAutoScene = ({ scene }: Params): AutoSceneData => ({
   ...scene,
   view: { ...scene.view, delegations: delegationsOf({ delegations: scene.view.delegations }) },
-  agents: agentsOf({ agents: scene.agents }),
+  agents: scene.agents.flatMap((agent): ReadonlyArray<Agent> => {
+    if (agent.kind === 'reviewer') {
+      return [];
+    }
+    if (agent.id === PLANNER_ID) {
+      const { parentAgentId: _parent, ...planner } = agent;
+      return [planner];
+    }
+    if (agent.id === IMPLEMENTER_ID) {
+      return [{ ...agent, providerOverride: 'codex', modelOverride: 'gpt-5.6-sol' }];
+    }
+    return [agent];
+  }),
 });

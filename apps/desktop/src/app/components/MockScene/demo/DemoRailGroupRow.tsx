@@ -14,7 +14,6 @@ type Props = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly access: GroupAccess;
-  readonly isOptional?: boolean;
   readonly isActive: boolean;
   readonly isUpNext: boolean;
   readonly tally?: HintTally;
@@ -39,7 +38,6 @@ export const DemoRailGroupRow = ({
   rail,
   railWidth,
   access,
-  isOptional = false,
   isActive,
   isUpNext,
   tally,
@@ -93,7 +91,6 @@ export const DemoRailGroupRow = ({
         >
           {title}
         </span>
-        {isOptional ? <span className="text-meta text-faint-foreground">Optional</span> : null}
       </span>
       {isUpNext ? <span className="shrink-0 text-meta text-primary">Up next</span> : null}
       {isLocked ? (

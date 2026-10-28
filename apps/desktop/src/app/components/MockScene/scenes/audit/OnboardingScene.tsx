@@ -66,6 +66,7 @@ const readSetup = (): SceneSetup => {
 
 const OPEN_DELAY_MS = 100;
 const REOPEN_MS = 1200;
+const PICK_POLL_MS = 80;
 
 export const OnboardingScene = () => {
   const [setup] = useState(readSetup);
@@ -89,6 +90,23 @@ export const OnboardingScene = () => {
     }, OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isReady, setup]);
+
+  useEffect(() => {
+    if (!isReady || sceneParam({ key: 'pick' }) !== 'folder') {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const choose = document.querySelector<HTMLElement>(
+        '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]',
+      );
+      if (choose === null) {
+        return;
+      }
+      window.clearInterval(timer);
+      choose.click();
+    }, PICK_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [isReady]);
 
   useEffect(() => {
     if (!isReady || !isDirectedScene()) {

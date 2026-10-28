@@ -348,8 +348,6 @@ debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
 demo
-demo-issue
-demo-run
 demo-storage
 design-comments
 design-controls-scale
@@ -807,6 +805,9 @@ step-rows-activity
 step-rows-runs
 steprows-models
 storage-other-tools
+story-direction
+story-plan
+story-review
 summarizer-failed
 switcher-pinned
 task-links
