@@ -128,7 +128,12 @@ describe('rebasing and pushing the reviewed fix', () => {
       mountId: STORY_REVIEW_MOUNT_ID,
     });
     expect(outcome).toBe('rebased');
-    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]?.origin).toBe('rebase');
+    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]).toMatchObject({
+      origin: 'rebase',
+      phase: 'applied',
+      stop: null,
+    });
+    expect(store.getState().historyRuns[STORY_REVIEW_MOUNT_ID]?.rebaseConflict).toBeUndefined();
     expect(entryOf()?.thread.state).not.toBe('closed');
   });
 

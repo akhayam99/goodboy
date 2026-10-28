@@ -2,7 +2,9 @@ const POLL_MS = 150;
 const GIVE_UP_MS = 4000;
 
 const pushButtonOf = (): HTMLButtonElement | undefined =>
-  [...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Push');
+  [...document.querySelectorAll('button')].find(
+    (button) => button.textContent?.trim().startsWith('Force push') === true,
+  );
 
 export const openStoryPushConfirm = (): void => {
   const startedAt = Date.now();

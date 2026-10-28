@@ -10,6 +10,7 @@ type StatusParams = {
 
 const HEAD = 'a41c9e2b7d3';
 const REBASED_HEAD = 'c7d20f4e915';
+const BACKUP_REF = 'refs/goodboy/backup/hl-fix-duplicate-credit/1';
 
 export const storyStatusOf = ({ phase }: StatusParams): WorktreeStatus => ({
   branch: GUARD_BRANCH,
@@ -34,14 +35,14 @@ export const storyRebasedRunOf = ({ sessionId, mountId }: RunParams): HistoryRun
   sessionId,
   mountId,
   origin: 'rebase',
-  phase: 'stopped',
+  phase: 'applied',
   planId: null,
   agentId: null,
   copyPath: null,
-  stop: { reason: 'conflict', message: '', files: [], sha: null },
+  stop: null,
   result: null,
-  backupRef: null,
-  remoteSha: null,
+  backupRef: BACKUP_REF,
+  remoteSha: HEAD,
   holder: null,
   progress: null,
   applied: null,
@@ -49,12 +50,6 @@ export const storyRebasedRunOf = ({ sessionId, mountId }: RunParams): HistoryRun
   movedHead: REBASED_HEAD,
   threadShas: [],
   commitCount: 2,
-  rebaseConflict: {
-    baseBranch: 'main',
-    ontoRef: null,
-    head: REBASED_HEAD,
-    autoAgentId: null,
-    isHere: true,
-  },
+  carriedCount: 0,
   updatedAt: Date.now(),
 });
