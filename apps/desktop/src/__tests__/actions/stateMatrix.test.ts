@@ -1314,7 +1314,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.switchBranch chip',
       'mount.putTaskOnBranch chip',
       ...WT_COPIES,
-      'mount.close inline',
+      ...['mount.cleanUp inline', 'mount.close menu'],
     ],
   ],
   [

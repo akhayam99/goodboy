@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import {
   resolveMountBaseBranch,
   selectWritableMounts,
@@ -48,6 +49,9 @@ export const useRebaseStopRows = ({ sessionId }: Params): RebaseStopRowFor => {
   );
   const mountIds = useMemo(() => writable.map((mount) => mount.mountId), [writable]);
   const runs = useAppStore(useShallow((s) => pickKeys({ source: s.historyRuns, keys: mountIds })));
+  const doneIds = useAppStore(
+    useShallow((s) => mountIds.filter((mountId) => isMountCompleted({ state: s, mountId }))),
+  );
   const targets = useMemo(
     () =>
       writable.flatMap((mount) => {
@@ -90,7 +94,7 @@ export const useRebaseStopRows = ({ sessionId }: Params): RebaseStopRowFor => {
   return useCallback(
     ({ mountId }: RowParams): RebaseStopRow | null => {
       const mount = writable.find((candidate) => mountId !== null && candidate.mountId === mountId);
-      if (mount === undefined) {
+      if (mount === undefined || doneIds.includes(mount.mountId)) {
         return null;
       }
       const baseBranch = resolveMountBaseBranch({ mount, projects });
@@ -115,6 +119,6 @@ export const useRebaseStopRows = ({ sessionId }: Params): RebaseStopRowFor => {
         ? null
         : rebaseStopRowOf({ stop, baseBranch: baseBranch ?? 'main', projectName: mount.mountName });
     },
-    [events, projects, reads, runs, sessionId, settled, writable],
+    [doneIds, events, projects, reads, runs, sessionId, settled, writable],
   );
 };

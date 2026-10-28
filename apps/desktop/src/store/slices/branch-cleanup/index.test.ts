@@ -84,12 +84,14 @@ type Setup = {
   readonly workspaceRule?: AfterMergeRule | null;
   readonly projectRule?: AfterMergeRule | null;
   readonly branchOrigin?: 'created' | 'adopted' | 'unknown';
+  readonly keptReason?: string | null;
 };
 
 const makeStore = ({
   workspaceRule = 'local',
   projectRule = null,
   branchOrigin = 'created',
+  keptReason = null,
 }: Setup = {}) => {
   h.loadMountViews.mockResolvedValue([
     {
@@ -117,7 +119,7 @@ const makeStore = ({
         },
       ],
       workspaceOverrides: { [WORKSPACE_ID]: overrides(workspaceRule) },
-      unmountMount: vi.fn(async () => ({ kept: false, reason: null })),
+      unmountMount: vi.fn(async () => ({ kept: keptReason !== null, reason: keptReason })),
       recordSessionEvent: vi.fn(async () => undefined),
       loadWorkspaceOverrides: vi.fn(async () => undefined),
     } as unknown as AppStore,
@@ -167,6 +169,51 @@ describe('runAfterMergeCleanup', () => {
 
     expect(await run(context)).toEqual({ kind: 'ask', keptBecause: null });
     expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('cleans up on request even when the workspace says Ask me, local only', async () => {
+    const context = makeStore({ workspaceRule: 'ask' });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome.kind).toBe('deleted');
+    expect(h.deleteBranchChecked).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: BRANCH, alsoOrigin: false }),
+    );
+  });
+
+  it('refuses a requested clean up when the folder holds uncommitted work, and says why', async () => {
+    const context = makeStore({ workspaceRule: 'ask', keptReason: 'it has uncommitted changes.' });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: it has uncommitted changes.`,
+    });
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
+  });
+
+  it('refuses a requested clean up when the branch has commits the base lacks', async () => {
+    h.branchMergeState.mockResolvedValue({ kind: 'not-merged', ahead: 2 });
+    const context = makeStore({ workspaceRule: 'ask' });
+
+    const outcome = await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({ sessionId: SESSION_ID, mountId: MOUNT_ID, expectedBranch: BRANCH, isRequested: true });
+
+    expect(outcome).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: 2 commits not in the base branch.`,
+    });
+    expect(context.store.state.unmountMount).not.toHaveBeenCalled();
   });
 
   it('lets a project override win over the workspace', async () => {

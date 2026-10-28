@@ -183,7 +183,8 @@ const STATES: ReadonlyArray<{
       'mount.switchBranch chip',
       ADD_TASK,
       ...COPIES,
-      'mount.close inline',
+      'mount.cleanUp inline',
+      'mount.close menu',
     ],
   },
   {

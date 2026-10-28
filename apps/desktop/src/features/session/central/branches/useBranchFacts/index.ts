@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { branchPushStateOf } from '../../../../../shared/lib/branchPushState';
-import { changedCount, distanceAhead, distanceBehind } from '../../../../../shared/lib/gitStatus';
+import { changedCount, distanceAhead, mainBehindOf } from '../../../../../shared/lib/gitStatus';
 import { useMountRows } from '../../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useSessionMountHosts } from '../../../../../shared/hooks/useSessionMountHosts';
 import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
@@ -51,16 +51,13 @@ export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
           null,
       );
       const status = row.worktreePath === null ? undefined : statuses.get(row.worktreePath);
-      behindByMountId.set(
-        row.mountId,
-        status === undefined ? null : distanceBehind({ distance: status.mainDistance }),
-      );
+      behindByMountId.set(row.mountId, mainBehindOf({ status, isDone: row.isFinished }));
       if (status !== undefined) {
         statusByMountId.set(row.mountId, {
           ahead: distanceAhead({ distance: status.mainDistance }),
           push: branchPushStateOf({ status }),
           changedFiles: changedCount({ workingTree: status.workingTree }),
-          isRebasing: status.inProgress === 'rebase',
+          isRebasing: !row.isFinished && status.inProgress === 'rebase',
         });
       }
     }

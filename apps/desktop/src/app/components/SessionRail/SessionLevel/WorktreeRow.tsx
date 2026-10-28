@@ -5,7 +5,7 @@ import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
-import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf, unmergedCount } from '../../../../shared/lib/gitStatus';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import { ROW_MENU_TOOLTIP } from '../../../../features/actions/rowMenuTooltip';
@@ -77,8 +77,9 @@ export const WorktreeRow = ({
   const hasEntries = livePath !== null && entries.length > 0;
   const node: RailTreeNode = { kind: 'branch', id: row.mountId, isOpenByDefault: true };
   const isOpen = hasEntries && isOpened && tree.isOpen(node);
-  const behind = status === null ? null : distanceBehind({ distance: status.mainDistance });
-  const conflicts = status === null ? null : unmergedCount({ workingTree: status.workingTree });
+  const behind = mainBehindOf({ status, isDone: row.isFinished });
+  const conflicts =
+    status === null || row.isFinished ? null : unmergedCount({ workingTree: status.workingTree });
   const facts = branchRowFactsOf({
     branch: row.branch,
     mountName: row.mountName,
@@ -104,7 +105,7 @@ export const WorktreeRow = ({
     signal: facts.signal,
     rebase,
     isSettled: isRebasedBranchSettled({ status: status ?? undefined }),
-    isRebaseStopped: status?.inProgress === 'rebase',
+    isRebaseStopped: !row.isFinished && status?.inProgress === 'rebase',
     isBatchSettled,
     progress,
     conflictFiles,

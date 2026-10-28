@@ -1,6 +1,6 @@
 import type { WorktreeStatus } from '@goodboy/types';
 import { branchPushFactsOf } from '../../shared/lib/branchPushState';
-import { distanceAhead, distanceBehind } from '../../shared/lib/gitStatus';
+import { distanceAhead, mainBehindOf } from '../../shared/lib/gitStatus';
 
 type BranchStartState = 'unknown' | 'empty' | 'unpushed' | 'pushed' | 'behind' | 'conflict';
 
@@ -18,6 +18,7 @@ export type BranchNextStep = {
 type Params = {
   readonly status: Pick<WorktreeStatus, 'upstreamDistance' | 'mainDistance' | 'inProgress'> | null;
   readonly hasConflictStop: boolean;
+  readonly isDone?: boolean;
 };
 
 type StepParams = {
@@ -66,9 +67,13 @@ const stateOf = ({ ahead, behind, unpushed, isConflict }: StateParams): BranchSt
   return unpushed > 0 ? 'unpushed' : 'pushed';
 };
 
-export const branchNextStepOf = ({ status, hasConflictStop }: Params): BranchNextStep => {
+export const branchNextStepOf = ({
+  status,
+  hasConflictStop,
+  isDone = false,
+}: Params): BranchNextStep => {
   const ahead = status === null ? null : distanceAhead({ distance: status.mainDistance });
-  const behind = status === null ? null : distanceBehind({ distance: status.mainDistance });
+  const behind = mainBehindOf({ status, isDone });
   const push = branchPushFactsOf({ status });
   const pushState = status === null ? null : push.state;
   const unpushed = push.toPush;
@@ -83,7 +88,7 @@ export const branchNextStepOf = ({ status, hasConflictStop }: Params): BranchNex
     ahead,
     behind,
     unpushed,
-    isConflict: hasConflictStop || status?.inProgress === 'rebase',
+    isConflict: !isDone && (hasConflictStop || status?.inProgress === 'rebase'),
   });
   return { state, ahead, behind, unpushed, isPushed, diverged, ...stepOf({ state }) };
 };

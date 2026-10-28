@@ -62,6 +62,8 @@ const sessionFacts: SessionFacts = {
   sessionId: 'session-harborline' as SessionId,
   title: 'Fix duplicate credit',
   behindMountIds: [],
+  mergedMountIds: [],
+  mergedBranches: [],
   rebaseAllRunId: null,
   isRebaseAllRunning: false,
   isArchived: false,
