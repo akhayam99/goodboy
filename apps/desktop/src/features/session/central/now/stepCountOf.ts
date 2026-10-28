@@ -1,10 +1,7 @@
-import type { LiveRunStepModel } from './liveGroupsOf';
-
 type Params = {
-  readonly steps: ReadonlyArray<LiveRunStepModel>;
+  readonly started: number;
+  readonly total: number;
 };
 
-export const stepCountOf = ({ steps }: Params): string => {
-  const started = steps.filter((step) => step.state !== 'notStarted').length;
-  return `${started}/${steps.length}`;
-};
+export const stepCountOf = ({ started, total }: Params): string =>
+  `${Math.min(started, total)}/${total}`;

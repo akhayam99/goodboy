@@ -5,6 +5,7 @@ import { stepFillOf } from './stepFillOf';
 
 type Props = {
   readonly steps: ReadonlyArray<LiveRunStepModel>;
+  readonly startedCount: number;
   readonly label: string;
   readonly card: FactCardSpec;
   readonly onOpen: () => void;
@@ -12,7 +13,7 @@ type Props = {
 
 const MAX_COUNTED_STEPS = 2;
 
-export const StepMeter = ({ steps, label, card, onOpen }: Props) => {
+export const StepMeter = ({ steps, startedCount, label, card, onOpen }: Props) => {
   const isCount = steps.length <= MAX_COUNTED_STEPS;
   return (
     <FactCard card={card} side="bottom">
@@ -29,7 +30,7 @@ export const StepMeter = ({ steps, label, card, onOpen }: Props) => {
       >
         {isCount ? (
           <span data-step-count="" className="text-meta tabular-nums text-faint-foreground">
-            {stepCountOf({ steps })}
+            {stepCountOf({ started: startedCount, total: steps.length })}
           </span>
         ) : (
           steps.map((step) => (

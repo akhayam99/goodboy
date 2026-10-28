@@ -119,6 +119,7 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
           group.steps.length === 0 ? null : (
             <StepMeter
               steps={group.steps}
+              startedCount={group.counts.started}
               label={stepMeterLabelOf({ group })}
               card={card}
               onOpen={openStep}
