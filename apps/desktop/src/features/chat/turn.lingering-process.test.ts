@@ -46,6 +46,39 @@ const textLine = (text: string): string =>
     message: { id: `msg-${text.length}`, content: [{ type: 'text', text }] },
   });
 
+const bashStartLine = (): string =>
+  JSON.stringify({
+    type: 'assistant',
+    message: {
+      id: 'msg-bash',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_bash_1',
+          name: 'Bash',
+          input: { command: 'git log -S"ledger-core" --all' },
+        },
+      ],
+    },
+  });
+
+const backgroundedLine = (): string =>
+  JSON.stringify({
+    type: 'user',
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'toolu_bash_1',
+          is_error: false,
+          content:
+            'Command did not complete within its 120s timeout and was moved to the background (ID: bjlv6sblg). You will be notified when it completes.',
+        },
+      ],
+    },
+  });
+
 const resultLine = (outputTokens: number): string =>
   JSON.stringify({
     type: 'result',
@@ -189,5 +222,32 @@ describe('a provider process that stays alive after its result', () => {
 
     expect(calledCommands()).not.toContain('turn_cancel');
     expect(calledCommands()).toContain('turn_release');
+  });
+
+  it('processes the end of a turn whose Bash call was moved to the background', async () => {
+    const turn = startTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    emitLine(initLine('session-1'));
+    emitLine(bashStartLine());
+    emitLine(backgroundedLine());
+    emitLine(textLine('The search keeps running in the background.\n'));
+    emitLine(textLine('<<step-done id="agent-harborline-scout">>'));
+    emitLine(resultLine(12755));
+    await vi.advanceTimersByTimeAsync(TURN_END_MS.grace);
+    emitEnd();
+    await turn.finished;
+
+    expect(turn.outcome.error).toBeNull();
+    expect(turn.seen.map((event) => event.kind)).toEqual([
+      'provider_session_init',
+      'tool_call_start',
+      'tool_call_end',
+      'assistant_text',
+      'assistant_text',
+      'usage',
+      'done',
+    ]);
+    const toolEnd = turn.seen.find((event) => event.kind === 'tool_call_end');
+    expect(JSON.stringify(toolEnd)).toContain('moved to the background');
   });
 });

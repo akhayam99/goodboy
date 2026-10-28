@@ -1,6 +1,6 @@
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { closeTurnStartWindow } from './turnStartWindow';
-import { markTurnActive, markTurnSettled } from './turnSettled';
+import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
 import { claimWorkflowTurn } from './workflowTurnBreaker';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
@@ -34,6 +34,8 @@ type RunOnceParams = Readonly<{
 }>;
 
 const NO_KNOWN_RUN = null;
+
+const OPERATOR_SETTLE_WAIT_MS = 30_000;
 
 const ALREADY_SENT: SendTurnResult = { blockedOverBudget: false, isAlreadySent: true };
 
@@ -104,6 +106,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return autoResult;
     }
     await noticeAutoOfChildTurn({ get, input });
+    if (input.origin === 'operator' && input.agentId !== undefined) {
+      await waitTurnSettledFor({ agentId: input.agentId, ms: OPERATOR_SETTLE_WAIT_MS });
+    }
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {

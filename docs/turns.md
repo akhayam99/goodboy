@@ -51,6 +51,15 @@ throw. `run` releases the writer lease and drains the resolve queue, opens the
 mount continuation and drains the agent queue after `runOnce` returns or
 throws.
 
+A message the operator sends to an agent waits for that agent's previous turn
+to settle (`waitTurnSettledFor`, at most 30 s) before its own turn starts.
+The `done` event already flips the agent to idle, so without the wait a
+message typed in the seconds between a result and the end of its stream
+started a second CLI on the same session while the first still ran. Only
+`origin: 'operator'` waits: a turn sent from inside the agent's own finalize
+(a question delegate, a workflow continue) would wait for itself.
+`store.send-after-result.test.ts` pins the order.
+
 The provider run row is closed on these paths only: `succeeded` when the stream
 and its finalize step complete (`failed` with "cancelled by user" when a stop
 landed), `cancelled` when a stop lands before the spawn (`claimTurnStart`),
