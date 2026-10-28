@@ -61,7 +61,8 @@ import { reviseArtifactForAgent } from '../../../features/artifacts/reviseArtifa
 import { capturedWireframeFidelity } from '../../../features/wireframes/capturedWireframeFidelity';
 import { requestedWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
 import type { AgentKind } from '../../../features/session/agent-kind';
-import { isInWorkflow } from '../../../features/workflows/isInWorkflow';
+import { hasActiveWorkflowRun } from '../../../features/workflows/activeWorkflowRuns';
+import { isWorkflowStepAgent } from '../../../features/workflows/isWorkflowStepAgent';
 import { kindReadsAttachment } from '../../../features/providers/attachment-routing';
 import { cooldownWindowEnd, routeTaskModel } from '../../../features/providers/taskModelRouting';
 import {
@@ -1094,12 +1095,13 @@ export const emitTurnNudges = async (
     return;
   }
   const agents = get().sessionPhaseRuns[sessionId] ?? [];
-  const inWorkflow = isInWorkflow({ session, agents, agentId });
+  const inWorkflow = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
+  const isStepAgent = isWorkflowStepAgent({ agents, agentId });
 
   let nextNudge: SessionNudge | null = null;
 
   const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
-  if (handoff && handoff.kind !== 'auto' && !inWorkflow) {
+  if (handoff && handoff.kind !== 'auto' && !inWorkflow && !isStepAgent) {
     const id = await recordNudgeShown({
       kind: 'handoff-suggested',
       sessionId,
