@@ -15,7 +15,7 @@ Keep everything a session made in one list. The tabs **All**, **Plans**, **Repor
 
 ### Plan parts and Run plan
 
-Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent. On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
+Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent. Parts that touch the same file never run at the same time. The plan page groups parts into **Runs first** and **Then, in parallel**. It names a shared file and shows each part as a block of its files. On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
 
 ### Plan beside the planner
 

@@ -54,4 +54,20 @@ describe('writerWaitCopy', () => {
       body: 'Another agent is writing in this folder. This turn starts by itself when it finishes. Until then, agents here can read and answer.',
     });
   });
+
+  it('names the running part that works on the same files', () => {
+    expect(
+      writerWaitCopy({
+        view: {
+          folderName: null,
+          partName: 'Move the route table',
+          writer: { kind: 'this-session' },
+          minutes: 3,
+        },
+      }),
+    ).toEqual({
+      title: 'Waiting for Move the route table.',
+      body: 'It is still running and works on files this part also changes. This turn starts by itself when it finishes, in about 3 minutes.',
+    });
+  });
 });

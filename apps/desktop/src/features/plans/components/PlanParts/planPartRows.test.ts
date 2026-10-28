@@ -131,6 +131,20 @@ describe('planPartRows', () => {
     expect(rows.map((row) => [row.node.state, row.agentId])).toEqual([['done', 'agent-impl']]);
   });
 
+  it('carries the part id and the ids it comes after', () => {
+    const ordered = plan({
+      clusters: [
+        { title: 'Routes', instructions: 'x', id: 'routes' },
+        { title: 'Home', instructions: 'x', after: [' routes ', ''] },
+      ],
+    });
+    const rows = planPartRows({ plan: ordered, agents: [], askingAgentIds: new Set() });
+    expect(rows.map((row) => [row.clusterId, row.after])).toEqual([
+      ['routes', []],
+      [null, ['routes']],
+    ]);
+  });
+
   it('has no parts for a plan without clusters', () => {
     const { clusters: _dropped, ...bare } = plan();
     expect(planPartRows({ plan: bare, agents: [], askingAgentIds: new Set() })).toEqual([]);
@@ -161,7 +175,7 @@ describe('planPartsProgress', () => {
 describe('planSplitSentence', () => {
   it('writes who split the plan on the screen', () => {
     expect(planSplitSentence({ count: 3, plannerName: 'Planner 2' })).toBe(
-      'Planner 2 split this plan into 3 parts. They run in order, each as its own subagent.',
+      'Planner 2 split this plan into 3 parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.',
     );
     expect(planSplitSentence({ count: 1, plannerName: 'Planner 2' })).toBe(
       'Runs as one part, in a single implementer.',

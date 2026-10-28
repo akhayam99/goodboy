@@ -25,6 +25,7 @@ import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
 import { lookupDeliveryRun } from '../../../features/chat/turn';
 import { stopLingeringTurn } from '../../../features/chat/stopLingeringTurn';
 import { handDelivery } from './handDelivery';
+import { waitForClusterOverlap } from './clusterOverlap/waitForClusterOverlap';
 
 type DiscardParams = Readonly<{
   error: unknown;
@@ -149,6 +150,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       markTurnActive({ agentId: settledAgentId });
     }
     try {
+      const overlap = await waitForClusterOverlap({ set, get, input });
+      if (overlap !== 'proceed') {
+        return { blockedOverBudget: false, isWriterLeaseDenied: overlap === 'timed_out' };
+      }
       return await runOnce({ input, lease });
     } finally {
       if (callerDeliveryId !== undefined) {

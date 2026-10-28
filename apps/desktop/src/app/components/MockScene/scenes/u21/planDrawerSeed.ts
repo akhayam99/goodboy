@@ -74,16 +74,24 @@ const BODY_SPLIT = [
 
 const PARTS = [
   {
+    id: 'ledger-view',
     title: 'Replace the CSV query with the ledger view',
     instructions: 'Read the batches from the ledger view, not the CSV.',
+    touches: ['ledger-core/src/settlement/ledgerView.ts', 'ledger-core/src/settlement/routes.ts'],
   },
   {
+    id: 'rounding',
+    after: ['ledger-view'],
     title: 'Round half-even at the ledger boundary',
     instructions: 'Round once, where an amount enters the ledger.',
+    touches: ['ledger-core/src/amounts'],
   },
   {
+    id: 'replay',
+    after: ['ledger-view'],
     title: 'Replay last week of settlements and compare the totals',
     instructions: 'Replay the week and compare each batch with its invoice.',
+    touches: ['ledger-core/test/replay', 'notify-relay/src/settlement.ts'],
   },
 ];
 

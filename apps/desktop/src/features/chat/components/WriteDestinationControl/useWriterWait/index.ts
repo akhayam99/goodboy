@@ -17,6 +17,7 @@ type WaitingWriter =
 
 export type WriterWaitView = Readonly<{
   folderName: string | null;
+  partName?: string;
   writer: WaitingWriter;
   minutes: number | null;
 }>;
@@ -82,5 +83,10 @@ export const useWriterWait = ({ sessionId, agentId }: Params): WriterWaitView | 
       : holderTitle === null || holderTitle.trim() === ''
         ? { kind: 'unknown' }
         : { kind: 'session', sessionTitle: holderTitle };
-  return { folderName, writer, minutes };
+  return {
+    folderName,
+    ...(wait.blockedPart !== undefined && { partName: wait.blockedPart }),
+    writer,
+    minutes,
+  };
 };

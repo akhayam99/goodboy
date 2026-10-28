@@ -44,6 +44,8 @@ const isCluster = (value: unknown): value is ImplementationCluster =>
   typeof value['instructions'] === 'string';
 
 const cleanCluster = ({
+  id,
+  after,
   title,
   instructions,
   routingProposal,
@@ -53,7 +55,7 @@ const cleanCluster = ({
   title,
   instructions,
   ...(routingProposal !== undefined && { routingProposal }),
-  ...readClusterChecks({ doneWhen, touches }),
+  ...readClusterChecks({ id, after, doneWhen, touches }),
 });
 
 const planMetadata = (value: unknown): PlanArtifactMetadata => {

@@ -25,6 +25,10 @@ import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { sessionById } from '../sessions/sessionIndex';
+import { blockUnreadablePart } from './clusterWaves/blockUnreadablePart';
+import { clusterLaunching } from './clusterWaves/clusterLaunching';
+import { clusterOrderBlocks } from './clusterWaves/clusterOrderBlocks';
+import { launchableChildren } from './clusterWaves/launchableChildren';
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -79,14 +83,11 @@ function composeClusterKickoff(
   index: number,
 ): string {
   const cluster = clusters[index];
-  const priorTitles = clusters.slice(0, index).map((c, i) => `${i + 1}. ${c.title}`);
-  const priorBlock =
-    priorTitles.length > 0
-      ? `**Done before you** ${priorTitles.join(', ')} (changes already on disk)`
-      : '';
+  const { priorBlock, parallelBlock } = clusterOrderBlocks({ clusters, index });
   return composeKickoff(
     `**Goal** ${goalTitle}`,
     priorBlock,
+    parallelBlock,
     `**Cluster ${index + 1}/${clusters.length}** ${cluster?.title ?? ''}`,
     cluster?.instructions ?? '',
     composeClusterChecks({ label: 'Done when', items: cluster?.doneWhen }),
@@ -159,6 +160,7 @@ const failChildStart = async ({
 }): Promise<void> => {
   const name =
     (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
+  clusterLaunching.release({ childId });
   await invokeAgentUpdateStatus(childId, { status: 'failed', completedAt: isoNow() }).catch(
     () => undefined,
   );
@@ -270,6 +272,7 @@ function startChild({
       origin: 'workflow',
       ...(handoff !== undefined && { handoff }),
     })
+    .then(() => clusterLaunching.release({ childId }))
     .catch((error: unknown) => {
       void handleChildStartFailure({
         set,
@@ -394,16 +397,18 @@ export const fanOutClusters = async (
     };
   });
 
-  const first = childIds[0];
-  if (first) {
+  const children = childrenOf(materialized.agents, container.id);
+  for (const child of launchableChildren({ children, clusters })) {
+    const index = children.indexOf(child);
+    clusterLaunching.claim({ childId: child.id });
     startChild({
       set,
       get,
       sessionId,
       containerId: container.id,
-      childId: first,
-      content: composeClusterKickoff(first, goalTitle, clusters, 0),
-      handoff: clusterHandoff({ containerId: container.id, goalTitle, clusters, index: 0 }),
+      childId: child.id,
+      content: composeClusterKickoff(child.id, goalTitle, clusters, index),
+      handoff: clusterHandoff({ containerId: container.id, goalTitle, clusters, index }),
     });
   }
 };
@@ -560,11 +565,9 @@ export const resumeClusterChildren = async ({
 }: ResumeClusterChildrenParams): Promise<boolean> => {
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
-  const next = children.find((child) => !isAgentStatusSettled({ status: child.status }));
-  if (next == null || next.status !== 'pending') {
+  if (!children.some((child) => child.status === 'pending')) {
     return false;
   }
-  const index = children.indexOf(next);
   const plan = await resolveClustersPlan({
     set,
     get,
@@ -573,18 +576,13 @@ export const resumeClusterChildren = async ({
     workflowRunId: container.workflowRunId,
   });
   const clusters = plan?.clusters ?? [];
+  const next = launchableChildren({ children, clusters })[0];
+  if (next === undefined) {
+    return false;
+  }
+  const index = children.indexOf(next);
   if (!hasInstructions(clusters[index])) {
-    await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: isoNow() });
-    const blocked = await invokeAgentList(sessionId);
-    set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
-    void get().refreshUnreadWorkspaces();
-    void get().emitNotification({
-      kind: 'error',
-      severity: 'warning',
-      title: `Subagent ${next.name} is blocked`,
-      body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
-      sessionId,
-    });
+    await blockUnreadablePart({ set, get, sessionId, child: next });
     return false;
   }
   const revalidated = await revalidateChildRouting({
@@ -603,6 +601,9 @@ export const resumeClusterChildren = async ({
       body: revalidated.reason,
       sessionId,
     });
+    return false;
+  }
+  if (!clusterLaunching.claim({ childId: next.id })) {
     return false;
   }
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
@@ -732,9 +733,12 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const nextIndex = children.findIndex((c) => !isDone(c));
-    const next = nextIndex >= 0 ? children[nextIndex] : undefined;
-    if (!next) {
+    const ready = launchableChildren({ children, clusters, justDoneId: childAgentId });
+    const isWaiting = children.some((c) => !isDone(c));
+    if (ready.length === 0 && isWaiting) {
+      return;
+    }
+    if (ready.length === 0) {
       await invokeAgentUpdateStatus(containerId, { status: 'blocked', completedAt: isoNow() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -748,49 +752,45 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       });
       return;
     }
-    if (!hasInstructions(clusters[nextIndex])) {
-      await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: isoNow() });
-      const blocked = await invokeAgentList(sessionId);
-      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+    for (const next of ready) {
+      const nextIndex = children.indexOf(next);
+      if (!hasInstructions(clusters[nextIndex])) {
+        await blockUnreadablePart({ set, get, sessionId, child: next });
+        continue;
+      }
+      const revalidated = await revalidateChildRouting({
+        set,
+        get,
+        sessionId,
+        child: next,
+        role: 'implementer',
+        promptText: `${next.name}\n${clusters[nextIndex]?.instructions ?? ''}`,
+      });
+      if (revalidated.kind === 'blocked') {
+        const held = await invokeAgentList(sessionId);
+        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: held } }));
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: `Subagent ${next.name} is blocked`,
+          body: revalidated.reason,
+          sessionId,
+        });
+        continue;
+      }
+      if (!clusterLaunching.claim({ childId: next.id })) {
+        continue;
+      }
       void get().refreshUnreadWorkspaces();
-      void get().emitNotification({
-        kind: 'error',
-        severity: 'warning',
-        title: `Subagent ${next.name} is blocked`,
-        body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      startChild({
+        set,
+        get,
         sessionId,
+        containerId,
+        childId: next.id,
+        content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
+        handoff: clusterHandoff({ containerId, goalTitle, clusters, index: nextIndex }),
       });
-      return;
     }
-    const revalidated = await revalidateChildRouting({
-      set,
-      get,
-      sessionId,
-      child: next,
-      role: 'implementer',
-      promptText: `${next.name}\n${clusters[nextIndex]?.instructions ?? ''}`,
-    });
-    if (revalidated.kind === 'blocked') {
-      const held = await invokeAgentList(sessionId);
-      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: held } }));
-      void get().emitNotification({
-        kind: 'error',
-        severity: 'warning',
-        title: `Subagent ${next.name} is blocked`,
-        body: revalidated.reason,
-        sessionId,
-      });
-      return;
-    }
-    void get().refreshUnreadWorkspaces();
-    startChild({
-      set,
-      get,
-      sessionId,
-      containerId,
-      childId: next.id,
-      content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
-      handoff: clusterHandoff({ containerId, goalTitle, clusters, index: nextIndex }),
-    });
   };
 };

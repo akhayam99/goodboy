@@ -31,6 +31,12 @@ const writerName = ({ writer }: Pick<WriterWaitView, 'writer'>): string => {
 
 export const writerWaitCopy = ({ view }: Params): WriterWaitCopy => {
   const when = whenLine({ minutes: view.minutes });
+  if (view.partName !== undefined) {
+    return {
+      title: `Waiting for ${view.partName}.`,
+      body: `It is still running and works on files this part also changes. ${when}`,
+    };
+  }
   if (view.folderName === null) {
     const lines = [OTHER_AGENT, when, MEANWHILE];
     return { title: 'Waiting for the writer.', body: lines.join(' ') };

@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./clusters": {
+      "types": "./src/clusters/index.ts",
+      "default": "./src/clusters/index.ts"
     }
   },
   "scripts": {

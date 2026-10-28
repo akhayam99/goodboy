@@ -4,7 +4,7 @@ import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRouti
 import { BITBUCKET_THREAD_PREFIX } from '../review-source/bitbucketReviewSource';
 import { GITLAB_THREAD_PREFIX } from '../review-source/gitlabReviewSource';
 import { NOTE_THREAD_PREFIX } from '../review-source/noteThreadPrefix';
-import { readClusterChecks } from './clusterChecks';
+import { readClusterChecks, type ClusterOrder } from './clusterChecks';
 import { canonicalizeMarkers } from './canonicalizeMarkers';
 import { PLAN_CLOSE, PLAN_OPEN, planFromMarker, type ExtractedPlan } from './plan-marker';
 
@@ -904,7 +904,7 @@ export type ExtractedCluster = {
   readonly routingProposal?: WorkflowRoutingProposal | null;
   readonly doneWhen?: ReadonlyArray<string>;
   readonly touches?: ReadonlyArray<string>;
-};
+} & ClusterOrder;
 
 type ChildRoutingParams = {
   readonly entry: Record<string, unknown>;
