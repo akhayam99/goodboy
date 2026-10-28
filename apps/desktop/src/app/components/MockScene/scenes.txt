@@ -765,6 +765,8 @@ session-start
 session-states
 session-studio-over
 session-switcher
+session-tools-order
+sessions-door-counts
 sessions-funnel
 sessions-funnel-open
 sessions-hidden
