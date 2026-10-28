@@ -13,6 +13,14 @@ const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
   workspaces_with_unread: () => [],
   worktree_carry_candidates: () => [],
   worktree_setup_proposal: () => null,
+  worktree_deps_check: () => ({
+    state: 'not-applicable',
+    command: null,
+    source: null,
+    folder: null,
+    isFolderLink: false,
+    outside: [],
+  }),
   file_versions_folder_size: () => ({
     folderPath: '/mock/Documents/acme-notes',
     isReady: true,

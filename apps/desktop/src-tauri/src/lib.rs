@@ -381,6 +381,8 @@ pub fn run() {
             worktree::worktree_grep_word,
             worktree::worktree_changed_files,
             worktree::worktree_setup_proposal,
+            worktree::worktree_deps_check,
+            worktree::worktree_deps_unlink,
             worktree::worktree_snapshot,
             worktree::worktree_turn_files,
             worktree::worktree_commits,
