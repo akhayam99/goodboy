@@ -1,6 +1,15 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type StepId,
+  type TurnEvent,
+  type WorkflowRunId,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ settings: new Map<string, string>() }));
 
@@ -122,8 +131,8 @@ describe('resumeInterruptedAgents', () => {
     const store = buildStore({
       agents: [
         agentOf('agent-a', 'run-a', {
-          stepId: 'step-scout' as Agent['stepId'],
-          workflowRunId: 'workflow-run-1' as Agent['workflowRunId'],
+          stepId: brandId<StepId>({ value: 'step-scout' }),
+          workflowRunId: brandId<WorkflowRunId>({ value: 'workflow-run-1' }),
         }),
       ],
     });

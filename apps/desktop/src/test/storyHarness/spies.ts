@@ -142,6 +142,7 @@ const storyInvokeHandlers = {
   patch_workspace_overrides: null,
   boot_breadcrumb: null,
   log_provider_standing: null,
+  log_step_end: null,
   claude_usage_probe: null,
   codex_rate_limits_probe: null,
   codex_rate_limits_latest: null,

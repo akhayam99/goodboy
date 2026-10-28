@@ -205,4 +205,29 @@ describe('a workflow step turn that stops without a step-done marker', () => {
     expect(prompt).toContain(`<<step-done id="${AGENT_ID}">>`);
     expect(prompt).toContain('<<ctx-question blocking="true">>');
   });
+
+  it('writes no ended-without-result line when the normal path already blocked the step', async () => {
+    vi.useFakeTimers();
+    useAppStore.setState({
+      sessions: [
+        aSession({
+          id: handsFreeSession.id,
+          workspaceId: handsFreeSession.workspaceId,
+          workflowRuns: [aWorkflowRun({ id: handsFreeRun.id, autoRun: false })],
+        }),
+      ],
+    });
+    storySpies.runTurn.mockImplementation(deltas(['Looked at the pages, more to read.']));
+    await useAppStore.getState().sendTurn({
+      sessionId: handsFreeSession.id,
+      agentId: AGENT_ID,
+      content: 'scout the ledger-core pages',
+    });
+    await vi.advanceTimersByTimeAsync(5000);
+    vi.useRealTimers();
+
+    expect(row.status).toBe('blocked');
+    const lines = storySpies.tauriInvoke.mock.calls.filter(([name]) => name === 'log_step_end');
+    expect(lines).toEqual([]);
+  });
 });

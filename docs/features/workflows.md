@@ -51,7 +51,7 @@ Choose how often a run stops for you: **Every step**, **After the plan** to appr
 
 ### Pause, resume and skip
 
-**Pause** lets the step in flight finish and starts nothing new, even after a restart, and **Resume** picks up from there. **Skip** passes a step that has not finished and keeps what it already wrote. If a step says nothing for 15 minutes, the run offers **Ask it to continue**.
+**Pause** lets the step in flight finish and starts nothing new, even after a restart, and **Resume** picks up from there. **Skip** passes a step that has not finished and keeps what it already wrote. If a step says nothing for 15 minutes, the run offers **Ask it to continue**. When an agent stops without saying it is done and without asking you anything, the run page and the agent page read "This step ended without a result". They offer **Continue** and **Mark step done**. Goodboy also moves a step to that state within a few seconds if it is still running after its turn ended with nothing to continue it. That adds one line to the app log.
 
 ### Run defaults
 

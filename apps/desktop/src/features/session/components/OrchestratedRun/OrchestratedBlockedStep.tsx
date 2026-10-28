@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { NAMES } from '../../../../shared/utils/names';
 import { useBlockedQuestion } from '../../hooks/useBlockedQuestion';
+import { StepEndedNotice } from '../../../workflows/StepEndedNotice';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
 type Props = {
@@ -46,16 +47,22 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
         void send();
       }}
     >
-      <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
-        <span className="text-meta text-faint-foreground">
-          {ORCHESTRATED_COPY.blockedAsks({ isQuestion: question?.isQuestion ?? false })}
-        </span>
-        {question === null ? (
-          <p className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.blockedNoReason}</p>
-        ) : (
-          <Markdown text={question.text} className="text-read text-foreground" />
-        )}
-      </div>
+      <StepEndedNotice
+        sessionId={sessionId}
+        agentId={agentId}
+        fallback={
+          <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
+            <span className="text-meta text-faint-foreground">
+              {ORCHESTRATED_COPY.blockedAsks({ isQuestion: question?.isQuestion ?? false })}
+            </span>
+            {question === null ? (
+              <p className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.blockedNoReason}</p>
+            ) : (
+              <Markdown text={question.text} className="text-read text-foreground" />
+            )}
+          </div>
+        }
+      />
       {error === null ? null : (
         <Notice
           tone="danger"

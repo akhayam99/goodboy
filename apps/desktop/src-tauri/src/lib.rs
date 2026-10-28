@@ -83,6 +83,7 @@ mod session_dir;
 mod settings_overrides;
 mod skills;
 mod slack;
+mod step_end_log;
 mod storage;
 mod summarize;
 mod terminal;
@@ -454,6 +455,7 @@ pub fn run() {
             providers::check_provider_auth,
             providers::test_connection::provider_test_connection,
             provider_standing_log::log_provider_standing,
+            step_end_log::log_step_end,
             provider_credentials::provider_api_key_validate,
             provider_lifecycle::provider_lifecycle_run,
             provider_lifecycle::provider_lifecycle_write,

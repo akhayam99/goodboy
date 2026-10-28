@@ -7,6 +7,7 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { TEST_NOW, aSession } from '@goodboy/types/testing';
+import { lingeringTurns } from '../features/chat/lingeringTurns';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStoryAgent,
@@ -15,6 +16,7 @@ import {
   importStore,
   resetStorySpies,
   storySpies,
+  stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
 
@@ -155,5 +157,24 @@ describe('an operator message sent while the previous turn still lingers after i
     });
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops the process that lingers after the result of the previous turn', async () => {
+    stubStoryInvoke({ turn_cancel: null });
+    lingeringTurns.mark({ agentId: AGENT_ID, runId: RUN_ID });
+    storySpies.runTurn.mockImplementation(async function* only(): AsyncIterable<TurnEvent> {
+      yield answer('No, I am not stuck.');
+      yield resultEvent;
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: session.id,
+      agentId: AGENT_ID,
+      content: 'are you stuck?',
+      origin: 'operator',
+    });
+    lingeringTurns.clear({ agentId: AGENT_ID, runId: RUN_ID });
+
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('turn_cancel', { runId: RUN_ID });
   });
 });

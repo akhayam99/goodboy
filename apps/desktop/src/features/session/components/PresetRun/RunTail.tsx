@@ -7,6 +7,7 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
+import { StepEndedNotice } from '../../../workflows/StepEndedNotice';
 import { RunTailVerb } from './RunTailVerb';
 import { runTailOf } from './runTailOf';
 
@@ -73,6 +74,12 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     selectedRootId === null
       ? null
       : (advance.runAgents.find((agent) => agent.id === selectedRootId) ?? null);
+  const haltedStep =
+    tail.verb?.kind === 'recover'
+      ? (advance.runAgents.find(
+          (agent) => agent.parentAgentId == null && agent.status === 'blocked',
+        ) ?? null)
+      : null;
   const isNotStarted =
     selectedRoot !== null &&
     selectedRoot.status === 'pending' &&
@@ -103,6 +110,9 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           )
         }
       />
+      {haltedStep === null ? null : (
+        <StepEndedNotice sessionId={session.id} agentId={haltedStep.id} />
+      )}
     </section>
   );
 };

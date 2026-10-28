@@ -74,3 +74,5 @@ export const waitTurnSettledFor = async ({ agentId, ms }: WaitForParams): Promis
   await Promise.race([existing.promise, ceiling]);
   clearTimeout(timer.id);
 };
+
+export const isTurnActive = ({ agentId }: Params): boolean => active.has(agentId);
