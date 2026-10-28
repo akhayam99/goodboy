@@ -219,7 +219,7 @@ export const DemoPlayground = () => {
             }
           />
           {isClosing ? (
-            <DemoClosing isHintsEnabled={!hints.isHidden} />
+            <DemoClosing />
           ) : (
             <DemoStage
               theme={theme}

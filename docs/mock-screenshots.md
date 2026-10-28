@@ -381,8 +381,7 @@ group and goes back to the first step of Bring your repositories. The rail is hi
 disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
 carry the current `?theme=`). Download for macOS lives only on
-the Get Goodboy screen (`DemoClosing`), where a coach points at it as at any step
-(`useClosingCoach`). The page behind the stage uses the
+the Get Goodboy screen (`DemoClosing`). The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.
 
