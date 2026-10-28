@@ -212,6 +212,19 @@ describe('the u28 run page scenes', () => {
     expect(within(popover).queryByRole('group')).toBeNull();
   });
 
+  it('u28-run-orchestrator-model names the orchestrator in the settings line and opens its picker', async () => {
+    await mount('u28-run-orchestrator-model');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const chip = screen.getByRole('button', { name: /^Orchestrator:/ });
+    expect(chip.getAttribute('data-run-model')).toBe('auto');
+    const popover = screen.getByRole('dialog', { name: 'Orchestrator model' });
+    within(popover).getByRole('button', { name: /^Auto, now / });
+    within(popover).getByRole('button', { name: 'Change the default in Settings' });
+  });
+
   it('u28-run-kind-ended offers Restart as on a stopped run', async () => {
     await mount('u28-run-kind-ended');
     await act(async () => {

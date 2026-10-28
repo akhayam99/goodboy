@@ -57,6 +57,14 @@ Its last line says what a pick does.
 - Once the run is finished, the list reads **Start a new run as**. A last line reads "Starts a new run with the same goal." and the new run gets what the first found. The finished run stays in the list.
 - The session default is not on the chip: set it with **New runs in this session start as** in Settings.
 
+### The model of a run
+
+The settings line of a run names the model that runs it, next to the **Kind** chip.
+
+- An orchestrated run shows **Orchestrator** with its model, **Auto** while the run follows the default. A pick is for this run only, and **Auto** in the picker goes back to the default. The chip is fixed while the orchestrator decides and once the run is over. The hint box below holds the same control.
+- An Auto agent shows **Auto agent** in front of the model pill of its box. A pick there applies from the next turn of that agent.
+- The default of each is in **Settings › Models › Runs**.
+
 ### The New session page
 
 Start a session from your goal: write it or pick an issue, then choose the kind of run.
@@ -186,6 +194,7 @@ This part is for contributors and agents who change the feature.
 
 - Run as chip: `RunAsChip` lists `runAsChoicesOf`, and `runAsRouteOf` turns the pick into the route Start uses, with a typed token ahead of the chip. `useStartRun` builds the live "Starts as" line from the same function.
 - Model chip: `RunModelChip` is the one control. `useRunModel` resolves the default of the slot the route lands on and keeps this start's pins by slot. `runModelSlotOf` maps a plan to the `workflow_orchestrator` task and a lead to its role, `auto` by default.
+- Run page: `OrchestratorModelChip` reads `useOrchestratorModel`, which writes `setWorkflowOrchestratorRouting`. The Auto agent label comes from `controlSlots.modelsLabel` of the composer.
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.

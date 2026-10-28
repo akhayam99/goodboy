@@ -333,6 +333,31 @@ describe('ChatInput, input wiring', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('hello');
   });
 
+  it('moves the model pill into the settings line under the label it is given', () => {
+    const slot = document.createElement('span');
+    document.body.appendChild(slot);
+    render(
+      <ChatInput
+        session={makeSession()}
+        controlSlots={{ asks: null, models: slot, modelsLabel: 'Auto agent' }}
+      />,
+    );
+
+    expect(slot.querySelector('[data-models-label]')?.textContent).toBe('Auto agent');
+    expect(slot.querySelector('button[aria-label^="Model routing:"]')).not.toBeNull();
+    slot.remove();
+  });
+
+  it('draws no label in the settings line unless one is given', () => {
+    const slot = document.createElement('span');
+    document.body.appendChild(slot);
+    render(<ChatInput session={makeSession()} controlSlots={{ asks: null, models: slot }} />);
+
+    expect(slot.querySelector('[data-models-label]')).toBeNull();
+    expect(slot.querySelector('button[aria-label^="Model routing:"]')).not.toBeNull();
+    slot.remove();
+  });
+
   it('textarea is enabled when session is idle and provider is connected', () => {
     render(<ChatInput session={makeSession()} />);
     const textarea = screen.getByRole('textbox');

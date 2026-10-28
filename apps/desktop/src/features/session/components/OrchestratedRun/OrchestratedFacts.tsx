@@ -8,6 +8,7 @@ import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunKindChip } from '../RunRoute/RunKindChip';
+import { OrchestratorModelChip } from './OrchestratorModelChip';
 import { runKindPhaseOf } from '../RunRoute/runKindPhaseOf';
 
 type Props = {
@@ -58,20 +59,23 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
           run={run}
           isOpen={isOpen}
           kind={
-            route === undefined ? null : (
-              <RunKindChip
-                workspaceId={session.workspaceId}
-                target={routeTarget}
-                route={route}
-                changeCount={changeCount}
-                phase={runKindPhaseOf({
-                  agentCount: agents.length,
-                  isFinished: view.isCompleted,
-                  phase: view.orchestrator.state.phase,
-                  status: null,
-                })}
-              />
-            )
+            <>
+              {route === undefined ? null : (
+                <RunKindChip
+                  workspaceId={session.workspaceId}
+                  target={routeTarget}
+                  route={route}
+                  changeCount={changeCount}
+                  phase={runKindPhaseOf({
+                    agentCount: agents.length,
+                    isFinished: view.isCompleted,
+                    phase: view.orchestrator.state.phase,
+                    status: null,
+                  })}
+                />
+              )}
+              <OrchestratorModelChip session={session} run={run} isOpen={isOpen} />
+            </>
           }
         />
       )}

@@ -57,7 +57,11 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
           })}
         />
       )}
-      <span ref={modelsSlotRef} data-settings-slot="models" className="inline-flex empty:hidden" />
+      <span
+        ref={modelsSlotRef}
+        data-settings-slot="models"
+        className="inline-flex items-center gap-1 empty:hidden"
+      />
     </div>
   );
 };
