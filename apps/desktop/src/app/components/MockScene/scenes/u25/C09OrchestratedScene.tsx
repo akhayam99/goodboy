@@ -16,13 +16,14 @@ import {
   type C09State,
 } from './c09OrchestratedSeed';
 
-type C09Click = 'none' | 'menu' | 'guidance';
+type C09Click = 'none' | 'menu' | 'guidance' | 'kind';
 
 type Props = {
   readonly state: C09State;
   readonly page: C09Page;
   readonly click?: C09Click;
   readonly isGuidanceRepeated?: boolean;
+  readonly isRouted?: boolean;
 };
 
 const noop = () => undefined;
@@ -48,6 +49,8 @@ const CLICK_DELAY_MS = 200;
 const TARGET: Readonly<Record<Exclude<C09Click, 'none'>, () => HTMLButtonElement | undefined>> = {
   menu: () =>
     document.querySelector<HTMLButtonElement>('button[aria-label$="run actions"]') ?? undefined,
+  kind: () =>
+    document.querySelector<HTMLButtonElement>('button[data-setting-chip="Kind"]') ?? undefined,
   guidance: () =>
     [...document.querySelectorAll<HTMLButtonElement>('section[aria-label="Goal"] button')].find(
       (button) => button.textContent === ORCHESTRATED_COPY.showGuidance,
@@ -59,6 +62,7 @@ export const C09OrchestratedScene = ({
   page,
   click = 'none',
   isGuidanceRepeated = false,
+  isRouted = false,
 }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C09_SESSION_ID);
@@ -66,9 +70,9 @@ export const C09OrchestratedScene = ({
   const isDrawerOpen = useAppStore((current) => current.drawer !== null);
 
   useEffect(() => {
-    seedC09({ state, page, isGuidanceRepeated });
+    seedC09({ state, page, isGuidanceRepeated, isRouted });
     setIsSeeded(true);
-  }, [state, page, isGuidanceRepeated]);
+  }, [state, page, isGuidanceRepeated, isRouted]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {
