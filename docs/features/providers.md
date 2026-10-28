@@ -1,6 +1,6 @@
 # Providers, limits and cost
 
-Goodboy runs the agents you already pay for. You sign in to each from the app, or paste its key, and keys stay in your system's password store.
+Goodboy runs the agents you already pay for. You sign in to each from the app, or paste its key, and keys stay in your system's password store. Copilot is billed in premium requests, so its turns show that count in place of a cost.
 
 Watch how much of each plan is left, keep work moving when a provider runs out, and see what it all costs. Goodboy shows limits in the top bar and spend in one place, so you decide where work goes before a limit stops it.
 
