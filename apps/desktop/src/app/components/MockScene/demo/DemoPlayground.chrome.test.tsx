@@ -126,7 +126,12 @@ describe('demo playground chrome', () => {
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
     const closing = screen.getByTestId('demo-closing');
-    expect(closing.querySelectorAll('p')).toHaveLength(1);
+    expect(
+      Array.from(closing.querySelectorAll('p')).filter(
+        (line) => line.closest('[role="note"]') === null,
+      ),
+    ).toHaveLength(1);
+    expect(within(closing).getByRole('note').textContent).toContain('Download Goodboy');
     expect(
       within(closing)
         .getByRole('link', { name: /Download for macOS/ })

@@ -47,7 +47,7 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 
 const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.id), CLOSING_ID];
 
-const CLOSING_INSTRUCTION = "Press **Download for macOS** to open Goodboy's download destination.";
+const CLOSING_INSTRUCTION = 'Press **Download for macOS** to get Goodboy.';
 
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -219,7 +219,7 @@ export const DemoPlayground = () => {
             }
           />
           {isClosing ? (
-            <DemoClosing />
+            <DemoClosing isHintsEnabled={!hints.isHidden} />
           ) : (
             <DemoStage
               theme={theme}

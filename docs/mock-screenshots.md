@@ -380,8 +380,9 @@ group and goes back to the first step of Bring your repositories. The rail is hi
 `lg` breakpoint; `DemoCompactNav` then shows the group switcher (Next group is
 disabled while the next group is locked) and the current step. The top bar's
 left side holds the logo and a goodboy-ai.dev link back to the website (both
-carry the current `?theme=`). Download for macOS and Star on GitHub live only on
-the Get Goodboy screen (`DemoClosing`). The page behind the stage uses the
+carry the current `?theme=`). Download for macOS lives only on
+the Get Goodboy screen (`DemoClosing`), where a coach points at it as at any step
+(`useClosingCoach`). The page behind the stage uses the
 `surround` surface, a touch darker than the app surfaces (lighter than the
 first cut in dark), so the app frame reads as a window.
 
@@ -457,7 +458,7 @@ Bring your repositories is the real setup wizard (`onboarding`, `pick=folder`): 
 
 Guide the work is `story-plan`: the same session after the handoff (`applyStoryAnswer.ts` replays the cues at once). The plan drawer is the real one; `installPlanCommentPrefill.ts` puts the example comment in the editor, and `replayAnchorOf.ts` shows the Comment button of the replay-test paragraph by sending it the hover. `installStoryPlan.ts` swaps `sendTurn`: a comment to the planner runs `storyRevisionCues.ts` (a Codex reply with plan v2, which adds the simultaneous retries test, then the comment turns addressed through the send's `onSettled`), and `Approved plan v2.` runs `storyWorkCues.ts` (a Codex implementer in payments-api and a tester that reads and runs the checks in ledger-core without changing its files; `castAutoScene.ts` retells the delegations of the shared Auto seed). Nothing in the story opens the pull request: dana-r did, before the review checkpoint.
 
-Review and ship starts on `story-review` (`StoryReviewScene.tsx`, `storyReviewSeed.ts`): the real Branch page of the resolve seed cut down to one comment from nadia-p on a pull request dana-r opened, with the real fix drawer open on it. `installStoryReview.ts` runs the resolve simulation (`installResolveActions.ts`, `resolveFixCues.ts`), opens the comment once its fix and drafted reply exist and closes it on Apply fix, then answers `worktree_status` by phase (`storyReviewGit.ts`): three behind main, then rebased and diverged from origin. `rebaseBranch` records a run that reads Rebased on main with Origin still has the old copy and opens the real Force push confirmation (`openStoryPushConfirm.ts`); `pushBranch` lands the push, publishes the drafted reply and closes the thread. The last step is `demo-storage` (`scenes/demo/DemoStorageScene.tsx`): the real Storage page with the three safe folders of older archived Harborline branches and the story's own folder in use; `installStorageActions.ts` opens the removal confirmation and swaps `removeStorageFolders` for a timed local removal that drops the three folders and sets the outcome notice.
+Review and ship starts on `story-review` (`StoryReviewScene.tsx`, `storyReviewSeed.ts`): the real Branch page of the resolve seed cut down to one comment from nadia-p on a pull request dana-r opened, with the real fix drawer open on it. `installStoryReview.ts` runs the resolve simulation (`installResolveActions.ts`, `resolveFixCues.ts`), opens the comment once its fix and drafted reply exist and closes it on Apply fix, then answers `worktree_status` by phase (`storyReviewGit.ts`): three behind main, then rebased and diverged from origin. `rebaseBranch` records a clean applied run, so the Branch page reads Rebased on main with the branch Diverged from origin and no longer behind main, and it opens the real Force push confirmation (`openStoryPushConfirm.ts`); `pushBranch` lands the push, publishes the drafted reply and closes the thread. The last step is `demo-storage` (`scenes/demo/DemoStorageScene.tsx`): the real Storage page with the three safe folders of older archived Harborline branches and the story's own folder in use; `installStorageActions.ts` opens the removal confirmation and swaps `removeStorageFolders` for a timed local removal that drops the three folders and sets the outcome notice.
 
 A hint can name the controls its step does not want pressed (`isBlocked`): the guard stops a click, Enter or Space on them, so one press moves a step. A step with a `progress` line shows it in the header between its press and its result. The scene hides the Run started and Session started toasts of a directed frame, so a toast never sits under a coach mark. the size in Storage falls. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
@@ -496,7 +497,8 @@ selector inside the frame (an existing `aria-label` or role, or a
 store and DOM of the frame. Once a frame is ready the stage sends it `hints`
 (the group id and the ids of the steps already done); the frame's
 `createHintEngine` re-measures on store changes, DOM mutations, scroll and
-resize in one animation frame and works on one step only, the first one not yet
+resize in one animation frame, and every 250 ms in case a layout shift or a
+stalled frame hid the change, and works on one step only, the first one not yet
 done, in the authored order: it reports `anchor` (that step, with its rect, or
 `isOffscreen` when a scroll container or the viewport hides it) and `tried`
 (its done check held after its reveal check did). A later step is never lit,
