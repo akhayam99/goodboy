@@ -36,6 +36,7 @@ const hasCoordinated = ({ state, start }: HintProbe): boolean => {
   );
   return (
     approvals > before &&
+    state.agentTurnState[STORY_ROOT_ID]?.kind === 'idle' &&
     delegations.some(
       (delegation) => delegation.childAgentId === IMPLEMENTER_ID && delegation.state === 'settled',
     )
