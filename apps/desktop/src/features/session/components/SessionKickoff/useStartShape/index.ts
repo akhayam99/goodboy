@@ -8,7 +8,10 @@ import { createLatestOnly } from '../../../../../store/runtime/state-writes/late
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
+import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
+import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import type { RunModelModel } from '../../StartRun/useRunModel';
 import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
 
@@ -16,6 +19,7 @@ type Params = {
   readonly workspaceId: WorkspaceId;
   readonly mount: SessionDraftMount | null;
   readonly prepare: () => Promise<void>;
+  readonly model: RunModelModel;
 };
 
 export type StartShapeModel = Readonly<{
@@ -26,7 +30,8 @@ export type StartShapeModel = Readonly<{
 
 const START_KEY = 'start-shape';
 
-export const useStartShape = ({ workspaceId, mount, prepare }: Params): StartShapeModel => {
+export const useStartShape = ({ workspaceId, mount, prepare, model }: Params): StartShapeModel => {
+  const { clear: clearModel, pinFor } = model;
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isStartingRef = useRef(false);
@@ -80,16 +85,32 @@ export const useStartShape = ({ workspaceId, mount, prepare }: Params): StartSha
         closeness: draft.presetCloseness,
         role: draft.agentKind,
       });
-      const routing = shape === 'agent' ? draft.agentRouting : null;
+      const slot = runModelSlotOfShape({ shape, agentKind: draft.agentKind });
+      const pin = shape === 'agent' ? null : pinFor({ slot });
+      const routing =
+        shape === 'agent'
+          ? draft.agentRouting
+          : pin !== null && slot.kind === 'agent'
+            ? agentRoutingOfPin({ pin })
+            : null;
+      const orchestratorRouting =
+        pin !== null && slot.kind === 'orchestrator' ? orchestratorRoutingOfPin({ pin }) : null;
       const autonomy = hasAsksGate({ shape }) ? draft.autonomy : null;
       const run = async (created: Session): Promise<void> => {
-        await startRoutedRun({ sessionId: created.id, result, routing, autonomy });
+        await startRoutedRun({
+          sessionId: created.id,
+          result,
+          routing,
+          orchestratorRouting,
+          autonomy,
+        });
       };
       await startFromDraft({
         workspaceId,
         start: draftStartOf({ picked: draft.pickedIssues, mount, ask, run }),
       });
       rememberLastStart({ workspaceId, last: shape });
+      clearModel();
     } catch (cause) {
       if (claim.isCurrent()) {
         setError(formatError(cause));
@@ -100,7 +121,7 @@ export const useStartShape = ({ workspaceId, mount, prepare }: Params): StartSha
         setIsStarting(false);
       }
     }
-  }, [mount, prepare, startFromDraft, workspaceId]);
+  }, [clearModel, mount, pinFor, prepare, startFromDraft, workspaceId]);
 
   return { start, isStarting, error };
 };

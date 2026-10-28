@@ -6,6 +6,7 @@ import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
+import { RunChoiceChips } from '../StartRun/RunChoiceChips';
 import type { StartRunModel } from '../StartRun/useStartRun';
 
 type Props = {
@@ -24,6 +25,7 @@ export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
       <FormActions
         leading={
           <div className="flex flex-wrap items-center gap-2">
+            <RunChoiceChips run={run} role={null} />
             <AutoLimitChip
               usd={limit.usd}
               isFromSession={limit.isFromSession}
