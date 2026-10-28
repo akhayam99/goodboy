@@ -27,6 +27,7 @@ type Data = Readonly<Record<string, unknown>>;
 
 type Checkpoint = {
   readonly premiumRequests: number | undefined;
+  readonly nanoAiu: number | undefined;
   readonly snapshot: unknown;
 };
 
@@ -220,6 +221,7 @@ type CheckpointParams = {
 const rememberCheckpoint = ({ data, ctx }: CheckpointParams): void => {
   runStateOf({ runId: ctx.runId }).checkpoint = {
     premiumRequests: finiteAt({ value: data, path: ['totalPremiumRequests'] }),
+    nanoAiu: finiteAt({ value: data, path: ['totalNanoAiu'] }),
     snapshot: data['accountingSnapshot'],
   };
 };
@@ -279,6 +281,7 @@ const usageFrom = ({ checkpoint, premiumRequests }: UsageFromParams): ProviderUs
     cacheCreationInputTokens,
     ...(lastInput !== undefined && { contextTokens: lastInput + lastOutput }),
     ...(premium !== undefined && { premiumRequests: premium }),
+    ...(checkpoint.nanoAiu !== undefined && { nanoAiu: checkpoint.nanoAiu }),
     estimatedCostUsd: 0,
   };
 };

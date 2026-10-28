@@ -162,6 +162,9 @@ const sumUsage = ({ first, second }: SumUsageParams): ProviderUsage => ({
   ...(first.premiumRequests !== undefined || second.premiumRequests !== undefined
     ? { premiumRequests: (first.premiumRequests ?? 0) + (second.premiumRequests ?? 0) }
     : {}),
+  ...(first.nanoAiu !== undefined || second.nanoAiu !== undefined
+    ? { nanoAiu: (first.nanoAiu ?? 0) + (second.nanoAiu ?? 0) }
+    : {}),
   estimatedCostUsd: first.estimatedCostUsd + second.estimatedCostUsd,
 });
 

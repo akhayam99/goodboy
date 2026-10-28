@@ -816,8 +816,9 @@ copilot -p <PROMPT> --model <MODEL> -C <DIR> --output-format=json --disable-clie
 - Premium requests are `result.usage.premiumRequests`. `ProviderUsage.premiumRequests`
   carries them to the turn footer, which shows them in place of a cost. The dollar cost of
   a Copilot turn is always 0, `costCoverage` is `unpriced` and `getProviderModelPrice`
-  is `null`. The stream also reports `totalNanoAiu`; Goodboy does not show it, because
-  the unit is not documented in the CLI help
+  is `null`. The stream also reports `totalNanoAiu`; Goodboy keeps it as
+  `ProviderUsage.nanoAiu`, summed per run, and does not show it, because the unit is not
+  documented in the CLI help
 - The prompt travels in argv: no real run has confirmed that `-p` reads stdin
 - A side job (planner, summarizer) runs the same read-only flags and, when it has no tools,
   also `--deny-tool=read` and `--deny-tool=url`. `provider_commands.rs` updates the CLI with

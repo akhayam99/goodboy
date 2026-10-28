@@ -234,6 +234,7 @@ describe('parseJsonLine, copilot 1.0.105', () => {
           cacheCreationInputTokens: 7708,
           contextTokens: 26419,
           premiumRequests: 1,
+          nanoAiu: 2938990000,
           estimatedCostUsd: 0,
         },
         at: AT,
