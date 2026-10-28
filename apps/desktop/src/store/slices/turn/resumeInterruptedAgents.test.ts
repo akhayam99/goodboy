@@ -117,6 +117,29 @@ describe('resumeInterruptedAgents', () => {
     ]);
   });
 
+  it('tells a resumed workflow step how to close itself', async () => {
+    writeMarker(['run-a']);
+    const store = buildStore({
+      agents: [
+        agentOf('agent-a', 'run-a', {
+          stepId: 'step-scout' as Agent['stepId'],
+          workflowRunId: 'workflow-run-1' as Agent['workflowRunId'],
+        }),
+      ],
+    });
+
+    await resumeInterruptedAgents({ get: store.get });
+
+    expect(store.sendTurn).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      agentId: 'agent-a',
+      content: expect.stringContaining('<<step-done id="agent-a">>'),
+    });
+    expect(store.sendTurn.mock.calls[0]?.[0]).toMatchObject({
+      content: expect.stringContaining(RESTART_RESUME_PROMPT),
+    });
+  });
+
   it('leaves an agent that was not cut by a clean exit as Stopped by restart', async () => {
     writeMarker(['run-other']);
     const store = buildStore({ agents: [agentOf('agent-a', 'run-a')] });

@@ -155,3 +155,54 @@ describe('a workflow step turn that ends with a handoff marker and a step-done m
     await vi.waitFor(() => expect(completedAgentIds()).toContain(AGENT_ID));
   });
 });
+
+describe('a workflow step turn that stops without a step-done marker', () => {
+  const handsFreeRun = aWorkflowRun({ autoRun: true });
+  const handsFreeSession = aSession({ workflowRuns: [handsFreeRun] });
+
+  beforeEach(() => {
+    resetStorySpies();
+    row = buildStoryAgent({
+      id: AGENT_ID,
+      sessionId: handsFreeSession.id,
+      name: 'Scout',
+      workflowRunId: handsFreeRun.id,
+      stepId: brandId<StepId>({ value: 'step-scout' }),
+      status: 'running',
+    });
+    storySpies.invokeAgentList.mockImplementation(async () => [row]);
+    storySpies.invokeAgentUpdateStatus.mockImplementation(async (_id, fields) => {
+      row = { ...row, status: fields.status };
+      return row;
+    });
+    useAppStore.setState({
+      sessions: [handsFreeSession],
+      projects: [],
+      workflowContinueAttempts: {},
+      sessionPhaseRuns: { [handsFreeSession.id]: [row] },
+      selectedAgentId: { [handsFreeSession.id]: AGENT_ID },
+      transcripts: {},
+      notifications: [],
+      workspaces: [
+        buildStoryWorkspace({ id: handsFreeSession.workspaceId, name: 'harborline', slug: 'hb' }),
+      ],
+      ...connectedAnthropicState(),
+    });
+  });
+
+  it('nudges it once with the same step-done instruction as the kickoff', async () => {
+    storySpies.runTurn.mockImplementation(deltas(['Looked at the pages, more to read.']));
+    await useAppStore.getState().sendTurn({
+      sessionId: handsFreeSession.id,
+      agentId: AGENT_ID,
+      content: 'scout the ledger-core pages',
+    });
+
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
+    const second: unknown = storySpies.runTurn.mock.calls[1]?.[0];
+    const prompt = String(Reflect.get(Object(second), 'prompt'));
+    expect(prompt).toContain('You stopped before finishing this workflow step.');
+    expect(prompt).toContain(`<<step-done id="${AGENT_ID}">>`);
+    expect(prompt).toContain('<<ctx-question blocking="true">>');
+  });
+});
