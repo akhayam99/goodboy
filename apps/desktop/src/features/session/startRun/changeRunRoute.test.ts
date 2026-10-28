@@ -150,12 +150,14 @@ const mockEngines = () => {
   const savePhaseTemplate = vi.fn<StoryState['savePhaseTemplate']>(async () => RUN_TEMPLATE);
   const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => undefined);
   const discardWorkflow = vi.fn<StoryState['discardWorkflow']>(async () => undefined);
+  const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => undefined);
   useAppStore.setState({
     spawnAgent,
     attachWorkflowToSession,
     savePhaseTemplate,
     stopWorkflowRunNow,
     discardWorkflow,
+    closeWorkflowRun,
     generateWorkflowTitle: vi.fn<StoryState['generateWorkflowTitle']>(async () => undefined),
   });
   return {
@@ -164,6 +166,7 @@ const mockEngines = () => {
     savePhaseTemplate,
     stopWorkflowRunNow,
     discardWorkflow,
+    closeWorkflowRun,
   };
 };
 
@@ -236,7 +239,7 @@ describe('changeRunRoute', () => {
     expect(engines.discardWorkflow).toHaveBeenCalledWith(SESSION.id, RUN_ID);
   });
 
-  it('after work started, starts a second run with what the first found and the first keeps going', async () => {
+  it('after work started on a finished run, starts a new run with what the first found', async () => {
     seedPlanRun({ hasWork: true });
     const engines = mockEngines();
 
@@ -246,6 +249,7 @@ describe('changeRunRoute', () => {
     });
 
     expect(change).toBe('second-run');
+    expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
     const prompt = engines.spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
     expect(prompt).toContain(ASK);
     expect(prompt).toContain('Found the billing table');
@@ -254,6 +258,92 @@ describe('changeRunRoute', () => {
     expect(runOf()?.rulesSnapshot?.route).toEqual(PLAN_ROUTE);
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[NEW_AGENT]).toMatchObject({ ask: ASK, shape: 'lead' });
+  });
+
+  it('restarts a stopped run: starts the new run with what was done, then ends this one', async () => {
+    seedPlanRun({ hasWork: true });
+    const engines = mockEngines();
+
+    const change = await changeRunRoute({
+      target: planTarget,
+      choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+      shouldEndRun: true,
+    });
+
+    expect(change).toBe('restarted');
+    const prompt = engines.spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(prompt).toContain('Found the billing table');
+    expect(engines.closeWorkflowRun).toHaveBeenCalledTimes(1);
+    expect(engines.closeWorkflowRun).toHaveBeenCalledWith(SESSION.id, RUN_ID);
+    expect(engines.spawnAgent.mock.invocationCallOrder[0]).toBeLessThan(
+      engines.closeWorkflowRun.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('keeps a stopped run open when the restart cannot start', async () => {
+    seedPlanRun({ hasWork: true });
+    const engines = mockEngines();
+    engines.spawnAgent.mockRejectedValueOnce(new Error('No provider is connected'));
+
+    await expect(
+      changeRunRoute({
+        target: planTarget,
+        choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+        shouldEndRun: true,
+      }),
+    ).rejects.toThrow('No provider is connected');
+
+    expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it('refuses to start a second run on a run that is still going', async () => {
+    seedPlanRun({ hasWork: true });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION.id]: [
+          anAgent({
+            sessionId: SESSION.id,
+            workflowRunId: RUN_ID,
+            name: 'Scout the billing table',
+            status: 'running',
+          }),
+        ],
+      },
+    });
+    const engines = mockEngines();
+
+    await expect(
+      changeRunRoute({
+        target: planTarget,
+        choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+        shouldEndRun: true,
+      }),
+    ).rejects.toThrow('still going');
+
+    expect(engines.spawnAgent).not.toHaveBeenCalled();
+    expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it('refuses to start a plan from an agent that is still working', async () => {
+    useAppStore.setState({
+      sessions: [SESSION],
+      phaseTemplates: { [WORKSPACE.id]: [] },
+      sessionPhaseRuns: {
+        [SESSION.id]: [
+          anAgent({ id: ROOT, sessionId: SESSION.id, name: 'Auto', status: 'running' }),
+        ],
+      },
+    });
+    const engines = mockEngines();
+
+    await expect(
+      changeRunRoute({
+        target: { kind: 'lead', sessionId: SESSION.id, agentId: ROOT },
+        choice: { shape: 'plan', presetId: null, closeness: 'adapt' },
+      }),
+    ).rejects.toThrow('still going');
+
+    expect(engines.attachWorkflowToSession).not.toHaveBeenCalled();
   });
 
   it('leaves the first run as it was when the second run fails to start', async () => {

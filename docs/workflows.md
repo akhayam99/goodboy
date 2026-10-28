@@ -513,10 +513,15 @@ through `updateWorkflowRunRules`: one queue per run in this window, and a
 compare and swap on the stored `rules_snapshot` text
 (`replaceWorkflowRunRulesIfUnchanged`) that re-reads and re-applies the patch
 when another window saved first, so no write drops another.
-A change after work started calls `startRoutedRun` with the findings
-(`runFindingsOf`: the run summary's done entries and the settled steps'
-summaries) and leaves the first run or Auto tree going; nothing new is written
-to it (`route.changedTo` is only parsed, for older runs). The defaults live in
+The popover follows the run (`runKindPhaseOf`): read-only while a step runs or
+the orchestrator decides, **Restart as** once the run stopped, failed or
+blocked, **Start a new run as** once it finished. A change after work started
+refuses while a step is going (`changeRunRoute`), else calls `startRoutedRun`
+with the findings (`runFindingsOf`: the run summary's done entries and the
+settled steps' summaries). On a stopped run the first run is then closed
+(`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
+an agent that finished, nothing is written to the first (`route.changedTo` is
+only parsed, for older runs). The defaults live in
 the settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
 through `runDefaultOf`; `changeRunDefault` writes compare and swap and records

@@ -8,6 +8,7 @@ import { runKindOfRoute } from '../../startRun/runKindOfRoute';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { RunKindChoices } from './RunKindChoices';
+import type { RunKindPhase } from './runKindPhaseOf';
 import { runKindChoicesOf } from './runKindChoicesOf';
 import { useRunRouteChange } from './useRunRouteChange';
 
@@ -16,7 +17,7 @@ type Props = {
   readonly target: RunRouteTarget;
   readonly route: RunRoute;
   readonly changeCount: number;
-  readonly hasStarted: boolean;
+  readonly phase: RunKindPhase;
 };
 
 type ChooseParams = {
@@ -25,7 +26,20 @@ type ChooseParams = {
 
 const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
 
-export const RunKindChip = ({ workspaceId, target, route, changeCount, hasStarted }: Props) => {
+const RUN_KIND_HEADING = {
+  unstarted: RUN_ROUTE_COPY.changeTo,
+  ended: RUN_ROUTE_COPY.restartAs,
+  finished: RUN_ROUTE_COPY.startNewAs,
+} as const satisfies Record<Exclude<RunKindPhase, 'live'>, string>;
+
+const RUN_KIND_CONSEQUENCE = {
+  unstarted: RUN_ROUTE_COPY.inPlace,
+  live: RUN_ROUTE_COPY.liveReadOnly,
+  ended: RUN_ROUTE_COPY.restart,
+  finished: RUN_ROUTE_COPY.secondRun,
+} as const satisfies Record<RunKindPhase, string>;
+
+export const RunKindChip = ({ workspaceId, target, route, changeCount, phase }: Props) => {
   const dropdown = useDropdown({ expectedHeight: 360, expectedWidth: 320, width: 'w-80' });
   const templates = useAppStore((state) => state.phaseTemplates[workspaceId] ?? NO_TEMPLATES);
   const presets = useMemo(
@@ -44,7 +58,7 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, hasStarte
     .filter((part) => part !== null)
     .join(' · ');
   const choose = async ({ choice }: ChooseParams) => {
-    const outcome = await change.choose({ choice });
+    const outcome = await change.choose({ choice, shouldEndRun: phase === 'ended' });
     if (outcome === null || outcome === 'in-place' || outcome === 'unchanged') {
       return;
     }
@@ -91,21 +105,23 @@ export const RunKindChip = ({ workspaceId, target, route, changeCount, hasStarte
           {whyLine}
         </p>
       )}
-      <RunKindChoices
-        choices={choices}
-        closeness={kind.shape === 'preset' ? (route.closeness ?? 'adapt') : null}
-        presetId={presetId}
-        hasStarted={hasStarted}
-        isBusy={change.isBusy}
-        onChoose={(params) => void choose(params)}
-      />
+      {phase === 'live' ? null : (
+        <RunKindChoices
+          choices={choices}
+          closeness={kind.shape === 'preset' ? (route.closeness ?? 'adapt') : null}
+          presetId={presetId}
+          heading={RUN_KIND_HEADING[phase]}
+          isBusy={change.isBusy}
+          onChoose={(params) => void choose(params)}
+        />
+      )}
       {change.error === null ? null : (
         <p role="alert" className="text-meta text-danger">
           {`${RUN_ROUTE_COPY.changeFailed}: ${change.error}`}
         </p>
       )}
       <p data-run-kind-consequence="" className="text-meta text-faint-foreground">
-        {hasStarted ? RUN_ROUTE_COPY.secondRun : RUN_ROUTE_COPY.inPlace}
+        {RUN_KIND_CONSEQUENCE[phase]}
       </p>
     </AnchoredPopover>
   );
