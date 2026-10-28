@@ -54,13 +54,15 @@ import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
+import { FixRunGroupHeader } from './FixRunGroupHeader';
+import { FixRunSection } from './FixRunSection';
+import { useDropHandledSelection } from './useDropHandledSelection';
+import { useFixRunGroups } from './useFixRunGroups';
 import { BulkUndoBar } from './BulkUndoBar';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
 import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewScopeBar';
-import { RunStatusBulkActions } from './RunStatusBulkActions';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
-import { ResolveRunStatus } from './ResolveRunStatus';
 import { ReviewList } from './ReviewList';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import type { ReviewPush } from './useReviewPush';
@@ -149,8 +151,6 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       }))
       .filter((group) => group.entries.length > 0);
   }, [branchGroups, commentState, scope]);
-  const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
-  const stopResolveLane = useAppStore((s) => s.stopResolveLane);
   const run = useMemo(
     () =>
       fixRunOf({
@@ -163,7 +163,12 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
     [entries],
   );
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const groups = allGroups;
+  const { groups, fixRunReady, isRunLive } = useFixRunGroups({
+    run,
+    lane,
+    entries,
+    groups: allGroups,
+  });
   const shownEntries = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
@@ -182,6 +187,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
     () => (storedSelection ?? []).filter((threadId) => presentIds.has(threadId)),
     [presentIds, storedSelection],
   );
+  useDropHandledSelection({ sessionId, presentIds, fixableIds, acceptableIds });
   const fixSelectedIds = useMemo(
     () => selectedIds.filter((threadId) => fixableIds.has(threadId)),
     [fixableIds, selectedIds],
@@ -210,12 +216,6 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const openThreadRef = useRef(openThreadId);
   openThreadRef.current = openThreadId;
   const [lastThreadId, setLastThreadId] = useState<string | null>(openThreadId);
-  const openTranscriptAgentId = useAppStore((s) =>
-    s.drawer?.kind === 'transcript' && s.drawer.sessionId === sessionId
-      ? s.drawer.payload.agentId
-      : null,
-  );
-  const isRunTranscriptOpen = run !== null && openTranscriptAgentId === run.agentId;
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
@@ -638,6 +638,18 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
               onSelect={select}
               checked={checked}
               onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
+              runHeader={
+                fixRunReady === null || run === null ? null : (
+                  <FixRunGroupHeader
+                    sessionId={sessionId}
+                    agentId={run.agentId}
+                    ready={fixRunReady}
+                    sourceKind={source?.kind ?? null}
+                    isBusy={isAccepting}
+                    onApply={() => void acceptMany(fixRunReady.threadIds)}
+                  />
+                )
+              }
             />
           </div>
           <div
@@ -740,33 +752,13 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           hostLabel={provider}
         />
         {run === null ? null : (
-          <ResolveRunStatus
+          <FixRunSection
+            sessionId={sessionId}
             run={run}
-            onOpenTranscript={
-              isRunTranscriptOpen
-                ? null
-                : () =>
-                    openDrawer({
-                      kind: 'transcript',
-                      sessionId,
-                      payload: { agentId: run.agentId },
-                    })
-            }
             lane={lane}
-            onStop={() =>
-              void (lane === null
-                ? forceCloseResolver(sessionId, run.agentId)
-                : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }))
-            }
-            actions={
-              bulkRun === null ? null : (
-                <RunStatusBulkActions
-                  sessionId={sessionId}
-                  run={bulkRun}
-                  onOpenAnswers={openAnswers}
-                />
-              )
-            }
+            bulkRun={bulkRun}
+            isChecksShown={!isRunLive && fixRunReady === null}
+            onOpenAnswers={openAnswers}
           />
         )}
         {body()}

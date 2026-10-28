@@ -106,14 +106,14 @@
   Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
   in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
   thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
-  The action that takes a fix is `Apply fix` in the comment drawer and `Apply N fixes` in the
+  The action that takes a fix is `Apply fix` in the comment drawer and `Apply and resolve N` in the
   selection bar and the drawer; group labels carry their count and no verbs. A fix run is one agent and one transcript for all its comments: answers, retries and
   hints continue that run, only a model the owner picks starts a new one, and a finished turn
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its drawer (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
-Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
+Fix N` opens the same panel, or `Apply and resolve N` for comments with a fix ready. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
   `N accepted · Undo` (Cmd+Z) are described in

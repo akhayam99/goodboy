@@ -35,7 +35,7 @@
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 361,
   "apps/desktop/src/features/reports/buildReportContext.ts": 911,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx": 281,
-  "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 743,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 735,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 418,
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 764,
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 318,

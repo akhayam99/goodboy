@@ -47,6 +47,9 @@ type CountParams = {
 export const applyFixesLabel = ({ count }: CountParams): string =>
   count === 1 ? RESOLVE_VOCAB.applyFix : `Apply ${count} fixes`;
 
+export const applyAndResolveLabel = ({ count }: CountParams): string =>
+  `Apply and resolve ${count}`;
+
 export const RESOLVE_GROUP_LABEL: Readonly<Record<Exclude<ResolveGroup, 'left_open'>, string>> = {
   needs_you: 'Needs you',
   working: 'Working',
