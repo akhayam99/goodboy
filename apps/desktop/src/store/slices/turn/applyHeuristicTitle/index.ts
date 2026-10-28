@@ -90,7 +90,7 @@ const generateAgentTitle = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    const title = parseGeneratedTitle({ providerId, stdout: result.stdout });
+    const title = parseGeneratedTitle({ providerId, stdout: result.stdout, ask: prompt });
     if (title.trim() === '') {
       throw new Error('the model returned an empty title');
     }
