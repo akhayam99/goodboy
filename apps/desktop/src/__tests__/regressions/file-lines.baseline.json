@@ -82,7 +82,7 @@
   "packages/db/src/migrations/m118-workspace-containers.ts": 701,
   "packages/db/src/migrations/m125-normalize-timestamps.ts": 767,
   "packages/db/src/queries/impact.ts": 773,
-  "packages/db/src/queries/session-workflow.ts": 637,
+  "packages/db/src/queries/session-workflow.ts": 631,
   "packages/db/src/queries/workflow.ts": 616,
   "packages/types/src/index.ts": 658,
   "packages/ui/src/components/ContextMenu/MenuList.tsx": 275,

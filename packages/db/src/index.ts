@@ -173,9 +173,9 @@ export {
   updateWorkflowRunRulesSnapshot,
   getWorkflowRunRulesText,
   replaceWorkflowRunRulesIfUnchanged,
-  updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
+export { updateGeneratedWorkflowRunTitle } from './queries/generated-workflow-run-title';
 export {
   listWorkspaceWorkflowRuns,
   type WorkflowRunHistoryRow,

@@ -92,7 +92,12 @@ changes it, so looking at another tab does not. A remembered **Preset** falls
 back to **Orchestrated** once the workspace has no presets left.
 
 Each run also gets a title of its own, at most six words, written from the run
-goal by the `agent_naming` task model when the run starts. The activity feed,
+goal by the `agent_naming` task model when the run starts. The title is cleaned
+(`cleanWorkflowRunTitle` in `@goodboy/db`): a `Title:` label, quotes and markdown
+marks go, a reply that reads as a sentence is dropped, and a title never ends in
+the middle of a word. When nothing usable is left it is the first line of the
+ask, cut at a word. A title stored before this reads cleaned too: the same
+function runs when the run rows load, and never touches a name you chose. The activity feed,
 the workflow detail and the breadcrumb show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
