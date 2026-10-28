@@ -1,6 +1,15 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type StepId,
+  type TurnEvent,
+  type WorkflowRunId,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ settings: new Map<string, string>() }));
 
@@ -115,6 +124,29 @@ describe('resumeInterruptedAgents', () => {
     expect(JSON.parse(h.settings.get(INTERRUPTED_RUNS_KEY) ?? '{}').runIds).toEqual([
       'run-elsewhere',
     ]);
+  });
+
+  it('tells a resumed workflow step how to close itself', async () => {
+    writeMarker(['run-a']);
+    const store = buildStore({
+      agents: [
+        agentOf('agent-a', 'run-a', {
+          stepId: brandId<StepId>({ value: 'step-scout' }),
+          workflowRunId: brandId<WorkflowRunId>({ value: 'workflow-run-1' }),
+        }),
+      ],
+    });
+
+    await resumeInterruptedAgents({ get: store.get });
+
+    expect(store.sendTurn).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      agentId: 'agent-a',
+      content: expect.stringContaining('<<step-done id="agent-a">>'),
+    });
+    expect(store.sendTurn.mock.calls[0]?.[0]).toMatchObject({
+      content: expect.stringContaining(RESTART_RESUME_PROMPT),
+    });
   });
 
   it('leaves an agent that was not cut by a clean exit as Stopped by restart', async () => {

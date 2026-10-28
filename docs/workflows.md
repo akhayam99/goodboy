@@ -1382,6 +1382,35 @@ question in plain prose never reaches the user, so an agent that needs an
 answer, an approval or a confirmation asks it in a blocking
 `<<ctx-question>>` block and stops.
 
+Every provider gets the same asks, in the same words. Claude takes the
+protocol in its system prompt; the other providers have no separate system
+prompt, so `renderHandoff` puts the same guards and role instructions at the
+top of the message (`store.kickoff-markers.test.ts` pins, for each provider and
+for the scout, planner, implementer, reviewer, investigator, tester and docs
+roles, the step-done line with the agent's own id, the question block, the
+decision protocol, the planner's plan block and the scout's handoff hint).
+The continue nudge, the ask to continue, the blocked-step answer, the stuck-step
+recovery and the continue of a stopped or restarted step all repeat the same
+scope line (`withStepBoundary`).
+
+What the harness reads back is tolerant of how a provider prints a marker.
+`canonicalizeMarkers` (`packages/core/src/context/`) runs first in
+`extractStepDone`, `extractHandoff`, `extractMarkers`, `hasBlockingQuestion`,
+`extractPlanFromMarker`, `extractClusterDone`, `stripControlMarkers` and the
+Auto child closing (`parseChildClosing`). It rewrites a known marker to its
+plain form when it was printed with markdown-escaped brackets, HTML entities,
+a space after `<<`, an upper-case name, curly double quotes around an attribute
+value, or (for `step-done` and `handoff` only) one closing bracket. Backticks,
+a code fence, extra spaces, single quotes, a bare id, a marker followed by more
+text and a marker split across streamed deltas already worked. Content between
+a block's open and close tags is never touched, a curly apostrophe inside a
+value stays, and a single-bracket `ctx-decision` still stays text. The id check
+is strict everywhere: a marker for another agent, an empty id and a bare
+`<<step-done>>` (an agent talking about the marker) never count.
+`packages/core/src/providers/markerMatrix.test.ts` runs every marker through
+the real line shape of claude, cursor, codex, gemini, copilot and opencode
+(partial deltas plus the final message where the provider sends both).
+
 When a step or a sub-agent ends a turn without its `step-done` or
 `cluster-done` marker, `holdForUserQuestion` looks at the turn first:
 
@@ -1411,3 +1440,20 @@ one of two states:
   sub-agent whose plan instructions are no longer readable also end in
   `blocked`. A blocked agent resumes when you write to it, or through Ask it
   to continue and Skip.
+
+A blocked step with no question reads "This step ended without a result" on
+the run page (`OrchestratedBlockedStep`, the preset `RunTail`) and on the
+agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. It offers
+**Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
+which finalizes the step with `force` from the agent's last words and lets the
+run advance). A step blocked for a missing artifact or for a question keeps its
+own copy.
+
+The same state is reached when no end path ran. `watchStepEnd`
+(`store/slices/workflows/stepEnd/`) looks four seconds after a step agent's
+turn settled. If the step is still `running`, no turn runs or starts for it, no
+child still works, no mount continuation waits and no open question of the
+agent waits for you, it sets the step to `blocked`, raises one warning
+notification and writes one line to the app log through `log_step_end`:
+`[turns] step ended without a result agent <id>: <reason>`. A failed write
+shows "Couldn't mark the step as ended" and leaves the step as it was.

@@ -1,6 +1,7 @@
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { closeTurnStartWindow } from './turnStartWindow';
-import { markTurnActive, markTurnSettled } from './turnSettled';
+import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
+import { watchStepEnd } from '../workflows/stepEnd/watchStepEnd';
 import { claimWorkflowTurn } from './workflowTurnBreaker';
 import { resetMountContinuationChain } from './mountContinuations';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
@@ -22,6 +23,7 @@ import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
 import { noticeAutoOfChildTurn } from '../../runtime/auto/noticeAutoOfChildTurn';
 import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
 import { lookupDeliveryRun } from '../../../features/chat/turn';
+import { stopLingeringTurn } from '../../../features/chat/stopLingeringTurn';
 import { handDelivery } from './handDelivery';
 
 type DiscardParams = Readonly<{
@@ -34,6 +36,8 @@ type RunOnceParams = Readonly<{
 }>;
 
 const NO_KNOWN_RUN = null;
+
+const OPERATOR_SETTLE_WAIT_MS = 30_000;
 
 const ALREADY_SENT: SendTurnResult = { blockedOverBudget: false, isAlreadySent: true };
 
@@ -104,6 +108,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return autoResult;
     }
     await noticeAutoOfChildTurn({ get, input });
+    if (input.origin === 'operator' && input.agentId !== undefined) {
+      await stopLingeringTurn({ agentId: input.agentId });
+      await waitTurnSettledFor({ agentId: input.agentId, ms: OPERATOR_SETTLE_WAIT_MS });
+    }
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {
@@ -166,6 +174,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       );
       if (settledAgentId !== null) {
         markTurnSettled({ agentId: settledAgentId });
+        watchStepEnd({ set, get, sessionId: input.sessionId, agentId: settledAgentId });
         void get().drainAgentQueue({ sessionId: input.sessionId, agentId: settledAgentId });
       }
     }

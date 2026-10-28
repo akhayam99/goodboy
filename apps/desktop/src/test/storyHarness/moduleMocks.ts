@@ -87,6 +87,7 @@ export const budgetModuleMock = () => ({
   invokeSessionBudgetGet: storySpies.invokeSessionBudgetGet,
   invokeSessionBudgetSet: storySpies.invokeSessionBudgetSet,
   invokeSessionBudgetClear: storySpies.invokeSessionBudgetClear,
+  invokeBudgetEmitAlerts: vi.fn(async () => []),
   invokeCheckProviderBudget: vi.fn(async () => undefined),
 });
 

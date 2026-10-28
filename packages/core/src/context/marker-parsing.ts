@@ -5,6 +5,13 @@ import { BITBUCKET_THREAD_PREFIX } from '../review-source/bitbucketReviewSource'
 import { GITLAB_THREAD_PREFIX } from '../review-source/gitlabReviewSource';
 import { NOTE_THREAD_PREFIX } from '../review-source/noteThreadPrefix';
 import { readClusterChecks } from './clusterChecks';
+import { canonicalizeMarkers } from './canonicalizeMarkers';
+import { PLAN_CLOSE, PLAN_OPEN, planFromMarker, type ExtractedPlan } from './plan-marker';
+
+export type { ExtractedPlan };
+
+export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null =>
+  planFromMarker({ assistantText });
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
@@ -26,8 +33,6 @@ const DECISION_OPEN = '<<ctx-decision>>';
 const DECISION_CLOSE = '<</ctx-decision>>';
 const RESOLVED_OPEN = '<<ctx-resolved>>';
 const RESOLVED_CLOSE = '<</ctx-resolved>>';
-const PLAN_OPEN = '<<plan>>';
-const PLAN_CLOSE = '<</plan>>';
 const CLUSTERS_OPEN = '<<clusters>>';
 const CLUSTERS_CLOSE = '<</clusters>>';
 const FAN_OUT_OPEN = '<<fan-out>>';
@@ -160,12 +165,13 @@ type ExtractedQuestion = {
 };
 
 export const extractMarkers = (
-  assistantText: string,
+  rawText: string,
 ): {
   readonly decisions: ReadonlyArray<string>;
   readonly questions: ReadonlyArray<ExtractedQuestion>;
   readonly resolved: ReadonlyArray<string>;
 } => {
+  const assistantText = canonicalizeMarkers({ text: rawText });
   const decisions = extractBlockContents(assistantText, DECISION_OPEN, DECISION_CLOSE);
   const questions = extractQuestions(assistantText);
   const resolved = extractBlockContents(assistantText, RESOLVED_OPEN, RESOLVED_CLOSE);
@@ -260,7 +266,8 @@ function parseQuestionAttrs(raw: string): Record<string, string> {
   return attrs;
 }
 
-function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
+function extractQuestions(rawText: string): ReadonlyArray<ExtractedQuestion> {
+  const text = canonicalizeMarkers({ text: rawText });
   const out: ExtractedQuestion[] = [];
   QUESTION_OPEN_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -336,65 +343,6 @@ export const extractOpenQuestionAnswer = ({
   }
 };
 
-export type ExtractedPlan = {
-  readonly title: string;
-  readonly bodyMd: string;
-};
-
-const lastPlanBlock = (assistantText: string): string | null => {
-  let closeAt = assistantText.lastIndexOf(PLAN_CLOSE);
-  while (closeAt !== -1) {
-    const openAt = assistantText.lastIndexOf(PLAN_OPEN, closeAt);
-    if (openAt !== -1) {
-      const value = assistantText.slice(openAt + PLAN_OPEN.length, closeAt).trim();
-      if (value.length > 0) {
-        return value;
-      }
-    }
-    closeAt = closeAt === 0 ? -1 : assistantText.lastIndexOf(PLAN_CLOSE, closeAt - 1);
-  }
-  return null;
-};
-
-export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
-  const raw = lastPlanBlock(assistantText);
-  if (raw === null) {
-    return null;
-  }
-  return parsePlanBody(raw);
-};
-
-function parsePlanBody(raw: string): ExtractedPlan | null {
-  const lines = raw.split('\n');
-  let firstIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const ln = (lines[i] ?? '').trim();
-    if (ln.length > 0) {
-      firstIdx = i;
-      break;
-    }
-  }
-  if (firstIdx === -1) {
-    return null;
-  }
-  const titleLine = (lines[firstIdx] ?? '').trim();
-  const title = titleLine.replace(/^#+\s*/, '').trim();
-  if (title.length === 0) {
-    return null;
-  }
-  const restLines = lines.slice(firstIdx + 1);
-  const joined = restLines.join('\n').replace(/^\n+/, '');
-  let end = joined.length;
-  while (end > 0 && joined[end - 1] === '\n') {
-    end -= 1;
-  }
-  let bodyMd = joined.slice(0, end);
-  if (bodyMd.length === 0) {
-    bodyMd = title;
-  }
-  return { title, bodyMd };
-}
-
 const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
   'planner',
   'scout',
@@ -415,7 +363,10 @@ export type ExtractedHandoff = {
 
 export const extractHandoff = (assistantText: string): ExtractedHandoff | null => {
   let last: ExtractedHandoff | null = null;
-  for (const inner of extractSelfClosingInner(assistantText, HANDOFF_OPEN)) {
+  for (const inner of extractSelfClosingInner(
+    canonicalizeMarkers({ text: assistantText }),
+    HANDOFF_OPEN,
+  )) {
     const attrs = parseHandoffAttrs(inner);
     const kindRaw = attrs.kind?.toLowerCase() ?? '';
     if (!HANDOFF_KINDS.has(kindRaw as AgentKindLabel)) {
@@ -1042,7 +993,10 @@ export const extractClustersFromMarker = ({
 
 export const extractClusterDone = (assistantText: string): { readonly id: string } | null => {
   let last: { id: string } | null = null;
-  for (const inner of extractSelfClosingInner(assistantText, CLUSTER_DONE_OPEN)) {
+  for (const inner of extractSelfClosingInner(
+    canonicalizeMarkers({ text: assistantText }),
+    CLUSTER_DONE_OPEN,
+  )) {
     const attrs = parseHandoffAttrs(inner);
     const id = (attrs.id ?? '').trim();
     if (id.length === 0) {
@@ -1093,7 +1047,8 @@ export const extractScoutDomains = (text: string): ReadonlyArray<string> | null 
   return last;
 };
 
-export const extractStepDone = (assistantText: string): { readonly id: string } | null => {
+export const extractStepDone = (rawText: string): { readonly id: string } | null => {
+  const assistantText = canonicalizeMarkers({ text: rawText });
   STEP_DONE_RE.lastIndex = 0;
   let last: { id: string } | null = null;
   let m: RegExpExecArray | null;
@@ -1317,7 +1272,8 @@ const stripSelfMarkers = (text: string): string => {
   return out + text.slice(cursor);
 };
 
-export const stripControlMarkers = (text: string): string => {
+export const stripControlMarkers = (rawText: string): string => {
+  const text = canonicalizeMarkers({ text: rawText });
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_STRAY_TAG_RE.lastIndex = 0;
   UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;

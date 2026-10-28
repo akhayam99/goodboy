@@ -1,4 +1,4 @@
-import type { AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 
 export const composePlanSection = ({ bodyMd }: { readonly bodyMd: string }): string =>
@@ -47,3 +47,13 @@ const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agen
 
 export const composeStepBoundary = (agentId: AgentId): string =>
   composeUnitBoundary({ unit: 'step', marker: stepBoundaryMarker(agentId) });
+
+type StepResumeParams = {
+  readonly agent: Pick<Agent, 'id' | 'stepId' | 'workflowRunId'> | undefined;
+  readonly text: string;
+};
+
+export const withStepBoundary = ({ agent, text }: StepResumeParams): string =>
+  agent?.stepId != null && agent.workflowRunId != null
+    ? `${text}\n\n${composeStepBoundary(agent.id)}`
+    : text;

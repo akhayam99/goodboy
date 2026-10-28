@@ -56,3 +56,23 @@ export const isTurnSettling = ({
 
 export const waitTurnSettled = ({ agentId }: Params): Promise<void> =>
   active.get(agentId)?.promise ?? Promise.resolve();
+
+type WaitForParams = Params &
+  Readonly<{
+    ms: number;
+  }>;
+
+export const waitTurnSettledFor = async ({ agentId, ms }: WaitForParams): Promise<void> => {
+  const existing = active.get(agentId);
+  if (existing === undefined) {
+    return;
+  }
+  const timer: { id: ReturnType<typeof setTimeout> | undefined } = { id: undefined };
+  const ceiling = new Promise<void>((done) => {
+    timer.id = setTimeout(done, ms);
+  });
+  await Promise.race([existing.promise, ceiling]);
+  clearTimeout(timer.id);
+};
+
+export const isTurnActive = ({ agentId }: Params): boolean => active.has(agentId);

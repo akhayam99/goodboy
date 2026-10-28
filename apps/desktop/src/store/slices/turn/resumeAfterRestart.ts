@@ -1,5 +1,6 @@
 import type { AgentId, IsoDateTime, ProviderId, ProviderRunId, SessionId } from '@goodboy/types';
 import { planRestartResume, type RestartReason } from './planRestartResume';
+import { withStepBoundary } from './kickoff';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -47,6 +48,8 @@ export const resumeAfterRestart = async ({
     message: plan.note,
     at: new Date().toISOString() as IsoDateTime,
   });
-  const result = await get().sendTurn({ sessionId, agentId, content: plan.prompt });
+  const content =
+    plan.mode === 'resend' ? plan.prompt : withStepBoundary({ agent, text: plan.prompt });
+  const result = await get().sendTurn({ sessionId, agentId, content });
   return result.blockedOverBudget ? 'blocked' : 'resumed';
 };

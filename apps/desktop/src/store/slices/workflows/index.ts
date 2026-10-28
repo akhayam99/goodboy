@@ -4,6 +4,7 @@ import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
 import { askAgentToContinue } from './askAgentToContinue';
+import { markStepDone } from './stepEnd/markStepDone';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { closeWorkflowRun } from './closeWorkflowRun';
 import { deleteStepDef } from './deleteStepDef';
@@ -100,6 +101,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
     askAgentToContinue: askAgentToContinue(get),
+    markStepDone: markStepDone({ get }),
     sweepIdleRuns: sweepIdleRuns(set, get),
   };
 };

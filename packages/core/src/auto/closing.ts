@@ -1,3 +1,4 @@
+import { canonicalizeMarkers } from '../context/canonicalizeMarkers';
 import { extractMarkers, stripControlMarkers } from '../context/marker-parsing';
 import { excerptStepOutput } from '../summarizer/step-output';
 import { parseSubstepNeeds, type AutoSubstepRole } from './substep';
@@ -61,11 +62,19 @@ const attrsOf = ({ raw }: AttrsParams): Readonly<Record<string, string>> => {
       continue;
     }
     const quoteAt = skipSpaces({ raw, from: equalsAt + 1 });
-    if (raw.charAt(quoteAt) !== '"') {
-      index = nameEnd;
+    const quote = raw.charAt(quoteAt);
+    if (quote !== '"' && quote !== "'") {
+      let bareEnd = quoteAt;
+      while (bareEnd < raw.length && !SPACE_CHAR_RE.test(raw.charAt(bareEnd))) {
+        bareEnd += 1;
+      }
+      if (bareEnd > quoteAt) {
+        attrs[raw.slice(index, nameEnd)] = raw.slice(quoteAt, bareEnd);
+      }
+      index = Math.max(bareEnd, nameEnd);
       continue;
     }
-    const closeAt = raw.indexOf('"', quoteAt + 1);
+    const closeAt = raw.indexOf(quote, quoteAt + 1);
     if (closeAt === -1) {
       return attrs;
     }
@@ -80,7 +89,8 @@ type CompletionParams = {
   readonly childAgentId: string;
 };
 
-const completionOf = ({ text, childAgentId }: CompletionParams): ChildCompletion => {
+const completionOf = ({ text: rawText, childAgentId }: CompletionParams): ChildCompletion => {
+  const text = canonicalizeMarkers({ text: rawText });
   STEP_DONE_RE.lastIndex = 0;
   let completion: ChildCompletion = 'none';
   let match: RegExpExecArray | null = STEP_DONE_RE.exec(text);
