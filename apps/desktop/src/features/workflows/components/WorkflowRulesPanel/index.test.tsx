@@ -149,7 +149,7 @@ describe('WorkflowRulesPanel', () => {
       'Asks you: Every step, new runs',
       'Limit: none, new runs',
       'Models: Claude, Codex · Cursor as backup, new runs',
-      'Auto limit: $5.00, default',
+      'Auto limit: none',
     ]);
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });

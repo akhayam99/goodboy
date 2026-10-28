@@ -172,8 +172,8 @@ keeps its own copy of the rules (`attachWorkflowToSession` copies them at start)
   the most room** option live in Settings > Providers and models, the one home
   of the provider policy
 - **Auto limit** (`DefaultAutoLimitSetting`): what a new Auto starts on
-  (`auto.treeLimitUsd.<workspace id>`, `writeAutoTreeLimit`), "default" until
-  you set one; the smaller of it and the session limit pauses Auto
+  (`auto.treeLimitUsd.<workspace id>`, `writeAutoTreeLimit`), "none" until
+  you set one, with a **No limit** action; the smaller of it and the session limit pauses Auto
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance

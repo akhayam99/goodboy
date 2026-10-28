@@ -111,6 +111,17 @@ export const replaceWorkspaceValueIfUnchanged = async ({
   return result.rowsAffected === 1;
 };
 
+export const deleteWorkspaceValue = async ({
+  db,
+  workspaceId,
+  key,
+}: WorkspaceTarget): Promise<void> => {
+  await db.execute('DELETE FROM workspace_values WHERE workspace_id = ? AND key = ?', [
+    workspaceId,
+    key,
+  ]);
+};
+
 export const getProjectValue = async ({
   db,
   projectId,

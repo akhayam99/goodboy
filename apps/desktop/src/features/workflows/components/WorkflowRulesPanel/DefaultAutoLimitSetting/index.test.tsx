@@ -6,8 +6,11 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
+const deleteWorkspaceValue = vi.hoisted(() => vi.fn(async () => undefined));
+
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../../store/storyHarness')).dbModuleMock({
+    deleteWorkspaceValue,
     getWorkspaceValue: vi.fn(async () => null),
     insertWorkspaceValueIfAbsent: vi.fn(async () => true),
   }),
@@ -43,6 +46,30 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('DefaultAutoLimitSetting', () => {
+  it('says none when the workspace has no Auto limit', () => {
+    render(<DefaultAutoLimitSetting workspaceId={HARBORLINE.id} workspaceName="Harborline" />);
+
+    expect(screen.getByRole('button', { name: /^Auto limit:/ }).textContent).toContain('none');
+  });
+
+  it('removes a stored limit with No limit', async () => {
+    useAppStore.setState({
+      loadWorkspaceValue: vi.fn(async () => null),
+      workspaceValues: { [HARBORLINE.id]: { 'auto.treeLimitUsd': '8' } },
+    });
+    render(<DefaultAutoLimitSetting workspaceId={HARBORLINE.id} workspaceName="Harborline" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Auto limit:/ }));
+    const popover = screen.getByRole('dialog', { name: 'Auto limit' });
+    await act(async () => {
+      fireEvent.click(within(popover).getByRole('button', { name: 'No limit' }));
+    });
+
+    expect(deleteWorkspaceValue).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: HARBORLINE.id, key: 'auto.treeLimitUsd' }),
+    );
+  });
+
   it('reports a failed refresh apart from the write, which went through', async () => {
     const loadWorkspaceValue = vi
       .fn(async (): Promise<string | null> => null)

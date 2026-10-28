@@ -78,8 +78,8 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 - Auto runs on any connected provider that can confine a read-only agent
   (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
   the workspace picks for the role.
-- The **Limit** chip proposes 5 USD, or the budget of the session when that is
-  smaller and pauses ("Limit for this Auto run" in its popover). The smallest
+- The **Limit** chip starts on No limit, or the budget of the session when it
+  pauses ("Limit for this Auto run" in its popover, with a **No limit** action). The smallest
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
@@ -93,9 +93,9 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   write time; only the write checks the cap and the phase, never the earlier
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
-  already spent. The first start stores the cap for the workspace
-  (`workspace_values` key `auto.treeLimitUsd`, compare and swap), so the next start is
-  not asked again; a person can change it from the chip.
+  already spent. A limit exists only when a person sets one. It is stored for the
+  workspace (`workspace_values` key `auto.treeLimitUsd`, compare and swap; No limit
+  deletes the key), and a start never stores one the person did not set.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
@@ -489,7 +489,7 @@ No fixed count of agents, runs or turns ends a tree or refuses a hand over. A tr
 that already delegated 12 agents, ran 20 attempts or took 30 turns keeps going. What
 stops it is a guard that protects the user:
 
-- the spend cap of the tree (`AUTO_DEFAULT_TREE_CAP_USD` or the limit the user set
+- the spend cap of the tree (none, or the limit the user set
   and raises), checked against real spend: settled cost plus what running children
   spent so far (`autoLiveUsdSql`, their telemetry). No money is held for a child and
   no child has a ceiling per role: a child is admitted while the limit has money

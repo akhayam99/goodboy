@@ -249,6 +249,7 @@ export {
 } from './queries/settings';
 export {
   deleteProjectValue,
+  deleteWorkspaceValue,
   getProjectValue,
   getWorkspaceValue,
   insertProjectValueIfAbsent,

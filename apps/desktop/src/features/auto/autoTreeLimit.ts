@@ -1,13 +1,11 @@
-import { AUTO_DEFAULT_TREE_CAP_USD } from '@goodboy/core';
 import {
+  deleteWorkspaceValue,
   getWorkspaceValue,
   insertWorkspaceValueIfAbsent,
   replaceWorkspaceValueIfUnchanged,
   type Database,
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
-
-export const AUTO_TREE_LIMIT_DEFAULT_USD = AUTO_DEFAULT_TREE_CAP_USD;
 
 type RawParams = {
   readonly raw: string | null | undefined;
@@ -34,16 +32,20 @@ export const readAutoTreeLimit = async ({ db, workspaceId }: ReadParams): Promis
 type WriteParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;
-  readonly usd: number;
+  readonly usd: number | null;
 };
 
 const MAX_ATTEMPTS = 2;
 
 export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams): Promise<void> => {
+  const key = 'auto.treeLimitUsd';
+  if (usd === null) {
+    await deleteWorkspaceValue({ db, workspaceId, key });
+    return;
+  }
   if (!Number.isFinite(usd) || usd <= 0) {
     throw new Error('The Auto limit must be more than zero');
   }
-  const key = 'auto.treeLimitUsd';
   const value = String(usd);
   for (let tries = 0; tries < MAX_ATTEMPTS; tries += 1) {
     const raw = await getWorkspaceValue({ db, workspaceId, key });
