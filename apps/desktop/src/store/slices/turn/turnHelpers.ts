@@ -61,7 +61,7 @@ import { reviseArtifactForAgent } from '../../../features/artifacts/reviseArtifa
 import { capturedWireframeFidelity } from '../../../features/wireframes/capturedWireframeFidelity';
 import { requestedWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
 import type { AgentKind } from '../../../features/session/agent-kind';
-import { hasActiveWorkflowRun } from '../../../features/workflows/activeWorkflowRuns';
+import { isInWorkflow } from '../../../features/workflows/isInWorkflow';
 import { kindReadsAttachment } from '../../../features/providers/attachment-routing';
 import { cooldownWindowEnd, routeTaskModel } from '../../../features/providers/taskModelRouting';
 import {
@@ -1093,10 +1093,8 @@ export const emitTurnNudges = async (
   if (!session) {
     return;
   }
-  const inWorkflow = hasActiveWorkflowRun({
-    workflowRuns: session.workflowRuns,
-    agents: get().sessionPhaseRuns[sessionId] ?? [],
-  });
+  const agents = get().sessionPhaseRuns[sessionId] ?? [];
+  const inWorkflow = isInWorkflow({ session, agents, agentId });
 
   let nextNudge: SessionNudge | null = null;
 

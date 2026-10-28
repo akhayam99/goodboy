@@ -69,7 +69,7 @@
   "apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx": 461,
   "apps/desktop/src/shared/keyboard/registry.ts": 1026,
   "apps/desktop/src/store/slices/artifacts/artifactScoutRun.ts": 853,
-  "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1098,
+  "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1096,
   "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": 748,
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 1050,
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 660,

@@ -248,6 +248,12 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   Start, from the card or from the live nudge (`acceptSessionNudgeHandoff`),
   seeds the new agent's first turn with the reason and what the source agent
   wrote (`composeHandoffSeed`, `handoffSourceOutput`), passed as `seedPrompt`.
+  Inside a workflow run the marker is advice for the run, not an action:
+  a step agent that emits `<<handoff ...>>` and `<<step-done ...>>` completes
+  its step as usual, in either order and with either marker split across
+  deltas, and raises no live nudge (`emitTurnNudges` skips an agent with a
+  `stepId` and a `workflowRunId`). The orchestrator reads the step output and
+  decides the next step.
   `spawnAgent` sends a first turn only when the kickoff is not empty and
   `shouldDeferKickoff` is unset (the push fixers set it and send the turn once
   bound to their run), so a started agent with no seed, plan or step prompt sits in Pending until you
@@ -477,6 +483,22 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
   produced events but no response and exited non-zero fails the same way.
 - A turn that ends with no assistant text and no error appends a
   non-retryable "exited without a response" error.
+- **A result ends the turn even when the process stays alive.** Claude and
+  Cursor print a `result` line (the `done` event) and normally exit. When the
+  agent moved a tool to the background (a Bash that hit its timeout), Claude
+  keeps the process alive for that task and the stream never closes, so the
+  turn end was never processed: no span, no message, no step completion, and
+  the run sat silent. `streamTurn` now arms a timer on every `done`
+  (`TURN_END_MS.grace`, 5 s in `features/chat/turnEndGrace.ts`). A line that
+  starts new work (`isTurnActivity`: anything but usage, done, unknown payload,
+  stopped processes and notes) cancels it, so a process that starts another
+  turn after an empty result keeps streaming. When it fires, the process is
+  stopped through `turn_cancel` (the same reap as a normal exit, so the
+  transcript still lists the stopped processes) and the stream ends normally;
+  if the end envelope does not arrive within `TURN_END_MS.force` (2 s) the
+  stream ends anyway. The next turn resumes the session and may mention the
+  background task. Other providers end by exiting, so the timer only applies
+  to the `done` event.
 - **One listener per window.** Every envelope arrives on the `turn_event`
   channel of the window; `features/chat/createRunEventRouter.ts` holds the one
   listener and hands the envelope to the handler of its run
