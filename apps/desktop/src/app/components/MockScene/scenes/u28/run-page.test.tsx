@@ -139,12 +139,12 @@ describe('the u28 run page scenes', () => {
     expect(tail().textContent).toContain('Which export size should the benchmark treat');
     expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
     const form = within(tail()).getByRole('form', { name: 'Answer the question' });
-    const answer = within(form).getByRole('button', { name: 'Answer' });
+    const answer = within(form).getByRole('button', { name: 'Send answer' });
     expect(answer.hasAttribute('disabled')).toBe(true);
 
     type('Answer the question', '12,000 rows.');
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Answer' }));
+      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
     });
 
     expect(answerOpenQuestions).toHaveBeenCalledWith(
@@ -174,7 +174,7 @@ describe('the u28 run page scenes', () => {
     const form = within(tail()).getByRole('form', { name: 'Answer the question' });
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Answer' }));
+      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
     });
 
     expect(within(form).getByRole('alert').textContent).toContain('Could not save the answer.');

@@ -50,6 +50,7 @@ export const ORCHESTRATED_COPY = {
   blockedAnswerAction: 'Answer',
   questionAnswerLabel: 'Answer the question',
   questionAsks: 'The run asks',
+  questionAnswerAction: 'Send answer',
   blockedAnswerFailed: "Couldn't send the answer",
   blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
   blockedAsks: ({ isQuestion }: AsksParams): string =>

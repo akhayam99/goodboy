@@ -359,9 +359,9 @@ read top to bottom at the conversation measure:
   field with **Answer** as its primary action, **Restart step** as a secondary
   button and **Open agent chat** next to it. A real open question (phase
   `needs-answer`, a preset run's tail too) shows the same way: the question
-  inline, an **Answer the question** field and **Answer** as the primary action
-  (`RunOpenQuestion`, `answerOpenQuestions`); the header keeps **Open question**
-  for the drawer. A preset run's blocked step gets the inline question and a
+  inline, an **Answer the question** field and **Send answer** as its action
+  (`RunOpenQuestion`, `answerOpenQuestions`); the header **Answer** still opens
+  the drawer. A preset run's blocked step gets the inline question and a
   secondary **Restart step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a

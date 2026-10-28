@@ -79,7 +79,7 @@ export const RunOpenQuestion = ({ sessionId, question }: Props) => {
         maxRows={6}
         actions={
           <Button size="sm" type="submit" disabled={!canSend} isBusy={isSending}>
-            {ORCHESTRATED_COPY.blockedAnswerAction}
+            {ORCHESTRATED_COPY.questionAnswerAction}
           </Button>
         }
       />
