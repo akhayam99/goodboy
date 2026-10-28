@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   brandId,
   type AgentId,
@@ -234,7 +234,53 @@ describe('PushBanner', () => {
     );
   });
 
-  it('tracks the running agent instead of offering a second one, and retries once the fix is pushed', () => {
+  it('hands the store the retry, and the store still runs the latest one after the card is gone', async () => {
+    const fixBranchPushWithAgent = vi.fn<
+      (input: { readonly onSettled?: () => void }) => Promise<void>
+    >(async () => undefined);
+    store.setState({ fixBranchPushWithAgent });
+    const failed = {
+      kind: 'result' as const,
+      result: {
+        tone: 'failed' as const,
+        sentence: 'Nothing was pushed.',
+        failure: { output: 'boom' },
+      },
+    };
+    const first = vi.fn();
+    const latest = vi.fn();
+    const view = render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: failed,
+          fixTarget: { mountId: MOUNT_TARGET.mountId },
+          retryAfterFix: first,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+    await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledOnce());
+    const onSettled = fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled;
+
+    view.rerender(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: failed,
+          fixTarget: { mountId: MOUNT_TARGET.mountId },
+          retryAfterFix: latest,
+        })}
+      />,
+    );
+    view.unmount();
+    onSettled?.();
+
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledOnce();
+  });
+
+  it('tracks the running agent instead of offering a second one', () => {
     const retryAfterFix = vi.fn();
     const agentId = brandId<AgentId>({ value: 'agent-push-fix' });
     store.setState({
@@ -274,10 +320,9 @@ describe('PushBanner', () => {
 
     screen.getByText('An agent is fixing the push');
     expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
-    expect(retryAfterFix).not.toHaveBeenCalled();
     act(() => {
       store.setState({ settledBranchPushes: { [MOUNT_TARGET.mountId]: 1 } });
     });
-    expect(retryAfterFix).toHaveBeenCalledOnce();
+    expect(retryAfterFix).not.toHaveBeenCalled();
   });
 });

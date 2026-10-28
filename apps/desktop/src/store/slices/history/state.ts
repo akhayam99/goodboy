@@ -5,6 +5,7 @@ import type {
   HistoryLiveSession,
   HistoryRewriterBinding,
   HistoryRun,
+  PushContinuation,
 } from './types';
 
 export type HistoryState = {
@@ -13,6 +14,7 @@ export type HistoryState = {
   readonly historyDrafts: Readonly<Record<MountId, HistoryDraft>>;
   readonly branchPushFixes: Readonly<Record<AgentId, BranchPushFix>>;
   readonly settledBranchPushes: Readonly<Record<MountId, number>>;
+  readonly pushContinuations: Readonly<Record<MountId, PushContinuation>>;
   readonly historyLiveSessions: Readonly<Record<MountId, HistoryLiveSession>>;
 };
 
@@ -22,5 +24,6 @@ export const historyInitialState: HistoryState = {
   historyDrafts: {},
   branchPushFixes: {},
   settledBranchPushes: {},
+  pushContinuations: {},
   historyLiveSessions: {},
 };

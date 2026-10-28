@@ -111,8 +111,11 @@ form. The label is `Let an agent fix the push` (`PushFixAgentAction`): it calls
 `fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
 publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
 brief tells the agent not to do itself and never to skip a hook. The action tracks the agent
-(`branchPushFixAgentOf`) and, when `settledBranchPushes` rises, the banner re-arms the publication
-(`retryAfterFix`) and the create form runs its create again. A retry that finds nothing new while
+(`branchPushFixAgentOf`) and hands the store its continuation (`onSettled`, kept in
+`pushContinuations` by mount). When the fix pushed, `settleBranchPushFix` runs it from the store,
+once, wherever the user is: the banner re-arms the publication (`retryAfterFix`) and the create
+form runs its create again, with the latest text of the screen that registered it. A failed agent
+or a push that fails again drops it. A retry that finds nothing new while
 the last publication failed on its push shows that failure, never `Nothing is waiting for the push`
 (`failedPushPublication`).
 Only the header pushes everything: a thread has no

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -22,15 +22,13 @@ export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSett
   const agentId = useAppStore((state) =>
     branchPushFixAgentOf({ fixes: state.branchPushFixes, sessionId, mountId }),
   );
-  const settledCount = useAppStore((state) => state.settledBranchPushes[mountId] ?? 0);
-  const seenCount = useRef(settledCount);
+  const latest = useRef(onSettled);
 
   useEffect(() => {
-    if (settledCount > seenCount.current) {
-      seenCount.current = settledCount;
-      onSettled();
-    }
-  }, [onSettled, settledCount]);
+    latest.current = onSettled;
+  }, [onSettled]);
+
+  const resume = useCallback((): void => latest.current(), []);
 
   const start = async (): Promise<void> => {
     const state = useAppStore.getState();
@@ -43,6 +41,7 @@ export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSett
         confirmedOnlyOnline: null,
         confirmedRemoteSha: null,
         message: output,
+        onSettled: resume,
         ...(pending !== undefined && { pending }),
       });
     } catch (error) {

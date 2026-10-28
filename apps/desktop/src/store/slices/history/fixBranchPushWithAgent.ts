@@ -13,6 +13,7 @@ type Params = BranchPushInput & {
   readonly hint?: string;
   readonly pending?: string;
   readonly onAccepted?: () => void;
+  readonly onSettled?: () => void;
 };
 
 export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
@@ -26,6 +27,7 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
     hint,
     pending,
     onAccepted,
+    onSettled,
   }: Params): Promise<void> => {
     const isBusy = Object.values(get().branchPushFixes).some(
       (fix) => fix.sessionId === sessionId && fix.mountId === mountId,
@@ -79,12 +81,24 @@ export const fixBranchPushWithAgent = ({ set, get }: SliceDeps) => {
                 confirmedRemoteSha,
               },
             },
+            pushContinuations:
+              onSettled === undefined
+                ? current.pushContinuations
+                : {
+                    ...current.pushContinuations,
+                    [mountId]: { agentId, sessionId, mountId, resume: onSettled },
+                  },
           }));
         },
         unbind: ({ agentId }) => {
           set((current) => ({
             branchPushFixes: Object.fromEntries(
               Object.entries(current.branchPushFixes).filter(([key]) => key !== agentId),
+            ),
+            pushContinuations: Object.fromEntries(
+              Object.entries(current.pushContinuations).filter(
+                ([, continuation]) => continuation.agentId !== agentId,
+              ),
             ),
           }));
         },

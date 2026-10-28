@@ -543,6 +543,126 @@ describe('settleBranchPushFix', () => {
   });
 });
 
+describe('push continuation', () => {
+  type SettleParams = {
+    readonly read: () => AppStore;
+    readonly hasFailed?: boolean;
+  };
+
+  const settle = async ({ read, hasFailed = false }: SettleParams) =>
+    read().settleBranchPushFix({ sessionId: SESSION_ID, agentId: AGENT_ID, hasFailed });
+
+  it('keeps the continuation in the store by branch while the agent works', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn();
+
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    expect(read().pushContinuations[MOUNT_ID]).toMatchObject({
+      agentId: AGENT_ID,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+    expect(onSettled).not.toHaveBeenCalled();
+  });
+
+  it('resumes it from the store once the push settles, with no screen mounted', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn();
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    await settle({ read });
+
+    expect(h.gitPush).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(read().pushContinuations[MOUNT_ID]).toBeUndefined();
+  });
+
+  it('resumes it only once', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn();
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    await settle({ read });
+    await settle({ read });
+
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops it when the agent failed', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn();
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    await settle({ read, hasFailed: true });
+
+    expect(onSettled).not.toHaveBeenCalled();
+    expect(read().pushContinuations[MOUNT_ID]).toBeUndefined();
+  });
+
+  it('drops it when the push fails again', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn();
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+    h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'rejected' });
+
+    await settle({ read });
+
+    expect(onSettled).not.toHaveBeenCalled();
+    expect(read().pushContinuations[MOUNT_ID]).toBeUndefined();
+  });
+
+  it('says so when the continuation throws', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn(() => {
+      throw new Error('The form is gone');
+    });
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    await settle({ read });
+
+    expect(read().reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't continue after the fix." }),
+    );
+  });
+
+  it('drops it with the fix when the kickoff is declined', async () => {
+    const { read, sendTurn } = harness();
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: true });
+
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled: vi.fn(),
+    });
+    await vi.waitFor(() => expect(read().pushContinuations[MOUNT_ID]).toBeUndefined());
+  });
+});
+
 describe('prefillBranchPushTerminal', () => {
   it('types the force push with its lease into the worktree terminal', async () => {
     const { read } = harness();

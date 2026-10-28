@@ -180,6 +180,13 @@ export type BranchPushFix = {
   readonly confirmedRemoteSha: string | null;
 };
 
+export type PushContinuation = {
+  readonly agentId: AgentId;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly resume: () => void;
+};
+
 export type BranchPushInput = HistoryMountInput & {
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;

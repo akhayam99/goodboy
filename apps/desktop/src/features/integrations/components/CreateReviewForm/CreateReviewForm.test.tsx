@@ -298,6 +298,7 @@ describe('the create form', () => {
       expect.objectContaining({
         message: expect.stringContaining('Unused files (3)'),
         pending: expect.stringContaining('Open a pull request titled'),
+        onSettled: expect.any(Function),
       }),
     );
     expect(descriptionValue()).toContain('Settlement retries');
