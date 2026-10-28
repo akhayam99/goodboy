@@ -78,7 +78,7 @@ describe('resolve-state scenes', () => {
     expect(within(comments).getAllByRole('button', { name: 'See diff of 90b1d57' })).toHaveLength(
       4,
     );
-    const group = within(comments).getByRole('region', { name: 'Fix run' });
+    const group = within(comments).getByRole('region', { name: 'Fix run comments' });
     expect(within(group).getByTestId('fix-run-ready')).toBe(banner);
     expect(group.querySelectorAll('[data-thread-id]')).toHaveLength(4);
     expect(screen.queryByText(/Checks were skipped/)).toBeNull();

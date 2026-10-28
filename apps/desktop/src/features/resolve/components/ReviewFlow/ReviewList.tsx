@@ -27,7 +27,7 @@ type LabelParams = {
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 
-const FIX_RUN_GROUP_LABEL = 'Fix run';
+const FIX_RUN_GROUP_LABEL = 'Fix run comments';
 
 const labelOf = ({ group, entries }: LabelParams): string => {
   if (group !== 'left_open') {
