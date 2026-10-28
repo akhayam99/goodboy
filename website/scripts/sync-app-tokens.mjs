@@ -45,6 +45,7 @@ const STATE_TOKEN_NAMES = [
   'provider-cursor',
   'provider-codex',
   'provider-gemini',
+  'provider-copilot',
   'provider-opencode',
   'provider-openrouter',
   'provider-moonshot',

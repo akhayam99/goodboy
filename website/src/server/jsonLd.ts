@@ -1,3 +1,4 @@
+import PROVIDER_SOURCES from '../components/brandIcons.source.json';
 import { BUILD_ASSET_URLS } from '../data/downloads';
 import { SITE } from '../site';
 import type { PageMeta } from './PageMeta';
@@ -16,7 +17,7 @@ const SOFTWARE_ID = `${SITE.origin}/#software`;
 const FEATURE_LIST = [
   'A briefing per task: goal, decisions and summary, read by every agent on it',
   'Workflows that run a goal as steps, each a fresh agent with a short brief',
-  'Seven providers in one session: Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter, Moonshot',
+  `${PROVIDER_SOURCES.length} providers in one session: ${PROVIDER_SOURCES.map((source) => source.name).join(', ')}`,
   'A git worktree for each branch of a task, across several repos',
   'A board that shows which tasks are building, running, in review or need you',
   'A timeline of what ran, what it cost and what was decided',

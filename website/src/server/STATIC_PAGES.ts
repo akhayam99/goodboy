@@ -10,7 +10,7 @@ export const STATIC_PAGES = {
     path: '/',
     title: 'Goodboy: AI coding agent orchestrator for Claude Code, Codex and Cursor',
     description:
-      'Goodboy is a free desktop app that runs Claude Code, Codex, Cursor and Gemini on one task, with git worktrees, shared context and review. macOS and Linux.',
+      'Goodboy is a free desktop app that runs Claude Code, Codex, Cursor, Gemini and Copilot on one task, with git worktrees, shared context and review. macOS and Linux.',
     ogType: 'website',
     pageType: 'WebPage',
     crumbs: [HOME],
