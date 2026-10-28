@@ -70,7 +70,7 @@ describe('the u27 one flow scenes', () => {
     expect(current.textContent?.startsWith('Runs')).toBe(true);
   });
 
-  it('names the run kind on a chip whose popover starts a second run as another kind', async () => {
+  it('names the run kind on a chip whose popover is read-only while the run goes', async () => {
     mount({ id: 'u27-one-flow-after-routed' });
 
     const chip = await screen.findByRole(
@@ -80,19 +80,10 @@ describe('the u27 one flow scenes', () => {
     );
     fireEvent.click(chip);
     const popover = await screen.findByRole('dialog', { name: 'Kind' }, WAIT);
-    const startAs = within(popover).getByRole('group', { name: 'Start a new run as' });
-    expect(
-      within(startAs)
-        .getAllByRole('button')
-        .map((item) => item.textContent),
-    ).toEqual(['Workflow · Orchestrated', 'Agent · Auto agent']);
-    expect(
-      within(popover)
-        .getAllByRole('tab')
-        .map((item) => item.textContent),
-    ).toEqual(['Follow it', 'Adapt as it goes']);
+    expect(within(popover).queryByRole('group')).toBeNull();
+    expect(within(popover).queryAllByRole('tab')).toHaveLength(0);
     expect(popover.textContent).toContain(
-      'Starts a second run with the same goal. This one keeps going.',
+      'Fixed while the run is going. Stop it to restart as something else.',
     );
     expect(popover.textContent).not.toContain('Start every run in this session');
   });

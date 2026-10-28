@@ -1,3 +1,4 @@
+import { isAgentStatusHalted } from '@goodboy/core';
 import type { Agent, AgentId } from '@goodboy/types';
 import type { TailState } from '../live-state/tailFacts';
 import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
@@ -9,6 +10,7 @@ export type OrchestratedVerb =
   | { readonly kind: 'stopStep'; readonly agent: Agent; readonly number: number }
   | { readonly kind: 'continueStep'; readonly agentId: AgentId }
   | { readonly kind: 'restartStep' }
+  | { readonly kind: 'openAgentChat'; readonly agentId: AgentId }
   | { readonly kind: 'viewTranscript'; readonly agentId: AgentId }
   | { readonly kind: 'readQueued'; readonly count: number; readonly isStopped: boolean }
   | { readonly kind: 'quiet'; readonly agentId: AgentId }
@@ -23,6 +25,7 @@ export type OrchestratedTail = {
   readonly state: TailState;
   readonly phrase: string;
   readonly stepAgentId: AgentId | null;
+  readonly blockedAgentId: AgentId | null;
   readonly verbs: ReadonlyArray<OrchestratedVerb>;
 };
 
@@ -62,7 +65,9 @@ type PrimaryParams = {
 };
 
 const primaryVerbs = ({ primary }: PrimaryParams): ReadonlyArray<OrchestratedVerb> =>
-  primary === null || primary.kind === 'resume' ? [] : [{ kind: 'primary', primary }];
+  primary === null || primary.kind === 'resume' || primary.kind === 'hint'
+    ? []
+    : [{ kind: 'primary', primary }];
 
 type PhraseParams = {
   readonly orchestrator: OrchestratorState;
@@ -94,6 +99,7 @@ export const orchestratedTailOf = ({
       state: 'waiting',
       phrase: `No output for ${quiet.minutes} min`,
       stepAgentId: null,
+      blockedAgentId: null,
       verbs: [{ kind: 'quiet', agentId: quiet.agentId }],
     };
   }
@@ -105,6 +111,7 @@ export const orchestratedTailOf = ({
           ? '1 agent stopped when Goodboy closed'
           : `${restartStoppedCount} agents stopped when Goodboy closed`,
       stepAgentId: null,
+      blockedAgentId: null,
       verbs: [{ kind: 'resumeAll', count: restartStoppedCount }],
     };
   }
@@ -115,6 +122,7 @@ export const orchestratedTailOf = ({
     state: TAIL_STATE[orchestrator.phase],
     phrase: phraseOf({ orchestrator }),
     stepAgentId: null,
+    blockedAgentId: null,
   };
   if (phase === 'waiting') {
     const runningIndex = roots.findIndex((agent) => agent.status === 'running');
@@ -134,6 +142,16 @@ export const orchestratedTailOf = ({
     return { ...base, verbs: [] };
   }
   if (phase === 'step-failed') {
+    const halted = [...agents]
+      .sort((left, right) => left.ordinal - right.ordinal)
+      .find((agent) => isAgentStatusHalted({ status: agent.status }));
+    if (halted?.status === 'blocked') {
+      return {
+        ...base,
+        blockedAgentId: halted.id,
+        verbs: [{ kind: 'restartStep' }, { kind: 'openAgentChat', agentId: halted.id }],
+      };
+    }
     return { ...base, verbs: [{ kind: 'restartStep' }] };
   }
   if (phase === 'failed') {

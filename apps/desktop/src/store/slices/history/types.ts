@@ -171,12 +171,20 @@ export type HistoryRewriterBinding = {
 };
 
 export type BranchPushFix = {
+  readonly agentId: AgentId;
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly identity: HistoryIdentity;
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
   readonly confirmedRemoteSha: string | null;
+};
+
+export type PushContinuation = {
+  readonly agentId: AgentId;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly resume: () => void;
 };
 
 export type BranchPushInput = HistoryMountInput & {

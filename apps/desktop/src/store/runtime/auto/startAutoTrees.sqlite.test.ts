@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_DEFAULT_TREE_CAP_USD } from '@goodboy/core';
 import { getAutoTreeByRootAgent } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId } from '@goodboy/types';
@@ -35,7 +34,7 @@ describe('starting the tree of an Auto agent', () => {
     });
   });
 
-  it('uses the spend cap of the workspace without a session budget, then the default', async () => {
+  it('uses the spend cap of the workspace without a session budget, then no cap', async () => {
     const withLimit = await worldWithAutoAgent();
     await startAutoTrees({
       ctx: withLimit.ctx,
@@ -50,7 +49,7 @@ describe('starting the tree of an Auto agent', () => {
       sessionCapUsd: () => null,
       workspaceLimitUsd: async () => null,
     });
-    expect((await treeOf(bare))?.capUsd).toBe(AUTO_DEFAULT_TREE_CAP_USD);
+    expect((await treeOf(bare))?.capUsd).toBeNull();
   });
 
   it('starts one tree per Auto agent, once, and leaves the other agents alone', async () => {

@@ -3,7 +3,7 @@ import { Button, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { applyFixesLabel } from '../../commentProjection';
+import { applyAndResolveLabel } from '../../commentProjection';
 import { postRepliesLabel } from '../../commentOutcomeCopy';
 import { postOutcomeReply } from '../../postOutcomeReply';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
@@ -80,7 +80,7 @@ export const BatchActions = ({ sessionId, fixes, replies }: Props) => {
             disabled={busy !== null}
             onClick={() => void guard('fixes', applyAll)}
           >
-            {applyFixesLabel({ count: fixes.length })}
+            {applyAndResolveLabel({ count: fixes.length })}
           </Button>
         )}
         {replies.length > 0 && (

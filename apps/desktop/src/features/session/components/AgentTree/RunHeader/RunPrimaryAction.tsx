@@ -39,6 +39,8 @@ export const RunPrimaryAction = ({ session, view, primary, variant = 'primary' }
       );
     case 'raise-cap':
       return <RaiseCapPrimary session={session} view={view} variant={variant} />;
+    case 'hint':
+      return null;
     case 'review-plan':
     case 'approve-plan':
     case 'answer':

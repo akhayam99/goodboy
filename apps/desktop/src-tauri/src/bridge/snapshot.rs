@@ -337,7 +337,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
 }
 
 fn random_id() -> String {
-    use rand::Rng;
+    use rand::RngExt;
     const ALPHABET: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     let mut rng = rand::rng();
     (0..12)

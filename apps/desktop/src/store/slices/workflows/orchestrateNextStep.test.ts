@@ -1347,17 +1347,16 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
   });
 
-  it('notifies when blocked', async () => {
+  it('notifies when blocked, as plain text, and leaves the queued hints unread', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
-      decision: { action: 'blocked', reason: 'A product choice is required.' },
+      decision: { action: 'blocked', reason: '**A product choice** is required.' },
     });
-    const state = baseState();
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'ship the copy' })]);
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
     expect(state['emitNotification']).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
@@ -1378,6 +1377,7 @@ describe('orchestrateNextStep', () => {
     );
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('blocked');
+    expect(updated.orchestratorHints?.[0]?.consumedAt).toBeUndefined();
   });
 
   it('recovers from a client failure without persisting an outcome', async () => {

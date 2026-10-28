@@ -1,9 +1,7 @@
-import { AUTO_DEFAULT_TREE_CAP_USD } from './limits';
-
-type AutoTreeLimitSource = 'session' | 'workspace' | 'default';
+type AutoTreeLimitSource = 'session' | 'workspace' | 'none';
 
 type AutoTreeLimit = Readonly<{
-  usd: number;
+  usd: number | null;
   source: AutoTreeLimitSource;
 }>;
 
@@ -22,12 +20,11 @@ const usableUsdOf = ({ value }: UsableParams): number | null =>
 export const autoTreeLimitOf = ({ sessionCapUsd, workspaceLimitUsd }: Params): AutoTreeLimit => {
   const workspaceUsd = usableUsdOf({ value: workspaceLimitUsd });
   const sessionUsd = usableUsdOf({ value: sessionCapUsd });
-  const auto: AutoTreeLimit =
-    workspaceUsd === null
-      ? { usd: AUTO_DEFAULT_TREE_CAP_USD, source: 'default' }
-      : { usd: workspaceUsd, source: 'workspace' };
-  if (sessionUsd !== null && sessionUsd < auto.usd) {
+  if (sessionUsd !== null && (workspaceUsd === null || sessionUsd < workspaceUsd)) {
     return { usd: sessionUsd, source: 'session' };
   }
-  return auto;
+  if (workspaceUsd === null) {
+    return { usd: null, source: 'none' };
+  }
+  return { usd: workspaceUsd, source: 'workspace' };
 };

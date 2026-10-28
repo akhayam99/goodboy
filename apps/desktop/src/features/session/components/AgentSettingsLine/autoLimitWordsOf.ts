@@ -27,7 +27,7 @@ const amountOf = ({ amount }: AmountParams): string =>
 
 const sourceOf = ({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName }: SourceParams) => {
   const inherited = autoTreeLimitOf({ sessionCapUsd, workspaceLimitUsd });
-  if (cap === null || Math.abs(cap - inherited.usd) >= CENT) {
+  if (cap === null || inherited.usd === null || Math.abs(cap - inherited.usd) >= CENT) {
     return 'this Auto';
   }
   if (inherited.source === 'session') {
@@ -46,7 +46,7 @@ export const autoLimitWordsOf = ({
   const workspaceUsd = autoTreeLimitOf({ sessionCapUsd: null, workspaceLimitUsd }).usd;
   const chain = `This Auto ${amountOf({ amount: cap })}, then session ${amountOf({
     amount: sessionCapUsd,
-  })}, then ${workspaceName} ${formatUsd(workspaceUsd)}.`;
+  })}, then ${workspaceName} ${amountOf({ amount: workspaceUsd })}.`;
   const limits = [cap, sessionCapUsd].filter(
     (limit): limit is number => limit !== null && limit > 0,
   );

@@ -13,6 +13,7 @@ import type { BranchControls } from '../../hooks/useBranchControls';
 import type { BranchPrimary } from '../../branchPrimary';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
+import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
 import { StartHint } from '../../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
@@ -180,6 +181,9 @@ export const BranchHeader = ({
               />
             </div>
           )
+        }
+        failureDetail={
+          pushFailure === null ? null : <PushFailureBlock output={pushFailure.message} />
         }
         failureActions={
           pushFailure === null ? null : (

@@ -1,4 +1,5 @@
 import type { Agent, AgentId, AgentRole, OrchestratorHint } from '@goodboy/types';
+import { isSameIntent } from './isSameIntent';
 
 type Summary = {
   readonly done: ReadonlyArray<string>;
@@ -23,8 +24,37 @@ export type OrchestratedChecklist = {
   readonly readHintsBefore: ReadonlyMap<AgentId, ReadonlyArray<number>>;
   readonly trailingHintSteps: ReadonlyArray<number>;
   readonly left: ReadonlyArray<OrchestratedPlannedItem>;
+  readonly notes: ReadonlyArray<string>;
   readonly isNextShown: boolean;
 };
+
+type OpenItems = Pick<OrchestratedChecklist, 'left' | 'notes'>;
+
+type OpenItemsParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly summary: Summary;
+};
+
+const openItemsOf = ({ agents, summary }: OpenItemsParams): OpenItems => {
+  const seen: Array<string> = agents.map((agent) => agent.name);
+  const left: Array<OrchestratedPlannedItem> = [];
+  const notes: Array<string> = [];
+  for (const text of summary.left) {
+    if (seen.some((known) => isSameIntent({ left: known, right: text }))) {
+      continue;
+    }
+    seen.push(text);
+    const role = summary.leftRoles[text] ?? null;
+    if (role === null) {
+      notes.push(text);
+      continue;
+    }
+    left.push({ text, role });
+  }
+  return { left, notes };
+};
+
+const NO_OPEN_ITEMS: OpenItems = { left: [], notes: [] };
 
 export const orchestratedChecklistOf = ({
   agents,
@@ -53,13 +83,12 @@ export const orchestratedChecklistOf = ({
     }
     readHintsBefore.set(root.id, [...(readHintsBefore.get(root.id) ?? []), step]);
   }
+  const open = isDone || summary === null ? NO_OPEN_ITEMS : openItemsOf({ agents, summary });
   return {
     readHintsBefore,
     trailingHintSteps,
-    left:
-      isDone || summary === null
-        ? []
-        : summary.left.map((text) => ({ text, role: summary.leftRoles[text] ?? null })),
+    left: open.left,
+    notes: open.notes,
     isNextShown: isDeciding,
   };
 };

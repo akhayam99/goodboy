@@ -1,4 +1,4 @@
-import { applyFixesLabel } from './commentProjection';
+import { applyAndResolveLabel } from './commentProjection';
 
 const plural = ({
   count,
@@ -37,7 +37,7 @@ export const answersContinueLabel = ({ count }: { readonly count: number }): str
   `Continue with ${plural({ count, one: 'answer', many: 'answers' })}`;
 
 export const acceptCountLabel = ({ count }: { readonly count: number }): string =>
-  applyFixesLabel({ count });
+  applyAndResolveLabel({ count });
 
 export const acceptedLine = ({ count }: { readonly count: number }): string => `${count} accepted`;
 

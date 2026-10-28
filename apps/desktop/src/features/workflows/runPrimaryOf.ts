@@ -7,6 +7,7 @@ export type RunPrimaryKind =
   | 'resume'
   | 'continue'
   | 'retry'
+  | 'hint'
   | 'raise-cap'
   | 'decide-next'
   | 'start-step'
@@ -50,6 +51,7 @@ const LABELS = {
   resume: 'Resume',
   continue: 'Continue the run',
   retry: 'Retry',
+  hint: 'Add a hint and continue',
   'raise-cap': 'Raise limit',
   'decide-next': 'Decide next step',
   'start-run': 'Start run',
@@ -91,8 +93,9 @@ const dynamicPrimary = ({ flow, hold }: DynamicParams): RunPrimary | null => {
     case 'stopped':
       return fixed({ kind: 'continue' });
     case 'failed':
-    case 'blocked':
       return fixed({ kind: 'retry' });
+    case 'blocked':
+      return fixed({ kind: 'hint' });
     case 'paused-budget':
       return fixed({ kind: 'raise-cap' });
     case 'ready-first':

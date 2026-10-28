@@ -48,7 +48,7 @@ describe('comments-triage scenes', () => {
     await waitFor(() =>
       expect(within(drawer).getByRole('button', { name: 'Close note' })).toBeDefined(),
     );
-    expect(within(drawer).getByRole('button', { name: 'Apply 2 fixes' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Apply and resolve 2' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Post 1 reply' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Answer' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Retry' })).toBeDefined();

@@ -85,7 +85,7 @@ describe('generateWorkflowRunTitle', () => {
       stderr: '',
       exitCode: 0,
     });
-    updateGeneratedTitleSpy.mockResolvedValue(true);
+    updateGeneratedTitleSpy.mockResolvedValue('Fix Safari OAuth login loop');
     const { generate, currentRun } = buildHarness();
 
     await generate();
@@ -94,6 +94,25 @@ describe('generateWorkflowRunTitle', () => {
       expect.objectContaining({ workflowRunId: RUN_ID, title: 'Fix Safari OAuth login loop' }),
     );
     expect(currentRun()?.title).toBe('Fix Safari OAuth login loop');
+  });
+
+  it('shows the title the database stored, not the raw reply', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: okStdout('Title: the user asked for a'),
+      stderr: '',
+      exitCode: 0,
+    });
+    updateGeneratedTitleSpy.mockResolvedValue(
+      'The login page loops back to itself after the OAuth',
+    );
+    const { generate, currentRun } = buildHarness();
+
+    await generate();
+
+    expect(updateGeneratedTitleSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Title: the user asked for a' }),
+    );
+    expect(currentRun()?.title).toBe('The login page loops back to itself after the OAuth');
   });
 
   it('skips a run that has no goal to name it from', async () => {
@@ -124,7 +143,7 @@ describe('generateWorkflowRunTitle', () => {
       stderr: '',
       exitCode: 0,
     });
-    updateGeneratedTitleSpy.mockResolvedValue(false);
+    updateGeneratedTitleSpy.mockResolvedValue(null);
     const { generate, currentRun } = buildHarness();
 
     await generate();

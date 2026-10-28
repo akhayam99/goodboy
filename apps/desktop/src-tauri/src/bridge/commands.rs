@@ -93,7 +93,7 @@ pub type PendingMap = Arc<Mutex<HashMap<String, oneshot::Sender<CmdResult>>>>;
 pub const ACK_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub fn random_id() -> String {
-    use rand::RngCore;
+    use rand::Rng;
     let mut b = [0u8; 16];
     rand::rng().fill_bytes(&mut b);
     b.iter().map(|x| format!("{x:02x}")).collect()

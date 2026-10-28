@@ -455,7 +455,9 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         confirmLabel: CLOSE_WORKFLOW_COPY.label,
         role: 'alert',
       }),
-      run: ({ facts, env }) => env.getState().closeWorkflowRun(facts.sessionId, facts.run.id),
+      run: async ({ facts, env }) => {
+        await env.getState().closeWorkflowRun(facts.sessionId, facts.run.id);
+      },
     },
     {
       id: 'workflowRun.discard',
