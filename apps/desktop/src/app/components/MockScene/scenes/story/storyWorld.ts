@@ -54,8 +54,7 @@ type ProjectsParams = {
 };
 
 const projectsOf = ({ projects }: ProjectsParams): ReadonlyArray<Project> => {
-  const payments = projects.find((project) => project.name === 'payments-api');
-  const relay = projects.find((project) => project.name === 'notify-relay');
+  const [payments, relay] = projects;
   if (payments === undefined || relay === undefined) {
     return projects;
   }
