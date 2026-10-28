@@ -831,7 +831,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
-      if (readHintIds.size > 0 && decision.action !== 'blocked') {
+      const consumeReadHints = async (): Promise<void> => {
+        if (readHintIds.size === 0) {
+          return;
+        }
         await updateOrchestratorHints({
           set,
           get,
@@ -845,7 +848,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
               step: workflow.steps.length + 1,
             }),
         });
-      }
+      };
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       } catch (error) {
@@ -970,6 +973,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           return;
         }
         const agent = created.agent;
+        await consumeReadHints();
         if (change !== undefined) {
           await recordPlanChange({ get, sessionId, workflowRunId, change, agentId: agent.id });
         }
@@ -1010,6 +1014,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (isDecisionDiscarded()) {
         await discardWithUsage();
         return;
+      }
+      if (decision.action === 'done') {
+        await consumeReadHints();
       }
       await persistOrchestrationOutcome({
         set,

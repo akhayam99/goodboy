@@ -1380,6 +1380,44 @@ describe('orchestrateNextStep', () => {
     expect(updated.orchestratorHints?.[0]?.consumedAt).toBeUndefined();
   });
 
+  it('marks the queued hints read only once the next step exists', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Ship the copy.',
+        step: { name: 'Implement', role: 'implementer', promptPrefix: 'Ship the copy.' },
+      },
+    });
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'ship the copy' })]);
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestratorHints?.[0]?.consumedAt).toBeDefined();
+  });
+
+  it('keeps the queued hints unread when the next step could not be created', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Ship the copy.',
+        step: { name: 'Implement', role: 'implementer', promptPrefix: 'Ship the copy.' },
+      },
+    });
+    invokeWorkflowUpsertSpy.mockRejectedValue(new Error('database is locked'));
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'ship the copy' })]);
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestratorHints?.[0]?.consumedAt).toBeUndefined();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
   it('recovers from a client failure without persisting an outcome', async () => {
     rejectDecisions(new Error('orchestrator decision timed out'), 2);
     const state = baseState();
