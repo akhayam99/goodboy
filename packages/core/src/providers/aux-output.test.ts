@@ -213,3 +213,49 @@ describe('extractAuxOutput, opencode json stream', () => {
     expect(out.errorMessage).toBe('Invalid key');
   });
 });
+
+describe('extractAuxOutput, copilot json stream', () => {
+  it('keeps the last reply with content and reads the token breakdown', () => {
+    const stdout = [
+      JSON.stringify({ type: 'assistant.message_delta', data: { deltaContent: 'bran' } }),
+      JSON.stringify({
+        type: 'assistant.message',
+        data: { messageId: 'm1', content: '', toolRequests: [{ name: 'view' }] },
+      }),
+      JSON.stringify({
+        type: 'assistant.message',
+        data: { messageId: 'm2', content: 'branch-name\n', toolRequests: [] },
+      }),
+      JSON.stringify({
+        type: 'session.usage_checkpoint',
+        data: {
+          accountingSnapshot: {
+            tokenDetails: {
+              input: { tokenCount: 8 },
+              cache_read: { tokenCount: 70 },
+              cache_write: { tokenCount: 7 },
+              output: { tokenCount: 3 },
+            },
+          },
+        },
+      }),
+      JSON.stringify({ type: 'result', exitCode: 0 }),
+    ].join('\n');
+    const out = extractAuxOutput({ providerId: 'copilot', stdout });
+    expect(out.text).toBe('branch-name');
+    expect(out.envelopeDecoded).toBe(true);
+    expect(out.isError).toBe(false);
+    expect(out.usage).toEqual({
+      inputTokens: 8,
+      outputTokens: 3,
+      cachedInputTokens: 70,
+      cacheCreationInputTokens: 7,
+    });
+  });
+
+  it('falls back to the plain text of a run that printed no json', () => {
+    const out = extractAuxOutput({ providerId: 'copilot', stdout: '  add-session-filters \n' });
+    expect(out.text).toBe('add-session-filters');
+    expect(out.envelopeDecoded).toBe(true);
+  });
+});

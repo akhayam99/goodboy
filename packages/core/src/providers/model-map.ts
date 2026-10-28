@@ -15,6 +15,7 @@ export const PROVIDERS = [
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

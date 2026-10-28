@@ -52,6 +52,20 @@ const OPENCODE_TABLE: ModeSupportTable = {
   bypassPermissions: works({ mode: 'bypassPermissions' }),
 };
 
+const COPILOT_TABLE: ModeSupportTable = {
+  plan: partly({
+    mode: 'plan',
+    reason: "Edits and commands are denied by rules that haven't been checked on a real turn",
+  }),
+  dontAsk: CANT_ASK,
+  default: CANT_ASK,
+  acceptEdits: partly({ mode: 'acceptEdits', reason: 'Edits run, shell commands are blocked' }),
+  bypassPermissions: partly({
+    mode: 'bypassPermissions',
+    reason: 'File access stays inside the project folders',
+  }),
+};
+
 const MODE_SUPPORT: Record<ProviderId, ModeSupportTable> = {
   anthropic: {
     plan: works({ mode: 'plan' }),
@@ -90,6 +104,7 @@ const MODE_SUPPORT: Record<ProviderId, ModeSupportTable> = {
     acceptEdits: CANT_SCOPE_EDITS,
     bypassPermissions: works({ mode: 'bypassPermissions' }),
   },
+  copilot: COPILOT_TABLE,
   opencode: OPENCODE_TABLE,
   openrouter: OPENCODE_TABLE,
   moonshot: OPENCODE_TABLE,

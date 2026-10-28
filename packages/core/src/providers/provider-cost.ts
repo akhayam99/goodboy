@@ -27,6 +27,8 @@ export const computeProviderCostUsd = ({
       return computeCodexCostUsd({ usage, model, override: priceOverride });
     case 'gemini':
       return computeGeminiCostUsd({ usage, model, override: priceOverride });
+    case 'copilot':
+      return 0;
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

@@ -10,6 +10,7 @@ export const PROVIDER_ARG_FLAGS = {
   cursor: { modelFlag: '--model', effortFlag: null },
   codex: { modelFlag: '-m', effortFlag: null },
   gemini: { modelFlag: '--model', effortFlag: '--effort' },
+  copilot: { modelFlag: '--model', effortFlag: '--reasoning-effort' },
   opencode: { modelFlag: '-m', effortFlag: '--variant' },
   openrouter: { modelFlag: '-m', effortFlag: '--variant' },
   moonshot: { modelFlag: '-m', effortFlag: '--variant' },

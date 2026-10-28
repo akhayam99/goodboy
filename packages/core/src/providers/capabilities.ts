@@ -16,6 +16,9 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
   gemini: {
     models: MODEL_CATALOGS.gemini.map((model) => catalogDescriptor({ model })),
   },
+  copilot: {
+    models: MODEL_CATALOGS.copilot.map((model) => catalogDescriptor({ model })),
+  },
   opencode: {
     models: MODEL_CATALOGS.opencode.map((model) => catalogDescriptor({ model })),
   },

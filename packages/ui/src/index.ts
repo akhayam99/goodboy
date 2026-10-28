@@ -131,6 +131,7 @@ export {
   GithubIcon,
   GitlabIcon,
   GeminiIcon,
+  CopilotIcon,
   CursorIcon,
   JiraIcon,
   LinearIcon,

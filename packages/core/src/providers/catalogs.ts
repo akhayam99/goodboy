@@ -2,6 +2,7 @@ import type { ModelCatalogs } from '@goodboy/types';
 import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { CODEX_CATALOG } from './codex/catalog';
 import { CURSOR_CATALOG } from './cursor/catalog';
+import { COPILOT_CATALOG } from './copilot/catalog';
 import { GEMINI_CATALOG } from './gemini/catalog';
 import { OPENCODE_CATALOG } from './opencode/catalog';
 import { MOONSHOT_CATALOG } from './moonshot/catalog';
@@ -12,6 +13,7 @@ export const MODEL_CATALOGS = {
   cursor: CURSOR_CATALOG,
   codex: CODEX_CATALOG,
   gemini: GEMINI_CATALOG,
+  copilot: COPILOT_CATALOG,
   opencode: OPENCODE_CATALOG,
   openrouter: OPENROUTER_CATALOG,
   moonshot: MOONSHOT_CATALOG,

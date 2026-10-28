@@ -233,6 +233,7 @@ export const modelAxes = ({ model, selection, catalog }: Params): ModelAxes => {
     case 'cursor':
       return cursorAxes({ model, selection, ...(catalog != null && { catalog }) });
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

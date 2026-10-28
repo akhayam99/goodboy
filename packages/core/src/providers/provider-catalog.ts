@@ -5,6 +5,7 @@ export const PROVIDER_KIND = {
   cursor: 'cli',
   codex: 'cli',
   gemini: 'cli',
+  copilot: 'cli',
   opencode: 'cli',
   openrouter: 'api',
   moonshot: 'api',

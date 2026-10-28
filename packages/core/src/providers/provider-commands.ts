@@ -46,6 +46,19 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLif
     },
     logout: 'rm -rf ~/.gemini/antigravity-cli && echo "antigravity credentials removed"',
   },
+  copilot: {
+    install: {
+      darwin: 'npm install -g @github/copilot',
+      linux: 'npm install -g @github/copilot',
+      win32: 'npm install -g @github/copilot',
+    },
+    update: {
+      darwin: 'npm install -g @github/copilot@latest',
+      linux: 'npm install -g @github/copilot@latest',
+      win32: 'npm install -g @github/copilot@latest',
+    },
+    login: 'copilot login',
+  },
   opencode: {
     install: {
       darwin: 'npm install -g opencode-ai',
@@ -89,3 +102,10 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLif
     logout: 'opencode auth logout',
   },
 };
+
+type LogoutParams = {
+  readonly id: ProviderId;
+};
+
+export const canLogout = ({ id }: LogoutParams): boolean =>
+  PROVIDER_LIFECYCLE_COMMANDS[id]?.logout !== undefined;

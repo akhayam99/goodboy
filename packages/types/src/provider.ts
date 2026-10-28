@@ -2,7 +2,15 @@ import type { IsoDateTime, ProviderRunId, SessionId } from './ids';
 import type { RoutingDecision } from './budget';
 
 export type ProviderName =
-  'anthropic' | 'openai' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter' | 'moonshot';
+  | 'anthropic'
+  | 'openai'
+  | 'cursor'
+  | 'codex'
+  | 'gemini'
+  | 'copilot'
+  | 'opencode'
+  | 'openrouter'
+  | 'moonshot';
 
 export const PROVIDER_NAMES = [
   'anthropic',
@@ -10,6 +18,7 @@ export const PROVIDER_NAMES = [
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

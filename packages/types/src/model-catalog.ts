@@ -68,6 +68,13 @@ export type GeminiModel = BaseModel & {
   readonly defaultEffort: EffortLevel;
 };
 
+type CopilotModel = BaseModel & {
+  readonly provider: 'copilot';
+  readonly cliId: string;
+  readonly efforts: ReadonlyArray<EffortLevel>;
+  readonly defaultEffort: EffortLevel;
+};
+
 export type OpencodeModel = BaseModel & {
   readonly provider: 'opencode';
   readonly cliId: string;
@@ -94,6 +101,7 @@ export type CatalogModel =
   | CodexModel
   | CursorModel
   | GeminiModel
+  | CopilotModel
   | OpencodeModel
   | OpenRouterModel
   | MoonshotModel;

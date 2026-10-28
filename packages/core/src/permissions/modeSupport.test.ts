@@ -33,7 +33,7 @@ describe('modeSupportFor', () => {
     }
   });
 
-  it.each(['codex', 'gemini', 'cursor', 'opencode', 'openrouter', 'moonshot'] as const)(
+  it.each(['codex', 'gemini', 'copilot', 'cursor', 'opencode', 'openrouter', 'moonshot'] as const)(
     'turns ask first into read only on %s',
     (provider) => {
       expect(resolveModeFor({ provider, mode: 'default' })).toBe('plan');
@@ -52,6 +52,15 @@ describe('modeSupportFor', () => {
     expect(resolveModeFor({ provider: 'gemini', mode: 'acceptEdits' })).toBe('acceptEdits');
     expect(resolveModeFor({ provider: 'cursor', mode: 'acceptEdits' })).toBe('plan');
     expect(resolveModeFor({ provider: 'opencode', mode: 'acceptEdits' })).toBe('plan');
+  });
+
+  it('runs copilot read only, edits allowed and full access as asked, each marked partly', () => {
+    for (const mode of ['plan', 'acceptEdits', 'bypassPermissions'] as const) {
+      expect(resolveModeFor({ provider: 'copilot', mode })).toBe(mode);
+      const support = modeSupportFor({ provider: 'copilot', mode });
+      expect(support.support).toBe('partly');
+      expect(support.reason).not.toBeNull();
+    }
   });
 
   it('resolves the fail closed fallback to no wider than Ask first on every provider', () => {

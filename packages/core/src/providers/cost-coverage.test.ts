@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
 import { costCoverage } from './cost-coverage';
 import { computeCostUsd } from './claude/cost';
+import { computeProviderCostUsd } from './provider-cost';
 
 const usage: ProviderUsage = {
   inputTokens: 1_000_000,
@@ -60,6 +61,28 @@ describe('costCoverage', () => {
       'unpriced',
     );
     expect(costCoverage({ provider: 'moonshot', model: 'kimi-k3' })).toBe('unpriced');
+  });
+
+  it('reports copilot as unpriced and computes no dollar cost for it', () => {
+    expect(costCoverage({ provider: 'copilot', model: 'sonnet-5.5' })).toBe('unpriced');
+    expect(
+      computeProviderCostUsd({
+        providerId: 'copilot',
+        usage: { ...usage, premiumRequests: 3 },
+        model: 'sonnet-5.5',
+      }),
+    ).toBe(0);
+  });
+
+  it('reports copilot as unpriced and computes no dollar cost for it', () => {
+    expect(costCoverage({ provider: 'copilot', model: 'sonnet-5.5' })).toBe('unpriced');
+    expect(
+      computeProviderCostUsd({
+        providerId: 'copilot',
+        usage: { ...usage, premiumRequests: 3 },
+        model: 'sonnet-5.5',
+      }),
+    ).toBe(0);
   });
 
   it('reports openai as unpriced, matching the exhaustive ProviderName member with no price table', () => {

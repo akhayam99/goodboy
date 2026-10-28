@@ -6,6 +6,7 @@ const catalogCliId = (model: CatalogModel): string => {
   switch (model.provider) {
     case 'anthropic':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

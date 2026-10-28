@@ -9,6 +9,7 @@ export const modelHasEffortAxis = ({ model }: Params): boolean => {
     case 'anthropic':
     case 'codex':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

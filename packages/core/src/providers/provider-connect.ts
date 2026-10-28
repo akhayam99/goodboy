@@ -30,6 +30,13 @@ export const PROVIDER_CONNECT_CAPABILITIES = {
     manualReason:
       'Antigravity has no login command: `agy` ships no auth subcommand at all. Sign in from the Antigravity app, or set GEMINI_API_KEY as a credential.',
   },
+  copilot: {
+    tier: 'one-click',
+    browserOwner: 'cli',
+    reauthSignsOut: false,
+    loginEnv: {},
+    manualReason: null,
+  },
   opencode: {
     tier: 'assisted',
     browserOwner: 'goodboy',

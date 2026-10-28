@@ -8,6 +8,7 @@ import { MODEL_CATALOGS } from './catalogs';
 import { ANTHROPIC_AGENT_MODEL_IDS } from './claude/agent-model-ids';
 import { CODEX_AGENT_MODEL_IDS } from './codex/agent-model-ids';
 import { CURSOR_AGENT_MODEL_IDS } from './cursor/agent-model-ids';
+import { COPILOT_AGENT_MODEL_IDS } from './copilot/agent-model-ids';
 import { GEMINI_AGENT_MODEL_IDS } from './gemini/agent-model-ids';
 import { MOONSHOT_AGENT_MODEL_IDS } from './moonshot/agent-model-ids';
 import { OPENCODE_AGENT_MODEL_IDS } from './opencode/agent-model-ids';
@@ -18,6 +19,7 @@ const ACCEPTED_IDS = {
   cursor: CURSOR_AGENT_MODEL_IDS,
   codex: CODEX_AGENT_MODEL_IDS,
   gemini: GEMINI_AGENT_MODEL_IDS,
+  copilot: COPILOT_AGENT_MODEL_IDS,
   opencode: OPENCODE_AGENT_MODEL_IDS,
   openrouter: OPENROUTER_AGENT_MODEL_IDS,
   moonshot: MOONSHOT_AGENT_MODEL_IDS,
@@ -40,6 +42,7 @@ const expectedCliId = ({ model }: ExpectedCliIdParams): string => {
   switch (model.provider) {
     case 'anthropic':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':
