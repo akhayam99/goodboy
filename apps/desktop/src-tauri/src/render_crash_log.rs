@@ -94,7 +94,13 @@ mod tests {
 
     #[test]
     fn three_lines_carry_name_message_and_both_stacks() {
-        let lines = crash_lines("TypeError", "x is undefined", "at a\nat b", "in Drawer", None);
+        let lines = crash_lines(
+            "TypeError",
+            "x is undefined",
+            "at a\nat b",
+            "in Drawer",
+            None,
+        );
         assert_eq!(lines[0], "[render-crash] TypeError: x is undefined");
         assert_eq!(lines[1], "[render-crash] stack at a at b");
         assert_eq!(lines[2], "[render-crash] component stack in Drawer");
