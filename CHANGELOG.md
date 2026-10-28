@@ -12,6 +12,73 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.6
+
+Runs name their model, steps finish when the agent is done, plan parts stop colliding, and merged branches offer a clean up.
+
+### Improved
+
+#### Pick the model of a run where it starts
+<!-- gb area=sessions -->
+
+Start a run and the New session page show a Model chip next to Run as. It names the model the Auto agent or the orchestrator uses, follows your default, and lets you pick another one for that run only.
+
+An orchestrated run shows its Orchestrator model next to Kind, and Settings > Models opens with a Runs section for the Auto agent and the Orchestrator.
+
+#### A step that ends without a result says so
+<!-- gb area=workflows -->
+
+A step whose agent stopped without saying it is done reads "This step ended without a result", with Continue and Mark step done on the run page and the agent page. Goodboy also reads the done, question, plan and hand-off markers however an agent writes them.
+
+#### Plan parts run in waves
+<!-- gb area=workflows -->
+
+The planner names each part and the parts it comes after. The plan page groups parts into Runs first and Then, in parallel, shows the files of each part, and names a file two parts share and the order it forces. A part you start by hand while another works on the same files waits and says which part it waits for.
+
+#### Merged branches are work complete
+<!-- gb area=review -->
+
+A merged branch says Merged, work complete and offers Clean up, which removes its folder and local branch after one inline confirmation and refuses when work would be lost. Clean up N merged handles several branches of a session at once.
+
+#### See what is new in a session
+<!-- gb area=sessions -->
+
+A session with unseen activity lists it under New since you last looked at the top of its overview, with Mark all seen, and its blue dot says what is new on hover.
+
+#### Push fixes stay in view
+<!-- gb area=review -->
+
+The Fix the push card keeps showing the agent, its progress and its result when you leave the page or reload. Before a push, a worktree with missing dependencies, or one that reads them from another folder, gets Reinstall dependencies, which installs them there and retries the push.
+
+#### Answer a run's question on the run page
+<!-- gb area=workflows -->
+
+A run waiting for your answer shows the question on the run page with an answer field, so you can reply without opening the agent chat.
+
+#### Copilot in setup
+<!-- gb area=providers -->
+
+Copilot appears in the agents step of setup, next to the other agents.
+
+#### Page crashes leave a trace
+<!-- gb area=app -->
+
+If a page of the app crashes, its error, stack and component path are written to the local app log so the cause can be found.
+
+### Fixed
+
+- A step no longer waits forever when its agent leaves a command running in the background after it said it was done. <!-- gb area=workflows -->
+- Writing to an agent that is still wrapping up no longer starts a second copy of it on the same conversation. <!-- gb area=agents -->
+- A plan no longer runs two parts on the same files at once; parts that share a file go one after the other. <!-- gb area=workflows -->
+- A merged branch no longer shows the behind-main dot, a behind count, rebase offers or an old rebase conflict. <!-- gb area=review -->
+- When the orchestrator cannot start the step it decided on, your queued hints stay queued instead of being marked as read. <!-- gb area=workflows -->
+- Session and agent titles no longer keep a "Title:" label or a leaked sentence. <!-- gb area=sessions -->
+- A fix run over more than 12 comments shows every comment as Fixing, not only the first 12. <!-- gb area=review -->
+- Each Copilot turn after the first shows only its own premium requests, not the whole session's. <!-- gb area=providers -->
+- Read-only Copilot runs refuse extra permission flags even when they are written with a value. <!-- gb area=providers -->
+- Storage counts the Claude Code sessions Goodboy runs in its scratch folders and history copies, and says the sizes are saved sessions, not worktrees. <!-- gb area=storage -->
+- The Running list group under Needs you reads Waiting for you instead of repeating the title. <!-- gb area=sessions -->
+
 ## Goodboy v0.28.5
 
 Copilot joins as a provider, and the Running list, the step bar and the session tools read at a glance.
