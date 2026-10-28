@@ -1,6 +1,7 @@
 import type { Agent, AgentId, ImplementationCluster, SessionId } from '@goodboy/types';
 import { nowIso } from '../../project-mounts/nowIso';
 import { applyAgentTurnState } from '../../sessions/sessionMutators';
+import { clusterLaunching } from '../../workflows/clusterWaves/clusterLaunching';
 import { overlappingRunningParts } from '../../workflows/clusterWaves/overlappingRunningParts';
 import { claimTurnStart, ensureTurnStartWindow, isTurnStartCancelled } from '../turnStartWindow';
 import type { GetFn, SendTurnInput, SetFn } from '../types';
@@ -75,6 +76,7 @@ export const waitForClusterOverlap = async ({
   if (blockers.length === 0) {
     return 'proceed';
   }
+  clusterLaunching.claim({ childId: agentId });
   ensureTurnStartWindow({ agentId });
   const previous = get().agentTurnState[agentId] ?? {
     kind: 'idle' as const,
@@ -84,6 +86,7 @@ export const waitForClusterOverlap = async ({
   applyAgentTurnState(set, sessionId, agentId, { kind: 'starting', startedAt }, startedAt);
   const deadline = Date.now() + OVERLAP_WAIT_LIMIT_MS;
   const leave = (): void => {
+    clusterLaunching.release({ childId: agentId });
     putWait({ set, agentId, sessionId, blocker: null });
     applyAgentTurnState(set, sessionId, agentId, previous, nowIso({}));
   };

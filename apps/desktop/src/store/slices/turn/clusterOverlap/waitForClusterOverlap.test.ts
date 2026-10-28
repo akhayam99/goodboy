@@ -18,6 +18,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../storyHarness';
+import { clusterLaunching } from '../../workflows/clusterWaves/clusterLaunching';
 import { cancelTurnStartWindow, resetTurnStartWindows } from '../turnStartWindow';
 import { waitForClusterOverlap } from './waitForClusterOverlap';
 import { writerWaiters } from '../writerWaiters';
@@ -162,6 +163,7 @@ describe('waitForClusterOverlap', () => {
     const wait = useAppStore.getState().agentWriterWait[brandId<AgentId>({ value: 'part-1' })];
     expect(wait?.blockedBy).toBe('part-0');
     expect(wait?.blockedPart).toBe('routes');
+    expect(clusterLaunching.has({ childId: brandId<AgentId>({ value: 'part-1' }) })).toBe(true);
     expect(useAppStore.getState().agentTurnState[brandId<AgentId>({ value: 'part-1' })]?.kind).toBe(
       'starting',
     );
@@ -182,6 +184,7 @@ describe('waitForClusterOverlap', () => {
     writerWaiters.wake();
 
     await expect(outcome).resolves.toBe('cancelled');
+    expect(clusterLaunching.has({ childId: brandId<AgentId>({ value: 'part-1' }) })).toBe(false);
     expect(useAppStore.getState().agentWriterWait).toEqual({});
   });
 });

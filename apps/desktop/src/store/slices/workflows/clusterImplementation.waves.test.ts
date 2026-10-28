@@ -13,6 +13,7 @@ import {
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import type { SendTurnInput, SendTurnResult } from '../turn/types';
+import { clusterLaunching } from './clusterWaves/clusterLaunching';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   connectedAnthropicState,
@@ -285,6 +286,17 @@ describe('advance in waves', () => {
     expect(sentTo()).toEqual(['part-1', 'part-2']);
     expect(contentOf('part-1')).toContain('**Done before you** 1. routes');
     expect(contentOf('part-1')).toContain('**Running at the same time** 3. chat');
+  });
+
+  it('leaves a part alone when a hand start is already waiting to run it', async () => {
+    const waiting = brandId<AgentId>({ value: 'part-1' });
+    seed({ agents: runs(['running', 'pending', 'pending', 'pending']), clusters: sharedThenTwo });
+    clusterLaunching.claim({ childId: waiting });
+
+    await advance({ id: 'part-0', agents: runs(['completed', 'pending', 'pending', 'pending']) });
+    clusterLaunching.release({ childId: waiting });
+
+    expect(sentTo()).toEqual(['part-2']);
   });
 
   it('starts nothing while a part of the same wave is still running', async () => {
