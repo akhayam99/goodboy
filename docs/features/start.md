@@ -8,7 +8,11 @@ Write what you want done and press Start. Goodboy picks how to run it.
 
 - The **Start a run** field sits at the top of a session's Runs page.
 - On the **New session** page, **Not sure? Describe it and Auto picks** routes the goal you wrote the same way, with the Limit and Start under it.
-- Its hint reads "Auto picks a workflow or an agent. Type ~preset or @role."
+- Its hint reads "Auto picks how to run it. ~ lists presets, @ lists roles."
+- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and the **Run as** chip shows it.
+- The **Run as** chip sits next to **Limit**: **Let Auto pick**, **Agent · Auto agent**, **Workflow · Orchestrated**, each preset and each role. A name typed in the text still wins over the chip.
+- Under the box, a line reads "Starts as ..." with the reason. It changes as you type or pick, before you press Start.
+- The paperclip, paste and drop attach files and images. They go with the run to its first agent.
 - ↵ starts, ⇧↵ adds a line.
 
 The pick is a rule table in the app, with no model call. Goodboy reads it top to bottom until a row holds.
@@ -176,6 +180,10 @@ Choose where an issue belongs with **Move to** in its chip menu: the session or 
 
 This part is for contributors and agents who change the feature.
 
+- Run as chip: `RunAsChip` lists `runAsChoicesOf`, and `runAsRouteOf` turns the pick into the route Start uses, with a typed token ahead of the chip. `useStartRun` builds the live "Starts as" line from the same function.
+- Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
+- Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
+- No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
 - Asks you chip: `AsksYouChip` is shared with the run's settings line.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.

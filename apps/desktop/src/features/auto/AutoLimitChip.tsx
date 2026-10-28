@@ -17,15 +17,15 @@ const INPUT_ID = 'auto-tree-limit';
 
 const NO_LIMIT = 'No limit';
 
-const labelOf = ({ usd }: TextParams): string =>
+const chipLabelOf = ({ usd }: TextParams): string =>
   usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`;
 
-const draftOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
+const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
 
 export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Props) => {
   const dropdown = useDropdown({ disabled: isDisabled, width: 'w-80' });
   const { open: isOpen, toggle, close } = dropdown;
-  const [draft, setDraft] = useState(draftOf({ usd }));
+  const [draft, setDraft] = useState(amountTextOf({ usd }));
   const parsed = parseSpendLimit(draft);
   const isInvalid = draft.trim() !== '' && parsed === null;
 
@@ -34,7 +34,7 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
       <Chip
         tone="neutral"
         kind="reference"
-        label={labelOf({ usd })}
+        label={chipLabelOf({ usd })}
         title="From the budget of this session"
       />
     );
@@ -51,12 +51,12 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
           tone="neutral"
           kind="reference"
           as="button"
-          label={labelOf({ usd })}
+          label={chipLabelOf({ usd })}
           expanded={isOpen}
           hasPopup="dialog"
           disabled={isDisabled}
           onClick={() => {
-            setDraft(draftOf({ usd }));
+            setDraft(amountTextOf({ usd }));
             toggle();
           }}
         />

@@ -1,8 +1,8 @@
 import {
-  deleteWorkspaceValue,
   getWorkspaceValue,
   insertWorkspaceValueIfAbsent,
   replaceWorkspaceValueIfUnchanged,
+  setWorkspaceValue,
   type Database,
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
@@ -40,7 +40,7 @@ const MAX_ATTEMPTS = 2;
 export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams): Promise<void> => {
   const key = 'auto.treeLimitUsd';
   if (usd === null) {
-    await deleteWorkspaceValue({ db, workspaceId, key });
+    await setWorkspaceValue({ db, workspaceId, key, value: null });
     return;
   }
   if (!Number.isFinite(usd) || usd <= 0) {

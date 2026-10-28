@@ -32,6 +32,21 @@ const seed = async () => {
 };
 
 describe('workspace values', () => {
+  it('removes a value when it is set to null and leaves the other workspaces alone', async () => {
+    const db = await seed();
+    await setWorkspaceValue({ db, workspaceId: HARBORLINE, key: 'auto.treeLimitUsd', value: '7' });
+    await setWorkspaceValue({ db, workspaceId: NORTHWIND, key: 'auto.treeLimitUsd', value: '3' });
+
+    await setWorkspaceValue({ db, workspaceId: HARBORLINE, key: 'auto.treeLimitUsd', value: null });
+
+    expect(
+      await getWorkspaceValue({ db, workspaceId: HARBORLINE, key: 'auto.treeLimitUsd' }),
+    ).toBeNull();
+    expect(await getWorkspaceValue({ db, workspaceId: NORTHWIND, key: 'auto.treeLimitUsd' })).toBe(
+      '3',
+    );
+  });
+
   it('reads nothing before a write, then what was written, per workspace', async () => {
     const db = await seed();
     expect(

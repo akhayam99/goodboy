@@ -34,7 +34,9 @@ type ProjectTarget = {
   readonly key: ProjectValueKey;
 };
 
-type WorkspaceWrite = Omit<WorkspaceTarget, 'db'> & { readonly value: string };
+type WorkspaceSet = Omit<WorkspaceTarget, 'db'> & { readonly value: string | null };
+
+type WorkspaceSetParams = WorkspaceTarget & { readonly value: string | null };
 
 export type ProjectValueWrite = Omit<ProjectTarget, 'db'> & { readonly value: string };
 
@@ -72,13 +74,21 @@ export const setWorkspaceValueStatement = ({
   workspaceId,
   key,
   value,
-}: WorkspaceWrite): PlainStatement => ({
-  sql: `INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, ?, ?, ?)
+}: WorkspaceSet): PlainStatement => {
+  if (value === null) {
+    return {
+      sql: 'DELETE FROM workspace_values WHERE workspace_id = ? AND key = ?',
+      params: [workspaceId, key],
+    };
+  }
+  return {
+    sql: `INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(workspace_id, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-  params: [workspaceId, key, value, Date.now()],
-});
+    params: [workspaceId, key, value, Date.now()],
+  };
+};
 
-export const setWorkspaceValue = async ({ db, ...target }: WorkspaceWriteParams): Promise<void> => {
+export const setWorkspaceValue = async ({ db, ...target }: WorkspaceSetParams): Promise<void> => {
   const statement = setWorkspaceValueStatement(target);
   await db.execute(statement.sql, statement.params);
 };
@@ -109,17 +119,6 @@ export const replaceWorkspaceValueIfUnchanged = async ({
     [value, Date.now(), workspaceId, key, expected],
   );
   return result.rowsAffected === 1;
-};
-
-export const deleteWorkspaceValue = async ({
-  db,
-  workspaceId,
-  key,
-}: WorkspaceTarget): Promise<void> => {
-  await db.execute('DELETE FROM workspace_values WHERE workspace_id = ? AND key = ?', [
-    workspaceId,
-    key,
-  ]);
 };
 
 export const getProjectValue = async ({

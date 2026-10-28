@@ -6,11 +6,11 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-const deleteWorkspaceValue = vi.hoisted(() => vi.fn(async () => undefined));
+const setWorkspaceValue = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../../store/storyHarness')).dbModuleMock({
-    deleteWorkspaceValue,
+    setWorkspaceValue,
     getWorkspaceValue: vi.fn(async () => null),
     insertWorkspaceValueIfAbsent: vi.fn(async () => true),
   }),
@@ -65,8 +65,12 @@ describe('DefaultAutoLimitSetting', () => {
       fireEvent.click(within(popover).getByRole('button', { name: 'No limit' }));
     });
 
-    expect(deleteWorkspaceValue).toHaveBeenCalledWith(
-      expect.objectContaining({ workspaceId: HARBORLINE.id, key: 'auto.treeLimitUsd' }),
+    expect(setWorkspaceValue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: HARBORLINE.id,
+        key: 'auto.treeLimitUsd',
+        value: null,
+      }),
     );
   });
 

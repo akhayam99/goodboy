@@ -153,7 +153,7 @@ describe('FirstSessionStep with no task source', () => {
 
     expect(field().value).toContain('Explain how acme-web is organized');
     screen.getByRole('region', { name: 'Start a run' });
-    screen.getByRole('button', { name: /^Limit \$/ });
+    screen.getByRole('button', { name: 'No limit' });
     screen.getByRole('button', { name: 'Explain how acme-web is organized' });
     screen.getByRole('heading', { name: 'Start your first session' });
   });
