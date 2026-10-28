@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import type { LucideIcon, LucideProps } from 'lucide-react';
 
-const svgProps = ({
+export const svgProps = ({
   size = 24,
   color: _color,
   strokeWidth: _sw,

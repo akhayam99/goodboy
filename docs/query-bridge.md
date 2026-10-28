@@ -86,7 +86,7 @@ The socket has limits too. A line is read up to 1 MiB and a longer one is refuse
 
 **The advertisement is a cost.** The `[integrations]` block goes into every prompt of every turn. So it names only the providers this workspace connected, one line each. The details live in the CLI's `--help`, which costs nothing until an agent asks. A workspace with no connection gets no block.
 
-**Same text for every provider.** The block reaches Claude, Codex, Cursor, Gemini and opencode through the guard-block channel. Nothing about the bridge depends on the provider.
+**Same text for every provider.** The block reaches Claude, Codex, Cursor, Gemini, Copilot and opencode through the guard-block channel. Nothing about the bridge depends on the provider.
 
 **No verb writes an event.** There is no `session event` command. Typed actions record their own events inside the transaction that did the work. Polling records the requests it finds on the host. An agent that could write a lifecycle event could claim a merge that never happened.
 

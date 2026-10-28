@@ -1,0 +1,17 @@
+cli-version: 1.0.105
+-p
+{prompt}
+--model
+fake-model
+-C
+{work_dir}
+--output-format=json
+--disable-client-telemetry
+--no-auto-update
+--disable-builtin-mcps
+--no-ask-user
+--allow-all-tools
+--deny-tool=write
+--deny-tool=shell
+--deny-tool=memory
+--resume=session-ledger-core-1

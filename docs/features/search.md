@@ -22,7 +22,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Spend and limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Ask**, **Terminal**, **Explore**, **Context**, **Agents** and **Scripts**.
+At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Explore**, **Context**, **Ask**, **Agents**, **Scripts** and **Terminal**. A thin line separates three groups: what you read, what you work with, then the terminal.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 

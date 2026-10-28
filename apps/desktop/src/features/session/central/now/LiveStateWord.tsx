@@ -1,4 +1,4 @@
-import { StatusDot, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { StatusDot, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly tone: Tone;
@@ -11,10 +11,7 @@ export const LiveStateWord = ({ tone, word, autoWord }: Props) => (
     <StatusDot tone={tone} size="sm" />
     <span
       data-auto-word={autoWord}
-      className={cn(
-        'min-w-0 line-clamp-2 text-ui',
-        tone === 'neutral' ? 'text-muted-foreground' : tintClasses(tone).text,
-      )}
+      className="min-w-0 truncate whitespace-nowrap text-ui text-muted-foreground"
     >
       {word}
     </span>

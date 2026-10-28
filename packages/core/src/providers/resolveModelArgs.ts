@@ -85,6 +85,7 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
         applied,
       });
     }
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot': {

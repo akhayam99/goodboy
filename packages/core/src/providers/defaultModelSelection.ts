@@ -16,6 +16,7 @@ export const defaultModelSelection = ({ provider, tier = 'turn' }: Params): Mode
   switch (model.provider) {
     case 'anthropic':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

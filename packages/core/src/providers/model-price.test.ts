@@ -111,6 +111,12 @@ describe('getProviderModelPrice', () => {
     expect(getProviderModelPrice({ provider: 'moonshot', model: 'kimi-k3' })).toBeNull();
   });
 
+  it('returns null for copilot, which bills premium requests and not tokens', () => {
+    for (const model of MODEL_CATALOGS.copilot) {
+      expect(getProviderModelPrice({ provider: 'copilot', model: model.key })).toBeNull();
+    }
+  });
+
   it('resolves a catalog key through its own provider native id', () => {
     expect(getProviderModelPrice({ provider: 'codex', model: 'gpt-6' })).toEqual({
       inputPerMtok: 10,

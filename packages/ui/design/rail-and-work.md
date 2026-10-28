@@ -494,9 +494,12 @@ on a disagreement.
 | done agent or step                                     | neutral | a muted check, never green   |
 
 Green for an open pull request would make approved stop standing out, so open
-is `info`. A done segment of `StepMeter` fills `muted-foreground`, the running
-segment takes the color of its role (`AGENT_KIND_PALETTE`), never `info`, and a
-step at a ready gate or a question is `warning`. The children of a Running row
+is `info`. `StepMeter` paints by state only: a done segment fills
+`muted-foreground`, the running segment `primary` with a soft pulse, a step at a
+ready gate or a question `warning`, a failed one `danger` and one not started
+`border`. The role never colors a segment, it stays on the row icon, and green
+never appears, so the bar cannot read as a passed test. A run of two steps or
+fewer draws a tiny count (`1/2`, steps started over steps) instead of bars. The children of a Running row
 hang from one 1px `border` lane with a quarter elbow each (`LiveSpine`); the
 shared `WorkNode` done node keeps its violet disc.
 

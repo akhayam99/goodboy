@@ -56,6 +56,7 @@ const connectedProviders = () => ({
       cursor: installed('cursor-agent'),
       codex: installed('codex'),
       gemini: null,
+      copilot: null,
       opencode: null,
       openrouter: null,
       moonshot: null,

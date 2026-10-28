@@ -325,7 +325,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
   to the Overview.
 
-The tools (Ask, Terminal, Explore, Context, Agents, Scripts) are panes, not pages:
+The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -664,8 +664,13 @@ activity yet show the plain overview with its actions.
 
 One icon-only column at the right edge of the session content, between the
 page and the open drawer, the same on every rail level and in this order:
-**Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C),
-**Agents** (⌘⌥L) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
+**Explore** (⌘⌥X), **Context** (⌘⌥C), **Ask** (⌘L), **Agents** (⌘⌥L),
+**Scripts** (⌘⌥S) and **Terminal** (⌘⌥T) (`SESSION_TOOLS`), read from what you
+read to what you act with: Explore and Context first, Ask, Agents and Scripts
+next, the Terminal, a tool, last. A thin separator (`role="separator"`, not a
+button, so the arrow keys skip it) sits between the three groups, which each
+tool carries as its `group`. Each tool keeps its pane id and its chord, so a
+saved pane or a shortcut opens the same tool wherever it sits in the column. `SessionTools`
 (`features/session/components/SessionTools`) is mounted by `SessionFrame`
 after the page, one icon button plus its inset wide (40px) on the sheet background, its buttons starting on the
 rail top row's line. Each tool is a square `md` `IconButton` with its icon only

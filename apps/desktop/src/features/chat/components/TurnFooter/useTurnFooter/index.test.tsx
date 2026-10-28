@@ -112,6 +112,32 @@ describe('useTurnFooter', () => {
     expect(result.current.estimatedCostUsd).toBeNull();
   });
 
+  it('keeps the premium requests of the turn usage when telemetry has landed', () => {
+    store.sessionTelemetry = {
+      [SESSION_ID]: [record({ provider: 'copilot', estimatedCostUsd: 0 })],
+    };
+    store.runRouting = {};
+    const { result } = renderHook(() =>
+      useTurnFooter({
+        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        runId: RUN_ID,
+        fallbackUsage: { ...fallbackUsage, premiumRequests: 3 },
+      }),
+    );
+    expect(result.current.premiumRequests).toBe(3);
+    expect(result.current.estimatedCostUsd).toBeNull();
+  });
+
+  it('reports no premium requests for a turn that billed none', () => {
+    store.sessionTelemetry = {};
+    store.runRouting = {};
+    const { result } = renderHook(() =>
+      useTurnFooter({ sessionId: SESSION_ID, agentId: AGENT_ID, runId: RUN_ID, fallbackUsage }),
+    );
+    expect(result.current.premiumRequests).toBeNull();
+  });
+
   it('ignores telemetry records for a different run', () => {
     store.sessionTelemetry = {
       [SESSION_ID]: [record({ runId: 'run-2' as ProviderRunId })],

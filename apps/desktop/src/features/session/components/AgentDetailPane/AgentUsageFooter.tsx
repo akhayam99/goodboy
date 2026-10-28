@@ -34,6 +34,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
     contextTokens: dominant?.contextTokens ?? null,
     estimatedCostUsd:
       aggregate != null && aggregate.estimatedCostUsd > 0 ? aggregate.estimatedCostUsd : null,
+    premiumRequests: null,
   };
   const { contextWindow, hasUsage } = usageFigures({ data });
 

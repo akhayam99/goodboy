@@ -30,6 +30,7 @@ export const costCoverage = ({ provider, model }: Params): CostCoverage => {
     }
     case 'cursor':
       return 'approximate';
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

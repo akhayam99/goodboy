@@ -1,7 +1,7 @@
 use super::cli_args::Cli;
 use super::{
-    check_claude_auth, check_codex_auth, check_cursor_auth, check_gemini_auth, check_moonshot_auth,
-    check_opencode_auth, check_openrouter_auth, AuthState,
+    check_claude_auth, check_codex_auth, check_copilot_auth, check_cursor_auth, check_gemini_auth,
+    check_moonshot_auth, check_opencode_auth, check_openrouter_auth, AuthState,
 };
 
 pub(crate) struct ProviderSpec {
@@ -12,7 +12,7 @@ pub(crate) struct ProviderSpec {
     pub check_auth: fn() -> AuthState,
 }
 
-pub(crate) const PROVIDER_SPECS: [ProviderSpec; 7] = [
+pub(crate) const PROVIDER_SPECS: [ProviderSpec; 8] = [
     ProviderSpec {
         id: "anthropic",
         cli: Cli::Claude,
@@ -40,6 +40,13 @@ pub(crate) const PROVIDER_SPECS: [ProviderSpec; 7] = [
         binary: "agy",
         chat_shape: None,
         check_auth: check_gemini_auth,
+    },
+    ProviderSpec {
+        id: "copilot",
+        cli: Cli::Copilot,
+        binary: "copilot",
+        chat_shape: None,
+        check_auth: check_copilot_auth,
     },
     ProviderSpec {
         id: "opencode",

@@ -112,6 +112,10 @@ export const usageDetailRows = ({
       }),
     );
   }
+  if (data.premiumRequests !== null) {
+    rows.push(present({ label: 'Premium requests', value: formatInteger(data.premiumRequests) }));
+    return rows;
+  }
   rows.push(
     data.estimatedCostUsd === null
       ? missing({ label: 'Cost', reason: 'no cost estimate yet' })

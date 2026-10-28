@@ -43,14 +43,17 @@ describe('the usage card scenes', () => {
     );
   });
 
-  it.each(SCENE_IDS)('%s shows the four cards with a dash and a reason for gaps', async (id) => {
+  it.each(SCENE_IDS)('%s shows the five cards with a dash and a reason for gaps', async (id) => {
     const Scene = U26P_USAGE_CARD_SCENES[id];
     const { container } = render(<Scene />);
-    expect(screen.getAllByRole('dialog')).toHaveLength(4);
+    expect(screen.getAllByRole('dialog')).toHaveLength(5);
     const noUsage = screen.getByRole('dialog', { name: 'Usage detail no-usage' });
     within(noUsage).getAllByText('no usage reported yet');
     const full = screen.getByRole('dialog', { name: 'Usage detail full' });
     within(full).getByText('~$0.07');
+    const premium = screen.getByRole('dialog', { name: 'Usage detail premium' });
+    within(premium).getByText('Premium requests');
+    expect(within(premium).queryByText('Cost')).toBeNull();
     const { violations } = await runA11yCheck(container);
     expect(violations).toEqual([]);
   });

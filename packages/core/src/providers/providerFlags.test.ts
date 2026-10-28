@@ -19,6 +19,7 @@ describe('PROVIDER_FLAGS', () => {
       cursor: 'cursor-agent',
       codex: 'codex',
       gemini: 'agy',
+      copilot: 'copilot',
       opencode: 'opencode',
       openrouter: 'opencode',
       moonshot: 'opencode',
@@ -41,6 +42,7 @@ describe('PROVIDER_FLAGS', () => {
     ]);
     expect(providersOnSameBinary({ id: 'anthropic' })).toEqual(['anthropic']);
     expect(providersOnSameBinary({ id: 'gemini' })).toEqual(['gemini']);
+    expect(providersOnSameBinary({ id: 'copilot' })).toEqual(['copilot']);
   });
 
   it('gives a store status slot to the four providers that have one, each its own', () => {

@@ -134,7 +134,9 @@ from a designer's memory. The agents come from `PROVIDER_IDS` in
 `packages/types/src/provider-registry.ts`. The rest come from the integration
 union in `packages/types/src/workspace.ts`. The glyphs themselves live in
 `packages/ui/src/components/brandIcons.tsx`, and the colours in the
-`--color-provider-*` tokens.
+`--color-provider-*` tokens. `CopilotIcon` is the 24 pixel mark of the MIT-licensed
+Primer Octicons (`@primer/octicons` 19.42.0, copyright GitHub Inc.), copied path for
+path, and its token is the neutral of the GitHub mark in both themes.
 
 Two rules stop a row of logos from looking like a partner page:
 

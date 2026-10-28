@@ -15,6 +15,7 @@ what each provider needs and how to connect it, then how it works under the hood
 | Cursor     | Cursor Pro            | Browser sign-in        |
 | Codex      | A ChatGPT plan        | Browser sign-in or key |
 | Gemini     | Google AI Pro         | Antigravity app or key |
+| Copilot    | A Copilot plan        | Browser sign-in        |
 | OpenCode   | Nothing, free models  | OpenCode login         |
 | OpenRouter | An OpenRouter API key | Paste the key          |
 | Moonshot   | A Moonshot API key    | Paste the key          |
@@ -99,6 +100,30 @@ Rather use a key? Add a Gemini API key under **API keys** instead.
 
 **Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. Goodboy deletes
 `~/.gemini/antigravity-cli/`. Your Google account stays as it is.
+
+## Copilot
+
+**What you need:** a Copilot plan on github.com.
+
+**Connect**
+
+1. Click **Connect**
+2. If `copilot` is missing, Goodboy installs it first
+3. Copilot opens your browser on its own. Sign in with GitHub and approve. On a remote shell it prints a device code instead
+
+Copilot has no command that tells Goodboy whether you are signed in. The card shows
+**Connected** as soon as the CLI is installed and names no account. When you are
+signed out, the first turn fails with the CLI's own message. Use **Sign in again** on the card.
+
+Copilot bills premium requests, not dollars. A finished turn shows how many it used,
+for example "1 premium request", and Goodboy never shows a price for it.
+
+A `GH_TOKEN` or `GITHUB_TOKEN` in your shell beats the saved sign-in. Copilot refuses
+classic tokens (`ghp_`), so Goodboy leaves every token that is not a fine-grained one
+(`github_pat_`) out of a Copilot run.
+
+**Disconnect:** the page menu has no **Disconnect**, because the CLI has no logout
+command. Type `/logout` inside `copilot` to sign out.
 
 ## OpenCode
 
@@ -461,7 +486,7 @@ Two helpers have one owner each: `codex_home()` in `codex_rollout.rs` is the onl
 hidden terminal (a PTY).
 
 - One owner per sign-in tab: `browserOwner` in the capability table. Claude and
-  Codex (`cli`) open the browser themselves, so Goodboy never does. Cursor and
+  Codex and Copilot (`cli`) open the browser themselves, so Goodboy never does. Cursor and
   the opencode family (`goodboy`) get their tab from Goodboy, once, on the first
   sign-in URL in the CLI output
 - Goodboy starts Cursor with `NO_OPEN_BROWSER=1`, so Cursor does not open a second tab
@@ -487,11 +512,12 @@ The timers live in `apps/desktop/src/store/slices/providers/connectProvider.ts`:
 Each provider's connect options live in one table, not in UI code. The table is
 `PROVIDER_CONNECT_CAPABILITIES` in `packages/core/src/providers/provider-connect.ts`.
 
-| Provider                       | Tier        | Why                              |
-| ------------------------------ | ----------- | -------------------------------- |
-| anthropic, codex, cursor       | `one-click` | No prompts, sign-in gets checked |
-| opencode, openrouter, moonshot | `assisted`  | Login is a menu                  |
-| gemini                         | `manual`    | `agy` has no sign-in command     |
+| Provider                       | Tier        | Why                                  |
+| ------------------------------ | ----------- | ------------------------------------ |
+| anthropic, codex, cursor       | `one-click` | No prompts, sign-in gets checked     |
+| copilot                        | `one-click` | No prompts, sign-in can't be checked |
+| opencode, openrouter, moonshot | `assisted`  | Login is a menu                      |
+| gemini                         | `manual`    | `agy` has no sign-in command         |
 
 - `assisted`: `opencode auth login` shows a menu. When it goes quiet, the terminal
   appears so you can pick. Goodboy still checks the sign-in at the end
@@ -514,6 +540,7 @@ constant disagree, the constant is right.
 | cursor                         | `cursor-agent login`           | `cursor-agent logout`     | `cursor-agent status` |
 | codex                          | `codex login`                  | `codex logout`            | `codex login status`  |
 | gemini                         | none                           | delete the session folder | session folder        |
+| copilot                        | `copilot login`                | none                      | none                  |
 | opencode, openrouter, moonshot | `opencode auth login`          | `opencode auth logout`    | `opencode auth list`  |
 
 ### How the checks read the answer
@@ -546,6 +573,10 @@ log with the provider, the kind and the milliseconds.
   read-only fails with the kind `not_read_only`; `chatStartError` in
   `features/workspace-chat` turns it into `CHAT_PROVIDER_REFUSAL`, the same
   sentence the model picker shows.
+- Copilot has no status command, so `check_copilot_auth` never starts the CLI. It answers
+  `connected` with `verified: false` and the reason `no_status`. Detection
+  (`copilot --version`) still runs through the probe. The stored sign-in sits in the system
+  keychain, which Goodboy does not read.
 - Cursor reads `cursor-agent status --format json` and falls back to the plain text.
   `isAuthenticated` and `hasAccessToken` prove the local tokens. An email in `message`
   or `about` proves the server knows the account. Tokens without an email give
@@ -616,6 +647,7 @@ Install commands:
 - anthropic: `npm install -g @anthropic-ai/claude-code`
 - cursor: `curl https://cursor.com/install -fsS | bash`
 - codex: `npm install -g @openai/codex`
+- copilot: `npm install -g @github/copilot`
 - gemini: `curl -fsSL https://antigravity.google/cli/install.sh | bash`
 - opencode, openrouter, moonshot: `npm install -g opencode-ai`
 - gemini logout: `rm -rf ~/.gemini/antigravity-cli`
@@ -625,6 +657,7 @@ command again, which is how the cursor and gemini installers update:
 
 - anthropic: `claude update`
 - codex: `npm install -g @openai/codex@latest`
+- copilot: `npm install -g @github/copilot@latest`
 - opencode, openrouter, moonshot: `npm install -g opencode-ai@latest`
 
 An update run ends in exactly one of three states. Rust re-detects the status
@@ -671,7 +704,8 @@ one detected after it (`cliUpdateResultOf`):
 Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started),
 [Cursor CLI](https://docs.cursor.com/en/cli/installation),
 [Codex CLI](https://developers.openai.com/codex/cli),
-[Antigravity CLI](https://antigravity.google/cli).
+[Antigravity CLI](https://antigravity.google/cli),
+[Copilot CLI](https://docs.github.com/copilot/how-tos/copilot-cli).
 
 ### Claude CLI
 
@@ -746,6 +780,62 @@ agy -p <PROMPT> --model <MODEL> --mode <plan|accept-edits> --sandbox
 - In headless mode `agy` reports no token usage per turn. Goodboy estimates the cost
   from the price per token instead
 
+### Copilot CLI
+
+Read from `copilot` 1.0.105 (`copilot --help`, `help login`, `help environment`) and the
+recorded streams the fake CLI replays.
+
+Each turn starts like this:
+
+```
+copilot -p <PROMPT> --model <MODEL> -C <DIR> --output-format=json --disable-client-telemetry
+  --no-auto-update --disable-builtin-mcps --no-ask-user --allow-all-tools <MODE FLAGS>
+  [--add-dir <ROOT>]... [--reasoning-effort <LEVEL>] [--resume=<SESSION>]
+```
+
+- `--allow-all-tools` is required in non-interactive mode, so every mode grants it and
+  narrows it with `--deny-tool=` rules. The CLI documents that a deny rule wins over an
+  allow rule. Read only adds `--deny-tool=write`, `--deny-tool=shell` and
+  `--deny-tool=memory`. Edits allowed adds `--deny-tool=shell`. Full access adds
+  `--allow-all-urls`. File access stays inside the project folders (`-C`, `--add-dir`):
+  no turn passes `--allow-all-paths` or `--allow-all`
+- `--disable-client-telemetry` and `--no-auto-update` are always set, because the
+  repository forbids telemetry and a turn must not replace the CLI under a run.
+  `--disable-builtin-mcps` switches off the GitHub MCP server the CLI starts by default.
+  MCP servers the user configured stay on, as on Cursor and Codex
+- The stream is JSON lines (`--output-format=json`). `copilot/parser.ts` reads
+  `assistant.message_delta` as partial text and drops the `assistant.message` that repeats
+  it, `tool.execution_start` and `tool.execution_complete` as a tool call (with
+  `fileEdits` as file edits), `session.usage_checkpoint` as the token counts and the last
+  request's size, and `result` as the session id and the premium requests. An event the
+  parser does not map is dropped when the CLI marks it `ephemeral`, and otherwise kept as an
+  `unknown_payload` so a new event type shows up instead of vanishing
+- A turn resumes with `--resume=<session id>`; the id comes from `result.sessionId`, so
+  Copilot is a native-resume provider (`shouldReplayHistoryAsText: false`, and
+  `planRestartResume` resumes it natively)
+- Premium requests are `result.usage.premiumRequests`. `ProviderUsage.premiumRequests`
+  carries them to the turn footer, which shows them in place of a cost. The dollar cost of
+  a Copilot turn is always 0, `costCoverage` is `unpriced` and `getProviderModelPrice`
+  is `null`. The stream also reports `totalNanoAiu`; Goodboy does not show it, because
+  the unit is not documented in the CLI help
+- The prompt travels in argv: no real run has confirmed that `-p` reads stdin
+- A side job (planner, summarizer) runs the same read-only flags and, when it has no tools,
+  also `--deny-tool=read` and `--deny-tool=url`. `provider_commands.rs` updates the CLI with
+  `npm install -g @github/copilot@latest`, because the CLI's own help says an install from
+  npm only reports a newer version and leaves installing it to a manual `npm install`
+- Copilot has no chat shape: the read-only chat refuses it, like Cursor and Gemini
+- The environment: the CLI reads `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then `GITHUB_TOKEN`
+  before its saved sign-in, and refuses classic tokens with "Classic Personal Access Tokens
+  (ghp_) are not supported by Copilot." `strip_tokens_copilot_refuses` in `aux_spawn.rs`
+  runs after the Git host tokens are set, for turns and side jobs: it removes `GH_TOKEN`
+  and `GITHUB_TOKEN` unless they start with `github_pat_`, and removes
+  `COPILOT_GITHUB_TOKEN` when it starts with `ghp_`. A Copilot agent therefore has no
+  Git host token in its shell unless the user's token is fine-grained
+- Not confirmed by a real run: the shape of an error event (a failed turn shows the exit
+  code and the CLI's stderr), whether the deny rules hold in every case, the context window
+  of any model but Sonnet 5.5 (200k, the `context_token_limit` of the recorded run) and
+  which reasoning levels each model takes beyond low, medium and high
+
 ### opencode runtime
 
 opencode, OpenRouter and Moonshot share the `opencode` binary. Each one has its own
@@ -778,6 +868,7 @@ and the summarizer use them.
 | Claude          | `-p` with no value, prompt on stdin | on stdin                  |
 | Codex           | trailing `-`, prompt on stdin       | on stdin                  |
 | Cursor          | `-p <prompt>`                       | argv, stdin not confirmed |
+| Copilot         | `-p <prompt>`                       | argv, stdin not confirmed |
 | Antigravity     | `-p <prompt>`                       | argv, stdin not confirmed |
 | opencode family | `-- <prompt>`                       | argv, stdin not confirmed |
 
@@ -802,14 +893,17 @@ Every turn sends the session's mode to its CLI, not only to Claude.
 table; `sendTurn` sends its `runsAs` value and `providers/cli_args.rs` turns it into flags. A
 mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 
-| Mode                              | Claude              | Codex                                                       | Antigravity                      | Cursor                      | opencode family                            |
-| --------------------------------- | ------------------- | ----------------------------------------------------------- | -------------------------------- | --------------------------- | ------------------------------------------ |
-| Read only (`plan`)                | `plan`              | `-s read-only`                                              | `--mode plan --sandbox`          | `--mode plan`, no `--force` | `--agent plan`: no edits, shell still runs |
-| Don't ask (`dontAsk`)             | `dontAsk`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
-| Ask first (`default`)             | `default`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
-| Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
-| Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
+| Mode                              | Claude              | Codex                                                       | Antigravity                      | Copilot                                                        | Cursor                      | opencode family                            |
+| --------------------------------- | ------------------- | ----------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------- | --------------------------- | ------------------------------------------ |
+| Read only (`plan`)                | `plan`              | `-s read-only`                                              | `--mode plan --sandbox`          | `--deny-tool=write`, `--deny-tool=shell`, `--deny-tool=memory` | `--mode plan`, no `--force` | `--agent plan`: no edits, shell still runs |
+| Don't ask (`dontAsk`)             | `dontAsk`           | runs Read only                                              | runs Read only                   | runs Read only                                                 | runs Read only              | runs Read only                             |
+| Ask first (`default`)             | `default`           | runs Read only                                              | runs Read only                   | runs Read only                                                 | runs Read only              | runs Read only                             |
+| Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | `--deny-tool=shell`: edits run, commands do not                | runs Read only              | runs Read only                             |
+| Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--allow-all-urls`, files stay inside the projects             | `--force`                   | `--dangerously-skip-permissions`           |
 
+- Copilot's Read only is a set of deny rules over `--allow-all-tools`. The CLI documents
+  that a deny rule wins, but no real turn has exercised it, so `modeSupport.ts` marks the
+  Copilot cells Partly. The Auto role runs on Copilot like on Cursor, on that basis
 - opencode turns always carry `--dangerously-skip-permissions`, including the read-only roles
   (scout, planner, investigator, reviewer): the `plan` agent denies edits but asks before a shell
   command, and the flag approves the ask, so those roles can still run a shell there. Auto is the
@@ -933,7 +1027,7 @@ What the catalogs do not tell you:
   support (`clampEffort`). It does not fail
 - Only one level has a label that differs from the value Goodboy sends. `xhigh`
   reads **Very high** in the picker
-- claude and Antigravity (`agy --effort`) take `--effort <level>`, codex takes
+- Copilot takes `--reasoning-effort <level>`. claude and Antigravity (`agy --effort`) take `--effort <level>`, codex takes
   `-c model_reasoning_effort="<level>"` and the opencode family takes `--variant <level>`.
   `effort_args` in `apps/desktop/src-tauri/src/providers/cli_args.rs` builds all of them,
   for turns, the planner and the summarizer alike
@@ -942,6 +1036,13 @@ What the catalogs do not tell you:
   a separate setting (v2.1.203 or newer), not a level, so it stays out of the union.
   Codex's `ultra` is its own fan-out across subagents and stays out too: Goodboy
   owns fan-out. Run that check before you add a level to the union
+- Copilot lists `auto` (the default) and the nine ids the CLI reference names for `--model`.
+  The keys are the short names (`sonnet-5.5`, `gpt-6-astra`), so one `WEIGHT_BY_KEY` row
+  serves every provider; `cliId` is what the CLI gets. Only the models the supported
+  models page marks as configurable reasoning (Sonnet 5.5, Opus 5.5, Haiku 5.5, the GPT
+  models and Codex 5.3) carry efforts, and only low, medium and high: the CLI accepts
+  `xhigh` and `max` but publishes no per-model list. Haiku 4.5, Gemini 3.8 Flash and
+  `auto` get no effort flag. Every window is 200k, the one limit read from a real run
 - A model that publishes no effort levels (Haiku 4.5, and on opencode Big Pickle,
   MiMo and both Nemotrons) gets no effort flag at all. opencode Zen lists its
   variants per model, so each catalog entry carries only those
@@ -949,7 +1050,7 @@ What the catalogs do not tell you:
   `getProviderModelPrice({ provider, model })` reads that provider's `cost.ts`
   and returns `null` when it has no rate. The same key on two providers
   (`sonnet-4.6` on cursor and anthropic) never borrows the other's price.
-  opencode, OpenRouter and Moonshot return `null` on purpose.
+  Copilot, opencode, OpenRouter and Moonshot return `null` on purpose.
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
 - A rate the vendor has not published yet is copied from the model it follows and
@@ -1221,7 +1322,7 @@ project,local --no-session-persistence` in an empty scratch directory,
   - The desktop asks at boot, every 15 minutes alongside the Claude probe, and
     after every Codex usage event. `providerLimitsProbe` keeps, per provider,
     whether a probe is running, when one last worked and how many failed in a row
-- **Antigravity and Cursor** report nothing Goodboy can read
+- **Antigravity, Copilot and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the
   `providerLimits` store slice. A write never replaces a newer observation.
   Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
@@ -1233,6 +1334,7 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/core/src/providers/provider-commands.ts`: install, update, login and logout commands
 - `packages/core/src/providers/cliGate.ts`: which models the installed CLI can't run
 - `packages/core/src/providers/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
+- `packages/core/src/providers/copilot/`: the catalog, the accepted ids and the stream parser
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
@@ -1245,3 +1347,4 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/core/src/providers/providerFlags.ts`: `PROVIDER_FLAGS`, the TypeScript provider table
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks
 - `apps/desktop/src-tauri/src/turn.rs`: the args and env for starting a turn
+- `apps/desktop/src-tauri/src/aux_spawn.rs`: `strip_tokens_copilot_refuses`, the host tokens a Copilot run keeps

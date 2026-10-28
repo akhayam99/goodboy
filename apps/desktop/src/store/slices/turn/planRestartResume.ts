@@ -5,6 +5,7 @@ export const RESTART_RESUME_PROMPT =
 
 const NATIVE_RESUME_PROVIDERS: ReadonlySet<ProviderId> = new Set([
   'anthropic',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

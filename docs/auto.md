@@ -915,7 +915,7 @@ refuses to its children for the acts above.
 
 ## Providers
 
-Auto itself runs on Claude, Codex, Cursor and Gemini (`AUTO_OWN_PROVIDERS`), because it only reads
+Auto itself runs on Claude, Codex, Cursor, Gemini and Copilot (`AUTO_OWN_PROVIDERS`), because it only reads
 there. It never runs on the opencode family (opencode, OpenRouter, Moonshot,
 `AUTO_UNCONFINED_PROVIDERS`): the `plan` agent of opencode denies edits but asks before a shell
 command, and Goodboy always passes `--dangerously-skip-permissions` to opencode, which approves the
@@ -925,7 +925,7 @@ composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provi
 else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
 role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
 and `turn_spawn` refuses the role `auto` on an opencode binary (`ensure_confinement`). Its children run
-on Claude and Codex, never on Cursor or Gemini, which cannot confine a role
+on Claude and Codex, never on Cursor, Gemini or Copilot, which cannot confine a role
 (`AUTO_CHILD_PROVIDERS`). The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider

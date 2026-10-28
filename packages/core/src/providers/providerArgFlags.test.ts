@@ -15,6 +15,7 @@ const EXPECTED_FLAGS_BY_PROVIDER = {
   cursor: { modelFlag: '--model', effortFlag: null },
   codex: { modelFlag: '-m', effortFlag: null },
   gemini: { modelFlag: '--model', effortFlag: '--effort' },
+  copilot: { modelFlag: '--model', effortFlag: '--reasoning-effort' },
   opencode: { modelFlag: '-m', effortFlag: '--variant' },
   openrouter: { modelFlag: '-m', effortFlag: '--variant' },
   moonshot: { modelFlag: '-m', effortFlag: '--variant' },

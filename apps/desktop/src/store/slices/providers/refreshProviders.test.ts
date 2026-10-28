@@ -72,6 +72,7 @@ const install = () => {
     refresh_cursor_status: () => script.cursorStatus(),
     refresh_codex_status: () => okStatus('codex'),
     refresh_gemini_status: () => okStatus('gemini'),
+    refresh_copilot_status: () => okStatus('copilot'),
     refresh_opencode_status: () => okStatus('opencode'),
     check_provider_auth: (args: unknown) => {
       const providerId = (args as { readonly providerId: string }).providerId;
@@ -119,7 +120,7 @@ describe('refreshProviders', () => {
     const second = refresh();
     await Promise.all([first, second]);
     expect(callsTo('refresh_cursor_status')).toBe(1);
-    expect(callsTo('check_provider_auth')).toBe(7);
+    expect(callsTo('check_provider_auth')).toBe(8);
   });
 
   it('queues exactly one more probe set for fresh requests made during a run', async () => {
@@ -156,6 +157,7 @@ describe('refreshProviders', () => {
         cursor: okStatus('cursor'),
         codex: okStatus('codex'),
         gemini: okStatus('gemini'),
+        copilot: okStatus('copilot'),
         opencode: okStatus('opencode'),
         openrouter: okStatus('openrouter'),
         moonshot: okStatus('moonshot'),
@@ -282,7 +284,7 @@ describe('what the refresh keeps assembling', () => {
     await refresh();
     expect(callsTo('refresh_opencode_status')).toBe(1);
     expect(callsTo('refresh_openrouter_status')).toBe(0);
-    expect(callsTo('check_provider_auth')).toBe(7);
+    expect(callsTo('check_provider_auth')).toBe(8);
   });
 
   it('links OpenRouter from its stored credential', async () => {

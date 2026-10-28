@@ -5,6 +5,7 @@ export const PROVIDER_ORDER = [
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

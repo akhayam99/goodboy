@@ -10,6 +10,7 @@ pub(crate) enum Cli {
     Claude,
     Cursor,
     Agy,
+    Copilot,
     Codex,
     Opencode,
 }
@@ -57,7 +58,7 @@ pub(crate) fn partial_output_flag(cli: Cli) -> Option<&'static str> {
     match cli {
         Cli::Claude => Some("--include-partial-messages"),
         Cli::Cursor => Some("--stream-partial-output"),
-        Cli::Agy | Cli::Codex | Cli::Opencode => None,
+        Cli::Agy | Cli::Copilot | Cli::Codex | Cli::Opencode => None,
     }
 }
 
@@ -85,6 +86,7 @@ pub(crate) fn effort_args(cli: Cli, effort: Option<&str>) -> Vec<String> {
             format!("model_reasoning_effort=\"{level}\""),
         ],
         Cli::Opencode => vec!["--variant".to_string(), level.to_string()],
+        Cli::Copilot => vec!["--reasoning-effort".to_string(), level.to_string()],
         Cli::Cursor => Vec::new(),
     }
 }
@@ -97,7 +99,25 @@ const SIDE_JOB_FORBIDDEN: &[&str] = &[
     "-y",
     "--full-auto",
     "--dangerously-bypass-approvals-and-sandbox",
+    "--allow-all",
+    "--allow-all-paths",
+    "--allow-all-urls",
 ];
+
+const COPILOT_BASE_FLAGS: [&str; 5] = [
+    "--output-format=json",
+    "--disable-client-telemetry",
+    "--no-auto-update",
+    "--disable-builtin-mcps",
+    "--no-ask-user",
+];
+const COPILOT_ALLOW_TOOLS: &str = "--allow-all-tools";
+const COPILOT_DENY_WRITE: &str = "--deny-tool=write";
+const COPILOT_DENY_SHELL: &str = "--deny-tool=shell";
+const COPILOT_DENY_MEMORY: &str = "--deny-tool=memory";
+const COPILOT_DENY_READ: &str = "--deny-tool=read";
+const COPILOT_DENY_URL: &str = "--deny-tool=url";
+const COPILOT_ALLOW_URLS: &str = "--allow-all-urls";
 
 pub(crate) struct Policy {
     pub pairs: &'static [(&'static str, &'static str)],
@@ -141,6 +161,18 @@ pub(crate) fn read_only_policy(cli: Cli, job: Job) -> Policy {
             pairs: &[("--mode", "plan")],
             switches: &["--sandbox"],
             forbidden: &["--dangerously-skip-permissions"],
+            prompt_after_separator: false,
+            prompt_on_stdin: false,
+        },
+        (Cli::Copilot, _) => Policy {
+            pairs: &[],
+            switches: &[
+                COPILOT_ALLOW_TOOLS,
+                COPILOT_DENY_WRITE,
+                COPILOT_DENY_SHELL,
+                COPILOT_DENY_MEMORY,
+            ],
+            forbidden: &["--allow-all", "--yolo"],
             prompt_after_separator: false,
             prompt_on_stdin: false,
         },
@@ -272,6 +304,30 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
             ]);
             v
         }
+        Cli::Copilot => {
+            let mut v = vec!["-p".to_string(), combined, "--model".to_string(), model];
+            v.extend(COPILOT_BASE_FLAGS.iter().map(|flag| flag.to_string()));
+            v.extend(
+                [
+                    COPILOT_ALLOW_TOOLS,
+                    COPILOT_DENY_WRITE,
+                    COPILOT_DENY_SHELL,
+                    COPILOT_DENY_MEMORY,
+                ]
+                .iter()
+                .map(|flag| flag.to_string()),
+            );
+            if side.tools_disabled || side.job == Job::Summarizer {
+                v.push(COPILOT_DENY_READ.to_string());
+                v.push(COPILOT_DENY_URL.to_string());
+            }
+            if let Some(dir) = side.working_dir {
+                v.push("-C".to_string());
+                v.push(dir.to_string());
+            }
+            v.extend(effort);
+            v
+        }
         Cli::Codex => {
             let mut v = vec![
                 "exec".to_string(),
@@ -317,7 +373,7 @@ pub(crate) fn side_job_stdin(side: &SideJob<'_>) -> Option<String> {
     match cli {
         Cli::Claude => Some(side.user_message.to_string()),
         Cli::Codex => Some(format!("{}\n\n{}", side.system_prompt, side.user_message)),
-        Cli::Cursor | Cli::Agy | Cli::Opencode => None,
+        Cli::Cursor | Cli::Agy | Cli::Copilot | Cli::Opencode => None,
     }
 }
 
@@ -458,6 +514,45 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
                 ]),
             }
             v.shrink_to_fit();
+            v
+        }
+        Cli::Copilot => {
+            let _ = (
+                args.allowed_tools,
+                args.disallowed_tools,
+                args.system_prompt,
+            );
+            let mut v = vec![
+                "-p".to_string(),
+                args.prompt.to_string(),
+                "--model".to_string(),
+                args.model.to_string(),
+                "-C".to_string(),
+                args.working_dir.to_string(),
+            ];
+            v.extend(COPILOT_BASE_FLAGS.iter().map(|flag| flag.to_string()));
+            v.push(COPILOT_ALLOW_TOOLS.to_string());
+            match permission_mode {
+                "bypassPermissions" => v.push(COPILOT_ALLOW_URLS.to_string()),
+                "acceptEdits" => v.push(COPILOT_DENY_SHELL.to_string()),
+                _ => v.extend([
+                    COPILOT_DENY_WRITE.to_string(),
+                    COPILOT_DENY_SHELL.to_string(),
+                    COPILOT_DENY_MEMORY.to_string(),
+                ]),
+            }
+            for root in args.writable_roots {
+                v.push("--add-dir".to_string());
+                v.push(root.to_string());
+            }
+            if let Some(socket_directory) = args.query_socket_directory {
+                v.push("--add-dir".to_string());
+                v.push(socket_directory.to_string());
+            }
+            v.extend(effort_args(cli, args.effort));
+            if let Some(session_id) = args.resume_session_id {
+                v.push(format!("--resume={session_id}"));
+            }
             v
         }
         Cli::Codex => {
@@ -621,7 +716,7 @@ mod tests {
             partial_output_flag(Cli::Cursor),
             Some("--stream-partial-output")
         );
-        for cli in [Cli::Agy, Cli::Codex, Cli::Opencode] {
+        for cli in [Cli::Agy, Cli::Copilot, Cli::Codex, Cli::Opencode] {
             assert_eq!(partial_output_flag(cli), None);
         }
     }
@@ -634,7 +729,13 @@ mod tests {
             let argv = strings(&["-p", "x", skip]);
             assert!(!needs_workspace_trust(Cli::Cursor, &argv), "{skip}");
         }
-        for cli in [Cli::Claude, Cli::Agy, Cli::Codex, Cli::Opencode] {
+        for cli in [
+            Cli::Claude,
+            Cli::Agy,
+            Cli::Copilot,
+            Cli::Codex,
+            Cli::Opencode,
+        ] {
             assert!(!needs_workspace_trust(cli, &read_only));
         }
         let prompt_is_a_flag = strings(&["-p", "--force", "--mode", "plan"]);
@@ -666,6 +767,10 @@ mod tests {
             effort_args(Cli::Opencode, Some("max")),
             strings(&["--variant", "max"])
         );
+        assert_eq!(
+            effort_args(Cli::Copilot, Some("xhigh")),
+            vec!["--reasoning-effort", "xhigh"]
+        );
         assert!(effort_args(Cli::Cursor, Some("high")).is_empty());
     }
 
@@ -682,6 +787,7 @@ mod tests {
             ("cursor", "cursor-agent", Cli::Cursor),
             ("gemini", "/x/agy", Cli::Agy),
             ("codex", "codex", Cli::Codex),
+            ("copilot", "/usr/local/bin/copilot", Cli::Copilot),
             ("moonshot", "opencode", Cli::Opencode),
             ("openrouter", "/x/opencode", Cli::Opencode),
         ];
@@ -700,6 +806,8 @@ mod tests {
         assert_eq!(Cli::of_binary("/usr/bin/true"), None);
         assert_eq!(Cli::of_binary("codex.exe"), Some(Cli::Codex));
         assert_eq!(Cli::of_binary("cursor-agent.cmd"), Some(Cli::Cursor));
+        assert_eq!(Cli::of_binary("copilot.exe"), Some(Cli::Copilot));
+        assert_eq!(Cli::of_binary("copilot-agent"), None);
     }
 
     fn side(provider_id: &'static str, job: Job) -> SideJob<'static> {
@@ -717,7 +825,14 @@ mod tests {
 
     #[test]
     fn every_side_job_builds_an_argv_that_passes_its_own_policy() {
-        for provider_id in ["anthropic", "cursor", "gemini", "codex", "opencode"] {
+        for provider_id in [
+            "anthropic",
+            "cursor",
+            "gemini",
+            "copilot",
+            "codex",
+            "opencode",
+        ] {
             let cli = Cli::of_provider(provider_id).unwrap();
             for job in [Job::Planner, Job::Summarizer] {
                 let argv = side_job_args(&side(provider_id, job)).expect("argv");
@@ -994,6 +1109,147 @@ mod tests {
     }
 
     #[test]
+    fn a_copilot_turn_always_carries_its_non_interactive_flags() {
+        for mode in ["default", "plan", "acceptEdits", "bypassPermissions"] {
+            let args = spawn_args(mode, None, &[], &[], &[]);
+            let argv = turn_args("copilot", &args);
+            assert_eq!(&argv[..2], ["-p", "do it"], "{mode}");
+            assert_eq!(value_after(&argv, "--model").as_deref(), Some("model"));
+            assert_eq!(value_after(&argv, "-C").as_deref(), Some("/repo/wt"));
+            for flag in [
+                "--output-format=json",
+                "--disable-client-telemetry",
+                "--no-auto-update",
+                "--disable-builtin-mcps",
+                "--no-ask-user",
+                "--allow-all-tools",
+            ] {
+                assert!(argv.contains(&flag.to_string()), "{mode} lacks {flag}");
+            }
+            assert!(!argv.contains(&"--allow-all".to_string()), "{mode}");
+            assert!(!argv.contains(&"--yolo".to_string()), "{mode}");
+            assert!(!argv.contains(&"--allow-all-paths".to_string()), "{mode}");
+        }
+    }
+
+    #[test]
+    fn a_copilot_turn_denies_what_its_mode_does_not_allow() {
+        let denied = |mode: &str| -> Vec<String> {
+            let args = spawn_args(mode, None, &[], &[], &[]);
+            turn_args("copilot", &args)
+                .into_iter()
+                .filter(|arg| arg.starts_with("--deny-tool="))
+                .collect()
+        };
+        for mode in ["default", "dontAsk", "plan", "anything-unknown"] {
+            assert_eq!(
+                denied(mode),
+                strings(&[
+                    "--deny-tool=write",
+                    "--deny-tool=shell",
+                    "--deny-tool=memory"
+                ]),
+                "{mode}"
+            );
+        }
+        assert_eq!(denied("acceptEdits"), strings(&["--deny-tool=shell"]));
+        assert!(denied("bypassPermissions").is_empty());
+    }
+
+    #[test]
+    fn a_copilot_full_access_turn_allows_urls_and_no_other_turn_does() {
+        let allows_urls = |mode: &str| {
+            let args = spawn_args(mode, None, &[], &[], &[]);
+            turn_args("copilot", &args).contains(&"--allow-all-urls".to_string())
+        };
+        assert!(allows_urls("bypassPermissions"));
+        for mode in ["default", "plan", "acceptEdits"] {
+            assert!(!allows_urls(mode), "{mode}");
+        }
+    }
+
+    #[test]
+    fn a_read_only_copilot_role_never_gets_the_full_access_flags() {
+        let args = spawn_args("bypassPermissions", Some("scout"), &[], &[], &[]);
+        let argv = turn_args("copilot", &args);
+        assert!(!argv.contains(&"--allow-all-urls".to_string()));
+        assert!(argv.contains(&"--deny-tool=write".to_string()));
+        assert!(argv.contains(&"--deny-tool=shell".to_string()));
+        assert!(read_only_violations(Cli::Copilot, Job::Turn, &argv).is_empty());
+    }
+
+    #[test]
+    fn a_copilot_turn_names_its_roots_its_effort_and_its_session() {
+        let roots = strings(&["/repo/.meta", "/repo/wt-2"]);
+        let mut args = spawn_args("default", None, &[], &[], &roots);
+        args.effort = Some("high");
+        args.resume_session_id = Some("session-ledger-core-1");
+        args.query_socket_directory = Some("/run/goodboy");
+        let argv = turn_args("copilot", &args);
+        let added: Vec<&str> = argv
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(added, ["/repo/.meta", "/repo/wt-2", "/run/goodboy"]);
+        assert_eq!(
+            value_after(&argv, "--reasoning-effort").as_deref(),
+            Some("high")
+        );
+        assert!(argv.contains(&"--resume=session-ledger-core-1".to_string()));
+        let fresh = turn_args("copilot", &spawn_args("default", None, &[], &[], &[]));
+        assert!(!fresh.iter().any(|arg| arg.starts_with("--resume")));
+        assert!(!fresh.contains(&"--reasoning-effort".to_string()));
+    }
+
+    #[test]
+    fn a_copilot_turn_keeps_the_prompt_in_argv_and_off_stdin() {
+        assert!(!prompt_on_stdin(Cli::Copilot));
+        let args = spawn_args("default", None, &[], &[], &[]);
+        assert_eq!(turn_stdin("copilot", &args), None);
+    }
+
+    #[test]
+    fn the_copilot_policy_rejects_a_missing_deny_and_a_blanket_grant() {
+        let missing = strings(&["-p", "plan", "--allow-all-tools", "--deny-tool=write"]);
+        let found = read_only_violations(Cli::Copilot, Job::Planner, &missing);
+        assert!(found.contains(&"--deny-tool=shell is missing".to_string()));
+        assert!(found.contains(&"--deny-tool=memory is missing".to_string()));
+        let granted = strings(&[
+            "-p",
+            "plan",
+            "--allow-all-tools",
+            "--deny-tool=write",
+            "--deny-tool=shell",
+            "--deny-tool=memory",
+            "--allow-all-urls",
+            "--allow-all-paths",
+            "--yolo",
+        ]);
+        let found = read_only_violations(Cli::Copilot, Job::Summarizer, &granted);
+        for flag in ["--allow-all-urls", "--allow-all-paths", "--yolo"] {
+            assert!(
+                found.contains(&format!("{flag} must not be set")),
+                "{flag}: {found:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_copilot_side_job_denies_reads_and_urls_only_when_it_has_no_tools() {
+        let planner = side_job_args(&side("copilot", Job::Planner)).expect("argv");
+        assert!(!planner.contains(&"--deny-tool=read".to_string()));
+        let summarizer = side_job_args(&side("copilot", Job::Summarizer)).expect("argv");
+        assert!(summarizer.contains(&"--deny-tool=read".to_string()));
+        assert!(summarizer.contains(&"--deny-tool=url".to_string()));
+        let mut bare = side("copilot", Job::Planner);
+        bare.tools_disabled = true;
+        let argv = side_job_args(&bare).expect("argv");
+        assert!(argv.contains(&"--deny-tool=read".to_string()));
+        assert!(argv.contains(&"--deny-tool=url".to_string()));
+    }
+
+    #[test]
     fn auto_is_a_read_only_role_like_a_scout() {
         assert_eq!(role_access("auto"), Some(RoleAccess::ReadOnly));
         assert_eq!(role_access("auto"), role_access("scout"));
@@ -1005,7 +1261,14 @@ mod tests {
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
         for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
-            for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
+            for binary in [
+                "claude",
+                "codex",
+                "cursor-agent",
+                "agy",
+                "copilot",
+                "opencode",
+            ] {
                 let auto = spawn_args(mode, Some("auto"), &allowed, &disallowed, &roots);
                 let scout = spawn_args(mode, Some("scout"), &allowed, &disallowed, &roots);
                 assert_eq!(

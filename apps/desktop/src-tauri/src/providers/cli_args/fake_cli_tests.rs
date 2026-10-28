@@ -97,10 +97,11 @@ fn with_prompt(head: &[&str], tail: &[&str]) -> Vec<String> {
 }
 
 const JOBS: [Job; 2] = [Job::Planner, Job::Summarizer];
-const PROVIDERS: [(&str, &str); 5] = [
+const PROVIDERS: [(&str, &str); 6] = [
     ("anthropic", "claude"),
     ("cursor", "cursor-agent"),
     ("gemini", "agy"),
+    ("copilot", "copilot"),
     ("codex", "codex"),
     ("opencode", "opencode"),
 ];
@@ -151,6 +152,46 @@ fn gemini_side_jobs_spawn_in_plan_mode_with_the_chosen_effort() {
             ),
             "{job:?}"
         );
+    }
+}
+
+#[test]
+fn copilot_side_jobs_spawn_with_their_denials_and_the_chosen_effort() {
+    for job in JOBS {
+        let argv = run_side_job(job, "copilot", "copilot", Some("high"));
+
+        let mut expected = with_prompt(
+            &["-p"],
+            &[
+                "--model",
+                "fake-model",
+                "--output-format=json",
+                "--disable-client-telemetry",
+                "--no-auto-update",
+                "--disable-builtin-mcps",
+                "--no-ask-user",
+                "--allow-all-tools",
+                "--deny-tool=write",
+                "--deny-tool=shell",
+                "--deny-tool=memory",
+            ],
+        );
+        if job == Job::Summarizer {
+            expected.extend(strings(&["--deny-tool=read", "--deny-tool=url"]));
+        }
+        expected.extend(strings(&["-C", "WORK", "--reasoning-effort", "high"]));
+        let dir = expected.iter().position(|arg| arg == "WORK").unwrap();
+        assert!(argv[dir].ends_with("/work"), "{argv:?}");
+        expected[dir] = argv[dir].clone();
+        assert_eq!(argv, expected, "{job:?}");
+        for flag in [
+            "--allow-all",
+            "--yolo",
+            "--allow-all-urls",
+            "--allow-all-paths",
+        ] {
+            assert!(!argv.contains(&flag.to_string()), "{job:?} {flag}");
+        }
     }
 }
 
@@ -288,6 +329,7 @@ fn the_other_clis_keep_the_prompt_in_argv_until_their_stdin_is_confirmed() {
     for (provider_id, binary) in [
         ("cursor", "cursor-agent"),
         ("gemini", "agy"),
+        ("copilot", "copilot"),
         ("opencode", "opencode"),
     ] {
         let (argv, stdin) = run_side_job_with_stdin(Job::Planner, provider_id, binary, None);

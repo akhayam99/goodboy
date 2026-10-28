@@ -136,17 +136,17 @@ describe('c03 session tools scenes', () => {
     await mount('c03-panes-folded');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
-      'Ask',
-      'Terminal',
       'Explore',
       'Context',
+      'Ask',
       'Agents',
       'Scripts',
+      'Terminal',
     ]);
     expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'false',
       'true',
-      'false',
-      'false',
       'false',
       'false',
       'false',

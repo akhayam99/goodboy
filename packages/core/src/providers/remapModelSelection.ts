@@ -21,6 +21,7 @@ type SelectionParams = {
 const selectionFor = ({ model, effort }: SelectionParams): ModelSelection => {
   switch (model.provider) {
     case 'anthropic':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

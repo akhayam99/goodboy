@@ -82,6 +82,7 @@ export const getProviderModelPrice = ({
         table: GEMINI_PRICES,
         ids: candidateIds({ map: GEMINI_PRICE_IDS, model }),
       });
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

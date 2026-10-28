@@ -1,0 +1,16 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "1.0.105"
+    ;;
+  --help)
+    printf "Options:\n  --deny-tool [<tools>...]\n  --allow-all-tools\n  --mode <mode>\n"
+    ;;
+  -p)
+    fake_turn copilot.jsonl "$@"
+    ;;
+  *)
+    fake_usage_error "$1"
+    ;;
+esac

@@ -51,6 +51,7 @@ export type LiveRunGroup = LiveGroupBase &
   Readonly<{
     kind: 'run' | 'orchestrated';
     entry: TimelineRunEntry;
+    rowState: RowState;
     counts: RunStepCounts;
     stepStates: ReadonlyArray<RunStepState>;
     steps: ReadonlyArray<LiveRunStepModel>;
@@ -226,6 +227,7 @@ const runGroupOf = ({ entry, rowState, model }: RunParams): LiveRunGroup | null 
     mountId: mountIdOf({ agents: flatAgentsOf({ entries: stepAgents }) }),
     startedAt: timeOf({ value: entry.run.createdAt ?? entry.at }),
     entry,
+    rowState,
     counts,
     stepStates,
     steps: steps.map((step, index) => ({

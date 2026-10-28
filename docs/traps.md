@@ -24,6 +24,14 @@ The Rust files with the most comments lost them in one pass. What a reader would
 
 ## Deliberate dead ends
 
+- A Copilot run gets no `GH_TOKEN` or `GITHUB_TOKEN` unless it is fine-grained
+  (`github_pat_`). The CLI reads those two variables before its saved sign-in and
+  refuses classic tokens, so the token Goodboy sets for a Git host, or one inherited from
+  the shell, would break every turn or replace the user's Copilot sign-in. The side effect
+  is real: the agent's own shell has no Git host token. `strip_tokens_copilot_refuses`
+  runs after `apply_git_host_access` on purpose: before it, the stored token would be set
+  over the stripped one.
+
 - The Storage verdict for a worktree folder has two owners on purpose. Rust decides `safe`, `dirty`, `writing`, `operation`, `not-tracked` and `unavailable` (`folder_verdict`); the live terminals are the store's `terminalTabs`, which Rust cannot see, so `storageFolderStatus` turns a `safe` verdict into `terminal-open` when `terminalsInFolder` finds a live shell. Do not recompute the Rust half from `reasons` in TypeScript, and do not add the terminal half to Rust. Every count of safe folders goes through `summarizeStorage` with the same terminal map.
 
 - `navigate` closes the open drawer (only Ask survives, `keepAskDrawer`),

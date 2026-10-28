@@ -17,6 +17,7 @@ export type ProviderUsage = {
   readonly cacheCreationInputTokens?: number;
   readonly contextTokens?: number;
   readonly largeRequests?: ReadonlyArray<RequestUsage>;
+  readonly premiumRequests?: number;
   readonly estimatedCostUsd: number;
 };
 

@@ -32,7 +32,7 @@ const planFor = ({
   planRestartResume({ agent, provider, isProviderConnected: true, transcript, reason: 'restart' });
 
 describe('planRestartResume', () => {
-  it.each(['anthropic', 'opencode', 'openrouter', 'moonshot'] as const)(
+  it.each(['anthropic', 'copilot', 'opencode', 'openrouter', 'moonshot'] as const)(
     'resumes %s natively from its own session',
     (provider) => {
       expect(planFor({ provider })).toEqual({

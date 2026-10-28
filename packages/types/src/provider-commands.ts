@@ -12,5 +12,5 @@ export type ProviderLifecycleCommands = {
   readonly install: ProviderPlatformCommands;
   readonly update?: ProviderPlatformCommands;
   readonly login?: string;
-  readonly logout: string;
+  readonly logout?: string;
 };

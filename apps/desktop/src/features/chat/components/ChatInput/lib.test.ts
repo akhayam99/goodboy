@@ -45,6 +45,7 @@ describe('VALID_PROVIDERS', () => {
       'cursor',
       'codex',
       'gemini',
+      'copilot',
       'opencode',
       'openrouter',
       'moonshot',

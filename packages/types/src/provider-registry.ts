@@ -1,13 +1,14 @@
 import type { ModelRoutingProfile } from './workflow-routing';
 
 export type ProviderId =
-  'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter' | 'moonshot';
+  'anthropic' | 'cursor' | 'codex' | 'gemini' | 'copilot' | 'opencode' | 'openrouter' | 'moonshot';
 
 export const PROVIDER_IDS = [
   'anthropic',
   'cursor',
   'codex',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

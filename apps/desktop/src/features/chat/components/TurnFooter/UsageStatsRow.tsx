@@ -3,6 +3,7 @@ import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { modelLabel } from '../../utils/chat-constants';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
+import { premiumRequestsLabelOf } from './premiumRequestsLabelOf';
 import type { TurnFooterData } from './useTurnFooter';
 
 type Props = {
@@ -19,6 +20,7 @@ export const UsageStatsRow = ({ data, contextPct }: Props) => {
     data.estimatedCostUsd != null && data.estimatedCostUsd >= CENT
       ? formatUsd(data.estimatedCostUsd)
       : null;
+  const premium = premiumRequestsLabelOf({ premiumRequests: data.premiumRequests });
   const context =
     contextPct === null || Math.round(contextPct * 100) === 0
       ? null
@@ -26,7 +28,7 @@ export const UsageStatsRow = ({ data, contextPct }: Props) => {
   return (
     <>
       <ProviderIcon provider={data.provider} size={ICON_SIZE.row} />
-      <span>{joinFacts({ facts: [model, cost, context] })}</span>
+      <span>{joinFacts({ facts: [model, cost, premium, context] })}</span>
     </>
   );
 };

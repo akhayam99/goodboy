@@ -40,16 +40,16 @@ describe('doorSignalOf', () => {
       isWarning: true,
       isUnread: false,
       tone: 'warning',
-      pill: '2',
+      countText: '2',
       fact: '2 need you: Checks failing, 1 question for you',
     });
   });
 
-  it('says one session needs you in the singular, as a dot with no number', () => {
+  it('says one session needs you in the singular, with the count 1 beside the dot', () => {
     const signal = doorSignalOf({ kind: 'board', count: 1, tone: 'warning', reasons: [], ...NONE });
 
     expect(signal?.fact).toBe('1 needs you');
-    expect(signal?.pill).toBeUndefined();
+    expect(signal?.countText).toBe('1');
   });
 
   it('turns red when a session in the count is broken', () => {
@@ -57,16 +57,16 @@ describe('doorSignalOf', () => {
       doorSignalOf({ kind: 'board', count: 1, tone: 'danger', reasons: [], ...NONE })?.tone,
     ).toBe('danger');
     expect(
-      doorSignalOf({ kind: 'board', count: 4, tone: 'danger', reasons: [], ...NONE })?.pill,
+      doorSignalOf({ kind: 'board', count: 4, tone: 'danger', reasons: [], ...NONE })?.countText,
     ).toBe('4');
   });
 
   it('caps the number at 9+', () => {
     expect(
-      doorSignalOf({ kind: 'board', count: 9, tone: 'warning', reasons: [], ...NONE })?.pill,
+      doorSignalOf({ kind: 'board', count: 9, tone: 'warning', reasons: [], ...NONE })?.countText,
     ).toBe('9');
     expect(
-      doorSignalOf({ kind: 'board', count: 10, tone: 'warning', reasons: [], ...NONE })?.pill,
+      doorSignalOf({ kind: 'board', count: 10, tone: 'warning', reasons: [], ...NONE })?.countText,
     ).toBe('9+');
     expect(
       doorSignalOf({ kind: 'board', count: 31, tone: 'warning', reasons: [], ...NONE })?.fact,
@@ -103,7 +103,7 @@ describe('doorSignalOf', () => {
     });
 
     expect(signal).toMatchObject({ count: 1, isWarning: true, tone: 'warning' });
-    expect(signal?.pill).toBeUndefined();
+    expect(signal?.countText).toBe('1');
   });
 
   it('says nothing for a terminal row with no live terminal', () => {

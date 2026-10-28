@@ -54,6 +54,7 @@ fn required_flags(cli: Cli, access: RoleAccess) -> &'static [&'static str] {
         (Cli::Codex, RoleAccess::Writer) => &["--sandbox", "--add-dir"],
         (Cli::Cursor, _) => &["--mode"],
         (Cli::Agy, _) => &["--mode", "--sandbox"],
+        (Cli::Copilot, _) => &["--deny-tool", "--allow-all-tools"],
         (Cli::Opencode, _) => &["--agent"],
     }
 }
@@ -232,6 +233,7 @@ mod tests {
             Cli::Claude,
             Cli::Cursor,
             Cli::Agy,
+            Cli::Copilot,
             Cli::Codex,
             Cli::Opencode,
         ] {
@@ -262,7 +264,13 @@ mod tests {
         let refusal = ensure_confinement("/nonexistent/codex", "auto").expect_err("refused");
         assert!(refusal.contains("did not start"));
         assert!(missing_flags(Cli::Claude, RoleAccess::ReadOnly, CLAUDE_HELP).is_empty());
-        for cli in [Cli::Codex, Cli::Cursor, Cli::Agy, Cli::Opencode] {
+        for cli in [
+            Cli::Codex,
+            Cli::Cursor,
+            Cli::Agy,
+            Cli::Copilot,
+            Cli::Opencode,
+        ] {
             assert_eq!(
                 required_flags(cli, role_access("auto").expect("a role")),
                 required_flags(cli, role_access("scout").expect("a role"))

@@ -60,6 +60,7 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   cursor: 'https://docs.cursor.com/en/cli/installation',
   codex: 'https://github.com/openai/codex#installation',
   gemini: 'https://antigravity.google/cli',
+  copilot: 'https://docs.github.com/copilot/how-tos/copilot-cli',
   opencode: 'https://opencode.ai/docs',
   openrouter: 'https://openrouter.ai/docs',
   moonshot: 'https://platform.moonshot.ai/docs',
@@ -70,6 +71,7 @@ const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   cursor: 'refresh_cursor_status',
   codex: 'refresh_codex_status',
   gemini: 'refresh_gemini_status',
+  copilot: 'refresh_copilot_status',
   opencode: 'refresh_opencode_status',
   openrouter: 'refresh_openrouter_status',
   moonshot: 'refresh_moonshot_status',
@@ -214,6 +216,7 @@ export type ProviderStatuses = {
   readonly cursor: ProviderStatus | null;
   readonly codex: ProviderStatus | null;
   readonly gemini: ProviderStatus | null;
+  readonly copilot: ProviderStatus | null;
   readonly opencode: ProviderStatus | null;
   readonly openrouter: ProviderStatus | null;
   readonly moonshot: ProviderStatus | null;
@@ -229,6 +232,7 @@ export const buildProviderList = (
     'cursor',
     'codex',
     'gemini',
+    'copilot',
     'opencode',
     'openrouter',
     'moonshot',

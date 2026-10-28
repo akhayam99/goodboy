@@ -61,6 +61,7 @@ export const probeAgent =
           cursor: state.cursorStatus,
           codex: state.codexStatus,
           gemini: state.geminiStatus,
+          copilot: storedStatus({ get, providerId: 'copilot' }),
           opencode: storedStatus({ get, providerId: 'opencode' }),
           openrouter: storedStatus({ get, providerId: 'openrouter' }),
           moonshot: storedStatus({ get, providerId: 'moonshot' }),

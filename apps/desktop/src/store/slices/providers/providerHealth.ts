@@ -103,6 +103,7 @@ export const INITIAL_HEALTH_MAP: ProviderHealthMap = {
   cursor: INITIAL_HEALTH,
   codex: INITIAL_HEALTH,
   gemini: INITIAL_HEALTH,
+  copilot: INITIAL_HEALTH,
   opencode: INITIAL_HEALTH,
   openrouter: INITIAL_HEALTH,
   moonshot: INITIAL_HEALTH,

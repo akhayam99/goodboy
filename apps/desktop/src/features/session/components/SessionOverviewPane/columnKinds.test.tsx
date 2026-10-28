@@ -207,7 +207,11 @@ describe('the central column, kind by kind', () => {
   it('gives every running row one Where cell, with the project only across two projects', async () => {
     const { unmount } = await showColumn({ kind: 'mid' });
     const wheres = () =>
-      [...document.querySelectorAll('[data-overview-card="running"] [data-live-row]')].map((row) =>
+      [
+        ...document.querySelectorAll(
+          '[data-overview-card="running"] [data-live-group] > [data-live-row]',
+        ),
+      ].map((row) =>
         [...row.querySelectorAll('[data-live-where]')].map((cell) => cell.textContent),
       );
     expect(wheres().every((cells) => cells.length === 1)).toBe(true);

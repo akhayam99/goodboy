@@ -17,6 +17,7 @@ const CONNECTED = [
   'codex',
   'cursor',
   'gemini',
+  'copilot',
   'openrouter',
   'opencode',
   'moonshot',

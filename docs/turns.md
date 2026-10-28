@@ -431,7 +431,7 @@ continuation never resumes, because it runs in another directory.
   `bypassPermissions` never widens it: Claude gets `--tools Read,Grep,Glob`,
   no `--allowedTools`, and a deny list with Bash, the edit tools and the native
   subagent tools; Codex runs `-s read-only` with no extra roots; Cursor,
-  Gemini and opencode lose their bypass flags. For `implementer`, `tester` and
+  Gemini, Copilot and opencode lose their bypass flags. For `implementer`, `tester` and
   `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
   role is read-only. Before the spawn, `providers/cli_probe.rs` reads
   `--version` and `--help` of the binary once per file (resolved path, size and
@@ -870,8 +870,14 @@ map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
 falls back to the item's own `ProviderUsage` numbers (no provider or model
 yet) until telemetry lands. A cost of exactly zero hides the cost entry
 instead of showing `$0.00`, because zero usually means unknown, not free.
+A Copilot turn bills premium requests and has no dollar price: its `usage` event
+carries `premiumRequests` (`ProviderUsage`, summed by `sumUsage` for one run), the
+footer reads it from the item's own usage (telemetry has no column for it) and shows
+"N premium requests" in the line (`TurnFooterSummary`) and a **Premium requests**
+row in the detail, in place of the cost row and its API-price note
+(`premiumRequestsLabelOf` words it for the line and for `UsageStatsRow`).
 The line itself (`TurnFooterSummary`) carries only the provider mark, model,
-duration and cost; tokens, cache share and context window live in the
+premium requests and duration; tokens, cache share and context window live in the
 detail popover (`TurnFooterDetail`) it opens. The transcript pane's
 agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
@@ -1371,7 +1377,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
       is a known limit: Codex can read any file your user can read. It
       blocks writes and network for every command. Upgrade Codex, or pick
       Claude, for a chat that must not look outside its folders.
-  - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
+  - Cursor, Gemini, Copilot, opencode, OpenRouter and Moonshot are refused with "Chat
     needs a provider that can run read-only: Claude or Codex". m212 keeps
     `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
     `@goodboy/types` lists them for the model picker.

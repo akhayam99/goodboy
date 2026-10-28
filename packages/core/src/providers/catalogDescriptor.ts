@@ -73,6 +73,7 @@ const effortFor = ({ model }: Params) => {
     case 'anthropic':
     case 'codex':
     case 'gemini':
+    case 'copilot':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':

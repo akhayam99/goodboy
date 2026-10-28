@@ -149,4 +149,22 @@ describe('TurnFooter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
     screen.getByText('Failed');
   });
+
+  it('shows the premium requests of a Copilot turn on the line, with no price', () => {
+    const item = usageItem();
+    render(
+      <TurnFooter
+        item={{ ...item, usage: { ...item.usage, estimatedCostUsd: 0, premiumRequests: 2 } }}
+        sessionId={null}
+        agentId={null}
+      />,
+    );
+    screen.getByText('2 premium requests');
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('leaves the premium requests off the line for a turn that billed none', () => {
+    render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} />);
+    expect(screen.queryByText(/premium/)).toBeNull();
+  });
 });

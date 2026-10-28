@@ -10,6 +10,7 @@ const PROVIDER_RANK: Readonly<Record<ProviderId, number>> = {
   moonshot: 4,
   cursor: 5,
   openrouter: 6,
+  copilot: 7,
 };
 
 const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = (
@@ -46,6 +47,7 @@ const tiersOf = ({ provider }: { readonly provider: ProviderId }): Tiers => {
     switch (model.provider) {
       case 'anthropic':
       case 'gemini':
+      case 'copilot':
       case 'opencode':
       case 'openrouter':
       case 'moonshot':

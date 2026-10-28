@@ -1714,8 +1714,8 @@ Sentry glyph, and its tooltip names the Sentry projects.
 
 ## Providers and routing
 
-Goodboy works with seven providers: **Claude**, **Cursor**, **Codex**,
-**Gemini**, **OpenCode**, **OpenRouter** and **Moonshot**. You set their order
+Goodboy works with eight providers: **Claude**, **Cursor**, **Codex**,
+**Gemini**, **Copilot**, **OpenCode**, **OpenRouter** and **Moonshot**. You set their order
 and budgets, and turn each one on or off per session. Goodboy decides where
 each piece of work goes.
 
@@ -2045,9 +2045,9 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 Other identifiers:
 
 - Project kinds: `repo`, `folder`
-- `ProviderId`: `anthropic`, `cursor`, `codex`, `gemini`, `opencode`,
-  `openrouter`, `moonshot`, shown as Claude, Cursor, Codex, Gemini, OpenCode,
-  OpenRouter and Moonshot
+- `ProviderId`: `anthropic`, `cursor`, `codex`, `gemini`, `copilot`, `opencode`,
+  `openrouter`, `moonshot`, shown as Claude, Cursor, Codex, Gemini, Copilot,
+  OpenCode, OpenRouter and Moonshot
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`. The UI
   words are Ready to run or New, Approved, Ran, Replaced and Deleted

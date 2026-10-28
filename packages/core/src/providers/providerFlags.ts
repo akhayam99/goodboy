@@ -34,6 +34,12 @@ export const PROVIDER_FLAGS: Readonly<Record<ProviderId, ProviderFlags>> = {
     shouldReplayHistoryAsText: true,
     hasAccountTest: false,
   },
+  copilot: {
+    binary: 'copilot',
+    statusSlot: null,
+    shouldReplayHistoryAsText: false,
+    hasAccountTest: false,
+  },
   opencode: {
     binary: 'opencode',
     statusSlot: null,

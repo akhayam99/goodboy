@@ -32,6 +32,7 @@ export const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   cursor: 'cursor',
   codex: 'openai',
   gemini: 'gemini',
+  copilot: 'copilot',
   opencode: 'opencode',
   openrouter: 'openrouter',
   moonshot: 'moonshot',

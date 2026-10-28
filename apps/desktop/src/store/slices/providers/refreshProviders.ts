@@ -53,13 +53,21 @@ const probeAll = async ({ set, get, isFresh }: ProbeParams): Promise<void> => {
     cursor: get().cursorStatus,
     codex: get().codexStatus,
     gemini: get().geminiStatus,
+    copilot: storedStatus({ get, providerId: 'copilot' }),
     opencode: storedStatus({ get, providerId: 'opencode' }),
     openrouter: storedStatus({ get, providerId: 'openrouter' }),
     moonshot: storedStatus({ get, providerId: 'moonshot' }),
   };
   const authResults: Partial<Record<ProviderId, AuthState | null>> = { ...previousAuthResults };
   const only: ProviderId[] = [];
-  const ids: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode'];
+  const ids: ReadonlyArray<ProviderId> = [
+    'anthropic',
+    'cursor',
+    'codex',
+    'gemini',
+    'copilot',
+    'opencode',
+  ];
   await Promise.all(
     ids.map((id) =>
       probeLock({

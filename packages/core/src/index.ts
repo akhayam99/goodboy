@@ -562,7 +562,7 @@ export {
   isApiProvider,
   opencodeModelArg,
 } from './providers/provider-catalog';
-export { PROVIDER_LIFECYCLE_COMMANDS } from './providers/provider-commands';
+export { PROVIDER_LIFECYCLE_COMMANDS, canLogout } from './providers/provider-commands';
 export { cleanCliVersion, isCliVersionBelow, newestCliVersion } from './providers/cliVersion';
 export {
   cliGate,
@@ -636,7 +636,6 @@ export { catalogModelForId } from './providers/catalogModelForId';
 export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
 export { CODEX_CATALOG } from './providers/codex/catalog';
 export { CURSOR_CATALOG } from './providers/cursor/catalog';
-export { GEMINI_CATALOG } from './providers/gemini/catalog';
 export { OPENCODE_CATALOG } from './providers/opencode/catalog';
 export { OPENROUTER_CATALOG } from './providers/openrouter/catalog';
 export { defaultModelSelection } from './providers/defaultModelSelection';
@@ -781,6 +780,7 @@ export { OPENROUTER_MODELS } from './providers/openrouter/constants';
 export { computeOpenCodeCostUsd } from './providers/opencode/cost';
 export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
+export { parseJsonLine as parseCopilotJsonLine } from './providers/copilot/parser';
 export { computeGeminiCostUsd } from './providers/gemini/cost';
 export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 

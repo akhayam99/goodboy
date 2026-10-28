@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react';
+import { Fragment, useState, type KeyboardEvent } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -55,15 +55,24 @@ export const SessionTools = ({ sessionId }: Props) => {
       )}
     >
       {SESSION_TOOLS.map((tool, index) => (
-        <SessionToolButton
-          key={tool.pane}
-          tool={tool}
-          isOpen={openPane === tool.pane}
-          signal={signalOf[tool.pane] ?? null}
-          tabIndex={index === focusIndex ? 0 : -1}
-          onFocus={() => setFocusIndex(index)}
-          onToggle={() => togglePane({ sessionId, pane: tool.pane })}
-        />
+        <Fragment key={tool.pane}>
+          {index > 0 && SESSION_TOOLS[index - 1]?.group !== tool.group ? (
+            <span
+              role="separator"
+              aria-orientation="horizontal"
+              data-testid="session-tools-separator"
+              className="h-px w-5 shrink-0 bg-border-soft"
+            />
+          ) : null}
+          <SessionToolButton
+            tool={tool}
+            isOpen={openPane === tool.pane}
+            signal={signalOf[tool.pane] ?? null}
+            tabIndex={index === focusIndex ? 0 : -1}
+            onFocus={() => setFocusIndex(index)}
+            onToggle={() => togglePane({ sessionId, pane: tool.pane })}
+          />
+        </Fragment>
       ))}
     </div>
   );

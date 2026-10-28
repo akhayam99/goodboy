@@ -12,6 +12,33 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.28.5
+
+Copilot joins as a provider, and the Running list, the step bar and the session tools read at a glance.
+
+### New
+
+#### Copilot is a provider
+<!-- gb area=providers -->
+
+Connect the Copilot command line tool, pick its models in the model picker and run turns on it. A Copilot turn shows how many premium requests it used instead of a cost, and Goodboy keeps a classic GitHub token out of Copilot runs because Copilot refuses it.
+
+### Improved
+
+#### The Running list groups what you do next
+<!-- gb area=sessions -->
+
+The Running list on the session overview is grouped into Needs you, Running and Stopped. Each row shows one short status with the cause on a second line, and durations line up in one column, also for the agents under a run.
+
+#### Session tools run from reading to acting
+<!-- gb area=sessions -->
+
+The tools at the right of a session run Explore, Context, then Ask, Agents, Scripts, and the Terminal last, with a thin line between the groups. The count of sessions that need you is a small dot and a quiet number, red only when something is broken.
+
+### Fixed
+
+- The step bar of a run is colored by state, never by role, so green no longer reads as passed. <!-- gb area=sessions -->
+
 ## Goodboy v0.28.4
 
 Runs, start a run, review comments and failed pushes now say what is going on and what you can do next.

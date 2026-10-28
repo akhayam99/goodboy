@@ -292,6 +292,63 @@ const extractOpenCodeStream = (lines: ReadonlyArray<Record<string, unknown>>): A
   };
 };
 
+const COPILOT_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'assistant.message',
+  'session.usage_checkpoint',
+  'result',
+]);
+
+type LinesParams = {
+  readonly lines: ReadonlyArray<Record<string, unknown>>;
+};
+
+type CopilotUsageParams = {
+  readonly value: unknown;
+};
+
+type TokenCountParams = {
+  readonly details: Record<string, unknown> | null;
+  readonly key: string;
+};
+
+const tokenCountOf = ({ details, key }: TokenCountParams): number =>
+  asCount(asRecord(details?.[key])?.['tokenCount']);
+
+const readCopilotUsage = ({ value }: CopilotUsageParams): AuxUsage => {
+  const snapshot = asRecord(asRecord(value)?.['accountingSnapshot']);
+  const details = asRecord(snapshot?.['tokenDetails']);
+  return {
+    inputTokens: tokenCountOf({ details, key: 'input' }),
+    outputTokens: tokenCountOf({ details, key: 'output' }),
+    cachedInputTokens: tokenCountOf({ details, key: 'cache_read' }),
+    cacheCreationInputTokens: tokenCountOf({ details, key: 'cache_write' }),
+  };
+};
+
+const extractCopilotStream = ({ lines }: LinesParams): AuxOutput => {
+  let message: string | null = null;
+  let usage = ZERO_USAGE;
+  for (const payload of lines) {
+    const type = asString(payload['type']);
+    const data = asRecord(payload['data']);
+    const content = asString(data?.['content']);
+    if (type === 'assistant.message' && content !== null && content.trim().length > 0) {
+      message = content;
+    }
+    if (type === 'session.usage_checkpoint') {
+      usage = readCopilotUsage({ value: data });
+    }
+  }
+  const text = (message ?? '').trim();
+  return {
+    text,
+    usage,
+    isError: false,
+    errorMessage: null,
+    envelopeDecoded: text.length > 0,
+  };
+};
+
 export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
   const trimmed = stdout.trim();
   switch (providerId) {
@@ -299,6 +356,13 @@ export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
       return extractAnthropicEnvelope(trimmed);
     case 'gemini':
       return plainText({ text: trimmed, envelopeDecoded: true });
+    case 'copilot': {
+      const lines = readJsonLines(trimmed);
+      if (!hasEventOfType(lines, COPILOT_EVENT_TYPES)) {
+        return plainText({ text: trimmed, envelopeDecoded: true });
+      }
+      return extractCopilotStream({ lines });
+    }
     case 'cursor': {
       const lines = readCursorObjects({ stdout: trimmed });
       if (!hasEventOfType(lines, CURSOR_EVENT_TYPES)) {

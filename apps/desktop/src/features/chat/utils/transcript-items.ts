@@ -159,6 +159,9 @@ const sumUsage = ({ first, second }: SumUsageParams): ProviderUsage => ({
   cacheCreationInputTokens:
     (first.cacheCreationInputTokens ?? 0) + (second.cacheCreationInputTokens ?? 0),
   contextTokens: second.contextTokens ?? first.contextTokens,
+  ...(first.premiumRequests !== undefined || second.premiumRequests !== undefined
+    ? { premiumRequests: (first.premiumRequests ?? 0) + (second.premiumRequests ?? 0) }
+    : {}),
   estimatedCostUsd: first.estimatedCostUsd + second.estimatedCostUsd,
 });
 

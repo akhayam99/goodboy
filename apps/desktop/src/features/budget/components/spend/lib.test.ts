@@ -37,6 +37,7 @@ describe('PROVIDER_IDS', () => {
       'cursor',
       'codex',
       'gemini',
+      'copilot',
       'opencode',
       'openrouter',
       'moonshot',
