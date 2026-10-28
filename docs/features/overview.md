@@ -66,11 +66,11 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Running**
 
-- It lists the agents and runs at work: stuck first, then what waits on you, then what decides, then what works. Each group keeps the order the items started in.
-- Every row starts with its kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
+- It groups the agents and runs by what you do next: **Needs you** (they wait on you), **Running** (they work or decide) and **Stopped** (they failed or you stopped them). A group with nothing in it is not drawn, and a waiting or stopped item never sits under **Running**. Inside a group the items keep the order they started in.
+- Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to. It is blank when the run writes nowhere. It shows the project only across two projects.
-- The row then shows its state or the run's own next move, and its time.
-- A run shows its steps as a bar. Done steps are grey, the running step has the color of its role, and a step that waits for your go is amber.
+- The row then shows its status as a short muted word next to one colored dot, or the run's own next move, and its time in a column at the right edge that lines up for the agents under a run too. The cause, such as "Origin moved" or "Waits for your go on step 2", sits on a second muted line only for a row that waits or stopped.
+- A run shows its steps as a bar. Done steps are grey, the running step is the accent color and pulses, a step that waits for your go is amber and a failed step is red. The role never colors the bar. A run of two steps or fewer shows a count instead, such as **1/2**.
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run, an agent or Auto started hang under it on one thin line.
@@ -244,7 +244,7 @@ This part is for contributors and agents who change the feature.
 
 - Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
-- Running card: `liveGroupsOf` orders the rows.
+- Running card: `liveGroupsOf` orders the rows, `liveSectionsOf` groups them into **Needs you**, **Running** and **Stopped**, `liveStatusOf` splits a status word from its cause, and `LiveRow` draws one row and its children with the shared `LIVE_COLUMNS`.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.

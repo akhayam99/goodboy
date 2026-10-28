@@ -1,15 +1,17 @@
 import type { Tone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
-import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { NAMES } from '../../../../shared/utils/names';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { autoChildCopyOf } from '../../../auto/group/autoChildCopyOf';
 import type { AutoGroupChild } from '../../../auto/autoGroupOf';
+import { agentKindPalette } from '../../agent-kind';
+import { LiveGlyph } from './LiveGlyph';
 import type { LiveAutoGroup } from './liveGroupsOf';
 import { LiveRow } from './LiveRow';
 import { LiveSpine } from './LiveSpine';
 import { LiveStateWord } from './LiveStateWord';
+import { liveStatusOf } from './liveStatusOf';
 import { LIVE_TONE } from './liveTone';
 
 type Props = {
@@ -36,6 +38,8 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const auto = group.group;
   const title = auto.title ?? NAMES.runKind.autoAgent;
   const tone = group.state === 'stuck' ? 'danger' : LIVE_TONE.state[group.state].tone;
+  const palette = agentKindPalette({ kind: 'auto' });
+  const status = liveStatusOf({ word: auto.word, detail: null });
   return (
     <section
       aria-label={`${NAMES.runKind.autoAgent}: ${title}`}
@@ -44,16 +48,17 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
       className="flex min-w-0 flex-col"
     >
       <LiveRow
-        glyph={<AgentKindChip kind="auto" density="glyph" isDecorative />}
+        glyph={<LiveGlyph icon={palette.icon} colorClass={palette.fg} />}
         kindWord={NAMES.runKind.autoAgent}
         title={title}
+        reason={status.reason}
         openLabel="Open Auto chat"
         onOpen={() => navigate({ to: agentPlace({ sessionId, agentId: auto.rootAgentId }) })}
         where={where}
         end={
           <LiveStateWord
             tone={tone}
-            word={auto.word}
+            word={status.word}
             autoWord={auto.isStuck ? 'stuck' : auto.phase}
           />
         }
