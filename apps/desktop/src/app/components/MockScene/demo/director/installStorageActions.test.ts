@@ -54,11 +54,11 @@ describe('the storage cleanup', () => {
     const inUse = folders.filter((folder) => folder.origin === 'in-use');
     expect(inUse).toHaveLength(1);
     expect(inUse[0]?.branch).toBe('hl/fix-duplicate-credit');
-    expect(folders.every((folder) => folder.facts.verdict === 'safe')).toBe(true);
+    expect(folders.every((folder) => folder.facts?.verdict === 'safe')).toBe(true);
   });
 
   it('removes the three archived folders, keeps the active one and names the space freed', async () => {
-    const pending = store.getState().removeStorageFolders({ paths: safePaths() });
+    const pending = store.getState().removeStorageFolders({ paths: safePaths(), mode: 'safe' });
     vi.advanceTimersByTime(1000);
     const summary = await pending;
     expect(summary.removed).toBe(3);
