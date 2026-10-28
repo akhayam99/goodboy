@@ -5,6 +5,7 @@ import type { OverviewCardModel } from '../overviewCardsOf';
 type Props = {
   readonly card: OverviewCardModel;
   readonly hasHeader?: boolean;
+  readonly regionLabel?: string;
   readonly aside?: ReactNode;
   readonly countNote?: string | null;
   readonly children: ReactNode;
@@ -15,10 +16,18 @@ const SURFACE = 'flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4';
 export const OverviewCard = ({
   card,
   hasHeader = true,
+  regionLabel,
   aside,
   countNote = null,
   children,
 }: Props) => {
+  if (!hasHeader && regionLabel !== undefined) {
+    return (
+      <section aria-label={regionLabel} data-overview-card={card.id} className={SURFACE}>
+        {children}
+      </section>
+    );
+  }
   if (!hasHeader) {
     return (
       <div data-overview-card={card.id} className={SURFACE}>

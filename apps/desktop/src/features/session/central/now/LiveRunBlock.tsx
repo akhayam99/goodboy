@@ -1,7 +1,6 @@
 import { useContext } from 'react';
 import type { MeasuredTurnSpan, Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
 import type { RowPhase } from '../../../workTreeModel/rowState';
@@ -9,10 +8,12 @@ import { WorkTimeContext } from '../../../workTreeModel/workTimeSource';
 import { runWorkTime } from '../../timeline/runWorkTime';
 import { agentModelLineOf } from './agentModelLineOf';
 import { LiveChildren } from './LiveChildren';
+import { LiveGlyph } from './LiveGlyph';
 import type { LiveGroupState, LiveRunGroup } from './liveGroupsOf';
 import { LiveRow } from './LiveRow';
 import { LiveRunEnd } from './LiveRunEnd';
 import { LiveStateWord } from './LiveStateWord';
+import { liveStatusOf } from './liveStatusOf';
 import { LIVE_TONE } from './liveTone';
 import { runStepCardOf } from './runStepCardOf';
 import { StepMeter } from './StepMeter';
@@ -37,6 +38,20 @@ const NO_SPANS: ReadonlyArray<MeasuredTurnSpan> = [];
 
 type TimeParams = {
   readonly label: string | null;
+};
+
+type ReasonParams = {
+  readonly group: LiveRunGroup;
+};
+
+const runStatusDetailOf = ({ group }: ReasonParams): string | null => {
+  if (group.state === 'waiting' && group.waitingStepNumber !== null) {
+    return `Waits for your go on step ${group.waitingStepNumber}`;
+  }
+  if (group.state === 'stuck' && group.failedStep !== null) {
+    return `Step ${group.failedStep.number} failed: ${group.failedStep.title}`;
+  }
+  return null;
 };
 
 const timeTextOf = ({ label }: TimeParams): string | null =>
@@ -83,12 +98,9 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
     }
     navigate({ to: agentPlace({ sessionId, agentId: runningAgent.id }) });
   };
-  const waitingWord =
-    group.state === 'waiting' && group.waitingStepNumber !== null
-      ? `Waits for your go on step ${group.waitingStepNumber}`
-      : null;
   const stateSpec = LIVE_TONE.state[group.state];
-  const stateWord = <LiveStateWord tone={stateSpec.tone} word={waitingWord ?? stateSpec.word} />;
+  const status = liveStatusOf({ word: stateSpec.word, detail: runStatusDetailOf({ group }) });
+  const stateWord = <LiveStateWord tone={stateSpec.tone} word={status.word} />;
   return (
     <section
       aria-label={`${NAMES.runKind.workflow}: ${group.title}`}
@@ -97,9 +109,10 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
       className="flex min-w-0 flex-col"
     >
       <LiveRow
-        glyph={<Glyph size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />}
+        glyph={<LiveGlyph icon={Glyph} colorClass="text-muted-foreground" />}
         kindWord={NAMES.runKind.workflow}
         title={group.title}
+        reason={status.reason}
         openLabel={`Open ${group.title}`}
         onOpen={openRun}
         meter={
