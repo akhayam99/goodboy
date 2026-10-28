@@ -8,6 +8,7 @@ import { NewSessionBridge } from '../../../../../features/session/components/New
 import { AppFrame } from '../audit/AppFrame';
 import { installSceneDatabase } from '../sceneDatabase';
 import { SETTLED_MOTION } from '../onboarding/wizardSceneSeed';
+import { useAppStore } from '../../../../../store';
 import { applyStoryAnswer } from '../../demo/director/applyStoryAnswer';
 import { storyIssuesOf } from './storyIssues';
 import { seedStoryWorld, type StoryStage } from './storyWorld';
@@ -22,6 +23,7 @@ const WIZARD_OPEN_MS = 100;
 
 export const StorySessionScene = ({ stage }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const isWizardUp = useAppStore((state) => state.openSessionDraftWorkspaceId === null);
 
   useEffect(() => {
     installSceneDatabase({
@@ -53,7 +55,9 @@ export const StorySessionScene = ({ stage }: Props) => {
     <>
       <style>{SETTLED_MOTION}</style>
       <NewSessionBridge />
-      <AppFrame view="session" isRailCollapsed={false} hasPane hasDraft />
+      <div className="contents" inert={stage === 'draft' && isWizardUp}>
+        <AppFrame view="session" isRailCollapsed={false} hasPane hasDraft />
+      </div>
       {stage === 'draft' ? <OnboardingWizard /> : null}
     </>
   );
