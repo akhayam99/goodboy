@@ -26,6 +26,13 @@ describe('runKindPhaseOf for a plan run', () => {
     expect(plan({ phase: 'failed', agentCount: 0 })).toBe('unstarted');
   });
 
+  it.each(['deciding', 'stopping', 'automatic', 'plan-revising'] as const)(
+    'keeps a run with no agent yet read-only while it is %s',
+    (phase) => {
+      expect(plan({ phase, agentCount: 0 })).toBe('live');
+    },
+  );
+
   it.each(['deciding', 'waiting', 'automatic', 'paused', 'needs-answer', 'paused-budget'] as const)(
     'keeps the kind read-only while the run is %s',
     (phase) => {

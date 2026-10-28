@@ -85,10 +85,14 @@ const changePlanRun = async ({
     presets.find((candidate) => candidate.name === route?.presetName)?.id ?? null;
   const next = chosenResultOf({ choice, ask, presets });
   const isSamePlan = choice.shape === 'plan' && (route?.shape ?? 'plan') === 'plan';
-  if (isSamePlan && choice.presetId === currentPresetId) {
-    if (currentPresetId === null || route?.closeness === choice.closeness) {
-      return 'unchanged';
-    }
+  const isSameChoice = isSamePlan && choice.presetId === currentPresetId;
+  if (isSameChoice && (currentPresetId === null || route?.closeness === choice.closeness)) {
+    return 'unchanged';
+  }
+  if (state.orchestratingWorkflowRuns?.[runId] === true) {
+    throw new Error(RUN_ROUTE_COPY.stillGoing);
+  }
+  if (isSameChoice) {
     await state.updateWorkflowRunRules(sessionId, runId, (rules) => ({
       ...rules,
       route: next.route,
@@ -118,9 +122,7 @@ const changePlanRun = async ({
     await useAppStore.getState().discardWorkflow(sessionId, runId);
     return 'restarted';
   }
-  const isGoing =
-    state.orchestratingWorkflowRuns?.[runId] === true ||
-    agents.some((agent) => agent.status === 'running' || agent.status === 'pending');
+  const isGoing = agents.some((agent) => agent.status === 'running' || agent.status === 'pending');
   if (isGoing) {
     throw new Error(RUN_ROUTE_COPY.stillGoing);
   }
@@ -135,7 +137,10 @@ const changePlanRun = async ({
   if (!shouldEndRun) {
     return 'second-run';
   }
-  await useAppStore.getState().closeWorkflowRun(sessionId, runId);
+  const outcome = await useAppStore.getState().closeWorkflowRun(sessionId, runId);
+  if (outcome === 'failed') {
+    throw new Error(RUN_ROUTE_COPY.notEnded);
+  }
   return 'restarted';
 };
 

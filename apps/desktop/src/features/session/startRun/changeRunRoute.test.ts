@@ -150,7 +150,7 @@ const mockEngines = () => {
   const savePhaseTemplate = vi.fn<StoryState['savePhaseTemplate']>(async () => RUN_TEMPLATE);
   const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => undefined);
   const discardWorkflow = vi.fn<StoryState['discardWorkflow']>(async () => undefined);
-  const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => undefined);
+  const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => 'closed');
   useAppStore.setState({
     spawnAgent,
     attachWorkflowToSession,
@@ -294,6 +294,59 @@ describe('changeRunRoute', () => {
     ).rejects.toThrow('No provider is connected');
 
     expect(engines.closeWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it.each(['plan', 'lead'] as const)(
+    'refuses a change to %s while the first decision of a run with no agent is pending',
+    async (shape) => {
+      seedPlanRun({ hasWork: false });
+      useAppStore.setState({ orchestratingWorkflowRuns: { [RUN_ID]: true } });
+      const engines = mockEngines();
+
+      await expect(
+        changeRunRoute({
+          target: planTarget,
+          choice: { shape, presetId: shape === 'plan' ? AUDIT_ID : null, closeness: 'adapt' },
+        }),
+      ).rejects.toThrow('still going');
+
+      expect(engines.savePhaseTemplate).not.toHaveBeenCalled();
+      expect(engines.spawnAgent).not.toHaveBeenCalled();
+      expect(engines.discardWorkflow).not.toHaveBeenCalled();
+      expect(runOf()?.rulesSnapshot?.route).toEqual(PLAN_ROUTE);
+    },
+  );
+
+  it('refuses a Follow or Adapt switch while a decision is pending', async () => {
+    seedPlanRun({ hasWork: true });
+    useAppStore.setState({ orchestratingWorkflowRuns: { [RUN_ID]: true } });
+    mockEngines();
+
+    await expect(
+      changeRunRoute({
+        target: planTarget,
+        choice: { shape: 'plan', presetId: LAYOUT_ID, closeness: 'follow' },
+      }),
+    ).rejects.toThrow('still going');
+
+    expect(runOf()?.rulesSnapshot?.route).toEqual(PLAN_ROUTE);
+  });
+
+  it('says so when the old run did not end, and keeps the new run', async () => {
+    seedPlanRun({ hasWork: true });
+    const engines = mockEngines();
+    engines.closeWorkflowRun.mockResolvedValueOnce('failed');
+
+    await expect(
+      changeRunRoute({
+        target: planTarget,
+        choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+        shouldEndRun: true,
+      }),
+    ).rejects.toThrow('did not end');
+
+    expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
+    expect(engines.discardWorkflow).not.toHaveBeenCalled();
   });
 
   it('refuses to start a second run on a run that is still going', async () => {

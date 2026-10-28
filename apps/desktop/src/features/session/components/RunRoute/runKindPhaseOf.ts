@@ -17,6 +17,13 @@ const ENDED_PHASES: ReadonlyArray<OrchestratorPhase> = [
   'blocked',
 ];
 
+const ACTIVE_PHASES: ReadonlyArray<OrchestratorPhase> = [
+  'deciding',
+  'stopping',
+  'automatic',
+  'plan-revising',
+];
+
 const ENDED_STATUSES: ReadonlyArray<AgentStatus> = ['failed', 'blocked', 'stopped'];
 
 const LIVE_STATUSES: ReadonlyArray<AgentStatus> = ['running', 'pending'];
@@ -30,6 +37,9 @@ export const runKindPhaseOf = ({ agentCount, isFinished, phase, status }: Params
   }
   if (phase === null) {
     return 'finished';
+  }
+  if (ACTIVE_PHASES.includes(phase)) {
+    return 'live';
   }
   if (agentCount === 0) {
     return 'unstarted';
