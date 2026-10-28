@@ -663,6 +663,12 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 - **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
   when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;
   a panel passes `renderFallback`, the root does not.
+- **Every caught render error is written to the app log.** Both boundaries pass
+  `onCatch={logRenderCrash}` (`features/bug-report/logRenderCrash`), which calls
+  `log_render_crash` (`render_crash_log.rs`). It writes three `[render-crash]`
+  lines (name and message, stack, component stack) to the local log only. Home
+  folders become `~`, credentials are hidden and each field is cut to a fixed
+  length.
 
 ### Frames
 

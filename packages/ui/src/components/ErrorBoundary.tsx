@@ -19,6 +19,7 @@ type Props = {
   readonly renderFallback?: (request: ErrorFallbackRequest) => ReactNode;
   readonly describeError?: (error: Error) => string;
   readonly renderReport?: (request: ErrorReportRequest) => ReactNode;
+  readonly onCatch?: (request: ErrorReportRequest) => void;
 };
 
 type ErrorBoundaryState = {
@@ -40,7 +41,9 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('[error-boundary]', error, info.componentStack);
-    this.setState({ componentStack: info.componentStack ?? null });
+    const componentStack = info.componentStack ?? null;
+    this.setState({ componentStack });
+    this.props.onCatch?.({ error, componentStack });
   }
 
   reset = (): void => {
