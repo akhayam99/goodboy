@@ -1,31 +1,13 @@
 import type { DemoTimeline, TimelineParams } from './directorTypes';
-import { agentTimeline } from './agentTimeline';
-import { runTimeline } from './runTimeline';
-import { boardTimeline } from './boardTimeline';
-import { autoTimeline } from './autoTimeline';
-import { runFlowTimeline } from './runFlowTimeline';
-import { worldTimeline } from './worldTimeline';
 import { resolveTimeline } from './resolveTimeline';
-import { resolveWorkingTimeline } from './resolveWorkingTimeline';
-import { limitsTimeline } from './limitsTimeline';
+import { storageTimeline } from './storageTimeline';
+import { storyDirectionTimeline } from './storyDirectionTimeline';
+import { storyPlanTimeline } from './storyPlanTimeline';
 
 export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => DemoTimeline | null> =
   new Map([
-    ['chat-shell', agentTimeline],
-    ['c08-run-working', runTimeline],
-    ['c08-run-ready', runFlowTimeline],
-    ['c08-run-approval', runFlowTimeline],
-    ['c08-run-done', runFlowTimeline],
-    ['board-shell', boardTimeline],
-    ['c07-auto-start', autoTimeline],
-    ['c07-auto-plan', autoTimeline],
-    ['c07-auto-working', autoTimeline],
-    ['c07-auto-child-done', autoTimeline],
-    ['artifacts-lens-shell', worldTimeline],
-    ['artifact-report', worldTimeline],
-    ['brand-diff', worldTimeline],
-    ['brand-limits', limitsTimeline],
-    ['resolve-queue-shell', resolveTimeline],
-    ['resolve-fix-working', resolveWorkingTimeline],
-    ['resolve-fix-ready', resolveTimeline],
+    ['story-direction', storyDirectionTimeline],
+    ['story-plan', storyPlanTimeline],
+    ['story-review', resolveTimeline],
+    ['demo-storage', storageTimeline],
   ]);

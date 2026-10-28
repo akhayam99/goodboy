@@ -83,7 +83,9 @@ const exitHandlers = (): ReadonlyArray<readonly [string, Handler]> =>
   [...DEMO_EXIT_NOTICES.entries()].map(([command, message]) => [
     command,
     () => {
-      showDemoNotice({ message });
+      if (message !== null) {
+        showDemoNotice({ message });
+      }
       return SHELL_COMMANDS.has(command) ? SHELL_DONE : null;
     },
   ]);

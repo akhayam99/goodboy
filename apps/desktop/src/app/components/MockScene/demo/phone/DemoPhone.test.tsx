@@ -159,7 +159,7 @@ describe('demo phone page', () => {
   });
 
   it('shares the canonical demo link with the requested chapter', async () => {
-    window.history.replaceState(null, '', '/?scene=demo&debug=1#review');
+    window.history.replaceState(null, '', '/?scene=demo&debug=1#ship');
     const share = vi.fn(() => Promise.resolve());
     const writeText = vi.fn(() => Promise.resolve());
     setNavigator({ key: 'share', value: share });
@@ -171,7 +171,7 @@ describe('demo phone page', () => {
     await flush();
 
     expect(share).toHaveBeenCalledWith(
-      expect.objectContaining({ url: `${PHONE_LINKS.demo}#review` }),
+      expect.objectContaining({ url: `${PHONE_LINKS.demo}#ship` }),
     );
     expect(writeText).not.toHaveBeenCalled();
     expect(status()).toBe('Link shared');

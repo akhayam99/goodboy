@@ -1,9 +1,8 @@
-const LINK = 'Links open in your browser in the app. The playground stays on this page.';
-const LOCAL = 'In the app this opens on your Mac. The playground has no files to open.';
-const PUSH = 'Pushed to the sample origin. In the playground nothing leaves this page.';
-const HOST = 'In the app this goes to your Git host. In the playground nothing leaves this page.';
+const LINK = 'Opens in your browser.';
+const LOCAL = 'Opens on your Mac.';
+const HOST = 'Posts to your Git host.';
 
-export const DEMO_EXIT_NOTICES: ReadonlyMap<string, string> = new Map([
+export const DEMO_EXIT_NOTICES: ReadonlyMap<string, string | null> = new Map([
   ['open_url', LINK],
   ['plugin:opener|open_url', LINK],
   ['plugin:shell|open', LINK],
@@ -17,8 +16,8 @@ export const DEMO_EXIT_NOTICES: ReadonlyMap<string, string> = new Map([
   ['open_command_in_external_terminal', LOCAL],
   ['plugin:opener|open_path', LOCAL],
   ['plugin:opener|reveal_item_in_dir', LOCAL],
-  ['git_push', PUSH],
-  ['git_push_with_lease', PUSH],
+  ['git_push', null],
+  ['git_push_with_lease', null],
   ['project_publish_main', HOST],
   ['slack_post_reply', HOST],
   ['gitlab_reply_to_issue_discussion', HOST],

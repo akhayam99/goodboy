@@ -5,11 +5,10 @@ import type { OffscreenHint } from './useDemoHints';
 type Props = {
   readonly hint: OffscreenHint;
   readonly onReveal: () => void;
-  readonly onSkip: () => void;
   readonly onHide: () => void;
 };
 
-export const DemoHintSlot = ({ hint, onReveal, onSkip, onHide }: Props) => (
+export const DemoHintSlot = ({ hint, onReveal, onHide }: Props) => (
   <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
     <div
       role="note"
@@ -24,10 +23,7 @@ export const DemoHintSlot = ({ hint, onReveal, onSkip, onHide }: Props) => (
       <Button size="xs" variant="primary" onClick={onReveal}>
         Show control
       </Button>
-      <Button size="xs" variant="quiet" onClick={onSkip}>
-        Skip hint
-      </Button>
-      <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
+      <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
     </div>
   </div>
 );

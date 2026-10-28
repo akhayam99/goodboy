@@ -8,7 +8,8 @@ import { DEMO_CHAPTERS } from './demoChapters';
 import { DEMO_GROUPS } from './demoGroups';
 import { DEMO_PROTOCOL, type DemoRect, type DemoReportType } from './director/demoProtocol';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
-import { GROUP_VISITS_KEY } from './hints/groupVisitsKey';
+import { dwellOf } from './hints/dwellOf';
+import { RESULT_DWELL_MS } from './hints/resultDwellMs';
 
 const visibleFrame = (): HTMLIFrameElement => {
   const frame = document.querySelector<HTMLIFrameElement>('iframe[data-shown="true"]');
@@ -67,6 +68,8 @@ type HintParams = {
   readonly rect?: DemoRect | null;
   readonly focus?: DemoRect | null;
   readonly isOffscreen?: boolean;
+  readonly isClicked?: boolean;
+  readonly isPressed?: boolean;
   readonly generation?: number;
   readonly source?: MessageEventSource | null;
 };
@@ -77,6 +80,8 @@ const hint = ({
   rect = { x: 900, y: 700, width: 28, height: 28 },
   focus = null,
   isOffscreen = false,
+  isClicked = false,
+  isPressed = false,
   generation = 0,
   source = frame.contentWindow,
 }: HintParams) => {
@@ -92,6 +97,8 @@ const hint = ({
           rect,
           focus,
           isOffscreen,
+          isClicked,
+          isPressed,
         },
         origin: window.location.origin,
         source,
@@ -123,27 +130,40 @@ const tried = ({ frame, hintId }: TriedParams) => {
   });
 };
 
-type PlaceParams = {
-  readonly frame: HTMLIFrameElement;
-  readonly place: string;
+type ElapseParams = {
+  readonly ms: number;
 };
 
-const place = ({ frame, place: where }: PlaceParams) => {
+const elapse = ({ ms }: ElapseParams) => {
   act(() => {
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        data: {
-          channel: DEMO_PROTOCOL.channel,
-          version: DEMO_PROTOCOL.version,
-          generation: 0,
-          type: 'place',
-          place: where,
-        },
-        origin: window.location.origin,
-        source: frame.contentWindow,
-      }),
-    );
+    vi.advanceTimersByTime(ms);
   });
+};
+
+type ChapterParams = {
+  readonly id: string;
+};
+
+const chapterOf = ({ id }: ChapterParams) => {
+  const chapter = DEMO_CHAPTERS.find((entry) => entry.id === id);
+  if (chapter === undefined) {
+    throw new Error(`no chapter ${id}`);
+  }
+  return chapter;
+};
+
+type DoneParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+const idsOf = ({ id }: ChapterParams): ReadonlyArray<string> =>
+  chapterOf({ id }).hints.map((entry) => entry.id);
+
+const seedProgress = ({ ids }: DoneParams) => {
+  window.sessionStorage.setItem(
+    HINT_PROGRESS_KEY,
+    JSON.stringify(Object.fromEntries(ids.map((id) => [id, { tried: idsOf({ id }), epoch: 0 }]))),
+  );
 };
 
 const playgroundRoot = (): HTMLElement => {
@@ -154,11 +174,40 @@ const playgroundRoot = (): HTMLElement => {
   return root;
 };
 
-const currentStep = (): string =>
-  document.querySelector('ol button[aria-current="step"]')?.textContent ?? '';
+const topBar = (): HTMLElement => {
+  const bar = document.querySelector<HTMLElement>('body > div header, header');
+  if (bar === null) {
+    throw new Error('missing top bar');
+  }
+  return bar;
+};
+
+const railOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Playground groups' });
+
+const groupRows = (): ReadonlyArray<HTMLButtonElement> =>
+  Array.from(railOf().querySelectorAll<HTMLButtonElement>('button[data-access]'));
+
+type RowParams = {
+  readonly title: string;
+};
+
+const rowOf = ({ title }: RowParams): HTMLButtonElement => {
+  const row = groupRows().find((entry) => entry.textContent?.includes(title));
+  if (row === undefined) {
+    throw new Error(`no row ${title}`);
+  }
+  return row;
+};
+
+const stepStates = (): ReadonlyArray<string | null> =>
+  Array.from(railOf().querySelectorAll('ol[aria-label="Steps in this group"] li')).map((step) =>
+    step.getAttribute('data-state'),
+  );
+
+const instruction = (): string => screen.getByTestId('demo-instruction').textContent ?? '';
 
 beforeEach(() => {
-  window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
   window.history.replaceState(null, '', '/?scene=demo');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -173,15 +222,16 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
+const plain = (text: string | undefined): string => (text ?? '').split('**').join('');
+
 describe('demo playground', () => {
-  it('keeps the rail on the same five groups as the phone page', () => {
+  it('keeps the rail on the same groups as the phone page', () => {
     render(<DemoPlayground />);
-    const rail = screen.getByRole('navigation', { name: 'Playground groups' });
-    const titles = Array.from(rail.querySelectorAll('button')).map(
-      (row) => row.querySelector('.text-row')?.textContent,
-    );
-    expect(titles).toEqual(Object.values(DEMO_GROUPS).map((group) => group.title));
     expect(DEMO_CHAPTERS.map((chapter) => chapter.id)).toEqual(Object.keys(DEMO_GROUPS));
+    expect(groupRows().map((row) => row.querySelector('.truncate')?.textContent)).toEqual([
+      ...Object.values(DEMO_GROUPS).map((group) => group.title),
+      'Get Goodboy',
+    ]);
   });
 
   it('loads no app frame while the stage has no room', () => {
@@ -190,42 +240,76 @@ describe('demo playground', () => {
     expect(document.querySelectorAll('iframe')).toHaveLength(0);
   });
 
-  it('opens Set up on a fresh visit and lists the five groups', () => {
+  it('opens the first group on a fresh visit, with its steps listed and the other groups held back', () => {
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
     expect(visibleFrame().getAttribute('src')).toContain('scene=onboarding');
     expect(visibleFrame().getAttribute('src')).toContain('theme=dark');
-    const rail = screen.getByRole('navigation', { name: 'Playground groups' });
-    expect(Array.from(rail.querySelectorAll('button')).map((row) => row.textContent)).toEqual([
-      '01Set upOptional0 of 5 tried',
-      '02Work with an agentUp next0 of 4 tried',
-      '03Orchestrate0 of 6 tried',
-      '04Find work and results0 of 3 tried',
-      '05Review and ship0 of 3 tried',
+    const steps = within(railOf()).getByRole('list', { name: 'Steps in this group' });
+    expect(
+      Array.from(steps.querySelectorAll('li')).map((step) => step.getAttribute('aria-label')),
+    ).toEqual(
+      chapterOf({ id: 'bring' }).hints.map(
+        (entry, index) => `${entry.label}, ${index === 0 ? 'now' : 'next'}`,
+      ),
+    );
+    expect(groupRows().map((row) => row.getAttribute('data-access'))).toEqual([
+      'open',
+      'locked',
+      'locked',
+      'locked',
+      'locked',
     ]);
   });
 
-  it('opens the group named in the hash', () => {
-    window.history.replaceState(null, '', '/?scene=demo#orchestrate');
+  it('opens the group named in the hash once it is reachable', () => {
+    seedProgress({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Orchestrate');
-    expect(visibleFrame().getAttribute('src')).toContain('scene=c07-auto-start');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Guide the work');
+    expect(visibleFrame().getAttribute('src')).toContain(
+      `scene=${chapterOf({ id: 'guide' }).beats[0]?.scene ?? ''}`,
+    );
     expect(visibleFrame().getAttribute('src')).toContain('director=1');
   });
 
-  it('moves to another group from its rail row and writes it to the hash', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('falls back to the first group when the hash names a group that is still locked', () => {
+    window.history.replaceState(null, '', '/?scene=demo#ship');
     render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: /^\d+\s*Orchestrate/ }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Orchestrate');
-    expect(window.location.hash).toBe('#orchestrate');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    cleanup();
+    render(<DemoPlayground />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
   });
 
-  it('moves between groups with the arrow keys', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('shows every group title with its count kept quiet', () => {
+    render(<DemoPlayground />);
+    for (const group of Object.values(DEMO_GROUPS)) {
+      expect(rowOf({ title: group.title }).textContent).toContain(group.title);
+    }
+    expect(rowOf({ title: DEMO_GROUPS.bring.title }).textContent).toContain(
+      `0 of ${chapterOf({ id: 'bring' }).hints.length}`,
+    );
+  });
+
+  it('moves to another group from its rail row and writes it to the hash', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    fireEvent.click(rowOf({ title: 'Bring your repositories' }));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(window.location.hash).toBe('#bring');
+  });
+
+  it('moves between the groups it may open with the arrow keys', () => {
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     fireEvent.keyDown(playgroundRoot(), { key: 'ArrowLeft' });
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
+    fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
+    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[1]?.id ?? ''}`);
     fireEvent.keyDown(playgroundRoot(), { key: 'ArrowRight' });
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[1]?.id ?? ''}`);
   });
@@ -233,89 +317,16 @@ describe('demo playground', () => {
   it('replays the group in a fresh frame', () => {
     render(<DemoPlayground />);
     const before = visibleFrame();
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
-    const frames = document.querySelectorAll('iframe');
-    expect(Array.from(frames).some((frame) => frame !== before)).toBe(true);
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
+    expect(Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== before)).toBe(
+      true,
+    );
   });
 
   it('has nothing to play or pause, and Space does nothing', () => {
-    window.history.replaceState(null, '', '/?scene=demo#orchestrate');
     render(<DemoPlayground />);
     fireEvent.keyDown(playgroundRoot(), { key: ' ' });
     expect(screen.queryByRole('button', { name: /^(Play|Pause)$/ })).toBeNull();
-    expect(currentStep()).toBe('Auto starts');
-  });
-
-  it('jumps to a step from the timeline', () => {
-    window.history.replaceState(null, '', '/?scene=demo#orchestrate');
-    render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: 'Run approval' }));
-    expect(currentStep()).toBe('Run approval');
-  });
-
-  it('shows the download in the rail and again in the top bar only below the large breakpoint, with nothing up next after the last group', async () => {
-    const last = DEMO_CHAPTERS.at(-1);
-    window.history.replaceState(null, '', `/?scene=demo#${last?.id ?? ''}`);
-    render(<DemoPlayground />);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
-    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
-    const downloads = screen.getAllByRole('link', { name: /Download for macOS/ });
-    expect(downloads).toHaveLength(2);
-    expect(downloads.filter((link) => link.className.includes('lg:hidden'))).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Back to the start' })).toBeNull();
-    expect(document.querySelector('[data-up-next]:not([data-up-next="none"])')).toBeNull();
-  });
-
-  it('says the playground is mock data until every group is tried', () => {
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: ['agent-send', 'agent-answer', 'agent-files'], skipped: [], epoch: 0 },
-      }),
-    );
-    render(<DemoPlayground />);
-    expect(screen.getByText(/sample projects/).textContent).toBe(
-      'The real Goodboy on sample projects. Run it on your own code.',
-    );
-    expect(screen.queryByText(/You have tried every group/)).toBeNull();
-  });
-
-  it('closes the note on the download once every group is tried', () => {
-    const progress = Object.fromEntries(
-      DEMO_CHAPTERS.map((chapter) => [
-        chapter.id,
-        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      ]),
-    );
-    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
-    render(<DemoPlayground />);
-    expect(screen.getByText(/every group/).textContent).toBe(
-      'You have tried every group. Take Goodboy home.',
-    );
-  });
-
-  it('remembers every group the visitor opened', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
-    expect(JSON.parse(window.localStorage.getItem(GROUP_VISITS_KEY) ?? '[]')).toEqual([
-      'agent',
-      'orchestrate',
-    ]);
-  });
-
-  it('keeps the mock data line while one group is still untried', () => {
-    const progress = Object.fromEntries(
-      DEMO_CHAPTERS.filter((chapter) => chapter.id !== 'review').map((chapter) => [
-        chapter.id,
-        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      ]),
-    );
-    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
-    render(<DemoPlayground />);
-    expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
 
   it('shows the loading state until the frame reports ready', () => {
@@ -325,73 +336,6 @@ describe('demo playground', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('selects the group row and shows the loading state at once when the next frame is not ready', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    report({ frame: visibleFrame(), type: 'ready' });
-    expect(screen.queryByRole('status')).toBeNull();
-    const row = screen.getByRole('button', { name: /Find work and results/ });
-    fireEvent.click(row);
-    expect(row.getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('status').textContent).toBe('Loading Find work and results');
-    const next = document.querySelector<HTMLIFrameElement>('iframe[data-shown="false"]');
-    if (next === null) {
-      throw new Error('no frame loading');
-    }
-    report({ frame: next, type: 'ready' });
-    expect(screen.queryByRole('status')).toBeNull();
-    expect(visibleFrame()).toBe(next);
-  });
-
-  it('names the beat being loaded when the visitor steps to another beat', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    report({ frame: visibleFrame(), type: 'ready' });
-    expect(screen.queryByRole('status')).toBeNull();
-    fireEvent.click(
-      within(screen.getByRole('list', { name: 'Steps in this group' })).getByText('Limits'),
-    );
-    expect(screen.getByRole('status').textContent).toBe('Loading Limits');
-  });
-
-  it('loads the frame of a group while the pointer is on its row', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    report({ frame: visibleFrame(), type: 'ready' });
-    const sources = (): ReadonlyArray<string> =>
-      Array.from(document.querySelectorAll('iframe')).map((entry) => entry.src);
-    const before = sources();
-    fireEvent.pointerEnter(screen.getByRole('button', { name: /Review and ship/ }));
-    const after = sources();
-    expect(after).toHaveLength(before.length);
-    expect(after.some((src) => !before.includes(src))).toBe(true);
-  });
-
-  it('never moves focus when a hint opens, hides or lifts', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    const before = document.activeElement;
-    hint({ frame, hintId: 'agent-send' });
-    expect(document.activeElement).toBe(before);
-    fireEvent.click(screen.getByRole('button', { name: 'Skip hint' }));
-    hint({ frame, hintId: 'agent-answer' });
-    expect(document.activeElement).toBe(before);
-  });
-
-  it('shows no hint and no spotlight while the frame holds the next one back', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-limits-peek' });
-    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
-    hint({ frame, hintId: null, rect: null });
-    expect(screen.queryByRole('note')).toBeNull();
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-  });
-
   it('ignores a report from a window that is not one of its frames', () => {
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready', source: window });
@@ -399,9 +343,10 @@ describe('demo playground', () => {
   });
 
   it('plays the cues once the frame is ready and never moves on by itself', () => {
-    window.history.replaceState(null, '', '/?scene=demo#find');
+    seedProgress({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
-    const board = frameOf({ scene: 'board-shell' });
+    const board = visibleFrame();
     const post = vi.spyOn(board.contentWindow ?? window, 'postMessage');
     report({ frame: board, type: 'ready' });
     expect(post).toHaveBeenCalledWith(
@@ -409,10 +354,8 @@ describe('demo playground', () => {
       window.location.origin,
     );
     report({ frame: board, type: 'complete' });
-    act(() => {
-      vi.advanceTimersByTime(60000);
-    });
-    expect(currentStep()).toBe('Board');
+    elapse({ ms: 60000 });
+    expect(visibleFrame()).toBe(board);
     expect(post).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: 'pause' }),
       window.location.origin,
@@ -420,164 +363,14 @@ describe('demo playground', () => {
   });
 
   it('drops reports from the frame a replay left behind', () => {
-    window.history.replaceState(null, '', '/?scene=demo#find');
     render(<DemoPlayground />);
-    const board = frameOf({ scene: 'board-shell' });
-    report({ frame: board, type: 'ready' });
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
-    report({ frame: board, type: 'complete' });
-    const fresh = Array.from(document.querySelectorAll('iframe')).find(
-      (entry) => entry !== board && (entry.getAttribute('src') ?? '').includes('board-shell'),
+    const first = visibleFrame();
+    report({ frame: first, type: 'ready' });
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
+    report({ frame: first, type: 'complete' });
+    expect(Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== first)).toBe(
+      true,
     );
-    expect(fresh).not.toBeUndefined();
-    expect(currentStep()).toBe('Board');
-  });
-
-  it('follows the wizard screen the visitor walks to, and reloads a step picked again', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const wizard = visibleFrame();
-    report({ frame: wizard, type: 'ready' });
-    place({ frame: wizard, place: 'tools' });
-    expect(currentStep()).toBe('Tools');
-    expect(visibleFrame()).toBe(wizard);
-    place({ frame: wizard, place: 'not-a-step' });
-    expect(currentStep()).toBe('Tools');
-    fireEvent.click(screen.getByRole('button', { name: 'Welcome' }));
-    expect(currentStep()).toBe('Welcome');
-    const welcome = Array.from(document.querySelectorAll('iframe')).filter((entry) =>
-      (entry.getAttribute('src') ?? '').includes('step=welcome'),
-    );
-    expect(welcome.some((entry) => entry !== wizard)).toBe(true);
-  });
-
-  it('offers Show control for a hint whose control is scrolled away', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', rect: null, isOffscreen: true });
-    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    const slot = screen.getByRole('note', { name: 'Hint' });
-    expect(slot.textContent).toContain('Send the follow-up');
-    fireEvent.click(screen.getByRole('button', { name: 'Show control' }));
-    expect(post).toHaveBeenLastCalledWith(
-      expect.objectContaining({ type: 'reveal', hintId: 'agent-send', generation: 0 }),
-      window.location.origin,
-    );
-    hint({ frame, hintId: 'agent-send' });
-    expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
-    screen.getByRole('note', { name: 'Step 1 of 6' });
-  });
-
-  it('lets the visitor skip a hint whose control is scrolled away', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', rect: null, isOffscreen: true });
-    fireEvent.click(
-      within(screen.getByRole('note', { name: 'Hint' })).getByRole('button', { name: 'Skip hint' }),
-    );
-    expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
-  });
-
-  const finishSetup = ({ frame }: { readonly frame: HTMLIFrameElement }) => {
-    for (const hintId of [
-      'setup-start',
-      'setup-agents',
-      'setup-create',
-      'setup-tools',
-      'setup-first-start',
-    ]) {
-      tried({ frame, hintId });
-    }
-  };
-
-  const upNextRow = () => screen.getByRole('button', { name: /^02/ });
-
-  it('closes a finished group with no card: Up next pulses, then rests, and a click goes there', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    expect(upNextRow().getAttribute('data-up-next')).toBe('soon');
-    expect(upNextRow().getAttribute('data-pulsing')).toBe('false');
-    finishSetup({ frame });
-    expect(upNextRow().getAttribute('data-up-next')).toBe('ready');
-    expect(upNextRow().getAttribute('data-pulsing')).toBe('true');
-    expect(screen.queryByRole('note', { name: 'Group done' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Go to/ })).toBeNull();
-    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
-    act(() => {
-      vi.advanceTimersByTime(10000);
-    });
-    expect(upNextRow().getAttribute('data-up-next')).toBe('ready');
-    expect(upNextRow().getAttribute('data-pulsing')).toBe('false');
-    fireEvent.click(upNextRow());
-    expect(window.location.hash).toBe('#agent');
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
-  });
-
-  it('offers a Next group control in the timeline that pulses once the group is done and goes there', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    const nextControl = () => screen.getByRole('button', { name: 'Next group' });
-    const marker = () => nextControl().closest('[data-up-next]');
-    expect(marker()?.getAttribute('data-up-next')).toBe('soon');
-    expect(marker()?.getAttribute('data-pulsing')).toBe('false');
-    finishSetup({ frame });
-    expect(marker()?.getAttribute('data-up-next')).toBe('ready');
-    expect(marker()?.getAttribute('data-pulsing')).toBe('true');
-    fireEvent.click(nextControl());
-    expect(window.location.hash).toBe('#agent');
-  });
-
-  it('never points the finished-group line at the left, where a narrow window has no rail', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    finishSetup({ frame });
-    const line = screen.getByRole('heading', { level: 1 }).closest('header')?.querySelector('p');
-    expect(line?.textContent).not.toMatch(/left/i);
-  });
-
-  it('writes the live instruction under the title from the hint, the beat and the done state', () => {
-    window.history.replaceState(null, '', '/?scene=demo#setup');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    const instruction = () =>
-      screen.getByRole('heading', { level: 1 }).closest('header')?.querySelector('p')?.textContent;
-    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.beats[0]?.shows);
-    hint({ frame, hintId: 'setup-start' });
-    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.hints?.[0]?.instruction);
-    expect(instruction()).toBe('Click Get started to see which agents Goodboy found on your Mac.');
-    expect(screen.getByRole('note', { name: 'Step 1 of 6' }).textContent).not.toContain(
-      instruction() ?? '',
-    );
-    hint({ frame, hintId: 'setup-agents' });
-    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.hints?.[1]?.instruction);
-    hint({ frame, hintId: null, rect: null });
-    expect(instruction()).toBe(DEMO_CHAPTERS[0]?.beats[0]?.shows);
-    finishSetup({ frame });
-    expect(instruction()).toContain('Set up is done');
-    expect(instruction()).toContain('Work with an agent');
-  });
-
-  it('gives every hint a header instruction that never repeats its coach mark', () => {
-    for (const chapter of DEMO_CHAPTERS) {
-      for (const entry of chapter.hints ?? []) {
-        expect(entry.instruction.length).toBeGreaterThan(0);
-        expect(entry.instruction).not.toBe(entry.copy);
-        expect(entry.instruction).not.toContain(entry.copy);
-      }
-    }
   });
 
   it('switches the stage to the light theme and keeps the frame it shows', () => {
@@ -589,224 +382,379 @@ describe('demo playground', () => {
     expect(visibleFrame().getAttribute('src')).toBe(src);
     expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeNull();
   });
+
   it('names the group track for the visible frame once it is ready', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedProgress({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
     expect(post).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'hints', chapterId: 'agent', settledIds: [], generation: 0 }),
+      expect.objectContaining({
+        type: 'hints',
+        chapterId: 'direction',
+        settledIds: [],
+        generation: 0,
+      }),
       window.location.origin,
     );
   });
 
-  it('draws the hint over the stage beside its anchor with a callout that takes clicks', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('drops a hint from a stale generation, from another window or for an unknown step', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
-    const note = screen.getByRole('note', { name: 'Step 1 of 6' });
-    expect(note.textContent).toContain('Send the follow-up');
-    expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
-    fireEvent.click(within(note).getByRole('button', { name: 'Skip hint' }));
+    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first, generation: 3 });
+    hint({ frame, hintId: first, source: window });
+    hint({ frame, hintId: 'not-a-hint' });
     expect(screen.queryByRole('note')).toBeNull();
   });
 
+  it('shows the position once, on the rail, and not in the header or the coach', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const { hints } = chapterOf({ id: 'bring' });
+    for (const [index, entry] of hints.entries()) {
+      hint({ frame, hintId: entry.id });
+      expect(screen.getByRole('note').textContent).not.toMatch(/\bstep \d+ of\b/i);
+      expect(screen.queryByTestId('demo-counter')).toBeNull();
+      expect(stepStates().filter((state) => state === 'done')).toHaveLength(index);
+      expect(stepStates()[index]).toBe('current');
+      tried({ frame, hintId: entry.id });
+      elapse({ ms: RESULT_DWELL_MS });
+    }
+    expect(screen.queryByTestId('demo-counter')).toBeNull();
+    expect(stepStates().every((state) => state === 'done')).toBe(true);
+  });
+
+  it('credits the steps strictly in order and ignores one that is not next', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const { hints } = chapterOf({ id: 'bring' });
+    tried({ frame, hintId: hints[2]?.id ?? '' });
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+    tried({ frame, hintId: hints[0]?.id ?? '' });
+    tried({ frame, hintId: hints[0]?.id ?? '' });
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(1);
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      bring: { tried: [hints[0]?.id], epoch: 0 },
+    });
+  });
+
+  it('credits two steps the frame finishes in the same tick, one after the other', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const { hints } = chapterOf({ id: 'bring' });
+    act(() => {
+      for (const entry of [hints[0], hints[1]]) {
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              channel: DEMO_PROTOCOL.channel,
+              version: DEMO_PROTOCOL.version,
+              generation: 0,
+              type: 'tried',
+              hintId: entry?.id ?? '',
+            },
+            origin: window.location.origin,
+            source: frame.contentWindow,
+          }),
+        );
+      }
+    });
+    expect(JSON.parse(window.sessionStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      bring: { tried: [hints[0]?.id, hints[1]?.id], epoch: 0 },
+    });
+  });
+
+  it('shows the instruction, then the result for the dwell, then the next instruction', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const { hints } = chapterOf({ id: 'bring' });
+    const [first, second] = hints;
+    expect(instruction()).toBe(plain(first?.instruction));
+    hint({ frame, hintId: first?.id ?? '' });
+    expect(instruction()).toBe(plain(first?.instruction));
+    tried({ frame, hintId: first?.id ?? '' });
+    expect(instruction()).toBe(plain(first?.result));
+    elapse({ ms: RESULT_DWELL_MS - 100 });
+    expect(instruction()).toBe(plain(first?.result));
+    hint({ frame, hintId: null, rect: null });
+    elapse({ ms: 200 });
+    expect(instruction()).toBe(plain(first?.result));
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(instruction()).toBe(plain(second?.instruction));
+  });
+
+  it('says the group is done only after the last result has been on screen', () => {
+    seedProgress({ ids: ['bring'] });
+    const { hints } = chapterOf({ id: 'direction' });
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
+        direction: { tried: hints.slice(0, -1).map((entry) => entry.id), epoch: 0 },
+      }),
+    );
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const last = hints.at(-1);
+    hint({ frame, hintId: last?.id ?? '' });
+    tried({ frame, hintId: last?.id ?? '' });
+    expect(instruction()).toBe(plain(last?.result));
+    expect(instruction()).not.toContain('is done');
+    elapse({ ms: last === undefined ? RESULT_DWELL_MS : dwellOf({ hint: last }) });
+    expect(instruction()).toContain('Set the direction is done');
+    expect(instruction()).toContain('Guide the work');
+  });
+
+  it('changes the scene only when a step that lives in another scene becomes the next one', () => {
+    seedProgress({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const { hints, beats } = chapterOf({ id: 'ship' });
+    const crossing = hints.findIndex(
+      (entry, index) => index > 0 && entry.beat !== (hints[index - 1]?.beat ?? 0),
+    );
+    expect(crossing).toBeGreaterThan(0);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    for (const entry of hints.slice(0, crossing - 1)) {
+      tried({ frame, hintId: entry.id });
+      elapse({ ms: dwellOf({ hint: entry }) });
+    }
+    const before = visibleFrame();
+    expect(before.getAttribute('src')).toContain(
+      `scene=${beats[hints[crossing - 1]?.beat ?? 0]?.scene ?? ''}`,
+    );
+    tried({ frame: before, hintId: hints[crossing - 1]?.id ?? '' });
+    expect(visibleFrame()).toBe(before);
+    const crossed = hints[crossing - 1];
+    if (crossed === undefined) {
+      throw new Error('no crossing hint');
+    }
+    elapse({ ms: dwellOf({ hint: crossed }) });
+    const next = frameOf({ scene: beats[hints[crossing]?.beat ?? 0]?.scene ?? '' });
+    report({ frame: next, type: 'ready' });
+    expect(visibleFrame()).toBe(next);
+  });
+
+  it('shows the coach of the step in the next scene once the stage switches to it', () => {
+    seedProgress({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const { hints, beats } = chapterOf({ id: 'ship' });
+    const crossing = hints.findIndex(
+      (entry, index) => index > 0 && entry.beat !== (hints[index - 1]?.beat ?? 0),
+    );
+    const crossed = hints[crossing - 1];
+    const crossingHint = hints[crossing];
+    if (crossed === undefined || crossingHint === undefined) {
+      throw new Error('no crossing hint');
+    }
+    const first = visibleFrame();
+    report({ frame: first, type: 'ready' });
+    const next = frameOf({ scene: beats[crossingHint.beat]?.scene ?? '' });
+    report({ frame: next, type: 'ready' });
+    for (const entry of hints.slice(0, crossing)) {
+      hint({ frame: first, hintId: entry.id });
+      tried({ frame: first, hintId: entry.id });
+      hint({
+        frame: first,
+        hintId: crossingHint.id,
+        rect: { x: 10, y: 10, width: 20, height: 20 },
+      });
+      elapse({ ms: dwellOf({ hint: entry }) });
+    }
+    const post = vi.spyOn(next.contentWindow ?? window, 'postMessage');
+    elapse({ ms: RESULT_DWELL_MS });
+    expect(visibleFrame()).toBe(next);
+    expect(screen.queryByRole('note')).toBeNull();
+    hint({ frame: first, hintId: crossingHint.id });
+    expect(screen.queryByRole('note')).toBeNull();
+    report({ frame: next, type: 'ready' });
+    const tracks = post.mock.calls.filter(
+      ([message]) => typeof message === 'object' && message !== null && message.type === 'hints',
+    );
+    expect(tracks.length).toBeGreaterThan(0);
+    hint({ frame: next, hintId: crossingHint.id });
+    expect(screen.getByRole('note').textContent).toContain(crossingHint.copy);
+  });
+
+  it('keeps the result line until the next control is on screen', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const [first, second] = chapterOf({ id: 'bring' }).hints;
+    hint({ frame, hintId: first?.id ?? '' });
+    tried({ frame, hintId: first?.id ?? '' });
+    hint({ frame, hintId: null, rect: null });
+    elapse({ ms: RESULT_DWELL_MS + 5000 });
+    expect(instruction()).toBe(plain(first?.result));
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(instruction()).toBe(plain(second?.instruction));
+  });
+
+  it('never moves focus when a hint opens or hides', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const before = document.activeElement;
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(document.activeElement).toBe(before);
+    fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
+    expect(document.activeElement).toBe(before);
+  });
+
+  it('shows no hint and no spotlight while the frame holds the next one back', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first });
+    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
+    hint({ frame, hintId: null, rect: null });
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+  });
+
+  it('shows no hint for a step that is not the next one', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[3]?.id ?? '' });
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('offers Show control for a hint whose control is scrolled away, without a way to skip it', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0];
+    hint({ frame, hintId: first?.id ?? '', rect: null, isOffscreen: true });
+    expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    const slot = screen.getByRole('note', { name: 'Hint' });
+    expect(slot.textContent).toContain(first?.copy ?? '');
+    expect(screen.queryByRole('button', { name: 'Skip hint' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show control' }));
+    expect(post).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'reveal', hintId: first?.id, generation: 0 }),
+      window.location.origin,
+    );
+  });
+
+  it('draws the hint over the stage beside its anchor, without a step count', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0];
+    hint({ frame, hintId: first?.id ?? '' });
+    const note = screen.getByRole('note');
+    expect(note.textContent).toContain(first?.copy ?? '');
+    expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
+    expect(within(note).queryByRole('button', { name: 'Skip hint' })).toBeNull();
+  });
+
+  it('keeps the coach when the visitor clicks a control that opens nothing new, as the composer', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first, isClicked: true });
+    expect(screen.queryByRole('note')).not.toBeNull();
+  });
+
+  it('lifts the coach once the visitor presses the control, so it never covers what opens', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first });
+    expect(screen.queryByRole('note')).not.toBeNull();
+    hint({ frame, hintId: first, isClicked: true, isPressed: true });
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
+  });
+
   it('dims the app around the hinted control and lets the control and its note stay sharp', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    hint({ frame, hintId: 'agent-send' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
     const spotlight = screen.getByTestId('demo-spotlight');
     expect(spotlight.getAttribute('aria-hidden')).toBe('true');
     expect(spotlight.children).toHaveLength(0);
-    expect(spotlight.querySelector('button, a, [tabindex]')).toBeNull();
     expect(spotlight.contains(screen.getByRole('note'))).toBe(false);
     expect(screen.getByTestId('demo-coach-mark').contains(spotlight)).toBe(true);
   });
 
-  type Box = {
-    readonly left: number;
-    readonly top: number;
-    readonly right: number;
-    readonly bottom: number;
-  };
-
-  const holeBox = (): Box => {
-    const [x = 0, y = 0, width = 0, height = 0] = (
-      screen.getByTestId('demo-spotlight').getAttribute('data-hole') ?? ''
-    )
-      .split(' ')
-      .map(Number);
-    return { left: x, top: y, right: x + width, bottom: y + height };
-  };
-
-  const ringBox = (): Box => {
-    const ring = screen.getByTestId('demo-coach-mark').querySelector<HTMLElement>('.ring-2');
-    const left = parseFloat(ring?.style.left ?? '0');
-    const top = parseFloat(ring?.style.top ?? '0');
-    return {
-      left,
-      top,
-      right: left + parseFloat(ring?.style.width ?? '0'),
-      bottom: top + parseFloat(ring?.style.height ?? '0'),
-    };
-  };
-
-  it('cuts the hole around the focus region as well as the control, with a little room', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
-    const alone = holeBox();
-    const ring = ringBox();
-    expect(alone.left).toBeLessThan(ring.left);
-    expect(alone.top).toBeLessThan(ring.top);
-    expect(alone.right).toBeGreaterThanOrEqual(ring.right);
-    expect(alone.bottom).toBeGreaterThanOrEqual(ring.bottom);
-    const focus = { x: 400, y: 600, width: 540, height: 200 };
-    hint({ frame, hintId: 'agent-send', focus });
-    const wide = holeBox();
-    const scale = (ring.right - ring.left - 8) / 28;
-    expect(wide.left).toBeLessThan(focus.x * scale);
-    expect(wide.top).toBeLessThan(focus.y * scale);
-    expect(wide.right).toBeGreaterThan((focus.x + focus.width) * scale);
-    expect(wide.bottom).toBeGreaterThan((focus.y + focus.height) * scale);
-    expect(wide.right - wide.left).toBeGreaterThan(alone.right - alone.left);
-  });
-
-  it('falls back to the control alone when the frame reports no region', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', focus: null });
-    const hole = holeBox();
-    const ring = ringBox();
-    expect(hole.right - hole.left).toBeLessThan(ring.right - ring.left + 16);
-    expect(hole.bottom - hole.top).toBeLessThan(ring.bottom - ring.top + 16);
-  });
-
-  it('keeps the hole inside the stage when the region reaches past it', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', focus: { x: -200, y: -200, width: 900, height: 700 } });
-    const hole = holeBox();
-    expect(hole.left).toBe(0);
-    expect(hole.top).toBe(0);
-  });
-
   it('does not dim the stage when the hole would cover most of it', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', focus: { x: 0, y: 0, width: 1400, height: 880 } });
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    screen.getByRole('note', { name: 'Step 1 of 6' });
-  });
-
-  it('removes the spotlight once the control is clicked, hidden, skipped or done', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
-    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
-    act(() => {
-      window.dispatchEvent(
-        new MessageEvent('message', {
-          data: {
-            channel: DEMO_PROTOCOL.channel,
-            version: DEMO_PROTOCOL.version,
-            generation: 0,
-            type: 'anchor',
-            hintId: 'agent-send',
-            rect: { x: 900, y: 700, width: 28, height: 28 },
-            isOffscreen: false,
-            isClicked: true,
-          },
-          origin: window.location.origin,
-          source: frame.contentWindow,
-        }),
-      );
+    hint({
+      frame,
+      hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '',
+      focus: { x: 0, y: 0, width: 1400, height: 880 },
     });
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
     expect(screen.queryByRole('note')).not.toBeNull();
-    hint({ frame, hintId: 'agent-send' });
-    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
-    fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    fireEvent.keyDown(playgroundRoot(), { key: 'h' });
-    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
-    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Skip hint' }));
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
-    hint({ frame, hintId: 'agent-answer' });
-    tried({ frame, hintId: 'agent-answer' });
-    hint({ frame, hintId: null, rect: null });
-    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
   });
 
-  it('quiets only the secondary chrome while the spotlight is on and keeps what must be read at full strength', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('quiets only the secondary chrome while the spotlight is on', () => {
+    const agentHints = chapterOf({ id: 'direction' }).hints;
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
+        direction: { tried: [], epoch: 0 },
+      }),
+    );
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    const rowOf = ({ title }: { readonly title: string }): HTMLElement => {
-      const row = within(screen.getByRole('navigation', { name: 'Playground groups' }))
-        .getByText(title)
-        .closest('div');
-      if (row === null) {
-        throw new Error(`no row for ${title}`);
-      }
-      return row;
-    };
     const title = screen.getByRole('heading', { level: 1 });
-    const summary = screen.getByText(DEMO_CHAPTERS[1]?.beats[0]?.shows ?? '');
-    const counter = within(title.closest('header') ?? document.body).getByText(/0 of 4/);
-    const note = screen.getByText(/The real Goodboy on sample projects/);
-    const download = screen.getAllByRole('link', { name: /Download for macOS/ });
-    const star = screen.getByRole('link', { name: /Star on GitHub/ });
-    const version = screen.getByRole('link', { name: /What is new in/ });
     const back = screen.getAllByRole('link', { name: /goodboy-ai.dev/ });
-    hint({ frame, hintId: 'agent-send' });
-    expect(rowOf({ title: DEMO_GROUPS.setup.title }).getAttribute('data-quiet')).toBe('true');
-    expect(version.closest('[data-quiet="true"]')).not.toBeNull();
+    hint({ frame, hintId: agentHints[0]?.id ?? '' });
+    expect(
+      rowOf({ title: 'Bring your repositories' })
+        .closest('[data-quiet]')
+        ?.getAttribute('data-quiet'),
+    ).toBe('true');
     expect(back.some((link) => link.closest('[data-quiet="true"]') !== null)).toBe(true);
-    const full = [
+    for (const element of [
       title,
-      summary,
-      counter,
-      note,
-      star,
-      screen.getByRole('note', { name: 'Step 1 of 6' }),
-      rowOf({ title: DEMO_GROUPS.agent.title }),
-      ...download,
-    ];
-    for (const element of full) {
+      screen.getByTestId('demo-instruction'),
+      screen.getByRole('note'),
+    ]) {
       expect(element.closest('[data-quiet="true"]')).toBeNull();
     }
-    const upNext = document.querySelector('[data-up-next="soon"]');
-    expect(upNext?.parentElement?.getAttribute('data-quiet')).toBe('false');
+    expect(
+      rowOf({ title: 'Set the direction' }).closest('[data-quiet]')?.getAttribute('data-quiet'),
+    ).toBe('false');
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(document.querySelector('[data-quiet="true"]')).toBeNull();
   });
 
   it('tracks the hints again and drops a stale hint once the frame reloads', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
-    screen.getByRole('note', { name: 'Step 1 of 6' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(screen.queryByRole('note')).not.toBeNull();
     report({ frame, type: 'ready' });
     expect(screen.queryByRole('note')).toBeNull();
     const tracks = post.mock.calls.filter(
@@ -816,142 +764,87 @@ describe('demo playground', () => {
   });
 
   it('plays a reloaded frame again', () => {
-    window.history.replaceState(null, '', '/?scene=demo#find');
     render(<DemoPlayground />);
-    const board = frameOf({ scene: 'board-shell' });
-    const post = vi.spyOn(board.contentWindow ?? window, 'postMessage');
-    report({ frame: board, type: 'ready' });
-    report({ frame: board, type: 'ready' });
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    report({ frame, type: 'ready' });
+    report({ frame, type: 'ready' });
     const plays = post.mock.calls.filter(
       ([message]) => typeof message === 'object' && message !== null && message.type === 'play',
     );
     expect(plays).toHaveLength(2);
   });
 
-  it('drops a hint from a stale generation or from a window that is not the visible frame', () => {
+  it('dismisses only the open hint with Escape, leaves the hints on and brings it back with H', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', generation: 3 });
-    hint({ frame, hintId: 'agent-send', source: window });
-    hint({ frame, hintId: 'not-a-hint' });
-    expect(screen.queryByRole('note')).toBeNull();
-  });
-
-  it('hides the hint with Escape and brings it back with H', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
+    hint({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
     expect(screen.queryByRole('note')).toBeNull();
-    screen.getByRole('button', { name: /Show hint/ });
+    expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
+    within(topBar()).getByRole('button', { name: 'Hide hints' });
+    expect(instruction()).toBe(plain(chapterOf({ id: 'bring' }).hints[0]?.instruction));
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
-    screen.getByRole('note', { name: 'Step 1 of 6' });
+    expect(screen.queryByRole('note')).not.toBeNull();
   });
 
-  it('skips a hint, tells the frame and keeps that across a reload', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('dismisses only the open hint with the coach X and shows the next one', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const [first, second] = chapterOf({ id: 'bring' }).hints;
+    hint({ frame, hintId: first?.id ?? '' });
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Dismiss hint' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    within(topBar()).getByRole('button', { name: 'Hide hints' });
+    expect(screen.queryByRole('button', { name: 'Show hints' })).toBeNull();
+    tried({ frame, hintId: first?.id ?? '' });
+    elapse({ ms: RESULT_DWELL_MS });
+    hint({ frame, hintId: second?.id ?? '' });
+    expect(screen.getByRole('note').textContent).toContain(second?.copy ?? '');
+  });
+
+  it('turns the hints off and back on from the wrapper and keeps that in the tab', () => {
     const view = render(<DemoPlayground />);
     const frame = visibleFrame();
-    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send' });
-    fireEvent.click(screen.getByRole('button', { name: 'Skip hint' }));
+    const first = chapterOf({ id: 'bring' }).hints[0]?.id ?? '';
+    hint({ frame, hintId: first });
+    screen.getByRole('note');
+    fireEvent.click(within(topBar()).getByRole('button', { name: 'Hide hints' }));
     expect(screen.queryByRole('note')).toBeNull();
-    expect(post).toHaveBeenLastCalledWith(
-      expect.objectContaining({ type: 'hints', settledIds: ['agent-send'] }),
-      window.location.origin,
-    );
     view.unmount();
     render(<DemoPlayground />);
-    const again = visibleFrame();
-    const repost = vi.spyOn(again.contentWindow ?? window, 'postMessage');
-    report({ frame: again, type: 'ready' });
-    expect(repost).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'hints', settledIds: ['agent-send'] }),
-      window.location.origin,
-    );
+    report({ frame: visibleFrame(), type: 'ready' });
+    hint({ frame: visibleFrame(), hintId: first });
+    expect(screen.queryByRole('note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show hints' }));
+    screen.getByRole('note');
   });
 
-  it('counts tried outcomes in the rail and the header and keeps them in storage', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+  it('keeps progress in the tab and never in the shared storage', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    tried({ frame, hintId: 'agent-answer' });
-    tried({ frame, hintId: 'agent-answer' });
-    expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: ['agent-answer'], skipped: [], epoch: 0 },
-    });
+    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(window.sessionStorage.getItem(HINT_PROGRESS_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(HINT_PROGRESS_KEY)).toBeNull();
   });
 
-  it('follows another tab and never overwrites its progress', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    render(<DemoPlayground />);
+  it('starts a new tab with nothing done', () => {
+    const view = render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    const otherTab = JSON.stringify({
-      agent: { tried: ['agent-files'], skipped: [], epoch: 0 },
-      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
-    });
-    window.localStorage.setItem(HINT_PROGRESS_KEY, otherTab);
-    tried({ frame, hintId: 'agent-answer' });
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: ['agent-files', 'agent-answer'], skipped: [], epoch: 0 },
-      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
-    });
-    expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
-    act(() => {
-      window.localStorage.setItem(
-        HINT_PROGRESS_KEY,
-        JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
-      );
-      window.dispatchEvent(new StorageEvent('storage', { key: HINT_PROGRESS_KEY }));
-    });
-    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
-  });
-
-  it('does not bring back a group another tab replayed', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({ agent: { tried: ['agent-answer'], skipped: [], epoch: 0 } }),
-    );
+    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(1);
+    view.unmount();
+    window.sessionStorage.clear();
     render(<DemoPlayground />);
-    const frame = visibleFrame();
-    report({ frame, type: 'ready' });
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
-    );
-    tried({ frame, hintId: 'agent-files' });
-    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: [], skipped: [], epoch: 1 },
-    });
-    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
-  });
-
-  it('starts with the stored progress and resets only this group on replay', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: ['agent-answer', 'agent-files'], skipped: [] },
-        setup: { tried: ['setup-start'], skipped: [] },
-      }),
-    );
-    render(<DemoPlayground />);
-    expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
-    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
-    expect(screen.getByText('1 of 5 tried').textContent).toBe('1 of 5 tried');
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
   });
 
   it('works without storage', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
@@ -961,7 +854,49 @@ describe('demo playground', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    tried({ frame, hintId: 'agent-answer' });
-    expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
+    tried({ frame, hintId: chapterOf({ id: 'bring' }).hints[0]?.id ?? '' });
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(1);
+  });
+
+  it('starts with the stored progress and resets only this group on replay', () => {
+    window.sessionStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        direction: { tried: idsOf({ id: 'direction' }).slice(0, 2), epoch: 0 },
+        bring: { tried: idsOf({ id: 'bring' }), epoch: 0 },
+      }),
+    );
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    render(<DemoPlayground />);
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(2);
+    fireEvent.keyDown(playgroundRoot(), { key: 'r' });
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+      `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
+    );
+  });
+
+  it('restarts at the first step of the first group and clears every group', () => {
+    seedProgress({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#guide');
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    expect(window.location.hash).toBe('#bring');
+    expect(stepStates()[0]).toBe('current');
+    expect(stepStates().filter((state) => state === 'done')).toHaveLength(0);
+    expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('locked');
+    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+      `0 of ${chapterOf({ id: 'bring' }).hints.length}`,
+    );
+  });
+
+  it('restarts the first group in a fresh frame when it is already open', () => {
+    render(<DemoPlayground />);
+    const before = visibleFrame();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    expect(Array.from(document.querySelectorAll('iframe')).some((frame) => frame !== before)).toBe(
+      true,
+    );
   });
 });

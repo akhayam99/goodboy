@@ -91,6 +91,9 @@ export const ProviderPolicyRow = ({
               <span className={tintClasses('warning').text}> · {status.limit}</span>
             )}
           </span>
+          {status.usage === null ? null : (
+            <span className="w-full text-meta text-faint-foreground">{status.usage}</span>
+          )}
         </button>
         {row.isNew ? (
           <Button size="sm" variant="secondary" onClick={() => onState('on')}>

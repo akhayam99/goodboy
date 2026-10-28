@@ -36,6 +36,7 @@ export type DemoHintsCommand = {
   readonly type: 'hints';
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding: boolean;
 };
 
 export type DemoRevealCommand = {
@@ -54,16 +55,10 @@ type DemoAnchorReport = {
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
   readonly focus?: DemoRect | null;
+  readonly opened?: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked?: boolean;
-};
-
-type DemoPlaceReport = {
-  readonly channel: typeof DEMO_PROTOCOL.channel;
-  readonly version: typeof DEMO_PROTOCOL.version;
-  readonly generation: number;
-  readonly type: 'place';
-  readonly place: string;
+  readonly isPressed?: boolean;
 };
 
 type DemoTriedReport = {
@@ -74,7 +69,15 @@ type DemoTriedReport = {
   readonly hintId: string;
 };
 
-export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoPlaceReport;
+type DemoBlockedReport = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'blocked';
+  readonly hintId: string;
+};
+
+export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoBlockedReport;
 
 export type DemoTheme = 'dark' | 'light';
 

@@ -100,7 +100,7 @@ describe('the simulated review fix', () => {
     expect(entryOf()?.thread.stage).toBe('proposed');
   });
 
-  it('previews the approved fix for the push, then says publishing stays local', async () => {
+  it('previews the approved fix for the push, then lands it', async () => {
     await startFix();
     vi.advanceTimersByTime(8000);
     const entry = entryOf();
@@ -124,11 +124,12 @@ describe('the simulated review fix', () => {
     if (publicationId === null) {
       throw new Error('no publication');
     }
-    await expect(
-      store.getState().publishConversations({ sessionId: SESSION_ID, publicationId }),
-    ).rejects.toThrow();
-    expect(store.getState().undoNotices.at(-1)?.toast.title).toBe('Demo playground');
-    expect(entryOf()?.thread.replyPostedAt).toBeNull();
+    const result = await store
+      .getState()
+      .publishConversations({ sessionId: SESSION_ID, publicationId });
+    expect(result).toMatchObject({ kind: 'done', pushed: true, failed: 0 });
+    expect(entryOf()?.thread.replyPostedAt).not.toBeNull();
+    expect(entryOf()?.item.deliveredAt).not.toBeNull();
   });
 
   it('keeps publishing local and says so', async () => {
@@ -136,7 +137,7 @@ describe('the simulated review fix', () => {
       store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: THREAD }),
     ).rejects.toThrow();
     const notice = store.getState().undoNotices.at(-1);
-    expect(notice?.toast.title).toBe('Demo playground');
+    expect(notice?.toast.title).toBe('In the app');
     expect(entryOf()?.thread.replyPostedAt).toBeNull();
   });
 });

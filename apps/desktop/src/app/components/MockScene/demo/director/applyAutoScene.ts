@@ -1,13 +1,15 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import {
-  AUTO_PLAN,
-  AUTO_PLAN_STORED,
-  AUTO_SESSION,
   IMPLEMENTER_ID,
+  TESTER_ID,
   autoSceneOf,
+  type AutoSceneData,
   type AutoSceneState,
 } from '../../scenes/u24/autoSceneSeed';
+import { STORY_PLAN } from '../../scenes/story/storyContent';
+import { STORY_SESSION_ID } from '../../scenes/story/storyWorld';
+import { castAutoScene } from './castAutoScene';
 import type { DirectorStore } from './directorTypes';
 
 const SCENE_TURNS = 4;
@@ -17,6 +19,7 @@ type Params = {
   readonly state: AutoSceneState;
   readonly at: IsoDateTime;
   readonly implementerRunId: ProviderRunId;
+  readonly revision: 1 | 2;
 };
 
 type TurnParams = {
@@ -25,7 +28,7 @@ type TurnParams = {
   readonly runId: ProviderRunId;
 };
 
-const implementerTurnOf = ({ isRunning, at, runId }: TurnParams) =>
+const helperTurnOf = ({ isRunning, at, runId }: TurnParams) =>
   isRunning
     ? { kind: 'running' as const, runId, startedAt: at }
     : { kind: 'idle' as const, lastActivityAt: at };
@@ -42,42 +45,59 @@ const settledResultOf = ({ result }: ResultParams): unknown => {
   return { ...result, verified };
 };
 
-export const applyAutoScene = ({ store, state, at, implementerRunId }: Params): void => {
-  const scene = autoSceneOf({ state });
-  const sessionId = AUTO_SESSION.id;
+type SceneParams = {
+  readonly scene: AutoSceneData;
+  readonly revision: 1 | 2;
+};
+
+export const storySceneViewOf = ({ scene, revision }: SceneParams): AutoSceneData['view'] => ({
+  ...scene.view,
+  tree: { ...scene.view.tree, turnsUsed: SCENE_TURNS },
+  artifacts: scene.view.artifacts.map((row) => ({
+    ...row,
+    title: STORY_PLAN.title,
+    revision,
+    artifact: {
+      ...row.artifact,
+      approvedRevision: row.artifact.approvedRevision === null ? null : revision,
+    },
+  })),
+  delegations: scene.view.delegations.map((delegation) => ({
+    ...delegation,
+    result: settledResultOf({ result: delegation.result }),
+  })),
+});
+
+export const applyAutoScene = ({ store, state, at, implementerRunId, revision }: Params): void => {
+  const scene = castAutoScene({ scene: autoSceneOf({ state }) });
   const isImplementing = scene.agents.some(
     (agent) => agent.id === IMPLEMENTER_ID && agent.status === 'running',
   );
+  const turn = helperTurnOf({ isRunning: isImplementing, at, runId: implementerRunId });
   store.setState((current) => ({
-    sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: scene.agents },
+    sessionPhaseRuns: {
+      ...current.sessionPhaseRuns,
+      [STORY_SESSION_ID]: scene.agents.map((agent) => {
+        const kept = (current.sessionPhaseRuns[STORY_SESSION_ID] ?? []).find(
+          (entry) => entry.id === agent.id,
+        );
+        return kept?.providerOverride === undefined
+          ? agent
+          : {
+              ...agent,
+              providerOverride: kept.providerOverride,
+              modelOverride: kept.modelOverride,
+            };
+      }),
+    },
     autoTreeViews: {
       ...current.autoTreeViews,
-      [sessionId]: [
-        {
-          ...scene.view,
-          tree: { ...scene.view.tree, turnsUsed: SCENE_TURNS },
-          delegations: scene.view.delegations.map((delegation) => ({
-            ...delegation,
-            result: settledResultOf({ result: delegation.result }),
-          })),
-        },
-      ],
+      [STORY_SESSION_ID]: [storySceneViewOf({ scene, revision })],
     },
     agentTurnState: {
       ...current.agentTurnState,
-      [IMPLEMENTER_ID]: implementerTurnOf({
-        isRunning: isImplementing,
-        at,
-        runId: implementerRunId,
-      }),
-    },
-    sessionPlans: {
-      ...current.sessionPlans,
-      [sessionId]: scene.hasPlanArtifact ? [AUTO_PLAN] : [],
-    },
-    sessionArtifacts: {
-      ...current.sessionArtifacts,
-      [sessionId]: scene.hasPlanArtifact ? [AUTO_PLAN_STORED] : [],
+      [IMPLEMENTER_ID]: turn,
+      [TESTER_ID]: turn,
     },
   }));
 };

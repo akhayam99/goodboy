@@ -160,6 +160,7 @@ import { BrandDiffEditsOnlyScene } from '../scenes/brand/DiffEditsOnlyScene';
 import { BrandDiffEmptyScene } from '../scenes/brand/DiffEmptyScene';
 import { BrandDiffManyFilesScene } from '../scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from '../scenes/brand/DiffNotesScene';
+import { BrandDiffUnpushedScene } from '../scenes/brand/DiffUnpushedScene';
 import { BrandHistoryScene } from '../scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from '../scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from '../scenes/brand/HistoryResultScene';
@@ -169,6 +170,10 @@ import { BrandHistoryTrialScene } from '../scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from '../scenes/brand/LimitsScene';
 import { BrandCodexScene } from '../scenes/brand/CodexScene';
 import { BrandStorageScene } from '../scenes/brand/StorageScene';
+import { StoryDirectionScene } from '../scenes/story/StoryDirectionScene';
+import { StoryPlanScene } from '../scenes/story/StoryPlanScene';
+import { StoryReviewScene } from '../scenes/story/StoryReviewScene';
+import { DemoStorageScene } from '../scenes/demo/DemoStorageScene';
 import { BrandSecurityFindingsScene } from '../scenes/brand/SecurityFindingsScene';
 import { BrandToolsScene } from '../scenes/brand/ToolsScene';
 import { AgentBriefScene } from '../scenes/AgentBriefScene';
@@ -479,6 +484,7 @@ export const BASE_SCENES = {
   'brand-diff-empty': BrandDiffEmptyScene,
   'brand-diff-edits-only': BrandDiffEditsOnlyScene,
   'brand-diff-large': BrandDiffLargeScene,
+  'brand-diff-unpushed': BrandDiffUnpushedScene,
   'diff-notes': DiffNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
@@ -489,6 +495,10 @@ export const BASE_SCENES = {
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,
+  'story-direction': StoryDirectionScene,
+  'story-plan': StoryPlanScene,
+  'story-review': StoryReviewScene,
+  'demo-storage': DemoStorageScene,
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,

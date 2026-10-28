@@ -15,7 +15,6 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import type { DemoHint } from '../hints/demoHintTypes';
-import { setupPlace } from '../hints/setupPlace';
 import { createHintEngine } from './createHintEngine';
 import type { DemoHintReport } from './demoProtocol';
 
@@ -58,18 +57,22 @@ afterEach(() => {
 const HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'first',
+    label: 'First',
     copy: 'Open the first thing',
     instruction: 'Open the first thing to see its result.',
-    outcome: null,
+    result: 'The first thing is open.',
+    beat: 0,
     anchor: '#first',
     revealWhen: () => true,
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
   {
     id: 'second',
+    label: 'Second',
     copy: 'Then the second thing',
     instruction: 'Then open the second thing to see its result.',
-    outcome: null,
+    result: 'The second thing is open.',
+    beat: 0,
     anchor: '#second',
     revealWhen: () => true,
     doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
@@ -106,39 +109,13 @@ const elapse = async ({ ms }: ElapseParams): Promise<void> => {
   vi.advanceTimersByTime(ms);
 };
 
-const REPLACED: ReadonlyArray<DemoHint> = [
-  {
-    id: 'first',
-    copy: 'Open the first thing',
-    instruction: 'Open the first thing to see its result.',
-    outcome: null,
-    anchor: '#first',
-    revealWhen: ({ root }) => root.querySelector('#first') !== null,
-    doneWhen: () => false,
-  },
-  {
-    id: 'second',
-    copy: 'Then the second thing',
-    instruction: 'Then open the second thing to see its result.',
-    outcome: null,
-    anchor: '#second',
-    revealWhen: () => true,
-    doneWhen: () => false,
-  },
-];
-
-type StartParams = {
-  readonly hints?: ReadonlyArray<DemoHint>;
-};
-
-const start = ({ hints = HINTS }: StartParams = {}) => {
+const start = () => {
   const reports: DemoHintReport[] = [];
   const engine = createHintEngine({
     store,
     view: window,
     generation: () => 0,
-    hintsOf: ({ chapterId }) => (chapterId === 'test' ? hints : []),
-    placeOf: setupPlace,
+    hintsOf: ({ chapterId }) => (chapterId === 'test' ? HINTS : []),
     onReport: ({ report }) => reports.push(report),
   });
   engine.setTrack({ chapterId: 'test', settledIds: [] });
@@ -155,29 +132,12 @@ const openPopover = (): void => {
 };
 
 describe('the hint engine dwell', () => {
-  it('holds the next hint for the dwell after a step is done, then shows it', async () => {
+  it('shows the next hint as soon as a step is done, with no dwell', async () => {
     const { engine, last } = start();
     await elapse({ ms: 40 });
     expect(last()).toMatchObject({ hintId: 'first' });
     visitorClick({ selector: '#first' });
-    await elapse({ ms: 100 });
-    expect(last()).toMatchObject({ hintId: null, rect: null });
-    await elapse({ ms: 2000 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 600 });
-    expect(last()).toMatchObject({ hintId: 'second' });
-    engine.dispose();
-  });
-
-  it('holds the next hint too when the clicked hint is replaced rather than done', async () => {
-    const { engine, last } = start({ hints: REPLACED });
     await elapse({ ms: 40 });
-    expect(last()).toMatchObject({ hintId: 'first' });
-    visitorClick({ selector: '#first' });
-    document.querySelector('#first')?.remove();
-    await elapse({ ms: 300 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 2500 });
     expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });
@@ -188,8 +148,6 @@ describe('the hint engine dwell', () => {
     visitorClick({ selector: '#first' });
     openPopover();
     await elapse({ ms: 1200 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 1700 });
     const report = last();
     expect(report).toMatchObject({ hintId: 'second' });
     const focus = report?.type === 'anchor' ? report.focus : null;
@@ -218,7 +176,7 @@ describe('the hint engine dwell', () => {
     engine.dispose();
   });
 
-  it('keeps waiting while the pointer rests on the result', async () => {
+  it('keeps the next hint lit while the pointer rests on the result', async () => {
     const { engine, last } = start();
     await elapse({ ms: 40 });
     visitorClick({ selector: '#first' });
@@ -227,11 +185,8 @@ describe('the hint engine dwell', () => {
     for (let step = 0; step < 5; step += 1) {
       pointerAt({ x: 350 + step, y: 350 });
       await elapse({ ms: 1000 });
-      expect(last()).toMatchObject({ hintId: null });
+      expect(last()).toMatchObject({ hintId: 'second' });
     }
-    pointerAt({ x: 20, y: 20 });
-    await elapse({ ms: 900 });
-    expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });
 

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { DemoChapter } from '../demoChapters';
 
 type Params = {
-  readonly chapters: ReadonlyArray<DemoChapter>;
+  readonly ids: ReadonlyArray<string>;
   readonly fallbackId: string;
 };
 
@@ -15,22 +14,19 @@ type ChapterHash = {
   readonly selectChapter: (params: SelectParams) => void;
 };
 
-const readHash = ({ chapters, fallbackId }: Params): string => {
+const readHash = ({ ids, fallbackId }: Params): string => {
   const wanted = window.location.hash.replace(/^#/, '');
-  const match =
-    chapters.find((chapter) => chapter.id === wanted) ??
-    chapters.find((chapter) => chapter.id === fallbackId);
-  return match?.id ?? chapters[0]?.id ?? '';
+  return ids.find((id) => id === wanted) ?? ids.find((id) => id === fallbackId) ?? ids[0] ?? '';
 };
 
-export const useChapterHash = ({ chapters, fallbackId }: Params): ChapterHash => {
-  const [chapterId, setChapterId] = useState(() => readHash({ chapters, fallbackId }));
+export const useChapterHash = ({ ids, fallbackId }: Params): ChapterHash => {
+  const [chapterId, setChapterId] = useState(() => readHash({ ids, fallbackId }));
 
   useEffect(() => {
-    const onHashChange = () => setChapterId(readHash({ chapters, fallbackId }));
+    const onHashChange = () => setChapterId(readHash({ ids, fallbackId }));
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
-  }, [chapters, fallbackId]);
+  }, [ids, fallbackId]);
 
   const selectChapter = useCallback(({ id }: SelectParams) => {
     setChapterId(id);

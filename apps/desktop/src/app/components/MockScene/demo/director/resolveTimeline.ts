@@ -1,8 +1,8 @@
 import type { DemoTimeline } from './directorTypes';
-import { installResolveActions } from './installResolveActions';
+import { installStoryReview } from './installStoryReview';
 
 export const resolveTimeline = (): DemoTimeline => ({
-  setup: installResolveActions,
+  setup: installStoryReview,
   prepare: () => undefined,
   cues: [],
 });

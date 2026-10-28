@@ -22,7 +22,16 @@ type PlaceParams = {
 };
 
 const place = ({ target }: PlaceParams) =>
-  placeCallout({ target, callout: CALLOUT, bounds: BOUNDS, side: 'right', gap: 12, margin: 16 });
+  placeCallout({
+    target,
+    avoid: [],
+    lit: null,
+    callout: CALLOUT,
+    bounds: BOUNDS,
+    side: 'right',
+    gap: 12,
+    margin: 16,
+  });
 
 describe('callout placement', () => {
   it('sits beside the target on the preferred side when there is room', () => {
@@ -30,10 +39,34 @@ describe('callout placement', () => {
     expect(place({ target })).toMatchObject({ side: 'right', x: 312 });
   });
 
-  it('drops below a control near the right edge, where a form keeps its free space', () => {
+  it('takes the side with the most room even when the preferred side fits', () => {
+    const target = { x: 600, y: 200, width: 100, height: 32 };
+    const placement = place({ target });
+    expect(placement.side).toBe('left');
+    expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
+  });
+
+  it('keeps a locked side while it fits and covers nothing, even over a lit region', () => {
+    const target = { x: 600, y: 200, width: 100, height: 32 };
+    const lit = { x: 300, y: 150, width: 300, height: 200 };
+    const placement = placeCallout({
+      target,
+      avoid: [],
+      lit,
+      callout: CALLOUT,
+      bounds: BOUNDS,
+      side: 'right',
+      isLocked: true,
+      gap: 12,
+      margin: 16,
+    });
+    expect(placement.side).toBe('right');
+  });
+
+  it('goes to the left of a control near the right edge, where the room is', () => {
     const target = { x: 900, y: 200, width: 80, height: 32 };
     const placement = place({ target });
-    expect(placement.side).toBe('bottom');
+    expect(placement.side).toBe('left');
     expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
   });
 

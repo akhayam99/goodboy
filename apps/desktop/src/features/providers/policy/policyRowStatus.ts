@@ -4,6 +4,7 @@ import type { PolicyRow } from './policyRows';
 export type PolicyRowStatus = Readonly<{
   text: string;
   limit: string | null;
+  usage: string | null;
 }>;
 
 type Params = {
@@ -39,4 +40,5 @@ const limitText = ({ row, nowMs }: Params): string | null => {
 export const policyRowStatus = ({ row, nowMs }: Params): PolicyRowStatus => ({
   text: baseText({ row }),
   limit: limitText({ row, nowMs }),
+  usage: row.isNew || row.state === 'off' ? null : row.usage,
 });

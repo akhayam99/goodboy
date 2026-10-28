@@ -1,20 +1,25 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DemoChapter } from '../demoChapters';
 import type { CoachMark } from '../DemoCoachMark';
 import type { DemoHintReport, DemoRect } from '../director/demoProtocol';
+import type { DemoHint } from '../hints/demoHintTypes';
+import type { HintProgress } from '../hints/hintProgressTypes';
 import { hintTally, type HintTally } from '../hints/hintTally';
-import { isHoleTooBig } from '../hints/isHoleTooBig';
-import { APP_SIZE } from '../appSize';
-import { useHintProgress } from '../useHintProgress';
+import { dwellOf } from '../hints/dwellOf';
+import { RESULT_DWELL_MS } from '../hints/resultDwellMs';
+import { stepsOf, type Steps } from '../hints/stepsOf';
+import type { HintProgressControls } from '../useHintProgress';
+import { useHintsEnabled } from '../useHintsEnabled';
 
 type Params = {
   readonly chapter: DemoChapter;
-  readonly frameKey: string;
+  readonly progressControls: HintProgressControls;
 };
 
 export type HintTrack = {
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding: boolean;
 };
 
 export type HintReportParams = {
@@ -27,13 +32,20 @@ type TallyParams = {
 };
 
 type AnchorState = {
-  readonly key: string;
   readonly chapterId: string;
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
   readonly focus: DemoRect | null;
+  readonly opened: ReadonlyArray<DemoRect>;
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
+  readonly isPressed: boolean;
+};
+
+type Hold = {
+  readonly chapterId: string;
+  readonly hintId: string;
+  readonly phase: 'show' | 'wait';
 };
 
 export type OffscreenHint = {
@@ -46,136 +58,237 @@ export type HintReveal = {
   readonly count: number;
 };
 
-export type DemoHints = {
+export type DemoHints = Steps & {
   readonly track: HintTrack | undefined;
   readonly coach: CoachMark | undefined;
   readonly offscreen: OffscreenHint | undefined;
-  readonly instruction: string | undefined;
+  readonly progress: HintProgress;
+  readonly held: DemoHint | undefined;
+  readonly acting: DemoHint | undefined;
+  readonly beatIndex: number;
+  readonly nextBeatIndex: number | undefined;
   readonly reveal: HintReveal | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onHintReport: (params: HintReportParams) => void;
-  readonly skip: () => void;
   readonly hide: () => void;
+  readonly dismiss: () => void;
   readonly show: () => void;
   readonly revealHint: () => void;
   readonly reset: () => void;
+  readonly restart: () => void;
 };
 
-export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
-  const { progress, markTried, markSkipped, reset: resetProgress } = useHintProgress();
-  const [anchor, setAnchor] = useState<AnchorState | null>(null);
-  const [hiddenId, setHiddenId] = useState<string | null>(null);
-  const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
+const HOLD_WAIT_MS = 20000;
 
-  const hints = useMemo(() => chapter.hints ?? [], [chapter]);
-  const chapterProgress = progress[chapter.id];
-  const settledKey = [...(chapterProgress?.tried ?? []), ...(chapterProgress?.skipped ?? [])]
-    .filter((id) => hints.some((hint) => hint.id === id))
-    .sort()
-    .join(' ');
+export const useDemoHints = ({ chapter, progressControls }: Params): DemoHints => {
+  const {
+    progress,
+    markTried,
+    reset: resetProgress,
+    resetAll: resetAllProgress,
+  } = progressControls;
+  const { isEnabled, setEnabled } = useHintsEnabled();
+  const [anchor, setAnchor] = useState<AnchorState | null>(null);
+  const [reveal, setReveal] = useState<HintReveal | undefined>(undefined);
+  const [hold, setHold] = useState<Hold | null>(null);
+  const [actingId, setActingId] = useState<string | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [pulse, setPulse] = useState(0);
+
+  const { hints } = chapter;
+  const steps = stepsOf({ chapter, progress });
+  const { activeHint } = steps;
+  const activeIdRef = useRef<string | undefined>(activeHint?.id);
+  activeIdRef.current = activeHint?.id;
+  const anchorIdRef = useRef<string | null>(null);
+  const doneIdsRef = useRef(steps.doneIds);
+  doneIdsRef.current = steps.doneIds;
+  const pendingIdsRef = useRef(new Set<string>());
+
+  const settledKey = [...steps.doneIds].sort().join(' ');
+
+  useEffect(() => {
+    pendingIdsRef.current.clear();
+  }, [settledKey, chapter.id]);
 
   const track = useMemo((): HintTrack | undefined => {
     if (hints.length === 0) {
       return undefined;
     }
+    const ids = new Set(hints.map((hint) => hint.id));
     return {
       chapterId: chapter.id,
-      settledIds: settledKey.length > 0 ? settledKey.split(' ') : [],
+      settledIds: settledKey.length > 0 ? settledKey.split(' ').filter((id) => ids.has(id)) : [],
+      isGuarding: isEnabled,
     };
-  }, [hints, chapter.id, settledKey]);
+  }, [hints, chapter.id, settledKey, isEnabled]);
+
+  useEffect(() => {
+    if (hold === null) {
+      return;
+    }
+    const isShowing = hold.phase === 'show';
+    const heldHint = hints.find((hint) => hint.id === hold.hintId);
+    const timer = window.setTimeout(
+      () => {
+        const isNextShown =
+          activeIdRef.current === undefined || anchorIdRef.current === activeIdRef.current;
+        if (isShowing && !isNextShown) {
+          setHold((previous) => (previous === hold ? { ...hold, phase: 'wait' } : previous));
+          return;
+        }
+        setHold((previous) => (previous === hold ? null : previous));
+      },
+      isShowing
+        ? heldHint === undefined
+          ? RESULT_DWELL_MS
+          : dwellOf({ hint: heldHint })
+        : HOLD_WAIT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [hold, hints]);
 
   const onHintReport = useCallback(
-    ({ key, report }: HintReportParams) => {
-      if (report.type === 'place') {
-        return;
-      }
+    ({ report }: HintReportParams) => {
       if (report.hintId !== null && !hints.some((hint) => hint.id === report.hintId)) {
         return;
       }
-      if (report.type === 'tried') {
-        markTried({ chapterId: chapter.id, hintId: report.hintId });
+      if (report.type === 'blocked') {
+        if (report.hintId !== activeIdRef.current) {
+          return;
+        }
+        const blockedId = report.hintId;
+        setDismissedIds((previous) => {
+          if (!previous.has(blockedId)) {
+            return previous;
+          }
+          return new Set([...previous].filter((id) => id !== blockedId));
+        });
+        setPulse((previous) => previous + 1);
         return;
       }
+      if (report.type === 'tried') {
+        const expected = hints.find(
+          (hint) => !doneIdsRef.current.has(hint.id) && !pendingIdsRef.current.has(hint.id),
+        );
+        if (report.hintId !== expected?.id) {
+          return;
+        }
+        pendingIdsRef.current.add(report.hintId);
+        markTried({ chapterId: chapter.id, hintId: report.hintId });
+        setHold({ chapterId: chapter.id, hintId: report.hintId, phase: 'show' });
+        return;
+      }
+      anchorIdRef.current = report.hintId;
+      if (report.hintId !== null && report.hintId === activeIdRef.current) {
+        setHold((previous) => (previous?.phase === 'wait' ? null : previous));
+        if (report.isClicked === true) {
+          setActingId(report.hintId);
+        }
+      }
       setAnchor({
-        key,
         chapterId: chapter.id,
         hintId: report.hintId,
         rect: report.rect,
         focus: report.focus ?? null,
+        opened: report.opened ?? [],
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
+        isPressed: report.isPressed === true,
       });
     },
     [hints, chapter.id, markTried],
   );
 
-  const current =
-    anchor !== null && anchor.key === frameKey && anchor.chapterId === chapter.id ? anchor : null;
-  const currentId = current?.hintId ?? null;
-  const isSettled = track?.settledIds.includes(currentId ?? '') ?? false;
-  const index = hints.findIndex((entry) => entry.id === currentId);
-  const hint = hints.find((entry) => entry.id === currentId);
-  const isHidden = currentId !== null && !isSettled && hiddenId === currentId;
+  const held =
+    hold !== null && hold.chapterId === chapter.id
+      ? hints.find((hint) => hint.id === hold.hintId)
+      : undefined;
+  const isFrameHeld = held !== undefined && hold?.phase === 'show';
+  const frameHint = isFrameHeld ? held : (activeHint ?? hints.at(-1));
+  const beatIndex = frameHint?.beat ?? 0;
+  const frameHintIndex = hints.findIndex((hint) => hint.id === frameHint?.id);
+  const nextBeatIndex = hints
+    .slice(frameHintIndex + 1)
+    .find((hint) => hint.beat !== beatIndex)?.beat;
 
-  const isOpen = hint !== undefined && current !== null && !isSettled && !isHidden;
-  const instruction =
-    hint !== undefined && current !== null && !isSettled ? hint.instruction : undefined;
+  useEffect(() => {
+    setAnchor(null);
+  }, [beatIndex, chapter.id]);
+
+  const acting = actingId !== null && actingId === activeHint?.id ? activeHint : undefined;
+
+  const current = anchor !== null && anchor.chapterId === chapter.id ? anchor : null;
+  const isActive = current !== null && current.hintId === activeHint?.id;
+  const isDismissed = activeHint !== undefined && dismissedIds.has(activeHint.id);
+  const isOpen = activeHint !== undefined && isActive && isEnabled && !isDismissed;
 
   const coach = useMemo((): CoachMark | undefined => {
-    if (!isOpen || hint === undefined || current === null || current.rect === null) {
+    if (!isOpen || activeHint === undefined || current === null || current.rect === null) {
+      return undefined;
+    }
+    if (current.isPressed) {
       return undefined;
     }
     return {
-      hintId: hint.id,
-      copy: hint.copy,
-      step: index + 1,
-      total: hints.length,
-      side: hint.side ?? 'right',
+      hintId: activeHint.id,
+      copy: acting?.progressCopy ?? activeHint.copy,
+      side: activeHint.side,
+      isSideLocked: activeHint.isSideLocked === true,
       rect: current.rect,
       focus: current.focus,
-      isSpotlit:
-        !current.isClicked &&
-        !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
+      opened: current.opened,
+      isDimmed: activeHint.isDimmed !== false,
+      pulse,
     };
-  }, [isOpen, hint, current, index, hints.length]);
+  }, [isOpen, activeHint, acting, current, pulse]);
 
   const offscreen = useMemo((): OffscreenHint | undefined => {
-    if (!isOpen || hint === undefined || current === null || !current.isOffscreen) {
+    if (!isOpen || activeHint === undefined || current === null || !current.isOffscreen) {
       return undefined;
     }
-    return { hintId: hint.id, copy: hint.copy };
-  }, [isOpen, hint, current]);
+    return { hintId: activeHint.id, copy: activeHint.copy };
+  }, [isOpen, activeHint, current]);
 
-  const skip = useCallback(() => {
-    if (currentId === null) {
+  const hide = useCallback(() => setEnabled({ isEnabled: false }), [setEnabled]);
+
+  const dismiss = useCallback(() => {
+    const id = activeIdRef.current;
+    if (id === undefined) {
       return;
     }
-    markSkipped({ chapterId: chapter.id, hintId: currentId });
-  }, [currentId, chapter.id, markSkipped]);
+    setDismissedIds((previous) => new Set([...previous, id]));
+  }, []);
 
-  const hide = useCallback(() => {
-    if (currentId === null) {
-      return;
-    }
-    setHiddenId(currentId);
-  }, [currentId]);
-
-  const show = useCallback(() => setHiddenId(null), []);
+  const show = useCallback(() => {
+    setDismissedIds(new Set());
+    setEnabled({ isEnabled: true });
+  }, [setEnabled]);
 
   const revealHint = useCallback(() => {
-    if (currentId === null) {
+    if (activeHint === undefined) {
       return;
     }
-    setReveal((previous) => ({ hintId: currentId, count: (previous?.count ?? 0) + 1 }));
-  }, [currentId]);
+    setReveal((previous) => ({ hintId: activeHint.id, count: (previous?.count ?? 0) + 1 }));
+  }, [activeHint]);
 
   const reset = useCallback(() => {
     resetProgress({ chapterId: chapter.id });
     setAnchor(null);
-    setHiddenId(null);
+    setHold(null);
+    setActingId(null);
+    setDismissedIds(new Set());
   }, [resetProgress, chapter.id]);
+
+  const restart = useCallback(() => {
+    resetAllProgress();
+    setAnchor(null);
+    setHold(null);
+    setActingId(null);
+    setDismissedIds(new Set());
+  }, [resetAllProgress]);
 
   const tallyOf = useCallback(
     ({ chapter: target }: TallyParams) => hintTally({ chapter: target, progress }),
@@ -183,19 +296,25 @@ export const useDemoHints = ({ chapter, frameKey }: Params): DemoHints => {
   );
 
   return {
+    ...steps,
+    progress,
     track,
     coach,
     offscreen,
-    instruction,
+    held,
+    acting,
+    beatIndex,
+    nextBeatIndex,
     reveal,
     tally: hintTally({ chapter, progress }),
-    isHidden,
+    isHidden: !isEnabled,
     tallyOf,
     onHintReport,
-    skip,
     hide,
+    dismiss,
     show,
     revealHint,
     reset,
+    restart,
   };
 };

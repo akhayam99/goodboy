@@ -2,7 +2,7 @@
 // @vitest-environment-options {"settings":{"navigation":{"disableChildFrameNavigation":true}}}
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { DemoPlayground } from './DemoPlayground';
 import { DEMO_THEME_KEY } from './demoThemeKey';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
@@ -50,6 +50,16 @@ const ready = ({ frame }: { readonly frame: HTMLIFrameElement }) =>
     data: { generation: 0, type: 'ready', elapsedMs: 0, durationMs: 0, cueIndex: 0 },
   });
 
+type AgentParams = {
+  readonly userAgent: string;
+};
+
+const visitOn = ({ userAgent }: AgentParams) => {
+  vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+};
+
+const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15';
+
 const rootOf = (): HTMLElement => {
   const root = screen.getByRole('heading', { level: 1 }).closest<HTMLElement>('[tabindex="-1"]');
   if (root === null) {
@@ -58,8 +68,29 @@ const rootOf = (): HTMLElement => {
   return root;
 };
 
+type DoneParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+const seedDone = ({ ids }: DoneParams) => {
+  window.sessionStorage.setItem(
+    HINT_PROGRESS_KEY,
+    JSON.stringify(
+      Object.fromEntries(
+        DEMO_CHAPTERS.filter((chapter) => ids.includes(chapter.id)).map((chapter) => [
+          chapter.id,
+          { tried: chapter.hints.map((entry) => entry.id), epoch: 0 },
+        ]),
+      ),
+    ),
+  );
+};
+
+const ALL_IDS = DEMO_CHAPTERS.map((chapter) => chapter.id);
+
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
   window.history.replaceState(null, '', '/?scene=demo');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -84,22 +115,91 @@ describe('demo playground chrome', () => {
     );
   });
 
-  it('keeps the star and download calls to action in the rail, not the top bar', () => {
+  it('offers Download for macOS in exactly one place, the Get Goodboy screen', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: MAC_AGENT });
+    const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
+    for (const id of groupIds) {
+      window.history.replaceState(null, '', `/?scene=demo#${id}`);
+      const view = render(<DemoPlayground />);
+      expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
+      view.unmount();
+    }
+    window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
-    const topBar = document.querySelector('header');
-    expect(topBar?.textContent).not.toContain('Star on GitHub');
-    expect(screen.getAllByRole('link', { name: /Star on GitHub/ })).toHaveLength(1);
-    expect(topBar?.contains(screen.getByRole('link', { name: /Star on GitHub/ }))).toBe(false);
+    expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
+    expect(document.querySelector('header')?.querySelector('a[target="_blank"]')).toBeNull();
+  });
+
+  it('closes on a calm Get Goodboy screen with one line and the download action', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: MAC_AGENT });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get Goodboy');
+    const closing = screen.getByTestId('demo-closing');
+    expect(closing.querySelectorAll('p')).toHaveLength(1);
+    expect(
+      within(closing)
+        .getByRole('link', { name: /Download for macOS/ })
+        .getAttribute('href'),
+    ).toBe('https://goodboy-ai.dev/#install');
+    expect(within(closing).queryAllByRole('link')).toHaveLength(1);
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('offers the Linux download to a Linux visitor', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0)' });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const closing = screen.getByTestId('demo-closing');
+    expect(
+      within(closing)
+        .getByRole('link', { name: /Download for Linux/ })
+        .getAttribute('href'),
+    ).toBe('https://goodboy-ai.dev/#install');
+    expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
+  });
+
+  it('tells a Windows visitor that Windows is on the way, with no download', () => {
+    seedDone({ ids: ALL_IDS });
+    visitOn({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' });
+    window.history.replaceState(null, '', '/?scene=demo#get');
+    render(<DemoPlayground />);
+    const closing = screen.getByTestId('demo-closing');
+    expect(within(closing).queryAllByRole('link')).toHaveLength(0);
+    expect(within(closing).getByRole('note').textContent).toBe(
+      'Goodboy for Windows is on the way.',
+    );
+  });
+
+  it('keeps the Get Goodboy row out of the group count and below the groups', () => {
+    render(<DemoPlayground />);
+    const rail = screen.getByRole('navigation', { name: 'Playground groups' });
+    const rows = Array.from(rail.querySelectorAll('button[data-access]'));
+    expect(rows.at(-1)?.textContent).toContain('Get Goodboy');
+    expect(rows.at(-1)?.textContent).not.toMatch(/\d of \d/);
+    expect(rows).toHaveLength(DEMO_CHAPTERS.length + 1);
+  });
+
+  it('opens Get Goodboy from the rail and goes back to the last group', () => {
+    seedDone({ ids: ALL_IDS });
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: /Get Goodboy/ }));
+    expect(window.location.hash).toBe('#get');
+    fireEvent.keyDown(rootOf(), { key: 'ArrowLeft', code: 'ArrowLeft' });
+    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS.at(-1)?.id ?? ''}`);
   });
 
   it('opens in the theme named in the url, which beats the stored one, then drops it from the url', () => {
     window.localStorage.setItem(DEMO_THEME_KEY, 'dark');
-    window.history.replaceState(null, '', '/?scene=demo&theme=light#agent');
+    window.history.replaceState(null, '', '/?scene=demo&theme=light#direction');
     render(<DemoPlayground />);
     expect(visibleFrame().getAttribute('src')).toContain('theme=light');
     expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeNull();
     expect(window.location.search).toBe('?scene=demo');
-    expect(window.location.hash).toBe('#agent');
+    expect(window.location.hash).toBe('#direction');
     expect(window.localStorage.getItem(DEMO_THEME_KEY)).toBe('dark');
   });
 
@@ -191,12 +291,13 @@ describe('demo playground chrome', () => {
   });
 
   it('drops a held shortcut when another group opens before its frame is ready', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const first = visibleFrame();
     const isMac = currentPlatform() === 'darwin';
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
-    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guide the work/ }));
     const frames = Array.from(document.querySelectorAll('iframe')).filter(
       (entry) => entry !== first,
     );
@@ -220,36 +321,15 @@ describe('demo playground chrome', () => {
     rootOf().appendChild(field);
     fireEvent.keyDown(field, { key: 'ArrowRight', code: 'ArrowRight' });
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK' });
-    expect(window.location.hash).not.toBe('#agent');
+    expect(window.location.hash).not.toBe('#direction');
     expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
   });
 
-  it('marks the next group up next, brighter once the open group is tried, and the last one never', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    const agent = DEMO_CHAPTERS.find((chapter) => chapter.id === 'agent');
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: (agent?.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
-      }),
-    );
-    render(<DemoPlayground />);
-    const rows = screen
-      .getByRole('navigation', { name: 'Playground groups' })
-      .querySelectorAll('button');
-    expect(Array.from(rows).map((row) => row.getAttribute('data-up-next'))).toEqual([
-      'none',
-      'none',
-      'ready',
-      'none',
-      'none',
-    ]);
-  });
-
   it('keeps the arrow keys moving between groups without a next button', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     fireEvent.keyDown(rootOf(), { key: 'ArrowRight', code: 'ArrowRight' });
-    expect(window.location.hash).toBe('#orchestrate');
+    expect(window.location.hash).toBe('#guide');
   });
 });

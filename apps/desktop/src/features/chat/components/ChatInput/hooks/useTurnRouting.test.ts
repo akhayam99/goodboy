@@ -75,6 +75,23 @@ describe('useTurnRouting', () => {
     expect(setSessionConfig).toHaveBeenCalledWith(SESSION_ID, { modelOverride: 'claude-opus-5' });
   });
 
+  it('follows a route the agent was moved to from outside the composer', () => {
+    selectScout();
+    const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
+    expect(result.current.effectiveProvider).toBe('anthropic');
+
+    act(() => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [SESSION_ID]: [makeScoutRow({ providerOverride: 'codex', modelOverride: 'gpt-5.6-sol' })],
+        },
+      });
+    });
+
+    expect(result.current.effectiveProvider).toBe('codex');
+    expect(setAgentConfig).not.toHaveBeenCalled();
+  });
+
   it('pins the picked model on the selected agent and leaves the session config untouched', () => {
     useAppStore.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } });
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));

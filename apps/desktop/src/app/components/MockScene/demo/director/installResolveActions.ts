@@ -21,7 +21,7 @@ import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
 import { installDemoWorld } from './installDemoWorld';
-import { FAKE_RETRY_DIFF } from '../../scenes/resolveSeed';
+import { STORY_REVIEW } from '../../scenes/story/storyContent';
 import { addDemoOverlay } from './addDemoOverlay';
 import { demoPublicationPreview } from './demoPublicationPreview';
 
@@ -188,7 +188,8 @@ type PatchItemParams = {
 };
 
 const RESOLVE_ANSWERS: Readonly<Record<string, unknown>> = {
-  worktree_diff: FAKE_RETRY_DIFF,
+  worktree_diff: STORY_REVIEW.diff,
+  worktree_diff_range: STORY_REVIEW.diff,
 };
 
 export const installResolveActions = ({ store }: Params): void => {
@@ -353,6 +354,52 @@ export const installResolveActions = ({ store }: Params): void => {
       };
     });
   };
+  const publishConversations: AppStore['publishConversations'] = async ({ sessionId }) => {
+    const now = Date.now();
+    const accepted = (store.getState().sessionResolveQueueItems[sessionId] ?? []).filter(
+      (entry) => entry.item.approvalState === 'accepted' && entry.item.deliveredAt === null,
+    );
+    const acceptedIds = new Set(accepted.map((entry) => entry.item.id));
+    const threadIds = accepted.map((entry) => entry.thread.threadId);
+    patchResolveThreads({
+      store,
+      sessionId,
+      threadIds,
+      patch: ({ thread }) => ({
+        ...thread,
+        state: 'closed',
+        stage: 'resolved',
+        replyPostedAt: now,
+        closedAt: now,
+        closedSource: 'goodboy',
+        updatedAt: now,
+      }),
+    });
+    store.setState((current) => ({
+      sessionResolveQueueItems: {
+        ...current.sessionResolveQueueItems,
+        [sessionId]: (current.sessionResolveQueueItems[sessionId] ?? []).map((entry) =>
+          acceptedIds.has(entry.item.id)
+            ? { ...entry, item: { ...entry.item, deliveredAt: now, updatedAt: now } }
+            : entry,
+        ),
+      },
+    }));
+    const total = accepted.length;
+    return {
+      kind: 'done',
+      pushed: true,
+      pushedHead: null,
+      total,
+      replies: total,
+      replied: total,
+      closed: total,
+      resolved: total,
+      leftOpen: 0,
+      failed: 0,
+      error: null,
+    };
+  };
   const preparePublication: AppStore['preparePublication'] = async ({ sessionId, threadIds }) => {
     const preview = demoPublicationPreview({ state: store.getState(), sessionId, threadIds });
     store.setState((current) => ({
@@ -381,7 +428,7 @@ export const installResolveActions = ({ store }: Params): void => {
     acceptReviewComments,
     publishThreadNow: async () => refusePublish(),
     replyAndResolveThread: async () => refusePublish(),
-    publishConversations: async () => refusePublish(),
+    publishConversations,
     retryPublication: async () => refusePublish(),
   });
 };

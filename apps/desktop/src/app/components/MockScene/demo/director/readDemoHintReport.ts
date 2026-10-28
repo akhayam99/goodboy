@@ -47,6 +47,23 @@ const rectOf = ({ value }: ValueParams): DemoRect | null | undefined => {
     : { x, y, width, height };
 };
 
+const MAX_OPENED = 16;
+
+const openedOf = ({ value }: ValueParams): ReadonlyArray<DemoRect> | undefined => {
+  if (!Array.isArray(value) || value.length > MAX_OPENED) {
+    return undefined;
+  }
+  const rects: Array<DemoRect> = [];
+  for (const entry of value) {
+    const rect = rectOf({ value: entry });
+    if (rect === null || rect === undefined) {
+      return undefined;
+    }
+    rects.push(rect);
+  }
+  return rects;
+};
+
 export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   const envelope = readDemoEnvelope({ data });
   if (envelope === null) {
@@ -62,9 +79,8 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   if (envelope.type === 'tried') {
     return hintId === null ? null : { ...base, type: 'tried', hintId };
   }
-  if (envelope.type === 'place') {
-    const place = readHintId({ value: Reflect.get(envelope.data, 'place') });
-    return place === null ? null : { ...base, type: 'place', place };
+  if (envelope.type === 'blocked') {
+    return hintId === null ? null : { ...base, type: 'blocked', hintId };
   }
   if (envelope.type !== 'anchor') {
     return null;
@@ -72,15 +88,22 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
   const rect = rectOf({ value: Reflect.get(envelope.data, 'rect') });
   const isOffscreen: unknown = Reflect.get(envelope.data, 'isOffscreen');
   const isClicked: unknown = Reflect.get(envelope.data, 'isClicked');
+  const isPressed: unknown = Reflect.get(envelope.data, 'isPressed');
   const hasFocus = Reflect.has(envelope.data, 'focus');
   const focus = hasFocus ? rectOf({ value: Reflect.get(envelope.data, 'focus') }) : undefined;
+  const hasOpened = Reflect.has(envelope.data, 'opened');
+  const opened = hasOpened ? openedOf({ value: Reflect.get(envelope.data, 'opened') }) : undefined;
   const hasValidHint = hintValue === null || hintId !== null;
   const hasValidFocus = !hasFocus || focus !== undefined;
+  const hasValidOpened = !hasOpened || opened !== undefined;
   const hasValidClick = isClicked === undefined || typeof isClicked === 'boolean';
+  const hasValidPress = isPressed === undefined || typeof isPressed === 'boolean';
   if (
     !hasValidHint ||
     !hasValidFocus ||
+    !hasValidOpened ||
     !hasValidClick ||
+    !hasValidPress ||
     rect === undefined ||
     typeof isOffscreen !== 'boolean'
   ) {
@@ -93,6 +116,8 @@ export const readDemoHintReport = ({ data }: Params): DemoHintReport | null => {
     rect,
     isOffscreen,
     ...(focus === undefined ? {} : { focus }),
+    ...(opened === undefined ? {} : { opened }),
     ...(isClicked === undefined ? {} : { isClicked }),
+    ...(isPressed === undefined ? {} : { isPressed }),
   };
 };
