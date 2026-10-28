@@ -176,9 +176,16 @@ export const placeCallout = ({
   ) {
     return wanted.placement;
   }
-  const best = [...candidates].sort(
-    (left, right) =>
-      rankOf(right) - rankOf(left) || left.litBucket - right.litBucket || right.room - left.room,
-  )[0];
+  const best = [...candidates].sort((left, right) => {
+    const byRank = rankOf(right) - rankOf(left);
+    if (byRank !== 0) {
+      return byRank;
+    }
+    const byLit = left.litBucket - right.litBucket;
+    if (byLit !== 0) {
+      return byLit;
+    }
+    return right.room - left.room;
+  })[0];
   return best?.placement ?? placeOn({ ...base, side: preferred ?? 'right' });
 };
