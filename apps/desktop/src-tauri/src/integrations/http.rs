@@ -331,13 +331,16 @@ mod tests {
 
     #[tokio::test]
     async fn the_body_read_is_bounded_by_the_same_request_timeout() {
-        use tokio::io::AsyncWriteExt;
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind");
         let url = format!("http://{}", listener.local_addr().expect("addr"));
         let server = tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.expect("accept");
+            let mut buf = [0u8; 2048];
+            let read = socket.read(&mut buf).await.expect("read");
+            assert!(read > 0);
             socket
                 .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\npartial")
                 .await
