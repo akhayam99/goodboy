@@ -1,4 +1,5 @@
 import { stripTitlePreamble } from './title-preamble';
+import { stripTrailingPunctuation } from './strip-trailing-punctuation';
 
 const WORKFLOW_RUN_TITLE_MAX_LENGTH = 60;
 
@@ -8,8 +9,6 @@ const ELLIPSIS = '…';
 
 const LEAK_PATTERN =
   /^(?:the user (?:asked|wants|said|wrote|is|needs|has)\b|user (?:asked|wants|said|wrote)\b|i(?:'ll|'d| will| would| need| should| am| have)\b|let me\b|here(?:'s| is| are)\b|this (?:run|workflow) (?:is|will|needs)\b)/i;
-
-const TRAILING_PUNCTUATION_PATTERN = /[.,;:!?]+$/;
 
 type TextParams = {
   readonly text: string;
@@ -43,7 +42,7 @@ type Params = {
 export const cleanWorkflowRunTitle = ({ title, goal }: Params): string => {
   const unlabeled = stripTitlePreamble({ text: leadingLineOf({ text: title ?? '' }) });
   const candidate = stripTitlePreamble({
-    text: unlabeled.replace(TRAILING_PUNCTUATION_PATTERN, ''),
+    text: stripTrailingPunctuation({ text: unlabeled }),
   }).trim();
   if (isUsableTitle({ text: candidate })) {
     return clampAtWord({ text: candidate, isEllipsisAllowed: false });

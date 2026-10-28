@@ -19,6 +19,68 @@ describe('stripTitlePreamble', () => {
   it('keeps a title that only starts with an issue number', () => {
     expect(stripTitlePreamble({ text: '#2053 release notes' })).toBe('#2053 release notes');
   });
+
+  it.each([
+    ['#### Batch the reads  ', 'Batch the reads'],
+    ['####### Batch the reads', '####### Batch the reads'],
+    ['> - **Batch the reads**', 'Batch the reads'],
+    ['__Batch the reads__', 'Batch the reads'],
+    ['`Batch the reads`', 'Batch the reads'],
+    ['~~Batch the reads~~', 'Batch the reads'],
+    ['\u201cBatch the reads\u201d', 'Batch the reads'],
+    ['*** x ***', 'x *'],
+    ['Name - Batch the reads', 'Batch the reads'],
+    ['', ''],
+    ['  \t\n ', ''],
+  ])('reads %j as %j', (text, expected) => {
+    expect(stripTitlePreamble({ text })).toBe(expected);
+  });
+
+  describe('on a long run of one repeated character', () => {
+    const LENGTH = 60_000;
+    const MAX_MS = 750;
+
+    const timed = (run: () => string): { readonly out: string; readonly ms: number } => {
+      const startedAt = performance.now();
+      const out = run();
+      return { out, ms: performance.now() - startedAt };
+    };
+
+    it.each([
+      ['tabs', '\t'],
+      ['spaces', ' '],
+      ['asterisks', '**'],
+      ['underscores', '__'],
+      ['backticks', '`'],
+      ['tildes', '~~'],
+      ['quotes', '"'],
+    ])('stays linear on %s inside the text', (_name, unit) => {
+      const text = `x${unit.repeat(LENGTH)}x`;
+
+      const { out, ms } = timed(() => stripTitlePreamble({ text }));
+
+      expect(ms).toBeLessThan(MAX_MS);
+      expect(out.startsWith('x')).toBe(true);
+      expect(out.endsWith('x')).toBe(true);
+    });
+
+    it('stays linear on trailing punctuation inside the title', () => {
+      const title = `x${'!'.repeat(LENGTH)}x`;
+
+      const { out, ms } = timed(() => cleanWorkflowRunTitle({ title, goal: GOAL }));
+
+      expect(ms).toBeLessThan(MAX_MS);
+      expect(out.length).toBeLessThanOrEqual(60);
+    });
+
+    it('stays linear on a long run of hashes', () => {
+      const text = `${'#'.repeat(LENGTH)} x`;
+
+      const { ms } = timed(() => stripTitlePreamble({ text }));
+
+      expect(ms).toBeLessThan(MAX_MS);
+    });
+  });
 });
 
 describe('cleanWorkflowRunTitle', () => {
