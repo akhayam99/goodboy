@@ -163,7 +163,7 @@ describe('a run row in the Running card', () => {
     ).toHaveLength(1);
   });
 
-  it('marks the running step with the role that runs it, for the role color', async () => {
+  it('marks the running step by its state, with no role on the meter', async () => {
     useAppStore.setState({
       sessionPhaseRuns: {
         [SESSION_ID]: [
@@ -181,7 +181,25 @@ describe('a run row in the Running card', () => {
       'running',
       'notStarted',
     ]);
-    expect(segments[1]?.dataset.stepKind).toBe('implementer');
+    expect(runRow().querySelector('[data-step-kind]')).toBeNull();
+  });
+
+  it('shows a tiny count instead of bars when the run has two steps', async () => {
+    const short = { ...WORKFLOW, steps: WORKFLOW.steps.slice(0, 2) };
+    useAppStore.setState({
+      sessionWorkflows: { [SESSION_ID]: [short] },
+      phaseTemplates: { [WORKSPACE_ID]: [short] },
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          stepAgent({ index: 0, status: 'running' }),
+          stepAgent({ index: 1, status: 'pending' }),
+        ],
+      },
+    });
+    await show();
+
+    expect(runRow().querySelectorAll('[data-step-state]')).toHaveLength(0);
+    expect(runRow().querySelector('[data-step-count]')?.textContent).toBe('1/2');
   });
 
   it('keeps the row and its button when the start fails, and says why', async () => {
