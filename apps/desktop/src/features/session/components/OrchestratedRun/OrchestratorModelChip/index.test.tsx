@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,10 +19,10 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import type { ProviderDisplayInfo } from '../../../providers/providers';
-import { OrchestratorModelChip } from './OrchestratorModelChip';
+} from '../../../../../store/storyHarness';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import type { ProviderDisplayInfo } from '../../../../providers/providers';
+import { OrchestratorModelChip } from './index';
 
 const WORKSPACE = aWorkspace({ name: 'Cascadia' });
 const SESSION = aSession({ workspaceId: WORKSPACE.id, goal: 'Refund retries' });

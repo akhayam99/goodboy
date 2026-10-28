@@ -1,6 +1,6 @@
 import type { Session, WorkflowRun } from '@goodboy/types';
-import { RunModelChip } from '../StartRun/RunModelChip';
-import { useOrchestratorModel } from './useOrchestratorModel';
+import { RunModelChip } from '../../StartRun/RunModelChip';
+import { useOrchestratorModel } from '../useOrchestratorModel';
 
 type Props = {
   readonly session: Session;

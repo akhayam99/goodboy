@@ -79,7 +79,9 @@ describe('the u28 start run scenes', () => {
     const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
     const chip = screen.getByRole('button', { name: /^Model:/ });
     expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
-    expect(line.textContent).toMatch(/^Starts as Agent · Auto agent · .+ · A question or a check/);
+    expect(line.textContent).toMatch(
+      /^Starts[ ]as[ ]Agent · Auto agent · .+ · A question or a check/,
+    );
   });
 
   it('opens the Model menu with the picker and the link to the default', async () => {

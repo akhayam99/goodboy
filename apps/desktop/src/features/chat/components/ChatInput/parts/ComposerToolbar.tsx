@@ -99,17 +99,7 @@ export const ComposerToolbar = ({
         : createPortal(asks, controlSlots.asks)}
       {controlSlots === undefined || controlSlots.models === null
         ? null
-        : createPortal(
-            <>
-              {controlSlots.modelsLabel === undefined ? null : (
-                <span data-models-label="" className="shrink-0 text-meta text-muted-foreground">
-                  {controlSlots.modelsLabel}
-                </span>
-              )}
-              {models}
-            </>,
-            controlSlots.models,
-          )}
+        : createPortal(models, controlSlots.models)}
     </div>
   );
 };

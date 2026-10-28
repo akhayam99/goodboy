@@ -14,7 +14,6 @@ import {
 } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
-import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
 import { executedRoutingOf } from '../../../auto/executedRoutingOf';
 import { agentHeadingOf } from './agentHeadingOf';
 import { briefLineOf } from './briefLineOf';
@@ -283,13 +282,7 @@ export const AgentDetailPane = ({
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
-        {...(runStep === undefined && {
-          controlSlots: {
-            asks: asksSlot,
-            models: modelsSlot,
-            ...(isAutoRoot && { modelsLabel: RUN_MODEL_COPY.autoAgent }),
-          },
-        })}
+        {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
         hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
