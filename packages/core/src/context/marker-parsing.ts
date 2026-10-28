@@ -6,6 +6,12 @@ import { GITLAB_THREAD_PREFIX } from '../review-source/gitlabReviewSource';
 import { NOTE_THREAD_PREFIX } from '../review-source/noteThreadPrefix';
 import { readClusterChecks } from './clusterChecks';
 import { canonicalizeMarkers } from './canonicalizeMarkers';
+import { PLAN_CLOSE, PLAN_OPEN, planFromMarker, type ExtractedPlan } from './plan-marker';
+
+export type { ExtractedPlan };
+
+export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null =>
+  planFromMarker({ assistantText });
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
@@ -27,8 +33,6 @@ const DECISION_OPEN = '<<ctx-decision>>';
 const DECISION_CLOSE = '<</ctx-decision>>';
 const RESOLVED_OPEN = '<<ctx-resolved>>';
 const RESOLVED_CLOSE = '<</ctx-resolved>>';
-const PLAN_OPEN = '<<plan>>';
-const PLAN_CLOSE = '<</plan>>';
 const CLUSTERS_OPEN = '<<clusters>>';
 const CLUSTERS_CLOSE = '<</clusters>>';
 const FAN_OUT_OPEN = '<<fan-out>>';
@@ -338,65 +342,6 @@ export const extractOpenQuestionAnswer = ({
     searchFrom = end + OPEN_QUESTION_ANSWER_CLOSE.length;
   }
 };
-
-export type ExtractedPlan = {
-  readonly title: string;
-  readonly bodyMd: string;
-};
-
-const lastPlanBlock = (assistantText: string): string | null => {
-  let closeAt = assistantText.lastIndexOf(PLAN_CLOSE);
-  while (closeAt !== -1) {
-    const openAt = assistantText.lastIndexOf(PLAN_OPEN, closeAt);
-    if (openAt !== -1) {
-      const value = assistantText.slice(openAt + PLAN_OPEN.length, closeAt).trim();
-      if (value.length > 0) {
-        return value;
-      }
-    }
-    closeAt = closeAt === 0 ? -1 : assistantText.lastIndexOf(PLAN_CLOSE, closeAt - 1);
-  }
-  return null;
-};
-
-export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
-  const raw = lastPlanBlock(canonicalizeMarkers({ text: assistantText }));
-  if (raw === null) {
-    return null;
-  }
-  return parsePlanBody(raw);
-};
-
-function parsePlanBody(raw: string): ExtractedPlan | null {
-  const lines = raw.split('\n');
-  let firstIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const ln = (lines[i] ?? '').trim();
-    if (ln.length > 0) {
-      firstIdx = i;
-      break;
-    }
-  }
-  if (firstIdx === -1) {
-    return null;
-  }
-  const titleLine = (lines[firstIdx] ?? '').trim();
-  const title = titleLine.replace(/^#+\s*/, '').trim();
-  if (title.length === 0) {
-    return null;
-  }
-  const restLines = lines.slice(firstIdx + 1);
-  const joined = restLines.join('\n').replace(/^\n+/, '');
-  let end = joined.length;
-  while (end > 0 && joined[end - 1] === '\n') {
-    end -= 1;
-  }
-  let bodyMd = joined.slice(0, end);
-  if (bodyMd.length === 0) {
-    bodyMd = title;
-  }
-  return { title, bodyMd };
-}
 
 const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
   'planner',
