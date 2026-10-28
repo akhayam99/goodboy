@@ -2,39 +2,35 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { agentPlace } from '../../store/slices/navigation/place';
-import { branchPushFixAgentOf } from '../../store/slices/history/branchPushFixAgentOf';
+import type { PushContinuation } from '../../store/slices/history/types';
+import { usePushFix } from '../hooks/usePushFix';
 import { NAMES } from '../utils/names';
+import { PushFixStatusLine } from './PushFixStatusLine';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly output: string;
   readonly pending?: string;
-  readonly onSettled: () => void;
+  readonly onSettled: PushContinuation['resume'];
 };
-
-const WORKING_LABEL = 'An agent is fixing the push';
-const OPEN_LABEL = 'Open the agent';
 
 export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSettled }: Props) => {
   const [isStarting, setIsStarting] = useState(false);
-  const agentId = useAppStore((state) =>
-    branchPushFixAgentOf({ fixes: state.branchPushFixes, sessionId, mountId }),
-  );
+  const state = usePushFix({ sessionId, mountId, onSettled });
   const latest = useRef(onSettled);
 
   useEffect(() => {
     latest.current = onSettled;
   }, [onSettled]);
 
-  const resume = useCallback((): void => latest.current(), []);
+  const resume = useCallback(() => latest.current(), []);
 
   const start = async (): Promise<void> => {
-    const state = useAppStore.getState();
+    const store = useAppStore.getState();
     setIsStarting(true);
     try {
-      await state.fixBranchPushWithAgent({
+      await store.fixBranchPushWithAgent({
         sessionId,
         mountId,
         isForce: false,
@@ -45,33 +41,21 @@ export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSett
         ...(pending !== undefined && { pending }),
       });
     } catch (error) {
-      await state.reportError({ title: "Couldn't start the agent.", error, sessionId });
+      await store.reportError({ title: "Couldn't start the agent.", error, sessionId });
     } finally {
       setIsStarting(false);
     }
   };
 
-  if (agentId !== null) {
-    return (
-      <>
-        <span role="status" className="text-meta text-muted-foreground">
-          {WORKING_LABEL}
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            useAppStore.getState().navigate({ to: agentPlace({ sessionId, agentId }) })
-          }
-        >
-          {OPEN_LABEL}
-        </Button>
-      </>
-    );
+  if (state.kind === 'working') {
+    return <PushFixStatusLine sessionId={sessionId} state={state} />;
   }
   return (
-    <Button size="sm" variant="secondary" isBusy={isStarting} onClick={() => void start()}>
-      {NAMES.fixPushWithAgent}
-    </Button>
+    <>
+      {state.kind === 'failed' && <PushFixStatusLine sessionId={sessionId} state={state} />}
+      <Button size="sm" variant="secondary" isBusy={isStarting} onClick={() => void start()}>
+        {NAMES.fixPushWithAgent}
+      </Button>
+    </>
   );
 };

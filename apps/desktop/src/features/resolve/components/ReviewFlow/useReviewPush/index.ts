@@ -10,6 +10,7 @@ import type {
 import { useAppStore } from '../../../../../store';
 import { agentPlace } from '../../../../../store/slices/navigation/place';
 import { selectActiveMount } from '../../../../../store/slices/project-mounts/selectors';
+import type { PushFixFollowUp } from '../../../../../store/slices/history/types';
 import { isRemoteMovedError } from '../../../../../store/slices/resolve/remoteMovedError';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
 import { failedPushPublication } from '../../../../../store/slices/resolve/publication/failedPushPublication';
@@ -64,7 +65,8 @@ type FixTarget = {
 export type ReviewPush = {
   readonly phase: ReviewPushPhase;
   readonly fixTarget: FixTarget | null;
-  readonly retryAfterFix: () => void;
+  readonly retryAfterFix: () => Promise<PushFixFollowUp | undefined>;
+  readonly retryAfterDeps: () => void;
   readonly arm: (params: ArmParams) => Promise<void>;
   readonly press: (params: PressParams) => Promise<void>;
   readonly confirm: () => Promise<void>;
@@ -404,9 +406,22 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
     }
   }, [arm, mountId, move, sessionId, syncBranchWithRemote]);
 
-  const retryAfterFix = useCallback((): void => {
+  const retryAfterFix = useCallback(async (): Promise<PushFixFollowUp | undefined> => {
     move(IDLE);
-    void arm({ isRetry: true, threadIds: armedThreadIds.current, isAfterFix: true });
+    await arm({ isRetry: true, threadIds: armedThreadIds.current, isAfterFix: true });
+    const settled = phaseRef.current;
+    if (settled.kind !== 'result') {
+      return undefined;
+    }
+    return {
+      tone: settled.result.tone === 'done' ? 'done' : 'failed',
+      sentence: settled.result.sentence,
+    };
+  }, [arm, move]);
+
+  const retryAfterDeps = useCallback((): void => {
+    move(IDLE);
+    void arm({ isRetry: true, threadIds: armedThreadIds.current });
   }, [arm, move]);
 
   const recover = useCallback(
@@ -455,6 +470,7 @@ export const useReviewPush = ({ sessionId, mountId = null }: PushParams): Review
     phase,
     fixTarget,
     retryAfterFix,
+    retryAfterDeps,
     arm,
     press,
     confirm,

@@ -7,7 +7,7 @@ import {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
-import { SESSION_ID } from '../resolveSeed';
+import { FIX_RUN_MOUNT, MOUNT_TARGET, SESSION_ID } from '../resolveSeed';
 import { seedBulkScene } from '../bulkSeed';
 
 const clock = sceneClock({ anchor: '2026-10-28T09:40:00.000Z' });
@@ -89,6 +89,7 @@ const agentOf = ({ variant }: Params): Agent => ({
   status: variant === 'working' ? 'running' : 'completed',
   kind: 'resolver',
   sourceKind: 'review_comment',
+  mountId: MOUNT_TARGET.mountId,
   startedAt: clock.iso({ at: '2026-10-28T09:30:00.000Z' }),
   doneAt: variant === 'working' ? undefined : clock.iso({ at: '2026-10-28T09:36:00.000Z' }),
   ...(variant === 'ready' && { outputSummary: SUMMARY_READY }),
@@ -106,6 +107,7 @@ export const bResolveStateSeed = ({ variant }: Params): void => {
     );
   const github = state.sessionGithub[SESSION_ID];
   useAppStore.setState({
+    sessionProjectMounts: { ...state.sessionProjectMounts, [SESSION_ID]: [FIX_RUN_MOUNT] },
     sessionResolveQueueItems: { [SESSION_ID]: queue },
     sessionResolveAttempts: {
       [SESSION_ID]: (state.sessionResolveAttempts[SESSION_ID] ?? []).map((attempt) =>

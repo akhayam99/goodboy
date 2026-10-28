@@ -755,3 +755,136 @@ describe('prefillBranchPushTerminal', () => {
     expect(addTerminalTab).not.toHaveBeenCalled();
   });
 });
+
+describe('push fix outcome', () => {
+  type SettleParams = {
+    readonly read: () => AppStore;
+    readonly hasFailed?: boolean;
+    readonly reason?: string;
+  };
+
+  const settle = async ({ read, hasFailed = false, reason }: SettleParams) =>
+    read().settleBranchPushFix({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      hasFailed,
+      ...(reason !== undefined && { reason }),
+    });
+
+  it('keeps a pushed outcome nobody has taken when no screen registered a continuation', async () => {
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({
+      agentId: AGENT_ID,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      kind: 'pushed',
+      reason: null,
+      isClaimed: false,
+      followUp: null,
+    });
+  });
+
+  it('marks the outcome taken and keeps what the waiting action reported when the continuation ran', async () => {
+    const { read } = harness();
+    const onSettled = vi.fn(async () => ({
+      tone: 'done' as const,
+      sentence: 'Pull request #318 is open.',
+    }));
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled,
+    });
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({
+      kind: 'pushed',
+      isClaimed: true,
+      followUp: { tone: 'done', sentence: 'Pull request #318 is open.' },
+    });
+  });
+
+  it('keeps a continuation that threw as a failed follow up the card can show later', async () => {
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled: vi.fn(async () => {
+        throw new Error('The form is gone');
+      }),
+    });
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]?.followUp).toEqual({
+      tone: 'failed',
+      sentence: 'The form is gone',
+    });
+  });
+
+  it('keeps why the agent did not finish', async () => {
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    await settle({ read, hasFailed: true, reason: 'The agent was stopped before it finished.' });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({
+      kind: 'agent_failed',
+      reason: 'The agent was stopped before it finished.',
+    });
+    expect(h.gitPush).not.toHaveBeenCalled();
+  });
+
+  it('keeps which check stopped the push after the fix', async () => {
+    h.gitPush.mockResolvedValue({
+      exitCode: 1,
+      stdout: '',
+      stderr: '$ yarn knip --cache\nhusky - pre-push script failed (code 1)',
+    });
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({
+      kind: 'push_failed',
+      reason: 'pre-push: yarn knip --cache failed',
+    });
+  });
+
+  it('keeps the reason when the branch moved while the agent worked', async () => {
+    const { read, renameBranch } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+    renameBranch({ branch: 'fix/other-branch' });
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]?.kind).toBe('push_failed');
+    expect(read().pushFixOutcomes[MOUNT_ID]?.reason).toContain('fix/other-branch');
+  });
+
+  it('forgets the old outcome the moment a new fix starts on that branch', async () => {
+    const { read } = harness();
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+    await settle({ read, hasFailed: true, reason: 'stopped' });
+    expect(read().pushFixOutcomes[MOUNT_ID]).toBeDefined();
+
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    expect(read().pushFixOutcomes[MOUNT_ID]).toBeUndefined();
+    expect(read().branchPushFixes[AGENT_ID]?.startedAt).toBeGreaterThan(0);
+  });
+
+  it('records an outcome only for a fix this window still tracks', async () => {
+    const { read } = harness();
+
+    await settle({ read });
+
+    expect(read().pushFixOutcomes).toEqual({});
+  });
+});

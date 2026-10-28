@@ -19,6 +19,7 @@ import {
 } from '../../../../store/storyHarness';
 import { mockSceneIpc } from '../../../../app/components/MockScene/scenes/mockSceneIpc';
 import { clearSceneInvoke } from '../../../../test/sceneInvoke';
+import { PrPushFailedError } from '../../../../store/slices/github/PrPushFailedError';
 import { CreatePrPanel } from '../../github/components/PullRequest/CreatePrPanel';
 import { CreateReviewForm } from './CreateReviewForm';
 import type { CreatedReview, CreateReviewInput, CreateReviewNouns } from './types';
@@ -302,6 +303,72 @@ describe('the create form', () => {
       }),
     );
     expect(descriptionValue()).toContain('Settlement retries');
+  });
+
+  describe('the retry the store runs after an agent fixed the push', () => {
+    const renderFailedCreate = async () => {
+      const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+      await titleField();
+      seeded.unmount();
+      const sessionId = firstSessionId();
+      const mountId = store.getState().sessionProjectMounts[sessionId]?.[0]?.mountId;
+      if (mountId === undefined) {
+        throw new Error('the scene seeds a mount');
+      }
+      const create = vi.fn(async (): Promise<CreatedReview> => {
+        throw new PrPushFailedError({
+          branch: 'hl/fix-duplicate-credit',
+          mountId,
+          output: '$ pnpm knip\nhusky - pre-push script failed (code 1)',
+        });
+      });
+      const fixBranchPushWithAgent = vi.fn(
+        async (_input: { readonly onSettled?: () => unknown }) => undefined,
+      );
+      store.setState({ fixBranchPushWithAgent });
+      render(
+        <ToastProvider>
+          <CreateReviewForm
+            sessionId={sessionId}
+            defaultTitle="Goal"
+            nouns={NOUNS}
+            canSetDraft
+            loadBases={null}
+            searchReviewers={async () => []}
+            hasPushStep
+            hasCloses
+            create={create}
+            requestReviewers={async () => undefined}
+            onCreated={vi.fn()}
+          />
+        </ToastProvider>,
+      );
+      await titleField();
+      fireEvent.click(screen.getByRole('button', { name: 'Push and create pull request' }));
+      const alert = await screen.findByRole('alert', {}, { timeout: 3_000 });
+      fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+      const resume = async (): Promise<unknown> =>
+        fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled?.();
+      return { create, resume };
+    };
+
+    it('reports that the pull request is open', async () => {
+      const { create, resume } = await renderFailedCreate();
+      create.mockResolvedValueOnce({ number: 318, url: null });
+
+      const followed = await act(async () => resume());
+
+      expect(followed).toEqual({ tone: 'done', sentence: 'Pull request #318 is open.' });
+    });
+
+    it('reports why the pull request could not be opened', async () => {
+      const { create, resume } = await renderFailedCreate();
+      create.mockRejectedValueOnce(new Error('The base branch does not exist'));
+
+      const followed = await act(async () => resume());
+
+      expect(followed).toEqual({ tone: 'failed', sentence: 'The base branch does not exist' });
+    });
   });
 
   it('offers Opens as and Reviewers on GitHub and no Reviewers on GitLab', async () => {

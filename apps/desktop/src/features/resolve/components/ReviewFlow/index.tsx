@@ -729,7 +729,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
           />
         )}
-        <LaneNotices sessionId={sessionId} lane={lane} />
+        <LaneNotices sessionId={sessionId} lane={lane} mountId={source?.mountId ?? null} />
         {acceptError !== null && (
           <Notice
             tone="danger"

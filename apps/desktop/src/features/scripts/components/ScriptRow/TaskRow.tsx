@@ -2,7 +2,7 @@ import { Check, Circle, Square, X } from 'lucide-react';
 import { ICON_SIZE, InteractiveRow, StatusDot, Tooltip } from '@goodboy/ui';
 
 import { joinFacts } from '../../../../shared/utils/joinFacts';
-import { lastOutputLine } from '../../lastOutputLine';
+import { lastOutputLine } from '../../../../shared/utils/lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { describeLastRun } from './describeLastRun';
 import { RunToggle } from './RunToggle';

@@ -8,5 +8,11 @@ type Props = {
 
 export const FixRunAgentChecks = ({ agent }: Props) => {
   const outcome = useAgentOutcome({ agent });
-  return <ChecksSkippedNotice text={outcome.text} />;
+  return (
+    <ChecksSkippedNotice
+      text={outcome.text}
+      sessionId={agent.sessionId}
+      mountId={agent.mountId ?? null}
+    />
+  );
 };

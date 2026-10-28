@@ -1,17 +1,28 @@
 import type { AgentId, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
+import { pushFailureReason } from '../../../features/resolve/pushFailureReason';
 import { identityChange } from './historyIdentity';
+import { persistPushFixes } from './pushFix/persistPushFixes';
+import { recordPushFixFollowUp, recordPushFixOutcome } from './pushFix/recordPushFixOutcome';
 import { pushFailureReportOf } from '../notifications/pushFailureReport';
 import type { SliceDeps } from '../../slice-types';
 import { WORK_KEPT } from '../notifications/errorRecovery';
+import type { PushFixOutcome } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly hasFailed: boolean;
+  readonly reason?: string | null;
 };
 
+type OutcomeBase = Pick<
+  PushFixOutcome,
+  'agentId' | 'sessionId' | 'mountId' | 'settledAt' | 'isClaimed' | 'followUp'
+>;
+
 export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId, agentId, hasFailed }: Params): Promise<void> => {
+  return async ({ sessionId, agentId, hasFailed, reason = null }: Params): Promise<void> => {
     const fix = get().branchPushFixes[agentId];
     if (fix === undefined || fix.sessionId !== sessionId) {
       return;
@@ -29,12 +40,23 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
         ),
       ),
     }));
+    persistPushFixes({ get });
+    const { mountId, identity, isForce, confirmedOnlyOnline, confirmedRemoteSha } = fix;
+    const base: OutcomeBase = {
+      agentId,
+      sessionId,
+      mountId,
+      settledAt: Date.now(),
+      isClaimed: false,
+      followUp: null,
+    };
     if (hasFailed) {
+      recordPushFixOutcome({ set, get, outcome: { ...base, kind: 'agent_failed', reason } });
       return;
     }
-    const { mountId, identity, isForce, confirmedOnlyOnline, confirmedRemoteSha } = fix;
     const change = identityChange({ get, sessionId, mountId, identity });
     if (change !== null) {
+      recordPushFixOutcome({ set, get, outcome: { ...base, kind: 'push_failed', reason: change } });
       await get().reportError({
         title: "Couldn't push the fix.",
         error: change,
@@ -54,6 +76,15 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
         : { sessionId, mountId, mode: 'plain', expectedWorktreePath: identity.worktreePath },
     );
     if (!result.ok) {
+      recordPushFixOutcome({
+        set,
+        get,
+        outcome: {
+          ...base,
+          kind: 'push_failed',
+          reason: pushFailureReason({ error: result.error }),
+        },
+      });
       await get().reportError({
         title: "Couldn't push the fix.",
         error: result.error,
@@ -67,12 +98,27 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
         [mountId]: (state.settledBranchPushes[mountId] ?? 0) + 1,
       },
     }));
+    recordPushFixOutcome({
+      set,
+      get,
+      outcome: { ...base, kind: 'pushed', reason: null, isClaimed: continuation !== undefined },
+    });
     if (continuation === undefined) {
       return;
     }
     try {
-      continuation.resume();
+      const followUp = await continuation.resume();
+      if (followUp !== undefined) {
+        recordPushFixFollowUp({ set, get, mountId, agentId, followUp });
+      }
     } catch (error) {
+      recordPushFixFollowUp({
+        set,
+        get,
+        mountId,
+        agentId,
+        followUp: { tone: 'failed', sentence: formatError(error) },
+      });
       await get().reportError({
         title: "Couldn't continue after the fix.",
         error,

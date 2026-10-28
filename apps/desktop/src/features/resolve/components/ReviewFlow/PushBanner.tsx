@@ -21,6 +21,7 @@ import {
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PushFailureCard } from './PushFailureCard';
+import { PushFixIdle } from './PushFixIdle';
 import { SYNC_COPY } from '../../failedRunCopy';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
@@ -63,6 +64,10 @@ export const PushBanner = ({ sessionId, mountId = null, push }: Props) => {
       : (selectMountById({ state: s, sessionId, mountId })?.mountName ?? null),
   );
   const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
+
+  if (phase.kind === 'idle') {
+    return <PushFixIdle sessionId={sessionId} mountId={mountId} onSettled={push.retryAfterFix} />;
+  }
 
   if (phase.kind === 'sync_confirm') {
     return (

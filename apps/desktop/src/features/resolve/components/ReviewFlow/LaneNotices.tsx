@@ -1,5 +1,6 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
+import { StaleDepsNotice } from '../../../../shared/components/StaleDepsNotice';
 import { useAppStore } from '../../../../store';
 import type { LaneRebuildFailure } from '../../../../store/slices/resolve/state';
 import { LANE_REBUILD_FAILED_LABEL } from '../../laneCopy';
@@ -8,11 +9,12 @@ import type { LaneStatus } from '../../laneStatus';
 type Props = {
   readonly sessionId: SessionId;
   readonly lane: LaneStatus | null;
+  readonly mountId: MountId | null;
 };
 
 const NO_FAILURES: ReadonlyArray<LaneRebuildFailure> = [];
 
-export const LaneNotices = ({ sessionId, lane }: Props) => {
+export const LaneNotices = ({ sessionId, lane, mountId }: Props) => {
   const failures = useAppStore((s) => s.sessionLaneRebuildFailures[sessionId] ?? NO_FAILURES);
   const retryLaneRebuild = useAppStore((s) => s.retryLaneRebuild);
   return (
@@ -31,6 +33,7 @@ export const LaneNotices = ({ sessionId, lane }: Props) => {
           }
         />
       ))}
+      {mountId !== null && <StaleDepsNotice sessionId={sessionId} mountId={mountId} />}
       {lane?.rebuildLine != null && (
         <p role="status" className="text-meta text-muted-foreground">
           {lane.rebuildLine}
