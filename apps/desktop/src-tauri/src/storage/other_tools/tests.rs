@@ -92,6 +92,42 @@ fn claude_counts_sessions_and_matches_goodboy_folders_by_their_encoded_path() {
 }
 
 #[test]
+fn claude_counts_scratch_and_history_copy_folders_as_goodboy() {
+    let home = temp_root("claude-markers");
+    let projects = home.join(".claude").join("projects");
+    write(
+        &projects
+            .join("-repos-ledger-core--goodboy-worktrees-har-212")
+            .join("a.jsonl"),
+        100,
+    );
+    write(
+        &projects
+            .join("-repos-ledger-core--goodboy-scratch-s1")
+            .join("b.jsonl"),
+        200,
+    );
+    write(
+        &projects
+            .join("-repos-ledger-core--goodboy-history-copies-h1")
+            .join("c.jsonl"),
+        400,
+    );
+    write(&projects.join("-repos-ledger-core").join("d.jsonl"), 800);
+
+    let all = tools(scan_other_tools(
+        &roots(&home),
+        &OtherToolsRequest::default(),
+        &never,
+    ));
+    let claude = tool(&all, OtherToolId::ClaudeCode);
+
+    assert_eq!(claude.sessions, 4);
+    assert_eq!(claude.goodboy_bytes, 700);
+    fs::remove_dir_all(home).ok();
+}
+
+#[test]
 fn codex_and_cursor_count_goodboy_sessions_by_their_ids_in_file_names() {
     let home = temp_root("ids");
     let ours = "019fe249-3eed-7113-b53f-092b9c96a11b";
