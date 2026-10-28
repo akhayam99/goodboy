@@ -14,6 +14,7 @@ import { threadLocationOf } from '../../threadLocationOf';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
+import { ChecksSkippedNotice } from '../ReviewFlow/ChecksSkippedNotice';
 import { FixRunCommits } from './FixRunCommits';
 import { FixRunNote } from './FixRunNote';
 import { FixRunStatusLine, type SharedState } from './FixRunStatusLine';
@@ -119,6 +120,7 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
         hasStateColumn={shared === null}
         onOpen={openThread}
       />
+      {status === 'ended' && <ChecksSkippedNotice text={outcome.text} />}
       {status === 'ended' && outcome.text !== '' && (
         <FixRunNote label={FIX_RUN_COPY.didHeading}>
           <div
