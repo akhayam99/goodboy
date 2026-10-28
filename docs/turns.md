@@ -873,10 +873,11 @@ instead of showing `$0.00`, because zero usually means unknown, not free.
 A Copilot turn bills premium requests and has no dollar price: its `usage` event
 carries `premiumRequests` (`ProviderUsage`, summed by `sumUsage` for one run), the
 footer reads it from the item's own usage (telemetry has no column for it) and shows
-"N premium requests" in the line and a **Premium requests** row in the detail, in
-place of the cost row and its API-price note.
+"N premium requests" in the line (`TurnFooterSummary`) and a **Premium requests**
+row in the detail, in place of the cost row and its API-price note
+(`premiumRequestsLabelOf` words it for the line and for `UsageStatsRow`).
 The line itself (`TurnFooterSummary`) carries only the provider mark, model,
-duration and cost; tokens, cache share and context window live in the
+premium requests and duration; tokens, cache share and context window live in the
 detail popover (`TurnFooterDetail`) it opens. The transcript pane's
 agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
