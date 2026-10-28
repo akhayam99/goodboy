@@ -726,6 +726,10 @@ resolve-run-answered
 resolve-run-question
 resolve-run-working
 resolve-select
+resolve-state-failed
+resolve-state-ready
+resolve-state-skipped
+resolve-state-working
 resolve-transcript-drawer
 resolve-transcript-drawer-multi
 resolve-transcript-drawer-multi-done

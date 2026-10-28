@@ -42,6 +42,12 @@ When a fix fails, the comment says why in one sentence and links to the agent's 
 
 Open a fix run from Activity or from a comment to see what the agent did. A drawer beside the list has two tabs. Fix shows the status, the comments the run covers, what it did and its commits. Transcript shows the whole conversation, and you can write to the agent from there. It opens on Transcript while the run works, and on Fix once it ended or when it asks a question. A dot on the other tab tells you when something new happens there.
 
+A comment a fix run covers says where it stands on its row. While the run works the row reads **Fixing in the fix run**. When the fix is ready it reads **Fixed in 90b1d57 · Review the fix**. A **See diff** link opens the Files of the branch on that commit. A comment the run could not fix says why in one sentence. The state comes from the thread, so it is still there when you leave the Comments tab and come back. Starting a fix takes its comments out of the selection. Leaving the list drops a selection that sits on comments nobody can act on.
+
+When the run has finished with fixes ready, its comments move into one group, **Fix run**, above the rest of the list. The header reads **Fix run finished: N fixes ready for you**. It says what Apply does: it accepts the fixes, then the next push sends them, replies to the threads and resolves them where the host can. It holds **Apply and resolve N**. Comments no run covers stay in their normal groups.
+
+When the agent says its checks did not run, the group and the Fix tab of the run drawer show **Checks were skipped: <reason>**. An example is dependencies missing from its copy. Goodboy reads the agent's final message for it.
+
 ### Hints when a fix starts
 
 Tell the agent what to weigh before a fix starts. Every start that launches a fix has one quiet line, **Add a hint**, above its buttons: Fix comments, **Start fix** in the Debugger drawer, **Analyze again** on a failing check, **Fix with agent** after a failed push and **Rewrite with an agent** on a conflict. The line is closed by default and never required. A click opens an unboxed field, **Hint for the agent** (**Hint for the Implementer** for a fix), that grows to six lines, shows a small counter near 2000 characters and clears with an x. **Esc** closes the open popover first, then the field with its text kept, then the page. The first **Analyze** of a failing check stays one click with no field.
@@ -148,6 +154,7 @@ This part is for contributors and agents who change the feature.
 
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N comments**.
 - Comment drawer: `ReviewCommentDrawer` and `CommentDrawerActions`.
+- Fix run state: `rowFixOf` gives a row its Fixing, Fixed in sha or failed line, `fixRunReadyOf` picks the fixes the **Fix run** group header offers, `dropLaunchedSelection` runs in `startBatch`, and `checksSkippedOf` reads the skipped checks.
 - Add a hint: `apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx` (Fix comments), `apps/desktop/src/features/branch/components/CheckAnalysisDrawer/ProposedFix.tsx` (**Start fix**) and `apps/desktop/src/features/branch/components/CheckAnalysisHint.tsx` (**Analyze again**).
 - Fact cards: `fileCardOf` builds the card on a file path and `checkCardOf` the card on a check row.
 - Checks: `PrChecks` and `CheckRunRow` draw the grid, and `features/branch/components/AnalyzedCheckRow.tsx` reads the state of an analyzed row. `pushCheckFix.ts` pushes the fix, `ciFixOutcomeOf.ts` writes the outcome line and `ciFixStepsOf.ts` the steps. `checksWordOf` words the checks over `pullRequestRunsOf`.
