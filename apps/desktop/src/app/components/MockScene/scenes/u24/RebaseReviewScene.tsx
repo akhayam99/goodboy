@@ -39,7 +39,7 @@ export const RebaseReviewScene = ({ isExpanded = true }: Props) => {
     seedActivityRunScene();
     installSceneDatabase();
     installScenePlanEngine({ sessionId: SESSION.id });
-    const mount = useAppStore.getState().sessionProjectMounts[SESSION.id]?.[0];
+    const mount = useAppStore.getState().sessionProjectMounts[SESSION.id]?.[1];
     if (mount === undefined) {
       throw new Error('The scene needs a mount.');
     }

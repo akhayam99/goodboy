@@ -28,6 +28,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     mountId,
     expectedBranch,
     mergedHeadSha = null,
+    isRequested = false,
   }: RunAfterMergeCleanupParams): Promise<AfterMergeOutcome> => {
     const views = await loadMountViews({ get, sessionId });
     const view = views.find((candidate) => candidate.id === mountId);
@@ -47,10 +48,11 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     if (workspaceOverrides === undefined) {
       return ask(null);
     }
-    const rule = resolveAfterMergeRule({
+    const configuredRule = resolveAfterMergeRule({
       projectRule: project.overrides.afterMerge,
       workspaceRule: workspaceOverrides.afterMerge,
     });
+    const rule = isRequested && configuredRule === 'ask' ? 'local' : configuredRule;
     if (rule === 'ask') {
       return ask(null);
     }

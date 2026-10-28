@@ -1,4 +1,10 @@
-import type { GitDistance, GitOperation, GitUnknownReason, GitWorkingTree } from '@goodboy/types';
+import type {
+  GitDistance,
+  GitOperation,
+  GitUnknownReason,
+  GitWorkingTree,
+  WorktreeStatus,
+} from '@goodboy/types';
 
 type DistanceParams = {
   readonly distance: GitDistance;
@@ -22,6 +28,18 @@ export const distanceAhead = ({ distance }: DistanceParams): number | null => {
 
 export const distanceBehind = ({ distance }: DistanceParams): number | null => {
   return distance.kind === 'known' ? distance.behind : null;
+};
+
+type MainBehindParams = {
+  readonly status: Pick<WorktreeStatus, 'mainDistance'> | null | undefined;
+  readonly isDone: boolean;
+};
+
+export const mainBehindOf = ({ status, isDone }: MainBehindParams): number | null => {
+  if (isDone || status == null) {
+    return null;
+  }
+  return distanceBehind({ distance: status.mainDistance });
 };
 
 export const changedCount = ({ workingTree }: WorkingTreeParams): number | null => {

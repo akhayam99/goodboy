@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { isMountCompleted } from '../../../../store/slices/project-mounts/mountRowModel';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { rebaseConflictOf } from '../../../history/rebaseConflictOf';
 import { branchNextStepOf, type BranchNextStep } from '../../branchNextStepOf';
@@ -37,13 +38,14 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
     return conflict === null ? null : conflict.files;
   });
   const hasConflictStop = conflictFiles !== null;
+  const isDone = useAppStore((state) => mountId !== null && isMountCompleted({ state, mountId }));
   const localCheck = useAppStore((state) =>
     mountId === null ? null : (state.mountLocalChecks[mountId] ?? null),
   );
   const now = useNow(60_000);
   return useMemo(() => {
-    const step = branchNextStepOf({ status, hasConflictStop });
-    const files = conflictFiles ?? NO_FILES;
+    const step = branchNextStepOf({ status, hasConflictStop, isDone });
+    const files = isDone ? NO_FILES : (conflictFiles ?? NO_FILES);
     const unmerged =
       status !== null && status.workingTree.kind === 'known' ? status.workingTree.unmerged : 0;
     return {
@@ -59,5 +61,5 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
       conflictFiles: files,
       baseBranch,
     };
-  }, [baseBranch, conflictFiles, hasConflictStop, localCheck, now, status]);
+  }, [baseBranch, conflictFiles, hasConflictStop, isDone, localCheck, now, status]);
 };

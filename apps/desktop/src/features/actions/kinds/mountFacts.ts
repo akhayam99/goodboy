@@ -6,7 +6,12 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import type { OnlineCommit } from '../../../store/runtime/worktreeStatuses/onlyOnline';
-import { changedCount, distanceAhead, distanceBehind } from '../../../shared/lib/gitStatus';
+import {
+  changedCount,
+  distanceAhead,
+  distanceBehind,
+  mainBehindOf,
+} from '../../../shared/lib/gitStatus';
 import { branchPushFactsOf } from '../../../shared/lib/branchPushState';
 import type { RemoteHostKind } from '../../../shared/utils/remoteHost';
 
@@ -28,6 +33,7 @@ export type MountFacts = {
   readonly canRestoreBranch: boolean;
   readonly pr: MountRequestPhase | null;
   readonly requestLabel: string | null;
+  readonly mergedHeadSha?: string | null;
   readonly requestNumber: number | null;
   readonly requestProvider: MountPullRequestProvider | null;
   readonly createProvider: MountPullRequestProvider | null;
@@ -94,6 +100,7 @@ type Params = {
     readonly label: string;
     readonly number: number;
     readonly provider: MountPullRequestProvider;
+    readonly mergedHeadSha?: string | null;
   } | null;
   readonly status: WorktreeStatus | null;
   readonly remoteKind: RemoteHostKind | null;
@@ -137,6 +144,7 @@ export const mountFacts = ({
   const push = branchPushFactsOf({ status });
   const upstreamBehind =
     status === null ? null : distanceBehind({ distance: status.upstreamDistance });
+  const isDone = request?.state === 'merged' || request?.state === 'closed';
   return {
     sessionId,
     mountId,
@@ -153,17 +161,18 @@ export const mountFacts = ({
     canRestoreBranch: !isAttached && isBranchGone && canRestoreBranch,
     pr: request === null ? null : phaseOf({ state: request.state, isDraft: request.isDraft }),
     requestLabel: request?.label ?? null,
+    mergedHeadSha: request?.mergedHeadSha ?? null,
     requestNumber: request?.number ?? null,
     requestProvider: request?.provider ?? null,
     createProvider: remoteKind === null ? null : (CREATABLE[remoteKind] ?? null),
     ahead,
     unpushed: push.toPush,
-    behind: status === null ? 0 : (distanceBehind({ distance: status.mainDistance }) ?? 0),
+    behind: mainBehindOf({ status, isDone }) ?? 0,
     dirty: status === null ? 0 : (changedCount({ workingTree: status.workingTree }) ?? 0),
     isDiverged: upstreamBehind !== null && upstreamBehind > 0,
     onlyOnline,
-    isRebasing: status?.inProgress === 'rebase',
-    rebaseConflict,
+    isRebasing: !isDone && status?.inProgress === 'rebase',
+    rebaseConflict: isDone ? null : rebaseConflict,
     autoBlockedReason,
     comments,
     canStartTurnsHere,

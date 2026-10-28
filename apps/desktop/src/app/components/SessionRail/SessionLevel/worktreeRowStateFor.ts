@@ -1,6 +1,6 @@
 import type { WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
-import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf, unmergedCount } from '../../../../shared/lib/gitStatus';
 import {
   worktreeRowStateOf,
   type EntryShownFact,
@@ -22,9 +22,10 @@ export const worktreeRowStateFor = ({
 }: Params): WorktreeRowState =>
   worktreeRowStateOf({
     checks: row.request?.checks ?? null,
-    behind: status === null ? null : distanceBehind({ distance: status.mainDistance }),
-    conflicts: status === null ? null : unmergedCount({ workingTree: status.workingTree }),
-    isRebasing: status?.inProgress === 'rebase',
+    behind: mainBehindOf({ status, isDone: row.isFinished }),
+    conflicts:
+      status === null || row.isFinished ? null : unmergedCount({ workingTree: status.workingTree }),
+    isRebasing: !row.isFinished && status?.inProgress === 'rebase',
     isDecisionWaiting: row.observation !== null,
     commentsWaiting,
     baseBranch: row.baseBranch,

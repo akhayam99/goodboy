@@ -194,6 +194,8 @@ A rebase still in progress keeps **Conflict**. So does one the agent aborted bac
 
 Decide what happens to a merged branch: **Ask first**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.
 
+A merged branch is done. It shows no behind count, no warning dot, no rebase offer and no rebase conflict, and says "Merged, work complete". **Clean up** removes its folder and deletes the local branch after one inline confirmation that lists what goes and what stays. The remote branch goes only when the after-merge setting says so. It stops and says why when the folder holds uncommitted or unpushed work. With two or more merged branches in a session, **Clean up N merged** does the same for each.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.

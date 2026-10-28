@@ -23,6 +23,8 @@ const LIVE: SessionFacts = {
   sessionId: SESSION_ID,
   title: 'Speed up the payout export',
   behindMountIds: [],
+  mergedMountIds: [],
+  mergedBranches: [],
   rebaseAllRunId: null,
   isRebaseAllRunning: false,
   isArchived: false,
