@@ -1290,7 +1290,14 @@ mod tests {
 
     #[test]
     fn providers_that_cannot_be_read_only_are_refused() {
-        for provider in ["cursor", "gemini", "opencode", "openrouter", "moonshot"] {
+        for provider in [
+            "cursor",
+            "gemini",
+            "copilot",
+            "opencode",
+            "openrouter",
+            "moonshot",
+        ] {
             let error = prepare(&args_for(provider)).err().unwrap();
             assert!(matches!(error, ChatError::NotReadOnly(_)));
             let wire = serde_json::to_value(&error).expect("serializes");
@@ -1837,7 +1844,7 @@ mod tests {
 
     #[test]
     fn ask_refuses_providers_that_cannot_run_read_only_and_a_provider_the_thread_does_not_use() {
-        for provider in ["cursor", "gemini", "opencode"] {
+        for provider in ["cursor", "gemini", "copilot", "opencode"] {
             let result = prepare_ask_turn(
                 &ask_args_for(provider),
                 &ask_scope_for(provider, &WORKTREES),

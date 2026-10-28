@@ -3,6 +3,7 @@ use std::collections::HashMap;
 const NPM_CODEX: &str = "npm install -g @openai/codex";
 const NPM_OPENCODE: &str = "npm install -g opencode-ai";
 const NPM_OPENCODE_LATEST: &str = "npm install -g opencode-ai@latest";
+const NPM_COPILOT: &str = "npm install -g @github/copilot";
 const CURL_GEMINI: &str = "curl -fsSL https://antigravity.google/cli/install.sh | bash";
 
 const ALLOWED_ENV: &[&str] = &["NO_OPEN_BROWSER"];
@@ -49,6 +50,9 @@ const ROWS: &[Row] = &[
     same("codex", "update", "npm install -g @openai/codex@latest"),
     same("codex", "login", "codex login"),
     same("codex", "logout", "codex logout"),
+    same("copilot", "install", NPM_COPILOT),
+    same("copilot", "update", "copilot update"),
+    same("copilot", "login", "copilot login"),
     same("gemini", "install", CURL_GEMINI),
     same(
         "gemini",
@@ -150,6 +154,23 @@ mod tests {
                 assert!(lifecycle_command(provider, action).is_ok());
             }
         }
+    }
+
+    #[test]
+    fn copilot_installs_from_npm_signs_in_through_its_own_login_and_has_no_logout() {
+        assert_eq!(
+            lifecycle_command("copilot", "install").unwrap(),
+            "npm install -g @github/copilot"
+        );
+        assert_eq!(
+            lifecycle_command("copilot", "update").unwrap(),
+            "copilot update"
+        );
+        assert_eq!(
+            lifecycle_command("copilot", "login").unwrap(),
+            "copilot login"
+        );
+        assert!(lifecycle_command("copilot", "logout").is_err());
     }
 
     #[test]

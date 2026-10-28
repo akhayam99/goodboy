@@ -17,15 +17,21 @@ struct ParentEnv {
 
 impl ParentEnv {
     fn set(keys: &[&'static str]) -> Self {
+        let pairs: Vec<(&'static str, &'static str)> =
+            keys.iter().map(|key| (*key, "parent-value")).collect();
+        Self::set_values(&pairs)
+    }
+
+    fn set_values(pairs: &[(&'static str, &'static str)]) -> Self {
         let lock = PARENT_ENV
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let saved = keys
+        let saved = pairs
             .iter()
-            .map(|key| (*key, std::env::var_os(key)))
+            .map(|(key, _)| (*key, std::env::var_os(key)))
             .collect();
-        for key in keys {
-            std::env::set_var(key, "parent-value");
+        for (key, value) in pairs {
+            std::env::set_var(key, value);
         }
         Self { saved, _lock: lock }
     }
@@ -350,6 +356,45 @@ fn cursor_recorded_stream_reaches_the_sink_with_stream_json_flags() {
     let workspace = argv.iter().position(|arg| arg == "--workspace").unwrap();
     assert_eq!(argv[workspace + 1], run.fake.work_dir());
     assert!(argv.contains(&"--stream-partial-output".to_string()));
+}
+
+#[test]
+fn copilot_recorded_stream_reaches_the_sink_with_json_flags() {
+    let run = assert_recorded_stream_reaches_the_sink("copilot", "copilot.jsonl");
+    let argv = argv_of(&run);
+    assert_eq!(argv[0], "-p");
+    assert_eq!(argv[1], PROMPT);
+    assert!(argv.contains(&"--output-format=json".to_string()));
+    assert!(argv.contains(&"--disable-client-telemetry".to_string()));
+    let directory = argv.iter().position(|arg| arg == "-C").unwrap();
+    assert_eq!(argv[directory + 1], run.fake.work_dir());
+    assert_eq!(run.fake.work_file("fake-cli-stdin.txt"), None);
+}
+
+#[test]
+fn a_copilot_turn_loses_every_host_token_that_is_not_fine_grained() {
+    let _env = ParentEnv::set_values(&[
+        ("GH_TOKEN", "ghp_harborline"),
+        ("GITHUB_TOKEN", "github_pat_northwind"),
+    ]);
+    let run = Run::new("ok");
+    run.spawn_shaped("copilot", PROMPT, "default", None, false, false)
+        .unwrap();
+    run.turn_events_until_end();
+
+    assert_eq!(env_of(&run, "GH_TOKEN"), "__unset__");
+    assert_eq!(env_of(&run, "GITHUB_TOKEN"), "github_pat_northwind");
+}
+
+#[test]
+fn another_cli_keeps_a_classic_host_token() {
+    let _env = ParentEnv::set_values(&[("GH_TOKEN", "ghp_harborline")]);
+    let run = Run::new("ok");
+    run.spawn_shaped("codex", PROMPT, "default", None, false, false)
+        .unwrap();
+    run.turn_events_until_end();
+
+    assert_eq!(env_of(&run, "GH_TOKEN"), "ghp_harborline");
 }
 
 #[test]
@@ -680,7 +725,14 @@ fn an_owned_writer_lease_is_released_and_announced_when_the_turn_ends() {
 fn a_read_only_turn_spawns_every_cli_with_its_read_only_posture() {
     use crate::providers::cli_args::{read_only_violations, Cli, Job};
 
-    for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
+    for binary in [
+        "claude",
+        "codex",
+        "cursor-agent",
+        "agy",
+        "copilot",
+        "opencode",
+    ] {
         let run = Run::new("ok");
         run.spawn_full(binary, PROMPT, "plan", None).unwrap();
         run.turn_events_until_end();

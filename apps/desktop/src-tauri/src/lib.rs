@@ -447,6 +447,7 @@ pub fn run() {
             providers::refresh_cursor_status,
             providers::refresh_codex_status,
             providers::refresh_gemini_status,
+            providers::refresh_copilot_status,
             providers::refresh_opencode_status,
             providers::refresh_openrouter_status,
             providers::refresh_moonshot_status,

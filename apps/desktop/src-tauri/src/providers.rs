@@ -567,6 +567,10 @@ fn check_gemini_auth() -> AuthState {
     AuthState::disconnected()
 }
 
+fn check_copilot_auth() -> AuthState {
+    AuthState::connected_unverified(AuthReason::NoStatus)
+}
+
 const OPENCODE_BOX_CHARS: &[char] = &['┌', '│', '└', '├', '┐', '┘', '─', '●', '○', '◆', '◇'];
 
 fn opencode_row_label(line: &str) -> String {
@@ -698,6 +702,11 @@ pub async fn refresh_codex_status() -> Result<ProviderStatus, ProviderStatusErro
 #[tauri::command]
 pub async fn refresh_gemini_status() -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status("gemini").await
+}
+
+#[tauri::command]
+pub async fn refresh_copilot_status() -> Result<ProviderStatus, ProviderStatusError> {
+    refresh_status("copilot").await
 }
 
 #[tauri::command]
@@ -1033,6 +1042,15 @@ mod tests {
     fn openrouter_ignores_environment_only_entries() {
         let names = parse_opencode_credentials(OPENCODE_EMPTY_LIST);
         assert!(openrouter_credential(&names).is_none());
+    }
+
+    #[test]
+    fn copilot_has_no_status_command_so_it_is_connected_but_never_verified() {
+        let state = check_copilot_auth();
+        assert_eq!(state.state, AuthStateKind::Connected);
+        assert!(!state.verified);
+        assert_eq!(state.reason, Some(AuthReason::NoStatus));
+        assert_eq!(state.identity, None);
     }
 
     #[test]

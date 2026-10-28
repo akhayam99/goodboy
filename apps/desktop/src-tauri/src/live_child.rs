@@ -244,6 +244,9 @@ pub fn run_side_job(
 ) -> std::io::Result<SideJobOutput> {
     let mut command = crate::path_env::command(binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    if crate::aux_spawn::is_copilot_binary(binary) {
+        crate::aux_spawn::strip_tokens_copilot_refuses(&mut command);
+    }
     let tag = crate::aux_spawn::tag_spawn(&mut command, kind);
     crate::process_group::isolate(&mut command);
     if let Some(dir) = working_dir.filter(|dir| !dir.is_empty()) {

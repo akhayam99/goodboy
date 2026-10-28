@@ -273,6 +273,7 @@
     "query_bridge_serving",
     "read_folder_signals",
     "refresh_codex_status",
+    "refresh_copilot_status",
     "refresh_cursor_status",
     "refresh_gemini_status",
     "refresh_moonshot_status",

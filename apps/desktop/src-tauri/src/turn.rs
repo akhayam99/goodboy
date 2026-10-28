@@ -379,6 +379,9 @@ fn spawn_one<E: TurnEmitter>(
     }
 
     apply_git_host_access(&mut command, &args);
+    if crate::aux_spawn::is_copilot_binary(args.binary) {
+        crate::aux_spawn::strip_tokens_copilot_refuses(&mut command);
+    }
 
     crate::query_bridge::apply_turn_env(
         &mut command,

@@ -43,6 +43,7 @@ fn detection_reads_the_version_each_fake_cli_prints() {
         ("cursor", "cursor-agent", "2026.09.17-fake"),
         ("codex", "codex", "codex-cli 0.130.0"),
         ("gemini", "agy", "agy 1.1.9"),
+        ("copilot", "copilot", "1.0.105"),
     ];
     for (id, binary, version) in cases {
         let path = fake.binary(binary);

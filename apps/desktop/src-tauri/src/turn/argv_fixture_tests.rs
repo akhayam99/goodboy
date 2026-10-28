@@ -4,10 +4,11 @@ use std::process::Command;
 use super::fake_cli_tests::{Run, PROMPT};
 use super::*;
 
-const PROVIDERS: [(&str, &str); 5] = [
+const PROVIDERS: [(&str, &str); 6] = [
     ("anthropic", "claude"),
     ("cursor", "cursor-agent"),
     ("gemini", "agy"),
+    ("copilot", "copilot"),
     ("codex", "codex"),
     ("opencode", "opencode"),
 ];

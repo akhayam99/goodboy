@@ -118,9 +118,146 @@ pub fn scrub_nested_session_env(command: &mut Command) {
         .env_remove("CLAUDE_AGENT_SDK_VERSION");
 }
 
+const COPILOT_CLASSIC_TOKEN_PREFIX: &str = "ghp_";
+const COPILOT_FINE_GRAINED_TOKEN_PREFIX: &str = "github_pat_";
+const COPILOT_OWN_TOKEN_ENV: &str = "COPILOT_GITHUB_TOKEN";
+const COPILOT_SHARED_TOKEN_ENV: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
+
+pub fn is_copilot_binary(binary: &str) -> bool {
+    std::path::Path::new(binary)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        == Some("copilot")
+}
+
+fn effective_env(
+    command: &Command,
+    name: &str,
+    inherited: &impl Fn(&str) -> Option<String>,
+) -> Option<String> {
+    let set = command
+        .get_envs()
+        .find(|(key, _)| key.to_string_lossy() == name);
+    match set {
+        Some((_, Some(value))) => Some(value.to_string_lossy().into_owned()),
+        Some((_, None)) => None,
+        None => inherited(name),
+    }
+}
+
+pub fn strip_tokens_copilot_refuses_with(
+    command: &mut Command,
+    inherited: impl Fn(&str) -> Option<String>,
+) {
+    let own = effective_env(command, COPILOT_OWN_TOKEN_ENV, &inherited);
+    if own.is_some_and(|value| value.starts_with(COPILOT_CLASSIC_TOKEN_PREFIX)) {
+        command.env_remove(COPILOT_OWN_TOKEN_ENV);
+    }
+    for name in COPILOT_SHARED_TOKEN_ENV {
+        let value = effective_env(command, name, &inherited);
+        if value.is_some_and(|value| !value.starts_with(COPILOT_FINE_GRAINED_TOKEN_PREFIX)) {
+            command.env_remove(name);
+        }
+    }
+}
+
+pub fn strip_tokens_copilot_refuses(command: &mut Command) {
+    strip_tokens_copilot_refuses_with(command, |name| std::env::var(name).ok());
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn removed_names(command: &Command) -> Vec<String> {
+        command
+            .get_envs()
+            .filter(|(_, value)| value.is_none())
+            .map(|(key, _)| key.to_string_lossy().into_owned())
+            .collect()
+    }
+
+    fn inherited_with(
+        pairs: &'static [(&'static str, &'static str)],
+    ) -> impl Fn(&str) -> Option<String> {
+        move |name| {
+            pairs
+                .iter()
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| value.to_string())
+        }
+    }
+
+    #[test]
+    fn a_classic_token_in_the_shared_variables_is_removed_for_copilot() {
+        let mut command = Command::new("copilot");
+        strip_tokens_copilot_refuses_with(
+            &mut command,
+            inherited_with(&[
+                ("GH_TOKEN", "ghp_harborline"),
+                ("GITHUB_TOKEN", "ghp_northwind"),
+            ]),
+        );
+        let removed = removed_names(&command);
+        assert!(removed.contains(&"GH_TOKEN".to_string()));
+        assert!(removed.contains(&"GITHUB_TOKEN".to_string()));
+    }
+
+    #[test]
+    fn a_fine_grained_token_is_kept_for_copilot() {
+        let mut command = Command::new("copilot");
+        strip_tokens_copilot_refuses_with(
+            &mut command,
+            inherited_with(&[("GH_TOKEN", "github_pat_harborline")]),
+        );
+        assert!(removed_names(&command).is_empty());
+    }
+
+    #[test]
+    fn a_token_the_app_set_on_the_command_is_judged_before_the_inherited_one() {
+        let mut command = Command::new("copilot");
+        command.env("GITHUB_TOKEN", "ghp_acme");
+        strip_tokens_copilot_refuses_with(
+            &mut command,
+            inherited_with(&[("GITHUB_TOKEN", "github_pat_cascadia")]),
+        );
+        assert_eq!(removed_names(&command), vec!["GITHUB_TOKEN".to_string()]);
+    }
+
+    #[test]
+    fn only_a_classic_copilot_token_is_removed_from_its_own_variable() {
+        let mut classic = Command::new("copilot");
+        strip_tokens_copilot_refuses_with(
+            &mut classic,
+            inherited_with(&[("COPILOT_GITHUB_TOKEN", "ghp_harborline")]),
+        );
+        assert_eq!(
+            removed_names(&classic),
+            vec!["COPILOT_GITHUB_TOKEN".to_string()]
+        );
+        let mut other = Command::new("copilot");
+        strip_tokens_copilot_refuses_with(
+            &mut other,
+            inherited_with(&[("COPILOT_GITHUB_TOKEN", "gho_northwind")]),
+        );
+        assert!(removed_names(&other).is_empty());
+    }
+
+    #[test]
+    fn a_variable_nobody_set_is_left_alone() {
+        let mut command = Command::new("copilot");
+        strip_tokens_copilot_refuses_with(&mut command, inherited_with(&[]));
+        assert!(removed_names(&command).is_empty());
+    }
+
+    #[test]
+    fn copilot_is_recognised_by_its_binary_name() {
+        assert!(is_copilot_binary("copilot"));
+        assert!(is_copilot_binary("/opt/bin/copilot"));
+        assert!(is_copilot_binary("copilot.exe"));
+        assert!(!is_copilot_binary("copilot-agent"));
+        assert!(!is_copilot_binary("codex"));
+    }
 
     #[test]
     fn setting_sources_keeps_project_and_local_only() {
