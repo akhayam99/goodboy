@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { CopilotIcon } from '../components/brandIcons';
+import { CopilotIcon } from '../components/CopilotIcon';
 
 afterEach(cleanup);
 

@@ -131,7 +131,6 @@ export {
   GithubIcon,
   GitlabIcon,
   GeminiIcon,
-  CopilotIcon,
   CursorIcon,
   JiraIcon,
   LinearIcon,
@@ -143,6 +142,7 @@ export {
   SlackIcon,
   XIcon,
 } from './components/brandIcons';
+export { CopilotIcon } from './components/CopilotIcon';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
