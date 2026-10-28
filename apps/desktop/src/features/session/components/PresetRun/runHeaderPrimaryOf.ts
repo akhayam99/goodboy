@@ -22,7 +22,12 @@ export const runHeaderPrimaryOf = ({ view }: Params): RunHeaderPrimary => {
   if (isOpen && view.run.orchestrationStop?.kind === 'budget' && primary?.kind !== 'raise-cap') {
     return { kind: 'raiseCap' };
   }
-  if (primary === null || primary.kind === 'resume' || primary.kind === 'answer') {
+  if (
+    primary === null ||
+    primary.kind === 'resume' ||
+    primary.kind === 'answer' ||
+    primary.kind === 'hint'
+  ) {
     return { kind: 'live' };
   }
   return { kind: 'primary', primary };

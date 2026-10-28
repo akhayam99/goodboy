@@ -11,7 +11,7 @@ import { useApproveRunPlan } from '../../../../workflows/useApproveRunPlan';
 import type { RunView } from '../useRunView';
 import type { RunPrimaryVariant } from './RunPrimaryAction';
 
-type RunButtonKind = Exclude<RunPrimaryKind, 'start-run' | 'start-step' | 'raise-cap'>;
+type RunButtonKind = Exclude<RunPrimaryKind, 'start-run' | 'start-step' | 'raise-cap' | 'hint'>;
 
 type Props = {
   readonly session: Session;

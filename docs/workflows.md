@@ -92,7 +92,12 @@ changes it, so looking at another tab does not. A remembered **Preset** falls
 back to **Orchestrated** once the workspace has no presets left.
 
 Each run also gets a title of its own, at most six words, written from the run
-goal by the `agent_naming` task model when the run starts. The activity feed,
+goal by the `agent_naming` task model when the run starts. The title is cleaned
+(`cleanWorkflowRunTitle` in `@goodboy/db`): a `Title:` label, quotes and markdown
+marks go, a reply that reads as a sentence is dropped, and a title never ends in
+the middle of a word. When nothing usable is left it is the first line of the
+ask, cut at a word. A title stored before this reads cleaned too: the same
+function runs when the run rows load, and never touches a name you chose. The activity feed,
 the workflow detail and the breadcrumb show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
@@ -283,7 +288,9 @@ read top to bottom at the conversation measure:
   **Answer**, a run paused at the limit **Raise limit**, else the `runPrimaryOf`
   verb through `RunPrimaryAction` (**Review plan**, **Approve plan**,
   **Decide next step**, **Start step 2**, **Start run**, **Retry**, **Continue
-  the run**, **Restore**), else **Pause run** or **Resume run** as a quiet word
+  the run**, **Restore**; a run the orchestrator stopped on a human call has no
+  header button: its action is the field **Add a hint and continue**, docked in
+  place of the composer), else **Pause run** or **Resume run** as a quiet word
   (`RunLiveVerbs`); then the run `⋯`. The header stays fixed above the
   scroll, the composer docks below it. The right click on the title lists the
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
@@ -321,8 +328,12 @@ read top to bottom at the conversation measure:
   on the tracks and in the "3.1" label; a gray row "Your
   hint, read at step 4" before the step whose decision read it, a dashed row
   "Next step, not decided yet" while the orchestrator chooses, then the recap's
-  **Left** items as dashed rows, so the plan and the progress are one list
-  (`orchestratedChecklistOf`). A Left entry the orchestrator planned for a
+  **Left** items that name a role as dashed rows, so the plan and the progress
+  are one list (`orchestratedChecklistOf`). A Left entry with no role is not a
+  step: it sits in a folded **Left open (2)** list under the steps
+  (`OrchestratedNotes`). An entry that restates a step already on the list, or
+  one listed before it, shows once (`isSameIntent`: the shared word stems of the
+  two texts, 60 percent). A Left entry the orchestrator planned for a
   role (`{"text": ..., "role": "tester"}` in the run summary, kept in
   `leftRoles`; an unknown role is dropped) shows that role's glyph and word in
   the same role column as the decided steps; a plain string entry leaves the
@@ -341,22 +352,33 @@ read top to bottom at the conversation measure:
   "Last decision failed: ..." (model ids read as display
   names, `modelNamesIn`) with **View
   transcript**; the move each of those waits for is the header primary, never a
-  second button on the tail, a failed step with **Restart step**, a stopped step with
+  second button on the tail, a failed step with **Restart step**, a step blocked
+  on a question with the question inline (what the step agent closed with,
+  `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
+  field with **Answer** as its primary action, **Restart step** as a secondary
+  button and **Open agent chat** next to it. **Answer** sends the text to the
+  step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
+  send that fails keeps the text and says so inline. A stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
   a restart stopped with **Resume**, "Run complete" on a
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Resume and read 2 queued**. Under the line, a
-  folded **Why this step** (`Disclosure`) opens the latest decision's reason,
-  hidden while the run is failed; older reasons sit at the top of each step's pane. While the
+  **Stop step** the verb is **Resume and read 2 queued**. A run the
+  orchestrator stopped on a human call shows its reason inline as markdown, with
+  no folded reason, and **Add a hint and continue** at the dock
+  (`continueWithHint` clears the block, then the orchestrator decides again with
+  the hint; the queued hints are not marked read by a blocked decision). Under
+  the line, a folded **Why this step** (`Disclosure`) opens the latest decision's
+  reason as markdown, hidden while the run is failed or blocked; older reasons sit at the top of each step's pane. While the
   plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through
   today's `RunPrimaryAction`, so their gates and confirms are the same.
-- **Result** (`OrchestratedResult`), on a finished run: the closing reason,
+- **Result** (`OrchestratedResult`), on a finished run: the closing reason (markdown),
   the recap's **Done** and **Left** lists, **Create report** and **Create
   wireframe**. An orchestrated run never offers **Add step**, in the document
   or in its rail level: the orchestrator picks the steps. **Add step** stays on
   preset runs.
 - **Continue with a hint** (`OrchestratedContinue`), docked in place of the
-  composer once the run is complete: one field with files and **Continue**.
+  composer once the run is complete, or **Add a hint and continue** once the
+  orchestrator stopped on a human call: one field with files and **Continue**.
   It goes through `continueWithHint` (store `workflows`): the hint is saved as
   a queued hint, then `clearOrchestrationOutcome` reopens the run (the same
   reopen `continueWorkflowRun` and Add step use, no migration), then the
@@ -491,10 +513,15 @@ through `updateWorkflowRunRules`: one queue per run in this window, and a
 compare and swap on the stored `rules_snapshot` text
 (`replaceWorkflowRunRulesIfUnchanged`) that re-reads and re-applies the patch
 when another window saved first, so no write drops another.
-A change after work started calls `startRoutedRun` with the findings
-(`runFindingsOf`: the run summary's done entries and the settled steps'
-summaries) and leaves the first run or Auto tree going; nothing new is written
-to it (`route.changedTo` is only parsed, for older runs). The defaults live in
+The popover follows the run (`runKindPhaseOf`): read-only while a step runs or
+the orchestrator decides, **Restart as** once the run stopped, failed or
+blocked, **Start a new run as** once it finished. A change after work started
+refuses while a step is going (`changeRunRoute`), else calls `startRoutedRun`
+with the findings (`runFindingsOf`: the run summary's done entries and the
+settled steps' summaries). On a stopped run the first run is then closed
+(`closeWorkflowRun`), so two runs never edit one branch; on a finished run, or
+an agent that finished, nothing is written to the first (`route.changedTo` is
+only parsed, for older runs). The defaults live in
 the settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
 through `runDefaultOf`; `changeRunDefault` writes compare and swap and records

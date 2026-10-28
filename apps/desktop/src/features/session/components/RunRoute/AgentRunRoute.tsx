@@ -3,6 +3,7 @@ import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { parseRunRoutes, runRoutesKey } from '../../startRun/runRoutesSetting';
 import { RunKindChip } from './RunKindChip';
+import { runKindPhaseOf } from './runKindPhaseOf';
 
 type Props = {
   readonly session: Session;
@@ -21,6 +22,9 @@ export const AgentRunRoute = ({ session, agentId }: Props) => {
   );
 
   const reportError = useAppStore((state) => state.reportError);
+  const status = useAppStore(
+    (state) => state.sessionPhaseRuns[sessionId]?.find((agent) => agent.id === agentId)?.status,
+  );
 
   useEffect(() => {
     loadSetting(key).catch((error: unknown) => {
@@ -37,7 +41,12 @@ export const AgentRunRoute = ({ session, agentId }: Props) => {
       target={target}
       route={route}
       changeCount={0}
-      hasStarted
+      phase={runKindPhaseOf({
+        agentCount: 1,
+        isFinished: false,
+        phase: null,
+        status: status ?? null,
+      })}
     />
   );
 };

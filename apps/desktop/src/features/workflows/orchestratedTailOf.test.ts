@@ -158,6 +158,38 @@ describe('orchestratedTailOf', () => {
     expect(tail?.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 
+  it('keeps Restart step secondary and adds Open agent chat on a step blocked on a question', () => {
+    const blocked = agentOf({ key: 'verify', ordinal: 1, status: 'blocked' });
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on blocked step 2' }),
+      agents: [DONE, blocked],
+    });
+    expect(tail.blockedAgentId).toBe(blocked.id);
+    expect(tail.verbs).toEqual([
+      { kind: 'restartStep' },
+      { kind: 'openAgentChat', agentId: blocked.id },
+    ]);
+  });
+
+  it('names no blocked step when the halted step failed', () => {
+    const failed = agentOf({ key: 'verify', ordinal: 1, status: 'failed' });
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on failed step 2' }),
+      agents: [DONE, failed],
+    });
+    expect(tail.blockedAgentId).toBeNull();
+    expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
+  });
+
+  it('leaves the hint to the run page when the orchestrator stopped on a human call', () => {
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'blocked', sentence: 'Stopped · needs a human call' }),
+      primary: { kind: 'hint', label: 'Add a hint and continue' },
+    });
+    expect(tail.state).toBe('failed');
+    expect(tail.verbs).toEqual([]);
+  });
+
   it('reads the queued hints on a finished run, and resumes with them after Stop step', () => {
     const done = tailOf({
       orchestrator: stateOf({ phase: 'done', sentence: 'Run complete · 1 step · $0.10' }),

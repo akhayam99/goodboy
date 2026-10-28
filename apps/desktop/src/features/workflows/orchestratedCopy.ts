@@ -20,6 +20,10 @@ type CountParams = {
   readonly count: number;
 };
 
+type AsksParams = {
+  readonly isQuestion: boolean;
+};
+
 export const ORCHESTRATED_COPY = {
   emptyTitle: 'No orchestrated runs yet',
   showGuidance: 'Show guidance',
@@ -41,5 +45,14 @@ export const ORCHESTRATED_COPY = {
   changes: ({ count }: CountParams): string => `${count} ${count === 1 ? 'change' : 'changes'}`,
   continueLabel: 'Continue with a hint',
   continueAction: 'Continue',
+  hintLabel: 'Add a hint and continue',
+  blockedAnswerLabel: 'Answer the step',
+  blockedAnswerAction: 'Answer',
+  blockedAnswerFailed: "Couldn't send the answer",
+  blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
+  blockedAsks: ({ isQuestion }: AsksParams): string =>
+    isQuestion ? 'The step asked' : 'The step stopped after saying',
+  openAgentChat: 'Open agent chat',
   continueFailed: "Couldn't continue the run",
+  leftOpen: ({ count }: CountParams): string => `Left open (${count})`,
 } as const;

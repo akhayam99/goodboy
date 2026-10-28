@@ -35,6 +35,7 @@ export type RunRouteChange = 'unchanged' | 'in-place' | 'restarted' | 'second-ru
 type Params = {
   readonly target: RunRouteTarget;
   readonly choice: RunRouteChoice;
+  readonly shouldEndRun?: boolean;
 };
 
 type ResultParams = {
@@ -60,9 +61,15 @@ type PlanParams = {
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly choice: RunRouteChoice;
+  readonly shouldEndRun: boolean;
 };
 
-const changePlanRun = async ({ sessionId, runId, choice }: PlanParams): Promise<RunRouteChange> => {
+const changePlanRun = async ({
+  sessionId,
+  runId,
+  choice,
+  shouldEndRun,
+}: PlanParams): Promise<RunRouteChange> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
   const run = session?.workflowRuns.find((candidate) => candidate.id === runId);
@@ -111,6 +118,12 @@ const changePlanRun = async ({ sessionId, runId, choice }: PlanParams): Promise<
     await useAppStore.getState().discardWorkflow(sessionId, runId);
     return 'restarted';
   }
+  const isGoing =
+    state.orchestratingWorkflowRuns?.[runId] === true ||
+    agents.some((agent) => agent.status === 'running' || agent.status === 'pending');
+  if (isGoing) {
+    throw new Error(RUN_ROUTE_COPY.stillGoing);
+  }
   const summary = parseRunSummaryText(run.orchestratorSummary?.trim() ?? '');
   const findings = runFindingsOf({
     done: summary === null ? [] : summary.done,
@@ -119,7 +132,11 @@ const changePlanRun = async ({ sessionId, runId, choice }: PlanParams): Promise<
       .map((agent) => ({ name: agent.name, summary: agent.outputSummary })),
   });
   await startRoutedRun({ sessionId, result: next, findings });
-  return 'second-run';
+  if (!shouldEndRun) {
+    return 'second-run';
+  }
+  await useAppStore.getState().closeWorkflowRun(sessionId, runId);
+  return 'restarted';
 };
 
 type LeadParams = {
@@ -146,6 +163,15 @@ const changeLeadRun = async ({
     parseRunRoutes({ raw: state.settings[runRoutesKey({ sessionId })] })[agentId] ?? null;
   const agents = state.sessionPhaseRuns[sessionId] ?? [];
   const root = agents.find((agent) => agent.id === agentId) ?? null;
+  const turn = state.agentTurnState[agentId];
+  const isGoing =
+    root?.status === 'running' ||
+    root?.status === 'pending' ||
+    turn?.kind === 'running' ||
+    turn?.kind === 'starting';
+  if (isGoing) {
+    throw new Error(RUN_ROUTE_COPY.stillGoing);
+  }
   const ask = route?.ask ?? root?.name ?? '';
   const presets = (state.phaseTemplates[session.workspaceId] ?? []).filter(
     (candidate) => candidate.isPreset === true,
@@ -165,7 +191,11 @@ const changeLeadRun = async ({
   return 'second-run';
 };
 
-export const changeRunRoute = ({ target, choice }: Params): Promise<RunRouteChange> =>
+export const changeRunRoute = ({
+  target,
+  choice,
+  shouldEndRun = false,
+}: Params): Promise<RunRouteChange> =>
   target.kind === 'plan'
-    ? changePlanRun({ sessionId: target.sessionId, runId: target.runId, choice })
+    ? changePlanRun({ sessionId: target.sessionId, runId: target.runId, choice, shouldEndRun })
     : changeLeadRun({ sessionId: target.sessionId, agentId: target.agentId, choice });

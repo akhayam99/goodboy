@@ -20,9 +20,9 @@ export const continueWithHint = (set: SetFn, get: GetFn) => {
       ...draft,
       delivery: 'queue',
     });
-    const isStillDone =
-      findWorkflowRun({ get, sessionId, workflowRunId })?.orchestrationOutcome === 'done';
-    if (hint === null || !isStillDone) {
+    const outcome = findWorkflowRun({ get, sessionId, workflowRunId })?.orchestrationOutcome;
+    const isStillStopped = outcome === 'done' || outcome === 'blocked';
+    if (hint === null || !isStillStopped) {
       return;
     }
     try {

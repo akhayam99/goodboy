@@ -74,10 +74,7 @@ describe('orchestratedChecklistOf', () => {
       isDeciding: false,
       isDone: false,
     });
-    expect(live.left).toEqual([
-      { text: 'Prove the batching', role: 'tester' },
-      { text: 'Stream rows to CSV', role: null },
-    ]);
+    expect(live.left).toEqual([{ text: 'Prove the batching', role: 'tester' }]);
     const done = orchestratedChecklistOf({
       agents: [FIRST],
       hints: [],
@@ -86,5 +83,59 @@ describe('orchestratedChecklistOf', () => {
       isDone: true,
     });
     expect(done.left).toEqual([]);
+    expect(done.notes).toEqual([]);
+  });
+
+  it('keeps a Left item with no role out of the steps and lists it as a note', () => {
+    const list = orchestratedChecklistOf({
+      agents: [FIRST],
+      hints: [],
+      summary: SUMMARY,
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.left.map((item) => item.text)).toEqual(['Prove the batching']);
+    expect(list.notes).toEqual(['Stream rows to CSV']);
+  });
+
+  it('shows a planned step once when it repeats a step that already exists', () => {
+    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR for feat-settings' };
+    const list = orchestratedChecklistOf({
+      agents: [verify],
+      hints: [],
+      summary: {
+        done: [],
+        left: [
+          'Verify the checks, push and open the draft PR for feat-settings',
+          'Prove the batching',
+          'Prove the batching again',
+        ],
+        leftRoles: {
+          'Verify the checks, push and open the draft PR for feat-settings': 'implementer',
+          'Prove the batching': 'tester',
+          'Prove the batching again': 'tester',
+        },
+      },
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.left.map((item) => item.text)).toEqual(['Prove the batching']);
+    expect(list.notes).toEqual([]);
+  });
+
+  it('drops a roleless note that repeats a done step', () => {
+    const verify = { ...FIRST, name: 'Verify the checks and open the draft PR for feat-settings' };
+    const list = orchestratedChecklistOf({
+      agents: [verify],
+      hints: [],
+      summary: {
+        done: [],
+        left: ['Verify the checks, push and open the draft PR for feat-settings'],
+        leftRoles: {},
+      },
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.notes).toEqual([]);
   });
 });
