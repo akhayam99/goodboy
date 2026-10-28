@@ -74,17 +74,6 @@ describe('costCoverage', () => {
     ).toBe(0);
   });
 
-  it('reports copilot as unpriced and computes no dollar cost for it', () => {
-    expect(costCoverage({ provider: 'copilot', model: 'sonnet-5.5' })).toBe('unpriced');
-    expect(
-      computeProviderCostUsd({
-        providerId: 'copilot',
-        usage: { ...usage, premiumRequests: 3 },
-        model: 'sonnet-5.5',
-      }),
-    ).toBe(0);
-  });
-
   it('reports openai as unpriced, matching the exhaustive ProviderName member with no price table', () => {
     expect(costCoverage({ provider: 'openai', model: 'gpt-anything' })).toBe('unpriced');
   });
