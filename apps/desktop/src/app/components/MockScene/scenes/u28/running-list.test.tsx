@@ -66,7 +66,11 @@ const show = async ({ name }: ShowParams) => {
   return view;
 };
 
-const sectionOf = ({ id }: { readonly id: string }): HTMLElement => {
+type SectionParams = {
+  readonly id: string;
+};
+
+const sectionOf = ({ id }: SectionParams): HTMLElement => {
   const section = document.querySelector<HTMLElement>(`[data-live-section="${id}"]`);
   if (section === null) {
     throw new Error(`The ${id} section must be drawn`);
@@ -154,7 +158,7 @@ describe('the Running list scenes', () => {
     await show({ name: KEYS[0] ?? '' });
 
     const copy = screen.getByRole('region', { name: 'Workflow: Fix the copy' });
-    expect(copy.querySelector('[data-step-count]')?.textContent).toBe('2/2');
+    expect(copy.querySelector('[data-step-count]')?.textContent).toBe('1/2');
     const build = screen.getByRole('region', { name: 'Workflow: Build' });
     expect(build.querySelectorAll('[data-step-state]')).toHaveLength(6);
   });
