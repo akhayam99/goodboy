@@ -3,7 +3,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { ClusterPane } from '../../panes/clusterPane';
 
-export type SessionToolGroup = 'read' | 'work' | 'tools';
+type SessionToolGroup = 'read' | 'work' | 'tools';
 
 export type SessionTool = {
   readonly pane: ClusterPane;

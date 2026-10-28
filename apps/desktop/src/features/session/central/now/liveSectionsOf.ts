@@ -1,7 +1,7 @@
 import { NAMES } from '../../../../shared/utils/names';
 import type { LiveGroupModel } from './liveGroupsOf';
 
-export type LiveSectionId = 'needs-you' | 'running' | 'stopped';
+type LiveSectionId = 'needs-you' | 'running' | 'stopped';
 
 export type LiveSection = Readonly<{
   id: LiveSectionId;
@@ -33,7 +33,7 @@ const isStoppedByYou = ({ group }: GroupParams): boolean => {
   return kind === 'agentStopped' || kind === 'stepStopped' || kind === 'stopped';
 };
 
-export const liveSectionIdOf = ({ group }: GroupParams): LiveSectionId => {
+const liveSectionIdOf = ({ group }: GroupParams): LiveSectionId => {
   switch (group.state) {
     case 'stuck':
       return 'stopped';
