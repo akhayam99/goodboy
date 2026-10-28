@@ -1,6 +1,6 @@
 {
   "name": "@goodboy/desktop",
-  "version": "0.28.4",
+  "version": "0.28.5",
   "private": true,
   "type": "module",
   "scripts": {
