@@ -8,10 +8,10 @@ import { NewSessionBridge } from '../../../../../features/session/components/New
 import { AppFrame } from '../audit/AppFrame';
 import { installSceneDatabase } from '../sceneDatabase';
 import { SETTLED_MOTION } from '../onboarding/wizardSceneSeed';
-import { useAppStore } from '../../../../../store';
 import { applyStoryAnswer } from '../../demo/director/applyStoryAnswer';
 import { storyIssuesOf } from './storyIssues';
 import { seedStoryWorld, type StoryStage } from './storyWorld';
+import { useIsWizardUp } from './useIsWizardUp';
 
 type SceneStage = StoryStage | 'planned';
 
@@ -23,7 +23,7 @@ const WIZARD_OPEN_MS = 100;
 
 export const StorySessionScene = ({ stage }: Props) => {
   const [isReady, setIsReady] = useState(false);
-  const isWizardUp = useAppStore((state) => state.openSessionDraftWorkspaceId === null);
+  const isWizardUp = useIsWizardUp();
 
   useEffect(() => {
     installSceneDatabase({
