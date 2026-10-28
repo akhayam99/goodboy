@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { FIXTURE_NOW } from '../../../auto/testing/autoViewFixtures';
 import { liveGroupsOf } from './liveGroupsOf';
 import { liveSectionsOf } from './liveSectionsOf';
-import { aNowAgent, nowModelOf } from './testing/nowModelOf';
+import { aNowAgent, aNowRun, aNowStepAgent, aNowWorkflow, nowModelOf } from './testing/nowModelOf';
 
 type StatusParams = {
   readonly statuses: ReadonlyArray<readonly [string, 'running' | 'blocked' | 'failed']>;
@@ -65,5 +66,50 @@ describe('liveSectionsOf', () => {
         ],
       }),
     ).toEqual([['running', ['Add the limit table', 'Check the docs']]]);
+  });
+
+  it('puts a workflow with a stopped step under Stopped, like a stopped agent', () => {
+    const attached = aNowRun({
+      key: 'ship',
+      title: 'Ship',
+      workflow: aNowWorkflow({ key: 'ship', name: 'Ship', stepNames: ['Scope', 'Review'] }),
+    });
+    const agents = [aNowStepAgent({ attached, stepIndex: 0, status: 'stopped', name: 'Scope' })];
+    const groups = liveGroupsOf({
+      model: nowModelOf({ agents, runs: [attached] }),
+      agents,
+      now: FIXTURE_NOW,
+    });
+
+    expect(groups.map((group) => group.state)).toEqual(['waiting']);
+    expect(liveSectionsOf({ groups }).map((section) => section.id)).toEqual(['stopped']);
+  });
+
+  it('sorts each section by start time, not by the state priority', () => {
+    const attached = aNowRun({
+      key: 'ship',
+      title: 'Ship',
+      workflow: aNowWorkflow({ key: 'ship', name: 'Ship', stepNames: ['Scope', 'Review'] }),
+    });
+    const earlier = {
+      ...aNowAgent({ key: 'early', name: 'Rebuild the index', status: 'running' }),
+      startedAt: brandId<IsoDateTime>({ value: '2026-10-13T11:00:00.000Z' }),
+    };
+    const step = aNowStepAgent({ attached, stepIndex: 0, status: 'running', name: 'Scope' });
+    const agents = [earlier, step];
+    const groups = liveGroupsOf({
+      model: nowModelOf({
+        agents,
+        runs: [attached],
+        decidingRunIds: new Set([attached.run.id]),
+      }),
+      agents,
+      now: FIXTURE_NOW,
+    });
+
+    expect(groups.map((group) => group.state)).toEqual(['deciding', 'working']);
+    expect(liveSectionsOf({ groups }).map((section) => section.groups.map((g) => g.title))).toEqual(
+      [['Rebuild the index', 'Ship']],
+    );
   });
 });

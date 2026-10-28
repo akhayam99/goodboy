@@ -26,7 +26,7 @@ const SECTION_TITLE: Readonly<Record<LiveSectionId, string>> = {
 };
 
 const isStoppedByYou = ({ group }: GroupParams): boolean => {
-  if (group.kind !== 'agent') {
+  if (group.kind === 'auto') {
     return false;
   }
   const kind = group.rowState.reason?.kind;
@@ -51,6 +51,8 @@ const liveSectionIdOf = ({ group }: GroupParams): LiveSectionId => {
 
 export const liveSectionsOf = ({ groups }: Params): ReadonlyArray<LiveSection> =>
   SECTION_ORDER.flatMap((id) => {
-    const inSection = groups.filter((group) => liveSectionIdOf({ group }) === id);
+    const inSection = groups
+      .filter((group) => liveSectionIdOf({ group }) === id)
+      .sort((first, second) => first.startedAt - second.startedAt);
     return inSection.length === 0 ? [] : [{ id, title: SECTION_TITLE[id], groups: inSection }];
   });
