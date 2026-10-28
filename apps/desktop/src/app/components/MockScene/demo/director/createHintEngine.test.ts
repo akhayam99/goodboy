@@ -124,6 +124,19 @@ const click = ({ selector, isTrusted = true }: ClickParams): void => {
 };
 
 describe('the hint engine', () => {
+  it('follows a control that moves without any change to the page', async () => {
+    document.body.innerHTML = BUTTONS;
+    const { engine, reports } = engineFor({ hints: STORY });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    vi.mocked(Element.prototype.getBoundingClientRect).mockReturnValue(
+      new DOMRect(100, 300, 40, 24),
+    );
+    vi.advanceTimersByTime(300);
+    expect(reports.at(-1)).toMatchObject({ type: 'anchor', rect: { y: 300 } });
+    engine.dispose();
+  });
+
   it('stays silent until the shell names a track', async () => {
     document.body.innerHTML = BUTTONS;
     const { engine, reports } = engineFor({ hints: STORY });

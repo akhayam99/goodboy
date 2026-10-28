@@ -77,6 +77,7 @@ const CUT_TOLERANCE = 2;
 const HOVER_GRACE_MS = 600;
 const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
+const POLL_MS = 250;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
@@ -198,6 +199,7 @@ export const createHintEngine = ({
   let dwellUntil = 0;
   let dwellStart = 0;
   let dwellTimer: number | null = null;
+  let pollTimer: number | null = null;
   const results = createResultTracker({ view, onChange: () => schedule() });
 
   const envelope = () => ({
@@ -415,6 +417,17 @@ export const createHintEngine = ({
     pending = view.requestAnimationFrame(evaluate);
   };
 
+  const poll = (): void => {
+    if (isDisposed) {
+      return;
+    }
+    if (pending !== null) {
+      view.cancelAnimationFrame(pending);
+    }
+    evaluate();
+    pollTimer = view.setTimeout(poll, POLL_MS);
+  };
+
   const guard = ({ event }: GuardParams): void => {
     if (!isGuarding || !event.isTrusted || !(event.target instanceof Node)) {
       return;
@@ -501,6 +514,9 @@ export const createHintEngine = ({
       settled = new Set(settledIds);
       lastSignature = '';
       schedule();
+      if (pollTimer === null) {
+        pollTimer = view.setTimeout(poll, POLL_MS);
+      }
     },
     reveal: ({ hintId }) => {
       const hint = hints.find((entry) => entry.id === hintId);
@@ -531,6 +547,9 @@ export const createHintEngine = ({
       }
       if (dwellTimer !== null) {
         view.clearTimeout(dwellTimer);
+      }
+      if (pollTimer !== null) {
+        view.clearTimeout(pollTimer);
       }
       results.dispose();
       unsubscribe();

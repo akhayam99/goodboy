@@ -547,6 +547,48 @@ describe('demo playground', () => {
     expect(visibleFrame()).toBe(next);
   });
 
+  it('shows the coach of the step in the next scene once the stage switches to it', () => {
+    seedProgress({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
+    render(<DemoPlayground />);
+    const { hints, beats } = chapterOf({ id: 'ship' });
+    const crossing = hints.findIndex(
+      (entry, index) => index > 0 && entry.beat !== (hints[index - 1]?.beat ?? 0),
+    );
+    const crossed = hints[crossing - 1];
+    const crossingHint = hints[crossing];
+    if (crossed === undefined || crossingHint === undefined) {
+      throw new Error('no crossing hint');
+    }
+    const first = visibleFrame();
+    report({ frame: first, type: 'ready' });
+    const next = frameOf({ scene: beats[crossingHint.beat]?.scene ?? '' });
+    report({ frame: next, type: 'ready' });
+    for (const entry of hints.slice(0, crossing)) {
+      hint({ frame: first, hintId: entry.id });
+      tried({ frame: first, hintId: entry.id });
+      hint({
+        frame: first,
+        hintId: crossingHint.id,
+        rect: { x: 10, y: 10, width: 20, height: 20 },
+      });
+      elapse({ ms: dwellOf({ hint: entry }) });
+    }
+    const post = vi.spyOn(next.contentWindow ?? window, 'postMessage');
+    elapse({ ms: RESULT_DWELL_MS });
+    expect(visibleFrame()).toBe(next);
+    expect(screen.queryByRole('note')).toBeNull();
+    hint({ frame: first, hintId: crossingHint.id });
+    expect(screen.queryByRole('note')).toBeNull();
+    report({ frame: next, type: 'ready' });
+    const tracks = post.mock.calls.filter(
+      ([message]) => typeof message === 'object' && message !== null && message.type === 'hints',
+    );
+    expect(tracks.length).toBeGreaterThan(0);
+    hint({ frame: next, hintId: crossingHint.id });
+    expect(screen.getByRole('note').textContent).toContain(crossingHint.copy);
+  });
+
   it('keeps the result line until the next control is on screen', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
