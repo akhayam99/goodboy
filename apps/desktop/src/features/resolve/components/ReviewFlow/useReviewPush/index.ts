@@ -56,7 +56,7 @@ type PressParams = {
   readonly isRetry: boolean;
 };
 
-export type FixTarget = {
+type FixTarget = {
   readonly mountId: MountId;
   readonly pending?: string;
 };
