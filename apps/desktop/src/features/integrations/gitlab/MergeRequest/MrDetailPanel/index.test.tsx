@@ -312,6 +312,13 @@ describe('MrDetailPanel', () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(h.showToast).not.toHaveBeenCalled();
 
+    await waitFor(
+      () => {
+        const verbs = screen.getAllByRole('button', { name: /^(Merge|Confirm merge)$/ });
+        expect(verbs.some((verb) => verb.hasAttribute('disabled'))).toBe(false);
+      },
+      { timeout: 5000 },
+    );
     if (screen.queryByRole('button', { name: 'Confirm merge' }) === null) {
       fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     }
