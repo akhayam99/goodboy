@@ -35,7 +35,7 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
-import { formatError } from '@goodboy/ui';
+import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import {
   listOpenQuestionsForSession,
   updateWorkflowRunOrchestrationOutcome,
@@ -831,7 +831,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
-      if (readHintIds.size > 0) {
+      if (readHintIds.size > 0 && decision.action !== 'blocked') {
         await updateOrchestratorHints({
           set,
           get,
@@ -1045,7 +1045,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         kind: 'error',
         severity: 'warning',
         title: 'Orchestrated run blocked',
-        body: decision.reason,
+        body: inlineMarkdownText({ text: decision.reason }),
         sessionId,
         ...(terminalAgentId != null && {
           action: { kind: 'open-agent', sessionId, agentId: terminalAgentId },

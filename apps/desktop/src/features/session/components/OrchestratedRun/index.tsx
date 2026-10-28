@@ -13,6 +13,7 @@ import { OrchestratedGoal } from './OrchestratedGoal';
 import { OrchestratedResult } from './OrchestratedResult';
 import { OrchestratedRouting } from './OrchestratedRouting';
 import { OrchestratedTail } from './OrchestratedTail';
+import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { PresetChangeAsk } from './PresetChangeAsk';
 
 type Props = {
@@ -26,14 +27,20 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
   const sessionId = session.id;
   const runningStep =
     view.agents.find((agent) => agent.parentAgentId == null && agent.status === 'running') ?? null;
-  const isDone = view.orchestrator.state.phase === 'done';
+  const phase = view.orchestrator.state.phase;
+  const isDone = phase === 'done';
   const titleMenu = useObjectMenuTrigger({
     target: { kind: 'workflowRun', sessionId, runId: run.id, stepAgentId: runningStep?.id ?? null },
     anchorKey: `workflow-run-title:${run.id}`,
     viewing: { kind: 'workflowRun', id: run.id },
   });
-  const composer = view.isDiscarded ? null : isDone ? (
-    <OrchestratedContinue key={run.id} sessionId={sessionId} runId={run.id} />
+  const composer = view.isDiscarded ? null : isDone || phase === 'blocked' ? (
+    <OrchestratedContinue
+      key={run.id}
+      sessionId={sessionId}
+      runId={run.id}
+      {...(phase === 'blocked' && { label: ORCHESTRATED_COPY.hintLabel })}
+    />
   ) : (
     <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
   );

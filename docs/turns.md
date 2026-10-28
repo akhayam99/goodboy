@@ -1325,8 +1325,9 @@ degraded step of the session. An orchestrator Retry asks the orchestrator again
 for that run. A model that is no longer available to the account still raises
 **Summarizer model ... is unavailable** once per model, because the setting needs
 fixing. **Orchestrated run blocked** is not a failure: the orchestrator chose to
-stop and needs you. It raises once per run with **Open agent**, and clears when
-the run moves on.
+stop and needs you. It raises once per run with **Open agent**, reads as plain
+text (the reason's markdown marks are dropped), and clears when the run moves
+on.
 
 ## Workspace chat turns
 

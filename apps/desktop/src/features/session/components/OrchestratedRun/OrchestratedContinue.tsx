@@ -11,9 +11,14 @@ import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 type Props = {
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
+  readonly label?: string;
 };
 
-export const OrchestratedContinue = ({ sessionId, runId }: Props) => {
+export const OrchestratedContinue = ({
+  sessionId,
+  runId,
+  label = ORCHESTRATED_COPY.continueLabel,
+}: Props) => {
   const continueWithHint = useAppStore((state) => state.continueWithHint);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export const OrchestratedContinue = ({ sessionId, runId }: Props) => {
 
   return (
     <form
-      aria-label={ORCHESTRATED_COPY.continueLabel}
+      aria-label={label}
       data-orchestrated-continue=""
       className="flex min-w-0 flex-col gap-2"
       onSubmit={(event) => {
@@ -69,8 +74,8 @@ export const OrchestratedContinue = ({ sessionId, runId }: Props) => {
       )}
       <PromptField
         kind="message"
-        label={ORCHESTRATED_COPY.continueLabel}
-        placeholder={ORCHESTRATED_COPY.continueLabel}
+        label={label}
+        placeholder={label}
         value={text}
         onChange={setText}
         onSubmit={() => void send()}
