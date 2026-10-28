@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 
 type TurnEnvelope = {
   readonly runId: string;
@@ -106,6 +113,38 @@ describe('runTurn', () => {
       runId,
       provider: 'cursor',
       model: 'gpt-5.5-high',
+      workingDir: '/tmp/worktree',
+      writableRoots: [],
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toHaveProperty('message', message);
+  });
+
+  it('surfaces the copilot stderr line when the model is not available', async () => {
+    const runId = brandId<ProviderRunId>({ value: 'copilot-unknown-model-run' });
+    const message = 'Error: Model "gpt-5-mini" from --model flag is not available.';
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        for (const data of [
+          { kind: 'status', state: 'disabled' },
+          { kind: 'startup', outcome: 'skipped_below_threshold', fileCount: 1, eligible: false },
+        ]) {
+          capturedListeners[0]?.({
+            runId,
+            type: 'line',
+            line: JSON.stringify({ type: 'session.indexed_search', data, ephemeral: true }),
+          });
+        }
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 1, stderr: `${message}\n` });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn({
+      runId,
+      provider: 'copilot',
+      model: 'gpt-5-mini',
       workingDir: '/tmp/worktree',
       writableRoots: [],
       prompt: 'hello',

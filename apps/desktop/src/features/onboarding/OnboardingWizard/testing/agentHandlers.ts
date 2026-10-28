@@ -25,9 +25,15 @@ type AgentsParams = {
   readonly signedIn: ReadonlyArray<ProviderId>;
   readonly codexVersion?: string;
   readonly claudeVersion?: string;
+  readonly copilotVersion?: string;
 };
 
-export const agentHandlers = ({ signedIn, codexVersion, claudeVersion }: AgentsParams) => ({
+export const agentHandlers = ({
+  signedIn,
+  codexVersion,
+  claudeVersion,
+  copilotVersion,
+}: AgentsParams) => ({
   refresh_provider_status: agentStatus({
     id: 'anthropic',
     binary: 'claude',
@@ -40,6 +46,11 @@ export const agentHandlers = ({ signedIn, codexVersion, claudeVersion }: AgentsP
   }),
   refresh_cursor_status: agentStatus({ id: 'cursor', binary: 'cursor-agent' }),
   refresh_gemini_status: agentStatus({ id: 'gemini', binary: 'agy' }),
+  refresh_copilot_status: agentStatus({
+    id: 'copilot',
+    binary: 'copilot',
+    ...(copilotVersion === undefined ? {} : { version: copilotVersion }),
+  }),
   check_provider_auth: (args: AuthArgs | undefined) =>
     args?.providerId !== undefined && signedIn.includes(args.providerId)
       ? { state: 'connected', identity: 'dana@northwind.dev' }

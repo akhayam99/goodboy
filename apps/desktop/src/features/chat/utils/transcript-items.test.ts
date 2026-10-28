@@ -791,6 +791,28 @@ describe('reduceTranscript usage', () => {
     expect(usage?.kind === 'usage' ? usage.usage.premiumRequests : null).toBe(3);
   });
 
+  it('keeps the AI credits of the usage events of one run', () => {
+    const withCredits = ({ nanoAiu }: { readonly nanoAiu: number }): TurnEvent => {
+      const event = premiumUsageEvent({ premiumRequests: 1 });
+      return event.kind === 'usage' ? { ...event, usage: { ...event.usage, nanoAiu } } : event;
+    };
+    const items = reduceTranscript([withCredits({ nanoAiu: 5 }), withCredits({ nanoAiu: 7 })]);
+    const usage = items.find((item) => item.kind === 'usage');
+    expect(usage?.kind === 'usage' ? usage.usage.nanoAiu : null).toBe(12);
+  });
+
+  it('keeps the latest session totals instead of adding them', () => {
+    const withTotals = ({ total }: { readonly total: number }): TurnEvent => {
+      const event = premiumUsageEvent({ premiumRequests: 1 });
+      return event.kind === 'usage'
+        ? { ...event, usage: { ...event.usage, sessionPremiumRequests: total } }
+        : event;
+    };
+    const items = reduceTranscript([withTotals({ total: 0.33 }), withTotals({ total: 0.66 })]);
+    const usage = items.find((item) => item.kind === 'usage');
+    expect(usage?.kind === 'usage' ? usage.usage.sessionPremiumRequests : null).toBe(0.66);
+  });
+
   it('leaves premium requests out of a run that billed none', () => {
     const items = reduceTranscript([usageEvent(), usageEvent()]);
     const usage = items.find((item) => item.kind === 'usage');

@@ -43,6 +43,7 @@ const PRODUCT_NAME: Readonly<Record<AgentProviderId, string>> = {
   codex: 'Codex',
   cursor: 'Cursor Agent',
   gemini: 'Antigravity',
+  copilot: 'Copilot',
 };
 
 const VERSION_NUMBER = /\d+(?:\.\d+)+/;

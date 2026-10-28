@@ -1,0 +1,1 @@
+Error: Model "gpt-5-mini" from --model flag is not available.

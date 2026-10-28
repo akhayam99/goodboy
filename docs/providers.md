@@ -811,18 +811,26 @@ copilot -p <PROMPT> --model <MODEL> -C <DIR> --output-format=json --disable-clie
 - The stream is JSON lines (`--output-format=json`). `copilot/parser.ts` reads
   `assistant.message_delta` as partial text and drops the `assistant.message` that repeats
   it, `tool.execution_start` and `tool.execution_complete` as a tool call (with
-  `fileEdits` as file edits), `session.usage_checkpoint` as the token counts and the last
+  `fileEdits` as file edits; a denied tool has `success: false` and `error.message`, which
+  becomes the tool error's output), `session.usage_checkpoint` as the token counts and the last
   request's size, and `result` as the session id and the premium requests. An event the
   parser does not map is dropped when the CLI marks it `ephemeral`, and otherwise kept as an
   `unknown_payload` so a new event type shows up instead of vanishing
 - A turn resumes with `--resume=<session id>`; the id comes from `result.sessionId`, so
   Copilot is a native-resume provider (`shouldReplayHistoryAsText: false`, and
   `planRestartResume` resumes it natively)
-- Premium requests are `result.usage.premiumRequests`. `ProviderUsage.premiumRequests`
+- Premium requests are `result.usage.premiumRequests`, and after a resume that number is the
+  total of the whole CLI session, not of the turn. The parser keeps the totals as
+  `ProviderUsage.sessionPremiumRequests` and `sessionNanoAiu`; `copilotTurnUsage` in
+  `store/slices/turn/copilotTurnUsage/` subtracts the previous total of the same provider session (read from
+  the agent's stored usage events, matched by the `provider_session_init` of the same run)
+  so `premiumRequests` and `nanoAiu` hold the turn's own share. A new session after a reset
+  starts from zero. `ProviderUsage.premiumRequests`
   carries them to the turn footer, which shows them in place of a cost. The dollar cost of
   a Copilot turn is always 0, `costCoverage` is `unpriced` and `getProviderModelPrice`
-  is `null`. The stream also reports `totalNanoAiu`; Goodboy does not show it, because
-  the unit is not documented in the CLI help
+  is `null`. The stream also reports `totalNanoAiu`; Goodboy keeps it as
+  `ProviderUsage.nanoAiu`, summed per run, and does not show it, because the unit is not
+  documented in the CLI help
 - The prompt travels in argv: no real run has confirmed that `-p` reads stdin
 - A side job (planner, summarizer) runs the same read-only flags and, when it has no tools,
   also `--deny-tool=read` and `--deny-tool=url`. `provider_commands.rs` updates the CLI with

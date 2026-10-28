@@ -10,7 +10,10 @@ import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { probeLock } from './probeLock';
 import type { GetFn, SetFn } from './types';
 
-export type AgentProviderId = Extract<ProviderId, 'anthropic' | 'codex' | 'cursor' | 'gemini'>;
+export type AgentProviderId = Extract<
+  ProviderId,
+  'anthropic' | 'codex' | 'cursor' | 'gemini' | 'copilot'
+>;
 
 export type ProbeAgentParams = {
   readonly providerId: AgentProviderId;

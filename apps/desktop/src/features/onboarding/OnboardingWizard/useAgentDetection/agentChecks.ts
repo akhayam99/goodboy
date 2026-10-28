@@ -32,6 +32,7 @@ const idleChecks = (): AgentChecks => ({
   codex: IDLE_CHECK,
   cursor: IDLE_CHECK,
   gemini: IDLE_CHECK,
+  copilot: IDLE_CHECK,
 });
 
 type EngineParams = {

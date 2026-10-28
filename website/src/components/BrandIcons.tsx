@@ -7,6 +7,7 @@ const PROVIDER_IDS = [
   'codex',
   'cursor',
   'gemini',
+  'copilot',
   'opencode',
   'openrouter',
   'moonshot',

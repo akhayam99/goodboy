@@ -38,6 +38,7 @@
   --g-provider-cursor: oklch(0.5 0.17 290);
   --g-provider-codex: oklch(0.48 0.15 148);
   --g-provider-gemini: oklch(0.5 0.16 240);
+  --g-provider-copilot: oklch(0.24 0 0);
   --g-provider-opencode: #bc6d37;
   --g-provider-openrouter: #5558d9;
   --g-provider-moonshot: #1280fb;
@@ -102,6 +103,7 @@
   --g-provider-cursor: oklch(0.7 0.16 290);
   --g-provider-codex: oklch(0.72 0.16 150);
   --g-provider-gemini: oklch(0.72 0.16 240);
+  --g-provider-copilot: oklch(0.88 0 0);
   --g-provider-opencode: #fab283;
   --g-provider-openrouter: #676af6;
   --g-provider-moonshot: #1783ff;
