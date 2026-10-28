@@ -30,6 +30,7 @@ beforeEach(async () => {
     <button type="button" id="connect">Connect</button>
     <input type="text" id="field" />
     <button type="button" id="continue">Continue</button>
+    <button type="button" id="other">Other</button>
   `;
   vi.useFakeTimers({
     toFake: ['setTimeout', 'clearTimeout', 'Date', 'requestAnimationFrame', 'cancelAnimationFrame'],
@@ -110,15 +111,16 @@ const elapse = async (): Promise<void> => {
 
 type StartParams = {
   readonly isGuarding: boolean;
+  readonly hints?: ReadonlyArray<DemoHint>;
 };
 
-const start = ({ isGuarding }: StartParams) => {
+const start = ({ isGuarding, hints = HINTS }: StartParams) => {
   const reports: DemoHintReport[] = [];
   const engine = createHintEngine({
     store,
     view: window,
     generation: () => 0,
-    hintsOf: ({ chapterId }) => (chapterId === 'test' ? HINTS : []),
+    hintsOf: ({ chapterId }) => (chapterId === 'test' ? hints : []),
     onReport: ({ report }) => reports.push(report),
   });
   engine.setTrack({ chapterId: 'test', settledIds: [], isGuarding });
@@ -129,7 +131,43 @@ const start = ({ isGuarding }: StartParams) => {
   return { engine, tried, blocked };
 };
 
+const EXCLUSIVE: ReadonlyArray<DemoHint> = HINTS.map((hint) => ({
+  ...hint,
+  isBlocked: ({ target }) => target.closest('#other') !== null,
+}));
+
 describe('the skip guard', () => {
+  it('stops a click and an Enter on a control the active step names as blocked', async () => {
+    const { engine, tried, blocked } = start({ isGuarding: true, hints: EXCLUSIVE });
+    await elapse();
+    expect(visitorClick({ selector: '#other' })).toBe(true);
+    expect(visitorKey({ selector: '#other', key: 'Enter' })).toBe(true);
+    await elapse();
+    expect(blocked()).toEqual(['connect', 'connect']);
+    expect(tried()).toEqual([]);
+    engine.dispose();
+  });
+
+  it('leaves the keys that only move focus on a blocked control alone', async () => {
+    const { engine, blocked } = start({ isGuarding: true, hints: EXCLUSIVE });
+    await elapse();
+    expect(visitorKey({ selector: '#other', key: 'Tab' })).toBe(false);
+    expect(visitorKey({ selector: '#other', key: 'ArrowDown' })).toBe(false);
+    await elapse();
+    expect(blocked()).toEqual([]);
+    engine.dispose();
+  });
+
+  it('still lets the visitor press the control of the active step', async () => {
+    const { engine, tried, blocked } = start({ isGuarding: true, hints: EXCLUSIVE });
+    await elapse();
+    expect(visitorClick({ selector: '#connect' })).toBe(false);
+    await elapse();
+    expect(blocked()).toEqual([]);
+    expect(tried()).toEqual(['connect']);
+    engine.dispose();
+  });
+
   it('stops a click on the control of a later step and points back at the active one', async () => {
     const { engine, tried, blocked } = start({ isGuarding: true });
     await elapse();

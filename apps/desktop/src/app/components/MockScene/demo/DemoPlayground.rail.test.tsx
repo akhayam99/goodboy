@@ -153,28 +153,28 @@ describe('demo rail', () => {
   it('draws one spine with a marker per group and the open group steps on the app rail primitives', () => {
     render(<DemoPlayground />);
     const cells = railOf().querySelectorAll('[data-spawned-rail]');
-    expect(cells).toHaveLength(groupRows().length + chapterOf({ id: 'setup' }).hints.length);
+    expect(cells).toHaveLength(groupRows().length + chapterOf({ id: 'bring' }).hints.length);
     expect(
       railOf().querySelectorAll('[data-testid="timeline-rail-segment"]').length,
     ).toBeGreaterThan(groupRows().length);
     expect(railOf().querySelectorAll('[data-node-size="sm"]')).toHaveLength(
-      chapterOf({ id: 'setup' }).hints.length,
+      chapterOf({ id: 'bring' }).hints.length,
     );
   });
 
   it('lists the steps under the open group only and keeps the other groups to a title and a count', () => {
-    seedDone({ ids: ['setup'] });
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const steps = within(railOf()).getByRole('list', { name: 'Steps in this group' });
     expect(Array.from(steps.querySelectorAll('li')).map((step) => step.textContent)).toEqual(
-      chapterOf({ id: 'agent' }).hints.map((entry) => entry.label),
+      chapterOf({ id: 'direction' }).hints.map((entry) => entry.label),
     );
     expect(within(railOf()).getAllByRole('list')).toHaveLength(1);
-    expect(rowOf({ title: 'Set up' }).textContent).toContain(
-      `${chapterOf({ id: 'setup' }).hints.length} of ${chapterOf({ id: 'setup' }).hints.length}`,
+    expect(rowOf({ title: 'Bring your repositories' }).textContent).toContain(
+      `${chapterOf({ id: 'bring' }).hints.length} of ${chapterOf({ id: 'bring' }).hints.length}`,
     );
-    expect(rowOf({ title: 'Orchestrate' }).textContent).toContain('Orchestrate');
+    expect(rowOf({ title: 'Guide the work' }).textContent).toContain('Guide the work');
   });
 
   it('marks the step in progress as live and the ones after it as next', () => {
@@ -188,7 +188,7 @@ describe('demo rail', () => {
 
   it('gives a finished step a check and makes the next step live', () => {
     render(<DemoPlayground />);
-    const { hints } = chapterOf({ id: 'setup' });
+    const { hints } = chapterOf({ id: 'bring' });
     tried({ hintId: hints[0]?.id ?? '' });
     expect(stepRows()[0]?.getAttribute('data-state')).toBe('done');
     expect(stepRows()[0]?.querySelector('[data-node-state="done"]')).not.toBeNull();
@@ -208,49 +208,42 @@ describe('demo rail', () => {
 
   it('locks the groups after the current one: muted, disabled and without a hover state', () => {
     render(<DemoPlayground />);
-    for (const title of [
-      'Orchestrate',
-      'Find work and results',
-      'Review and ship',
-      'Get Goodboy',
-    ]) {
+    for (const title of ['Guide the work', 'Review and ship', 'Get Goodboy']) {
       const row = rowOf({ title });
       expect(row.getAttribute('data-access')).toBe('locked');
       expect(row.disabled).toBe(true);
       fireEvent.click(row);
       expect(window.location.hash).not.toBe(`#${title}`);
     }
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
-    within(rowOf({ title: 'Orchestrate' })).getByText(/Locked/);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
+    within(rowOf({ title: 'Guide the work' })).getByText(/Locked/);
   });
 
-  it('keeps the optional Set up open and lets the visitor start at the first required group', () => {
+  it('opens the first group and keeps the later ones locked until it is done', () => {
     render(<DemoPlayground />);
-    expect(rowOf({ title: 'Set up' }).disabled).toBe(false);
-    expect(rowOf({ title: 'Work with an agent' }).disabled).toBe(false);
-    fireEvent.click(rowOf({ title: 'Work with an agent' }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
-    fireEvent.click(rowOf({ title: 'Set up' }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
+    expect(rowOf({ title: 'Bring your repositories' }).disabled).toBe(false);
+    expect(rowOf({ title: 'Set the direction' }).disabled).toBe(true);
+    fireEvent.click(rowOf({ title: 'Set the direction' }));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bring your repositories');
   });
 
   it('keeps a finished group open to revisit and unlocks the next one only when it is done', () => {
-    seedDone({ ids: ['setup', 'agent'] });
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
-    expect(rowOf({ title: 'Work with an agent' }).getAttribute('data-access')).toBe('done');
-    expect(rowOf({ title: 'Work with an agent' }).disabled).toBe(false);
-    expect(rowOf({ title: 'Orchestrate' }).getAttribute('data-access')).toBe('open');
-    expect(rowOf({ title: 'Find work and results' }).getAttribute('data-access')).toBe('locked');
+    expect(rowOf({ title: 'Set the direction' }).getAttribute('data-access')).toBe('done');
+    expect(rowOf({ title: 'Set the direction' }).disabled).toBe(false);
+    expect(rowOf({ title: 'Guide the work' }).getAttribute('data-access')).toBe('open');
+    expect(rowOf({ title: 'Review and ship' }).getAttribute('data-access')).toBe('locked');
     expect(stepRows().every((step) => step.getAttribute('data-state') === 'done')).toBe(true);
   });
 
   it('lights Up next on the next group only once the current one is fully done', () => {
-    window.history.replaceState(null, '', '/?scene=demo#agent');
-    seedDone({ ids: ['setup'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
+    seedDone({ ids: ['bring'] });
     render(<DemoPlayground />);
-    const row = () => rowOf({ title: 'Orchestrate' });
-    const { hints } = chapterOf({ id: 'agent' });
+    const row = () => rowOf({ title: 'Guide the work' });
+    const { hints } = chapterOf({ id: 'direction' });
     expect(row().getAttribute('data-up-next')).toBe('none');
     for (const entry of hints.slice(0, -1)) {
       tried({ hintId: entry.id });
@@ -264,34 +257,34 @@ describe('demo rail', () => {
     expect(row().getAttribute('data-up-next')).toBe('ready');
     expect(row().getAttribute('data-pulsing')).toBe('true');
     expect(row().textContent).toContain('Up next');
-    expect(row().textContent).toContain('Orchestrate');
+    expect(row().textContent).toContain('Guide the work');
     act(() => {
       vi.advanceTimersByTime(10000);
     });
     expect(row().getAttribute('data-up-next')).toBe('ready');
     expect(row().getAttribute('data-pulsing')).toBe('false');
     fireEvent.click(row());
-    expect(window.location.hash).toBe('#orchestrate');
+    expect(window.location.hash).toBe('#guide');
   });
 
-  it('lights Up next for Set up as soon as its last step is done, with no other group glowing before', () => {
+  it('lights Up next for the first group as soon as its last step is done, with no other group glowing before', () => {
     render(<DemoPlayground />);
     expect(railOf().querySelector('[data-up-next="ready"]')).toBeNull();
-    finish({ id: 'setup' });
-    expect(rowOf({ title: 'Work with an agent' }).getAttribute('data-up-next')).toBe('ready');
+    finish({ id: 'bring' });
+    expect(rowOf({ title: 'Set the direction' }).getAttribute('data-up-next')).toBe('ready');
     expect(railOf().querySelectorAll('[data-up-next="ready"]')).toHaveLength(1);
   });
 
   it('puts Get Goodboy at the end of the spine, locked until Review and ship is done', () => {
-    seedDone({ ids: ['setup', 'agent', 'orchestrate', 'find'] });
-    window.history.replaceState(null, '', '/?scene=demo#review');
+    seedDone({ ids: ['bring', 'direction', 'guide'] });
+    window.history.replaceState(null, '', '/?scene=demo#ship');
     render(<DemoPlayground />);
     const last = groupRows().at(-1);
     expect(last?.textContent).toContain('Get Goodboy');
     expect(last?.getAttribute('data-access')).toBe('locked');
     expect(last?.disabled).toBe(true);
     expect(last?.getAttribute('data-up-next')).toBe('none');
-    finish({ id: 'review' });
+    finish({ id: 'ship' });
     expect(last?.getAttribute('data-access')).toBe('open');
     expect(last?.disabled).toBe(false);
     expect(last?.getAttribute('data-up-next')).toBe('ready');
@@ -301,20 +294,20 @@ describe('demo rail', () => {
   });
 
   it('offers a compact group switcher with the current step for narrow windows', () => {
-    seedDone({ ids: ['setup', 'agent'] });
-    window.history.replaceState(null, '', '/?scene=demo#orchestrate');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#guide');
     render(<DemoPlayground />);
     const compact = screen.getByRole('navigation', { name: 'Playground navigation' });
-    expect(compact.textContent).toContain('Orchestrate');
-    expect(compact.textContent).toContain('3 of 5');
-    const first = chapterOf({ id: 'orchestrate' }).hints[0];
+    expect(compact.textContent).toContain('Guide the work');
+    expect(compact.textContent).toContain('3 of 4');
+    const first = chapterOf({ id: 'guide' }).hints[0];
     expect(within(compact).getByLabelText('Current step').textContent).toBe(
-      `Step 1 of ${chapterOf({ id: 'orchestrate' }).hints.length}: ${first?.label}`,
+      `Step 1 of ${chapterOf({ id: 'guide' }).hints.length}: ${first?.label}`,
     );
     const next = within(compact).getByRole('button', { name: 'Next group' });
     expect(next.hasAttribute('disabled')).toBe(true);
     fireEvent.click(within(compact).getByRole('button', { name: 'Previous group' }));
-    expect(window.location.hash).toBe('#agent');
+    expect(window.location.hash).toBe('#direction');
   });
 
   it('has no timeline bar at the bottom of the stage', () => {

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_CHAPTERS } from '../demoChapters';
 import { headerInstruction } from './headerInstruction';
-import { REVIEW_HINTS } from './reviewHints';
+import { SHIP_HINTS } from './shipHints';
 
-const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'review');
-const note = REVIEW_HINTS.find((hint) => hint.id === 'diff-note');
-const handler = REVIEW_HINTS.find((hint) => hint.id === 'diff-file');
+const chapter = DEMO_CHAPTERS.find((entry) => entry.id === 'ship');
+const fix = SHIP_HINTS.find((hint) => hint.id === 'fix-start');
+const apply = SHIP_HINTS.find((hint) => hint.id === 'fix-apply');
 
-if (chapter === undefined || note === undefined || handler === undefined) {
-  throw new Error('missing review fixtures');
+if (chapter === undefined || fix === undefined || apply === undefined) {
+  throw new Error('missing ship fixtures');
 }
 
 describe('the header line', () => {
@@ -18,10 +18,10 @@ describe('the header line', () => {
         chapter,
         held: undefined,
         acting: undefined,
-        active: note,
+        active: fix,
         nextTitle: 'Get Goodboy',
       }),
-    ).toBe(note.instruction);
+    ).toBe(fix.instruction);
   });
 
   it('shows the progress line between the press and the result', () => {
@@ -29,11 +29,11 @@ describe('the header line', () => {
       headerInstruction({
         chapter,
         held: undefined,
-        acting: note,
-        active: note,
+        acting: fix,
+        active: fix,
         nextTitle: 'Get Goodboy',
       }),
-    ).toBe('Write your note, then press Add note.');
+    ).toBe(fix.progress);
   });
 
   it('keeps the instruction when the pressed step has no progress line', () => {
@@ -41,23 +41,23 @@ describe('the header line', () => {
       headerInstruction({
         chapter,
         held: undefined,
-        acting: handler,
-        active: handler,
+        acting: apply,
+        active: apply,
         nextTitle: 'Get Goodboy',
       }),
-    ).toBe(handler.instruction);
+    ).toBe(apply.instruction);
   });
 
   it('shows the result of a finished step ahead of everything else', () => {
     expect(
       headerInstruction({
         chapter,
-        held: note,
-        acting: note,
-        active: handler,
+        held: fix,
+        acting: fix,
+        active: apply,
         nextTitle: 'Get Goodboy',
       }),
-    ).toBe(note.result);
+    ).toBe(fix.result);
   });
 
   it('points at the next group once every step is done', () => {

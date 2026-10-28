@@ -105,24 +105,22 @@ describe('demo playground chrome', () => {
     );
   });
 
-  it('offers Download for macOS and Star on GitHub in exactly one place, the Get Goodboy screen', () => {
+  it('offers Download for macOS in exactly one place, the Get Goodboy screen', () => {
     seedDone({ ids: ALL_IDS });
     const groupIds = DEMO_CHAPTERS.map((chapter) => chapter.id);
     for (const id of groupIds) {
       window.history.replaceState(null, '', `/?scene=demo#${id}`);
       const view = render(<DemoPlayground />);
       expect(screen.queryAllByRole('link', { name: /Download for macOS/ })).toHaveLength(0);
-      expect(screen.queryAllByRole('link', { name: /Star on GitHub/ })).toHaveLength(0);
       view.unmount();
     }
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
     expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
-    expect(screen.getAllByRole('link', { name: /Star on GitHub/ })).toHaveLength(1);
     expect(document.querySelector('header')?.querySelector('a[target="_blank"]')).toBeNull();
   });
 
-  it('closes on a calm Get Goodboy screen with one line, the two calls to action and the version', () => {
+  it('closes on a calm Get Goodboy screen with one line and the download action', () => {
     seedDone({ ids: ALL_IDS });
     window.history.replaceState(null, '', '/?scene=demo#get');
     render(<DemoPlayground />);
@@ -134,10 +132,7 @@ describe('demo playground chrome', () => {
         .getByRole('link', { name: /Download for macOS/ })
         .getAttribute('href'),
     ).toBe('https://goodboy-ai.dev');
-    within(closing).getByRole('link', { name: /Star on GitHub/ });
-    expect(within(closing).getByRole('link', { name: /What is new in/ }).textContent).toContain(
-      'Version',
-    );
+    expect(within(closing).queryAllByRole('link')).toHaveLength(1);
     expect(document.querySelector('iframe')).toBeNull();
   });
 
@@ -161,12 +156,12 @@ describe('demo playground chrome', () => {
 
   it('opens in the theme named in the url, which beats the stored one, then drops it from the url', () => {
     window.localStorage.setItem(DEMO_THEME_KEY, 'dark');
-    window.history.replaceState(null, '', '/?scene=demo&theme=light#agent');
+    window.history.replaceState(null, '', '/?scene=demo&theme=light#direction');
     render(<DemoPlayground />);
     expect(visibleFrame().getAttribute('src')).toContain('theme=light');
     expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeNull();
     expect(window.location.search).toBe('?scene=demo');
-    expect(window.location.hash).toBe('#agent');
+    expect(window.location.hash).toBe('#direction');
     expect(window.localStorage.getItem(DEMO_THEME_KEY)).toBe('dark');
   });
 
@@ -258,13 +253,13 @@ describe('demo playground chrome', () => {
   });
 
   it('drops a held shortcut when another group opens before its frame is ready', () => {
-    seedDone({ ids: ['agent'] });
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     const first = visibleFrame();
     const isMac = currentPlatform() === 'darwin';
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
-    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guide the work/ }));
     const frames = Array.from(document.querySelectorAll('iframe')).filter(
       (entry) => entry !== first,
     );
@@ -288,15 +283,15 @@ describe('demo playground chrome', () => {
     rootOf().appendChild(field);
     fireEvent.keyDown(field, { key: 'ArrowRight', code: 'ArrowRight' });
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK' });
-    expect(window.location.hash).not.toBe('#agent');
+    expect(window.location.hash).not.toBe('#direction');
     expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
   });
 
   it('keeps the arrow keys moving between groups without a next button', () => {
-    seedDone({ ids: ['agent'] });
-    window.history.replaceState(null, '', '/?scene=demo#agent');
+    seedDone({ ids: ['bring', 'direction'] });
+    window.history.replaceState(null, '', '/?scene=demo#direction');
     render(<DemoPlayground />);
     fireEvent.keyDown(rootOf(), { key: 'ArrowRight', code: 'ArrowRight' });
-    expect(window.location.hash).toBe('#orchestrate');
+    expect(window.location.hash).toBe('#guide');
   });
 });
