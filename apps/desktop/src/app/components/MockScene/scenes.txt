@@ -372,6 +372,8 @@ drawer-split-plan
 drawer-split-plan-1280
 drawer-split-tasks
 drawer-wide-push
+e2-working-now-one
+e2-working-now-two
 explore
 explore-changedempty
 explore-changedfilter

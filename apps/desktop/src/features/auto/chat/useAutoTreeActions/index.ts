@@ -118,7 +118,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   );
 
   const openChild = useCallback(
-    (agentId: AgentId) => openDrawer({ kind: 'auto-child', sessionId, payload: { agentId } }),
+    (agentId: AgentId) => openDrawer({ kind: 'spawned', sessionId, payload: { agentId } }),
     [openDrawer, sessionId],
   );
 

@@ -419,14 +419,20 @@ writing to it reopens it to **Deciding**.
   **Mark finished** is in the header. A Stop or a Retry that fails says why on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
-  thinking line of the conversation speaks instead, and while a plan waits for
-  approval the ask is the state. The composer says "Message Auto" while Auto
+  thinking line of the conversation speaks instead. The **Working now** strip
+  (`AutoWorkingNow`) remains above the message field while children start or run,
+  newest first, even during Auto's own turn. Each chip shows the short task title,
+  role glyph and elapsed active time (`DelegationClock`, shared with the rail).
+  A chip or a delegation line's **Open** reveals that child in Agents without
+  changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
+  payload and `useSpawnedFocus`). Settled children leave the strip even if their
+  turn state arrives late. While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
-- **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
-  from its rail row or its line's **Open**, so Auto's conversation stays in
-  view; another child swaps in place, the Auto row of the rail closes it, Esc
-  closes it, and its rail row is the selected one. The pane title is the task
+- **A child preview opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
+  from a preview door, so the main conversation stays in view. Another child
+  swaps in place and Esc closes it. Picking a row in Agents opens the child in
+  the center; **Open** in Auto's chat only reveals its row in Agents. The pane title is the task
   Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what

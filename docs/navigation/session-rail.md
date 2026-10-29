@@ -736,7 +736,11 @@ Folding the rail leaves the column in place, and a drill never moves it.
   selected agent is revealed when the panel opens or the selection changes:
   a fold hiding it opens and the row scrolls to the middle, later changes
   scroll only as far as needed, and an agent missing from the tree changes
-  nothing (`useSpawnedReveal`, `foldAncestorsOf`). An Auto
+  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's **Working now** chips
+  and chat **Open** actions set the Agents drawer's child target without
+  navigating the center. The target takes precedence over the main selection
+  (`useSpawnedFocus`); **All launches** still works, and another reveal returns
+  to the target's launch. An Auto
   root is titled by the ask it started with, loaded with the tree view, not
   its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
   ([auto.md](../auto.md#the-chat)). Every Auto parent folds on its row (chevron,

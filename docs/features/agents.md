@@ -118,7 +118,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - In the **Agents** panel, each Auto conversation is titled by what you asked it. Its agents hang above it on the same rail as **Activity**, newest on top under a **Now** marker.
 - When you open a conversation there, a new agent arrives at the top without moving what you are reading.
 - A finished conversation folds to one row with its count of agents. Open or fold a row with its chevron or the arrow keys.
-- The chat stays lean. Each agent Auto starts gets one line, with its role and name.
+- The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. **Approve plan** shows right there when a Planner finished.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
@@ -179,3 +179,4 @@ Get agents and summaries in the language of your goal.
 This part is for contributors and agents who change the feature.
 
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
+- Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
