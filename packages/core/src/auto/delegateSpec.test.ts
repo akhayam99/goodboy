@@ -4,6 +4,39 @@ import { parseDelegateSpec } from './delegateSpec';
 const spec = (value: unknown): string => JSON.stringify(value);
 
 describe('parsing the spec of an agent delegate call', () => {
+  it('preserves explicit confirmation and includes it in the request identity', () => {
+    const child = { role: 'scout', task: 'read ledger-core', reason: 'find the callers' };
+    const normal = parseDelegateSpec({ text: JSON.stringify([child]) });
+    const confirmed = parseDelegateSpec({ text: JSON.stringify([{ ...child, confirm: true }]) });
+    expect(normal).toMatchObject({ kind: 'ok', children: [{ shouldConfirm: false }] });
+    expect(confirmed).toMatchObject({ kind: 'ok', children: [{ shouldConfirm: true }] });
+    expect(confirmed).not.toEqual(normal);
+    expect(parseDelegateSpec({ text: JSON.stringify([{ ...child, confirm: false }]) })).toEqual(
+      normal,
+    );
+  });
+
+  it('refuses a confirmation flag that is not a boolean', () => {
+    expect(
+      parseDelegateSpec({
+        text: JSON.stringify([
+          { role: 'scout', task: 'read ledger-core', reason: 'read', confirm: 'true' },
+        ]),
+      }),
+    ).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+  });
+
+  it('keeps the confirmation flag on a retry request', () => {
+    expect(
+      parseDelegateSpec({
+        text: JSON.stringify([{ retryOf: 'delegation-acme', reason: 'try again', confirm: true }]),
+      }),
+    ).toMatchObject({
+      kind: 'ok',
+      children: [{ retryOf: 'delegation-acme', shouldConfirm: true }],
+    });
+  });
+
   it('reads a children list and hashes it the same way every time', () => {
     const text = spec({
       children: [

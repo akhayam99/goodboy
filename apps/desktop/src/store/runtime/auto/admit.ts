@@ -217,7 +217,8 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           slot,
           artifactId: ref.artifactId,
           revision: ref.revision,
-          isApprovalRequired: params.isPlanApprovalRequired && isPlan && isWriter,
+          isApprovalRequired:
+            snapshot.isPlanApprovalRequired && snapshot.level !== 'run' && isPlan && isWriter,
           isConsumed: isPlan && isWriter,
           nowMs: params.nowMs,
         }),
@@ -258,7 +259,8 @@ const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyA
           },
           target: child.target,
           routing: child.routing,
-          state: child.isConfirmForced ? 'awaiting_confirm' : 'accepted',
+          state:
+            snapshot.level === 'step' || child.isConfirmForced ? 'awaiting_confirm' : 'accepted',
           retryOf: child.retryOf ?? null,
           reviseOf: revise === null ? null : revise.artifactId,
           baseRevision: revise === null ? null : revise.expectedRevision,
@@ -370,7 +372,10 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
         childAgentId: child.childAgentId,
         attemptId: child.attemptId,
         role: child.role,
-        state: child.isConfirmForced ? ('awaiting_confirm' as const) : ('accepted' as const),
+        state:
+          snapshot.level === 'step' || child.isConfirmForced
+            ? ('awaiting_confirm' as const)
+            : ('accepted' as const),
       }));
       return {
         kind: 'accepted',

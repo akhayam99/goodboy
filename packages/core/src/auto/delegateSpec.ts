@@ -37,6 +37,7 @@ export type DelegateChildSpec = Readonly<{
   decisions: ReadonlyArray<string>;
   forQuestion: string | null;
   retryOf: string | null;
+  shouldConfirm: boolean;
 }>;
 
 export type DelegateChildRefusal = Readonly<{
@@ -199,6 +200,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       decisions: [],
       forQuestion: null,
       retryOf,
+      shouldConfirm: raw['confirm'] === true,
     },
   };
 };
@@ -206,6 +208,13 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
 const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
   if (!isRecord(raw)) {
     return refuse({ slot, code: 'spec_invalid', message: `child ${slot + 1} is not an object` });
+  }
+  if (raw['confirm'] !== undefined && typeof raw['confirm'] !== 'boolean') {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message: `child ${slot + 1}: confirm must be a boolean`,
+    });
   }
   const revises = reviseOf({ value: raw['revises'] });
   if (revises === 'invalid') {
@@ -275,6 +284,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       decisions: listOf({ value: raw['decisions'] }),
       forQuestion: textOf({ value: raw['forQuestion'], max: DELEGATE_FIELD_CHARS }),
       retryOf: null,
+      shouldConfirm: raw['confirm'] === true,
     },
   };
 };
@@ -331,6 +341,7 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         ...(child.decisions.length > 0 ? [child.decisions] : []),
         ...(child.forQuestion === null ? [] : [['forQuestion', child.forQuestion]]),
         ...(child.title === null ? [] : [['title', child.title]]),
+        ...(child.shouldConfirm ? [['confirm', true]] : []),
       ]),
     ),
   );

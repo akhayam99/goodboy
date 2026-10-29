@@ -173,6 +173,7 @@ export const prepareRetry = async ({
     decisions: listOf({ source: original.request, key: 'decisions' }),
     forQuestion: null,
     retryOf: original.id,
+    shouldConfirm: child.shouldConfirm || original.request['confirm'] === true,
   };
   return { kind: 'resolve', child: synthetic, original };
 };
