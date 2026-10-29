@@ -20,6 +20,7 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -86,15 +87,15 @@ vi.mock('../../../features/settings/config-export', async () =>
   (await import('../../storyHarness')).configExportModuleMock(),
 );
 
-const WS_ID = 'workspace-1' as WorkspaceId;
-const WS_ID_2 = 'workspace-2' as WorkspaceId;
-const SESSION_ID = 'session-1' as SessionId;
-const SESSION_ID_2 = 'session-2' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const AGENT_ID_2 = 'agent-2' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
-const PLAN_ID = 'plan-1' as PlanId;
-const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
+const WS_ID = brandId<WorkspaceId>({ value: 'workspace-1' });
+const WS_ID_2 = brandId<WorkspaceId>({ value: 'workspace-2' });
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const SESSION_ID_2 = brandId<SessionId>({ value: 'session-2' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
+const AGENT_ID_2 = brandId<AgentId>({ value: 'agent-2' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-1' });
+const PLAN_ID = brandId<PlanId>({ value: 'plan-1' });
+const NOW = brandId<IsoDateTime>({ value: '2026-05-28T00:00:00.000Z' });
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {

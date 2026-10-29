@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getCapabilities, orchestratorModelPool, visibleCatalog } from '@goodboy/core';
+import { brandId } from '@goodboy/types';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';
@@ -10,8 +11,8 @@ import { selectKindRouting } from '../agents/selectKindRouting';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { selectHiddenModels } from './selectHiddenModels';
 
-const SESSION_ID = 'ses-ledger' as SessionId;
-const WORKSPACE_ID = 'ws-northwind' as WorkspaceId;
+const SESSION_ID = brandId<SessionId>({ value: 'ses-ledger' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'ws-northwind' });
 
 type ProviderParams = {
   readonly id: ProviderId;
