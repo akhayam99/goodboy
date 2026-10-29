@@ -675,6 +675,13 @@ role a shell would give the Auto root one too (they share an argv). Instead a sc
 the commits since the base branch, the pull or merge request of the branch, its open review threads
 and its checks, on GitHub, GitLab and Bitbucket alike (`makeBranchFactsReaders` goes through
 `pullRequestPortFor` and the review source threads, the same functions the Branch page uses).
+Every reader resolves the request of the mount it is asked about, never the active mount of the
+conversation: the host comes from `mountRequestHostOf` (the remote of that mount), the request is
+the one stored for that `mountId` (`mountGithub`, `mountGitlabMr`, `mountBitbucketPr`), and the
+GitHub threads come from the detail of that mount (`refreshSessionPrDetail` with its `mountId`,
+checked against the request number). A mount with no request reads "none is open"; a mount whose
+request or detail could not be read, or was never read, reads "Facts not available: reason", never
+"none".
 `composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
 `AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
 host could not read becomes "Facts not available: reason" and the scout still starts; a read slower

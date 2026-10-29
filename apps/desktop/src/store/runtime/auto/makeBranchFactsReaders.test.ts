@@ -129,27 +129,30 @@ describe('the commits of a branch since its base', () => {
 
 describe('the open review threads of a request', () => {
   const refreshReviewSource = vi.fn(async () => undefined);
+  const refreshSessionPrDetail = vi.fn(async () => undefined);
 
-  it('keeps root comments that are not resolved, on GitHub', async () => {
+  const githubOf = (extra: Readonly<Record<string, unknown>>) => ({
+    [MOUNT_ID]: { pr: { number: 421 }, detail: null, detailError: null, ...extra },
+  });
+
+  it('keeps root comments that are not resolved, on GitHub, of the mount asked about', async () => {
     const readers = makeBranchFactsReaders({
       getState: () =>
         stateOf({
           baseBranch: 'main',
           patch: {
-            refreshReviewSource,
-            sessionGithub: {
-              [SESSION_ID]: {
-                pr: { number: 421 },
-                detail: {
-                  comments: [
-                    commentOf({ id: 'a' }),
-                    commentOf({ id: 'b', resolved: true }),
-                    commentOf({ id: 'c', inReplyToId: 'a' }),
-                    commentOf({ id: 'd', source: 'issue' }),
-                  ],
-                },
+            refreshSessionPrDetail,
+            mountGithub: githubOf({
+              detail: {
+                prNumber: 421,
+                comments: [
+                  commentOf({ id: 'a' }),
+                  commentOf({ id: 'b', resolved: true }),
+                  commentOf({ id: 'c', inReplyToId: 'a' }),
+                  commentOf({ id: 'd', source: 'issue' }),
+                ],
               },
-            },
+            }),
           },
         }),
       commitRange: vi.fn(),
@@ -158,29 +161,43 @@ describe('the open review threads of a request', () => {
     expect(threads).toEqual([
       { author: 'northwind-dev', path: 'src/export.ts', body: 'rename it', isResolved: false },
     ]);
-    expect(refreshReviewSource).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
+    expect(refreshSessionPrDetail).toHaveBeenCalledWith(SESSION_ID, {
+      mountId: MOUNT_ID,
       force: true,
-      silent: true,
     });
   });
 
-  it('refuses a GitHub request that is not the one open in the conversation', async () => {
+  it('refuses a GitHub request that is not the one the detail of the mount belongs to', async () => {
     const readers = makeBranchFactsReaders({
       getState: () =>
         stateOf({
           baseBranch: 'main',
           patch: {
-            refreshReviewSource,
-            sessionGithub: {
-              [SESSION_ID]: { pr: { number: 99 }, detail: null },
-            },
+            refreshSessionPrDetail,
+            mountGithub: githubOf({ detail: { prNumber: 99, comments: [] } }),
           },
         }),
       commitRange: vi.fn(),
     });
     await expect(readers.threads({ params: PARAMS, request: requestOf('github') })).rejects.toThrow(
-      'not the one open in this conversation',
+      'not the one open on this mount',
+    );
+  });
+
+  it('reports the error of the detail instead of an empty list', async () => {
+    const readers = makeBranchFactsReaders({
+      getState: () =>
+        stateOf({
+          baseBranch: 'main',
+          patch: {
+            refreshSessionPrDetail,
+            mountGithub: githubOf({ detailError: 'rate limited' }),
+          },
+        }),
+      commitRange: vi.fn(),
+    });
+    await expect(readers.threads({ params: PARAMS, request: requestOf('github') })).rejects.toThrow(
+      'rate limited',
     );
   });
 
