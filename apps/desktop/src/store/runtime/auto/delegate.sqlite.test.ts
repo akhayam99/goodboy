@@ -249,6 +249,24 @@ describe('the delegate command', () => {
     expect(rows[0]?.target).toMatchObject({ mountId: 'mount-ledger-core', mountSource: 'primary' });
   });
 
+  it('refuses a reviewer asked to judge each commit of a range, which only git can list', async () => {
+    const state = await setup();
+    const refused = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'reviewer',
+            task: 'Check each commit in `a1b2c3d4e..HEAD`: does its subject match its diff?',
+            reason: 'an audit of the history',
+          },
+        ],
+      }),
+    );
+    expect(refused).toMatchObject({ isOk: false, code: 'role_lacks_shell' });
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+  });
+
   it('refuses a read only role for a task that runs commands, then admits the reroute to a writer', async () => {
     const state = await setup();
     const task = 'Run git log and git ls-remote on ledger-core and compare the heads.';

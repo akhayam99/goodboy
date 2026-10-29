@@ -660,7 +660,7 @@ Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run wi
 each role line of the prompt says whether the role has a shell, and the prompt rule says a task that
 runs a command goes only to a role that does. `resolveDelegateChild` enforces it: a read-only role
 whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm test`, "run the
-tests") is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
+tests", or a commit range such as `a1b2c3d4e..HEAD`, which only git can list) is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
 nothing is written, so Auto chooses again in its next turn. There is no read-only shell role yet:
 a read-only check goes to a writer role with "read only, change nothing" in the task. A child that
 ends blocked and says it had no shell tool gets the reason `missing_tool` (not `declared_blocked`),

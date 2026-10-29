@@ -5,6 +5,7 @@ const COMMAND_TOOL_RE =
 const RUN_COMMAND_RE =
   /\b(?:run|execute|invoke)\b[^.\n]{0,40}\b(?:commands?|scripts?|tests?|build|lint|typecheck)\b/i;
 const LS_REMOTE_RE = /\bls-remote\b/i;
+const COMMIT_RANGE_RE = /\b(?=[0-9a-f]{0,39}\d)[0-9a-f]{7,40}\.{2,3}[\w/-]+|\.{2,3}HEAD\b/i;
 
 const MISSING_SHELL_RE =
   /\bno (?:shell|bash|terminal)\b|\b(?:shell|bash|terminal) tool\b|\bcannot run (?:commands?|shell)\b|\b(?:did not|didn't|does not|doesn't|do not|don't) have (?:a )?(?:shell|bash)\b/i;
@@ -22,7 +23,10 @@ export const canAutoRoleRunCommands = ({ role }: RoleParams): boolean => isAutoW
 export const AUTO_COMMAND_ROLES: ReadonlyArray<AutoDelegationRole> = AUTO_WRITER_ROLES;
 
 export const doesTaskNeedCommands = ({ text }: TextParams): boolean =>
-  COMMAND_TOOL_RE.test(text) || RUN_COMMAND_RE.test(text) || LS_REMOTE_RE.test(text);
+  COMMAND_TOOL_RE.test(text) ||
+  RUN_COMMAND_RE.test(text) ||
+  LS_REMOTE_RE.test(text) ||
+  COMMIT_RANGE_RE.test(text);
 
 export const isMissingShellText = ({ text }: TextParams): boolean => MISSING_SHELL_RE.test(text);
 
