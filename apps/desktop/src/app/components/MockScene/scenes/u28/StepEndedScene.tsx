@@ -40,6 +40,7 @@ export const StepEndedScene = () => {
             : agent,
         ),
       },
+      silentlyEndedSteps: { [AGENT_BACKFILL_ID]: clock.iso({ at: '2026-09-16T11:14:30.000Z' }) },
       agentTurnState: {},
       transcripts: { [AGENT_BACKFILL_ID]: [CLOSING] },
       sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },

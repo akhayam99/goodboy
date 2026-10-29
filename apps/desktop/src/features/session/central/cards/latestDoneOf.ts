@@ -8,12 +8,9 @@ const UNLISTED_AGENT_BY = 'Agent';
 
 const EPOCH = new Date(0).toISOString();
 
-export type LatestDoneRowFacts = Pick<
-  DoneRowModel,
-  'id' | 'entryId' | 'title' | 'by' | 'at' | 'agentIds'
->;
+type LatestDoneRowFacts = Pick<DoneRowModel, 'id' | 'entryId' | 'title' | 'by' | 'at' | 'agentIds'>;
 
-export type LatestDoneItem = Readonly<{
+type LatestDoneItem = Readonly<{
   row: DoneRowModel;
   isUnread: boolean;
 }>;
