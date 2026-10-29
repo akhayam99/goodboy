@@ -372,10 +372,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               branchFacts={branchFacts}
               mergeWord={mergeWord}
               commits={diff.commits}
-              files={diff.files}
-              isDiffLoading={diff.loading}
-              diffError={diff.error}
-              onRetryDiff={diff.refresh}
+              diffRevision={historyRevision}
               canEdit={canEditBody}
               request={request}
               isConnected={isGithubConnected}

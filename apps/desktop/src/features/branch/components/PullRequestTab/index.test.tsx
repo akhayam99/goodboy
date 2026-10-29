@@ -34,7 +34,21 @@ const COLLABORATORS = 'omar-t\t\nkenji-w\t\nrio-k\thttps://avatars.example/rio\n
 
 let behindMain = 0;
 
+const COMMIT_PATCH = [
+  'diff --git a/src/retry.ts b/src/retry.ts',
+  'index 1111111..2222222 100644',
+  '--- a/src/retry.ts',
+  '+++ b/src/retry.ts',
+  '@@ -1,1 +1,1 @@',
+  '-const retries = 3;',
+  '+const retries = 5;',
+  '',
+].join('\n');
+
 const answer = async (command: string, args: unknown): Promise<unknown> => {
+  if (command === 'worktree_diff_commit') {
+    return COMMIT_PATCH;
+  }
   const handlers = prPageHandlers({ behind: behindMain });
   const handler = handlers[command];
   if (handler !== undefined) {
@@ -576,5 +590,30 @@ describe('the Overview grid', () => {
     expect(line?.textContent).toContain('#318');
     expect(line?.textContent).toContain('main');
     expect(screen.queryByRole('region', { name: 'Base' })).toBeNull();
+  });
+});
+
+describe('the Changes summary', () => {
+  it('keeps the changes of the branch while the Files tab shows one commit', async () => {
+    await show();
+    const card = await screen.findByRole('button', { name: 'Open Changes' });
+    const branchSummary = card.textContent;
+    expect(branchSummary).toContain('6files');
+
+    act(() => {
+      useAppStore
+        .getState()
+        .setDiffFocus(SESSION.id, { kind: 'commit', sha: 'abc1234', path: null });
+    });
+    await waitFor(() =>
+      expect(vi.mocked(invoke).mock.calls.map(([command]) => command)).toContain(
+        'worktree_diff_commit',
+      ),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('button', { name: 'Open Changes' }).textContent).toBe(branchSummary);
   });
 });

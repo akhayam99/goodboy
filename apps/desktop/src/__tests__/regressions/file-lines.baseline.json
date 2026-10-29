@@ -5,7 +5,7 @@
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.tsx": 330,
   "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 300,
   "apps/desktop/src/features/bootstrap/PublishPanel/index.tsx": 251,
-  "apps/desktop/src/features/branch/components/BranchPage/index.tsx": 543,
+  "apps/desktop/src/features/branch/components/BranchPage/index.tsx": 540,
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestActivity.tsx": 260,
   "apps/desktop/src/features/bug-report/components/ReportComposer.tsx": 288,
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 293,

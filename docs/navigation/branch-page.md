@@ -260,7 +260,8 @@ headline, several give the linked issue and the first headline, the description
 lists the commits and `Closes HL-1372` for a Linear issue), and two summary cards
 (`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the count, how many are not pushed and the last three
 subjects, and `Changes` with the files, the lines added and removed, a bar by top folder and the three biggest
-folders. Each card opens its tab (Commits, Files); the lists themselves live there. A card reads a skeleton while
+folders. The files always come from the branch against its base (`useBranchSummaryDiff`, its own read),
+never from the Files tab, which can show one commit or the working tree. Each card opens its tab (Commits, Files); the lists themselves live there. A card reads a skeleton while
 the diff loads and `Couldn't read this` with Retry when it fails. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
 never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
