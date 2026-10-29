@@ -284,9 +284,7 @@ export {
   type BranchFactsThread,
 } from './auto/branchFacts';
 export {
-  AUTO_DEFAULT_DONE_WHEN,
   AUTO_DEFAULT_EXPECTED,
-  AUTO_KICKOFF_HEADER,
   composeAnswerKickoff,
   composeDelegationKickoff,
   type AnswerKickoffParams,
@@ -382,17 +380,8 @@ export {
   type AutoBlockOutcome,
   type ParseAutoBlockParams,
 } from './auto/autoBlock';
-export {
-  parseProposeSpec,
-  type ProposeAlternative,
-  type ProposeSpecOutcome,
-} from './auto/proposeSpec';
-export {
-  AUTO_RESTART_NOTICE,
-  buildDeliveryText,
-  type BuildDeliveryParams,
-  type DeliveryRow,
-} from './auto/delivery';
+export { parseProposeSpec } from './auto/proposeSpec';
+export { buildDeliveryText, type BuildDeliveryParams, type DeliveryRow } from './auto/delivery';
 export {
   describeMounts,
   isUsableMount,

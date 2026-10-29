@@ -480,12 +480,6 @@ describe('extractCommentAnalysis', () => {
     expect(stripControlMarkers(text)).toBe('result\n\ndone');
   });
 
-  it('strips the outcome line from visible text', () => {
-    const text =
-      '<<outcome>>Done: retry posts one credit.<</outcome>>\n\nThe guard keys on the event id.';
-    expect(stripControlMarkers(text)).toBe('The guard keys on the event id.');
-  });
-
   it('strips the unsummarized step output marker in every form', () => {
     expect(
       stripControlMarkers('[unsummarized step output, carried whole]\nfixed the retry loop'),

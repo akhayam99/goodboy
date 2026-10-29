@@ -75,7 +75,7 @@
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 660,
   "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1928,
   "packages/core/src/context/marker-parsing.ts": 1187,
-  "packages/core/src/index.ts": 1143,
+  "packages/core/src/index.ts": 1137,
   "packages/core/src/providers/cursor/catalog.ts": 1049,
   "packages/core/src/providers/openrouter/catalog.ts": 781,
   "packages/db/src/index.ts": 841,

@@ -25,7 +25,7 @@ type RefuseParams = Readonly<{
   message: string;
 }>;
 
-const refuse = ({ message }: RefuseParams): ProposeSpecOutcome => ({
+const proposeRefusal = ({ message }: RefuseParams): ProposeSpecOutcome => ({
   kind: 'refused',
   code: 'spec_invalid',
   message,
@@ -37,24 +37,24 @@ export const parseProposeSpec = ({ text }: Params): ProposeSpecOutcome => {
   try {
     parsed = JSON.parse(text);
   } catch {
-    return refuse({ message: 'a proposal needs a JSON object' });
+    return proposeRefusal({ message: 'a proposal needs a JSON object' });
   }
   if (!isRecord(parsed) || !isRecord(parsed['primary'])) {
-    return refuse({ message: 'a proposal needs one primary child' });
+    return proposeRefusal({ message: 'a proposal needs one primary child' });
   }
   const rawAlternatives = parsed['alternatives'] === undefined ? [] : parsed['alternatives'];
   if (!Array.isArray(rawAlternatives) || rawAlternatives.length > 2) {
-    return refuse({ message: 'a proposal accepts at most two alternatives' });
+    return proposeRefusal({ message: 'a proposal accepts at most two alternatives' });
   }
   const alternatives: ProposeAlternative[] = [];
   for (const raw of rawAlternatives) {
     if (!isRecord(raw)) {
-      return refuse({ message: 'an alternative needs a label and a role' });
+      return proposeRefusal({ message: 'an alternative needs a label and a role' });
     }
     const label = raw['label'];
     const role = parseAutoDelegationRole({ role: raw['role'] });
     if (typeof label !== 'string' || label.trim() === '' || role === null) {
-      return refuse({ message: 'an alternative needs a nonempty label and a known role' });
+      return proposeRefusal({ message: 'an alternative needs a nonempty label and a known role' });
     }
     alternatives.push({ label: label.trim().slice(0, 1_000), role });
   }
