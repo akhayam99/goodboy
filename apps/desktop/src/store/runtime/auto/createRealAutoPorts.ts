@@ -28,7 +28,7 @@ import {
   makeBranchFactsReaders,
   type MakeBranchFactsReadersParams,
 } from './makeBranchFactsReaders';
-import { readBranchFactsOf } from './readBranchFactsOf';
+import { readBranchFactsOf } from './branchFacts/readBranchFactsOf';
 import { resolveChildRouting } from './resolveChildRouting';
 import { runAutoCheckScript } from './runAutoCheckScript';
 import { createHistoryBackup } from '../../../features/history/historyEngine';

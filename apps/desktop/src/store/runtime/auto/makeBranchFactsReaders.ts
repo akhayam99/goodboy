@@ -10,7 +10,7 @@ import type { AppStore } from '../../store';
 import { selectMountBaseBranch } from '../../slices/project-mounts/selectors';
 import { pullRequestPortFor } from '../../slices/review-source/pullRequestPortFor';
 import { refreshActiveRequest } from '../../slices/review-source/refreshActiveRequest';
-import type { BranchFactsReaders, RequestFacts } from './readBranchFactsOf';
+import type { BranchFactsReaders, RequestFacts } from './branchFacts/readBranchFactsOf';
 
 export type MakeBranchFactsReadersParams = Readonly<{
   getState: () => AppStore;

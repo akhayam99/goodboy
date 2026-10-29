@@ -5,7 +5,7 @@ import {
   type PickableMount,
 } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
-import type { AutoPorts, BranchFactsParts } from './ports';
+import type { AutoPorts, BranchFactsParts } from '../ports';
 
 export type MountLabelParams = {
   readonly mount: PickableMount;

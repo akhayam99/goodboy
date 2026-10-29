@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_FACTS_FETCH_MS } from '@goodboy/core';
 import { brandId, type SessionId } from '@goodboy/types';
 import { gatherBranchFacts } from './gatherBranchFacts';
-import { CLEAN_FACTS, LEDGER_MOUNT, NOTIFY_MOUNT, makeFakePorts } from './testing/fakePorts';
+import { CLEAN_FACTS, LEDGER_MOUNT, NOTIFY_MOUNT, makeFakePorts } from '../testing/fakePorts';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 
