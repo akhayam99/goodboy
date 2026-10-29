@@ -628,6 +628,23 @@ capability token and no allow rule. It decides by ending its final reply with at
   close.
 - No block is a plain answer to the user.
 
+The prompt takes an Asks you level, using the same three values as workflows
+with its own default, **After the plan**. **Every step** requires confirmation
+for each child and a planner's plan before a change. **After the plan** lets
+readers start freely, requires a planner's plan and user approval before a
+writer, then continues without asking for each handoff. **Never** makes the
+plan optional and tells Auto to choose and delegate without proposing a next
+step. Force pushes still require confirmation and a backup at every level.
+Auto must never end a turn with a prose yes or no question: a choice belongs
+in a next step proposal for the app to show as a card.
+
+These are prompt instructions, not admission guards or a new card protocol.
+`buildAutoSystemPrompt` reads `AutoLevel` and defaults to `DEFAULT_AUTO_LEVEL`
+in `packages/core/src/auto/level.ts`; `buildTurnSpawn` rebuilds it with that
+default for every Auto turn. The level's planning instructions take precedence
+over the role-addition guidance below. `prompt.level.test.ts` checks each
+level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
+
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
 The default is one implementer with nothing added, a "do not" beats a reason, and a force push
