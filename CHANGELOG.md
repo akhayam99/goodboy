@@ -12,6 +12,50 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.0
+
+Auto asks you as much as you want, proposes its next step as a card, and its agents answer in one short reading order.
+
+### New
+
+#### Choose how much Auto asks you
+<!-- gb area=agents -->
+
+Auto has an Asks you level: Every step, After the plan or Never. Pick it in Start a run, change it from the running agent's settings line, and set a workspace default in Settings, separate from the workflow one. At Every step each agent waits for your go; After the plan, the default, waits only for the plan; Never runs on its own.
+
+#### Auto proposes its next step as a card
+<!-- gb area=agents -->
+
+Auto no longer ends on a yes or no question in prose. It proposes the next agent as a card with one main action, up to two alternatives and a hint field, and keys 1 to 3 pick. A hint you add travels with the agent's brief and survives a retry.
+
+### Improved
+
+#### The plan card opens the plan
+<!-- gb area=agents -->
+
+The Auto plan card shows the first steps and their file and risk counts, with View plan as the main action. Approve plan sits at the top right of the plan view and keeps the run inside Auto. An approved plan stays in the chat in the artifact colour.
+
+#### Agents answer in one reading order
+<!-- gb area=agents -->
+
+Every agent message starts with a one line outcome, then its artifacts, then chips, with the rest folded under Notes. Goodboy corrects the outcome when checks fail or a push did not go through, and an Auto child's result card follows the same order.
+
+#### Auto plans without the plan mode
+<!-- gb area=agents -->
+
+The Claude Auto lead runs outside the CLI plan mode, so it writes a real plan instead of a prose one, and stays limited to reading and searching.
+
+#### Open a folder from the Changes card
+<!-- gb area=review -->
+
+A folder in the Changes card of a pull request opens Files showing only that folder, and Clear brings the whole tree back.
+
+### Fixed
+
+- If Auto did not hear a saved plan approval, the plan view offers Tell Auto instead of closing. <!-- gb area=agents -->
+- Auto reads the Asks you level fresh at each handoff, so another window's change applies, and a pending confirmation survives a switch to Never. <!-- gb area=agents -->
+- A decline from another window no longer cancels a child you just confirmed. <!-- gb area=agents -->
+
 ## Goodboy v0.28.7
 
 Auto shows its agents at work and their artifacts, pull requests open on two short cards, and commits fit on one line.
