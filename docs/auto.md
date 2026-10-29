@@ -483,13 +483,14 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-Auto cannot start a writer role (Implementer, Tester, Docs, Scribe, CI fixer,
-Rewriter) on a plan that is not
-approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
-stored setting `agents.autoPlanApproval` on every tick, and approval is required
-unless the stored value is exactly `false`. There is no screen for that setting
-yet. **Ask for changes** opens the chat of Auto: a change written there makes Auto
-rework the same plan into the next version.
+A writer role (Implementer, Tester, Docs, Scribe, CI fixer, Rewriter) taking a
+plan needs its current revision approved, unless the session level is **Never**
+or the global approval switch is off. The admission snapshot reads the stored
+`agents.autoPlanApproval` setting for every handoff through
+`isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
+off. There is no screen for that setting yet. **Ask for changes** opens the
+chat of Auto: a change written there makes Auto rework the same plan into
+the next version.
 
 A writer admitted with a plan marks that plan used in the admission
 transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
@@ -638,12 +639,30 @@ step. Force pushes still require confirmation and a backup at every level.
 Auto must never end a turn with a prose yes or no question: a choice belongs
 in a next step proposal for the app to show as a card.
 
-These are prompt instructions, not admission guards or a new card protocol.
+Admission reads the session level from the database for every handoff, after
+resolving the child. **Every step** stores each child as waiting for its own
+Confirm or Cancel. At **Never**, an unapproved plan may be consumed by a
+writer, while revision and artifact checks still apply. Changing the level
+never starts a child already waiting for confirmation. An explicit child
+`confirm: true` or an ambiguous revise still requires confirmation at any level.
+
+The storage helpers in `store/runtime/auto/level/` keep session overrides
+and a separate default in the workspace value `auto.level`, whose key is
+registered in `packages/db/src/queries/entity-value.ts`. A session override
+falls back to that workspace default, then **After the plan**. Invalid
+values fall through to the next default. Workflow autonomy is unchanged. A
+write takes a named session or workspace target, compares and swaps, retries
+one lost race and reports a failed write without updating window state.
+`readAdmissionSnapshot` reads the persisted level and approval switch;
+`admit.ts` applies the same policy to the stored child state, receipt and
+plan consumption. The level tests in `store/runtime/auto/level/` check
+persistence, failures, second writers and pending confirmations.
+
 `buildAutoSystemPrompt` reads `AutoLevel` and defaults to `DEFAULT_AUTO_LEVEL`
-in `packages/core/src/auto/level.ts`; `buildTurnSpawn` rebuilds it with that
-default for every Auto turn. The level's planning instructions take precedence
-over the role-addition guidance below. `prompt.level.test.ts` checks each
-level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
+in `packages/core/src/auto/level.ts`; `buildTurnSpawn` still rebuilds it with
+that default for every Auto turn. The level's planning instructions take
+precedence over the role-addition guidance below. `prompt.level.test.ts` checks
+each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
 
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".

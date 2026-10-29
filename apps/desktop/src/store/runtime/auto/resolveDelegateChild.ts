@@ -456,6 +456,7 @@ export const resolveDelegateChild = async ({
         ...(child.title !== null && { title: child.title }),
         task: child.task,
         reason: child.reason,
+        ...(child.shouldConfirm && { confirm: true }),
         doneWhen: child.doneWhen,
         expected: child.expected,
         kickoff,
@@ -505,7 +506,7 @@ export const resolveDelegateChild = async ({
           ? null
           : { artifactId: revise.artifactId, expectedRevision: revise.expectedRevision },
       inputArtifacts: inputs.refs,
-      isConfirmForced: words?.isAmbiguous === true,
+      isConfirmForced: child.shouldConfirm || words?.isAmbiguous === true,
       retryOf: retry?.id ?? null,
       substep,
       deadlineAt: nowMs + AUTO_DELEGATION_DEADLINE_MINUTES * 60_000,

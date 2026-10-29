@@ -74,6 +74,7 @@ const bareRetry = (retryOf: string) => ({
   decisions: [],
   forQuestion: null,
   retryOf,
+  shouldConfirm: false,
 });
 
 const retry = async (world: RuntimeWorld, extra: Readonly<Record<string, unknown>> = {}) => {

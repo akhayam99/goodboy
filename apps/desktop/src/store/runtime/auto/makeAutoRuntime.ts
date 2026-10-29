@@ -1,5 +1,4 @@
 import type { Database } from '@goodboy/db';
-import { isAutoPlanApprovalRequired } from '../../../features/auto/isAutoPlanApprovalRequired';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { lookupDeliveryRun, listLiveRunIds } from '../../../features/chat/turn';
 import {
@@ -64,7 +63,7 @@ export const makeAutoRuntime = ({
     worktreeStatus: ({ worktreePath }) => worktreeStatus({ worktreePath }),
     worktreeRemoteHead,
     listLiveRunIds,
-    isPlanApprovalRequired: () => isAutoPlanApprovalRequired({ settings: getState().settings }),
+    isPlanApprovalRequired: () => true,
     sleep,
     nowMs: Date.now,
     newId: () => crypto.randomUUID(),
