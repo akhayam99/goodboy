@@ -42,6 +42,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -79,12 +80,17 @@ const holdWriteOf = ({ level, until }: HoldParams) => {
 describe('changeAutoLevel', () => {
   it('keeps the last pick when an older pick would land after a newer one', async () => {
     holdWriteOf({ level: 'step', until: 'run' });
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
     const { changeAutoLevel } = useAppStore.getState();
 
-    await Promise.all([
+    const picks = Promise.all([
       changeAutoLevel({ workspaceId: WORKSPACE, sessionId: AUTO_SEED_SESSION, level: 'step' }),
       changeAutoLevel({ workspaceId: WORKSPACE, sessionId: AUTO_SEED_SESSION, level: 'run' }),
     ]);
+    for (let tick = 0; tick <= NEWER_LANDS_FIRST_MS; tick += 1) {
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    await picks;
 
     expect(await readAutoLevel({ db: storySqlite(), target: SESSION })).toBe('run');
     const held = useAppStore.getState().workspaceValues[WORKSPACE]?.['auto.level'] ?? '';
