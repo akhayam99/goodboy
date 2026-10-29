@@ -200,6 +200,6 @@ This part is for contributors and agents who change the feature.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
-- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, and `startRoutedRun` writes the pick with `writeAutoLevel` before the lead starts.
+- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the workspace default through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.

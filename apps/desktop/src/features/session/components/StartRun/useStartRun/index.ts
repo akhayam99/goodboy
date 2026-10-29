@@ -27,7 +27,7 @@ import {
   runModelSlotOf,
   type RunModelSlot,
 } from '../../../startRun/runModelSlotOf';
-import { useAutoLevelDefault } from '../../../../auto/level/useAutoLevelDefault';
+import { useAutoLevel } from '../../../../../shared/hooks/useAutoLevel';
 import { useRunModel, type RunModelModel } from '../useRunModel';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
@@ -58,7 +58,7 @@ export type StartRunModel = Readonly<{
   setRunAs: (runAs: RunAs) => void;
   route: RunRouteResult;
   level: AutoLevel;
-  isLevelPicked: boolean;
+  workspaceLevel: AutoLevel;
   setLevel: (level: AutoLevel) => void;
   model: RunModelModel;
   presets: ReadonlyArray<Workflow>;
@@ -176,7 +176,7 @@ export const useStartRun = ({
   const [error, setError] = useState<string | null>(null);
   const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
   const [pickedLevel, setPickedLevel] = useState<AutoLevel | null>(null);
-  const defaultLevel = useAutoLevelDefault({ workspaceId });
+  const { workspaceLevel } = useAutoLevel({ workspaceId, sessionId: null });
   const promptFiles = usePromptFiles({ note: RUN_ROUTE_COPY.attachFiles, isEnabled: !isStarting });
   const { attachments: stagedFiles, setAttachments: setStagedFiles } = promptFiles;
   const clearFilesRef = useRef(promptFiles.clear);
@@ -392,8 +392,8 @@ export const useStartRun = ({
     runAs,
     setRunAs,
     route,
-    level: pickedLevel ?? defaultLevel,
-    isLevelPicked: pickedLevel !== null,
+    level: pickedLevel ?? workspaceLevel,
+    workspaceLevel,
     setLevel: setPickedLevel,
     model,
     presets,

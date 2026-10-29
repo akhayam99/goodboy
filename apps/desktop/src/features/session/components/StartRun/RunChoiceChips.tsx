@@ -43,7 +43,8 @@ export const RunChoiceChips = ({ run, workspaceId, role }: Props) => {
       {isAutoLead ? (
         <AutoLevelChip
           value={run.level}
-          isPicked={run.isLevelPicked}
+          workspaceLevel={run.workspaceLevel}
+          error={null}
           workspaceName={workspaceName}
           isDisabled={run.isStarting}
           onPick={({ next }) => run.setLevel(next)}

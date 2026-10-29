@@ -12,7 +12,6 @@ import {
   type WorkflowId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { writeAutoLevel } from '../../../store/runtime/auto/level/writeAutoLevel';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
@@ -59,7 +58,7 @@ export const startRoutedRun = async ({
       await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
     }
     if (level !== null && role === null) {
-      await writeAutoLevel({ db: tauriDatabase, target: { sessionId }, level });
+      await state.changeAutoLevel({ workspaceId: session.workspaceId, sessionId, level });
     }
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',

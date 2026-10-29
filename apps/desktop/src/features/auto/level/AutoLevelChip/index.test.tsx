@@ -2,24 +2,40 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { AutoLevelChip } from './AutoLevelChip';
+import { AutoLevelChip } from '.';
 
 afterEach(cleanup);
 
 describe('AutoLevelChip', () => {
-  it('shows the level and where it comes from', () => {
+  it('shows the level and says it comes from the workspace when it matches', () => {
     render(
       <AutoLevelChip
         value="plan"
-        isPicked={false}
+        workspaceLevel="plan"
         workspaceName="Harborline"
+        error={null}
         isDisabled={false}
         onPick={vi.fn()}
       />,
     );
 
-    expect(screen.getByText('After the plan')).toBeDefined();
-    expect(screen.getByText('from Harborline')).toBeDefined();
+    screen.getByText('After the plan');
+    screen.getByText('from Harborline');
+  });
+
+  it('says this run when the level differs from the workspace default', () => {
+    render(
+      <AutoLevelChip
+        value="step"
+        workspaceLevel="plan"
+        workspaceName="Harborline"
+        error={null}
+        isDisabled={false}
+        onPick={vi.fn()}
+      />,
+    );
+
+    screen.getByText('this run');
   });
 
   it('hands back the level picked in the popover', () => {
@@ -27,8 +43,9 @@ describe('AutoLevelChip', () => {
     render(
       <AutoLevelChip
         value="plan"
-        isPicked
+        workspaceLevel="plan"
         workspaceName="Harborline"
+        error={null}
         isDisabled={false}
         onPick={onPick}
       />,
