@@ -6,7 +6,7 @@ type Params = Readonly<{
   set: SetFn;
   sessionId: SessionId;
   agentId: AgentId;
-  branch: string;
+  branch: string | null;
 }>;
 
 export const blockRunStepOnGoneMount = async ({
@@ -25,6 +25,6 @@ export const blockRunStepOnGoneMount = async ({
     },
   }));
   throw new Error(
-    `This run step is pinned to the branch ${branch}, which is no longer in the session. Pick another branch mount to continue.`,
+    `This run step is pinned to ${branch === null ? 'the branch the run started on' : `the branch ${branch}`}, which is no longer in the session. Pick another branch mount to continue.`,
   );
 };

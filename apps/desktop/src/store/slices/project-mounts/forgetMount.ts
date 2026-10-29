@@ -2,6 +2,7 @@ import { deleteSessionMount } from '@goodboy/db';
 import type { SessionMountView } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cleanup/cleanupPolicy';
+import { runsPinnedToMount } from '../workflows/runMount/runsPinnedToMount';
 import { clearMountBranchObservation } from './mountBranchObservations';
 import { mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
@@ -33,6 +34,14 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
       throw mountError({
         code: 'directory-busy',
         message: 'unmount the branch before removing it from the session',
+        mountId,
+      });
+    }
+    const [pinnedRun] = runsPinnedToMount({ state: get(), sessionId, mountId });
+    if (pinnedRun !== undefined) {
+      throw mountError({
+        code: 'directory-busy',
+        message: `the run "${pinnedRun}" still uses this branch: stop the run before removing it from the session`,
         mountId,
       });
     }

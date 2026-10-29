@@ -7,6 +7,7 @@ import {
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderRunId, Step, TurnEvent, WorkflowRunId } from '@goodboy/types';
 import { blockRunStepOnGoneMount } from '../workflows/runMount/blockRunStepOnGoneMount';
+import { hasRunLostItsMount } from '../workflows/runMount/hasRunLostItsMount';
 import { selectRunStepMountId } from '../workflows/runMount/selectRunStepMountId';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { scratchDirPrepare, sessionDirExists } from '../../../features/worktree/worktree';
@@ -102,6 +103,14 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
         }) ??
         undefined);
   const explicitMountId = mountTarget?.mountId ?? launchCopy?.mountTarget?.mountId ?? mountId;
+  if (
+    stepAgent?.workflowRunId != null &&
+    explicitMountId === undefined &&
+    pinnedStepMountId === undefined &&
+    hasRunLostItsMount({ state: before, sessionId, workflowRunId: stepAgent.workflowRunId })
+  ) {
+    await blockRunStepOnGoneMount({ set, sessionId, agentId: stepAgent.id, branch: null });
+  }
   const aimedMountId = explicitMountId ?? pinnedStepMountId;
   const aimedMount =
     aimedMountId === undefined

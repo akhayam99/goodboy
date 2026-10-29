@@ -7,6 +7,7 @@ import {
   type IsoDateTime,
   type MountId,
   type ProjectId,
+  type ProviderRunId,
   type Session,
   type SessionId,
   type SessionMountView,
@@ -279,6 +280,55 @@ describe('story: a run step stays on the mount it was pinned to', () => {
       useAppStore.getState().sessionPhaseRuns[SESSION_ID]?.find((agent) => agent.id === step.id)
         ?.status,
     ).toBe('blocked');
+  });
+});
+
+describe('story: a run whose pinned mount was forgotten', () => {
+  it('blocks the next step instead of falling back to the active mount', async () => {
+    await seed();
+    const first = stepAgent({ id: 'agent-step-1', ordinal: 1 });
+    const second = stepAgent({ id: 'agent-step-2', ordinal: 2 });
+    placeAgents({ agents: [first, second] });
+    useAppStore.setState({
+      transcripts: {
+        [first.id]: [
+          {
+            kind: 'user_text',
+            runId: brandId<ProviderRunId>({ value: 'run-earlier' }),
+            text: 'go',
+            provider: 'anthropic',
+            model: 'claude-sonnet-5-5',
+            at: NOW,
+          },
+        ],
+      },
+    });
+    storySpies.invokeAgentUpdateStatus.mockResolvedValue({ ...second, status: 'blocked' });
+
+    await expect(
+      useAppStore
+        .getState()
+        .sendTurn({ sessionId: SESSION_ID, agentId: second.id, content: 'go', origin: 'workflow' }),
+    ).rejects.toThrow(/the branch the run started on/);
+
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(second.id, {
+      status: 'blocked',
+    });
+  });
+
+  it('lets the first step of a fresh run launch on the active mount', async () => {
+    await seed();
+    const first = stepAgent({ id: 'agent-step-1', ordinal: 1 });
+    placeAgents({ agents: [first] });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: first.id, content: 'go', origin: 'workflow' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ workingDir: pathOf({ mountId: MOUNT_B }) }),
+    );
   });
 });
 
