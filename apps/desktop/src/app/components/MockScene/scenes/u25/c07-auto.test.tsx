@@ -170,7 +170,7 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
+  it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
     mount({ id: 'c07-auto-working' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -179,9 +179,7 @@ describe('c07 Auto scenes', () => {
     expect(within(title).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('Delegated to')).toBeNull();
-    for (const lines of screen.getAllByRole('list', { name: 'Delegations' })) {
-      expect(within(lines).queryByText('Running')).toBeNull();
-    }
+    expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
     const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
     expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
