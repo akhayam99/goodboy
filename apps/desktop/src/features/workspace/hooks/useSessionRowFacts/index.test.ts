@@ -14,6 +14,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -92,5 +93,31 @@ describe('useSessionRowFacts', () => {
     const archived = renderHook(() => useSessionRowFacts({ session, isArchived: true }));
 
     expect(archived.result.current.node).not.toEqual(live.result.current.node);
+  });
+
+  it('leaves the agent being viewed out of the unread label', () => {
+    const session = sessionOf({ goal: 'Ledger export speedup' });
+    const viewed = anAgent({
+      sessionId: session.id,
+      name: 'Trace the rounding',
+      status: 'completed',
+      lastFinishedAt: brandedId<IsoDateTime>({ value: '2026-10-05T10:00:00.000Z' }),
+    });
+    const other = anAgent({
+      sessionId: session.id,
+      name: 'Review the ledger',
+      status: 'completed',
+      lastFinishedAt: brandedId<IsoDateTime>({ value: '2026-10-05T09:00:00.000Z' }),
+    });
+    seedColumn({ store: useAppStore, sessions: [session] });
+    useAppStore.setState({
+      sessionPhaseRuns: { [session.id]: [viewed, other] },
+      currentSessionId: session.id,
+      selectedAgentId: { [session.id]: viewed.id },
+    });
+
+    const { result } = renderHook(() => useSessionRowFacts({ session }));
+
+    expect(result.current.unreadLabel).toBe('1 new: Review the ledger');
   });
 });

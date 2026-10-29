@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { sessionNodeOf, type SessionNode } from '../../../session/sessionNode';
 import { unreadLabelOf } from '../../../session/unreadLabelOf';
+import { viewedAgentIdOf } from '../../../../shared/utils/viewedAgentIdOf';
 import { sessionRowTitle, type SessionRowTitle } from '../../../../shared/utils/sessionTitle';
 import { useSessionSummary, type SessionSummary } from '../useSessionSummary';
 
@@ -27,7 +28,12 @@ export const useSessionRowFacts = ({ session, isArchived = false }: Params): Ses
   const node = sessionNodeOf({ info: summary.info, isArchived });
   const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
   const unreadLabel = useAppStore((state) =>
-    unreadLabelOf({ unread: unreadAgentsOf({ agents: state.sessionPhaseRuns[session.id] }) }),
+    unreadLabelOf({
+      unread: unreadAgentsOf({
+        agents: state.sessionPhaseRuns[session.id],
+        viewedAgentId: viewedAgentIdOf({ state, sessionId: session.id }),
+      }),
+    }),
   );
   return {
     summary,
