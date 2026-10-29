@@ -50,6 +50,7 @@ export type ProviderStatus = {
 export type ProviderDisplayInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
+  readonly errorKind?: ProbeErrorKind | null;
   readonly docsUrl: string;
   readonly standing?: ProviderHealthStanding;
   readonly isBreakerOpen?: boolean;
@@ -150,6 +151,8 @@ function providerInfoFromStatus(
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
     docsUrl: PROVIDER_DOCS[id],
+    ...(status?.errorKind !== undefined &&
+      status.errorKind !== null && { errorKind: status.errorKind }),
   };
   if (id === 'anthropic') {
     if (!status) {

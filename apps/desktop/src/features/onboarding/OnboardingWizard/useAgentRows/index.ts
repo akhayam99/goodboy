@@ -6,7 +6,7 @@ import type { ProviderStatus } from '../../../providers/providers';
 import { AGENT_ROW_IDS } from '../agentRowIds';
 import { agentRowOf, type AgentRow } from '../agentRowOf';
 import { readyAgents } from '../readyAgents';
-import { statusOfInfo } from '../statusOfInfo';
+import { statusOfInfo } from '../../../providers/statusOfInfo';
 import { useAgentDetection, type AgentDetection } from '../useAgentDetection';
 
 export type AgentRows = {
