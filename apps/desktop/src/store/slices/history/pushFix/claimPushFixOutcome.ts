@@ -1,4 +1,3 @@
-import { persistPushFixes } from './persistPushFixes';
 import type { SliceDeps } from '../../../slice-types';
 import type { PushFixOutcome } from '../types';
 
@@ -13,10 +12,10 @@ export const claimPushFixOutcome = ({ set, get }: SliceDeps) => {
     if (outcome === undefined || outcome.agentId !== agentId || outcome.isClaimed) {
       return false;
     }
-    set((state) => ({
-      pushFixOutcomes: { ...state.pushFixOutcomes, [mountId]: { ...outcome, isClaimed: true } },
-    }));
-    persistPushFixes({ get });
+    if (get().pushFixClaims[mountId] !== undefined) {
+      return false;
+    }
+    set((state) => ({ pushFixClaims: { ...state.pushFixClaims, [mountId]: agentId } }));
     return true;
   };
 };

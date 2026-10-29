@@ -130,9 +130,14 @@ stopped or what stopped the push after it; the Comments banner (`PushFixIdle`), 
 (`PushFixStatus`) and the create form (`CreateNotices`) show the same line when no failure is on
 screen, so leaving the page and coming back shows the agent, its progress and its result. A
 result nobody took (the fix pushed while no continuation was registered) is claimed once by the
-first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. A new fix on
+first surface that mounts with a continuation (`claimPushFixOutcome`) and run there. The claim is held
+in memory (`pushFixClaims`) while it runs. `completePushFixOutcome` marks the result taken and records
+the follow up only after the continuation returned, so a reload mid-flight resumes it again, and a
+continuation that throws releases the claim (`releasePushFixClaim`) and reports the error. A new fix on
 the branch clears the old result, and the line can be dismissed (`dismissPushFixOutcome`).
-Stale dependencies are caught before the push. `worktree_deps_check` reads the lockfile to pick
+Stale dependencies are caught before the push. `worktree_deps_check` and `worktree_deps_unlink`
+take the repository path and the worktree path, and refuse a folder the repository does not list as
+a worktree. `worktree_deps_check` reads the lockfile to pick
 the package manager (`worktree_setup_proposal` tables), and reports a worktree whose install
 folder is missing (`missing`) or whose install folder, a nested one or a workspace package link
 resolves outside the worktree (`outside`; the usual case is `node_modules` linked to another

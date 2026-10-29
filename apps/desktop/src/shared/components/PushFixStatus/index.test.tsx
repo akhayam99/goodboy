@@ -193,6 +193,72 @@ describe('PushFixStatus after the card was left and came back', () => {
   });
 });
 
+describe('the claim on a pushed fix while the waiting action continues', () => {
+  it('releases the claim, reports the failure and tries again when the card comes back', async () => {
+    const reportError = vi.fn(async () => undefined);
+    store.setState({ reportError });
+    seedOutcome(outcome({ isClaimed: false }));
+    const onSettled = vi
+      .fn<() => Promise<{ readonly tone: 'done'; readonly sentence: string } | undefined>>()
+      .mockRejectedValueOnce(new Error('The form is gone'))
+      .mockResolvedValueOnce({ tone: 'done', sentence: 'Nothing else is waiting.' });
+
+    const first = render(status(onSettled));
+    await act(async () => undefined);
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't continue after the fix." }),
+    );
+    expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(false);
+    expect(store.getState().pushFixClaims[MOUNT_TARGET.mountId]).toBeUndefined();
+    first.unmount();
+    render(status(onSettled));
+    await act(async () => undefined);
+
+    expect(onSettled).toHaveBeenCalledTimes(2);
+    expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]).toMatchObject({
+      isClaimed: true,
+      followUp: { tone: 'done', sentence: 'Nothing else is waiting.' },
+    });
+  });
+
+  it('holds the claim in memory while it runs, so a reload mid-flight resumes it again', async () => {
+    seedOutcome(outcome({ isClaimed: false }));
+    let finish: (value: undefined) => void = () => undefined;
+    const pending = new Promise<undefined>((resolve) => {
+      finish = resolve;
+    });
+    const interrupted = vi.fn(() => pending);
+
+    render(status(interrupted));
+    await act(async () => undefined);
+
+    expect(store.getState().pushFixClaims[MOUNT_TARGET.mountId]).toBe(AGENT_ID);
+    expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(false);
+
+    cleanup();
+    store.setState({ pushFixClaims: {} });
+    const resumed = vi.fn(async () => undefined);
+    render(status(resumed));
+    await act(async () => undefined);
+
+    expect(resumed).toHaveBeenCalledOnce();
+    expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(true);
+    await act(async () => finish(undefined));
+  });
+
+  it('does not run the continuation twice while the first one is still in flight', async () => {
+    seedOutcome(outcome({ isClaimed: false }));
+    const onSettled = vi.fn(() => new Promise<undefined>(() => undefined));
+
+    render(status(onSettled));
+    render(status(onSettled));
+    await act(async () => undefined);
+
+    expect(onSettled).toHaveBeenCalledOnce();
+  });
+});
+
 describe('the push fix across a leave and return, through the real store', () => {
   it('shows the agent working, then the pushed fix, on a card mounted after the agent settled', async () => {
     seedFixAgent({ status: 'running' });

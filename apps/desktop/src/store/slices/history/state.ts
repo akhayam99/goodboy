@@ -18,6 +18,7 @@ export type HistoryState = {
   readonly settledBranchPushes: Readonly<Record<MountId, number>>;
   readonly pushContinuations: Readonly<Record<MountId, PushContinuation>>;
   readonly pushFixOutcomes: Readonly<Record<MountId, PushFixOutcome>>;
+  readonly pushFixClaims: Readonly<Record<MountId, AgentId>>;
   readonly historyLiveSessions: Readonly<Record<MountId, HistoryLiveSession>>;
 };
 
@@ -31,5 +32,6 @@ export const historyInitialState: HistoryState = {
   settledBranchPushes: {},
   pushContinuations: {},
   pushFixOutcomes: remembered.outcomes,
+  pushFixClaims: {},
   historyLiveSessions: {},
 };

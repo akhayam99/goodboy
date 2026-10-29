@@ -809,6 +809,33 @@ describe('push fix outcome', () => {
     });
   });
 
+  it('keeps the outcome untaken and the claim in memory until the continuation is recorded', async () => {
+    const { read } = harness();
+    let finish: (value: { readonly tone: 'done'; readonly sentence: string }) => void = () =>
+      undefined;
+    const pending = new Promise<{ readonly tone: 'done'; readonly sentence: string }>((resolve) => {
+      finish = resolve;
+    });
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      onSettled: vi.fn(() => pending),
+    });
+
+    const settling = settle({ read });
+    await vi.waitFor(() => expect(read().pushFixClaims[MOUNT_ID]).toBe(AGENT_ID));
+
+    expect(read().pushFixOutcomes[MOUNT_ID]?.isClaimed).toBe(false);
+    finish({ tone: 'done', sentence: 'Pull request #318 is open.' });
+    await settling;
+
+    expect(read().pushFixClaims[MOUNT_ID]).toBeUndefined();
+    expect(read().pushFixOutcomes[MOUNT_ID]).toMatchObject({
+      isClaimed: true,
+      followUp: { tone: 'done', sentence: 'Pull request #318 is open.' },
+    });
+  });
+
   it('keeps a continuation that threw as a failed follow up the card can show later', async () => {
     const { read } = harness();
     await read().fixBranchPushWithAgent({

@@ -281,7 +281,7 @@ describe('PushBanner', () => {
     expect(latest).toHaveBeenCalledOnce();
   });
 
-  it('tracks the running agent instead of offering a second one, then resumes once when it settled while nobody listened', () => {
+  it('tracks the running agent instead of offering a second one, then resumes once when it settled while nobody listened', async () => {
     const retryAfterFix = vi.fn();
     const agentId = brandId<AgentId>({ value: 'agent-push-fix' });
     const seeded = store.getState().sessionPhaseRuns[SESSION.id] ?? [];
@@ -362,6 +362,8 @@ describe('PushBanner', () => {
       });
     });
     expect(retryAfterFix).toHaveBeenCalledOnce();
-    expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(true);
+    await waitFor(() =>
+      expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(true),
+    );
   });
 });

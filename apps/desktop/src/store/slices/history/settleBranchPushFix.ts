@@ -3,7 +3,8 @@ import { formatError } from '@goodboy/ui';
 import { pushFailureReason } from '../../../features/resolve/pushFailureReason';
 import { identityChange } from './historyIdentity';
 import { persistPushFixes } from './pushFix/persistPushFixes';
-import { recordPushFixFollowUp, recordPushFixOutcome } from './pushFix/recordPushFixOutcome';
+import { completePushFixOutcome } from './pushFix/completePushFixOutcome';
+import { recordPushFixOutcome } from './pushFix/recordPushFixOutcome';
 import { pushFailureReportOf } from '../notifications/pushFailureReport';
 import type { SliceDeps } from '../../slice-types';
 import { WORK_KEPT } from '../notifications/errorRecovery';
@@ -101,20 +102,17 @@ export const settleBranchPushFix = ({ set, get }: SliceDeps) => {
     recordPushFixOutcome({
       set,
       get,
-      outcome: { ...base, kind: 'pushed', reason: null, isClaimed: continuation !== undefined },
+      outcome: { ...base, kind: 'pushed', reason: null, isClaimed: false },
+      isHeld: continuation !== undefined,
     });
     if (continuation === undefined) {
       return;
     }
     try {
       const followUp = await continuation.resume();
-      if (followUp !== undefined) {
-        recordPushFixFollowUp({ set, get, mountId, agentId, followUp });
-      }
+      completePushFixOutcome({ set, get })({ mountId, agentId, followUp: followUp ?? null });
     } catch (error) {
-      recordPushFixFollowUp({
-        set,
-        get,
+      completePushFixOutcome({ set, get })({
         mountId,
         agentId,
         followUp: { tone: 'failed', sentence: formatError(error) },

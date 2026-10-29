@@ -45,17 +45,21 @@ export const usePushFix = ({ sessionId, mountId, onSettled }: Params): PushFixSt
       return;
     }
     const agentId = unclaimedAgentId;
-    void Promise.resolve(latest.current()).then(
-      (followUp) => {
-        if (followUp !== undefined) {
-          useAppStore.getState().notePushFixFollowUp({ mountId, agentId, followUp });
-        }
-      },
-      (error: unknown) =>
+    const resume = latest.current;
+    const run = async (): Promise<void> => {
+      try {
+        const followUp = await resume();
         useAppStore
           .getState()
-          .reportError({ title: "Couldn't continue after the fix.", error, sessionId }),
-    );
+          .completePushFixOutcome({ mountId, agentId, followUp: followUp ?? null });
+      } catch (error: unknown) {
+        useAppStore.getState().releasePushFixClaim({ mountId, agentId });
+        await useAppStore
+          .getState()
+          .reportError({ title: "Couldn't continue after the fix.", error, sessionId });
+      }
+    };
+    void run();
   }, [unclaimedAgentId, mountId, sessionId]);
 
   return state;

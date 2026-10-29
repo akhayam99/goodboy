@@ -59,6 +59,7 @@ export const SESSION_EVICTION = [
   { key: 'settledBranchPushes', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'pushContinuations', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'pushFixOutcomes', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'pushFixClaims', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestViews', keyedBy: 'session', evictOn: 'archive' },
