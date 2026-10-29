@@ -712,6 +712,18 @@ cut, so a dropped middle never hides them. `DELEGATION_SUMMARY_CHARS` is the sam
 expected text says so, `finishedPlain` registers what the child wrote, and a writer that wrote none
 is not failed (`artifactPersistence` is `not_applicable`).
 
+A read-only role (scout, planner, investigator, reviewer) owes its artifact, and `finishedPlain` tells
+three endings apart through `artifactPersistence`. A report the harness registered is `ok`. A turn with
+no artifact block at all is `not_written`: the delegation fails `report_missing` when the child closed
+with the closing line ("It ended without writing its report.") and `no_closing_envelope` when it did
+not. A turn that holds a block the harness could not store is `failed`, reason
+`artifact_persistence_failed`. A child that declares `status="blocked"` is `blocked` in all three cases,
+never failed for a missing report. An artifact block written beside a blocking question is not
+captured (`captureArtifactsFromTurn` skips a turn with a question), so a scout that Auto releases with
+its answer ("no longer needed, stop") and that then writes no report ends `report_missing`. The closing
+line matches the id of the child ignoring whitespace inside it, so an id a model wrapped across lines
+still closes.
+
 **Answering a child that cannot resume.** The resume text of a paused child (`composeAnswerKickoff`)
 is the question and the answer. A provider outside `AUTO_RESUMING_PROVIDERS` (`isAutoProviderResuming`,
 Claude only; Codex drops the session id in `cli_args.rs`) starts the second attempt with no memory, so

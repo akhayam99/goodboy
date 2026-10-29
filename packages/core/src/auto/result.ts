@@ -80,7 +80,7 @@ export type DelegationResultV1 = Readonly<{
     publish?: ResultPublish;
   }>;
   artifacts: ReadonlyArray<ResultArtifact>;
-  artifactPersistence: 'ok' | 'failed' | 'not_applicable';
+  artifactPersistence: 'ok' | 'failed' | 'not_written' | 'not_applicable';
   openQuestions: ReadonlyArray<ResultQuestion>;
   cost: Readonly<{ usd: number | null; basis: 'reported' | 'reserved_ceiling' | 'estimate' }>;
   reason: string | null;
@@ -118,12 +118,18 @@ export const resolveDelegationOutcome = ({
     return { outcome: 'failed', reason: 'process_error' };
   }
   const completion = closing?.completion ?? 'none';
-  if (isArtifactExpected && artifactPersistence === 'failed') {
-    return { outcome: 'failed', reason: 'artifact_persistence_failed' };
-  }
   if (completion === 'blocked') {
     const isShellMissing = isMissingShellText({ text: closing?.summary ?? '' });
     return { outcome: 'blocked', reason: isShellMissing ? 'missing_tool' : 'declared_blocked' };
+  }
+  if (isArtifactExpected && artifactPersistence === 'failed') {
+    return { outcome: 'failed', reason: 'artifact_persistence_failed' };
+  }
+  if (isArtifactExpected && artifactPersistence === 'not_written') {
+    return {
+      outcome: 'failed',
+      reason: completion === 'done' ? 'report_missing' : 'no_closing_envelope',
+    };
   }
   if (completion === 'done') {
     return { outcome: 'completed', reason: null };
@@ -285,6 +291,9 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
   }
   if (result.artifactPersistence === 'failed') {
     lines.push('  its artifact could not be saved');
+  }
+  if (result.artifactPersistence === 'not_written') {
+    lines.push('  it wrote no report');
   }
   for (const question of result.openQuestions) {
     lines.push(`  open question ${question.questionId}: ${oneLine(question.text)}`);

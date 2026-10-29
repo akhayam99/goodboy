@@ -9,6 +9,7 @@ import {
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type AgentId, type ArtifactId } from '@goodboy/types';
 import {
+  autoAnswers,
   autoDelegates,
   autoTurnEnds,
   childTurnEnds,
@@ -163,8 +164,77 @@ describe('closing the work of one child', () => {
 
     await childTurnEnds({ world, index: 0, text: closing(turn.childAgentId) });
 
-    expect(world.state.ports.autoTurns[1]?.text).toContain('its artifact could not be saved');
+    expect(world.state.ports.autoTurns[1]?.text).toContain('failed, report_missing');
+    expect(world.state.ports.autoTurns[1]?.text).toContain('it wrote no report');
+    expect((await delegationOf(world)).reason).toBe('report_missing');
     expect((await delegationOf(world)).outcome).toBe('failed');
+  });
+
+  it('says a scout released by Auto wrote no report, not that its report was not saved', async () => {
+    const world = await startWith(SCOUT);
+    const first = world.state.ports.childTurns[0];
+    if (first === undefined) {
+      throw new Error('a child was expected');
+    }
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: `Cannot read the pull request.\n<<ctx-question blocking="true">>Paste the threads?<</ctx-question>>\n<<artifact v=1 kind=report>>\n{"title":"Blocked","format":"markdown","content":"nothing read"}\n<</artifact>>`,
+    });
+    const delegation = await delegationOf(world);
+    await autoAnswers({
+      world,
+      delegationId: delegation.id,
+      questionId: `question-${first.attemptId}`,
+      text: 'No longer needed. Stop here and report superseded.',
+    });
+    await autoTurnEnds({ world });
+
+    await childTurnEnds({
+      world,
+      index: 1,
+      text: `superseded, no further work here.\n<<step-done id="${first.childAgentId}">>`,
+    });
+
+    const settled = await delegationOf(world);
+    expect(settled.outcome).toBe('failed');
+    expect(settled.reason).toBe('report_missing');
+    expect(world.state.ports.autoTurns.at(-1)?.text).toContain('failed, report_missing');
+    expect(world.errors).toEqual([]);
+  });
+
+  it('keeps artifact_persistence_failed for a report block that was written but not stored', async () => {
+    const world = await startWith(SCOUT);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: `Two callers.\n<<artifact v=1 kind=report>>\n{"title":"Callers","format":"markdown","content":"exportLedger"}\n<</artifact>>\n<<step-done id="${turn.childAgentId}">>`,
+    });
+
+    expect((await delegationOf(world)).reason).toBe('artifact_persistence_failed');
+  });
+
+  it('keeps a scout that stopped blocked without a report as blocked', async () => {
+    const world = await startWith(SCOUT);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: closing(turn.childAgentId, ' status="blocked"'),
+    });
+
+    const delegation = await delegationOf(world);
+    expect(delegation.outcome).toBe('blocked');
+    expect(delegation.reason).toBe('declared_blocked');
   });
 
   it('opens the pull request a Scribe wrote once and returns its link to Auto', async () => {

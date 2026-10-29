@@ -1,5 +1,6 @@
 import {
   attributeChanges,
+  captureArtifactFromTurnText,
   isAutoWriterRole,
   parseChildClosing,
   parseRevisionFromTurn,
@@ -471,16 +472,22 @@ const publishRecordOf = async ({
 type PersistenceParams = {
   readonly delegation: AutoDelegation;
   readonly artifactCount: number;
+  readonly assistantText: string;
 };
 
 const artifactPersistenceOf = ({
   delegation,
   artifactCount,
-}: PersistenceParams): 'ok' | 'failed' | 'not_applicable' => {
+  assistantText,
+}: PersistenceParams): DelegationResultV1['artifactPersistence'] => {
   if (artifactCount > 0) {
     return 'ok';
   }
-  return isArtifactRole({ delegation }) ? 'failed' : 'not_applicable';
+  if (!isArtifactRole({ delegation })) {
+    return 'not_applicable';
+  }
+  const written = captureArtifactFromTurnText({ assistantText, emittingProvider: null });
+  return written.status === 'none' ? 'not_written' : 'failed';
 };
 
 const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
@@ -504,7 +511,11 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     remote: attribution.remote,
     verification,
     artifacts,
-    artifactPersistence: artifactPersistenceOf({ delegation, artifactCount: artifacts.length }),
+    artifactPersistence: artifactPersistenceOf({
+      delegation,
+      artifactCount: artifacts.length,
+      assistantText: ended.assistantText,
+    }),
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });

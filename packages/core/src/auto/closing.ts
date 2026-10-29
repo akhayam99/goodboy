@@ -21,6 +21,7 @@ export type ChildClosing = Readonly<{
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
 const NAME_CHAR_RE = /[\w-]/;
 const SPACE_CHAR_RE = /\s/;
+const WHITESPACE_RE = /\s+/g;
 
 type ScanParams = {
   readonly raw: string;
@@ -96,7 +97,7 @@ const completionOf = ({ text: rawText, childAgentId }: CompletionParams): ChildC
   let match: RegExpExecArray | null = STEP_DONE_RE.exec(text);
   while (match !== null) {
     const attrs = attrsOf({ raw: match[1] ?? '' });
-    if ((attrs['id'] ?? '').trim() === childAgentId) {
+    if ((attrs['id'] ?? '').replace(WHITESPACE_RE, '') === childAgentId) {
       completion = (attrs['status'] ?? '').trim() === 'blocked' ? 'blocked' : 'done';
     }
     match = STEP_DONE_RE.exec(text);
