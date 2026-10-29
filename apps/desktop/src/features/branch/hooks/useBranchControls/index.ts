@@ -4,10 +4,7 @@ import { useAppStore } from '../../../../store';
 import { mainBehindOf } from '../../../../shared/lib/gitStatus';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
-import {
-  isMountCompleted,
-  isMountRequestMerged,
-} from '../../../../store/slices/project-mounts/mountRowModel';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { DIFF_CHANGE_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import type { DiffActionTarget, PullRequestActionTarget } from '../../../actions/types';
@@ -92,8 +89,7 @@ export const useBranchControls = ({
   );
   const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
-  const isDone = useAppStore((s) => mountId !== null && isMountCompleted({ state: s, mountId }));
-  const behind = mainBehindOf({ status: diff.status, isDone });
+  const behind = mainBehindOf({ status: diff.status, isDone: isRequestMerged });
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const prediction = useRebasePrediction({
     worktreePath: worktreePath ?? '',

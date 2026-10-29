@@ -11,7 +11,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 import { mainBehindOf } from '../../../../shared/lib/gitStatus';
-import { isMountCompleted } from '../../../../store/slices/project-mounts/mountRowModel';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../shared/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
@@ -197,7 +197,9 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         (agent.id === pending?.agentId || rebasingAgentIds.has(agent.id)),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
-  const isDone = useAppStore((state) => mountId != null && isMountCompleted({ state, mountId }));
+  const isDone = useAppStore(
+    (state) => mountId != null && isMountRequestMerged({ state, mountId }),
+  );
   const behindMain = mainBehindOf({ status, isDone });
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
   const canResume = sessionId != null && !isDone && status?.inProgress === 'rebase';

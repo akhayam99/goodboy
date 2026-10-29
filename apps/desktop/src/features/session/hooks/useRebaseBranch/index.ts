@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mainBehindOf } from '../../../../shared/lib/gitStatus';
-import { isMountCompleted } from '../../../../store/slices/project-mounts/mountRowModel';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { useToast } from '../../../../shared/components/Toast';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -45,7 +45,9 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
   });
   const isRebaseRun = run !== null && run.origin === 'rebase';
   const isRunning = isStarting || (isRebaseRun && isHistoryRunActive({ phase: run.phase }));
-  const isDone = useAppStore((state) => mountId != null && isMountCompleted({ state, mountId }));
+  const isDone = useAppStore(
+    (state) => mountId != null && isMountRequestMerged({ state, mountId }),
+  );
   const behindMain = mainBehindOf({ status, isDone });
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
 

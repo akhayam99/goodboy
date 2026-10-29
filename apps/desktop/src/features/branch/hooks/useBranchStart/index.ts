@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { isMountCompleted } from '../../../../store/slices/project-mounts/mountRowModel';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { rebaseConflictOf } from '../../../history/rebaseConflictOf';
 import { branchNextStepOf, type BranchNextStep } from '../../branchNextStepOf';
@@ -38,7 +38,9 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
     return conflict === null ? null : conflict.files;
   });
   const hasConflictStop = conflictFiles !== null;
-  const isDone = useAppStore((state) => mountId !== null && isMountCompleted({ state, mountId }));
+  const isDone = useAppStore(
+    (state) => mountId !== null && isMountRequestMerged({ state, mountId }),
+  );
   const localCheck = useAppStore((state) =>
     mountId === null ? null : (state.mountLocalChecks[mountId] ?? null),
   );
