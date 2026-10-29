@@ -237,6 +237,8 @@ const baseState = (): State => {
     budgetAlerts: [],
     sessionBudgets: {},
     loadSessionBudget: vi.fn(async () => undefined),
+    loadGoalAttachments: vi.fn(async () => undefined),
+    sessionSlots: {},
     phaseTemplates: { [WORKSPACE_ID]: [template] },
     sessionWorkflows: { [SESSION_ID]: [template] },
     sessionPhaseRuns: { [SESSION_ID]: [completedAgent()] },

@@ -296,8 +296,10 @@ fn claude_side_jobs_spawn_without_tools_and_with_the_effort() {
     ]));
     let mut expected_planner = strings(&common);
     expected_planner.extend(strings(&[
+        "--tools",
+        "Read,Grep,Glob",
         "--disallowedTools",
-        "mcp__*",
+        "Bash,Edit,Write,MultiEdit,NotebookEdit,WebFetch,WebSearch,Task,Agent,mcp__*",
         "--effort",
         "medium",
     ]));

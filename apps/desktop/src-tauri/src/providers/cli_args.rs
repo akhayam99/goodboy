@@ -137,7 +137,7 @@ pub(crate) fn read_only_policy(cli: Cli, job: Job) -> Policy {
             prompt_on_stdin: true,
         },
         (Cli::Claude, Job::Planner) => Policy {
-            pairs: &[("--disallowedTools", "mcp__*")],
+            pairs: &[],
             switches: &["--no-session-persistence"],
             forbidden: &["--dangerously-skip-permissions", "--allowedTools"],
             prompt_after_separator: false,
@@ -252,6 +252,41 @@ pub(crate) fn read_only_violations(cli: Cli, job: Job, argv: &[String]) -> Vec<S
             found.push(format!("{switch} is missing"));
         }
     }
+    if cli == Cli::Claude && job == Job::Planner {
+        found.extend(claude_planner_tool_violations(&flags));
+    }
+    found
+}
+
+fn flag_value<'a>(flags: &[&'a str], name: &str) -> Option<&'a str> {
+    flags
+        .windows(2)
+        .find(|pair| pair[0] == name)
+        .map(|pair| pair[1])
+}
+
+fn claude_planner_tool_violations(flags: &[&str]) -> Vec<String> {
+    let tools = flag_value(flags, "--tools");
+    let denied: Vec<&str> = flag_value(flags, "--disallowedTools")
+        .unwrap_or("")
+        .split(',')
+        .collect();
+    let mut found = Vec::new();
+    if tools != Some("") && tools != Some(READ_ONLY_CLAUDE_TOOLS) {
+        found.push(format!(
+            "--tools must be empty or {READ_ONLY_CLAUDE_TOOLS:?}"
+        ));
+    }
+    if !denied.contains(&"mcp__*") {
+        found.push("--disallowedTools must deny mcp__*".to_string());
+    }
+    if tools == Some(READ_ONLY_CLAUDE_TOOLS) {
+        for tool in PLANNER_READING_DENIED_TOOLS {
+            if !denied.contains(tool) {
+                found.push(format!("--disallowedTools must deny {tool:?}"));
+            }
+        }
+    }
     found
 }
 
@@ -286,12 +321,17 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
                 "json".to_string(),
                 "--no-session-persistence".to_string(),
             ];
-            if side.tools_disabled || side.job == Job::Summarizer {
-                v.push("--tools".to_string());
-                v.push(String::new());
+            let mut denied: Vec<&str> = Vec::new();
+            let mut tools = "";
+            if !(side.tools_disabled || side.job == Job::Summarizer) {
+                tools = READ_ONLY_CLAUDE_TOOLS;
+                denied.extend(PLANNER_READING_DENIED_TOOLS);
             }
+            v.push("--tools".to_string());
+            v.push(tools.to_string());
+            denied.push("mcp__*");
             v.push("--disallowedTools".to_string());
-            v.push("mcp__*".to_string());
+            v.push(denied.join(","));
             v.extend(effort);
             v
         }
@@ -421,6 +461,17 @@ const WRITER_ROLES: &[&str] = &[
 const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
 const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
 const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
+const PLANNER_READING_DENIED_TOOLS: &[&str] = &[
+    "Bash",
+    "Edit",
+    "Write",
+    "MultiEdit",
+    "NotebookEdit",
+    "WebFetch",
+    "WebSearch",
+    "Task",
+    "Agent",
+];
 const AUTO_CHILD_DENIED_TOOLS: &[&str] = &[
     "Bash(git push:*)",
     "Bash(git push *)",
@@ -926,15 +977,63 @@ mod tests {
     }
 
     #[test]
-    fn the_planner_keeps_tools_unless_disabled_and_the_summarizer_never_has_them() {
+    fn the_planner_reads_files_unless_disabled_and_the_summarizer_never_has_tools() {
         let mut planner = side("anthropic", Job::Planner);
         let with_tools = side_job_args(&planner).expect("argv");
         planner.tools_disabled = true;
         let without_tools = side_job_args(&planner).expect("argv");
         let summarizer = side_job_args(&side("anthropic", Job::Summarizer)).expect("argv");
-        assert!(!with_tools.contains(&"--tools".to_string()));
-        assert!(without_tools.contains(&"--tools".to_string()));
-        assert!(summarizer.contains(&"--tools".to_string()));
+        assert_eq!(
+            value_after(&with_tools, "--tools").as_deref(),
+            Some("Read,Grep,Glob")
+        );
+        assert_eq!(value_after(&without_tools, "--tools").as_deref(), Some(""));
+        assert_eq!(value_after(&summarizer, "--tools").as_deref(), Some(""));
+    }
+
+    #[test]
+    fn a_planner_that_reads_files_can_never_write_run_or_fetch() {
+        let argv = side_job_args(&side("anthropic", Job::Planner)).expect("argv");
+        let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+        for tool in [
+            "Bash",
+            "Edit",
+            "Write",
+            "MultiEdit",
+            "NotebookEdit",
+            "WebFetch",
+            "WebSearch",
+            "Task",
+            "Agent",
+            "mcp__*",
+        ] {
+            assert!(denied.split(',').any(|entry| entry == tool), "{tool}");
+        }
+        assert!(!argv.contains(&"--allowedTools".to_string()));
+    }
+
+    #[test]
+    fn a_claude_planner_argv_that_opens_more_tools_is_a_violation() {
+        let open = strings(&["-p", "--disallowedTools", "mcp__*"]);
+        let found = read_only_violations(Cli::Claude, Job::Planner, &open);
+        assert!(found.iter().any(|message| message.contains("--tools")));
+        let partial = strings(&[
+            "-p",
+            "--tools",
+            "Read,Grep,Glob",
+            "--disallowedTools",
+            "mcp__*",
+        ]);
+        let found = read_only_violations(Cli::Claude, Job::Planner, &partial);
+        assert!(found.iter().any(|message| message.contains("\"Bash\"")));
+    }
+
+    #[test]
+    fn the_other_clis_run_their_planner_in_a_read_only_mode_with_or_without_file_reads() {
+        for provider in ["cursor", "gemini", "codex", "opencode", "copilot"] {
+            let planner = side_job_args(&side(provider, Job::Planner));
+            assert!(planner.is_ok(), "{provider}: {planner:?}");
+        }
     }
 
     fn spawn_args<'a>(

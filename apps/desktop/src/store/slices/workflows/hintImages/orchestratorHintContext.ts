@@ -18,6 +18,7 @@ type Result = {
   readonly operatorHints: string;
   readonly worktreePath: string | null;
   readonly canReadFiles: boolean;
+  readonly decisions: string;
 };
 
 export const orchestratorHintContext = async ({
@@ -53,5 +54,8 @@ export const orchestratorHintContext = async ({
   const worktreePath = canReadFiles
     ? hintsWorktreeDir
     : (getSessionRepo({ get, sessionId })?.worktreePath ?? null);
-  return { operatorHints, worktreePath, canReadFiles };
+  const decisionsSlot = (get().sessionSlots[sessionId] ?? []).find(
+    (slot) => slot.key === 'decisions' && slot.enabled,
+  );
+  return { operatorHints, worktreePath, canReadFiles, decisions: decisionsSlot?.value ?? '' };
 };

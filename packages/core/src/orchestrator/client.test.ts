@@ -116,6 +116,26 @@ describe('OrchestratorClient', () => {
     expect(on.args()['toolsDisabled']).toBe(false);
   });
 
+  it('swaps in the file-reading system prompt only when the decision has files to read', async () => {
+    const off = capture();
+    const on = capture();
+    const deps = { providerId: 'anthropic', model: 'sonnet-5-5' } as const;
+
+    await new OrchestratorClient({ ...deps, invokeFn: off.invokeFn }).decide(input());
+    await new OrchestratorClient({ ...deps, invokeFn: on.invokeFn }).decide(
+      input({ canReadFiles: true }),
+    );
+
+    expect(String(off.args()['systemPrompt'])).toContain('You have no tools and no repository');
+    expect(String(off.args()['systemPrompt'])).toContain('Respond immediately with');
+    const reading = String(on.args()['systemPrompt']);
+    expect(reading).toContain('reading files with Read, Glob and Grep');
+    expect(reading).toContain('You can never write, run commands, fetch from the web');
+    expect(reading).not.toContain('You have no tools');
+    expect(reading).not.toContain('Respond immediately with');
+    expect(reading).toContain('Read the files the hints name first.');
+  });
+
   it('forwards the configured effort to the spawn args', async () => {
     const seen = capture();
     const client = new OrchestratorClient({

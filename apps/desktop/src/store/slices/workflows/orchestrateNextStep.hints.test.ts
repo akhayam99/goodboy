@@ -174,7 +174,7 @@ const seedRun = ({ hints, projects = [], attachments = [] }: SeedParams): void =
 };
 
 type DecideFieldParams = {
-  readonly key: 'operatorHints' | 'canReadFiles';
+  readonly key: 'operatorHints' | 'canReadFiles' | 'decisions';
 };
 
 const decideField = ({ key }: DecideFieldParams): unknown => {
@@ -241,6 +241,32 @@ describe('orchestrateNextStep hints', () => {
     expect(decideField({ key: 'operatorHints' })).toContain(
       '- /work/harborline/.goodboy/attachments/a/a.png',
     );
+  });
+
+  it('hands the orchestrator the active numbered decisions of the session', async () => {
+    seedRun({ hints: [] });
+    useAppStore.setState({
+      sessionSlots: {
+        [SESSION]: [{ key: 'decisions', value: '- D4 no PR, commit locally', enabled: true }],
+      },
+    });
+
+    await decide();
+
+    expect(decideField({ key: 'decisions' })).toBe('- D4 no PR, commit locally');
+  });
+
+  it('leaves a disabled decisions slot out', async () => {
+    seedRun({ hints: [] });
+    useAppStore.setState({
+      sessionSlots: {
+        [SESSION]: [{ key: 'decisions', value: '- D4 no PR, commit locally', enabled: false }],
+      },
+    });
+
+    await decide();
+
+    expect(decideField({ key: 'decisions' })).toBe('');
   });
 
   it('keeps the orchestrator without file tools when no hint carries an image', async () => {

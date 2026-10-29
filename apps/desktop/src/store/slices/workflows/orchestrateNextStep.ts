@@ -605,13 +605,14 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const { operatorHints, worktreePath, canReadFiles } = await orchestratorHintContext({
-        get,
-        sessionId,
-        workflowRunId,
-        workspaceId: session.workspaceId,
-        hints: readHints,
-      });
+      const { operatorHints, worktreePath, canReadFiles, decisions } =
+        await orchestratorHintContext({
+          get,
+          sessionId,
+          workflowRunId,
+          workspaceId: session.workspaceId,
+          hints: readHints,
+        });
       const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
@@ -644,6 +645,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         openQuestionCount: openQuestions.length,
         ...(operatorHints !== '' && { operatorHints }),
         ...(canReadFiles && { canReadFiles: true }),
+        decisions,
         providerId: defaultProvider,
         modelMenu,
         roleDefaults,
