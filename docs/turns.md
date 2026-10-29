@@ -220,7 +220,10 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   the rule once the bridge serves and a mount exists. A read-only role such as
   the planner gets the planning half: it names each new branch
   `<type>/<kebab-desc>` and leaves the creation to the step that writes.
-  `scopeGuard.test.ts` pins the text.
+  `scopeGuard.test.ts` pins the text. A guard that names a worktree or a
+  mount also forbids linking or copying `node_modules`, `.next`, `dist` or other
+  build output from another folder: a missing dependency is installed in the
+  worktree with the project's install command, or asked about once.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary. A fallback rerun of that

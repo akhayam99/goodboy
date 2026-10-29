@@ -59,6 +59,8 @@ ${roleNeedsSection({ driver: 'orchestrator' })}
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
+When a step touches what an active decision governs, promptPrefix names that decision by number and restates its rule in one line, so the step never depends on finding it.
+
 ${routingSection({ isModelPickEnabled })}
 
 reason is written for the operator, not for you. Say why this step is needed now: what the step before it left open, what this one settles. One or two sentences, plain markdown, never a recap of what already happened. For done and blocked, say what the run achieved and what is left.

@@ -276,6 +276,12 @@ describe('buildOrchestratorUserPrompt', () => {
 });
 
 describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
+  it('has the brief name the active decision a step touches', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'promptPrefix names that decision by number and restates its rule in one line',
+    );
+  });
+
   it('dictates the flow rules that keep a run from running forever', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('treat that estimate as your own soft cap');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('never because a count was reached');

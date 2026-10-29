@@ -102,6 +102,9 @@ const mountCommandLines = ({
   ];
 };
 
+const DEPENDENCY_LINE =
+  'NEVER link or copy `node_modules`, `.next`, `dist` or other build output from another folder. When dependencies are missing, run the project install or setup command in this worktree, or ask once if it is unknown.';
+
 const WRITE_BOUNDARY_LINES: ReadonlyArray<string> = [
   'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount. NEVER write to a project root or any path outside them.',
   'If the request implies editing files outside the session directory and the materialized mounts, stop and ask for explicit confirmation before touching them.',
@@ -194,7 +197,11 @@ const executionLines = ({
 }: ExecutionParams): ReadonlyArray<string> => {
   const bound = executionLine({ workingDir, activeMountId });
   if (tag === 'worktree-scope') {
-    return [`You are operating inside an isolated git worktree at: ${workingDir}`, bound];
+    return [
+      `You are operating inside an isolated git worktree at: ${workingDir}`,
+      bound,
+      DEPENDENCY_LINE,
+    ];
   }
   if (tag === 'session-directory-scope') {
     return [`You are operating inside this session directory: ${workingDir}`, bound];
@@ -209,6 +216,7 @@ const executionLines = ({
   return [
     `You are operating inside the active project mount at: ${workingDir}`,
     bound,
+    DEPENDENCY_LINE,
     `This session has ${mounts.length} materialized project mounts:`,
     ...mounts.map((mount) => mountInventoryLine({ mount, projects })),
     'Two mounts of the same project are worktrees of one repository and share its history and its remotes, they are not separate clones. Run every git command inside the mount you mean.',

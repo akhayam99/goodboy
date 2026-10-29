@@ -1,3 +1,4 @@
+import { DECISION_FIRST_RULE } from '../decisionFirstRule';
 import { ROLE_REGISTRY } from '../roles';
 import { isAutoWriterRole, type AutoDelegationRole } from './roles';
 import { OUTCOME_MAX_CHARS } from './outcome';
@@ -158,7 +159,7 @@ const NEEDS_RULE =
 const returnContract = ({ childAgentId, isSubstep }: ReturnContractParams): string =>
   [
     `**Return** When the work is done, end your last message with \`<<step-done id="${childAgentId}">>\` on its own line. If you cannot go on and nothing can be asked, say why and end with \`<<step-done id="${childAgentId}" status="blocked">>\`.`,
-    'When only the user or Auto can decide something, ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop.',
+    `When only the user or Auto can decide something, ask it in one \`<<ctx-question blocking="true">>the question<</ctx-question>>\` block and stop. ${DECISION_FIRST_RULE}`,
     ...(isSubstep ? [] : [NEEDS_RULE]),
     'Do not hand the work to another agent, do not split it into several agents, and do not start subagents. If the result needs more work, say so and Auto decides.',
   ].join('\n');

@@ -1391,7 +1391,14 @@ Every kickoff, re-kick and recovery prompt ends with the scope line from
 `composeUnitBoundary`. It names the done marker and the question channel: a
 question in plain prose never reaches the user, so an agent that needs an
 answer, an approval or a confirmation asks it in a blocking
-`<<ctx-question>>` block and stops.
+`<<ctx-question>>` block and stops. Before it asks, it checks the decisions in
+the shared context: an active decision that settles the point is followed, even
+when it says assumed or proposed, and is never asked about again. An agent that
+finds a decision wrong follows it anyway, says why in its report and leaves the
+change to you. The same rule (`DECISION_FIRST_RULE`) sits in the context
+handoff protocol and in the Auto child kickoff. When a step touches what an
+active decision governs, the orchestrator brief names that decision by number
+and restates its rule in one line.
 
 Every provider gets the same asks, in the same words. Claude takes the
 protocol in its system prompt; the other providers have no separate system

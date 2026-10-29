@@ -283,6 +283,7 @@ export {
   type BranchFactsRequest,
   type BranchFactsThread,
 } from './auto/branchFacts';
+export { DECISION_FIRST_RULE } from './decisionFirstRule';
 export {
   AUTO_DEFAULT_EXPECTED,
   composeAnswerKickoff,
