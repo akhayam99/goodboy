@@ -15,6 +15,7 @@ export type ConfirmDelegationParams = Readonly<{
   ctx: AgentVerbContext;
   delegationId: AutoDelegationId;
   decision: 'confirm' | 'decline';
+  hint?: string;
 }>;
 
 export type ConfirmDelegationOutcome = 'confirmed' | 'declined' | 'lost';
@@ -26,6 +27,7 @@ export const confirmDelegation = async ({
   ctx,
   delegationId,
   decision,
+  hint,
 }: ConfirmDelegationParams): Promise<ConfirmDelegationOutcome> => {
   const delegation = await getAutoDelegation({ db: ctx.db, delegationId });
   if (delegation === null || delegation.state !== 'awaiting_confirm') {
@@ -44,9 +46,32 @@ export const confirmDelegation = async ({
     abortCode: ABORT_TREE,
   };
   if (decision === 'confirm') {
+    const userHint = hint?.trim() ?? '';
+    const request = delegation.request;
+    const task = typeof request['task'] === 'string' ? request['task'] : '';
+    const kickoff = typeof request['kickoff'] === 'string' ? request['kickoff'] : '';
+    const hintNote = `\n\nUSER HINT\n${userHint}`;
     const outcome = await ctx.db.transaction({
       statements: [
         guard,
+        ...(userHint === ''
+          ? []
+          : [
+              {
+                sql: `UPDATE auto_delegations SET request_json = ?
+                WHERE id = ? AND generation = ? AND state = 'awaiting_confirm'`,
+                params: [
+                  JSON.stringify({
+                    ...request,
+                    hint: userHint,
+                    task: task + hintNote,
+                    kickoff: kickoff + hintNote,
+                  }),
+                  delegationId,
+                  delegation.generation,
+                ],
+              },
+            ]),
         casAutoDelegationStateStatement({
           delegationId,
           generation: delegation.generation,
@@ -66,6 +91,13 @@ export const confirmDelegation = async ({
   const outcome = await ctx.db.transaction({
     statements: [
       guard,
+      {
+        sql: `SELECT 1 FROM auto_delegations
+          WHERE id = ? AND generation = ? AND state = 'awaiting_confirm'`,
+        params: [delegationId, delegation.generation],
+        abortWhen: 'noRows',
+        abortCode: ABORT_STATE,
+      },
       settleAutoDelegationStatement({
         delegationId,
         generation: delegation.generation,

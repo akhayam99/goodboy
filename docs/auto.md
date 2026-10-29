@@ -624,6 +624,9 @@ It decides by ending its final reply with at most one block:
 
 - `delegate` hands one to four children to agents of a role (`requestId` is optional and
   derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
+- `propose` offers one `primary` child like a delegate and at most two
+  `alternatives`, each with a label and a role. The primary waits for confirmation;
+  alternatives carry no brief and consume no budget.
 - `answer` answers the question of a child (`delegation`, `question`, `text`, and an optional
   `artifact` id whose text Goodboy puts into the resume, see Substeps).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
@@ -641,6 +644,21 @@ plan optional and tells Auto to choose and delegate without proposing a next
 step. Force pushes still require confirmation and a backup at every level.
 Auto must never end a turn with a prose yes or no question: a choice belongs
 in a next step proposal for the app to show as a card.
+
+`parseProposeSpec` validates the primary with the delegate rules and forces
+confirmation. Alternatives live in the primary's request data, and the replay
+hash includes them. Admission keeps the same plan, mount, owner and generation
+guards as a delegate. A malformed proposal starts nothing and comes back as a
+refusal. `proposals/propose.sqlite.test.ts` covers admission, recovery and replay.
+
+`confirmDelegation` accepts an optional hint. It saves the trimmed hint and adds
+it to the task and kickoff in the same transaction that accepts the child, so
+confirmation needs no extra Auto turn and a retry of the work retains the hint.
+A failed save leaves the old request pending. A competing decision, stop, changed
+generation or lost owner returns `lost` without saving the hint. Decline ignores
+hints. Confirm and decline both check pending state inside their transaction, so
+a late decline cannot cancel a confirmed child. The proposal tests cover rollback,
+retry and competing decisions.
 
 Admission reads the session level from the database for every handoff, after
 resolving the child. **Every step** stores each child as waiting for its own

@@ -39,6 +39,7 @@ export type AutoRuntimeOptions = Readonly<{
 type ConfirmRuntimeParams = Readonly<{
   delegationId: AutoDelegationId;
   decision: 'confirm' | 'decline';
+  hint?: string;
 }>;
 
 type SendNowRuntimeParams = Readonly<{
@@ -162,8 +163,13 @@ export const createAutoRuntime = ({
       }
       return outcome;
     },
-    confirm: async ({ delegationId, decision }) => {
-      const outcome = await confirmDelegation({ ctx, delegationId, decision });
+    confirm: async ({ delegationId, decision, hint }) => {
+      const outcome = await confirmDelegation({
+        ctx,
+        delegationId,
+        decision,
+        ...(hint === undefined ? {} : { hint }),
+      });
       return outcome;
     },
     rerunChecks: (delegationId) => rerunChecks({ ctx, delegationId }),

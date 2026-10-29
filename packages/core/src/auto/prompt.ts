@@ -50,6 +50,7 @@ const delegationRules = (): string =>
     '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it.',
     `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
+    '- Propose: when you need a choice, never ask yes or no in prose; send <<auto>>{"action":"propose","primary":{"role":"scout","title":"Find the callers","task":"Read ledger-core callers.","reason":"Reading code."},"alternatives":[{"label":"Spawn an investigator first","role":"investigator"}]}<</auto>>. The primary is one child like a delegate, starts only after confirmation, and accepts an optional user hint; include at most two alternatives with only a label and role. At Never, delegate instead.',
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
     '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',

@@ -383,6 +383,11 @@ export {
   type ParseAutoBlockParams,
 } from './auto/autoBlock';
 export {
+  parseProposeSpec,
+  type ProposeAlternative,
+  type ProposeSpecOutcome,
+} from './auto/proposeSpec';
+export {
   AUTO_RESTART_NOTICE,
   buildDeliveryText,
   type BuildDeliveryParams,
