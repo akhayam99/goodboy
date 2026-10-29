@@ -345,8 +345,8 @@ pub async fn worktree_deps_check(
         authorize_worktree(&repo_path, &worktree_path)?;
         deps_check_blocking(worktree_path)
     })
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
@@ -358,8 +358,8 @@ pub async fn worktree_deps_unlink(
         authorize_worktree(&repo_path, &worktree_path)?;
         deps_unlink_blocking(worktree_path)
     })
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[cfg(test)]
