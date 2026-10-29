@@ -306,11 +306,16 @@ writing to it reopens it to **Deciding**.
   word only while Auto rests and its own turn is not running (the registry verb
   `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
   to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
-- **Delegation lines.** Each delegation is one bare line in the conversation
-  (`AutoDelegationLines`): its role chip, the task Auto gave and **Open**; the
-  lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
-  ready". The child's state word is on its rail row, never on the line; its
-  reason, model and result are in its pane. Lines read the
+- **Delegation lines.** Each delegation is in the conversation
+  (`AutoDelegationLines`). A settled one is one bare line: its role chip, the
+  task Auto gave and **Open**. A child still in flight is a live card
+  (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
+  **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
+  the elapsed time, role and model, and the child's last tool as the activity
+  line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
+  of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
+  child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
+  ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A revise that waits for an OK carries **Confirm** and
   **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
