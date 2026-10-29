@@ -1,12 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async () => undefined),
-}));
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(async () => () => undefined),
-  emit: vi.fn(async () => undefined),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GoalAttachment, OrchestratorHint } from '@goodboy/types';
