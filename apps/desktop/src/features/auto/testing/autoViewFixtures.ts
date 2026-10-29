@@ -69,6 +69,7 @@ type DelegationParams = {
   readonly reviseOf?: string | null;
   readonly baseRevision?: number | null;
   readonly routing?: Readonly<Record<string, unknown>>;
+  readonly alternatives?: ReadonlyArray<Readonly<{ label: string; role: string }>>;
 };
 
 export const aDelegation = ({
@@ -85,6 +86,7 @@ export const aDelegation = ({
   reviseOf = null,
   baseRevision = null,
   routing = {},
+  alternatives = [],
 }: DelegationParams): AutoDelegation => ({
   id: brandId<AutoDelegationId>({ value: `delegation-${key}` }),
   treeId: FIXTURE_TREE,
@@ -96,7 +98,11 @@ export const aDelegation = ({
   childAgentId: brandId<AgentId>({ value: `agent-${key}` }),
   firstAttemptId: brandId({ value: `attempt-${key}` }),
   role,
-  request: { task: `work for ${key}`, reason },
+  request: {
+    task: `work for ${key}`,
+    reason,
+    ...(alternatives.length === 0 ? {} : { alternatives }),
+  },
   target: { mountName: 'payments-api' },
   routing: { provider: 'anthropic', model, effort, reason: 'chosen for the role', ...routing },
   state,

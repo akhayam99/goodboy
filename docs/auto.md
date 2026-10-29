@@ -320,8 +320,8 @@ writing to it reopens it to **Deciding**.
   child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
-  the same lines. A revise that waits for an OK carries **Confirm** and
-  **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
+  the same lines. A child that waits for an OK carries the **Next step** card
+  (see **Confirming**), and a plan that waits for approval carries the
   ask **Plan v1 needs your approval** with the plan title, the first four steps
   and the step, file and risk counts (`autoPlanOutlineOf`), and one action,
   **View plan** (`AutoPlanAsk`). **Approve plan** and **Ask for changes** sit
@@ -329,7 +329,8 @@ writing to it reopens it to **Deciding**.
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the view keeps open with
   **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
-  artifact colour (`AUTO_STATE_TONE.artifact`), never green. While the plan is
+  artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the ask does not
+  unmount: it settles to "Plan v1 approved" with **View plan**. While the plan is
   revised the ask settles to one quiet line, "Plan v1 · changes asked".
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
@@ -518,10 +519,27 @@ until the session is reopened.
 
 ## Confirming
 
-A revise Auto is not sure about waits for an OK under its delegation line: "Change plan
-Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
-goes through one port, `registerDelegationDecisionPort`, which the runtime
-registers; without a port the click says Auto cannot take the answer yet.
+A child that waits for an OK shows one **Next step** card under its line, never a
+Confirm row (`AutoNextAction`, built by `nextActionOf`). The proposed child is the
+primary tile and button ("Spawn implementer", or "Revise Retry-safe credit
+retries to v3"), the alternatives of the proposal follow as tiles 2 and 3, and an
+optional hint field sits under them. The keys 1 to 3 pick a tile while focus is
+inside the card; Enter in the hint field runs the pick. The card is the question
+colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side border.
+
+- The primary confirms through `registerDelegationDecisionPort` with the typed hint
+  (`confirmDelegation` appends it to the brief). No model turn runs.
+- An alternative declines the primary first, then sends the Auto root one
+  structured message: `Next step: <role>` on the first line, the hint after it.
+  If the decline lost, no message is sent. If the message fails, the card stays as
+  "Declined. Auto was not told." with **Tell Auto**, which sends only the message.
+- **Not now** declines and tells nothing.
+- A failed start keeps the pick and the hint, shows the reason in the card and
+  reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
+- Without a port the card says Auto can't take the answer in this window yet.
+
+The hint travels through the same port in every window (the multi-window bridge
+carries it).
 
 ## Blocked and Retry
 

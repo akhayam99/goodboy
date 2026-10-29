@@ -287,6 +287,7 @@ c13-workflows-history
 c13-workflows-history-empty
 c13-workflows-history-failed
 c13-workflows-history-filter
+c2-next-step
 card-rails
 changelog
 chat-empty-noprojects
