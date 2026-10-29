@@ -12,6 +12,17 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.1
+
+A run that asks several questions shows them all on its page, and you answer them in one go.
+
+### Improved
+
+#### Answer every question of a run at once
+<!-- gb area=workflows image=run-answers -->
+
+When the agent of a run asks several questions, the run page lists each one with its own answer field and one Send answers button. The agent gets every answer together and resumes once; a failed send keeps what you typed and Retry sends the same answers again.
+
 ## Goodboy v0.29.0
 
 Auto asks you as much as you want, proposes its next step as a card, and its agents answer in one short reading order.
