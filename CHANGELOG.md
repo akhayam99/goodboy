@@ -24,6 +24,7 @@ Agents follow what the session already decided, a run's steps stay on its branch
 - A step whose branch was removed stops and names the branch instead of starting in another worktree. <!-- gb area=workflows -->
 - The orchestrator looks at the images of your hints and writes what they show into the step brief, and the step gets those images by path. <!-- gb area=workflows -->
 - Agents in a worktree install dependencies there instead of linking node_modules or build output from another folder. <!-- gb area=agents -->
+- The orchestrator and the planner can only read files, never run commands or edit, even when your settings allow more. <!-- gb area=workflows -->
 
 ## Goodboy v0.29.1
 
