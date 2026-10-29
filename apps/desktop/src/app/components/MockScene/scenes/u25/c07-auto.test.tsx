@@ -218,7 +218,7 @@ describe('c07 Auto scenes', () => {
     ).toBeGreaterThan(1);
   });
 
-  it('a tree row and a delegation line open the child pane; the Auto row closes it', async () => {
+  it('a delegation line reveals the child, then tree rows open the child and Auto', async () => {
     mount({ id: 'c07-auto-working' });
 
     const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -229,9 +229,9 @@ describe('c07 Auto scenes', () => {
       throw new Error('no Tester line');
     }
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
-    expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
+    expect((await treeRow(/^Tester, /)).getAttribute('aria-selected')).toBe('true');
 
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
     fireEvent.click(await treeRow(/^Implementer, /));
     expect(
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),

@@ -10,6 +10,7 @@ import { autoLimitOpenEvent } from './autoLimitOpenEvent';
 import { raisedCapOf } from './raisedCapOf';
 import { useAutoTreeActions } from './useAutoTreeActions';
 import { useAutoTreeCap } from './useAutoTreeCap';
+import { AutoWorkingNow } from './AutoWorkingNow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -53,11 +54,11 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const saveCap = useAutoTreeCap({ sessionId, treeId: view.tree.id });
   const isRaisingRef = useRef(false);
   if (rootTurn?.kind === 'running' || rootTurn?.kind === 'starting') {
-    return null;
+    return <AutoWorkingNow sessionId={sessionId} view={view} />;
   }
   const live = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
   if (live === null || live.state === 'idle') {
-    return null;
+    return <AutoWorkingNow sessionId={sessionId} view={view} />;
   }
   const facts = view.delegations.length > 0 ? live : withPlainStop({ facts: live });
   const capUsd = view.budget?.capUsd ?? null;
@@ -108,6 +109,7 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
           body={actions.failure.message}
         />
       )}
+      <AutoWorkingNow sessionId={sessionId} view={view} />
     </div>
   );
 };
