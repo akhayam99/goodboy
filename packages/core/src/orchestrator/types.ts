@@ -96,6 +96,7 @@ export type OrchestratorInput = {
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;
   readonly openQuestionCount: number;
   readonly operatorHints?: string;
+  readonly canReadFiles?: boolean;
   readonly providerId: ProviderId;
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;

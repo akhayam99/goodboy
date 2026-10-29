@@ -66,6 +66,7 @@ import { selectRunStepMountId } from './runMount/selectRunStepMountId';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { formatOrchestratorHints } from './orchestratorHintQueue';
+import { hintImagePaths } from './hintImagePaths';
 import { decisionRestartMark } from './decisionRestart';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
@@ -616,11 +617,24 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const hints = [profileBlock, projectsBlock, formatOrchestratorHints({ hints: readHints })]
+      const hintsWorktreeDir = (get().sessionWorktrees ?? {})[sessionId]?.[0] ?? null;
+      const imagePaths = hintImagePaths({
+        hints: readHints,
+        attachments: (get().workflowRunAttachments ?? {})[workflowRunId] ?? [],
+        worktreeDir: hintsWorktreeDir,
+      });
+      const hasHintImages = Object.keys(imagePaths).length > 0;
+      const hints = [
+        profileBlock,
+        projectsBlock,
+        formatOrchestratorHints({ hints: readHints, imagePaths }),
+      ]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
-      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const worktreePath = hasHintImages
+        ? hintsWorktreeDir
+        : (getSessionRepo({ get, sessionId })?.worktreePath ?? null);
       const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
@@ -652,6 +666,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         completedSteps,
         openQuestionCount: openQuestions.length,
         ...(hints !== '' && { operatorHints: hints }),
+        ...(hasHintImages && { canReadFiles: true }),
         providerId: defaultProvider,
         modelMenu,
         roleDefaults,

@@ -1692,6 +1692,56 @@ describe('orchestrateNextStep', () => {
     expect(input.operatorHints).toContain('[new] run a reviewer first');
   });
 
+  it('gives the orchestrator the hint images as readable paths and lets it read them', async () => {
+    const image = (id: string) => ({
+      id,
+      ownerType: 'workflow_run',
+      ownerId: WORKFLOW_RUN_ID,
+      relPath: `.goodboy/attachments/${id}/${id}.png`,
+      kind: 'image',
+      fileName: `${id}.png`,
+      mimeType: 'image/png',
+      createdAt: HINT_AT,
+    });
+    const state = {
+      ...withHints(baseState(), [
+        hintFixture({ id: 'shot', text: 'remove this header', attachmentIds: ['a', 'b'] }),
+      ]),
+      sessionWorktrees: { [SESSION_ID]: ['/work/harborline'] },
+      workflowRunAttachments: { [WORKFLOW_RUN_ID]: [image('a'), image('b'), image('other')] },
+    };
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
+    expect(input.canReadFiles).toBe(true);
+    expect(input.operatorHints).toContain('write into the step brief what they show');
+    expect(input.operatorHints).toContain('- /work/harborline/.goodboy/attachments/a/a.png');
+    expect(input.operatorHints).toContain('- /work/harborline/.goodboy/attachments/b/b.png');
+    expect(input.operatorHints).not.toContain('other.png');
+  });
+
+  it('keeps the orchestrator without file tools when no hint carries an image', async () => {
+    const state = withHints(baseState(), [hintFixture({ id: 'plain', text: 'one PR' })]);
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
+    expect(input.canReadFiles).toBeUndefined();
+  });
+
   it('hands the orchestrator the workspace projects with the starred one first', async () => {
     const state = {
       ...baseState(),

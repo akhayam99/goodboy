@@ -102,6 +102,20 @@ describe('OrchestratorClient', () => {
     expect(String(args['userMessage'])).toContain('Name taskType and difficulty');
   });
 
+  it('keeps tools off unless the decision has files to read', async () => {
+    const off = capture();
+    const on = capture();
+    const deps = { providerId: 'anthropic', model: 'sonnet-5-5' } as const;
+
+    await new OrchestratorClient({ ...deps, invokeFn: off.invokeFn }).decide(input());
+    await new OrchestratorClient({ ...deps, invokeFn: on.invokeFn }).decide(
+      input({ canReadFiles: true }),
+    );
+
+    expect(off.args()['toolsDisabled']).toBe(true);
+    expect(on.args()['toolsDisabled']).toBe(false);
+  });
+
   it('forwards the configured effort to the spawn args', async () => {
     const seen = capture();
     const client = new OrchestratorClient({

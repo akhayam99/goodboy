@@ -106,7 +106,7 @@ export class OrchestratorClient {
               input.isModelPickEnabled === true
                 ? ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT
                 : ORCHESTRATOR_SYSTEM_PROMPT,
-            toolsDisabled: true,
+            toolsDisabled: input.canReadFiles !== true,
             runId,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
