@@ -105,6 +105,8 @@ const diffOf = (): SessionDiff => ({
 
 const STABLE_DIFF = diffOf();
 
+const SESSION = 'session-1' as SessionId;
+
 const run = () =>
   renderHook(() =>
     useReviewState({
@@ -445,7 +447,6 @@ describe('useReviewState filters', () => {
 });
 
 describe('useReviewState file-level comments', () => {
-  const SESSION = 'session-1' as SessionId;
   const PULL_REQUEST = {
     sessionId: SESSION,
     provider: 'github' as const,
@@ -634,7 +635,6 @@ describe('useReviewState on a big change', () => {
 });
 
 describe('useReviewState folder filter', () => {
-  const SESSION = 'session-1' as SessionId;
   const files = [
     fileAt('src/ledger/ledger.ts'),
     fileAt('src/ledger/export.ts'),
