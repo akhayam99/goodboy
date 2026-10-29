@@ -69,7 +69,8 @@ export type AutoSceneState =
   | 'done'
   | 'finished'
   | 'nocap'
-  | 'blocked';
+  | 'blocked'
+  | 'queued';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -414,6 +415,7 @@ const viewOf = ({
   pendingRefusal = null,
 }: ViewParams): AutoTreeView => ({
   pendingRefusal,
+  pendingMessages: [],
   deliveredResults: [],
   hiddenChildIds: [],
   rootAsk: null,
@@ -725,6 +727,26 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
               ? null
               : { ...working.view.budget, capUsd: null, remainingUsd: null },
         },
+      };
+    }
+    case 'queued': {
+      const working = autoSceneOf({ state: 'working' });
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          pendingMessages: [
+            { rowId: 'mock-auto-outbox-user-2', createdAt: Date.parse(at({ time: '12:10:00' })) },
+          ],
+        },
+        events: [
+          ...working.events,
+          userText({
+            time: '12:10:00',
+            text: 'Also keep the retry window at 30 seconds.',
+            run: RUN_THREE,
+          }),
+        ],
       };
     }
     default: {

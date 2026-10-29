@@ -167,6 +167,8 @@ export const createAutoBridgeClient = async ({
   const ports: AutoBridgePorts = {
     stop: ({ treeId }) => ask({ call: { kind: 'stop', treeId }, isResult: isStopResult }),
     retry: ({ treeId }) => ask({ call: { kind: 'retry', treeId }, isResult: isRetryResult }),
+    sendNow: ({ treeId, rowId }) =>
+      ask({ call: { kind: 'sendNow', treeId, rowId }, isResult: isRetryResult }),
     rerunChecks: ({ delegationId }) =>
       ask({
         call: { kind: 'rerunChecks', delegationId },

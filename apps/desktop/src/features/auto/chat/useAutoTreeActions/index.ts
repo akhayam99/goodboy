@@ -3,6 +3,7 @@ import { brandId, type AgentId, type ArtifactId, type SessionId } from '@goodboy
 import { agentPlace, useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { formatError } from '@goodboy/ui';
+import { currentSendNowPort } from '../../sendNowPort';
 import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { focusAgentComposer } from '../focusAgentComposer';
@@ -16,6 +17,11 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
+type SendNowParams = {
+  readonly view: AutoTreeView;
+  readonly rowId: string;
+};
+
 type AutoTreeActionFailure = Readonly<{
   title: string;
   message: string;
@@ -26,6 +32,7 @@ export type AutoTreeActions = Readonly<{
   failure: AutoTreeActionFailure | null;
   stop: (params: ViewParams) => Promise<void>;
   retry: (params: ViewParams) => Promise<void>;
+  sendNow: (params: SendNowParams) => Promise<void>;
   changeApproach: (params: ViewParams) => Promise<void>;
   openAgent: (agentId: AgentId) => void;
   openChild: (agentId: AgentId) => void;
@@ -78,6 +85,22 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     }
   }, []);
 
+  const sendNow = useCallback(async ({ view, rowId }: SendNowParams): Promise<void> => {
+    setFailure(null);
+    try {
+      const port = currentSendNowPort();
+      if (port === null) {
+        throw new Error("Auto isn't running yet. Send it again in a moment.");
+      }
+      const result = await port({ treeId: view.tree.id, rowId });
+      if (result.kind === 'refused') {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      setFailure({ title: "Couldn't send the message now", message: formatError(error) });
+    }
+  }, []);
+
   const changeApproach = useCallback(
     async ({ view }: ViewParams): Promise<void> => {
       await stop({ view });
@@ -125,6 +148,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     failure,
     stop,
     retry,
+    sendNow,
     changeApproach,
     openAgent,
     openChild,

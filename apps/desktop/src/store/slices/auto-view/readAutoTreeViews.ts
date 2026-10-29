@@ -15,7 +15,7 @@ import type { SessionId } from '@goodboy/types';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
-import type { AutoPendingRefusal, AutoTreeView } from './state';
+import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
   readonly db: Database;
@@ -42,6 +42,14 @@ const pendingRefusalOf = ({ tree, pending }: PendingRefusalParams): AutoPendingR
   };
 };
 
+const pendingMessagesOf = ({
+  tree,
+  pending,
+}: PendingRefusalParams): ReadonlyArray<AutoPendingMessage> =>
+  pending
+    .filter((row) => row.kind === 'user' && row.generation === tree.generation)
+    .map((row) => ({ rowId: String(row.id), createdAt: row.createdAt }));
+
 export const readAutoTreeViews = async ({
   db,
   sessionId,
@@ -67,6 +75,7 @@ export const readAutoTreeViews = async ({
         artifacts,
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
+        pendingMessages: pendingMessagesOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,
       };

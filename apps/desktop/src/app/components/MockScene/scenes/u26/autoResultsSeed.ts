@@ -167,6 +167,7 @@ export const RESULTS_VIEW: AutoTreeView = {
     }),
   }),
   pendingRefusal: null,
+  pendingMessages: [],
   deliveredResults: CHILDREN.map((child) => deliveredOf(child)),
   hiddenChildIds: [],
   rootAsk: null,
