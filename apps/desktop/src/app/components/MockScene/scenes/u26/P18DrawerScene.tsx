@@ -12,6 +12,7 @@ type Props = {
 };
 
 const ANSWER = [
+  '<<outcome>>Added 3 tests in payments-api, all pass<</outcome>>',
   'Three tests added in payments-api, all pass.',
   '',
   '- **Trailer grep:** no commit in the range carries a stray trailer.',

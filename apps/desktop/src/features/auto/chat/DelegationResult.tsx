@@ -1,14 +1,16 @@
-import { Check, MessageSquare, X } from 'lucide-react';
-import { Button, ICON_SIZE } from '@goodboy/ui';
-import { RevealedMarkdown } from '../../chat/reveal/RevealedMarkdown';
+import type { ReactNode } from 'react';
+import { Check, FileText, MessageSquare, X } from 'lucide-react';
+import { Chip, ICON_SIZE, type Tone } from '@goodboy/ui';
+import { OutcomeLine } from '../../chat/readingOrder/OutcomeLine';
+import { ReadingNotes } from '../../chat/readingOrder/ReadingNotes';
 import type { DelegationResultView } from './delegationResultOf';
-import { summaryProseOf } from './summaryProseOf';
+import { DelegationResultChips } from './DelegationResultChips';
+import { summaryNotesOf } from './summaryNotesOf';
 
 const SUMMARY_ITEM_KEY = 'delegation-summary';
 
 type Props = {
   readonly result: DelegationResultView;
-  readonly liveKey?: string;
   readonly isRerunningChecks?: boolean;
   readonly onRerunChecks?: () => void;
   readonly isActingPublish?: boolean;
@@ -20,11 +22,11 @@ type PublishToneParams = {
   readonly state: NonNullable<DelegationResultView['publish']>['state'];
 };
 
-const publishToneOf = ({ state }: PublishToneParams): string => {
+const publishToneOf = ({ state }: PublishToneParams): Tone => {
   if (state === 'failed') {
-    return 'text-warning';
+    return 'warning';
   }
-  return state === 'pushed' ? 'text-success' : 'text-muted-foreground';
+  return state === 'pushed' ? 'success' : 'neutral';
 };
 
 type CountParams = {
@@ -38,137 +40,180 @@ type ToneParams = {
   readonly verdict: DelegationResultView['checksVerdict'];
 };
 
-const checksToneOf = ({ verdict }: ToneParams): string => {
+const checksToneOf = ({ verdict }: ToneParams): Tone => {
   if (verdict === 'red') {
-    return 'text-danger';
+    return 'danger';
   }
-  return verdict === 'green' ? 'text-success' : 'text-muted-foreground';
+  return verdict === 'green' ? 'success' : 'neutral';
+};
+
+type ActionChipParams = {
+  readonly label: string;
+  readonly isDisabled: boolean;
+  readonly onClick: () => void;
+};
+
+const actionChip = ({ label, isDisabled, onClick }: ActionChipParams): ReactNode => (
+  <Chip
+    key={label}
+    as="button"
+    kind="reference"
+    tone="neutral"
+    label={label}
+    disabled={isDisabled}
+    onClick={onClick}
+  />
+);
+
+const chipsOf = ({
+  result,
+  isRerunningChecks = false,
+  onRerunChecks,
+  isActingPublish = false,
+  onRetryPublish,
+  onPutBackPublish,
+}: Props): ReadonlyArray<ReactNode> => {
+  const chips: ReactNode[] = [];
+  if (result.changedFileCount > 0) {
+    chips.push(
+      <Chip
+        key="files"
+        kind="reference"
+        tone="neutral"
+        icon={<FileText size={ICON_SIZE.control} aria-hidden />}
+        label={filesLine({ count: result.changedFileCount })}
+      />,
+    );
+  }
+  if (result.checksText !== null) {
+    chips.push(
+      <span key="checks" role="status" className="inline-flex min-w-0">
+        <Chip
+          kind="reference"
+          tone={checksToneOf({ verdict: result.checksVerdict })}
+          label={<span className="min-w-0 truncate">{result.checksText}</span>}
+          className="min-w-0 max-w-full"
+        />
+      </span>,
+    );
+  }
+  result.checks
+    .filter((check) => check.status === 'fail')
+    .forEach((check) => {
+      chips.push(
+        <Chip
+          key={`check-${check.name}`}
+          kind="reference"
+          tone="danger"
+          icon={<X size={ICON_SIZE.control} aria-hidden />}
+          label={<span className="min-w-0 truncate">{check.name}</span>}
+          title={check.isClaimed ? 'claimed by the agent' : undefined}
+          className="min-w-0 max-w-full"
+        />,
+      );
+    });
+  const passedCount = result.checks.filter((check) => check.status === 'pass').length;
+  if (passedCount > 0 && result.checksText === null) {
+    chips.push(
+      <Chip
+        key="passed"
+        kind="reference"
+        tone="success"
+        icon={<Check size={ICON_SIZE.control} aria-hidden />}
+        label={`${passedCount} ${passedCount === 1 ? 'check' : 'checks'} passed`}
+      />,
+    );
+  }
+  if (result.canRerunChecks && onRerunChecks !== undefined) {
+    chips.push(
+      actionChip({
+        label: isRerunningChecks ? 'Running checks' : 'Run checks again',
+        isDisabled: isRerunningChecks,
+        onClick: onRerunChecks,
+      }),
+    );
+  }
+  if (result.publish !== null) {
+    chips.push(
+      <span key="publish" role="status" className="inline-flex min-w-0">
+        <Chip
+          kind="reference"
+          tone={publishToneOf({ state: result.publish.state })}
+          label={<span className="min-w-0 truncate">{result.publish.text}</span>}
+          className="min-w-0 max-w-full"
+        />
+      </span>,
+    );
+    if (result.publish.canRetry && onRetryPublish !== undefined) {
+      chips.push(
+        actionChip({
+          label: 'Try the push again',
+          isDisabled: isActingPublish,
+          onClick: onRetryPublish,
+        }),
+      );
+    }
+    if (result.publish.canPutBack && onPutBackPublish !== undefined) {
+      chips.push(
+        actionChip({
+          label: 'Put back',
+          isDisabled: isActingPublish,
+          onClick: onPutBackPublish,
+        }),
+      );
+    }
+  }
+  result.questions.forEach((question) => {
+    chips.push(
+      <Chip
+        key={`question-${question}`}
+        kind="reference"
+        tone="warning"
+        icon={<MessageSquare size={ICON_SIZE.control} aria-hidden />}
+        label={<span className="min-w-0 truncate">{question}</span>}
+        title={question}
+        className="min-w-0 max-w-full"
+      />,
+    );
+  });
+  return chips;
 };
 
 export const DelegationResult = ({
   result,
-  liveKey = '',
   isRerunningChecks = false,
   onRerunChecks,
   isActingPublish = false,
   onRetryPublish,
   onPutBackPublish,
 }: Props) => {
-  const summary = summaryProseOf({ summary: result.summary });
+  const notes = summaryNotesOf({
+    summary: result.summary,
+    key: SUMMARY_ITEM_KEY,
+    isOpen: result.outcomeLine?.tone === 'danger',
+  });
+  const outcomeLine = result.outcomeLine;
+  const isReasonShown = result.reasonText !== null && outcomeLine?.source !== 'facts';
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      {summary === null ? null : (
-        <RevealedMarkdown
-          liveKey={liveKey}
-          itemKey={SUMMARY_ITEM_KEY}
-          text={summary}
-          className="min-w-0 text-meta"
-        />
+    <div className="flex min-w-0 flex-col gap-2">
+      {outcomeLine === null ? null : (
+        <OutcomeLine text={outcomeLine.text} tone={outcomeLine.tone} />
       )}
-      {result.reasonText === null ? null : (
-        <p className="text-meta text-warning">{result.reasonText}</p>
-      )}
+      {isReasonShown ? <p className="text-meta text-warning">{result.reasonText}</p> : null}
       {result.remoteText === null ? null : (
         <p className="text-meta text-warning">{result.remoteText}</p>
       )}
-      {result.changedFileCount === 0 ? null : (
-        <p className="text-meta text-muted-foreground">
-          {filesLine({ count: result.changedFileCount })}
-        </p>
-      )}
-      {result.checksText === null ? null : (
-        <div className="flex min-w-0 items-center gap-2">
-          <p
-            role="status"
-            className={`min-w-0 text-meta ${checksToneOf({ verdict: result.checksVerdict })}`}
-          >
-            {result.checksText}
-          </p>
-          {result.canRerunChecks && onRerunChecks !== undefined ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={isRerunningChecks}
-              onClick={onRerunChecks}
-            >
-              {isRerunningChecks ? 'Running checks' : 'Run checks again'}
-            </Button>
-          ) : null}
-        </div>
-      )}
-      {result.publish === null ? null : (
-        <div className="flex min-w-0 items-center gap-2">
-          <p
-            role="status"
-            className={`min-w-0 text-meta ${publishToneOf({ state: result.publish.state })}`}
-          >
-            {result.publish.text}
-          </p>
-          {result.publish.canRetry && onRetryPublish !== undefined ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={isActingPublish}
-              onClick={onRetryPublish}
-            >
-              Try the push again
-            </Button>
-          ) : null}
-          {result.publish.canPutBack && onPutBackPublish !== undefined ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={isActingPublish}
-              onClick={onPutBackPublish}
-            >
-              Put back
-            </Button>
-          ) : null}
-        </div>
-      )}
-      {result.checks.length === 0 ? null : (
-        <ul aria-label="Checks" className="flex min-w-0 flex-col gap-0.5">
-          {result.checks.map((check) => (
-            <li
-              key={check.name}
-              className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
-            >
-              {check.status === 'fail' ? (
-                <X size={ICON_SIZE.control} aria-hidden className="shrink-0 text-danger" />
-              ) : (
-                <Check
-                  size={ICON_SIZE.control}
-                  aria-hidden
-                  className={
-                    check.status === 'pass'
-                      ? 'shrink-0 text-success'
-                      : 'shrink-0 text-faint-foreground'
-                  }
-                />
-              )}
-              <span className="min-w-0 truncate">{check.name}</span>
-              {check.isClaimed ? (
-                <span className="shrink-0 text-meta text-faint-foreground">
-                  claimed by the agent
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-      {result.questions.length === 0 ? null : (
-        <ul aria-label="Open questions" className="flex min-w-0 flex-col gap-0.5">
-          {result.questions.map((question) => (
-            <li
-              key={question}
-              className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
-            >
-              <MessageSquare size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-              <span className="min-w-0">{question}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DelegationResultChips
+        chips={chipsOf({
+          result,
+          isRerunningChecks,
+          onRerunChecks,
+          isActingPublish,
+          onRetryPublish,
+          onPutBackPublish,
+        })}
+      />
+      {notes === null ? null : <ReadingNotes role={notes} />}
     </div>
   );
 };

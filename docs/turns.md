@@ -913,6 +913,10 @@ cards, 4 chips, prose clamped at 3 lines).
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
   draws the optional `OutcomeLine`, the clamped text with **Show more**, then
   the chips with **+N** past 4. `AssistantText` is a thin caller.
+- The Auto child result cards use the same pieces without the message renderer:
+  `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
+  (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
+  line, the artifact rows, the chips and a closed Notes line, never a stack of rows.
 - `reading-order.test.ts` counts `<Markdown` in `features/chat` and
   `features/auto` outside `readingOrder/` against
   `reading-order.baseline.json`; the count only falls.
