@@ -209,7 +209,8 @@ Back and a reload leave it where it was, and the push confirm names the reposito
 has more than one.
 
 **Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`): the status strip first, then two columns, the
+(`features/branch/components/PullRequestTab`): the status strip first, then the same two summary cards, `N open threads · M need you` when review threads are
+open (`OpenThreadsLink`, counted by `commentsCountOf` through the readiness facts, a click opens Comments), then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
 row. The strip (`PullRequestStatusStrip`, cells from
@@ -251,8 +252,11 @@ and a failure that does not name `pre-push` leaves the last result, a remote
 Pull request `None yet`, Remote, Branch, the conflict cell amber), then the create
 form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
 headline, several give the linked issue and the first headline, the description
-lists the commits and `Closes HL-1372` for a Linear issue), and `In this branch`
-with the commits and files under it. The form works on the branch on screen: it
+lists the commits and `Closes HL-1372` for a Linear issue), and two summary cards
+(`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the count, how many are not pushed and the last three
+subjects, and `Changes` with the files, the lines added and removed, a bar by top folder and the three biggest
+folders. Each card opens its tab (Commits, Files); the lists themselves live there. A card reads a skeleton while
+the diff loads and `Couldn't read this` with Retry when it fails. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
 never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
 and prefill and hands the mount to `createMrForSession`. Its submit is the one primary once the

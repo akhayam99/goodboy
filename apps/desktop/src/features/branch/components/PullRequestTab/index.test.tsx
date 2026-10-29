@@ -429,7 +429,8 @@ describe('the Overview grid', () => {
 
       const children = [...grid().children];
       expect(children[0]).toBe(screen.getByRole('group', { name: 'Status' }));
-      const columns = children[1];
+      const columns = children.find((child) => child.getAttribute('data-slot') === 'page-columns');
+      expect(children.at(-1)).toBe(columns);
       const reading = columns?.querySelector('[data-slot="reading-column"]');
       expect(reading?.contains(description())).toBe(true);
       const side = screen.getByRole('group', { name: 'Properties' });

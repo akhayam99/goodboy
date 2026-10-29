@@ -373,11 +373,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               mergeWord={mergeWord}
               commits={diff.commits}
               files={diff.files}
-              stat={
-                identity.mountPath === null
-                  ? null
-                  : (mountDiffStats.get(identity.mountPath) ?? null)
-              }
+              isDiffLoading={diff.loading}
+              diffError={diff.error}
+              onRetryDiff={diff.refresh}
               canEdit={canEditBody}
               request={request}
               isConnected={isGithubConnected}
