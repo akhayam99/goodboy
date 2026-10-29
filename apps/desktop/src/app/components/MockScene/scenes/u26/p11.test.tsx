@@ -86,7 +86,7 @@ describe('the u26 p11 Auto result scenes', () => {
       name: 'Open report Certify the ledger-core retry fix, branch vs main',
     });
     within(second).getByText(/One race left in ledger-core/);
-    within(second).getByRole('button', { name: "Show the agent's notes" });
+    within(second).getByRole('button', { name: /^Notes, \d+ lines?$/ });
     expect(within(second).queryByText(/Comparing the ledger-core branch/)).toBeNull();
     const tester = within(cards).getByRole('article', { name: `${TESTS}, Failed` });
     expect(tester.querySelector('[data-clamped]')).toBeNull();

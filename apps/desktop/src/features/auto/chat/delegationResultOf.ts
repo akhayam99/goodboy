@@ -4,10 +4,14 @@ import {
   canRetryPublish,
   checksRunOfResult,
   checksTextOf,
+  outcomeLineOf,
+  parseOutcomeLine,
   publishOfResult,
   publishTextOf,
+  type OutcomeLine,
   type PublishState,
 } from '@goodboy/core';
+import type { AutoOutcome } from '@goodboy/db';
 import { delegationReasonTextOf } from '../delegationReasonTextOf';
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';
 
@@ -32,6 +36,7 @@ type PublishView = Readonly<{
 }>;
 
 export type DelegationResultView = Readonly<{
+  outcomeLine: OutcomeLine | null;
   summary: string | null;
   changedFileCount: number;
   checks: ReadonlyArray<ResultCheckView>;
@@ -91,6 +96,17 @@ const artifactOf = (value: unknown): ResultArtifactView | null => {
   };
 };
 
+const AUTO_OUTCOMES: ReadonlyArray<AutoOutcome> = [
+  'completed',
+  'failed',
+  'blocked',
+  'stopped',
+  'timed_out',
+];
+
+const autoOutcomeOf = ({ value }: StatusParams): AutoOutcome | null =>
+  AUTO_OUTCOMES.find((candidate) => candidate === value) ?? null;
+
 type MappedParams<Item> = {
   readonly items: ReadonlyArray<unknown>;
   readonly read: (value: unknown) => Item | null;
@@ -117,7 +133,21 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
   const checks = mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf });
   const checksRun = checksRunOfResult({ result });
   const publish = publishOfResult({ result });
+  const summary = textField({ source: declared, key: 'summary' });
+  const reasonText = delegationReasonTextOf({ reason: reasonOf });
   return {
+    outcomeLine: outcomeLineOf({
+      modelLine: summary === null ? null : parseOutcomeLine({ text: summary }),
+      outcome: autoOutcomeOf({ value: textField({ source: result, key: 'outcome' }) }),
+      checksRun,
+      checks: checks.map((check) => ({
+        name: check.name,
+        status: check.status,
+        source: check.isClaimed ? 'child_claim' : 'harness',
+      })),
+      publish,
+      failure: reasonText,
+    }),
     publish:
       publish === null
         ? null
@@ -140,7 +170,7 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
           }),
     checksVerdict: checksRun?.verdict ?? null,
     canRerunChecks: checksRun !== null && canRerunChecks({ run: checksRun }),
-    summary: textField({ source: declared, key: 'summary' }),
+    summary,
     changedFileCount: listField({ source: verified, key: 'changedFiles' }).length,
     checks,
     artifacts: mapped({ items: listField({ source: result, key: 'artifacts' }), read: artifactOf }),
@@ -151,7 +181,7 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
     costUsd: numberField({ source: cost, key: 'usd' }),
     isCostEstimated: textField({ source: cost, key: 'basis' }) !== 'reported',
     reason: reasonOf,
-    reasonText: delegationReasonTextOf({ reason: reasonOf }),
+    reasonText,
     remoteText: remoteTextOf({
       value: textField({
         source: recordField({ source: verified, key: 'remote' }),

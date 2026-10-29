@@ -396,15 +396,17 @@ writing to it reopens it to **Deciding**.
   child's card, right after the **What Auto was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
   `AutoResultCards`): the role glyph, the name, the model
-  with its provider, the state word (`settledStatusOf`, the rail's words) and
-  **Open**, which opens the child pane. The body is the child's own report in
-  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
-  child shows its card with its state and no body. When the child produced an
-  artifact (`deliveredResultsOf` reads the `artifacts` of the result entry), the card leads with
-  the same artifact rows as the delegation lines and the agent's own prose goes behind **Show the
-  agent's notes**, closed by default (`AutoResultNotes`, artifact blocks dropped by
-  `summaryProseOf`); a plan that waits for approval has no row on the card, its ask is on the
-  line, and a card whose child produced no artifact keeps the three line preview. The cards read data, never
+  with its provider and **Open**, which opens the child pane. Under that header the card
+  reads in the reading order of [turns.md](./turns.md): one outcome line (the child's own
+  `<<outcome>>` line, or the one `outcomeLineOf` computes: Done, Failed or Timed out), the
+  artifact rows, then the notes. The state word is the outcome line, not a second label, and
+  the card has no coloured side border. A child with no artifact keeps its report in
+  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out child shows
+  the outcome line and no body. When the child produced an artifact (`deliveredResultsOf`
+  reads the `artifacts` of the result entry), the card leads with the same artifact rows as
+  the delegation lines and the agent's own prose goes behind a closed **Notes, N lines**
+  (`ReadingNotes` fed by `summaryNotesOf`, which drops the outcome line and artifact blocks);
+  a plan that waits for approval has no row on the card, its ask is on the line. The cards read data, never
   Auto's prose: an accepted `results` row of the outbox keeps the root run that
   read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
   `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
@@ -445,8 +447,12 @@ writing to it reopens it to **Deciding**.
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
-  `DelegationResult`; the summary is markdown through the shared `Markdown`,
-  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
+  `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
+  child's own sentence; then chips for files changed, the checks verdict, each failing check,
+  **Run checks again**, the push state with **Try the push again** and **Put back**, and each
+  open question, four at most then **+N**; last a closed **Notes, N lines** with the summary
+  as markdown, open only when the outcome is red, any artifact block dropped by
+  `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
   conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
