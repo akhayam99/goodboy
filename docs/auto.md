@@ -660,7 +660,10 @@ It decides by ending its final reply with at most one block:
 - No block is a plain answer to the user.
 
 The prompt takes an Asks you level, using the same three values as workflows
-with its own default, **After the plan**. **Every step** requires confirmation
+with its own default, **After the plan**. Each turn reads the
+level saved for its session (`kindSystemPromptOf`, the same `readAutoLevel` that
+admission uses), so the prompt and the gates follow one setting and a read that fails
+fails the turn instead of guessing a level. **Every step** requires confirmation
 for each child and a planner's plan before a change. **After the plan** lets
 readers start freely, requires a planner's plan and user approval before a
 writer, then continues without asking for each handoff. **Never** makes the

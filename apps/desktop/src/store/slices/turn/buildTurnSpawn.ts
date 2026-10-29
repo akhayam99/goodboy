@@ -1,12 +1,7 @@
-import {
-  AUTO_GATES,
-  DEFAULT_AUTO_LEVEL,
-  buildAutoSystemPrompt,
-  renderHandoff,
-} from '@goodboy/core';
+import { renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
-import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
+import { kindWritesFiles } from '../../../features/session/agent-kind';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
@@ -25,6 +20,7 @@ import { readFolderPurposes } from './readFolderPurposes';
 import { collectTouchedMounts, isTurnShared } from './collectTouchedMounts';
 import { beginTurnFileSets, recordTurnFileSets } from './turnFileSets';
 import { composeAgentHandoff } from './composeAgentHandoff';
+import { kindSystemPromptOf } from './kindSystemPromptOf';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
 import { projectById } from '../projects/projectIndex';
@@ -140,13 +136,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ? agentRowEarly.providerSessionId
       : undefined;
 
-  const kindSystemPrompt =
-    earlyAgentKind === 'auto'
-      ? buildAutoSystemPrompt({
-          isDelegationEnabled: AUTO_GATES.isDelegationEnabled,
-          level: DEFAULT_AUTO_LEVEL,
-        })
-      : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
+  const kindSystemPrompt = await kindSystemPromptOf({ kind: earlyAgentKind, sessionId });
 
   const scopeMounts =
     rewriterCopy !== null || copyPath !== null
