@@ -127,13 +127,14 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(await screen.findByText('revising v2', undefined, WAIT)).toBeDefined();
   });
 
-  it('Confirm a revise: Confirm and Cancel under its line', async () => {
+  it('Confirm a revise: the Next step card with Not now under its line', async () => {
     mount({ Scene: U24_AUTO_CHAT_SCENES['auto-chat-confirm'] });
 
+    const card = await screen.findByRole('region', { name: 'Next step' }, WAIT);
     expect(
-      await screen.findByText('Revise Retry-safe credit retries to v2?', undefined, WAIT),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
+      within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
+    ).toBeGreaterThan(0);
+    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
   });
 
   it('Auto plan approval: the ask with View plan, then Approve plan in the plan view', async () => {
