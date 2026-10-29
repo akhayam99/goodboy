@@ -895,6 +895,28 @@ under `$CODEX_HOME/sessions` (default `~/.codex`) and takes the latest
 `last_token_usage` as the context size. When the rollout cannot be read, the
 parsed usage stands.
 
+## Reading order
+
+An agent turn reads in one order: outcome line, artifact cards, next action,
+chips, then notes folded away. `features/chat/readingOrder/` owns it, and
+`readingBudgets.ts` holds every budget (outcome 100 characters, 3 artifact
+cards, 4 chips, prose clamped at 3 lines).
+
+- `readingOrderOf` is pure. It splits the rows into turns at each `user_text`,
+  `handoff`, `oq_answer` and `auto_delivery` row. In a finished turn the last
+  `assistant_text` is the answer (clamped at 3 lines, at 12 when the turn is one
+  text with no steps) and the earlier ones become one closed **Notes** line
+  (`ReadingNotes`) drawn in place of the first of them; the others draw
+  nothing. A text with a control marker is never folded.
+- A turn with a text of the active run is live and untouched, so the reveal
+  types it whole. A turn with an `error` item keeps its notes open.
+- `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
+  draws the optional `OutcomeLine`, the clamped text with **Show more**, then
+  the chips with **+N** past 4. `AssistantText` is a thin caller.
+- `reading-order.test.ts` counts `<Markdown` in `features/chat` and
+  `features/auto` outside `readingOrder/` against
+  `reading-order.baseline.json`; the count only falls.
+
 ## Turn footer
 
 `usage` transcript items no longer cluster with operations
