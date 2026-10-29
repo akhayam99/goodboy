@@ -104,6 +104,7 @@ export type HistoryCommitFiles = {
 };
 
 export type HistoryGraph = {
+  readonly configuredAuthor?: string | null;
   readonly baseRef: string;
   readonly mergeBase: HistoryGraphCommit;
   readonly mainHead: string;

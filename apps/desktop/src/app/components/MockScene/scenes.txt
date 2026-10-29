@@ -316,6 +316,7 @@ commits-loading
 commits-planned
 commits-rest
 commits-rest-1920
+compact-commits
 companion
 confirm-action-panel
 confirm-artifact-delete

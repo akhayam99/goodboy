@@ -26,6 +26,28 @@ const PARAMS = {
 };
 
 describe('history drop hit testing', () => {
+  it('keeps fold and reorder targets at compact height with a day header between rows', () => {
+    const rows = [
+      { sha: 'f', top: 28, bottom: 56 },
+      { sha: 'd', top: 84, bottom: 112 },
+      { sha: 'c', top: 112, bottom: 140 },
+    ];
+    expect(hitHistoryDrop({ rows, sha: 'f', y: 98, listTop: 0, params: PARAMS })).toEqual({
+      mode: 'into',
+      sha: 'd',
+    });
+    expect(hitHistoryDrop({ rows, sha: 'f', y: 82, listTop: 0, params: PARAMS })).toEqual({
+      mode: 'slot',
+      anchor: 'd',
+      y: 84,
+    });
+    expect(hitHistoryDrop({ rows, sha: 'f', y: 138, listTop: 0, params: PARAMS })).toEqual({
+      mode: 'slot',
+      anchor: null,
+      y: 140,
+    });
+  });
+
   it('reads the middle of a row as a drop onto it', () => {
     expect(hitHistoryDrop({ rows: ROWS, sha: 'f', y: 250, listTop: 0, params: PARAMS })).toEqual({
       mode: 'into',

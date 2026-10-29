@@ -64,6 +64,9 @@ export const useRowPositions = ({ listRef, layoutKey }: Params): RowPositions =>
     }
     const observer = new ResizeObserver(update);
     observer.observe(list);
+    for (const row of list.querySelectorAll<HTMLElement>('[data-graph-key]')) {
+      observer.observe(row);
+    }
     return () => observer.disconnect();
   }, [listRef, layoutKey]);
 

@@ -143,7 +143,9 @@ const rename = async () => {
 describe('live Commits page', () => {
   it('shows the branch graph and no preview or staged apply controls', async () => {
     await mountPage();
-    expect(screen.getByRole('list', { name: 'Commits' }).children.length).toBe(7);
+    expect(
+      within(screen.getByRole('list', { name: 'Commits' })).getAllByRole('listitem').length,
+    ).toBe(7);
     expect(screen.queryByRole('heading', { name: /After Apply|Planned changes/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Apply|Reset all/ })).toBeNull();
     screen.getByText('Based on main');

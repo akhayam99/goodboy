@@ -232,12 +232,12 @@ describe('CommitsHistory toolbar', () => {
     slot.remove();
   });
 
-  it('draws one node graphic only, the 72px lane', () => {
+  it('draws one node graphic only, the compact lane', () => {
     const slot = mountWithSlot();
 
     const lanes = document.querySelectorAll('[data-history-lane]');
     expect(lanes).toHaveLength(1);
-    expect(lanes[0]?.getAttribute('width')).toBe('72');
+    expect(lanes[0]?.getAttribute('width')).toBe('36');
     slot.remove();
   });
 
