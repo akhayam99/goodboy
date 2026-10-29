@@ -899,7 +899,15 @@ ended ok: it takes the last complete block, strips code fences, escapes raw line
 and falls back to the last `}` when the close marker is missing. `store/runtime/auto/applyAutoBlock.ts`
 runs at the top of `settleAutoTurn` and only for the current run of a `deciding` tree that is not
 stopping, so a duplicate settle, a late settle after a stop and a recovered turn that passes the
-same text admit once (the admission guards and the request id replay do the rest).
+same text admit once (the admission guards and the request id replay do the rest). A delegate block
+that ends a turn which is no longer the current run (a settle that closed it without the text) is
+never dropped silently: unless the request id was already admitted, it becomes a `not_deciding`
+refusal row. A stop or a restart stays silent.
+
+The runtime keeps the run ids of the Auto turns it started itself (`createOwnTurns`, set in
+`deliverNext`, cleared after `settleAutoTurn`). `recoverTree` leaves such a run alone, because the
+ledger marks a run done a few seconds before the turn saves its answer and a recovery settle in that
+gap would read an empty text. Only a run from an earlier process is settled from the ledger.
 
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,

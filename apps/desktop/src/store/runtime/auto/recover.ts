@@ -15,6 +15,7 @@ import {
   type AutoTree,
   type Statement,
 } from '@goodboy/db';
+import type { OwnTurns } from './createOwnTurns';
 import { failAttempt } from './failAttempt';
 import { finishAttempt } from './finishAttempt';
 import { landAttemptRevision } from './landAttemptRevision';
@@ -31,6 +32,7 @@ export type RecoverParams = Readonly<{
   treeId: AutoTree['id'];
   sleep: (params: SleepParams) => Promise<void>;
   maxPolls: number;
+  ownTurns?: OwnTurns;
 }>;
 
 export type RecoverOutcome =
@@ -317,6 +319,7 @@ export const recoverTree = async ({
   treeId,
   sleep,
   maxPolls,
+  ownTurns,
 }: RecoverParams): Promise<RecoverOutcome> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   if (!isOwner) {
@@ -333,8 +336,12 @@ export const recoverTree = async ({
   }
   const watchers: Watchers = [];
   const params: ClaimedParams = { ctx, tree, watchers, sleep, maxPolls };
-  await recoverClaimedRows(params);
-  await recoverAutoTurn(params);
+  const isOwnTurn =
+    tree.activeRunId !== null && ownTurns?.has({ runId: tree.activeRunId }) === true;
+  if (!isOwnTurn) {
+    await recoverClaimedRows(params);
+    await recoverAutoTurn(params);
+  }
   const fresh = await getAutoTree({ db: ctx.db, treeId });
   if (fresh !== null) {
     const next: ClaimedParams = { ...params, tree: fresh };

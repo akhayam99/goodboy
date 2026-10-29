@@ -7,7 +7,8 @@ import {
   type RefusalPayload,
 } from '@goodboy/core';
 import { getAutoTree, insertAutoOutbox, type AutoTree } from '@goodboy/db';
-import { brandId, type AutoOutboxId } from '@goodboy/types';
+import { brandId, type AutoOutboxId, type AutoRequestId } from '@goodboy/types';
+import { replayAdmission } from './admit';
 import type { AgentCommand, AutoTurnEnded } from './ports';
 import { runAutoCommand } from './runAutoCommand';
 import type { AgentVerbContext } from './verbContext';
@@ -22,7 +23,7 @@ export type ApplyAutoBlockOutcome =
   | Readonly<{ kind: 'applied'; action: AutoBlock['action'] }>
   | Readonly<{ kind: 'refused'; action: string; code: string }>;
 
-const STALE_CODES: ReadonlyArray<string> = ['tree_stopped', 'generation_changed', 'not_deciding'];
+const SILENT_CODES: ReadonlyArray<string> = ['tree_stopped', 'generation_changed'];
 const INVALID_BLOCK_CODE: AutoRefusalCode = 'spec_invalid';
 
 type GrantParams = {
@@ -121,6 +122,98 @@ const writeRefusal = async ({
   });
 };
 
+type RunBlockParams = {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree;
+  readonly ended: AutoTurnEnded;
+  readonly block: AutoBlock;
+};
+
+const runBlock = async ({
+  ctx,
+  tree,
+  ended,
+  block,
+}: RunBlockParams): Promise<ApplyAutoBlockOutcome> => {
+  const command = commandOf({
+    block,
+    grant: {
+      agentId: ended.agentId,
+      treeId: tree.id,
+      generation: ended.generation,
+      workspaceId: await workspaceOf({ ctx, tree }),
+      sessionId: tree.sessionId,
+      runId: ended.runId,
+    },
+  });
+  const outcome = await runAutoCommand({ ctx, command });
+  if (outcome.isOk) {
+    return { kind: 'applied', action: block.action };
+  }
+  const code = outcome.code ?? INVALID_BLOCK_CODE;
+  if (SILENT_CODES.includes(code)) {
+    return { kind: 'skipped', reason: 'stale' };
+  }
+  await writeRefusal({
+    ctx,
+    tree,
+    runId: ended.runId,
+    action: block.action,
+    code,
+    text: outcome.error ?? describeAutoRefusal({ code: INVALID_BLOCK_CODE }),
+    roles: rolesOf({ block }),
+  });
+  return { kind: 'refused', action: block.action, code };
+};
+
+type PastTurnParams = {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree | null;
+  readonly ended: AutoTurnEnded;
+};
+
+const NOT_CURRENT: ApplyAutoBlockOutcome = { kind: 'skipped', reason: 'not_current' };
+
+const answerPastTurn = async ({
+  ctx,
+  tree,
+  ended,
+}: PastTurnParams): Promise<ApplyAutoBlockOutcome> => {
+  if (tree === null || tree.generation !== ended.generation || tree.stopState !== 'none') {
+    return NOT_CURRENT;
+  }
+  const parsed = parseAutoBlock({ text: ended.assistantText });
+  if (parsed.kind !== 'block' || parsed.block.action !== 'delegate') {
+    return NOT_CURRENT;
+  }
+  const spec = parseDelegateSpec({ text: parsed.block.spec });
+  const replay =
+    spec.kind === 'ok'
+      ? await replayAdmission({
+          db: ctx.db,
+          treeId: tree.id,
+          requestId: brandId<AutoRequestId>({
+            value: parsed.block.requestId ?? `auto-${ended.runId}`,
+          }),
+          requestHash: spec.hash,
+        })
+      : null;
+  if (replay !== null && replay.kind === 'replayed') {
+    return { kind: 'applied', action: 'delegate' };
+  }
+  const code: AutoRefusalCode = 'not_deciding';
+  await writeRefusal({
+    ctx,
+    tree,
+    runId: ended.runId,
+    action: 'delegate',
+    code,
+    text: describeAutoRefusal({ code }),
+    roles: rolesOf({ block: parsed.block }),
+  });
+  return { kind: 'refused', action: 'delegate', code };
+};
+
 export const applyAutoBlock = async ({
   ctx,
   ended,
@@ -136,7 +229,7 @@ export const applyAutoBlock = async ({
     tree.phase === 'deciding' &&
     tree.stopState === 'none';
   if (!isCurrent) {
-    return { kind: 'skipped', reason: 'not_current' };
+    return answerPastTurn({ ctx, tree, ended });
   }
   const parsed = parseAutoBlock({ text: ended.assistantText });
   if (parsed.kind === 'none') {
@@ -155,33 +248,5 @@ export const applyAutoBlock = async ({
     });
     return { kind: 'refused', action: 'block', code: INVALID_BLOCK_CODE };
   }
-  const command = commandOf({
-    block: parsed.block,
-    grant: {
-      agentId: ended.agentId,
-      treeId: tree.id,
-      generation: tree.generation,
-      workspaceId: await workspaceOf({ ctx, tree }),
-      sessionId: tree.sessionId,
-      runId: ended.runId,
-    },
-  });
-  const outcome = await runAutoCommand({ ctx, command });
-  if (outcome.isOk) {
-    return { kind: 'applied', action: parsed.block.action };
-  }
-  const code = outcome.code ?? INVALID_BLOCK_CODE;
-  if (STALE_CODES.includes(code)) {
-    return { kind: 'skipped', reason: 'stale' };
-  }
-  await writeRefusal({
-    ctx,
-    tree,
-    runId: ended.runId,
-    action: parsed.block.action,
-    code,
-    text: outcome.error ?? describeAutoRefusal({ code: INVALID_BLOCK_CODE }),
-    roles: rolesOf({ block: parsed.block }),
-  });
-  return { kind: 'refused', action: parsed.block.action, code };
+  return runBlock({ ctx, tree, ended, block: parsed.block });
 };

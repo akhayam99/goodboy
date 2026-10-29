@@ -26,6 +26,7 @@ import {
 import { brandId, type AutoReservationId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
+import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
@@ -37,6 +38,7 @@ export type DeliverParams = Readonly<{
   treeId: AutoTree['id'];
   onEnded: (ended: AutoTurnEnded) => void;
   sendNowId?: string;
+  ownTurns?: OwnTurns;
 }>;
 
 export type DeliverOutcome =
@@ -245,6 +247,7 @@ export const deliverNext = async ({
   treeId,
   onEnded,
   sendNowId,
+  ownTurns,
 }: DeliverParams): Promise<DeliverOutcome> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   if (!isOwner) {
@@ -311,6 +314,7 @@ export const deliverNext = async ({
     }
     return { kind: 'idle', reason: 'lost_race' };
   }
+  ownTurns?.begin({ runId });
   const outcome = await ctx.ports
     .startAutoTurn({
       treeId,
@@ -328,8 +332,12 @@ export const deliverNext = async ({
       message: formatError(error),
     }));
   if (outcome.kind === 'refused') {
+    ownTurns?.end({ runId });
     await rollbackDelivery({ ctx, tree, rows, message: outcome.message });
     return { kind: 'blocked', reason: outcome.message };
+  }
+  if (outcome.runId !== runId) {
+    ownTurns?.end({ runId });
   }
   const isAccepted = await acceptDelivery({
     ctx,
