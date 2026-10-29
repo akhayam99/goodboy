@@ -23,6 +23,11 @@ A run that asks several questions shows them all on its page, and you answer the
 
 When the agent of a run asks several questions, the run page lists each one with its own answer field and one Send answers button. The agent gets every answer together and resumes once; a failed send keeps what you typed and Retry sends the same answers again.
 
+### Fixed
+
+- An answer saved on the run page that did not reach the agent stays there with the error and Retry, which sends it again without saving twice. <!-- gb area=workflows -->
+- A question another agent is already answering shows as waiting on the run page and is left out of the answers you send. <!-- gb area=workflows -->
+
 ## Goodboy v0.29.0
 
 Auto asks you as much as you want, proposes its next step as a card, and its agents answer in one short reading order.
