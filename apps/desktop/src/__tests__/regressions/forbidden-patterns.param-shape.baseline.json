@@ -1682,7 +1682,6 @@
     "apps/desktop/src/store/slices/review-navigation/openReviewTarget.ts": 3,
     "apps/desktop/src/store/slices/review-source/activeReviewSource.ts": 1,
     "apps/desktop/src/store/slices/review-source/index.ts": 2,
-    "apps/desktop/src/store/slices/review-source/pullRequestPortFor.ts": 1,
     "apps/desktop/src/store/slices/review-source/requestHostOf.ts": 1,
     "apps/desktop/src/store/slices/review-source/reviewSourceEntries.ts": 11,
     "apps/desktop/src/store/slices/review-source/sessionPullRequestOf.ts": 4,

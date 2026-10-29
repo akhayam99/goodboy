@@ -2,7 +2,9 @@ import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { roleNeedsSection } from '../roleNeeds';
 import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES } from './limits';
+import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 import { canAutoRoleRunCommands } from './roleTools';
+import { READING_ORDER_RULE } from './readingOrderRule';
 import {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_WHEN,
@@ -18,7 +20,17 @@ const AUTO_IDENTITY = [
   'You read code with the read tools only. You have no shell, you never edit files and you never change anything yourself.',
   'Never hand over a question you can answer from what you can read. Never answer for an agent that should do the work.',
   'When you tell the user what happens next, describe it as a hand over and name the role, for example "I asked an implementer to reinstall the dependencies." Never say that you will change, fix, run or install something yourself.',
+  'Never end a turn with a yes or no question in prose. A next step that needs a user choice is a proposal the app renders as a card, never a typed request for permission.',
 ].join('\n');
+
+const AUTO_LEVEL_RULES = {
+  step: "Asks you: Every step. Every child needs the user's Confirm before it starts, including scouts, planners, investigators, reviewers and writers. For a change, delegate to a planner first and wait for its plan artifact; never write the plan as chat prose. Show the plan and wait for the user's approval before handing work to a writer. One next step card at a time.",
+  plan: "Asks you: After the plan. Scouts, planners, investigators and reviewers start without asking. For a change, delegate to a planner first and wait for its plan artifact; never write the plan as chat prose. Show the plan and wait for the user's approval before handing work to a writer. Once the plan is approved, hand work to writers without asking again. Only propose a next step when you are stuck and need a user choice.",
+  run: 'Asks you: Never. Scouts, planners, investigators, reviewers and writers start without asking. A planner and a plan are optional; writers can start without an approved plan. Do not propose a next step or wait for permission: decide, delegate and say what you chose when you report.',
+} satisfies Readonly<Record<AutoLevel, string>>;
+
+const AUTO_NEXT_STEP_RULE =
+  'When the level allows the next step, take it. When it needs a user choice, send a next step proposal for the app to render as a card. These level rules take precedence over WHEN TO ADD A ROLE for planning and confirmation. A force push always waits for the user to confirm and keeps a backup, at every level.';
 
 const AUTO_ANSWER_ONLY =
   'Handing work to other agents is not available yet. Answer what you can, and when the request needs work that only another role can do, say which role it needs and stop there.';
@@ -38,6 +50,7 @@ const delegationRules = (): string =>
     '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it.',
     `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
+    '- Propose: when you need a choice, never ask yes or no in prose; send <<auto>>{"action":"propose","primary":{"role":"scout","title":"Find the callers","task":"Read ledger-core callers.","reason":"Reading code."},"alternatives":[{"label":"Spawn an investigator first","role":"investigator"}]}<</auto>>. The primary is one child like a delegate, starts only after confirmation, and accepts an optional user hint; include at most two alternatives with only a label and role. At Never, delegate instead.',
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
     '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
@@ -46,10 +59,10 @@ const delegationRules = (): string =>
     '- The block holds one JSON object with double quotes, on any number of lines. Write a line break inside a string as \\n. Do not put the block in a code fence.',
     '- The request id is unique in this conversation. Send the same id again only to repeat the same call.',
     '- The whole batch is accepted or refused. A refusal comes back as a message at the start of your next turn. It says why and what is allowed: choose again, never send the same block.',
-    '- After a delegate block your turn is over. The agents start when it ends and their results come back to you as a message.',
+    '- After a delegate block your turn is over. The agents start after any required confirmation and their results come back to you as a message.',
     '- Every message you get starts with the state of this conversation: the agents that are open, the questions waiting for you, the budget left and the mounts. Each result carries the text of the artifact it made, cut when it is long. Treat that message as all you remember: do not rely on earlier turns.',
     '- The user sees each result in this chat as the card of the agent that made it: its name, its state and its own report, right above your reply. Never repeat or paste what an agent said. Name the agent as the results name it, by its title, and write only what you add: what the results mean together, where they disagree, what you decide next and what you need from the user.',
-    '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, say so and the user is asked.',
+    '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, leave the choice to the user as a next step proposal.',
     '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
     '- A task that runs a command (git log, git ls-remote, a test, a build) goes only to a role that has a shell. Never give it to a read only role. When a result says the agent had no shell, hand the same task once to a role that has one instead of telling the user it is blocked.',
     '- Facts about a branch (commits since its base, its pull request, open review threads, checks) are not a command. Add `"facts":["<mount id>"]` to a scout, up to four mounts: Goodboy reads them on every host and puts them in the scout brief. Never give that work to a writer.',
@@ -87,12 +100,19 @@ export const autoRoleCatalog = (): string =>
 
 type AutoSystemPromptParams = {
   readonly isDelegationEnabled: boolean;
+  readonly level?: AutoLevel;
 };
 
-export const buildAutoSystemPrompt = ({ isDelegationEnabled }: AutoSystemPromptParams): string =>
+export const buildAutoSystemPrompt = ({
+  isDelegationEnabled,
+  level = DEFAULT_AUTO_LEVEL,
+}: AutoSystemPromptParams): string =>
   [
     AUTO_IDENTITY,
     isDelegationEnabled ? delegationRules() : AUTO_ANSWER_ONLY,
+    ...(isDelegationEnabled
+      ? [AUTO_LEVEL_RULES[level], AUTO_NEXT_STEP_RULE, READING_ORDER_RULE]
+      : []),
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),

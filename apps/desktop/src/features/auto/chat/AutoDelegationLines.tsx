@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { Button, TruncatedText } from '@goodboy/ui';
@@ -6,15 +7,13 @@ import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { artifactLinksOf } from './artifactLinksOf';
 import { AutoChildCard } from './AutoChildCard';
+import { AutoNextAction } from './AutoNextAction';
 import { AutoPlanAsk } from './AutoPlanAsk';
 import { cardTitleOf } from './cardTitleOf';
-import { confirmLineOf } from './confirmLineOf';
 import { delegationCardOf } from './delegationCardOf';
-import { DelegationConfirmRow } from './DelegationConfirmRow';
-import { isAwaitingApproval } from './isAwaitingApproval';
+import { nextActionOf } from './nextActionOf';
 import { revisionWordOf } from './revisionWordOf';
 import { PublishConfirmRow } from './PublishConfirmRow';
-import { useDelegationDecision } from './useDelegationDecision';
 import { usePublishAct } from './usePublishAct';
 import { waitingPublishesOf } from './waitingPublishesOf';
 
@@ -35,7 +34,7 @@ export const AutoDelegationLines = ({
   onOpenChild,
   onOpenArtifact,
 }: Props) => {
-  const decision = useDelegationDecision();
+  const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
   const publishing = usePublishAct();
   const labels = autoChildLabelsOf({ delegations: view.delegations });
   const waiting = waitingPublishesOf({ delegations });
@@ -48,7 +47,7 @@ export const AutoDelegationLines = ({
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
         const asks = artifactLinksOf({ view, artifacts: card.result?.artifacts ?? [] }).filter(
-          (link) => isAwaitingApproval({ link }),
+          (link) => link.approval !== null,
         );
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
@@ -84,15 +83,19 @@ export const AutoDelegationLines = ({
                 onOpen={onOpenChild}
               />
             )}
-            {delegation.state === 'awaiting_confirm' ? (
-              <DelegationConfirmRow
-                line={confirmLineOf({ view, delegation, card })}
-                isBusy={decision.busyId === delegation.id}
-                onConfirm={() =>
-                  void decision.decide({ delegationId: delegation.id, decision: 'confirm' })
-                }
-                onCancel={() =>
-                  void decision.decide({ delegationId: delegation.id, decision: 'decline' })
+            {delegation.state === 'awaiting_confirm' || untold[delegation.id] !== undefined ? (
+              <AutoNextAction
+                sessionId={sessionId}
+                rootAgentId={view.tree.rootAgentId}
+                action={nextActionOf({ view, delegation, card })}
+                untold={untold[delegation.id] ?? null}
+                onUntold={(content) =>
+                  setUntold((current) => {
+                    const rest = Object.fromEntries(
+                      Object.entries(current).filter(([id]) => id !== delegation.id),
+                    );
+                    return content === null ? rest : { ...rest, [delegation.id]: content };
+                  })
                 }
               />
             ) : null}

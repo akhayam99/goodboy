@@ -812,7 +812,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   state (a ring, a clock that keeps counting, no shimmer): the phrase reads
   Stopping with a busy Stop, then Still stopping with Force stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.
-- An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline, one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
+- An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline on its own pane (the chat shows the Next step card), one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
 - A finished turn draws no tail: it is read from its summary line.
 
 The terminal has no tail by design (its output is its tail), and dependency
@@ -894,6 +894,34 @@ Codex usage event `codexMeasuredUsage` asks Rust for the thread's rollout file
 under `$CODEX_HOME/sessions` (default `~/.codex`) and takes the latest
 `last_token_usage` as the context size. When the rollout cannot be read, the
 parsed usage stands.
+
+## Reading order
+
+An agent turn reads in one order: outcome line, artifact cards, next action,
+chips, then notes folded away. `features/chat/readingOrder/` owns it, and
+`readingBudgets.ts` holds every budget (outcome 100 characters, 3 artifact
+cards, 4 chips, prose clamped at 3 lines).
+
+- `readingOrderOf` is pure. It splits the rows into turns at each `user_text`,
+  `handoff`, `oq_answer` and `auto_delivery` row. In a finished turn the last
+  `assistant_text` is the answer (clamped at 3 lines, at 12 when the turn is one
+  text with no steps) and the earlier ones become one closed **Notes** line
+  (`ReadingNotes`) drawn in place of the first of them; the others draw
+  nothing. A text with a control marker is never folded.
+- A turn with a text of the active run is live and untouched, so the reveal
+  types it whole. A turn with an `error` item keeps its notes open.
+- `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
+  draws the optional `OutcomeLine`, the clamped text with **Show more**, then
+  the chips with **+N** past 4. `AssistantText` is a thin caller: it reads
+  `parseOutcomeLine` from the raw text, before the markers are stripped, and
+  passes a neutral `outcome` once the message is complete and revealed.
+- The Auto child result cards use the same pieces without the message renderer:
+  `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
+  (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
+  line, the artifact rows, the chips and a closed Notes line, never a stack of rows.
+- `reading-order.test.ts` counts `<Markdown` in `features/chat` and
+  `features/auto` outside `readingOrder/` against
+  `reading-order.baseline.json`; the count only falls.
 
 ## Turn footer
 

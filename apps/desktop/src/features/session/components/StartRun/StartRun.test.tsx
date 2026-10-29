@@ -12,7 +12,13 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getSetting, getWorkspaceValue, insertWorkspace, setSetting } from '@goodboy/db';
+import {
+  getSetting,
+  getWorkspaceValue,
+  insertWorkspace,
+  setSetting,
+  setWorkspaceValue,
+} from '@goodboy/db';
 import {
   brandId,
   type AgentId,
@@ -417,6 +423,60 @@ describe('StartRun run as', () => {
 
     expect(routeLine()).toMatch(/^Starts as Workflow · Orchestrated · .+ · you picked it$/);
     screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
+  });
+
+  it('shows the Asks you chip for an Auto agent run only', () => {
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: QUESTION } });
+    screen.getByText('After the plan');
+    screen.getByText('from Cascadia');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    expect(screen.queryByText('from Cascadia')).toBeNull();
+  });
+
+  it('shows the level the session already has, and a run started untouched keeps it', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    const stored = JSON.stringify({ defaultLevel: 'plan', sessions: { [SESSION.id]: 'step' } });
+    await setWorkspaceValue({
+      db: storySqlite(),
+      workspaceId: WORKSPACE.id,
+      key: 'auto.level',
+      value: stored,
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: QUESTION } });
+
+    await waitFor(() => screen.getByText('Every step'));
+    expect(screen.queryByText('After the plan')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Start/ }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(
+      await getWorkspaceValue({
+        db: storySqlite(),
+        workspaceId: WORKSPACE.id,
+        key: 'auto.level',
+      }),
+    ).toBe(stored);
+  });
+
+  it('shows the workspace default when the session has no level of its own', async () => {
+    await setWorkspaceValue({
+      db: storySqlite(),
+      workspaceId: WORKSPACE.id,
+      key: 'auto.level',
+      value: JSON.stringify({ defaultLevel: 'run', sessions: {} }),
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: QUESTION } });
+
+    await waitFor(() => screen.getByText('Never'));
   });
 
   it('lists Auto, Orchestrated, every preset and every role in the chip', () => {

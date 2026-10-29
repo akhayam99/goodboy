@@ -137,7 +137,7 @@ export const StartRun = ({
       <FormActions
         leading={
           <div className="flex min-w-0 flex-wrap items-center gap-1">
-            <RunChoiceChips run={run} role={role} />
+            <RunChoiceChips run={run} workspaceId={workspaceId} role={role} />
             <AutoLimitChip
               usd={limit.usd}
               isFromSession={limit.isFromSession}

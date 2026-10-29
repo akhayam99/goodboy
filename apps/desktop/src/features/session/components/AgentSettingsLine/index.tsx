@@ -2,6 +2,7 @@ import type { ReactNode, RefCallback } from 'react';
 import type { AutoBudgetFacts } from '@goodboy/core';
 import type { AutoTreeId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { AutoLevelSetting } from '../../../auto/level/AutoLevelSetting';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { pausingSessionCapOf } from '../../../budget/pausingSessionCapOf';
 import { RUN_MODEL_COPY } from '../../startRun/runModelCopy';
@@ -42,6 +43,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
     >
       {kind}
       <span ref={asksSlotRef} data-settings-slot="asks" className="inline-flex empty:hidden" />
+      {auto === null ? null : <AutoLevelSetting sessionId={sessionId} workspaceId={workspaceId} />}
       {auto === null ? (
         <SessionLimitSetting sessionId={sessionId} />
       ) : (

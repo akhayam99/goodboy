@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
-import { CodeBlockActionsContext, CopyButton, Markdown } from '@goodboy/ui';
+import { CopyButton } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
+import {
+  extractAllCommentResolved,
+  isReviewThreadId,
+  parseOutcomeLine,
+  stripControlMarkers,
+} from '@goodboy/core';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
@@ -9,10 +14,11 @@ import { ScribeTextCard } from '../ScribeTextCard';
 import { carriesPullRequestText } from '../../../../shared/utils/scribeProposal';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRevealedMarkdown } from '../../reveal/useRevealedMarkdown';
-import { AssistantCodeActions } from './AssistantCodeActions';
-import { CodeActionTargetContext } from './codeActionTarget';
+import { ReadingOrderMessage } from '../../readingOrder/ReadingOrderMessage';
+import { READING_BUDGETS } from '../../readingOrder/readingBudgets';
 
 type Props = {
+  clampLines?: number;
   text: string;
   sessionId: SessionId | null;
   agentId?: AgentId | null;
@@ -25,6 +31,7 @@ type Props = {
 const NO_RUN = '';
 
 export const AssistantText = ({
+  clampLines = READING_BUDGETS.proseClampLines,
   text,
   sessionId,
   agentId = null,
@@ -34,6 +41,7 @@ export const AssistantText = ({
   workingDir = null,
 }: Props) => {
   const displayText = stripControlMarkers(text);
+  const outcomeText = parseOutcomeLine({ text });
   const reveal = useRevealedMarkdown({
     runId: runId ?? NO_RUN,
     itemKey,
@@ -57,35 +65,40 @@ export const AssistantText = ({
       data-reveal-answer={reveal.isRevealing ? reveal.revealKey : undefined}
       onContextMenu={menu.onContextMenu}
     >
-      {reveal.text.length > 0 ? (
-        <CodeActionTargetContext.Provider value={codeTarget}>
-          <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
-            <Markdown text={reveal.text} fresh={reveal.fresh} />
-          </CodeBlockActionsContext.Provider>
-        </CodeActionTargetContext.Provider>
-      ) : null}
-      {reveal.isRevealing ? null : (
-        <>
-          {sessionId && agentId && hasScribeText ? (
-            <ScribeTextCard
+      <ReadingOrderMessage
+        text={reveal.text}
+        fresh={reveal.fresh}
+        codeTarget={codeTarget}
+        clampLines={reveal.isRevealing || !isComplete ? null : clampLines}
+        outcome={
+          outcomeText === null || reveal.isRevealing || !isComplete
+            ? null
+            : { text: outcomeText, tone: 'neutral' }
+        }
+      >
+        {reveal.isRevealing ? null : sessionId && agentId && hasScribeText ? (
+          <ScribeTextCard
+            assistantText={text}
+            sessionId={sessionId}
+            agentId={agentId}
+            runId={runId}
+          />
+        ) : null}
+        {reveal.isRevealing || !sessionId ? null : (
+          <div className="flex flex-col items-start gap-2 empty:hidden">
+            <PlanChip assistantText={text} sessionId={sessionId} />
+            <HandoffChip assistantText={text} sessionId={sessionId} sourceAgentId={agentId} />
+            <ResolverThreadsCard
               assistantText={text}
               sessionId={sessionId}
               agentId={agentId}
               runId={runId}
             />
-          ) : null}
-          {sessionId ? (
-            <div className="flex flex-col items-start gap-2 empty:hidden">
-              <PlanChip assistantText={text} sessionId={sessionId} />
-              <HandoffChip assistantText={text} sessionId={sessionId} sourceAgentId={agentId} />
-              <ResolverThreadsCard
-                assistantText={text}
-                sessionId={sessionId}
-                agentId={agentId}
-                runId={runId}
-              />
-            </div>
-          ) : null}
+          </div>
+        )}
+      </ReadingOrderMessage>
+      {reveal.isRevealing ? null : (
+        <>
           {hasCommentResolvedMarker || displayText.length === 0 ? null : (
             <div data-message-meta="" className="flex items-center justify-end">
               <CopyButton

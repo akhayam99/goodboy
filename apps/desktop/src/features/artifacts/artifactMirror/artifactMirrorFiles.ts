@@ -1,14 +1,8 @@
 import type { SessionArtifact } from '@goodboy/types';
 import type { ArtifactFolderFile } from '../artifactFile';
 import { artifactFolderName } from '../artifactFolderName';
-import { buildWireframeMirror } from '../../wireframes/wireframePages/buildWireframeMirror';
 import type { WireframeVersion } from '../../wireframes/wireframeVersion';
 import { artifactMirrorMeta } from './artifactMirrorMeta';
-import {
-  ARTIFACT_DOCUMENT_CSS_FILE,
-  artifactDocumentCss,
-  renderArtifactFile,
-} from './renderArtifactFile';
 
 export type ArtifactMirrorFiles = Readonly<{
   folder: string;
@@ -27,14 +21,16 @@ const metaFile = ({ artifact, workspaceSlug, appVersion }: Params): ArtifactFold
   contents: `${JSON.stringify(artifactMirrorMeta({ artifact, workspaceSlug, appVersion }), null, 2)}\n`,
 });
 
-export const artifactMirrorFiles = ({
+export const artifactMirrorFiles = async ({
   artifact,
   workspaceSlug,
   appVersion,
   versions = [],
-}: Params): ArtifactMirrorFiles => {
+}: Params): Promise<ArtifactMirrorFiles> => {
   const folder = artifactFolderName({ artifact });
   if (artifact.kind === 'wireframe') {
+    const { buildWireframeMirror } =
+      await import('../../wireframes/wireframePages/buildWireframeMirror');
     return {
       folder,
       files: [
@@ -43,6 +39,8 @@ export const artifactMirrorFiles = ({
       ],
     };
   }
+  const { ARTIFACT_DOCUMENT_CSS_FILE, artifactDocumentCss, renderArtifactFile } =
+    await import('./renderArtifactFile');
   return {
     folder,
     files: [

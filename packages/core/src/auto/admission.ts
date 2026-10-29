@@ -2,6 +2,7 @@ import { AUTO_USD_EPSILON, type AutoArtifact, type AutoTree } from '@goodboy/db'
 import { AUTO_BATCH_MAX_CHILDREN, AUTO_MAX_OPEN_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
+import type { AutoLevel } from './level';
 import { isAutoWriterRole } from './roles';
 import {
   substepRefusal,
@@ -45,6 +46,7 @@ export type AdmissionSnapshot = Readonly<{
   remainingUsd: number;
   artifacts: ReadonlyArray<AdmissionArtifactFacts & { readonly artifactId: string }>;
   isPlanApprovalRequired: boolean;
+  level?: AutoLevel;
   parents?: ReadonlyArray<AdmissionParentFacts>;
 }>;
 
@@ -219,6 +221,7 @@ const inputRefusal = ({ snapshot, ref, tree, child }: InputCheckParams): Artifac
   }
   const isApprovalNeeded =
     snapshot.isPlanApprovalRequired &&
+    snapshot.level !== 'run' &&
     registered.kind === 'plan' &&
     isAutoWriterRole({ role: child.role });
   const isApproved =

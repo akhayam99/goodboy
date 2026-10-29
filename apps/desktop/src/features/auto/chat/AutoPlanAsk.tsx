@@ -1,8 +1,9 @@
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
-import { Button, Notice } from '@goodboy/ui';
+import { Button, Notice, tintClasses } from '@goodboy/ui';
 import { useAutoPlanApproval } from '../plan/useAutoPlanApproval';
 import type { ArtifactLinkModel } from './artifactLinksOf';
-import { focusAgentComposer } from './focusAgentComposer';
+import { AUTO_STATE_TONE } from './autoStateTone';
+import { AutoPlanOutline } from './AutoPlanOutline';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,22 +16,40 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
     sessionId,
     artifactId: brandId<ArtifactId>({ value: link.artifactId }),
   });
-  if (model === null || model.approval.state === 'approved') {
+  if (model === null) {
     return null;
   }
-  const isRevising = model.approval.state === 'revising';
-  if (isRevising) {
+  const viewPlan = (
+    <Button
+      variant={model.approval.state === 'needs_approval' ? 'primary' : 'quiet'}
+      size={model.approval.state === 'needs_approval' ? 'sm' : 'xs'}
+      aria-label={`Open plan ${link.title}`}
+      onClick={() => onOpen(link.artifactId)}
+    >
+      View plan
+    </Button>
+  );
+  if (model.approval.state === 'approved') {
+    return (
+      <p
+        data-plan-settled="approved"
+        className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground"
+      >
+        <span
+          data-tone={AUTO_STATE_TONE.artifact}
+          className={tintClasses(AUTO_STATE_TONE.artifact).text}
+        >
+          Plan v{model.version} approved
+        </span>
+        {viewPlan}
+      </p>
+    );
+  }
+  if (model.approval.state === 'revising') {
     return (
       <p className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground">
-        <Button
-          variant="quiet"
-          size="xs"
-          aria-label={`Open plan ${link.title}`}
-          onClick={() => onOpen(link.artifactId)}
-        >
-          Plan v{model.version}
-        </Button>
-        <span>· changes asked</span>
+        <span>Plan v{model.version} · changes asked</span>
+        {viewPlan}
       </p>
     );
   }
@@ -40,39 +59,12 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
       placement="transcript"
       title={`Plan v${model.version} needs your approval`}
       body={
-        <Button
-          variant="quiet"
-          size="xs"
-          aria-label={`Open plan ${link.title}`}
-          onClick={() => onOpen(link.artifactId)}
-        >
-          {link.title}
-        </Button>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="truncate text-foreground">{link.title}</p>
+          {model.outline === null ? null : <AutoPlanOutline outline={model.outline} />}
+        </div>
       }
-      actions={
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              model.askForChanges();
-              focusAgentComposer();
-            }}
-          >
-            Ask for changes
-          </Button>
-          <Button
-            size="sm"
-            data-demo-anchor="auto-approve"
-            disabled={model.isBusy}
-            isBusy={model.isBusy}
-            busyLabel="Approving"
-            onClick={() => void model.approve()}
-          >
-            Approve plan
-          </Button>
-        </>
-      }
+      actions={viewPlan}
     />
   );
 };

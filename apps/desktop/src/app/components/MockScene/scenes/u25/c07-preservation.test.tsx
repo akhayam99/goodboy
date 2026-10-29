@@ -96,7 +96,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child-done'] });
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+    expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
   it('Auto phase words and Change approach: the tail of the Auto chat', async () => {
@@ -127,21 +127,26 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(await screen.findByText('revising v2', undefined, WAIT)).toBeDefined();
   });
 
-  it('Confirm a revise: Confirm and Cancel under its line', async () => {
+  it('Confirm a revise: the Next step card with Not now under its line', async () => {
     mount({ Scene: U24_AUTO_CHAT_SCENES['auto-chat-confirm'] });
 
+    const card = await screen.findByRole('region', { name: 'Next step' }, WAIT);
     expect(
-      await screen.findByText('Revise Retry-safe credit retries to v2?', undefined, WAIT),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
+      within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
+    ).toBeGreaterThan(0);
+    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
   });
 
-  it('Auto plan approval: the ask with Approve plan and Ask for changes', async () => {
+  it('Auto plan approval: the ask with View plan, then Approve plan in the plan view', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-plan'] });
 
     expect(await screen.findByText('Plan v1 needs your approval', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('Approve plan').closest('button')).not.toBeNull();
-    expect(screen.getByText('Ask for changes').closest('button')).not.toBeNull();
+    const viewPlan = screen.getByText('View plan').closest('button');
+    if (viewPlan === null) {
+      throw new Error('no View plan');
+    }
+    fireEvent.click(viewPlan);
+    expect(await screen.findByText('Approve plan', undefined, WAIT)).toBeDefined();
   });
 
   it('Child page notice with Open Auto, after Open full', async () => {

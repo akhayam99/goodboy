@@ -3,6 +3,7 @@ import type { BranchCommit, FileDiff } from '@goodboy/types';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { branchSummaryOf } from './branchSummaryOf';
 import { ChangesCardBody } from './ChangesCardBody';
+import { ChangesFolderList } from './ChangesFolderList';
 import { CommitsCardBody } from './CommitsCardBody';
 import { SummaryCard, type SummaryCardState } from './SummaryCard';
 
@@ -13,9 +14,18 @@ type Props = {
   readonly error: string | null;
   readonly onRetry: () => void;
   readonly onOpen: (tab: BranchTab) => void;
+  readonly onOpenFolder: (folder: string) => void;
 };
 
-export const BranchSummary = ({ commits, files, isLoading, error, onRetry, onOpen }: Props) => {
+export const BranchSummary = ({
+  commits,
+  files,
+  isLoading,
+  error,
+  onRetry,
+  onOpen,
+  onOpenFolder,
+}: Props) => {
   const summary = useMemo(() => branchSummaryOf({ commits, files }), [commits, files]);
   const state: SummaryCardState = error !== null ? 'error' : isLoading ? 'loading' : 'ready';
   if (state === 'ready' && summary.commitCount === 0 && summary.fileCount === 0) {
@@ -26,7 +36,13 @@ export const BranchSummary = ({ commits, files, isLoading, error, onRetry, onOpe
       <SummaryCard label="Commits" state={state} onOpen={() => onOpen('commits')} onRetry={onRetry}>
         <CommitsCardBody summary={summary} />
       </SummaryCard>
-      <SummaryCard label="Changes" state={state} onOpen={() => onOpen('files')} onRetry={onRetry}>
+      <SummaryCard
+        label="Changes"
+        state={state}
+        footer={<ChangesFolderList summary={summary} onOpenFolder={onOpenFolder} />}
+        onOpen={() => onOpen('files')}
+        onRetry={onRetry}
+      >
         <ChangesCardBody summary={summary} />
       </SummaryCard>
     </section>

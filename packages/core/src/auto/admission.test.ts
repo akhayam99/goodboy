@@ -416,6 +416,20 @@ describe('diagnoseAdmission', () => {
   });
 
   describe('plan as input', () => {
+    it.each(['step', 'plan', 'run'] as const)(
+      'applies the %s level to an unapproved plan without relaxing revision checks',
+      (level) => {
+        const current = snapshot({ level, artifacts: [planFacts()] });
+        expect(codeOf(diagnoseAdmission({ snapshot: current, children: [implementer()] }))).toBe(
+          level === 'run' ? 'ok' : 'artifact_unapproved',
+        );
+        expect(codeOf(diagnoseAdmission({ snapshot: current, children: [implementer(1)] }))).toBe(
+          'stale_revision',
+        );
+        expect(codeOf(diagnoseAdmission({ snapshot: current, children: [scout()] }))).toBe('ok');
+      },
+    );
+
     it('lets a writer take a plan only at the revision that was approved', () => {
       const approved = planFacts({ artifact: { approvalState: 'approved', approvedRevision: 2 } });
       expect(

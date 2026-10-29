@@ -182,11 +182,11 @@ describe('the Auto chat scenes', () => {
   it('auto-chat-confirm asks before the revise starts', async () => {
     mount({ id: 'auto-chat-confirm' });
 
+    const card = await screen.findByRole('region', { name: 'Next step' }, WAIT);
     expect(
-      await screen.findByText('Revise Retry-safe credit retries to v2?', undefined, WAIT),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
+      within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
+    ).toBeGreaterThan(0);
+    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
   });
 
   it('auto-chat-refused turns a refused hand over into the project ask, nothing started', async () => {
@@ -210,7 +210,7 @@ describe('the Auto chat scenes', () => {
     expect(root?.getAttribute('aria-label')).toMatch(/, 4 agents, Idle$/);
     fireEvent.keyDown(root ?? rail(), { key: 'ArrowRight' });
     expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
-    expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);
   });

@@ -11,6 +11,8 @@ import type {
 import type { ConversationRow } from '../../utils/conversationRows';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
+import { ReadingNotes } from '../../readingOrder/ReadingNotes';
+import { readingOrderOf } from '../../readingOrder/readingOrderOf';
 import { OperationsCluster } from '../OperationsCluster';
 import { PlanChecklist } from '../PlanChecklist';
 import { TurnSummaryLine } from '../TurnSummaryLine';
@@ -23,7 +25,9 @@ import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
 import { NewRowsDivider } from './NewRowsDivider';
 import { SlackDraftCard } from './SlackDraftCard';
-import { dayKey, formatDayLabel } from './lib';
+import { dayKey } from './lib';
+import { DayDivider } from './DayDivider';
+import { TurnHeading } from './TurnHeading';
 import { planBlockVersions } from './planBlockVersions';
 import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
@@ -60,16 +64,6 @@ type Props = {
 };
 
 const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
-
-type HeadingParams = {
-  readonly text: string;
-};
-
-const turnHeadingOf = ({ text }: HeadingParams): string =>
-  text
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line !== '') ?? 'Turn';
 
 type VisibilityParams = {
   readonly px: number;
@@ -157,6 +151,7 @@ export const TranscriptRows = ({
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
   const planVersions = planBlockVersions({ rows });
+  const readingRoles = readingOrderOf({ rows, activeRunId: activeRunId ?? null });
   const placedRunIds = new Set<ProviderRunId>();
   const briefRow =
     briefLabel === undefined
@@ -262,16 +257,7 @@ export const TranscriptRows = ({
       const isLeadingToday = lastDay === null && day === todayKey;
       if (dayChanged) {
         if (!isLeadingToday) {
-          out.push(
-            <li
-              key={`day-${day}-${row.key}`}
-              data-testid="transcript-day"
-              data-align="start"
-              className="flex justify-start"
-            >
-              <span className="text-meta text-muted-foreground">{formatDayLabel(at)}</span>
-            </li>,
-          );
+          out.push(<DayDivider key={`day-${day}-${row.key}`} at={at} />);
         }
         lastDay = day;
       }
@@ -280,13 +266,7 @@ export const TranscriptRows = ({
       }
       if (isStepsOnly && row !== briefRow) {
         flushRailGroup();
-        out.push(
-          <li key={row.key} data-turn-heading={turnIndex}>
-            <p className="truncate text-meta text-muted-foreground">
-              {turnHeadingOf({ text: row.item.text })}
-            </p>
-          </li>,
-        );
+        out.push(<TurnHeading key={row.key} index={turnIndex} text={row.item.text} />);
         return;
       }
     }
@@ -309,6 +289,10 @@ export const TranscriptRows = ({
           activeRunId={activeRunId}
         />,
       );
+      return;
+    }
+    const reading = readingRoles.get(row.key);
+    if (reading?.kind === 'hidden') {
       return;
     }
     flushRailGroup();
@@ -346,8 +330,11 @@ export const TranscriptRows = ({
           />
         ) : row === briefRow && briefLabel !== undefined && row.item.kind === 'handoff' ? (
           <BriefCard label={briefLabel} text={row.item.text} />
+        ) : reading?.kind === 'notes' ? (
+          <ReadingNotes role={reading} />
         ) : (
           <TranscriptCard
+            {...(reading?.kind === 'answer' && { clampLines: reading.clampLines })}
             item={row.item}
             sessionId={sessionId}
             agentId={selectedAgentId}

@@ -181,8 +181,11 @@ export const createAutoBridgeClient = async ({
         isResult: isPublishResult,
         waitMs: longTimeoutMs,
       }),
-    decision: ({ delegationId, decision }) =>
-      ask({ call: { kind: 'decision', delegationId, decision }, isResult: isDecisionResult }),
+    decision: ({ delegationId, decision, hint }) =>
+      ask({
+        call: { kind: 'decision', delegationId, decision, ...(hint === undefined ? {} : { hint }) },
+        isResult: isDecisionResult,
+      }),
     userTurn: async (turn) => {
       const key = turnKeyOf({ turn });
       const messageId = unsettledTurns.get(key) ?? newId();

@@ -105,6 +105,8 @@ const diffOf = (): SessionDiff => ({
 
 const STABLE_DIFF = diffOf();
 
+const SESSION = 'session-1' as SessionId;
+
 const run = () =>
   renderHook(() =>
     useReviewState({
@@ -445,7 +447,6 @@ describe('useReviewState filters', () => {
 });
 
 describe('useReviewState file-level comments', () => {
-  const SESSION = 'session-1' as SessionId;
   const PULL_REQUEST = {
     sessionId: SESSION,
     provider: 'github' as const,
@@ -630,5 +631,62 @@ describe('useReviewState on a big change', () => {
     const { result } = runBig(bigFiles.slice(0, 80));
 
     expect(result.current.collapsed.size).toBe(0);
+  });
+});
+
+describe('useReviewState folder filter', () => {
+  const files = [
+    fileAt('src/ledger/ledger.ts'),
+    fileAt('src/ledger/export.ts'),
+    fileAt('docs/ledger.md'),
+    fileAt('README.md'),
+  ];
+
+  const runFolder = () =>
+    renderHook(() =>
+      useReviewState({
+        sessionId: SESSION,
+        worktreePath: '/w/ledger',
+        diff: { ...STABLE_DIFF, files },
+      }),
+    );
+
+  afterEach(() => {
+    act(() => store.getState().setBranchFilesFolder({ sessionId: SESSION, folder: null }));
+  });
+
+  it('shows only the files of the folder a card opened', () => {
+    const { result } = runFolder();
+    expect(result.current.tree.files).toHaveLength(4);
+
+    act(() => store.getState().setBranchFilesFolder({ sessionId: SESSION, folder: 'src' }));
+
+    expect(result.current.folder).toBe('src');
+    expect(result.current.isFiltering).toBe(true);
+    expect(result.current.tree.files.map((file) => file.path)).toEqual([
+      'src/ledger/export.ts',
+      'src/ledger/ledger.ts',
+    ]);
+  });
+
+  it('matches the root files folder to files without a directory', () => {
+    const { result } = runFolder();
+
+    act(() => store.getState().setBranchFilesFolder({ sessionId: SESSION, folder: 'Root files' }));
+
+    expect(result.current.tree.files.map((file) => file.path)).toEqual(['README.md']);
+  });
+
+  it('restores the whole tree when the filters are cleared', () => {
+    const { result } = runFolder();
+    act(() => store.getState().setBranchFilesFolder({ sessionId: SESSION, folder: 'docs' }));
+    expect(result.current.tree.files).toHaveLength(1);
+
+    act(() => result.current.clearFilters());
+
+    expect(result.current.folder).toBeNull();
+    expect(result.current.isFiltering).toBe(false);
+    expect(result.current.tree.files).toHaveLength(4);
+    expect(store.getState().branchFilesFolder[SESSION]).toBeNull();
   });
 });

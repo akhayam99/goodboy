@@ -120,7 +120,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - A finished conversation folds to one row with its count of agents. Open or fold a row with its chevron or the arrow keys.
 - The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
-- Auto's reply adds only what the reports mean together. **Approve plan** shows right there when a Planner finished.
+- Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
 
 **Limit and control**
@@ -130,6 +130,8 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - **Stop** or **Change approach** while it waits.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
 - An agent's page has the same chip line under its title: how it runs, when it asks you, the session **Limit** and its **Models**. The composer keeps only the message.
+- An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
+- When Auto needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the main button, such as **Spawn implementer**, with one or two other options and a hint field. The keys 1 to 3 pick an option once you are in the card. An option other than the first declines the proposal and tells Auto your pick. **Not now** declines and tells nothing.
 - When the work rests, Auto reads **Idle**. Only you close it, with **Mark finished** in its header. Writing to it again reopens it.
 - When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too.
 - **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
@@ -180,3 +182,4 @@ This part is for contributors and agents who change the feature.
 
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
+- Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

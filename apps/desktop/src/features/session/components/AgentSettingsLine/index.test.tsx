@@ -14,6 +14,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { AutoBudgetFacts } from '@goodboy/core';
 import { getAutoTree } from '@goodboy/db';
+import { readAutoLevel } from '../../../../store/runtime/auto/level/readAutoLevel';
 import {
   AUTO_SEED_SESSION,
   seedAutoSession,
@@ -187,5 +188,59 @@ describe('the model slot of the settings line', () => {
     const { container } = showSlot({ isFilled: true, isAuto: false });
 
     expect(container.querySelector('[data-settings-models]')?.textContent).toBe('Model routing');
+  });
+});
+
+describe('the Auto level chip of the settings line', () => {
+  const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+  const target = { sessionId: AUTO_SEED_SESSION };
+
+  type LevelParams = {
+    readonly isAuto: boolean;
+  };
+
+  const showLevel = ({ isAuto }: LevelParams) =>
+    render(
+      <AgentSettingsLine
+        session={SESSION}
+        kind={null}
+        auto={isAuto ? { treeId: TREE_ID, facts: FACTS } : null}
+        asksSlotRef={() => undefined}
+        modelsSlotRef={() => undefined}
+      />,
+    );
+
+  it('shows After the plan from the workspace on an Auto agent and nothing on another agent', () => {
+    showLevel({ isAuto: true });
+    screen.getByRole('button', { name: /^Asks you: After the plan, from / });
+    cleanup();
+
+    showLevel({ isAuto: false });
+    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+  });
+
+  it('saves the level for this session only and names this run as the source', async () => {
+    showLevel({ isAuto: true });
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Every step' }));
+
+    await waitFor(async () =>
+      expect(await readAutoLevel({ db: storySqlite(), target })).toBe('step'),
+    );
+    expect(await readAutoLevel({ db: storySqlite(), target: { workspaceId: WORKSPACE_ID } })).toBe(
+      'plan',
+    );
+    await screen.findByRole('button', { name: 'Asks you: Every step, this run' });
+  });
+
+  it('keeps the old level and says why when the write fails', async () => {
+    showLevel({ isAuto: true });
+    await storySqlite().execute('DELETE FROM sessions WHERE id = ?', [AUTO_SEED_SESSION]);
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you: / }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't change it.");
+    screen.getByRole('button', { name: /^Asks you: After the plan/ });
   });
 });

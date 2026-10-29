@@ -49,6 +49,7 @@ describe('the u25 transcript width scene', () => {
       </ToastProvider>,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /^Notes, \d+ lines?$/ }));
     const reply = screen.getByText(/The retry path in notify-relay posts the credit twice/);
     expect(reply.closest('[class*="--measure"]')).toBeNull();
     fireEvent.click(

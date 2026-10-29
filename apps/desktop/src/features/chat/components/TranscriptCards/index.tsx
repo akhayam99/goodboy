@@ -42,6 +42,7 @@ type TranscriptCardProps = {
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
   readonly isBrief?: boolean;
+  readonly clampLines?: number;
 };
 
 const TranscriptCardImpl = ({
@@ -59,6 +60,7 @@ const TranscriptCardImpl = ({
   turnOutcome,
   turnStartedAt,
   isBrief = false,
+  clampLines,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -96,6 +98,7 @@ const TranscriptCardImpl = ({
     case 'assistant_text':
       return (
         <AssistantText
+          {...(clampLines !== undefined && { clampLines })}
           text={item.text}
           sessionId={sessionId}
           agentId={agentId}
@@ -223,5 +226,6 @@ export const TranscriptCard = memo(
     prev.permission?.decision === next.permission?.decision &&
     prev.turnOutcome === next.turnOutcome &&
     prev.turnStartedAt === next.turnStartedAt &&
-    prev.isBrief === next.isBrief,
+    prev.isBrief === next.isBrief &&
+    prev.clampLines === next.clampLines,
 );

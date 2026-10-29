@@ -449,7 +449,18 @@ fn confinement_of(args: &SpawnOneArgs<'_>) -> Option<RoleAccess> {
         .map(|role| role_access(role).unwrap_or(RoleAccess::ReadOnly))
 }
 
-fn effective_permission_mode<'a>(args: &SpawnOneArgs<'a>, access: Option<RoleAccess>) -> &'a str {
+struct EffectivePermissionModeParams<'a> {
+    cli: Cli,
+    args: &'a SpawnOneArgs<'a>,
+    access: Option<RoleAccess>,
+}
+
+fn effective_permission_mode<'a>(
+    EffectivePermissionModeParams { cli, args, access }: EffectivePermissionModeParams<'a>,
+) -> &'a str {
+    if cli == Cli::Claude && args.confined_role == Some("auto") {
+        return "default";
+    }
     if access == Some(RoleAccess::ReadOnly) {
         return "plan";
     }
@@ -469,7 +480,8 @@ fn build_turn_args(binary: &str, args: &SpawnOneArgs<'_>, is_stdin_allowed: bool
         return Vec::new();
     };
     let access = confinement_of(args);
-    let permission_mode = effective_permission_mode(args, access);
+    let permission_mode =
+        effective_permission_mode(EffectivePermissionModeParams { cli, args, access });
     match cli {
         Cli::Cursor => {
             let mut v = vec![
@@ -1305,19 +1317,12 @@ mod tests {
     }
 
     #[test]
-    fn auto_gets_the_argv_of_a_scout_on_every_provider() {
+    fn auto_gets_the_argv_of_a_scout_on_other_providers() {
         let roots = strings(&["/repo/.meta"]);
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
         for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
-            for binary in [
-                "claude",
-                "codex",
-                "cursor-agent",
-                "agy",
-                "copilot",
-                "opencode",
-            ] {
+            for binary in ["codex", "cursor-agent", "agy", "copilot", "opencode"] {
                 let auto = spawn_args(mode, Some("auto"), &allowed, &disallowed, &roots);
                 let scout = spawn_args(mode, Some("scout"), &allowed, &disallowed, &roots);
                 assert_eq!(
@@ -1330,39 +1335,49 @@ mod tests {
     }
 
     #[test]
-    fn auto_on_claude_reads_only_and_holds_no_bash_rule() {
+    fn auto_on_claude_leaves_plan_mode_and_keeps_only_read_tools() {
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
-        for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
+        for mode in [
+            "default",
+            "acceptEdits",
+            "bypassPermissions",
+            "plan",
+            "dontAsk",
+        ] {
             let args = spawn_args(mode, Some("auto"), &allowed, &disallowed, &[]);
-            let argv = turn_args("claude", &args);
-            assert_eq!(
-                value_after(&argv, "--tools").as_deref(),
-                Some("Read,Grep,Glob")
-            );
-            assert_eq!(
-                value_after(&argv, "--permission-mode").as_deref(),
-                Some("plan")
-            );
-            assert!(!argv.contains(&"--allowedTools".to_string()));
-            assert!(argv.iter().all(|arg| !arg.contains("Bash(")));
-            assert!(argv.iter().all(|arg| !arg.contains("query agent")));
-            let denied = value_after(&argv, "--disallowedTools").expect("deny list");
-            for tool in [
-                "Read(.env)",
-                "Task",
-                "Agent",
-                "Bash",
-                "Edit",
-                "Write",
-                "MultiEdit",
-                "NotebookEdit",
-                "mcp__*",
+            for argv in [
+                turn_args("claude", &args),
+                turn_args_with_prompt("claude", &args),
             ] {
-                assert!(
-                    denied.split(',').any(|entry| entry == tool),
-                    "{tool} in {denied}"
+                assert_eq!(
+                    value_after(&argv, "--tools").as_deref(),
+                    Some("Read,Grep,Glob")
                 );
+                assert_eq!(
+                    value_after(&argv, "--permission-mode").as_deref(),
+                    Some("default")
+                );
+                assert!(!argv.contains(&"--allowedTools".to_string()));
+                assert!(argv.iter().all(|arg| !arg.contains("Bash(")));
+                assert!(argv.iter().all(|arg| !arg.contains("query agent")));
+                let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+                for tool in [
+                    "Read(.env)",
+                    "Task",
+                    "Agent",
+                    "Bash",
+                    "Edit",
+                    "Write",
+                    "MultiEdit",
+                    "NotebookEdit",
+                    "mcp__*",
+                ] {
+                    assert!(
+                        denied.split(',').any(|entry| entry == tool),
+                        "{tool} in {denied}"
+                    );
+                }
             }
         }
     }

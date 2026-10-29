@@ -1026,8 +1026,10 @@ kept.
   normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
   bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
-  transaction. A writer must name its mount; a reader without one gets the primary
-  mount, captured at admission. Nothing runs for a person until they start an Auto agent, because no tree exists before.
+  transaction. Its snapshot reads the persisted session level and global approval
+  switch for each handoff, with the policy described in
+  [auto.md](./auto.md#how-auto-decides). A writer must name its mount; a reader
+  without one gets the primary mount, captured at admission. Nothing runs for a person until they start an Auto agent, because no tree exists before.
 - Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
   built text on the first row, reserves the turn ceiling and makes the tree `deciding`
   on a planned run id; then the turn starts under the first row id as its delivery id,

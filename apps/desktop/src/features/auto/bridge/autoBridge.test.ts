@@ -211,6 +211,28 @@ describe('Auto in a window without the runtime', () => {
     expect(result.rows.map((row) => row.state)).toEqual(['pushed', 'failed']);
   });
 
+  it('forwards a delegation decision with its hint, and without one when there is none', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    await client.ports.decision({
+      delegationId: 'delegation-a',
+      decision: 'confirm',
+      hint: 'keep the retry cap',
+    });
+    await client.ports.decision({ delegationId: 'delegation-a', decision: 'decline' });
+
+    expect(main.decision).toHaveBeenNthCalledWith(1, {
+      delegationId: 'delegation-a',
+      decision: 'confirm',
+      hint: 'keep the retry cap',
+    });
+    expect(main.decision).toHaveBeenNthCalledWith(2, {
+      delegationId: 'delegation-a',
+      decision: 'decline',
+    });
+  });
+
   it('forwards a decline, a retry and a put back with their ids', async () => {
     const main = mainPorts();
     const client = await windows({ bus: memoryBus(), ports: main.ports });

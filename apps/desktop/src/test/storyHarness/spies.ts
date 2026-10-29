@@ -31,6 +31,7 @@ import type {
   Workflow,
   Workspace,
   WorkspaceId,
+  Session,
 } from '@goodboy/types';
 
 export const STORY_NOW: IsoDateTime = TEST_NOW;
@@ -222,6 +223,7 @@ export const storySpies = {
   }),
   setSetting: vi.fn(async () => undefined),
   getWorkspaceValue: vi.fn<(params: unknown) => Promise<string | null>>(async () => null),
+  getSessionById: vi.fn<(db: unknown, id: string) => Promise<Session | null>>(async () => null),
   setWorkspaceValue: vi.fn(async (_params: unknown) => undefined),
   insertWorkspaceValueIfAbsent: vi.fn(async (_params: unknown) => true),
   replaceWorkspaceValueIfUnchanged: vi.fn(async (_params: unknown) => true),

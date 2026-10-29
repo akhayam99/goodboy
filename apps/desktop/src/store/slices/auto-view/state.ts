@@ -1,5 +1,5 @@
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoOutcome, AutoTree } from '@goodboy/db';
-import type { AutoBudgetFacts } from '@goodboy/core';
+import type { AutoBudgetFacts, OutcomeLine } from '@goodboy/core';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 
 export type AutoTreeView = Readonly<{
@@ -30,6 +30,7 @@ export type AutoDeliveredResult = Readonly<{
   model: string | null;
   outcome: AutoOutcome;
   summary: string | null;
+  outcomeLine: OutcomeLine | null;
   artifacts: ReadonlyArray<AutoDeliveredArtifact>;
 }>;
 

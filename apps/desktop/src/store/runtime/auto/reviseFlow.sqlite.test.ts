@@ -453,6 +453,7 @@ describe('retrying a revise', () => {
         decisions: [],
         forQuestion: null,
         retryOf: (await reviseDelegation(world)).id,
+        shouldConfirm: false,
       },
       slot: 0,
     });

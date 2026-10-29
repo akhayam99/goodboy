@@ -1236,7 +1236,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'auto|plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
+  'auto|plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry|outcome';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 

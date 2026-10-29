@@ -40,6 +40,7 @@ export const storyDbStubs = () => ({
   getSettings: storySpies.getSettings,
   setSetting: storySpies.setSetting,
   getWorkspaceValue: storySpies.getWorkspaceValue,
+  getSessionById: storySpies.getSessionById,
   setWorkspaceValue: storySpies.setWorkspaceValue,
   insertWorkspaceValueIfAbsent: storySpies.insertWorkspaceValueIfAbsent,
   replaceWorkspaceValueIfUnchanged: storySpies.replaceWorkspaceValueIfUnchanged,

@@ -28,7 +28,7 @@ type EstimateParams = {
   readonly text: string;
 };
 
-const estimateRenderedLines = ({ text }: EstimateParams): number =>
+export const estimateRenderedLines = ({ text }: EstimateParams): number =>
   text
     .split('\n')
     .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / CHARS_PER_LINE)), 0);

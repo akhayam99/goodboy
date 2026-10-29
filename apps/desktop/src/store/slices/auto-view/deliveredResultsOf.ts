@@ -3,6 +3,7 @@ import { AUTO_OUTCOMES, type AutoOutboxRow } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredArtifact, AutoDeliveredResult } from './state';
 import { isRecord } from '@goodboy/types/helpers';
+import { delegationResultOf } from '../../../features/auto/chat/delegationResultOf';
 
 type Params = {
   readonly accepted: ReadonlyArray<AutoOutboxRow>;
@@ -81,6 +82,7 @@ const deliveredOf = ({ entry, runId }: EntryParams): AutoDeliveredResult | null 
     model: textOf({ source: routing, key: 'model' }),
     outcome,
     summary: textOf({ source: recordOf({ source: entry, key: 'declared' }), key: 'summary' }),
+    outcomeLine: delegationResultOf({ result: entry })?.outcomeLine ?? null,
     artifacts: artifactsOf({ entry }),
   };
 };

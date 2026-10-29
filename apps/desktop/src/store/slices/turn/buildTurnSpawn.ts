@@ -1,8 +1,9 @@
-import { AUTO_GATES, buildAutoSystemPrompt, renderHandoff } from '@goodboy/core';
+import { renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
 import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
+import { autoSystemPromptOf } from '../../runtime/auto/level/autoSystemPromptOf';
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
@@ -137,7 +138,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
 
   const kindSystemPrompt =
     earlyAgentKind === 'auto'
-      ? buildAutoSystemPrompt({ isDelegationEnabled: AUTO_GATES.isDelegationEnabled })
+      ? await autoSystemPromptOf({ sessionId })
       : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
   const scopeMounts =

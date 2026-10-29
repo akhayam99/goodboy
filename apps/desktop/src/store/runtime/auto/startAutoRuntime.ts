@@ -1,7 +1,6 @@
 import { AUTO_GATES } from '@goodboy/core';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
-import { SETTING_AUTO_PLAN_APPROVAL } from '../../../features/settings/settings';
 import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';
 import {
   currentAutoUserTurnPort,
@@ -138,10 +137,11 @@ export const startAutoRuntime = async ({
     return holder.runtime;
   };
   registerDelegationDecisionPort({
-    port: ({ delegationId, decision }) =>
+    port: ({ delegationId, decision, hint }) =>
       runtimeOf().confirm({
         delegationId: brandId<AutoDelegationId>({ value: delegationId }),
         decision,
+        ...(hint === undefined ? {} : { hint }),
       }),
   });
   registerTreeStopPort({
@@ -250,7 +250,6 @@ export const startAutoRuntime = async ({
     }
   };
   const tick = async (): Promise<void> => {
-    await getState().loadSetting(SETTING_AUTO_PLAN_APPROVAL);
     await startAutoTrees({ ctx: runtime.ctx, ...treeCaps });
     const trees = await listAutoTreesToRecover({ db });
     await Promise.all(trees.map((tree) => tickTree(tree.id)));

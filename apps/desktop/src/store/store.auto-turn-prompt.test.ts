@@ -100,15 +100,15 @@ describe('the system prompt of an Auto turn', () => {
     resetStorySpies();
     storySpies.runTurn.mockImplementation(() => emptyTurnStream());
     storySpies.invokeAgentList.mockResolvedValue([autoAgent, plainAgent]);
+    const session = buildStorySession({
+      id: SESSION_ID,
+      workspaceId: WORKSPACE_ID,
+      goal: '',
+      state: { kind: 'idle', lastActivityAt: STORY_NOW },
+    });
+    storySpies.getSessionById.mockResolvedValue(session);
     useAppStore.setState({
-      sessions: [
-        buildStorySession({
-          id: SESSION_ID,
-          workspaceId: WORKSPACE_ID,
-          goal: '',
-          state: { kind: 'idle', lastActivityAt: STORY_NOW },
-        }),
-      ],
+      sessions: [session],
       projects: [],
       sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
       sessionPhaseRuns: { [SESSION_ID]: [autoAgent, plainAgent] },

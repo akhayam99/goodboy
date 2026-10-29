@@ -320,12 +320,18 @@ writing to it reopens it to **Deciding**.
   child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
-  the same lines. A revise that waits for an OK carries **Confirm** and
-  **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
-  ask **Plan v1 needs your approval** with the plan title (opens the plan),
-  **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
-  `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
-  settles to one quiet line, "Plan v1 · changes asked".
+  the same lines. A child that waits for an OK carries the **Next step** card
+  (see **Confirming**), and a plan that waits for approval carries the
+  ask **Plan v1 needs your approval** with the plan title, the first four steps
+  and the step, file and risk counts (`autoPlanOutlineOf`), and one action,
+  **View plan** (`AutoPlanAsk`). **Approve plan** and **Ask for changes** sit
+  top right in the plan view, which uses the same `useAutoPlanApproval`;
+  approving sends the approval to the Auto root, so the run stays inside Auto.
+  If the approval is saved but Auto was not told, the view keeps open with
+  **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
+  artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the ask does not
+  unmount: it settles to "Plan v1 approved" with **View plan**. While the plan is
+  revised the ask settles to one quiet line, "Plan v1 · changes asked".
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
@@ -391,15 +397,17 @@ writing to it reopens it to **Deciding**.
   child's card, right after the **What Auto was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
   `AutoResultCards`): the role glyph, the name, the model
-  with its provider, the state word (`settledStatusOf`, the rail's words) and
-  **Open**, which opens the child pane. The body is the child's own report in
-  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
-  child shows its card with its state and no body. When the child produced an
-  artifact (`deliveredResultsOf` reads the `artifacts` of the result entry), the card leads with
-  the same artifact rows as the delegation lines and the agent's own prose goes behind **Show the
-  agent's notes**, closed by default (`AutoResultNotes`, artifact blocks dropped by
-  `summaryProseOf`); a plan that waits for approval has no row on the card, its ask is on the
-  line, and a card whose child produced no artifact keeps the three line preview. The cards read data, never
+  with its provider and **Open**, which opens the child pane. Under that header the card
+  reads in the reading order of [turns.md](./turns.md): one outcome line (the child's own
+  `<<outcome>>` line, or the one `outcomeLineOf` computes: Done, Failed or Timed out; red checks or a failed push override the model line, the same as on the delegation card, because `deliveredResultsOf` computes the line once with `delegationResultOf` and the card only draws it), the
+  artifact rows, then the notes. The state word is the outcome line, not a second label, and
+  the card has no coloured side border. A child with no artifact keeps its report in
+  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out child shows
+  the outcome line and no body. When the child produced an artifact (`deliveredResultsOf`
+  reads the `artifacts` of the result entry), the card leads with the same artifact rows as
+  the delegation lines and the agent's own prose goes behind a closed **Notes, N lines**
+  (`ReadingNotes` fed by `summaryNotesOf`, which drops the outcome line and artifact blocks);
+  a plan that waits for approval has no row on the card, its ask is on the line. The cards read data, never
   Auto's prose: an accepted `results` row of the outbox keeps the root run that
   read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
   `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
@@ -440,8 +448,12 @@ writing to it reopens it to **Deciding**.
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
-  `DelegationResult`; the summary is markdown through the shared `Markdown`,
-  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
+  `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
+  child's own sentence; then chips for files changed, the checks verdict, each failing check,
+  **Run checks again**, the push state with **Try the push again** and **Put back**, and each
+  open question, four at most then **+N**; last a closed **Notes, N lines** with the summary
+  as markdown, open only when the outcome is red, any artifact block dropped by
+  `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
   conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
@@ -478,13 +490,14 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-Auto cannot start a writer role (Implementer, Tester, Docs, Scribe, CI fixer,
-Rewriter) on a plan that is not
-approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
-stored setting `agents.autoPlanApproval` on every tick, and approval is required
-unless the stored value is exactly `false`. There is no screen for that setting
-yet. **Ask for changes** opens the chat of Auto: a change written there makes Auto
-rework the same plan into the next version.
+A writer role (Implementer, Tester, Docs, Scribe, CI fixer, Rewriter) taking a
+plan needs its current revision approved, unless the session level is **Never**
+or the global approval switch is off. The admission snapshot reads the stored
+`agents.autoPlanApproval` setting for every handoff through
+`isAutoPlanApprovalRequired`; only the exact value `false` turns that switch
+off. There is no screen for that setting yet. **Ask for changes** opens the
+chat of Auto: a change written there makes Auto rework the same plan into
+the next version.
 
 A writer admitted with a plan marks that plan used in the admission
 transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
@@ -506,10 +519,27 @@ until the session is reopened.
 
 ## Confirming
 
-A revise Auto is not sure about waits for an OK under its delegation line: "Change plan
-Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
-goes through one port, `registerDelegationDecisionPort`, which the runtime
-registers; without a port the click says Auto cannot take the answer yet.
+A child that waits for an OK shows one **Next step** card under its line, never a
+Confirm row (`AutoNextAction`, built by `nextActionOf`). The proposed child is the
+primary tile and button ("Spawn implementer", or "Revise Retry-safe credit
+retries to v3"), the alternatives of the proposal follow as tiles 2 and 3, and an
+optional hint field sits under them. The keys 1 to 3 pick a tile while focus is
+inside the card; Enter in the hint field runs the pick. The card is the question
+colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side border.
+
+- The primary confirms through `registerDelegationDecisionPort` with the typed hint
+  (`confirmDelegation` appends it to the brief). No model turn runs.
+- An alternative declines the primary first, then sends the Auto root one
+  structured message: `Next step: <role>` on the first line, the hint after it.
+  If the decline lost, no message is sent. If the message fails, the card stays as
+  "Declined. Auto was not told." with **Tell Auto**, which sends only the message.
+- **Not now** declines and tells nothing.
+- A failed start keeps the pick and the hint, shows the reason in the card and
+  reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
+- Without a port the card says Auto can't take the answer in this window yet.
+
+The hint travels through the same port in every window (the multi-window bridge
+carries it).
 
 ## Blocked and Retry
 
@@ -604,10 +634,13 @@ tells Auto the spend left (`autoBudgetPromptLine`), never a count of agents left
 
 ## How Auto decides
 
-Auto runs read-only on every provider that can confine it: the same role access scouts and reviewers get
-(Claude with `--tools Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor `--mode plan`, and so on). It
-has no shell and never calls Goodboy from inside its turn, so there is no bridge command, no
-capability token and no allow rule. It decides by ending its final reply with at most one block:
+Auto runs read-only on every provider that can confine it. Claude's Auto lead uses
+`--permission-mode default` at every session mode, with `--tools Read,Grep,Glob` and explicit
+shell and write tool denies (`effective_permission_mode` in `providers/cli_args.rs`). Other Claude
+read-only roles keep plan mode. Other providers keep their existing confinement, including
+Codex `-s read-only` and Cursor `--mode plan`. Auto has no shell and never calls Goodboy from
+inside its turn, so there is no bridge command, no capability token and no allow rule.
+It decides by ending its final reply with at most one block:
 
 ```
 <<auto>>{"action":"delegate","requestId":"r1","children":[...]}<</auto>>
@@ -615,6 +648,9 @@ capability token and no allow rule. It decides by ending its final reply with at
 
 - `delegate` hands one to four children to agents of a role (`requestId` is optional and
   derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
+- `propose` offers one `primary` child like a delegate and at most two
+  `alternatives`, each with a label and a role. The primary waits for confirmation;
+  alternatives carry no brief and consume no budget.
 - `answer` answers the question of a child (`delegation`, `question`, `text`, and an optional
   `artifact` id whose text Goodboy puts into the resume, see Substeps).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
@@ -622,6 +658,75 @@ capability token and no allow rule. It decides by ending its final reply with at
   prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
   close.
 - No block is a plain answer to the user.
+
+The prompt takes an Asks you level, using the same three values as workflows
+with its own default, **After the plan**. Each turn reads the
+level saved for its session (`autoSystemPromptOf`, the same `readAutoLevel` that
+admission uses), so the prompt and the gates follow one setting and a read that fails
+fails the turn instead of guessing a level. **Every step** requires confirmation
+for each child and a planner's plan before a change. **After the plan** lets
+readers start freely, requires a planner's plan and user approval before a
+writer, then continues without asking for each handoff. **Never** makes the
+plan optional and tells Auto to choose and delegate without proposing a next
+step. Force pushes still require confirmation and a backup at every level.
+Auto must never end a turn with a prose yes or no question: a choice belongs
+in a next step proposal for the app to show as a card.
+
+`parseProposeSpec` validates the primary with the delegate rules and forces
+confirmation. Alternatives live in the primary's request data, and the replay
+hash includes them. Admission keeps the same plan, mount, owner and generation
+guards as a delegate. A malformed proposal starts nothing and comes back as a
+refusal. `proposals/propose.sqlite.test.ts` covers admission, recovery and replay.
+
+`confirmDelegation` accepts an optional hint. It saves the trimmed hint and adds
+it to the task and kickoff in the same transaction that accepts the child, so
+confirmation needs no extra Auto turn and a retry of the work retains the hint.
+A failed save leaves the old request pending. A competing decision, stop, changed
+generation or lost owner returns `lost` without saving the hint. Decline ignores
+hints. Confirm and decline both check pending state inside their transaction, so
+a late decline cannot cancel a confirmed child. The proposal tests cover rollback,
+retry and competing decisions.
+
+Admission reads the session level from the database for every handoff, after
+resolving the child. **Every step** stores each child as waiting for its own
+Confirm or Cancel. At **Never**, an unapproved plan may be consumed by a
+writer, while revision and artifact checks still apply. Changing the level
+never starts a child already waiting for confirmation. An explicit child
+`confirm: true` or an ambiguous revise still requires confirmation at any level.
+
+The storage helpers in `store/runtime/auto/level/` keep session overrides
+and a separate default in the workspace value `auto.level`, whose key is
+registered in `packages/db/src/queries/entity-value.ts`. A session override
+falls back to that workspace default, then **After the plan**. Invalid
+values fall through to the next default. Workflow autonomy is unchanged. A
+write takes a named session or workspace target, compares and swaps, retries
+one lost race and reports a failed write without updating window state. Picks made in one window
+run in call order per workspace (`changeAutoLevel` queues them), so the last pick wins
+and an older pick never retries over a newer one.
+`readAdmissionSnapshot` reads the persisted level and approval switch;
+`admit.ts` applies the same policy to the stored child state, receipt and
+plan consumption. The level tests in `store/runtime/auto/level/` check
+persistence, failures, second writers and pending confirmations.
+
+Start a run shows the same chip (`AutoLevelChip`) for an Auto lead: it reads the
+workspace default through `useAutoLevel` and `startRoutedRun` writes the pick
+with `changeAutoLevel`.
+
+The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
+to the Limit chip) and the workspace default in Settings, workspace defaults
+(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `shared/hooks/`,
+which reads `auto.level`, writes through the `changeAutoLevel` store action
+(`writeAutoLevel` on a named session or workspace, then a reload of the value)
+and keeps only the latest pick. A
+failed write keeps the old level and shows the reason. The chip is rendered by
+`AgentSettingsLine` itself, never through the composer slot, so the message
+field is not affected.
+
+`buildAutoSystemPrompt` reads `AutoLevel` and defaults to `DEFAULT_AUTO_LEVEL`
+in `packages/core/src/auto/level.ts`; `buildTurnSpawn` still rebuilds it with
+that default for every Auto turn. The level's planning instructions take
+precedence over the role-addition guidance below. `prompt.level.test.ts` checks
+each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
 
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
@@ -669,7 +774,7 @@ commands instead of reporting the block as the answer. The reroute is Auto's own
 checked by the same refusal, not a second child started by the harness.
 
 **Branch facts for a scout.** A scout cannot run `git log` or `gh pr view`, and giving a read-only
-role a shell would give the Auto root one too (they share an argv). Instead a scout spec may carry
+role a shell would give the Auto root one too (they share the read-only tool policy). Instead a scout spec may carry
 `"facts":["<mount id>"]`, up to `AUTO_FACTS_MOUNTS_MAX` (4). `resolveDelegateChild` calls
 `gatherBranchFacts` before the kickoff is composed: per named mount the `readBranchFacts` port reads
 the commits since the base branch, the pull or merge request of the branch, its open review threads
@@ -1019,3 +1124,19 @@ is built before the claim reserves the turn's 0.50 USD, so it counts that
 hold itself and names it ("Held 0.50 USD for this answer. Left 0.68 USD."): the
 Left Auto reads equals the rail's Left while that turn runs. The line never
 speaks of money reserved for agents, since none is. A delivery retried after a failed start reuses its stored text.
+
+## The outcome line
+
+Every message that ends an Auto turn or a child's work starts with one outcome
+line: `<<outcome>>text<</outcome>>`, at most 100 characters (`OUTCOME_MAX_CHARS`).
+The Auto prompt asks for it (`READING_ORDER_RULE`, after the level rules) and
+every child kickoff asks for it in its expected output
+(`OUTCOME_EXPECTED_NOTE`). `core/auto/outcome.ts` owns the reading:
+`parseOutcomeLine` takes the last block, `stripOutcomeLine` removes the blocks
+from the prose, and `outcomeLineOf` decides the line shown. The model's words
+never override the facts: red checks give "Checks failed: n", a failed,
+declined or put back push gives the "Not pushed" text of `publishTextOf`. A
+missing line falls back to the outcome word ("Done", "Failed: reason"), and a
+message with neither shows no line. The tone of the line is data
+(`success`, `danger`, `warning`, `neutral`); the screens that draw it come with
+the reading order work.

@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole, stripOutcomeLine } from '@goodboy/core';
 import type { AgentId } from '@goodboy/types';
 import { Button, ClampedProse, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -8,10 +8,12 @@ import { AutoArtifactRow } from '../../../auto/chat/AutoArtifactRow';
 import type { ArtifactLinkModel } from '../../../auto/chat/artifactLinksOf';
 import { isAwaitingApproval } from '../../../auto/chat/isAwaitingApproval';
 import { settledStatusOf } from '../../../auto/chat/settledStatusOf';
+import { summaryNotesOf } from '../../../auto/chat/summaryNotesOf';
 import { summaryProseOf } from '../../../auto/chat/summaryProseOf';
 import { kindForRole, type AgentKind } from '../../../session/agent-kind';
+import { OutcomeLine } from '../../readingOrder/OutcomeLine';
+import { ReadingNotes } from '../../readingOrder/ReadingNotes';
 import { TranscriptShell } from '../TranscriptShell';
-import { AutoResultNotes } from './AutoResultNotes';
 
 type Props = {
   readonly result: AutoDeliveredResult;
@@ -37,10 +39,15 @@ export const AutoResultCard = ({
     result.outcome === 'completed' || result.outcome === 'blocked' ? result.summary : null;
   const rows = artifacts.filter((link) => !isAwaitingApproval({ link }));
   const hasArtifacts = result.artifacts.length > 0;
-  const notes = hasArtifacts ? summaryProseOf({ summary: body }) : null;
-  const preview = hasArtifacts ? null : body;
+  const { outcomeLine } = result;
+  const notes = hasArtifacts
+    ? summaryNotesOf({ summary: body, key: result.delegationId, isOpen: false })
+    : null;
+  const preview = hasArtifacts
+    ? null
+    : summaryProseOf({ summary: body === null ? null : stripOutcomeLine({ text: body }) });
   return (
-    <TranscriptShell tone={status.tone} variant="leftBorder" data-testid="auto-result-card">
+    <TranscriptShell tone={status.tone} variant="plain" data-testid="auto-result-card">
       <article
         aria-label={`${label}, ${status.word}`}
         data-auto-result={result.delegationId}
@@ -56,7 +63,6 @@ export const AutoResultCard = ({
             <span className="min-w-0 shrink truncate">
               <RoutingLabel provider={result.provider} model={result.model} muted />
             </span>
-            <span className="shrink-0 text-meta text-muted-foreground">{status.word}</span>
           </div>
           <Button
             variant="quiet"
@@ -67,6 +73,9 @@ export const AutoResultCard = ({
             Open
           </Button>
         </div>
+        {outcomeLine === null ? null : (
+          <OutcomeLine text={outcomeLine.text} tone={outcomeLine.tone} />
+        )}
         {rows.length === 0 ? null : (
           <ul aria-label="Artifacts" className="flex min-w-0 flex-col gap-1">
             {rows.map((link) => (
@@ -76,7 +85,7 @@ export const AutoResultCard = ({
             ))}
           </ul>
         )}
-        {notes === null ? null : <AutoResultNotes text={notes} />}
+        {notes === null ? null : <ReadingNotes role={notes} />}
         {preview === null ? null : <ClampedProse text={preview} lines={SUMMARY_LINES} />}
       </article>
     </TranscriptShell>

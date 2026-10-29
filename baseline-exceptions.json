@@ -313,5 +313,12 @@
     "count": 8,
     "reason": "first measure of the guard that P30.1 adds; the ledger only falls from here",
     "release": "0.29.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/reading-order.baseline.json",
+    "count": 11,
+    "reason": "first measure of the reading order guard that ux29 F2 adds; owner approved 29/10; the ledger only falls from here",
+    "release": "0.29.0"
   }
 ]

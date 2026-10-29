@@ -214,7 +214,7 @@ Back and a reload leave it where it was, and the push confirm names the reposito
 has more than one.
 
 **Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`): the status strip first, then the same two summary cards, `N open threads · M need you` when review threads are
+(`features/branch/components/PullRequestTab`): the status strip first, then the same two summary cards (a folder row in the Changes card opens Files filtered to that top folder: `useOpenBranchFolder` writes `branchFilesFolder` for the session, switches the shared diff back to the branch view and clears its commit focus, so the folder never filters a working-tree or commit diff, and `useReviewState` filters on it, `Clear` in the Files head resets it and restores the tree; the card reads its own branch diff, so the Files tab selection never changes it), `N open threads · M need you` when review threads are
 open (`OpenThreadsLink`, counted by `commentsCountOf` through the readiness facts, a click opens Comments), then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping

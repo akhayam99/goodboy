@@ -157,7 +157,6 @@ export {
   AUTO_FACTS_THREAD_CHARS,
   AUTO_FACTS_THREADS_MAX,
   AUTO_GATES,
-  AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_LEDGER_OUTLINE_CHARS,
   AUTO_MAX_OPEN_CHILDREN,
@@ -171,14 +170,12 @@ export {
   AUTO_TURN_CEILING_USD,
 } from './auto/limits';
 export {
-  AUTO_SUBSTEP_ROLES,
   delegationDepthOf,
   isAutoSubstepRole,
   parseSubstepNeeds,
   substepLinkOf,
-  type AutoSubstepRole,
-  type SubstepLink,
 } from './auto/substep';
+export type { AutoSubstepRole, SubstepLink } from './auto/substep';
 export type { AdmissionParentFacts, AdmissionSubstep } from './auto/substepAdmission';
 export {
   autoBudgetOf,
@@ -221,6 +218,9 @@ export {
   type AutoRefusalCode,
 } from './auto/refusals';
 export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
+export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './auto/level';
+export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './auto/outcome';
+export type { OutcomeLine } from './auto/outcome';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
@@ -284,9 +284,7 @@ export {
   type BranchFactsThread,
 } from './auto/branchFacts';
 export {
-  AUTO_DEFAULT_DONE_WHEN,
   AUTO_DEFAULT_EXPECTED,
-  AUTO_KICKOFF_HEADER,
   composeAnswerKickoff,
   composeDelegationKickoff,
   type AnswerKickoffParams,
@@ -382,12 +380,8 @@ export {
   type AutoBlockOutcome,
   type ParseAutoBlockParams,
 } from './auto/autoBlock';
-export {
-  AUTO_RESTART_NOTICE,
-  buildDeliveryText,
-  type BuildDeliveryParams,
-  type DeliveryRow,
-} from './auto/delivery';
+export { parseProposeSpec } from './auto/proposeSpec';
+export { buildDeliveryText, type BuildDeliveryParams, type DeliveryRow } from './auto/delivery';
 export {
   describeMounts,
   isUsableMount,

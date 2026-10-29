@@ -16,6 +16,22 @@ export const AutoPlanToolbar = ({ model }: Props) => {
         v{model.version}
       </span>
       <span aria-hidden className="min-w-0 flex-1" />
+      {model.isToldFailed ? (
+        <>
+          <span className="min-w-0 truncate text-meta text-muted-foreground">
+            Approved, Auto did not hear it
+          </span>
+          <Button
+            size="sm"
+            disabled={model.isBusy}
+            isBusy={model.isBusy}
+            busyLabel="Telling Auto"
+            onClick={() => void model.tellAuto()}
+          >
+            Tell Auto
+          </Button>
+        </>
+      ) : null}
       {model.approval.state === 'approved' ? null : (
         <>
           <Button variant="ghost" size="sm" onClick={model.askForChanges}>

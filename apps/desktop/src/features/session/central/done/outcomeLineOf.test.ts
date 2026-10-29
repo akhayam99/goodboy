@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
+import { declaredOutcomeLineOf } from '../../../auto/testing/autoViewFixtures';
 import { AGENT_KIND_ORDER } from '../../agent-kind';
 import {
   aDelegation,
@@ -151,6 +152,7 @@ describe('outcomeLineOf for an Auto tree', () => {
     model: null,
     outcome: 'completed' as const,
     summary,
+    outcomeLine: declaredOutcomeLineOf({ summary, outcome: 'completed' }),
     artifacts: [],
   });
 

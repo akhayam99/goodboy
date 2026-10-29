@@ -2,6 +2,7 @@ import {
   describeAutoRefusal,
   parseAutoBlock,
   parseDelegateSpec,
+  parseProposeSpec,
   type AutoBlock,
   type AutoRefusalCode,
   type RefusalPayload,
@@ -48,8 +49,9 @@ type CommandParams = {
 const commandOf = ({ block, grant }: CommandParams): AgentCommand => {
   switch (block.action) {
     case 'delegate':
+    case 'propose':
       return {
-        verb: 'delegate',
+        verb: block.action,
         args: { 'request-id': block.requestId ?? `auto-${grant.runId}`, spec: block.spec },
         grant,
       };
@@ -78,10 +80,13 @@ type RolesParams = {
 };
 
 const rolesOf = ({ block }: RolesParams): ReadonlyArray<string> => {
-  if (block.action !== 'delegate') {
+  if (block.action !== 'delegate' && block.action !== 'propose') {
     return [];
   }
-  const spec = parseDelegateSpec({ text: block.spec });
+  const spec =
+    block.action === 'propose'
+      ? parseProposeSpec({ text: block.spec })
+      : parseDelegateSpec({ text: block.spec });
   if (spec.kind !== 'ok') {
     return [];
   }
@@ -183,10 +188,16 @@ const answerPastTurn = async ({
     return NOT_CURRENT;
   }
   const parsed = parseAutoBlock({ text: ended.assistantText });
-  if (parsed.kind !== 'block' || parsed.block.action !== 'delegate') {
+  if (
+    parsed.kind !== 'block' ||
+    (parsed.block.action !== 'delegate' && parsed.block.action !== 'propose')
+  ) {
     return NOT_CURRENT;
   }
-  const spec = parseDelegateSpec({ text: parsed.block.spec });
+  const spec =
+    parsed.block.action === 'propose'
+      ? parseProposeSpec({ text: parsed.block.spec })
+      : parseDelegateSpec({ text: parsed.block.spec });
   const replay =
     spec.kind === 'ok'
       ? await replayAdmission({
@@ -199,19 +210,19 @@ const answerPastTurn = async ({
         })
       : null;
   if (replay !== null && replay.kind === 'replayed') {
-    return { kind: 'applied', action: 'delegate' };
+    return { kind: 'applied', action: parsed.block.action };
   }
   const code: AutoRefusalCode = 'not_deciding';
   await writeRefusal({
     ctx,
     tree,
     runId: ended.runId,
-    action: 'delegate',
+    action: parsed.block.action,
     code,
     text: describeAutoRefusal({ code }),
     roles: rolesOf({ block: parsed.block }),
   });
-  return { kind: 'refused', action: 'delegate', code };
+  return { kind: 'refused', action: parsed.block.action, code };
 };
 
 export const applyAutoBlock = async ({

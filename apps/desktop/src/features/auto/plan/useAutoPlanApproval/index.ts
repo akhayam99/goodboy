@@ -3,6 +3,7 @@ import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { artifactApprovalOf, type ArtifactApprovalView } from '../../chat/artifactApprovalOf';
+import { autoPlanOutlineOf, type AutoPlanOutline } from '../../chat/autoPlanOutlineOf';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { approveAutoPlan } from '../approveAutoPlan';
 
@@ -14,9 +15,12 @@ type Params = {
 export type AutoPlanApprovalModel = Readonly<{
   approval: ArtifactApprovalView;
   version: number;
+  outline: AutoPlanOutline | null;
   rootAgentId: AgentId;
   isBusy: boolean;
+  isToldFailed: boolean;
   approve: () => Promise<void>;
+  tellAuto: () => Promise<void>;
   askForChanges: () => void;
 }>;
 
@@ -31,6 +35,7 @@ export const useAutoPlanApproval = ({
   const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const [isBusy, setIsBusy] = useState(false);
+  const [toldFailedRevision, setToldFailedRevision] = useState<number | null>(null);
 
   const found = useMemo(() => {
     for (const view of views) {
@@ -69,13 +74,14 @@ export const useAutoPlanApproval = ({
         });
       }
       if (result.kind === 'told_failed') {
+        setToldFailedRevision(result.revision);
         await reportError({
           title: 'The plan is approved, but Auto was not told',
           error: result.error,
           sessionId,
         });
       }
-      if (result.kind !== 'refused') {
+      if (result.kind === 'approved' || result.kind === 'already_approved') {
         closeDrawer();
       }
     } catch (error) {
@@ -98,6 +104,26 @@ export const useAutoPlanApproval = ({
     version,
   ]);
 
+  const tellAuto = useCallback(async (): Promise<void> => {
+    if (rootAgentId === null || toldFailedRevision === null || isBusy) {
+      return;
+    }
+    setIsBusy(true);
+    try {
+      await sendTurn({
+        sessionId,
+        agentId: rootAgentId,
+        content: `Approved plan v${toldFailedRevision}.`,
+      });
+      setToldFailedRevision(null);
+      closeDrawer();
+    } catch (error) {
+      await reportError({ title: "Couldn't tell Auto", error, sessionId });
+    } finally {
+      setIsBusy(false);
+    }
+  }, [closeDrawer, isBusy, reportError, rootAgentId, sendTurn, sessionId, toldFailedRevision]);
+
   const askForChanges = useCallback(() => {
     if (rootAgentId === null) {
       return;
@@ -113,5 +139,15 @@ export const useAutoPlanApproval = ({
   if (approval === null) {
     return null;
   }
-  return { approval, version, rootAgentId, isBusy, approve, askForChanges };
+  return {
+    approval,
+    version,
+    outline: autoPlanOutlineOf({ sourceText: found.row.sourceText }),
+    rootAgentId,
+    isBusy,
+    isToldFailed: toldFailedRevision !== null,
+    approve,
+    tellAuto,
+    askForChanges,
+  };
 };

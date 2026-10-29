@@ -175,6 +175,41 @@ describe('the plan drawer of an Auto plan', () => {
     await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
   });
 
+  it('offers Tell Auto when the approval was saved but Auto was not told, and sends it again', async () => {
+    seedAutoPlan();
+    const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+    useAppStore.setState({
+      reportError: vi.fn(async () => undefined),
+      sendTurn,
+      drawer: {
+        kind: 'artifact-document',
+        sessionId: PLAN_FIXTURE_SESSION,
+        payload: { artifactId: PLAN_FIXTURE_ID, revision: null },
+      },
+    });
+    approveAutoPlan.mockResolvedValue({
+      kind: 'told_failed',
+      revision: 2,
+      error: new Error('offline'),
+    });
+    renderDrawer();
+
+    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    const tell = await screen.findByRole('button', { name: 'Tell Auto' });
+    screen.getByText('Approved, Auto did not hear it');
+    expect(useAppStore.getState().drawer).not.toBeNull();
+    fireEvent.click(tell);
+
+    await waitFor(() =>
+      expect(sendTurn).toHaveBeenCalledWith({
+        sessionId: PLAN_FIXTURE_SESSION,
+        agentId: FIXTURE_ROOT,
+        content: 'Approved plan v2.',
+      }),
+    );
+    await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+  });
+
   it('turns Approve plan off while the planner revises, with the reason', () => {
     seedAutoPlan({ approvalState: 'revising', openRevise: 'delegation-revise' });
 

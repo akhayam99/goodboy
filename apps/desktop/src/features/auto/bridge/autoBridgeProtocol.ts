@@ -23,7 +23,12 @@ export type AutoBridgeCall =
   | Readonly<{ kind: 'rerunChecks'; delegationId: string }>
   | Readonly<{ kind: 'publish'; act: PublishAct; delegationIds: ReadonlyArray<string> }>
   | Readonly<{ kind: 'userTurn'; messageId: string; turn: AutoUserTurnParams }>
-  | Readonly<{ kind: 'decision'; delegationId: string; decision: DelegationDecision }>;
+  | Readonly<{
+      kind: 'decision';
+      delegationId: string;
+      decision: DelegationDecision;
+      hint?: string;
+    }>;
 
 export type AutoBridgeRequest = Readonly<{
   id: string;

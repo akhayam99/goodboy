@@ -50,6 +50,7 @@ import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import { createBranchFilesFilterSlice } from './slices/branch-files-filter';
 import { createNextViewSlice } from './slices/next-view';
 import { createTrackerMovesSlice } from './slices/tracker-moves';
 import {
@@ -173,6 +174,7 @@ import { sidebarInitialState } from './slices/sidebar/state';
 import { settingsLastPageInitialState } from './slices/settings-last-page/state';
 import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
+import { branchFilesFilterInitialState } from './slices/branch-files-filter/state';
 import { nextViewInitialState } from './slices/next-view/state';
 import { trackerMovesInitialState } from './slices/tracker-moves/state';
 import { turnInitialState } from './slices/turn/state';
@@ -246,6 +248,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createBranchFilesFilterSlice> &
   ReturnType<typeof createNextViewSlice> &
   ReturnType<typeof createTrackerMovesSlice> &
   ReturnType<typeof createCheckFixCommitsSlice> &
@@ -369,6 +372,7 @@ const initialState: AppState = {
   ...settingsLastPageInitialState,
   ...localChecksInitialState,
   ...chatLastOpenInitialState,
+  ...branchFilesFilterInitialState,
   ...nextViewInitialState,
   ...trackerMovesInitialState,
   ...checkFixCommitsInitialState,
@@ -439,6 +443,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSettingsLastPageSlice({ set, get }),
   ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createBranchFilesFilterSlice({ set, get }),
   ...createNextViewSlice({ set, get }),
   ...createTrackerMovesSlice({ set, get }),
   ...createCheckFixCommitsSlice({ set, get }),

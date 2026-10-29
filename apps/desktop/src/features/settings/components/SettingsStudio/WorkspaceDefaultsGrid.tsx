@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
+import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
 import { BranchTemplateField } from './BranchTemplateField';
 import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
@@ -189,6 +190,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           />
         </WorkspaceFieldRow>
         <RunDefaultField workspaceId={workspaceId} />
+        <AutoLevelDefaultRow workspaceId={workspaceId} />
       </Band>
     </>
   );
