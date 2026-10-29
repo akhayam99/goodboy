@@ -5,6 +5,7 @@ import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { artifactLinksOf } from './artifactLinksOf';
+import { AutoChildCard } from './AutoChildCard';
 import { AutoPlanAsk } from './AutoPlanAsk';
 import { cardTitleOf } from './cardTitleOf';
 import { confirmLineOf } from './confirmLineOf';
@@ -41,10 +42,8 @@ export const AutoDelegationLines = ({
   return (
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
-        const card = delegationCardOf({
-          delegation,
-          childAgent: agents.find((agent) => agent.id === delegation.childAgentId) ?? null,
-        });
+        const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
+        const card = delegationCardOf({ delegation, childAgent });
         const title = cardTitleOf({ card });
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
@@ -53,26 +52,38 @@ export const AutoDelegationLines = ({
         );
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
-            <span className="flex h-7 min-w-0 items-center gap-2 text-meta">
-              <AgentKindChip kind={card.role} density="glyph" />
-              <TruncatedText
-                className="min-w-0 truncate text-foreground"
-                tooltip={card.task ?? title}
-              >
-                {name}
-              </TruncatedText>
-              {revision === null ? null : (
-                <span className="shrink-0 text-muted-foreground">{revision}</span>
-              )}
-              <Button
-                variant="quiet"
-                size="xs"
-                aria-label={`Open ${name}`}
-                onClick={() => onOpenChild(card.childAgentId)}
-              >
-                Open
-              </Button>
-            </span>
+            {delegation.state === 'settled' ? (
+              <span className="flex h-7 min-w-0 items-center gap-2 text-meta">
+                <AgentKindChip kind={card.role} density="glyph" />
+                <TruncatedText
+                  className="min-w-0 truncate text-foreground"
+                  tooltip={card.task ?? title}
+                >
+                  {name}
+                </TruncatedText>
+                {revision === null ? null : (
+                  <span className="shrink-0 text-muted-foreground">{revision}</span>
+                )}
+                <Button
+                  variant="quiet"
+                  size="xs"
+                  aria-label={`Open ${name}`}
+                  onClick={() => onOpenChild(card.childAgentId)}
+                >
+                  Open
+                </Button>
+              </span>
+            ) : (
+              <AutoChildCard
+                sessionId={sessionId}
+                delegation={delegation}
+                card={card}
+                agent={childAgent}
+                name={name}
+                revision={revision}
+                onOpen={onOpenChild}
+              />
+            )}
             {delegation.state === 'awaiting_confirm' ? (
               <DelegationConfirmRow
                 line={confirmLineOf({ view, delegation, card })}

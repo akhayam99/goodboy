@@ -55,7 +55,7 @@ const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: 
 };
 
 describe('AutoDelegationLines', () => {
-  it('says one bare line per hand over: the role, the task and Open, the rail owning the state', () => {
+  it('shows a running child as a live card: role, task, state word and Open', () => {
     const onOpenChild = vi.fn();
     renderLines({
       view: aView({
@@ -70,7 +70,7 @@ describe('AutoDelegationLines', () => {
     expect(within(line).getByRole('img', { name: 'Implementer' })).toBeDefined();
     expect(within(line).getByText('work for impl')).toBeDefined();
     expect(within(line).queryByText(/Reserved up to/)).toBeNull();
-    expect(within(line).queryByText('Running')).toBeNull();
+    within(line).getByText('Running');
     fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
   });
@@ -369,5 +369,47 @@ describe('the confirm row of a delegation that waits for an OK', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false),
     );
+  });
+});
+
+describe('the Stop button of a live child card', () => {
+  const RUNNING = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+  const renderRunning = (delegation = RUNNING) =>
+    renderLines({ view: aView({ phase: 'waiting', delegations: [delegation] }) });
+
+  it('stops that child by its own id', async () => {
+    const cancelCurrentTurn = vi.fn(async () => undefined);
+    useAppStore.setState({ cancelCurrentTurn });
+    renderRunning();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
+
+    await waitFor(() =>
+      expect(cancelCurrentTurn).toHaveBeenCalledWith(FIXTURE_SESSION, 'agent-impl', 'user'),
+    );
+  });
+
+  it('says why when the stop fails and keeps the card working', async () => {
+    useAppStore.setState({
+      cancelCurrentTurn: vi.fn(async () => {
+        throw new Error('the agent did not answer');
+      }),
+    });
+    renderRunning();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
+
+    await screen.findByRole('alert');
+    screen.getByText('Running');
+    screen.getByRole('button', { name: 'Stop work for impl' });
+  });
+
+  it('turns into the bare line with no Stop once the delegation settled', () => {
+    renderRunning(
+      aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome: 'completed' }),
+    );
+
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+    expect(screen.queryByText('Running')).toBeNull();
   });
 });
