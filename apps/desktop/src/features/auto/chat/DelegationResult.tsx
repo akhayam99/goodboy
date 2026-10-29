@@ -1,8 +1,8 @@
 import { Check, MessageSquare, X } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { RevealedMarkdown } from '../../chat/reveal/RevealedMarkdown';
-import { splitArtifactText } from '../../chat/utils/split-artifact-blocks';
 import type { DelegationResultView } from './delegationResultOf';
+import { summaryProseOf } from './summaryProseOf';
 
 const SUMMARY_ITEM_KEY = 'delegation-summary';
 
@@ -31,10 +31,6 @@ type CountParams = {
   readonly count: number;
 };
 
-type SummaryParams = {
-  readonly summary: string | null;
-};
-
 const filesLine = ({ count }: CountParams): string =>
   count === 1 ? '1 file changed' : `${count} files changed`;
 
@@ -49,17 +45,6 @@ const checksToneOf = ({ verdict }: ToneParams): string => {
   return verdict === 'green' ? 'text-success' : 'text-muted-foreground';
 };
 
-const proseOf = ({ summary }: SummaryParams): string | null => {
-  if (summary === null) {
-    return null;
-  }
-  const prose = splitArtifactText({ text: summary })
-    .segments.map((segment) => (segment.kind === 'prose' ? segment.text : ''))
-    .join('')
-    .trim();
-  return prose.length > 0 ? prose : null;
-};
-
 export const DelegationResult = ({
   result,
   liveKey = '',
@@ -69,7 +54,7 @@ export const DelegationResult = ({
   onRetryPublish,
   onPutBackPublish,
 }: Props) => {
-  const summary = proseOf({ summary: result.summary });
+  const summary = summaryProseOf({ summary: result.summary });
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {summary === null ? null : (

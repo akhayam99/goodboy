@@ -151,6 +151,7 @@ describe('outcomeLineOf for an Auto tree', () => {
     model: null,
     outcome: 'completed' as const,
     summary,
+    artifacts: [],
   });
 
   const lineOfTree = ({

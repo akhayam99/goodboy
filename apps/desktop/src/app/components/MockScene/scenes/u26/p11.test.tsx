@@ -81,7 +81,13 @@ describe('the u26 p11 Auto result scenes', () => {
     const first = within(cards).getByRole('article', { name: `${FIRST_REVIEW}, Done` });
     expect(within(first).getByText(/built once per credit/)).toBeDefined();
     const second = within(cards).getByRole('article', { name: `${SECOND_REVIEW}, Done` });
-    expect(within(second).getByRole('button', { name: 'Show more' })).toBeDefined();
+    expect(within(second).queryByRole('button', { name: 'Show more' })).toBeNull();
+    within(second).getByRole('button', {
+      name: 'Open report Certify the ledger-core retry fix, branch vs main',
+    });
+    within(second).getByText(/One race left in ledger-core/);
+    within(second).getByRole('button', { name: "Show the agent's notes" });
+    expect(within(second).queryByText(/Comparing the ledger-core branch/)).toBeNull();
     const tester = within(cards).getByRole('article', { name: `${TESTS}, Failed` });
     expect(tester.querySelector('[data-clamped]')).toBeNull();
     expect(tester.textContent).not.toContain('Show more');
@@ -103,6 +109,22 @@ describe('the u26 p11 Auto result scenes', () => {
     expect(
       within(tree).getByRole('treeitem', { name: `Reviewer, ${SECOND_REVIEW}, Done` }),
     ).toBeDefined();
+  });
+
+  it('opens the report of a reviewer from its card', async () => {
+    mount({ id: 'u26-auto-results-light' });
+
+    const cards = await screen.findByRole('list', { name: 'What the agents reported' }, WAIT);
+    fireEvent.click(
+      within(cards).getByRole('button', {
+        name: 'Open report Certify the ledger-core retry fix, branch vs main',
+      }),
+    );
+
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'artifact-document',
+      payload: { artifactId: 'mock-results-report-ledger-core' },
+    });
   });
 
   it('opens the child that wrote a report from its card', async () => {

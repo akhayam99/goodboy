@@ -6,7 +6,13 @@ import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerDelegationDecisionPort } from '../delegationDecisionPort';
 import { registerPublishPort, type PublishPort } from '../publishPort';
-import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
+import {
+  aDelegation,
+  anArtifactRow,
+  aPlanRow,
+  aView,
+  FIXTURE_SESSION,
+} from '../testing/autoViewFixtures';
 import { AutoDelegationLines } from './AutoDelegationLines';
 
 afterEach(cleanup);
@@ -110,6 +116,105 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.queryByText(/needs your approval/)).toBeNull();
+  });
+
+  it('shows an approved plan as one row with the Approved word, not as an ask', () => {
+    const onOpenArtifact = vi.fn();
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [SETTLED_PLAN],
+        artifacts: [aPlanRow({ approvalState: 'approved', approvedRevision: 1 })],
+      }),
+      onOpenArtifact,
+    });
+
+    const row = screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
+    expect(row.textContent).toContain('Plan · Retry-safe credit retries');
+    screen.getByText('Approved');
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    fireEvent.click(row);
+    expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
+  });
+
+  it('gives a plan that needs approval the ask only, never a second row', () => {
+    renderLines({
+      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
+    });
+
+    expect(
+      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
+    ).toHaveLength(1);
+    expect(screen.queryByText('Approved')).toBeNull();
+  });
+
+  it('shows the report a reviewer produced as one row and opens it', () => {
+    const onOpenArtifact = vi.fn();
+    const reviewer = aDelegation({
+      key: 'reviewer',
+      role: 'reviewer',
+      state: 'settled',
+      outcome: 'completed',
+      settledAt: 1_000,
+      result: {
+        declared: { summary: 'Comparing the branch. Checking the diff.' },
+        artifacts: [
+          {
+            id: 'artifact-report',
+            kind: 'report',
+            title: 'Certify ledger-core, branch vs main',
+            revision: 2,
+          },
+        ],
+        cost: { usd: 0.2, basis: 'reported' },
+      },
+    });
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [reviewer],
+        artifacts: [
+          anArtifactRow({
+            id: 'artifact-report',
+            kind: 'report',
+            title: 'Certify ledger-core, branch vs main',
+            revision: 2,
+            sourceText: '<<summary>>\nOne race left in ledger-core.\n<</summary>>',
+          }),
+        ],
+      }),
+      onOpenArtifact,
+    });
+
+    const row = screen.getByRole('button', {
+      name: 'Open report Certify ledger-core, branch vs main',
+    });
+    expect(row.textContent).toContain('Report · Certify ledger-core, branch vs main');
+    screen.getByText('v2');
+    screen.getByText('One race left in ledger-core.');
+    fireEvent.click(row);
+    expect(onOpenArtifact).toHaveBeenCalledWith('artifact-report');
+  });
+
+  it('shows a wireframe row even when the ledger has no row for it', () => {
+    const designer = aDelegation({
+      key: 'designer',
+      role: 'designer',
+      state: 'settled',
+      outcome: 'completed',
+      settledAt: 1_000,
+      result: {
+        declared: { summary: 'Done.' },
+        artifacts: [
+          { id: 'artifact-wire', kind: 'wireframe', title: 'Checkout screen', revision: 1 },
+        ],
+        cost: { usd: 0.2, basis: 'reported' },
+      },
+    });
+    renderLines({ view: aView({ phase: 'waiting', delegations: [designer] }) });
+
+    screen.getByRole('button', { name: 'Open wireframe Checkout screen' });
+    expect(screen.queryByText('v1')).toBeNull();
   });
 
   it('shows a revision on the same producer line', () => {

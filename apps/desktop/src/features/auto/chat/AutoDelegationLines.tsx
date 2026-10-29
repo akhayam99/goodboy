@@ -5,11 +5,13 @@ import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { artifactLinksOf } from './artifactLinksOf';
+import { AutoArtifactRow } from './AutoArtifactRow';
 import { AutoPlanAsk } from './AutoPlanAsk';
 import { cardTitleOf } from './cardTitleOf';
 import { confirmLineOf } from './confirmLineOf';
 import { delegationCardOf } from './delegationCardOf';
 import { DelegationConfirmRow } from './DelegationConfirmRow';
+import { isAwaitingApproval } from './isAwaitingApproval';
 import { revisionWordOf } from './revisionWordOf';
 import { PublishConfirmRow } from './PublishConfirmRow';
 import { useDelegationDecision } from './useDelegationDecision';
@@ -47,9 +49,9 @@ export const AutoDelegationLines = ({
         const title = cardTitleOf({ card });
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
-        const asks = artifactLinksOf({ view, card }).filter(
-          (link) => link.approval !== null && link.approval.state !== 'approved',
-        );
+        const links = artifactLinksOf({ view, artifacts: card.result?.artifacts ?? [] });
+        const asks = links.filter((link) => isAwaitingApproval({ link }));
+        const rows = links.filter((link) => !isAwaitingApproval({ link }));
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
             <span className="flex h-7 min-w-0 items-center gap-2 text-meta">
@@ -84,6 +86,9 @@ export const AutoDelegationLines = ({
                 }
               />
             ) : null}
+            {rows.map((link) => (
+              <AutoArtifactRow key={link.artifactId} link={link} onOpen={onOpenArtifact} />
+            ))}
             {asks.map((link) => (
               <AutoPlanAsk
                 key={link.artifactId}

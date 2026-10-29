@@ -31,6 +31,7 @@ const resultOf = ({ key, runId, summary }: ResultParams): AutoDeliveredResult =>
   model: 'claude-sonnet-5-5',
   outcome: 'completed',
   summary,
+  artifacts: [],
 });
 
 const seed = () =>

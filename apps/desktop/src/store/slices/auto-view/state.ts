@@ -13,6 +13,13 @@ export type AutoTreeView = Readonly<{
   rootAsk: string | null;
 }>;
 
+export type AutoDeliveredArtifact = Readonly<{
+  artifactId: string;
+  kind: string;
+  title: string;
+  revision: number | null;
+}>;
+
 export type AutoDeliveredResult = Readonly<{
   runId: ProviderRunId;
   delegationId: string;
@@ -22,6 +29,7 @@ export type AutoDeliveredResult = Readonly<{
   model: string | null;
   outcome: AutoOutcome;
   summary: string | null;
+  artifacts: ReadonlyArray<AutoDeliveredArtifact>;
 }>;
 
 export type AutoPendingRefusal = Readonly<{

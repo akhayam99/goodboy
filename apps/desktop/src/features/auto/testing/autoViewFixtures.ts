@@ -151,6 +151,29 @@ export const aPlanRow = ({
   lastAsk: null,
 });
 
+type ArtifactRowParams = {
+  readonly id: string;
+  readonly kind: AutoArtifactLedgerRow['artifact']['kind'];
+  readonly title: string;
+  readonly revision?: number;
+  readonly sourceText?: string;
+};
+
+export const anArtifactRow = ({
+  id,
+  kind,
+  title,
+  revision = 1,
+  sourceText = '',
+}: ArtifactRowParams): AutoArtifactLedgerRow => {
+  const base = aPlanRow({ title, revision });
+  return {
+    ...base,
+    artifact: { ...base.artifact, artifactId: brandId<ArtifactId>({ value: id }), kind },
+    sourceText,
+  };
+};
+
 type ViewParams = {
   readonly phase?: AutoPhase;
   readonly delegations?: ReadonlyArray<AutoDelegation>;
