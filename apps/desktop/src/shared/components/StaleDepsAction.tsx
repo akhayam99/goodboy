@@ -16,20 +16,24 @@ export const StaleDepsAction = ({ sessionId, mountId, isForced = false, onInstal
   const worktreePath = useAppStore(
     (state) => selectMountById({ state, sessionId, mountId })?.worktreePath ?? null,
   );
-  const { finding, recheck } = useWorktreeDeps({ worktreePath });
+  const repoPath = useAppStore(
+    (state) => selectMountById({ state, sessionId, mountId })?.repoRoot ?? null,
+  );
+  const { finding, recheck } = useWorktreeDeps({ repoPath, worktreePath });
   const [isOffered, setIsOffered] = useState(false);
   useEffect(() => {
     if (finding !== null) {
       setIsOffered(true);
     }
   }, [finding]);
-  if (!(isOffered || isForced) || worktreePath === null) {
+  if (!(isOffered || isForced) || repoPath === null || worktreePath === null) {
     return null;
   }
   return (
     <ReinstallDepsAction
       sessionId={sessionId}
       mountId={mountId}
+      repoPath={repoPath}
       worktreePath={worktreePath}
       onInstalled={() => {
         recheck();

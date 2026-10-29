@@ -15,8 +15,11 @@ export const StaleDepsNotice = ({ sessionId, mountId, onInstalled }: Props) => {
   const worktreePath = useAppStore(
     (state) => selectMountById({ state, sessionId, mountId })?.worktreePath ?? null,
   );
-  const { finding, recheck } = useWorktreeDeps({ worktreePath });
-  if (finding === null || worktreePath === null) {
+  const repoPath = useAppStore(
+    (state) => selectMountById({ state, sessionId, mountId })?.repoRoot ?? null,
+  );
+  const { finding, recheck } = useWorktreeDeps({ repoPath, worktreePath });
+  if (finding === null || repoPath === null || worktreePath === null) {
     return null;
   }
   return (
@@ -30,6 +33,7 @@ export const StaleDepsNotice = ({ sessionId, mountId, onInstalled }: Props) => {
         <ReinstallDepsAction
           sessionId={sessionId}
           mountId={mountId}
+          repoPath={repoPath}
           worktreePath={worktreePath}
           onInstalled={() => {
             recheck();

@@ -3,6 +3,7 @@ import { worktreeDepsCheck, type WorktreeDepsCheck } from '../../lib/worktreeDep
 import { depsFindingOf, type DepsFinding } from '../../utils/depsFinding';
 
 type Params = {
+  readonly repoPath: string | null;
   readonly worktreePath: string | null;
 };
 
@@ -12,18 +13,18 @@ export type WorktreeDeps = {
   readonly recheck: () => void;
 };
 
-export const useWorktreeDeps = ({ worktreePath }: Params): WorktreeDeps => {
+export const useWorktreeDeps = ({ repoPath, worktreePath }: Params): WorktreeDeps => {
   const [check, setCheck] = useState<WorktreeDepsCheck | null>(null);
   const latest = useRef(0);
 
   const run = useCallback((): void => {
     latest.current += 1;
     const ticket = latest.current;
-    if (worktreePath === null) {
+    if (repoPath === null || worktreePath === null) {
       setCheck(null);
       return;
     }
-    void worktreeDepsCheck({ worktreePath }).then(
+    void worktreeDepsCheck({ repoPath, worktreePath }).then(
       (next) => {
         if (latest.current === ticket) {
           setCheck(next);
@@ -35,7 +36,7 @@ export const useWorktreeDeps = ({ worktreePath }: Params): WorktreeDeps => {
         }
       },
     );
-  }, [worktreePath]);
+  }, [repoPath, worktreePath]);
 
   useEffect(() => {
     setCheck(null);

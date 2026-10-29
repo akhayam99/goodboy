@@ -1,5 +1,8 @@
 use super::error::WorktreeError;
+use super::git::{git, RunGit};
+use super::inspect::inspect_worktree_with;
 use super::setup_proposal::setup_proposal_blocking;
+use super::types::WorktreeInspection;
 use serde::Serialize;
 use std::path::{Component, Path, PathBuf};
 
@@ -240,6 +243,37 @@ fn is_empty_install(folder: &Path) -> bool {
     !entry_paths(folder).iter().any(|path| !is_dotted(path))
 }
 
+fn authorize_worktree_with(
+    repo_path: &Path,
+    worktree_path: &Path,
+    run_git: RunGit<'_>,
+) -> Result<(), WorktreeError> {
+    match inspect_worktree_with(repo_path, worktree_path, run_git) {
+        WorktreeInspection::Registered { .. } => Ok(()),
+        _ => Err(WorktreeError::Git {
+            message: format!(
+                "{} is not a worktree of {}",
+                worktree_path.display(),
+                repo_path.display()
+            ),
+        }),
+    }
+}
+
+fn authorize_worktree(repo_path: &str, worktree_path: &str) -> Result<(), WorktreeError> {
+    authorize_worktree_with(
+        Path::new(repo_path),
+        Path::new(worktree_path),
+        &mut |cwd, args| git(cwd, args),
+    )
+}
+
+fn is_directly_inside(link: &Path, canonical_root: &Path) -> bool {
+    link.parent()
+        .and_then(|parent| std::fs::canonicalize(parent).ok())
+        .is_some_and(|parent| parent.starts_with(canonical_root))
+}
+
 pub(super) fn deps_check_blocking(worktree_path: String) -> Result<DepsCheck, WorktreeError> {
     let root = Path::new(&worktree_path);
     if !root.is_dir() {
@@ -290,7 +324,10 @@ pub(super) fn deps_unlink_blocking(worktree_path: String) -> Result<Vec<String>,
     let canonical_root = root.canonicalize()?;
     let mut removed = Vec::new();
     for link in links_outside(root, &canonical_root, folder_of(&proposal.source)) {
-        if !link.is_folder || !is_link(&link.path) {
+        if !link.is_folder
+            || !is_link(&link.path)
+            || !is_directly_inside(&link.path, &canonical_root)
+        {
             continue;
         }
         std::fs::remove_file(&link.path).or_else(|_| std::fs::remove_dir(&link.path))?;
@@ -300,15 +337,27 @@ pub(super) fn deps_unlink_blocking(worktree_path: String) -> Result<Vec<String>,
 }
 
 #[tauri::command]
-pub async fn worktree_deps_check(worktree_path: String) -> Result<DepsCheck, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || deps_check_blocking(worktree_path))
+pub async fn worktree_deps_check(
+    repo_path: String,
+    worktree_path: String,
+) -> Result<DepsCheck, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        authorize_worktree(&repo_path, &worktree_path)?;
+        deps_check_blocking(worktree_path)
+    })
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
-pub async fn worktree_deps_unlink(worktree_path: String) -> Result<Vec<String>, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || deps_unlink_blocking(worktree_path))
+pub async fn worktree_deps_unlink(
+    repo_path: String,
+    worktree_path: String,
+) -> Result<Vec<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        authorize_worktree(&repo_path, &worktree_path)?;
+        deps_unlink_blocking(worktree_path)
+    })
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }

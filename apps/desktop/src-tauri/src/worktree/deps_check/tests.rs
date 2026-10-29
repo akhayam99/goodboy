@@ -250,6 +250,71 @@ mod links {
     }
 }
 
+mod authorization {
+    use super::*;
+
+    fn git_ok(cwd: &Path, args: &[&str]) {
+        git(cwd, args).unwrap_or_else(|error| panic!("git {} failed: {error}", args.join(" ")));
+    }
+
+    fn repo(name: &str) -> PathBuf {
+        let root = std::fs::canonicalize(folder(name)).expect("root");
+        git_ok(&root, &["init", "-b", "main"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        write(&root, "tracked.txt", "base\n");
+        git_ok(&root, &["add", "tracked.txt"]);
+        git_ok(&root, &["commit", "-m", "base"]);
+        root
+    }
+
+    fn authorize(repo_path: &Path, worktree_path: &Path) -> Result<(), WorktreeError> {
+        authorize_worktree_with(repo_path, worktree_path, &mut |cwd, args| git(cwd, args))
+    }
+
+    #[test]
+    fn a_registered_worktree_and_the_checkout_itself_are_authorized() {
+        let root = repo("authorized");
+        let linked = root.join("worktrees/payments-api");
+        git_ok(
+            &root,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                "test/payments-api",
+                linked.to_str().expect("path"),
+            ],
+        );
+
+        assert!(authorize(&root, &linked).is_ok());
+        assert!(authorize(&root, &root).is_ok());
+        std::fs::remove_dir_all(&root).expect("cleanup");
+    }
+
+    #[test]
+    fn a_folder_git_does_not_know_is_refused() {
+        let root = repo("refused");
+        let stranger = folder("northwind-stranger");
+        write(&stranger, "package.json", "{}");
+
+        assert!(authorize(&root, &stranger).is_err());
+        assert!(authorize(&root, &root.join("missing")).is_err());
+        assert!(authorize(&stranger, &root).is_err());
+        std::fs::remove_dir_all(&root).expect("cleanup");
+        std::fs::remove_dir_all(&stranger).expect("cleanup");
+    }
+
+    #[test]
+    fn a_folder_inside_a_worktree_is_not_the_worktree() {
+        let root = repo("nested");
+        write(&root, "apps/web/package.json", "{}");
+
+        assert!(authorize(&root, &root.join("apps/web")).is_err());
+        std::fs::remove_dir_all(&root).expect("cleanup");
+    }
+}
+
 #[test]
 fn a_missing_folder_is_an_error() {
     assert!(deps_check_blocking("/no/such/worktree".to_string()).is_err());

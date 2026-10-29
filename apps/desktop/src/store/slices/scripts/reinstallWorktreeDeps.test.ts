@@ -13,6 +13,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
@@ -20,6 +21,7 @@ import type { WorktreeDepsCheck } from '../../../shared/lib/worktreeDepsCheck';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-deps' });
 const MOUNT_ID = brandId<MountId>({ value: 'mount-deps' });
+const REPO = '/repos/ledger-core';
 const WORKTREE = '/w/ledger-core';
 const SCRIPT_ID = `deps-install:${MOUNT_ID}`;
 
@@ -70,7 +72,12 @@ const setup = ({ checks, run = { stdout: '', stderr: '', exitCode: 0 } }: Setup)
   return { runDiscoveredScript, unlink };
 };
 
-const params = { sessionId: SESSION_ID, mountId: MOUNT_ID, worktreePath: WORKTREE };
+const params = {
+  sessionId: SESSION_ID,
+  mountId: MOUNT_ID,
+  repoPath: REPO,
+  worktreePath: WORKTREE,
+};
 
 describe('reinstallWorktreeDeps', () => {
   it('runs the install the lockfile names in that worktree and reports it installed once the check is ready', async () => {
@@ -106,6 +113,10 @@ describe('reinstallWorktreeDeps', () => {
 
     expect(result).toEqual({ kind: 'installed' });
     expect(order).toEqual(['unlink', 'install']);
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_deps_unlink', {
+      repoPath: REPO,
+      worktreePath: WORKTREE,
+    });
   });
 
   it('does nothing when the worktree already has its dependencies', async () => {

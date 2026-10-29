@@ -9,6 +9,7 @@ import { NAMES } from '../utils/names';
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
+  readonly repoPath: string;
   readonly worktreePath: string;
   readonly onInstalled?: () => void;
 };
@@ -22,7 +23,13 @@ const IDLE: Outcome = { kind: 'idle' };
 const WORKING_LABEL = 'Installing dependencies';
 const INSTALLED_LABEL = 'Dependencies are installed.';
 
-export const ReinstallDepsAction = ({ sessionId, mountId, worktreePath, onInstalled }: Props) => {
+export const ReinstallDepsAction = ({
+  sessionId,
+  mountId,
+  repoPath,
+  worktreePath,
+  onInstalled,
+}: Props) => {
   const [outcome, setOutcome] = useState<Outcome>(IDLE);
   const [isStarting, setIsStarting] = useState(false);
   const scriptId = depsInstallScriptId({ mountId });
@@ -35,7 +42,7 @@ export const ReinstallDepsAction = ({ sessionId, mountId, worktreePath, onInstal
     setIsStarting(true);
     const result = await useAppStore
       .getState()
-      .reinstallWorktreeDeps({ sessionId, mountId, worktreePath });
+      .reinstallWorktreeDeps({ sessionId, mountId, repoPath, worktreePath });
     setIsStarting(false);
     if (result.kind === 'busy') {
       return;

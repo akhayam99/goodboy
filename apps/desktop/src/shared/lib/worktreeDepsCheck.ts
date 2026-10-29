@@ -12,11 +12,15 @@ export type WorktreeDepsCheck = {
 };
 
 type Params = {
+  readonly repoPath: string;
   readonly worktreePath: string;
 };
 
-export const worktreeDepsCheck = ({ worktreePath }: Params): Promise<WorktreeDepsCheck> =>
-  invokeCommand<WorktreeDepsCheck>('worktree_deps_check', { worktreePath });
+export const worktreeDepsCheck = ({ repoPath, worktreePath }: Params): Promise<WorktreeDepsCheck> =>
+  invokeCommand<WorktreeDepsCheck>('worktree_deps_check', { repoPath, worktreePath });
 
-export const worktreeDepsUnlink = ({ worktreePath }: Params): Promise<ReadonlyArray<string>> =>
-  invokeCommand<ReadonlyArray<string>>('worktree_deps_unlink', { worktreePath });
+export const worktreeDepsUnlink = ({
+  repoPath,
+  worktreePath,
+}: Params): Promise<ReadonlyArray<string>> =>
+  invokeCommand<ReadonlyArray<string>>('worktree_deps_unlink', { repoPath, worktreePath });

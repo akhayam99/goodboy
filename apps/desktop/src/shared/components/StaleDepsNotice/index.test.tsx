@@ -117,6 +117,7 @@ describe('StaleDepsNotice', () => {
 
     await screen.findByText('Dependencies are not installed in this worktree');
     expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_deps_check', {
+      repoPath: FIX_RUN_MOUNT.repoRoot,
       worktreePath: FIX_RUN_MOUNT.worktreePath,
     });
     screen.getByRole('button', { name: 'Reinstall dependencies' });

@@ -9,6 +9,7 @@ import type { SliceDeps } from '../../slice-types';
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
+  readonly repoPath: string;
   readonly worktreePath: string;
 };
 
@@ -20,18 +21,23 @@ export type ReinstallDepsResult =
 const STILL_MISSING = 'The install finished but the dependencies are still not usable here.';
 
 export const reinstallWorktreeDeps = ({ get }: Pick<SliceDeps, 'get'>) => {
-  return async ({ sessionId, mountId, worktreePath }: Params): Promise<ReinstallDepsResult> => {
+  return async ({
+    sessionId,
+    mountId,
+    repoPath,
+    worktreePath,
+  }: Params): Promise<ReinstallDepsResult> => {
     const scriptId = depsInstallScriptId({ mountId });
     if (get().scriptRuns[sessionId]?.[scriptId]?.status === 'pending') {
       return { kind: 'busy' };
     }
     try {
-      const check = await worktreeDepsCheck({ worktreePath });
+      const check = await worktreeDepsCheck({ repoPath, worktreePath });
       if (check.command === null || check.state === 'ready' || check.state === 'not-applicable') {
         return { kind: 'installed' };
       }
       if (check.state === 'outside') {
-        await worktreeDepsUnlink({ worktreePath });
+        await worktreeDepsUnlink({ repoPath, worktreePath });
       }
       const result = await get().runDiscoveredScript({
         sessionId,
@@ -48,7 +54,7 @@ export const reinstallWorktreeDeps = ({ get }: Pick<SliceDeps, 'get'>) => {
           message: lastOutputLine({ output }) ?? `The install exited with ${result.exitCode}.`,
         };
       }
-      const after = await worktreeDepsCheck({ worktreePath });
+      const after = await worktreeDepsCheck({ repoPath, worktreePath });
       return after.state === 'ready' || after.state === 'not-applicable'
         ? { kind: 'installed' }
         : { kind: 'failed', message: STILL_MISSING };
