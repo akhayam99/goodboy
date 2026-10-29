@@ -196,7 +196,7 @@ export const seedScribeBranch = async ({
     fallbackUsed: false,
   });
   storySpies.scratchDirPrepare.mockResolvedValue('/tmp/goodboy-root/scratch/harborline');
-  stubStoryInvoke({ workspaces_with_unread: [] });
+  stubStoryInvoke({ workspaces_with_unread: [], git_remote_names: ['origin'] });
   storySpies.cancelTurn.mockResolvedValue(undefined);
   storySpies.runTurn.mockImplementation(() => emptyTurnStream());
   const { session } = await useAppStore.getState().createSession({

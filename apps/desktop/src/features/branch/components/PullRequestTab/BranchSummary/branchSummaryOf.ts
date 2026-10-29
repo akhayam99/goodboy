@@ -44,7 +44,7 @@ export const branchSummaryOf = ({ commits, files }: Params): BranchSummary => {
   }
   const folders = [...counts.entries()]
     .map(([name, count]) => ({ name, files: count }))
-    .sort((a, b) => b.files - a.files || a.name.localeCompare(b.name));
+    .sort((a, b) => (b.files === a.files ? a.name.localeCompare(b.name) : b.files - a.files));
   const hidden = folders.slice(SUMMARY_FOLDERS);
   return {
     commitCount: commits.length,

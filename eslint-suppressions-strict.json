@@ -811,7 +811,7 @@
   },
   "apps/desktop/src/store/slices/github/createPrForSession.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/store/slices/github/pushSessionBranch.ts": {
@@ -821,7 +821,7 @@
   },
   "apps/desktop/src/store/slices/gitlab-mr/createMrForSession.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/issue-briefs/issueBriefKey.ts": {
