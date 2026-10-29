@@ -104,6 +104,11 @@ value and write only if it is still the old value.
   `null` and the caller reports, it never overwrites.
 - Test: `packages/db/src/queries/settings.test.ts` (the swap only writes when
   the stored value still equals the expected one).
+- Two writes from one window are queued, not raced: `createSerialQueue()` in
+  `store/runtime/state-writes/serialQueue.ts` runs the tasks of one key in call
+  order, so the last pick wins instead of an older pick retrying over a newer
+  one. In use: `changeAutoLevel` in `store/slices/settings/` (test:
+  `changeAutoLevel.sqlite.test.ts`, two quick picks).
 
 ## 5. Undo and retry carry their own target
 

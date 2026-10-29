@@ -697,7 +697,9 @@ registered in `packages/db/src/queries/entity-value.ts`. A session override
 falls back to that workspace default, then **After the plan**. Invalid
 values fall through to the next default. Workflow autonomy is unchanged. A
 write takes a named session or workspace target, compares and swaps, retries
-one lost race and reports a failed write without updating window state.
+one lost race and reports a failed write without updating window state. Picks made in one window
+run in call order per workspace (`changeAutoLevel` queues them), so the last pick wins
+and an older pick never retries over a newer one.
 `readAdmissionSnapshot` reads the persisted level and approval switch;
 `admit.ts` applies the same policy to the stored child state, receipt and
 plan consumption. The level tests in `store/runtime/auto/level/` check
