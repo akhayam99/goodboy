@@ -96,7 +96,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child-done'] });
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+    expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
   it('Auto phase words and Change approach: the tail of the Auto chat', async () => {
@@ -136,12 +136,16 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
   });
 
-  it('Auto plan approval: the ask with Approve plan and Ask for changes', async () => {
+  it('Auto plan approval: the ask with View plan, then Approve plan in the plan view', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-plan'] });
 
     expect(await screen.findByText('Plan v1 needs your approval', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('Approve plan').closest('button')).not.toBeNull();
-    expect(screen.getByText('Ask for changes').closest('button')).not.toBeNull();
+    const viewPlan = screen.getByText('View plan').closest('button');
+    if (viewPlan === null) {
+      throw new Error('no View plan');
+    }
+    fireEvent.click(viewPlan);
+    expect(await screen.findByText('Approve plan', undefined, WAIT)).toBeDefined();
   });
 
   it('Child page notice with Open Auto, after Open full', async () => {

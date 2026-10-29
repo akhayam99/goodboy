@@ -186,13 +186,16 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
-  it('c07-auto-plan asks for the plan approval in the stream with one primary', async () => {
+  it('c07-auto-plan asks for the plan approval in the stream with View plan as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 
-    expect(await screen.findByText('Plan v1 needs your approval', undefined, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    await screen.findByText('Plan v1 needs your approval', undefined, WAIT);
+    const viewPlan = screen.getByRole('button', { name: /^Open plan / });
+    expect(viewPlan.textContent).toBe('View plan');
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
+    fireEvent.click(viewPlan);
+    expect(await screen.findByRole('button', { name: 'Approve plan' }, WAIT)).toBeDefined();
   });
 
   it('c07-auto-idle offers Mark finished in the header and draws no tail', async () => {
@@ -257,7 +260,7 @@ describe('c07 Auto scenes', () => {
     expect(
       screen.getAllByText('Three tests added in payments-api, all pass.').length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+    expect(screen.getByText('1 file changed')).toBeDefined();
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Run checks again' })).toBeDefined();
   });
@@ -265,8 +268,10 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-child-push says the push did not go out and offers one more try', async () => {
     mount({ id: 'c07-auto-child-push' });
 
-    expect(await screen.findByText('Not pushed: connection reset', undefined, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Try the push again' })).toBeDefined();
+    expect(
+      (await screen.findAllByText('Not pushed: connection reset', undefined, WAIT)).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Try the push again' }).length).toBeGreaterThan(0);
   });
 
   it('c07-auto-project asks where the Implementer works and names the primary by the choice', async () => {
