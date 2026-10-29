@@ -176,9 +176,8 @@ export {
   isAutoSubstepRole,
   parseSubstepNeeds,
   substepLinkOf,
-  type AutoSubstepRole,
-  type SubstepLink,
 } from './auto/substep';
+export type { AutoSubstepRole, SubstepLink } from './auto/substep';
 export type { AdmissionParentFacts, AdmissionSubstep } from './auto/substepAdmission';
 export {
   autoBudgetOf,
@@ -221,6 +220,7 @@ export {
   type AutoRefusalCode,
 } from './auto/refusals';
 export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
+export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './auto/level';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
