@@ -661,6 +661,15 @@ one lost race and reports a failed write without updating window state.
 plan consumption. The level tests in `store/runtime/auto/level/` check
 persistence, failures, second writers and pending confirmations.
 
+The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
+to the Limit chip) and the workspace default in Settings, workspace defaults
+(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `features/auto/level/`,
+which reads `auto.level`, writes with `writeAutoLevel` on a named session or
+workspace, reloads the value after the write and keeps only the latest pick. A
+failed write keeps the old level and shows the reason. The chip is rendered by
+`AgentSettingsLine` itself, never through the composer slot, so the message
+field is not affected.
+
 `buildAutoSystemPrompt` reads `AutoLevel` and defaults to `DEFAULT_AUTO_LEVEL`
 in `packages/core/src/auto/level.ts`; `buildTurnSpawn` still rebuilds it with
 that default for every Auto turn. The level's planning instructions take
