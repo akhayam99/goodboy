@@ -19,29 +19,29 @@ Auto shows its agents at work and their artifacts, pull requests open on two sho
 ### Improved
 
 #### See Auto's agents at work
-<!-- gb area=agents -->
+<!-- gb area=agents image=auto-agents -->
 
 A running Auto child shows as a live card in the chat with its state, how long it has run, what it is doing right now, Open and Stop. A Working now strip above the message field lists the agents still running.
 
 Opening a child from the chat reveals its row in Agents while Auto stays in view.
 
 #### Messages to a busy Auto say what they wait for
-<!-- gb area=agents -->
+<!-- gb area=agents image=auto-queue -->
 
 A message you send to Auto while its agents work reads "Waits for" under it, with Send now to hand it to Auto at once without stopping the agents.
 
 #### A pull request opens on two short cards
-<!-- gb area=review -->
+<!-- gb area=review image=pr-cards -->
 
 The Pull request page of a branch opens on Commits and Changes cards instead of a list of every commit and file, and each card opens its tab. A branch with an open pull request counts its open review threads and the ones that need you.
 
 #### Compact commits with day headings
-<!-- gb area=review -->
+<!-- gb area=review image=compact-commits -->
 
 The Commits list uses one line per commit under day headings and keeps squash, reorder and the other history actions. Your own commits drop the author name, and other authors show as initials with the full name on hover.
 
 #### The Agents panel follows you
-<!-- gb area=agents -->
+<!-- gb area=agents image=agents-panel -->
 
 The Agents panel scrolls to the agent you are on and opens the fold that hides it. Its rows line up in clean icon, chevron and time columns.
 
