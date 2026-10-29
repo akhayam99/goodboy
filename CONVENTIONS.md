@@ -113,7 +113,7 @@ Branch protection is a repository setting the repo cannot read, so this table is
 
 ## CI parity
 
-`scripts/gate.sh` runs the CI steps on your machine. `pnpm gate` is the full gate and prints `gate ok` or `gate failed at <step>: <log>`, with the logs under `.gate-logs/`. `pnpm gate:quick` is the two-minute version for the changed files: run it before each commit, and run the full gate before you push. `GATE_BASE` (default `origin/main`) sets the base, `GATE_WORKERS` (default 3) the vitest workers, and `CARGO_TARGET_DIR` from the environment is honored. `scripts/gate.test.mjs` fails when a command of the `checks`, `commits` or `rust` jobs is missing from the full gate.
+`scripts/gate.sh` runs the CI steps on your machine. `pnpm gate` is the full gate and prints `gate ok` or `gate failed at <step>: <log>`, with the logs under `.gate-logs/`. `pnpm gate:quick` is the two-minute version for the changed files: run it before each commit, and run the full gate before you push. `GATE_BASE` (default `origin/main`) sets the base, `GATE_WORKERS` (default 2) the vitest workers, and `CARGO_TARGET_DIR` from the environment is honored. `scripts/gate.test.mjs` fails when a command of the `checks`, `commits` or `rust` jobs is missing from the full gate.
 
 | Local step (`scripts/gate.sh`)                                         | CI job and step                                                |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------- |

@@ -12,6 +12,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version),
   },
   test: {
+    maxWorkers: process.env.CI === undefined ? 2 : undefined,
     environment: 'happy-dom',
     passWithNoTests: true,
     silent: 'passed-only',

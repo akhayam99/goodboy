@@ -4,6 +4,7 @@ const PERF_TESTS = '**/*.perf.test.ts';
 
 export default defineConfig({
   test: {
+    maxWorkers: process.env.CI === undefined ? 2 : undefined,
     passWithNoTests: true,
     setupFiles: ['src/test/failOnConsole.ts'],
     projects: [
