@@ -130,7 +130,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - **Stop** or **Change approach** while it waits.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
 - An agent's page has the same chip line under its title: how it runs, when it asks you, the session **Limit** and its **Models**. The composer keeps only the message.
-- An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies from the next handoff. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
+- An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
 - When the work rests, Auto reads **Idle**. Only you close it, with **Mark finished** in its header. Writing to it again reopens it.
 - When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too.
 - **Stop** and **Retry** work from every Goodboy window. A failure says why under them.

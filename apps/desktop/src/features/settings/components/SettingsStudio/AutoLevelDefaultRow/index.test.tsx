@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,10 +21,10 @@ import {
   resetStoryStore,
   storySqlite,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { readAutoLevel } from '../../../../store/runtime/auto/level/readAutoLevel';
-import { writeAutoLevel } from '../../../../store/runtime/auto/level/writeAutoLevel';
-import { AutoLevelDefaultRow } from './AutoLevelDefaultRow';
+} from '../../../../../store/storyHarness';
+import { readAutoLevel } from '../../../../../store/runtime/auto/level/readAutoLevel';
+import { writeAutoLevel } from '../../../../../store/runtime/auto/level/writeAutoLevel';
+import { AutoLevelDefaultRow } from './index';
 
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 
@@ -46,7 +46,7 @@ describe('AutoLevelDefaultRow', () => {
   it('starts on After the plan and stores the workspace default that a run reads', async () => {
     render(<AutoLevelDefaultRow workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByRole('tab', { name: 'After the plan', selected: true })).toBeDefined();
+    screen.getByRole('tab', { name: 'After the plan', selected: true });
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
 
     await waitFor(async () =>

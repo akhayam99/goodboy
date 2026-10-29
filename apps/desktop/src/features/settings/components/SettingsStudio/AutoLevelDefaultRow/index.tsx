@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { FieldRow, SegmentedTabs } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { useAutoLevel } from '../../../auto/level/useAutoLevel';
-import { RUN_AUTONOMY_OPTIONS } from '../../../workflows/runAutonomy';
+import { useAutoLevel } from '../../../../../shared/hooks/useAutoLevel';
+import { RUN_AUTONOMY_OPTIONS } from '../../../../workflows/runAutonomy';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

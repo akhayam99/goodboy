@@ -241,6 +241,6 @@ describe('the Auto level chip of the settings line', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain("Couldn't change it.");
-    expect(screen.getByRole('button', { name: /^Asks you: After the plan/ })).toBeDefined();
+    screen.getByRole('button', { name: /^Asks you: After the plan/ });
   });
 });

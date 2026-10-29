@@ -3,7 +3,7 @@ import { useAppStore } from '../../../store';
 import { AsksYouChip } from '../../workflows/AsksYouChip';
 import { asksWordsOf } from '../../workflows/asksWordsOf';
 import { runAutonomyOf } from '../../workflows/runAutonomy';
-import { useAutoLevel } from './useAutoLevel';
+import { useAutoLevel } from '../../../shared/hooks/useAutoLevel';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -11,7 +11,7 @@ type Props = {
 };
 
 const HELP =
-  'How much Auto may do alone. A change applies from the next handoff; an agent already waiting for your go keeps waiting.';
+  'How much Auto may do alone. A change applies to what Auto starts next; an agent already waiting for your go keeps waiting.';
 
 export const AutoLevelSetting = ({ sessionId, workspaceId }: Props) => {
   const { level, workspaceLevel, error, pick } = useAutoLevel({ workspaceId, sessionId });

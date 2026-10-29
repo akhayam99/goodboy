@@ -663,9 +663,10 @@ persistence, failures, second writers and pending confirmations.
 
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
 to the Limit chip) and the workspace default in Settings, workspace defaults
-(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `features/auto/level/`,
-which reads `auto.level`, writes with `writeAutoLevel` on a named session or
-workspace, reloads the value after the write and keeps only the latest pick. A
+(`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `shared/hooks/`,
+which reads `auto.level`, writes through the `changeAutoLevel` store action
+(`writeAutoLevel` on a named session or workspace, then a reload of the value)
+and keeps only the latest pick. A
 failed write keeps the old level and shows the reason. The chip is rendered by
 `AgentSettingsLine` itself, never through the composer slot, so the message
 field is not affected.

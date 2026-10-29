@@ -1,3 +1,4 @@
+import { changeAutoLevel } from './changeAutoLevel';
 import { loadSetting } from './loadSetting';
 import { loadWorkspaceValue } from './loadWorkspaceValue';
 import { removeSettingIfUnchanged } from './removeSettingIfUnchanged';
@@ -8,6 +9,7 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createSettingsSlice = ({ set, get }: SliceDeps) => {
   return {
+    changeAutoLevel: changeAutoLevel({ set }),
     loadSetting: loadSetting(set),
     loadWorkspaceValue: loadWorkspaceValue({ set }),
     readProjectValue: readProjectValue(),
