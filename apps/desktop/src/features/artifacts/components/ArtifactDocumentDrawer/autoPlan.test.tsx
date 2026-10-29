@@ -196,7 +196,7 @@ describe('the plan drawer of an Auto plan', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
     const tell = await screen.findByRole('button', { name: 'Tell Auto' });
-    expect(screen.getByText('Approved, Auto did not hear it')).toBeDefined();
+    screen.getByText('Approved, Auto did not hear it');
     expect(useAppStore.getState().drawer).not.toBeNull();
     fireEvent.click(tell);
 

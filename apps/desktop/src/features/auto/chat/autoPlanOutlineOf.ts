@@ -58,7 +58,7 @@ const sectionOf = ({ lines, name }: SectionParams): ReadonlyArray<string> => {
   return body;
 };
 
-const plainOf = ({ text }: TextParams): string => {
+const outlineStepOf = ({ text }: TextParams): string => {
   const plain = text.replaceAll('*', '').replaceAll('`', '').trim();
   return plain.length > MAX_STEP_CHARS ? `${plain.slice(0, MAX_STEP_CHARS).trimEnd()}...` : plain;
 };
@@ -86,7 +86,7 @@ export const autoPlanOutlineOf = ({ sourceText }: Params): AutoPlanOutline | nul
     (line) => line.startsWith('- ') || line.startsWith('* '),
   ).length;
   return {
-    steps: steps.slice(0, MAX_OUTLINE_STEPS).map((step) => plainOf({ text: step })),
+    steps: steps.slice(0, MAX_OUTLINE_STEPS).map((step) => outlineStepOf({ text: step })),
     stepCount: steps.length,
     fileCount: files.size,
     riskCount,

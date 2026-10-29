@@ -1,16 +1,9 @@
+import { pluralize } from '../../../shared/utils/pluralize';
 import type { AutoPlanOutline as Outline } from './autoPlanOutlineOf';
 
 type Props = {
   readonly outline: Outline;
 };
-
-type CountParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const countWord = ({ count, noun }: CountParams): string =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 export const AutoPlanOutline = ({ outline }: Props) => (
   <div className="flex min-w-0 flex-col gap-1">
@@ -24,9 +17,9 @@ export const AutoPlanOutline = ({ outline }: Props) => (
     </ol>
     <p className="text-faint-foreground">
       {[
-        countWord({ count: outline.stepCount, noun: 'step' }),
-        countWord({ count: outline.fileCount, noun: 'file' }),
-        countWord({ count: outline.riskCount, noun: 'risk' }),
+        pluralize(outline.stepCount, 'step'),
+        pluralize(outline.fileCount, 'file'),
+        pluralize(outline.riskCount, 'risk'),
       ].join(' · ')}
     </p>
   </div>
