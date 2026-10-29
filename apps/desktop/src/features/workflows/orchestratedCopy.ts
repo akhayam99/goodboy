@@ -61,6 +61,8 @@ export const ORCHESTRATED_COPY = {
   questionNumberLabel: ({ position, total }: QuestionNumberParams): string =>
     `Answer question ${position} of ${total}`,
   blockedAnswerFailed: "Couldn't send the answer",
+  answersNotDeliveredLabel: 'Answers not delivered',
+  answersNotDeliveredTitle: "The agent didn't get your answers",
   blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
   blockedAsks: ({ isQuestion }: AsksParams): string =>
     isQuestion ? 'The step asked' : 'The step stopped after saying',

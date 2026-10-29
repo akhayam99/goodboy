@@ -7,6 +7,7 @@ import { loadSessionOpenQuestions } from './loadSessionOpenQuestions';
 import { requestOpenQuestionScroll } from './requestOpenQuestionScroll';
 import { resolveQuestionDelegate } from './resolveQuestionDelegate';
 import { restoreDismissedOpenQuestion } from './restoreDismissedOpenQuestion';
+import { retryOpenQuestionDelivery } from './retryOpenQuestionDelivery';
 import { sendQuestionAsMessage } from './sendQuestionAsMessage';
 import { spawnQuestionDelegates } from './spawnQuestionDelegates';
 import { takeQuestionBack } from './takeQuestionBack';
@@ -20,6 +21,7 @@ export const createOpenQuestionsSlice = ({ set, get }: SliceDeps) => {
     requestOpenQuestionScroll: requestOpenQuestionScroll(set),
     clearOpenQuestionScroll: clearOpenQuestionScroll(set),
     answerOpenQuestions: answerOpenQuestions(set, get),
+    retryOpenQuestionDelivery: retryOpenQuestionDelivery({ set, get }),
     dismissOpenQuestion: dismissOpenQuestion(set, get),
     sendQuestionAsMessage: sendQuestionAsMessage(set, get),
     restoreDismissedOpenQuestion: restoreDismissedOpenQuestion(set, get),

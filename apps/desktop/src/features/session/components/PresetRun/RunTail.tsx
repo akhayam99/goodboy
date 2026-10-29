@@ -10,6 +10,7 @@ import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-k
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { RunOpenQuestion } from '../RunOpenQuestion';
+import { RunPendingDelivery } from '../RunPendingDelivery';
 import { RunTailVerb } from './RunTailVerb';
 import { runTailOf } from './runTailOf';
 
@@ -70,7 +71,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     ).length,
   });
   if (tail === null) {
-    return null;
+    return <RunPendingDelivery sessionId={session.id} />;
   }
   const selectedRoot =
     selectedRootId === null
@@ -133,6 +134,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           })}
         />
       )}
+      <RunPendingDelivery sessionId={session.id} />
       {blockedStep === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
       )}

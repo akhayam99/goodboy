@@ -4,6 +4,12 @@ import {
   persistOpenQuestionAnswers,
   type OpenQuestionAnswerPair,
 } from './persistOpenQuestionAnswers';
+import { formatError } from '@goodboy/ui';
+import { OpenQuestionDeliveryError } from './openQuestionDeliveryError';
+import {
+  clearPendingOpenQuestionDelivery,
+  recordPendingOpenQuestionDelivery,
+} from './pendingOpenQuestionDelivery';
 import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
 import type { GetFn, SetFn } from './types';
 
@@ -51,8 +57,18 @@ export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
       questionIds: valid.map((pair) => pair.id),
     });
     await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
+    const attemptId = crypto.randomUUID();
     try {
       await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
+      clearPendingOpenQuestionDelivery({ set, sessionId, attemptId });
+    } catch (cause) {
+      const error = formatError(cause);
+      recordPendingOpenQuestionDelivery({
+        set,
+        sessionId,
+        pending: { attemptId, pairs: valid, askingAgentIds: [...askingAgentIds], error },
+      });
+      throw new OpenQuestionDeliveryError(error);
     } finally {
       void get().maybeAutoAdvanceWorkflow(sessionId);
     }

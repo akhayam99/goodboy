@@ -86,12 +86,15 @@ const toQuestion = (row: Row): OpenQuestion =>
     createdAt: '2026-09-20T00:00:00.000Z',
   }) as unknown as OpenQuestion;
 
+const emptyPending = (): Record<string, unknown> => ({});
+
 const deps = {
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
   cancelCurrentTurn: vi.fn(async () => undefined),
   loadSessionDismissedQuestions: vi.fn(async () => undefined),
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
   sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
+  pendingOpenQuestionDeliveries: emptyPending(),
   loadSessionOpenQuestions: vi.fn(async () => {
     deps.sessionOpenQuestions = {
       [sessionId]: rows.filter((r) => r.status === 'open').map(toQuestion),
@@ -135,6 +138,7 @@ beforeEach(() => {
   removeQuestionsFromSlot.mockResolvedValue(false);
   deps.sessionOpenQuestions = {};
   deps.sessionAnsweredQuestions = {};
+  deps.pendingOpenQuestionDeliveries = emptyPending();
   deps.sessionPhaseRuns = {};
 });
 afterEach(() => vi.restoreAllMocks());

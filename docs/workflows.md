@@ -369,8 +369,14 @@ read top to bottom at the conversation measure:
   open questions the run page shows all of them in creation order (`askingAgentBatch`),
   each with an **Answer question 2 of 3** field and one **Send answers** that
   stays off until every field has text and sends them in one call, so the agent
-  resumes once. Another agent's questions wait for the next batch. A failed send
-  keeps every typed answer and shows one alert with **Retry** for the same batch.
+  resumes once. Another agent's questions wait for the next batch. A question
+  an agent is already answering for you shows as waiting, with no field, and
+  never counts toward the send (`partitionDelegatedQuestions`). A send that
+  fails before the answers are saved keeps every typed answer and shows one
+  alert with **Retry** for the same batch. A send that fails after they are
+  saved keeps the batch in the store (`pendingOpenQuestionDeliveries`) and the
+  run tail shows the questions, your answers and **Retry** (`RunPendingDelivery`)
+  until the agent gets them; Retry only sends again and never saves twice.
   The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
   secondary **Restart step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the

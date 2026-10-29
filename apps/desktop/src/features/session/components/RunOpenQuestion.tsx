@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Markdown, Notice, formatError } from '@goodboy/ui';
-import type { OpenQuestion, SessionId } from '@goodboy/types';
+import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { OpenQuestionDeliveryError } from '../../../store/slices/open-questions/openQuestionDeliveryError';
 import { PromptField } from '../../../shared/components/PromptField';
 import { NAMES } from '../../../shared/utils/names';
+import {
+  QUESTION_DELEGATE_COPY,
+  partitionDelegatedQuestions,
+} from '../../context/questionDelegate';
 import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
+
+const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 type Props = {
   readonly sessionId: SessionId;
   readonly questions: ReadonlyArray<OpenQuestion>;
+};
+
+type ClearParams = {
+  readonly sentIds: ReadonlyArray<string>;
 };
 
 type TextParams = {
@@ -17,34 +28,50 @@ type TextParams = {
 
 export const RunOpenQuestion = ({ sessionId, questions }: Props) => {
   const answerOpenQuestions = useAppStore((state) => state.answerOpenQuestions);
+  const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const [answers, setAnswers] = useState<Readonly<Record<string, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const { waiting, answerable } = useMemo(
+    () => partitionDelegatedQuestions({ questions, agents }),
+    [questions, agents],
+  );
+  const waitingIds = useMemo(() => new Set(waiting.map((question) => question.id)), [waiting]);
   const first = questions[0];
-  const isMany = questions.length > 1;
+  const isMany = answerable.length > 1;
   const textOf = ({ id }: TextParams): string => answers[id] ?? '';
   const canSend =
-    questions.every((question) => textOf({ id: question.id }).trim() !== '') && !isSending;
+    answerable.length > 0 &&
+    answerable.every((question) => textOf({ id: question.id }).trim() !== '') &&
+    !isSending;
+
+  const clearSent = ({ sentIds }: ClearParams): void => {
+    setAnswers((current) =>
+      Object.fromEntries(Object.entries(current).filter(([id]) => !sentIds.includes(id))),
+    );
+  };
 
   const send = async (): Promise<void> => {
-    if (!canSend || first === undefined) {
+    const asking = answerable[0];
+    if (!canSend || asking === undefined) {
       return;
     }
-    const batch = questions.map((question) => ({
+    const batch = answerable.map((question) => ({
       id: question.id,
       text: question.text,
       answer: textOf({ id: question.id }).trim(),
     }));
+    const sentIds = batch.map((sent) => sent.id);
     setIsSending(true);
     setError(null);
     try {
-      await answerOpenQuestions(sessionId, batch, first.createdByAgentId ?? null);
-      setAnswers((current) =>
-        Object.fromEntries(
-          Object.entries(current).filter(([id]) => !batch.some((sent) => sent.id === id)),
-        ),
-      );
+      await answerOpenQuestions(sessionId, batch, asking.createdByAgentId ?? null);
+      clearSent({ sentIds });
     } catch (cause) {
+      if (cause instanceof OpenQuestionDeliveryError) {
+        clearSent({ sentIds });
+        return;
+      }
       setError(formatError(cause));
     } finally {
       setIsSending(false);
@@ -80,7 +107,9 @@ export const RunOpenQuestion = ({ sessionId, questions }: Props) => {
   return (
     <form
       aria-label={
-        isMany ? ORCHESTRATED_COPY.questionsAnswerLabel : ORCHESTRATED_COPY.questionAnswerLabel
+        isMany || (answerable.length === 0 && questions.length > 1)
+          ? ORCHESTRATED_COPY.questionsAnswerLabel
+          : ORCHESTRATED_COPY.questionAnswerLabel
       }
       data-run-open-question={first.id}
       className="flex min-w-0 flex-col gap-2"
@@ -90,11 +119,12 @@ export const RunOpenQuestion = ({ sessionId, questions }: Props) => {
       }}
     >
       {isMany ? notice : null}
-      {questions.map((question, index) => {
+      {questions.map((question) => {
+        const position = answerable.findIndex((candidate) => candidate.id === question.id);
         const label = isMany
           ? ORCHESTRATED_COPY.questionNumberLabel({
-              position: index + 1,
-              total: questions.length,
+              position: position + 1,
+              total: answerable.length,
             })
           : ORCHESTRATED_COPY.questionAnswerLabel;
         return (
@@ -105,20 +135,33 @@ export const RunOpenQuestion = ({ sessionId, questions }: Props) => {
               </span>
               <Markdown text={question.text} className="text-read text-foreground" />
             </div>
-            {index === 0 && !isMany ? notice : null}
-            <PromptField
-              kind="message"
-              label={label}
-              placeholder={label}
-              value={textOf({ id: question.id })}
-              onChange={(value) => setAnswers((current) => ({ ...current, [question.id]: value }))}
-              onSubmit={() => void send()}
-              isSubmitBlocked={!canSend}
-              disabled={isSending}
-              minRows={1}
-              maxRows={6}
-              actions={isMany ? undefined : submit}
-            />
+            {waitingIds.has(question.id) ? (
+              <p
+                data-run-question-waiting={question.id}
+                className="px-2 text-ui text-muted-foreground"
+              >
+                {QUESTION_DELEGATE_COPY.running}
+              </p>
+            ) : (
+              <>
+                {position === 0 && !isMany ? notice : null}
+                <PromptField
+                  kind="message"
+                  label={label}
+                  placeholder={label}
+                  value={textOf({ id: question.id })}
+                  onChange={(value) =>
+                    setAnswers((current) => ({ ...current, [question.id]: value }))
+                  }
+                  onSubmit={() => void send()}
+                  isSubmitBlocked={!canSend}
+                  disabled={isSending}
+                  minRows={1}
+                  maxRows={6}
+                  actions={isMany ? undefined : submit}
+                />
+              </>
+            )}
           </div>
         );
       })}
