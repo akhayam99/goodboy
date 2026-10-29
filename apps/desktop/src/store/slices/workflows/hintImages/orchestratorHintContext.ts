@@ -20,13 +20,14 @@ type Result = {
   readonly canReadFiles: boolean;
 };
 
-export const orchestratorHintContext = ({
+export const orchestratorHintContext = async ({
   get,
   sessionId,
   workflowRunId,
   workspaceId,
   hints,
-}: Params): Result => {
+}: Params): Promise<Result> => {
+  await get().loadGoalAttachments({ type: 'workflow_run', id: workflowRunId });
   const profileBlock = buildProfileGuard({
     profile: get().workspaces.find((candidate) => candidate.id === workspaceId)?.profile,
     audience: 'orchestrator',

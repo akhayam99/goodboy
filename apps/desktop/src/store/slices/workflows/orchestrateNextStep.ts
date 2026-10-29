@@ -605,7 +605,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const { operatorHints, worktreePath, canReadFiles } = orchestratorHintContext({
+      const { operatorHints, worktreePath, canReadFiles } = await orchestratorHintContext({
         get,
         sessionId,
         workflowRunId,

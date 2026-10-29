@@ -22,9 +22,10 @@ import {
   workflowFixture,
 } from '../../../__tests__/helpers/actionFixtures';
 
-const { decideSpy, updateHintsSpy } = vi.hoisted(() => ({
+const { decideSpy, updateHintsSpy, listRunAttachmentsSpy } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
   updateHintsSpy: vi.fn(async () => undefined),
+  listRunAttachmentsSpy: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -36,6 +37,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () =>
   (await import('../../storyHarness')).dbModuleMock({
     updateWorkflowRunOrchestratorHints: updateHintsSpy,
+    listGoalAttachmentsForRun: listRunAttachmentsSpy,
     updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
     updateWorkflowRunOrchestrationOutcome: vi.fn(async () => undefined),
   }),
@@ -224,6 +226,21 @@ describe('orchestrateNextStep hints', () => {
       '- /work/harborline/.goodboy/attachments/b/b.png',
     );
     expect(decideField({ key: 'operatorHints' })).not.toContain('other.png');
+  });
+
+  it('loads the run attachments a restart left unloaded before it looks for the images', async () => {
+    seedRun({
+      hints: [hintFixture({ id: 'shot', text: 'remove this header', attachmentIds: ['a'] })],
+    });
+    useAppStore.setState({ workflowRunAttachments: {} });
+    listRunAttachmentsSpy.mockResolvedValueOnce([image('a')]);
+
+    await decide();
+
+    expect(decideField({ key: 'canReadFiles' })).toBe(true);
+    expect(decideField({ key: 'operatorHints' })).toContain(
+      '- /work/harborline/.goodboy/attachments/a/a.png',
+    );
   });
 
   it('keeps the orchestrator without file tools when no hint carries an image', async () => {
