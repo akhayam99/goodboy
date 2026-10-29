@@ -60,7 +60,7 @@ const writeOne = async ({ artifact, workspaceSlug }: ArtifactMirrorItem): Promis
   if (written.get(artifact.id) === key) {
     return;
   }
-  const { folder, files } = artifactMirrorFiles({
+  const { folder, files } = await artifactMirrorFiles({
     artifact,
     workspaceSlug,
     appVersion: await appVersion(),
