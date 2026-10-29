@@ -98,6 +98,7 @@ export const storyDbStubs = () => ({
   listSessionsForWorkspace: vi.fn(async () => []),
   listArchivedSessionsForWorkspace: vi.fn(async () => []),
   listGoalAttachmentsForSession: vi.fn(async () => []),
+  listGoalAttachmentsForRun: vi.fn(async () => []),
   deleteFileVersionsForSession: storySpies.deleteFileVersionsForSession,
   getSessionMount: vi.fn(async () => null),
   deleteSessionMount: storySpies.deleteSessionMount,

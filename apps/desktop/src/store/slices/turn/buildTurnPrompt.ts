@@ -143,13 +143,16 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
   const isKickoff =
     agentRowEarly?.providerSessionId === undefined &&
     (get().transcripts[activeAgentId] ?? []).length === 0;
+  if (agentRowEarly?.workflowRunId != null) {
+    await get().loadGoalAttachments({ type: 'workflow_run', id: agentRowEarly.workflowRunId });
+  }
   const goalAttachments = [
     ...(get().sessionAttachments[sessionId] ?? []),
     ...(agentRowEarly?.workflowRunId
       ? (get().workflowRunAttachments[agentRowEarly.workflowRunId] ?? [])
       : []),
   ];
-  const hintImages = isKickoff
+  const hintImages = ctx.isHandoffTurn
     ? hintImagesForStep({ get, session, agent: agentRowEarly, attachments: goalAttachments })
     : null;
   const generalAttachmentsBlock = buildGoalAttachmentsBlock(

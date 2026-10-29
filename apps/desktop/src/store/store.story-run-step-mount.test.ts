@@ -26,6 +26,7 @@ import {
   importStore,
   type StoryStore,
 } from './storyHarness';
+import { queueMountContinuation } from './slices/turn/mountContinuations';
 import { selectRunStepMountId } from './slices/workflows/runMount/selectRunStepMountId';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -205,6 +206,34 @@ describe('story: a run step stays on the mount it was pinned to', () => {
     });
 
     expect(storySpies.runTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ workingDir: pathOf({ mountId: MOUNT_B }), mountId: MOUNT_B }),
+    );
+  });
+
+  it('continues on the mount the agent requested, not the one the step is pinned to', async () => {
+    await seed();
+    const step = stepAgent({ id: 'agent-step-33', ordinal: 33, mountId: MOUNT_A });
+    placeAgents({ agents: [step] });
+    queueMountContinuation({
+      continuation: {
+        operationId: 'op-fork-fix',
+        sessionId: SESSION_ID,
+        mountId: MOUNT_B,
+        mountName: 'ledger-core',
+        branch: 'ak/fix-notify-relay',
+        worktreePath: pathOf({ mountId: MOUNT_B }),
+        origin: 'fork',
+      },
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: step.id, content: 'go', origin: 'workflow' });
+
+    await vi.waitFor(() => {
+      expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    });
+    expect(storySpies.runTurn).toHaveBeenLastCalledWith(
       expect.objectContaining({ workingDir: pathOf({ mountId: MOUNT_B }), mountId: MOUNT_B }),
     );
   });
