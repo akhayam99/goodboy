@@ -188,6 +188,30 @@ message the runtime
 cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
 message" and the composer keeps its text.
 
+**When a message waits.** A `user` row is delivered in every phase that takes a turn
+(`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
+stays `pending` and goes with the next results, so a message typed during a long child run
+reaches Auto only when the child ends. The chat says so under the bubble in one quiet line,
+"Waits for <task of the child>" or "Waits for 2 agents", with **Send now**
+(`AutoPendingMessages`, from `pendingMessages` of the tree view). **Send now**
+(`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
+once as its own Auto turn, like a child's question, and leaves the children running; the line goes
+away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's
+phase revision and the row's `claimed_by`, so a child that ends at the same moment cannot deliver
+it twice: whoever claims first delivers it and the other finds no row. A waiting tree with no
+child in `starting` or `running` (a lost turn end) is the watchdog's case: `deliverNext` delivers
+the pending `user` rows and logs one `[auto] ... waited with no running agent` line.
+
+**A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
+and its line says so: "Not delivered: <reason>". A tree blocked by the budget shows the reason
+with **Change limit** (raising it delivers the row, as before). A tree blocked for any other
+reason but the time limit shows it with **Retry**, which resumes the tree and delivers the row
+(the send itself already tries one Retry). The time limit and a stopped or stopping tree have no
+action ("This conversation reached its time limit.", "Auto was stopped."): the row stays unsent
+and the words are not lost from the chat. A `finished` or `done` tree takes the message as a
+normal follow-up turn. Rows left from old trees show the same line on load and are never
+auto-sent.
+
 **Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
 session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
 outbox row (`images` in the payload) and shows them on the bubble (`operator_text` with

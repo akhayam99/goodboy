@@ -7,6 +7,7 @@ export const U24_AUTO_CHAT_SCENES: Readonly<Record<string, ComponentType>> = {
   'auto-chat-delegating': () => <AutoChatScene state="delegating" />,
   'auto-chat-plan': () => <AutoChatScene state="plan" isPlanOpen />,
   'auto-chat-working': () => <AutoChatScene state="working" />,
+  'auto-chat-queued': () => <AutoChatScene state="queued" />,
   'auto-chat-revising': () => <AutoChatScene state="revising" />,
   'auto-chat-confirm': () => <AutoChatScene state="confirm" />,
   'auto-chat-refused': () => <AutoChatScene state="refused" />,

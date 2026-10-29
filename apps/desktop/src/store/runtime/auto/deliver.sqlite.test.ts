@@ -4,7 +4,7 @@ import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core';
 import { brandId, type AutoOutboxId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';
-import { secondScheduler, WORLD_TREE } from './testing/autoWorld';
+import { batchInput, childInput, secondScheduler, WORLD_TREE } from './testing/autoWorld';
 import {
   addOutboxRow,
   addQuestionRow,
@@ -118,7 +118,9 @@ describe('delivering stored rows to Auto', () => {
   });
 
   it('keeps a user message waiting while children run and delivers a question at once', async () => {
-    const state = await makeDeliveryWorld();
+    const state = await makeDeliveryWorld({ isDeciding: true });
+    await state.world.scheduler.admit(batchInput({ children: [childInput({ key: 'a' })] }));
+    await state.world.db.execute(`UPDATE auto_delegations SET state = 'running'`);
     await state.world.db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
     await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'also add tests' });
 

@@ -5,6 +5,7 @@ import type { TranscriptInsertion } from '../../../../shared/types/transcriptIns
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoPendingMessages } from '../AutoPendingMessages';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
 import { projectAskOf } from '../projectAskOf';
@@ -62,7 +63,12 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
           <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
         ),
     };
-    return [...lines, tail];
+    const pending: TranscriptInsertion = {
+      key: `auto-pending-${view.tree.id}`,
+      beforeMs: null,
+      node: <AutoPendingMessages sessionId={session.id} view={view} />,
+    };
+    return [...lines, pending, tail];
   }, [view, agents, agent, openChild, openArtifact, session.id]);
 
   return {

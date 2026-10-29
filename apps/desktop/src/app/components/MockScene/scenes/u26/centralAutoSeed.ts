@@ -386,6 +386,7 @@ export const centralAutoSeedOf = ({ variant }: SeedParams): CentralAutoSeed => (
       }),
     }),
     pendingRefusal: null,
+    pendingMessages: [],
     deliveredResults: DELIVERED_BY_VARIANT[variant],
     hiddenChildIds: [],
     rootAsk: null,
