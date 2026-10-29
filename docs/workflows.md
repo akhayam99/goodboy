@@ -365,8 +365,13 @@ read top to bottom at the conversation measure:
   button and **Open agent chat** next to it. A real open question (phase
   `needs-answer`, a preset run's tail too) shows the same way: the question
   inline, an **Answer the question** field and **Send answer** as its action
-  (`RunOpenQuestion`, `answerOpenQuestions`); the header **Answer** still opens
-  the drawer. A preset run's blocked step gets the inline question and a
+  (`RunOpenQuestion`, `answerOpenQuestions`). When the asking agent has several
+  open questions the run page shows all of them in creation order (`askingAgentBatch`),
+  each with an **Answer question 2 of 3** field and one **Send answers** that
+  stays off until every field has text and sends them in one call, so the agent
+  resumes once. Another agent's questions wait for the next batch. A failed send
+  keeps every typed answer and shows one alert with **Retry** for the same batch.
+  The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
   secondary **Restart step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a

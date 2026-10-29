@@ -3,6 +3,7 @@ import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
 import { TailLine } from '../../../live-state/TailLine';
+import { askingAgentBatch } from '../../../context/askingAgentBatch';
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
@@ -85,6 +86,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           (agent) => agent.parentAgentId == null && agent.status === 'blocked',
         ) ?? null)
       : null;
+  const answered = tail.verb?.kind === 'answer' ? tail.verb.question : null;
   return (
     <section
       aria-label="Run state"
@@ -116,9 +118,21 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           )
         }
       />
-      {tail.verb?.kind === 'answer' ? (
-        <RunOpenQuestion sessionId={session.id} question={tail.verb.question} />
-      ) : null}
+      {answered === null ? null : (
+        <RunOpenQuestion
+          sessionId={session.id}
+          questions={askingAgentBatch({
+            questions: [
+              answered,
+              ...advance.questions.filter(
+                (question) =>
+                  question.id !== answered.id &&
+                  (question.createdByAgentId ?? null) === (answered.createdByAgentId ?? null),
+              ),
+            ],
+          })}
+        />
+      )}
       {blockedStep === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
       )}

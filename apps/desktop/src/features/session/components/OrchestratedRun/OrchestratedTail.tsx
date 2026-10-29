@@ -81,8 +81,8 @@ export const OrchestratedTail = ({ session, view }: Props) => {
               ))
         }
       />
-      {phase === 'needs-answer' && view.answerQuestion !== null ? (
-        <RunOpenQuestion sessionId={session.id} question={view.answerQuestion} />
+      {phase === 'needs-answer' && view.orchestrator.runQuestions.length > 0 ? (
+        <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
       ) : null}
       {tail.blockedAgentId === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
