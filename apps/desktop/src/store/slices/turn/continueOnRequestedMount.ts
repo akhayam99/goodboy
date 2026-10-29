@@ -28,6 +28,7 @@ export const continueOnRequestedMount = async ({ get, run, input }: Params) => {
   await run({
     sessionId: input.sessionId,
     ...(input.agentId !== undefined && { agentId: input.agentId }),
+    mountId: continuation.mountId,
     content: mountContinuationPrompt({ continuation }),
     origin: 'mount-continuation',
   });

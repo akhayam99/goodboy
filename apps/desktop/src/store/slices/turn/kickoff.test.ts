@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId } from '@goodboy/types';
+import { brandId, type AgentId } from '@goodboy/types';
 import {
   buildGoalKickoffSection,
   composeKickoff,
@@ -44,5 +44,11 @@ describe('composeStepBoundary', () => {
     expect(gap).toBe('');
     expect(questions).toContain('**Questions** a question in plain prose never reaches the user');
     expect(questions).toContain('<<ctx-question blocking="true">>');
+  });
+
+  it('tells the step agent to follow a settling decision instead of asking', () => {
+    const text = composeStepBoundary(brandId<AgentId>({ value: 'agent-1' }));
+    expect(text).toContain('follow it and do not ask');
+    expect(text).toContain('even when it says assumed or proposed');
   });
 });

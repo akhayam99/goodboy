@@ -117,6 +117,24 @@ const makeStore = () => ({
 
 type Store = ReturnType<typeof makeStore>;
 
+type PinnedRunParams = {
+  readonly store: Store;
+  readonly run: Record<string, unknown>;
+};
+
+const withPinnedRun = ({ store, run: overrides }: PinnedRunParams) => ({
+  ...store,
+  sessions: [
+    {
+      ...store.sessions[0]!,
+      workflowRuns: [{ id: 'run-1', ordinal: 0, executionMode: 'dynamic', ...overrides }],
+    },
+  ],
+  sessionPhaseRuns: {
+    'sess-1': [{ id: 'agent-1', workflowRunId: 'run-1', mountId: 'mount-api', status: 'running' }],
+  },
+});
+
 const run = async (store: Store) => {
   const set = vi.fn((updater: unknown) => {
     const patch =
@@ -163,6 +181,28 @@ describe('forgetMount', () => {
     const result = await run(store);
 
     expect(result.keptPath).toBe('/container/api');
+  });
+
+  it('refuses a mount an unfinished run still has pinned and names the run', async () => {
+    const store = withPinnedRun({ store: makeStore(), run: { title: 'Payout export' } });
+
+    await expect(run(store)).rejects.toThrow('the run "Payout export" still uses this branch');
+    expect(deleteSessionMount).not.toHaveBeenCalled();
+  });
+
+  it('lets a mount go once the run that pinned it is stopped, discarded or done', async () => {
+    for (const settled of [
+      { orchestrationStop: { kind: 'failure', message: 'x' } },
+      { discardedAt: '2026-10-29T00:00:00.000Z' },
+      { orchestrationOutcome: 'done' },
+    ]) {
+      deleteSessionMount.mockClear();
+      const store = withPinnedRun({ store: makeStore(), run: settled });
+
+      await run(store);
+
+      expect(deleteSessionMount).toHaveBeenCalledTimes(1);
+    }
   });
 
   it('refuses a mount the rendered rows still show as attached', async () => {

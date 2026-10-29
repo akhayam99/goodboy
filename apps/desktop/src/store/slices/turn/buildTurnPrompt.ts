@@ -25,6 +25,7 @@ import {
 import { handoffNoticeMessage } from './handoffNoticeMessage';
 import { movedProviderOf } from './movedProviderOf';
 import { buildGoalAttachmentsBlock } from './turnHelpers';
+import { hintImagesForStep } from './hintImages/hintImagesForStep';
 import { resolveTurnAudience } from './turnAudience';
 import { briefSlotsOf } from './briefSlotsOf';
 import { confinedRoleOf } from './confinedRoleOf';
@@ -142,15 +143,26 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
   const isKickoff =
     agentRowEarly?.providerSessionId === undefined &&
     (get().transcripts[activeAgentId] ?? []).length === 0;
+  if (agentRowEarly?.workflowRunId != null) {
+    await get().loadGoalAttachments({ type: 'workflow_run', id: agentRowEarly.workflowRunId });
+  }
   const goalAttachments = [
     ...(get().sessionAttachments[sessionId] ?? []),
     ...(agentRowEarly?.workflowRunId
       ? (get().workflowRunAttachments[agentRowEarly.workflowRunId] ?? [])
       : []),
   ];
-  const goalAttachmentsBlock = buildGoalAttachmentsBlock(earlyAgentKind, goalAttachments, {
-    isKickoff,
-  });
+  const hintImages = ctx.isHandoffTurn
+    ? hintImagesForStep({ get, session, agent: agentRowEarly, attachments: goalAttachments })
+    : null;
+  const generalAttachmentsBlock = buildGoalAttachmentsBlock(
+    earlyAgentKind,
+    goalAttachments.filter((att) => hintImages?.attachmentIds.has(att.id) !== true),
+    { isKickoff },
+  );
+  const goalAttachmentsBlock = [hintImages?.text ?? '', generalAttachmentsBlock]
+    .filter((block) => block !== '')
+    .join('\n\n');
 
   const priorTurns = providerFlags({ id: provider }).shouldReplayHistoryAsText
     ? buildPriorTurnsBlock({

@@ -74,6 +74,7 @@ export type AgentStatusFields = {
   readonly completedAt?: IsoDateTime;
   readonly stoppedAt?: IsoDateTime;
   readonly stoppedBy?: AgentStoppedBy;
+  readonly mountId?: MountId;
 };
 
 export type WorkflowNodeRouting = AgentRoutingUpdate & {
@@ -249,7 +250,8 @@ export const recordAgentStatus = async (
          THEN COALESCE(?, last_finished_at, ?)
          ELSE last_finished_at END,
        stopped_at       = CASE WHEN ? = 1 THEN COALESCE(?, ?) END,
-       stopped_by       = ?
+       stopped_by       = ?,
+       mount_id         = COALESCE((SELECT id FROM session_worktrees WHERE id = ?), mount_id)
      WHERE id = ?`,
     params: [
       fields.status,
@@ -263,6 +265,7 @@ export const recordAgentStatus = async (
       isoToMs(fields.stoppedAt),
       now,
       isStopped ? (fields.stoppedBy ?? DEFAULT_STOPPED_BY) : null,
+      fields.mountId ?? null,
       id,
     ],
   });

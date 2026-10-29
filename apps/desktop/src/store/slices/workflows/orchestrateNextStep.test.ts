@@ -237,13 +237,13 @@ const baseState = (): State => {
     budgetAlerts: [],
     sessionBudgets: {},
     loadSessionBudget: vi.fn(async () => undefined),
+    loadGoalAttachments: vi.fn(async () => undefined),
     phaseTemplates: { [WORKSPACE_ID]: [template] },
     sessionWorkflows: { [SESSION_ID]: [template] },
     sessionPhaseRuns: { [SESSION_ID]: [completedAgent()] },
     workspaceOverrides: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     sessionProjectMounts: {},
-    sessionActiveProject: {},
     sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     transcripts: { [AGENT_ID]: [] },
@@ -1671,81 +1671,6 @@ describe('orchestrateNextStep', () => {
       {},
       expect.objectContaining({ kind: 'orchestrator', estimatedCostUsd: 0.0123 }),
     );
-  });
-
-  it('hands every hint of the run to the orchestrator, marking the new ones', async () => {
-    const state = withHints(baseState(), [
-      hintFixture({ id: 'read', text: 'ignore the docs', consumedAt: HINT_AT, consumedAtStep: 1 }),
-      hintFixture({ id: 'queued', text: 'run a reviewer first' }),
-    ]);
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.operatorHints).toContain('[since step 1] ignore the docs');
-    expect(input.operatorHints).toContain('[new] run a reviewer first');
-  });
-
-  it('hands the orchestrator the workspace projects with the starred one first', async () => {
-    const state = {
-      ...baseState(),
-      projects: [
-        { id: 'project-relay', workspaceId: WORKSPACE_ID, name: 'notify-relay', kind: 'repo' },
-        {
-          id: 'project-ledger',
-          workspaceId: WORKSPACE_ID,
-          name: 'ledger-core',
-          kind: 'repo',
-          starredAt: HINT_AT,
-          description: 'Settles payments',
-        },
-      ],
-    };
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.operatorHints).toContain(
-      '- ledger-core (repo) | starred, the owner works here most | Settles payments\n- notify-relay (repo)',
-    );
-    expect(input.operatorHints).toContain(
-      'When a request names no project, look in starred projects first.',
-    );
-  });
-
-  it('stamps the queued hints with the decision that first read them', async () => {
-    const state = withHints(baseState(), [
-      hintFixture({ id: 'read', text: 'ignore the docs', consumedAt: HINT_AT, consumedAtStep: 1 }),
-      hintFixture({ id: 'queued', text: 'run a reviewer first' }),
-    ]);
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const hints = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!
-      .orchestratorHints;
-    const queued = hints?.find((hint) => hint.id === 'queued');
-    expect(queued?.consumedAt).toBeDefined();
-    expect(queued?.consumedAtStep).toBeGreaterThan(0);
-    expect(hints?.find((hint) => hint.id === 'read')?.consumedAtStep).toBe(1);
-    expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, hints);
   });
 
   it('says which hints the decision in flight is reading, and forgets them once it lands', async () => {

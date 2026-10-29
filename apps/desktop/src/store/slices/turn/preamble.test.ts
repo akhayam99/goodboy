@@ -17,6 +17,10 @@ describe('buildContextPreamble', () => {
     expect(out).not.toContain('## shared context');
   });
 
+  it('tells every agent to follow a settling decision instead of asking', () => {
+    expect(buildContextPreamble([])).toContain('follow it and do not ask');
+  });
+
   it('renders shared context block when slots present', () => {
     const out = buildContextPreamble([slot('goal', 'ship m4-m6')]);
     expect(out).toContain('## shared context');

@@ -451,7 +451,8 @@ the step where the orchestrator first read it.
 - **Send now** is the quiet button. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
 - The help sits in each button's tooltip, not in a sentence under the field. Send now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter sends now. **Preview** shows it as markdown
-- Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
+- Paste, drop or attach images. They are saved as files of the run and the hint keeps their ids. The orchestrator opens them with file reading only, Read, Glob and Grep on every provider (the Rust planner args deny Bash, Edit, Write, web and sub-agent tools; its tools stay off when no hint has an image), under a system prompt that allows the reads before the decision (`orchestratorSystemPromptFor`), and writes into the step brief what they show and what to change. The step that starts from that decision gets a block, "Images from the user's hint", with absolute paths to those images only, apart from the general run files (`hintImagesForStep`, matched by the hint's `consumedAtStep`)
+- The orchestrator also gets the session's active numbered decisions (the `decisions` slot, cut to its budget) so a step brief can name the number. A step the hint was read for carries the image block on its first turn, and a restarted run loads its attachments before either lookup. A branch an unfinished run still uses is refused by `forgetMount` (`runsPinnedToMount`), and a run started before pins existed pins the active mount on its next step.
 - The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
 - You can remove a hint, except while a decision is reading it
 
@@ -1391,7 +1392,14 @@ Every kickoff, re-kick and recovery prompt ends with the scope line from
 `composeUnitBoundary`. It names the done marker and the question channel: a
 question in plain prose never reaches the user, so an agent that needs an
 answer, an approval or a confirmation asks it in a blocking
-`<<ctx-question>>` block and stops.
+`<<ctx-question>>` block and stops. Before it asks, it checks the decisions in
+the shared context: an active decision that settles the point is followed, even
+when it says assumed or proposed, and is never asked about again. An agent that
+finds a decision wrong follows it anyway, says why in its report and leaves the
+change to you. The same rule (`DECISION_FIRST_RULE`) sits in the context
+handoff protocol and in the Auto child kickoff. When a step touches what an
+active decision governs, the orchestrator brief names that decision by number
+and restates its rule in one line.
 
 Every provider gets the same asks, in the same words. Claude takes the
 protocol in its system prompt; the other providers have no separate system

@@ -22,6 +22,7 @@ import {
   type WorkflowStepUpsertArgs,
 } from '../../../features/workflows/workflows';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { selectRunStepMountId } from './runMount/selectRunStepMountId';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
@@ -251,6 +252,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       scope: withHeadroom({ scope: selectRoutingScope({ state: get(), sessionId }), headroom }),
       sessionId,
       workflowRunId,
+      mountId: selectRunStepMountId({ state: get(), sessionId, workflowRunId }),
       steps: [savedStep],
       baseOrdinal,
       defaultProvider: (session.providerOverride ??

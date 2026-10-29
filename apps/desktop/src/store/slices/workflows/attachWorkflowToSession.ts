@@ -141,6 +141,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             }),
             sessionId,
             workflowRunId,
+            mountId: null,
             steps: template.steps,
             baseOrdinal: baseOrdinal + 1,
             defaultProvider: sessionDefaultProvider,

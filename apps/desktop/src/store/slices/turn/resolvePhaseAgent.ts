@@ -1,6 +1,7 @@
 import type {
   Agent,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   SessionId,
   Step,
@@ -13,6 +14,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly definition: Step;
   readonly workflowRunId: WorkflowRunId | null;
+  readonly mountId: MountId | null;
   readonly reusable: Agent | null;
   readonly providerRunId: ProviderRunId;
   readonly now: () => IsoDateTime;
@@ -22,6 +24,7 @@ export const resolvePhaseAgent = async ({
   sessionId,
   definition,
   workflowRunId,
+  mountId,
   reusable,
   providerRunId,
   now,
@@ -31,6 +34,7 @@ export const resolvePhaseAgent = async ({
       status: 'running',
       providerRunId,
       startedAt: now(),
+      ...(mountId !== null && { mountId }),
     });
   }
 
@@ -43,6 +47,7 @@ export const resolvePhaseAgent = async ({
     status: 'running',
     providerRunId,
     startedAt: now(),
+    ...(mountId !== null && { mountId }),
     kind: classifyStep({ step: definition }),
   });
 };

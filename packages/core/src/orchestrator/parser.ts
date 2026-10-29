@@ -172,6 +172,7 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   const selectedTaskType = taskType(step['taskType']);
   const selectedDifficulty = difficulty(step['difficulty']);
   const modelReason = nonEmptyString(step['modelReason']);
+  const mountId = nonEmptyString(step['mountId']);
   if (name === null || promptPrefix === null) {
     return null;
   }
@@ -198,6 +199,7 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
     ...(selectedDifficulty !== null && { difficulty: selectedDifficulty }),
     ...(modelReason !== null && { modelReason }),
     ...(isPresetStep && { presetStep }),
+    ...(mountId !== null && { mountId }),
   };
 };
 

@@ -1,6 +1,7 @@
 import type {
   Agent,
   EffortLevel,
+  MountId,
   ProviderId,
   RoleModelPreferences,
   SessionId,
@@ -31,6 +32,7 @@ type Params = {
   readonly defaultVerbosity?: VerbosityLevel;
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
   readonly scope?: AutoContext | null;
+  readonly mountId: MountId | null;
 };
 
 type BlockedWorkflowStep = Readonly<{
@@ -60,6 +62,7 @@ export const preSpawnWorkflowAgents = async ({
   defaultVerbosity,
   availability,
   scope = null,
+  mountId,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -109,6 +112,7 @@ export const preSpawnWorkflowAgents = async ({
       routingLock: effectiveStep.routingLock ?? null,
       routingDecision: effectiveStep.routingDecision ?? null,
       taskProfile: effectiveStep.taskProfile ?? null,
+      ...(mountId !== null && { mountId }),
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;

@@ -182,6 +182,13 @@ describe('buildScopeGuard reading entitlement', () => {
 });
 
 describe('buildScopeGuard write boundary', () => {
+  for (const entry of MATRIX.filter((candidate) => !candidate.name.startsWith('no mount'))) {
+    it(`forbids linking dependencies from another folder with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: true });
+      expect(guard).toContain('NEVER link or copy `node_modules`, `.next`, `dist`');
+    });
+  }
+
   for (const entry of MATRIX) {
     it(`keeps the write boundary and the marker for a writer kind with ${entry.name}`, () => {
       const guard = guardFor({ entry, canWrite: true });

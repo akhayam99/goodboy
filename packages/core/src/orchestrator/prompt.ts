@@ -1,3 +1,4 @@
+import { SLOT_BUDGETS } from '../context/budgets';
 import { sessionLanguageRule } from '../language/sessionLanguage';
 import {
   annotateFallbackStepOutputSummary,
@@ -25,7 +26,19 @@ const ORCHESTRATOR_LANGUAGE_RULE = [
 
 type SystemPromptParams = {
   readonly isModelPickEnabled: boolean;
+  readonly canReadFiles: boolean;
 };
+
+const NO_TOOLS_RULE =
+  'You have no tools and no repository access, and you must not ask for either. Your only job is to emit the next decision from the information given.';
+
+const READ_FILES_RULE =
+  'You have one capability beyond the information given: reading files with Read, Glob and Grep. Use it only to open the files an operator hint names, such as attached images. You can never write, run commands, fetch from the web or ask for more tools. Your only job is to emit the next decision.';
+
+const NO_TOOLS_RESPONSE = 'Respond immediately with exactly one marked JSON object';
+
+const READ_FILES_RESPONSE =
+  'Read the files the hints name first. Then respond with exactly one marked JSON object';
 
 const DIFFICULTY_ROUTING_RULE =
   'Routing: you do not pick models. For every next step name taskType, one of exploration, planning, implementation, debugging, review, testing, writing, general, and difficulty, one of light, standard, heavy: how hard the work of this step is, judged from the goal, what the run found so far and how much the step has to change. The app turns the step role and your difficulty into the model and effort on the provider the operator prefers, a lighter model for light work and a stronger one for heavy work, so never name provider, model or effort. Put one clause on why the step has that difficulty in modelReason.';
@@ -34,15 +47,18 @@ const MODEL_ROUTING_RULE = `Routing: pick the model for every next step yourself
 
 The list names identities and the efforts each one accepts. It says nothing about how good a model is at anything: that judgement is yours, from what you know about these models, and you never claim a capability the list did not give you.`;
 
-const routingSection = ({ isModelPickEnabled }: SystemPromptParams): string =>
+type RoutingParams = Pick<SystemPromptParams, 'isModelPickEnabled'>;
+
+const routingSection = ({ isModelPickEnabled }: RoutingParams): string =>
   isModelPickEnabled ? MODEL_ROUTING_RULE : DIFFICULTY_ROUTING_RULE;
 
-const stepRoutingFields = ({ isModelPickEnabled }: SystemPromptParams): string =>
+const stepRoutingFields = ({ isModelPickEnabled }: RoutingParams): string =>
   isModelPickEnabled ? '"provider":"...","model":"...","effort":"medium",' : '';
 
 const orchestratorSystemPrompt = ({
   isModelPickEnabled,
-}: SystemPromptParams): string => `You are the workflow orchestrator for an AI coding workspace. You never execute the work yourself: dedicated agents run each step and report back. You have no tools and no repository access, and you must not ask for either. Your only job is to emit the next decision from the information given.
+  canReadFiles,
+}: SystemPromptParams): string => `You are the workflow orchestrator for an AI coding workspace. You never execute the work yourself: dedicated agents run each step and report back. ${canReadFiles ? READ_FILES_RULE : NO_TOOLS_RULE}
 
 After each completed step, including kickoff when no steps exist, decide the single next step or end the run. Keep steps small and purposeful. Most runs land in a handful of steps, so a long run has to be a deliberate choice you can justify in reason, never drift.
 
@@ -59,13 +75,15 @@ ${roleNeedsSection({ driver: 'orchestrator' })}
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
+When a step touches what an active decision governs, promptPrefix names that decision by number and restates its rule in one line, so the step never depends on finding it.
+
 ${routingSection({ isModelPickEnabled })}
 
 reason is written for the operator, not for you. Say why this step is needed now: what the step before it left open, what this one settles. One or two sentences, plain markdown, never a recap of what already happened. For done and blocked, say what the run achieved and what is left.
 
 ${ORCHESTRATOR_LANGUAGE_RULE}
 
-Respond immediately with exactly one marked JSON object on a single line, using \\n escapes for any newlines inside strings, and nothing else:
+${canReadFiles ? READ_FILES_RESPONSE : NO_TOOLS_RESPONSE} on a single line, using \\n escapes for any newlines inside strings, and nothing else:
 <<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"...",${stepRoutingFields({ isModelPickEnabled })}"taskType":"implementation","difficulty":"standard","modelReason":"..."}}<</orchestrator>>
 
 The other valid forms are:
@@ -77,11 +95,39 @@ After the decision, on its own line, emit the running recap of the whole run as 
 
 Each entry is one short sentence of plain text, no markdown and no bullet glyphs. A left entry you expect a later step to settle is an object with that sentence as text and the role you expect to run it, one of the role keywords above; leave it a plain string when no step is planned for it. An empty left array means the run is complete. The recap is written for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
 
-export const ORCHESTRATOR_SYSTEM_PROMPT = orchestratorSystemPrompt({ isModelPickEnabled: false });
+export const ORCHESTRATOR_SYSTEM_PROMPT = orchestratorSystemPrompt({
+  isModelPickEnabled: false,
+  canReadFiles: false,
+});
 
 export const ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT = orchestratorSystemPrompt({
   isModelPickEnabled: true,
+  canReadFiles: false,
 });
+
+const ORCHESTRATOR_READING_SYSTEM_PROMPT = orchestratorSystemPrompt({
+  isModelPickEnabled: false,
+  canReadFiles: true,
+});
+
+const ORCHESTRATOR_MODEL_PICK_READING_SYSTEM_PROMPT = orchestratorSystemPrompt({
+  isModelPickEnabled: true,
+  canReadFiles: true,
+});
+
+type SystemPromptForParams = {
+  readonly input: Pick<OrchestratorInput, 'isModelPickEnabled' | 'canReadFiles'>;
+};
+
+export const orchestratorSystemPromptFor = ({ input }: SystemPromptForParams): string => {
+  const isPick = input.isModelPickEnabled === true;
+  if (input.canReadFiles === true) {
+    return isPick
+      ? ORCHESTRATOR_MODEL_PICK_READING_SYSTEM_PROMPT
+      : ORCHESTRATOR_READING_SYSTEM_PROMPT;
+  }
+  return isPick ? ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT : ORCHESTRATOR_SYSTEM_PROMPT;
+};
 
 type RoleModelSetLinesParams = {
   readonly roleDefaults: OrchestratorInput['roleDefaults'];
@@ -225,12 +271,30 @@ const presetLines = ({ preset }: PresetLinesParams): ReadonlyArray<string> => [
   '',
 ];
 
+type DecisionsParams = {
+  readonly decisions: string;
+};
+
+const budgetedDecisions = ({ decisions }: DecisionsParams): string => {
+  const kept: Array<string> = [];
+  let used = 0;
+  for (const row of decisions.split(/\n(?=- D\d)/)) {
+    if (used + row.length > SLOT_BUDGETS.decisions && kept.length > 0) {
+      break;
+    }
+    kept.push(row);
+    used += row.length + 1;
+  }
+  return kept.join('\n').slice(0, SLOT_BUDGETS.decisions);
+};
+
 export const buildOrchestratorUserPrompt = ({
   goal,
   processText,
   completedSteps,
   openQuestionCount,
   operatorHints,
+  decisions,
   providerId,
   modelMenu,
   roleDefaults,
@@ -278,6 +342,14 @@ export const buildOrchestratorUserPrompt = ({
         rendered.length > 0 ? rendered : '(no output captured)',
       );
     });
+  }
+  const activeDecisions = budgetedDecisions({ decisions: decisions?.trim() ?? '' });
+  if (activeDecisions.length > 0) {
+    lines.push(
+      '',
+      'Active decisions of the session, newest first (name the number in a step promptPrefix when the step touches one):',
+      activeDecisions,
+    );
   }
   const hints = operatorHints?.trim() ?? '';
   if (hints.length > 0) {

@@ -35,6 +35,7 @@ describe('orchestratorHintQueue', () => {
           attachmentIds: ['att-1'],
         }),
       ],
+      imagePaths: { multi: ['/work/acme/.goodboy/attachments/att-1/trace.png'] },
     });
     const lines = text.split('\n').slice(1);
     expect(lines).toEqual([
@@ -42,9 +43,20 @@ describe('orchestratorHintQueue', () => {
       '  - [new] skip the review step',
       '',
       '  The trace is attached.',
-      '  (1 image is attached to this hint. The next agent gets it with the run files.)',
+      '  (1 image is attached to this hint. Open each with your Read tool:)',
+      '  - /work/acme/.goodboy/attachments/att-1/trace.png',
     ]);
     expect(lines.filter((line) => line.startsWith('- ['))).toHaveLength(1);
+  });
+
+  it('tells the orchestrator to look at hint images and write what they show into the brief', () => {
+    const text = formatOrchestratorHints({
+      hints: [hint({ id: 'shot', text: 'remove this header', attachmentIds: ['a', 'b'] })],
+      imagePaths: { shot: ['/work/acme/a.png', '/work/acme/b.png'] },
+    });
+    expect(text).toContain('write into the step brief what they show and exactly what to change');
+    expect(text).toContain('(2 images are attached to this hint. Open each with your Read tool:)');
+    expect(text).toContain('  - /work/acme/a.png\n  - /work/acme/b.png');
   });
 
   it('has nothing to say without hints', () => {

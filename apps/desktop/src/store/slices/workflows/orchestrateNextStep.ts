@@ -58,12 +58,11 @@ import {
   type SpendLimitStop,
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { buildProfileGuard } from '../turn/profileGuard';
-import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { liveWorkflowFor } from './runMount/liveWorkflowFor';
+import { selectRunStepMountId } from './runMount/selectRunStepMountId';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
-import { formatOrchestratorHints } from './orchestratorHintQueue';
+import { orchestratorHintContext } from './hintImages/orchestratorHintContext';
 import { decisionRestartMark } from './decisionRestart';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
@@ -377,33 +376,10 @@ type AppendParams = {
   readonly workflow: Workflow;
   readonly roleModels: RoleModelPreferences | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
+  readonly namedMountId?: string | null;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
   };
-};
-
-type LiveWorkflowParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId;
-  readonly snapshot: Workflow;
-};
-
-const liveWorkflowFor = ({
-  get,
-  sessionId,
-  workflowRunId,
-  snapshot,
-}: LiveWorkflowParams): Workflow => {
-  const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
-    (candidate) => candidate.id === workflowRunId,
-  );
-  const targetId = run?.workflowId ?? snapshot.id;
-  return (
-    (get().phaseTemplates[snapshot.workspaceId] ?? []).find(
-      (candidate) => candidate.id === targetId,
-    ) ?? snapshot
-  );
 };
 
 const appendStep = async ({
@@ -414,6 +390,7 @@ const appendStep = async ({
   workflow: snapshot,
   roleModels,
   availability,
+  namedMountId,
   step,
 }: AppendParams): Promise<Agent> => {
   const workflow = liveWorkflowFor({ get, sessionId, workflowRunId, snapshot });
@@ -462,6 +439,7 @@ const appendStep = async ({
     roleModels,
     sessionEffort: session.effort ?? null,
     availability,
+    mountId: selectRunStepMountId({ state: get(), sessionId, workflowRunId, namedMountId }),
   });
   const blockedStep = spawned.blocked[0];
   if (blockedStep != null) {
@@ -616,14 +594,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           ? run.orchestratorRouting
           : null;
       const plannedRouting = options?.routing ?? pinnedRouting ?? taskModel;
-      const profileBlock = buildProfileGuard({
-        profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
-          ?.profile,
-        audience: 'orchestrator',
-      });
-      const projectsBlock = buildWorkspaceProjectsBlock({
-        projects: get().projects.filter((project) => project.workspaceId === session.workspaceId),
-      });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
       markHintsReading({
@@ -635,11 +605,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const hints = [profileBlock, projectsBlock, formatOrchestratorHints({ hints: readHints })]
-        .map((entry) => entry?.trim() ?? '')
-        .filter((entry) => entry !== '')
-        .join('\n');
-      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const { worktreePath, hintInput } = await orchestratorHintContext({
+        get,
+        sessionId,
+        workflowRunId,
+        workspaceId: session.workspaceId,
+        hints: readHints,
+      });
       const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
@@ -670,7 +642,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         processText: orchestratorProcessText({ processText: workflow.processText, run }),
         completedSteps,
         openQuestionCount: openQuestions.length,
-        ...(hints !== '' && { operatorHints: hints }),
+        ...hintInput,
         providerId: defaultProvider,
         modelMenu,
         roleDefaults,
@@ -912,6 +884,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflow,
           roleModels: workspaceRoleModels,
           availability,
+          namedMountId: decision.step.mountId ?? null,
           step: {
             name: proposed.name,
             role: proposed.role,

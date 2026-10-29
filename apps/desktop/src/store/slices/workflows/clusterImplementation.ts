@@ -29,6 +29,7 @@ import { blockUnreadablePart } from './clusterWaves/blockUnreadablePart';
 import { clusterLaunching } from './clusterWaves/clusterLaunching';
 import { clusterOrderBlocks } from './clusterWaves/clusterOrderBlocks';
 import { launchableChildren } from './clusterWaves/launchableChildren';
+import { composeClusterChecks } from './clusterWaves/composeClusterChecks';
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -63,18 +64,6 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
 
 export const composeClusterBoundary = (childId: AgentId): string =>
   composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
-
-type ClusterChecksParams = {
-  readonly label: string;
-  readonly items: ReadonlyArray<string> | undefined;
-};
-
-const composeClusterChecks = ({ label, items }: ClusterChecksParams): string => {
-  if (items === undefined || items.length === 0) {
-    return '';
-  }
-  return [`**${label}**`, ...items.map((item) => `- ${item}`)].join('\n');
-};
 
 function composeClusterKickoff(
   childId: AgentId,
@@ -341,6 +330,7 @@ export const fanOutClusters = async (
       return {
         sessionId,
         parentAgentId: container.id,
+        ...(container.mountId != null && { mountId: container.mountId }),
         ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
         ordinal: baseOrdinal + index,
         name: cluster.title,

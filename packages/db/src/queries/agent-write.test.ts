@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderId,
   ProviderRunId,
   SessionId,
@@ -371,6 +373,30 @@ describe('agent writes', () => {
       const again = await recordAgentStatus(db, id, { status: 'blocked' });
 
       expect(again.lastFinishedAt).toBe('2026-09-25T12:10:00.000Z');
+    });
+
+    it('pins the mount the turn ran in and keeps the old pin when that mount is gone', async () => {
+      const id = await seedAgent('a1', 'pending');
+      await db.execute(
+        `INSERT INTO session_worktrees (id, session_id, worktree_path, branch, created_at)
+         VALUES ('mount-refactor', ?, '/tmp/mount-refactor', 'ak/refactor-ledger', 1)`,
+        [sessionId],
+      );
+
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        mountId: brandId<MountId>({ value: 'mount-refactor' }),
+      });
+      expect((await getAgentById(db, id))?.mountId).toBe('mount-refactor');
+
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        mountId: brandId<MountId>({ value: 'mount-gone' }),
+      });
+      expect((await getAgentById(db, id))?.mountId).toBe('mount-refactor');
+
+      await recordAgentStatus(db, id, { status: 'completed' });
+      expect((await getAgentById(db, id))?.mountId).toBe('mount-refactor');
     });
 
     it('refuses an agent that does not exist', async () => {

@@ -21,6 +21,7 @@ export type OrchestratorStep = {
   readonly difficulty?: WorkflowTaskDifficulty;
   readonly modelReason?: string;
   readonly presetStep?: number;
+  readonly mountId?: string;
 };
 
 type OrchestratorPresetInput = {
@@ -95,6 +96,8 @@ export type OrchestratorInput = {
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;
   readonly openQuestionCount: number;
   readonly operatorHints?: string;
+  readonly canReadFiles?: boolean;
+  readonly decisions?: string;
   readonly providerId: ProviderId;
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;

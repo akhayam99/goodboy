@@ -6,6 +6,8 @@ import {
   type HandoffEarlierStep,
 } from '@goodboy/core';
 import type { IsoDateTime, ProviderRunId, Step, TurnEvent, WorkflowRunId } from '@goodboy/types';
+import { blockRunStepOnGoneMount } from '../workflows/runMount/blockRunStepOnGoneMount';
+import { selectRunStepMountId } from '../workflows/runMount/selectRunStepMountId';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { scratchDirPrepare, sessionDirExists } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -83,13 +85,36 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
     resolveCopyPath !== undefined || launchAgentId === null || origin === 'mount-continuation'
       ? null
       : await resolverLaunchCopy({ get, sessionId, agentId: launchAgentId });
-  const aimedMountId = mountTarget?.mountId ?? launchCopy?.mountTarget?.mountId ?? mountId;
+  const stepAgent =
+    launchAgentId === null
+      ? undefined
+      : (before.sessionPhaseRuns[sessionId] ?? []).find(
+          (candidate) => candidate.id === launchAgentId && candidate.workflowRunId != null,
+        );
+  const pinnedStepMountId =
+    stepAgent === undefined
+      ? undefined
+      : (stepAgent.mountId ??
+        selectRunStepMountId({
+          state: before,
+          sessionId,
+          workflowRunId: stepAgent.workflowRunId ?? null,
+        }) ??
+        undefined);
+  const explicitMountId = mountTarget?.mountId ?? launchCopy?.mountTarget?.mountId ?? mountId;
+  const aimedMountId = explicitMountId ?? pinnedStepMountId;
   const aimedMount =
     aimedMountId === undefined
       ? null
       : selectMountById({ state: before, sessionId, mountId: aimedMountId });
   if (aimedMountId !== undefined && aimedMount === null) {
-    throw new Error('The branch mount this turn was aimed at is no longer in the session.');
+    const goneBranch = (before.sessionMounts?.[sessionId] ?? []).find(
+      (view) => view.id === aimedMountId,
+    )?.branch;
+    if (explicitMountId !== undefined || goneBranch === undefined || stepAgent === undefined) {
+      throw new Error('The branch mount this turn was aimed at is no longer in the session.');
+    }
+    await blockRunStepOnGoneMount({ set, sessionId, agentId: stepAgent.id, branch: goneBranch });
   }
   const isFrozenTargetHeld =
     mountTarget === undefined ||

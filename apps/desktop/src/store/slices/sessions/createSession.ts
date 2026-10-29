@@ -378,6 +378,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           sessionId: session.id,
           ...(workflowRunId !== undefined && { workflowRunId }),
           steps: sortedSteps,
+          mountId: null,
           baseOrdinal: 0,
           defaultProvider: session.providerPreference.defaultProvider,
           roleModels,

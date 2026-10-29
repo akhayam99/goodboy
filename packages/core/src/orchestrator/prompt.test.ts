@@ -31,6 +31,39 @@ const input = (overrides: Partial<OrchestratorInput> = {}): OrchestratorInput =>
   ...overrides,
 });
 
+describe('buildOrchestratorUserPrompt decisions', () => {
+  it('renders the active numbered decisions so a step brief can cite them', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({ decisions: '- D7 no PR, commit locally\n- D3 keep the ledger-core API' }),
+    );
+
+    expect(prompt).toContain('Active decisions of the session, newest first');
+    expect(prompt).toContain('- D7 no PR, commit locally\n- D3 keep the ledger-core API');
+  });
+
+  it('renders no decisions section for an empty ledger', () => {
+    expect(buildOrchestratorUserPrompt(input({ decisions: '  ' }))).not.toContain(
+      'Active decisions',
+    );
+    expect(buildOrchestratorUserPrompt(input())).not.toContain('Active decisions');
+  });
+
+  it('keeps whole decision rows inside the slot budget, newest first', () => {
+    const rows = Array.from({ length: 80 }, (_, index) => `- D${80 - index} ${'x'.repeat(40)}`);
+    const prompt = buildOrchestratorUserPrompt(input({ decisions: rows.join('\n') }));
+    const rendered =
+      prompt.split(
+        'newest first (name the number in a step promptPrefix when the step touches one):\n',
+      )[1] ?? '';
+    const kept = rendered.split('\n').filter((line) => line.startsWith('- D'));
+
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.length).toBeLessThan(80);
+    expect(kept[0]).toContain('- D80 ');
+    expect(kept.join('\n').length).toBeLessThanOrEqual(1_200);
+  });
+});
+
 describe('buildOrchestratorUserPrompt without the model pick rule', () => {
   it('names no model, no menu and no role default, and asks for the difficulty', () => {
     const prompt = buildOrchestratorUserPrompt(
@@ -276,6 +309,12 @@ describe('buildOrchestratorUserPrompt', () => {
 });
 
 describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
+  it('has the brief name the active decision a step touches', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'promptPrefix names that decision by number and restates its rule in one line',
+    );
+  });
+
   it('dictates the flow rules that keep a run from running forever', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('treat that estimate as your own soft cap');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('never because a count was reached');

@@ -215,12 +215,17 @@ mod tests {
     }
 
     #[test]
-    fn anthropic_args_keep_tools_by_default() {
+    fn anthropic_args_read_only_by_default() {
         let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
-        assert!(!cli.iter().any(|a| a == "--tools"));
-        assert!(cli
+        let idx = cli.iter().position(|a| a == "--tools").expect("--tools");
+        assert_eq!(cli[idx + 1], "Read,Grep,Glob");
+        let denied = cli
             .windows(2)
-            .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+            .find(|pair| pair[0] == "--disallowedTools")
+            .map(|pair| pair[1].clone())
+            .expect("--disallowedTools");
+        assert!(denied.split(',').any(|tool| tool == "Bash"));
+        assert!(denied.split(',').any(|tool| tool == "mcp__*"));
     }
 
     #[test]

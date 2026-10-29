@@ -12,6 +12,20 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.2
+
+Agents follow what the session already decided, a run's steps stay on its branch, and a hint image reaches the agent that acts on it.
+
+### Fixed
+
+- Agents follow an active session decision instead of asking you to confirm it, even when it was written as an assumption. <!-- gb area=agents -->
+- The orchestrator names the decisions that govern a step in its brief, so the step never has to find them. <!-- gb area=workflows -->
+- A run's steps stay on the branch the run started on, even when another agent adds a branch or you switch branch. <!-- gb area=workflows -->
+- A step whose branch was removed stops and names the branch instead of starting in another worktree. <!-- gb area=workflows -->
+- The orchestrator looks at the images of your hints and writes what they show into the step brief, and the step gets those images by path. <!-- gb area=workflows -->
+- Agents in a worktree install dependencies there instead of linking node_modules or build output from another folder. <!-- gb area=agents -->
+- The orchestrator and the planner can only read files, never run commands or edit, even when your settings allow more. <!-- gb area=workflows -->
+
 ## Goodboy v0.29.1
 
 A run that asks several questions shows them all on its page, and you answer them in one go.

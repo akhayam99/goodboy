@@ -19,6 +19,17 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
+  it('keeps the mount a step names and drops an empty one', () => {
+    const decision = ({ mountId }: { readonly mountId: string }) =>
+      parseOrchestratorDecision({
+        raw: `<<orchestrator>>{"action":"next","reason":"Fix it","step":{"name":"Fix notify-relay","role":"implementer","promptPrefix":"Fix it.","mountId":"${mountId}"}}<</orchestrator>>`,
+        provider: 'anthropic',
+      });
+
+    expect(decision({ mountId: 'mount-fix' })).toMatchObject({ step: { mountId: 'mount-fix' } });
+    expect(decision({ mountId: '' })).not.toHaveProperty('step.mountId');
+  });
+
   it('parses terminal decisions', () => {
     expect(
       parseOrchestratorDecision({

@@ -52,6 +52,12 @@ describe('the kickoff of an answered question', () => {
 });
 
 describe('the kickoff of a delegated child', () => {
+  it('tells the child to follow a settling decision instead of asking', () => {
+    const text = composeDelegationKickoff(base());
+    expect(text).toContain('follow it and do not ask');
+    expect(text).toContain('even when it says assumed or proposed');
+  });
+
   it('starts with the header that says who started the child and where a question goes', () => {
     const text = composeDelegationKickoff(base());
     expect(text.startsWith(AUTO_KICKOFF_HEADER)).toBe(true);
