@@ -1041,3 +1041,19 @@ is built before the claim reserves the turn's 0.50 USD, so it counts that
 hold itself and names it ("Held 0.50 USD for this answer. Left 0.68 USD."): the
 Left Auto reads equals the rail's Left while that turn runs. The line never
 speaks of money reserved for agents, since none is. A delivery retried after a failed start reuses its stored text.
+
+## The outcome line
+
+Every message that ends an Auto turn or a child's work starts with one outcome
+line: `<<outcome>>text<</outcome>>`, at most 100 characters (`OUTCOME_MAX_CHARS`).
+The Auto prompt asks for it (`READING_ORDER_RULE`, after the level rules) and
+every child kickoff asks for it in its expected output
+(`OUTCOME_EXPECTED_NOTE`). `core/auto/outcome.ts` owns the reading:
+`parseOutcomeLine` takes the last block, `stripOutcomeLine` removes the blocks
+from the prose, and `outcomeLineOf` decides the line shown. The model's words
+never override the facts: red checks give "Checks failed: n", a failed,
+declined or put back push gives the "Not pushed" text of `publishTextOf`. A
+missing line falls back to the outcome word ("Done", "Failed: reason"), and a
+message with neither shows no line. The tone of the line is data
+(`success`, `danger`, `warning`, `neutral`); the screens that draw it come with
+the reading order work.

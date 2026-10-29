@@ -4,6 +4,7 @@ import { roleNeedsSection } from '../roleNeeds';
 import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES } from './limits';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from './level';
 import { canAutoRoleRunCommands } from './roleTools';
+import { READING_ORDER_RULE } from './readingOrderRule';
 import {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_WHEN,
@@ -108,7 +109,9 @@ export const buildAutoSystemPrompt = ({
   [
     AUTO_IDENTITY,
     isDelegationEnabled ? delegationRules() : AUTO_ANSWER_ONLY,
-    ...(isDelegationEnabled ? [AUTO_LEVEL_RULES[level], AUTO_NEXT_STEP_RULE] : []),
+    ...(isDelegationEnabled
+      ? [AUTO_LEVEL_RULES[level], AUTO_NEXT_STEP_RULE, READING_ORDER_RULE]
+      : []),
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),

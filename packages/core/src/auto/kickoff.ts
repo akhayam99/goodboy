@@ -1,5 +1,7 @@
 import { ROLE_REGISTRY } from '../roles';
 import { isAutoWriterRole, type AutoDelegationRole } from './roles';
+import { OUTCOME_MAX_CHARS } from './outcome';
+import { OUTCOME_MARKER_EXAMPLE } from './readingOrderRule';
 
 export const AUTO_DEFAULT_DONE_WHEN = {
   scout:
@@ -40,6 +42,8 @@ export const AUTO_DEFAULT_EXPECTED = {
   'ci-fixer': `A short text summary, the commit you made and the checks you ran.${LONG_REPORT_NOTE}`,
   rewriter: 'The new commit list (sha and subject) and the checks you ran.',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
+
+export const OUTCOME_EXPECTED_NOTE = `Start your last message with one \`<<outcome>>...<</outcome>>\` line of at most ${OUTCOME_MAX_CHARS} characters: the state and the result, from facts you checked, for example ${OUTCOME_MARKER_EXAMPLE}`;
 
 export const AUTO_DEPENDENCIES_RULE =
   "If dependencies are missing, install them with the project's package manager in this mount. Never link or copy node_modules or other files from another checkout.";
@@ -222,7 +226,9 @@ export const composeDelegationKickoff = ({
   }
   sections.push(revise === null ? `**Task** ${task}` : reviseSection({ revise }));
   sections.push(`**Done when** ${doneWhen ?? AUTO_DEFAULT_DONE_WHEN[role]}`);
-  sections.push(`**Expected output** ${expected ?? AUTO_DEFAULT_EXPECTED[role]}`);
+  sections.push(
+    `**Expected output** ${expected ?? AUTO_DEFAULT_EXPECTED[role]} ${OUTCOME_EXPECTED_NOTE}`,
+  );
   if (inputs.length > 0) {
     sections.push(inputsSection({ inputs }));
   }
