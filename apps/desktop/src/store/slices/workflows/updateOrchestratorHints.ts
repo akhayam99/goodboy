@@ -64,8 +64,16 @@ export const consumeReadOrchestratorHints = async ({
   if (readIds.size === 0) {
     return;
   }
-  await updateOrchestratorHints({
-    ...target,
-    update: consumingUpdate({ readIds, step, consumedAt }),
-  });
+  try {
+    await updateOrchestratorHints({
+      ...target,
+      update: consumingUpdate({ readIds, step, consumedAt }),
+    });
+  } catch (error) {
+    await target.get().reportError({
+      title: "Couldn't mark the hints as read",
+      error,
+      sessionId: target.sessionId,
+    });
+  }
 };

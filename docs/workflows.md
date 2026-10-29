@@ -1459,3 +1459,8 @@ agent waits for you, it sets the step to `blocked`, raises one warning
 notification and writes one line to the app log through `log_step_end`:
 `[turns] step ended without a result agent <id>: <reason>`. A failed write
 shows "Couldn't mark the step as ended" and leaves the step as it was.
+
+When the orchestrator creates the next step, the hints it read are marked read
+after the step exists (`consumeReadOrchestratorHints`). A failed write of that
+mark does not stop the step from starting: the hints stay unread and
+"Couldn't mark the hints as read" is shown.
