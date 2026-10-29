@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
+import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
 import { BranchChip } from '../../central/branches/BranchChip';
@@ -15,6 +15,7 @@ import { useBranchNames } from '../../central/branches/useBranchNames';
 import { BranchesCard } from '../../central/cards/BranchesCard';
 import { cardsOutsideRunningOf } from '../../central/cards/cardsOutsideRunningOf';
 import { DoneCard } from '../../central/cards/DoneCard';
+import { NewSinceCard } from '../../central/cards/NewSinceCard';
 import { doneSummaryOf } from '../../central/cards/doneSummaryOf';
 import { latestDoneOf } from '../../central/cards/latestDoneOf';
 import { NextRowsCard } from '../../central/cards/NextRowsCard';
@@ -95,17 +96,10 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     () => doneSummaryOf({ finished: branches.finished, days }),
     [branches.finished, days],
   );
-  const unreadAgentIds = useAppStore(
-    useShallow((state) =>
-      (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY)
-        .filter((agent) => agentHasUnread(agent, false))
-        .map((agent) => agent.id),
-    ),
+  const unreadAgents = useAppStore(
+    useShallow((state) => unreadAgentsOf({ agents: state.sessionPhaseRuns[sessionId] })),
   );
-  const latest = useMemo(
-    () => latestDoneOf({ days, unreadAgentIds: new Set(unreadAgentIds) }),
-    [days, unreadAgentIds],
-  );
+  const latest = useMemo(() => latestDoneOf({ days, unreadAgents }), [days, unreadAgents]);
   const branchLabelOf = useBranchLabels({ sessionId });
   const branchNameOf = useBranchNames({ sessionId });
   const whereOf = useWhereOf({ sessionId });
@@ -188,6 +182,9 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
 
   return (
     <div data-central-column className={PANE_RHYTHM.stack}>
+      {isArchived ? null : (
+        <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
+      )}
       {shown.map((card) => cardViewOf({ card }))}
     </div>
   );

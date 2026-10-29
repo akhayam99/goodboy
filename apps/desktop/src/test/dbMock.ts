@@ -5,6 +5,8 @@ type DbModule = typeof import('@goodboy/db');
 
 export type DbStubs = Readonly<Record<string, unknown>>;
 
+const PURE_NAMES: ReadonlySet<string> = new Set(['cleanWorkflowRunTitle']);
+
 const isClass = (value: unknown): boolean =>
   typeof value === 'function' && /^class[\s{]/.test(Function.prototype.toString.call(value));
 
@@ -44,7 +46,8 @@ export const createDbMock = async (stubs: DbStubs): Promise<DbModule> => {
       mock[name] = stubs[name];
       continue;
     }
-    mock[name] = typeof value === 'function' && !isClass(value) ? recordingStub(name) : value;
+    const isStubbable = typeof value === 'function' && !isClass(value) && !PURE_NAMES.has(name);
+    mock[name] = isStubbable ? recordingStub(name) : value;
   }
   return mock as DbModule;
 };

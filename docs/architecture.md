@@ -566,6 +566,13 @@ anywhere; a debug build also prints to stdout.
   `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
   already exited is not reported. Other `let _ =` are still silent by design:
   event emits to a closed window and best-effort file cleanup.
+- **A step that ended silently leaves a line.** `step_end_log::log_step_end`
+  (`step_end_log.rs`) writes `[turns] step ended without a result agent <id>:
+<reason>` when the step end watch finds a workflow step still running after
+  its turn settled with nothing to continue it
+  ([workflows.md](workflows.md) → When a step stops without its done marker).
+  The agent id and a fixed reason, nothing from the conversation; control
+  characters become spaces and each field is cut at 200 characters.
 - **A frozen window leaves a record.** `window_heartbeat.rs` is a watchdog
   with no network and no kill: it notes a freeze in `last-crash.json` (see
   [navigation/shell.md](navigation/shell.md), After a crash the app could not show) and
@@ -663,6 +670,12 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 - **The root `ErrorBoundary` in `main.tsx` is the last resort.** It only shows
   when the shell itself throws. Both use `ErrorBoundary` from `packages/ui`;
   a panel passes `renderFallback`, the root does not.
+- **Every caught render error is written to the app log.** Both boundaries pass
+  `onCatch={logRenderCrash}` (`features/bug-report/logRenderCrash`), which calls
+  `log_render_crash` (`render_crash_log.rs`). It writes three `[render-crash]`
+  lines (name and message, stack, component stack) to the local log only. Home
+  folders become `~`, credentials are hidden and each field is cut to a fixed
+  length.
 
 ### Frames
 

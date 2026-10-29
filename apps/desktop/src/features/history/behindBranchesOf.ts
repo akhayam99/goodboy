@@ -1,7 +1,7 @@
 import type { MountId, Project, SessionId, SessionProjectMount } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { distanceBehind } from '../../shared/lib/gitStatus';
-import { isMountCompleted } from '../../store/slices/project-mounts/mountRowModel';
+import { isMountRequestMerged } from '../../store/slices/project-mounts/mountRowModel';
 import { resolveMountBaseBranch } from '../../store/slices/project-mounts/selectors';
 import { readWorktreeStatus, worktreeStatusKey } from '../../store/runtime/worktreeStatuses/cache';
 
@@ -56,7 +56,7 @@ export const behindBranchesOf = ({ state, sessionId }: Params): ReadonlyArray<Be
     mounts: state.sessionProjectMounts[sessionId] ?? [],
     projects: state.projects,
   }).flatMap((target): ReadonlyArray<BehindBranch> => {
-    if (isMountCompleted({ state, mountId: target.mountId })) {
+    if (isMountRequestMerged({ state, mountId: target.mountId })) {
       return [];
     }
     const status = readWorktreeStatus(target.key);

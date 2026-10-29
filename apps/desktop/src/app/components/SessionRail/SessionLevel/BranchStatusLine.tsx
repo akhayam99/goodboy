@@ -3,7 +3,7 @@ import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
-import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf, unmergedCount } from '../../../../shared/lib/gitStatus';
 
 import { actionButtonStateOf } from '../../../../features/actions/actionButtonStateOf';
 import { useActionControls } from '../../../../features/actions/useActionControls';
@@ -24,6 +24,15 @@ type Props = {
 
 const VERB_IDS = ['mount.abortRebase', 'mount.rebase'] as const;
 
+const MERGED_VERB_IDS = ['mount.cleanUp'] as const;
+
+const VERB_LABEL: Readonly<Record<string, string>> = {
+  'mount.rebase': 'Rebase',
+  'mount.cleanUp': 'Clean up',
+};
+
+const MERGED_TEXT = 'Merged, work complete';
+
 const STOP_TONE: Readonly<Record<RebaseJobTone, Tone>> = {
   info: 'info',
   ok: 'success',
@@ -40,26 +49,31 @@ export const BranchStatusLine = ({ sessionId, row, status, target }: Props) => {
   );
   const job = rebase?.job ?? null;
   const isJobRunning = job !== null && job.isRunning;
-  const conflicts = status === null ? null : unmergedCount({ workingTree: status.workingTree });
-  const text = branchStatusFactsOf({
-    behind: status === null ? null : distanceBehind({ distance: status.mainDistance }),
-    conflicts,
-    isRebasing: status?.inProgress === 'rebase' || isJobRunning,
-    progress: job?.progress ?? null,
-    baseBranch,
-  });
+  const conflicts =
+    status === null || row.isFinished ? null : unmergedCount({ workingTree: status.workingTree });
+  const isMerged = row.request?.state === 'merged';
+  const text = isMerged
+    ? MERGED_TEXT
+    : branchStatusFactsOf({
+        behind: mainBehindOf({ status, isDone: row.isFinished }),
+        conflicts,
+        isRebasing: !row.isFinished && (status?.inProgress === 'rebase' || isJobRunning),
+        progress: job?.progress ?? null,
+        baseBranch,
+      });
+  const verbIds = isMerged ? MERGED_VERB_IDS : VERB_IDS;
   const verb = isJobRunning
     ? (controls.actions.find((action) => action.id === 'mount.abortRebase') ?? null)
-    : (VERB_IDS.map((id) => controls.actions.find((action) => action.id === id)).find(
-        (action) => action !== undefined,
-      ) ?? null);
+    : (verbIds
+        .map((id) => controls.actions.find((action) => action.id === id))
+        .find((action) => action !== undefined) ?? null);
   const state =
     verb === null
       ? null
       : actionButtonStateOf({
           controls,
           actionId: verb.id,
-          label: verb.id === 'mount.rebase' ? 'Rebase' : 'Abort',
+          label: VERB_LABEL[verb.id] ?? 'Abort',
           pendingLabel: verb.pendingLabel,
         });
   const button =
@@ -105,7 +119,10 @@ export const BranchStatusLine = ({ sessionId, row, status, target }: Props) => {
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>
       ) : null}
-      {job !== null && job.state !== 'pushed' && REBASE_STOP_PANEL_STATES.has(job.state) ? (
+      {!row.isFinished &&
+      job !== null &&
+      job.state !== 'pushed' &&
+      REBASE_STOP_PANEL_STATES.has(job.state) ? (
         <div
           data-rebase-conflict=""
           className="flex min-h-7 min-w-0 items-center gap-2 pr-1 text-ui"

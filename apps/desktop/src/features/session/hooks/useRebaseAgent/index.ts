@@ -10,7 +10,8 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
-import { distanceBehind } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf } from '../../../../shared/lib/gitStatus';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../shared/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
@@ -196,9 +197,12 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         (agent.id === pending?.agentId || rebasingAgentIds.has(agent.id)),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
-  const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
+  const isDone = useAppStore(
+    (state) => mountId != null && isMountRequestMerged({ state, mountId }),
+  );
+  const behindMain = mainBehindOf({ status, isDone });
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
-  const canResume = sessionId != null && status?.inProgress === 'rebase';
+  const canResume = sessionId != null && !isDone && status?.inProgress === 'rebase';
 
   useEffect(() => {
     pendingRef.current = pending;

@@ -2,6 +2,8 @@ import {
   DEFAULT_WORKFLOW_RULES,
   type Agent,
   type AgentId,
+  type OpenQuestion,
+  type OpenQuestionId,
   type OrchestratorHint,
   type ProviderRunId,
   type Session,
@@ -54,7 +56,15 @@ const TEST_RUN = idOf<ProviderRunId>('mock-c09-provider-test');
 const DOCS_RUN = idOf<ProviderRunId>('mock-c09-provider-docs');
 
 export type C09State =
-  'running' | 'reading' | 'ready' | 'failed' | 'done' | 'archived' | 'step-blocked' | 'blocked';
+  | 'running'
+  | 'reading'
+  | 'ready'
+  | 'failed'
+  | 'done'
+  | 'archived'
+  | 'step-blocked'
+  | 'needs-answer'
+  | 'blocked';
 
 export type C09Page = 'document' | 'list' | 'empty' | 'step';
 
@@ -339,7 +349,7 @@ const testerStatusOf = ({ state }: StateParams): Agent['status'] => {
   if (state === 'reading') {
     return 'skipped';
   }
-  if (state === 'step-blocked') {
+  if (state === 'step-blocked' || state === 'needs-answer') {
     return 'blocked';
   }
   return 'completed';
@@ -375,7 +385,7 @@ const agentsOf = ({ state }: StateParams): ReadonlyArray<Agent> => {
   if (isReady) {
     return steps;
   }
-  const isStepBlocked = state === 'step-blocked';
+  const isStepBlocked = state === 'step-blocked' || state === 'needs-answer';
   const tester = agentOf({
     id: C09_TESTER_ID,
     runId: C09_RUN_ID,
@@ -593,6 +603,19 @@ const sessionOf = ({ state, page, isRouted }: SessionParams): Session => ({
   updatedAt: C09_NOW,
 });
 
+const NEEDS_ANSWER_QUESTION: OpenQuestion = {
+  id: idOf<OpenQuestionId>('mock-c09-question'),
+  sessionId: C09_SESSION_ID,
+  workflowRunId: C09_RUN_ID,
+  createdByAgentId: C09_TESTER_ID,
+  text: 'Which export size should the benchmark treat as the target: 12,000 rows or 50,000?',
+  suggestedAnswers: [],
+  isBlocking: true,
+  userAnswer: null,
+  status: 'open',
+  createdAt: at('10:55'),
+};
+
 export const seedC09 = ({
   state,
   page,
@@ -637,7 +660,9 @@ export const seedC09 = ({
     loadAgentTranscript: async () => undefined,
     loadSessionTelemetry: async () => undefined,
     sessionPlans: { [C09_SESSION_ID]: [] },
-    sessionOpenQuestions: { [C09_SESSION_ID]: [] },
+    sessionOpenQuestions: {
+      [C09_SESSION_ID]: state === 'needs-answer' ? [NEEDS_ANSWER_QUESTION] : [],
+    },
     sessionAnsweredQuestions: { [C09_SESSION_ID]: [] },
     drawer:
       page === 'step'

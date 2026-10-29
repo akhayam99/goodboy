@@ -20,6 +20,7 @@ import { openInConfiguredTerminal } from '../../../shared/lib/terminalApp';
 import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
+import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -423,13 +424,14 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     when: ({ facts }) => (facts.worktreePath ?? facts.keptPath) !== null,
     run: ({ facts, env }) => env.copyText({ text: facts.worktreePath ?? facts.keptPath ?? '' }),
   },
+  MOUNT_CLEAN_UP_ACTION,
   {
     id: 'mount.close',
     label: NAMES.closeBranch,
     icon: CONCEPT_ICONS.worktree,
     group: 'danger',
     when: ({ facts }) => isOpen({ facts }) && !facts.isRebasing,
-    slot: ({ facts }) => (facts.pr === 'merged' ? 'inline' : 'menu'),
+    slot: () => 'menu',
     pendingLabel: ({ facts }) => (facts.pr === 'merged' ? 'Removing…' : 'Closing…'),
     confirm: closeConfirm,
     run: async ({ facts, env }) => {

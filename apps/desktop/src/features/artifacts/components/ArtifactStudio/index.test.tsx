@@ -551,7 +551,7 @@ describe('ArtifactStudio plan parts', () => {
     const parts = screen.getByTestId('plan-parts');
     expect(
       within(parts).getByText(
-        'Planner 2 split this plan into 2 parts. They run in order, each as its own subagent.',
+        'Planner 2 split this plan into 2 parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.',
       ),
     ).toBeDefined();
     expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();

@@ -113,6 +113,7 @@ const FOLDER_COMMANDS: Readonly<Record<string, (params: HandlerParams) => unknow
   gh_status: () => ({ mode: 'absent', available: false }),
   last_crash_claim: () => null,
   log_provider_standing: () => null,
+  log_render_crash: () => null,
   window_heartbeat: () => null,
   refresh_opencode_status: () => agentStatus({ id: 'opencode', binary: 'opencode' }),
 };

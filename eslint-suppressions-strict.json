@@ -1101,7 +1101,7 @@
   },
   "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 10
+      "count": 8
     }
   },
   "apps/desktop/src/store/slices/workflows/detachWorkflowFromSession.ts": {

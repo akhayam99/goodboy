@@ -12,8 +12,10 @@ const seedProvidersScope = (): void => {
 export const ProvidersScopeScene = () => {
   useEffect(() => {
     const id = window.setTimeout(() => {
-      Array.from(document.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="dialog"]'))
-        .find((button) => button.closest('[data-top-bar]') === null)
+      document
+        .querySelector<HTMLButtonElement>(
+          'section[aria-label="Providers"] button[aria-haspopup="dialog"]',
+        )
         ?.click();
     }, OPEN_DELAY_MS);
     return () => window.clearTimeout(id);

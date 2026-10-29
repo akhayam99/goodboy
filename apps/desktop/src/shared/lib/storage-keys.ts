@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
   zoom: `${PREFIX}zoom`,
   windowReloadIntent: `${PREFIX}window-reload-intent`,
   rowActionsCue: `${PREFIX}row-actions-cue:v1`,
+  pushFixes: `${PREFIX}push-fixes:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

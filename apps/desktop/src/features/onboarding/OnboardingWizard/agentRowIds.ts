@@ -5,4 +5,5 @@ export const AGENT_ROW_IDS = [
   'codex',
   'cursor',
   'gemini',
+  'copilot',
 ] as const satisfies ReadonlyArray<AgentProviderId>;

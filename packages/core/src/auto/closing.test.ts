@@ -109,4 +109,38 @@ describe('reading how a child closed its work', () => {
     });
     expect(closing.completion).toBe('blocked');
   });
+
+  it('reads the closing line in the forms providers print', () => {
+    const forms = [
+      `\`<<step-done id="${ID}">>\``,
+      `<<step-done id='${ID}'>>`,
+      `<<step-done id=${ID}>>`,
+      `\\<\\<step-done id="${ID}"\\>\\>`,
+      `<< step-done id=“${ID}” >>`,
+      `<<step-done id="${ID}">`,
+    ];
+    for (const form of forms) {
+      const closing = parseChildClosing({
+        text: `Done.\n${form}\nOne more line.`,
+        childAgentId: ID,
+      });
+      expect(closing.completion, form).toBe('done');
+    }
+  });
+
+  it('reads a block written with a bare status value', () => {
+    const closing = parseChildClosing({
+      text: `Cannot go on.\n<<step-done id=${ID} status=blocked>>`,
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('blocked');
+  });
+
+  it('still ignores another agent in every form', () => {
+    const closing = parseChildClosing({
+      text: `\`<<step-done id='agent-other'>>\``,
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('none');
+  });
 });

@@ -60,6 +60,7 @@ export const PushFailureScene = ({ variant }: Props) => {
             confirmedRemoteSha={null}
             message={error.message}
             onResolved={() => undefined}
+            onRetry={() => undefined}
           />
         }
       />

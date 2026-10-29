@@ -13,6 +13,7 @@ import { classifyProviderError } from './classifyProviderError';
 import { createRunEventRouter } from './createRunEventRouter';
 import { parseProviderLine } from './parseProviderLine';
 import { clearTurnCursor, writeTurnCursor, type TurnCursor, type TurnOwner } from './turnCursor';
+import { createTurnResultWatch } from './turnResultWatch';
 
 const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
@@ -204,7 +205,6 @@ async function* streamTurn({
   let rejector: ((err: unknown) => void) | null = null;
   let ended = false;
   let error: unknown = null;
-
   const flush = () => {
     if (!resolver) {
       return;
@@ -228,6 +228,20 @@ async function* streamTurn({
       }
     }
   };
+
+  const resultWatch = createTurnResultWatch({
+    runId,
+    agentId: owner?.agentId ?? null,
+    stop: () => {
+      void invokeCommand('turn_cancel', { runId }).catch((cancelError: unknown) => {
+        console.warn('stopping the process left running after its result failed', cancelError);
+      });
+    },
+    finish: () => {
+      ended = true;
+      flush();
+    },
+  });
 
   const isResumed = resumeFrom !== null && resumeFrom.seq > 0;
   let receivedAnyEvent = isResumed;
@@ -259,6 +273,7 @@ async function* streamTurn({
       unparsedOutput.push(line.trim());
     }
     for (const ev of parsedEvents) {
+      resultWatch.observe({ event: ev });
       if (
         ev.kind === 'error' &&
         classifyProviderError({ message: ev.message }).kind === 'usage_limit'
@@ -307,6 +322,7 @@ async function* streamTurn({
         break;
       }
       case 'end': {
+        resultWatch.clear();
         for (const line of assembler.flush()) {
           handleLine({ line });
         }
@@ -347,6 +363,7 @@ async function* streamTurn({
         break;
       }
       case 'error':
+        resultWatch.clear();
         error = new Error(envelope.message);
         ended = true;
         flush();
@@ -422,6 +439,7 @@ async function* streamTurn({
       }
     }
   } finally {
+    resultWatch.clear();
     activeStreams.delete(runId);
     unlisten();
     clearTurnCursor({ runId });

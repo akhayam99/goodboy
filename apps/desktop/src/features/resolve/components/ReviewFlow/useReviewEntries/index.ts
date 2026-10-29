@@ -40,6 +40,7 @@ import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
 import { isFixableThread } from '../../../fixableComments';
 import { rowFixOf, type RowFix } from '../../../rowFix';
+import { heldLaunchIdOf } from '../../../../../store/slices/resolve/launchTurns';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 
 export type ReviewEntry = {
@@ -117,6 +118,7 @@ export const useReviewEntries = ({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
         isChanged: changes[row.thread.threadId]?.changed != null,
+        isHeld: heldLaunchIdOf({ threadId: row.thread.threadId }) !== null,
       });
       const facts = threadGit[row.thread.threadId] ?? null;
       const remote = remoteOf({ state, facts });

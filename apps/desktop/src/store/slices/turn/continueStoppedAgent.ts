@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
+import { withStepBoundary } from './kickoff';
 import type { GetFn } from './types';
 
 const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';
@@ -37,7 +38,7 @@ export const continueStoppedAgent = (get: GetFn) => {
     await get().sendTurn({
       sessionId,
       agentId,
-      content: CONTINUE_STOPPED_MESSAGE,
+      content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
       origin: 'operator',
     });
   };

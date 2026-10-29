@@ -22,6 +22,7 @@ const recoveryPrompt = ({
 }): string =>
   [
     'Check whether this workflow step is complete.',
+    'If your last message asked the operator a question, repeat it and wait for the answer.',
     'If work remains, finish it. If the work is complete, briefly confirm the result.',
     composeStepBoundary(agentId),
   ].join('\n');

@@ -207,14 +207,50 @@ describe('useReviewPush on a page that shows one mount', () => {
       useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }),
     );
 
+    let followUp: Awaited<ReturnType<typeof result.current.retryAfterFix>> = undefined;
     await act(async () => {
-      result.current.retryAfterFix();
+      followUp = await result.current.retryAfterFix();
     });
 
     expect(retry).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_LEDGER });
     expect(result.current.phase).toEqual({
       kind: 'result',
       result: { tone: 'done', sentence: 'The fix is pushed. Nothing else is waiting.' },
+    });
+    expect(followUp).toEqual({
+      tone: 'done',
+      sentence: 'The fix is pushed. Nothing else is waiting.',
+    });
+  });
+
+  it('still reports what the retry after a fix did when no screen shows it any more', async () => {
+    retry.mockResolvedValueOnce({ ...PREVIEW, publicationId: null, commits: [] });
+    const view = renderHook(() => useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }));
+    const { retryAfterFix } = view.result.current;
+    view.unmount();
+
+    const followUp = await retryAfterFix();
+
+    expect(followUp).toEqual({
+      tone: 'done',
+      sentence: 'The fix is pushed. Nothing else is waiting.',
+    });
+  });
+
+  it('retries the push as a plain retry after the dependencies were reinstalled', async () => {
+    retry.mockResolvedValueOnce({ ...PREVIEW, publicationId: null, commits: [] });
+    const { result } = renderHook(() =>
+      useReviewPush({ sessionId: SESSION.id, mountId: MOUNT_LEDGER }),
+    );
+
+    await act(async () => {
+      result.current.retryAfterDeps();
+    });
+
+    expect(retry).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_LEDGER });
+    expect(result.current.phase).toEqual({
+      kind: 'result',
+      result: { tone: 'done', sentence: 'Nothing is waiting for the push.' },
     });
   });
 

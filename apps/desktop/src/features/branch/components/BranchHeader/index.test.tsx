@@ -23,11 +23,13 @@ vi.mock('../../../worktree/useMountRemoteHostKind', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId } from '@goodboy/types';
 import type {
   MountId,
   ProjectId,
   PullRequestState,
   SessionId,
+  AgentId,
   SessionMountView,
   SessionProjectMount,
   WorktreeStatus,
@@ -837,7 +839,20 @@ describe('BranchHeader push failure', () => {
     await screen.findByRole('alert');
 
     act(() => {
-      useAppStore.setState({ settledBranchPushes: { [MOUNT_ID]: 1 } });
+      useAppStore.setState({
+        pushFixOutcomes: {
+          [MOUNT_ID]: {
+            agentId: brandId<AgentId>({ value: 'agent-push-fixer' }),
+            sessionId: SESSION_ID,
+            mountId: MOUNT_ID,
+            kind: 'pushed',
+            reason: null,
+            settledAt: 1,
+            isClaimed: false,
+            followUp: null,
+          },
+        },
+      });
     });
 
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
@@ -946,5 +961,63 @@ describe('BranchHeader push feedback', () => {
     screen.getByRole('button', { name: 'Retry' });
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull();
+  });
+});
+
+describe('BranchHeader push fix status', () => {
+  const open: PullRequestState = { ...PR, isDraft: false };
+  const AGENT = brandId<AgentId>({ value: 'agent-header-fixer' });
+
+  it('shows the running fix agent of this branch with no failure on screen, as after leaving and coming back', () => {
+    withRequest(open);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          {
+            id: AGENT,
+            sessionId: SESSION_ID,
+            ordinal: 3,
+            name: 'Fix the push',
+            status: 'running',
+            mountId: MOUNT_ID,
+          },
+        ],
+      },
+    });
+
+    const first = renderHeader({ pr: open });
+    screen.getByText('An agent is fixing the push');
+    first.unmount();
+    renderHeader({ pr: open });
+
+    screen.getByText('An agent is fixing the push');
+    screen.getByRole('button', { name: 'Open the agent' });
+  });
+
+  it('shows why the fix did not land, and lets the line be dismissed', () => {
+    withRequest(open);
+    useAppStore.setState({
+      pushFixOutcomes: {
+        [MOUNT_ID]: {
+          agentId: AGENT,
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          kind: 'push_failed',
+          reason: 'pre-push: yarn knip --cache failed',
+          settledAt: 1,
+          isClaimed: true,
+          followUp: null,
+        },
+      },
+    });
+    renderHeader({ pr: open });
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The fix couldn't be pushed: pre-push: yarn knip --cache failed.",
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+    expect(useAppStore.getState().pushFixOutcomes[MOUNT_ID]).toBeUndefined();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

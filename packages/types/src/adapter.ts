@@ -18,6 +18,9 @@ export type ProviderUsage = {
   readonly contextTokens?: number;
   readonly largeRequests?: ReadonlyArray<RequestUsage>;
   readonly premiumRequests?: number;
+  readonly nanoAiu?: number;
+  readonly sessionPremiumRequests?: number;
+  readonly sessionNanoAiu?: number;
   readonly estimatedCostUsd: number;
 };
 

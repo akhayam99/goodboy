@@ -91,6 +91,12 @@
           "also": "Change"
         },
         {
+          "title": "The model of a run",
+          "text": "A run names the model it runs on next to its Kind, Orchestrator or Auto agent, and you can pick another one for that run only.",
+          "group": "Start a task",
+          "also": "Model"
+        },
+        {
           "title": "The New session page",
           "text": "Start a session from your goal: write it or pick an issue, then choose the kind of run.",
           "group": "Start a task",

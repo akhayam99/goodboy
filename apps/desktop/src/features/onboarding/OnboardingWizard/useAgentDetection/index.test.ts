@@ -59,6 +59,7 @@ const STEADY = {
   refresh_provider_status: found({ id: 'anthropic', binary: 'claude', version: '2.1.280' }),
   refresh_cursor_status: found({ id: 'cursor', binary: 'cursor-agent', version: null }),
   refresh_gemini_status: found({ id: 'gemini', binary: 'agy', version: null }),
+  refresh_copilot_status: found({ id: 'copilot', binary: 'copilot', version: null }),
   check_provider_auth: { state: 'connected', identity: 'dana@northwind.dev' },
 };
 

@@ -36,7 +36,6 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
-import { fixRunOf } from '../../fixRun';
 import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
@@ -151,20 +150,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       }))
       .filter((group) => group.entries.length > 0);
   }, [branchGroups, commentState, scope]);
-  const run = useMemo(
-    () =>
-      fixRunOf({
-        sources: entries.map((entry) => ({
-          threadId: entry.threadId,
-          word: entry.resolveWord,
-          attempt: entry.row.attempt,
-        })),
-      }),
-    [entries],
-  );
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const { groups, fixRunReady, isRunLive } = useFixRunGroups({
-    run,
+  const { run, groups, fixRunReady, isRunLive } = useFixRunGroups({
     lane,
     entries,
     groups: allGroups,
@@ -729,7 +716,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
           />
         )}
-        <LaneNotices sessionId={sessionId} lane={lane} />
+        <LaneNotices sessionId={sessionId} lane={lane} mountId={source?.mountId ?? null} />
         {acceptError !== null && (
           <Notice
             tone="danger"

@@ -96,7 +96,8 @@ goal by the `agent_naming` task model when the run starts. The title is cleaned
 (`cleanWorkflowRunTitle` in `@goodboy/db`): a `Title:` label, quotes and markdown
 marks go, a reply that reads as a sentence is dropped, and a title never ends in
 the middle of a word. When nothing usable is left it is the first line of the
-ask, cut at a word. A title stored before this reads cleaned too: the same
+ask, cut at a word. A session or agent title goes through the same cleaning at
+the parse boundary (`parseGeneratedTitle`, with the ask as the fallback). A title stored before this reads cleaned too: the same
 function runs when the run rows load, and never touches a name you chose. The activity feed,
 the workflow detail and the breadcrumb show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
@@ -273,8 +274,13 @@ blocked.
 - It keeps a running recap of what is done and what is left
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-You choose the model the orchestrator runs on in the launch form, and the
-providers it may pick from with **Can use**.
+The model of the orchestrator has three homes. The workspace default is the
+**Orchestrator** row of **Settings › Models › Runs**. A run takes it from the
+**Model** chip of Start a run, and the run page shows it as the **Orchestrator**
+chip in the settings line, the composer row beside the hint box changes the same
+value. The chips write `orchestratorRouting` of the run (`useOrchestratorModel`
+through `setWorkflowOrchestratorRouting`), and a run with none follows the
+default. The providers it may pick from are set with **Can use**.
 
 ### The orchestrated document
 
@@ -356,7 +362,13 @@ read top to bottom at the conversation measure:
   on a question with the question inline (what the step agent closed with,
   `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
   field with **Answer** as its primary action, **Restart step** as a secondary
-  button and **Open agent chat** next to it. **Answer** sends the text to the
+  button and **Open agent chat** next to it. A real open question (phase
+  `needs-answer`, a preset run's tail too) shows the same way: the question
+  inline, an **Answer the question** field and **Send answer** as its action
+  (`RunOpenQuestion`, `answerOpenQuestions`); the header **Answer** still opens
+  the drawer. A preset run's blocked step gets the inline question and a
+  secondary **Restart step**, and the restart prompt asks the agent to repeat a
+  question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
@@ -366,7 +378,9 @@ read top to bottom at the conversation measure:
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
-  the hint; the queued hints are not marked read by a blocked decision). Under
+  the hint; a hint is marked read only once a step started with it, so a
+  blocked decision, a step that was not created and a next step the routing
+  refused all leave the queued hints unread). Under
   the line, a folded **Why this step** (`Disclosure`) opens the latest decision's
   reason as markdown, hidden while the run is failed or blocked; older reasons sit at the top of each step's pane. While the
   plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through
@@ -1368,6 +1382,35 @@ question in plain prose never reaches the user, so an agent that needs an
 answer, an approval or a confirmation asks it in a blocking
 `<<ctx-question>>` block and stops.
 
+Every provider gets the same asks, in the same words. Claude takes the
+protocol in its system prompt; the other providers have no separate system
+prompt, so `renderHandoff` puts the same guards and role instructions at the
+top of the message (`store.kickoff-markers.test.ts` pins, for each provider and
+for the scout, planner, implementer, reviewer, investigator, tester and docs
+roles, the step-done line with the agent's own id, the question block, the
+decision protocol, the planner's plan block and the scout's handoff hint).
+The continue nudge, the ask to continue, the blocked-step answer, the stuck-step
+recovery and the continue of a stopped or restarted step all repeat the same
+scope line (`withStepBoundary`).
+
+What the harness reads back is tolerant of how a provider prints a marker.
+`canonicalizeMarkers` (`packages/core/src/context/`) runs first in
+`extractStepDone`, `extractHandoff`, `extractMarkers`, `hasBlockingQuestion`,
+`extractPlanFromMarker`, `extractClusterDone`, `stripControlMarkers` and the
+Auto child closing (`parseChildClosing`). It rewrites a known marker to its
+plain form when it was printed with markdown-escaped brackets, HTML entities,
+a space after `<<`, an upper-case name, curly double quotes around an attribute
+value, or (for `step-done` and `handoff` only) one closing bracket. Backticks,
+a code fence, extra spaces, single quotes, a bare id, a marker followed by more
+text and a marker split across streamed deltas already worked. Content between
+a block's open and close tags is never touched, a curly apostrophe inside a
+value stays, and a single-bracket `ctx-decision` still stays text. The id check
+is strict everywhere: a marker for another agent, an empty id and a bare
+`<<step-done>>` (an agent talking about the marker) never count.
+`packages/core/src/providers/markerMatrix.test.ts` runs every marker through
+the real line shape of claude, cursor, codex, gemini, copilot and opencode
+(partial deltas plus the final message where the provider sends both).
+
 When a step or a sub-agent ends a turn without its `step-done` or
 `cluster-done` marker, `holdForUserQuestion` looks at the turn first:
 
@@ -1397,3 +1440,27 @@ one of two states:
   sub-agent whose plan instructions are no longer readable also end in
   `blocked`. A blocked agent resumes when you write to it, or through Ask it
   to continue and Skip.
+
+A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
+the run page (`OrchestratedBlockedStep`, the preset `RunTail`) and on the
+agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. It offers
+**Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
+which finalizes the step with `force` from the agent's last words and lets the
+run advance). `watchStepEnd` records the end time it set in
+`silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`
+still equals it. A step blocked for any other reason (a missing artifact, a
+question, the unattended-turn breaker, a budget stop) keeps its own copy.
+
+The same state is reached when no end path ran. `watchStepEnd`
+(`store/slices/workflows/stepEnd/`) looks four seconds after a step agent's
+turn settled. If the step is still `running`, no turn runs or starts for it, no
+child still works, no mount continuation waits and no open question of the
+agent waits for you, it sets the step to `blocked`, raises one warning
+notification and writes one line to the app log through `log_step_end`:
+`[turns] step ended without a result agent <id>: <reason>`. A failed write
+shows "Couldn't mark the step as ended" and leaves the step as it was.
+
+When the orchestrator creates the next step, the hints it read are marked read
+after the step exists (`consumeReadOrchestratorHints`). A failed write of that
+mark does not stop the step from starting: the hints stay unread and
+"Couldn't mark the hints as read" is shown.

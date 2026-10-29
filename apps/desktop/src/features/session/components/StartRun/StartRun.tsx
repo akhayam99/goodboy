@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Button, FormActions } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
@@ -6,13 +6,13 @@ import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
-import { agentKindPalette, visibleAgentKinds, type AgentKind } from '../../agent-kind';
-import { runAsChoicesOf, runAsLabelOf } from '../../startRun/runAsOf';
+import type { AgentKind } from '../../agent-kind';
+import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
-import { RunAsChip } from './RunAsChip';
+import { RunChoiceChips } from './RunChoiceChips';
 import { StartRunFileChip } from './StartRunFileChip';
 import { useRunPrefixMenu } from './useRunPrefixMenu';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
@@ -21,10 +21,6 @@ import { useStartRun } from './useStartRun';
 type ActionsParams = {
   readonly isStarting: boolean;
 };
-
-const ROLES = visibleAgentKinds()
-  .filter((kind) => kind !== 'auto')
-  .map((kind) => ({ kind, label: agentKindPalette({ kind }).label }));
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -60,16 +56,17 @@ export const StartRun = ({
   });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
+  const modelSummary = recommendationSummary({
+    provider: run.model.effective.provider,
+    model: run.model.effective.model,
+    effort: run.model.effective.effort,
+  });
   const menu = useRunPrefixMenu({
     text: run.text,
     presets: run.presets,
     setText: run.setText,
     onPick: run.setRunAs,
   });
-  const choices = useMemo(
-    () => runAsChoicesOf({ presets: run.presets, roles: ROLES }),
-    [run.presets],
-  );
   const { setText, setFile } = run;
 
   useEffect(() => {
@@ -129,21 +126,18 @@ export const StartRun = ({
       </div>
       {hasText ? (
         <p data-run-route-line="" className="text-meta text-muted-foreground">
-          {`${RUN_ROUTE_COPY.runAs.startsAs} ${run.route.route.choice} · ${run.route.route.why}`}
+          {[
+            `${RUN_ROUTE_COPY.runAs.startsAs} ${run.route.route.choice}`,
+            ...(role === null ? [modelSummary] : []),
+            run.route.route.why,
+          ].join(' · ')}
         </p>
       ) : null}
       {hint === null || hasText ? null : <p className="text-meta text-muted-foreground">{hint}</p>}
       <FormActions
         leading={
           <div className="flex min-w-0 flex-wrap items-center gap-1">
-            {role === null ? (
-              <RunAsChip
-                label={runAsLabelOf({ runAs: run.runAs, choices })}
-                choices={choices}
-                isDisabled={run.isStarting}
-                onChoose={({ runAs }) => run.setRunAs(runAs)}
-              />
-            ) : null}
+            <RunChoiceChips run={run} role={role} />
             <AutoLimitChip
               usd={limit.usd}
               isFromSession={limit.isFromSession}

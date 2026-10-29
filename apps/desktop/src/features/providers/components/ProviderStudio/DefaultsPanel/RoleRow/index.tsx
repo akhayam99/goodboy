@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  AUTO_OWN_PROVIDERS,
   PROVIDER_CAPABILITIES,
   isModelHidden,
   resolveStoredModelSelection,
@@ -48,10 +49,11 @@ export const RoleRow = ({
   onChange,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const resolution = useResolution({ role, workspaceId });
-  const auto = useResolution({ role, workspaceId, isAutoOnly: true });
-  const small = useResolution({ role, workspaceId, isAutoOnly: true, size: 'small' });
-  const large = useResolution({ role, workspaceId, isAutoOnly: true, size: 'large' });
+  const scope = role === 'auto' ? { providers: AUTO_OWN_PROVIDERS } : {};
+  const resolution = useResolution({ role, workspaceId, ...scope });
+  const auto = useResolution({ role, workspaceId, isAutoOnly: true, ...scope });
+  const small = useResolution({ role, workspaceId, isAutoOnly: true, size: 'small', ...scope });
+  const large = useResolution({ role, workspaceId, isAutoOnly: true, size: 'large', ...scope });
   const facts = useMemo(
     () => roleRunFacts({ role, auto, sized: { small, large }, isParallelOn }),
     [role, auto, small, large, isParallelOn],

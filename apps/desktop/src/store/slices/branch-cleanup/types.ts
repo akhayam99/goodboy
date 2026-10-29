@@ -8,6 +8,7 @@ export type RunAfterMergeCleanupParams = {
   readonly mountId: MountId;
   readonly expectedBranch: string;
   readonly mergedHeadSha?: string | null;
+  readonly isRequested?: boolean;
 };
 
 export type CheckMergedThenParams = {

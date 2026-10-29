@@ -10,6 +10,8 @@ export type ArtifactStatus = 'active' | 'consumed' | 'superseded' | 'discarded';
 export type ArtifactSourceFormat = 'markdown' | 'json';
 
 export type ImplementationCluster = Readonly<{
+  id?: string;
+  after?: ReadonlyArray<string>;
   title: string;
   instructions: string;
   routingProposal?: WorkflowRoutingProposal | null;

@@ -94,6 +94,10 @@ describe('the Running list scenes', () => {
       node.getAttribute('data-live-section'),
     );
     expect(ids).toEqual(['needs-you', 'running', 'stopped']);
+    expect(within(running).getByRole('group', { name: 'Waiting for you' })).toBe(
+      sectionOf({ id: 'needs-you' }),
+    );
+    expect(within(running).queryByRole('group', { name: 'Needs you' })).toBeNull();
   });
 
   it('keeps a waiting or stopped item out of Running', async () => {

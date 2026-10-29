@@ -29,14 +29,16 @@ export const reviewCommentStateOf = ({
   row,
   isEdited = false,
   isChanged = false,
+  isHeld = false,
 }: {
   readonly row: ResolveQueueRow;
   readonly isEdited?: boolean;
   readonly isChanged?: boolean;
+  readonly isHeld?: boolean;
 }): ReviewCommentState => {
   switch (row.thread.stage) {
     case 'new':
-      return 'new';
+      return isHeld ? 'drafting' : 'new';
     case 'working':
       return 'drafting';
     case 'asking':

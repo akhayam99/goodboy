@@ -16,7 +16,7 @@
   "apps/desktop/src/store/slices/resolve/publication/publishConversations.test.ts": 1630,
   "apps/desktop/src/store/slices/sessions/index.test.ts": 1916,
   "apps/desktop/src/store/slices/workflows/clusterImplementation.test.ts": 1758,
-  "apps/desktop/src/store/slices/workflows/orchestrateNextStep.test.ts": 2320,
+  "apps/desktop/src/store/slices/workflows/orchestrateNextStep.test.ts": 2280,
   "apps/desktop/src/store/store.sendturn-agent-routing.test.ts": 2792,
   "apps/desktop/src/store/store.summarizer-queue.test.ts": 1201,
   "packages/core/src/context/extractors.test.ts": 1400,

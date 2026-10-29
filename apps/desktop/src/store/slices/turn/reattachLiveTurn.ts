@@ -28,6 +28,7 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { recordTurnSpan } from './recordTurnSpan';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { snapshotMountChanges } from './snapshotMountChanges';
+import { copilotTurnUsage } from './copilotTurnUsage';
 import { markTurnActive, markTurnSettled } from './turnSettled';
 import { turnSpanEndReason } from './turnSpanEndReason';
 import { isTurnWritableMount } from './turnWritableRoots';
@@ -106,12 +107,16 @@ export const reattachLiveTurn = async ({ set, get, runId, cursor }: Params): Pro
   let receivedProviderError = false;
   let failure: unknown = null;
   try {
-    for await (const event of attachTurn({
+    for await (const rawEvent of attachTurn({
       runId,
       provider: owner.provider,
       cursor,
       hooks: { onProviderLimits: (limits) => void get().recordProviderLimits({ limits }) },
     })) {
+      const event =
+        rawEvent.kind === 'usage'
+          ? copilotTurnUsage({ event: rawEvent, events: get().transcripts[agentId] ?? [] })
+          : rawEvent;
       get().appendTurnEvent(agentId, sessionId, event);
       if (event.kind === 'error') {
         receivedProviderError = true;

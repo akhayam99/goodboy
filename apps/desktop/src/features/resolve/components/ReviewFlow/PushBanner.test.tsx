@@ -73,6 +73,7 @@ const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
   phase: { kind: 'idle' },
   fixTarget: null,
   retryAfterFix: vi.fn(),
+  retryAfterDeps: vi.fn(),
   arm: vi.fn(async () => undefined),
   press: vi.fn(async () => undefined),
   confirm: vi.fn(async () => undefined),
@@ -280,10 +281,25 @@ describe('PushBanner', () => {
     expect(latest).toHaveBeenCalledOnce();
   });
 
-  it('tracks the running agent instead of offering a second one', () => {
+  it('tracks the running agent instead of offering a second one, then resumes once when it settled while nobody listened', async () => {
     const retryAfterFix = vi.fn();
     const agentId = brandId<AgentId>({ value: 'agent-push-fix' });
+    const seeded = store.getState().sessionPhaseRuns[SESSION.id] ?? [];
     store.setState({
+      sessionPhaseRuns: {
+        ...store.getState().sessionPhaseRuns,
+        [SESSION.id]: [
+          ...seeded,
+          {
+            id: agentId,
+            sessionId: SESSION.id,
+            ordinal: 9,
+            name: 'Fix the push',
+            status: 'running',
+            mountId: MOUNT_TARGET.mountId,
+          },
+        ],
+      },
       branchPushFixes: {
         [agentId]: {
           agentId,
@@ -297,6 +313,7 @@ describe('PushBanner', () => {
           isForce: false,
           confirmedOnlyOnline: null,
           confirmedRemoteSha: null,
+          startedAt: 1,
         },
       },
     });
@@ -320,9 +337,33 @@ describe('PushBanner', () => {
 
     screen.getByText('An agent is fixing the push');
     expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
-    act(() => {
-      store.setState({ settledBranchPushes: { [MOUNT_TARGET.mountId]: 1 } });
-    });
     expect(retryAfterFix).not.toHaveBeenCalled();
+    act(() => {
+      store.setState({
+        sessionPhaseRuns: {
+          ...store.getState().sessionPhaseRuns,
+          [SESSION.id]: (store.getState().sessionPhaseRuns[SESSION.id] ?? []).map((agent) =>
+            agent.id === agentId ? { ...agent, status: 'completed' as const } : agent,
+          ),
+        },
+        branchPushFixes: {},
+        pushFixOutcomes: {
+          [MOUNT_TARGET.mountId]: {
+            agentId,
+            sessionId: SESSION.id,
+            mountId: MOUNT_TARGET.mountId,
+            kind: 'pushed',
+            reason: null,
+            settledAt: 2,
+            isClaimed: false,
+            followUp: null,
+          },
+        },
+      });
+    });
+    expect(retryAfterFix).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(store.getState().pushFixOutcomes[MOUNT_TARGET.mountId]?.isClaimed).toBe(true),
+    );
   });
 });

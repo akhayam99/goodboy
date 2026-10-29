@@ -5,6 +5,7 @@ type WriterWait = Readonly<{
   sessionId: SessionId;
   blockedPath: string;
   blockedBy: string | null;
+  blockedPart?: string;
   since: IsoDateTime;
 }>;
 

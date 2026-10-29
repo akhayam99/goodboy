@@ -10,6 +10,8 @@ import { ROW_NODE_LABEL, rowStateNode, type RowNode } from '../../../workTreeMod
 
 export type PlanPartRow = Readonly<{
   index: number;
+  clusterId: string | null;
+  after: ReadonlyArray<string>;
   title: string;
   instructions: string;
   doneWhen: ReadonlyArray<string>;
@@ -98,6 +100,8 @@ export const planPartRows = ({
           });
     return {
       index,
+      clusterId: cluster.id ?? null,
+      after: listOf(cluster.after),
       title: cluster.title,
       instructions: cluster.instructions,
       doneWhen: listOf(cluster.doneWhen),
@@ -166,5 +170,5 @@ export const planSplitSentence = ({
     return 'Runs as one part, in a single implementer.';
   }
   const who = plannerName ?? 'The planner';
-  return `${who} split this plan into ${count} parts. They run in order, each as its own subagent.`;
+  return `${who} split this plan into ${count} parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.`;
 };

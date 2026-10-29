@@ -40,6 +40,7 @@ export type WorkflowsState = {
   readonly stepSummaryDegraded: Readonly<Record<AgentId, boolean>>;
   readonly degradedStepOutputs: Readonly<Record<AgentId, string>>;
   readonly scoutSelfExploreTasked: Readonly<Record<AgentId, true>>;
+  readonly silentlyEndedSteps: Readonly<Record<AgentId, string>>;
 };
 
 export const workflowsInitialState: WorkflowsState = {
@@ -61,4 +62,5 @@ export const workflowsInitialState: WorkflowsState = {
   stepSummaryDegraded: {},
   degradedStepOutputs: {},
   scoutSelfExploreTasked: {},
+  silentlyEndedSteps: {},
 };

@@ -12,6 +12,7 @@ import {
   selectMountBaseBranch,
   selectMountForPath,
 } from '../../../store/slices/project-mounts/selectors';
+import { isMountRequestMerged } from '../../../store/slices/project-mounts/mountRowModel';
 import { changedCount, distanceBehind, unmergedCount } from '../../../shared/lib/gitStatus';
 import { isInSyncWithOrigin } from '../isInSyncWithOrigin';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
@@ -91,7 +92,18 @@ export const useRebaseJob = ({
     isWanted: isDetailed && run?.phase === 'stopped' && run.stop?.reason === 'origin-moved',
   });
 
-  if (stop === null || run === null || flow === null || worktreePath === null || mount === null) {
+  const isDone = useAppStore(
+    (s) => mountId !== null && isMountRequestMerged({ state: s, mountId }),
+  );
+
+  if (
+    isDone ||
+    stop === null ||
+    run === null ||
+    flow === null ||
+    worktreePath === null ||
+    mount === null
+  ) {
     return null;
   }
   const files =

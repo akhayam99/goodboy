@@ -9,6 +9,7 @@ import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
+import { RunOpenQuestion } from '../RunOpenQuestion';
 import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
 import { OrchestratedTailVerb } from './OrchestratedTailVerb';
 
@@ -80,6 +81,9 @@ export const OrchestratedTail = ({ session, view }: Props) => {
               ))
         }
       />
+      {phase === 'needs-answer' && view.answerQuestion !== null ? (
+        <RunOpenQuestion sessionId={session.id} question={view.answerQuestion} />
+      ) : null}
       {tail.blockedAgentId === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
       )}

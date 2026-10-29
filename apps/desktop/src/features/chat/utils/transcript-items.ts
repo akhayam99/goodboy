@@ -152,6 +152,15 @@ type SumUsageParams = {
   readonly second: ProviderUsage;
 };
 
+const sessionTotalsOf = ({ first, second }: SumUsageParams): Partial<ProviderUsage> => {
+  const premium = second.sessionPremiumRequests ?? first.sessionPremiumRequests;
+  const nano = second.sessionNanoAiu ?? first.sessionNanoAiu;
+  return {
+    ...(premium !== undefined && { sessionPremiumRequests: premium }),
+    ...(nano !== undefined && { sessionNanoAiu: nano }),
+  };
+};
+
 const sumUsage = ({ first, second }: SumUsageParams): ProviderUsage => ({
   inputTokens: first.inputTokens + second.inputTokens,
   outputTokens: first.outputTokens + second.outputTokens,
@@ -162,6 +171,10 @@ const sumUsage = ({ first, second }: SumUsageParams): ProviderUsage => ({
   ...(first.premiumRequests !== undefined || second.premiumRequests !== undefined
     ? { premiumRequests: (first.premiumRequests ?? 0) + (second.premiumRequests ?? 0) }
     : {}),
+  ...(first.nanoAiu !== undefined || second.nanoAiu !== undefined
+    ? { nanoAiu: (first.nanoAiu ?? 0) + (second.nanoAiu ?? 0) }
+    : {}),
+  ...sessionTotalsOf({ first, second }),
   estimatedCostUsd: first.estimatedCostUsd + second.estimatedCostUsd,
 });
 

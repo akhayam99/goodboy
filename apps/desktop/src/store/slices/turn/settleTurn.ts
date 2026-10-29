@@ -26,6 +26,8 @@ import { activePlanOf } from './activePlanOf';
 import { unchangedPlanNote } from './unchangedPlanNote';
 import { WORK_KEPT } from '../notifications/errorRecovery';
 
+const STOPPED_REASON = 'The agent was stopped before it finished.';
+
 type Params = Readonly<{
   set: SetFn;
   get: GetFn;
@@ -92,6 +94,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       sessionId,
       agentId: activeAgentId,
       hasFailed: lastError !== null || turnWasCancelled,
+      reason: lastError === null ? STOPPED_REASON : formatError(lastError),
     })
     .catch((error: unknown) =>
       get().reportError({ title: "Couldn't push the fix.", error, sessionId, recovery: WORK_KEPT }),

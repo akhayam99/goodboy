@@ -14,8 +14,12 @@ import type { BranchPrimary } from '../../branchPrimary';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
 import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
+import { PushFixStatus } from '../../../../shared/components/PushFixStatus';
+import { StaleDepsNotice } from '../../../../shared/components/StaleDepsNotice';
 import { StartHint } from '../../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
+import { useAppStore } from '../../../../store';
+import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
 import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { requestNounLabel } from '../../requestNounLabel';
 import { BranchOverflow } from './BranchOverflow';
@@ -68,6 +72,8 @@ export const BranchHeader = ({
 
   const failedError = controls.diffControls.failure?.error;
   const pushFailure = pushFailureOf({ error: failedError });
+  const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
+  const isPushNext = primary?.actionId === 'diff.push';
   const buttonOf = ({ action, slot, variant }: ButtonParams) => {
     const state = actionButtonStateOf({
       controls: controls.controlsOf(action),
@@ -167,6 +173,12 @@ export const BranchHeader = ({
           }
         />
       )}
+      {isPushNext && activeMountId !== null && (
+        <StaleDepsNotice sessionId={sessionId} mountId={activeMountId} />
+      )}
+      {pushFailure === null && activeMountId !== null && (
+        <PushFixStatus sessionId={sessionId} mountId={activeMountId} />
+      )}
       <ActionStatusLine
         controls={controls.diffControls}
         showReasons={false}
@@ -197,6 +209,7 @@ export const BranchHeader = ({
               confirmedRemoteSha={pushFailure.confirmedRemoteSha}
               message={pushFailure.message}
               onResolved={controls.diffControls.dismissFailure}
+              onRetry={controls.diffControls.retry}
             />
           )
         }

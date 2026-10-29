@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import { brandId, type StepId } from '@goodboy/types';
+import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import {
   FIXTURE_ROOT,
@@ -106,5 +107,23 @@ describe('resumeStoppedAgents after a restart', () => {
 
     expect(count).toBe(0);
     expect(continueSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('continueStoppedAgent on a workflow step', () => {
+  it('repeats the step-done instruction so the resumed turn can still close the step', async () => {
+    const stepAgent = anAgent({
+      status: 'stopped',
+      stoppedBy: 'you',
+      stepId: brandId<StepId>({ value: 'step-scout' }),
+      workflowRunId: aWorkflowRun().id,
+    });
+    const { get, sendTurn } = buildGet({ agents: [stepAgent], views: [] });
+
+    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
+
+    const content = sendTurn.mock.calls[0]?.[0].content ?? '';
+    expect(content).toContain('Continue from where you stopped.');
+    expect(content).toContain(`<<step-done id="${stepAgent.id}">>`);
   });
 });

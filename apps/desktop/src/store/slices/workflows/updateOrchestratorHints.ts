@@ -1,8 +1,9 @@
-import type { OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { IsoDateTime, OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateWorkflowRunOrchestratorHints } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { findWorkflowRun } from './findWorkflowRun';
+import { consumeOrchestratorHints } from './orchestratorHintQueue';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
@@ -39,4 +40,40 @@ export const updateOrchestratorHints = (params: Params): Promise<void> => {
     key: params.workflowRunId,
     task: () => applyUpdate(params),
   });
+};
+
+type ConsumeParams = Omit<Params, 'update'> & {
+  readonly readIds: ReadonlySet<string>;
+  readonly step: number;
+  readonly consumedAt: IsoDateTime;
+};
+
+type ConsumeUpdateParams = Pick<ConsumeParams, 'readIds' | 'step' | 'consumedAt'>;
+
+const consumingUpdate =
+  ({ readIds, step, consumedAt }: ConsumeUpdateParams) =>
+  (hints: ReadonlyArray<OrchestratorHint>) =>
+    consumeOrchestratorHints({ hints, readIds, consumedAt, step });
+
+export const consumeReadOrchestratorHints = async ({
+  readIds,
+  step,
+  consumedAt,
+  ...target
+}: ConsumeParams): Promise<void> => {
+  if (readIds.size === 0) {
+    return;
+  }
+  try {
+    await updateOrchestratorHints({
+      ...target,
+      update: consumingUpdate({ readIds, step, consumedAt }),
+    });
+  } catch (error) {
+    await target.get().reportError({
+      title: "Couldn't mark the hints as read",
+      error,
+      sessionId: target.sessionId,
+    });
+  }
 };

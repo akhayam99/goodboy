@@ -68,6 +68,32 @@ describe('parseArtifactEnvelope', () => {
     expect(result.artifact.metadata.clusters).toHaveLength(1);
   });
 
+  it('keeps the id and after list of each plan cluster', () => {
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=plan',
+        JSON.stringify({
+          title: 'Ship it',
+          format: 'markdown',
+          content: 'step one',
+          metadata: {
+            clusters: [
+              { title: 'shared', instructions: 'a', id: 'shared' },
+              { title: 'page', instructions: 'b', id: 'page', after: [' shared ', 5] },
+            ],
+          },
+        }),
+      ),
+    );
+    if (result.status !== 'captured' || result.artifact.kind !== 'plan') {
+      throw new Error('expected a captured plan');
+    }
+    expect(result.artifact.metadata.clusters).toEqual([
+      { title: 'shared', instructions: 'a', id: 'shared' },
+      { title: 'page', instructions: 'b', id: 'page', after: ['shared'] },
+    ]);
+  });
+
   it('cleans the doneWhen and touches of each plan cluster', () => {
     const result = parseArtifactEnvelope(
       envelope(

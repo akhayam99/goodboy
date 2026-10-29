@@ -53,6 +53,22 @@ describe('liveSectionsOf', () => {
     ]);
   });
 
+  it('names the waiting section differently from the Needs you card above the list', () => {
+    const [section] = liveSectionsOf({
+      groups: liveGroupsOf({
+        model: nowModelOf({
+          agents: [aNowAgent({ key: 'docs', name: 'Check the docs', status: 'blocked' })],
+        }),
+        agents: [aNowAgent({ key: 'docs', name: 'Check the docs', status: 'blocked' })],
+        now: FIXTURE_NOW,
+      }),
+    });
+
+    expect(section?.id).toBe('needs-you');
+    expect(section?.title).toBe('Waiting for you');
+    expect(section?.title).not.toBe('Needs you');
+  });
+
   it('draws nothing for no work', () => {
     expect(liveSectionsOf({ groups: [] })).toEqual([]);
   });

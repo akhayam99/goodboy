@@ -110,7 +110,7 @@ describe('generateWorkflowRunTitle', () => {
     await generate();
 
     expect(updateGeneratedTitleSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Title: the user asked for a' }),
+      expect.objectContaining({ title: 'The login page loops back to itself after the OAuth…' }),
     );
     expect(currentRun()?.title).toBe('The login page loops back to itself after the OAuth');
   });

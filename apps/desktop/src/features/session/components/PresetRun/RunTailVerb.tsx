@@ -13,6 +13,7 @@ type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly verb: RunTailVerbModel;
+  readonly isSecondary?: boolean;
 };
 
 type PressParams = {
@@ -25,7 +26,7 @@ const QUIET_VERB = cn(
   FOCUS_RING,
 );
 
-export const RunTailVerb = ({ session, view, verb }: Props) => {
+export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props) => {
   const sessionId = session.id;
   const runId = view.run.id;
   const navigate = useAppStore((state) => state.navigate);
@@ -66,7 +67,7 @@ export const RunTailVerb = ({ session, view, verb }: Props) => {
       return (
         <Button
           size="sm"
-          variant="primary"
+          variant={isSecondary ? 'secondary' : 'primary'}
           isBusy={isBusy}
           busyLabel="Restarting"
           onClick={() =>

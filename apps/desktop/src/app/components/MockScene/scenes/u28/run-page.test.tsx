@@ -128,6 +128,59 @@ describe('the u28 run page scenes', () => {
     expect(fieldValue('Answer the step')).toBe('');
   });
 
+  it('u28-run-needs-answer shows the question inline and sends the answer to the asking step', async () => {
+    await mount('u28-run-needs-answer');
+    const answerOpenQuestions = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ answerOpenQuestions });
+    });
+
+    expect(tail().getAttribute('data-orchestrated-tail')).toBe('needs-answer');
+    expect(tail().textContent).toContain('Which export size should the benchmark treat');
+    expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
+    const form = within(tail()).getByRole('form', { name: 'Answer the question' });
+    const answer = within(form).getByRole('button', { name: 'Send answer' });
+    expect(answer.hasAttribute('disabled')).toBe(true);
+
+    type('Answer the question', '12,000 rows.');
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
+    });
+
+    expect(answerOpenQuestions).toHaveBeenCalledWith(
+      C09_SESSION_ID,
+      [
+        {
+          id: 'mock-c09-question',
+          text: 'Which export size should the benchmark treat as the target: 12,000 rows or 50,000?',
+          answer: '12,000 rows.',
+        },
+      ],
+      C09_TESTER_ID,
+    );
+    expect(fieldValue('Answer the question')).toBe('');
+  });
+
+  it('u28-run-needs-answer keeps the answer and says why when the send fails', async () => {
+    await mount('u28-run-needs-answer');
+    act(() => {
+      useAppStore.setState({
+        answerOpenQuestions: vi.fn(async () => {
+          throw new Error('Could not save the answer.');
+        }),
+      });
+    });
+    type('Answer the question', '12,000 rows.');
+    const form = within(tail()).getByRole('form', { name: 'Answer the question' });
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
+    });
+
+    expect(within(form).getByRole('alert').textContent).toContain('Could not save the answer.');
+    expect(fieldValue('Answer the question')).toBe('12,000 rows.');
+  });
+
   it('u28-run-step-blocked keeps the answer and says why when the send fails', async () => {
     await mount('u28-run-step-blocked');
     const answerBlockedStep = vi.fn(async () => {
@@ -210,6 +263,19 @@ describe('the u28 run page scenes', () => {
     );
     expect(within(popover).queryAllByRole('button')).toHaveLength(0);
     expect(within(popover).queryByRole('group')).toBeNull();
+  });
+
+  it('u28-run-orchestrator-model names the orchestrator in the settings line and opens its picker', async () => {
+    await mount('u28-run-orchestrator-model');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const chip = screen.getByRole('button', { name: /^Orchestrator:/ });
+    expect(chip.getAttribute('data-run-model')).toBe('auto');
+    const popover = screen.getByRole('dialog', { name: 'Orchestrator model' });
+    within(popover).getByRole('button', { name: /^Auto, now / });
+    within(popover).getByRole('button', { name: 'Change the default in Settings' });
   });
 
   it('u28-run-kind-ended offers Restart as on a stopped run', async () => {

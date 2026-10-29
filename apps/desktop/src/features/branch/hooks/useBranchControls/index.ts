@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { distanceBehind } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf } from '../../../../shared/lib/gitStatus';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
@@ -89,8 +89,7 @@ export const useBranchControls = ({
   );
   const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
-  const behind =
-    diff.status === null ? null : distanceBehind({ distance: diff.status.mainDistance });
+  const behind = mainBehindOf({ status: diff.status, isDone: isRequestMerged });
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const prediction = useRebasePrediction({
     worktreePath: worktreePath ?? '',

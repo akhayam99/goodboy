@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type SessionId,
+} from '@goodboy/types';
 import type { DoneDay, DoneRowModel } from '../done/doneTypes';
 import { latestDoneOf } from './latestDoneOf';
 
@@ -31,6 +37,26 @@ const rowOf = ({ id, agents }: RowParams): DoneRowModel => ({
   },
 });
 
+type AgentParams = {
+  readonly id: string;
+  readonly name?: string;
+  readonly lastFinishedAt?: string;
+};
+
+const agentOf = ({ id, name = `Agent ${id}`, lastFinishedAt }: AgentParams): Agent => ({
+  id: brandId<AgentId>({ value: id }),
+  sessionId: brandId<SessionId>({ value: 'session-1' }),
+  ordinal: 1,
+  name,
+  status: 'running',
+  ...(lastFinishedAt !== undefined && {
+    lastFinishedAt: brandId<IsoDateTime>({ value: lastFinishedAt }),
+  }),
+});
+
+const unreadOf = (...ids: ReadonlyArray<string>): ReadonlyArray<Agent> =>
+  ids.map((id) => agentOf({ id }));
+
 const DAYS: ReadonlyArray<DoneDay> = [
   {
     key: 'today',
@@ -53,25 +79,49 @@ const DAYS: ReadonlyArray<DoneDay> = [
 
 describe('latestDoneOf', () => {
   it('keeps the first three rows in order across days', () => {
-    const { items } = latestDoneOf({ days: DAYS, unreadAgentIds: new Set() });
+    const { items } = latestDoneOf({ days: DAYS, unreadAgents: [] });
 
     expect(items.map((item) => item.row.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('marks a row unread when any of its agents is, and counts every unread row, shown or not', () => {
-    const { items, unreadCount } = latestDoneOf({
+  it('marks a row unread when any of its agents is, and lists every unread row newest first, shown or not', () => {
+    const { items, unreadItems, unreadCount } = latestDoneOf({
       days: DAYS,
-      unreadAgentIds: new Set(['agent-b2', 'agent-e']),
+      unreadAgents: unreadOf('agent-b2', 'agent-e'),
     });
 
     expect(items.map((item) => item.isUnread)).toEqual([false, true, false]);
+    expect(unreadItems.map((item) => item.row.id)).toEqual(['b', 'e']);
     expect(unreadCount).toBe(2);
   });
 
-  it('never reads a row without agents as unread, and says nothing for no rows', () => {
-    expect(latestDoneOf({ days: DAYS, unreadAgentIds: new Set(['agent-x']) }).unreadCount).toBe(0);
-    expect(latestDoneOf({ days: [], unreadAgentIds: new Set() })).toEqual({
+  it('lists an unread agent that has no finished row, so the count and the list agree', () => {
+    const unread = latestDoneOf({
+      days: DAYS,
+      unreadAgents: [
+        agentOf({
+          id: 'agent-x',
+          name: 'Review the ledger',
+          lastFinishedAt: '2026-10-18T10:00:00.000Z',
+        }),
+        agentOf({ id: 'agent-b1', lastFinishedAt: '2026-10-18T08:00:00.000Z' }),
+      ],
+    });
+
+    expect(unread.unreadCount).toBe(2);
+    expect(unread.unreadItems.map((item) => item.row.id)).toEqual(['agent:agent-x', 'b']);
+    expect(unread.unreadItems[0]?.row).toMatchObject({
+      title: 'Review the ledger',
+      agentIds: ['agent-x'],
+      entryId: 'agent:agent-x',
+    });
+    expect(unread.unreadItems.length).toBe(unread.unreadCount);
+  });
+
+  it('lists nothing when no agent is unread', () => {
+    expect(latestDoneOf({ days: [], unreadAgents: [] })).toEqual({
       items: [],
+      unreadItems: [],
       unreadCount: 0,
     });
   });

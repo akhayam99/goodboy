@@ -8,6 +8,7 @@ import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
 import { SESSION, SESSION_ID, WORKSPACE_ID, seedResolveScene } from '../resolveSeed';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
+import { SCENE_PROVIDERS } from './sceneProviders';
 
 const clock = sceneClock({ anchor: '2026-10-28T10:00:00.000Z' });
 const NOW = clock.iso({ at: '2026-10-28T10:00:00.000Z' });
@@ -45,6 +46,7 @@ export const StartRunScene = ({ text, openLabels }: Props) => {
     });
     useAppStore.setState({
       phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
+      providers: SCENE_PROVIDERS,
       workspaceValues: {},
       loadWorkspaceValue: async () => null,
     });

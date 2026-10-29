@@ -23,6 +23,10 @@ import { fixPushWithAgent } from './fixPushWithAgent';
 import { settlePushFix } from './settlePushFix';
 import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
 import { settleBranchPushFix } from './settleBranchPushFix';
+import { claimPushFixOutcome } from './pushFix/claimPushFixOutcome';
+import { dismissPushFixOutcome } from './pushFix/dismissPushFixOutcome';
+import { completePushFixOutcome } from './pushFix/completePushFixOutcome';
+import { releasePushFixClaim } from './pushFix/releasePushFixClaim';
 import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
@@ -54,6 +58,10 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     settlePushFix: settlePushFix({ set, get }),
     fixBranchPushWithAgent: fixBranchPushWithAgent({ set, get }),
     settleBranchPushFix: settleBranchPushFix({ set, get }),
+    claimPushFixOutcome: claimPushFixOutcome({ set, get }),
+    dismissPushFixOutcome: dismissPushFixOutcome({ set, get }),
+    completePushFixOutcome: completePushFixOutcome({ set, get }),
+    releasePushFixClaim: releasePushFixClaim({ set, get }),
     prefillBranchPushTerminal: prefillBranchPushTerminal({ get }),
     loadHistoryDraft: loadHistoryDraft(set, get),
     editHistoryDraft: editHistoryDraft(set, get),

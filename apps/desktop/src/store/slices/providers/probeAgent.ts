@@ -6,11 +6,15 @@ import {
   type ProviderStatus,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
+import { statusOfInfo } from '../../../features/providers/statusOfInfo';
 import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { probeLock } from './probeLock';
 import type { GetFn, SetFn } from './types';
 
-export type AgentProviderId = Extract<ProviderId, 'anthropic' | 'codex' | 'cursor' | 'gemini'>;
+export type AgentProviderId = Extract<
+  ProviderId,
+  'anthropic' | 'codex' | 'cursor' | 'gemini' | 'copilot'
+>;
 
 export type ProbeAgentParams = {
   readonly providerId: AgentProviderId;
@@ -22,19 +26,11 @@ type StoredParams = {
   readonly providerId: ProviderId;
 };
 
-const storedStatus = ({ get, providerId }: StoredParams): ProviderStatus | null => {
-  const info = get().providers.find((provider) => provider.id === providerId);
-  if (info === undefined || info.connection === 'unknown') {
-    return null;
-  }
-  return {
+const storedStatus = ({ get, providerId }: StoredParams): ProviderStatus | null =>
+  statusOfInfo({
     id: providerId,
-    binary: info.binary,
-    available: info.version !== null && info.version !== undefined,
-    version: info.version ?? null,
-    error: info.error,
-  };
-};
+    info: get().providers.find((provider) => provider.id === providerId) ?? null,
+  });
 
 type Params = {
   readonly set: SetFn;

@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
-import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
+import { useAppStore } from '../../../../../store';
+import { PushFixStatusLine } from '../../../../../shared/components/PushFixStatusLine';
+import { StaleDepsAction } from '../../../../../shared/components/StaleDepsAction';
+import { usePushFix } from '../../../../../shared/hooks/usePushFix';
+import { NAMES } from '../../../../../shared/utils/names';
+import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -13,6 +17,7 @@ type Props = {
   readonly confirmedRemoteSha: string | null;
   readonly message: string;
   readonly onResolved: () => void;
+  readonly onRetry: () => void;
 };
 
 export const PushFailureActions = ({
@@ -23,17 +28,12 @@ export const PushFailureActions = ({
   confirmedRemoteSha,
   message,
   onResolved,
+  onRetry,
 }: Props) => {
   const [isFixing, setIsFixing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const reportError = useAppStore((state) => state.reportError);
-  const settledCount = useAppStore((state) => state.settledBranchPushes[mountId] ?? 0);
-  const initialSettledCount = useRef(settledCount);
-  useEffect(() => {
-    if (settledCount > initialSettledCount.current) {
-      onResolved();
-    }
-  }, [settledCount, onResolved]);
+  const fix = usePushFix({ sessionId, mountId, onSettled: onResolved });
   const fixWithAgent = async () => {
     const state = useAppStore.getState();
     const capture = captureStartHint({
@@ -76,13 +76,26 @@ export const PushFailureActions = ({
     }
   };
   return (
-    <>
-      <Button size="sm" variant="secondary" isBusy={isFixing} onClick={() => void fixWithAgent()}>
-        Let an agent fix the push
-      </Button>
-      <Button size="sm" variant="ghost" isBusy={isOpening} onClick={() => void openTerminal()}>
-        Open terminal here
-      </Button>
-    </>
+    <div className="flex max-w-sm flex-wrap items-center gap-2">
+      {fix.kind !== 'none' && fix.kind !== 'pushed' && (
+        <PushFixStatusLine sessionId={sessionId} state={fix} />
+      )}
+      {fix.kind !== 'working' && (
+        <>
+          <StaleDepsAction sessionId={sessionId} mountId={mountId} onInstalled={onRetry} />
+          <Button
+            size="sm"
+            variant="secondary"
+            isBusy={isFixing}
+            onClick={() => void fixWithAgent()}
+          >
+            {NAMES.fixPushWithAgent}
+          </Button>
+          <Button size="sm" variant="ghost" isBusy={isOpening} onClick={() => void openTerminal()}>
+            Open terminal here
+          </Button>
+        </>
+      )}
+    </div>
   );
 };

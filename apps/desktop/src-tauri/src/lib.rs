@@ -70,6 +70,7 @@ mod remote;
 mod remote_auth;
 mod remote_image;
 mod remote_probe;
+mod render_crash_log;
 mod repo;
 mod repo_clone;
 mod reproducible_dirs;
@@ -83,6 +84,7 @@ mod session_dir;
 mod settings_overrides;
 mod skills;
 mod slack;
+mod step_end_log;
 mod storage;
 mod summarize;
 mod terminal;
@@ -381,6 +383,8 @@ pub fn run() {
             worktree::worktree_grep_word,
             worktree::worktree_changed_files,
             worktree::worktree_setup_proposal,
+            worktree::worktree_deps_check,
+            worktree::worktree_deps_unlink,
             worktree::worktree_snapshot,
             worktree::worktree_turn_files,
             worktree::worktree_commits,
@@ -454,6 +458,8 @@ pub fn run() {
             providers::check_provider_auth,
             providers::test_connection::provider_test_connection,
             provider_standing_log::log_provider_standing,
+            render_crash_log::log_render_crash,
+            step_end_log::log_step_end,
             provider_credentials::provider_api_key_validate,
             provider_lifecycle::provider_lifecycle_run,
             provider_lifecycle::provider_lifecycle_write,

@@ -25,7 +25,10 @@ import {
 } from '../../../../store/runtime/worktreeStatuses/onlyOnline';
 import { SCRIBE_WRITING_REASON } from '../../../../store/slices/scribe/scribeWritingReason';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { CreateFailureNotice } from './CreateFailureNotice';
+import type { PushFixFollowUp } from '../../../../store/slices/history/types';
+import { CreateNotices } from './CreateNotices';
+import { openedSentenceOf } from './openedSentenceOf';
+import { requestReviewersOrWarn } from './requestReviewersOrWarn';
 import { ReviewSettings } from './ReviewSettings';
 import { ReviewTextCard } from './ReviewTextCard';
 import { ScribeBar } from './ScribeBar';
@@ -311,9 +314,9 @@ export const CreateReviewForm = ({
     });
   };
 
-  const onCreate = async ({ forcePush }: CreateParams) => {
+  const onCreate = async ({ forcePush }: CreateParams): Promise<PushFixFollowUp | undefined> => {
     if (isLocked || title.trim().length === 0) {
-      return;
+      return undefined;
     }
     setIsConfirmingForce(false);
     setPhase({ kind: 'creating', isPushed: false });
@@ -328,21 +331,19 @@ export const CreateReviewForm = ({
         forcePush,
         onPushed: () => setPhase({ kind: 'creating', isPushed: true }),
       });
-      if (reviewers.length > 0 && created.number !== null) {
-        await requestReviewers({ sessionId, number: created.number, logins: reviewers }).catch(
-          (error: unknown) =>
-            showToast({
-              kind: 'warning',
-              message: `Reviewers were not requested: ${formatError(error)}`,
-            }),
-        );
-      }
+      await requestReviewersOrWarn({ requestReviewers, showToast, sessionId, created, reviewers });
       setPhase(IDLE);
       onCreated(created);
+      const sentence = openedSentenceOf({ nouns, created });
+      return { tone: 'done' as const, sentence };
     } catch (error) {
       setPhase({ kind: 'failed', error });
+      return { tone: 'failed' as const, sentence: formatError(error) };
     }
   };
+
+  const isDraftRequested = canSetDraft && isDraft;
+  const draft = { title, body, base, isDraft: isDraftRequested };
 
   const onReferenceRemove = (reference: ClosingIssueReference) =>
     setDismissed((current) => [...current, reference.number]);
@@ -391,15 +392,15 @@ export const CreateReviewForm = ({
             onStop={onStop}
           />
         </ReviewTextCard>
-        {phase.kind === 'failed' && (
-          <CreateFailureNotice
-            sessionId={sessionId}
-            nouns={nouns}
-            error={phase.error}
-            draft={{ title, body, base, isDraft: canSetDraft && isDraft }}
-            onRetry={() => void onCreate({ forcePush: null })}
-          />
-        )}
+        <CreateNotices
+          sessionId={sessionId}
+          mountId={scribeMountId}
+          hasPushStep={hasPushStep}
+          nouns={nouns}
+          failure={phase.kind === 'failed' ? { error: phase.error } : null}
+          draft={draft}
+          onRetry={() => onCreate({ forcePush: null })}
+        />
         {!hasPushStep && unpushed > 0 && (
           <p className="text-meta text-faint-foreground">
             {`Pushes ${unpushed} local ${unpushed === 1 ? 'commit' : 'commits'} first.`}
@@ -448,11 +449,11 @@ export const CreateReviewForm = ({
                 ))}
               </div>
             }
-            onConfirm={() =>
-              onCreate({
+            onConfirm={async () => {
+              await onCreate({
                 forcePush: { confirmedOnlyOnline: onlyOnline?.map((commit) => commit.sha) ?? null },
-              })
-            }
+              });
+            }}
             onCancel={() => setIsConfirmingForce(false)}
           />
         )}

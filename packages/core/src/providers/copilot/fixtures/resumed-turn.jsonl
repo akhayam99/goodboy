@@ -1,0 +1,9 @@
+{"type":"session.tools_updated","data":{"model":"claude-haiku-4.5"},"ephemeral":true,"id":"evt-1","timestamp":"2026-10-28T10:01:00.000Z"}
+{"type":"user.message","data":{"content":"Which file did you read earlier?","transformedContent":"Which file did you read earlier?"},"id":"evt-2","timestamp":"2026-10-28T10:01:00.010Z"}
+{"type":"assistant.turn_start","data":{"turnId":"0","interactionId":"interaction-2"},"id":"evt-3","timestamp":"2026-10-28T10:01:00.020Z"}
+{"type":"assistant.message_delta","data":{"messageId":"msg-3","deltaContent":"I read README.md earlier."},"ephemeral":true,"id":"evt-4","timestamp":"2026-10-28T10:01:01.000Z"}
+{"type":"assistant.message","data":{"messageId":"msg-3","model":"claude-haiku-4.5","providerId":"copilot","content":"I read README.md earlier.","toolRequests":[],"interactionId":"interaction-2","turnId":"0"},"id":"evt-5","timestamp":"2026-10-28T10:01:01.100Z"}
+{"type":"assistant.turn_end","data":{"turnId":"0"},"id":"evt-6","timestamp":"2026-10-28T10:01:01.110Z"}
+{"type":"session.usage_checkpoint","data":{"totalNanoAiu":5600000000,"totalPremiumRequests":0.66,"accountingSnapshot":{"tokenDetails":{"input":{"tokenCount":40},"cache_read":{"tokenCount":50000},"cache_write":{"tokenCount":20000},"output":{"tokenCount":600}}}},"id":"evt-7","timestamp":"2026-10-28T10:01:01.120Z"}
+{"type":"assistant.idle","data":{},"ephemeral":true,"id":"evt-8","timestamp":"2026-10-28T10:01:01.130Z"}
+{"type":"result","timestamp":"2026-10-28T10:01:01.140Z","sessionId":"session-ledger-core-1","exitCode":0,"usage":{"premiumRequests":0.66,"totalApiDurationMs":8101,"sessionDurationMs":31948,"codeChanges":{"linesAdded":0,"linesRemoved":0,"filesModified":[]}}}

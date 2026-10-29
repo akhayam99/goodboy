@@ -57,9 +57,10 @@ import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_EXTERNAL_OPEN_ACTIONS } from './sessionExternalOpenActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
-import { SESSION_REBASE_ACTIONS } from './sessionRebaseActions';
+import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
+import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
 
-export type SessionFacts = {
+export type SessionFacts = MergedFacts & {
   readonly session: Session;
   readonly sessionId: SessionId;
   readonly title: string;
@@ -559,7 +560,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId: facts.sessionId }) });
     },
   },
-  ...SESSION_REBASE_ACTIONS,
+  ...SESSION_BRANCH_ACTIONS,
 ];
 
 const findSession = ({
@@ -602,6 +603,7 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       behindMountIds: behindBranchesOf({ state, sessionId: target.sessionId }).map(
         (branch) => branch.mountId,
       ),
+      ...mergedFactsOf({ state, sessionId: target.sessionId }),
       rebaseAllRunId: state.rebaseAllRuns[target.sessionId]?.id ?? null,
       isRebaseAllRunning: state.rebaseAllRuns[target.sessionId]?.phase === 'running',
       isArchived: session.archivedAt != null,

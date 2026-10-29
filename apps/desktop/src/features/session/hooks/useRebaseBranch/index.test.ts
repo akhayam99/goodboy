@@ -4,18 +4,22 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 
-const { showToast, state } = vi.hoisted(() => ({
-  showToast: vi.fn(),
-  state: {
-    historyRuns: {} as Record<string, unknown>,
-    sessionProjectMounts: {
-      'session-1': [{ mountId: 'mount-1', projectId: 'project-1', baseBranch: 'main' }],
-    } as Record<string, ReadonlyArray<unknown>>,
-    projects: [{ id: 'project-1', baseBranch: 'main' as string | null }],
-    rebaseBranch: vi.fn(async (): Promise<string> => 'rebased'),
-    reportError: vi.fn(async (_params: unknown) => undefined),
-  },
-}));
+const { showToast, state } = vi.hoisted(() => {
+  const noGithub = (): Record<string, unknown> => ({});
+  return {
+    showToast: vi.fn(),
+    state: {
+      historyRuns: {} as Record<string, unknown>,
+      mountGithub: noGithub(),
+      sessionProjectMounts: {
+        'session-1': [{ mountId: 'mount-1', projectId: 'project-1', baseBranch: 'main' }],
+      } as Record<string, ReadonlyArray<unknown>>,
+      projects: [{ id: 'project-1', baseBranch: 'main' as string | null }],
+      rebaseBranch: vi.fn(async (): Promise<string> => 'rebased'),
+      reportError: vi.fn(async (_params: unknown) => undefined),
+    },
+  };
+});
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T>(selector: (store: typeof state) => T) => selector(state),
@@ -38,6 +42,7 @@ const behindBy = (behind: number): WorktreeStatus =>
 afterEach(() => {
   cleanup();
   state.historyRuns = {};
+  state.mountGithub = {};
   state.rebaseBranch.mockClear();
   state.reportError.mockClear();
   showToast.mockClear();
@@ -123,6 +128,23 @@ describe('useRebaseBranch', () => {
     });
     expect(result.current.isRunning).toBe(false);
   });
+
+  it.each([
+    { requestState: 'closed', canRebase: true },
+    { requestState: 'open', canRebase: true },
+    { requestState: 'merged', canRebase: false },
+  ])(
+    'allows a rebase on a $requestState pull request: $canRebase',
+    ({ requestState, canRebase }) => {
+      state.mountGithub = { [mountId]: { pr: { number: 7, state: requestState } } };
+
+      const { result } = renderHook(() =>
+        useRebaseBranch({ sessionId, mountId, status: behindBy(4) }),
+      );
+
+      expect(result.current.canRebase).toBe(canRebase);
+    },
+  );
 
   it('does nothing when the branch is not behind', async () => {
     const { result } = renderHook(() =>

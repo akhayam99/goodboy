@@ -1,9 +1,9 @@
 import { InteractiveRow, StateDot } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import type { LatestDoneItem } from './latestDoneOf';
+import type { NewSinceItem } from './latestDoneOf';
 
 type Props = {
-  readonly item: LatestDoneItem;
+  readonly item: NewSinceItem;
   readonly nowMs: number;
   readonly openLabel: string;
   readonly onOpen: () => void;

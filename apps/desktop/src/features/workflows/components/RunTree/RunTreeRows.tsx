@@ -26,6 +26,7 @@ type Props = {
   readonly skip?: RunStepSkipAction | null;
   readonly folds?: RunTreeFolds;
   readonly plans?: ReadonlyMap<string, PlanWithCount>;
+  readonly waveLabels?: ReadonlyMap<string, string>;
   readonly beforeRow?: (insert: RunTreeInsert) => ReactNode;
   readonly trailing?: (insert: RunTreeInsert) => ReactNode;
   readonly onHighlight?: (stepId: string | null) => void;
@@ -36,6 +37,8 @@ type Props = {
 const LIVE_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['queued', 'running', 'waiting']);
 
 const NO_PLANS: ReadonlyMap<string, PlanWithCount> = new Map();
+
+const NO_WAVE_LABELS: ReadonlyMap<string, string> = new Map();
 
 type AgentRowItem = TimelineRowItem & { readonly entry: TimelineAgentEntry };
 
@@ -59,6 +62,7 @@ export const RunTreeRows = ({
   skip = null,
   folds,
   plans = NO_PLANS,
+  waveLabels = NO_WAVE_LABELS,
   beforeRow,
   trailing,
   onHighlight,
@@ -156,6 +160,7 @@ export const RunTreeRows = ({
               isNested={isNested}
               hasActionColumn={hasActionColumn}
               plan={plans.get(item.entry.agent.id) ?? null}
+              waveLabel={waveLabels.get(item.entry.agent.id) ?? null}
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}

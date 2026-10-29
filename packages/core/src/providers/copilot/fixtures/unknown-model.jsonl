@@ -1,0 +1,2 @@
+{"type":"session.indexed_search","data":{"kind":"status","state":"disabled"},"ephemeral":true,"id":"evt-1","timestamp":"2026-10-28T10:02:00.000Z"}
+{"type":"session.indexed_search","data":{"kind":"startup","outcome":"skipped_below_threshold","forcedByEnv":false,"warmStart":false,"startupDurationMs":150,"fileCount":1,"eligible":false},"ephemeral":true,"id":"evt-2","timestamp":"2026-10-28T10:02:00.001Z"}

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ErrorBoundary, type ErrorFallbackRequest } from '@goodboy/ui';
+import { logRenderCrash } from '../../../features/bug-report/logRenderCrash';
 import { PanelFallback } from './PanelFallback';
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 
 export const PanelBoundary = ({ children, leaveLabel, onLeave }: Props) => (
   <ErrorBoundary
+    onCatch={logRenderCrash}
     renderFallback={(request: ErrorFallbackRequest) => (
       <PanelFallback {...request} leaveLabel={leaveLabel} onLeave={onLeave} />
     )}

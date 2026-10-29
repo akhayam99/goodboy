@@ -95,8 +95,8 @@ vi.mock('../ChatInput', () => ({
   ChatInput: () => null,
 }));
 
-vi.mock('./parts/WorkflowAdvanceRow', () => ({
-  WorkflowAdvanceRow: () =>
+vi.mock('./parts/WorkflowAdvanceStack', () => ({
+  WorkflowAdvanceStack: () =>
     workflowAdvance.visible ? (
       <button type="button" data-testid="workflow-advance-slot">
         Check completion

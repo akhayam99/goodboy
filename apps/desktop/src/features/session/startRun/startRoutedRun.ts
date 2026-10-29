@@ -4,6 +4,7 @@ import {
   type AgentId,
   type AttachmentInput,
   type IsoDateTime,
+  type OrchestratorRouting,
   type SessionId,
   type Workflow,
   type WorkflowAutonomy,
@@ -24,6 +25,7 @@ type Params = {
   readonly result: RunRouteResult;
   readonly findings?: string;
   readonly routing?: AgentKindRouting | null;
+  readonly orchestratorRouting?: OrchestratorRouting | null;
   readonly autonomy?: WorkflowAutonomy | null;
   readonly attachments?: ReadonlyArray<AttachmentInput>;
 };
@@ -36,6 +38,7 @@ export const startRoutedRun = async ({
   result,
   findings = '',
   routing = null,
+  orchestratorRouting = null,
   autonomy = null,
   attachments = [],
 }: Params): Promise<RoutedRun> => {
@@ -97,6 +100,7 @@ export const startRoutedRun = async ({
     goal: work,
     ...(attachments.length > 0 && { attachmentInputs: attachments }),
     executionMode: 'dynamic',
+    ...(orchestratorRouting !== null && { orchestratorRouting }),
     rulesSnapshot: {
       ...rules,
       autonomy: asks,

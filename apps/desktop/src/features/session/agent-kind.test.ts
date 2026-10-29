@@ -810,6 +810,12 @@ describe('boundary systemPrompts', () => {
     expect(prompt).toContain('"doneWhen": 1 to 4 checks');
     expect(prompt).toContain('"touches": the files or folders this part changes, at most 12');
     expect(prompt).toContain('never more than 5');
+    expect(prompt).toContain('"id": a short stable name');
+    expect(prompt).toContain('"after": the ids of the parts that must finish before this one');
+    expect(prompt).toContain('never run at the same time');
+    expect(prompt).toContain('disjoint touches');
+    expect(prompt).toContain('in their own first part');
+    expect(prompt).toContain('name a folder only when the whole folder belongs to this part');
     expect(prompt).toContain(PLAN_KIT_GUIDE);
     expect(prompt).toContain('use one form or the other, never both');
   });

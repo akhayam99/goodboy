@@ -169,5 +169,8 @@ export const orchestratedTailOf = ({
       verbs: queuedCount > 0 ? [{ kind: 'readQueued', count: queuedCount, isStopped: false }] : [],
     };
   }
+  if (phase === 'needs-answer') {
+    return { ...base, verbs: [] };
+  }
   return { ...base, verbs: primaryVerbs({ primary }) };
 };

@@ -38,7 +38,7 @@ Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk
 
 ### Other tools
 
-See how much space the other coding tools keep, without risking their history. **Other tools** at the foot of **Storage** lists Claude Code, Codex and Cursor with their size and how much comes from Goodboy sessions. It is read only, and Goodboy measures sizes and names, never the files inside.
+See how much space the other coding tools keep, without risking their history. **Other tools** at the foot of **Storage** lists Claude Code, Codex and Cursor with their size and how much comes from Goodboy sessions. The sizes are each tool's saved sessions (transcripts), not worktrees. The Claude Code share includes the sessions Goodboy runs in its scratch folders and the history copies it makes. It is read only, and Goodboy measures sizes and names, never the files inside.
 
 ## Under the hood
 

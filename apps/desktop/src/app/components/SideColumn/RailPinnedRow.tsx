@@ -1,4 +1,4 @@
-import { ROW_INTERACTIVE, cn, inlineMarkdownText } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Tooltip, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
 import { StateNode } from '../../../shared/components/StateNode';
@@ -15,7 +15,7 @@ type Props = {
 
 export const RailPinnedRow = ({ session, isOpen, onSelect }: Props) => {
   const isCurrent = isOpen;
-  const { node, title } = useSessionRowFacts({ session });
+  const { node, title, unreadLabel } = useSessionRowFacts({ session });
   const menu = useObjectMenuTrigger({
     target: { kind: 'session', sessionId: session.id },
     anchorKey: `rail-pinned:${session.id}`,
@@ -30,7 +30,15 @@ export const RailPinnedRow = ({ session, isOpen, onSelect }: Props) => {
       onClick={onSelect}
       className={cn(PINNED_ROW, ROW_INTERACTIVE, isCurrent && 'text-foreground')}
     >
-      <StateNode node={node} />
+      {unreadLabel === null ? (
+        <StateNode node={node} />
+      ) : (
+        <Tooltip content={unreadLabel} side="right">
+          <span className="inline-flex">
+            <StateNode node={node} />
+          </span>
+        </Tooltip>
+      )}
       <span className="min-w-0 flex-1 truncate">{inlineMarkdownText({ text: title })}</span>
     </button>
   );

@@ -16,7 +16,7 @@ import {
   type C09State,
 } from './c09OrchestratedSeed';
 
-type C09Click = 'none' | 'menu' | 'guidance' | 'kind';
+type C09Click = 'none' | 'menu' | 'guidance' | 'kind' | 'model';
 
 type Props = {
   readonly state: C09State;
@@ -51,6 +51,9 @@ const TARGET: Readonly<Record<Exclude<C09Click, 'none'>, () => HTMLButtonElement
     document.querySelector<HTMLButtonElement>('button[aria-label$="run actions"]') ?? undefined,
   kind: () =>
     document.querySelector<HTMLButtonElement>('button[data-setting-chip="Kind"]') ?? undefined,
+  model: () =>
+    document.querySelector<HTMLButtonElement>('button[data-setting-chip="Orchestrator"]') ??
+    undefined,
   guidance: () =>
     [...document.querySelectorAll<HTMLButtonElement>('section[aria-label="Goal"] button')].find(
       (button) => button.textContent === ORCHESTRATED_COPY.showGuidance,

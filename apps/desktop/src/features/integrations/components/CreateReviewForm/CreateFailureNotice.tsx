@@ -2,7 +2,9 @@ import { Notice, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
 import { PushFixAgentAction } from '../../../../shared/components/PushFixAgentAction';
+import { StaleDepsAction } from '../../../../shared/components/StaleDepsAction';
 import { PrPushFailedError } from '../../../../store/slices/github/PrPushFailedError';
+import type { PushFixFollowUp } from '../../../../store/slices/history/types';
 import type { CreateReviewNouns } from './types';
 
 type Draft = {
@@ -17,7 +19,7 @@ type Props = {
   readonly nouns: CreateReviewNouns;
   readonly error: unknown;
   readonly draft: Draft;
-  readonly onRetry: () => void;
+  readonly onRetry: () => Promise<PushFixFollowUp | undefined>;
 };
 
 type PendingParams = {
@@ -58,13 +60,20 @@ export const CreateFailureNotice = ({ sessionId, nouns, error, draft, onRetry }:
         </div>
       }
       actions={
-        <PushFixAgentAction
-          sessionId={sessionId}
-          mountId={error.mountId}
-          output={error.output}
-          pending={pendingOf({ nouns, draft })}
-          onSettled={onRetry}
-        />
+        <>
+          <StaleDepsAction
+            sessionId={sessionId}
+            mountId={error.mountId}
+            onInstalled={() => void onRetry()}
+          />
+          <PushFixAgentAction
+            sessionId={sessionId}
+            mountId={error.mountId}
+            output={error.output}
+            pending={pendingOf({ nouns, draft })}
+            onSettled={onRetry}
+          />
+        </>
       }
     />
   );

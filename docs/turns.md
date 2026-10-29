@@ -51,6 +51,17 @@ throw. `run` releases the writer lease and drains the resolve queue, opens the
 mount continuation and drains the agent queue after `runOnce` returns or
 throws.
 
+A message the operator sends to an agent first stops a process that lingers
+after its result (`stopLingeringTurn`, through the run registered by
+`lingeringTurns`), then waits for that agent's previous turn to settle
+(`waitTurnSettledFor`, at most 30 s) before its own turn starts. The `done`
+event already flips the agent to idle, so without this a message typed in
+the seconds or minutes between a result and the end of its stream started a
+second CLI on the same session while the first still ran. Only
+`origin: 'operator'` does this: a turn sent from inside the agent's own
+finalize (a question delegate, a workflow continue) would wait for itself.
+`store.send-after-result.test.ts` pins the order and the stop.
+
 The provider run row is closed on these paths only: `succeeded` when the stream
 and its finalize step complete (`failed` with "cancelled by user" when a stop
 landed), `cancelled` when a stop lands before the spawn (`claimTurnStart`),
@@ -248,6 +259,12 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   Start, from the card or from the live nudge (`acceptSessionNudgeHandoff`),
   seeds the new agent's first turn with the reason and what the source agent
   wrote (`composeHandoffSeed`, `handoffSourceOutput`), passed as `seedPrompt`.
+  Inside a workflow run the marker is advice for the run, not an action:
+  a step agent that emits `<<handoff ...>>` and `<<step-done ...>>` completes
+  its step as usual, in either order and with either marker split across
+  deltas, and raises no live nudge (`emitTurnNudges` skips an agent with a
+  `stepId` and a `workflowRunId`). The orchestrator reads the step output and
+  decides the next step.
   `spawnAgent` sends a first turn only when the kickoff is not empty and
   `shouldDeferKickoff` is unset (the push fixers set it and send the turn once
   bound to their run), so a started agent with no seed, plan or step prompt sits in Pending until you
@@ -318,8 +335,9 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   (`launchTurns`). When a turn ends, `feedLaunchTurns` sends the next chunk as
   another turn of the same agent in the same copy, and stops when the run
   failed, the owner stopped it or a turn was refused. A comment in a chunk not
-  yet fed reads Open. Held chunks live in memory, so a restart leaves the unfed
-  comments Open to start again.
+  yet fed reads Fixing and counts in the fix run (`heldLaunchIdOf`), so a run of
+  13 or more comments shows every comment. Held chunks live in memory, so a
+  restart leaves the unfed comments Open to start again.
   `startFixAttempt` mints the `resolve_attempts.launch_id` (m222) once per call
   and `startBatch` returns the run (`batchId`, `launchId`) and the single
   `agentId`. Every later turn of that agent is another attempt row that inherits
@@ -477,6 +495,33 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
   produced events but no response and exited non-zero fails the same way.
 - A turn that ends with no assistant text and no error appends a
   non-retryable "exited without a response" error.
+- **A result ends the turn even when the process stays alive.** Claude and
+  Cursor print a `result` line (the `done` event) and normally exit. When the
+  agent moved a tool to the background (a Bash that hit its timeout), Claude
+  keeps the process alive for that task and the stream never closed, so the
+  turn end was never processed: no span, no message, no step completion, and
+  the run sat silent. In real usage about 3 percent of runs printed more than
+  one `done`, and a new turn started up to 15 minutes after the first.
+  `createTurnResultWatch` (`features/chat/turnResultWatch.ts`) arms a timer on
+  every `done`:
+  - **5 s** (`TURN_END_MS.grace`) when the turn closed its work (a step-done
+    or cluster-done marker, or a blocking question), or when no tool was moved
+    to the background. This is the owner's lost turn: the marker was there, the
+    process stayed.
+  - **12 min** (`TURN_END_MS.background`) when a tool was moved to the
+    background and the turn did not close its work. The agent may be waiting
+    for that task, and Claude wakes it with a new turn when the task ends (it
+    stops a task after 10 minutes), so the stream keeps going. The operator
+    can cut the wait by writing to the agent (below).
+  - Any line that starts new work (`isTurnActivity`: anything but usage, done,
+    unknown payload, stopped processes and notes) cancels the timer and starts
+    a new segment, so a process that starts another turn keeps streaming.
+    When the timer fires, the process is stopped through `turn_cancel` (the same
+    reap as a normal exit, so the transcript still lists the stopped processes)
+    and the stream ends normally; if the end envelope does not arrive within
+    `TURN_END_MS.force` (2 s) the stream ends anyway. The next turn resumes the
+    session and may mention the background task. Other providers end by
+    exiting, so the timer only applies to the `done` event.
 - **One listener per window.** Every envelope arrives on the `turn_event`
   channel of the window; `features/chat/createRunEventRouter.ts` holds the one
   listener and hands the envelope to the handler of its run

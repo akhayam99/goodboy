@@ -10,6 +10,7 @@ const REPOSITORY_DIRECTORY = resolve(WEBSITE_DIRECTORY, '..');
 const OUTPUT_PATH = resolve(WEBSITE_DIRECTORY, 'src/components/mocks/icons.tsx');
 const BRAND_SOURCES_PATH = resolve(WEBSITE_DIRECTORY, 'src/components/brandIcons.source.json');
 const APP_BRAND_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/brandIcons.tsx');
+const COPILOT_ICON_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/CopilotIcon.tsx');
 const APP_SOURCE_DIRECTORIES = [
   resolve(REPOSITORY_DIRECTORY, 'apps/desktop/src'),
   resolve(REPOSITORY_DIRECTORY, 'packages/ui/src'),
@@ -109,10 +110,20 @@ const readUsedNames = ({ lucide }) =>
     ),
   ].sort();
 
+const readCopilotPath = () => {
+  const source = readFileSync(COPILOT_ICON_PATH, 'utf8');
+  const paths = [...source.matchAll(/<path d="([^"]+)"/g)].map((match) => match[1]);
+  if (paths.length === 0) {
+    throw new Error('Could not find the app glyph CopilotIcon');
+  }
+  return paths.join(' ');
+};
+
 const readAppBrandPaths = () => {
   const source = readFileSync(APP_BRAND_PATH, 'utf8');
-  return Object.fromEntries(
-    Object.entries(APP_BRAND_EXPORTS).map(([exportName, id]) => {
+  return Object.fromEntries([
+    ['copilot', readCopilotPath()],
+    ...Object.entries(APP_BRAND_EXPORTS).map(([exportName, id]) => {
       const match = source.match(
         new RegExp(`export const ${exportName}\\b[\\s\\S]*?<path d="([^"]+)"`),
       );
@@ -121,7 +132,7 @@ const readAppBrandPaths = () => {
       }
       return [id, match[1]];
     }),
-  );
+  ]);
 };
 
 const literal = (value) => JSON.stringify(value).replace(/'/g, "\\'").replace(/"/g, "'");

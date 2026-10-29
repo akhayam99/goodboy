@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { distanceBehind } from '../../../../shared/lib/gitStatus';
+import { mainBehindOf } from '../../../../shared/lib/gitStatus';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { useToast } from '../../../../shared/components/Toast';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -44,7 +45,10 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
   });
   const isRebaseRun = run !== null && run.origin === 'rebase';
   const isRunning = isStarting || (isRebaseRun && isHistoryRunActive({ phase: run.phase }));
-  const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
+  const isDone = useAppStore(
+    (state) => mountId != null && isMountRequestMerged({ state, mountId }),
+  );
+  const behindMain = mainBehindOf({ status, isDone });
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
 
   const start = async ({ mountId: targetMountId, behind }: RunParams): Promise<void> => {

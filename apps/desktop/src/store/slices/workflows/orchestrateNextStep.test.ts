@@ -112,7 +112,11 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
-import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
+import type {
+  OrchestratorClientDeps,
+  OrchestratorDecision,
+  OrchestratorInput,
+} from '@goodboy/core';
 import { OrchestratorClient, OrchestratorClientSpawnError, AUTO_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { requestDecisionRestart } from './decisionRestart';
@@ -322,6 +326,12 @@ const rejectDecisions = (error: Error, times: number): void => {
   for (let index = 0; index < times; index += 1) {
     decideSpy.mockRejectedValueOnce(error);
   }
+};
+
+type DecideNextParams = Omit<Extract<OrchestratorDecision, { action: 'next' }>, 'action'>;
+
+const decideNext = (fields: DecideNextParams): void => {
+  decideSpy.mockResolvedValue({ usage: NO_USAGE, decision: { action: 'next', ...fields } });
 };
 
 const anthropicReply = (text: string): string =>
@@ -569,17 +579,13 @@ describe('orchestrateNextStep', () => {
           gate.release = () => resolve([]);
         }),
     );
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The implementation is ready.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the mapped change.',
-          expectedOutput: 'A tested implementation.',
-        },
+    decideNext({
+      reason: 'The implementation is ready.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the mapped change.',
+        expectedOutput: 'A tested implementation.',
       },
     });
     invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
@@ -636,17 +642,13 @@ describe('orchestrateNextStep', () => {
   });
 
   it('appends a real step and agent, emits the decision, and activates it', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The implementation is ready.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the mapped change.',
-          expectedOutput: 'A tested implementation.',
-        },
+    decideNext({
+      reason: 'The implementation is ready.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the mapped change.',
+        expectedOutput: 'A tested implementation.',
       },
     });
     const state = baseState();
@@ -677,17 +679,13 @@ describe('orchestrateNextStep', () => {
   });
 
   it('suffixes a colliding step name', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Inspect again.',
-        step: {
-          name: 'Scout',
-          role: 'scout',
-          promptPrefix: 'Inspect another area.',
-          expectedOutput: 'An updated map.',
-        },
+    decideNext({
+      reason: 'Inspect again.',
+      step: {
+        name: 'Scout',
+        role: 'scout',
+        promptPrefix: 'Inspect another area.',
+        expectedOutput: 'An updated map.',
       },
     });
     const state = baseState();
@@ -699,16 +697,12 @@ describe('orchestrateNextStep', () => {
   });
 
   it('spawns a decided scout step on the scout role model, not on an expensive one', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Survey first.',
-        step: {
-          name: 'Survey the routing code',
-          role: 'scout',
-          promptPrefix: 'Survey the routing code.',
-        },
+    decideNext({
+      reason: 'Survey first.',
+      step: {
+        name: 'Survey the routing code',
+        role: 'scout',
+        promptPrefix: 'Survey the routing code.',
       },
     });
     const state = baseState();
@@ -723,18 +717,14 @@ describe('orchestrateNextStep', () => {
   });
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'opus-5',
-          effort: 'max',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'opus-5',
+        effort: 'max',
       },
     });
     const state = modelPickState();
@@ -868,19 +858,15 @@ describe('orchestrateNextStep', () => {
   });
 
   it('moves a pick outside the run pool onto a provider the run may use', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-          effort: 'max',
-          modelReason: 'The refactor spans the whole router.',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'fable-5',
+        effort: 'max',
+        modelReason: 'The refactor spans the whole router.',
       },
     });
     const state = modelPickState();
@@ -898,19 +884,15 @@ describe('orchestrateNextStep', () => {
   });
 
   it('runs an available pick no role default reaches, without a rejection notice', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-          effort: 'max',
-          modelReason: 'The refactor spans the whole router.',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'fable-5',
+        effort: 'max',
+        modelReason: 'The refactor spans the whole router.',
       },
     });
     const state = modelPickState();
@@ -934,21 +916,17 @@ describe('orchestrateNextStep', () => {
   });
 
   it('stores the task profile the orchestrator emitted', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-          effort: 'max',
-          taskType: 'implementation',
-          difficulty: 'heavy',
-          modelReason: 'The refactor spans the whole router.',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'fable-5',
+        effort: 'max',
+        taskType: 'implementation',
+        difficulty: 'heavy',
+        modelReason: 'The refactor spans the whole router.',
       },
     });
     const { set, get } = harness(modelPickState());
@@ -967,22 +945,18 @@ describe('orchestrateNextStep', () => {
   });
 
   it('labels a difficulty it read off the step text as heuristic', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: [
-            'Rework the migration runner so every segment is transactional.',
-            '```ts',
-            'const run = () => {};',
-            '```',
-          ].join('\n'),
-          model: 'fable-5',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: [
+          'Rework the migration runner so every segment is transactional.',
+          '```ts',
+          'const run = () => {};',
+          '```',
+        ].join('\n'),
+        model: 'fable-5',
       },
     });
     const { set, get } = harness(modelPickState());
@@ -998,19 +972,15 @@ describe('orchestrateNextStep', () => {
   });
 
   it('runs a pick from another connected provider than the one deciding', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          provider: 'codex',
-          model: 'gpt-5.6-sol',
-          effort: 'high',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+        effort: 'high',
       },
     });
     const state = modelPickState();
@@ -1028,17 +998,13 @@ describe('orchestrateNextStep', () => {
   });
 
   it('replaces a model no catalog knows with an available recommendation', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'gpt-9-imaginary',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'gpt-9-imaginary',
       },
     });
     const state = modelPickState();
@@ -1061,21 +1027,17 @@ describe('orchestrateNextStep', () => {
   });
 
   it('ignores the model a step names while the model pick rule is off and sizes it by difficulty', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'A small edit.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Rename the helper.',
-          provider: 'anthropic',
-          model: 'opus-5',
-          effort: 'max',
-          taskType: 'implementation',
-          difficulty: 'light',
-        },
+    decideNext({
+      reason: 'A small edit.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Rename the helper.',
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'max',
+        taskType: 'implementation',
+        difficulty: 'light',
       },
     });
     const { set, get } = harness(baseState());
@@ -1101,17 +1063,13 @@ describe('orchestrateNextStep', () => {
   });
 
   it('keeps the step reason about the work, not about routing', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The scout located the failure.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'gpt-9-imaginary',
-        },
+    decideNext({
+      reason: 'The scout located the failure.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'gpt-9-imaginary',
       },
     });
     const state = modelPickState();
@@ -1124,19 +1082,15 @@ describe('orchestrateNextStep', () => {
   });
 
   it('normalizes an unsupported effort against the model that actually runs', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          provider: 'codex',
-          model: 'gpt-5.6-sol',
-          effort: 'minimal',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+        effort: 'minimal',
       },
     });
     const state = modelPickState();
@@ -1156,17 +1110,13 @@ describe('orchestrateNextStep', () => {
   });
 
   it('stays quiet when the picked model is inside the pool', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'opus-5',
-        },
+    decideNext({
+      reason: 'This one is hard.',
+      step: {
+        name: 'Implement',
+        role: 'implementer',
+        promptPrefix: 'Implement the change.',
+        model: 'opus-5',
       },
     });
     const state = modelPickState();
@@ -1378,6 +1328,36 @@ describe('orchestrateNextStep', () => {
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('blocked');
     expect(updated.orchestratorHints?.[0]?.consumedAt).toBeUndefined();
+  });
+
+  it('marks the queued hints read only once the next step exists', async () => {
+    decideNext({
+      reason: 'Ship the copy.',
+      step: { name: 'Implement', role: 'implementer', promptPrefix: 'Ship the copy.' },
+    });
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'ship the copy' })]);
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, [
+      expect.objectContaining({ id: 'queued', consumedAt: expect.any(String) }),
+    ]);
+  });
+
+  it('keeps the queued hints unread when the next step could not be created', async () => {
+    decideNext({
+      reason: 'Ship the copy.',
+      step: { name: 'Implement', role: 'implementer', promptPrefix: 'Ship the copy.' },
+    });
+    invokeWorkflowUpsertSpy.mockRejectedValue(new Error('database is locked'));
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'ship the copy' })]);
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateHintsSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
   });
 
   it('recovers from a client failure without persisting an outcome', async () => {
@@ -2166,13 +2146,9 @@ describe('orchestrateNextStep', () => {
 
   it('decides anyway when the operator forced a skip, which already cleared the gate', async () => {
     listOpenQuestionsSpy.mockResolvedValue([openQuestion()]);
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The implementation is ready.',
-        step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
-      },
+    decideNext({
+      reason: 'The implementation is ready.',
+      step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
     });
     const state = baseState();
     const { set, get } = harness(state);
@@ -2434,17 +2410,13 @@ describe('orchestrateNextStep with a preset', () => {
   });
 
   it('runs a pinned step as the preset wrote it', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Now center.',
-        step: {
-          name: 'Center a few pages',
-          role: 'implementer',
-          promptPrefix: 'Center two pages.',
-          presetStep: 2,
-        },
+    decideNext({
+      reason: 'Now center.',
+      step: {
+        name: 'Center a few pages',
+        role: 'implementer',
+        promptPrefix: 'Center two pages.',
+        presetStep: 2,
       },
     });
     const { set, get } = presetState({ closeness: 'adapt', isPinned: true });
@@ -2463,17 +2435,13 @@ describe('orchestrateNextStep with a preset', () => {
       pick: { provider: 'anthropic', model: 'haiku-4.5', effort: null },
       origin: 'user',
     };
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Now center.',
-        step: {
-          name: 'Center the pages',
-          role: 'implementer',
-          promptPrefix: 'Center two pages.',
-          presetStep: 2,
-        },
+    decideNext({
+      reason: 'Now center.',
+      step: {
+        name: 'Center the pages',
+        role: 'implementer',
+        promptPrefix: 'Center two pages.',
+        presetStep: 2,
       },
     });
     const { set, get } = presetState({ closeness: 'adapt', isPinned: true, routingLock });

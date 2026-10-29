@@ -182,3 +182,61 @@ describe('startRoutedRun keeps the reason with the run', () => {
     expect(await readRoutes()).toEqual({});
   });
 });
+
+describe('startRoutedRun pins the model of one run', () => {
+  it('passes the pinned routing to the Auto agent it spawns', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Why does the ledger-core importer drop rows?' });
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result,
+      routing: { provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      provider: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: 'high',
+    });
+  });
+
+  it('leaves the model to the defaults when nothing is pinned', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Why does the ledger-core importer drop rows?' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    const options = engines.spawnAgent.mock.calls[0]?.[1];
+    expect(options).not.toHaveProperty('model');
+    expect(options).not.toHaveProperty('provider');
+  });
+
+  it('starts an orchestrated run with the orchestrator the person picked', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result,
+      orchestratorRouting: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+    });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      executionMode: 'dynamic',
+      orchestratorRouting: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+    });
+  });
+
+  it('starts an orchestrated run on the default orchestrator when none is picked', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]).not.toHaveProperty(
+      'orchestratorRouting',
+    );
+  });
+});

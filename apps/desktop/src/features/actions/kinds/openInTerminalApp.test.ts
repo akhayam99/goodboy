@@ -87,6 +87,8 @@ const sessionFacts: SessionFacts = {
   sessionId: SESSION_ID,
   title: 'Fix duplicate credit',
   behindMountIds: [],
+  mergedMountIds: [],
+  mergedBranches: [],
   rebaseAllRunId: null,
   isRebaseAllRunning: false,
   isArchived: false,

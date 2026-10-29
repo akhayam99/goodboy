@@ -6,7 +6,11 @@ use serde::{Deserialize, Serialize};
 
 static SCAN_GENERATION: AtomicU64 = AtomicU64::new(0);
 
-const WORKTREES_MARKER: &str = "--goodboy-worktrees-";
+const GOODBOY_MARKERS: [&str; 3] = [
+    "--goodboy-worktrees-",
+    "--goodboy-scratch-",
+    "--goodboy-history-copies-",
+];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
@@ -104,7 +108,7 @@ pub(crate) fn encode_claude_project(path: &Path) -> String {
 }
 
 fn is_goodboy_claude_project(name: &str, goodboy_prefix: Option<&str>) -> bool {
-    if name.contains(WORKTREES_MARKER) {
+    if GOODBOY_MARKERS.iter().any(|marker| name.contains(marker)) {
         return true;
     }
     match goodboy_prefix {

@@ -190,6 +190,15 @@ describe('orchestratedTailOf', () => {
     expect(tail.verbs).toEqual([]);
   });
 
+  it('leaves the answer to the inline field when a step asked a real question', () => {
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'needs-answer', sentence: 'Waiting for your answer' }),
+      primary: { kind: 'answer', label: 'Answer' },
+    });
+    expect(tail.state).toBe('waiting');
+    expect(tail.verbs).toEqual([]);
+  });
+
   it('reads the queued hints on a finished run, and resumes with them after Stop step', () => {
     const done = tailOf({
       orchestrator: stateOf({ phase: 'done', sentence: 'Run complete · 1 step · $0.10' }),

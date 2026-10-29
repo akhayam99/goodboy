@@ -120,6 +120,20 @@ const markUnread = ({ agentIds }: UnreadParams) => {
 
 const latestRows = () => [...doneCard().querySelectorAll<HTMLElement>('[data-done-latest]')];
 
+const newSinceCard = () => {
+  const card = document.querySelector<HTMLElement>('[data-overview-card="new-since"]');
+  if (card === null) {
+    throw new Error('the new since card is not shown');
+  }
+  return card;
+};
+
+const newSinceRows = () => [
+  ...(document
+    .querySelector('[data-overview-card="new-since"]')
+    ?.querySelectorAll<HTMLElement>('[data-done-latest]') ?? []),
+];
+
 const noteOf = () => doneCard().querySelector('[data-overview-note]')?.textContent ?? null;
 
 describe('the Done card lists what finished last', () => {
@@ -154,7 +168,40 @@ describe('the Done card lists what finished last', () => {
     expect(noteOf()).toBe(', 2 unread');
     expect(latestRows().map((row) => row.hasAttribute('data-unread'))).toEqual([true, true, false]);
     expect(within(doneCard()).getAllByRole('img', { name: 'Unread reply' })).toHaveLength(2);
-    within(doneCard()).getByRole('button', { name: 'Mark all seen' });
+    expect(within(doneCard()).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+
+  it('lists every unread item in a New since you last looked card above Done, with Mark all seen', async () => {
+    seedCentralColumn({ kind: 'finished' });
+    markUnread({ agentIds: [CI_FIX, LAST_STEP] });
+    render(
+      <ToastProvider>
+        <SessionOverviewPane session={mountedSession()} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    const cards = [...document.querySelectorAll('[data-overview-card]')].map((card) =>
+      card.getAttribute('data-overview-card'),
+    );
+    expect(cards.indexOf('new-since')).toBe(0);
+    expect(cards).toContain('done');
+    expect(newSinceRows()).toHaveLength(2);
+    expect(newSinceCard().querySelector('[data-new-since-count]')?.textContent).toBe('2');
+    within(newSinceCard()).getByRole('button', { name: 'Mark all seen' });
+  });
+
+  it('shows no New since you last looked card once everything is seen', async () => {
+    seedCentralColumn({ kind: 'finished' });
+    markUnread({ agentIds: [] });
+    render(
+      <ToastProvider>
+        <SessionOverviewPane session={mountedSession()} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(document.querySelector('[data-overview-card="new-since"]')).toBeNull();
   });
 
   it('draws no dot, no note and no Mark all seen once everything is seen', async () => {
@@ -184,7 +231,7 @@ describe('the Done card lists what finished last', () => {
     expect(noteOf()).toBe(', 1 unread');
 
     await act(async () => {
-      fireEvent.click(within(doneCard()).getByRole('button', { name: 'Mark all seen' }));
+      fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Mark all seen' }));
       await Promise.resolve();
     });
     await settle();

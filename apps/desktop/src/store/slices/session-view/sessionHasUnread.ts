@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { viewedAgentIdOf, type ViewedState } from '../../../shared/utils/viewedAgentIdOf';
 import type { AppState } from '../../types';
-import { agentHasUnread } from '../agents/agentHasUnread';
+import { unreadAgentsOf } from '../agents/unreadAgentsOf';
 
 type SessionUnreadState = Pick<AppState, 'sessionPhaseRuns'> & ViewedState;
 
@@ -11,10 +11,10 @@ type Params = {
 };
 
 export const sessionHasUnread = ({ state, sessionId }: Params): boolean => {
-  const runs = state.sessionPhaseRuns[sessionId];
-  if (runs === undefined) {
-    return false;
-  }
-  const viewed = viewedAgentIdOf({ state, sessionId });
-  return runs.some((run) => agentHasUnread(run, run.id === viewed));
+  return (
+    unreadAgentsOf({
+      agents: state.sessionPhaseRuns[sessionId],
+      viewedAgentId: viewedAgentIdOf({ state, sessionId }),
+    }).length > 0
+  );
 };

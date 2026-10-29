@@ -50,7 +50,7 @@ import { buildRetryOverride } from './buildRetryOverride';
 import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
 import { rowHeightCache } from './rowHeightCache';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
-import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
+import { WorkflowAdvanceStack } from './parts/WorkflowAdvanceStack';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
@@ -639,7 +639,7 @@ export const ChatView = ({
         </div>
       ) : null}
       {hasAdvanceRow && hasComposer && !isEnded && selectedAgentId != null ? (
-        <WorkflowAdvanceRow session={session} />
+        <WorkflowAdvanceStack session={session} />
       ) : null}
       {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (
         <PageColumn className="py-1">{composerLead}</PageColumn>

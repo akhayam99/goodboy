@@ -46,7 +46,7 @@ A comment a fix run covers says where it stands on its row. While the run works 
 
 When the run has finished with fixes ready, its comments move into one group above the rest of the list. The header reads **Fix run finished: N fixes ready for you**. It says what Apply does: it accepts the fixes, then the next push sends them, replies to the threads and resolves them where the host can. It holds **Apply and resolve N**. Comments no run covers stay in their normal groups.
 
-When the agent says its checks did not run, the group and the Fix tab of the run drawer show **Checks were skipped: <reason>**. An example is dependencies missing from its copy. Goodboy reads the agent's final message for it.
+When the agent says its checks did not run, the group and the Fix tab of the run drawer show **Checks were skipped: <reason>**. An example is dependencies missing from its copy. Goodboy reads the agent's final message for it. When the reason names dependencies, or the worktree of the branch is missing them, the warning offers **Reinstall dependencies**. It installs them in that worktree so the next fix run can check.
 
 ### Hints when a fix starts
 
@@ -66,7 +66,9 @@ If a fix commit is no longer on the branch, for example after a squash done else
 
 Finish a review with **Push N fixes** in the Branch header. It covers the comments of the branch on screen, and the confirm names the repository (`Push 2 commits to hl/fix-duplicate-credit in payments-api?`) when the session has more than one. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix and hides while the preview is open. A reply with no code change goes out right away when no fix is waiting.
 
-When a check of the repository stops the push, the failure card names the check and shows its first findings. **Let an agent fix the push** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent. When it finishes, Goodboy pushes and sends the replies, or opens the pull request with the text you wrote.
+When a check of the repository stops the push, the failure card names the check and shows its first findings. **Let an agent fix the push** starts an agent on the same branch that fixes what the check reports without skipping it. The card follows that agent. It keeps following it when you leave the page and come back, or reload the window. It shows the agent working. When the agent ends, it shows whether the fix was pushed and what the replies or the pull request did next, or why the agent did not finish. When the agent finishes, Goodboy pushes and sends the replies, or opens the pull request with the text you wrote.
+
+The page says so before you push if the worktree has no dependencies installed or reads them from another folder. The failure card then offers **Reinstall dependencies**. It installs them in that worktree with the install command of its lockfile, shows the progress and retries the push.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
@@ -156,7 +158,7 @@ This part is for contributors and agents who change the feature.
 
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N comments**.
 - Comment drawer: `ReviewCommentDrawer` and `CommentDrawerActions`.
-- Fix run state: `rowFixOf` gives a row its Fixing, Fixed in sha or failed line. `fixRunReadyOf` picks the fixes the fix run group header offers. `dropLaunchedSelection` runs in `startBatch`. `checksSkippedOf` reads the skipped checks.
+- Fix run state: `rowFixOf` gives a row its Fixing, Fixed in sha or failed line. `fixRunReadyOf` picks the fixes the fix run group header offers. `dropLaunchedSelection` runs in `startBatch`. `checksSkippedOf` reads the skipped checks and `isMissingDepsReason` tells when the reason is about dependencies.
 - Add a hint: `apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx` (Fix comments), `apps/desktop/src/features/branch/components/CheckAnalysisDrawer/ProposedFix.tsx` (**Start fix**) and `apps/desktop/src/features/branch/components/CheckAnalysisHint.tsx` (**Analyze again**).
 - Fact cards: `fileCardOf` builds the card on a file path and `checkCardOf` the card on a check row.
 - Checks: `PrChecks` and `CheckRunRow` draw the grid, and `features/branch/components/AnalyzedCheckRow.tsx` reads the state of an analyzed row. `pushCheckFix.ts` pushes the fix, `ciFixOutcomeOf.ts` writes the outcome line and `ciFixStepsOf.ts` the steps. `checksWordOf` words the checks over `pullRequestRunsOf`.

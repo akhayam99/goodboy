@@ -172,7 +172,14 @@ pub(crate) fn read_only_policy(cli: Cli, job: Job) -> Policy {
                 COPILOT_DENY_SHELL,
                 COPILOT_DENY_MEMORY,
             ],
-            forbidden: &["--allow-all", "--yolo"],
+            forbidden: &[
+                "--allow-all",
+                "--allow-all-paths",
+                "--allow-all-urls",
+                "--allow-tool",
+                "--allow-url",
+                "--yolo",
+            ],
             prompt_after_separator: false,
             prompt_on_stdin: false,
         },
@@ -224,7 +231,11 @@ pub(crate) fn read_only_violations(cli: Cli, job: Job, argv: &[String]) -> Vec<S
     };
     for flag in policy.forbidden.iter().chain(side_job_forbidden) {
         let message = format!("{flag} must not be set");
-        if flags.contains(flag) && !found.contains(&message) {
+        let with_value = format!("{flag}=");
+        let is_set = flags
+            .iter()
+            .any(|set| set == flag || set.starts_with(&with_value));
+        if is_set && !found.contains(&message) {
             found.push(message);
         }
     }
@@ -1233,6 +1244,44 @@ mod tests {
                 "{flag}: {found:?}"
             );
         }
+    }
+
+    #[test]
+    fn the_copilot_policy_rejects_a_forbidden_flag_set_with_a_value() {
+        for flag in [
+            "--allow-all=true",
+            "--allow-all-paths=true",
+            "--allow-all-urls=true",
+            "--allow-tool=write",
+            "--allow-tool",
+            "--allow-url=example.com",
+            "--yolo=1",
+        ] {
+            let argv = strings(&[
+                "-p",
+                "plan",
+                "--allow-all-tools",
+                "--deny-tool=write",
+                "--deny-tool=shell",
+                "--deny-tool=memory",
+                flag,
+            ]);
+            let found = read_only_violations(Cli::Copilot, Job::Turn, &argv);
+            let name = flag.split('=').next().expect("name");
+            assert!(
+                found.contains(&format!("{name} must not be set")),
+                "{flag}: {found:?}"
+            );
+        }
+        let clean = strings(&[
+            "-p",
+            "plan",
+            "--allow-all-tools",
+            "--deny-tool=write",
+            "--deny-tool=shell",
+            "--deny-tool=memory",
+        ]);
+        assert!(read_only_violations(Cli::Copilot, Job::Turn, &clean).is_empty());
     }
 
     #[test]

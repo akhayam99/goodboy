@@ -115,6 +115,43 @@ describe('AgentsStep', () => {
     );
   });
 
+  it('lists Copilot as a ready agent that can be made the default', async () => {
+    stubStoryInvoke(
+      agentHandlers({
+        signedIn: ['anthropic', 'copilot'],
+        claudeVersion: '2.1.280',
+        copilotVersion: '1.0.105',
+      }),
+    );
+    renderStep();
+
+    const makeDefault = await screen.findByRole('button', {
+      name: 'Make Copilot the default agent',
+    });
+    screen.getByText(/Copilot 1\.0\.105/);
+
+    fireEvent.click(makeDefault);
+    fireEvent.click(continueButton());
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(storySpies.setSetting).toHaveBeenLastCalledWith(
+      expect.anything(),
+      'agents.default',
+      'copilot',
+    );
+  });
+
+  it('shows Copilot as not found with its install command when it is missing', async () => {
+    stubStoryInvoke(agentHandlers({ signedIn: [] }));
+    renderStep();
+
+    await waitFor(() =>
+      expect(screen.getByRole('list', { name: 'Agents on this Mac' }).textContent).toContain(
+        'Copilot',
+      ),
+    );
+  });
+
   it('counts the ready agents from one function', async () => {
     stubStoryInvoke(agentHandlers({ signedIn: ['anthropic'], claudeVersion: '2.1.280' }));
     renderStep();

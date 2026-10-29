@@ -16,6 +16,17 @@ import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import {
+  agentRoutingOfPin,
+  orchestratorRoutingOfPin,
+  type RunModelPin,
+} from '../../../startRun/runModelPin';
+import {
+  AUTO_AGENT_SLOT,
+  runModelSlotOf,
+  type RunModelSlot,
+} from '../../../startRun/runModelSlotOf';
+import { useRunModel, type RunModelModel } from '../useRunModel';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { askWithFileOf } from '../../../startRun/askWithFileOf';
@@ -44,6 +55,7 @@ export type StartRunModel = Readonly<{
   runAs: RunAs;
   setRunAs: (runAs: RunAs) => void;
   route: RunRouteResult;
+  model: RunModelModel;
   presets: ReadonlyArray<Workflow>;
   files: ReturnType<typeof usePromptFiles>['files'];
   filesNotice: string | null;
@@ -106,6 +118,20 @@ const factsOf = ({
           },
     fileCount,
   };
+};
+
+type PinnedParams = {
+  readonly result: RunRouteResult;
+  readonly pin: RunModelPin | null;
+};
+
+const pinnedRoutingOf = ({ result, pin }: PinnedParams) => {
+  if (pin === null) {
+    return {};
+  }
+  return result.route.shape === 'plan'
+    ? { orchestratorRouting: orchestratorRoutingOfPin({ pin }) }
+    : { routing: agentRoutingOfPin({ pin }) };
 };
 
 export const useStartRun = ({
@@ -191,6 +217,12 @@ export const useStartRun = ({
       }),
     });
   }, [file, pickedCount, presets, role, runAs, sessionRow, settings, text, workspaceId]);
+  const slot = useMemo(
+    (): RunModelSlot => (role === null ? runModelSlotOf({ result: route }) : AUTO_AGENT_SLOT),
+    [role, route],
+  );
+  const model = useRunModel({ workspaceId, sessionId, slot });
+  const { clear: clearModel, pinFor } = model;
   const isStartingRef = useRef(false);
   const startFromDraft = useStartFromDraft();
   const latestRef = useRef(createLatestOnly());
@@ -203,11 +235,12 @@ export const useStartRun = ({
       setLocalText('');
       setFile(null);
       setRunAs(AUTO_RUN_AS);
+      clearModel();
       clearFilesRef.current();
       setError(null);
       setIsStarting(false);
     };
-  }, [sessionId, workspaceId]);
+  }, [clearModel, sessionId, workspaceId]);
 
   const clearAsked = useCallback(
     ({ asked }: AskedParams) => {
@@ -280,15 +313,18 @@ export const useStartRun = ({
                 absolutePath: file.absolutePath,
               }),
             };
+      const pin: RunModelPin | null =
+        role === null ? pinFor({ slot: runModelSlotOf({ result }) }) : null;
+      const pinned = pinnedRoutingOf({ result, pin });
       const run = async (created: Session): Promise<void> => {
-        await startRoutedRun({ sessionId: created.id, result, attachments });
+        await startRoutedRun({ sessionId: created.id, result, attachments, ...pinned });
       };
       await (sessionId === null
         ? startFromDraft({
             workspaceId,
             start: draftStartOf({ picked, mount, ask: result.ask, run }),
           })
-        : startRoutedRun({ sessionId, result, attachments }));
+        : startRoutedRun({ sessionId, result, attachments, ...pinned }));
       if (sessionId === null) {
         rememberLastStart({ workspaceId, last: 'auto' });
       }
@@ -296,6 +332,7 @@ export const useStartRun = ({
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
         setRunAs(AUTO_RUN_AS);
+        clearModel();
         setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
       }
@@ -311,9 +348,11 @@ export const useStartRun = ({
     }
   }, [
     clearAsked,
+    clearModel,
     file,
     mount,
     onStarted,
+    pinFor,
     prepare,
     role,
     runAs,
@@ -337,6 +376,7 @@ export const useStartRun = ({
     runAs,
     setRunAs,
     route,
+    model,
     presets,
     files: promptFiles.files,
     filesNotice: promptFiles.notice,

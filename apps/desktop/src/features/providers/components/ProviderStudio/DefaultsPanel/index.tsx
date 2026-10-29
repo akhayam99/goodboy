@@ -20,6 +20,7 @@ import { NAMES } from '../../../../../shared/utils/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
+import { RunsSection } from './RunsSection';
 import { TaskModelRow } from './TaskModelRow';
 import { ClassifyRequestsRow } from './ClassifyRequestsRow';
 import { OrchestratorModelPickRow } from './OrchestratorModelPickRow';
@@ -62,14 +63,16 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 };
 
 export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: Props) => {
+  const runsRef = useRef<HTMLElement>(null);
   const tasksRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
       return;
     }
-    tasksRef.current
-      ?.querySelector(`[data-default-row="${focusSection}"]`)
-      ?.scrollIntoView({ block: 'center' });
+    const selector = `[data-default-row="${focusSection}"]`;
+    (
+      runsRef.current?.querySelector(selector) ?? tasksRef.current?.querySelector(selector)
+    )?.scrollIntoView({ block: 'center' });
   }, [focusSection]);
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
@@ -141,6 +144,16 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         onProviderIds={onProviderIds}
         isDisabled={busy}
         onConfirm={() => clearRoleModels({ roles: unrunnableRoles })}
+      />
+
+      <RunsSection
+        workspaceId={workspaceId}
+        overrides={overrides}
+        connectedProviderIds={connectedProviderIds}
+        isDisabled={busy}
+        sectionRef={runsRef}
+        onRoleChange={persistRoleModel}
+        onTaskChange={persistTaskModel}
       />
 
       <section aria-label="Providers" className="flex flex-col gap-1">

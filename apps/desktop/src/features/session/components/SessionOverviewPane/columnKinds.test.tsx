@@ -130,7 +130,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'finished',
     facts: {
-      cards: ['next', 'branches', 'done'],
+      cards: ['new-since', 'next', 'branches', 'done'],
       primary: 'Mark ready',
       done: '5 finished runs and agents are in the full log.',
     },
