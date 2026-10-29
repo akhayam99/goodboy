@@ -4,6 +4,7 @@ import type { AutoDelegationId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { advancePhase } from './advancePhase';
 import { confirmDelegation, type ConfirmDelegationOutcome } from './confirmDelegation';
+import { createOwnTurns } from './createOwnTurns';
 import { deliverNext } from './deliver';
 import { enforceDeadlines } from './enforceDeadlines';
 import { expireStaleDecide } from './expireStaleDecide';
@@ -69,6 +70,7 @@ export const createAutoRuntime = ({
 }: AutoRuntimeOptions): AutoRuntime => {
   const queue = createKeyedQueue();
   const inflight = new Set<Promise<void>>();
+  const ownTurns = createOwnTurns();
   const watchedSinceMs = ctx.now();
   const track = (work: Promise<void>): void => {
     const tracked = work.catch(onError).finally(() => {
@@ -85,7 +87,12 @@ export const createAutoRuntime = ({
     if (launched.delegationIds.length > 0) {
       track(launched.done.then(() => runtime.drive(treeId)));
     }
-    const delivered = await deliverNext({ ctx, treeId, onEnded: runtime.onAutoTurnEnded });
+    const delivered = await deliverNext({
+      ctx,
+      treeId,
+      onEnded: runtime.onAutoTurnEnded,
+      ownTurns,
+    });
     return (
       hasExpired ||
       hasStaleDecide ||
@@ -109,7 +116,7 @@ export const createAutoRuntime = ({
       },
     });
   const recover = async (treeId: AutoTree['id']): Promise<boolean> => {
-    const outcome = await recoverTree({ ctx, treeId, sleep, maxPolls: watchPolls });
+    const outcome = await recoverTree({ ctx, treeId, sleep, maxPolls: watchPolls, ownTurns });
     const tree = await getAutoTree({ db: ctx.db, treeId });
     if (tree?.phase === 'blocked' && !isAutoGateBlock({ reason: tree.blockedReason })) {
       await retryBlockedTree({ ctx, treeId });
@@ -126,7 +133,13 @@ export const createAutoRuntime = ({
     ctx,
     drive,
     onAutoTurnEnded: (ended) => {
-      track(settleAutoTurn({ ctx, ended }).then(() => drive(ended.treeId)));
+      track(
+        settleAutoTurn({ ctx, ended })
+          .finally(() => {
+            ownTurns.end({ runId: ended.runId });
+          })
+          .then(() => drive(ended.treeId)),
+      );
     },
     onChildEnded: (ended) => {
       track(finishAttempt({ ctx, ended }).then(() => drive(ended.treeId)));
