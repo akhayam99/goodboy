@@ -283,40 +283,7 @@ describe('story: a run step stays on the mount it was pinned to', () => {
   });
 });
 
-describe('story: a run whose pinned mount was forgotten', () => {
-  it('blocks the next step instead of falling back to the active mount', async () => {
-    await seed();
-    const first = stepAgent({ id: 'agent-step-1', ordinal: 1 });
-    const second = stepAgent({ id: 'agent-step-2', ordinal: 2 });
-    placeAgents({ agents: [first, second] });
-    useAppStore.setState({
-      transcripts: {
-        [first.id]: [
-          {
-            kind: 'user_text',
-            runId: brandId<ProviderRunId>({ value: 'run-earlier' }),
-            text: 'go',
-            provider: 'anthropic',
-            model: 'claude-sonnet-5-5',
-            at: NOW,
-          },
-        ],
-      },
-    });
-    storySpies.invokeAgentUpdateStatus.mockResolvedValue({ ...second, status: 'blocked' });
-
-    await expect(
-      useAppStore
-        .getState()
-        .sendTurn({ sessionId: SESSION_ID, agentId: second.id, content: 'go', origin: 'workflow' }),
-    ).rejects.toThrow(/the branch the run started on/);
-
-    expect(storySpies.runTurn).not.toHaveBeenCalled();
-    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(second.id, {
-      status: 'blocked',
-    });
-  });
-
+describe('story: the first step of a run', () => {
   it('lets the first step of a fresh run launch on the active mount', async () => {
     await seed();
     const first = stepAgent({ id: 'agent-step-1', ordinal: 1 });

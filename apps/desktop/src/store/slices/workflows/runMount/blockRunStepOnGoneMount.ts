@@ -20,7 +20,7 @@ export const blockRunStepOnGoneMount = async ({
     sessionPhaseRuns: {
       ...state.sessionPhaseRuns,
       [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((candidate) =>
-        candidate.id === blocked.id ? blocked : candidate,
+        candidate.id === agentId ? blocked : candidate,
       ),
     },
   }));
