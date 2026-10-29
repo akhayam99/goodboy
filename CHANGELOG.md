@@ -111,19 +111,19 @@ Runs name their model, steps finish when the agent is done, plan parts stop coll
 ### Improved
 
 #### Pick the model of a run where it starts
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=model-chip -->
 
 Start a run and the New session page show a Model chip next to Run as. It names the model the Auto agent or the orchestrator uses, follows your default, and lets you pick another one for that run only.
 
 An orchestrated run shows its Orchestrator model next to Kind, and Settings > Models opens with a Runs section for the Auto agent and the Orchestrator.
 
 #### A step that ends without a result says so
-<!-- gb area=workflows -->
+<!-- gb area=workflows image=step-ended -->
 
 A step whose agent stopped without saying it is done reads "This step ended without a result", with Continue and Mark step done on the run page and the agent page. Goodboy also reads the done, question, plan and hand-off markers however an agent writes them.
 
 #### Plan parts run in waves
-<!-- gb area=workflows -->
+<!-- gb area=workflows image=plan-waves -->
 
 The planner names each part and the parts it comes after. The plan page groups parts into Runs first and Then, in parallel, shows the files of each part, and names a file two parts share and the order it forces. A part you start by hand while another works on the same files waits and says which part it waits for.
 
@@ -133,22 +133,22 @@ The planner names each part and the parts it comes after. The plan page groups p
 A merged branch says Merged, work complete and offers Clean up, which removes its folder and local branch after one inline confirmation and refuses when work would be lost. Clean up N merged handles several branches of a session at once.
 
 #### See what is new in a session
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=new-since -->
 
 A session with unseen activity lists it under New since you last looked at the top of its overview, with Mark all seen, and its blue dot says what is new on hover.
 
 #### Push fixes stay in view
-<!-- gb area=review -->
+<!-- gb area=review image=push-reinstall -->
 
 The Fix the push card keeps showing the agent, its progress and its result when you leave the page or reload. Before a push, a worktree with missing dependencies, or one that reads them from another folder, gets Reinstall dependencies, which installs them there and retries the push.
 
 #### Answer a run's question on the run page
-<!-- gb area=workflows -->
+<!-- gb area=workflows image=run-answer -->
 
 A run waiting for your answer shows the question on the run page with an answer field, so you can reply without opening the agent chat.
 
 #### Copilot in setup
-<!-- gb area=providers -->
+<!-- gb area=providers image=copilot-setup -->
 
 Copilot appears in the agents step of setup, next to the other agents.
 
