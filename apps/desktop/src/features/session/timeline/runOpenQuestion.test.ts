@@ -11,7 +11,7 @@ import {
 import { classifyAgent } from '../agent-kind';
 import type { TimelineAgentEntry, TimelineRunEntry } from './buildTimelineGroups';
 import { runIdentity } from './runIdentity';
-import { runOpenQuestion, runOpenQuestionBatch } from './runOpenQuestion';
+import { runOpenQuestion } from './runOpenQuestion';
 
 type QuestionFields = {
   readonly id: string;
@@ -62,42 +62,23 @@ const runOf = (children: ReadonlyArray<TimelineAgentEntry>): TimelineRunEntry =>
   producedPlan: null,
 });
 
-const idsOf = (batch: ReadonlyArray<{ readonly question: OpenQuestion }>): ReadonlyArray<string> =>
-  batch.map((item) => item.question.id);
-
-describe('runOpenQuestionBatch', () => {
-  it('returns every question of the asking agent in creation order', () => {
-    const entry = runOf([
-      agentEntry({
-        id: 'a',
-        questions: [
-          questionOf({ id: 'q3', agentId: 'a', minute: 3 }),
-          questionOf({ id: 'q1', agentId: 'a', minute: 1 }),
-          questionOf({ id: 'q2', agentId: 'a', minute: 2 }),
-        ],
-      }),
-    ]);
-
-    expect(idsOf(runOpenQuestionBatch({ entry }))).toEqual(['q1', 'q2', 'q3']);
-  });
-
-  it('keeps the other agent waiting while the oldest asker has questions', () => {
+describe('runOpenQuestion', () => {
+  it('shows the oldest question of the oldest asker first', () => {
     const entry = runOf([
       agentEntry({ id: 'b', questions: [questionOf({ id: 'qb', agentId: 'b', minute: 2 })] }),
       agentEntry({
         id: 'a',
         questions: [
-          questionOf({ id: 'qa1', agentId: 'a', minute: 1 }),
           questionOf({ id: 'qa2', agentId: 'a', minute: 3 }),
+          questionOf({ id: 'qa1', agentId: 'a', minute: 1 }),
         ],
       }),
     ]);
 
-    expect(idsOf(runOpenQuestionBatch({ entry }))).toEqual(['qa1', 'qa2']);
     expect(runOpenQuestion({ entry })?.question.id).toBe('qa1');
   });
 
-  it('drops a question already shown as a row', () => {
+  it('skips a question already shown as a row', () => {
     const entry = runOf([
       agentEntry({
         id: 'a',
@@ -108,9 +89,7 @@ describe('runOpenQuestionBatch', () => {
       }),
     ]);
 
-    expect(idsOf(runOpenQuestionBatch({ entry, shownQuestionIds: new Set(['q1']) }))).toEqual([
-      'q2',
-    ]);
+    expect(runOpenQuestion({ entry, shownQuestionIds: new Set(['q1']) })?.question.id).toBe('q2');
   });
 
   it('hands the run to the next agent once the first agent only has shown questions', () => {
@@ -119,13 +98,10 @@ describe('runOpenQuestionBatch', () => {
       agentEntry({ id: 'b', questions: [questionOf({ id: 'qb', agentId: 'b', minute: 2 })] }),
     ]);
 
-    expect(idsOf(runOpenQuestionBatch({ entry, shownQuestionIds: new Set(['qa']) }))).toEqual([
-      'qb',
-    ]);
+    expect(runOpenQuestion({ entry, shownQuestionIds: new Set(['qa']) })?.question.id).toBe('qb');
   });
 
-  it('is empty when the run asks nothing', () => {
-    expect(runOpenQuestionBatch({ entry: runOf([]) })).toEqual([]);
+  it('is null when the run asks nothing', () => {
     expect(runOpenQuestion({ entry: runOf([]) })).toBeNull();
   });
 });

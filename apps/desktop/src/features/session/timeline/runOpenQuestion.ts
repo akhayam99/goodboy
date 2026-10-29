@@ -29,7 +29,7 @@ const runOpenQuestions = ({ entry }: RunParams): ReadonlyArray<RunOpenQuestion> 
     child.kind === 'agent' ? agentOpenQuestions({ entry: child }) : [],
   );
 
-export const runOpenQuestionBatch = ({
+const runOpenQuestionBatch = ({
   entry,
   shownQuestionIds = NO_SHOWN_QUESTIONS,
 }: RunParams): ReadonlyArray<RunOpenQuestion> => {
