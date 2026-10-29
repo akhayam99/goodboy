@@ -22,6 +22,8 @@ import type {
 import { ChatView } from '../../../../features/chat/components/ChatView';
 import { useAppStore } from '../../../../store';
 import { ShellFrame, seedShellChrome } from './shellChrome';
+import { BRAND_PROJECTS, BRAND_SESSION, BRAND_WORKSPACE_NAME } from './brand/canon';
+import { seedBrandLimits } from './brand/limitsSeed';
 
 const WORKSPACE_ID = 'mock-chat-workspace-cascadia' as WorkspaceId;
 const SESSION_ID = 'mock-chat-session-webhook-credits' as SessionId;
@@ -66,8 +68,8 @@ const OVERRIDES = {
 
 const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
-  name: 'Cascadia',
-  slug: 'cascadia',
+  name: BRAND_WORKSPACE_NAME,
+  slug: 'harborline',
   overrides: OVERRIDES,
   createdAt: STARTED,
   updatedAt: NOW,
@@ -77,7 +79,7 @@ const projectOf = (id: ProjectId, name: string): Project => ({
   id,
   workspaceId: WORKSPACE_ID,
   name,
-  rootPath: `/mock/cascadia/${name}`,
+  rootPath: `~/code/harborline/${name}`,
   kind: 'repo',
   overrides: OVERRIDES,
   createdAt: STARTED,
@@ -85,17 +87,17 @@ const projectOf = (id: ProjectId, name: string): Project => ({
 });
 
 const PROJECTS: ReadonlyArray<Project> = [
-  projectOf(PAYMENTS_ID, 'payments-api'),
-  projectOf(CONSOLE_ID, 'notify-relay'),
+  projectOf(PAYMENTS_ID, BRAND_PROJECTS.payments.name),
+  projectOf(CONSOLE_ID, BRAND_PROJECTS.ledger.name),
 ];
 
 const mountOf = (projectId: ProjectId, name: string, branch: string): SessionProjectMount => ({
   mountId: `mock-chat-mount-${name}` as MountId,
   projectId,
   mountName: name,
-  worktreePath: `/mock/cascadia/${name}-webhook-credits`,
+  worktreePath: `~/code/harborline/${name}-duplicate-credit`,
   lastWorktreePath: null,
-  repoRoot: `/mock/cascadia/${name}`,
+  repoRoot: `~/code/harborline/${name}`,
   branch,
   baseBranch: 'main',
   parallelIndex: 0,
@@ -106,14 +108,14 @@ const mountOf = (projectId: ProjectId, name: string, branch: string): SessionPro
 });
 
 const MOUNTS: ReadonlyArray<SessionProjectMount> = [
-  mountOf(PAYMENTS_ID, 'payments-api', 'nw/fix-webhook-idempotency'),
-  mountOf(CONSOLE_ID, 'notify-relay', 'nw/surface-retry-state'),
+  mountOf(PAYMENTS_ID, BRAND_PROJECTS.payments.name, BRAND_SESSION.branch),
+  mountOf(CONSOLE_ID, BRAND_PROJECTS.ledger.name, BRAND_SESSION.branch),
 ];
 
 const SESSION: Session = {
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
-  goal: 'Stop payments-api from double-crediting invoices when the processor redelivers a webhook',
+  goal: BRAND_SESSION.title,
   state: { kind: 'idle', lastActivityAt: NOW },
   contextSlots: [],
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -135,9 +137,13 @@ const sibling = (id: string, goal: string, minutesAgo: number): Session => ({
 });
 
 const SIBLINGS: ReadonlyArray<Session> = [
-  sibling('mock-chat-session-rate-limit', 'Add per-tenant rate limiting to the public API', 6),
-  sibling('mock-chat-session-rounding', 'Fix the rounding bug in the multi-currency export', 14),
-  sibling('mock-chat-session-pagination', 'Add pagination to the admin sessions table', 22),
+  sibling('mock-chat-session-rate-limit', 'Per-tenant limits on the public API', 6),
+  sibling('mock-chat-session-rounding', 'Nightly reconciliation before the Monday close', 14),
+  sibling(
+    'mock-chat-session-pagination',
+    'Reconcile the settlement export against the ledger snapshot',
+    22,
+  ),
 ];
 
 const AGENTS: ReadonlyArray<Agent> = [
@@ -145,7 +151,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 1,
-    name: 'Guard the webhook handler',
+    name: 'Credit once per event id',
     kind: 'implementer',
     status: 'completed',
     runId: RUN_ID,
@@ -173,12 +179,13 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: LIVE_DELEGATE_ID,
     sessionId: SESSION_ID,
     ordinal: 3,
-    name: 'answer: Should notify-relay show a banner while a…',
+    name: 'answer: Should ledger-core keep a posting for a…',
     kind: 'implementer',
-    status: 'running',
+    status: 'stopped',
     sourceKind: 'open_question',
     sourceThreadId: QUESTION_BANNER_ID,
     startedAt: at(39),
+    lastFinishedAt: at(40),
     providerOverride: 'gemini',
     modelOverride: 'gemini-3.1-pro',
   },
@@ -201,7 +208,7 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   {
     kind: 'user_text',
     runId: RUN_ID,
-    text: 'Invoices get credited twice when the processor retries a webhook. Find why and fix it, then show the retry state in notify-relay.',
+    text: BRAND_SESSION.goal,
     provider: 'anthropic',
     model: 'claude-opus-5-5',
     at: at(2),
@@ -210,21 +217,21 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascadia/payments-api-webhook-credits/src/webhooks/handler.ts',
+    path: '~/code/harborline/payments-api-duplicate-credit/src/webhooks/applyWebhook.ts',
     editType: 'modify',
     at: at(28),
   },
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascadia/payments-api-webhook-credits/migrations/0142_processed_events.sql',
+    path: '~/code/harborline/payments-api-duplicate-credit/migrations/0142_processed_events.sql',
     editType: 'create',
     at: at(29),
   },
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascadia/payments-api-webhook-credits/test/webhooks/redelivery.test.ts',
+    path: '~/code/harborline/payments-api-duplicate-credit/test/webhooks/redelivery.test.ts',
     editType: 'create',
     at: at(31),
   },
@@ -232,7 +239,7 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
     kind: 'assistant_text',
     runId: RUN_ID,
     delta:
-      'The guard is in and the redelivery test posts the same event three times against one credit. One call left on the notify-relay side before I touch it.',
+      'The guard is in and the redelivery test posts the same event three times against one credit. One call left on the ledger-core side before I touch it.',
     at: at(38),
   },
   { kind: 'done', runId: RUN_ID, at: at(38) },
@@ -266,9 +273,13 @@ const QUESTIONS_OPEN: ReadonlyArray<OpenQuestion> = [
     sessionId: SESSION_ID,
     createdByAgentId: AGENT_ID,
     turnOrdinal: 1,
-    text: 'Should notify-relay show a banner while a webhook is being retried, or only mark the invoice row?',
-    suggestedAnswers: ['A banner on the invoice page', 'A badge on the invoice row', 'Both'],
-    recommendedAnswer: 'A badge on the invoice row',
+    text: 'Should ledger-core keep a posting for a duplicate event, or skip it?',
+    suggestedAnswers: [
+      'Skip it: one posting per event id',
+      'Keep it, marked as a duplicate',
+      'Both',
+    ],
+    recommendedAnswer: 'Skip it: one posting per event id',
     selectMode: 'one',
     isBlocking: true,
     userAnswer: null,
@@ -306,8 +317,8 @@ const task = (
 });
 
 const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
-  task('linear', 'PAY-418', 'Invoices credited twice after webhook retries'),
-  task('sentry', 'PAYMENTS-API-3F2', 'DuplicateCreditError in handleInvoicePaid'),
+  task('linear', BRAND_SESSION.issue, BRAND_SESSION.issueTitle),
+  task('sentry', 'PAYMENTS-API-4F2', BRAND_SESSION.sentry),
 ];
 
 export const ChatShellScene = () => {
@@ -319,14 +330,15 @@ export const ChatShellScene = () => {
       currentWorkspaceId: WORKSPACE_ID,
       projects: PROJECTS,
     });
+    seedBrandLimits();
     seedShellChrome({
       session: SESSION,
       siblings: SIBLINGS,
       branches: {
-        [SESSION_ID]: 'nw/fix-webhook-idempotency',
-        'mock-chat-session-rate-limit': 'nw/feat-tenant-rate-limit',
-        'mock-chat-session-rounding': 'nw/fix-export-rounding',
-        'mock-chat-session-pagination': 'nw/feat-admin-pagination',
+        [SESSION_ID]: BRAND_SESSION.branch,
+        'mock-chat-session-rate-limit': 'hl/per-tenant-limits',
+        'mock-chat-session-rounding': 'hl/nightly-reconciliation',
+        'mock-chat-session-pagination': 'hl/reconcile-settlement-export',
       },
       telemetryAt: at(38),
       lens: 'agents',

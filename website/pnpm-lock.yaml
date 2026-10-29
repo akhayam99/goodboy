@@ -9,13 +9,13 @@ importers:
     dependencies:
       '@vercel/analytics':
         specifier: ^2.0.1
-        version: 2.0.1(react@19.3.0)
+        version: 2.0.1(react@19.3.1)
       react:
-        specifier: ^19.3.0
-        version: 19.3.0
+        specifier: ^19.3.1
+        version: 19.3.1
       react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.2
@@ -30,8 +30,8 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.2(jiti@2.7.0)(lightningcss@1.32.0))
       marked:
-        specifier: ^18.0.14
-        version: 18.0.14
+        specifier: ^18.1.1
+        version: 18.1.2
       tailwindcss:
         specifier: ^4.3.2
         version: 4.3.3
@@ -1156,10 +1156,10 @@ packages:
         integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==,
       }
 
-  marked@18.0.14:
+  marked@18.1.2:
     resolution:
       {
-        integrity: sha512-mBHK6FBHuBAlhgRe88w9F0O1AbwwXJUcQibUbC/QcdTbVGAD7aWza+xt3N6oT/jCZx3/OMeS+8rnuiHZcQ9s7A==,
+        integrity: sha512-DfOnvLAQ6WYeWxWO1u4RyFOeqyHup6dks5PPqnoFiooU7ipRvidO/2j8plhAHIiZg574E9ZlzSjUiPMLAzFkgg==,
       }
     engines: { node: '>= 20' }
     hasBin: true
@@ -1205,13 +1205,13 @@ packages:
       }
     engines: { node: ^10 || ^12 || >=14 }
 
-  react-dom@19.3.0:
+  react-dom@19.3.1:
     resolution:
       {
-        integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==,
+        integrity: sha512-Y0bARz53lhEC1NMCASs0/j+faB/zqt3R8hpvg1e8+61ZVJ4UL0UdC4cBbXfZMcIuhrfgeILTLe+ZeBCavQPtKQ==,
       }
     peerDependencies:
-      react: ^19.3.0
+      react: ^19.3.1
 
   react-refresh@0.17.0:
     resolution:
@@ -1220,10 +1220,10 @@ packages:
       }
     engines: { node: '>=0.10.0' }
 
-  react@19.3.0:
+  react@19.3.1:
     resolution:
       {
-        integrity: sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog==,
+        integrity: sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==,
       }
     engines: { node: '>=0.10.0' }
 
@@ -1727,9 +1727,9 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@vercel/analytics@2.0.1(react@19.3.0)':
+  '@vercel/analytics@2.0.1(react@19.3.1)':
     optionalDependencies:
-      react: 19.3.0
+      react: 19.3.1
 
   '@vitejs/plugin-react@4.7.0(vite@6.4.2(jiti@2.7.0)(lightningcss@1.32.0))':
     dependencies:
@@ -1879,7 +1879,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  marked@18.0.14: {}
+  marked@18.1.2: {}
 
   ms@2.1.3: {}
 
@@ -1897,14 +1897,14 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  react-dom@19.3.0(react@19.3.0):
+  react-dom@19.3.1(react@19.3.1):
     dependencies:
-      react: 19.3.0
+      react: 19.3.1
       scheduler: 0.28.0
 
   react-refresh@0.17.0: {}
 
-  react@19.3.0: {}
+  react@19.3.1: {}
 
   rollup@4.60.4:
     dependencies:

@@ -5,11 +5,10 @@ import { eventCue } from './eventCue';
 import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
-import { RESOLVE_REPLY_DRAFT } from './resolveReplyDraft';
+import { STORY_REVIEW } from '../../scenes/story/storyContent';
 
-const SUMMARY =
-  'retryPolicy.ts now uses the shared MAX_RETRY_ATTEMPTS and emits a metric when it gives up. The retry suite passes, and a reply is drafted for the thread.';
-const TEST_COMMAND = 'pnpm vitest run retryPolicy';
+const SUMMARY = STORY_REVIEW.summary;
+const TEST_COMMAND = 'pnpm vitest run redelivery';
 const FIX_SHA = 'a4c19e07d2b85f3e61c0d9a7b42e8f15c3d6a90b';
 
 type Params = {
@@ -42,7 +41,7 @@ const settleFix = ({ store, sessionId, agentId, attemptId, threadIds }: SettlePa
       state: 'fixed',
       stage: 'proposed',
       disposition: 'fix',
-      replyDraft: RESOLVE_REPLY_DRAFT,
+      replyDraft: STORY_REVIEW.reply,
       commitShas: [FIX_SHA],
       updatedAt: now,
     }),
@@ -122,8 +121,7 @@ export const resolveFixCues = ({
         {
           kind: 'assistant_text',
           runId,
-          delta:
-            'retryPolicy.ts keeps its own copy of the cap. Pointing it at the shared constant.',
+          delta: STORY_REVIEW.narration,
           at,
         },
       ],
@@ -132,8 +130,7 @@ export const resolveFixCues = ({
       atMs: 2200,
       agentId,
       events: ({ at }) => [
-        { kind: 'file_edit', runId, path: 'src/webhooks/metrics.ts', editType: 'modify', at },
-        { kind: 'file_edit', runId, path: 'src/webhooks/retryPolicy.ts', editType: 'modify', at },
+        { kind: 'file_edit', runId, path: STORY_REVIEW.path, editType: 'modify', at },
       ],
     }),
     eventCue({ atMs: 3200, agentId, events: bash({ runId, toolUseId }) }),
@@ -141,7 +138,7 @@ export const resolveFixCues = ({
       atMs: 4600,
       agentId,
       events: ({ at }) => [
-        { kind: 'tool_call_end', runId, toolUseId, output: '6 passed', isError: false, at },
+        { kind: 'tool_call_end', runId, toolUseId, output: '7 passed', isError: false, at },
       ],
     }),
     eventCue({

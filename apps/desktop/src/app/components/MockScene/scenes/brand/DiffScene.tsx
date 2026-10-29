@@ -14,7 +14,7 @@ import {
   RENAMED_PATH,
 } from './contextDiffPatch';
 import { CLEAN_HANDLERS, EDITS_ONLY_HANDLERS } from './diffEmptyHandlers';
-import { DiffStage, handlersFor } from './DiffStage';
+import { DiffStage, UNPUSHED_HANDLERS, handlersFor } from './DiffStage';
 import { LARGE_PATCH } from './largeDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
 
@@ -55,12 +55,14 @@ type Props = {
   readonly manyFiles?: boolean;
   readonly largeChange?: boolean;
   readonly empty?: 'clean' | 'editsOnly';
+  readonly isUnpushed?: boolean;
 };
 
 export const BrandDiffScene = ({
   manyFiles = false,
   largeChange = false,
   empty = undefined,
+  isUnpushed = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
@@ -100,6 +102,8 @@ export const BrandDiffScene = ({
       <DiffStage handlers={LARGE_HANDLERS} centerNote={false} />
     ) : manyFiles ? (
       <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
+    ) : isUnpushed ? (
+      <DiffStage handlers={UNPUSHED_HANDLERS} />
     ) : (
       <DiffStage />
     );

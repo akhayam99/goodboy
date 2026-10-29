@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
 import { holeOf } from './hints/holeOf';
@@ -10,12 +10,13 @@ import { DemoSpotlight } from './DemoSpotlight';
 export type CoachMark = {
   readonly hintId: string;
   readonly copy: string;
-  readonly step: number;
-  readonly total: number;
-  readonly side: HintSide;
+  readonly side: HintSide | undefined;
+  readonly isSideLocked: boolean;
   readonly rect: DemoRect;
   readonly focus: DemoRect | null;
-  readonly isSpotlit: boolean;
+  readonly opened: ReadonlyArray<DemoRect>;
+  readonly isDimmed: boolean;
+  readonly pulse: number;
 };
 
 type Size = {
@@ -27,17 +28,18 @@ type Props = {
   readonly coach: CoachMark;
   readonly scale: number;
   readonly bounds: Size;
-  readonly onSkip: () => void;
+  readonly isSpotlit: boolean;
   readonly onHide: () => void;
 };
 
 const RING_OUTSET = 4;
 const HOLE_PAD = 8;
-const GAP = 12;
+const GAP = 6;
 const MARGIN = 16;
 const CALLOUT_WIDTH = 240;
 const CARET = 8;
 const ENTER_MS = 120;
+const PULSE_MS = 360;
 
 const ENTER_SHIFT = {
   bottom: 'translateY(-4px)',
@@ -83,7 +85,19 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
+type ScaledParams = {
+  readonly rect: DemoRect;
+  readonly scale: number;
+};
+
+const scaledOf = ({ rect, scale }: ScaledParams): DemoRect => ({
+  x: rect.x * scale,
+  y: rect.y * scale,
+  width: rect.width * scale,
+  height: rect.height * scale,
+});
+
+export const DemoCoachMark = ({ coach, scale, bounds, isSpotlit, onHide }: Props) => {
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -123,14 +137,17 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
     height === null
       ? null
       : placeCallout({
-          target: coach.isSpotlit ? hole : target,
+          target,
+          avoid: coach.opened.map((rect) => scaledOf({ rect, scale })),
+          lit: hole,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
+          isLocked: coach.isSideLocked,
           gap: GAP,
           margin: MARGIN,
         });
-  const side = placement?.side ?? coach.side;
+  const side = placement?.side ?? coach.side ?? 'right';
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -155,9 +172,21 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
     };
   }, [coach.hintId, side]);
 
+  useEffect(() => {
+    const callout = calloutRef.current;
+    if (coach.pulse === 0 || callout === null || !canAnimate({ element: callout })) {
+      return;
+    }
+    const nudge = callout.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
+      { duration: PULSE_MS, easing: 'ease-out' },
+    );
+    return () => nudge.cancel();
+  }, [coach.pulse]);
+
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">
-      {coach.isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
+      {isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
       <div
         ref={ringRef}
         aria-hidden
@@ -167,7 +196,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
       <div
         ref={calloutRef}
         role="note"
-        aria-label={`Step ${coach.step} of ${coach.total}`}
+        aria-label="Hint"
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -195,15 +224,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
         )}
         <div className="flex items-start justify-between gap-2">
           <p className="text-row text-foreground">{coach.copy}</p>
-          <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-meta text-faint-foreground">
-            Step {coach.step} of {coach.total}
-          </span>
-          <Button size="xs" variant="quiet" onClick={onSkip}>
-            Skip hint
-          </Button>
+          <IconButton icon={X} label="Dismiss hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
       </div>
     </div>

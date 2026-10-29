@@ -92,15 +92,12 @@ describe('the demo IPC boundary', () => {
     ).resolves.toEqual({ paths: [], entries: [], additions: 0, deletions: 0, numstat: '' });
   });
 
-  it('keeps a push local and tells the visitor', async () => {
+  it('keeps a push local without a notice', async () => {
     const { invoke } = internals();
     await expect(invoke('git_push', { cwd: '/mock/payments-api' })).resolves.toMatchObject({
       exitCode: 0,
     });
-    expect(store.getState().undoNotices.at(-1)?.toast).toMatchObject({
-      kind: 'info',
-      title: 'Demo playground',
-    });
+    expect(store.getState().undoNotices).toHaveLength(0);
   });
 
   it('keeps a GitHub write local and parks a GitHub read', async () => {

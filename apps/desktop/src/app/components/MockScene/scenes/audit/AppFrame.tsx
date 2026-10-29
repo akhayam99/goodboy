@@ -9,6 +9,7 @@ import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import { shellArrangement } from '../../../../shellArrangement';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
+import { SessionDraftPane } from '../../../../../features/session/components/SessionDraftPane';
 import {
   useAppStore,
   useCurrentSession,
@@ -30,6 +31,7 @@ type Props = {
   readonly isRailCollapsed: boolean;
   readonly hasPane?: boolean;
   readonly hasLiveToggle?: boolean;
+  readonly hasDraft?: boolean;
   readonly center?: ReactNode;
 };
 
@@ -38,6 +40,7 @@ export const AppFrame = ({
   isRailCollapsed,
   hasPane = false,
   hasLiveToggle = false,
+  hasDraft = false,
   center,
 }: Props) => {
   const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
@@ -50,6 +53,9 @@ export const AppFrame = ({
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const sessions = useSessions();
+  const draftWorkspaceId = useAppStore((state) => state.openSessionDraftWorkspaceId);
+  const isDraftShown =
+    hasDraft && draftWorkspaceId !== null && draftWorkspaceId === currentWorkspace?.id;
   const goToBoard = useGoToBoard();
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
@@ -102,7 +108,9 @@ export const AppFrame = ({
   }
 
   const main =
-    currentSession !== null ? (
+    isDraftShown && draftWorkspaceId !== null ? (
+      <SessionDraftPane workspaceId={draftWorkspaceId} />
+    ) : currentSession !== null ? (
       <SessionFrame session={currentSession}>
         {center ?? <KeepAliveWorkSurface sessionId={currentSession.id} isActive />}
       </SessionFrame>
@@ -128,8 +136,8 @@ export const AppFrame = ({
           <ShellLeft
             arrangement={arrangement}
             workspaceId={currentWorkspace?.id ?? null}
-            currentSessionId={currentSession?.id ?? null}
-            isDraftShown={false}
+            currentSessionId={isDraftShown ? null : (currentSession?.id ?? null)}
+            isDraftShown={isDraftShown}
             actions={actions}
             settingsSlotRef={setSettingsSlot}
           />

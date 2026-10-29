@@ -25,7 +25,7 @@
      < elevated (cards) < floating (popovers, menus, dialogs, toasts).
      fill is one step inside whatever parent it sits on: brighter here, darker in light.
      idle is the single grey for pending, queued and off. */
-  --color-surround: oklch(0.155 0.005 255);
+  --color-surround: oklch(0.18 0.006 255);
   --color-chrome: oklch(0.17 0.006 255);
   --color-background: oklch(0.205 0.006 255);
   --color-drawer: oklch(0.187 0.006 255);

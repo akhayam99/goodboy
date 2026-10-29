@@ -1,4 +1,4 @@
-import { limitsChipOf, seedProviderPolicy } from '@goodboy/core';
+import { limitsChipOf, seedProviderPolicy, sortLimitWindows } from '@goodboy/core';
 import type {
   IsoDateTime,
   ProviderId,
@@ -7,6 +7,8 @@ import type {
   ProviderPolicyEntry,
   ProviderPolicyState,
 } from '@goodboy/types';
+import { formatUsedPercent } from '../limits/formatUsedPercent';
+import { limitWindowLabel } from '../limits/limitWindowLabel';
 
 export type PolicyRow = Readonly<{
   id: ProviderId;
@@ -17,6 +19,7 @@ export type PolicyRow = Readonly<{
   keepAfterLimit: boolean;
   limitResetsAt: IsoDateTime | null;
   isAtLimit: boolean;
+  usage: string | null;
 }>;
 
 type RowsParams = {
@@ -27,13 +30,33 @@ type RowsParams = {
   readonly nowMs: number;
 };
 
+type UsageParams = {
+  readonly windows: ProviderLimits['windows'];
+};
+
 type LimitParams = Pick<RowsParams, 'limits' | 'nowMs'> & {
   readonly id: ProviderId;
 };
 
+const usageOf = ({ windows }: UsageParams): string | null => {
+  const sorted = sortLimitWindows({ windows });
+  const parts = sorted.flatMap((window) =>
+    window.usedFraction === null
+      ? []
+      : [
+          `${limitWindowLabel({ window, siblings: sorted })} ${formatUsedPercent({ usedFraction: window.usedFraction })} used`,
+        ],
+  );
+  return parts.length === 0 ? null : parts.join(', ');
+};
+
 const limitOf = ({ id, limits, nowMs }: LimitParams) => {
   const chip = limitsChipOf({ providerId: id, limits: limits[id], nowMs });
-  return { isAtLimit: chip.state === 'out', limitResetsAt: chip.resetsAt };
+  return {
+    isAtLimit: chip.state === 'out',
+    limitResetsAt: chip.resetsAt,
+    usage: usageOf({ windows: chip.windows }),
+  };
 };
 
 export const basePolicy = ({

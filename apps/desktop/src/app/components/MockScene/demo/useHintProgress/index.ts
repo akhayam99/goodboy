@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ChapterHintProgress, HintProgress } from '../hints/hintProgressTypes';
-import { HINT_PROGRESS_KEY } from '../hints/hintProgressKey';
 import { readHintProgress } from '../hints/readHintProgress';
 import { writeHintProgress } from '../hints/writeHintProgress';
 
@@ -16,13 +15,12 @@ type ResetParams = {
 export type HintProgressControls = {
   readonly progress: HintProgress;
   readonly markTried: (params: MarkParams) => void;
-  readonly markSkipped: (params: MarkParams) => void;
   readonly reset: (params: ResetParams) => void;
+  readonly resetAll: () => void;
 };
 
 type AddParams = MarkParams & {
   readonly progress: HintProgress;
-  readonly list: 'tried' | 'skipped';
   readonly epoch: number;
 };
 
@@ -34,20 +32,28 @@ type ApplyParams = {
   readonly change: (params: ChangeParams) => HintProgress;
 };
 
-const EMPTY: ChapterHintProgress = { tried: [], skipped: [], epoch: 0 };
+const EMPTY: ChapterHintProgress = { tried: [], epoch: 0 };
 
-const withHint = ({ progress, chapterId, hintId, list, epoch }: AddParams): HintProgress => {
+const withHint = ({ progress, chapterId, hintId, epoch }: AddParams): HintProgress => {
   const chapter = progress[chapterId] ?? EMPTY;
-  if (chapter.epoch !== epoch || chapter[list].includes(hintId)) {
+  if (chapter.epoch !== epoch || chapter.tried.includes(hintId)) {
     return progress;
   }
-  return { ...progress, [chapterId]: { ...chapter, [list]: [...chapter[list], hintId] } };
+  return { ...progress, [chapterId]: { ...chapter, tried: [...chapter.tried, hintId] } };
 };
 
 const withoutChapter = ({ progress, chapterId }: ChangeParams & ResetParams): HintProgress => {
   const epoch = (progress[chapterId]?.epoch ?? 0) + 1;
-  return { ...progress, [chapterId]: { tried: [], skipped: [], epoch } };
+  return { ...progress, [chapterId]: { tried: [], epoch } };
 };
+
+const withoutAnyProgress = ({ progress }: ChangeParams): HintProgress =>
+  Object.fromEntries(
+    Object.entries(progress).map(([chapterId, chapter]) => [
+      chapterId,
+      { tried: [], epoch: chapter.epoch + 1 },
+    ]),
+  );
 
 const initial = (): HintProgress => readHintProgress({ fallback: {} });
 
@@ -72,40 +78,14 @@ export const useHintProgress = (): HintProgressControls => {
     [adopt],
   );
 
-  useEffect(() => {
-    const listener = new AbortController();
-    window.addEventListener(
-      'storage',
-      (event) => {
-        if (event.key !== null && event.key !== HINT_PROGRESS_KEY) {
-          return;
-        }
-        adopt({ progress: readHintProgress({ fallback: latest.current }) });
-      },
-      { signal: listener.signal },
-    );
-    return () => listener.abort();
-  }, [adopt]);
-
-  const mark = useCallback(
-    ({ chapterId, hintId, list }: MarkParams & Pick<AddParams, 'list'>) => {
+  const markTried = useCallback(
+    ({ chapterId, hintId }: MarkParams) => {
       const epoch = latest.current[chapterId]?.epoch ?? 0;
       apply({
-        change: ({ progress: stored }) =>
-          withHint({ progress: stored, chapterId, hintId, list, epoch }),
+        change: ({ progress: stored }) => withHint({ progress: stored, chapterId, hintId, epoch }),
       });
     },
     [apply],
-  );
-
-  const markTried = useCallback(
-    ({ chapterId, hintId }: MarkParams) => mark({ chapterId, hintId, list: 'tried' }),
-    [mark],
-  );
-
-  const markSkipped = useCallback(
-    ({ chapterId, hintId }: MarkParams) => mark({ chapterId, hintId, list: 'skipped' }),
-    [mark],
   );
 
   const reset = useCallback(
@@ -115,5 +95,9 @@ export const useHintProgress = (): HintProgressControls => {
     [apply],
   );
 
-  return { progress, markTried, markSkipped, reset };
+  const resetAll = useCallback(() => {
+    apply({ change: ({ progress: stored }) => withoutAnyProgress({ progress: stored }) });
+  }, [apply]);
+
+  return { progress, markTried, reset, resetAll };
 };

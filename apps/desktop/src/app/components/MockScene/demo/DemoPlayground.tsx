@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
+import { CLOSING_ID } from './closingId';
+import { CLOSING_TITLE } from './closingTitle';
 import { DEMO_CHAPTERS } from './demoChapters';
 import { DEFAULT_GROUP_ID } from './defaultGroupId';
 import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
+import { DemoClosing } from './DemoClosing';
+import { closingCopyOf } from './closingCopyOf';
+import { currentPlatform } from '../../../../shared/platform';
 import { DemoStage, type ShortcutRequest } from './DemoStage';
-import { DemoTimeline } from './DemoTimeline';
+import { DemoCompactNav } from './DemoCompactNav';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys, type FrameShortcutParams } from './useDemoKeys';
 import { useDemoTheme } from './useDemoTheme';
-import { isEveryGroupTried } from './hints/isEveryGroupTried';
+import { groupAccessOf } from './hints/groupAccessOf';
 import { headerInstruction } from './hints/headerInstruction';
-import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
-import { useGroupVisits } from './useGroupVisits';
+import { useDemoHints, type DemoHints } from './useDemoHints';
+import { useHintProgress } from './useHintProgress';
 
 type ChapterParams = {
   readonly id: string;
@@ -22,6 +27,14 @@ type ChapterParams = {
 
 type ShownParams = {
   readonly key: string;
+};
+
+type ToggleHintsParams = {
+  readonly isEnabled: boolean;
+};
+
+type SpotlightParams = {
+  readonly isOn: boolean;
 };
 
 type AnnouncementParams = {
@@ -34,32 +47,60 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
   return copy === undefined ? '' : `Hint: ${copy}`;
 };
 
+const RAIL_IDS: ReadonlyArray<string> = [...DEMO_CHAPTERS.map((entry) => entry.id), CLOSING_ID];
+
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [platform] = useState(currentPlatform);
+  const closingCopy = closingCopyOf({ platform });
   const { theme, choose: chooseTheme, toggle: swapTheme } = useDemoTheme();
   const [shortcut, setShortcut] = useState<ShortcutRequest | undefined>(undefined);
-  const { chapterId, selectChapter } = useChapterHash({
-    chapters: DEMO_CHAPTERS,
+  const progressControls = useHintProgress();
+  const access = groupAccessOf({ chapters: DEMO_CHAPTERS, progress: progressControls.progress });
+  const { chapterId: requestedId, selectChapter } = useChapterHash({
+    ids: RAIL_IDS,
     fallbackId: DEFAULT_GROUP_ID,
   });
 
-  const chapterIndex = Math.max(
-    0,
-    DEMO_CHAPTERS.findIndex((entry) => entry.id === chapterId),
-  );
+  const accessOf = ({ id }: ChapterParams) =>
+    id === CLOSING_ID ? access.closing : (access.groups.get(id) ?? 'locked');
+  const chapterId = accessOf({ id: requestedId }) === 'locked' ? DEFAULT_GROUP_ID : requestedId;
+  const isClosing = chapterId === CLOSING_ID;
+  const chapterIndex = isClosing
+    ? DEMO_CHAPTERS.length - 1
+    : Math.max(
+        0,
+        DEMO_CHAPTERS.findIndex((entry) => entry.id === chapterId),
+      );
+  const railIndex = isClosing ? RAIL_IDS.length - 1 : chapterIndex;
   const [shownKey, setShownKey] = useState<string | undefined>(undefined);
   const chapter = DEMO_CHAPTERS[chapterIndex] ?? DEMO_CHAPTERS[0];
-  const previousChapter = DEMO_CHAPTERS[chapterIndex - 1];
-  const nextChapter = DEMO_CHAPTERS[chapterIndex + 1];
+  const previousId = RAIL_IDS[railIndex - 1];
+  const nextId = RAIL_IDS[railIndex + 1];
+  const nextChapter = isClosing ? undefined : DEMO_CHAPTERS[chapterIndex + 1];
+  const nextTitle = nextId === CLOSING_ID ? CLOSING_TITLE : nextChapter?.title;
   const [intentId, setIntentId] = useState<string | undefined>(undefined);
   const intentChapter =
     intentId === undefined || intentId === chapter.id
       ? undefined
       : DEMO_CHAPTERS.find((entry) => entry.id === intentId);
-  const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
-  const hints = useDemoHints({ chapter, frameKey: player.frame.key });
-  const visitedIds = useGroupVisits({ chapterId: chapter.id });
+  const hints = useDemoHints({ chapter, progressControls });
+  const isGroupDone = !isClosing && hints.isDone;
+  const isNextOpen = nextId !== undefined && accessOf({ id: nextId }) === 'open';
+  const upNextId = isGroupDone && isNextOpen ? nextId : undefined;
+
+  const preloadBeat =
+    intentChapter?.beats[0] ??
+    (hints.nextBeatIndex === undefined ? undefined : chapter.beats[hints.nextBeatIndex]) ??
+    (isGroupDone && isNextOpen ? nextChapter?.beats[0] : undefined);
+  const player = useBeatPlayer({
+    chapter,
+    beatIndex: hints.beatIndex,
+    preloadBeat,
+    theme,
+    shownKey,
+  });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -81,34 +122,45 @@ export const DemoPlayground = () => {
   const onIntent = useCallback(({ id }: ChapterParams) => setIntentId(id), []);
 
   const onPrevious = useCallback(() => {
-    if (previousChapter === undefined) {
+    if (previousId === undefined) {
       return;
     }
-    goToChapter({ id: previousChapter.id });
-  }, [previousChapter, goToChapter]);
+    goToChapter({ id: previousId });
+  }, [previousId, goToChapter]);
 
+  const isNextLocked = nextId === undefined || accessOf({ id: nextId }) === 'locked';
   const onNext = useCallback(() => {
-    if (nextChapter === undefined) {
+    if (nextId === undefined || isNextLocked) {
       return;
     }
-    goToChapter({ id: nextChapter.id });
-  }, [nextChapter, goToChapter]);
+    goToChapter({ id: nextId });
+  }, [nextId, isNextLocked, goToChapter]);
 
-  const { reset: resetHints, onHintReport: onHintNote } = hints;
-  const { replay, follow } = player;
+  const { reset: resetHints, restart: restartHints, show: showHints, hide: hideHints } = hints;
+  const { replay } = player;
   const onReplay = useCallback(() => {
     resetHints();
     replay();
   }, [resetHints, replay]);
-  const onHintReport = useCallback(
-    ({ key, report }: HintReportParams) => {
-      if (report.type === 'place') {
-        follow({ key, place: report.place });
+  const firstChapter = DEMO_CHAPTERS[0];
+  const onRestart = useCallback(() => {
+    restartHints();
+    if (chapterId === firstChapter.id) {
+      replay();
+      focusFrame();
+      return;
+    }
+    goToChapter({ id: firstChapter.id });
+  }, [restartHints, chapterId, firstChapter.id, replay, focusFrame, goToChapter]);
+  const onToggleHints = useCallback(
+    ({ isEnabled }: ToggleHintsParams) => {
+      if (isEnabled) {
+        showHints();
         return;
       }
-      onHintNote({ key, report });
+      hideHints();
     },
-    [follow, onHintNote],
+    [showHints, hideHints],
   );
   const onFrameShortcut = useCallback(({ code }: FrameShortcutParams) => {
     setShortcut((previous) => ({ code, count: (previous?.count ?? 0) + 1 }));
@@ -120,15 +172,11 @@ export const DemoPlayground = () => {
     onShowHint: hints.show,
     onFrameShortcut,
   });
-  useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
+  useEscapeLayer(hints.dismiss, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
-  const isSpotlit = hints.coach?.isSpotlit === true;
-  const isLastBeat = player.beatIndex === chapter.beats.length - 1;
-  const isGroupDone =
-    hints.tally.total > 0
-      ? hints.tally.tried >= hints.tally.total
-      : isLastBeat && player.isComplete;
+  const [isSpotlit, setIsSpotlit] = useState(false);
+  const onSpotlightChange = useCallback(({ isOn }: SpotlightParams) => setIsSpotlit(isOn), []);
 
   return (
     <div
@@ -137,70 +185,81 @@ export const DemoPlayground = () => {
       onKeyDown={onKeyDown}
       className="flex h-screen min-h-0 flex-col bg-surround text-foreground outline-none"
     >
-      <DemoTopBar theme={theme} isQuiet={isSpotlit} onToggleTheme={swapTheme} />
+      <DemoTopBar
+        theme={theme}
+        isQuiet={isSpotlit}
+        isHintsEnabled={!hints.isHidden}
+        onToggleHints={onToggleHints}
+        onRestart={onRestart}
+        onToggleTheme={swapTheme}
+      />
       <div className="flex min-h-0 flex-1">
         <DemoRail
           chapters={DEMO_CHAPTERS}
-          activeId={chapter.id}
+          activeId={chapterId}
+          access={access}
+          steps={hints}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
           onIntent={onIntent}
-          upNextId={nextChapter?.id}
-          isUpNextReady={isGroupDone}
+          upNextId={upNextId}
           isQuiet={isSpotlit}
-          isEveryGroupTried={isEveryGroupTried({
-            chapters: DEMO_CHAPTERS,
-            tallyOf: hints.tallyOf,
-            visitedIds,
-          })}
         />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-5 pt-4 lg:pl-2 lg:pr-5">
           <DemoChapterHeader
-            chapter={chapter}
-            tally={hints.tally}
-            instruction={headerInstruction({
-              chapter,
-              beatIndex: player.beatIndex,
-              hintInstruction: hints.instruction,
-              isGroupDone,
-              next: nextChapter,
-            })}
-            isHintHidden={hints.isHidden}
-            onShowHint={hints.show}
+            title={isClosing ? CLOSING_TITLE : chapter.title}
+            instruction={
+              isClosing
+                ? closingCopy.instruction
+                : headerInstruction({
+                    chapter,
+                    held: hints.held,
+                    acting: hints.acting,
+                    active: hints.activeHint,
+                    nextTitle: nextTitle ?? CLOSING_TITLE,
+                  })
+            }
           />
-          <DemoStage
-            theme={theme}
-            onThemeChange={chooseTheme}
-            shortcut={shortcut}
-            frame={player.frame}
-            preloadFrame={player.preloadFrame}
-            command={player.command}
-            onShown={onShown}
-            onReport={player.report}
-            onFocusLost={focusFrame}
-            hintTrack={hints.track}
-            coach={hints.coach}
-            offscreen={hints.offscreen}
-            reveal={hints.reveal}
-            onHintReport={onHintReport}
-            onSkipHint={hints.skip}
-            onHideHint={hints.hide}
-            onRevealHint={hints.revealHint}
-          />
+          {isClosing ? (
+            <DemoClosing copy={closingCopy} />
+          ) : (
+            <DemoStage
+              theme={theme}
+              onThemeChange={chooseTheme}
+              shortcut={shortcut}
+              frame={player.frame}
+              preloadFrame={player.preloadFrame}
+              command={player.command}
+              onShown={onShown}
+              onReport={player.report}
+              onFocusLost={focusFrame}
+              hintTrack={hints.track}
+              coach={hints.coach}
+              offscreen={hints.offscreen}
+              reveal={hints.reveal}
+              onHintReport={hints.onHintReport}
+              onSpotlightChange={onSpotlightChange}
+              onHideHint={hints.dismiss}
+              onRevealHint={hints.revealHint}
+            />
+          )}
           <p className="sr-only" aria-live="polite">
             {hintAnnouncement({
               coach: hints.coach,
               offscreen: hints.offscreen,
             })}
           </p>
-          <DemoTimeline
-            chapter={chapter}
-            player={player}
-            onReplay={onReplay}
-            hasPrevious={previousChapter !== undefined}
+          <DemoCompactNav
+            title={isClosing ? CLOSING_TITLE : chapter.title}
+            chapter={isClosing ? undefined : chapter}
+            groupNumber={chapterIndex + 1}
+            groupCount={DEMO_CHAPTERS.length}
+            steps={hints}
+            hasPrevious={previousId !== undefined}
             onPrevious={onPrevious}
-            next={nextChapter}
-            isNextReady={isGroupDone}
+            nextTitle={nextTitle}
+            isNextReady={upNextId !== undefined}
+            isNextLocked={isNextLocked}
             onNext={onNext}
           />
         </main>

@@ -54,6 +54,7 @@ export const AnswerSubmitButton = ({
       size="sm"
       disabled={!canAnswer}
       onClick={onAnswer}
+      data-demo-anchor="question-answer"
       className="min-w-18"
     >
       {isHandOff ? 'Hand off' : 'Answer'}

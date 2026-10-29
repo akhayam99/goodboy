@@ -1,5 +1,6 @@
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from '../hints/demoHintTypes';
+import { dwellOf } from '../hints/dwellOf';
 import { DEMO_PROTOCOL, type DemoHintReport, type DemoRect } from './demoProtocol';
 import type { DirectorStore } from './directorTypes';
 import { createResultTracker } from './createResultTracker';
@@ -10,16 +11,8 @@ type ReportParams = {
   readonly report: DemoHintReport;
 };
 
-type HintIdParams = {
-  readonly hintId: string;
-};
-
 type TrackParams = {
   readonly chapterId: string;
-};
-
-type PlaceParams = TrackParams & {
-  readonly root: Document;
 };
 
 type Params = {
@@ -27,7 +20,6 @@ type Params = {
   readonly view: Window;
   readonly generation: () => number;
   readonly hintsOf: (params: TrackParams) => ReadonlyArray<DemoHint>;
-  readonly placeOf: (params: PlaceParams) => string | null;
   readonly onReport: (params: ReportParams) => void;
 };
 
@@ -38,6 +30,7 @@ type RevealParams = {
 type SetTrackParams = {
   readonly chapterId: string;
   readonly settledIds: ReadonlyArray<string>;
+  readonly isGuarding?: boolean;
 };
 
 export type HintEngine = {
@@ -67,6 +60,10 @@ type RegionElementParams = {
   readonly region: Element | null;
 };
 
+type DwellParams = {
+  readonly hint: DemoHint;
+};
+
 type StateParams = {
   readonly state: AppStore;
 };
@@ -77,14 +74,35 @@ type ElementParams = {
 };
 
 const CUT_TOLERANCE = 2;
-const DWELL_MS = 2500;
 const HOVER_GRACE_MS = 600;
 const MAX_DWELL_MS = 8000;
 const DWELL_SLACK_MS = 30;
+const POLL_MS = 250;
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
+type GuardParams = {
+  readonly event: MouseEvent | KeyboardEvent;
+};
+
+type FieldParams = {
+  readonly element: Element;
+};
+
+type ControlParams = {
+  readonly target: Node;
+};
+
+const TEXT_FIELD = 'textarea, input, [contenteditable="true"], [role="textbox"]';
+const CONTROL = `${TEXT_FIELD}, button, a[href], summary, [role="button"], [role="tab"], [role="menuitem"]`;
+
+const isTextField = ({ element }: FieldParams): boolean => element.matches(TEXT_FIELD);
+
+const isOnControl = ({ target }: ControlParams): boolean =>
+  target instanceof Element && target.closest(CONTROL) !== null;
+
 type Placement = {
+  readonly element: Element | null;
   readonly rect: DemoRect | null;
   readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
@@ -96,7 +114,13 @@ type Current = {
   readonly placement: Placement;
 };
 
-const MISSING: Placement = { rect: null, focus: null, isOffscreen: false, isCut: false };
+const MISSING: Placement = {
+  element: null,
+  rect: null,
+  focus: null,
+  isOffscreen: false,
+  isCut: false,
+};
 
 type Box = {
   readonly top: number;
@@ -155,27 +179,27 @@ export const createHintEngine = ({
   view,
   generation,
   hintsOf,
-  placeOf,
   onReport,
 }: Params): HintEngine => {
   const root = view.document;
-  let chapterId: string | null = null;
-  let lastPlace: string | null = null;
+  let trackedId: string | null = null;
   let hints: ReadonlyArray<DemoHint> = [];
   let settled: ReadonlySet<string> = new Set();
   const done = new Set<string>();
-  const dwelt = new Set<string>();
-  let shownId: string | null = null;
   const armed = new Set<string>();
   const clicked = new Set<string>();
+  const clickedElements = new Map<string, Element>();
+  let settling: ReadonlyArray<DemoHint> = [];
   const scrolled = new Set<string>();
   const baselines = new Map<string, AppStore>();
   let lastSignature = '';
   let pending: number | null = null;
   let isDisposed = false;
+  let isGuarding = false;
   let dwellUntil = 0;
   let dwellStart = 0;
   let dwellTimer: number | null = null;
+  let pollTimer: number | null = null;
   const results = createResultTracker({ view, onChange: () => schedule() });
 
   const envelope = () => ({
@@ -241,7 +265,7 @@ export const createHintEngine = ({
       centerY >= visible.top &&
       centerY <= visible.bottom;
     if (!isShown) {
-      return { rect: null, focus: null, isOffscreen: true, isCut: false };
+      return { element, rect: null, focus: null, isOffscreen: true, isCut: false };
     }
     const isCut =
       box.top < visible.top - CUT_TOLERANCE ||
@@ -249,6 +273,7 @@ export const createHintEngine = ({
       box.left < visible.left - CUT_TOLERANCE ||
       box.right > visible.right + CUT_TOLERANCE;
     return {
+      element,
       rect: rectOfBox({ box }),
       focus: focusOf({ region }),
       isOffscreen: false,
@@ -256,17 +281,8 @@ export const createHintEngine = ({
     };
   };
 
-  const reportPlace = (): void => {
-    if (chapterId === null) {
-      return;
-    }
-    const place = placeOf({ chapterId, root });
-    if (place === null || place === lastPlace) {
-      return;
-    }
-    lastPlace = place;
-    onReport({ report: { ...envelope(), type: 'place', place } });
-  };
+  const activeOf = (): DemoHint | undefined =>
+    hints.find((hint) => !done.has(hint.id) && !settled.has(hint.id));
 
   const placeHint = ({ hint, state }: ProbeParams): Placement => {
     const probe = probeOf({ hint, state });
@@ -287,22 +303,20 @@ export const createHintEngine = ({
   };
 
   const currentOf = ({ state }: StateParams): Current | undefined => {
-    for (const hint of hints) {
-      if (done.has(hint.id) || settled.has(hint.id) || !hint.revealWhen(probeOf({ hint, state }))) {
-        continue;
-      }
-      const placement = placeHint({ hint, state });
-      if (placement.rect !== null || placement.isOffscreen) {
-        return { hint, placement };
-      }
+    const hint = activeOf();
+    if (hint === undefined || !hint.revealWhen(probeOf({ hint, state }))) {
+      return undefined;
+    }
+    const placement = placeHint({ hint, state });
+    if (placement.rect !== null || placement.isOffscreen) {
+      return { hint, placement };
     }
     return undefined;
   };
 
-  const startDwell = ({ hintId }: HintIdParams): void => {
-    dwelt.add(hintId);
+  const startDwell = ({ hint }: DwellParams): void => {
     dwellStart = Date.now();
-    dwellUntil = dwellStart + DWELL_MS;
+    dwellUntil = dwellStart + dwellOf({ hint });
   };
 
   const isDwelling = (): boolean => {
@@ -329,41 +343,31 @@ export const createHintEngine = ({
     if (isDisposed) {
       return;
     }
-    reportPlace();
     if (hints.length === 0) {
       return;
     }
     const state = store.getState();
-    for (const hint of hints) {
-      if (done.has(hint.id)) {
-        continue;
-      }
+    for (let hint = activeOf(); hint !== undefined; hint = activeOf()) {
       const probe = probeOf({ hint, state });
       if (!armed.has(hint.id) && hint.revealWhen(probe)) {
         armed.add(hint.id);
         baselines.set(hint.id, state);
       }
-      if (armed.has(hint.id) && hint.doneWhen(probe)) {
-        done.add(hint.id);
-        startDwell({ hintId: hint.id });
-        onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
+      if (!armed.has(hint.id) || !hint.doneWhen(probe)) {
+        break;
       }
+      done.add(hint.id);
+      startDwell({ hint });
+      settling = [...settling, hint];
+      onReport({ report: { ...envelope(), type: 'tried', hintId: hint.id } });
     }
-    let current = isDwelling() ? undefined : currentOf({ state });
-    const previousId = shownId;
-    const isReplaced =
-      previousId !== null &&
-      current?.hint.id !== previousId &&
-      !dwelt.has(previousId) &&
-      clicked.has(previousId);
-    if (previousId !== null && isReplaced && dwellUntil === 0) {
-      startDwell({ hintId: previousId });
-      isDwelling();
-      current = undefined;
+    if (!isDwelling()) {
+      for (const hint of settling) {
+        hint.settle?.({ root });
+      }
+      settling = [];
     }
-    if (current !== undefined) {
-      shownId = current.hint.id;
-    }
+    const current = currentOf({ state });
     const rect = current?.placement.rect ?? null;
     const resultRects = current === undefined ? [] : results.rects();
     const focus =
@@ -373,13 +377,36 @@ export const createHintEngine = ({
     const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
     const isClicked = hintId !== null && clicked.has(hintId);
-    const signature = JSON.stringify({ hintId, rect, focus, isOffscreen, isClicked });
+    const isPressed =
+      hintId !== null &&
+      current?.placement.element !== null &&
+      clickedElements.get(hintId) === current?.placement.element;
+    const opened = rect === null ? [] : resultRects;
+    const signature = JSON.stringify({
+      hintId,
+      rect,
+      focus,
+      opened,
+      isOffscreen,
+      isClicked,
+      isPressed,
+    });
     if (signature === lastSignature) {
       return;
     }
     lastSignature = signature;
     onReport({
-      report: { ...envelope(), type: 'anchor', hintId, rect, focus, isOffscreen, isClicked },
+      report: {
+        ...envelope(),
+        type: 'anchor',
+        hintId,
+        rect,
+        focus,
+        opened,
+        isOffscreen,
+        isClicked,
+        isPressed,
+      },
     });
   };
 
@@ -390,7 +417,66 @@ export const createHintEngine = ({
     pending = view.requestAnimationFrame(evaluate);
   };
 
+  const poll = (): void => {
+    if (isDisposed) {
+      return;
+    }
+    if (pending !== null) {
+      view.cancelAnimationFrame(pending);
+    }
+    evaluate();
+    pollTimer = view.setTimeout(poll, POLL_MS);
+  };
+
+  const guard = ({ event }: GuardParams): void => {
+    if (!isGuarding || !event.isTrusted || !(event.target instanceof Node)) {
+      return;
+    }
+    const active = activeOf();
+    if (active === undefined) {
+      return;
+    }
+    const state = store.getState();
+    const own = anchorOf({ hint: active, probe: probeOf({ hint: active, state }) });
+    if (own?.contains(event.target) === true) {
+      return;
+    }
+    const { target } = event;
+    const isActivation =
+      event.type === 'click' ||
+      (event instanceof KeyboardEvent && (event.key === 'Enter' || event.key === ' '));
+    if (isActivation && target instanceof Element && active.isBlocked?.({ target }) === true) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onReport({ report: { ...envelope(), type: 'blocked', hintId: active.id } });
+      return;
+    }
+    const skipping = hints
+      .slice(hints.indexOf(active) + 1)
+      .map((hint) => anchorOf({ hint, probe: probeOf({ hint, state }) }))
+      .filter((anchor) => anchor !== null && !isTextField({ element: anchor }));
+    const isOnSkipping = skipping.some((anchor) => anchor?.contains(target) === true);
+    const isEnterAnywhere =
+      event instanceof KeyboardEvent &&
+      event.key === 'Enter' &&
+      skipping.length > 0 &&
+      !isOnControl({ target });
+    if (!isOnSkipping && !isEnterAnywhere) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    onReport({ report: { ...envelope(), type: 'blocked', hintId: active.id } });
+  };
+
   const clickListener = new AbortController();
+
+  for (const type of ['click', 'keydown'] as const) {
+    view.addEventListener(type, (event) => guard({ event }), {
+      capture: true,
+      signal: clickListener.signal,
+    });
+  }
 
   const unsubscribe = store.subscribe(schedule);
   const mutations = new MutationObserver(schedule);
@@ -404,12 +490,12 @@ export const createHintEngine = ({
       if (!event.isTrusted || !(event.target instanceof Node)) {
         return;
       }
-      const target = event.target;
-      const state = store.getState();
-      for (const hint of hints) {
-        const anchor = anchorOf({ hint, probe: probeOf({ hint, state }) });
-        if (anchor !== null && anchor.contains(target)) {
+      const hint = activeOf();
+      if (hint !== undefined) {
+        const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
+        if (anchor !== null && anchor.contains(event.target)) {
           clicked.add(hint.id);
+          clickedElements.set(hint.id, anchor);
         }
       }
       schedule();
@@ -418,16 +504,19 @@ export const createHintEngine = ({
   );
 
   return {
-    setTrack: ({ chapterId: track, settledIds }) => {
-      if (chapterId !== track) {
+    setTrack: ({ chapterId: track, settledIds, isGuarding: isGuardOn = false }) => {
+      if (trackedId !== track) {
         scrolled.clear();
       }
-      chapterId = track;
+      trackedId = track;
+      isGuarding = isGuardOn;
       hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
-      shownId = null;
       lastSignature = '';
       schedule();
+      if (pollTimer === null) {
+        pollTimer = view.setTimeout(poll, POLL_MS);
+      }
     },
     reveal: ({ hintId }) => {
       const hint = hints.find((entry) => entry.id === hintId);
@@ -442,13 +531,12 @@ export const createHintEngine = ({
       done.clear();
       armed.clear();
       clicked.clear();
+      clickedElements.clear();
+      settling = [];
       scrolled.clear();
       baselines.clear();
       lastSignature = '';
-      lastPlace = null;
       dwellUntil = 0;
-      dwelt.clear();
-      shownId = null;
       results.reset();
       schedule();
     },
@@ -459,6 +547,9 @@ export const createHintEngine = ({
       }
       if (dwellTimer !== null) {
         view.clearTimeout(dwellTimer);
+      }
+      if (pollTimer !== null) {
+        view.clearTimeout(pollTimer);
       }
       results.dispose();
       unsubscribe();

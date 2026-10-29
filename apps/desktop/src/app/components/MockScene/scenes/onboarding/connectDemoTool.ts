@@ -30,9 +30,9 @@ const bindingOf = ({ workspaceId, tool, at }: BindingParams): IntegrationBinding
         ...base,
         provider: 'linear',
         config: {
-          workspaceUrlKey: 'acme',
+          workspaceUrlKey: 'harborline',
           viewerUserId: 'mock-linear-dana',
-          viewerName: 'Dana K.',
+          viewerName: 'Dana R.',
         },
       };
     case 'jira':
@@ -40,10 +40,10 @@ const bindingOf = ({ workspaceId, tool, at }: BindingParams): IntegrationBinding
         ...base,
         provider: 'jira',
         config: {
-          siteUrl: 'https://acme.atlassian.net',
-          email: 'dana@northwind.dev',
-          projectKey: 'ACM',
-          displayName: 'Dana K.',
+          siteUrl: 'https://harborline.atlassian.net',
+          email: 'dana@harborline.dev',
+          projectKey: 'HBL',
+          displayName: 'Dana R.',
         },
       };
     case 'gitlab':
@@ -56,7 +56,11 @@ const bindingOf = ({ workspaceId, tool, at }: BindingParams): IntegrationBinding
       return {
         ...base,
         provider: 'bitbucket',
-        config: { workspaceSlug: 'acme', email: 'dana@northwind.dev', displayName: 'Dana K.' },
+        config: {
+          workspaceSlug: 'harborline',
+          email: 'dana@harborline.dev',
+          displayName: 'Dana R.',
+        },
       };
     default: {
       const unreachable: never = tool;

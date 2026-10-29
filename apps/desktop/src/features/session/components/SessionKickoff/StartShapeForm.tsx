@@ -108,6 +108,7 @@ export const StartShapeForm = ({ workspaceId, shape, run, limit, model }: Props)
         ) : null}
         <Button
           size="md"
+          data-demo-anchor="draft-start"
           disabled={reason !== null || run.isStarting}
           isBusy={run.isStarting}
           busyLabel={START_KIND_COPY.starting}
