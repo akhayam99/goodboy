@@ -1,7 +1,7 @@
 import { isResultsPayload } from '@goodboy/core';
 import { AUTO_OUTCOMES, type AutoOutboxRow } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
-import type { AutoDeliveredResult } from './state';
+import type { AutoDeliveredArtifact, AutoDeliveredResult } from './state';
 import { isRecord } from '@goodboy/types/helpers';
 
 type Params = {
@@ -22,6 +22,40 @@ const textOf = ({ source, key }: FieldParams): string | null => {
 };
 
 const recordOf = ({ source, key }: FieldParams): unknown => (isRecord(source) ? source[key] : null);
+
+type ArtifactParams = {
+  readonly value: unknown;
+};
+
+const deliveredArtifactOf = ({ value }: ArtifactParams): AutoDeliveredArtifact | null => {
+  const artifactId = textOf({ source: value, key: 'id' });
+  const title = textOf({ source: value, key: 'title' });
+  if (artifactId === null || title === null) {
+    return null;
+  }
+  const revision = isRecord(value) ? value['revision'] : null;
+  return {
+    artifactId,
+    kind: textOf({ source: value, key: 'kind' }) ?? 'artifact',
+    title,
+    revision: typeof revision === 'number' ? revision : null,
+  };
+};
+
+type ArtifactsParams = {
+  readonly entry: unknown;
+};
+
+const artifactsOf = ({ entry }: ArtifactsParams): ReadonlyArray<AutoDeliveredArtifact> => {
+  const list = isRecord(entry) ? entry['artifacts'] : null;
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.flatMap((value: unknown) => {
+    const artifact = deliveredArtifactOf({ value });
+    return artifact === null ? [] : [artifact];
+  });
+};
 
 type EntryParams = {
   readonly entry: unknown;
@@ -47,6 +81,7 @@ const deliveredOf = ({ entry, runId }: EntryParams): AutoDeliveredResult | null 
     model: textOf({ source: routing, key: 'model' }),
     outcome,
     summary: textOf({ source: recordOf({ source: entry, key: 'declared' }), key: 'summary' }),
+    artifacts: artifactsOf({ entry }),
   };
 };
 

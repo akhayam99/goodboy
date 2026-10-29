@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { AutoOutcome } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredResult } from '../../../../store/slices/auto-view/state';
+import type { ArtifactLinkModel } from '../../../auto/chat/artifactLinksOf';
 import { AutoResultCards } from './AutoResultCards';
 
 afterEach(cleanup);
@@ -25,6 +26,7 @@ const resultOf = ({ key, role, outcome, summary }: ResultParams): AutoDeliveredR
   model: 'claude-sonnet-5-5',
   outcome,
   summary,
+  artifacts: [],
 });
 
 const LONG_REPORT = [
@@ -46,8 +48,31 @@ const LABELS = new Map<AgentId, string>([
   [brandId<AgentId>({ value: 'agent-stopped' }), 'Tester'],
 ]);
 
+type RenderParams = {
+  readonly results: ReadonlyArray<AutoDeliveredResult>;
+  readonly artifacts?: ReadonlyMap<string, ReadonlyArray<ArtifactLinkModel>>;
+  readonly onOpenChild?: () => void;
+  readonly onOpenArtifact?: () => void;
+};
+
+const renderCardsWith = ({
+  results,
+  artifacts = new Map(),
+  onOpenChild = vi.fn(),
+  onOpenArtifact = vi.fn(),
+}: RenderParams) =>
+  render(
+    <AutoResultCards
+      results={results}
+      labels={LABELS}
+      artifacts={artifacts}
+      onOpenChild={onOpenChild}
+      onOpenArtifact={onOpenArtifact}
+    />,
+  );
+
 const renderCards = (results: ReadonlyArray<AutoDeliveredResult>, onOpenChild = vi.fn()) =>
-  render(<AutoResultCards results={results} labels={LABELS} onOpenChild={onOpenChild} />);
+  renderCardsWith({ results, onOpenChild });
 
 describe('AutoResultCards', () => {
   it('wraps each report in the card of the agent that wrote it, with Open on the agent', () => {
@@ -116,5 +141,136 @@ describe('AutoResultCards', () => {
     expect(within(failed).getByRole('button', { name: 'Open Scout' })).toBeDefined();
     const stopped = screen.getByRole('article', { name: 'Tester, Stopped' });
     expect(within(stopped).queryByText('half done')).toBeNull();
+  });
+
+  describe('when the agent produced an artifact', () => {
+    const NARRATION = [
+      'Comparing the ledger-core branch against main.',
+      '',
+      'Checking the insert path for concurrent webhooks.',
+      '',
+      'One race left in ledger-core.',
+    ].join('\n');
+
+    const REPORT_LINK: ArtifactLinkModel = {
+      artifactId: 'artifact-report',
+      kind: 'report',
+      kindLabel: 'Report',
+      title: 'Certify ledger-core, branch vs main',
+      revision: 2,
+      lead: 'One race left in ledger-core, the rest is safe to merge.',
+      approval: null,
+    };
+
+    const reviewerResult = (): AutoDeliveredResult => ({
+      ...resultOf({ key: 'first', role: 'reviewer', outcome: 'completed', summary: NARRATION }),
+      artifacts: [
+        {
+          artifactId: 'artifact-report',
+          kind: 'report',
+          title: 'Certify ledger-core, branch vs main',
+          revision: 2,
+        },
+      ],
+    });
+
+    it('leads with the artifact row and keeps the notes closed', () => {
+      const onOpenArtifact = vi.fn();
+      renderCardsWith({
+        results: [reviewerResult()],
+        artifacts: new Map([['delegation-first', [REPORT_LINK]]]),
+        onOpenArtifact,
+      });
+
+      const card = screen.getByRole('article', { name: 'Reviewer 1, Done' });
+      const row = within(card).getByRole('button', {
+        name: 'Open report Certify ledger-core, branch vs main',
+      });
+      expect(row.textContent).toContain('Report · Certify ledger-core, branch vs main');
+      within(card).getByText('v2');
+      within(card).getByText('One race left in ledger-core, the rest is safe to merge.');
+      expect(within(card).queryByText(/Comparing the ledger-core branch/)).toBeNull();
+      const notes = within(card).getByRole('button', { name: "Show the agent's notes" });
+      expect(notes.getAttribute('aria-expanded')).toBe('false');
+      expect(card.querySelector('[data-clamped]')).toBeNull();
+      fireEvent.click(row);
+      expect(onOpenArtifact).toHaveBeenCalledWith('artifact-report');
+    });
+
+    it('opens the notes on demand', () => {
+      renderCardsWith({
+        results: [reviewerResult()],
+        artifacts: new Map([['delegation-first', [REPORT_LINK]]]),
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: "Show the agent's notes" }));
+
+      const hide = screen.getByRole('button', { name: "Hide the agent's notes" });
+      expect(hide.getAttribute('aria-expanded')).toBe('true');
+      screen.getByText(/Comparing the ledger-core branch/);
+    });
+
+    it('draws no row for a plan that waits for approval and keeps the notes closed', () => {
+      const waiting: ArtifactLinkModel = {
+        ...REPORT_LINK,
+        artifactId: 'artifact-plan',
+        kind: 'plan',
+        kindLabel: 'Plan',
+        title: 'Retry-safe credit retries',
+        approval: { word: 'Needs approval', tone: 'warning', state: 'needs_approval' },
+      };
+      renderCardsWith({
+        results: [reviewerResult()],
+        artifacts: new Map([['delegation-first', [waiting]]]),
+      });
+
+      expect(screen.queryByRole('list', { name: 'Artifacts' })).toBeNull();
+      screen.getByRole('button', { name: "Show the agent's notes" });
+    });
+
+    it('marks an approved plan with its tone word', () => {
+      const approved: ArtifactLinkModel = {
+        ...REPORT_LINK,
+        artifactId: 'artifact-plan',
+        kind: 'plan',
+        kindLabel: 'Plan',
+        title: 'Retry-safe credit retries',
+        revision: 1,
+        approval: { word: 'Approved', tone: 'success', state: 'approved' },
+      };
+      renderCardsWith({
+        results: [reviewerResult()],
+        artifacts: new Map([['delegation-first', [approved]]]),
+      });
+
+      screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
+      screen.getByText('Approved');
+    });
+
+    it('drops the notes when the summary is only an artifact block', () => {
+      const blockOnly: AutoDeliveredResult = {
+        ...reviewerResult(),
+        summary: '<<artifact v=1 kind=report>>\n{"title":"Audit"}\n<</artifact>>',
+      };
+      renderCardsWith({
+        results: [blockOnly],
+        artifacts: new Map([['delegation-first', [REPORT_LINK]]]),
+      });
+
+      expect(screen.queryByRole('button', { name: "Show the agent's notes" })).toBeNull();
+      screen.getByRole('button', { name: /^Open report/ });
+    });
+  });
+
+  it('keeps the text preview and no notes toggle for an agent with no artifact', () => {
+    renderCards([
+      resultOf({ key: 'first', role: 'reviewer', outcome: 'completed', summary: LONG_REPORT }),
+    ]);
+
+    const card = screen.getByRole('article', { name: 'Reviewer 1, Done' });
+    expect(within(card).queryByRole('button', { name: "Show the agent's notes" })).toBeNull();
+    expect(within(card).queryByRole('list', { name: 'Artifacts' })).toBeNull();
+    expect(card.querySelector('[data-clamped="true"]')).not.toBeNull();
+    within(card).getByRole('button', { name: 'Show more' });
   });
 });

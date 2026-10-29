@@ -10,8 +10,9 @@ import {
   type ProviderRunId,
   type TurnEvent,
 } from '@goodboy/types';
-import { aTree } from '../../../../../features/auto/testing/autoViewFixtures';
+import { anArtifactRow, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
 import type {
+  AutoDeliveredArtifact,
   AutoDeliveredResult,
   AutoTreeView,
 } from '../../../../../store/slices/auto-view/state';
@@ -49,6 +50,12 @@ const OPUS = modelKeyOf({ label: 'Opus 5.5' });
 const FIRST_REPORT =
   'No blocking issues in payments-api. The idempotency key is now built once per credit, before the retry loop, and postCredit passes it through unchanged.';
 const SECOND_REPORT = [
+  'Comparing the ledger-core branch against main.',
+  '',
+  'Checking how applyCredit builds the idempotency key.',
+  '',
+  'Reviewing the insert path for concurrent webhooks.',
+  '',
   'One race in ledger-core.',
   '',
   'applyCredit reads the key and inserts the credit in two statements, so two webhooks for the same event can both pass the check and both insert a row.',
@@ -58,6 +65,25 @@ const SECOND_REPORT = [
   'Everything else in the diff reads fine.',
 ].join('\n');
 
+const REPORT_ID = 'mock-results-report-ledger-core';
+const REPORT_TITLE = 'Certify the ledger-core retry fix, branch vs main';
+const REPORT_SOURCE = [
+  '<<summary>>',
+  'One race left in ledger-core: applyCredit can insert the same credit twice when two webhooks arrive together. Everything else in the diff is fine to merge.',
+  '<</summary>>',
+  '',
+  '## Findings',
+  '',
+  'applyCredit reads the key and inserts in two statements.',
+].join('\n');
+
+const REPORT: AutoDeliveredArtifact = {
+  artifactId: REPORT_ID,
+  kind: 'report',
+  title: REPORT_TITLE,
+  revision: 1,
+};
+
 type ChildParams = {
   readonly key: string;
   readonly childId: AgentId;
@@ -66,6 +92,7 @@ type ChildParams = {
   readonly model: string;
   readonly outcome: AutoOutcome;
   readonly slot: number;
+  readonly artifacts: ReadonlyArray<AutoDeliveredArtifact>;
 };
 
 const delegationOf = ({
@@ -114,6 +141,7 @@ const CHILDREN: ReadonlyArray<ChildParams & Readonly<{ summary: string | null }>
     model: SONNET,
     outcome: 'completed',
     slot: 0,
+    artifacts: [],
     summary: FIRST_REPORT,
   },
   {
@@ -124,6 +152,7 @@ const CHILDREN: ReadonlyArray<ChildParams & Readonly<{ summary: string | null }>
     model: OPUS,
     outcome: 'completed',
     slot: 1,
+    artifacts: [REPORT],
     summary: SECOND_REPORT,
   },
   {
@@ -134,6 +163,7 @@ const CHILDREN: ReadonlyArray<ChildParams & Readonly<{ summary: string | null }>
     model: SONNET,
     outcome: 'failed',
     slot: 2,
+    artifacts: [],
     summary: null,
   },
 ];
@@ -147,6 +177,7 @@ const deliveredOf = (child: (typeof CHILDREN)[number]): AutoDeliveredResult => (
   model: child.model,
   outcome: child.outcome,
   summary: child.summary,
+  artifacts: child.artifacts,
 });
 
 export const RESULTS_VIEW: AutoTreeView = {
@@ -156,7 +187,14 @@ export const RESULTS_VIEW: AutoTreeView = {
     sessionId: RESULTS_SESSION.id,
   },
   delegations: CHILDREN.map((child) => delegationOf(child)),
-  artifacts: [],
+  artifacts: [
+    anArtifactRow({
+      id: REPORT_ID,
+      kind: 'report',
+      title: REPORT_TITLE,
+      sourceText: REPORT_SOURCE,
+    }),
+  ],
   budget: autoBudgetOf({
     spend: autoTreeSpendOf({
       capUsd: 10,

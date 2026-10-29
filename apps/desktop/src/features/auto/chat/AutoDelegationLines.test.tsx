@@ -6,7 +6,13 @@ import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerDelegationDecisionPort } from '../delegationDecisionPort';
 import { registerPublishPort, type PublishPort } from '../publishPort';
-import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
+import {
+  aDelegation,
+  anArtifactRow,
+  aPlanRow,
+  aView,
+  FIXTURE_SESSION,
+} from '../testing/autoViewFixtures';
 import { AutoDelegationLines } from './AutoDelegationLines';
 
 afterEach(cleanup);
@@ -110,6 +116,46 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.queryByText(/needs your approval/)).toBeNull();
+  });
+
+  it('draws no row for an approved plan or any other artifact, the result card owns them', () => {
+    const reviewer = aDelegation({
+      key: 'reviewer',
+      role: 'reviewer',
+      state: 'settled',
+      outcome: 'completed',
+      settledAt: 1_000,
+      result: {
+        declared: { summary: 'Comparing the branch.' },
+        artifacts: [
+          { id: 'artifact-report', kind: 'report', title: 'Certify ledger-core', revision: 2 },
+        ],
+        cost: { usd: 0.2, basis: 'reported' },
+      },
+    });
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [SETTLED_PLAN, reviewer],
+        artifacts: [
+          aPlanRow({ approvalState: 'approved', approvedRevision: 1 }),
+          anArtifactRow({ id: 'artifact-report', kind: 'report', title: 'Certify ledger-core' }),
+        ],
+      }),
+    });
+
+    expect(screen.queryByRole('button', { name: /^Open (plan|report) / })).toBeNull();
+    expect(screen.queryByText('Approved')).toBeNull();
+  });
+
+  it('keeps one ask and no second row for a plan that needs approval', () => {
+    renderLines({
+      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
+    });
+
+    expect(
+      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
+    ).toHaveLength(1);
   });
 
   it('shows a revision on the same producer line', () => {

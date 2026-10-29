@@ -175,6 +175,7 @@ const DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Found 2 doc mismatches',
+    artifacts: [],
   },
 ];
 
@@ -189,6 +190,7 @@ const DONE_DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Fixed both mismatches in ledger-core',
+    artifacts: [],
   },
 ];
 

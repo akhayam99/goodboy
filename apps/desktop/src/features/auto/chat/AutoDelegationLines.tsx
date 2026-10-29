@@ -10,6 +10,7 @@ import { cardTitleOf } from './cardTitleOf';
 import { confirmLineOf } from './confirmLineOf';
 import { delegationCardOf } from './delegationCardOf';
 import { DelegationConfirmRow } from './DelegationConfirmRow';
+import { isAwaitingApproval } from './isAwaitingApproval';
 import { revisionWordOf } from './revisionWordOf';
 import { PublishConfirmRow } from './PublishConfirmRow';
 import { useDelegationDecision } from './useDelegationDecision';
@@ -47,8 +48,8 @@ export const AutoDelegationLines = ({
         const title = cardTitleOf({ card });
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
-        const asks = artifactLinksOf({ view, card }).filter(
-          (link) => link.approval !== null && link.approval.state !== 'approved',
+        const asks = artifactLinksOf({ view, artifacts: card.result?.artifacts ?? [] }).filter(
+          (link) => isAwaitingApproval({ link }),
         );
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">

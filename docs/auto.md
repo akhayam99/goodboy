@@ -318,6 +318,8 @@ writing to it reopens it to **Deciding**.
   **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
   `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
   settles to one quiet line, "Plan v1 · changes asked".
+  An artifact that needs no approval has no row on its line: it shows once, on the
+  result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
 - **Names.** A child is named by what it does. Auto gives each child an
@@ -384,7 +386,12 @@ writing to it reopens it to **Deciding**.
   with its provider, the state word (`settledStatusOf`, the rail's words) and
   **Open**, which opens the child pane. The body is the child's own report in
   `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
-  child shows its card with its state and no body. The cards read data, never
+  child shows its card with its state and no body. When the child produced an
+  artifact (`deliveredResultsOf` reads the `artifacts` of the result entry), the card leads with
+  the same artifact rows as the delegation lines and the agent's own prose goes behind **Show the
+  agent's notes**, closed by default (`AutoResultNotes`, artifact blocks dropped by
+  `summaryProseOf`); a plan that waits for approval has no row on the card, its ask is on the
+  line, and a card whose child produced no artifact keeps the three line preview. The cards read data, never
   Auto's prose: an accepted `results` row of the outbox keeps the root run that
   read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
   `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
