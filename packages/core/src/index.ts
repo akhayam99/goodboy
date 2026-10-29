@@ -285,7 +285,6 @@ export {
 } from './auto/branchFacts';
 export { DECISION_FIRST_RULE } from './decisionFirstRule';
 export {
-  AUTO_DEFAULT_EXPECTED,
   composeAnswerKickoff,
   composeDelegationKickoff,
   type AnswerKickoffParams,
@@ -373,7 +372,6 @@ export {
   type StateDigestParams,
 } from './auto/digest';
 export {
-  AUTO_BLOCK_ACTIONS,
   AUTO_BLOCK_CLOSE,
   AUTO_BLOCK_OPEN,
   parseAutoBlock,
