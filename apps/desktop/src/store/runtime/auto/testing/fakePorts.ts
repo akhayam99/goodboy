@@ -54,6 +54,28 @@ export const NOTIFY_MOUNT: PickableMount = {
   diskState: 'present',
 };
 
+export const GITLAB_MOUNT: PickableMount = {
+  id: 'mount-payments-api',
+  mountName: 'payments-api',
+  branch: 'ak/payments-retry',
+  projectId: 'project-payments-api',
+  worktreePath: '/work/harborline/payments-api',
+  revision: 2,
+  isAttached: true,
+  diskState: 'present',
+};
+
+export const BITBUCKET_MOUNT: PickableMount = {
+  id: 'mount-acme-billing',
+  mountName: 'acme-billing',
+  branch: 'ak/acme-invoices',
+  projectId: 'project-acme-billing',
+  worktreePath: '/work/harborline/acme-billing',
+  revision: 4,
+  isAttached: true,
+  diskState: 'present',
+};
+
 export const WORLD_GRANT: AgentGrant = {
   agentId: AUTO_SEED_ROOT,
   treeId: WORLD_TREE,

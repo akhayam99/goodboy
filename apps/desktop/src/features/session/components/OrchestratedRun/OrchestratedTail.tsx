@@ -10,6 +10,7 @@ import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
+import { RunPendingDelivery } from '../RunPendingDelivery';
 import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
 import { OrchestratedTailVerb } from './OrchestratedTailVerb';
 
@@ -44,7 +45,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
       .length,
   });
   if (tail === null) {
-    return null;
+    return <RunPendingDelivery sessionId={session.id} />;
   }
   const tailVerbs = tail.verbs.filter((verb) => verb.kind !== 'primary');
   const phase = view.orchestrator.state.phase;
@@ -81,9 +82,10 @@ export const OrchestratedTail = ({ session, view }: Props) => {
               ))
         }
       />
-      {phase === 'needs-answer' && view.answerQuestion !== null ? (
-        <RunOpenQuestion sessionId={session.id} question={view.answerQuestion} />
+      {phase === 'needs-answer' && view.orchestrator.runQuestions.length > 0 ? (
+        <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
       ) : null}
+      <RunPendingDelivery sessionId={session.id} />
       {tail.blockedAgentId === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
       )}

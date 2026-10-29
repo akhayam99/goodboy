@@ -1,4 +1,5 @@
 import type { OpenQuestion } from '@goodboy/types';
+import { askingAgentBatch } from '../../context/askingAgentBatch';
 import { isQuestionDelegate } from '../../context/questionDelegate';
 import type { TimelineAgentEntry, TimelineRunEntry } from './buildTimelineGroups';
 
@@ -18,19 +19,6 @@ const agentOpenQuestions = ({ entry }: AgentParams): ReadonlyArray<RunOpenQuesti
   ...entry.children.flatMap((child) => agentOpenQuestions({ entry: child })),
 ];
 
-type OldestParams = {
-  readonly candidates: ReadonlyArray<RunOpenQuestion>;
-};
-
-const oldestOf = ({ candidates }: OldestParams): RunOpenQuestion | null =>
-  candidates.reduce<RunOpenQuestion | null>(
-    (oldest, candidate) =>
-      oldest == null || candidate.question.createdAt < oldest.question.createdAt
-        ? candidate
-        : oldest,
-    null,
-  );
-
 type RunParams = {
   readonly entry: TimelineRunEntry;
   readonly shownQuestionIds?: ReadonlySet<string>;
@@ -41,15 +29,25 @@ const runOpenQuestions = ({ entry }: RunParams): ReadonlyArray<RunOpenQuestion> 
     child.kind === 'agent' ? agentOpenQuestions({ entry: child }) : [],
   );
 
+const runOpenQuestionBatch = ({
+  entry,
+  shownQuestionIds = NO_SHOWN_QUESTIONS,
+}: RunParams): ReadonlyArray<RunOpenQuestion> => {
+  const candidates = new Map(
+    runOpenQuestions({ entry })
+      .filter((candidate) => !shownQuestionIds.has(candidate.question.id))
+      .map((candidate) => [candidate.question.id, candidate]),
+  );
+  return askingAgentBatch({
+    questions: [...candidates.values()].map((candidate) => candidate.question),
+  }).flatMap((question) => candidates.get(question.id) ?? []);
+};
+
 export const runOpenQuestion = ({
   entry,
   shownQuestionIds = NO_SHOWN_QUESTIONS,
 }: RunParams): RunOpenQuestion | null =>
-  oldestOf({
-    candidates: runOpenQuestions({ entry }).filter(
-      (candidate) => !shownQuestionIds.has(candidate.question.id),
-    ),
-  });
+  runOpenQuestionBatch({ entry, shownQuestionIds })[0] ?? null;
 
 export const hasShownRunQuestion = ({
   entry,

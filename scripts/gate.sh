@@ -4,7 +4,7 @@ set -u
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
 BASE_REF="${GATE_BASE:-origin/main}"
-WORKERS="${GATE_WORKERS:-3}"
+WORKERS="${GATE_WORKERS:-2}"
 LOG_DIR=.gate-logs
 TAURI_DIR=apps/desktop/src-tauri
 FORMAT_GLOB='\.(ts|tsx|js|jsx|json|md|yml|yaml)$'

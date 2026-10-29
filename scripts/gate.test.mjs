@@ -149,7 +149,7 @@ describe('scripts/gate.sh against the CI jobs', () => {
   });
 
   it('honors GATE_WORKERS and the environment target dir', () => {
-    assert.match(gateText, /GATE_WORKERS:-3/);
+    assert.match(gateText, /GATE_WORKERS:-2/);
     assert.doesNotMatch(gateText, /CARGO_TARGET_DIR=/);
   });
 

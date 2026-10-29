@@ -64,6 +64,7 @@ export type C09State =
   | 'archived'
   | 'step-blocked'
   | 'needs-answer'
+  | 'needs-answers'
   | 'blocked';
 
 export type C09Page = 'document' | 'list' | 'empty' | 'step';
@@ -349,7 +350,7 @@ const testerStatusOf = ({ state }: StateParams): Agent['status'] => {
   if (state === 'reading') {
     return 'skipped';
   }
-  if (state === 'step-blocked' || state === 'needs-answer') {
+  if (state === 'step-blocked' || state === 'needs-answer' || state === 'needs-answers') {
     return 'blocked';
   }
   return 'completed';
@@ -385,7 +386,8 @@ const agentsOf = ({ state }: StateParams): ReadonlyArray<Agent> => {
   if (isReady) {
     return steps;
   }
-  const isStepBlocked = state === 'step-blocked' || state === 'needs-answer';
+  const isStepBlocked =
+    state === 'step-blocked' || state === 'needs-answer' || state === 'needs-answers';
   const tester = agentOf({
     id: C09_TESTER_ID,
     runId: C09_RUN_ID,
@@ -616,6 +618,32 @@ const NEEDS_ANSWER_QUESTION: OpenQuestion = {
   createdAt: at('10:55'),
 };
 
+const MORE_ANSWER_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+  {
+    ...NEEDS_ANSWER_QUESTION,
+    id: idOf<OpenQuestionId>('mock-c09-question-2'),
+    text: 'Should the benchmark run against the Northwind fixtures or the Harborline ones?',
+    createdAt: at('10:56'),
+  },
+  {
+    ...NEEDS_ANSWER_QUESTION,
+    id: idOf<OpenQuestionId>('mock-c09-question-3'),
+    text: 'Is a cold cache run required before the warm one?',
+    createdAt: at('10:57'),
+  },
+];
+
+type OpenQuestionsParams = {
+  readonly state: C09State;
+};
+
+const openQuestionsOf = ({ state }: OpenQuestionsParams): ReadonlyArray<OpenQuestion> => {
+  if (state === 'needs-answers') {
+    return [NEEDS_ANSWER_QUESTION, ...MORE_ANSWER_QUESTIONS];
+  }
+  return state === 'needs-answer' ? [NEEDS_ANSWER_QUESTION] : [];
+};
+
 export const seedC09 = ({
   state,
   page,
@@ -661,7 +689,7 @@ export const seedC09 = ({
     loadSessionTelemetry: async () => undefined,
     sessionPlans: { [C09_SESSION_ID]: [] },
     sessionOpenQuestions: {
-      [C09_SESSION_ID]: state === 'needs-answer' ? [NEEDS_ANSWER_QUESTION] : [],
+      [C09_SESSION_ID]: openQuestionsOf({ state }),
     },
     sessionAnsweredQuestions: { [C09_SESSION_ID]: [] },
     drawer:

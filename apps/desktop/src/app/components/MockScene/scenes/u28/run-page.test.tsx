@@ -181,6 +181,73 @@ describe('the u28 run page scenes', () => {
     expect(fieldValue('Answer the question')).toBe('12,000 rows.');
   });
 
+  it('u28-run-needs-answers blocks send until every question has text, then sends one batch', async () => {
+    await mount('u28-run-needs-answers');
+    const answerOpenQuestions = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ answerOpenQuestions });
+    });
+    const form = within(tail()).getByRole('form', { name: 'Answer the questions' });
+    const send = within(form).getByRole('button', { name: 'Send answers' });
+    expect(within(form).queryByRole('button', { name: 'Send answer' })).toBeNull();
+
+    type('Answer question 1 of 3', '12,000 rows.');
+    type('Answer question 2 of 3', 'Northwind.');
+    expect(send.hasAttribute('disabled')).toBe(true);
+    type('Answer question 3 of 3', 'Yes.');
+    expect(send.hasAttribute('disabled')).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(send);
+    });
+
+    expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
+    expect(answerOpenQuestions).toHaveBeenCalledWith(
+      C09_SESSION_ID,
+      [
+        expect.objectContaining({ id: 'mock-c09-question', answer: '12,000 rows.' }),
+        expect.objectContaining({ id: 'mock-c09-question-2', answer: 'Northwind.' }),
+        expect.objectContaining({ id: 'mock-c09-question-3', answer: 'Yes.' }),
+      ],
+      C09_TESTER_ID,
+    );
+    expect(fieldValue('Answer question 1 of 3')).toBe('');
+    expect(fieldValue('Answer question 3 of 3')).toBe('');
+  });
+
+  it('u28-run-needs-answers keeps every answer when the send fails and Retry resends the batch', async () => {
+    await mount('u28-run-needs-answers');
+    const answerOpenQuestions = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Could not save the answers.'))
+      .mockResolvedValue(undefined);
+    act(() => {
+      useAppStore.setState({ answerOpenQuestions });
+    });
+    type('Answer question 1 of 3', 'One.');
+    type('Answer question 2 of 3', 'Two.');
+    type('Answer question 3 of 3', 'Three.');
+    const form = within(tail()).getByRole('form', { name: 'Answer the questions' });
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Send answers' }));
+    });
+
+    expect(within(form).getAllByRole('alert')).toHaveLength(1);
+    expect(within(form).getByRole('alert').textContent).toContain('Could not save the answers.');
+    expect(fieldValue('Answer question 1 of 3')).toBe('One.');
+    expect(fieldValue('Answer question 2 of 3')).toBe('Two.');
+    expect(fieldValue('Answer question 3 of 3')).toBe('Three.');
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(answerOpenQuestions).toHaveBeenCalledTimes(2);
+    expect(answerOpenQuestions.mock.calls[1]).toEqual(answerOpenQuestions.mock.calls[0]);
+    expect(fieldValue('Answer question 2 of 3')).toBe('');
+  });
+
   it('u28-run-step-blocked keeps the answer and says why when the send fails', async () => {
     await mount('u28-run-step-blocked');
     const answerBlockedStep = vi.fn(async () => {

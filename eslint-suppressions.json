@@ -10381,16 +10381,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/settings/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
-    }
-  },
-  "apps/desktop/src/store/slices/settings/selectHiddenModels.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/store/slices/sidebar/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
