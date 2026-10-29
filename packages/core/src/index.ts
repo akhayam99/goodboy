@@ -171,7 +171,6 @@ export {
   AUTO_TURN_CEILING_USD,
 } from './auto/limits';
 export {
-  AUTO_SUBSTEP_ROLES,
   delegationDepthOf,
   isAutoSubstepRole,
   parseSubstepNeeds,
@@ -221,17 +220,7 @@ export {
 } from './auto/refusals';
 export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
 export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './auto/level';
-export {
-  OUTCOME_MAX_CHARS,
-  capOutcomeText,
-  outcomeLineOf,
-  parseOutcomeLine,
-  stripOutcomeLine,
-  type OutcomeLine,
-  type OutcomeLineParams,
-  type OutcomeTone,
-} from './auto/outcome';
-export { OUTCOME_MARKER_EXAMPLE, READING_ORDER_RULE } from './auto/readingOrderRule';
+export { outcomeLineOf, stripOutcomeLine, type OutcomeLine } from './auto/outcome';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
