@@ -96,15 +96,10 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     () => doneSummaryOf({ finished: branches.finished, days }),
     [branches.finished, days],
   );
-  const unreadAgentIds = useAppStore(
-    useShallow((state) =>
-      unreadAgentsOf({ agents: state.sessionPhaseRuns[sessionId] }).map((agent) => agent.id),
-    ),
+  const unreadAgents = useAppStore(
+    useShallow((state) => unreadAgentsOf({ agents: state.sessionPhaseRuns[sessionId] })),
   );
-  const latest = useMemo(
-    () => latestDoneOf({ days, unreadAgentIds: new Set(unreadAgentIds) }),
-    [days, unreadAgentIds],
-  );
+  const latest = useMemo(() => latestDoneOf({ days, unreadAgents }), [days, unreadAgents]);
   const branchLabelOf = useBranchLabels({ sessionId });
   const branchNameOf = useBranchNames({ sessionId });
   const whereOf = useWhereOf({ sessionId });
