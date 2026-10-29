@@ -159,7 +159,7 @@ export type { SelectionConfirmProps } from './components/SelectionBar/SelectionC
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip, chipClasses } from './components/Chip';
 export type { ChipClassParams, ChipEmphasis, ChipProps } from './components/Chip';
-export { ClampedProse } from './components/ClampedProse';
+export { ClampedProse, estimateRenderedLines } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
 export type { CollapsibleProps } from './components/Collapsible';
