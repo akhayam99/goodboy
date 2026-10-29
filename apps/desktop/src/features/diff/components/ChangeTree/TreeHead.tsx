@@ -14,7 +14,6 @@ type Props = {
   readonly onUnviewedOnly: (next: boolean) => void;
   readonly commentedOnly: boolean;
   readonly onCommentedOnly: (next: boolean) => void;
-  readonly folder: string | null;
   readonly group: TreeGroup;
   readonly onGroup: (group: TreeGroup) => void;
   readonly shown: number;
@@ -33,7 +32,6 @@ export const TreeHead = ({
   onUnviewedOnly,
   commentedOnly,
   onCommentedOnly,
-  folder,
   group,
   onGroup,
   shown,
@@ -86,7 +84,6 @@ export const TreeHead = ({
         <p className="flex items-center gap-2 text-meta tabular-nums text-muted-foreground">
           <span>
             Showing {shown} of {total}
-            {folder === null ? '' : ` in ${folder}`}
           </span>
           <button
             type="button"
