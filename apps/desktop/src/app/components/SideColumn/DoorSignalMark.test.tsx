@@ -53,6 +53,26 @@ describe('DoorSignalMark', () => {
     expect(one.querySelector('[data-door-pill]')).toBeNull();
   });
 
+  it('draws only the dot on the collapsed rail, where a number has no room', () => {
+    const rail = render(
+      <DoorSignalMark
+        signal={{
+          count: 2,
+          isWarning: true,
+          isUnread: false,
+          tone: 'warning',
+          countText: '2',
+          fact: '2 need you',
+        }}
+        isDotOnly
+      />,
+    ).container;
+
+    expect(rail.querySelector('[data-door-count]')).toBeNull();
+    expect(rail.querySelector('[data-door-signal="warning"]')).not.toBeNull();
+    expect(rail.textContent).toBe('');
+  });
+
   it('draws a quiet neutral dot, never amber, when only replies and approvals wait', () => {
     const quiet = mark({ count: 0, isWarning: false, isUnread: false, tone: 'neutral', fact: 'x' });
 
