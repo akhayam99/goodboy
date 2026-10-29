@@ -184,6 +184,7 @@ beforeEach(async () => {
     workflow_list: [],
     gh_run: answerGh,
     git_push: { stdout: '', stderr: '', exitCode: 0 },
+    git_remote_names: ['origin'],
     linear_fetch_issue: () => ({ id: ISSUE.externalId, state: linearState }),
     linear_fetch_team_states: [
       { id: 'state-progress', name: 'In Progress', type: 'started', position: 2 },

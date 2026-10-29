@@ -175,6 +175,7 @@ const DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Found 2 doc mismatches',
+    artifacts: [],
   },
 ];
 
@@ -189,6 +190,7 @@ const DONE_DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Fixed both mismatches in ledger-core',
+    artifacts: [],
   },
 ];
 
@@ -386,6 +388,7 @@ export const centralAutoSeedOf = ({ variant }: SeedParams): CentralAutoSeed => (
       }),
     }),
     pendingRefusal: null,
+    pendingMessages: [],
     deliveredResults: DELIVERED_BY_VARIANT[variant],
     hiddenChildIds: [],
     rootAsk: null,

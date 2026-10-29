@@ -45,6 +45,7 @@ auto-chat-done
 auto-chat-finished
 auto-chat-nocap
 auto-chat-plan
+auto-chat-queued
 auto-chat-refused
 auto-chat-revising
 auto-chat-working
@@ -317,6 +318,7 @@ commits-loading
 commits-planned
 commits-rest
 commits-rest-1920
+compact-commits
 companion
 confirm-action-panel
 confirm-artifact-delete
@@ -372,6 +374,8 @@ drawer-split-plan
 drawer-split-plan-1280
 drawer-split-tasks
 drawer-wide-push
+e2-working-now-one
+e2-working-now-two
 explore
 explore-changedempty
 explore-changedfilter

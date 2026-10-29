@@ -4,7 +4,11 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**. A mark on a planned row (combines, folds into, renamed) opens a fact card on rest. The card shows the commits it takes in or the new name. A step that may conflict in two or more files lists them.
+Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**.
+
+Commits use one line, grouped by Today, Yesterday or date. Your author label is hidden when it matches the repository's configured git name; if that name cannot be read, all authors show. An open editor or a history mark gives the row more room.
+
+A mark on a planned row (combines, folds into, renamed) opens a fact card on rest. The card shows the commits it takes in or the new name. A step that may conflict in two or more files lists them.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">
@@ -200,6 +204,7 @@ A merged branch is done. It shows no behind count, no warning dot, no rebase off
 
 This part is for contributors and agents who change the feature.
 
+- Compact rows and local day groups: `HistoryCommitRow` and `historyDaysOf`. `HistoryCommitMetadata` hides the configured author read by `history_graph` for the named worktree. `useRowPositions` measures only keyed graph rows, so day headers add space without adding nodes.
 - Fact cards on a planned row: `historyMarkCardOf` and `conflictCardOf`.
 - Push with lease: `pushBranch({ mode: 'lease' })` is the one verb. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the `Pushed` event and the pull request description, in `apps/desktop/src/store/slices/history/settleHistoryPush.ts`.
 - Rebase progress: `features/history/rebaseJob.ts` reports `progress`. The banner is `apps/desktop/src/features/history/JobBanner/index.tsx` and the live notice is `apps/desktop/src/features/history/components/CommitsHistory/HistoryLiveNotice.tsx`, which keep the hint of a failed start.

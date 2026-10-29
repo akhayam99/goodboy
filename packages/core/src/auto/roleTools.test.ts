@@ -27,6 +27,8 @@ describe('doesTaskNeedCommands', () => {
     'Check what ls-remote returns for ledger-core.',
     'Execute the test script for notify-relay.',
     'Run pnpm test in the mount.',
+    'Check each commit in `a1b2c3d4e..HEAD`: does its subject match its diff?',
+    'Compare origin/main...HEAD and list the commits that revert each other.',
   ])('flags a task that runs commands: %s', (text) => {
     expect(doesTaskNeedCommands({ text })).toBe(true);
   });
@@ -34,6 +36,8 @@ describe('doesTaskNeedCommands', () => {
   it.each([
     'Find where the retry limit is set in payments-api.',
     'Explain why the checkout total is wrong.',
+    'Compare the versions 1.2.0...1.4.0 of the changelog of notify-relay.',
+    'Wait... then read the file; deadbeef is not a commit here.',
     '',
   ])('leaves a task that only reads: %s', (text) => {
     expect(doesTaskNeedCommands({ text })).toBe(false);

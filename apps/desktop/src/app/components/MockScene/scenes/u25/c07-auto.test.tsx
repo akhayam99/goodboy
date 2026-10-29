@@ -170,7 +170,7 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
+  it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
     mount({ id: 'c07-auto-working' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -179,9 +179,7 @@ describe('c07 Auto scenes', () => {
     expect(within(title).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('Delegated to')).toBeNull();
-    for (const lines of screen.getAllByRole('list', { name: 'Delegations' })) {
-      expect(within(lines).queryByText('Running')).toBeNull();
-    }
+    expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
     const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
     expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
@@ -218,7 +216,7 @@ describe('c07 Auto scenes', () => {
     ).toBeGreaterThan(1);
   });
 
-  it('a tree row and a delegation line open the child pane; the Auto row closes it', async () => {
+  it('a delegation line reveals the child, then tree rows open the child and Auto', async () => {
     mount({ id: 'c07-auto-working' });
 
     const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -229,9 +227,9 @@ describe('c07 Auto scenes', () => {
       throw new Error('no Tester line');
     }
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
-    expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
+    expect((await treeRow(/^Tester, /)).getAttribute('aria-selected')).toBe('true');
 
-    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
     fireEvent.click(await treeRow(/^Implementer, /));
     expect(
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),

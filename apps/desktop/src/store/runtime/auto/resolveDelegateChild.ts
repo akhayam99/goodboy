@@ -41,7 +41,7 @@ import {
   type AutoOutboxId,
 } from '@goodboy/types';
 import type { AdmitChildInput } from './admit';
-import { gatherBranchFacts, mountLabelOf } from './gatherBranchFacts';
+import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import type { AgentVerbContext } from './verbContext';

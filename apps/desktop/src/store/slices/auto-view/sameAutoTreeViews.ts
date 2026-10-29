@@ -25,6 +25,7 @@ const signatureOf = (view: AutoTreeView): string =>
     ]),
     view.budget,
     view.pendingRefusal,
+    view.pendingMessages,
     view.deliveredResults.map((result) => [result.runId, result.delegationId, result.outcome]),
     view.rootAsk,
   ]);

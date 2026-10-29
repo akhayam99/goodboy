@@ -2,12 +2,12 @@ import { useMemo, type ReactNode } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import type { BranchCommit, FileDiff, Session, SessionExternalTask } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { useAppStore, type MountDiffStat } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchNextStep } from '../../branchNextStepOf';
 import { pullRequestPrefillOf } from '../../pullRequestPrefillOf';
 import { BranchConflicts } from './BranchConflicts';
-import { BranchContents } from './BranchContents';
+import { BranchSummary } from './BranchSummary';
 import { NoPullRequest } from './NoPullRequest';
 import { PullRequestStatusStrip } from './PullRequestStatusStrip';
 import type { StatusCell } from './statusCell';
@@ -21,7 +21,9 @@ type Props = {
   readonly cells: ReadonlyArray<StatusCell>;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly files: ReadonlyArray<FileDiff>;
-  readonly stat: MountDiffStat | null;
+  readonly isDiffLoading: boolean;
+  readonly diffError: string | null;
+  readonly onRetryDiff: () => void;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
@@ -40,7 +42,9 @@ export const BranchStartPage = ({
   cells,
   commits,
   files,
-  stat,
+  isDiffLoading,
+  diffError,
+  onRetryDiff,
   conflictFiles,
   isConnected,
   onConnected,
@@ -52,13 +56,22 @@ export const BranchStartPage = ({
     () => pullRequestPrefillOf({ commits, tasks, branch }),
     [branch, commits, tasks],
   );
-  const contents = <BranchContents commits={commits} files={files} stat={stat} />;
+  const summary = (
+    <BranchSummary
+      commits={commits}
+      files={files}
+      isLoading={isDiffLoading}
+      error={diffError}
+      onRetry={onRetryDiff}
+      onOpen={onSelectTab}
+    />
+  );
   const main = () => {
     if (step.state === 'conflict') {
       return (
         <>
           <BranchConflicts files={conflictFiles} requestNoun="pull request" />
-          {contents}
+          {summary}
         </>
       );
     }
@@ -76,7 +89,7 @@ export const BranchStartPage = ({
       return (
         <>
           {hostForm}
-          {contents}
+          {summary}
         </>
       );
     }
@@ -86,7 +99,7 @@ export const BranchStartPage = ({
         mountPath={mountPath}
         prefill={prefill}
         submitVariant={step.submit === 'secondary' ? 'secondary' : 'primary'}
-        trailing={contents}
+        trailing={summary}
         isRepoMissing={false}
         isConnected={isConnected}
         onConnected={onConnected}
@@ -95,7 +108,7 @@ export const BranchStartPage = ({
     );
   };
   return (
-    <div data-branch-start={step.state} className="flex min-w-0 flex-col gap-6">
+    <div data-branch-start={step.state} className="@container flex min-w-0 flex-col gap-6">
       <PullRequestStatusStrip cells={cells} onOpen={onSelectTab} />
       <div className="flex min-w-0 flex-col gap-8">{main()}</div>
     </div>

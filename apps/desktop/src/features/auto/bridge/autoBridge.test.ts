@@ -6,6 +6,7 @@ import type { ChecksRerunPort } from '../checksRerunPort';
 import type { PublishPort } from '../publishPort';
 import { isAutoBridgeRequest } from './isAutoBridgeRequest';
 import type { DelegationDecisionPort } from '../delegationDecisionPort';
+import type { SendNowPort } from '../sendNowPort';
 import type { TreeRetryPort } from '../treeRetryPort';
 import type { TreeStopPort } from '../treeStopPort';
 import { AUTO_BRIDGE_EVENT, type AutoBridgeBus, type AutoBridgePorts } from './autoBridgeProtocol';
@@ -73,8 +74,9 @@ const mainPorts = () => {
       message: null,
     })),
   }));
-  const ports: AutoBridgePorts = { stop, retry, userTurn, decision, rerunChecks, publish };
-  return { ports, stop, retry, userTurn, decision, rerunChecks, publish };
+  const sendNow = vi.fn<SendNowPort>(async () => ({ kind: 'retried' }));
+  const ports: AutoBridgePorts = { stop, retry, sendNow, userTurn, decision, rerunChecks, publish };
+  return { ports, stop, retry, sendNow, userTurn, decision, rerunChecks, publish };
 };
 
 const cleanups: Array<() => void> = [];
@@ -129,6 +131,16 @@ describe('Auto in a window without the runtime', () => {
       kind: 'refused',
       message: 'This conversation reached its time limit.',
     });
+  });
+
+  it('sends a waiting message now in the main window and carries the answer back', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.sendNow({ treeId: 'tree-harborline', rowId: 'outbox-1' })).toEqual({
+      kind: 'retried',
+    });
+    expect(main.sendNow).toHaveBeenCalledWith({ treeId: 'tree-harborline', rowId: 'outbox-1' });
   });
 
   it('reruns the checks of one agent in the main window and carries the verdict back', async () => {

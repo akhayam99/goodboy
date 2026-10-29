@@ -6,7 +6,7 @@ import type {
   BranchFactsThread,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { BranchFactsParts, ReadBranchFactsParams } from './ports';
+import type { BranchFactsParts, ReadBranchFactsParams } from '../ports';
 
 export type RequestFacts = Readonly<{
   request: BranchFactsRequest;

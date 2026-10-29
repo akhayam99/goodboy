@@ -1,7 +1,8 @@
-import type { ReactNode, RefObject } from 'react';
+import { Fragment, type ReactNode, type RefObject } from 'react';
 import { cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { historyDaysOf } from '../../historyDaysOf';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../hooks/useHistoryDrag';
 import type { RowPositions } from '../../hooks/useRowPositions';
@@ -56,14 +57,25 @@ export const HistoryNowList = ({
   return (
     <div ref={listRef} className="relative flex flex-col">
       <div role="list" aria-label="Commits" className="flex flex-col">
-        {rows.map(renderRow)}
+        {historyDaysOf({ commits: rows, nowMs }).map((day) => (
+          <Fragment key={day.commits[0]?.sha}>
+            <div
+              role="presentation"
+              className="grid min-h-7 grid-cols-[36px_minmax(0,1fr)] items-center"
+            >
+              <span aria-hidden />
+              <span className="px-2 text-row text-faint-foreground">{day.label}</span>
+            </div>
+            {day.commits.map(renderRow)}
+          </Fragment>
+        ))}
       </div>
       <div
         data-graph-key="fork"
-        className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)] items-center"
+        className="grid min-h-7 grid-cols-[36px_minmax(0,1fr)] items-center"
       >
         <span aria-hidden />
-        <span className="flex min-w-0 items-center gap-3 px-3 text-meta text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-3 px-2 text-meta text-muted-foreground">
           <HistoryBaseRow
             sessionId={sessionId}
             graph={graph}
@@ -94,7 +106,7 @@ export const HistoryNowList = ({
           aria-hidden
           data-history-slot
           style={{ top: dropTarget.y }}
-          className="pointer-events-none absolute left-17 right-1.5 h-0"
+          className="pointer-events-none absolute left-9 right-1.5 h-0"
         >
           <span className="absolute -top-1.5 left-0 size-2 rounded-full border-2 border-history-move bg-background" />
           <span

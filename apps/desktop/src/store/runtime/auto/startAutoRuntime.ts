@@ -18,6 +18,7 @@ import {
   registerDelegationDecisionPort,
 } from '../../../features/auto/delegationDecisionPort';
 import { currentPublishPort, registerPublishPort } from '../../../features/auto/publishPort';
+import { currentSendNowPort, registerSendNowPort } from '../../../features/auto/sendNowPort';
 import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
 import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
 import {
@@ -61,6 +62,7 @@ const requirePort = <Port>({ port }: PortParams<Port>): Port => {
 const REGISTERED_PORTS: AutoBridgePorts = {
   stop: (params) => requirePort({ port: currentTreeStopPort() })(params),
   retry: (params) => requirePort({ port: currentTreeRetryPort() })(params),
+  sendNow: ({ treeId, rowId }) => requirePort({ port: currentSendNowPort() })({ treeId, rowId }),
   userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
   rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
@@ -75,6 +77,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   const client = await createAutoBridgeClient({ bus, newId: () => crypto.randomUUID() });
   registerTreeStopPort({ port: client.ports.stop });
   registerTreeRetryPort({ port: client.ports.retry });
+  registerSendNowPort({ port: client.ports.sendNow });
   registerChecksRerunPort({ port: client.ports.rerunChecks });
   registerPublishPort({ port: client.ports.publish });
   registerDelegationDecisionPort({ port: client.ports.decision });
@@ -89,6 +92,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
     client.close();
     registerTreeStopPort({ port: null });
     registerTreeRetryPort({ port: null });
+    registerSendNowPort({ port: null });
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerDelegationDecisionPort({ port: null });
@@ -161,6 +165,24 @@ export const startAutoRuntime = async ({
       return { kind: 'retried' };
     },
   });
+  registerSendNowPort({
+    port: async ({ treeId, rowId }) => {
+      const outcome = await runtimeOf().sendNow({
+        treeId: brandId<AutoTreeId>({ value: treeId }),
+        rowId,
+      });
+      if (outcome.kind === 'blocked') {
+        return { kind: 'refused', message: outcome.reason };
+      }
+      if (outcome.kind === 'idle' && outcome.reason === 'not_owner') {
+        return {
+          kind: 'refused',
+          message: 'Another window runs this conversation. Send it there.',
+        };
+      }
+      return { kind: 'retried' };
+    },
+  });
   registerChecksRerunPort({
     port: ({ delegationId }) =>
       runtimeOf().rerunChecks(brandId<AutoDelegationId>({ value: delegationId })),
@@ -184,6 +206,7 @@ export const startAutoRuntime = async ({
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerTreeRetryPort({ port: null });
+    registerSendNowPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });

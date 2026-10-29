@@ -60,6 +60,7 @@ describe('autoGroupOf', () => {
           model: null,
           outcome: 'completed',
           summary: 'Found 2 doc mismatches',
+          artifacts: [],
         },
       ],
     });

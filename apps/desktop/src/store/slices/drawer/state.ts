@@ -103,7 +103,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'spawned';
-      readonly payload: null;
+      readonly payload: { readonly agentId: AgentId } | null;
     }
   | {
       readonly kind: 'session-log';

@@ -17,6 +17,7 @@ const viewWithScout = ({ isAdopted = false }: ViewParams = {}): AutoTreeView => 
   artifacts: [],
   budget: null,
   pendingRefusal: null,
+  pendingMessages: [],
   deliveredResults: [],
   hiddenChildIds: [],
   rootAsk: null,

@@ -15,9 +15,29 @@ pub(crate) fn lease_ref(branch: &str) -> String {
     format!("refs/heads/{branch}")
 }
 
+pub(crate) fn names(root: &Path) -> Vec<String> {
+    git(root, &["remote"])
+        .map(|output| {
+            output
+                .lines()
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+pub async fn git_remote_names(cwd: String) -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(move || names(Path::new(&cwd)))
+        .await
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{lease_ref, resolve, REMOTE_NAME};
+    use super::{lease_ref, names, resolve, REMOTE_NAME};
     use crate::worktree::git;
     use std::path::{Path, PathBuf};
 
@@ -95,6 +115,33 @@ mod tests {
         );
 
         assert_eq!(resolve(&root), None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn every_configured_remote_is_listed_by_name() {
+        let root = repo("names");
+        git_ok(
+            &root,
+            &["remote", "add", "origin", "https://harborline.test/a.git"],
+        );
+        git_ok(
+            &root,
+            &["remote", "add", "upstream", "https://harborline.test/b.git"],
+        );
+
+        let mut listed = names(&root);
+        listed.sort();
+
+        assert_eq!(listed, vec!["origin".to_string(), "upstream".to_string()]);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_folder_that_is_not_a_repository_lists_no_remote() {
+        let root = temp_root("not-a-repo");
+
+        assert!(names(&root).is_empty());
         std::fs::remove_dir_all(root).unwrap();
     }
 

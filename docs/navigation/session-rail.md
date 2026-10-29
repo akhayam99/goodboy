@@ -730,8 +730,17 @@ Folding the rail leaves the column in place, and a drill never moves it.
   row's offset across the change; at the top, on Now, the new row simply shows).
   Focus stays on its row. The run page's step tree (`OrchestratedChecklist`)
   stays top down, the first step on top. A row is one 28px line: the
-  state node on the rail, role glyph (the noun in its tooltip), title, the
-  active time (`DelegationClock`, the clock every work row reads). An Auto
+  state node on the rail, role glyph (the noun in its tooltip), title, a
+  fixed chevron slot and a fixed time column (`DelegationClock`, the clock
+  every work row reads), so icons and times line up down the list. The
+  selected agent is revealed when the panel opens or the selection changes:
+  a fold hiding it opens and the row scrolls to the middle, later changes
+  scroll only as far as needed, and an agent missing from the tree changes
+  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's **Working now** chips
+  and chat **Open** actions set the Agents drawer's child target without
+  navigating the center. The target takes precedence over the main selection
+  (`useSpawnedFocus`); **All launches** still works, and another reveal returns
+  to the target's launch. An Auto
   root is titled by the ask it started with, loaded with the tree view, not
   its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
   ([auto.md](../auto.md#the-chat)). Every Auto parent folds on its row (chevron,

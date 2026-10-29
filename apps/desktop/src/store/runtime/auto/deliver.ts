@@ -13,6 +13,7 @@ import {
   claimAutoOutboxStatement,
   getAutoTree,
   reserveAutoReservationStatement,
+  listAutoDelegations,
   listAutoOutbox,
   readAutoTreeSpend,
   releaseAutoOutboxClaimsStatement,
@@ -25,6 +26,7 @@ import {
 import { brandId, type AutoReservationId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
+import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
@@ -35,6 +37,8 @@ export type DeliverParams = Readonly<{
   ctx: AgentVerbContext;
   treeId: AutoTree['id'];
   onEnded: (ended: AutoTurnEnded) => void;
+  sendNowId?: string;
+  ownTurns?: OwnTurns;
 }>;
 
 export type DeliverOutcome =
@@ -222,10 +226,28 @@ const acceptDelivery = async ({
   return outcome.status === 'committed';
 };
 
+type IdleParams = {
+  readonly ctx: AgentVerbContext;
+  readonly tree: AutoTree;
+  readonly pending: ReadonlyArray<AutoOutboxRow>;
+};
+
+const hasNoRunningChild = async ({ ctx, tree, pending }: IdleParams): Promise<boolean> => {
+  if (tree.phase !== 'waiting' || !pending.some((row) => row.kind === 'user')) {
+    return false;
+  }
+  const delegations = await listAutoDelegations({ db: ctx.db, treeId: tree.id });
+  return !delegations.some(
+    (delegation) => delegation.state === 'starting' || delegation.state === 'running',
+  );
+};
+
 export const deliverNext = async ({
   ctx,
   treeId,
   onEnded,
+  sendNowId,
+  ownTurns,
 }: DeliverParams): Promise<DeliverOutcome> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   if (!isOwner) {
@@ -239,10 +261,20 @@ export const deliverNext = async ({
     return { kind: 'idle', reason: 'stopped' };
   }
   const pending = await listAutoOutbox({ db: ctx.db, treeId, states: ['pending'] });
-  const rows = chooseDeliveryRows({ phase: tree.phase, generation: tree.generation, pending });
+  const isIdle = await hasNoRunningChild({ ctx, tree, pending });
+  const rows = chooseDeliveryRows({
+    phase: tree.phase,
+    generation: tree.generation,
+    pending,
+    isIdle,
+    sendNowId: sendNowId ?? null,
+  });
   const primary = rows[0];
   if (primary === undefined) {
     return { kind: 'idle', reason: 'no_rows' };
+  }
+  if (isIdle && sendNowId === undefined && primary.kind === 'user') {
+    console.warn(`[auto] tree ${treeId} waited with no running agent, delivering a user message`);
   }
   const spend = await readAutoTreeSpend({ db: ctx.db, treeId });
   const gate = turnGate({
@@ -282,6 +314,7 @@ export const deliverNext = async ({
     }
     return { kind: 'idle', reason: 'lost_race' };
   }
+  ownTurns?.begin({ runId });
   const outcome = await ctx.ports
     .startAutoTurn({
       treeId,
@@ -299,8 +332,12 @@ export const deliverNext = async ({
       message: formatError(error),
     }));
   if (outcome.kind === 'refused') {
+    ownTurns?.end({ runId });
     await rollbackDelivery({ ctx, tree, rows, message: outcome.message });
     return { kind: 'blocked', reason: outcome.message };
+  }
+  if (outcome.runId !== runId) {
+    ownTurns?.end({ runId });
   }
   const isAccepted = await acceptDelivery({
     ctx,

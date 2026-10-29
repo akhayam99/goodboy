@@ -4,7 +4,8 @@ import type { AutoDelegationId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { advancePhase } from './advancePhase';
 import { confirmDelegation, type ConfirmDelegationOutcome } from './confirmDelegation';
-import { deliverNext } from './deliver';
+import { createOwnTurns } from './createOwnTurns';
+import { deliverNext, type DeliverOutcome } from './deliver';
 import { enforceDeadlines } from './enforceDeadlines';
 import { expireStaleDecide } from './expireStaleDecide';
 import { finishAttempt } from './finishAttempt';
@@ -40,6 +41,11 @@ type ConfirmRuntimeParams = Readonly<{
   decision: 'confirm' | 'decline';
 }>;
 
+type SendNowRuntimeParams = Readonly<{
+  treeId: AutoTree['id'];
+  rowId: string;
+}>;
+
 export type AutoRuntime = Readonly<{
   ctx: AgentVerbContext;
   drive: (treeId: AutoTree['id']) => Promise<void>;
@@ -51,6 +57,7 @@ export type AutoRuntime = Readonly<{
   rerunChecks: (delegationId: AutoDelegationId) => Promise<RerunChecksOutcome>;
   publish: (params: Omit<PublishActParams, 'ctx'>) => ReturnType<typeof publishAct>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
+  sendNow: (params: SendNowRuntimeParams) => Promise<DeliverOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
   recoverAll: () => Promise<void>;
   settled: () => Promise<void>;
@@ -69,6 +76,7 @@ export const createAutoRuntime = ({
 }: AutoRuntimeOptions): AutoRuntime => {
   const queue = createKeyedQueue();
   const inflight = new Set<Promise<void>>();
+  const ownTurns = createOwnTurns();
   const watchedSinceMs = ctx.now();
   const track = (work: Promise<void>): void => {
     const tracked = work.catch(onError).finally(() => {
@@ -78,14 +86,19 @@ export const createAutoRuntime = ({
   };
   const driveOnce = async (treeId: AutoTree['id']): Promise<boolean> => {
     const hasExpired = await enforceDeadlines({ ctx, treeId, watchedSinceMs });
-    const hasStaleDecide = await expireStaleDecide({ ctx, treeId });
+    const hasStaleDecide = await expireStaleDecide({ ctx, treeId, ownTurns });
     const joined = await joinReady({ ctx, treeId });
     const hasAdvanced = await advancePhase({ ctx, treeId });
     const launched = await launchChildren({ ctx, treeId, onChildEnded: runtime.onChildEnded });
     if (launched.delegationIds.length > 0) {
       track(launched.done.then(() => runtime.drive(treeId)));
     }
-    const delivered = await deliverNext({ ctx, treeId, onEnded: runtime.onAutoTurnEnded });
+    const delivered = await deliverNext({
+      ctx,
+      treeId,
+      onEnded: runtime.onAutoTurnEnded,
+      ownTurns,
+    });
     return (
       hasExpired ||
       hasStaleDecide ||
@@ -109,7 +122,7 @@ export const createAutoRuntime = ({
       },
     });
   const recover = async (treeId: AutoTree['id']): Promise<boolean> => {
-    const outcome = await recoverTree({ ctx, treeId, sleep, maxPolls: watchPolls });
+    const outcome = await recoverTree({ ctx, treeId, sleep, maxPolls: watchPolls, ownTurns });
     const tree = await getAutoTree({ db: ctx.db, treeId });
     if (tree?.phase === 'blocked' && !isAutoGateBlock({ reason: tree.blockedReason })) {
       await retryBlockedTree({ ctx, treeId });
@@ -126,7 +139,13 @@ export const createAutoRuntime = ({
     ctx,
     drive,
     onAutoTurnEnded: (ended) => {
-      track(settleAutoTurn({ ctx, ended }).then(() => drive(ended.treeId)));
+      track(
+        settleAutoTurn({ ctx, ended })
+          .finally(() => {
+            ownTurns.end({ runId: ended.runId });
+          })
+          .then(() => drive(ended.treeId)),
+      );
     },
     onChildEnded: (ended) => {
       track(finishAttempt({ ctx, ended }).then(() => drive(ended.treeId)));
@@ -155,6 +174,21 @@ export const createAutoRuntime = ({
         await retryBlockedTree({ ctx, treeId: params.treeId });
         await drive(params.treeId);
       }
+      return outcome;
+    },
+    sendNow: async ({ treeId, rowId }) => {
+      const outcome = await queue.run({
+        key: treeId,
+        task: () =>
+          deliverNext({
+            ctx,
+            treeId,
+            onEnded: runtime.onAutoTurnEnded,
+            ownTurns,
+            sendNowId: rowId,
+          }),
+      });
+      await drive(treeId);
       return outcome;
     },
     recover,

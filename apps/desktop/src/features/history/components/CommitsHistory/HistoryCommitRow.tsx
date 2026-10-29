@@ -1,5 +1,5 @@
 import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { GitMerge, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import { cn, ICON_SIZE } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -12,6 +12,8 @@ import {
   type HistoryRowMark,
 } from '../../historyRowMarks';
 import type { HistoryAbsorbed } from '../../../../store/slices/history/types';
+import { HistoryCommitMetadata } from './HistoryCommitMetadata';
+import { HistoryTakenInList } from './HistoryTakenInList';
 import { HistoryAbsorbedList } from './HistoryAbsorbedList';
 import { HistoryModeSwitch } from './HistoryModeSwitch';
 import { HistoryRowActions } from './HistoryRowActions';
@@ -32,6 +34,7 @@ type HistoryTakenInRow = {
 type Props = {
   readonly sessionId: SessionId;
   readonly commit: BranchCommit;
+  readonly configuredAuthor?: string | null;
   readonly view: HistoryRowView;
   readonly mark: HistoryRowMark | null;
   readonly titleOf: (sha: string) => string;
@@ -63,6 +66,7 @@ type Props = {
 const HistoryCommitRowView = ({
   sessionId,
   commit,
+  configuredAuthor = null,
   view,
   mark,
   titleOf,
@@ -108,6 +112,14 @@ const HistoryCommitRowView = ({
     now: nowMs,
   });
   const showExpanded = view === 'planned' && isExpanded && takenIn.length > 0;
+  const isTall =
+    isEditing ||
+    isBusy ||
+    action !== 'pick' ||
+    parts.length > 0 ||
+    conflictFiles.length > 0 ||
+    absorbed.length > 0 ||
+    showExpanded;
   const anchorKey = `commit:${commit.sha}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const rowRef = useHeldPaletteScope<HTMLDivElement>({
@@ -123,6 +135,7 @@ const HistoryCommitRowView = ({
       data-graph-key={commit.sha}
       data-flip-key={commit.sha}
       data-action={action}
+      data-history-density={isTall ? 'expanded' : 'compact'}
       data-highlighted={isHighlighted ? 'true' : undefined}
       aria-label={`${title}${action === 'pick' ? '' : `, ${HISTORY_ACTION_LABEL[action]}`}`}
       onPointerDown={onPointerDown}
@@ -134,12 +147,16 @@ const HistoryCommitRowView = ({
           menu.onKeyDown(event);
         }
       }}
-      className="group group/row relative grid min-h-14 grid-cols-[72px_minmax(0,1fr)] items-start outline-none"
+      className={cn(
+        'group group/row relative grid min-h-7 grid-cols-[36px_minmax(0,1fr)] items-start outline-none',
+        isTall && 'min-h-14',
+      )}
     >
       <span aria-hidden />
       <span
         className={cn(
-          'relative flex min-h-14 min-w-0 items-start gap-3 rounded-lg py-2 pl-2 pr-3 transition-colors select-none',
+          'relative flex min-h-7 min-w-0 items-start gap-2 rounded-lg px-2 transition-colors select-none',
+          isTall && 'min-h-14 pb-2',
           isDraggable && 'cursor-grab',
           'group-hover:bg-hover group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-focus-ring',
           isHighlighted && 'bg-selected',
@@ -152,7 +169,7 @@ const HistoryCommitRowView = ({
           <span
             aria-hidden
             className={cn(
-              'absolute bottom-3 left-0 top-3 w-0.5 rounded-full',
+              'absolute bottom-2 left-1 top-2 w-0.5 rounded-full',
               HISTORY_ACTION_CLASSES[action].solid,
             )}
           />
@@ -172,7 +189,7 @@ const HistoryCommitRowView = ({
             size={ICON_SIZE.control}
             aria-hidden
             className={cn(
-              'mt-0.5 shrink-0 text-faint-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+              'self-start translate-y-1.5 shrink-0 text-faint-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
               !isDraggable && 'invisible',
             )}
           />
@@ -184,22 +201,38 @@ const HistoryCommitRowView = ({
             </span>
           ) : null}
           {isEditing ? (
-            editor
+            <span className="flex min-h-7 flex-col">{editor}</span>
           ) : (
             <>
-              <span className="flex min-w-0 items-start gap-2">
+              <span
+                className={cn('flex min-h-7 min-w-0 items-center gap-2', isTall && 'flex-wrap')}
+              >
                 <span
-                  className={cn(
-                    'min-w-0 flex-1 truncate text-row',
-                    isRemoved
-                      ? 'text-faint-foreground line-through decoration-danger'
-                      : isFolded && view === 'now'
-                        ? 'text-muted-foreground'
-                        : 'text-foreground',
-                  )}
+                  className={cn('flex min-h-7 min-w-0 flex-1 items-center', isTall && 'basis-full')}
                 >
-                  {title}
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-row',
+                      isRemoved
+                        ? 'text-faint-foreground line-through decoration-danger'
+                        : isFolded && view === 'now'
+                          ? 'text-muted-foreground'
+                          : 'text-foreground',
+                    )}
+                  >
+                    {title}
+                  </span>
                 </span>
+                <HistoryCommitMetadata
+                  commit={commit}
+                  configuredAuthor={configuredAuthor}
+                  age={age}
+                  isRemoved={isRemoved}
+                  isNew={isNew}
+                  shaClassName="font-mono"
+                  canShowUnpushed={canShowUnpushed}
+                  view={view}
+                />
                 {mark === null ? null : (
                   <span className="flex shrink-0 items-center gap-1">
                     <HistoryRowMarkList
@@ -220,50 +253,17 @@ const HistoryCommitRowView = ({
                   />
                 ) : null}
               </span>
-              <span
-                className={cn(
-                  'flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-faint-foreground',
-                  isRemoved && 'opacity-70',
-                )}
-              >
-                <span
-                  className={cn(
-                    'shrink-0 font-mono tabular-nums',
-                    isNew ? 'text-primary' : 'text-muted-foreground',
-                  )}
-                >
-                  {commit.shortSha}
-                </span>
-                <span className="truncate">{commit.author}</span>
-                <span className="shrink-0">{age}</span>
-                {!commit.pushed && canShowUnpushed && view !== 'done' ? (
-                  <span className="shrink-0 text-faint-foreground">Not pushed</span>
-                ) : null}
-              </span>
-              <HistoryRowPlanLine parts={parts} conflictFiles={conflictFiles} />
+              {parts.length > 0 || conflictFiles.length > 0 ? (
+                <HistoryRowPlanLine parts={parts} conflictFiles={conflictFiles} />
+              ) : null}
               {absorbed.length === 0 ? null : <HistoryAbsorbedList absorbed={absorbed} />}
               {showExpanded ? (
-                <span className="mt-2 flex flex-col gap-0.5 border-l border-border-soft pl-3">
-                  {takenIn.map((taken) => (
-                    <span
-                      key={taken.commit.sha}
-                      className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground"
-                    >
-                      <GitMerge size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                      <span className="truncate text-foreground">{taken.commit.subject}</span>
-                      <span className="shrink-0 font-mono tabular-nums">
-                        {taken.commit.shortSha}
-                      </span>
-                      {isInteractive ? (
-                        <HistoryModeSwitch
-                          mode={taken.mode}
-                          onChange={(mode) => onModeChange(taken.commit.sha, mode)}
-                          onSeparate={() => onSeparate(taken.commit.sha)}
-                        />
-                      ) : null}
-                    </span>
-                  ))}
-                </span>
+                <HistoryTakenInList
+                  takenIn={takenIn}
+                  isInteractive={isInteractive}
+                  onModeChange={onModeChange}
+                  onSeparate={onSeparate}
+                />
               ) : null}
             </>
           )}

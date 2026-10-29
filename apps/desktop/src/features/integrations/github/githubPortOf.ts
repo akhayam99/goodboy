@@ -33,7 +33,10 @@ export const githubPortOf = ({
     return null;
   }
   const mountGithub = state.mountGithub?.[repo.mountId] ?? null;
-  const sessionPr = state.sessionGithub?.[sessionId]?.pr ?? null;
+  const sessionPr =
+    mountId === undefined
+      ? (state.sessionGithub?.[sessionId]?.pr ?? null)
+      : (mountGithub?.pr ?? null);
   const number = prNumber ?? sessionPr?.number ?? null;
   if (number === null) {
     return null;

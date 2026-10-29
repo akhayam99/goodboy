@@ -420,7 +420,7 @@ describe('journey: Auto delegates and a child finishes', () => {
 
     await vi.waitFor(async () => expect(autoPrompts).toHaveLength(2));
     expect(autoPrompts[1]).toContain('RESULTS FROM YOUR AGENTS');
-    expect(autoPrompts[1]).toContain('failed, artifact_persistence_failed');
+    expect(autoPrompts[1]).toContain('failed, report_missing');
     const [settled] = await listAutoDelegations({ db, treeId });
     expect(settled).toMatchObject({ state: 'settled', outcome: 'failed' });
     expect((await attemptReservations()).map((reservation) => reservation.state)).toEqual([

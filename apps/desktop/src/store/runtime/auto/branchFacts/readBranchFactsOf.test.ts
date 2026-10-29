@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BranchFactsRequest } from '@goodboy/core';
 import { brandId, type SessionId } from '@goodboy/types';
-import type { ReadBranchFactsParams } from './ports';
+import type { ReadBranchFactsParams } from '../ports';
 import { readBranchFactsOf, type BranchFactsReaders } from './readBranchFactsOf';
 
 const PARAMS: ReadBranchFactsParams = {

@@ -188,6 +188,32 @@ message the runtime
 cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
 message" and the composer keeps its text.
 
+**When a message waits.** A `user` row is delivered in every phase that takes a turn
+(`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
+stays `pending` and goes with the next results, so a message typed during a long child run
+reaches Auto only when the child ends. The chat says so under the bubble in one quiet line,
+"Waits for <task of the child>" or "Waits for 2 agents", with **Send now**
+(`AutoPendingMessages`, from `pendingMessages` of the tree view). **Send now**
+(`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
+once as its own Auto turn, like a child's question, and leaves the children running; the line goes
+away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's
+phase revision and the row's `claimed_by`, so a child that ends at the same moment cannot deliver
+it twice: whoever claims first delivers it and the other finds no row. A waiting tree with no
+child in `starting` or `running` (a lost turn end) is the watchdog's case: `deliverNext` delivers
+the pending `user` rows and logs one `[auto] ... waited with no running agent` line.
+
+**A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
+and its line says so: "Not delivered: <reason>". A tree blocked by the budget shows the reason
+with **Change limit** (raising it delivers the row, as before). A tree blocked for any other
+reason but the time limit shows it with **Retry**, which resumes the tree and delivers the row
+(the send itself already tries one Retry). The time limit and a stopped or stopping tree have no
+action ("This conversation reached its time limit.", "Auto was stopped."): the row stays unsent
+and the words are not lost from the chat. Stopping drops the pending rows with the reason
+`stopped`; `readAutoTreeViews` keeps those user rows in `pendingMessages` while the tree is stopping
+or stopped, so the line still shows under them. A `finished` or `done` tree takes the message as a
+normal follow-up turn. Rows left from old trees show the same line on load and are never
+auto-sent.
+
 **Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
 session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
 outbox row (`images` in the payload) and shows them on the bubble (`operator_text` with
@@ -282,11 +308,17 @@ writing to it reopens it to **Deciding**.
   word only while Auto rests and its own turn is not running (the registry verb
   `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
   to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
-- **Delegation lines.** Each delegation is one bare line in the conversation
-  (`AutoDelegationLines`): its role chip, the task Auto gave and **Open**; the
-  lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
-  ready". The child's state word is on its rail row, never on the line; its
-  reason, model and result are in its pane. Lines read the
+- **Delegation lines.** Each delegation is in the conversation
+  (`AutoDelegationLines`). A settled one is one bare line: its role chip, the
+  task Auto gave and **Open**. A child still in flight is a live card
+  (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
+  **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
+  the active work time (`DelegationClock`, the same number as Working now and the
+  Agents row, so a resumed child keeps its earlier work), role and model, and the
+  child's last tool as the activity line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
+  of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
+  child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
+  ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A revise that waits for an OK carries **Confirm** and
   **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
@@ -294,6 +326,8 @@ writing to it reopens it to **Deciding**.
   **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
   `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
   settles to one quiet line, "Plan v1 · changes asked".
+  An artifact that needs no approval has no row on its line: it shows once, on the
+  result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
 - **Names.** A child is named by what it does. Auto gives each child an
@@ -360,7 +394,12 @@ writing to it reopens it to **Deciding**.
   with its provider, the state word (`settledStatusOf`, the rail's words) and
   **Open**, which opens the child pane. The body is the child's own report in
   `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
-  child shows its card with its state and no body. The cards read data, never
+  child shows its card with its state and no body. When the child produced an
+  artifact (`deliveredResultsOf` reads the `artifacts` of the result entry), the card leads with
+  the same artifact rows as the delegation lines and the agent's own prose goes behind **Show the
+  agent's notes**, closed by default (`AutoResultNotes`, artifact blocks dropped by
+  `summaryProseOf`); a plan that waits for approval has no row on the card, its ask is on the
+  line, and a card whose child produced no artifact keeps the three line preview. The cards read data, never
   Auto's prose: an accepted `results` row of the outbox keeps the root run that
   read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
   `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
@@ -383,14 +422,20 @@ writing to it reopens it to **Deciding**.
   **Mark finished** is in the header. A Stop or a Retry that fails says why on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
-  thinking line of the conversation speaks instead, and while a plan waits for
-  approval the ask is the state. The composer says "Message Auto" while Auto
+  thinking line of the conversation speaks instead. The **Working now** strip
+  (`AutoWorkingNow`) remains above the message field while children start or run,
+  newest first, even during Auto's own turn. Each chip shows the short task title,
+  role glyph and elapsed active time (`DelegationClock`, shared with the rail).
+  A chip or a delegation line's **Open** reveals that child in Agents without
+  changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
+  payload and `useSpawnedFocus`). Settled children leave the strip even if their
+  turn state arrives late. While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
-- **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
-  from its rail row or its line's **Open**, so Auto's conversation stays in
-  view; another child swaps in place, the Auto row of the rail closes it, Esc
-  closes it, and its rail row is the selected one. The pane title is the task
+- **A child preview opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
+  from a preview door, so the main conversation stays in view. Another child
+  swaps in place and Esc closes it. Picking a row in Agents opens the child in
+  the center; **Open** in Auto's chat only reveals its row in Agents. The pane title is the task
   Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
@@ -603,7 +648,7 @@ gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest`
 through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
 (draft, the repository's base, never a second request when the branch already has one). The
 result Auto reads starts with "Pull request #421 is open: <url>"; a failure fails the delegation
-with the reason, and a retry of the same child opens it once. It names the `mount` field of a
+with the reason in the words of `createPrFailureText` (a sentence the person can act on, shown on the child's card with Retry, which `delegationReasonTextOf` lets through because it starts with a capital letter), and a retry of the same child opens it once. The base it sends is a branch name from `requestBaseBranchOf`, so a mount that stores `origin/main` still opens against `main`. It names the `mount` field of a
 child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
 itself; when it reports what happens next it describes a hand over and names the role ("I asked
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every
@@ -615,7 +660,7 @@ Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run wi
 each role line of the prompt says whether the role has a shell, and the prompt rule says a task that
 runs a command goes only to a role that does. `resolveDelegateChild` enforces it: a read-only role
 whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm test`, "run the
-tests") is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
+tests", or a commit range such as `a1b2c3d4e..HEAD`, which only git can list) is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
 nothing is written, so Auto chooses again in its next turn. There is no read-only shell role yet:
 a read-only check goes to a writer role with "read only, change nothing" in the task. A child that
 ends blocked and says it had no shell tool gets the reason `missing_tool` (not `declared_blocked`),
@@ -630,6 +675,13 @@ role a shell would give the Auto root one too (they share an argv). Instead a sc
 the commits since the base branch, the pull or merge request of the branch, its open review threads
 and its checks, on GitHub, GitLab and Bitbucket alike (`makeBranchFactsReaders` goes through
 `pullRequestPortFor` and the review source threads, the same functions the Branch page uses).
+Every reader resolves the request of the mount it is asked about, never the active mount of the
+conversation: the host comes from `mountRequestHostOf` (the remote of that mount), the request is
+the one stored for that `mountId` (`mountGithub`, `mountGitlabMr`, `mountBitbucketPr`), and the
+GitHub threads come from the detail of that mount (`refreshSessionPrDetail` with its `mountId`,
+checked against the request number). A mount with no request reads "none is open"; a mount whose
+request or detail could not be read, or was never read, reads "Facts not available: reason", never
+"none".
 `composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
 `AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
 host could not read becomes "Facts not available: reason" and the scout still starts; a read slower
@@ -666,6 +718,18 @@ cut, so a dropped middle never hides them. `DELEGATION_SUMMARY_CHARS` is the sam
 (implementer, tester, docs, ci-fixer) may attach its long report as a `report` artifact: the kickoff
 expected text says so, `finishedPlain` registers what the child wrote, and a writer that wrote none
 is not failed (`artifactPersistence` is `not_applicable`).
+
+A read-only role (scout, planner, investigator, reviewer) owes its artifact, and `finishedPlain` tells
+three endings apart through `artifactPersistence`. A report the harness registered is `ok`. A turn with
+no artifact block at all is `not_written`: the delegation fails `report_missing` when the child closed
+with the closing line ("It ended without writing its report.") and `no_closing_envelope` when it did
+not. A turn that holds a block the harness could not store is `failed`, reason
+`artifact_persistence_failed`. A child that declares `status="blocked"` is `blocked` in all three cases,
+never failed for a missing report. An artifact block written beside a blocking question is not
+captured (`captureArtifactsFromTurn` skips a turn with a question), so a scout that Auto releases with
+its answer ("no longer needed, stop") and that then writes no report ends `report_missing`. The closing
+line matches the id of the child ignoring whitespace inside it, so an id a model wrapped across lines
+still closes.
 
 **Answering a child that cannot resume.** The resume text of a paused child (`composeAnswerKickoff`)
 is the question and the answer. A provider outside `AUTO_RESUMING_PROVIDERS` (`isAutoProviderResuming`,
@@ -868,7 +932,17 @@ ended ok: it takes the last complete block, strips code fences, escapes raw line
 and falls back to the last `}` when the close marker is missing. `store/runtime/auto/applyAutoBlock.ts`
 runs at the top of `settleAutoTurn` and only for the current run of a `deciding` tree that is not
 stopping, so a duplicate settle, a late settle after a stop and a recovered turn that passes the
-same text admit once (the admission guards and the request id replay do the rest).
+same text admit once (the admission guards and the request id replay do the rest). A delegate block
+that ends a turn which is no longer the current run (a settle that closed it without the text) is
+never dropped silently: unless the request id was already admitted, it becomes a `not_deciding`
+refusal row. A stop or a restart stays silent.
+
+The runtime keeps the run ids of the Auto turns it started itself (`createOwnTurns`, set in
+`deliverNext`, cleared after `settleAutoTurn`). `recoverTree` leaves such a run alone, because the
+ledger marks a run done a few seconds before the turn saves its answer and a recovery settle in that
+gap would read an empty text. `expireStaleDecide` skips such a run too, however long it has been
+deciding, so the ten-minute watchdog never blocks a turn that is still saving its answer. Only a run
+from an earlier process is settled from the ledger.
 
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,

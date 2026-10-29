@@ -22,6 +22,14 @@ describe('reading how a child closed its work', () => {
     expect(closing.completion).toBe('blocked');
   });
 
+  it('reads a closing line whose id a model wrapped across lines', () => {
+    const closing = parseChildClosing({
+      text: 'Nothing to add.\n<<step-done id="agent-sco\n\nut-1">>',
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('done');
+  });
+
   it('ignores a closing line addressed to another agent', () => {
     const closing = parseChildClosing({
       text: '<<step-done id="agent-other">>',

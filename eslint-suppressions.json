@@ -8637,7 +8637,7 @@
       "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/store/slices/github/index.test.ts": {
@@ -8749,7 +8749,7 @@
       "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/gitlab-mr/mrLink.ts": {

@@ -6,7 +6,7 @@ import { gitlabPortOf } from '../../../features/integrations/gitlab/gitlabPortOf
 import type { GetFn } from '../../slice-types';
 import { requestHostOf } from './requestHostOf';
 
-export type PortBuilderParams = Readonly<{
+type PortBuilderParams = Readonly<{
   get: GetFn;
   sessionId: SessionId;
   mountId?: MountId;
@@ -21,11 +21,17 @@ const PORT_BUILDERS = {
   bitbucket: bitbucketPortOf,
 } as const satisfies Readonly<Record<PullRequestHost, PortBuilder>>;
 
-export const pullRequestPortFor = (params: PortBuilderParams): PullRequestPort | null =>
+type Params = PortBuilderParams &
+  Readonly<{
+    host?: PullRequestHost;
+  }>;
+
+export const pullRequestPortFor = ({ host, ...params }: Params): PullRequestPort | null =>
   PORT_BUILDERS[
-    requestHostOf({
-      state: params.get(),
-      sessionId: params.sessionId,
-      ...(params.mountId === undefined ? {} : { mountId: params.mountId }),
-    })
+    host ??
+      requestHostOf({
+        state: params.get(),
+        sessionId: params.sessionId,
+        ...(params.mountId === undefined ? {} : { mountId: params.mountId }),
+      })
   ](params);

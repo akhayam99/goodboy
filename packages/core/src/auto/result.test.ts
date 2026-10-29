@@ -93,6 +93,44 @@ describe('the outcome of a delegation', () => {
     ).toMatchObject({ outcome: 'failed', reason: 'artifact_persistence_failed' });
   });
 
+  it('names a report the role never wrote, apart from one it could not save', () => {
+    const scout = { role: 'scout', isArtifactExpected: true } as const;
+    expect(
+      buildDelegationResult(base({ ...scout, artifactPersistence: 'not_written' })),
+    ).toMatchObject({ outcome: 'failed', reason: 'report_missing' });
+    expect(
+      buildDelegationResult(
+        base({
+          ...scout,
+          artifactPersistence: 'not_written',
+          closing: closingOf('superseded, nothing to add.'),
+        }),
+      ),
+    ).toMatchObject({ outcome: 'failed', reason: 'no_closing_envelope' });
+    expect(
+      renderDelegationResult({
+        result: buildDelegationResult(base({ ...scout, artifactPersistence: 'not_written' })),
+      }),
+    ).toContain('it wrote no report');
+  });
+
+  it('keeps a declared block as blocked when the role owes a report it did not write', () => {
+    const blocked = base({
+      role: 'scout',
+      isArtifactExpected: true,
+      closing: closingOf(
+        `Cannot read the pull request.\n<<step-done id="${ID}" status="blocked">>`,
+      ),
+    });
+    expect(buildDelegationResult({ ...blocked, artifactPersistence: 'not_written' })).toMatchObject(
+      { outcome: 'blocked', reason: 'declared_blocked' },
+    );
+    expect(buildDelegationResult({ ...blocked, artifactPersistence: 'failed' })).toMatchObject({
+      outcome: 'blocked',
+      reason: 'declared_blocked',
+    });
+  });
+
   it('reads a declared block as blocked, a cancelled process as stopped, a deadline as timed out', () => {
     expect(
       resolveDelegationOutcome({

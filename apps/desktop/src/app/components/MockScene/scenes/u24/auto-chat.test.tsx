@@ -63,6 +63,7 @@ describe('the Auto chat scenes', () => {
       'auto-chat-finished',
       'auto-chat-nocap',
       'auto-chat-plan',
+      'auto-chat-queued',
       'auto-chat-refused',
       'auto-chat-revising',
       'auto-chat-working',
@@ -132,6 +133,22 @@ describe('the Auto chat scenes', () => {
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 of \$10\.00/);
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
+  });
+
+  it('auto-chat-queued says under the bubble that the message waits, with Send now', async () => {
+    mount({ id: 'auto-chat-queued' });
+
+    expect(
+      await screen.findByText('Also keep the retry window at 30 seconds.', undefined, WAIT),
+    ).toBeDefined();
+    const line = document.querySelector('[data-auto-pending-message]');
+    if (!(line instanceof HTMLElement)) {
+      throw new Error('no pending line');
+    }
+    expect(line.textContent).toMatch(/^Waits for /);
+    expect(within(line).getAllByRole('button')).toHaveLength(1);
+    expect(within(line).getAllByRole('button')[0]?.textContent).toBe('Send now');
+    expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(1);
   });
 
   it('auto-chat-working opens the limit popover from the chip line', async () => {

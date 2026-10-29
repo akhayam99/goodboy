@@ -2,11 +2,19 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId, type AgentId, type MeasuredTurnSpan } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { WorkTimeContext, type WorkTimeSource } from '../../workTreeModel/workTimeSource';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerDelegationDecisionPort } from '../delegationDecisionPort';
 import { registerPublishPort, type PublishPort } from '../publishPort';
-import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
+import {
+  aDelegation,
+  anArtifactRow,
+  aPlanRow,
+  aView,
+  FIXTURE_SESSION,
+} from '../testing/autoViewFixtures';
 import { AutoDelegationLines } from './AutoDelegationLines';
 
 afterEach(cleanup);
@@ -49,7 +57,7 @@ const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: 
 };
 
 describe('AutoDelegationLines', () => {
-  it('says one bare line per hand over: the role, the task and Open, the rail owning the state', () => {
+  it('shows a running child as a live card: role, task, state word and Open', () => {
     const onOpenChild = vi.fn();
     renderLines({
       view: aView({
@@ -64,9 +72,58 @@ describe('AutoDelegationLines', () => {
     expect(within(line).getByRole('img', { name: 'Implementer' })).toBeDefined();
     expect(within(line).getByText('work for impl')).toBeDefined();
     expect(within(line).queryByText(/Reserved up to/)).toBeNull();
-    expect(within(line).queryByText('Running')).toBeNull();
+    within(line).getByText('Running');
     fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
+  });
+
+  it('draws the active work of a resumed child, as Working now and the Agents row do', () => {
+    const agentId = brandId<AgentId>({ value: 'agent-impl' });
+    const span = (startedAtMs: number, endedAtMs: number): MeasuredTurnSpan => ({
+      agentId,
+      parentAgentId: null,
+      agentStatus: null,
+      workflowRunId: null,
+      isOrchestratedRunDone: false,
+      stepRole: 'implementer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: null,
+      startedAtMs,
+      endedAtMs,
+      endReason: 'succeeded',
+      costUsd: null,
+      touchedMountIds: null,
+    });
+    const start = Date.parse('2026-10-16T09:00:00.000Z');
+    const minute = 60_000;
+    const source: WorkTimeSource = {
+      nowMs: start + 30 * minute,
+      spans: [span(start, start + 2 * minute), span(start + 20 * minute, start + 21 * minute)],
+      history: null,
+      liveStartMs: new Map(),
+      childrenOf: new Map(),
+    };
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    useAppStore.setState({ autoTreeViews: { [SESSION_ID]: [view] } });
+
+    render(
+      <WorkTimeContext.Provider value={source}>
+        <AutoDelegationLines
+          sessionId={SESSION_ID}
+          view={view}
+          delegations={view.delegations}
+          agents={[]}
+          onOpenChild={vi.fn()}
+          onOpenArtifact={vi.fn()}
+        />
+      </WorkTimeContext.Provider>,
+    );
+
+    expect(within(screen.getByRole('listitem')).getByText('3m').textContent).toBe('3m');
   });
 
   it('names two agents of one role apart by their task, as their result cards do', () => {
@@ -110,6 +167,46 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.queryByText(/needs your approval/)).toBeNull();
+  });
+
+  it('draws no row for an approved plan or any other artifact, the result card owns them', () => {
+    const reviewer = aDelegation({
+      key: 'reviewer',
+      role: 'reviewer',
+      state: 'settled',
+      outcome: 'completed',
+      settledAt: 1_000,
+      result: {
+        declared: { summary: 'Comparing the branch.' },
+        artifacts: [
+          { id: 'artifact-report', kind: 'report', title: 'Certify ledger-core', revision: 2 },
+        ],
+        cost: { usd: 0.2, basis: 'reported' },
+      },
+    });
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [SETTLED_PLAN, reviewer],
+        artifacts: [
+          aPlanRow({ approvalState: 'approved', approvedRevision: 1 }),
+          anArtifactRow({ id: 'artifact-report', kind: 'report', title: 'Certify ledger-core' }),
+        ],
+      }),
+    });
+
+    expect(screen.queryByRole('button', { name: /^Open (plan|report) / })).toBeNull();
+    expect(screen.queryByText('Approved')).toBeNull();
+  });
+
+  it('keeps one ask and no second row for a plan that needs approval', () => {
+    renderLines({
+      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
+    });
+
+    expect(
+      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
+    ).toHaveLength(1);
   });
 
   it('shows a revision on the same producer line', () => {
@@ -323,5 +420,47 @@ describe('the confirm row of a delegation that waits for an OK', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false),
     );
+  });
+});
+
+describe('the Stop button of a live child card', () => {
+  const RUNNING = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+  const renderRunning = (delegation = RUNNING) =>
+    renderLines({ view: aView({ phase: 'waiting', delegations: [delegation] }) });
+
+  it('stops that child by its own id', async () => {
+    const cancelCurrentTurn = vi.fn(async () => undefined);
+    useAppStore.setState({ cancelCurrentTurn });
+    renderRunning();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
+
+    await waitFor(() =>
+      expect(cancelCurrentTurn).toHaveBeenCalledWith(FIXTURE_SESSION, 'agent-impl', 'user'),
+    );
+  });
+
+  it('says why when the stop fails and keeps the card working', async () => {
+    useAppStore.setState({
+      cancelCurrentTurn: vi.fn(async () => {
+        throw new Error('the agent did not answer');
+      }),
+    });
+    renderRunning();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
+
+    await screen.findByRole('alert');
+    screen.getByText('Running');
+    screen.getByRole('button', { name: 'Stop work for impl' });
+  });
+
+  it('turns into the bare line with no Stop once the delegation settled', () => {
+    renderRunning(
+      aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome: 'completed' }),
+    );
+
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+    expect(screen.queryByText('Running')).toBeNull();
   });
 });

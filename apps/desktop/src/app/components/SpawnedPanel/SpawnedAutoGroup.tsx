@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../store';
@@ -11,6 +11,7 @@ import { openSpawned } from '../../../features/session/openSpawned';
 import { spawnedRailOf } from './spawnedRailOf';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
+import { useSpawnedReveal } from './useSpawnedReveal';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -50,6 +51,14 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
     () => foldSpawnedRowsOf({ rows, expanded, isOpenByDefault }),
     [rows, expanded, isOpenByDefault],
   );
+  const rootRef = useRef<HTMLDivElement>(null);
+  const onExpand = useCallback((ids: ReadonlyArray<string>) => {
+    setExpanded((current) => ({
+      ...current,
+      ...Object.fromEntries(ids.map((id) => [id, true])),
+    }));
+  }, []);
+  useSpawnedReveal({ rootRef, selectedAgentId, rows, shown, onExpand });
   const rail = useMemo(
     () =>
       spawnedRailOf({
@@ -62,7 +71,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
     [shown],
   );
   return (
-    <div data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
+    <div ref={rootRef} data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
       {shown.map(({ row, count, isExpanded }) => {
         const rowRail = rail.railById.get(row.id);
         if (rowRail === undefined) {

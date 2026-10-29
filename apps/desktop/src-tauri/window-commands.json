@@ -140,6 +140,7 @@
     "gh_status",
     "git_push",
     "git_push_with_lease",
+    "git_remote_names",
     "gitlab_approve_mr",
     "gitlab_cancel_auto_merge",
     "gitlab_connect",

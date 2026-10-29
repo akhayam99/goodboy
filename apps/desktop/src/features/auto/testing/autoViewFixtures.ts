@@ -11,6 +11,7 @@ import {
 } from '@goodboy/types';
 import type {
   AutoDeliveredResult,
+  AutoPendingMessage,
   AutoPendingRefusal,
   AutoTreeView,
 } from '../../../store/slices/auto-view/state';
@@ -151,6 +152,29 @@ export const aPlanRow = ({
   lastAsk: null,
 });
 
+type ArtifactRowParams = {
+  readonly id: string;
+  readonly kind: AutoArtifactLedgerRow['artifact']['kind'];
+  readonly title: string;
+  readonly revision?: number;
+  readonly sourceText?: string;
+};
+
+export const anArtifactRow = ({
+  id,
+  kind,
+  title,
+  revision = 1,
+  sourceText = '',
+}: ArtifactRowParams): AutoArtifactLedgerRow => {
+  const base = aPlanRow({ title, revision });
+  return {
+    ...base,
+    artifact: { ...base.artifact, artifactId: brandId<ArtifactId>({ value: id }), kind },
+    sourceText,
+  };
+};
+
 type ViewParams = {
   readonly phase?: AutoPhase;
   readonly delegations?: ReadonlyArray<AutoDelegation>;
@@ -159,6 +183,7 @@ type ViewParams = {
   readonly reservedUsd?: number;
   readonly capUsd?: number;
   readonly pendingRefusal?: AutoPendingRefusal | null;
+  readonly pendingMessages?: ReadonlyArray<AutoPendingMessage>;
   readonly deliveredResults?: ReadonlyArray<AutoDeliveredResult>;
   readonly rootAsk?: string | null;
 };
@@ -171,11 +196,13 @@ export const aView = ({
   reservedUsd = 0,
   capUsd = 10,
   pendingRefusal = null,
+  pendingMessages = [],
   deliveredResults = [],
   rootAsk = null,
 }: ViewParams = {}): AutoTreeView => ({
   hiddenChildIds: [],
   pendingRefusal,
+  pendingMessages,
   deliveredResults,
   rootAsk,
   tree: aTree({ phase, capUsd }),

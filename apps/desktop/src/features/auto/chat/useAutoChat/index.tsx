@@ -5,8 +5,10 @@ import type { TranscriptInsertion } from '../../../../shared/types/transcriptIns
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoPendingMessages } from '../AutoPendingMessages';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
+import { AutoWorkTime } from '../AutoWorkTime';
 import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
@@ -40,14 +42,16 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         key: batch.key,
         beforeMs: batch.beforeMs,
         node: (
-          <AutoDelegationLines
-            sessionId={session.id}
-            view={view}
-            delegations={batch.delegations}
-            agents={agents}
-            onOpenChild={openChild}
-            onOpenArtifact={openArtifact}
-          />
+          <AutoWorkTime session={session}>
+            <AutoDelegationLines
+              sessionId={session.id}
+              view={view}
+              delegations={batch.delegations}
+              agents={agents}
+              onOpenChild={openChild}
+              onOpenArtifact={openArtifact}
+            />
+          </AutoWorkTime>
         ),
       }),
     );
@@ -57,13 +61,20 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
       beforeMs: null,
       node:
         ask === null ? (
-          <AutoTail sessionId={session.id} view={view} rootAgent={agent} />
+          <AutoWorkTime session={session}>
+            <AutoTail sessionId={session.id} view={view} rootAgent={agent} />
+          </AutoWorkTime>
         ) : (
           <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
         ),
     };
-    return [...lines, tail];
-  }, [view, agents, agent, openChild, openArtifact, session.id]);
+    const pending: TranscriptInsertion = {
+      key: `auto-pending-${view.tree.id}`,
+      beforeMs: null,
+      node: <AutoPendingMessages sessionId={session.id} view={view} />,
+    };
+    return [...lines, pending, tail];
+  }, [view, agents, agent, openChild, openArtifact, session]);
 
   return {
     tree,

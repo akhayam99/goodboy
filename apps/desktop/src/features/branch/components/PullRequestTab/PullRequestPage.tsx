@@ -6,6 +6,8 @@ import {
 } from '@goodboy/core';
 import { SkeletonRow } from '@goodboy/ui';
 import type {
+  BranchCommit,
+  FileDiff,
   MountId,
   PrDetail,
   PullRequestHost,
@@ -21,6 +23,8 @@ import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { queueLineOf } from '../../queueLineOf';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestActivityOf } from './activityOf';
+import { BranchSummary } from './BranchSummary';
+import { OpenThreadsLink } from './OpenThreadsLink';
 import { PullRequestActivity } from './PullRequestActivity';
 import { PullRequestDescription } from './PullRequestDescription';
 import { PullRequestProperties } from './PullRequestProperties';
@@ -44,6 +48,11 @@ export type PullRequestPageProps = {
   readonly viewErrorKind: PullRequestFailureKind | null;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly isDiffLoading: boolean;
+  readonly diffError: string | null;
+  readonly onRetryDiff: () => void;
   readonly onMutated: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
@@ -66,6 +75,11 @@ export const PullRequestPage = ({
   viewErrorKind,
   canEdit,
   request,
+  commits,
+  files,
+  isDiffLoading,
+  diffError,
+  onRetryDiff,
   onMutated,
   onReload,
   onSelectTab,
@@ -108,6 +122,19 @@ export const PullRequestPage = ({
   return (
     <div data-slot="overview-grid" className="@container flex min-w-0 flex-col gap-6">
       <PullRequestStatusStrip cells={cells} onOpen={onSelectTab} />
+      <BranchSummary
+        commits={commits}
+        files={files}
+        isLoading={isDiffLoading}
+        error={diffError}
+        onRetry={onRetryDiff}
+        onOpen={onSelectTab}
+      />
+      <OpenThreadsLink
+        unresolved={facts.commentsUnresolved}
+        needYou={commentsNeedYou}
+        onOpen={() => onSelectTab('comments')}
+      />
       <div
         data-slot="page-columns"
         className="grid min-w-0 grid-cols-1 gap-8 @[880px]:grid-cols-[minmax(0,1fr)_224px]"

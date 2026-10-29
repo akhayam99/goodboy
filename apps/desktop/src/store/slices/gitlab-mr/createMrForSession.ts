@@ -8,6 +8,7 @@ import {
 } from '../../../features/integrations/gitlab/client';
 import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
 import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
+import { requestBaseBranchOf } from '../../../features/integrations/shared/requestBaseBranchOf';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
@@ -82,7 +83,11 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
     }
     const mount = target.mount;
     const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
-    const base = targetBranch?.trim() || mount.baseBranch || projectBaseBranch || 'main';
+    const base =
+      (await requestBaseBranchOf({
+        candidates: [targetBranch, mount.baseBranch, projectBaseBranch],
+        cwd: target.cwd,
+      })) ?? 'main';
     const resolvedTitle = title?.trim() || context.goal;
     const isDraft = draft ?? true;
     const membership = await findPrSeriesMembership({

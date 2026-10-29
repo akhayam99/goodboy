@@ -86,7 +86,7 @@ export const ColumnRail = ({
                     (signal.isWarning || signal.isUnread || signal.tone === 'neutral') && {
                       badge: (
                         <span className="absolute right-0.5 top-0.5 flex">
-                          <DoorSignalMark signal={signal} />
+                          <DoorSignalMark signal={signal} isDotOnly />
                         </span>
                       ),
                     })}

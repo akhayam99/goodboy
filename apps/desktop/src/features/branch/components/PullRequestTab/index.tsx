@@ -2,16 +2,15 @@ import type { PullRequestFailureKind } from '@goodboy/core';
 import type {
   BranchCommit,
   MountId,
-  FileDiff,
   PullRequestHost,
   PrDetail,
   PullRequestState,
   PullRequestView,
   Session,
 } from '@goodboy/types';
-import type { MountDiffStat } from '../../../../store';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
+import { useBranchSummaryDiff } from '../../hooks/useBranchSummaryDiff';
 import type { BranchStart } from '../../hooks/useBranchStart';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import type { PullRequestBranchFacts } from './pullRequestCellsOf';
@@ -40,8 +39,7 @@ type Props = {
   readonly branchFacts: PullRequestBranchFacts;
   readonly mergeWord: string;
   readonly commits: ReadonlyArray<BranchCommit>;
-  readonly files: ReadonlyArray<FileDiff>;
-  readonly stat: MountDiffStat | null;
+  readonly diffRevision: number | string;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly isConnected: boolean;
@@ -72,8 +70,7 @@ export const PullRequestTab = ({
   branchFacts,
   mergeWord,
   commits,
-  files,
-  stat,
+  diffRevision,
   canEdit,
   request,
   isConnected,
@@ -83,6 +80,11 @@ export const PullRequestTab = ({
   onReload,
   onSelectTab,
 }: Props) => {
+  const summaryDiff = useBranchSummaryDiff({
+    sessionId: session.id,
+    worktreePath: mountPath,
+    revision: diffRevision,
+  });
   if (pr === null) {
     return (
       <BranchStartPage
@@ -97,8 +99,10 @@ export const PullRequestTab = ({
         step={start.step}
         cells={start.cells}
         commits={commits}
-        files={files}
-        stat={stat}
+        files={summaryDiff.files}
+        isDiffLoading={summaryDiff.isLoading}
+        diffError={summaryDiff.error}
+        onRetryDiff={summaryDiff.retry}
         conflictFiles={start.conflictFiles}
         isConnected={isConnected}
         onConnected={onConnected}
@@ -123,6 +127,11 @@ export const PullRequestTab = ({
       viewErrorKind={viewErrorKind}
       canEdit={canEdit}
       request={request}
+      commits={commits}
+      files={summaryDiff.files}
+      isDiffLoading={summaryDiff.isLoading}
+      diffError={summaryDiff.error}
+      onRetryDiff={summaryDiff.retry}
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}

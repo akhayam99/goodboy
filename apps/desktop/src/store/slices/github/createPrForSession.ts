@@ -12,7 +12,9 @@ import type {
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
 import { closingIssueReferences } from '../../../features/integrations/github/closingIssueReferences';
+import { createPrFailureText } from '../../../features/integrations/github/createPrFailureText';
 import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
+import { requestBaseBranchOf } from '../../../features/integrations/shared/requestBaseBranchOf';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isScribeWriting } from '../scribe/isScribeWriting';
@@ -163,7 +165,10 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       !(excludedIssues ?? []).includes(Number.parseInt(task.externalId.trim(), 10));
     const references = mode === 'closing' ? linkedTasks.filter(isKept) : [];
     const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
-    const baseBranch = base?.trim() || mount.baseBranch || projectBaseBranch;
+    const baseBranch = await requestBaseBranchOf({
+      candidates: [base, mount.baseBranch, projectBaseBranch],
+      cwd,
+    });
     const args = ['pr', 'create', '--repo', repository, '--head', mount.branch];
     const hasFields = title !== undefined || body !== undefined;
     if (hasFields) {
@@ -192,7 +197,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     } else {
       args.push('--fill');
     }
-    if (baseBranch != null && baseBranch !== '') {
+    if (baseBranch !== undefined) {
       args.push('--base', baseBranch);
     }
     const isDraft = draft ?? true;
@@ -238,7 +243,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     const existingUrl = res.exitCode === 0 ? null : existingPrUrlOf({ stderr: res.stderr });
     const isAdopted = existingUrl !== null;
     if (res.exitCode !== 0 && !isAdopted) {
-      const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
+      const errMsg =
+        createPrFailureText({ stderr: res.stderr, base: baseBranch }) ||
+        `gh pr create exited with ${res.exitCode}`;
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
