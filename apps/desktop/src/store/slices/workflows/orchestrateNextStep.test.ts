@@ -126,6 +126,18 @@ import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { resolvePresetChange } from './resolvePresetChange';
 import { updateWorkflowRunRules } from './updateWorkflowRunRules';
 
+type DecideFieldParams = {
+  readonly key: 'operatorHints' | 'canReadFiles';
+};
+
+const decideField = ({ key }: DecideFieldParams): unknown => {
+  const input: unknown = decideSpy.mock.calls[0]?.[0];
+  if (typeof input !== 'object' || input === null) {
+    return undefined;
+  }
+  return Reflect.get(input, key);
+};
+
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
@@ -1687,9 +1699,8 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.operatorHints).toContain('[since step 1] ignore the docs');
-    expect(input.operatorHints).toContain('[new] run a reviewer first');
+    expect(decideField({ key: 'operatorHints' })).toContain('[since step 1] ignore the docs');
+    expect(decideField({ key: 'operatorHints' })).toContain('[new] run a reviewer first');
   });
 
   it('gives the orchestrator the hint images as readable paths and lets it read them', async () => {
@@ -1719,12 +1730,17 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.canReadFiles).toBe(true);
-    expect(input.operatorHints).toContain('write into the step brief what they show');
-    expect(input.operatorHints).toContain('- /work/harborline/.goodboy/attachments/a/a.png');
-    expect(input.operatorHints).toContain('- /work/harborline/.goodboy/attachments/b/b.png');
-    expect(input.operatorHints).not.toContain('other.png');
+    expect(decideField({ key: 'canReadFiles' })).toBe(true);
+    expect(decideField({ key: 'operatorHints' })).toContain(
+      'write into the step brief what they show',
+    );
+    expect(decideField({ key: 'operatorHints' })).toContain(
+      '- /work/harborline/.goodboy/attachments/a/a.png',
+    );
+    expect(decideField({ key: 'operatorHints' })).toContain(
+      '- /work/harborline/.goodboy/attachments/b/b.png',
+    );
+    expect(decideField({ key: 'operatorHints' })).not.toContain('other.png');
   });
 
   it('keeps the orchestrator without file tools when no hint carries an image', async () => {
@@ -1738,8 +1754,7 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.canReadFiles).toBeUndefined();
+    expect(decideField({ key: 'canReadFiles' })).toBeUndefined();
   });
 
   it('hands the orchestrator the workspace projects with the starred one first', async () => {
@@ -1766,11 +1781,10 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.operatorHints).toContain(
+    expect(decideField({ key: 'operatorHints' })).toContain(
       '- ledger-core (repo) | starred, the owner works here most | Settles payments\n- notify-relay (repo)',
     );
-    expect(input.operatorHints).toContain(
+    expect(decideField({ key: 'operatorHints' })).toContain(
       'When a request names no project, look in starred projects first.',
     );
   });

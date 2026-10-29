@@ -11173,7 +11173,7 @@
   },
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 85
+      "count": 83
     }
   },
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": {
