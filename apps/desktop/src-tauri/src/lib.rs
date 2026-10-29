@@ -619,6 +619,7 @@ pub fn run() {
             github::gh_run,
             github::git_push,
             github::git_push_with_lease,
+            remote::git_remote_names,
             github::gh_pr_diff,
             integration_credentials::integration_credentials_adopt,
             integration_credentials::integration_credential_forget,

@@ -21,5 +21,15 @@ type Params = {
   readonly reason: string | null;
 };
 
-export const delegationReasonTextOf = ({ reason }: Params): string | null =>
-  reason === null ? null : (REASON_TEXT.get(reason) ?? null);
+const PROSE = /^[A-Z]/;
+
+export const delegationReasonTextOf = ({ reason }: Params): string | null => {
+  if (reason === null) {
+    return null;
+  }
+  const known = REASON_TEXT.get(reason);
+  if (known !== undefined) {
+    return known;
+  }
+  return PROSE.test(reason) ? reason : null;
+};

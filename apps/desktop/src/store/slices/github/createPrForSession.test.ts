@@ -19,6 +19,17 @@ const h = vi.hoisted(() => ({
   run: vi.fn<GhRun>(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   upsertMountPullRequestLink: vi.fn(async () => true),
   findPrSeriesMembership: vi.fn(async (): Promise<unknown> => null),
+  remotes: vi.fn<() => ReadonlyArray<string>>(() => ['origin']),
+}));
+
+vi.mock('../../../shared/lib/invokeCommand', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../shared/lib/invokeCommand')>()),
+  invokeCommand: vi.fn(async (name: string) => {
+    if (name === 'git_remote_names') {
+      return h.remotes();
+    }
+    throw new Error(`unmocked command ${name}`);
+  }),
 }));
 
 vi.mock('../../../features/integrations/github/github', () => ({
@@ -67,9 +78,16 @@ type MountParams = {
   readonly projectId: ProjectId;
   readonly branch: string;
   readonly worktreePath: string;
+  readonly baseBranch?: string;
 };
 
-const mountView = ({ id, projectId, branch, worktreePath }: MountParams): unknown => ({
+const mountView = ({
+  id,
+  projectId,
+  branch,
+  worktreePath,
+  baseBranch = 'main',
+}: MountParams): unknown => ({
   id,
   sessionId: SESSION_ID,
   projectId,
@@ -78,7 +96,7 @@ const mountView = ({ id, projectId, branch, worktreePath }: MountParams): unknow
   lastWorktreePath: worktreePath,
   repoRoot: '/repo',
   branch,
-  baseBranch: 'main',
+  baseBranch,
   parallelIndex: 0,
   repoSlug: 'acme/web',
   isAttached: true,
@@ -171,6 +189,7 @@ beforeEach(() => {
   h.upsertMountPullRequestLink.mockClear();
   h.findPrSeriesMembership.mockReset();
   h.findPrSeriesMembership.mockResolvedValue(null);
+  h.remotes.mockReturnValue(['origin']);
   h.run.mockImplementation(async () => ({ stdout: `${CREATED_URL}\n`, stderr: '', exitCode: 0 }));
 });
 
@@ -371,6 +390,66 @@ describe('createPrForSession, mount targeting', () => {
 
     const args = createArgs();
     expect(args[args.indexOf('--base') + 1]).toBe('main');
+  });
+
+  const stateWithBase = (baseBranch: string): FakeState =>
+    buildState({
+      sessionMounts: {
+        [SESSION_ID]: [
+          mountView({
+            id: MOUNT_ID,
+            projectId: PROJECT_ID,
+            branch: BRANCH,
+            worktreePath: '/repo/.goodboy/worktrees/cards',
+            baseBranch,
+          }),
+        ],
+      },
+    });
+
+  it('sends the branch name, never the remote tracking ref, when the mount stores origin/main', async () => {
+    const state = stateWithBase('origin/main');
+
+    await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
+
+    const args = createArgs();
+    expect(args[args.indexOf('--base') + 1]).toBe('main');
+    expect(h.upsertMountPullRequestLink).toHaveBeenCalledWith(
+      expect.objectContaining({ link: expect.objectContaining({ baseBranch: 'main' }) }),
+    );
+  });
+
+  it('strips the name of the remote the repository really has, not a fixed origin', async () => {
+    h.remotes.mockReturnValue(['origin', 'upstream']);
+    const state = stateWithBase('upstream/develop');
+
+    await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
+
+    const args = createArgs();
+    expect(args[args.indexOf('--base') + 1]).toBe('develop');
+  });
+
+  it('strips the remote off a base the caller typed', async () => {
+    const state = buildState();
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      title: 'Fix cards',
+      body: '',
+      base: ' origin/release ',
+    });
+
+    const args = createArgs();
+    expect(args[args.indexOf('--base') + 1]).toBe('release');
+  });
+
+  it('keeps a base branch whose name only looks like a remote path', async () => {
+    const state = stateWithBase('release/2026');
+
+    await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
+
+    const args = createArgs();
+    expect(args[args.indexOf('--base') + 1]).toBe('release/2026');
   });
 });
 
@@ -765,6 +844,26 @@ describe('createPrForSession, a create whose outcome was uncertain', () => {
     await expect(create(state)).rejects.toThrow('GraphQL: Resource not accessible');
 
     expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
+  });
+
+  it('tells the user the branch is missing from GitHub instead of the GraphQL list', async () => {
+    const state = buildState();
+    h.run.mockResolvedValueOnce({
+      stdout: '',
+      stderr:
+        "pull request create failed: GraphQL: Head sha can't be blank, No commits between main and ak/cards (createPullRequest)",
+      exitCode: 1,
+    });
+
+    await expect(create(state)).rejects.toThrow(
+      "Couldn't open the pull request: the branch isn't on GitHub yet. Push it and retry.",
+    );
+
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "Couldn't open the pull request: the branch isn't on GitHub yet. Push it and retry.",
+      }),
+    );
   });
 
   it('opens once after a push that went through and a create that did not', async () => {
