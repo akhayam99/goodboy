@@ -168,6 +168,7 @@ export const SESSION_EVICTION = [
   { key: 'stepSummaryDegraded', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'degradedStepOutputs', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'scoutSelfExploreTasked', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'silentlyEndedSteps', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentModelOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentProviderOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentEffortOverride', keyedBy: 'agent', evictOn: 'delete' },

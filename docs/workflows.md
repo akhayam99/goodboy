@@ -1441,13 +1441,15 @@ one of two states:
   `blocked`. A blocked agent resumes when you write to it, or through Ask it
   to continue and Skip.
 
-A blocked step with no question reads "This step ended without a result" on
+A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
 the run page (`OrchestratedBlockedStep`, the preset `RunTail`) and on the
 agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. It offers
 **Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
 which finalizes the step with `force` from the agent's last words and lets the
-run advance). A step blocked for a missing artifact or for a question keeps its
-own copy.
+run advance). `watchStepEnd` records the end time it set in
+`silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`
+still equals it. A step blocked for any other reason (a missing artifact, a
+question, the unattended-turn breaker, a budget stop) keeps its own copy.
 
 The same state is reached when no end path ran. `watchStepEnd`
 (`store/slices/workflows/stepEnd/`) looks four seconds after a step agent's

@@ -93,7 +93,9 @@ describe('the step end watch', () => {
     rows = [stepAgent()];
     storySpies.invokeAgentList.mockImplementation(async () => rows);
     storySpies.invokeAgentUpdateStatus.mockImplementation(async (id, fields) => {
-      rows = rows.map((row) => (row.id === id ? { ...row, status: fields.status } : row));
+      rows = rows.map((row) =>
+        row.id === id ? { ...row, status: fields.status, completedAt: fields.completedAt } : row,
+      );
       const updated = rows.find((row) => row.id === id);
       if (updated === undefined) {
         throw new Error('no agent');
@@ -106,6 +108,7 @@ describe('the step end watch', () => {
       agentTurnState: { [AGENT_ID]: { kind: 'idle', lastActivityAt: TEST_NOW } },
       sessionOpenQuestions: {},
       notifications: [],
+      silentlyEndedSteps: {},
       workspaces: [workspace],
     });
   });
@@ -119,12 +122,23 @@ describe('the step end watch', () => {
     await vi.advanceTimersByTimeAsync(4100);
 
     expect(statusOf()).toBe('blocked');
+    expect(useAppStore.getState().silentlyEndedSteps[AGENT_ID]).toBe(
+      rows.find((row) => row.id === AGENT_ID)?.completedAt,
+    );
     expect(logLines()).toEqual([
       { agent: AGENT_ID, reason: expect.stringContaining('still running') },
     ]);
     expect(
       useAppStore.getState().notifications.some((entry) => entry.title.includes('Scout')),
     ).toBe(true);
+  });
+
+  it('records no silent end for a step it leaves alone', async () => {
+    useAppStore.setState({ sessionOpenQuestions: { [session.id]: [question()] } });
+    arm();
+    await vi.advanceTimersByTimeAsync(4100);
+
+    expect(useAppStore.getState().silentlyEndedSteps[AGENT_ID]).toBeUndefined();
   });
 
   it('leaves a step alone while a new turn runs for it', async () => {

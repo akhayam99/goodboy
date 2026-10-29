@@ -18,6 +18,7 @@ export const useStepEndedWithoutResult = ({ sessionId, agentId }: Params): boole
       (candidate) => candidate.id === agentId,
     ),
   );
+  const silentEndMark = useAppStore((state) => state.silentlyEndedSteps[agentId]);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agentId] ?? null);
   const artifacts = useAppStore((state) => state.sessionArtifacts[sessionId]);
   const events = useAppStore((state) => state.transcripts[agentId]);
@@ -46,5 +47,6 @@ export const useStepEndedWithoutResult = ({ sessionId, agentId }: Params): boole
     agent,
     isAsking: events !== undefined && blockedQuestionOf({ events })?.isQuestion === true,
     isMissingArtifact,
+    silentEndMark,
   });
 };

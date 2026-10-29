@@ -34,10 +34,16 @@ const checkStepEnd = async ({ set, get, sessionId, agentId }: Params): Promise<v
     return;
   }
   try {
-    await invokeAgentUpdateStatus(agentId, { status: 'blocked', completedAt: isoNow() });
+    const completedAt = isoNow();
+    await invokeAgentUpdateStatus(agentId, { status: 'blocked', completedAt });
     const refreshed = await invokeAgentList(sessionId);
+    const endedAt = refreshed.find((candidate) => candidate.id === agentId)?.completedAt;
     set((current) => ({
       sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: refreshed },
+      silentlyEndedSteps: {
+        ...current.silentlyEndedSteps,
+        [agentId]: endedAt ?? completedAt,
+      },
     }));
     void get().refreshUnreadWorkspaces();
     logStepEnd({ agentId, reason });

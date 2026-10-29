@@ -13,7 +13,14 @@ vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness'))
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { brandId, type Agent, type AgentId, type StepId, type TurnEvent } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type IsoDateTime,
+  type StepId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { TEST_NOW, aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -49,14 +56,18 @@ const said = (text: string): TurnEvent => ({
   at: TEST_NOW,
 });
 
+const ENDED_AT = brandId<IsoDateTime>({ value: '2026-10-18T09:30:00.000Z' });
+
 type SetupParams = {
   readonly agent?: Agent;
   readonly closing?: string;
+  readonly silentEndMark?: string;
 };
 
 const setup = ({
-  agent = stepAgent(),
+  agent = stepAgent({ completedAt: ENDED_AT }),
   closing = 'Traced the rounding to post_line.',
+  silentEndMark = ENDED_AT,
 }: SetupParams = {}) => {
   const askAgentToContinue = vi.fn<StoryState['askAgentToContinue']>(async () => undefined);
   const markStepDone = vi.fn<StoryState['markStepDone']>(async () => undefined);
@@ -66,6 +77,7 @@ const setup = ({
     transcripts: { [AGENT_ID]: [said(closing)] },
     sessionArtifacts: {},
     agentKindOverride: {},
+    silentlyEndedSteps: { [AGENT_ID]: silentEndMark },
     askAgentToContinue,
     markStepDone,
   });
@@ -115,6 +127,30 @@ describe('StepEndedNotice', () => {
     expect(markStepDone).toHaveBeenCalledTimes(1);
   });
 
+  it('shows nothing for a block the silent end watch did not record, so the real reason stays', () => {
+    setup({ silentEndMark: '2026-10-18T08:00:00.000Z' });
+    const { container } = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
+    expect(container.textContent).toBe('');
+    cleanup();
+
+    useAppStore.setState({ silentlyEndedSteps: {} });
+    const none = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
+    expect(none.container.textContent).toBe('');
+  });
+
+  it('shows the fallback of the caller for a block it did not record', () => {
+    setup({ silentEndMark: '2026-10-18T08:00:00.000Z' });
+    render(
+      <StepEndedNotice
+        sessionId={SESSION.id}
+        agentId={AGENT_ID}
+        fallback={<p>The agent stopped itself after three unattended turns.</p>}
+      />,
+    );
+
+    screen.getByText('The agent stopped itself after three unattended turns.');
+  });
+
   it('shows nothing when the step asked the user something', () => {
     setup({ closing: 'Which export should I trace first, the nightly one or the manual one?' });
     const { container } = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
@@ -124,9 +160,9 @@ describe('StepEndedNotice', () => {
 
   it('shows nothing for a step that is running, done or not part of a workflow', () => {
     for (const agent of [
-      stepAgent({ status: 'running' }),
-      stepAgent({ status: 'completed' }),
-      stepAgent({ status: 'failed' }),
+      stepAgent({ status: 'running', completedAt: ENDED_AT }),
+      stepAgent({ status: 'completed', completedAt: ENDED_AT }),
+      stepAgent({ status: 'failed', completedAt: ENDED_AT }),
       anAgent({ id: AGENT_ID, sessionId: SESSION.id, status: 'blocked' }),
     ]) {
       setup({ agent });
