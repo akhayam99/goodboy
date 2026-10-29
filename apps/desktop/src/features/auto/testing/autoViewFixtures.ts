@@ -1,5 +1,11 @@
-import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
-import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase, AutoTree } from '@goodboy/db';
+import { autoBudgetOf, autoTreeSpendOf, type OutcomeLine } from '@goodboy/core';
+import type {
+  AutoArtifactLedgerRow,
+  AutoDelegation,
+  AutoOutcome,
+  AutoPhase,
+  AutoTree,
+} from '@goodboy/db';
 import {
   brandId,
   type AgentId,
@@ -15,6 +21,7 @@ import type {
   AutoPendingRefusal,
   AutoTreeView,
 } from '../../../store/slices/auto-view/state';
+import { delegationResultOf } from '../chat/delegationResultOf';
 
 export const FIXTURE_NOW = Date.UTC(2026, 9, 13, 12, 4, 0);
 export const FIXTURE_SESSION = brandId<SessionId>({ value: 'session-harborline' });
@@ -224,3 +231,13 @@ export const aView = ({
     }),
   }),
 });
+
+type DeclaredParams = {
+  readonly summary: string | null;
+  readonly outcome: AutoOutcome;
+};
+
+export const declaredOutcomeLineOf = ({ summary, outcome }: DeclaredParams): OutcomeLine | null =>
+  delegationResultOf({
+    result: { outcome, declared: summary === null ? {} : { summary } },
+  })?.outcomeLine ?? null;

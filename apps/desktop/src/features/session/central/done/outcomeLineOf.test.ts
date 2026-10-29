@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
-import { declaredOutcomeLineOf } from '../../../auto/chat/declaredOutcomeLineOf';
+import { declaredOutcomeLineOf } from '../../../auto/testing/autoViewFixtures';
 import { AGENT_KIND_ORDER } from '../../agent-kind';
 import {
   aDelegation,

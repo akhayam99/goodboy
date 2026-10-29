@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { AutoOutcome } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredResult } from '../../../../store/slices/auto-view/state';
-import { declaredOutcomeLineOf } from '../../../auto/chat/declaredOutcomeLineOf';
+import { declaredOutcomeLineOf } from '../../../auto/testing/autoViewFixtures';
 import type { ArtifactLinkModel } from '../../../auto/chat/artifactLinksOf';
 import { AutoResultCards } from './AutoResultCards';
 

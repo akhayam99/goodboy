@@ -10,8 +10,11 @@ import {
   type ProviderRunId,
   type TurnEvent,
 } from '@goodboy/types';
-import { declaredOutcomeLineOf } from '../../../../../features/auto/chat/declaredOutcomeLineOf';
-import { anArtifactRow, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
+import {
+  anArtifactRow,
+  aTree,
+  declaredOutcomeLineOf,
+} from '../../../../../features/auto/testing/autoViewFixtures';
 import type {
   AutoDeliveredArtifact,
   AutoDeliveredResult,

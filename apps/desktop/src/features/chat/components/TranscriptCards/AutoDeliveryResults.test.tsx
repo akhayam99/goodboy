@@ -5,8 +5,12 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AutoDeliveredResult } from '../../../../store/slices/auto-view/state';
-import { declaredOutcomeLineOf } from '../../../auto/chat/declaredOutcomeLineOf';
-import { aDelegation, aView, FIXTURE_SESSION } from '../../../auto/testing/autoViewFixtures';
+import {
+  aDelegation,
+  aView,
+  declaredOutcomeLineOf,
+  FIXTURE_SESSION,
+} from '../../../auto/testing/autoViewFixtures';
 import { TranscriptCard } from '.';
 
 afterEach(() => {

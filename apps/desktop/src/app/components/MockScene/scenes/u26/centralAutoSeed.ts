@@ -11,8 +11,10 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
-import { declaredOutcomeLineOf } from '../../../../../features/auto/chat/declaredOutcomeLineOf';
-import { aTree } from '../../../../../features/auto/testing/autoViewFixtures';
+import {
+  aTree,
+  declaredOutcomeLineOf,
+} from '../../../../../features/auto/testing/autoViewFixtures';
 import type { WorkTimeSource } from '../../../../../features/workTreeModel/workTimeSource';
 import type {
   AutoDeliveredResult,
