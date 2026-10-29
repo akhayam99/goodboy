@@ -56,6 +56,7 @@ beforeEach(async () => {
   storySpies.runTurn.mockImplementation(() => emptyTurnStream());
   storySpies.invokeAgentList.mockResolvedValue([agent]);
   stubStoryInvoke({ query_bridge_serving: false });
+  storySpies.getSessionById.mockResolvedValue(session);
   useAppStore.setState({
     sessions: [session],
     sessionWorktrees: { [session.id]: ['/tmp/harborline'] },

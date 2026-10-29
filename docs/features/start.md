@@ -96,7 +96,7 @@ Picking a kind shows only that kind's controls.
 - An Agent shows **Role** and **Model**. The others show the **Limit**.
 - Orchestrated, Preset and Auto agent also show the **Model** chip of the Start a run field. It names the orchestrator or the Auto agent for this run.
 - Both workflow kinds also show **Asks you** (Every step, After the plan, Never). It is the same chip and popover as the run's settings line. It opens on Every step, what a run started here got before, and the run starts with the pick.
-- The Auto agent also shows **Asks you**. In a session that already has its own level it opens on that level, otherwise on the workspace default, or After the plan, so the chip shows the level that applies. The pick is stored for the session when the run starts. A failed save stops the start and shows the error. The other agents have no step to stop at, so they have no Asks you.
+- The Auto agent also shows **Asks you**. It opens on the level that applies: the session level, else the workspace default, else After the plan. The pick is stored for the session when the run starts. A failed save stops the start and shows the error. The other agents have no step to stop at, so they have no Asks you.
 - The primary names what starts: **Start workflow**, **Start Scout** (the role you picked) or **Start Auto agent**.
 - Start sends the route you picked, so the router does not guess. The run's line says "you picked it".
 - The goal is required on every kind.
