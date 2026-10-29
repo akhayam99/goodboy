@@ -96,7 +96,7 @@ Picking a kind shows only that kind's controls.
 - An Agent shows **Role** and **Model**. The others show the **Limit**.
 - Orchestrated, Preset and Auto agent also show the **Model** chip of the Start a run field. It names the orchestrator or the Auto agent for this run.
 - Both workflow kinds also show **Asks you** (Every step, After the plan, Never). It is the same chip and popover as the run's settings line. It opens on Every step, what a run started here got before, and the run starts with the pick.
-- An agent has no step to stop at, so the agent kinds have no Asks you.
+- The Auto agent also shows **Asks you**. It opens on the workspace default, or After the plan, and the pick is stored for the session when the run starts. A failed save stops the start and shows the error. The other agents have no step to stop at, so they have no Asks you.
 - The primary names what starts: **Start workflow**, **Start Scout** (the role you picked) or **Start Auto agent**.
 - Start sends the route you picked, so the router does not guess. The run's line says "you picked it".
 - The goal is required on every kind.
@@ -200,6 +200,6 @@ This part is for contributors and agents who change the feature.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
-- Asks you chip: `AsksYouChip` is shared with the run's settings line.
+- Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, and `startRoutedRun` writes the pick with `writeAutoLevel` before the lead starts.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.

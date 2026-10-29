@@ -1,3 +1,4 @@
+import type { AutoLevel } from '@goodboy/core';
 import {
   DEFAULT_WORKFLOW_RULES,
   brandId,
@@ -11,6 +12,7 @@ import {
   type WorkflowId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { writeAutoLevel } from '../../../store/runtime/auto/level/writeAutoLevel';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
@@ -27,6 +29,7 @@ type Params = {
   readonly routing?: AgentKindRouting | null;
   readonly orchestratorRouting?: OrchestratorRouting | null;
   readonly autonomy?: WorkflowAutonomy | null;
+  readonly level?: AutoLevel | null;
   readonly attachments?: ReadonlyArray<AttachmentInput>;
 };
 
@@ -40,6 +43,7 @@ export const startRoutedRun = async ({
   routing = null,
   orchestratorRouting = null,
   autonomy = null,
+  level = null,
   attachments = [],
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
@@ -53,6 +57,9 @@ export const startRoutedRun = async ({
   if (route.shape === 'lead') {
     if (attachments.length > 0) {
       await state.addGoalAttachments({ type: 'session', id: sessionId }, attachments);
+    }
+    if (level !== null && role === null) {
+      await writeAutoLevel({ db: tauriDatabase, target: { sessionId }, level });
     }
     const agentId = await state.spawnAgent(sessionId, {
       kindOverride: role ?? 'auto',
