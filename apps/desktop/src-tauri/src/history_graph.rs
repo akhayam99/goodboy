@@ -29,6 +29,7 @@ pub struct CommitFiles {
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryGraph {
+    pub configured_author: Option<String>,
     pub base_ref: String,
     pub merge_base: GraphCommit,
     pub main_head: String,
@@ -139,6 +140,10 @@ pub(crate) fn history_graph_of(
                 message: "Couldn't read the commit your branch starts from".to_string(),
             })?;
     Ok(HistoryGraph {
+        configured_author: git(cwd, &["config", "--get", "user.name"])
+            .ok()
+            .map(|name| name.trim().to_string())
+            .filter(|name| !name.is_empty()),
         base_ref,
         merge_base: merge_base_commit,
         main_head,
@@ -199,6 +204,30 @@ mod tests {
         git_ok(&root, &["config", "user.name", "Lena Arkwright"]);
         git_ok(&root, &["config", "commit.gpgsign", "false"]);
         root
+    }
+
+    #[test]
+    fn the_graph_reads_the_configured_author_of_its_repository() {
+        let root = repo("configured-author");
+        commit(&root, "ledger.ts", "one\n", "Acme credit");
+        git_ok(&root, &["checkout", "-q", "-b", "hl/ledger-export"]);
+        commit(&root, "export.ts", "export\n", "Export credits");
+        git_ok(&root, &["config", "user.name", "Harborline"]);
+
+        let graph = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
+        assert_eq!(graph.configured_author.as_deref(), Some("Harborline"));
+        assert_eq!(
+            serde_json::to_value(&graph).unwrap()["configuredAuthor"],
+            "Harborline"
+        );
+        git_ok(&root, &["config", "user.name", "Northwind"]);
+        let changed = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
+        assert_eq!(changed.configured_author.as_deref(), Some("Northwind"));
+        git_ok(&root, &["config", "user.name", ""]);
+        let unknown = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
+        assert_eq!(unknown.configured_author, None);
+        assert!(serde_json::to_value(&unknown).unwrap()["configuredAuthor"].is_null());
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

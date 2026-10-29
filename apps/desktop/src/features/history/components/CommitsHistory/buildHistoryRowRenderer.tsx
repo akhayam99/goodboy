@@ -18,6 +18,7 @@ import type { useHistoryScribe } from './useHistoryScribe';
 type Params = {
   readonly sessionId: SessionId;
   readonly view: HistoryRowView;
+  readonly configuredAuthor: string | null;
   readonly items: ReadonlyArray<HistoryStep>;
   readonly marks: ReadonlyMap<string, HistoryRowMark>;
   readonly commitBySha: ReadonlyMap<string, BranchCommit>;
@@ -51,6 +52,7 @@ export const buildHistoryRowRenderer =
   ({
     sessionId,
     view,
+    configuredAuthor,
     items,
     marks,
     commitBySha,
@@ -125,6 +127,7 @@ export const buildHistoryRowRenderer =
         key={commit.sha}
         sessionId={sessionId}
         commit={commit}
+        configuredAuthor={configuredAuthor}
         view={view}
         mark={mark}
         titleOf={titleOf}

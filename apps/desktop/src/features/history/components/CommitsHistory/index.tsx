@@ -149,8 +149,8 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     workingSha,
     isDone,
   });
-  const headSha = model.headSha;
   const renderRow = buildHistoryRowRenderer({
+    configuredAuthor: graph?.configuredAuthor ?? null,
     sessionId,
     view,
     items,
@@ -162,7 +162,7 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     applied,
     conflictStep: null,
     workingSha,
-    headSha,
+    headSha: model.headSha,
     model,
     prNumber,
     hasUpstream,

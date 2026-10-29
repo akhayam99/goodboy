@@ -112,7 +112,7 @@ export const HistoryLaneSvg = ({
         >
           {node.isHighlighted ? (
             <circle
-              r={node.ring === null ? 11 : 14}
+              r={node.ring === null ? 8 : 10}
               fill="none"
               strokeWidth={1.25}
               opacity={0.55}
@@ -121,28 +121,28 @@ export const HistoryLaneSvg = ({
           ) : null}
           {node.ring !== null ? (
             <circle
-              r={10.5}
+              r={7.5}
               fill="none"
               strokeWidth={2}
               className={strokeOf({ color: node.ring })}
             />
           ) : null}
           <circle
-            r={7}
+            r={4}
             strokeWidth={2}
             strokeDasharray={node.color === 'drop' ? '3 2.4' : undefined}
             className={cn('fill-background', strokeOf({ color: node.color }))}
           />
           {node.color === 'drop' ? (
             <path
-              d="M -3 -3 L 3 3 M 3 -3 L -3 3"
+              d="M -2 -2 L 2 2 M 2 -2 L -2 2"
               strokeWidth={1.6}
               strokeLinecap="round"
               className={strokeOf({ color: node.color })}
             />
           ) : (
             <circle
-              r={2.6}
+              r={1.75}
               className={cn(
                 fillOf({ color: node.color }),
                 node.isWorking && 'motion-safe:animate-soft-pulse',
