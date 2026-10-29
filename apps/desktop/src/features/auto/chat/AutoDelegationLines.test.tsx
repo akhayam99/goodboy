@@ -118,38 +118,7 @@ describe('AutoDelegationLines', () => {
     expect(screen.queryByText(/needs your approval/)).toBeNull();
   });
 
-  it('shows an approved plan as one row with the Approved word, not as an ask', () => {
-    const onOpenArtifact = vi.fn();
-    renderLines({
-      view: aView({
-        phase: 'waiting',
-        delegations: [SETTLED_PLAN],
-        artifacts: [aPlanRow({ approvalState: 'approved', approvedRevision: 1 })],
-      }),
-      onOpenArtifact,
-    });
-
-    const row = screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
-    expect(row.textContent).toContain('Plan · Retry-safe credit retries');
-    screen.getByText('Approved');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    fireEvent.click(row);
-    expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
-  });
-
-  it('gives a plan that needs approval the ask only, never a second row', () => {
-    renderLines({
-      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
-    });
-
-    expect(
-      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
-    ).toHaveLength(1);
-    expect(screen.queryByText('Approved')).toBeNull();
-  });
-
-  it('shows the report a reviewer produced as one row and opens it', () => {
-    const onOpenArtifact = vi.fn();
+  it('draws no row for an approved plan or any other artifact, the result card owns them', () => {
     const reviewer = aDelegation({
       key: 'reviewer',
       role: 'reviewer',
@@ -157,14 +126,9 @@ describe('AutoDelegationLines', () => {
       outcome: 'completed',
       settledAt: 1_000,
       result: {
-        declared: { summary: 'Comparing the branch. Checking the diff.' },
+        declared: { summary: 'Comparing the branch.' },
         artifacts: [
-          {
-            id: 'artifact-report',
-            kind: 'report',
-            title: 'Certify ledger-core, branch vs main',
-            revision: 2,
-          },
+          { id: 'artifact-report', kind: 'report', title: 'Certify ledger-core', revision: 2 },
         ],
         cost: { usd: 0.2, basis: 'reported' },
       },
@@ -172,49 +136,26 @@ describe('AutoDelegationLines', () => {
     renderLines({
       view: aView({
         phase: 'waiting',
-        delegations: [reviewer],
+        delegations: [SETTLED_PLAN, reviewer],
         artifacts: [
-          anArtifactRow({
-            id: 'artifact-report',
-            kind: 'report',
-            title: 'Certify ledger-core, branch vs main',
-            revision: 2,
-            sourceText: '<<summary>>\nOne race left in ledger-core.\n<</summary>>',
-          }),
+          aPlanRow({ approvalState: 'approved', approvedRevision: 1 }),
+          anArtifactRow({ id: 'artifact-report', kind: 'report', title: 'Certify ledger-core' }),
         ],
       }),
-      onOpenArtifact,
     });
 
-    const row = screen.getByRole('button', {
-      name: 'Open report Certify ledger-core, branch vs main',
-    });
-    expect(row.textContent).toContain('Report · Certify ledger-core, branch vs main');
-    screen.getByText('v2');
-    screen.getByText('One race left in ledger-core.');
-    fireEvent.click(row);
-    expect(onOpenArtifact).toHaveBeenCalledWith('artifact-report');
+    expect(screen.queryByRole('button', { name: /^Open (plan|report) / })).toBeNull();
+    expect(screen.queryByText('Approved')).toBeNull();
   });
 
-  it('shows a wireframe row even when the ledger has no row for it', () => {
-    const designer = aDelegation({
-      key: 'designer',
-      role: 'designer',
-      state: 'settled',
-      outcome: 'completed',
-      settledAt: 1_000,
-      result: {
-        declared: { summary: 'Done.' },
-        artifacts: [
-          { id: 'artifact-wire', kind: 'wireframe', title: 'Checkout screen', revision: 1 },
-        ],
-        cost: { usd: 0.2, basis: 'reported' },
-      },
+  it('keeps one ask and no second row for a plan that needs approval', () => {
+    renderLines({
+      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
     });
-    renderLines({ view: aView({ phase: 'waiting', delegations: [designer] }) });
 
-    screen.getByRole('button', { name: 'Open wireframe Checkout screen' });
-    expect(screen.queryByText('v1')).toBeNull();
+    expect(
+      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
+    ).toHaveLength(1);
   });
 
   it('shows a revision on the same producer line', () => {

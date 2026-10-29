@@ -193,8 +193,7 @@ describe('the Auto chat scenes', () => {
     expect(root?.getAttribute('aria-label')).toMatch(/, 4 agents, Idle$/);
     fireEvent.keyDown(root ?? rail(), { key: 'ArrowRight' });
     expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
-    expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
-    expect(screen.getAllByRole('button', { name: /^Open plan / })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);
   });

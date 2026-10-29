@@ -294,12 +294,8 @@ writing to it reopens it to **Deciding**.
   **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
   `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
   settles to one quiet line, "Plan v1 · changes asked".
-  Every other artifact the child produced is one dense row under its line
-  (`AutoArtifactRow`, built by `artifactLinksOf` from the result's `artifacts` and the
-  ledger): a `Chip` in the artifact tone with the kind and title, **v2** from the
-  second revision on, the **Approved** word for an approved plan, and for a report the lead of its
-  `<<summary>>` block on one line (`artifactLeadOf`); the chip opens the artifact. A plan that waits
-  for approval or is being revised has only its ask, never a second row.
+  An artifact that needs no approval has no row on its line: it shows once, on the
+  result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
 - **Names.** A child is named by what it does. Auto gives each child an

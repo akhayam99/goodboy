@@ -103,7 +103,6 @@ const delegationOf = ({
   model,
   outcome,
   slot,
-  artifacts,
 }: ChildParams): AutoDelegation => ({
   id: brandId<AutoDelegationId>({ value: `mock-results-delegation-${key}` }),
   treeId: aTree().id,
@@ -128,17 +127,7 @@ const delegationOf = ({
   isStopping: false,
   questionCycles: 0,
   deadlineAt: ms({ time: '10:40:00' }),
-  result:
-    artifacts.length === 0
-      ? null
-      : {
-          artifacts: artifacts.map((artifact) => ({
-            id: artifact.artifactId,
-            kind: artifact.kind,
-            title: artifact.title,
-            revision: artifact.revision,
-          })),
-        },
+  result: null,
   createdAt: ms({ time: '10:05:10' }) + slot,
   settledAt: ms({ time: '10:11:30' }),
 });
