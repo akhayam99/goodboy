@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AUTO_STALE_DECIDE_MS } from '@goodboy/core';
 import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
 import { settleAutoTurn } from './settleAutoTurn';
 import { endedTurn } from './testing/deliveryWorld';
@@ -66,6 +67,24 @@ describe('a recovery tick while the turn of this window is still saving its answ
 
     expect((await delegationsOf(world)).map((row) => row.requestId)).toEqual(['r30']);
     expect(await treeOf(world)).toMatchObject({ phase: 'waiting', activeRunId: null });
+    expect(await refusalsOf(world)).toHaveLength(0);
+    expect(world.errors).toEqual([]);
+  });
+
+  it('does not expire a turn of this window past the stale threshold while it saves its answer', async () => {
+    const world = await started();
+    const turn = currentTurn(world);
+    world.state.ports.liveRuns.delete(turn.runId);
+    world.state.ports.runOutcomes.set(turn.runId, { assistantText: '', exit: 'ok', costUsd: 0.1 });
+    world.state.world.clock.advance({ ms: AUTO_STALE_DECIDE_MS + 1_000 });
+
+    await world.runtime.recover(world.treeId);
+    await world.runtime.settled();
+    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', activeRunId: turn.runId });
+
+    await autoTurnEndsWithBlock({ world, block: BLOCK });
+
+    expect((await delegationsOf(world)).map((row) => row.requestId)).toEqual(['r30']);
     expect(await refusalsOf(world)).toHaveLength(0);
     expect(world.errors).toEqual([]);
   });

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_MS, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
 import { getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
-import { makeRuntimeWorld, userSays, type RuntimeWorld } from './testing/runtimeWorld';
+import {
+  makeRuntimeWorld,
+  restartedWorld,
+  userSays,
+  type RuntimeWorld,
+} from './testing/runtimeWorld';
 
 const treeOf = (world: RuntimeWorld) =>
   getAutoTree({ db: world.state.world.db, treeId: world.treeId });
@@ -15,8 +20,14 @@ const tick = async (world: RuntimeWorld): Promise<void> => {
 };
 
 const deciding = async (): Promise<RuntimeWorld> => {
-  const world = await makeRuntimeWorld({ capUsd: 10 });
-  await userSays({ world, id: 'outbox-user-1', text: 'Summarize the notify-relay retries' });
+  const earlier = await makeRuntimeWorld({ capUsd: 10 });
+  await userSays({
+    world: earlier,
+    id: 'outbox-user-1',
+    text: 'Summarize the notify-relay retries',
+  });
+  const world = restartedWorld({ world: earlier });
+  world.state.ports.autoTurns.push(...earlier.state.ports.autoTurns);
   return world;
 };
 

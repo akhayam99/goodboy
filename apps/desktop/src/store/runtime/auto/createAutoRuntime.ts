@@ -86,7 +86,7 @@ export const createAutoRuntime = ({
   };
   const driveOnce = async (treeId: AutoTree['id']): Promise<boolean> => {
     const hasExpired = await enforceDeadlines({ ctx, treeId, watchedSinceMs });
-    const hasStaleDecide = await expireStaleDecide({ ctx, treeId });
+    const hasStaleDecide = await expireStaleDecide({ ctx, treeId, ownTurns });
     const joined = await joinReady({ ctx, treeId });
     const hasAdvanced = await advancePhase({ ctx, treeId });
     const launched = await launchChildren({ ctx, treeId, onChildEnded: runtime.onChildEnded });

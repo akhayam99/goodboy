@@ -9,6 +9,7 @@ import {
   type AutoTree,
   type Statement,
 } from '@goodboy/db';
+import type { OwnTurns } from './createOwnTurns';
 import type { RunOutcome } from './ports';
 import { requeueStatements } from './requeueStatements';
 import { settleAutoTurn } from './settleAutoTurn';
@@ -17,6 +18,7 @@ import type { AgentVerbContext } from './verbContext';
 export type ExpireStaleDecideParams = Readonly<{
   ctx: AgentVerbContext;
   treeId: AutoTree['id'];
+  ownTurns?: OwnTurns;
 }>;
 
 const ABORT_PHASE = 'stale_decide_phase';
@@ -91,6 +93,7 @@ const blockStaleTree = async ({ ctx, tree, outcome }: BlockParams): Promise<bool
 export const expireStaleDecide = async ({
   ctx,
   treeId,
+  ownTurns,
 }: ExpireStaleDecideParams): Promise<boolean> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   const tree = isOwner ? await getAutoTree({ db: ctx.db, treeId }) : null;
@@ -101,6 +104,9 @@ export const expireStaleDecide = async ({
     return false;
   }
   const runId = tree.activeRunId;
+  if (runId !== null && ownTurns?.has({ runId }) === true) {
+    return false;
+  }
   if (runId !== null && (await ctx.ports.isRunLive({ runId }))) {
     return false;
   }

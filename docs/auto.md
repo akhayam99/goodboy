@@ -918,7 +918,9 @@ refusal row. A stop or a restart stays silent.
 The runtime keeps the run ids of the Auto turns it started itself (`createOwnTurns`, set in
 `deliverNext`, cleared after `settleAutoTurn`). `recoverTree` leaves such a run alone, because the
 ledger marks a run done a few seconds before the turn saves its answer and a recovery settle in that
-gap would read an empty text. Only a run from an earlier process is settled from the ledger.
+gap would read an empty text. `expireStaleDecide` skips such a run too, however long it has been
+deciding, so the ten-minute watchdog never blocks a turn that is still saving its answer. Only a run
+from an earlier process is settled from the ledger.
 
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
