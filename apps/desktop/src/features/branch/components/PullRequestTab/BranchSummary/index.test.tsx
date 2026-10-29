@@ -34,6 +34,7 @@ type DrawParams = {
   readonly error?: string | null;
   readonly onRetry?: () => void;
   readonly onOpen?: (tab: BranchTab) => void;
+  readonly onOpenFolder?: (folder: string) => void;
 };
 
 const draw = ({
@@ -41,6 +42,7 @@ const draw = ({
   error = null,
   onRetry = vi.fn(),
   onOpen = vi.fn(),
+  onOpenFolder = vi.fn(),
 }: DrawParams) =>
   render(
     <BranchSummary
@@ -50,6 +52,7 @@ const draw = ({
       error={error}
       onRetry={onRetry}
       onOpen={onOpen}
+      onOpenFolder={onOpenFolder}
     />,
   );
 
@@ -63,6 +66,15 @@ describe('BranchSummary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Changes' }));
     expect(onOpen.mock.calls).toEqual([['commits'], ['files']]);
     expect(screen.getByText('commit, 1 not pushed').textContent).toBe('commit, 1 not pushed');
+  });
+
+  it('opens one folder from the Changes card', () => {
+    const onOpen = vi.fn();
+    const onOpenFolder = vi.fn();
+    draw({ onOpen, onOpenFolder });
+    fireEvent.click(screen.getByRole('button', { name: 'Open src in Files' }));
+    expect(onOpenFolder.mock.calls).toEqual([['src']]);
+    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it('shows a skeleton per card while the diff loads and no number', () => {

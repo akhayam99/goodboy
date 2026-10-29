@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchNextStep } from '../../branchNextStepOf';
 import { pullRequestPrefillOf } from '../../pullRequestPrefillOf';
+import { useOpenBranchFolder } from '../../hooks/useOpenBranchFolder';
 import { BranchConflicts } from './BranchConflicts';
 import { BranchSummary } from './BranchSummary';
 import { NoPullRequest } from './NoPullRequest';
@@ -51,6 +52,7 @@ export const BranchStartPage = ({
   onCreated,
   onSelectTab,
 }: Props) => {
+  const openFolder = useOpenBranchFolder({ sessionId: session.id, onSelectTab });
   const tasks = useAppStore((state) => state.sessionExternalTasks[session.id] ?? NO_TASKS);
   const prefill = useMemo(
     () => pullRequestPrefillOf({ commits, tasks, branch }),
@@ -64,6 +66,7 @@ export const BranchStartPage = ({
       error={diffError}
       onRetry={onRetryDiff}
       onOpen={onSelectTab}
+      onOpenFolder={openFolder}
     />
   );
   const main = () => {

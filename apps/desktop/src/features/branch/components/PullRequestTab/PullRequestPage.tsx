@@ -22,6 +22,7 @@ import { usePullRequestPort } from '../../hooks/usePullRequestPort';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { queueLineOf } from '../../queueLineOf';
 import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
+import { useOpenBranchFolder } from '../../hooks/useOpenBranchFolder';
 import { pullRequestActivityOf } from './activityOf';
 import { BranchSummary } from './BranchSummary';
 import { OpenThreadsLink } from './OpenThreadsLink';
@@ -85,6 +86,7 @@ export const PullRequestPage = ({
   onSelectTab,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
+  const openFolder = useOpenBranchFolder({ sessionId, onSelectTab });
   const port = usePullRequestPort({ sessionId, mountId });
   const { readiness, commentsNeedYou, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
@@ -129,6 +131,7 @@ export const PullRequestPage = ({
         error={diffError}
         onRetry={onRetryDiff}
         onOpen={onSelectTab}
+        onOpenFolder={openFolder}
       />
       <OpenThreadsLink
         unresolved={facts.commentsUnresolved}

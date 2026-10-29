@@ -1,4 +1,5 @@
 import type { BranchCommit, FileDiff } from '@goodboy/types';
+import { topFolderOf } from '../../../../diff/lib/topFolderOf';
 
 type Params = {
   readonly commits: ReadonlyArray<BranchCommit>;
@@ -25,21 +26,11 @@ export type BranchSummary = {
 
 const SUMMARY_SUBJECTS = 3;
 const SUMMARY_FOLDERS = 3;
-const ROOT_FOLDER = 'Root files';
-
-type FolderParams = {
-  readonly path: string;
-};
-
-const folderOf = ({ path }: FolderParams): string => {
-  const slash = path.indexOf('/');
-  return slash === -1 ? ROOT_FOLDER : path.slice(0, slash);
-};
 
 export const branchSummaryOf = ({ commits, files }: Params): BranchSummary => {
   const counts = new Map<string, number>();
   for (const file of files) {
-    const folder = folderOf({ path: file.path });
+    const folder = topFolderOf({ path: file.path });
     counts.set(folder, (counts.get(folder) ?? 0) + 1);
   }
   const folders = [...counts.entries()]

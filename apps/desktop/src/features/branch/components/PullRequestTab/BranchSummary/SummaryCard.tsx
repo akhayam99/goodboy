@@ -8,13 +8,14 @@ type Props = {
   readonly label: string;
   readonly state: SummaryCardState;
   readonly children: ReactNode;
+  readonly footer?: ReactNode;
   readonly onOpen: () => void;
   readonly onRetry: () => void;
 };
 
 const FRAME = 'flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3 text-left';
 
-export const SummaryCard = ({ label, state, children, onOpen, onRetry }: Props) => {
+export const SummaryCard = ({ label, state, children, footer, onOpen, onRetry }: Props) => {
   if (state === 'loading') {
     return (
       <div
@@ -42,12 +43,12 @@ export const SummaryCard = ({ label, state, children, onOpen, onRetry }: Props) 
       </div>
     );
   }
-  return (
+  const open = (
     <SelectableRow
       selected={false}
       ariaLabel={`Open ${label}`}
       testId={`summary-card-${label}`}
-      className={cn(FRAME, 'flex-col')}
+      className={cn(footer === undefined ? FRAME : 'gap-2', 'flex-col')}
       onClick={onOpen}
     >
       <span className="flex items-center gap-1 text-meta text-muted-foreground">
@@ -56,5 +57,14 @@ export const SummaryCard = ({ label, state, children, onOpen, onRetry }: Props) 
       </span>
       {children}
     </SelectableRow>
+  );
+  if (footer === undefined) {
+    return open;
+  }
+  return (
+    <div data-summary-card={label} className={FRAME}>
+      {open}
+      {footer}
+    </div>
   );
 };
