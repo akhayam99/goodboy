@@ -25,7 +25,7 @@ export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
       <FormActions
         leading={
           <div className="flex flex-wrap items-center gap-2">
-            <RunChoiceChips run={run} role={null} />
+            <RunChoiceChips run={run} workspaceId={workspaceId} role={null} />
             <AutoLimitChip
               usd={limit.usd}
               isFromSession={limit.isFromSession}

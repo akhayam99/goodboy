@@ -419,6 +419,19 @@ describe('StartRun run as', () => {
     screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
   });
 
+  it('shows the Asks you chip for an Auto agent run only', () => {
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.change(field(), { target: { value: QUESTION } });
+    screen.getByText('After the plan');
+    screen.getByText('from Cascadia');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    expect(screen.queryByText('from Cascadia')).toBeNull();
+  });
+
   it('lists Auto, Orchestrated, every preset and every role in the chip', () => {
     useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
     renderField({ sessionId: SESSION.id });

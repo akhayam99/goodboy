@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import type { AutoLevel } from '@goodboy/core';
 import type { Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -26,6 +27,7 @@ import {
   runModelSlotOf,
   type RunModelSlot,
 } from '../../../startRun/runModelSlotOf';
+import { useAutoLevelDefault } from '../../../../auto/level/useAutoLevelDefault';
 import { useRunModel, type RunModelModel } from '../useRunModel';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
@@ -55,6 +57,9 @@ export type StartRunModel = Readonly<{
   runAs: RunAs;
   setRunAs: (runAs: RunAs) => void;
   route: RunRouteResult;
+  level: AutoLevel;
+  isLevelPicked: boolean;
+  setLevel: (level: AutoLevel) => void;
   model: RunModelModel;
   presets: ReadonlyArray<Workflow>;
   files: ReturnType<typeof usePromptFiles>['files'];
@@ -170,6 +175,8 @@ export const useStartRun = ({
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
+  const [pickedLevel, setPickedLevel] = useState<AutoLevel | null>(null);
+  const defaultLevel = useAutoLevelDefault({ workspaceId });
   const promptFiles = usePromptFiles({ note: RUN_ROUTE_COPY.attachFiles, isEnabled: !isStarting });
   const { attachments: stagedFiles, setAttachments: setStagedFiles } = promptFiles;
   const clearFilesRef = useRef(promptFiles.clear);
@@ -235,6 +242,7 @@ export const useStartRun = ({
       setLocalText('');
       setFile(null);
       setRunAs(AUTO_RUN_AS);
+      setPickedLevel(null);
       clearModel();
       clearFilesRef.current();
       setError(null);
@@ -317,14 +325,20 @@ export const useStartRun = ({
         role === null ? pinFor({ slot: runModelSlotOf({ result }) }) : null;
       const pinned = pinnedRoutingOf({ result, pin });
       const run = async (created: Session): Promise<void> => {
-        await startRoutedRun({ sessionId: created.id, result, attachments, ...pinned });
+        await startRoutedRun({
+          sessionId: created.id,
+          result,
+          attachments,
+          level: pickedLevel,
+          ...pinned,
+        });
       };
       await (sessionId === null
         ? startFromDraft({
             workspaceId,
             start: draftStartOf({ picked, mount, ask: result.ask, run }),
           })
-        : startRoutedRun({ sessionId, result, attachments, ...pinned }));
+        : startRoutedRun({ sessionId, result, attachments, level: pickedLevel, ...pinned }));
       if (sessionId === null) {
         rememberLastStart({ workspaceId, last: 'auto' });
       }
@@ -332,6 +346,7 @@ export const useStartRun = ({
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));
         setRunAs(AUTO_RUN_AS);
+        setPickedLevel(null);
         clearModel();
         setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
@@ -352,6 +367,7 @@ export const useStartRun = ({
     file,
     mount,
     onStarted,
+    pickedLevel,
     pinFor,
     prepare,
     role,
@@ -376,6 +392,9 @@ export const useStartRun = ({
     runAs,
     setRunAs,
     route,
+    level: pickedLevel ?? defaultLevel,
+    isLevelPicked: pickedLevel !== null,
+    setLevel: setPickedLevel,
     model,
     presets,
     files: promptFiles.files,
