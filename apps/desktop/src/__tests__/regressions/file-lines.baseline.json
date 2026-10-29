@@ -10,7 +10,7 @@
   "apps/desktop/src/features/bug-report/components/ReportComposer.tsx": 288,
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 293,
   "apps/desktop/src/features/chat/components/ChatView/index.tsx": 641,
-  "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 416,
+  "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 405,
   "apps/desktop/src/features/chat/components/OperationsCluster/index.tsx": 254,
   "apps/desktop/src/features/companion/commandExecutor.ts": 783,
   "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 301,
