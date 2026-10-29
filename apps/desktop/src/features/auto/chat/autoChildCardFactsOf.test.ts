@@ -29,7 +29,7 @@ const factsOf = ({ delegation, isTurnRunning = false }: FactsParams) =>
   });
 
 describe('autoChildCardFactsOf', () => {
-  it('shows the real last tool, the start time and Stop for a running child', () => {
+  it('shows the real last tool and Stop for a running child', () => {
     const facts = factsOf({
       delegation: aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
       isTurnRunning: true,
@@ -38,13 +38,12 @@ describe('autoChildCardFactsOf', () => {
     expect(facts).toEqual({
       word: 'Running',
       tone: 'info',
-      startedAt: STARTED,
       activity: 'Reading ledger.ts',
       canStop: true,
     });
   });
 
-  it('shows a queued child with no clock and no activity, still stoppable', () => {
+  it('shows a queued child with no activity, still stoppable', () => {
     const facts = factsOf({
       delegation: aDelegation({ key: 'impl', role: 'implementer', state: 'accepted' }),
     });
@@ -52,7 +51,6 @@ describe('autoChildCardFactsOf', () => {
     expect(facts).toMatchObject({
       word: 'Queued',
       tone: 'neutral',
-      startedAt: null,
       activity: null,
     });
     expect(facts.canStop).toBe(true);

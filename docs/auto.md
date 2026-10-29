@@ -311,8 +311,9 @@ writing to it reopens it to **Deciding**.
   task Auto gave and **Open**. A child still in flight is a live card
   (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
   **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
-  the elapsed time, role and model, and the child's last tool as the activity
-  line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
+  the active work time (`DelegationClock`, the same number as Working now and the
+  Agents row, so a resumed child keeps its earlier work), role and model, and the
+  child's last tool as the activity line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
   of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
   child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". Its reason and result are in its pane. Lines read the

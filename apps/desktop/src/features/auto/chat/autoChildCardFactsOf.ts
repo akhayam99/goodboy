@@ -1,5 +1,4 @@
 import type { Tone } from '@goodboy/ui';
-import type { IsoDateTime } from '@goodboy/types';
 import type { TailFacts } from '../../live-state/tailFacts';
 import { AUTO_STATE_TONE } from './autoStateTone';
 import type { DelegationCardModel } from './delegationCardOf';
@@ -7,7 +6,6 @@ import type { DelegationCardModel } from './delegationCardOf';
 export type AutoChildCardFacts = Readonly<{
   word: string;
   tone: Tone;
-  startedAt: IsoDateTime | null;
   activity: string | null;
   canStop: boolean;
 }>;
@@ -35,7 +33,6 @@ export const autoChildCardFactsOf = ({ card, live }: Params): AutoChildCardFacts
   return {
     word: card.status.word,
     tone: cardToneOf({ card }),
-    startedAt: live?.startedAt ?? null,
     activity: hasActivity ? live.phrase : null,
     canStop:
       card.status.word !== 'Stopping' &&

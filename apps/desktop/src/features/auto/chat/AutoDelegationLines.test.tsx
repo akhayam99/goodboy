@@ -2,7 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId, type AgentId, type MeasuredTurnSpan } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { WorkTimeContext, type WorkTimeSource } from '../../workTreeModel/workTimeSource';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerDelegationDecisionPort } from '../delegationDecisionPort';
 import { registerPublishPort, type PublishPort } from '../publishPort';
@@ -73,6 +75,55 @@ describe('AutoDelegationLines', () => {
     within(line).getByText('Running');
     fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
+  });
+
+  it('draws the active work of a resumed child, as Working now and the Agents row do', () => {
+    const agentId = brandId<AgentId>({ value: 'agent-impl' });
+    const span = (startedAtMs: number, endedAtMs: number): MeasuredTurnSpan => ({
+      agentId,
+      parentAgentId: null,
+      agentStatus: null,
+      workflowRunId: null,
+      isOrchestratedRunDone: false,
+      stepRole: 'implementer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: null,
+      startedAtMs,
+      endedAtMs,
+      endReason: 'succeeded',
+      costUsd: null,
+      touchedMountIds: null,
+    });
+    const start = Date.parse('2026-10-16T09:00:00.000Z');
+    const minute = 60_000;
+    const source: WorkTimeSource = {
+      nowMs: start + 30 * minute,
+      spans: [span(start, start + 2 * minute), span(start + 20 * minute, start + 21 * minute)],
+      history: null,
+      liveStartMs: new Map(),
+      childrenOf: new Map(),
+    };
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    useAppStore.setState({ autoTreeViews: { [SESSION_ID]: [view] } });
+
+    render(
+      <WorkTimeContext.Provider value={source}>
+        <AutoDelegationLines
+          sessionId={SESSION_ID}
+          view={view}
+          delegations={view.delegations}
+          agents={[]}
+          onOpenChild={vi.fn()}
+          onOpenArtifact={vi.fn()}
+        />
+      </WorkTimeContext.Provider>,
+    );
+
+    expect(within(screen.getByRole('listitem')).getByText('3m').textContent).toBe('3m');
   });
 
   it('names two agents of one role apart by their task, as their result cards do', () => {

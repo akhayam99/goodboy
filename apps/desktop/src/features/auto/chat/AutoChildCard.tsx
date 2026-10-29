@@ -4,10 +4,9 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { Button, Notice, TruncatedText, formatError, tintClasses } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { useAppStore } from '../../../store';
-import { useNow } from '../../../shared/hooks/useNow';
-import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import { autoChildCardFactsOf } from './autoChildCardFactsOf';
 import type { DelegationCardModel } from './delegationCardOf';
+import { DelegationClock } from './DelegationClock';
 import { useChildLive } from './hooks/useChildLive';
 
 type Props = {
@@ -34,11 +33,6 @@ export const AutoChildCard = ({
   const [failure, setFailure] = useState<string | null>(null);
   const live = useChildLive({ delegation, agent });
   const facts = autoChildCardFactsOf({ card, live });
-  const now = useNow(1_000);
-  const clock =
-    facts.startedAt === null
-      ? null
-      : formatDuration({ durationMs: now - Date.parse(facts.startedAt) });
   const stop = async (): Promise<void> => {
     if (isStopping) {
       return;
@@ -92,11 +86,7 @@ export const AutoChildCard = ({
       </span>
       <span className="col-start-2 col-span-2 flex min-w-0 items-center gap-2" role="status">
         <span className={tintClasses(facts.tone).text}>{facts.word}</span>
-        {clock === null ? null : (
-          <span aria-hidden className="shrink-0 tabular-nums text-faint-foreground">
-            {clock}
-          </span>
-        )}
+        <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
         {meta === '' ? null : (
           <span className="min-w-0 truncate text-muted-foreground">{meta}</span>
         )}
