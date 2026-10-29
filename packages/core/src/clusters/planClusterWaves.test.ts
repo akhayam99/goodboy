@@ -55,6 +55,36 @@ describe('clusterTouchesOverlap', () => {
     ).toBe(false);
   });
 
+  it('resolves parent segments before comparing', () => {
+    expect(
+      clusterTouchesOverlap({
+        first: ['apps/web/src/../src/routes.ts'],
+        second: ['apps/web/src/routes.ts'],
+      }),
+    ).toBe(true);
+    expect(
+      clusterTouchesOverlap({
+        first: ['docs/../packages/ledger-core/src'],
+        second: ['packages/notify-relay/src'],
+      }),
+    ).toBe(false);
+    expect(
+      clusterTouchesOverlap({
+        first: ['./docs/guides/../ledger.md'],
+        second: ['docs/ledger.md'],
+      }),
+    ).toBe(true);
+  });
+
+  it('treats a path that escapes the root as touching everything', () => {
+    expect(clusterTouchesOverlap({ first: ['../outside/notes.md'], second: ['docs/a.md'] })).toBe(
+      true,
+    );
+    expect(clusterTouchesOverlap({ first: ['docs/../../outside.md'], second: ['docs/a.md'] })).toBe(
+      true,
+    );
+  });
+
   it('treats a part with no touches as touching everything', () => {
     expect(clusterTouchesOverlap({ first: undefined, second: ['docs/a.md'] })).toBe(true);
     expect(clusterTouchesOverlap({ first: [], second: ['docs/a.md'] })).toBe(true);
