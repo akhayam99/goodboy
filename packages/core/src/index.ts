@@ -157,7 +157,6 @@ export {
   AUTO_FACTS_THREAD_CHARS,
   AUTO_FACTS_THREADS_MAX,
   AUTO_GATES,
-  AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_LEDGER_OUTLINE_CHARS,
   AUTO_MAX_OPEN_CHILDREN,
@@ -220,7 +219,8 @@ export {
 } from './auto/refusals';
 export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
 export { DEFAULT_AUTO_LEVEL, type AutoLevel } from './auto/level';
-export { outcomeLineOf, stripOutcomeLine, type OutcomeLine } from './auto/outcome';
+export { outcomeLineOf, parseOutcomeLine, stripOutcomeLine } from './auto/outcome';
+export type { OutcomeLine } from './auto/outcome';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
