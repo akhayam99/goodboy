@@ -1,3 +1,4 @@
+import type { OrchestratorInput } from '@goodboy/core';
 import type { OrchestratorHint, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { buildProfileGuard } from '../../turn/profileGuard';
 import { getSessionRepo } from '../../worktrees/getSessionRepo';
@@ -15,10 +16,8 @@ type Params = {
 };
 
 type Result = {
-  readonly operatorHints: string;
   readonly worktreePath: string | null;
-  readonly canReadFiles: boolean;
-  readonly decisions: string;
+  readonly hintInput: Pick<OrchestratorInput, 'operatorHints' | 'canReadFiles' | 'decisions'>;
 };
 
 export const orchestratorHintContext = async ({
@@ -54,8 +53,15 @@ export const orchestratorHintContext = async ({
   const worktreePath = canReadFiles
     ? hintsWorktreeDir
     : (getSessionRepo({ get, sessionId })?.worktreePath ?? null);
-  const decisionsSlot = (get().sessionSlots[sessionId] ?? []).find(
+  const decisionsSlot = ((get().sessionSlots ?? {})[sessionId] ?? []).find(
     (slot) => slot.key === 'decisions' && slot.enabled,
   );
-  return { operatorHints, worktreePath, canReadFiles, decisions: decisionsSlot?.value ?? '' };
+  return {
+    worktreePath,
+    hintInput: {
+      ...(operatorHints !== '' && { operatorHints }),
+      ...(canReadFiles && { canReadFiles: true }),
+      decisions: decisionsSlot?.value ?? '',
+    },
+  };
 };

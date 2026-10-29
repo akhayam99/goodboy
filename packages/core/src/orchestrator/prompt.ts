@@ -47,10 +47,12 @@ const MODEL_ROUTING_RULE = `Routing: pick the model for every next step yourself
 
 The list names identities and the efforts each one accepts. It says nothing about how good a model is at anything: that judgement is yours, from what you know about these models, and you never claim a capability the list did not give you.`;
 
-const routingSection = ({ isModelPickEnabled }: SystemPromptParams): string =>
+type RoutingParams = Pick<SystemPromptParams, 'isModelPickEnabled'>;
+
+const routingSection = ({ isModelPickEnabled }: RoutingParams): string =>
   isModelPickEnabled ? MODEL_ROUTING_RULE : DIFFICULTY_ROUTING_RULE;
 
-const stepRoutingFields = ({ isModelPickEnabled }: SystemPromptParams): string =>
+const stepRoutingFields = ({ isModelPickEnabled }: RoutingParams): string =>
   isModelPickEnabled ? '"provider":"...","model":"...","effort":"medium",' : '';
 
 const orchestratorSystemPrompt = ({
