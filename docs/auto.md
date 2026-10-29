@@ -610,10 +610,13 @@ tells Auto the spend left (`autoBudgetPromptLine`), never a count of agents left
 
 ## How Auto decides
 
-Auto runs read-only on every provider that can confine it: the same role access scouts and reviewers get
-(Claude with `--tools Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor `--mode plan`, and so on). It
-has no shell and never calls Goodboy from inside its turn, so there is no bridge command, no
-capability token and no allow rule. It decides by ending its final reply with at most one block:
+Auto runs read-only on every provider that can confine it. Claude's Auto lead uses
+`--permission-mode default` at every session mode, with `--tools Read,Grep,Glob` and explicit
+shell and write tool denies (`effective_permission_mode` in `providers/cli_args.rs`). Other Claude
+read-only roles keep plan mode. Other providers keep their existing confinement, including
+Codex `-s read-only` and Cursor `--mode plan`. Auto has no shell and never calls Goodboy from
+inside its turn, so there is no bridge command, no capability token and no allow rule.
+It decides by ending its final reply with at most one block:
 
 ```
 <<auto>>{"action":"delegate","requestId":"r1","children":[...]}<</auto>>
@@ -710,7 +713,7 @@ commands instead of reporting the block as the answer. The reroute is Auto's own
 checked by the same refusal, not a second child started by the harness.
 
 **Branch facts for a scout.** A scout cannot run `git log` or `gh pr view`, and giving a read-only
-role a shell would give the Auto root one too (they share an argv). Instead a scout spec may carry
+role a shell would give the Auto root one too (they share the read-only tool policy). Instead a scout spec may carry
 `"facts":["<mount id>"]`, up to `AUTO_FACTS_MOUNTS_MAX` (4). `resolveDelegateChild` calls
 `gatherBranchFacts` before the kickoff is composed: per named mount the `readBranchFacts` port reads
 the commits since the base branch, the pull or merge request of the branch, its open review threads
