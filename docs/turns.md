@@ -912,7 +912,9 @@ cards, 4 chips, prose clamped at 3 lines).
   types it whole. A turn with an `error` item keeps its notes open.
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
   draws the optional `OutcomeLine`, the clamped text with **Show more**, then
-  the chips with **+N** past 4. `AssistantText` is a thin caller.
+  the chips with **+N** past 4. `AssistantText` is a thin caller: it reads
+  `parseOutcomeLine` from the raw text, before the markers are stripped, and
+  passes a neutral `outcome` once the message is complete and revealed.
 - The Auto child result cards use the same pieces without the message renderer:
   `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
   (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome

@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { CopyButton } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
+import {
+  extractAllCommentResolved,
+  isReviewThreadId,
+  parseOutcomeLine,
+  stripControlMarkers,
+} from '@goodboy/core';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
@@ -36,6 +41,7 @@ export const AssistantText = ({
   workingDir = null,
 }: Props) => {
   const displayText = stripControlMarkers(text);
+  const outcomeText = parseOutcomeLine({ text });
   const reveal = useRevealedMarkdown({
     runId: runId ?? NO_RUN,
     itemKey,
@@ -64,6 +70,11 @@ export const AssistantText = ({
         fresh={reveal.fresh}
         codeTarget={codeTarget}
         clampLines={reveal.isRevealing || !isComplete ? null : clampLines}
+        outcome={
+          outcomeText === null || reveal.isRevealing || !isComplete
+            ? null
+            : { text: outcomeText, tone: 'neutral' }
+        }
       >
         {reveal.isRevealing ? null : sessionId && agentId && hasScribeText ? (
           <ScribeTextCard

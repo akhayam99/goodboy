@@ -685,6 +685,10 @@ one lost race and reports a failed write without updating window state.
 plan consumption. The level tests in `store/runtime/auto/level/` check
 persistence, failures, second writers and pending confirmations.
 
+Start a run shows the same chip (`AutoLevelChip`) for an Auto lead: it reads the
+workspace default through `useAutoLevel` and `startRoutedRun` writes the pick
+with `changeAutoLevel`.
+
 The chip lives in the settings line of an Auto agent (`AutoLevelSetting`, next
 to the Limit chip) and the workspace default in Settings, workspace defaults
 (`AutoLevelDefaultRow`). Both go through `useAutoLevel` in `shared/hooks/`,
