@@ -9,7 +9,6 @@ import type {
   PullRequestView,
   Session,
 } from '@goodboy/types';
-import type { MountDiffStat } from '../../../../store';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchStart } from '../../hooks/useBranchStart';
@@ -41,7 +40,9 @@ type Props = {
   readonly mergeWord: string;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly files: ReadonlyArray<FileDiff>;
-  readonly stat: MountDiffStat | null;
+  readonly isDiffLoading: boolean;
+  readonly diffError: string | null;
+  readonly onRetryDiff: () => void;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly isConnected: boolean;
@@ -73,7 +74,9 @@ export const PullRequestTab = ({
   mergeWord,
   commits,
   files,
-  stat,
+  isDiffLoading,
+  diffError,
+  onRetryDiff,
   canEdit,
   request,
   isConnected,
@@ -98,7 +101,9 @@ export const PullRequestTab = ({
         cells={start.cells}
         commits={commits}
         files={files}
-        stat={stat}
+        isDiffLoading={isDiffLoading}
+        diffError={diffError}
+        onRetryDiff={onRetryDiff}
         conflictFiles={start.conflictFiles}
         isConnected={isConnected}
         onConnected={onConnected}
@@ -123,6 +128,11 @@ export const PullRequestTab = ({
       viewErrorKind={viewErrorKind}
       canEdit={canEdit}
       request={request}
+      commits={commits}
+      files={files}
+      isDiffLoading={isDiffLoading}
+      diffError={diffError}
+      onRetryDiff={onRetryDiff}
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}

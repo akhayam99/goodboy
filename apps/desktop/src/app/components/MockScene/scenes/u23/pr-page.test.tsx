@@ -290,8 +290,9 @@ describe('the branch page of a branch with no pull request', () => {
       ),
     );
     expect(
-      within(screen.getByRole('region', { name: 'In this branch' })).getByText('5 commits'),
+      within(screen.getByRole('region', { name: 'Summary' })).getByText('5', { selector: 'span' }),
     ).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'In this branch' })).toBeNull();
   });
 
   it('hides the form while a rebase is stopped and lists the conflicts instead', async () => {

@@ -71,7 +71,7 @@ confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`)
 the option cards carry the effect sentence, draw no icon tile when they have no
 icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is the branch page
 (the branch as the title, its pushed state and distance as the line under it, the
-status strip, then the create form with `In this branch` under it), the activity
+status strip, then the create form with the Commits and Changes summary cards under it), the activity
 loads as a `SkeletonRow`, a failed read is an inline danger `Notice` with Retry.
 
 ## Workspace chat
