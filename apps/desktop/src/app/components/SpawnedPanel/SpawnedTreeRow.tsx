@@ -110,17 +110,17 @@ export const SpawnedTreeRow = ({
           {countWord}
         </span>
       ) : null}
-      {fold === null ? null : (
-        <span
-          aria-hidden
-          data-testid="spawned-fold-toggle"
-          onClick={onToggleClick}
-          className="flex size-4 shrink-0 items-center justify-center text-muted-foreground"
-        >
-          <Chevron size={ICON_SIZE.row} />
-        </span>
-      )}
-      {time}
+      <span
+        aria-hidden
+        data-testid={fold === null ? undefined : 'spawned-fold-toggle'}
+        onClick={fold === null ? undefined : onToggleClick}
+        className="flex size-4 shrink-0 items-center justify-center text-muted-foreground"
+      >
+        {fold === null ? null : <Chevron size={ICON_SIZE.row} />}
+      </span>
+      <span data-spawned-time="" className="flex w-12 shrink-0 justify-end">
+        {time}
+      </span>
     </div>
   );
   return (
