@@ -55,9 +55,10 @@ The Agents panel scrolls to the agent you are on and opens the fold that hides i
 - The collapsed sidebar shows only a dot on a door, without a number that overlaps the icon. <!-- gb area=app -->
 - Auto says a scout that wrote no report ended without one, instead of claiming its result could not be saved, and keeps a blocked scout blocked. <!-- gb area=agents -->
 - Auto no longer sends a reviewer to audit a commit range it cannot read without git; it routes that work to an agent with a shell before any spend. <!-- gb area=agents -->
-- A message you queue for Auto and then stop no longer vanishes; it shows as Not delivered. <!-- gb area=agents -->
+- A message waiting for Auto no longer vanishes when you stop Auto; it shows as Not delivered. <!-- gb area=agents -->
 - The clock on a running Auto child counts its whole active time, matching Working now and the Agents panel. <!-- gb area=agents -->
 - The Changes card of a pull request keeps the whole branch while the Files tab shows one commit. <!-- gb area=review -->
+- Auto briefs name the pull request, threads and checks of each mount they mention, and say unknown instead of none when a mount was not read. <!-- gb area=agents -->
 
 ## Goodboy v0.28.6
 
