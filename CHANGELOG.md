@@ -19,24 +19,24 @@ Auto asks you as much as you want, proposes its next step as a card, and its age
 ### New
 
 #### Choose how much Auto asks you
-<!-- gb area=agents -->
+<!-- gb area=agents image=asks-you -->
 
 Auto has an Asks you level: Every step, After the plan or Never. Pick it in Start a run, change it from the running agent's settings line, and set a workspace default in Settings, separate from the workflow one. At Every step each agent waits for your go; After the plan, the default, waits only for the plan; Never runs on its own.
 
 #### Auto proposes its next step as a card
-<!-- gb area=agents -->
+<!-- gb area=agents image=next-step -->
 
 Auto no longer ends on a yes or no question in prose. It proposes the next agent as a card with one main action, up to two alternatives and a hint field, and keys 1 to 3 pick. A hint you add travels with the agent's brief and survives a retry.
 
 ### Improved
 
 #### The plan card opens the plan
-<!-- gb area=agents -->
+<!-- gb area=agents image=plan-card -->
 
 The Auto plan card shows the first steps and their file and risk counts, with View plan as the main action. Approve plan sits at the top right of the plan view and keeps the run inside Auto. An approved plan stays in the chat in the artifact colour.
 
 #### Agents answer in one reading order
-<!-- gb area=agents -->
+<!-- gb area=agents image=reading-order -->
 
 Every agent message starts with a one line outcome, then its artifacts, then chips, with the rest folded under Notes. Goodboy corrects the outcome when checks fail or a push did not go through, and an Auto child's result card follows the same order.
 
