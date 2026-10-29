@@ -8,10 +8,12 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderId,
   EffortLevel,
   RoleModelPreferences,
@@ -101,6 +103,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [decidedStep()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
       availability: availability(),
@@ -114,12 +117,33 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['taskProfile']).toMatchObject({ taskType: 'implementation' });
   });
 
+  it('stores the mount it is given on the agent row and none when it has none', async () => {
+    const run = ({ mountId }: { readonly mountId: MountId | null }) =>
+      preSpawnWorkflowAgents({
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        steps: [decidedStep()],
+        baseOrdinal: 0,
+        mountId,
+        defaultProvider: 'anthropic',
+        roleModels: null,
+        availability: availability(),
+      });
+
+    await run({ mountId: brandId<MountId>({ value: 'mount-refactor' }) });
+    await run({ mountId: null });
+
+    expect(invokeAgentInsertSpy.mock.calls[0]![0]).toMatchObject({ mountId: 'mount-refactor' });
+    expect(invokeAgentInsertSpy.mock.calls[1]![0]).not.toHaveProperty('mountId');
+  });
+
   it('never spawns a static step on an Off provider, even when the role is pinned there', async () => {
     await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,
       workflowRunId: RUN_ID,
       steps: [step()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'codex',
       roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
       availability: availability(),
@@ -142,6 +166,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'codex',
       roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
       availability: availability(),
@@ -164,6 +189,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [decidedStep()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
       availability: availability({ coolingDownProviders: ['codex'] }),
@@ -189,6 +215,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [locked],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
       availability: availability({ coolingDownProviders: ['codex'] }),
@@ -207,6 +234,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [decidedStep()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
       availability: availability({ isSessionBudgetBlocked: true }),
@@ -235,6 +263,7 @@ describe('preSpawnWorkflowAgents', () => {
         }),
       ],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -258,6 +287,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [locked],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
       availability: availability(),
@@ -274,6 +304,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step({ modelOverride: 'opus-5', effort: 'high' })],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -291,6 +322,7 @@ describe('preSpawnWorkflowAgents', () => {
       sessionId: SESSION_ID,
       steps: [step()],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -307,6 +339,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step({ role: 'resolver', name: 'Fix the review findings (payments-api)' })],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -322,6 +355,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step({ role: undefined, name: 'Resolve comments' })],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -336,6 +370,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step({ role: 'scout', name: 'Survey the routing code' })],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -356,6 +391,7 @@ describe('preSpawnWorkflowAgents', () => {
         step({ id: 'step-2' as StepId, ordinal: 1, role: 'planner', name: 'Plan' }),
       ],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -374,6 +410,7 @@ describe('preSpawnWorkflowAgents', () => {
       workflowRunId: RUN_ID,
       steps: [step({ role: 'scout', modelOverride: 'opus-5', effort: 'high' })],
       baseOrdinal: 0,
+      mountId: null,
       defaultProvider: 'anthropic',
       roleModels: null,
     });
@@ -423,6 +460,7 @@ const spawnAndReference = async ({ spawnStep, defaultProvider, roleModels }: Inv
     workflowRunId: RUN_ID,
     steps: [spawnStep],
     baseOrdinal: 0,
+    mountId: null,
     defaultProvider,
     roleModels,
   });

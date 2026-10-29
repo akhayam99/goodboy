@@ -21,6 +21,7 @@ export type OrchestratorStep = {
   readonly difficulty?: WorkflowTaskDifficulty;
   readonly modelReason?: string;
   readonly presetStep?: number;
+  readonly mountId?: string;
 };
 
 type OrchestratorPresetInput = {
