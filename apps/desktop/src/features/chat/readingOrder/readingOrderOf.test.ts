@@ -104,4 +104,23 @@ describe('readingOrderOf', () => {
     expect(roles.get('t1')).toEqual({ kind: 'answer', clampLines: 12 });
     expect(roles.get('t2')).toEqual({ kind: 'answer', clampLines: 12 });
   });
+
+  it('keeps narration that carries control markers out of the notes', () => {
+    const verdict =
+      'Checked it.\n<<comment-wontfix threadId="PRRT_ledger1" reason="already covered upstream">>';
+    const outcome = 'Reviewed.\n<<outcome>>Changes needed<</outcome>>';
+    const roles = readingOrderOf({
+      rows: [
+        user({ key: 'u1' }),
+        text({ key: 't1', body: 'Reading notify-relay' }),
+        text({ key: 't2', body: verdict }),
+        text({ key: 't3', body: outcome }),
+        text({ key: 't4', body: 'Changes needed: 1 blocker.' }),
+      ],
+    });
+    expect(roles.get('t1')).toMatchObject({ kind: 'notes', lineCount: 1 });
+    expect(roles.get('t2')).toBeUndefined();
+    expect(roles.get('t3')).toBeUndefined();
+    expect(roles.get('t4')).toEqual({ kind: 'answer', clampLines: 3 });
+  });
 });
