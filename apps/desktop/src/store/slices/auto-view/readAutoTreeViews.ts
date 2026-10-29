@@ -29,7 +29,10 @@ type PendingRefusalParams = {
 
 const pendingRefusalOf = ({ tree, pending }: PendingRefusalParams): AutoPendingRefusal | null => {
   const latest = pending
-    .filter((row) => row.kind === 'refusal' && row.generation === tree.generation)
+    .filter(
+      (row) =>
+        row.state === 'pending' && row.kind === 'refusal' && row.generation === tree.generation,
+    )
     .sort((a, b) => b.createdAt - a.createdAt)[0];
   if (latest === undefined || !isRefusalPayload(latest.payload)) {
     return null;
@@ -42,12 +45,25 @@ const pendingRefusalOf = ({ tree, pending }: PendingRefusalParams): AutoPendingR
   };
 };
 
+type ShownMessageParams = {
+  readonly tree: AutoTree;
+  readonly row: AutoOutboxRow;
+};
+
+const isShownMessage = ({ tree, row }: ShownMessageParams): boolean => {
+  if (row.state === 'pending') {
+    return row.generation === tree.generation;
+  }
+  const isStopped = tree.phase === 'stopping' || tree.phase === 'stopped';
+  return isStopped && row.state === 'dropped' && row.droppedReason === 'stopped';
+};
+
 const pendingMessagesOf = ({
   tree,
   pending,
 }: PendingRefusalParams): ReadonlyArray<AutoPendingMessage> =>
   pending
-    .filter((row) => row.kind === 'user' && row.generation === tree.generation)
+    .filter((row) => row.kind === 'user' && isShownMessage({ tree, row }))
     .map((row) => ({ rowId: String(row.id), createdAt: row.createdAt }));
 
 export const readAutoTreeViews = async ({
@@ -63,7 +79,7 @@ export const readAutoTreeViews = async ({
           listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
           listAutoArtifactLedger({ db, treeId: tree.id }),
           readAutoTreeSpend({ db, treeId: tree.id }),
-          listAutoOutbox({ db, treeId: tree.id, states: ['pending'] }),
+          listAutoOutbox({ db, treeId: tree.id, states: ['pending', 'dropped'] }),
           listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
           readFirstUserText({ db, agentId: tree.rootAgentId }),
         ]);

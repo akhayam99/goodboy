@@ -208,7 +208,9 @@ with **Change limit** (raising it delivers the row, as before). A tree blocked f
 reason but the time limit shows it with **Retry**, which resumes the tree and delivers the row
 (the send itself already tries one Retry). The time limit and a stopped or stopping tree have no
 action ("This conversation reached its time limit.", "Auto was stopped."): the row stays unsent
-and the words are not lost from the chat. A `finished` or `done` tree takes the message as a
+and the words are not lost from the chat. Stopping drops the pending rows with the reason
+`stopped`; `readAutoTreeViews` keeps those user rows in `pendingMessages` while the tree is stopping
+or stopped, so the line still shows under them. A `finished` or `done` tree takes the message as a
 normal follow-up turn. Rows left from old trees show the same line on load and are never
 auto-sent.
 
