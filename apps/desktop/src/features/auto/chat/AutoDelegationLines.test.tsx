@@ -151,8 +151,9 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.getByText('Plan v1 needs your approval')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Ask for changes' })).toBeNull();
+    expect(screen.getByText('View plan')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }));
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
   });

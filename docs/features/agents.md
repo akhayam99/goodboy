@@ -120,7 +120,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - A finished conversation folds to one row with its count of agents. Open or fold a row with its chevron or the arrow keys.
 - The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
-- Auto's reply adds only what the reports mean together. **Approve plan** shows right there when a Planner finished.
+- Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
 
 **Limit and control**

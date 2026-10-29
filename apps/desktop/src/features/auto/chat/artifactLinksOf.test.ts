@@ -94,7 +94,7 @@ describe('artifactLinksOf', () => {
       artifact: { artifactId: 'artifact-plan', kind: 'plan', title: 'x', revision: 1 },
     });
 
-    expect(link.approval).toEqual({ word: 'Approved', tone: 'success', state: 'approved' });
+    expect(link.approval).toEqual({ word: 'Approved', tone: 'merged', state: 'approved' });
     expect(isAwaitingApproval({ link })).toBe(false);
   });
 

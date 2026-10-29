@@ -322,10 +322,15 @@ writing to it reopens it to **Deciding**.
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A revise that waits for an OK carries **Confirm** and
   **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
-  ask **Plan v1 needs your approval** with the plan title (opens the plan),
-  **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
-  `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
-  settles to one quiet line, "Plan v1 · changes asked".
+  ask **Plan v1 needs your approval** with the plan title, the first four steps
+  and the step, file and risk counts (`autoPlanOutlineOf`), and one action,
+  **View plan** (`AutoPlanAsk`). **Approve plan** and **Ask for changes** sit
+  top right in the plan view, which uses the same `useAutoPlanApproval`;
+  approving sends the approval to the Auto root, so the run stays inside Auto.
+  If the approval is saved but Auto was not told, the view keeps open with
+  **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
+  artifact colour (`AUTO_STATE_TONE.artifact`), never green. While the plan is
+  revised the ask settles to one quiet line, "Plan v1 · changes asked".
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
