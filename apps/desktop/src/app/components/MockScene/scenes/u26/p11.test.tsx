@@ -134,7 +134,7 @@ describe('the u26 p11 Auto result scenes', () => {
     fireEvent.click(within(cards).getByRole('button', { name: `Open ${SECOND_REVIEW}` }));
 
     expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'auto-child',
+      kind: 'spawned',
       payload: { agentId: 'mock-results-reviewer-2' },
     });
   });
