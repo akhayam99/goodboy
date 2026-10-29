@@ -176,7 +176,7 @@ export const useStartRun = ({
   const [error, setError] = useState<string | null>(null);
   const [runAs, setRunAs] = useState<RunAs>(AUTO_RUN_AS);
   const [pickedLevel, setPickedLevel] = useState<AutoLevel | null>(null);
-  const { workspaceLevel } = useAutoLevel({ workspaceId, sessionId: null });
+  const { level: appliedLevel, workspaceLevel } = useAutoLevel({ workspaceId, sessionId });
   const promptFiles = usePromptFiles({ note: RUN_ROUTE_COPY.attachFiles, isEnabled: !isStarting });
   const { attachments: stagedFiles, setAttachments: setStagedFiles } = promptFiles;
   const clearFilesRef = useRef(promptFiles.clear);
@@ -392,7 +392,7 @@ export const useStartRun = ({
     runAs,
     setRunAs,
     route,
-    level: pickedLevel ?? workspaceLevel,
+    level: pickedLevel ?? appliedLevel,
     workspaceLevel,
     setLevel: setPickedLevel,
     model,
