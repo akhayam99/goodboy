@@ -6,7 +6,7 @@ import { gitlabPortOf } from '../../../features/integrations/gitlab/gitlabPortOf
 import type { GetFn } from '../../slice-types';
 import { requestHostOf } from './requestHostOf';
 
-export type PortBuilderParams = Readonly<{
+type PortBuilderParams = Readonly<{
   get: GetFn;
   sessionId: SessionId;
   mountId?: MountId;
