@@ -5,7 +5,7 @@ type Params = {
   readonly files: ReadonlyArray<Pick<FileDiff, 'path' | 'additions' | 'deletions' | 'binary'>>;
 };
 
-export type FolderShare = {
+type FolderShare = {
   readonly name: string;
   readonly files: number;
 };
@@ -25,7 +25,7 @@ export type BranchSummary = {
 
 const SUMMARY_SUBJECTS = 3;
 const SUMMARY_FOLDERS = 3;
-export const ROOT_FOLDER = 'Root files';
+const ROOT_FOLDER = 'Root files';
 
 type FolderParams = {
   readonly path: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BranchCommit } from '@goodboy/types';
-import { branchSummaryOf, ROOT_FOLDER } from './branchSummaryOf';
+import { branchSummaryOf } from './branchSummaryOf';
 
 type CommitParams = {
   readonly subject: string;
@@ -48,7 +48,7 @@ describe('branchSummaryOf', () => {
       'src',
       'apps',
       'docs',
-      ROOT_FOLDER,
+      'Root files',
       'web',
     ]);
     expect(summary.shownFolders.map((folder) => folder.name)).toEqual(['src', 'apps', 'docs']);

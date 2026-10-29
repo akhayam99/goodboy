@@ -1,6 +1,6 @@
 import type { TreeRetryResult } from './treeRetryPort';
 
-export type SendNowResult = TreeRetryResult;
+type SendNowResult = TreeRetryResult;
 
 type SendNowParams = {
   readonly treeId: string;
