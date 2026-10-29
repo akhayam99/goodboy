@@ -126,6 +126,10 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick**, **Workflow** or **Auto agent**. With a session open, a second row, **New runs in this session start as**, sets that session's own default, which wins over the workspace one. Either reaches new runs only, and each change shows a toast with **Undo**.
 
+### Auto asks you
+
+Choose how much Auto may do alone in this workspace: **Every step**, **After the plan** (the default) or **Never**. It is separate from the workflow **Asks you** default, so workflows can keep asking at every step while Auto goes on after the plan. Each Auto can change its own level from its page.
+
 ### Monitoring
 
 See which ports are taken and by whom. The page has four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and a group's header carries its count and its free ports (`3 · 2 free`); the free count opens the free ports under the ports in use. Expanded rows sit one step in. A terminal or script with no port says "no port" in faint text and shows its process. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftovers sit on the same grid with their age under Up.
