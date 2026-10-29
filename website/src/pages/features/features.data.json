@@ -461,6 +461,12 @@
           "also": "run default"
         },
         {
+          "title": "Auto asks you",
+          "text": "Choose how much Auto may do alone in a workspace: every step, after the plan or never.",
+          "group": "Workspaces and folders",
+          "also": "Asks you"
+        },
+        {
           "title": "Copy settings from another workspace",
           "text": "Take the settings of another workspace, or restore the defaults, page by page. You see every change before it is saved.",
           "group": "Workspaces and folders",
