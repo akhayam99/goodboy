@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { AutoOutcome } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredResult } from '../../../../store/slices/auto-view/state';
+import { declaredOutcomeLineOf } from '../../../auto/chat/declaredOutcomeLineOf';
 import type { ArtifactLinkModel } from '../../../auto/chat/artifactLinksOf';
 import { AutoResultCards } from './AutoResultCards';
 
@@ -26,6 +27,7 @@ const resultOf = ({ key, role, outcome, summary }: ResultParams): AutoDeliveredR
   model: 'claude-sonnet-5-5',
   outcome,
   summary,
+  outcomeLine: declaredOutcomeLineOf({ summary, outcome }),
   artifacts: [],
 });
 
@@ -229,9 +231,11 @@ describe('AutoResultCards', () => {
     });
 
     it('leads with the model outcome line and shows no state word beside the title', () => {
+      const summary = `<<outcome>>Changes needed: 1 blocker<</outcome>>\n${NARRATION}`;
       const withLine: AutoDeliveredResult = {
         ...reviewerResult(),
-        summary: `<<outcome>>Changes needed: 1 blocker<</outcome>>\n${NARRATION}`,
+        summary,
+        outcomeLine: declaredOutcomeLineOf({ summary, outcome: 'completed' }),
       };
       renderCardsWith({
         results: [withLine],

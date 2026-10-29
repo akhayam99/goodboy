@@ -10,6 +10,7 @@ import {
   type ProviderRunId,
   type TurnEvent,
 } from '@goodboy/types';
+import { declaredOutcomeLineOf } from '../../../../../features/auto/chat/declaredOutcomeLineOf';
 import { anArtifactRow, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
 import type {
   AutoDeliveredArtifact,
@@ -177,6 +178,7 @@ const deliveredOf = (child: (typeof CHILDREN)[number]): AutoDeliveredResult => (
   model: child.model,
   outcome: child.outcome,
   summary: child.summary,
+  outcomeLine: declaredOutcomeLineOf({ summary: child.summary, outcome: child.outcome }),
   artifacts: child.artifacts,
 });
 

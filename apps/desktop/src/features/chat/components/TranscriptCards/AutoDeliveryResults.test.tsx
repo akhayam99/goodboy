@@ -5,6 +5,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AutoDeliveredResult } from '../../../../store/slices/auto-view/state';
+import { declaredOutcomeLineOf } from '../../../auto/chat/declaredOutcomeLineOf';
 import { aDelegation, aView, FIXTURE_SESSION } from '../../../auto/testing/autoViewFixtures';
 import { TranscriptCard } from '.';
 
@@ -31,6 +32,7 @@ const resultOf = ({ key, runId, summary }: ResultParams): AutoDeliveredResult =>
   model: 'claude-sonnet-5-5',
   outcome: 'completed',
   summary,
+  outcomeLine: declaredOutcomeLineOf({ summary, outcome: 'completed' }),
   artifacts: [],
 });
 
@@ -85,6 +87,28 @@ describe('AutoDeliveryResults', () => {
     ).toEqual(['work for review-b, Done']);
     expect(within(cards).getByText('One race in applyCredit.')).toBeDefined();
     expect(screen.queryByText('No blocking issues.')).toBeNull();
+  });
+
+  it('draws the red outcome a result carries over the model Done', () => {
+    useAppStore.setState({
+      autoTreeViews: {
+        [FIXTURE_SESSION]: [
+          aView({
+            phase: 'done',
+            delegations: [aDelegation({ key: 'review-a', role: 'reviewer', state: 'settled' })],
+            deliveredResults: [
+              {
+                ...resultOf({ key: 'review-a', runId: RUN_ONE, summary: 'Done' }),
+                outcomeLine: { text: 'Checks failed: 1', tone: 'danger', source: 'facts' },
+              },
+            ],
+          }),
+        ],
+      },
+    });
+    renderDelivery({ runId: RUN_ONE });
+
+    expect(screen.getByTestId('outcome-line').textContent).toBe('Checks failed: 1');
   });
 
   it('draws no cards under a delivery that read no results', () => {

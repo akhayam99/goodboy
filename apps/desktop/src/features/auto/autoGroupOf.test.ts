@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId, type AutoDelegationId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
+import { declaredOutcomeLineOf } from './chat/declaredOutcomeLineOf';
 import { aDelegation, aView, FIXTURE_NOW, FIXTURE_ROOT } from './testing/autoViewFixtures';
 import { autoGroupOf } from './autoGroupOf';
 import { autoRowFacts } from './autoRowFacts';
@@ -60,6 +61,10 @@ describe('autoGroupOf', () => {
           model: null,
           outcome: 'completed',
           summary: 'Found 2 doc mismatches',
+          outcomeLine: declaredOutcomeLineOf({
+            summary: 'Found 2 doc mismatches',
+            outcome: 'completed',
+          }),
           artifacts: [],
         },
       ],

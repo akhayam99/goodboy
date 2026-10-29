@@ -399,7 +399,7 @@ writing to it reopens it to **Deciding**.
   `AutoResultCards`): the role glyph, the name, the model
   with its provider and **Open**, which opens the child pane. Under that header the card
   reads in the reading order of [turns.md](./turns.md): one outcome line (the child's own
-  `<<outcome>>` line, or the one `outcomeLineOf` computes: Done, Failed or Timed out), the
+  `<<outcome>>` line, or the one `outcomeLineOf` computes: Done, Failed or Timed out; red checks or a failed push override the model line, the same as on the delegation card, because `deliveredResultsOf` computes the line once with `delegationResultOf` and the card only draws it), the
   artifact rows, then the notes. The state word is the outcome line, not a second label, and
   the card has no coloured side border. A child with no artifact keeps its report in
   `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out child shows

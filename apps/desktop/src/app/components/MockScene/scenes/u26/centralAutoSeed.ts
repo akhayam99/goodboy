@@ -11,6 +11,7 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
+import { declaredOutcomeLineOf } from '../../../../../features/auto/chat/declaredOutcomeLineOf';
 import { aTree } from '../../../../../features/auto/testing/autoViewFixtures';
 import type { WorkTimeSource } from '../../../../../features/workTreeModel/workTimeSource';
 import type {
@@ -175,6 +176,7 @@ const DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Found 2 doc mismatches',
+    outcomeLine: declaredOutcomeLineOf({ summary: 'Found 2 doc mismatches', outcome: 'completed' }),
     artifacts: [],
   },
 ];
@@ -190,6 +192,10 @@ const DONE_DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
     model: 'sonnet',
     outcome: 'completed',
     summary: 'Fixed both mismatches in ledger-core',
+    outcomeLine: declaredOutcomeLineOf({
+      summary: 'Fixed both mismatches in ledger-core',
+      outcome: 'completed',
+    }),
     artifacts: [],
   },
 ];

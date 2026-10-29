@@ -1,9 +1,4 @@
-import {
-  outcomeLineOf,
-  parseAutoDelegationRole,
-  parseOutcomeLine,
-  stripOutcomeLine,
-} from '@goodboy/core';
+import { parseAutoDelegationRole, stripOutcomeLine } from '@goodboy/core';
 import type { AgentId } from '@goodboy/types';
 import { Button, ClampedProse, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -44,10 +39,7 @@ export const AutoResultCard = ({
     result.outcome === 'completed' || result.outcome === 'blocked' ? result.summary : null;
   const rows = artifacts.filter((link) => !isAwaitingApproval({ link }));
   const hasArtifacts = result.artifacts.length > 0;
-  const outcomeLine = outcomeLineOf({
-    modelLine: result.summary === null ? null : parseOutcomeLine({ text: result.summary }),
-    outcome: result.outcome,
-  });
+  const { outcomeLine } = result;
   const notes = hasArtifacts
     ? summaryNotesOf({ summary: body, key: result.delegationId, isOpen: false })
     : null;
