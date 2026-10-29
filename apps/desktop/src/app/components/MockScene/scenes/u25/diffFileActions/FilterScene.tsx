@@ -17,6 +17,7 @@ const NO_FILTER = {
   onUnviewedOnly: () => undefined,
   commentedOnly: false,
   onCommentedOnly: () => undefined,
+  folder: null,
   group: 'folders' as const,
   onGroup: () => undefined,
   isFiltering: true,

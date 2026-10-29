@@ -6,6 +6,7 @@ import { selectMountForPath } from '../../../../store/slices/project-mounts/sele
 import { isFileLevelDraft } from '../../../../store/slices/review-drafts/fileLevel';
 import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
 import { draftThread } from '../../lib/draftThreads';
+import { topFolderOf } from '../../lib/topFolderOf';
 import { NO_KINDS, type CommentKinds } from '../../lib/commentKinds';
 import type { DiffComments, DiffThread, DiffViewed } from '../../components/DiffView/types';
 import {
@@ -35,6 +36,7 @@ export type ReviewState = {
   readonly setUnviewedOnly: (next: boolean) => void;
   readonly commentedOnly: boolean;
   readonly setCommentedOnly: (next: boolean) => void;
+  readonly folder: string | null;
   readonly group: TreeGroup;
   readonly setGroup: (group: TreeGroup) => void;
   readonly isFiltering: boolean;
@@ -129,7 +131,9 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   const [commentedOnly, setCommentedOnly] = useState(false);
   const [group, setGroup] = useState<TreeGroup>('folders');
   const { stateOf } = diff.viewed;
-  const isFiltering = query.trim() !== '' || unviewedOnly || commentedOnly;
+  const folder = useAppStore((s) => s.branchFilesFolder[sessionId] ?? null);
+  const setBranchFilesFolder = useAppStore((s) => s.setBranchFilesFolder);
+  const isFiltering = query.trim() !== '' || unviewedOnly || commentedOnly || folder !== null;
   const [activePath, setActivePath] = useState<string | null>(null);
   const { collapsed, toggleFolder, openFolders } = useFoldState({
     sessionId,
@@ -182,10 +186,20 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     }
     return filterFiles({ files: diff.files, query }).filter(
       (file) =>
+        (folder === null || topFolderOf({ path: file.path }) === folder) &&
         (!unviewedOnly || stateOf(file) !== 'viewed') &&
         (!commentedOnly || commentCountOf(file.path) > 0),
     );
-  }, [commentCountOf, commentedOnly, diff.files, isFiltering, query, stateOf, unviewedOnly]);
+  }, [
+    commentCountOf,
+    commentedOnly,
+    diff.files,
+    folder,
+    isFiltering,
+    query,
+    stateOf,
+    unviewedOnly,
+  ]);
   const tree = useMemo(() => buildChangeTree({ files: shownFiles, group }), [group, shownFiles]);
   const rowsRef = useRef(tree.rows);
   rowsRef.current = tree.rows;
@@ -194,7 +208,8 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     setQuery('');
     setUnviewedOnly(false);
     setCommentedOnly(false);
-  }, []);
+    setBranchFilesFolder({ sessionId, folder: null });
+  }, [sessionId, setBranchFilesFolder]);
 
   const reveal = useCallback(
     (path: string) => openFolders(ancestorIds({ rows: rowsRef.current, path })),
@@ -233,6 +248,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     setUnviewedOnly,
     commentedOnly,
     setCommentedOnly,
+    folder,
     group,
     setGroup,
     isFiltering,

@@ -67,6 +67,7 @@ import type { SidebarState } from './slices/sidebar/state';
 import type { SettingsLastPageState } from './slices/settings-last-page/state';
 import type { LocalChecksState } from './slices/local-checks/state';
 import type { ChatLastOpenState } from './slices/chat-last-open/state';
+import type { BranchFilesFilterState } from './slices/branch-files-filter/state';
 import type { NextViewState } from './slices/next-view/state';
 import type { TrackerMovesState } from './slices/tracker-moves/state';
 import type { CheckFixCommitsState } from './slices/check-fix-commits/state';
@@ -185,6 +186,7 @@ type AppSliceState = ArtifactsState &
   SettingsLastPageState &
   LocalChecksState &
   ChatLastOpenState &
+  BranchFilesFilterState &
   NextViewState &
   TrackerMovesState &
   CheckFixCommitsState &

@@ -74,6 +74,7 @@ export const SessionDiffPane = ({
       onUnviewedOnly: review.setUnviewedOnly,
       commentedOnly: review.commentedOnly,
       onCommentedOnly: review.setCommentedOnly,
+      folder: review.folder,
       group: review.group,
       onGroup: review.setGroup,
       isFiltering: review.isFiltering,
@@ -81,6 +82,7 @@ export const SessionDiffPane = ({
     }),
     [
       review.clearFilters,
+      review.folder,
       review.group,
       review.isFiltering,
       review.commentedOnly,

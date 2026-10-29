@@ -47,6 +47,7 @@ type TreeFilter = {
   readonly onUnviewedOnly: (next: boolean) => void;
   readonly commentedOnly: boolean;
   readonly onCommentedOnly: (next: boolean) => void;
+  readonly folder: string | null;
   readonly group: TreeGroup;
   readonly onGroup: (group: TreeGroup) => void;
   readonly isFiltering: boolean;
@@ -314,6 +315,7 @@ export const ChangeTree = ({
         onUnviewedOnly={filter.onUnviewedOnly}
         commentedOnly={filter.commentedOnly}
         onCommentedOnly={filter.onCommentedOnly}
+        folder={filter.folder}
         group={filter.group}
         onGroup={filter.onGroup}
         shown={tree.files.length}

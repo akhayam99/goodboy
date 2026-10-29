@@ -34,6 +34,7 @@ const NO_FILTER = {
   onUnviewedOnly: vi.fn(),
   commentedOnly: false,
   onCommentedOnly: vi.fn(),
+  folder: null,
   group: 'folders' as const,
   onGroup: vi.fn(),
   isFiltering: false,
