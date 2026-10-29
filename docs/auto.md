@@ -661,7 +661,7 @@ It decides by ending its final reply with at most one block:
 
 The prompt takes an Asks you level, using the same three values as workflows
 with its own default, **After the plan**. Each turn reads the
-level saved for its session (`kindSystemPromptOf`, the same `readAutoLevel` that
+level saved for its session (`autoSystemPromptOf`, the same `readAutoLevel` that
 admission uses), so the prompt and the gates follow one setting and a read that fails
 fails the turn instead of guessing a level. **Every step** requires confirmation
 for each child and a planner's plan before a change. **After the plan** lets
