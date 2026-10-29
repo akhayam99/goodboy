@@ -1,6 +1,6 @@
 import type { Agent, GoalAttachment, Session } from '@goodboy/types';
 import { buildHintImagesBlock, type HintImagesBlock } from './buildHintImagesBlock';
-import type { GetFn } from './types';
+import type { GetFn } from '../types';
 
 type Params = {
   readonly get: GetFn;

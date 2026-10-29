@@ -1,10 +1,10 @@
 import type { OrchestratorHint, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
-import { buildProfileGuard } from '../turn/profileGuard';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
-import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
+import { buildProfileGuard } from '../../turn/profileGuard';
+import { getSessionRepo } from '../../worktrees/getSessionRepo';
+import { buildWorkspaceProjectsBlock } from '../buildWorkspaceProjectsBlock';
 import { hintImagePaths } from './hintImagePaths';
-import { formatOrchestratorHints } from './orchestratorHintQueue';
-import type { GetFn } from './types';
+import { formatOrchestratorHints } from '../orchestratorHintQueue';
+import type { GetFn } from '../types';
 
 type Params = {
   readonly get: GetFn;

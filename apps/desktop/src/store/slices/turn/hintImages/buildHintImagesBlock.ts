@@ -1,5 +1,5 @@
 import type { GoalAttachment, OrchestratorHint } from '@goodboy/types';
-import { hintImagePaths } from '../workflows/hintImagePaths';
+import { hintImagePaths } from '../../workflows/hintImages/hintImagePaths';
 
 type Params = {
   readonly hints: ReadonlyArray<OrchestratorHint>;

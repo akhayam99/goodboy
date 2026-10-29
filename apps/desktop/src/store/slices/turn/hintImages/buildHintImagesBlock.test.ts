@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { GoalAttachment, OrchestratorHint } from '@goodboy/types';
-import { isoDateTimeOf } from '../../../__tests__/helpers/brandedIds';
+import { isoDateTimeOf } from '../../../../__tests__/helpers/brandedIds';
 import { buildHintImagesBlock } from './buildHintImagesBlock';
 
 const AT = isoDateTimeOf({ value: '2026-10-29T10:00:00.000Z' });

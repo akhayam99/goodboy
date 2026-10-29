@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../storyHarness')).tauriEventModuleMock(),
+  (await import('../../../storyHarness')).tauriEventModuleMock(),
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,7 +14,7 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../storyHarness';
+} from '../../../storyHarness';
 import {
   FIXTURE_NOW,
   RUN,
@@ -28,8 +28,8 @@ import {
   sessionFixture,
   stepAgent,
   workflowFixture,
-} from '../../../__tests__/helpers/actionFixtures';
-import { buildGoalAttachmentsBlock } from './turnHelpers';
+} from '../../../../__tests__/helpers/actionFixtures';
+import { buildGoalAttachmentsBlock } from '../turnHelpers';
 import { hintImagesForStep } from './hintImagesForStep';
 
 let useAppStore: StoryStore;

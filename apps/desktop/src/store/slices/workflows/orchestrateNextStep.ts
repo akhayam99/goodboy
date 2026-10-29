@@ -62,7 +62,7 @@ import { liveWorkflowFor } from './runMount/liveWorkflowFor';
 import { selectRunStepMountId } from './runMount/selectRunStepMountId';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
-import { orchestratorHintContext } from './orchestratorHintContext';
+import { orchestratorHintContext } from './hintImages/orchestratorHintContext';
 import { decisionRestartMark } from './decisionRestart';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
