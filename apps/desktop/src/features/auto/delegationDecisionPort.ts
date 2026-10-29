@@ -5,6 +5,7 @@ export type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost';
 type DecisionParams = {
   readonly delegationId: string;
   readonly decision: DelegationDecision;
+  readonly hint?: string;
 };
 
 export type DelegationDecisionPort = (params: DecisionParams) => Promise<DelegationDecisionResult>;

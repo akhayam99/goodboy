@@ -1,7 +1,8 @@
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
-import { Button, Notice } from '@goodboy/ui';
+import { Button, Notice, tintClasses } from '@goodboy/ui';
 import { useAutoPlanApproval } from '../plan/useAutoPlanApproval';
 import type { ArtifactLinkModel } from './artifactLinksOf';
+import { AUTO_STATE_TONE } from './autoStateTone';
 import { AutoPlanOutline } from './AutoPlanOutline';
 
 type Props = {
@@ -29,7 +30,20 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
     </Button>
   );
   if (model.approval.state === 'approved') {
-    return null;
+    return (
+      <p
+        data-plan-settled="approved"
+        className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground"
+      >
+        <span
+          data-tone={AUTO_STATE_TONE.artifact}
+          className={tintClasses(AUTO_STATE_TONE.artifact).text}
+        >
+          Plan v{model.version} approved
+        </span>
+        {viewPlan}
+      </p>
+    );
   }
   if (model.approval.state === 'revising') {
     return (

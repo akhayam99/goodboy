@@ -158,7 +158,7 @@ describe('AutoDelegationLines', () => {
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
   });
 
-  it('drops the ask once the plan is approved', () => {
+  it('settles the plan card to Plan v1 approved in the artifact tone instead of unmounting', () => {
     renderLines({
       view: aView({
         phase: 'waiting',
@@ -168,9 +168,13 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.queryByText(/needs your approval/)).toBeNull();
+    expect(screen.getByText('Plan v1 approved').getAttribute('data-tone')).toBe('merged');
+    expect(
+      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
+    ).toHaveLength(1);
   });
 
-  it('draws no row for an approved plan or any other artifact, the result card owns them', () => {
+  it('draws no row for another artifact, the result card owns them', () => {
     const reviewer = aDelegation({
       key: 'reviewer',
       role: 'reviewer',
@@ -196,7 +200,7 @@ describe('AutoDelegationLines', () => {
       }),
     });
 
-    expect(screen.queryByRole('button', { name: /^Open (plan|report) / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Open report / })).toBeNull();
     expect(screen.queryByText('Approved')).toBeNull();
   });
 
@@ -344,83 +348,16 @@ const renderAsking = () =>
     }),
   });
 
-describe('the confirm row of a delegation that waits for an OK', () => {
+describe('the next step card of a delegation that waits for an OK', () => {
   afterEach(() => registerDelegationDecisionPort({ port: null }));
 
-  it('names the plan and version it would change and offers Confirm and Cancel', () => {
+  it('replaces the Confirm row and names the revision it would start', () => {
     renderAsking();
 
-    expect(screen.getByText('Revise Retry-safe credit retries to v3?')).toBeDefined();
-    expect(screen.getByRole('group', { name: 'Confirm this work' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
-  });
-
-  it('sends the answer once to the port and leaves the line to the next read', async () => {
-    const port = vi.fn(async () => 'confirmed' as const);
-    registerDelegationDecisionPort({ port });
-    renderAsking();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-
-    await waitFor(() => expect(port).toHaveBeenCalledOnce());
-    expect(port).toHaveBeenCalledWith({
-      delegationId: 'delegation-planner-2',
-      decision: 'confirm',
-    });
-  });
-
-  it('sends a decline for Cancel', async () => {
-    const port = vi.fn(async () => 'declined' as const);
-    registerDelegationDecisionPort({ port });
-    renderAsking();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    await waitFor(() =>
-      expect(port).toHaveBeenCalledWith({
-        delegationId: 'delegation-planner-2',
-        decision: 'decline',
-      }),
-    );
-  });
-
-  it('says so when the question is no longer open and when no window can take the answer', async () => {
-    const reportError = vi.fn(async () => undefined);
-    useAppStore.setState({ reportError });
-    registerDelegationDecisionPort({ port: async () => 'lost' });
-    renderAsking();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
-    expect(reportError).toHaveBeenLastCalledWith(
-      expect.objectContaining({ title: 'Auto has already moved on' }),
-    );
-
-    registerDelegationDecisionPort({ port: null });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(reportError).toHaveBeenCalledTimes(2));
-    expect(reportError).toHaveBeenLastCalledWith(
-      expect.objectContaining({ title: "Couldn't answer Auto" }),
-    );
-  });
-
-  it('reports a port that throws and frees the buttons again', async () => {
-    const reportError = vi.fn(async () => undefined);
-    useAppStore.setState({ reportError });
-    registerDelegationDecisionPort({
-      port: async () => {
-        throw new Error('database is locked');
-      },
-    });
-    renderAsking();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-
-    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false),
-    );
+    screen.getByRole('region', { name: 'Next step' });
+    expect(screen.queryByRole('group', { name: 'Confirm this work' })).toBeNull();
+    screen.getByRole('tab', { name: /Revise Retry-safe credit retries to v3/ });
+    expect(screen.queryByRole('button', { name: 'Confirm' })).toBeNull();
   });
 });
 

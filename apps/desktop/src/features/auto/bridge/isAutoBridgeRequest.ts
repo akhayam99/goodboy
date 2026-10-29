@@ -42,7 +42,8 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
   if (kind === 'decision') {
     return (
       isText(value['delegationId']) &&
-      (value['decision'] === 'confirm' || value['decision'] === 'decline')
+      (value['decision'] === 'confirm' || value['decision'] === 'decline') &&
+      (value['hint'] === undefined || typeof value['hint'] === 'string')
     );
   }
   return false;

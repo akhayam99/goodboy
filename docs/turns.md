@@ -812,7 +812,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   state (a ring, a clock that keeps counting, no shimmer): the phrase reads
   Stopping with a busy Stop, then Still stopping with Force stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.
-- An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline, one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
+- An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline on its own pane (the chat shows the Next step card), one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
 - A finished turn draws no tail: it is read from its summary line.
 
 The terminal has no tail by design (its output is its tail), and dependency

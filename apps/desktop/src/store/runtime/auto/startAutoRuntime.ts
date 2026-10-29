@@ -137,10 +137,11 @@ export const startAutoRuntime = async ({
     return holder.runtime;
   };
   registerDelegationDecisionPort({
-    port: ({ delegationId, decision }) =>
+    port: ({ delegationId, decision, hint }) =>
       runtimeOf().confirm({
         delegationId: brandId<AutoDelegationId>({ value: delegationId }),
         decision,
+        ...(hint === undefined ? {} : { hint }),
       }),
   });
   registerTreeStopPort({
