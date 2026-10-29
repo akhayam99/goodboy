@@ -1,5 +1,6 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../../types';
+import { selectWritableMounts } from '../../project-mounts/selectors';
 import { selectRunStepMountId } from './selectRunStepMountId';
 
 type State = Pick<
@@ -15,6 +16,9 @@ type Params = Readonly<{
 
 export const hasRunLostItsMount = ({ state, sessionId, workflowRunId }: Params): boolean => {
   if (selectRunStepMountId({ state, sessionId, workflowRunId }) !== null) {
+    return false;
+  }
+  if (selectWritableMounts({ state, sessionId }).length === 0) {
     return false;
   }
   return (state.sessionPhaseRuns[sessionId] ?? []).some(
