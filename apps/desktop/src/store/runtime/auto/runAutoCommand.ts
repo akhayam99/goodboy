@@ -16,6 +16,8 @@ export const runAutoCommand = async ({
   switch (command.verb) {
     case 'delegate':
       return delegate({ ctx, command });
+    case 'propose':
+      return delegate({ ctx, command, isProposal: true });
     case 'answer':
       return answerQuestion({ ctx, command });
     case 'finish':

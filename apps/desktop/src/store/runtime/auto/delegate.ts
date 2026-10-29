@@ -1,4 +1,4 @@
-import { parseDelegateSpec } from '@goodboy/core';
+import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core';
 import { getAutoTree, recordAutoRefusal } from '@goodboy/db';
 import { brandId, type AutoBatchId, type AutoRequestId } from '@goodboy/types';
 import { replayAdmission, type AdmitChildInput, type AdmitOutcome } from './admit';
@@ -12,6 +12,7 @@ import type { AgentVerbContext } from './verbContext';
 export type DelegateParams = Readonly<{
   ctx: AgentVerbContext;
   command: AgentCommand;
+  isProposal?: boolean;
 }>;
 
 type TextParams = {
@@ -118,7 +119,11 @@ const recoveredOutcome = ({ recoveries, hasOthers }: RecoveredOutcomeParams): Br
   };
 };
 
-export const delegate = async ({ ctx, command }: DelegateParams): Promise<BridgeOutcome> => {
+export const delegate = async ({
+  ctx,
+  command,
+  isProposal = false,
+}: DelegateParams): Promise<BridgeOutcome> => {
   const { grant, args } = command;
   const requestIdText = textOf({ value: args['request-id'] });
   const specText = textOf({ value: args['spec'] });
@@ -133,7 +138,9 @@ export const delegate = async ({ ctx, command }: DelegateParams): Promise<Bridge
   if (!isOwner) {
     return refuseOutcome({ code: 'not_owner' });
   }
-  const parsed = parseDelegateSpec({ text: specText });
+  const parsed = isProposal
+    ? parseProposeSpec({ text: specText })
+    : parseDelegateSpec({ text: specText });
   if (parsed.kind === 'refused') {
     return countedRefusal({
       ctx,
@@ -185,7 +192,13 @@ export const delegate = async ({ ctx, command }: DelegateParams): Promise<Bridge
       retry: prepared === null ? null : prepared.original,
     });
     if (resolved.kind === 'ok') {
-      inputs.push(resolved.input);
+      inputs.push({
+        ...resolved.input,
+        request: {
+          ...resolved.input.request,
+          ...('alternatives' in parsed && { alternatives: parsed.alternatives }),
+        },
+      });
       continue;
     }
     refusals.push(resolved.refusal);

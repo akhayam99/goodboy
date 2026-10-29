@@ -1,10 +1,11 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
+import { parseProposeSpec } from './proposeSpec';
 import { isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_BLOCK_OPEN = '<<auto>>';
 export const AUTO_BLOCK_CLOSE = '<</auto>>';
 
-export const AUTO_BLOCK_ACTIONS = ['delegate', 'answer', 'finish'] as const;
+export const AUTO_BLOCK_ACTIONS = ['delegate', 'propose', 'answer', 'finish'] as const;
 
 const FIELD_CHARS = 1_000;
 const ANSWER_CHARS = 8_000;
@@ -12,6 +13,7 @@ const SUMMARY_CHARS = 4_000;
 
 export type AutoBlock =
   | Readonly<{ action: 'delegate'; requestId: string | null; spec: string }>
+  | Readonly<{ action: 'propose'; requestId: string | null; spec: string }>
   | Readonly<{
       action: 'answer';
       delegation: string;
@@ -136,6 +138,30 @@ const delegateOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   };
 };
 
+const proposeOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const rawId = fields['requestId'];
+  if (
+    rawId !== undefined &&
+    rawId !== null &&
+    textOf({ value: rawId, max: FIELD_CHARS }) === null
+  ) {
+    return invalid({ reason: '"requestId" must be a non-empty string' });
+  }
+  const spec = JSON.stringify({ primary: fields['primary'], alternatives: fields['alternatives'] });
+  const parsed = parseProposeSpec({ text: spec });
+  if (parsed.kind === 'refused') {
+    return invalid({ reason: parsed.message });
+  }
+  return {
+    kind: 'block',
+    block: {
+      action: 'propose',
+      requestId: textOf({ value: rawId, max: FIELD_CHARS }),
+      spec,
+    },
+  };
+};
+
 const answerOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   const delegation = textOf({ value: fields['delegation'], max: FIELD_CHARS });
   const question = textOf({ value: fields['question'], max: FIELD_CHARS });
@@ -169,6 +195,8 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
   switch (parsed['action']) {
     case 'delegate':
       return delegateOf({ fields: parsed });
+    case 'propose':
+      return proposeOf({ fields: parsed });
     case 'answer':
       return answerOf({ fields: parsed });
     case 'finish':
