@@ -4,7 +4,7 @@ import type { AutoDelegationId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { advancePhase } from './advancePhase';
 import { confirmDelegation, type ConfirmDelegationOutcome } from './confirmDelegation';
-import { deliverNext } from './deliver';
+import { deliverNext, type DeliverOutcome } from './deliver';
 import { enforceDeadlines } from './enforceDeadlines';
 import { expireStaleDecide } from './expireStaleDecide';
 import { finishAttempt } from './finishAttempt';
@@ -40,6 +40,11 @@ type ConfirmRuntimeParams = Readonly<{
   decision: 'confirm' | 'decline';
 }>;
 
+type SendNowRuntimeParams = Readonly<{
+  treeId: AutoTree['id'];
+  rowId: string;
+}>;
+
 export type AutoRuntime = Readonly<{
   ctx: AgentVerbContext;
   drive: (treeId: AutoTree['id']) => Promise<void>;
@@ -51,6 +56,7 @@ export type AutoRuntime = Readonly<{
   rerunChecks: (delegationId: AutoDelegationId) => Promise<RerunChecksOutcome>;
   publish: (params: Omit<PublishActParams, 'ctx'>) => ReturnType<typeof publishAct>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
+  sendNow: (params: SendNowRuntimeParams) => Promise<DeliverOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
   recoverAll: () => Promise<void>;
   settled: () => Promise<void>;
@@ -155,6 +161,15 @@ export const createAutoRuntime = ({
         await retryBlockedTree({ ctx, treeId: params.treeId });
         await drive(params.treeId);
       }
+      return outcome;
+    },
+    sendNow: async ({ treeId, rowId }) => {
+      const outcome = await queue.run({
+        key: treeId,
+        task: () =>
+          deliverNext({ ctx, treeId, onEnded: runtime.onAutoTurnEnded, sendNowId: rowId }),
+      });
+      await drive(treeId);
       return outcome;
     },
     recover,
