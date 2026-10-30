@@ -5,11 +5,16 @@ import { useAppStore } from '../../../../../store';
 import { seedActivityRunScene } from '../activityRunSeed';
 import { AUTO_PLAN, AUTO_PLAN_STORED, AUTO_ROOT_ID, AUTO_SESSION } from '../u24/autoSceneSeed';
 import { chatReadingSceneOf } from './chatReadingSeed';
+import { SENT_EVENTS, SENT_TURN } from './chatAnchoringSeed';
 
-const FRAME_WIDTH = 880;
+const FRAME_WIDTH = 680;
 const FRAME_HEIGHT = 900;
 
-export const ChatReadingScene = () => {
+type Props = {
+  readonly isSent?: boolean;
+};
+
+export const ChatReadingScene = ({ isSent = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const scene = chatReadingSceneOf();
   const agent = scene.agents.find((candidate) => candidate.id === AUTO_ROOT_ID) ?? null;
@@ -39,6 +44,20 @@ export const ChatReadingScene = () => {
     });
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isReady || !isSent) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      const data = chatReadingSceneOf();
+      useAppStore.setState({
+        agentTurnState: { [AUTO_ROOT_ID]: SENT_TURN },
+        transcripts: { [AUTO_ROOT_ID]: [...data.events, ...SENT_EVENTS] },
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [isReady, isSent]);
 
   if (!isReady || agent === null) {
     return null;

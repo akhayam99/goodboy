@@ -15,6 +15,7 @@ type Layout = {
 type HarnessProps = {
   readonly layout: Layout;
   readonly answerIndex: number;
+  readonly anchorKey?: string;
 };
 
 type RectParams = {
@@ -69,9 +70,17 @@ const rowRect = ({ layout, index }: RowParams): DOMRect => {
   return rectOf({ top: top - layout.scrollTop, height: layout.heights[index] ?? 0 });
 };
 
-const Harness = ({ layout, answerIndex }: HarnessProps) => {
-  const { scrollerRef, onScroll, onUserScroll, isHolding } = useScrollPin({
+type TailParams = {
+  readonly node: HTMLElement | null;
+};
+
+const tailOf = ({ node }: TailParams): number =>
+  node === null || node.style.height === '' ? 0 : Number.parseFloat(node.style.height);
+
+const Harness = ({ layout, answerIndex, anchorKey }: HarnessProps) => {
+  const { scrollerRef, tailRef, onScroll, onUserScroll, isHolding } = useScrollPin({
     deps: [layout],
+    ...(anchorKey !== undefined && { anchorKey }),
   });
   useScrollAnchor({ viewportRef: scrollerRef, rowSelector: ROW_SELECTOR, shouldHold: isHolding });
   useLayoutEffect(() => {
@@ -97,7 +106,7 @@ const Harness = ({ layout, answerIndex }: HarnessProps) => {
     }
     Object.defineProperty(node, 'scrollHeight', {
       configurable: true,
-      get: () => totalOf({ layout }),
+      get: () => totalOf({ layout }) + tailOf({ node: tailRef.current }),
     });
     Object.defineProperty(node, 'clientHeight', { configurable: true, get: () => VIEWPORT_HEIGHT });
     Object.defineProperty(node, 'scrollTop', {
@@ -105,7 +114,13 @@ const Harness = ({ layout, answerIndex }: HarnessProps) => {
       get: () => layout.scrollTop,
       set: (value: number) => {
         layout.writes += 1;
-        layout.scrollTop = Math.max(0, Math.min(value, totalOf({ layout }) - VIEWPORT_HEIGHT));
+        layout.scrollTop = Math.max(
+          0,
+          Math.min(
+            value,
+            totalOf({ layout }) + tailOf({ node: tailRef.current }) - VIEWPORT_HEIGHT,
+          ),
+        );
       },
     });
     node.getBoundingClientRect = () => rectOf({ top: 0, height: VIEWPORT_HEIGHT });
@@ -126,9 +141,11 @@ const Harness = ({ layout, answerIndex }: HarnessProps) => {
             key={index}
             ref={setRow({ index })}
             {...(index === answerIndex && { 'data-reveal-answer': `run-1:text-${index}` })}
+            {...(index === layout.heights.length - 1 && { 'data-turn': '' })}
           />
         ))}
       </ul>
+      <div ref={tailRef} style={{ height: 48 }} />
     </div>
   );
 };
@@ -215,5 +232,44 @@ describe('useScrollPin with the shared scroll anchor', () => {
 
     expect(layout.scrollTop).toBe(400);
     expect(layout.writes).toBe(1);
+  });
+});
+
+describe('useScrollPin send anchor with the shared scroll anchor', () => {
+  it('moves the view once when a row above the sent message grows', () => {
+    const layout: Layout = { heights: [200, 400, 60], scrollTop: 0, writes: 0 };
+    const view = render(<Harness layout={layout} answerIndex={-1} anchorKey="user-1" />);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    view.rerender(<Harness layout={layout} answerIndex={-1} anchorKey="user-2" />);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    expect(layout.scrollTop).toBe(600 - 40);
+
+    layout.heights[0] = 300;
+    layout.writes = 0;
+    fireResize({ isReversed: false });
+
+    expect(layout.scrollTop).toBe(660);
+    expect(layout.writes).toBe(1);
+  });
+
+  it('keeps the view put when the reply under the sent message grows', () => {
+    const layout: Layout = { heights: [200, 400, 60], scrollTop: 0, writes: 0 };
+    const view = render(<Harness layout={layout} answerIndex={-1} anchorKey="user-1" />);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    view.rerender(<Harness layout={layout} answerIndex={-1} anchorKey="user-2" />);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    layout.heights[2] = 900;
+    fireResize({ isReversed: true });
+
+    expect(layout.scrollTop).toBe(560);
   });
 });

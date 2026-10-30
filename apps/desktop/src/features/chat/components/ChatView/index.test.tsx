@@ -121,6 +121,7 @@ vi.mock('../../../../features/worktree/worktree', () => ({
 }));
 
 import { ChatView } from './index';
+import { TRANSCRIPT_FLOOR_PX } from './useScrollPin';
 
 const session: Session = {
   id: 'sess-1',
@@ -259,6 +260,54 @@ describe('ChatView', () => {
     expect(PAGE_MEASURE.agent).toBe('measure');
     expect(content?.closest('[data-page-column]')).not.toBeNull();
     expect(content?.parentElement?.querySelectorAll('[data-scroll-content]')).toHaveLength(1);
+  });
+
+  it('ends the transcript on a 48px floor under the last line', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container } = render(<ChatView session={session} />);
+    const tail = container.querySelector<HTMLElement>('[data-transcript-tail]');
+
+    expect(tail?.style.height).toBe(`${TRANSCRIPT_FLOOR_PX}px`);
+    expect(TRANSCRIPT_FLOOR_PX).toBe(48);
+    expect(tail?.previousElementSibling?.hasAttribute('data-scroll-content')).toBe(true);
+  });
+
+  it('keeps Jump to latest out of sight while nothing is behind the reader', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container } = render(<ChatView session={session} />);
+
+    expect(container.querySelector('[data-jump-to-latest]')?.getAttribute('data-visible')).toBe(
+      'false',
+    );
+  });
+
+  it('makes room under a sent message so it can sit 40px under the top, and not for one already there', () => {
+    const client = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    state.transcripts = { 'agent-1': [] };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container, rerender } = render(<ChatView session={session} />);
+    const tail = () => container.querySelector<HTMLElement>('[data-transcript-tail]');
+    expect(tail()?.style.height).toBe(`${TRANSCRIPT_FLOOR_PX}px`);
+
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'user_text', key: 'u1', text: 'and again', at: '2026-06-13T00:00:05.000Z' },
+    ];
+    rerender(<ChatView session={session} />);
+
+    expect(tail()?.style.height).toBe(
+      `${TRANSCRIPT_FLOOR_PX + (600 - 40 - TRANSCRIPT_FLOOR_PX)}px`,
+    );
+    client.mockRestore();
   });
 
   it('leaves the growing list out of the live regions so no row is read aloud as it lands', () => {

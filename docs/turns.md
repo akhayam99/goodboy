@@ -1036,6 +1036,22 @@ the bottom; the first wheel, touch, pointer or key event stops its settle loop,
 and a reader who scrolled up is never pulled back down by new rows (the "Jump
 to latest" button pins again).
 
+A message the reader sends moves to 40 px under the top of the view
+and the reply grows downward from it; the view does not follow
+the reply. `ChatView` passes `anchorKey`, the key of the last `user_text` or
+`handoff` item (`anchorKeyOf`), and only once the transcript is loaded: the
+first key after an agent opens is remembered, never anchored, so opening a
+session lands on the bottom. A later key anchors the last `[data-turn]`
+(`applyFollow` re-reads its top on every resize, one write, held through
+`isHolding` like the answer hold) and ends at the first scroll of the reader,
+who is then pinned only when they reach the bottom again. Under the list sits
+`[data-transcript-tail]`, the one floor of the transcript: 48 px
+(`TRANSCRIPT_FLOOR_PX`) under the last line, with no padding under the scroller.
+After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 48`
+and never below zero, so a short turn can reach the 40 px line; the spacer
+shrinks as the reply grows and a different agent resets it. Content starts at
+the top and grows down, it is never piled against the composer.
+
 Growth is followed without a store write too: a `ResizeObserver` on the
 content calls the same follow step every time the content changes size, so a
 text that grows frame by frame (the text reveal) keeps the view at the bottom.
@@ -1051,8 +1067,11 @@ latest" or a manual scroll to the bottom during the reveal goes back to
 following the bottom until the reveal ends. The old rule, always stick to the
 bottom while pinned, still holds for everything that is not a revealing answer.
 
-"Jump to latest" (`JumpToLatest`) is mounted all the time. While you are at the
-bottom, or a question waits and its pill shows instead, it is `inert`,
+"Jump to latest" (`JumpToLatest`) is mounted all the time. It shows when the
+content (not the spacer) ends 32 px or more under the view, `isBehind` in
+`useScrollPin`: a reply that passed the bottom of the view, or a reader who
+scrolled up. While you are at the bottom, or a question waits and its pill
+shows instead, it is `inert`,
 `aria-hidden` and at zero opacity; when you scroll up it fades in over
 `--duration-quick` on `--ease-enter` (nothing under reduced motion) instead of
 mounting, so it never pops in during streaming. It is an `IconButton`, so it

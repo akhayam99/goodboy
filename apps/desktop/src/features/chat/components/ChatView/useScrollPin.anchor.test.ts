@@ -220,3 +220,194 @@ describe('useScrollPin answer anchor', () => {
     expect(box.scrollTop).toBe(1500);
   });
 });
+
+type TurnBox = {
+  turnTop: number;
+  turnHeight: number;
+  scrollTop: number;
+  readonly clientHeight: number;
+};
+
+type TurnKeys = {
+  readonly key: string;
+  readonly anchorKey: string | null | undefined;
+};
+
+const TAIL_FLOOR = 48;
+const ANCHOR_TOP = 40;
+
+type TailParams = {
+  readonly tail: HTMLElement;
+};
+
+type BoxParams = {
+  readonly box: TurnBox;
+};
+
+const tailPx = ({ tail }: TailParams): number =>
+  tail.style.height === '' ? 0 : Number.parseFloat(tail.style.height);
+
+const turnScroller = ({ box }: BoxParams) => {
+  const el = document.createElement('div');
+  const content = document.createElement('div');
+  content.dataset['scrollContent'] = '';
+  const turn = document.createElement('div');
+  turn.dataset['turn'] = '';
+  content.appendChild(turn);
+  el.appendChild(content);
+  const tail = document.createElement('div');
+  tail.style.height = `${TAIL_FLOOR}px`;
+  el.appendChild(tail);
+  const scrollHeight = () => box.turnTop + box.turnHeight + tailPx({ tail });
+  Object.defineProperty(el, 'scrollHeight', { get: scrollHeight });
+  Object.defineProperty(el, 'clientHeight', { get: () => box.clientHeight });
+  Object.defineProperty(el, 'scrollTop', {
+    get: () => box.scrollTop,
+    set: (value: number) => {
+      box.scrollTop = Math.max(0, Math.min(value, scrollHeight() - box.clientHeight));
+    },
+  });
+  el.getBoundingClientRect = () => rect({ top: 0, bottom: box.clientHeight });
+  turn.getBoundingClientRect = () =>
+    rect({
+      top: box.turnTop - box.scrollTop,
+      bottom: box.turnTop + box.turnHeight - box.scrollTop,
+    });
+  return { el, tail };
+};
+
+const INITIAL_KEYS: TurnKeys = { key: 'a', anchorKey: 'user-1' };
+
+const openTurn = ({ box }: BoxParams) => {
+  const { el, tail } = turnScroller({ box });
+  const hook = renderHook(
+    ({ key, anchorKey }: TurnKeys) => useScrollPin({ deps: [key], resetKey: 'a', anchorKey }),
+    { initialProps: INITIAL_KEYS },
+  );
+  hook.result.current.scrollerRef.current = el;
+  hook.result.current.tailRef.current = tail;
+  hook.rerender({ key: 'b', anchorKey: 'user-1' });
+  return { ...hook, el, tail };
+};
+
+type SendParams = {
+  readonly rerender: (props: TurnKeys) => void;
+};
+
+const sendOn = ({ rerender }: SendParams) => {
+  act(() => rerender({ key: 'c', anchorKey: 'user-2' }));
+};
+
+describe('useScrollPin send anchor', () => {
+  it('puts the sent message 40px under the top and leaves room below it', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, result, tail } = openTurn({ box });
+
+    sendOn({ rerender });
+
+    expect(box.scrollTop).toBe(900 - ANCHOR_TOP);
+    expect(tailPx({ tail })).toBe(TAIL_FLOOR + (500 - ANCHOR_TOP - 60 - TAIL_FLOOR));
+    expect(result.current.pinned).toBe(false);
+    expect(result.current.isBehind).toBe(false);
+  });
+
+  it('does not anchor the message already there when a session opens', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 0, clientHeight: 500 };
+    const { result } = openTurn({ box });
+
+    expect(box.scrollTop).toBe(900 + 60 + TAIL_FLOOR - 500);
+    expect(result.current.pinned).toBe(true);
+  });
+
+  it('does not follow the reply while it grows, and the room below shrinks with it', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, tail } = openTurn({ box });
+    sendOn({ rerender });
+
+    box.turnHeight = 300;
+    act(() => growth());
+
+    expect(box.scrollTop).toBe(860);
+    expect(tailPx({ tail })).toBe(TAIL_FLOOR + (500 - ANCHOR_TOP - 300 - TAIL_FLOOR));
+  });
+
+  it('keeps 48px under the last line once the reply is taller than the view', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, tail } = openTurn({ box });
+    sendOn({ rerender });
+
+    box.turnHeight = 900;
+    act(() => growth());
+
+    expect(tailPx({ tail })).toBe(TAIL_FLOOR);
+    expect(box.scrollTop).toBe(860);
+  });
+
+  it('shows the jump state when the reply passes the bottom and jumps to the last line', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, result, el } = openTurn({ box });
+    el.scrollTo = vi.fn();
+    sendOn({ rerender });
+    expect(result.current.isBehind).toBe(false);
+
+    box.turnHeight = 900;
+    act(() => growth());
+    expect(result.current.isBehind).toBe(true);
+    expect(box.scrollTop).toBe(860);
+
+    act(() => result.current.jumpToLatest());
+    expect(el.scrollTo).toHaveBeenCalledWith({
+      top: box.turnTop + box.turnHeight + TAIL_FLOOR,
+      behavior: 'smooth',
+    });
+  });
+
+  it('shows the jump state when the reader scrolls up away from the bottom', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { result } = openTurn({ box });
+    expect(result.current.isBehind).toBe(false);
+
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 300;
+    act(() => result.current.onScroll());
+
+    expect(result.current.pinned).toBe(false);
+    expect(result.current.isBehind).toBe(true);
+  });
+
+  it('lets the reader take the view and stops holding the anchor', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, result } = openTurn({ box });
+    sendOn({ rerender });
+
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 500;
+    act(() => result.current.onScroll());
+    box.turnHeight = 700;
+    act(() => growth());
+
+    expect(box.scrollTop).toBe(500);
+    expect(result.current.isHolding()).toBe(false);
+  });
+
+  it('anchors a second send on its own turn', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender } = openTurn({ box });
+    sendOn({ rerender });
+
+    box.turnTop = 1400;
+    box.turnHeight = 60;
+    act(() => rerender({ key: 'd', anchorKey: 'user-3' }));
+
+    expect(box.scrollTop).toBe(1400 - ANCHOR_TOP);
+  });
+
+  it('waits for the transcript to be ready before it remembers a message', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 0, clientHeight: 500 };
+    const { rerender } = openTurn({ box });
+    act(() => rerender({ key: 'c', anchorKey: undefined }));
+    act(() => rerender({ key: 'd', anchorKey: 'user-1' }));
+
+    expect(box.scrollTop).toBe(900 + 60 + TAIL_FLOOR - 500);
+  });
+});

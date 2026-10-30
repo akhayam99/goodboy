@@ -16,6 +16,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { TRANSCRIPT_FLOOR_PX } from '../../../../../features/chat/components/ChatView/useScrollPin';
 import { U25_CHAT_LONG_SCENES } from './chat-long';
 
 beforeAll(async () => {
@@ -97,5 +98,24 @@ describe('the long transcript scene', () => {
     ].filter((row) => row.style.contentVisibility === 'auto');
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
+  });
+
+  it('opens at the bottom on a 48px floor under the last line, with no jump to offer', async () => {
+    const Scene = U25_CHAT_LONG_SCENES['transcript-long'];
+    const { container } = render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-transcript-tail]')).not.toBeNull();
+    });
+    const tail = container.querySelector<HTMLElement>('[data-transcript-tail]');
+    expect(tail?.style.height).toBe(`${TRANSCRIPT_FLOOR_PX}px`);
+    expect(tail?.previousElementSibling?.hasAttribute('data-find-root')).toBe(true);
+    expect(container.querySelector('[data-jump-to-latest]')?.getAttribute('data-visible')).toBe(
+      'false',
+    );
   });
 });

@@ -9,7 +9,7 @@
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestActivity.tsx": 260,
   "apps/desktop/src/features/bug-report/components/ReportComposer.tsx": 288,
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 292,
-  "apps/desktop/src/features/chat/components/ChatView/index.tsx": 630,
+  "apps/desktop/src/features/chat/components/ChatView/index.tsx": 624,
   "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 403,
   "apps/desktop/src/features/chat/components/OperationsCluster/index.tsx": 254,
   "apps/desktop/src/features/companion/commandExecutor.ts": 783,

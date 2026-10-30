@@ -395,7 +395,9 @@ Tables and code scroll inside the column. A user or injected card keeps a fixed
 48px start gap (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the
 Ask panel and the fix run drawer. The rhythm is set by the parent's gap
 (`PANE_RHYTHM.transcript`): 32px between turns, 16px between the blocks of a
-turn, 12px between paragraphs of a message.
+turn, 12px between paragraphs of a message. The last line sits 48px above the composer
+(`TRANSCRIPT_FLOOR_PX`) and a sent message 40px
+under the top of the view, both in `useScrollPin`.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px
 column, so nothing moves from one section to the next. Its sections are the pages under the current branch row in
