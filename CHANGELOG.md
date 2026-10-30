@@ -12,6 +12,27 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.7
+
+Five clear text levels across the app, answers with real code blocks and tables, and pages where labels, names and the live step stand apart.
+
+### Improved
+
+#### Five text levels
+<!-- gb area=sessions image=text-levels -->
+
+Titles read at 18 on 28, headings, prose, rows and meta each have their own size, and figures line up only where they are numbers, such as costs, times and counts.
+
+#### Answers with code blocks and tables
+<!-- gb area=agents image=markdown-blocks -->
+
+A code block has a header with its language, Wrap and Copy, and is never cut by Show more. Tables have quiet headers, one line between rows and numbers aligned right.
+
+#### Overview and runs read in groups
+<!-- gb area=sessions image=overview -->
+
+Group labels stand above their rows with room between groups, a row's name leads it, the Runs page opens with one line, and the step that runs now is the strongest line on the run page.
+
 ## Goodboy v0.29.6
 
 Answers keep their headings apart, Show more lines up with the text, Stop appears once, and the picked Next step choice is easy to see.
