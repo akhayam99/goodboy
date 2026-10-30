@@ -731,6 +731,14 @@ that default for every Auto turn. The level's planning instructions take
 precedence over the role-addition guidance below. `prompt.level.test.ts` checks
 each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
 
+Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
+the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
+like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
+passes the agent id to `autoSystemPromptOf`, so `buildAutoSystemPrompt` adds a
+**GUIDANCE FOR THIS RUN** block to every turn, and `resolveDelegateChild` reads
+the root's text into each child brief as a `**Guidance**` section before the
+`**Task**`. A run without guidance builds the same prompt and briefs as before.
+
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
 The default is one implementer with nothing added, a "do not" beats a reason, and a force push

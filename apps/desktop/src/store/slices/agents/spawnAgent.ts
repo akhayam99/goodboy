@@ -31,6 +31,8 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
+import { runGuidanceSection } from '../workflows/standingGuidance';
+import { writeRunGuidance } from '../../runtime/runGuidance/writeRunGuidance';
 import { namedMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
@@ -63,6 +65,7 @@ type SpawnArgs = {
   provider?: ProviderId;
   effort?: string;
   initialPrompt?: string;
+  guidance?: string | null;
   humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;
@@ -260,6 +263,15 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   const effectiveKind: AgentKind =
     args.kindOverride ??
     (inserted.kind === undefined ? resolvedKind : storedAgentKind({ kind: inserted.kind }));
+  const guidance = args.guidance?.trim() ?? '';
+  if (guidance !== '') {
+    await writeRunGuidance({
+      db: tauriDatabase,
+      workspaceId: session.workspaceId,
+      agentId: inserted.id,
+      text: guidance,
+    });
+  }
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
   const engagePlan =
@@ -313,7 +325,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     return inserted.id;
   }
 
-  const kickoff = composeKickoff(planSection, baseKickoff);
+  const kickoff = composeKickoff(
+    effectiveKind === 'auto' ? '' : runGuidanceSection({ text: guidance }),
+    planSection,
+    baseKickoff,
+  );
   const humanPrompt =
     args.humanPrompt !== undefined && kickoff === args.initialPrompt ? args.humanPrompt : null;
   const machineRules =

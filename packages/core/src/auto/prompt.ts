@@ -101,11 +101,26 @@ export const autoRoleCatalog = (): string =>
 type AutoSystemPromptParams = {
   readonly isDelegationEnabled: boolean;
   readonly level?: AutoLevel;
+  readonly guidance?: string | null;
+};
+
+type GuidanceBlockParams = {
+  readonly guidance: string | null;
+};
+
+const guidanceBlockOf = ({ guidance }: GuidanceBlockParams): ReadonlyArray<string> => {
+  const text = guidance?.trim() ?? '';
+  return text === ''
+    ? []
+    : [
+        `GUIDANCE FOR THIS RUN\nThe user gave this guidance for the whole run. Follow it in every decision. Goodboy also hands it to each agent you start.\n${text}`,
+      ];
 };
 
 export const buildAutoSystemPrompt = ({
   isDelegationEnabled,
   level = DEFAULT_AUTO_LEVEL,
+  guidance = null,
 }: AutoSystemPromptParams): string =>
   [
     AUTO_IDENTITY,
@@ -113,6 +128,7 @@ export const buildAutoSystemPrompt = ({
     ...(isDelegationEnabled
       ? [AUTO_LEVEL_RULES[level], AUTO_NEXT_STEP_RULE, READING_ORDER_RULE]
       : []),
+    ...guidanceBlockOf({ guidance }),
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),

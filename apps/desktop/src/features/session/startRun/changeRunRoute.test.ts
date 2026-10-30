@@ -32,6 +32,7 @@ import {
   storySqlite,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { writeRunGuidance } from '../../../store/runtime/runGuidance/writeRunGuidance';
 import { changeRunRoute } from './changeRunRoute';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
 
@@ -100,16 +101,17 @@ const planTarget = { kind: 'plan' as const, sessionId: SESSION.id, runId: RUN_ID
 
 type SeedParams = {
   readonly hasWork: boolean;
+  readonly guidance?: string;
 };
 
-const seedPlanRun = ({ hasWork }: SeedParams) => {
+const seedPlanRun = ({ hasWork, guidance = '' }: SeedParams) => {
   const run = aWorkflowRun({
     id: RUN_ID,
     workflowId: RUN_WORKFLOW,
     executionMode: 'dynamic',
     goal: ASK,
     orchestratorSummary: JSON.stringify({ done: ['Found the billing table'], left: [] }),
-    rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, route: PLAN_ROUTE },
+    rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: guidance, route: PLAN_ROUTE },
   });
   useAppStore.setState({
     sessions: [{ ...SESSION, workflowRuns: [run] }],
@@ -453,5 +455,108 @@ describe('changeRunRoute', () => {
     expect(options?.rulesSnapshot?.route).toMatchObject({ shape: 'plan', ask: ASK });
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[ROOT]).not.toHaveProperty('changedTo');
+  });
+});
+
+describe('changeRunRoute keeps the guidance of the run', () => {
+  const GUIDANCE = 'Only touch the billing pages.';
+
+  it('hands the guidance of a plan to the one agent that replaces it', async () => {
+    seedPlanRun({ hasWork: false, guidance: GUIDANCE });
+    const engines = mockEngines();
+
+    await changeRunRoute({
+      target: planTarget,
+      choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: GUIDANCE });
+  });
+
+  it('hands the guidance of a finished plan to the agent that follows it', async () => {
+    seedPlanRun({ hasWork: true, guidance: GUIDANCE });
+    const engines = mockEngines();
+
+    await changeRunRoute({
+      target: planTarget,
+      choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
+      shouldEndRun: true,
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: GUIDANCE });
+  });
+
+  it('snapshots the guidance of a finished plan in the second plan', async () => {
+    seedPlanRun({ hasWork: true, guidance: GUIDANCE });
+    const engines = mockEngines();
+
+    await changeRunRoute({
+      target: planTarget,
+      choice: { shape: 'plan', presetId: AUDIT_ID, closeness: 'adapt' },
+    });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: GUIDANCE,
+    });
+  });
+
+  it('snapshots the guidance of an agent in the plan that follows it', async () => {
+    const root = anAgent({
+      id: ROOT,
+      sessionId: SESSION.id,
+      name: 'Auto',
+      status: 'completed',
+      outputSummary: 'Three pages share the billing table',
+    });
+    useAppStore.setState({
+      sessions: [SESSION],
+      phaseTemplates: { [WORKSPACE.id]: [] },
+      sessionPhaseRuns: { [SESSION.id]: [root] },
+    });
+    await storySqlite().execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [WORKSPACE.id, 'Harborline', 'harborline', 1, 1],
+    );
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE.id,
+      agentId: ROOT,
+      text: GUIDANCE,
+    });
+    const engines = mockEngines();
+
+    await changeRunRoute({
+      target: { kind: 'lead', sessionId: SESSION.id, agentId: ROOT },
+      choice: { shape: 'plan', presetId: null, closeness: 'adapt' },
+    });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: GUIDANCE,
+    });
+  });
+
+  it('adds no guidance to a plan that follows an agent that had none', async () => {
+    const root = anAgent({
+      id: ROOT,
+      sessionId: SESSION.id,
+      name: 'Auto',
+      status: 'completed',
+      outputSummary: 'Three pages share the billing table',
+    });
+    useAppStore.setState({
+      sessions: [SESSION],
+      phaseTemplates: { [WORKSPACE.id]: [] },
+      sessionPhaseRuns: { [SESSION.id]: [root] },
+    });
+    const engines = mockEngines();
+
+    await changeRunRoute({
+      target: { kind: 'lead', sessionId: SESSION.id, agentId: ROOT },
+      choice: { shape: 'plan', presetId: null, closeness: 'adapt' },
+    });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: DEFAULT_WORKFLOW_RULES.standingGuidance,
+    });
   });
 });

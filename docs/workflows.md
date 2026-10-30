@@ -195,6 +195,11 @@ default**. Where it goes:
   the rules, Implementer and Docs by default (`standingGuidanceSection`); the
   tester or the reviewer get it only when you pick them under **Goes to the
   planning agent and to**, behind **Edit**
+- a run started with its own guidance snapshots that text in place of the rules
+  one, so the orchestrator or the roles above read the run's text
+- a lone agent gets a **Guidance** section ahead of its ask; an Auto agent keeps
+  it in the `run.guidance` workspace value and sends it to the agent itself and to
+  every child (see [auto.md](./auto.md))
 - an empty text adds nothing
 
 On the run page, each step whose role got the guidance (`guidanceSentTo`, the

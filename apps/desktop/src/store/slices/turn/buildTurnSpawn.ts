@@ -138,7 +138,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
 
   const kindSystemPrompt =
     earlyAgentKind === 'auto'
-      ? await autoSystemPromptOf({ sessionId })
+      ? await autoSystemPromptOf({ sessionId, agentId: activeAgentId })
       : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
   const scopeMounts =

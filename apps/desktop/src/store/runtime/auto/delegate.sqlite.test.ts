@@ -5,7 +5,9 @@ import {
   listAutoDelegations,
   listAutoReservations,
 } from '@goodboy/db';
-import { brandId, type AutoDelegationId } from '@goodboy/types';
+import { AUTO_SEED_ROOT } from '@goodboy/db/test-helpers/auto-seeds';
+import { brandId, type AgentId, type AutoDelegationId, type WorkspaceId } from '@goodboy/types';
+import { writeRunGuidance } from '../runGuidance/writeRunGuidance';
 import { runAutoCommand } from './runAutoCommand';
 import type { AgentCommand } from './ports';
 import { makeAutoWorld, secondScheduler, WORLD_TREE, type AutoWorld } from './testing/autoWorld';
@@ -412,5 +414,56 @@ describe('the delegate command', () => {
     const state = await setup();
     const outcome = await run(state, { verb: 'finish', args: {}, grant: WORLD_GRANT });
     expect(outcome).toMatchObject({ isOk: true, data: { finished: true } });
+  });
+});
+
+describe('the guidance of the run in the brief of a child', () => {
+  const GUIDANCE = 'Keep every change inside ledger-core.';
+
+  it('puts the guidance of the Auto root before the task of every child', async () => {
+    const state = await setup();
+    await writeRunGuidance({
+      db: state.world.db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      agentId: AUTO_SEED_ROOT,
+      text: GUIDANCE,
+    });
+
+    await run(state, delegateCommand(scoutAndImplementer));
+
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      const kickoff = String(row.request['kickoff']);
+      expect(kickoff).toContain(`**Guidance**\n${GUIDANCE}\n\n**Task** `);
+    }
+  });
+
+  it('leaves the brief of a run without guidance as it was', async () => {
+    const state = await setup();
+
+    await run(state, delegateCommand(scoutAndImplementer));
+
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    for (const row of rows) {
+      expect(String(row.request['kickoff'])).not.toContain('**Guidance**');
+    }
+  });
+
+  it('ignores the guidance of another agent of the workspace', async () => {
+    const state = await setup();
+    await writeRunGuidance({
+      db: state.world.db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      agentId: brandId<AgentId>({ value: 'agent-notify-relay' }),
+      text: GUIDANCE,
+    });
+
+    await run(state, delegateCommand(scoutAndImplementer));
+
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    for (const row of rows) {
+      expect(String(row.request['kickoff'])).not.toContain(GUIDANCE);
+    }
   });
 });

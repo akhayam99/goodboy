@@ -52,6 +52,7 @@ type Params = {
   readonly prepare: () => Promise<StartLimit>;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
+  readonly guidance?: string | null;
   readonly onStarted?: () => void;
 };
 
@@ -160,6 +161,7 @@ export const useStartRun = ({
   prepare,
   mount = null,
   role = null,
+  guidance = null,
   onStarted,
 }: Params): StartRunModel => {
   const [localText, setLocalText] = useState('');
@@ -386,6 +388,7 @@ export const useStartRun = ({
           level: pickedLevel,
           autonomy: autonomyNow,
           limit,
+          ...(guidance !== null && { guidance }),
           ...pinned,
         });
       };
@@ -402,6 +405,7 @@ export const useStartRun = ({
               level: pickedLevel,
               autonomy: autonomyNow,
               limit,
+              ...(guidance !== null && { guidance }),
               ...pinned,
             }),
           ));
@@ -434,6 +438,7 @@ export const useStartRun = ({
     autonomyPick,
     clearModel,
     file,
+    guidance,
     mount,
     onStarted,
     pickedLevel,

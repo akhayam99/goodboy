@@ -202,5 +202,9 @@ This part is for contributors and agents who change the feature.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
 - Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
+- Run guidance: `startRoutedRun` takes `guidance`, and `useStartRun` forwards it. A plan writes it to `rulesSnapshot.standingGuidance`, which the orchestrator reads as its Operator process. `null` keeps the workspace value. `''` starts the run without any.
+- Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Auto agent keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.
+- Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
+- Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.

@@ -30,6 +30,7 @@ type Params = {
   readonly orchestratorRouting?: OrchestratorRouting | null;
   readonly autonomy?: WorkflowAutonomy | null;
   readonly level?: AutoLevel | null;
+  readonly guidance?: string | null;
   readonly attachments?: ReadonlyArray<AttachmentInput>;
   readonly limit?: StartLimit | null;
 };
@@ -45,6 +46,7 @@ export const startRoutedRun = async ({
   orchestratorRouting = null,
   autonomy = null,
   level = null,
+  guidance = null,
   attachments = [],
   limit = null,
 }: Params): Promise<RoutedRun> => {
@@ -67,6 +69,7 @@ export const startRoutedRun = async ({
       kindOverride: role ?? 'auto',
       initialPrompt: work,
       focus: 'agent',
+      ...(guidance !== null && { guidance }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,
@@ -117,6 +120,7 @@ export const startRoutedRun = async ({
     rulesSnapshot: {
       ...rules,
       autonomy: asks,
+      ...(guidance !== null && { standingGuidance: guidance.trim() }),
       route,
       ...(preset !== null && { preset: presetSnapshotOf({ preset }) }),
     },

@@ -19,6 +19,8 @@ import { RUN_ROUTE_COPY } from './runRouteCopy';
 import type { RunRouteResult } from './runRouteOf';
 import { parseRunRoutes, runRoutesKey } from './runRoutesSetting';
 import { startRoutedRun } from './startRoutedRun';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { readRunGuidance } from '../../../store/runtime/runGuidance/readRunGuidance';
 
 export type RunRouteTarget =
   | Readonly<{ kind: 'plan'; sessionId: SessionId; runId: WorkflowRunId }>
@@ -118,7 +120,11 @@ const changePlanRun = async ({
     return 'in-place';
   }
   if (agents.length === 0) {
-    await startRoutedRun({ sessionId, result: next });
+    await startRoutedRun({
+      sessionId,
+      result: next,
+      guidance: run.rulesSnapshot?.standingGuidance ?? null,
+    });
     await useAppStore.getState().discardWorkflow(sessionId, runId);
     return 'restarted';
   }
@@ -133,7 +139,12 @@ const changePlanRun = async ({
       .filter((agent) => isAgentStatusSettled({ status: agent.status }))
       .map((agent) => ({ name: agent.name, summary: agent.outputSummary })),
   });
-  await startRoutedRun({ sessionId, result: next, findings });
+  await startRoutedRun({
+    sessionId,
+    result: next,
+    findings,
+    guidance: run.rulesSnapshot?.standingGuidance ?? null,
+  });
   if (!shouldEndRun) {
     return 'second-run';
   }
@@ -188,10 +199,16 @@ const changeLeadRun = async ({
       ...agents.filter((agent) => agent.parentAgentId === agentId),
     ].map((agent) => ({ name: agent.name, summary: agent.outputSummary })),
   });
+  const guidance = await readRunGuidance({
+    db: tauriDatabase,
+    workspaceId: session.workspaceId,
+    agentId,
+  });
   await startRoutedRun({
     sessionId,
     result: chosenResultOf({ choice, ask, presets }),
     findings,
+    guidance,
   });
   return 'second-run';
 };

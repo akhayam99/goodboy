@@ -12,10 +12,15 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AutoLevel } from '@goodboy/core';
-import { AUTO_SEED_SESSION, seedAutoSession } from '@goodboy/db/test-helpers/auto-seeds';
-import { brandId, type SessionId } from '@goodboy/types';
+import {
+  AUTO_SEED_ROOT,
+  AUTO_SEED_SESSION,
+  seedAutoSession,
+} from '@goodboy/db/test-helpers/auto-seeds';
+import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { openStorySqlite, resetStoryStore, storySqlite } from '../../../storyHarness';
 import { autoSystemPromptOf } from './autoSystemPromptOf';
+import { writeRunGuidance } from '../../runGuidance/writeRunGuidance';
 import { writeAutoLevel } from './writeAutoLevel';
 
 const TARGET = { sessionId: AUTO_SEED_SESSION };
@@ -64,5 +69,77 @@ describe('autoSystemPromptOf', () => {
     await expect(autoSystemPromptOf({ sessionId: MISSING })).rejects.toThrow(
       'The session no longer exists.',
     );
+  });
+});
+
+describe('autoSystemPromptOf with the guidance of the run', () => {
+  const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+  const GUIDANCE = 'Keep every change inside ledger-core.';
+
+  it('adds the guidance of the Auto root once', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: AUTO_SEED_ROOT,
+      text: GUIDANCE,
+    });
+
+    const prompt = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+
+    expect(prompt).toContain(`GUIDANCE FOR THIS RUN\n`);
+    expect(prompt).toContain(`\n${GUIDANCE}`);
+    expect(prompt.split(GUIDANCE)).toHaveLength(2);
+  });
+
+  it('keeps the guidance on every turn because the prompt is rebuilt each time', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: AUTO_SEED_ROOT,
+      text: GUIDANCE,
+    });
+    await writeAutoLevel({ db: storySqlite(), target: TARGET, level: 'step' });
+
+    const first = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+    const second = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+
+    expect(second).toBe(first);
+    expect(first).toContain(GUIDANCE);
+  });
+
+  it('is byte for byte the prompt of today when the run has no guidance', async () => {
+    const without = await autoSystemPromptOf({ sessionId: AUTO_SEED_SESSION });
+    const withRoot = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+
+    expect(withRoot).toBe(without);
+    expect(withRoot).not.toContain('GUIDANCE FOR THIS RUN');
+  });
+
+  it('does not hand the guidance of another agent to this one', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: brandId<AgentId>({ value: 'agent-notify-relay' }),
+      text: GUIDANCE,
+    });
+
+    const prompt = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+    });
+
+    expect(prompt).not.toContain(GUIDANCE);
   });
 });

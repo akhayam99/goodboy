@@ -188,3 +188,42 @@ describe('the kickoff of a delegated child', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 });
+
+describe('the guidance of one run in a child brief', () => {
+  const GUIDANCE = 'Keep every change inside payments-api.';
+
+  it('puts a Guidance section right before the task', () => {
+    const text = composeDelegationKickoff(base({ guidance: GUIDANCE }));
+
+    expect(text).toContain(`**Guidance**\n${GUIDANCE}\n\n**Task** add the ledger export`);
+  });
+
+  it('puts the Guidance section before the revise task too', () => {
+    const text = composeDelegationKickoff(
+      base({
+        guidance: GUIDANCE,
+        revise: {
+          artifactId: 'artifact-plan-1',
+          kind: 'plan',
+          title: 'Plan for notify-relay',
+          revision: 1,
+          body: '# Plan v1',
+          userWords: [],
+          autoReading: null,
+          history: [],
+        },
+      }),
+    );
+
+    expect(text.indexOf('**Guidance**')).toBeGreaterThan(-1);
+    expect(text.indexOf('**Guidance**')).toBeLessThan(text.indexOf('**Task** Revise the plan'));
+  });
+
+  it('leaves the brief byte for byte the same when the guidance is unset, null or blank', () => {
+    const plain = composeDelegationKickoff(base());
+
+    expect(composeDelegationKickoff(base({ guidance: null }))).toBe(plain);
+    expect(composeDelegationKickoff(base({ guidance: '   ' }))).toBe(plain);
+    expect(plain).not.toContain('**Guidance**');
+  });
+});

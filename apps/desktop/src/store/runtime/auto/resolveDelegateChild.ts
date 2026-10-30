@@ -39,7 +39,9 @@ import {
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoOutboxId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import { readRunGuidance } from '../runGuidance/readRunGuidance';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { pickChildMount } from './pickChildMount';
@@ -429,6 +431,11 @@ export const resolveDelegateChild = async ({
     revise === null
       ? (retry?.childAgentId ?? brandId<AgentId>({ value: ctx.ports.newId() }))
       : revise.agentId;
+  const guidance = await readRunGuidance({
+    db: ctx.db,
+    workspaceId: brandId<WorkspaceId>({ value: grant.workspaceId }),
+    agentId: tree.rootAgentId,
+  });
   const kickoff = composeDelegationKickoff({
     role,
     childAgentId,
@@ -441,6 +448,7 @@ export const resolveDelegateChild = async ({
     facts: gathered === null ? null : composeBranchFacts({ facts: gathered.facts }),
     decisions,
     retryNote: retry === null ? null : retryNoteOf({ retry }),
+    guidance,
     isSubstep:
       substep !== null || (retry !== null && substepLinkOf({ request: retry.request }) !== null),
   });

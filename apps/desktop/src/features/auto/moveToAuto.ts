@@ -10,6 +10,7 @@ import {
 import { tauriDatabase } from '../../shared/lib/db';
 import { pausingSessionCapOf } from '../budget/pausingSessionCapOf';
 import { useAppStore } from '../../store';
+import { writeRunGuidance } from '../../store/runtime/runGuidance/writeRunGuidance';
 import { adoptAgent, type AdoptOutcome } from '../../store/runtime/auto/adoptAgent';
 import { scopedKindRouting } from '../../store/slices/agents/scopedKindRouting';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
@@ -33,6 +34,7 @@ export type MoveToAutoParams = Readonly<{
   sessionId: SessionId;
   agentId: AgentId;
   instruction: string;
+  guidance?: string | null;
 }>;
 
 export type MoveToAutoResult = AdoptOutcome | Readonly<{ kind: 'off'; message: string }>;
@@ -71,6 +73,7 @@ export const moveToAuto = async ({
   sessionId,
   agentId,
   instruction,
+  guidance = null,
 }: MoveToAutoParams): Promise<MoveToAutoResult> => {
   if (!isReleased) {
     return { kind: 'off', message: OFF_MESSAGE };
@@ -132,6 +135,14 @@ export const moveToAuto = async ({
     await useAppStore.getState().loadAutoTrees({ sessionId });
   }
   if (outcome.kind === 'adopted') {
+    if (guidance !== null && guidance.trim() !== '') {
+      await writeRunGuidance({
+        db,
+        workspaceId: brandId<WorkspaceId>({ value: session.workspaceId }),
+        agentId: outcome.autoAgentId,
+        text: guidance,
+      });
+    }
     await driveAtOnce({ treeId: outcome.treeId, sessionId });
   }
   return outcome;

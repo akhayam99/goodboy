@@ -182,3 +182,39 @@ describe('buildAutoSystemPrompt', () => {
     expect(AUTO_SYSTEM_PROMPT).toBe(buildAutoSystemPrompt({ isDelegationEnabled: true }));
   });
 });
+
+describe('the guidance of one run in the Auto prompt', () => {
+  const GUIDANCE = 'Keep every change inside payments-api.';
+
+  it('adds one guidance block that holds the text and names it as the run guidance', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, guidance: GUIDANCE });
+
+    expect(prompt).toContain(
+      `GUIDANCE FOR THIS RUN\nThe user gave this guidance for the whole run. Follow it in every decision. Goodboy also hands it to each agent you start.\n${GUIDANCE}`,
+    );
+    expect(prompt.split('GUIDANCE FOR THIS RUN')).toHaveLength(2);
+  });
+
+  it('puts the guidance after the level rules and before the role catalog', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, guidance: GUIDANCE });
+
+    expect(prompt.indexOf('Asks you:')).toBeLessThan(prompt.indexOf('GUIDANCE FOR THIS RUN'));
+    expect(prompt.indexOf('GUIDANCE FOR THIS RUN')).toBeLessThan(
+      prompt.indexOf('ROLES YOU CAN HAND WORK TO'),
+    );
+  });
+
+  it('leaves the prompt byte for byte the same when the guidance is unset, null or blank', () => {
+    const plain = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: true, guidance: null })).toBe(plain);
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: true, guidance: '  \n ' })).toBe(plain);
+    expect(plain).not.toContain('GUIDANCE FOR THIS RUN');
+  });
+
+  it('adds the guidance when delegation is off too', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: false, guidance: GUIDANCE });
+
+    expect(prompt).toContain(`\n${GUIDANCE}`);
+  });
+});

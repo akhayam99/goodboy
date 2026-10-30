@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { isRecord } from '@goodboy/types/helpers';
 import { anAgent, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -87,5 +88,41 @@ describe('Auto level instructions at the provider boundary', () => {
       expect(prompt).not.toContain('Asks you: Every step');
       expect(prompt).not.toContain('Asks you: Never');
     }
+  });
+});
+
+describe('Auto run guidance at the provider boundary', () => {
+  const GUIDANCE = 'Keep every change inside ledger-core.';
+
+  const storeGuidance = () => {
+    storySpies.getWorkspaceValue.mockImplementation(async (params) =>
+      isRecord(params) && params['key'] === 'run.guidance'
+        ? JSON.stringify({ agents: { [agent.id]: GUIDANCE } })
+        : null,
+    );
+  };
+
+  it('includes the guidance of the run in the system prompt of every Auto turn', async () => {
+    storeGuidance();
+    for (const content of ['Fix the Harborline retry path', 'Continue with the approved plan']) {
+      storySpies.runTurn.mockClear();
+      await useAppStore.getState().sendTurn({ sessionId: session.id, agentId: agent.id, content });
+
+      const prompt = storySpies.runTurn.mock.calls[0]?.[0]?.systemPrompt;
+      expect(prompt).toContain(`GUIDANCE FOR THIS RUN\n`);
+      expect(prompt).toContain(GUIDANCE);
+    }
+  });
+
+  it('adds no guidance block to the system prompt when the run has none', async () => {
+    storySpies.getWorkspaceValue.mockImplementation(async () => null);
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: session.id, agentId: agent.id, content: 'Fix the retry path' });
+
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.systemPrompt).not.toContain(
+      'GUIDANCE FOR THIS RUN',
+    );
   });
 });

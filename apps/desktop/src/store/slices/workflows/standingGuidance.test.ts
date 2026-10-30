@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { buildOrchestratorUserPrompt } from '@goodboy/core';
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
-import { orchestratorProcessText, standingGuidanceSection } from './standingGuidance';
+import {
+  orchestratorProcessText,
+  runGuidanceSection,
+  standingGuidanceSection,
+} from './standingGuidance';
 
 const GUIDANCE = '- Open the PR as a draft.';
 const rules = { ...DEFAULT_WORKFLOW_RULES, standingGuidance: GUIDANCE };
@@ -40,5 +45,54 @@ describe('standingGuidanceSection', () => {
         role: 'implementer',
       }),
     ).toBe(`**Guidance**\n${GUIDANCE}`);
+  });
+});
+
+describe('runGuidanceSection', () => {
+  it('is the Guidance heading and the trimmed text', () => {
+    expect(runGuidanceSection({ text: '  Keep the diff small.\n' })).toBe(
+      '**Guidance**\nKeep the diff small.',
+    );
+  });
+
+  it('is empty when the run has no guidance', () => {
+    expect(runGuidanceSection({ text: '' })).toBe('');
+    expect(runGuidanceSection({ text: ' \n ' })).toBe('');
+  });
+});
+
+describe('the guidance a run is started with', () => {
+  const START_RULES = { ...DEFAULT_WORKFLOW_RULES, standingGuidance: 'Only touch payments-api.' };
+
+  it('reaches the Operator process of the orchestrator of a run started with it', () => {
+    const processText = orchestratorProcessText({
+      processText: 'Inspect, implement, test.',
+      run: { rulesSnapshot: START_RULES },
+    });
+
+    const prompt = buildOrchestratorUserPrompt({
+      goal: 'Ship the change',
+      processText,
+      completedSteps: [],
+      openQuestionCount: 0,
+      providerId: 'anthropic',
+      modelMenu: [],
+      roleDefaults: [],
+      stepsUsed: 0,
+      isModelPickEnabled: true,
+    });
+
+    expect(prompt).toContain(
+      'Operator process:\nInspect, implement, test.\n\nOnly touch payments-api.',
+    );
+  });
+
+  it('still keeps the guidance away from the agents of that run', () => {
+    expect(
+      standingGuidanceSection({
+        run: { executionMode: 'dynamic', rulesSnapshot: START_RULES },
+        role: 'implementer',
+      }),
+    ).toBe('');
   });
 });
