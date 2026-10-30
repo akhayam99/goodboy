@@ -13,8 +13,6 @@ import { AGENT_KIND_META } from '../../agent-kind';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { routeLineOf } from '../../startRun/routeLineOf';
-import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
-import { StartAgentModel } from '../SessionKickoff/StartAgentModel';
 import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
 import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
 import { StartRoleField } from '../SessionKickoff/StartRoleField';
@@ -25,6 +23,7 @@ import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartForm } from './StartForm';
+import { useDraftAgentModel } from './useDraftAgentModel';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 import {
   startAsksOf,
@@ -68,7 +67,6 @@ export const NewSessionStartForm = ({
         workflowId: current.workflowId,
         presetCloseness: current.presetCloseness,
         agentKind: current.agentKind,
-        agentRouting: current.agentRouting,
         permissionMode: current.permissionMode,
         autonomy: current.autonomy,
       };
@@ -111,9 +109,8 @@ export const NewSessionStartForm = ({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
   });
-  const model = kind === null ? autoRun.model : shapeModel;
-  const agentSuggestion = useWorkspaceKindRouting({ workspaceId, kind: draft.agentKind });
-  const agentModel = draft.agentRouting ?? agentSuggestion;
+  const agentModel = useDraftAgentModel({ workspaceId, base: shapeModel });
+  const model = kind === null ? autoRun.model : kind === 'agent' ? agentModel : shapeModel;
   const hint =
     kind === null && hasGoal
       ? routeLineOf({
@@ -160,12 +157,7 @@ export const NewSessionStartForm = ({
           }
         />
       ),
-      model:
-        kind === 'agent' ? (
-          <StartAgentModel workspaceId={workspaceId} isDisabled={isDisabled} />
-        ) : (
-          <RunModelChip model={model} isDisabled={isDisabled} />
-        ),
+      model: <RunModelChip model={model} isDisabled={isDisabled} />,
       asks:
         asks === 'level' ? (
           <AutoLevelChip
@@ -189,7 +181,7 @@ export const NewSessionStartForm = ({
           workspaceId={workspaceId}
           sessionId={null}
           picked={draft.permissionMode}
-          provider={kind === 'agent' ? agentModel.provider : model.effective.provider}
+          provider={model.effective.provider}
           isDisabled={isDisabled}
           onPick={({ next }) => patchSessionDraft({ workspaceId, patch: { permissionMode: next } })}
         />

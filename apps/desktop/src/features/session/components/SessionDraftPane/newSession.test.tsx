@@ -30,6 +30,7 @@ import type {
   WorkflowId,
 } from '@goodboy/types';
 import { brandedId } from '../../../history/testing/brandedId';
+import type { ProviderDisplayInfo } from '../../../providers/providers';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -155,6 +156,22 @@ const startButton = (): HTMLButtonElement => {
   }
   return element;
 };
+
+type ConnectParams = {
+  readonly id: ProviderDisplayInfo['id'];
+};
+
+const providerOf = ({ id }: ConnectParams): ProviderDisplayInfo => ({
+  id,
+  label: id,
+  error: null,
+  docsUrl: 'https://example.com/docs',
+  binary: id,
+  capabilities: { models: [] },
+  connection: 'connected',
+  version: null,
+  identity: null,
+});
 
 const noSetting: AppStore['loadSetting'] = async () => null;
 
@@ -534,6 +551,39 @@ describe('New session page', () => {
       }),
     );
     expect(attach).not.toHaveBeenCalled();
+  });
+
+  it('picks the Agent model from the same Model chip as every other kind', async () => {
+    useAppStore.setState({
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+      providers: [providerOf({ id: 'anthropic' }), providerOf({ id: 'cursor' })],
+    });
+    await openPage();
+    await pickKind({ name: /^Agent/ });
+    await chooseOption({ box: 'Role', option: /^Planner/ });
+    const chip = screen.getByRole('button', { name: /^Model:/ });
+    expect(chip.getAttribute('data-run-model')).toBe('auto');
+    expect(chip.getAttribute('aria-label')).toMatch(/, Auto$/);
+
+    fireEvent.click(chip);
+    await settle();
+    screen.getByRole('button', { name: 'Change the default in Settings' });
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    await settle();
+
+    const picked = useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentRouting;
+    expect(picked).toMatchObject({ provider: 'cursor' });
+    expect(screen.getByRole('button', { name: /^Model:/ }).getAttribute('data-run-model')).toBe(
+      'pinned',
+    );
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Planner' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      cameFrom.id,
+      expect.objectContaining({ provider: 'cursor' }),
+    );
   });
 
   it('starts Auto agent with the goal', async () => {

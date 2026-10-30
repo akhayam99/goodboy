@@ -873,6 +873,24 @@ describe('StartRun model', () => {
     });
   });
 
+  it('picks the model of a plain Agent from the same chip, for this run only', async () => {
+    connectProviders();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Agent' });
+    fireEvent.change(field(), { target: { value: QUESTION } });
+
+    expect(modelChip().getAttribute('aria-label')).toMatch(/, Auto$/);
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
+    fireEvent.click(screen.getByRole('button', { name: /^(Start|Retry)/ }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'cursor' });
+  });
+
   it('keeps a model picked for one kind off the other kind', async () => {
     connectProviders();
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
