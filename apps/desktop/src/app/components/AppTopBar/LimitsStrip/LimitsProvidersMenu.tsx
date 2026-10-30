@@ -57,7 +57,10 @@ export const LimitsProvidersMenu = ({ workspaceId, chips, nowMs }: Props) => {
             onOpen={() => dropdown.toggle()}
           />
         ) : (
-          <Tooltip content={hasNoProvider ? 'Connect a provider to start' : 'Providers'}>
+          <Tooltip
+            content={hasNoProvider ? 'Connect a provider to start' : 'Providers'}
+            isSuppressed={dropdown.open}
+          >
             <button
               type="button"
               onClick={dropdown.toggle}

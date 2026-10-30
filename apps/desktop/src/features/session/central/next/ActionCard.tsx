@@ -1,6 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
-import { Button, ConfirmPopover, FOCUS_RING, HeaderActions, ICON_SIZE, cn } from '@goodboy/ui';
+import {
+  Button,
+  ConfirmPopover,
+  FOCUS_RING,
+  HeaderActions,
+  ICON_SIZE,
+  TruncatedText,
+  cn,
+} from '@goodboy/ui';
 import { BAND_TONE } from '../../../suggestions/bandTone';
 import { NextStepMenu } from '../../../suggestions/NextStepMenu';
 import { NextStepRebasePicker } from '../../../suggestions/NextStepRebasePicker';
@@ -155,9 +163,9 @@ export const ActionCard = ({
         >
           <div className="flex min-h-7 min-w-0 items-center gap-2">
             {onOpen === null ? (
-              <span className="truncate text-row text-foreground">{card.title}</span>
+              <TruncatedText className="text-row text-foreground">{card.title}</TruncatedText>
             ) : (
-              <span
+              <TruncatedText
                 role="link"
                 tabIndex={0}
                 onKeyDown={(event) => {
@@ -168,22 +176,22 @@ export const ActionCard = ({
                   onOpen();
                 }}
                 className={cn(
-                  'min-w-0 truncate rounded-sm text-row text-foreground hover:underline',
+                  'min-w-0 rounded-sm text-row text-foreground hover:underline',
                   FOCUS_RING,
                 )}
               >
                 {card.title}
-              </span>
+              </TruncatedText>
             )}
             {chip}
           </div>
           {card.detail === null ? null : (
-            <span className="truncate text-meta text-muted-foreground">{card.detail}</span>
+            <TruncatedText className="text-meta text-muted-foreground">{card.detail}</TruncatedText>
           )}
           {failure === null ? null : (
             <span role="alert" className="flex items-center gap-1 text-meta text-danger">
               <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-              <span className="min-w-0 truncate">{failure}</span>
+              <TruncatedText className="min-w-0">{failure}</TruncatedText>
             </span>
           )}
         </div>

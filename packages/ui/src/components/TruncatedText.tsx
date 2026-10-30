@@ -90,6 +90,7 @@ export const TruncatedText = ({
         {
           ...rest,
           ref: setRef,
+          'data-truncated-text': '',
           className: cn(lines === 2 ? 'line-clamp-2 break-words' : 'truncate', className),
           onMouseEnter: measure,
           ...(isFocusable && isTextCut && { tabIndex: 0 }),

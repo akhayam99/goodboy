@@ -1,4 +1,10 @@
-import { AnchoredPopover, PopoverBody, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  PopoverBody,
+  useDropdown,
+} from '@goodboy/ui';
 import type { AgentEffort, ProviderId } from '@goodboy/types';
 import { RoutingLabel } from './RoutingLabel';
 import { RoutingPickerBody } from './RoutingPicker/RoutingPickerBody';
@@ -36,8 +42,6 @@ type Props = {
 
 const MODEL_LABEL = 'Model';
 
-const MODEL_POPOVER_WIDTH = 'w-96 max-w-[calc(100vw-2rem)]';
-
 export const ModelControlChip = ({
   connectedProviders,
   effective,
@@ -54,8 +58,8 @@ export const ModelControlChip = ({
   const dropdown = useDropdown({
     align: 'start',
     disabled: isDisabled,
-    width: MODEL_POPOVER_WIDTH,
-    expectedWidth: 384,
+    width: POPOVER_WIDTH_CLASS.wide,
+    expectedWidth: POPOVER_WIDTH_PX.wide,
     expectedHeight: 480,
   });
   const summary = recommendationSummary({

@@ -4,8 +4,8 @@ import { ChevronDown } from 'lucide-react';
 import { MODEL_CATALOGS } from '@goodboy/core';
 import { AnchoredPopover, cn, ICON_SIZE, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';
-import { TriggerLabel } from './TriggerLabel';
-import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
+import { AUTO_LABEL } from './AutoTriggerLabel';
+import { RoutingTriggerContent } from './RoutingTriggerContent';
 import type { RecommendationKind } from './RecommendationRow';
 import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
@@ -193,6 +193,7 @@ export const RoutingPicker = ({
             }
             shortcut={disabled ? undefined : shortcut}
             anchorClassName={variant === 'field' ? 'w-full' : 'min-w-0'}
+            isSuppressed={open}
           >
             <button
               type="button"
@@ -214,28 +215,14 @@ export const RoutingPicker = ({
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >
-              <span className="flex min-w-0 flex-1 items-center gap-2">
-                {resolvedAuto?.label != null ? (
-                  <TriggerLabel
-                    provider={resolvedAuto.provider}
-                    label={resolvedAuto.label}
-                    prefix={AUTO_LABEL}
-                  />
-                ) : isAuto ? (
-                  <AutoTriggerLabel />
-                ) : (
-                  <TriggerLabel provider={routing.provider} label={triggerLabel} />
-                )}
-                {isPinned ? (
-                  <span
-                    data-routing-pinned=""
-                    className="shrink-0 text-faint-foreground @max-lg:hidden"
-                  >
-                    · pinned
-                  </span>
-                ) : null}
-                {budget}
-              </span>
+              <RoutingTriggerContent
+                resolvedAuto={resolvedAuto}
+                isAuto={isAuto}
+                isPinned={isPinned}
+                provider={routing.provider}
+                label={triggerLabel}
+                budget={budget}
+              />
               <ChevronDown
                 size={ICON_SIZE.row}
                 aria-hidden

@@ -93,7 +93,10 @@ export const NewBranchMountAction = ({
             {...(triggerClassName !== undefined && { className: triggerClassName })}
           />
         ) : (
-          <Tooltip content={`Add another line of work on ${projectName}, on its own branch`}>
+          <Tooltip
+            content={`Add another line of work on ${projectName}, on its own branch`}
+            isSuppressed={dropdown.open}
+          >
             <button
               type="button"
               aria-label={label}

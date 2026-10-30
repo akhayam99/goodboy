@@ -137,11 +137,16 @@ export const GoodboyChip = ({
     };
 
   const menuTrigger = (
-    <Tooltip content={TRIGGER_LABEL[state]} side={variant === 'rail' ? 'right' : 'top'}>
+    <Tooltip
+      content={TRIGGER_LABEL[state]}
+      side={variant === 'rail' ? 'right' : 'top'}
+      isSuppressed={isOpen}
+    >
       <button
         type="button"
         onClick={toggle}
         aria-label={TRIGGER_LABEL[state]}
+        aria-haspopup="menu"
         aria-expanded={isOpen}
         data-testid={isPrimary ? 'goodboy-chip' : undefined}
         data-goodboy-chip={variant}

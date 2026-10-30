@@ -1,4 +1,4 @@
-import { formatUsd, ICON_SIZE, ListGridRow, StateDot } from '@goodboy/ui';
+import { formatUsd, ICON_SIZE, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
@@ -57,7 +57,7 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
         run.isUnread ? (
           <>
             <StateDot state="unread" label="Unread" />
-            <span className="min-w-0 truncate">{run.title}</span>
+            <TruncatedText className="min-w-0">{run.title}</TruncatedText>
           </>
         ) : (
           run.title

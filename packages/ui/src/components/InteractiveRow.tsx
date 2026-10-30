@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, MouseEventHandler, ReactNode } from 'react';
+import type { KeyboardEventHandler, MouseEvent, MouseEventHandler, ReactNode } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { ROW_HOVER } from '../rowInteractive';
@@ -23,6 +23,24 @@ const RADIUS_CLASS = { md: 'rounded-md', lg: 'rounded-lg' } as const satisfies R
   'md' | 'lg',
   string
 >;
+
+type OpenFromTextParams = {
+  readonly event: MouseEvent<HTMLElement>;
+  readonly onOpen: () => void;
+};
+
+const openFromText = ({ event, onOpen }: OpenFromTextParams): void => {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const control = target.closest('a, button');
+  const isInsideControl = control !== null && event.currentTarget.contains(control);
+  if (isInsideControl || target.closest('[data-truncated-text]') === null) {
+    return;
+  }
+  onOpen();
+};
 
 export const InteractiveRow = ({
   label,
@@ -56,8 +74,9 @@ export const InteractiveRow = ({
       {...dataAttributes}
     />
     <div
+      onClick={(event) => openFromText({ event, onOpen })}
       className={cn(
-        'pointer-events-none relative [&_a]:pointer-events-auto [&_button]:pointer-events-auto',
+        'pointer-events-none relative [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_[data-truncated-text]]:pointer-events-auto',
         className,
       )}
     >

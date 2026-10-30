@@ -46,7 +46,11 @@ export const AutoChildCard = ({
         >
           <AgentKindChip kind={card.role} density="glyph" />
           <span className="flex min-w-0 items-center gap-2">
-            <TruncatedText className="min-w-0 truncate text-foreground" tooltip={card.task ?? name}>
+            <TruncatedText
+              isFocusable
+              className="min-w-0 truncate text-foreground"
+              tooltip={card.task ?? name}
+            >
               {name}
             </TruncatedText>
             {revision === null ? null : (
@@ -60,9 +64,9 @@ export const AutoChildCard = ({
             <AgentModelLine line={card.modelLine} className="pointer-events-auto" />
           </span>
           {facts.activity === null ? null : (
-            <span className="col-start-2 min-w-0 truncate text-muted-foreground">
+            <TruncatedText isFocusable className="col-start-2 min-w-0 text-muted-foreground">
               {facts.activity}
-            </span>
+            </TruncatedText>
           )}
         </InteractiveRow>
       </ObjectMenuArea>

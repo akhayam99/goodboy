@@ -173,6 +173,7 @@ const RowComponent = ({
           className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
         <TruncatedText
+          isFocusable
           className={cn(
             ARTIFACT_ROW_GRID.title,
             row.isFaint ? 'text-faint-foreground' : 'text-foreground',

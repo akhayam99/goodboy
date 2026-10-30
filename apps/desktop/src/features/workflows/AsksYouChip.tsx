@@ -1,4 +1,4 @@
-import { SegmentedTabs, useDropdown } from '@goodboy/ui';
+import { POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, SegmentedTabs, useDropdown } from '@goodboy/ui';
 import type { WorkflowAutonomy } from '@goodboy/types';
 import type { SettingWords } from '../../shared/components/SettingChip/settingWords';
 import { SettingChip } from '../../shared/components/SettingChip';
@@ -18,7 +18,11 @@ type Props = {
 };
 
 export const AsksYouChip = ({ value, words, help, error, isDisabled, onPick }: Props) => {
-  const dropdown = useDropdown({ expectedHeight: 200, expectedWidth: 320, width: 'w-80' });
+  const dropdown = useDropdown({
+    expectedHeight: 200,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    width: POPOVER_WIDTH_CLASS.standard,
+  });
   return (
     <SettingChip
       dropdown={dropdown}

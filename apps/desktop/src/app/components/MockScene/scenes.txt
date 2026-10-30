@@ -1101,6 +1101,8 @@ u30-failure-reason
 u30-human-call
 u30-model-lines
 u30-new-since
+u30-popovers
+u30-tooltips
 update-card
 update-card-long-version
 update-card-narrow

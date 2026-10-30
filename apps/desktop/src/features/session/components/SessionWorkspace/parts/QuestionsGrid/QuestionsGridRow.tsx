@@ -1,4 +1,4 @@
-import { ListGridRow, StateDot } from '@goodboy/ui';
+import { ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { AGENT_KIND_META, type AgentKind } from '../../../../agent-kind';
@@ -41,7 +41,11 @@ export const QuestionsGridRow = ({ sessionId, row, askerKind, age, isSelected, o
       onKeyDown={menu.onKeyDown}
       cells={[
         isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
-        isSettled ? <span className="min-w-0 truncate text-muted-foreground">{title}</span> : title,
+        isSettled ? (
+          <TruncatedText className="min-w-0 text-muted-foreground">{title}</TruncatedText>
+        ) : (
+          title
+        ),
         answer,
         askerKind === null ? '' : AGENT_KIND_META[askerKind].noun,
         age,

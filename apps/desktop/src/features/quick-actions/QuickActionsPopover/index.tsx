@@ -50,7 +50,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
     <div
       className={cn(
         FLOATING_SURFACE,
-        'absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden',
+        'absolute bottom-full left-0 z-popover mb-1 w-full max-w-125 overflow-hidden',
       )}
     >
       {items.length === 0 ? (
