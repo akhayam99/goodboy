@@ -41,6 +41,7 @@ type TranscriptCardProps = {
   readonly permission?: PermissionState;
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
+  readonly previousRunId?: ProviderRunId | null;
   readonly isBrief?: boolean;
   readonly clampLines?: number;
 };
@@ -59,6 +60,7 @@ const TranscriptCardImpl = ({
   permission,
   turnOutcome,
   turnStartedAt,
+  previousRunId = null,
   isBrief = false,
   clampLines,
 }: TranscriptCardProps): ReactNode => {
@@ -147,6 +149,7 @@ const TranscriptCardImpl = ({
             agentId={agentId}
             outcome={turnOutcome}
             startedAt={turnStartedAt}
+            previousRunId={previousRunId}
           />
         </>
       );
@@ -229,6 +232,7 @@ export const TranscriptCard = memo(
     prev.permission?.decision === next.permission?.decision &&
     prev.turnOutcome === next.turnOutcome &&
     prev.turnStartedAt === next.turnStartedAt &&
+    prev.previousRunId === next.previousRunId &&
     prev.isBrief === next.isBrief &&
     prev.clampLines === next.clampLines,
 );

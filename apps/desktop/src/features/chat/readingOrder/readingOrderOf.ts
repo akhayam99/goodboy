@@ -36,7 +36,6 @@ type TextRow = {
 
 type Segment = {
   readonly texts: Array<TextRow>;
-  hasSteps: boolean;
   hasError: boolean;
 };
 
@@ -47,9 +46,7 @@ const BOUNDARY_KINDS = new Set<TranscriptItem['kind']>([
   'auto_delivery',
 ]);
 
-const STEP_KINDS = new Set<TranscriptItem['kind']>(['tool_call', 'file_edit', 'skill_invocation']);
-
-const emptySegment = (): Segment => ({ texts: [], hasSteps: false, hasError: false });
+const emptySegment = (): Segment => ({ texts: [], hasError: false });
 
 type SegmentParams = {
   readonly rows: ReadonlyArray<ConversationRow>;
@@ -62,19 +59,12 @@ const turnSegmentsOf = ({ rows }: SegmentParams) => {
     if (current === undefined) {
       continue;
     }
-    if (row.kind === 'summary' || row.kind === 'operations') {
-      current.hasSteps = true;
-      continue;
-    }
     if (row.kind !== 'item') {
       continue;
     }
     if (BOUNDARY_KINDS.has(row.item.kind)) {
       segments.push(emptySegment());
       continue;
-    }
-    if (STEP_KINDS.has(row.item.kind)) {
-      current.hasSteps = true;
     }
     if (row.item.kind === 'error') {
       current.hasError = true;
@@ -102,13 +92,7 @@ export const readingOrderOf = ({
     }
     const earlierAll = segment.texts.slice(0, -1);
     const earlier = earlierAll.filter(({ text }) => stripControlMarkers(text) === text);
-    const isDirectAnswer = earlierAll.length === 0 && !segment.hasSteps;
-    roles.set(answer.key, {
-      kind: 'answer',
-      clampLines: isDirectAnswer
-        ? READING_BUDGETS.directAnswerClampLines
-        : READING_BUDGETS.proseClampLines,
-    });
+    roles.set(answer.key, { kind: 'answer', clampLines: READING_BUDGETS.answerClampLines });
     const [lead, ...rest] = earlier;
     if (lead === undefined) {
       continue;

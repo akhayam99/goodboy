@@ -13,10 +13,16 @@ type Outcome = Readonly<{
 type Props = {
   readonly data: TurnFooterData;
   readonly duration: string | null;
+  readonly isSpeakerShown?: boolean;
   readonly outcome?: Outcome | null;
 };
 
-export const TurnFooterSummary = ({ data, duration, outcome = null }: Props) => {
+export const TurnFooterSummary = ({
+  data,
+  duration,
+  isSpeakerShown = true,
+  outcome = null,
+}: Props) => {
   const provider = providerIdOf({ value: data.provider });
   const premium = premiumRequestsLabelOf({ premiumRequests: data.premiumRequests });
 
@@ -25,8 +31,8 @@ export const TurnFooterSummary = ({ data, duration, outcome = null }: Props) => 
       {outcome === null ? null : (
         <WorkNode size="sm" state={outcome.state} mark={{ kind: 'dot' }} label={outcome.label} />
       )}
-      {provider !== null && <ProviderGlyph id={provider} size={ICON_SIZE.row} />}
-      {data.model != null && <span>{modelLabel(data.model, provider)}</span>}
+      {isSpeakerShown && provider !== null && <ProviderGlyph id={provider} size={ICON_SIZE.row} />}
+      {isSpeakerShown && data.model != null && <span>{modelLabel(data.model, provider)}</span>}
       {premium !== null && <span>{premium}</span>}
       {duration != null && <span className="text-faint-foreground">{duration}</span>}
     </>

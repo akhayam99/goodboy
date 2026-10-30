@@ -60,7 +60,7 @@ const renderRows = ({ rows }: { readonly rows: ReadonlyArray<TranscriptRow> }) =
   );
 
 const kindsOf = ({ container }: { readonly container: HTMLElement }) =>
-  [...container.querySelectorAll('li')].map(
+  [...container.querySelectorAll('[data-turn] > ul > li')].map(
     (li) => li.querySelector('[data-testid]')?.getAttribute('data-testid') ?? '',
   );
 

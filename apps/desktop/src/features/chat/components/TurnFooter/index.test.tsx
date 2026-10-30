@@ -103,6 +103,72 @@ describe('TurnFooter', () => {
     screen.getByText(/~\$0\.12/);
   });
 
+  it('names the model once: a later turn on the same model keeps only its time and detail', () => {
+    const PREVIOUS_RUN = brandId<ProviderRunId>({ value: 'run-0' });
+    useAppStore.setState({
+      sessionTelemetry: {
+        [SESSION_ID]: [
+          RECORD,
+          { ...RECORD, id: brandId<TelemetryRecordId>({ value: 'rec-0' }), runId: PREVIOUS_RUN },
+        ],
+      },
+    });
+    render(
+      <TurnFooter
+        item={usageItem()}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
+        startedAt={STARTED_AT}
+        previousRunId={PREVIOUS_RUN}
+      />,
+    );
+    screen.getByText('42s');
+    expect(screen.queryByText('Opus 5')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
+    screen.getByText('Input');
+  });
+
+  it('names the model again when it changes, and on a stopped turn', () => {
+    const PREVIOUS_RUN = brandId<ProviderRunId>({ value: 'run-0' });
+    useAppStore.setState({
+      sessionTelemetry: {
+        [SESSION_ID]: [
+          RECORD,
+          {
+            ...RECORD,
+            id: brandId<TelemetryRecordId>({ value: 'rec-0' }),
+            runId: PREVIOUS_RUN,
+            model: 'claude-sonnet-5',
+          },
+        ],
+      },
+    });
+    const changed = render(
+      <TurnFooter
+        item={usageItem()}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
+        startedAt={STARTED_AT}
+        previousRunId={PREVIOUS_RUN}
+      />,
+    );
+    screen.getByText('Opus 5');
+    changed.unmount();
+
+    useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [RECORD] } });
+    render(
+      <TurnFooter
+        item={usageItem()}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
+        startedAt={STARTED_AT}
+        outcome="stopped"
+        previousRunId={RUN_ID}
+      />,
+    );
+    screen.getByText('Opus 5');
+  });
+
   it('opens the detail popover on click', () => {
     render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} />);
     expect(screen.queryByText('Input')).toBeNull();

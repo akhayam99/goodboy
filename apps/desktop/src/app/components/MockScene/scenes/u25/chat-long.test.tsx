@@ -63,13 +63,13 @@ describe('the long transcript scene', () => {
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll('[data-find-root] > li').length).toBeGreaterThanOrEqual(
-        100,
-      );
+      expect(
+        container.querySelectorAll('[data-find-root] > li > ul > li').length,
+      ).toBeGreaterThanOrEqual(100);
     });
-    const rows = [...container.querySelectorAll<HTMLElement>('[data-find-root] > li')].filter(
-      (row) => row.getAttribute('style') !== null,
-    );
+    const rows = [
+      ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
+    ].filter((row) => row.getAttribute('style') !== null);
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => row.style.containIntrinsicSize.startsWith('auto '))).toBe(true);
     expect(new Set(rows.map((row) => row.style.containIntrinsicSize)).size).toBeGreaterThan(3);
@@ -84,17 +84,17 @@ describe('the long transcript scene', () => {
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll('[data-find-root] > li').length).toBeGreaterThanOrEqual(
-        100,
-      );
+      expect(
+        container.querySelectorAll('[data-find-root] > li > ul > li').length,
+      ).toBeGreaterThanOrEqual(100);
     });
     const viewport = container
       .querySelector('[data-find-root]')
       ?.closest<HTMLElement>('.overflow-y-auto');
     expect(viewport?.style.overflowAnchor).toBe('none');
-    const rows = [...container.querySelectorAll<HTMLElement>('[data-find-root] > li')].filter(
-      (row) => row.style.contentVisibility === 'auto',
-    );
+    const rows = [
+      ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
+    ].filter((row) => row.style.contentVisibility === 'auto');
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
   });

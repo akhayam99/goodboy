@@ -614,7 +614,7 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   conversation the final answer row is added when `activeRunId` goes null,
   inside the 1.5 s live window of the run's last delta, so it reveals as the
   turn ends; a turn that ends more than 1.5 s after its last text shows it
-  whole. The chips and the copy button under an answer wait until the reveal
+  whole. The chips and the copy button of an answer wait until the reveal
   ends. The workspace chat marks its reply by message id in `sendChatMessage`
   and flushes it when the reply fails or is stopped.
 - Text an agent writes outside the conversation keys on the agent:
@@ -921,21 +921,25 @@ parsed usage stands.
 An agent turn reads in one order: outcome line, artifact cards, next action,
 chips, then notes folded away. `features/chat/readingOrder/` owns it, and
 `readingBudgets.ts` holds every budget (outcome 100 characters, 3 artifact
-cards, 4 chips, prose clamped at 3 lines).
+cards, 4 chips, an answer clamped at 12 lines).
 
 - `readingOrderOf` is pure. It splits the rows into turns at each `user_text`,
   `handoff`, `oq_answer` and `auto_delivery` row. In a finished turn the last
-  `assistant_text` is the answer (clamped at 3 lines, at 12 when the turn is one
-  text with no steps) and the earlier ones become one closed **Notes** line
+  `assistant_text` is the answer (clamped at 12 lines, `answerClampLines`) and the earlier ones become one closed **Notes** line
   (`ReadingNotes`) drawn in place of the first of them; the others draw
   nothing. A text with a control marker is never folded.
 - A turn with a text of the active run is live and untouched, so the reveal
   types it whole. A turn with an `error` item keeps its notes open.
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
-  draws the optional `OutcomeLine`, the clamped text with **Show more**, then
-  the chips with **+N** past 4. `AssistantText` is a thin caller: it reads
+  draws the optional `OutcomeLine` (`text-heading`, 14/20 at 600), the clamped text with **Show more**, then
+  the chips with **+N** past 4. `AssistantText` is a thin caller, and it draws no copy row: **Copy** is a `row-actions` button on the message root (`group/row`), at its top right, so it shows on hover and on keyboard focus and takes no room in the flow; the message context menu (`message.copy`) always has it. It reads
   `parseOutcomeLine` from the raw text, before the markers are stripped, and
   passes a neutral `outcome` once the message is complete and revealed.
+- `TranscriptRows` groups its rows into one `<li data-turn>` per turn, cut at each
+  message of the person, a handoff or a delivery (`splitTurns`), so the parent
+  list owns the 32px turn gap and each turn list owns the 16px block gap
+  (`PANE_RHYTHM.transcript`). A day chip or a New divider opens the turn it
+  belongs to, and the thinking tail joins the last turn.
 - The Auto child result cards use the same pieces without the message renderer:
   `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
   (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
@@ -971,7 +975,11 @@ footer reads it from the item's own usage (telemetry has no column for it) and s
 row in the detail, in place of the cost row and its API-price note
 (`premiumRequestsLabelOf` words it for the line and for `UsageStatsRow`).
 The line itself (`TurnFooterSummary`) carries only the provider mark, model,
-premium requests and duration; tokens, cache share and context window live in the
+premium requests and duration; `TranscriptRows` hands each footer the run of the
+footer before it (`previousRunId`), and a `done` footer with a duration on the
+same provider and model as that one drops the mark and the model, so the speaker
+is named once and again when it changes (a stopped or failed footer always names
+it); tokens, cache share and context window live in the
 detail popover (`TurnFooterDetail`) it opens. The transcript pane's
 agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 

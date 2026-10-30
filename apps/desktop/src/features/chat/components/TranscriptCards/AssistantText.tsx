@@ -31,7 +31,7 @@ type Props = {
 const NO_RUN = '';
 
 export const AssistantText = ({
-  clampLines = READING_BUDGETS.proseClampLines,
+  clampLines = READING_BUDGETS.answerClampLines,
   text,
   sessionId,
   agentId = null,
@@ -60,10 +60,11 @@ export const AssistantText = ({
   return (
     <div
       ref={reveal.rootRef}
-      className="flex flex-col gap-2 text-prose"
+      className="group/row relative flex flex-col gap-2 text-prose"
       aria-busy={reveal.isRevealing ? true : undefined}
       data-reveal-answer={reveal.isRevealing ? reveal.revealKey : undefined}
       onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
     >
       <ReadingOrderMessage
         text={reveal.text}
@@ -97,19 +98,19 @@ export const AssistantText = ({
           </div>
         )}
       </ReadingOrderMessage>
-      {reveal.isRevealing ? null : (
-        <>
-          {hasCommentResolvedMarker || displayText.length === 0 ? null : (
-            <div data-message-meta="" className="flex items-center justify-end">
-              <CopyButton
-                presentation="icon"
-                value={text}
-                label="copy message"
-                className="rounded-md p-0.5 text-muted-foreground transition-opacity hover:opacity-80 hover:text-foreground"
-              />
-            </div>
-          )}
-        </>
+      {reveal.isRevealing || hasCommentResolvedMarker || displayText.length === 0 ? null : (
+        <div
+          data-message-meta=""
+          className="row-actions absolute top-0 -right-8 @max-[800px]:right-0"
+        >
+          <CopyButton
+            presentation="icon"
+            value={text}
+            label="copy message"
+            tone="faint"
+            className="rounded-md p-0.5"
+          />
+        </div>
       )}
     </div>
   );

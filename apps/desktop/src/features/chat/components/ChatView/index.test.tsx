@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PAGE_MEASURE } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 
 const transcriptRowsMock = vi.hoisted(() => vi.fn());
@@ -245,6 +246,19 @@ describe('ChatView', () => {
 
     expect(content?.tagName).toBe('UL');
     expect(content?.hasAttribute('data-find-root')).toBe(true);
+  });
+
+  it('reads the transcript on the agent measure, in one page column', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container } = render(<ChatView session={session} />);
+    const content = container.querySelector('[data-scroll-content]');
+
+    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(content?.closest('[data-page-column]')).not.toBeNull();
+    expect(content?.parentElement?.querySelectorAll('[data-scroll-content]')).toHaveLength(1);
   });
 
   it('leaves the growing list out of the live regions so no row is read aloud as it lands', () => {

@@ -110,7 +110,7 @@ export const UserText = ({
         </div>
       )}
       {text.length > 0 && (
-        <ClampedText text={text} className="text-body text-foreground">
+        <ClampedText text={text} className="text-prose text-foreground">
           <Markdown text={text} />
         </ClampedText>
       )}

@@ -1,7 +1,7 @@
 import type { Session } from '@goodboy/types';
-import { PageColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../../store';
 import { StepEndedNotice } from '../../../../../workflows/StepEndedNotice';
+import { ConversationColumn } from '../../../ConversationColumn';
 import { WorkflowAdvanceRow } from '../WorkflowAdvanceRow';
 
 type Props = {
@@ -13,9 +13,9 @@ export const WorkflowAdvanceStack = ({ session }: Props) => {
   return (
     <>
       {selectedAgentId === null ? null : (
-        <PageColumn className="shrink-0 pb-1 empty:hidden">
+        <ConversationColumn className="shrink-0 pb-1 empty:hidden">
           <StepEndedNotice sessionId={session.id} agentId={selectedAgentId} />
-        </PageColumn>
+        </ConversationColumn>
       )}
       <WorkflowAdvanceRow session={session} />
     </>

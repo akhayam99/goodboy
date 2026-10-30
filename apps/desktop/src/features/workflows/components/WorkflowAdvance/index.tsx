@@ -1,5 +1,5 @@
 import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
-import { PageColumn } from '@goodboy/ui';
+import { PAGE_MEASURE, PageColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
@@ -84,7 +84,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   };
 
   return (
-    <PageColumn className="shrink-0 pb-1 empty:hidden">
+    <PageColumn width={PAGE_MEASURE.agent} className="shrink-0 pb-1 empty:hidden">
       <WorkflowNextStepCta
         workflow={workflow}
         runs={stepAgents}

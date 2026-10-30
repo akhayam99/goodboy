@@ -107,11 +107,13 @@ describe('r4 layout scenes', () => {
     expect(column?.getAttribute('data-width')).toBe(PAGE_MEASURE[page]);
   });
 
-  it('puts the Overview on the column of the other session pages', async () => {
+  it('puts the agent conversation of a session on the 720 measure, header included', async () => {
     const container = await mount('r4-layout-session');
 
     const header = pageHeaderOf(container);
-    expect(header.closest('[data-page-column]')?.getAttribute('data-width')).toBe('column');
+    expect(header.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
+      PAGE_MEASURE.agent,
+    );
   });
 
   it('puts the Terminal empty state on the title edge, not the panel edge', async () => {

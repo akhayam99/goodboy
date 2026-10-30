@@ -313,7 +313,7 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-heading` | 14/20, 600                | a page-grade section, a popover title, a kickoff question                              |
 | `text-row`     | 13/20, 500                | a top-level row label, a card title                                                    |
 | `text-body`    | 14/20                     | running text; text with no class inherits it from the body                             |
-| `text-prose`   | 14/22                     | messages, markdown, artifacts                                                          |
+| `text-prose`   | 15/24                     | messages, markdown, artifacts                                                          |
 | `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                |
 | `text-meta`    | 12/16, tabular            | controls, a nested row, a status label, time, ordinal, cost, count, a second line      |
 | `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
@@ -431,8 +431,8 @@ Overview and a comfortable everything else.
 **Prose is the one exception. It is a reading grade, not drift.** Human and
 assistant transcript messages, a markdown body and any artifact the reader came
 for stay on `text-prose` or `text-body`. Making those smaller makes the app
-worse. A conversation fills its column: assistant messages take the full width
-and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
+worse. A conversation reads in the 720px measure, centred: assistant messages
+take the measure and a user card keeps a 48px start gap (`PANE_RHYTHM.message.user`). The chrome around prose still takes the role its job asks for. A
 document pane's section label is an eyebrow even when the body under it is
 prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
