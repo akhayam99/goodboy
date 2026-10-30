@@ -10,6 +10,8 @@ vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,
     isFromSession: false,
+    isDefault: true,
+    defaultUsd: 5,
     isStored: true,
     change: () => undefined,
     persist: async () => undefined,

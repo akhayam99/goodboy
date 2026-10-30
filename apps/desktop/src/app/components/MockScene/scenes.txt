@@ -1099,6 +1099,7 @@ u28-workspace-attention
 u30-agents-fold
 u30-failure-reason
 u30-human-call
+u30-limit-chip
 u30-model-lines
 u30-new-since
 u30-popovers

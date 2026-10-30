@@ -182,10 +182,10 @@ Get agents and summaries in the language of your goal.
 
 This part is for contributors and agents who change the feature.
 
-- Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words (a retired model still reads by name), with the raw id in a tooltip only; "Unknown model" is only for an id with no known provider.
+- Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words, so a retired model still reads by name. The raw id shows in a tooltip only. "Unknown model" is only for an id with no known provider.
 - Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
 - Agents tree fold: `foldSpawnedRowsOf` decides which rows fold and `helperUrgencyOf` picks the state shown beside the count; the helper count comes from `runAgentCountOf`. The `u30-agents-fold` scene shows each case.
-- Failure links: a failed turn offers **View transcript** next to **Retry** and the drawer opens on the failing call when it is known (`TranscriptErrorRow`); a run that stopped on a human call offers it on its tail. The `u30-failure-reason` and `u30-human-call` scenes show the long Auto reason and the run tail.
+- Failure links: a failed turn offers **View transcript** next to **Retry**. The drawer opens on the failing call when it is known (`TranscriptErrorRow`). A run that stopped on a human call offers it on its tail. The `u30-failure-reason` and `u30-human-call` scenes show the long Auto reason and the run tail.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

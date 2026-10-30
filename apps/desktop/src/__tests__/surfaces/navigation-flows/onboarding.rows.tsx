@@ -163,7 +163,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       const field = await screen.findByRole('textbox', { name: 'Start a run' });
       expect(field).toHaveProperty('value', expect.stringContaining('Explain how ledger-core'));
       expect(screen.getByRole('region', { name: 'Start a run' })).toBeDefined();
-      expect(screen.getByRole('button', { name: 'No limit' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
       expect(screen.queryByText('reads only')).toBeNull();
     },
   },

@@ -10,7 +10,7 @@ Write what you want done and press Start. Goodboy picks how to run it.
 - On the **New session** page, **Not sure? Describe it and Auto picks** routes the goal you wrote the same way, with the Limit and Start under it.
 - Its hint reads "Auto picks how to run it. ~ lists presets, @ lists roles."
 - Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and the **Run as** chip shows it.
-- The **Run as** chip sits next to **Limit**: **Let Auto pick**, **Agent · Auto agent**, **Workflow · Orchestrated**, each preset and each role. A name typed in the text still wins over the chip.
+- The **Run as** chip sits next to **Limit**, which an Agent route hides: **Let Auto pick**, **Agent · Auto agent**, **Workflow · Orchestrated**, each preset and each role. A name typed in the text still wins over the chip.
 - The **Model** chip sits next to **Run as**. It names the model of the Auto agent or the orchestrator of this run. Until you pick another it shows the default from Settings, marked **Auto**.
 - A pick on the **Model** chip is for this run only. **Change the default in Settings** opens **Settings › Models › Runs**.
 - Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type or pick, before you press Start.
@@ -93,7 +93,9 @@ Picking a kind shows only that kind's controls.
 
 - A one-line hint says what you see while it runs.
 - A Preset shows the preset picker with its steps, and **Follow it** or **Adapt as it goes**.
-- An Agent shows **Role** and **Model**. The others show the **Limit**.
+- An Agent shows **Role** and **Model**. The others show the **Limit**, which a plain agent has no use for.
+- The **Limit** chip reads "Limit $5.00", with a quiet "default" while the amount is the workspace default. Picking or typing another amount drops the tag.
+- Its popover is titled for the kind: a run or an Auto run. It lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
 - Orchestrated, Preset and Auto agent also show the **Model** chip of the Start a run field. It names the orchestrator or the Auto agent for this run.
 - Both workflow kinds also show **Asks you** (Every step, After the plan, Never). It is the same chip and popover as the run's settings line. It opens on Every step, what a run started here got before, and the run starts with the pick.
 - The Auto agent also shows **Asks you**. It opens on the level that applies: the session level, else the workspace default, else After the plan. The pick is stored for the session when the run starts. A failed save stops the start and shows the error. The other agents have no step to stop at, so they have no Asks you.
@@ -198,6 +200,8 @@ This part is for contributors and agents who change the feature.
 - Model pins: `startRoutedRun` takes `routing` for a lead and `orchestratorRouting` for a plan. `attachWorkflowToSession` stores the second as the run's `orchestratorRouting`. A start clears the pins.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
+- Limit chip: `autoLimitOf` returns the amount, its source and the default. `useAutoTreeLimit`, `AutoLimitChip` and its callers read it.
+- Limit popover: `AutoLimitChip` uses `AnchoredPopover` at the standard popover width, so it flips and shifts inside the window.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
 - Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.

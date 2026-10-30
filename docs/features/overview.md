@@ -88,7 +88,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - It then lists the last three finished items, newest first. Each shows who did it, the outcome in one sentence, how long ago, and a dot when the reply was not read yet.
 - A run reads "Orchestrated · 7 agents · 3 of 5 steps" or "Auto · 6 agents · 1 needs you". It gives the kind, how many agents it started, how far it got and, only when something waits for you, what needs you. It never lists step numbers.
 - An agent shows its role with its icon and the provider mark, never the bare word "Agent".
-- The title is the first sentence of what the agent said, cut to one short line: a leading tag like "cluster 1/2:" and commit hashes go, a list like "lint/knip/vitest" reads "lint, knip and vitest", and a long path keeps its file name.
+- The title is the first sentence of what the agent said, cut to one short line. A leading tag like "cluster 1/2:" and commit hashes go. A list like "lint/knip/vitest" reads "lint, knip and vitest". A long path keeps its file name.
 - A click opens the agent or run.
 - The header counts the unread ones, as in "Done 5, 1 unread".
 - An archived session keeps this card with its list.
@@ -256,7 +256,7 @@ This part is for contributors and agents who change the feature.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
 - Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Waiting for you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `LIVE_COLUMNS`.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
-- Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`, `needsYouLabelOf`), `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share, and `LatestDoneRow` draws the role icon and the provider mark.
+- Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`, `needsYouLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.

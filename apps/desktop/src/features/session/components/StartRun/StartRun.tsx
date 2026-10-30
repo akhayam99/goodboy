@@ -9,6 +9,7 @@ import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover'
 import type { AgentKind } from '../../agent-kind';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
+import { runKindOfRoute } from '../../startRun/runKindOfRoute';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
@@ -54,6 +55,8 @@ export const StartRun = ({
     onStarted,
     prepare: limit.persist,
   });
+  const shape = runKindOfRoute({ route: run.route.route }).shape;
+  const limitKind = shape === 'agent' ? null : shape;
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
   const modelSummary = recommendationSummary({
@@ -138,12 +141,9 @@ export const StartRun = ({
         leading={
           <div className="flex min-w-0 flex-wrap items-center gap-1">
             <RunChoiceChips run={run} workspaceId={workspaceId} role={role} />
-            <AutoLimitChip
-              usd={limit.usd}
-              isFromSession={limit.isFromSession}
-              isDisabled={run.isStarting}
-              onChange={limit.change}
-            />
+            {limitKind === null ? null : (
+              <AutoLimitChip limit={limit} kind={limitKind} isDisabled={run.isStarting} />
+            )}
           </div>
         }
         error={run.error}

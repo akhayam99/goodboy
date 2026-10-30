@@ -1,12 +1,26 @@
 import { useState } from 'react';
-import { AnchoredPopover, Button, Chip, Input, formatUsd, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  Chip,
+  Input,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  TEXT_ROLE,
+  useDropdown,
+} from '@goodboy/ui';
 import { parseSpendLimit } from '../budget/parseSpendLimit';
+import { AutoLimitChoices } from './AutoLimitChoices';
+import { AUTO_LIMIT_COPY, type AutoLimitKind } from './autoLimitCopy';
+import type { AutoTreeLimitModel } from './useAutoTreeLimit';
 
 type Props = {
-  readonly usd: number | null;
-  readonly isFromSession: boolean;
+  readonly limit: Pick<
+    AutoTreeLimitModel,
+    'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'change'
+  >;
+  readonly kind: AutoLimitKind;
   readonly isDisabled: boolean;
-  readonly onChange: (usd: number | null) => void;
 };
 
 type TextParams = {
@@ -15,28 +29,35 @@ type TextParams = {
 
 const INPUT_ID = 'auto-tree-limit';
 
-const NO_LIMIT = 'No limit';
-
-const chipLabelOf = ({ usd }: TextParams): string =>
-  usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`;
+const POPOVER_HEIGHT_PX = 280;
 
 const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
 
-export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Props) => {
-  const dropdown = useDropdown({ disabled: isDisabled, width: 'w-80' });
+export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
+  const { usd, isFromSession, isDefault, defaultUsd, change } = limit;
+  const dropdown = useDropdown({
+    disabled: isDisabled,
+    width: POPOVER_WIDTH_CLASS.standard,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    expectedHeight: POPOVER_HEIGHT_PX,
+  });
   const { open: isOpen, toggle, close } = dropdown;
   const [draft, setDraft] = useState(amountTextOf({ usd }));
   const parsed = parseSpendLimit(draft);
   const isInvalid = draft.trim() !== '' && parsed === null;
+  const title = AUTO_LIMIT_COPY.titleOf({ kind });
+  const label = (
+    <>
+      {AUTO_LIMIT_COPY.labelOf({ usd })}
+      {isDefault ? (
+        <span className={TEXT_ROLE.hint}>{`· ${AUTO_LIMIT_COPY.defaultTag}`}</span>
+      ) : null}
+    </>
+  );
 
   if (isFromSession) {
     return (
-      <Chip
-        tone="neutral"
-        kind="reference"
-        label={chipLabelOf({ usd })}
-        title="From the budget of this session"
-      />
+      <Chip tone="neutral" kind="reference" label={label} title={AUTO_LIMIT_COPY.fromSession} />
     );
   }
 
@@ -44,14 +65,14 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Limit for this Auto run"
+      ariaLabel={title}
       className="flex flex-col gap-3 p-3"
       trigger={
         <Chip
           tone="neutral"
           kind="reference"
           as="button"
-          label={chipLabelOf({ usd })}
+          label={label}
           expanded={isOpen}
           hasPopup="dialog"
           disabled={isDisabled}
@@ -62,13 +83,19 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
         />
       }
     >
-      <label htmlFor={INPUT_ID} className="text-meta text-foreground">
-        Limit for this Auto run
+      <p className="text-meta text-foreground">{title}</p>
+      <p className="text-meta text-muted-foreground">{AUTO_LIMIT_COPY.helpOf({ kind })}</p>
+      <AutoLimitChoices
+        usd={usd}
+        defaultUsd={defaultUsd}
+        onPick={(amount) => {
+          change(amount);
+          close();
+        }}
+      />
+      <label htmlFor={INPUT_ID} className="text-meta text-muted-foreground">
+        {AUTO_LIMIT_COPY.other}
       </label>
-      <p className="text-meta text-muted-foreground">
-        The most Auto and the agents it starts may spend. Without a limit, Auto only stops when the
-        work is done. Other Auto runs in this workspace start from the same limit.
-      </p>
       <Input
         id={INPUT_ID}
         type="text"
@@ -77,18 +104,18 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
         aria-invalid={isInvalid}
         onChange={(event) => setDraft(event.target.value)}
       />
-      {isInvalid ? <p className="text-meta text-danger">Enter an amount more than zero.</p> : null}
+      {isInvalid ? <p className="text-meta text-danger">{AUTO_LIMIT_COPY.invalid}</p> : null}
       <div className="flex justify-end gap-2">
         {usd === null ? null : (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
-              onChange(null);
+              change(null);
               close();
             }}
           >
-            {NO_LIMIT}
+            {AUTO_LIMIT_COPY.noLimit}
           </Button>
         )}
         <Button
@@ -96,12 +123,12 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
           disabled={parsed === null}
           onClick={() => {
             if (parsed !== null) {
-              onChange(parsed);
+              change(parsed);
               close();
             }
           }}
         >
-          Use this limit
+          {AUTO_LIMIT_COPY.use}
         </Button>
       </div>
     </AnchoredPopover>

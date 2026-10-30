@@ -3,6 +3,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { pausingSessionCapOf } from '../../budget/pausingSessionCapOf';
+import { autoLimitOf } from '../autoLimitOf';
 import { parseAutoTreeLimit, writeAutoTreeLimit } from '../autoTreeLimit';
 
 type Params = {
@@ -15,6 +16,8 @@ type Draft = Readonly<{ usd: number | null }>;
 export type AutoTreeLimitModel = Readonly<{
   usd: number | null;
   isFromSession: boolean;
+  isDefault: boolean;
+  defaultUsd: number | null;
   isStored: boolean;
   change: (usd: number | null) => void;
   persist: () => Promise<void>;
@@ -41,8 +44,12 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
     });
   }, [workspaceId, loadWorkspaceValue, reportError]);
 
-  const usd = draft === null ? storedUsd : draft.usd;
-  const isFromSession = sessionCapUsd !== null && (usd === null || sessionCapUsd < usd);
+  const facts = autoLimitOf({
+    storedUsd,
+    draftUsd: draft === null ? undefined : draft.usd,
+    sessionCapUsd,
+  });
+  const { isFromSession } = facts;
 
   const change = useCallback((next: number | null): void => setDraft({ usd: next }), []);
 
@@ -60,8 +67,10 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
   }, [draft, isFromSession, loadWorkspaceValue, storedUsd, workspaceId]);
 
   return {
-    usd: isFromSession ? sessionCapUsd : usd,
+    usd: facts.usd,
     isFromSession,
+    isDefault: facts.isDefault,
+    defaultUsd: facts.defaultUsd,
     isStored: storedUsd !== null,
     change,
     persist,

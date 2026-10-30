@@ -88,12 +88,7 @@ export const StartShapeForm = ({ workspaceId, shape, run, limit, model }: Props)
                 <StartAsksSetting workspaceId={workspaceId} isDisabled={run.isStarting} />
               ) : null}
               <RunModelChip model={model} isDisabled={run.isStarting} />
-              <AutoLimitChip
-                usd={limit.usd}
-                isFromSession={limit.isFromSession}
-                isDisabled={run.isStarting}
-                onChange={limit.change}
-              />
+              <AutoLimitChip limit={limit} kind={shape} isDisabled={run.isStarting} />
             </div>
           )
         }

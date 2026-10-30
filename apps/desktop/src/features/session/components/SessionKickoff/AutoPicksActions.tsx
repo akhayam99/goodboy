@@ -26,12 +26,7 @@ export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
         leading={
           <div className="flex flex-wrap items-center gap-2">
             <RunChoiceChips run={run} workspaceId={workspaceId} role={null} />
-            <AutoLimitChip
-              usd={limit.usd}
-              isFromSession={limit.isFromSession}
-              isDisabled={run.isStarting}
-              onChange={limit.change}
-            />
+            <AutoLimitChip limit={limit} kind="autoAgent" isDisabled={run.isStarting} />
             <Button
               variant="ghost"
               size="sm"
