@@ -2,9 +2,13 @@ import {
   AUTO_BLOCK_TEXT,
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_TURN_CEILING_USD,
+  autoRefusalUserReason,
+  autoRefusedBlockText,
   autoRemainingForGates,
+  isRefusalPayload,
   storedDeliveryOf,
   turnGate,
+  type AutoBlockReason,
 } from '@goodboy/core';
 import {
   acceptAutoOutboxStatement,
@@ -74,6 +78,20 @@ const blockTree = async ({ ctx, tree, reason }: BlockParams): Promise<DeliverOut
     patch: { blockedReason: reason },
   });
   return { kind: 'blocked', reason };
+};
+
+type BlockReasonParams = {
+  readonly gate: AutoBlockReason;
+  readonly primary: AutoOutboxRow;
+};
+
+const blockReasonOf = ({ gate, primary }: BlockReasonParams): string => {
+  if (gate !== 'limit_no_progress' || !isRefusalPayload(primary.payload)) {
+    return AUTO_BLOCK_TEXT[gate];
+  }
+  return autoRefusedBlockText({
+    reason: autoRefusalUserReason({ code: primary.payload.code }),
+  });
 };
 
 type ClaimStatementsParams = {
@@ -284,7 +302,7 @@ export const deliverNext = async ({
     remainingUsd: autoRemainingForGates({ spend }),
   });
   if (gate !== null) {
-    return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT[gate] });
+    return blockTree({ ctx, tree, reason: blockReasonOf({ gate, primary }) });
   }
   if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
     return { kind: 'idle', reason: 'blocked' };

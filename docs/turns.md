@@ -676,6 +676,10 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   `streamedText.ts`) turns each `text_delta` of a top level `stream_event`
   into one `assistant_text` marked `isPartial`, and drops the text block of the whole `assistant`
   line that follows when it is contained in the text it already streamed.
+  A block stays open until its own `content_block_start` or `content_block_stop`, or a
+  top level `user`, `result` or `tool_call` payload. A `system` status, a hook line or any other
+  payload between two deltas never opens a paragraph, so a word or a marker split across deltas
+  is stored and rendered whole (`BLOCK_BOUNDARY_PAYLOAD_TYPES`).
   Cursor deltas are the `assistant` lines with a `timestamp_ms`; the whole line
   without one is dropped the same way. Usage, tools and the result stay on the
   whole lines. `queueTurnEventInsert` holds the `isPartial` deltas up to 250 ms

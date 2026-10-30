@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { autoRefusalUserReason, autoRefusedBlockText } from '@goodboy/core';
 import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
@@ -34,6 +35,26 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   registerTreeStopPort({ port: null });
+});
+
+describe('the Auto tail after refused hand overs', () => {
+  it('says why Auto stopped and offers Retry', () => {
+    const base = aView({ phase: 'blocked' });
+    const view = {
+      ...base,
+      tree: {
+        ...base.tree,
+        blockedReason: autoRefusedBlockText({
+          reason: autoRefusalUserReason({ code: 'role_lacks_shell' }),
+        }),
+      },
+    };
+    render(<AutoTail sessionId={FIXTURE_SESSION} view={view} rootAgent={ROOT} />);
+
+    screen.getByText(/was refused: the role it chose cannot run commands/);
+    screen.getByText(/Retry to let it choose again, or tell it what to change/);
+    screen.getByRole('button', { name: 'Retry' });
+  });
 });
 
 describe('the Auto tail verbs', () => {

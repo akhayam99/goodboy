@@ -246,7 +246,7 @@ export {
   type AutoBlockReason,
   type TurnGateParams,
 } from './auto/turnGate';
-export { isAutoGateBlock } from './auto/isAutoGateBlock';
+export { autoRefusedBlockText, isAutoGateBlock } from './auto/isAutoGateBlock';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
 export {
   AUTO_CHILD_PROVIDERS,
@@ -419,7 +419,7 @@ export {
 export {
   AUTO_COMMAND_ROLES,
   canAutoRoleRunCommands,
-  doesTaskNeedCommands,
+  commandMentionOf,
   isMissingShellText,
   rerouteHintOf,
   roleCannotRunCommandsMessage,

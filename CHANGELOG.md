@@ -45,6 +45,9 @@ A run's page shows its questions as the same card as the transcript, with the su
 - The Model chip looks and works the same on New session and on a session's Runs page. <!-- gb area=sessions -->
 - Agents reply and ask in the language of the session goal, which their instructions now name, instead of guessing it. <!-- gb area=agents -->
 - An agent that finds missing dependencies runs the install command for the lockfile instead of asking you how. <!-- gb area=agents -->
+- Auto's replies no longer break a word into two paragraphs, and its hand over notes no longer show as raw text. <!-- gb area=agents -->
+- A planner is no longer refused for a task that says not to run a command, and every refusal says what to change. <!-- gb area=agents -->
+- When Auto keeps being refused, the chat says why and offers Retry instead of stopping in silence. <!-- gb area=agents -->
 
 ## Goodboy v0.29.3
 

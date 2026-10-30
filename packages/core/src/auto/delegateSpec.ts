@@ -166,7 +166,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: `child ${slot + 1}: a retry repeats the earlier work as it was, so ${clash} cannot be set`,
+      message: `child ${slot + 1}: a retry repeats the earlier work as it was, so ${clash} cannot be set. Drop "${clash}" or drop "retryOf"`,
     });
   }
   const reason = textOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });

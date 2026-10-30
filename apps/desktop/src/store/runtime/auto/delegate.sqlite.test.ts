@@ -301,6 +301,102 @@ describe('the delegate command', () => {
     expect(rows.map((row) => row.role)).toEqual(['implementer']);
   });
 
+  it('admits a planner whose task forbids the commands it names', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'planner',
+            task: 'Plan the ledger-core export. No yarn install (no node_modules in this folder), never run git push, do not commit.',
+            reason: 'a plan before the change',
+          },
+        ],
+      }),
+    );
+    expect(outcome.isOk).toBe(true);
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(1);
+  });
+
+  it('still refuses a planner asked to run the tests, and quotes the phrase that matched', async () => {
+    const state = await setup();
+    const refused = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'planner',
+            task: 'No yarn install. Run pnpm test and plan the fix from the failures.',
+            reason: 'a plan from the failures',
+          },
+        ],
+      }),
+    );
+    expect(refused).toMatchObject({ isOk: false, code: 'role_lacks_shell' });
+    expect(refused.error).toContain('The task matched: `Run pnpm test`.');
+    expect(refused.error).not.toContain('yarn install`');
+  });
+
+  it('names the field to drop when facts, publish or forQuestion go to a role that cannot take them', async () => {
+    const state = await setup();
+    const facts = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'reviewer',
+            task: 'Review the open pull request of ledger-core.',
+            reason: 'a review',
+            facts: ['mount-ledger-core'],
+          },
+        ],
+      }),
+    );
+    expect(facts).toMatchObject({ isOk: false, code: 'spec_invalid' });
+    expect(facts.error).toContain(
+      '"facts" is for a scout: Goodboy reads the branch facts into a scout\'s brief. Drop "facts" from this reviewer child, or send it to a scout. Nothing was started',
+    );
+    const publish = await run(
+      state,
+      delegateCommand(
+        {
+          children: [
+            {
+              role: 'investigator',
+              task: 'Explain the ledger total.',
+              reason: 'a diagnosis',
+              publish: { mode: 'push' },
+            },
+          ],
+        },
+        'request-2',
+      ),
+    );
+    expect(publish.error).toContain(
+      'Drop "publish" from this investigator child, or send it to an implementer. Nothing was started',
+    );
+    const question = await run(
+      state,
+      delegateCommand(
+        {
+          children: [
+            {
+              role: 'reviewer',
+              task: 'Answer the question.',
+              reason: 'a substep',
+              forQuestion: 'question-1',
+            },
+          ],
+        },
+        'request-3',
+      ),
+    );
+    expect(question.error).toContain(
+      '"forQuestion" is for a scout or an investigator, and this child is reviewer. Change "role" or drop "forQuestion". Nothing was started',
+    );
+  });
+
   it('keeps a read only role for a task that only reads', async () => {
     const state = await setup();
     const outcome = await run(
