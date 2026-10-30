@@ -3,7 +3,7 @@ import { helperUrgencyOf, type HelperUrgency } from './helperUrgencyOf';
 import { parentIdsOf } from './parentIdsOf';
 import type { SpawnedRow } from './spawnedRow';
 
-export type HelpersSummary = Readonly<{
+type HelpersSummary = Readonly<{
   id: string;
   level: number;
 }>;
@@ -32,7 +32,7 @@ type HelpersParams = {
   readonly index: number;
 };
 
-export const helpersSummaryIdOf = ({ id }: IdParams): string => `${id}:helpers`;
+const helpersSummaryIdOf = ({ id }: IdParams): string => `${id}:helpers`;
 
 const helpersOf = ({ rows, index }: HelpersParams): ReadonlyArray<SpawnedRow> => {
   const level = rows[index]?.level ?? 0;
