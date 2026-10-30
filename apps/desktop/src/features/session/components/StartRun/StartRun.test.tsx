@@ -39,6 +39,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
@@ -629,6 +630,92 @@ describe('StartRun run as', () => {
         key: 'auto.treeLimitUsd',
       }),
     ).toBeNull();
+  });
+});
+
+const startOrchestrated = () => {
+  const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+  useAppStore.setState({
+    savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+    attachWorkflowToSession,
+    generateWorkflowTitle: vi.fn(async () => undefined),
+  });
+  return attachWorkflowToSession;
+};
+
+type DefaultLimitParams = {
+  readonly usd: string;
+};
+
+const storeDefaultLimit = async ({ usd }: DefaultLimitParams) =>
+  setWorkspaceValue({
+    db: storySqlite(),
+    workspaceId: WORKSPACE.id,
+    key: 'auto.treeLimitUsd',
+    value: usd,
+  });
+
+describe('StartRun limit', () => {
+  it('starts a run with the default amount the chip showed, tagged as the default', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    await screen.findByRole('button', { name: 'Limit $5.00 · default' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 5, limitSource: 'default' });
+  });
+
+  it('starts a run with no limit when the chip said No limit, though a default exists', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(await screen.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
+    await screen.findByRole('button', { name: 'No limit' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    const options = attach.mock.calls[0]?.[2];
+    expect(options?.spendLimitUsd).toBeNull();
+    expect(options?.limitSource).toBeUndefined();
+  });
+
+  it('starts a run with the amount typed in the popover, tagged as this run', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(await screen.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Other amount' }), {
+      target: { value: '8' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this limit' }));
+    await screen.findByRole('button', { name: 'Limit $8.00' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'run' });
+  });
+
+  it('names the session and the provider month in the popover, after the amounts', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    useAppStore.setState({
+      sessionBudgets: {
+        [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
+      },
+      providerBudgetStatus: {
+        anthropic: providerBudgetStatusFor({ spentUsd: 41.2, capUsd: 200 }),
+      },
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Limit / }));
+
+    screen.getByText('Session $0 of $20.00 · Claude $41.20 of $200.00 this month');
   });
 });
 

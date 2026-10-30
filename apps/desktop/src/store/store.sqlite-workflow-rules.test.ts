@@ -382,13 +382,73 @@ describe('store on sqlite: workflow rules', () => {
     expect((await storedRun(first))?.rulesSnapshot).toEqual({
       ...DEFAULT_WORKFLOW_RULES,
       spendLimitUsd: 25,
+      limitSource: 'default',
       autonomy: 'step',
     });
     expect((await storedRun(second))?.rulesSnapshot).toEqual({
       ...DEFAULT_WORKFLOW_RULES,
       spendLimitUsd: 10,
+      limitSource: 'default',
       autonomy: 'run',
     });
+  });
+});
+
+type LimitOptions = {
+  readonly spendLimitUsd?: number | null;
+  readonly limitSource?: 'default' | 'run';
+};
+
+const attachWithLimit = async ({ spendLimitUsd, limitSource }: LimitOptions) => {
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE_ID]: {
+        ...EMPTY_OVERRIDES,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: 25 },
+      },
+    },
+  });
+  await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
+    autoRun: false,
+    triggerMode: 'manual',
+    ...(spendLimitUsd !== undefined && { spendLimitUsd }),
+    ...(limitSource !== undefined && { limitSource }),
+  });
+  const id = runIdOfSession();
+  return { live: runOf(id), stored: await storedRun(id) };
+};
+
+describe('store on sqlite: the limit a run starts with', () => {
+  it('adds no limit when the start said none, whatever the workspace default is', async () => {
+    const { live, stored } = await attachWithLimit({ spendLimitUsd: null });
+
+    expect(live?.spendLimitUsd).toBeUndefined();
+    expect(stored?.spendLimitUsd).toBeUndefined();
+    expect(stored?.rulesSnapshot?.spendLimitUsd).toBeNull();
+    expect(stored?.rulesSnapshot?.limitSource).toBeUndefined();
+  });
+
+  it('gives the run the amount the start showed and says it was typed for this run', async () => {
+    const { live, stored } = await attachWithLimit({ spendLimitUsd: 8, limitSource: 'run' });
+
+    expect(live?.spendLimitUsd).toBe(8);
+    expect(stored?.spendLimitUsd).toBe(8);
+    expect(stored?.rulesSnapshot).toMatchObject({ spendLimitUsd: 8, limitSource: 'run' });
+  });
+
+  it('keeps the default tag when the start showed the default amount', async () => {
+    const { stored } = await attachWithLimit({ spendLimitUsd: 5, limitSource: 'default' });
+
+    expect(stored?.spendLimitUsd).toBe(5);
+    expect(stored?.rulesSnapshot).toMatchObject({ spendLimitUsd: 5, limitSource: 'default' });
+  });
+
+  it('starts from the workspace default only when no start said anything', async () => {
+    const { live, stored } = await attachWithLimit({});
+
+    expect(live?.spendLimitUsd).toBe(25);
+    expect(stored?.spendLimitUsd).toBe(25);
+    expect(stored?.rulesSnapshot).toMatchObject({ spendLimitUsd: 25, limitSource: 'default' });
   });
 });
 

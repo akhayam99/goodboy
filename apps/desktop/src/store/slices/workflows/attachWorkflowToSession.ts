@@ -9,7 +9,6 @@ import type {
   WorkflowExecutionMode,
   WorkflowRun,
   WorkflowRunId,
-  WorkflowSpendLimitMode,
   WorkflowTriggerMode,
   WorkflowRules,
   WorkspaceId,
@@ -34,6 +33,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { withHeadroom } from './withHeadroom';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { rulesWithLimit, runLimitOf, type WorkflowLimitSource } from './runLimit/runLimitOf';
 
 type Options = {
   autoRun?: boolean;
@@ -42,8 +42,8 @@ type Options = {
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
   orchestratorRouting?: OrchestratorRouting;
-  spendLimitUsd?: number;
-  spendLimitMode?: WorkflowSpendLimitMode;
+  spendLimitUsd?: number | null;
+  limitSource?: WorkflowLimitSource;
   providerPool?: ReadonlyArray<ProviderId>;
   navigate?: boolean;
   rulesSnapshot?: WorkflowRules;
@@ -79,11 +79,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const autoRun = options?.autoRun ?? session.autoRun;
     const executionMode = options?.executionMode ?? 'static';
     const goal = options?.goal?.trim() || undefined;
-    const spendLimitUsd =
-      options?.spendLimitUsd != null && options.spendLimitUsd > 0
-        ? options.spendLimitUsd
-        : undefined;
-    const spendLimitMode = options?.spendLimitMode ?? 'pause';
     const orchestratorRouting = options?.orchestratorRouting;
     const providerPool =
       executionMode === 'dynamic' &&
@@ -91,10 +86,21 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       options.providerPool.length > 0
         ? options.providerPool
         : undefined;
-    const rulesSnapshot = options?.rulesSnapshot ?? {
-      ...workspaceRulesFor({ get, workspaceId: session.workspaceId }),
-      autonomy: autoRun ? 'run' : 'step',
-    };
+    const workspaceRules = workspaceRulesFor({ get, workspaceId: session.workspaceId });
+    const limit = runLimitOf({
+      rules: workspaceRules,
+      spendLimitUsd: options?.spendLimitUsd,
+      limitSource: options?.limitSource,
+    });
+    const spendLimitUsd = limit.usd;
+    const spendLimitMode = limit.mode;
+    const rulesSnapshot = rulesWithLimit({
+      rules: options?.rulesSnapshot ?? {
+        ...workspaceRules,
+        autonomy: autoRun ? 'run' : 'step',
+      },
+      limit,
+    });
     const triggerMode = options?.triggerMode ?? 'immediate';
     const ordinal = session.workflowRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
     const now = new Date().toISOString() as IsoDateTime;

@@ -13,6 +13,7 @@ import {
 } from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { useRunSpendUsd } from '../../../../store/slices/sessions/selectors';
+import { runLimitSourceOf } from '../../runLimitSourceOf';
 import { RunLimitFields } from '../RunSettingsLine/RunLimitFields';
 import { useRunLimitDraft } from '../RunSettingsLine/useRunLimitDraft';
 
@@ -43,7 +44,11 @@ export const RunSpendLimitPopover = ({
   });
   const { open, toggle } = dropdown;
   const limit = useRunLimitDraft({ sessionId, run, isOpen: open });
-  const metaLabel = limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`;
+  const source = runLimitSourceOf({ run });
+  const metaLabel =
+    limitUsd == null
+      ? 'Set a limit'
+      : `Limit ${formatUsd(limitUsd)}${source === null ? '' : ` · ${source}`}`;
 
   return (
     <AnchoredPopover

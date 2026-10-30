@@ -21,6 +21,7 @@ const BASE = {
   sessionCapUsd: 8,
   spentUsd: 0.92,
   sessionSpentUsd: 3.4,
+  months: [],
   providers: ['anthropic', 'codex'] as const,
 };
 
@@ -46,6 +47,43 @@ describe('runSettingsOf', () => {
       source: 'this run',
       chain: 'This run $5.00, then session $8.00. $5.00 comes first.',
     });
+  });
+
+  it('tags the amount a run kept from the workspace default', () => {
+    const run = {
+      ...RUN,
+      spendLimitUsd: 5,
+      rulesSnapshot: {
+        ...DEFAULT_WORKFLOW_RULES,
+        spendLimitUsd: 5,
+        limitSource: 'default' as const,
+      },
+    };
+
+    expect(runSettingsOf({ ...BASE, run }).limit.source).toBe('default');
+  });
+
+  it('says this run once the amount differs from the default it started with', () => {
+    const run = {
+      ...RUN,
+      spendLimitUsd: 6,
+      rulesSnapshot: {
+        ...DEFAULT_WORKFLOW_RULES,
+        spendLimitUsd: 5,
+        limitSource: 'default' as const,
+      },
+    };
+
+    expect(runSettingsOf({ ...BASE, run }).limit.source).toBe('this run');
+  });
+
+  it('names the provider month after the session in the chain', () => {
+    const months = [{ label: 'Claude', spentUsd: 41.2, capUsd: 200 }];
+    const { limit } = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 5 }, months });
+
+    expect(limit.chain).toBe(
+      'This run $5.00, then session $8.00, then Claude $41.20 of $200.00 this month. $5.00 comes first.',
+    );
   });
 
   it('counts the whole session against the session cap when that cap comes first', () => {

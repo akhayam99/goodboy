@@ -18,7 +18,7 @@ type Props = {
   readonly limit: Pick<
     AutoTreeLimitModel,
     'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'change'
-  >;
+  > & { readonly tiers?: string };
   readonly kind: AutoLimitKind;
   readonly isDisabled: boolean;
 };
@@ -29,12 +29,12 @@ type TextParams = {
 
 const INPUT_ID = 'auto-tree-limit';
 
-const POPOVER_HEIGHT_PX = 280;
+const POPOVER_HEIGHT_PX = 320;
 
 const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
 
 export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
-  const { usd, isFromSession, isDefault, defaultUsd, change } = limit;
+  const { usd, isFromSession, isDefault, defaultUsd, change, tiers = '' } = limit;
   const dropdown = useDropdown({
     disabled: isDisabled,
     width: POPOVER_WIDTH_CLASS.standard,
@@ -93,6 +93,7 @@ export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
           close();
         }}
       />
+      {tiers === '' ? null : <p className="text-meta text-muted-foreground">{tiers}</p>}
       <label htmlFor={INPUT_ID} className="text-meta text-muted-foreground">
         {AUTO_LIMIT_COPY.other}
       </label>

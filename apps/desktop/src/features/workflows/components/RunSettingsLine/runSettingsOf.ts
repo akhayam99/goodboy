@@ -1,8 +1,10 @@
 import { formatUsd } from '@goodboy/ui';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
 import type { ProviderId, WorkflowAutonomy, WorkflowRun } from '@goodboy/types';
+import { limitTiersOf, type MonthTier } from '../../../budget/limitTiersOf';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { asksWordsOf } from '../../asksWordsOf';
+import { runLimitSourceOf } from '../../runLimitSourceOf';
 import { runAutonomyOf } from '../../runAutonomy';
 
 export type RunSettingWords = SettingWords;
@@ -20,6 +22,7 @@ type Params = {
   readonly sessionCapUsd: number | null;
   readonly spentUsd: number;
   readonly sessionSpentUsd: number;
+  readonly months: ReadonlyArray<MonthTier>;
   readonly providers: ReadonlyArray<ProviderId>;
 };
 
@@ -39,7 +42,10 @@ const asksOf = ({ run, workspaceName, workspaceAutonomy }: AsksParams): RunSetti
     workspaceAutonomy,
   });
 
-type LimitParams = Pick<Params, 'run' | 'sessionCapUsd' | 'spentUsd' | 'sessionSpentUsd'>;
+type LimitParams = Pick<
+  Params,
+  'run' | 'sessionCapUsd' | 'spentUsd' | 'sessionSpentUsd' | 'months'
+>;
 
 type AmountParams = {
   readonly amount: number | null;
@@ -53,24 +59,26 @@ const limitOf = ({
   sessionCapUsd,
   spentUsd,
   sessionSpentUsd,
+  months,
 }: LimitParams): RunSettingWords => {
   const runLimit = run.spendLimitUsd ?? null;
   const limits = [runLimit, sessionCapUsd].filter((limit): limit is number => limit !== null);
   const first = limits.length === 0 ? null : Math.min(...limits);
+  const monthText = limitTiersOf({ session: { capUsd: null, spentUsd: null }, months });
   const chain = `This run ${amountOf({ amount: runLimit })}, then session ${amountOf({
     amount: sessionCapUsd,
-  })}.`;
+  })}${monthText === '' ? '' : `, then ${monthText}`}.`;
   if (first === null) {
     return {
       value: spentUsd === 0 ? 'none' : `${formatUsd(spentUsd)} spent`,
       source: '',
-      chain: `${chain} Nothing stops this run.`,
+      chain: `${chain} ${monthText === '' ? 'Nothing stops this run.' : 'Only the month limit stops this run.'}`,
     };
   }
   if (first === runLimit) {
     return {
       value: `${formatUsd(spentUsd)} of ${formatUsd(first)}`,
-      source: 'this run',
+      source: runLimitSourceOf({ run }) ?? 'this run',
       chain: `${chain} ${formatUsd(first)} comes first.`,
     };
   }
@@ -108,9 +116,10 @@ export const runSettingsOf = ({
   sessionCapUsd,
   spentUsd,
   sessionSpentUsd,
+  months,
   providers,
 }: Params): RunSettings => ({
   asks: asksOf({ run, workspaceName, workspaceAutonomy }),
-  limit: limitOf({ run, sessionCapUsd, spentUsd, sessionSpentUsd }),
+  limit: limitOf({ run, sessionCapUsd, spentUsd, sessionSpentUsd, months }),
   models: modelsOf({ run, workspaceName, providers }),
 });

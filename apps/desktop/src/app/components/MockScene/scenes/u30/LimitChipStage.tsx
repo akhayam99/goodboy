@@ -19,6 +19,10 @@ const TYPED_LIMIT = {
   change: noop,
 } as const;
 
+const TIERS = 'Session $0 of $20.00 · Claude $41.20 of $200.00 this month';
+
+const OPEN_LIMIT = { ...TYPED_LIMIT, tiers: TIERS } as const;
+
 export const LimitChipStage = () => {
   const openRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +42,7 @@ export const LimitChipStage = () => {
           <span className="text-meta text-muted-foreground">Typed</span>
         </div>
         <div ref={openRef} className="flex items-center gap-2">
-          <AutoLimitChip limit={TYPED_LIMIT} kind="orchestrated" isDisabled={false} />
+          <AutoLimitChip limit={OPEN_LIMIT} kind="orchestrated" isDisabled={false} />
           <span className="text-meta text-muted-foreground">Open</span>
         </div>
       </div>

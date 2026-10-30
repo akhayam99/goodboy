@@ -49,6 +49,9 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - **Asks you** is Every step, After the plan or Never for a workflow, and the Auto level for an Auto agent.
 - **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, the same as the chat box's picker, and is set before the first agent starts.
 - **Limit** reads "Limit $5.00", with a quiet "default" while the amount is the workspace default. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
+- Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
+- The run gets exactly the amount the chip shows. **No limit** means no limit, even when the workspace has a default. A start never adds a limit you did not see.
+- The run page shows the same amount with its source, **default** or **this run**.
 - Switching kind keeps what you typed and the values that still apply.
 - The primary names what starts: **Start workflow**, **Start Scout** (the role you picked), **Start Auto agent**, or **Start** while Auto picks.
 - Setup's Scout run is pinned to Agent, so it draws neither kinds nor settings.
@@ -193,6 +196,8 @@ This part is for contributors and agents who change the feature.
 - Prefix menu: `useRunPrefixMenu` reuses `QuickActionsPopover` for `~` and `@`. A pick sets the chip and empties the field.
 - Attachments: `usePromptFiles` stages them. `startRoutedRun` saves them as goal attachments of the session (an agent) or the run (a plan) before the first agent starts.
 - Limit chip: `autoLimitOf` returns the amount, its source and the default. `useAutoTreeLimit`, `AutoLimitChip` and its callers read it.
+- Limit at start: `useAutoTreeLimit` returns `persist`, which resolves to the `StartLimit` that `startLimitOf` builds from the same facts the chip shows. `useStartRun` and `useStartShape` pass it to `startRoutedRun`, which hands `spendLimitUsd` and `limitSource` to `attachWorkflowToSession`. `runLimitOf` there sets the run's own limit and writes the same amount into its `rulesSnapshot`. The snapshot never carries a limit the form did not show. A start that passes nothing, such as a workflow from the chat prefix, copies the workspace limit of the Run defaults instead.
+- Tiers: `limitTiersOf` words the session and provider month lines, `useAutoTreeLimit` returns them as `tiers`, and `runSettingsOf` uses the same function for the run's chain. `runLimitSourceOf` reads **default** or **this run** from the run's `limitSource`.
 - Limit popover: `AutoLimitChip` uses `AnchoredPopover` at the standard popover width, so it flips and shifts inside the window.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.

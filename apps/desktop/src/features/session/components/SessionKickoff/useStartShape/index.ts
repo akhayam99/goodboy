@@ -13,6 +13,7 @@ import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
 import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
 import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
 import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
@@ -20,7 +21,7 @@ import { useStartFromDraft } from '../useStartFromDraft';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly mount: SessionDraftMount | null;
-  readonly prepare: () => Promise<void>;
+  readonly prepare: () => Promise<StartLimit>;
   readonly model: RunModelModel;
   readonly level: AutoLevel | null;
 };
@@ -84,9 +85,7 @@ export const useStartShape = ({
     setIsStarting(true);
     setError(null);
     try {
-      if (shape !== 'agent') {
-        await prepare();
-      }
+      const limit = shape === 'agent' ? null : await prepare();
       const result = pickedRouteOf({
         shape,
         ask,
@@ -114,6 +113,7 @@ export const useStartShape = ({
           orchestratorRouting,
           autonomy,
           level: shape === 'autoAgent' ? level : null,
+          limit,
         });
       };
       await startFromDraft({

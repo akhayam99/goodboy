@@ -126,7 +126,7 @@ describe('the c08 preset run scenes', () => {
     expect(panel.getByText('Fix flaky tests in the ledger export')).toBeDefined();
     expect(panel.getByRole('tree', { name: 'Run agents' })).toBeDefined();
     expect(panel.getByText('Add step')).toBeDefined();
-    expect(within(runDock()).getByText('Limit $3.00')).toBeDefined();
+    expect(within(runDock()).getByText('Limit $3.00 · this run')).toBeDefined();
     expect(document.querySelector('[data-run-step-heading]')?.textContent).toBe(
       'Step 2 · Implementer',
     );

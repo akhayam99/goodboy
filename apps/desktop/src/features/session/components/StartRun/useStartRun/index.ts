@@ -26,6 +26,7 @@ import { runAutonomyOf } from '../../../../workflows/runAutonomy';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import type { StartLimit } from '../../../../auto/startLimitOf';
 import {
   agentRoutingOfPin,
   orchestratorRoutingOfPin,
@@ -48,7 +49,7 @@ import type { StartRunFile } from '../../../startRun/startRunFileOf';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
-  readonly prepare: () => Promise<void>;
+  readonly prepare: () => Promise<StartLimit>;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
   readonly onStarted?: () => void;
@@ -320,7 +321,7 @@ export const useStartRun = ({
     setIsStarting(true);
     setError(null);
     try {
-      await prepare();
+      const limit = await prepare();
       const { loadSetting } = useAppStore.getState();
       await Promise.all([
         loadSetting(runDefaultKey({ scope: { kind: 'workspace', workspaceId } })),
@@ -384,6 +385,7 @@ export const useStartRun = ({
           attachments,
           level: pickedLevel,
           autonomy: autonomyNow,
+          limit,
           ...pinned,
         });
       };
@@ -399,6 +401,7 @@ export const useStartRun = ({
               attachments,
               level: pickedLevel,
               autonomy: autonomyNow,
+              limit,
               ...pinned,
             }),
           ));
