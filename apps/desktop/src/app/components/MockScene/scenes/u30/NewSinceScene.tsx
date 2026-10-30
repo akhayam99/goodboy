@@ -20,7 +20,7 @@ export const NewSinceScene = ({ theme }: Props) => {
   }
   return (
     <AutoReleaseContext.Provider value>
-      <div data-shot style={{ width: 1180, height: 900 }} className="[&>div]:h-full [&>div]:w-full">
+      <div data-shot style={{ width: 680, height: 760 }} className="[&>div]:h-full [&>div]:w-full">
         <CentralColumnPane />
       </div>
     </AutoReleaseContext.Provider>

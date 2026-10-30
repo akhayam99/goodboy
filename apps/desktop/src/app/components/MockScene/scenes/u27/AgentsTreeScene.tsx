@@ -9,9 +9,15 @@ type Props = {
   readonly theme: 'dark' | 'light';
   readonly isFocused: boolean;
   readonly seed?: TreeSeed;
+  readonly isShotFrame?: boolean;
 };
 
-export const AgentsTreeScene = ({ theme, isFocused, seed = TREE_SEED }: Props) => {
+export const AgentsTreeScene = ({
+  theme,
+  isFocused,
+  seed = TREE_SEED,
+  isShotFrame = false,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -35,6 +41,15 @@ export const AgentsTreeScene = ({ theme, isFocused, seed = TREE_SEED }: Props) =
 
   if (!isReady) {
     return null;
+  }
+  if (isShotFrame) {
+    return (
+      <main className="flex h-screen items-start bg-background text-foreground">
+        <section data-shot className="flex h-[30rem] w-[42.5rem] flex-col bg-background">
+          <SpawnedPanel sessionId={TREE_SESSION.id} onClose={() => undefined} />
+        </section>
+      </main>
+    );
   }
   return (
     <main className="flex h-screen justify-end bg-background text-foreground">
