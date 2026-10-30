@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -70,17 +70,22 @@ const mockSend = () => {
   return sendTurn;
 };
 
-const hintBox = () => screen.getByRole('textbox', { name: 'Add a hint' });
+const hintBox = () => {
+  if (screen.queryByRole('textbox', { name: 'Add a hint' }) === null) {
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+  }
+  return screen.getByRole('textbox', { name: 'Add a hint' });
+};
 
 const pickedLabel = () =>
-  screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true')
+  screen.getAllByRole('option').find((option) => option.getAttribute('aria-selected') === 'true')
     ?.textContent;
 
 describe('the next step card', () => {
   it('shows the proposed child as the primary and the alternatives, never a prose question', () => {
     renderCard();
 
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('option')).toHaveLength(3);
     expect(pickedLabel()).toContain('Spawn implementer');
     expect(pickedLabel()).toContain('Recommended');
     screen.getByText('Spawn a tester first');
@@ -88,12 +93,61 @@ describe('the next step card', () => {
     screen.getByRole('button', { name: 'Spawn implementer' });
   });
 
-  it('draws the warning tone as an inner bar', () => {
+  it('marks the waiting state with one warning dot and no rail, label or fill', () => {
     const { container } = renderCard();
+    const card = screen.getByRole('region', { name: 'Next step' });
 
-    expect(
-      container.querySelectorAll('[data-testid="tone-bar"][data-tone="warning"]'),
-    ).toHaveLength(1);
+    expect(card.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-next-action] .bg-warning')).toHaveLength(1);
+    expect(card.innerHTML).not.toMatch(/text-warning|bg-warning\/|border-warning|bg-elevated/);
+  });
+
+  it('shows the choices as one listbox with Recommended as a tag on the first', () => {
+    renderCard();
+    const group = screen.getByRole('listbox', { name: 'Next step choices' });
+
+    expect(within(group).getAllByRole('option')).toHaveLength(3);
+    expect(within(group).getAllByText('Recommended')).toHaveLength(1);
+    expect(screen.getAllByRole('option')[0]?.textContent).toContain('Recommended');
+  });
+
+  it('keeps the hint field behind Add a hint until asked and then focuses it', () => {
+    renderCard();
+
+    expect(screen.queryByRole('textbox', { name: 'Add a hint' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Add a hint' }));
+    expect(screen.queryByRole('button', { name: 'Add a hint' })).toBeNull();
+  });
+
+  it('moves the pick with the arrow keys and keeps focus on the chosen chip', () => {
+    renderCard();
+    const [first, second] = screen.getAllByRole('option');
+    first?.focus();
+
+    fireEvent.keyDown(first ?? document.body, { key: 'ArrowRight' });
+    expect(pickedLabel()).toContain('Spawn a tester first');
+    expect(document.activeElement).toBe(second);
+    fireEvent.keyDown(second ?? document.body, { key: 'ArrowLeft' });
+    expect(pickedLabel()).toContain('Spawn implementer');
+  });
+
+  it('sends the hint after it is opened and the Enter key is pressed in it', async () => {
+    const port = vi.fn<DelegationDecisionPort>(async () => 'confirmed');
+    registerDelegationDecisionPort({ port });
+    renderCard();
+
+    fireEvent.change(hintBox(), { target: { value: 'keep it small' } });
+    fireEvent.keyDown(hintBox(), { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(port).toHaveBeenCalledWith({
+        delegationId: 'delegation-impl',
+        decision: 'confirm',
+        hint: 'keep it small',
+      }),
+    );
   });
 
   it('picks with the keys 1 to 3 inside the card and ignores them while the hint is typed in', () => {
@@ -161,12 +215,12 @@ describe('the next step card', () => {
     const sendTurn = mockSend();
     renderCard();
 
-    fireEvent.click(screen.getByRole('tab', { name: /Spawn a tester first/ }));
+    fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn a tester first' }));
 
     await screen.findByText(/No longer open/);
     expect(sendTurn).not.toHaveBeenCalled();
-    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('option')).toBeNull();
   });
 
   it('says the confirm lost and offers nothing more to press', async () => {
@@ -213,7 +267,7 @@ describe('the next step card', () => {
     useAppStore.setState({ sendTurn });
     renderCard();
 
-    fireEvent.click(screen.getByRole('tab', { name: /Spawn a tester first/ }));
+    fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Spawn a tester first' }));
 
     await screen.findByText('Declined. Auto was not told.');

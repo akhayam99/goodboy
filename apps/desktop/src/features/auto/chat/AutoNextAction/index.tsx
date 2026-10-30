@@ -1,15 +1,6 @@
-import type { KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import {
-  Button,
-  ChoiceCards,
-  FormActions,
-  Input,
-  ToneBar,
-  TruncatedText,
-  cn,
-  tintClasses,
-} from '@goodboy/ui';
+import { Button, ChoiceChips, FormActions, Input, StatusDot, TruncatedText } from '@goodboy/ui';
 import { AUTO_STATE_TONE } from '../autoStateTone';
 import type { NextAction } from '../nextActionOf';
 import { useNextAction } from './useNextAction';
@@ -22,45 +13,38 @@ type Props = {
   readonly onUntold: (content: string | null) => void;
 };
 
-type PickKeyParams = {
-  readonly event: KeyboardEvent<HTMLElement>;
-  readonly keys: ReadonlyArray<string>;
-};
-
 const TONE = AUTO_STATE_TONE.waitingOnYou;
-
-const pickKeyOf = ({ event, keys }: PickKeyParams): string | undefined => {
-  const isTyping = event.target instanceof HTMLInputElement;
-  if (isTyping || event.metaKey || event.ctrlKey || event.altKey) {
-    return undefined;
-  }
-  return keys[Number(event.key) - 1];
-};
 
 export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntold }: Props) => {
   const model = useNextAction({ sessionId, rootAgentId, action, untold, onUntold });
-  const tint = tintClasses(TONE);
+  const cardRef = useRef<HTMLElement>(null);
+  const hintRef = useRef<HTMLInputElement>(null);
+  const [isHintOpen, setIsHintOpen] = useState(false);
   const picked = action.choices.find((choice) => choice.key === model.pickedKey);
   const isRetry = model.error !== null;
   const label = picked?.label ?? action.choices[0]?.label ?? 'Continue';
+  const hasHint = isHintOpen || model.hint !== '';
+
+  useEffect(() => {
+    if (isHintOpen) {
+      hintRef.current?.focus();
+    }
+  }, [isHintOpen]);
 
   return (
     <section
+      ref={cardRef}
       aria-label="Next step"
       data-next-action={action.delegationId}
-      onKeyDown={(event) => {
-        const key = pickKeyOf({ event, keys: action.choices.map((choice) => choice.key) });
-        if (key !== undefined && !model.isBusy) {
-          model.pick(key);
-        }
-      }}
-      className="relative flex min-w-0 flex-col gap-2 rounded-lg bg-elevated py-3 pl-4 pr-3 text-meta"
+      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3 text-meta"
     >
-      <ToneBar tone={TONE} density="card" />
-      <p className={cn('text-eyebrow', tint.text)}>Next step</p>
-      <TruncatedText className="min-w-0 truncate text-foreground" tooltip={action.title}>
-        {action.title}
-      </TruncatedText>
+      <div className="flex min-w-0 items-center gap-2">
+        <StatusDot tone={TONE} size="sm" />
+        <span className="shrink-0 text-meta text-muted-foreground">Next step</span>
+        <TruncatedText className="min-w-0 truncate text-ui text-foreground" tooltip={action.title}>
+          {action.title}
+        </TruncatedText>
+      </div>
       {untold !== null ? (
         <FormActions error={model.error}>
           <p className="min-w-0 flex-1 text-muted-foreground">Declined. Auto was not told.</p>
@@ -79,42 +63,57 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
         </p>
       ) : (
         <>
-          <ChoiceCards
+          <ChoiceChips
             ariaLabel="Next step choices"
             value={model.pickedKey}
             onChange={model.pick}
+            keyScope={cardRef}
             options={action.choices.map((choice, index) => ({
               value: choice.key,
               label: choice.label,
-              glyph: <span className="text-faint-foreground">{index + 1}</span>,
-              disabled: model.isBusy,
-              ...(index === 0 ? { badge: <span className={tint.text}>Recommended</span> } : {}),
+              isDisabled: model.isBusy,
+              isRecommended: index === 0,
             }))}
           />
-          <Input
-            aria-label="Add a hint"
-            placeholder="Add a hint"
-            value={model.hint}
-            disabled={model.isBusy}
-            onChange={(event) => model.setHint(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                void model.submit();
-              }
-            }}
-          />
+          {hasHint ? (
+            <Input
+              ref={hintRef}
+              aria-label="Add a hint"
+              placeholder="Add a hint"
+              value={model.hint}
+              disabled={model.isBusy}
+              onChange={(event) => model.setHint(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void model.submit();
+                }
+              }}
+            />
+          ) : null}
           <FormActions
             error={model.error}
             leading={
-              <Button
-                variant="quiet"
-                size="sm"
-                disabled={model.isBusy}
-                onClick={() => void model.notNow()}
-              >
-                Not now
-              </Button>
+              <>
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  disabled={model.isBusy}
+                  onClick={() => void model.notNow()}
+                >
+                  Not now
+                </Button>
+                {hasHint ? null : (
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    disabled={model.isBusy}
+                    onClick={() => setIsHintOpen(true)}
+                  >
+                    Add a hint
+                  </Button>
+                )}
+              </>
             }
           >
             <Button

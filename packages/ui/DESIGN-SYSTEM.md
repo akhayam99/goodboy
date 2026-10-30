@@ -170,6 +170,20 @@ is a disabled select, not a switch), and never inside a pane. No ring and no
 primary tint mark a selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
+`ChoiceChips` is the compact choice: one wrapping row of chips for two to nine
+short answers to one question, where `ChoiceCards` is a column of cards with a
+hint. It is a horizontal `listbox` of `option` buttons, not a tablist and not a menu, with
+roving focus: one tab stop on the picked chip, the arrows (and Home and End) move
+and pick, wrapping, and the keys 1 to 9 pick by the faint number each chip
+shows (`keyScope` widens the number keys to a whole card, and a field inside it
+keeps its own typing). A chip is 28px (`min-h-7`) and wraps a long label
+instead of cutting it. The selected chip is `bg-selected` only, with no ring.
+The advised answer carries a quiet `Recommended` tag (`Chip` neutral), never a
+tone. Past nine chips the numbers and their keys go away. `AutoNextAction` is
+the first use: a neutral `bg-subtle` card of about 116px (12px padding, a title
+row, a chip row, an action row, 8px gaps) whose only colour is a 6px warning
+`StatusDot` before its label, one primary and a quiet `Not now`.
+
 A row that holds its own links or buttons is `InteractiveRow`: one overlay
 button stretched over the row opens it, and the inner controls sit above it.
 A card shaped row passes `radius="lg"` so the focus ring follows its corners.
