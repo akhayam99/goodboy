@@ -135,7 +135,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
 - When Auto needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the main button, such as **Spawn implementer**, with one or two other options and a hint field. The keys 1 to 3 pick an option once you are in the card. An option other than the first declines the proposal and tells Auto your pick. **Not now** declines and tells nothing.
 - When the work rests, Auto reads **Idle**. Only you close it, with **Mark finished** in its header. Writing to it again reopens it.
-- When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too.
+- When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too. The reason shows on two lines at most, and the whole text opens when you point at it or tab to it. **View transcript** opens the conversation.
 - **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
 
 **Hand an agent to Auto**
@@ -185,6 +185,7 @@ This part is for contributors and agents who change the feature.
 - Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words (a retired model still reads by name), with the raw id in a tooltip only; "Unknown model" is only for an id with no known provider.
 - Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
 - Agents tree fold: `foldSpawnedRowsOf` decides which rows fold and `helperUrgencyOf` picks the state shown beside the count; the helper count comes from `runAgentCountOf`. The `u30-agents-fold` scene shows each case.
+- Failure links: a failed turn offers **View transcript** next to **Retry** and the drawer opens on the failing call when it is known (`TranscriptErrorRow`); a run that stopped on a human call offers it on its tail. The `u30-failure-reason` and `u30-human-call` scenes show the long Auto reason and the run tail.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

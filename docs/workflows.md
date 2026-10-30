@@ -387,7 +387,8 @@ read top to bottom at the conversation measure:
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
   **Stop step** the verb is **Resume and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
-  no folded reason, and **Add a hint and continue** at the dock
+  no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
+  last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing

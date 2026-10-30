@@ -424,7 +424,10 @@ writing to it reopens it to **Deciding**.
   popover on the Auto page) and **Stop**, plus a line on the agents still
   running when there are any, **Blocked: <reason>** with **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
-  and **Stop** instead, one at the time limit only **View transcript**). Only `deciding` reads
+  and **Stop** instead, one at the time limit only **View transcript**). The
+  reason is never cut to one line: the phrase wraps to two lines and, when it is
+  longer, the whole text opens in a tooltip on hover and on keyboard focus
+  (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
   **Mark finished** is in the header. A Stop or a Retry that fails says why on the

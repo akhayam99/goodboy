@@ -14,6 +14,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import {
   registerAutoUserTurnPort,
@@ -28,8 +29,10 @@ import { U25_C07_AUTO_SCENES } from './c07-auto';
 
 const WAIT = { timeout: 15_000 };
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -450,6 +453,16 @@ describe('c07 Auto scenes', () => {
 
     await waitFor(() => expect(retry).toHaveBeenCalledTimes(1), WAIT);
     expect(within(tail).queryByRole('alert')).toBeNull();
+  });
+
+  it('c07-auto-blocked offers View transcript on the tail and opens the root conversation', async () => {
+    mount({ id: 'c07-auto-blocked' });
+
+    const verb = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+    expect(verb.closest('[data-auto-tail]')).not.toBeNull();
+    fireEvent.click(verb);
+
+    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
   });
 
   it('c07-auto-blocked shows a refused Retry on the tail, not in a notification', async () => {

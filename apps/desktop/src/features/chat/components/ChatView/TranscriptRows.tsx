@@ -25,7 +25,7 @@ import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
 import { NewRowsDivider } from './NewRowsDivider';
 import { SlackDraftCard } from './SlackDraftCard';
-import { dayKey } from './lib';
+import { dayKey, rowAnchorOf } from './lib';
 import { DayDivider } from './DayDivider';
 import { TurnHeading } from './TurnHeading';
 import { planBlockVersions } from './planBlockVersions';
@@ -300,7 +300,7 @@ export const TranscriptRows = ({
     out.push(
       <li
         key={row.key}
-        data-anchor-key={heightKey}
+        {...rowAnchorOf({ row, heightKey })}
         style={visibilityStyle({
           px:
             rowHeightCache.read({ key: heightKey }) ??

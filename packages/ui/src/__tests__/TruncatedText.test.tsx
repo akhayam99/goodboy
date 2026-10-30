@@ -64,4 +64,34 @@ describe('TruncatedText', () => {
     expect(element.className).toContain('text-title');
     expect(element.className).toContain('truncate');
   });
+  it('clamps to two lines when asked and keeps the one-line default otherwise', () => {
+    render(<TruncatedText lines={2}>release-train/payments-api</TruncatedText>);
+
+    const element = screen.getByText('release-train/payments-api');
+    expect(element.className).toContain('line-clamp-2');
+    expect(element.className).not.toContain('truncate');
+  });
+
+  it('joins the tab order only while its text is cut when it is focusable', () => {
+    const heightOf = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get');
+    const clientOf = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get');
+    heightOf.mockReturnValue(40);
+    clientOf.mockReturnValue(20);
+    const cut = render(
+      <TruncatedText lines={2} isFocusable>
+        release-train/payments-api
+      </TruncatedText>,
+    );
+    expect(screen.getByText('release-train/payments-api').getAttribute('tabindex')).toBe('0');
+    cut.unmount();
+
+    heightOf.mockReturnValue(20);
+    render(
+      <TruncatedText lines={2} isFocusable>
+        release-train/payments-api
+      </TruncatedText>,
+    );
+    expect(screen.getByText('release-train/payments-api').getAttribute('tabindex')).toBeNull();
+    vi.restoreAllMocks();
+  });
 });

@@ -13,6 +13,7 @@ import { TranscriptReplyDock } from './TranscriptReplyDock';
 import { agentTranscriptTitle, TRANSCRIPT_DRAWER_COPY } from './transcriptDrawerCopy';
 import { DrawerTabs } from './DrawerTabs';
 import { useDrawerTabs } from './useDrawerTabs';
+import { useRevealToolCall } from './useRevealToolCall';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,7 +55,14 @@ export const AgentTranscriptDrawer = ({
       ? (drawer.payload.turn ?? null)
       : null;
   });
+  const toolUseId = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agentId
+      ? (drawer.payload.toolUseId ?? null)
+      : null;
+  });
   const bodyRef = useRef<HTMLDivElement>(null);
+  useRevealToolCall({ bodyRef, toolUseId });
   const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const isEnded = useAppStore(
     (s) =>

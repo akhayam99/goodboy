@@ -11,12 +11,18 @@ export type InteractiveRowProps = {
   readonly children: ReactNode;
   readonly dataAttributes?: Readonly<Record<`data-${string}`, string>>;
   readonly frameClassName?: string;
+  readonly radius?: 'md' | 'lg';
   readonly className?: string;
   readonly menu?: {
     readonly onContextMenu: MouseEventHandler<HTMLElement>;
     readonly onKeyDown: KeyboardEventHandler<HTMLElement>;
   };
 };
+
+const RADIUS_CLASS = { md: 'rounded-md', lg: 'rounded-lg' } as const satisfies Record<
+  'md' | 'lg',
+  string
+>;
 
 export const InteractiveRow = ({
   label,
@@ -27,13 +33,15 @@ export const InteractiveRow = ({
   frameClassName,
   className,
   menu,
+  radius = 'md',
 }: InteractiveRowProps) => (
   <div
     data-selected={isSelected}
     onContextMenu={menu?.onContextMenu}
     onKeyDown={menu?.onKeyDown}
     className={cn(
-      'relative rounded-md text-muted-foreground hover:text-foreground',
+      'relative text-muted-foreground hover:text-foreground',
+      RADIUS_CLASS[radius],
       ROW_HOVER,
       SELECTED_ROW_CLASSES,
       frameClassName,
@@ -44,7 +52,7 @@ export const InteractiveRow = ({
       aria-label={label}
       aria-current={isSelected ? 'true' : undefined}
       onClick={onOpen}
-      className={cn('absolute inset-0 cursor-pointer rounded-[inherit]', FOCUS_RING)}
+      className={cn('absolute inset-0 cursor-pointer', RADIUS_CLASS[radius], FOCUS_RING)}
       {...dataAttributes}
     />
     <div

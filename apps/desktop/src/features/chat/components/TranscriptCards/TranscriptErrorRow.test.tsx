@@ -116,3 +116,89 @@ describe('the limit panel in a stopped turn', () => {
     expect(screen.queryByRole('button', { name: `Continue at ${AT}` })).not.toBeNull();
   });
 });
+
+describe('View transcript on a failed turn', () => {
+  beforeEach(() => {
+    useAppStore.setState({ currentSessionId: SESSION, drawer: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ drawer: null });
+  });
+
+  it('sits next to Retry and opens the transcript drawer for that agent', () => {
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        runId={RUN}
+        sessionId={SESSION}
+        agentId={AGENT}
+        onRetry={() => undefined}
+      />,
+    );
+
+    const labels = screen.getAllByRole('button').map((button) => button.textContent);
+    expect(labels).toEqual(['Retry', 'View transcript']);
+    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'transcript',
+      sessionId: SESSION,
+      payload: { agentId: AGENT },
+    });
+  });
+
+  it('anchors the drawer to the failing call when it is known', () => {
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        runId={RUN}
+        sessionId={SESSION}
+        agentId={AGENT}
+        failedToolUseId="toolu-harborline-3"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'transcript',
+      sessionId: SESSION,
+      payload: { agentId: AGENT, toolUseId: 'toolu-harborline-3' },
+    });
+  });
+
+  it('is offered without Retry when the turn cannot be retried', () => {
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        sessionId={SESSION}
+        agentId={AGENT}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View transcript' })).not.toBeNull();
+  });
+
+  it('is not offered where the agent is unknown', () => {
+    render(<TranscriptErrorRow message="The provider closed the connection." runId={RUN} />);
+
+    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+  });
+
+  it('is not offered inside the transcript drawer of the same agent', () => {
+    useAppStore.setState({
+      drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
+    });
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        sessionId={SESSION}
+        agentId={AGENT}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+  });
+});

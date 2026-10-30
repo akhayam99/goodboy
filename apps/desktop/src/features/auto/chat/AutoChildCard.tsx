@@ -40,7 +40,8 @@ export const AutoChildCard = ({
           label={`Open ${name}, ${facts.word}`}
           isSelected={false}
           onOpen={() => onOpen(card.childAgentId)}
-          frameClassName="rounded-lg bg-elevated"
+          radius="lg"
+          frameClassName="bg-elevated"
           className="grid min-w-0 grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 p-3 text-meta"
         >
           <AgentKindChip kind={card.role} density="glyph" />

@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { encodeCliTooOldMessage } from '../turn';
 import { reduceTranscript, type TranscriptItem } from './transcript-items';
 import { reduceTranscriptTrace, resetReduceTranscriptTrace } from './transcript-items-trace';
@@ -817,5 +823,37 @@ describe('reduceTranscript usage', () => {
     const items = reduceTranscript([usageEvent(), usageEvent()]);
     const usage = items.find((item) => item.kind === 'usage');
     expect(usage?.kind === 'usage' ? 'premiumRequests' in usage.usage : null).toBe(false);
+  });
+  it('names the failing call on the error row of its run', () => {
+    const items = reduceTranscript([
+      toolStart({ toolUseId: 'a' }),
+      toolEnd({ toolUseId: 'a' }),
+      toolStart({ toolUseId: 'b' }),
+      toolEnd({ toolUseId: 'b', isError: true }),
+      { kind: 'error', runId: RUN, message: 'pnpm install timed out', at: AT },
+    ]);
+    const error = items.find((item) => item.kind === 'error');
+    expect(error?.kind === 'error' ? error.failedToolUseId : null).toBe('b');
+  });
+
+  it('leaves the failing call out when no call failed in the run', () => {
+    const items = reduceTranscript([
+      toolStart({ toolUseId: 'a' }),
+      toolEnd({ toolUseId: 'a' }),
+      { kind: 'error', runId: RUN, message: 'The provider closed the connection', at: AT },
+    ]);
+    const error = items.find((item) => item.kind === 'error');
+    expect(error !== undefined && 'failedToolUseId' in error).toBe(false);
+  });
+
+  it('ignores a failed call of an earlier run', () => {
+    const earlier = brandId<ProviderRunId>({ value: 'run-0' });
+    const items = reduceTranscript([
+      { ...toolStart({ toolUseId: 'old' }), runId: earlier },
+      { ...toolEnd({ toolUseId: 'old', isError: true }), runId: earlier },
+      { kind: 'error', runId: RUN, message: 'The provider closed the connection', at: AT },
+    ]);
+    const error = items.find((item) => item.kind === 'error');
+    expect(error !== undefined && 'failedToolUseId' in error).toBe(false);
   });
 });

@@ -6,7 +6,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('../ChatView', () => ({
   ChatView: ({ agentId, hasComposer }: { agentId?: string; hasComposer?: boolean }) => (
-    <div data-testid="drawer-transcript" data-agent={agentId} data-composer={String(hasComposer)} />
+    <div data-testid="drawer-transcript" data-agent={agentId} data-composer={String(hasComposer)}>
+      <ul>
+        <li data-tool-use-ids="toolu-harborline-1 toolu-harborline-3">Ran 2 commands</li>
+      </ul>
+    </div>
   ),
 }));
 
@@ -123,5 +127,37 @@ describe('AgentTranscriptDrawer', () => {
 
     expect(screen.getByText('This agent is no longer in the session.')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+  it('scrolls to the row holding the failing call when the drawer opens on it', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    useAppStore.setState({
+      drawer: {
+        kind: 'transcript',
+        sessionId: SESSION_ID,
+        payload: { agentId: PLANNER, toolUseId: 'toolu-harborline-3' },
+      },
+    });
+
+    render(
+      <AgentTranscriptDrawer sessionId={SESSION_ID} agentId={PLANNER} onClose={() => undefined} />,
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByText('Ran 2 commands'));
+  });
+
+  it('opens at the end, with no scroll of its own, when the failing call is not known', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    useAppStore.setState({
+      drawer: { kind: 'transcript', sessionId: SESSION_ID, payload: { agentId: PLANNER } },
+    });
+
+    render(
+      <AgentTranscriptDrawer sessionId={SESSION_ID} agentId={PLANNER} onClose={() => undefined} />,
+    );
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });
