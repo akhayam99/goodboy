@@ -10,7 +10,7 @@ export const anchorKeyOf = ({ items }: Params): string | null => {
     if (item === undefined) {
       continue;
     }
-    if ((item.kind === 'user_text' && item.isOperatorEcho !== true) || item.kind === 'handoff') {
+    if (item.kind === 'user_text' || item.kind === 'handoff') {
       return item.key;
     }
   }

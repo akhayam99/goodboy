@@ -99,4 +99,28 @@ describe('TranscriptRows with delivered text', () => {
 
     expect(kindsOf({ container })).toEqual(['card', 'card', 'oq']);
   });
+
+  it('keeps the operator words and their delivery in one turn, whatever their order', () => {
+    const echo = itemRow({
+      kind: 'user_text',
+      key: 'echo',
+      text: 'Also cover refunds.',
+      isOperatorEcho: true,
+      at: AT,
+    });
+    const delivery = itemRow({
+      kind: 'auto_delivery',
+      key: 'd1',
+      runId: brandId<ProviderRunId>({ value: 'run-auto-1' }),
+      text: 'delivery',
+      at: AT,
+    });
+    const answer = itemRow({ kind: 'assistant_text', key: 'a1', text: 'On it.' });
+
+    const echoFirst = renderRows({ rows: [echo, delivery, answer] });
+    expect(echoFirst.container.querySelectorAll('[data-turn]')).toHaveLength(1);
+    cleanup();
+    const deliveryFirst = renderRows({ rows: [delivery, echo, answer] });
+    expect(deliveryFirst.container.querySelectorAll('[data-turn]')).toHaveLength(1);
+  });
 });

@@ -37,6 +37,7 @@ import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { isTurnStartRow } from './isTurnStartRow';
 
 type Props = {
   rows: ReadonlyArray<ConversationRow>;
@@ -199,11 +200,7 @@ export const TranscriptRows = ({
 
   rows.forEach((row, idx) => {
     const isNewDivider = newFromKey !== null && row.key === newFromKey;
-    const isTurnStart =
-      row.kind === 'item' &&
-      ((row.item.kind === 'user_text' && row.item.isOperatorEcho !== true) ||
-        row.item.kind === 'handoff' ||
-        row.item.kind === 'auto_delivery');
+    const isTurnStart = isTurnStartRow({ row, previous: rows[idx - 1] });
     if (isNewDivider && !isTurnStart) {
       flushRailGroup();
       out.push(<NewRowsDivider key={`new-${row.key}`} />);

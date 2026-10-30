@@ -455,10 +455,10 @@ export const useScrollPin = ({ deps, resetKey, anchorKey, onRevealOverflow }: Pa
     clearAnchor();
     isLockedRef.current = true;
     ownTopRef.current = null;
-    const spacer = spacerPxRef.current;
-    const top = spacer > 0 ? el.scrollHeight - el.clientHeight - spacer : el.scrollHeight;
-    el.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }, [clearAnchor]);
+    isSpacerOnRef.current = false;
+    fitTail();
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [clearAnchor, fitTail]);
 
   const isHolding = useCallback(() => pinnedRef.current || isAnchoredRef.current, []);
 

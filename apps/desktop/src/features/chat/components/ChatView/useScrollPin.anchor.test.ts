@@ -390,6 +390,27 @@ describe('useScrollPin send anchor', () => {
     expect(result.current.isHolding()).toBe(false);
   });
 
+  it('drops the room under a short turn on Jump to latest, so the reply is followed again', () => {
+    const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
+    const { rerender, result, el, tail } = openTurn({ box });
+    Object.defineProperty(el, 'scrollTo', {
+      value: (options: ScrollToOptions) => {
+        box.scrollTop = options.top ?? box.scrollTop;
+      },
+    });
+    sendOn({ rerender });
+    expect(tailPx({ tail })).toBeGreaterThan(TAIL_FLOOR);
+
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 600;
+    act(() => result.current.onScroll());
+    act(() => result.current.jumpToLatest());
+    act(() => result.current.onScroll());
+
+    expect(tailPx({ tail })).toBe(TAIL_FLOOR);
+    expect(result.current.pinned).toBe(true);
+  });
+
   it('anchors a second send on its own turn', () => {
     const box = { turnTop: 900, turnHeight: 60, scrollTop: 700, clientHeight: 500 };
     const { rerender } = openTurn({ box });

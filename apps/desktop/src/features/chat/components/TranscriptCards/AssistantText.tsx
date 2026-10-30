@@ -99,10 +99,7 @@ export const AssistantText = ({
         )}
       </ReadingOrderMessage>
       {reveal.isRevealing || hasCommentResolvedMarker || displayText.length === 0 ? null : (
-        <div
-          data-message-meta=""
-          className="row-actions absolute top-0 -right-8 @max-[800px]:right-0"
-        >
+        <div data-message-meta="" className="row-actions absolute top-0 right-0">
           <CopyButton
             presentation="icon"
             value={text}

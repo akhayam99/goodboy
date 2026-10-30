@@ -80,6 +80,22 @@ describe('ChoiceChips', () => {
     expect(chips().map((option) => option.tabIndex)).toEqual([-1, 0]);
   });
 
+  it('moves the tab stop off a picked chip that is disabled', () => {
+    render(
+      <ChoiceChips
+        ariaLabel="Pick"
+        value="a"
+        onChange={vi.fn()}
+        options={[
+          { value: 'a', label: 'A', isDisabled: true },
+          { value: 'b', label: 'B' },
+        ]}
+      />,
+    );
+
+    expect(chips().map((option) => option.tabIndex)).toEqual([-1, 0]);
+  });
+
   it('draws Recommended as a tag on the flagged chip only and numbers every chip', () => {
     render(<Harness />);
 

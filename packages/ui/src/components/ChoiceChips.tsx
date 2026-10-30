@@ -74,7 +74,8 @@ export const ChoiceChips = <T extends string>({
   const isNumbered = options.length <= MAX_NUMBERED;
   const selectedIndex = options.findIndex((option) => option.value === value);
   const firstEnabled = options.findIndex((option) => option.isDisabled !== true);
-  const focusIndex = selectedIndex >= 0 ? selectedIndex : Math.max(0, firstEnabled);
+  const isSelectedEnabled = selectedIndex >= 0 && options[selectedIndex]?.isDisabled !== true;
+  const focusIndex = isSelectedEnabled ? selectedIndex : Math.max(0, firstEnabled);
 
   useEffect(() => {
     const scope = keyScope?.current ?? groupRef.current;
