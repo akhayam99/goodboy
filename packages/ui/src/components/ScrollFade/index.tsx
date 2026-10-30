@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { cn } from '../../cn';
 import { OverlayThumb } from './OverlayThumb';
 
@@ -36,12 +29,6 @@ const fadeSizeToPx = (fadeSize: number | string): number => {
     return DEFAULT_FADE_PX;
   }
   return Number(match[1]) * 4;
-};
-
-const maskStyleFor = ({ horizontal }: { horizontal: boolean }): CSSProperties => {
-  const direction = horizontal ? 'to right' : 'to bottom';
-  const image = `linear-gradient(${direction}, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent)`;
-  return { maskImage: image, WebkitMaskImage: image };
 };
 
 export const ScrollFade = ({
@@ -76,8 +63,11 @@ export const ScrollFade = ({
     const topFade = isLineEdge ? LINE_EDGE_FADE_PX : fadePx;
     const top = fadeEdges === 'end' ? 0 : Math.min(topFade, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
-    el.style.setProperty('--fade-top', `${top}px`);
-    el.style.setProperty('--fade-bottom', `${bottom}px`);
+    const hasFade = top > 0 || bottom > 0 || el.style.getPropertyValue('--fade-top') !== '';
+    if (hasFade) {
+      el.style.setProperty('--fade-top', `${top}px`);
+      el.style.setProperty('--fade-bottom', `${bottom}px`);
+    }
     const root = rootRef.current;
     if (!isLineEdge || root === null) {
       return;
@@ -127,11 +117,10 @@ export const ScrollFade = ({
           scheduleFade();
           onViewportScroll?.();
         }}
-        style={maskStyleFor({ horizontal })}
         className={cn(
           horizontal
-            ? 'h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-            : 'h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+            ? 'mask-fade-x h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+            : 'mask-fade-y h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           viewportClassName,
         )}
       >

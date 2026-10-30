@@ -805,6 +805,40 @@ body {
   background-image: var(--app-backdrop-cover);
 }
 
+@utility mask-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--fade-top, 0px),
+    black calc(100% - var(--fade-bottom, 0px)),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--fade-top, 0px),
+    black calc(100% - var(--fade-bottom, 0px)),
+    transparent
+  );
+}
+
+@utility mask-fade-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--fade-top, 0px),
+    black calc(100% - var(--fade-bottom, 0px)),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--fade-top, 0px),
+    black calc(100% - var(--fade-bottom, 0px)),
+    transparent
+  );
+}
+
 @utility bg-selected {
   background-image: linear-gradient(var(--color-overlay-selected), var(--color-overlay-selected));
 }

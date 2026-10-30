@@ -2243,7 +2243,7 @@
     "packages/ui/src/components/ReportSheet/index.tsx": 3,
     "packages/ui/src/components/ResizeHandle.tsx": 4,
     "packages/ui/src/components/Reveal.tsx": 1,
-    "packages/ui/src/components/ScrollFade/index.tsx": 2,
+    "packages/ui/src/components/ScrollFade/index.tsx": 1,
     "packages/ui/src/components/ScrollFade/useOverlayThumb/index.ts": 3,
     "packages/ui/src/components/SearchField.tsx": 1,
     "packages/ui/src/components/StudioRailLayout.tsx": 1,

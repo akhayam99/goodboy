@@ -484,6 +484,9 @@ header row (language in `text-meta`, **Wrap**, then the host's
 `ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
 a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
+`ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
+and writes its fade sizes only while the content overflows, so a static artifact
+page carries no inline style.
 
 ## Radius scale
 

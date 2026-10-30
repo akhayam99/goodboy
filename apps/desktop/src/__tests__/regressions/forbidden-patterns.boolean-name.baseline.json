@@ -431,7 +431,6 @@
     "packages/ui/src/components/ReportSheet/index.tsx": 1,
     "packages/ui/src/components/ResizeHandle.tsx": 1,
     "packages/ui/src/components/Reveal.tsx": 1,
-    "packages/ui/src/components/ScrollFade/index.tsx": 1,
     "packages/ui/src/components/ScrollFade/useOverlayThumb/index.ts": 6,
     "packages/ui/src/components/SegmentedTabs.tsx": 2,
     "packages/ui/src/components/SelectableRow.tsx": 2,
