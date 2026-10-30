@@ -6,6 +6,8 @@ import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { AgentRowModelLine } from '../../../features/providers/modelLine/AgentRowModelLine';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 import type { RailRow } from '../../../features/workTreeModel/railGeometry';
+import { HelperUrgencyWord } from './HelperUrgencyWord';
+import { helpersWordOf } from './helpersWordOf';
 import { SpawnedRailCell } from './SpawnedRailCell';
 import type { SpawnedRowFold, SpawnedRowModelSource } from './spawnedRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
@@ -28,13 +30,6 @@ type Props = {
   readonly fold?: SpawnedRowFold | null;
   readonly onOpen: () => void;
 };
-
-type CountParams = {
-  readonly count: number;
-};
-
-const countWordOf = ({ count }: CountParams): string =>
-  count === 1 ? '1 agent' : `${count} agents`;
 
 export const SpawnedTreeRow = ({
   id,
@@ -59,11 +54,13 @@ export const SpawnedTreeRow = ({
   const isRoleNamed =
     roleLabel === null || roleLabel.startsWith(title) || title.startsWith(roleLabel);
   const isFolded = fold !== null && !fold.isExpanded;
-  const countWord = fold === null ? null : countWordOf({ count: fold.count });
+  const countWord = fold === null ? null : helpersWordOf({ count: fold.count });
+  const urgency = isFolded ? (fold?.urgency ?? null) : null;
   const label = [
     ...new Set([
       ...(isRoleNamed ? [title] : [roleLabel, title]),
       ...(isFolded && countWord !== null ? [countWord] : []),
+      ...(urgency === null ? [] : [urgency.word]),
       word,
     ]),
   ].join(', ');
@@ -120,6 +117,7 @@ export const SpawnedTreeRow = ({
           {countWord}
         </span>
       ) : null}
+      {urgency === null ? null : <HelperUrgencyWord urgency={urgency} />}
       <span
         aria-hidden
         data-testid={fold === null ? undefined : 'spawned-fold-toggle'}

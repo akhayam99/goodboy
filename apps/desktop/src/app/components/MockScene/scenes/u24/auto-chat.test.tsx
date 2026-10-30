@@ -207,9 +207,9 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const [root] = within(rail()).getAllByRole('treeitem');
-    expect(root?.getAttribute('aria-label')).toMatch(/, 4 agents, Idle$/);
-    fireEvent.keyDown(root ?? rail(), { key: 'ArrowRight' });
-    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
+    expect(root?.getAttribute('aria-label')).toMatch(/, Idle$/);
+    fireEvent.click(within(rail()).getByRole('treeitem', { name: '4 helpers' }));
+    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(6);
     expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);

@@ -25,7 +25,7 @@ const ms = ({ minute }: AtParams): number =>
 
 export const TREE_SESSION = { ...SESSION, workflowRuns: [] };
 
-type ChildSpec = Readonly<{
+export type ChildSpec = Readonly<{
   key: string;
   role: string;
   state: AutoDelegation['state'];
@@ -34,7 +34,7 @@ type ChildSpec = Readonly<{
   minute: number;
 }>;
 
-type TreeSpec = Readonly<{
+export type TreeSpec = Readonly<{
   key: string;
   phase: AutoPhase;
   brief: string;
@@ -283,15 +283,31 @@ const childrenOf = ({ tree }: TreeParams): ReadonlyArray<Agent> =>
     lastViewedAt: iso({ minute: 120 }),
   }));
 
-export const TREE_VIEWS: ReadonlyArray<AutoTreeView> = TREES.map((tree) => viewOf({ tree }));
+export type TreeSeed = Readonly<{
+  views: ReadonlyArray<AutoTreeView>;
+  agents: ReadonlyArray<Agent>;
+  rootIds: ReadonlyArray<AgentId>;
+  selectedRootId: AgentId;
+}>;
 
-export const TREE_AGENTS: ReadonlyArray<Agent> = TREES.flatMap((tree) => [
-  rootOf({ tree }),
-  ...childrenOf({ tree }),
-]);
+type SeedParams = {
+  readonly trees: ReadonlyArray<TreeSpec>;
+  readonly selectedKey: string;
+};
 
-export const TREE_ROOT_IDS: ReadonlyArray<AgentId> = TREES.map((tree) =>
-  rootIdOf({ key: tree.key }),
-);
+export const treeSeedOf = ({ trees, selectedKey }: SeedParams): TreeSeed => ({
+  views: trees.map((tree) => viewOf({ tree })),
+  agents: trees.flatMap((tree) => [rootOf({ tree }), ...childrenOf({ tree })]),
+  rootIds: trees.map((tree) => rootIdOf({ key: tree.key })),
+  selectedRootId: rootIdOf({ key: selectedKey }),
+});
 
-export const TREE_LIVE_ROOT_ID: AgentId = rootIdOf({ key: LIVE.key });
+export const TREE_SEED = treeSeedOf({ trees: TREES, selectedKey: LIVE.key });
+
+export const TREE_VIEWS = TREE_SEED.views;
+
+export const TREE_AGENTS = TREE_SEED.agents;
+
+export const TREE_ROOT_IDS = TREE_SEED.rootIds;
+
+export const TREE_LIVE_ROOT_ID: AgentId = TREE_SEED.selectedRootId;

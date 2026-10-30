@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../store';
@@ -8,12 +8,19 @@ import { useAutoTreeRows } from '../../../features/auto/useAutoTreeRows';
 import { autoSpawnedRowsOf } from './autoSpawnedRowsOf';
 import { foldSpawnedRowsOf } from './foldSpawnedRowsOf';
 import { openSpawned } from '../../../features/session/openSpawned';
+import { helpersWordOf } from './helpersWordOf';
 import { spawnedRailOf } from './spawnedRailOf';
+import { SpawnedFoldRow } from './SpawnedFoldRow';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
 import { useSpawnedReveal } from './useSpawnedReveal';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+type SetParams = {
+  readonly id: string;
+  readonly isExpanded: boolean;
+};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -55,6 +62,9 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
     [rows, expanded, isOpenByDefault],
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  const onSet = useCallback(({ id, isExpanded }: SetParams) => {
+    setExpanded((current) => ({ ...current, [id]: isExpanded }));
+  }, []);
   const onExpand = useCallback((ids: ReadonlyArray<string>) => {
     setExpanded((current) => ({
       ...current,
@@ -65,59 +75,75 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
   const rail = useMemo(
     () =>
       spawnedRailOf({
-        nodes: shown.map(({ row }) => ({
-          id: row.id,
-          level: row.level,
-          isPending: row.node === 'queued',
-        })),
+        nodes: shown.flatMap(({ row, summary }) => [
+          { id: row.id, level: row.level, isPending: row.node === 'queued' },
+          ...(summary === null ? [] : [{ id: summary.id, level: summary.level, isPending: false }]),
+        ]),
       }),
     [shown],
   );
   return (
     <div ref={rootRef} data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
-      {shown.map(({ row, count, isExpanded }) => {
+      {shown.map(({ row, count, isExpanded, isFoldable, urgency, summary }) => {
         const rowRail = rail.railById.get(row.id);
         if (rowRail === undefined) {
           return null;
         }
+        const summaryRail = summary === null ? undefined : rail.railById.get(summary.id);
         return (
-          <ObjectMenuArea
-            key={row.id}
-            target={{ kind: 'agent', sessionId, agentId: row.agentId }}
-            anchorKey={`spawned:${row.id}`}
-          >
-            <SpawnedTreeRow
-              id={row.id}
-              agentId={row.agentId}
-              level={row.level}
-              hasChildren={row.hasChildren}
-              rail={rowRail}
-              railWidth={rail.width}
-              glyph={
-                <WorkNode state={row.node} label={row.word} mark={{ kind: 'dot' }} size="sm" />
-              }
-              role={row.role}
-              title={row.title}
-              card={row.card}
-              word={row.word}
-              model={row.model}
-              time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
-              isSelected={row.agentId === selectedAgentId}
-              fold={
-                count === 0
-                  ? null
-                  : {
-                      isExpanded,
-                      count,
-                      onToggle: () =>
-                        setExpanded((current) => ({ ...current, [row.id]: !isExpanded })),
-                    }
-              }
-              onOpen={() =>
-                openSpawned({ sessionId, target: { kind: 'agent', agentId: row.agentId } })
-              }
-            />
-          </ObjectMenuArea>
+          <Fragment key={row.id}>
+            <ObjectMenuArea
+              target={{ kind: 'agent', sessionId, agentId: row.agentId }}
+              anchorKey={`spawned:${row.id}`}
+            >
+              <SpawnedTreeRow
+                id={row.id}
+                agentId={row.agentId}
+                level={row.level}
+                hasChildren={row.hasChildren && (summary === null || isExpanded)}
+                rail={rowRail}
+                railWidth={rail.width}
+                glyph={
+                  <WorkNode state={row.node} label={row.word} mark={{ kind: 'dot' }} size="sm" />
+                }
+                role={row.role}
+                title={row.title}
+                card={row.card}
+                word={row.word}
+                model={row.model}
+                time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
+                isSelected={row.agentId === selectedAgentId}
+                fold={
+                  isFoldable
+                    ? {
+                        isExpanded,
+                        count,
+                        urgency,
+                        onToggle: () => onSet({ id: row.id, isExpanded: !isExpanded }),
+                      }
+                    : null
+                }
+                onOpen={() =>
+                  openSpawned({ sessionId, target: { kind: 'agent', agentId: row.agentId } })
+                }
+              />
+            </ObjectMenuArea>
+            {summary === null || summaryRail === undefined ? null : (
+              <SpawnedFoldRow
+                fold={{
+                  id: summary.id,
+                  expandId: row.id,
+                  level: summary.level,
+                  isExpanded,
+                  label: helpersWordOf({ count }),
+                }}
+                rail={summaryRail}
+                railWidth={rail.width}
+                urgency={urgency}
+                onSet={onSet}
+              />
+            )}
+          </Fragment>
         );
       })}
     </div>

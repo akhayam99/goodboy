@@ -80,7 +80,7 @@ describe('the u27 Agents tree scenes', () => {
     }
   });
 
-  it('names each root by its ask with no transcript loaded, opens live, folds settled', async () => {
+  it('names each root by its ask with no transcript loaded, opens live, keeps settled helpers behind a summary line', async () => {
     mount({ id: 'u27-agents-tree-light' });
 
     const tree = await launches();
@@ -90,15 +90,16 @@ describe('the u27 Agents tree scenes', () => {
       .filter((item) => item.getAttribute('aria-level') === '1');
     expect(roots.map((root) => root.getAttribute('aria-label'))).toEqual([
       `Auto agent, ${LIVE_BRIEF}, Running`,
-      'Auto agent, Why does the Harborline cache miss on every deploy?, 3 agents, Idle',
-      'Auto agent, Write the Northwind release notes for 2.4., 2 agents, Idle',
+      'Auto agent, Why does the Harborline cache miss on every deploy?, Idle',
+      'Auto agent, Write the Northwind release notes for 2.4., Idle',
     ]);
-    expect(roots.map((root) => root.getAttribute('aria-expanded'))).toEqual([
-      'true',
-      'false',
-      'false',
-    ]);
-    expect(labelsOf({ tree })).toHaveLength(13 + 2);
+    expect(roots.map((root) => root.getAttribute('aria-expanded'))).toEqual(['true', null, null]);
+    expect(
+      within(tree)
+        .getAllByRole('treeitem', { name: /helpers$/ })
+        .map((item) => item.getAttribute('aria-label')),
+    ).toEqual(['3 helpers', '2 helpers']);
+    expect(labelsOf({ tree })).toHaveLength(13 + 2 + 2);
   });
 
   it('names every child by its title, its task sentence or its role, newest on top', async () => {
@@ -134,25 +135,26 @@ describe('the u27 Agents tree scenes', () => {
     expect(root?.querySelectorAll('[data-spawned-rail] path').length).toBeGreaterThan(0);
   });
 
-  it('opens and folds a settled tree from its row, with the arrow keys and the chevron', async () => {
+  it('opens and folds a settled tree from its summary line, with the arrow keys and the click', async () => {
     mount({ id: 'u27-agents-tree-light' });
 
     const tree = await launches();
     const cache = within(tree).getByRole('treeitem', { name: /Harborline cache/ });
-    act(() => cache.focus());
-    fireEvent.keyDown(cache, { key: 'ArrowRight' });
+    expect(within(cache).queryByTestId('spawned-fold-toggle')).toBeNull();
+    const summary = within(tree).getByRole('treeitem', { name: '3 helpers' });
+    act(() => summary.focus());
+    fireEvent.keyDown(summary, { key: 'ArrowRight' });
+    expect(summary.getAttribute('aria-expanded')).toBe('true');
     expect(cache.getAttribute('aria-expanded')).toBe('true');
-    expect(labelsOf({ tree })).toHaveLength(15 + 3);
-    fireEvent.keyDown(cache, { key: 'ArrowRight' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(
-      'Scout, Find where the cache key is built, Done',
-    );
-    fireEvent.keyDown(document.activeElement ?? cache, { key: 'ArrowLeft' });
-    expect(document.activeElement).toBe(cache);
-    fireEvent.keyDown(cache, { key: 'ArrowLeft' });
-    expect(cache.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(within(cache).getByTestId('spawned-fold-toggle'));
-    expect(cache.getAttribute('aria-expanded')).toBe('true');
+    expect(labelsOf({ tree })).toHaveLength(17 + 3);
+    within(tree).getByRole('treeitem', {
+      name: 'Scout, Find where the cache key is built, Done',
+    });
+    fireEvent.keyDown(summary, { key: 'ArrowLeft' });
+    expect(summary.getAttribute('aria-expanded')).toBe('false');
+    expect(labelsOf({ tree })).toHaveLength(17);
+    fireEvent.click(summary);
+    expect(summary.getAttribute('aria-expanded')).toBe('true');
   });
 
   it.each(Object.keys(U27_AGENTS_TREE_SCENES))('%s has no accessibility violations', async (id) => {
@@ -272,8 +274,8 @@ describe('the focused Auto launch', () => {
     fireEvent.keyDown(document.activeElement ?? root, { key: 'End' });
     expect(document.activeElement).toBe(root);
     fireEvent.keyDown(root, { key: 'ArrowLeft' });
-    expect(root.getAttribute('aria-expanded')).toBe('false');
-    expect(visualLabelsOf({ tree })).toEqual([`Auto agent, ${LIVE_BRIEF}, 12 agents, Running`]);
+    expect(root.getAttribute('aria-expanded')).toBe('true');
+    expect(visualLabelsOf({ tree })).toHaveLength(13);
   });
 
   it('takes a new live child in at the top and keeps the scroll and the focus of a reader below', async () => {

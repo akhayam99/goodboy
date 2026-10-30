@@ -3,20 +3,15 @@ import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { SpawnedPanel } from '../../../SpawnedPanel';
 import { seedActivityRunScene } from '../activityRunSeed';
-import {
-  TREE_AGENTS,
-  TREE_LIVE_ROOT_ID,
-  TREE_ROOT_IDS,
-  TREE_SESSION,
-  TREE_VIEWS,
-} from './agentsTreeSeed';
+import { TREE_SEED, TREE_SESSION, type TreeSeed } from './agentsTreeSeed';
 
 type Props = {
   readonly theme: 'dark' | 'light';
   readonly isFocused: boolean;
+  readonly seed?: TreeSeed;
 };
 
-export const AgentsTreeScene = ({ theme, isFocused }: Props) => {
+export const AgentsTreeScene = ({ theme, isFocused, seed = TREE_SEED }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -24,19 +19,19 @@ export const AgentsTreeScene = ({ theme, isFocused }: Props) => {
     seedActivityRunScene();
     useAppStore.setState((state) => ({
       sessions: [TREE_SESSION],
-      sessionPhaseRuns: { [TREE_SESSION.id]: TREE_AGENTS },
-      agentKindOverride: Object.fromEntries(TREE_ROOT_IDS.map((id) => [id, 'auto'])),
-      autoTreeViews: { [TREE_SESSION.id]: TREE_VIEWS },
+      sessionPhaseRuns: { [TREE_SESSION.id]: seed.agents },
+      agentKindOverride: Object.fromEntries(seed.rootIds.map((id) => [id, 'auto'])),
+      autoTreeViews: { [TREE_SESSION.id]: seed.views },
       loadAutoTrees: async () => undefined,
       transcripts: {},
       loadAgentTranscript: async () => undefined,
-      selectedAgentId: isFocused ? { [TREE_SESSION.id]: TREE_LIVE_ROOT_ID } : {},
+      selectedAgentId: isFocused ? { [TREE_SESSION.id]: seed.selectedRootId } : {},
       activeLens: isFocused ? { ...state.activeLens, [TREE_SESSION.id]: 'auto' } : state.activeLens,
       focusedWorkflowRunId: {},
       drawer: null,
     }));
     setIsReady(true);
-  }, [theme, isFocused]);
+  }, [theme, isFocused, seed]);
 
   if (!isReady) {
     return null;

@@ -119,7 +119,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - The same name shows in the **Agents** panel, the chat lines, the result cards and what Auto reads.
 - In the **Agents** panel, each Auto conversation is titled by what you asked it. Its agents hang above it on the same rail as **Activity**, newest on top under a **Now** marker.
 - When you open a conversation there, a new agent arrives at the top without moving what you are reading.
-- A finished conversation folds to one row with its count of agents. Open or fold a row with its chevron or the arrow keys.
+- A conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. Open or fold a line with a click or the arrow keys. A fold opens by itself when a hidden helper needs you.
 - The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
@@ -184,6 +184,7 @@ This part is for contributors and agents who change the feature.
 
 - Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words (a retired model still reads by name), with the raw id in a tooltip only; "Unknown model" is only for an id with no known provider.
 - Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
+- Agents tree fold: `foldSpawnedRowsOf` decides which rows fold and `helperUrgencyOf` picks the state shown beside the count; the helper count comes from `runAgentCountOf`. The `u30-agents-fold` scene shows each case.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

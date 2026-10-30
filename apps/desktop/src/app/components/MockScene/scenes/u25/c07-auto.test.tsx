@@ -405,13 +405,14 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    const auto = await treeRow(/^Auto agent, .+, 4 agents, Idle$/);
-    expect(auto.getAttribute('aria-expanded')).toBe('false');
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
-    fireEvent.click(within(auto).getByTestId('spawned-fold-toggle'));
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(5);
-    fireEvent.keyDown(auto, { key: 'ArrowLeft' });
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
+    const auto = await treeRow(/^Auto agent, .+, Idle$/);
+    expect(auto.getAttribute('aria-expanded')).toBeNull();
+    const summary = await treeRow(/^4 helpers$/);
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
+    fireEvent.click(summary);
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(6);
+    fireEvent.keyDown(summary, { key: 'ArrowLeft' });
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
   });
 
   it('c07-auto-answering shows Auto alone in the tree with the empty state', async () => {
