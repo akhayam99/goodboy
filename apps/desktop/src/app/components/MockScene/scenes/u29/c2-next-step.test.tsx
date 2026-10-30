@@ -51,7 +51,7 @@ afterEach(() => {
 });
 
 describe('the next step card scene', () => {
-  it('shows one card with the primary, two alternatives, a hint field and no Confirm row', async () => {
+  it('shows one card with the primary, two alternatives, a hint behind Add a hint and no Confirm row', async () => {
     const Scene = U29_C2_NEXT_STEP_SCENES['c2-next-step'];
     render(
       <ToastProvider>
@@ -60,8 +60,9 @@ describe('the next step card scene', () => {
     );
 
     const card = await screen.findByRole('region', { name: 'Next step' }, WAIT);
-    expect(card.querySelectorAll('[role="tab"]')).toHaveLength(3);
-    screen.getByRole('textbox', { name: 'Add a hint' });
+    expect(card.querySelectorAll('[role="option"]')).toHaveLength(3);
+    expect(screen.queryByRole('textbox', { name: 'Add a hint' })).toBeNull();
+    screen.getByRole('button', { name: 'Add a hint' });
     expect(screen.queryByRole('group', { name: 'Confirm this work' })).toBeNull();
   });
 });

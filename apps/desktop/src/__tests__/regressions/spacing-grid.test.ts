@@ -67,4 +67,17 @@ describe('spacing grid', () => {
     expect(heights.length).toBeGreaterThan(0);
     expect(heights.filter((height) => !ROW_HEIGHTS.includes(height))).toEqual([]);
   });
+
+  it('holds the transcript rhythm on the grid: 32px between turns, 16px between blocks, set by the parent gap', () => {
+    const gapOf = (utility: string): number =>
+      Number(/\bgap-(\d+)\b/.exec(utility)?.[1] ?? 0) * SPACING_PX;
+    const rows = source({
+      path: join(DESKTOP_SRC, 'features/chat/components/ChatView/TranscriptRows.tsx'),
+    });
+    const view = source({ path: join(DESKTOP_SRC, 'features/chat/components/ChatView/index.tsx') });
+
+    expect([gapOf(RHYTHM.transcript.turns), gapOf(RHYTHM.transcript.blocks)]).toEqual([32, 16]);
+    expect(rows).toContain('className={PANE_RHYTHM.transcript.blocks}');
+    expect(view).toContain('className={PANE_RHYTHM.transcript.turns}');
+  });
 });

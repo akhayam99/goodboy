@@ -7,13 +7,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
-import type { ReactNode } from 'react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { Button, cn, PageColumn, ScrollFade } from '@goodboy/ui';
+import { PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
-  agentPlace,
   useAppStore,
   useSessionAnsweredQuestions,
   useSessionLoading,
@@ -31,19 +30,22 @@ import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { useProviderHealth } from '../../../../shared/hooks/useProviderHealth';
 import { ChatInput } from '../ChatInput';
+import { ConversationColumn } from '../ConversationColumn';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { MountSuggestionCard } from '../MountSuggestionCard';
+import { MountSuggestionStack } from './parts/MountSuggestionStack';
 import { useTranscriptMountProposals } from '../../../suggestions/useTranscriptMountProposals';
 import { useMountProposalActions } from '../../../suggestions/useMountProposalActions';
 import { mountProposalsByRun } from '../../../suggestions/transcriptMountProposals';
 import { ChatEmptyState } from './ChatEmptyState';
+import { OtherAgentQuestionButton } from './parts/OtherAgentQuestionButton';
 import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
 import { JumpToLatest } from './JumpToLatest';
 import { firstUnseenRowKeyOf } from './firstUnseenRowKeyOf';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { revealPacer } from '../../reveal/revealPacer';
-import { useScrollPin } from './useScrollPin';
+import { TRANSCRIPT_FLOOR_PX, useScrollPin } from './useScrollPin';
+import { anchorKeyOf } from './anchorKeyOf';
 import { listenUserInput } from './listenUserInput';
 import { findRetrySource } from './findRetrySource';
 import { buildRetryOverride } from './buildRetryOverride';
@@ -85,7 +87,7 @@ type Props = {
 
 type ChatViewMode = 'conversation' | 'record' | 'steps';
 
-const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li';
+const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li > ul > li';
 
 export const ChatView = ({
   session,
@@ -125,7 +127,6 @@ export const ChatView = ({
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
   const loadAgentTranscript = useAppStore((s) => s.loadAgentTranscript);
-  const navigate = useAppStore((s) => s.navigate);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
@@ -187,15 +188,22 @@ export const ChatView = ({
   const agentQuestionCount = openQuestions.filter(
     (question) => question.createdByAgentId === selectedAgentId,
   ).length;
-  const { scrollerRef, pinned, onScroll, userInput, jumpToLatest, isHolding } = useScrollPin({
-    deps: [deferredItems, agentQuestionCount],
-    resetKey: selectedAgentId,
-    onRevealOverflow: ({ keys }) => {
-      for (const key of keys) {
-        revealPacer.flush({ key });
-      }
-    },
-  });
+  const isTranscriptReady = !transcriptStale && transcriptCached && !loading.transcript;
+  const anchorKey = useMemo(
+    () => (isTranscriptReady ? anchorKeyOf({ items: deferredItems }) : undefined),
+    [isTranscriptReady, deferredItems],
+  );
+  const { scrollerRef, tailRef, pinned, isBehind, onScroll, userInput, jumpToLatest, isHolding } =
+    useScrollPin({
+      deps: [deferredItems, agentQuestionCount],
+      resetKey: selectedAgentId,
+      anchorKey,
+      onRevealOverflow: ({ keys }) => {
+        for (const key of keys) {
+          revealPacer.flush({ key });
+        }
+      },
+    });
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;
@@ -380,33 +388,11 @@ export const ChatView = ({
     for (const [runId, proposals] of mountProposalsByRun({ proposals: mountProposals })) {
       nodes.set(
         runId,
-        <div className="flex min-w-0 flex-col gap-2">
-          {proposals.map((proposal) => (
-            <MountSuggestionCard
-              key={proposal.projectId}
-              projectName={proposal.projectName}
-              agentName={
-                phaseRuns.find((run) => run.id === proposal.agentId)?.name ?? 'the requesting agent'
-              }
-              reason={proposal.reason}
-              cause={proposal.cause}
-              onMount={() =>
-                mountProposalActions.mount({
-                  projectId: proposal.projectId,
-                  projectName: proposal.projectName,
-                  reason: proposal.reason,
-                })
-              }
-              onDismiss={() =>
-                mountProposalActions.dismiss({
-                  projectId: proposal.projectId,
-                  projectName: proposal.projectName,
-                  reason: proposal.reason,
-                })
-              }
-            />
-          ))}
-        </div>,
+        <MountSuggestionStack
+          proposals={proposals}
+          phaseRuns={phaseRuns}
+          actions={mountProposalActions}
+        />,
       );
     }
     return nodes;
@@ -417,7 +403,6 @@ export const ChatView = ({
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const openQuestionScrollTarget = useAppStore((s) => s.openQuestionScrollTarget);
   const clearOpenQuestionScroll = useAppStore((s) => s.clearOpenQuestionScroll);
-  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
 
   useEffect(() => {
     void loadSessionOpenQuestions(session.id);
@@ -538,9 +523,9 @@ export const ChatView = ({
         <ScrollFade
           className="flex-1"
           fadeSize="h-12"
-          viewportClassName={cn('pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
+          viewportClassName={topInset === 'tight' ? 'pt-2' : 'pt-6'}
         >
-          <PageColumn className="h-full">
+          <ConversationColumn className="h-full">
             {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
               <TranscriptSkeleton />
             ) : deferredItems.length === 0 &&
@@ -569,46 +554,54 @@ export const ChatView = ({
                 />
               </div>
             ) : (
-              <ul data-find-root data-scroll-content="" className="flex flex-col gap-3">
-                <ChatImageLoaderProvider key={session.id} sessionId={session.id}>
-                  <TranscriptRows
-                    rows={rows}
-                    newFromKey={newFromKey}
-                    oqByTurnOrdinal={oqByTurnOrdinal}
-                    slackDrafts={slackDrafts}
-                    sessionId={session.id}
-                    selectedAgentId={selectedAgentId}
-                    workingDir={worktreePath}
-                    onRefreshAuth={handleRefreshAuth}
-                    onOpenDiff={handleOpenDiff}
-                    isThinking={isThinking}
-                    thinkingPhrase={thinkingPhrase}
-                    thinkingStartedAt={thinkingStartedAt}
-                    onRetryRun={(params) => void handleRetryRun(params)}
-                    retryingRunId={retryingRunId}
-                    mountSuggestionsByRun={mountSuggestionsByRun}
-                    activeRunId={activeRunId}
-                    turnFooters={turnFooters}
-                    briefLabel={briefLabel}
-                    {...(insertions !== undefined && { insertions })}
-                    {...(onOpenTranscript !== undefined && { onOpenTranscript })}
-                    isStepsOnly={mode === 'steps'}
-                    waitingFor={waitingFor}
-                    {...(stopLabel !== undefined && { stopLabel })}
-                    {...(clockStepAgentId !== undefined && { clockStepAgentId })}
-                    stopPhase={agentStop.phase}
-                    {...(canStop && { onStop: agentStop.stop })}
-                  />
-                </ChatImageLoaderProvider>
-              </ul>
+              <>
+                <ul data-find-root data-scroll-content="" className={PANE_RHYTHM.transcript.turns}>
+                  <ChatImageLoaderProvider key={session.id} sessionId={session.id}>
+                    <TranscriptRows
+                      rows={rows}
+                      newFromKey={newFromKey}
+                      oqByTurnOrdinal={oqByTurnOrdinal}
+                      slackDrafts={slackDrafts}
+                      sessionId={session.id}
+                      selectedAgentId={selectedAgentId}
+                      workingDir={worktreePath}
+                      onRefreshAuth={handleRefreshAuth}
+                      onOpenDiff={handleOpenDiff}
+                      isThinking={isThinking}
+                      thinkingPhrase={thinkingPhrase}
+                      thinkingStartedAt={thinkingStartedAt}
+                      onRetryRun={(params) => void handleRetryRun(params)}
+                      retryingRunId={retryingRunId}
+                      mountSuggestionsByRun={mountSuggestionsByRun}
+                      activeRunId={activeRunId}
+                      turnFooters={turnFooters}
+                      briefLabel={briefLabel}
+                      {...(insertions !== undefined && { insertions })}
+                      {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+                      isStepsOnly={mode === 'steps'}
+                      waitingFor={waitingFor}
+                      {...(stopLabel !== undefined && { stopLabel })}
+                      {...(clockStepAgentId !== undefined && { clockStepAgentId })}
+                      stopPhase={agentStop.phase}
+                      {...(canStop && { onStop: agentStop.stop })}
+                    />
+                  </ChatImageLoaderProvider>
+                </ul>
+                <div
+                  ref={tailRef}
+                  aria-hidden
+                  data-transcript-tail=""
+                  style={{ height: TRANSCRIPT_FLOOR_PX }}
+                />
+              </>
             )}
-          </PageColumn>
+          </ConversationColumn>
         </ScrollFade>
         {!pinned && waitingHere[0] !== undefined && (
           <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
         )}
         <JumpToLatest
-          isVisible={!pinned && waitingHere.length === 0}
+          isVisible={isBehind && waitingHere.length === 0}
           onJump={() => {
             suspendAnchor();
             jumpToLatest();
@@ -620,39 +613,29 @@ export const ChatView = ({
       otherAgentQuestion != null &&
       otherAgentId != null &&
       otherAgentQuestionCount > 0 ? (
-        <div className="flex shrink-0 justify-center py-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              navigate({ to: agentPlace({ sessionId: session.id, agentId: otherAgentId }) });
-              requestOpenQuestionScroll({
-                agentId: otherAgentId,
-                questionId: otherAgentQuestion.id,
-              });
-            }}
-          >
-            {otherAgentQuestionCount}{' '}
-            {otherAgentQuestionCount === 1 ? 'open question' : 'open questions'} from{' '}
-            {otherAgentName}
-          </Button>
-        </div>
+        <OtherAgentQuestionButton
+          sessionId={session.id}
+          agentId={otherAgentId}
+          agentName={otherAgentName}
+          questionId={otherAgentQuestion.id}
+          count={otherAgentQuestionCount}
+        />
       ) : null}
       {hasAdvanceRow && hasComposer && !isEnded && selectedAgentId != null ? (
         <WorkflowAdvanceStack session={session} />
       ) : null}
       {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (
-        <PageColumn className="py-1">{composerLead}</PageColumn>
+        <ConversationColumn className="py-1">{composerLead}</ConversationColumn>
       ) : null}
       {!hasComposer ? (
         composerNotice === undefined ? null : (
-          <PageColumn className="py-3">{composerNotice}</PageColumn>
+          <ConversationColumn className="py-3">{composerNotice}</ConversationColumn>
         )
       ) : isEnded ? (
         agentQuestionCount > 0 ? null : (
-          <PageColumn className="py-3 text-meta text-muted-foreground">
+          <ConversationColumn className="py-3 text-meta text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
-          </PageColumn>
+          </ConversationColumn>
         )
       ) : selectedAgentId ? (
         <ChatInput

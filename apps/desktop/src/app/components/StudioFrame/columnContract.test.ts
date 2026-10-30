@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 import type { StudioKind } from '../../../store';
-import { PAGE_FRAME, frameTierOf } from '@goodboy/ui';
+import { PAGE_FRAME, PAGE_MEASURE, frameTierOf } from '@goodboy/ui';
 import { STUDIO_META } from './studioMeta';
 
 const SRC = join(__dirname, '..', '..', '..');
@@ -299,6 +299,24 @@ describe('content column contract', () => {
 
     expect(files.filter((file) => !/<(PageColumn|PageHeader)\b/.test(read(file)))).toEqual([]);
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
+  });
+
+  it('puts the agent transcript, its composer and the rows above it on the 720 measure, no exception', () => {
+    const files = [
+      'features/chat/components/ChatView/index.tsx',
+      'features/chat/components/ChatInput/index.tsx',
+      'features/chat/components/ChatView/parts/WorkflowAdvanceStack/index.tsx',
+    ];
+
+    expect(PAGE_MEASURE.agent).toBe('measure');
+    expect(read('features/chat/components/ConversationColumn.tsx')).toMatch(
+      /<PageColumn\s+width=\{PAGE_MEASURE\.agent\}/,
+    );
+    expect(files.filter((file) => !/<ConversationColumn\b/.test(read(file)))).toEqual([]);
+    expect(files.filter((file) => /<PageColumn\b/.test(read(file)))).toEqual([]);
+    expect(read('features/workflows/components/WorkflowAdvance/index.tsx')).toMatch(
+      /<PageColumn\s+width=\{PAGE_MEASURE\.agent\}/,
+    );
   });
 
   it('registers every studio, so a new place cannot skip the contract', () => {

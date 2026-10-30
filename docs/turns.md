@@ -614,7 +614,7 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   conversation the final answer row is added when `activeRunId` goes null,
   inside the 1.5 s live window of the run's last delta, so it reveals as the
   turn ends; a turn that ends more than 1.5 s after its last text shows it
-  whole. The chips and the copy button under an answer wait until the reveal
+  whole. The chips and the copy button of an answer wait until the reveal
   ends. The workspace chat marks its reply by message id in `sendChatMessage`
   and flushes it when the reply fails or is stopped.
 - Text an agent writes outside the conversation keys on the agent:
@@ -921,21 +921,25 @@ parsed usage stands.
 An agent turn reads in one order: outcome line, artifact cards, next action,
 chips, then notes folded away. `features/chat/readingOrder/` owns it, and
 `readingBudgets.ts` holds every budget (outcome 100 characters, 3 artifact
-cards, 4 chips, prose clamped at 3 lines).
+cards, 4 chips, an answer clamped at 12 lines).
 
 - `readingOrderOf` is pure. It splits the rows into turns at each `user_text`,
   `handoff`, `oq_answer` and `auto_delivery` row. In a finished turn the last
-  `assistant_text` is the answer (clamped at 3 lines, at 12 when the turn is one
-  text with no steps) and the earlier ones become one closed **Notes** line
+  `assistant_text` is the answer (clamped at 12 lines, `answerClampLines`) and the earlier ones become one closed **Notes** line
   (`ReadingNotes`) drawn in place of the first of them; the others draw
   nothing. A text with a control marker is never folded.
 - A turn with a text of the active run is live and untouched, so the reveal
   types it whole. A turn with an `error` item keeps its notes open.
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
-  draws the optional `OutcomeLine`, the clamped text with **Show more**, then
-  the chips with **+N** past 4. `AssistantText` is a thin caller: it reads
+  draws the optional `OutcomeLine` (`text-heading`, 14/20 at 600), the clamped text with **Show more**, then
+  the chips with **+N** past 4. `AssistantText` is a thin caller, and it draws no copy row: **Copy** is a `row-actions` button on the message root (`group/row`), at its top right, so it shows on hover and on keyboard focus and takes no room in the flow; the message context menu (`message.copy`) always has it. It reads
   `parseOutcomeLine` from the raw text, before the markers are stripped, and
   passes a neutral `outcome` once the message is complete and revealed.
+- `TranscriptRows` groups its rows into one `<li data-turn>` per turn, cut at each
+  message of the person, a handoff or a delivery (`splitTurns`), so the parent
+  list owns the 32px turn gap and each turn list owns the 16px block gap
+  (`PANE_RHYTHM.transcript`). A day chip or a New divider opens the turn it
+  belongs to, and the thinking tail joins the last turn.
 - The Auto child result cards use the same pieces without the message renderer:
   `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
   (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
@@ -971,7 +975,11 @@ footer reads it from the item's own usage (telemetry has no column for it) and s
 row in the detail, in place of the cost row and its API-price note
 (`premiumRequestsLabelOf` words it for the line and for `UsageStatsRow`).
 The line itself (`TurnFooterSummary`) carries only the provider mark, model,
-premium requests and duration; tokens, cache share and context window live in the
+premium requests and duration; `TranscriptRows` hands each footer the run of the
+footer before it (`previousRunId`), and a `done` footer with a duration on the
+same provider and model as that one drops the mark and the model, so the speaker
+is named once and again when it changes (a stopped or failed footer always names
+it); tokens, cache share and context window live in the
 detail popover (`TurnFooterDetail`) it opens. The transcript pane's
 agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
@@ -1028,6 +1036,22 @@ the bottom; the first wheel, touch, pointer or key event stops its settle loop,
 and a reader who scrolled up is never pulled back down by new rows (the "Jump
 to latest" button pins again).
 
+A message the reader sends moves to 40 px under the top of the view
+and the reply grows downward from it; the view does not follow
+the reply. `ChatView` passes `anchorKey`, the key of the last `user_text` or
+`handoff` item (`anchorKeyOf`), and only once the transcript is loaded: the
+first key after an agent opens is remembered, never anchored, so opening a
+session lands on the bottom. A later key anchors the last `[data-turn]`
+(`applyFollow` re-reads its top on every resize, one write, held through
+`isHolding` like the answer hold) and ends at the first scroll of the reader,
+who is then pinned only when they reach the bottom again. Under the list sits
+`[data-transcript-tail]`, the one floor of the transcript: 48 px
+(`TRANSCRIPT_FLOOR_PX`) under the last line, with no padding under the scroller.
+After a send the hook adds a spacer to it, `clientHeight - 40 - last turn - 48`
+and never below zero, so a short turn can reach the 40 px line; the spacer
+shrinks as the reply grows and a different agent resets it. Content starts at
+the top and grows down, it is never piled against the composer.
+
 Growth is followed without a store write too: a `ResizeObserver` on the
 content calls the same follow step every time the content changes size, so a
 text that grows frame by frame (the text reveal) keeps the view at the bottom.
@@ -1043,8 +1067,11 @@ latest" or a manual scroll to the bottom during the reveal goes back to
 following the bottom until the reveal ends. The old rule, always stick to the
 bottom while pinned, still holds for everything that is not a revealing answer.
 
-"Jump to latest" (`JumpToLatest`) is mounted all the time. While you are at the
-bottom, or a question waits and its pill shows instead, it is `inert`,
+"Jump to latest" (`JumpToLatest`) is mounted all the time. It shows when the
+content (not the spacer) ends 32 px or more under the view, `isBehind` in
+`useScrollPin`: a reply that passed the bottom of the view, or a reader who
+scrolled up. While you are at the bottom, or a question waits and its pill
+shows instead, it is `inert`,
 `aria-hidden` and at zero opacity; when you scroll up it fades in over
 `--duration-quick` on `--ease-enter` (nothing under reduced motion) instead of
 mounting, so it never pops in during streaming. It is an `IconButton`, so it

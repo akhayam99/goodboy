@@ -49,7 +49,7 @@ const insertion = (key: string, beforeMs: number | null): TranscriptInsertion =>
 });
 
 const textsOf = (container: HTMLElement): ReadonlyArray<string> =>
-  [...container.querySelectorAll('li')].map((li) => li.textContent ?? '');
+  [...container.querySelectorAll('[data-turn] > ul > li')].map((li) => li.textContent ?? '');
 
 const renderRows = ({
   rows,

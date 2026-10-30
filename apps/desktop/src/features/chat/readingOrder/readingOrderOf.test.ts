@@ -49,7 +49,7 @@ describe('readingOrderOf', () => {
         text({ key: 't3', body: 'Changes needed: 1 blocker.' }),
       ],
     });
-    expect(roles.get('t3')).toEqual({ kind: 'answer', clampLines: 3 });
+    expect(roles.get('t3')).toEqual({ kind: 'answer', clampLines: 12 });
     expect(roles.get('t1')).toMatchObject({ kind: 'notes', isOpen: false, lineCount: 2 });
     expect(roles.get('t2')).toEqual({ kind: 'hidden' });
   });
@@ -78,18 +78,18 @@ describe('readingOrderOf', () => {
     expect(roles.get('t1')).toMatchObject({ kind: 'notes', isOpen: true });
   });
 
-  it('gives a direct answer the long budget', () => {
+  it('gives a direct answer the same 12 line budget', () => {
     const roles = readingOrderOf({
       rows: [user({ key: 'u1' }), text({ key: 't1', body: 'Northwind uses two queues.' })],
     });
     expect(roles.get('t1')).toEqual({ kind: 'answer', clampLines: 12 });
   });
 
-  it('does not give the long budget when the turn used tools', () => {
+  it('gives the answer of a turn that used tools the same 12 line budget', () => {
     const roles = readingOrderOf({
       rows: [user({ key: 'u1' }), operations({ key: 'o1' }), text({ key: 't1', body: 'Done.' })],
     });
-    expect(roles.get('t1')).toEqual({ kind: 'answer', clampLines: 3 });
+    expect(roles.get('t1')).toEqual({ kind: 'answer', clampLines: 12 });
   });
 
   it('treats each user turn on its own', () => {
@@ -121,6 +121,6 @@ describe('readingOrderOf', () => {
     expect(roles.get('t1')).toMatchObject({ kind: 'notes', lineCount: 1 });
     expect(roles.get('t2')).toBeUndefined();
     expect(roles.get('t3')).toBeUndefined();
-    expect(roles.get('t4')).toEqual({ kind: 'answer', clampLines: 3 });
+    expect(roles.get('t4')).toEqual({ kind: 'answer', clampLines: 12 });
   });
 });

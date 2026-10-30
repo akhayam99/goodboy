@@ -362,6 +362,8 @@ export { SearchField } from './components/SearchField';
 export type { SearchFieldProps } from './components/SearchField';
 export { ChoiceCards } from './components/ChoiceCards';
 export type { ChoiceCardFact, ChoiceCardOption, ChoiceCardsProps } from './components/ChoiceCards';
+export { ChoiceChips } from './components/ChoiceChips';
+export type { ChoiceChipOption, ChoiceChipsProps } from './components/ChoiceChips';
 export type { FieldSize } from './components/Input';
 export type { SegmentedTabsSize } from './components/SegmentedTabs';
 export { isChordHint } from './components/Kbd';

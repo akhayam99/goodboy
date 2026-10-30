@@ -15,6 +15,10 @@ export const PANE_RHYTHM = {
     section: 'pb-6',
   },
   prose: 'max-w-[var(--measure)]',
+  transcript: {
+    turns: 'flex flex-col gap-8',
+    blocks: 'flex flex-col gap-4',
+  },
   message: {
     user: 'max-w-[calc(100%-3rem)]',
   },

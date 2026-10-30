@@ -2,13 +2,29 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import type { ReactNode } from 'react';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 
 vi.mock('../TranscriptCards', () => ({
-  TranscriptCard: ({ item }: { item: TranscriptItem }) => <div data-testid="card">{item.kind}</div>,
+  TranscriptCard: ({
+    item,
+    previousRunId,
+  }: {
+    item: TranscriptItem;
+    previousRunId?: string | null;
+  }) => (
+    <div data-testid="card" data-previous-run={previousRunId ?? ''}>
+      {item.kind}
+    </div>
+  ),
 }));
 
 vi.mock('../OperationsCluster', () => ({
@@ -109,7 +125,7 @@ describe('TranscriptRows', () => {
       itemRow(decision('d1')),
       itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
     ]);
-    const rows = container.querySelectorAll('li');
+    const rows = container.querySelectorAll('[data-turn] > ul > li');
     expect(rows).toHaveLength(2);
     expect(rows[0]!.className).toContain('flex flex-col');
     expect(rows[0]!.querySelectorAll('[data-testid="card"]')).toHaveLength(2);
@@ -121,7 +137,7 @@ describe('TranscriptRows', () => {
       itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
       itemRow(decision('d1')),
     ]);
-    expect(container.querySelectorAll('li')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-turn] > ul > li')).toHaveLength(3);
   });
 
   it('counts the handoff as the first turn, with its day chip and the questions it raised', () => {
@@ -137,7 +153,7 @@ describe('TranscriptRows', () => {
       ],
       oqByTurnOrdinal,
     );
-    const rows = [...container.querySelectorAll('li')];
+    const rows = [...container.querySelectorAll('[data-turn] > ul > li')];
     expect(rows).toHaveLength(5);
     expect(rows[3]!.querySelector('[data-testid="oq"]')?.textContent).toBe('first-turn');
   });
@@ -157,7 +173,7 @@ describe('TranscriptRows', () => {
       itemRow({ kind: 'done', key: 'done-2' }),
     ]);
     expect(screen.getAllByTestId('card')).toHaveLength(1);
-    expect(container.querySelectorAll('li')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-turn] > ul > li')).toHaveLength(2);
   });
 
   it('keeps the day boundary chip across a run completion', () => {
@@ -167,7 +183,7 @@ describe('TranscriptRows', () => {
       itemRow(userText('u2', new Date(2026, 4, 16, 9, 0, 0))),
     ]);
     expect(screen.getAllByTestId('card')).toHaveLength(2);
-    expect(container.querySelectorAll('li')).toHaveLength(4);
+    expect(container.querySelectorAll('[data-turn] > ul > li')).toHaveLength(4);
   });
 
   it('drops the day chip when the transcript starts today', () => {
@@ -221,7 +237,7 @@ describe('TranscriptRows', () => {
       new Map(),
       new Map([[RUN_ID, <div data-testid="mount-suggestion">web</div>]]),
     );
-    const rows = [...container.querySelectorAll('li')];
+    const rows = [...container.querySelectorAll('[data-turn] > ul > li')];
     const suggestionIndex = rows.findIndex(
       (row) => row.querySelector('[data-testid="mount-suggestion"]') !== null,
     );
@@ -235,7 +251,7 @@ describe('TranscriptRows', () => {
       new Map(),
       new Map([[RUN_ID, <div data-testid="mount-suggestion">web</div>]]),
     );
-    const rows = [...container.querySelectorAll('li')];
+    const rows = [...container.querySelectorAll('[data-turn] > ul > li')];
     expect(rows).toHaveLength(2);
     expect(rows[1]!.querySelector('[data-testid="mount-suggestion"]')).not.toBeNull();
   });
@@ -257,7 +273,7 @@ describe('TranscriptRows', () => {
       itemRow(userText('u1', new Date())),
       itemRow({ kind: 'assistant_text', key: 'a1', text: 'word '.repeat(300) }),
     ]);
-    const sizes = [...container.querySelectorAll<HTMLElement>('li')].map(
+    const sizes = [...container.querySelectorAll<HTMLElement>('[data-turn] > ul > li')].map(
       (li) => li.style.containIntrinsicSize,
     );
     expect(sizes).toHaveLength(2);
@@ -280,8 +296,13 @@ describe('the New divider', () => {
     const divider = screen.getByTestId('transcript-new');
     expect(divider.textContent).toBe('New');
     expect(divider.querySelector('[role="separator"]')).not.toBeNull();
-    expect(divider.previousElementSibling?.textContent).toBe('assistant_text');
+    expect(divider.previousElementSibling).toBeNull();
     expect(divider.nextElementSibling?.textContent).toBe('user_text');
+    expect(
+      divider
+        .closest('[data-turn]')
+        ?.previousElementSibling?.textContent?.endsWith('assistant_text'),
+    ).toBe(true);
   });
 
   it('draws nothing without a boundary, or when the boundary names no row', () => {
@@ -291,5 +312,96 @@ describe('the New divider', () => {
 
     renderRows(rows, new Map(), undefined, 'user-gone');
     expect(screen.queryByTestId('transcript-new')).toBeNull();
+  });
+});
+
+describe('the transcript rhythm', () => {
+  const twoTurns = [
+    itemRow(userText('user-1', new Date(2026, 4, 15, 9, 0, 0))),
+    itemRow({ kind: 'assistant_text', key: 'reply-1', text: 'First reply.' }),
+    itemRow({ kind: 'assistant_text', key: 'reply-2', text: 'Second reply.' }),
+    itemRow(userText('user-2', new Date(2026, 4, 15, 10, 0, 0))),
+    itemRow({ kind: 'assistant_text', key: 'reply-3', text: 'Third reply.' }),
+  ];
+
+  it('opens a turn at each message of the person and keeps its blocks in one list', () => {
+    const { container } = renderRows(twoTurns);
+
+    const turns = [...container.querySelectorAll('[data-turn]')];
+    expect(turns).toHaveLength(2);
+    expect(turns.map((turn) => turn.querySelectorAll(':scope > ul > li').length)).toEqual([4, 2]);
+  });
+
+  it('leaves the turn gap to the list around and the block gap to one list inside each turn', () => {
+    const { container } = renderRows(twoTurns);
+
+    for (const turn of container.querySelectorAll('[data-turn]')) {
+      expect(turn.children).toHaveLength(1);
+      expect(turn.firstElementChild?.tagName).toBe('UL');
+    }
+  });
+
+  it('hands each turn footer the run of the footer before it, so the speaker is named once', () => {
+    const usage = (key: string, runId: string): TranscriptItem => ({
+      kind: 'usage',
+      key,
+      runId: brandId<ProviderRunId>({ value: runId }),
+      at: brandId<IsoDateTime>({ value: new Date(2026, 4, 15, 9, 1, 0).toISOString() }),
+      usage: {
+        inputTokens: 1,
+        outputTokens: 1,
+        cachedInputTokens: 0,
+        estimatedCostUsd: 0,
+      },
+    });
+    const { container } = renderRows([
+      itemRow(userText('user-1', new Date(2026, 4, 15, 9, 0, 0))),
+      itemRow(usage('usage-1', 'run-1')),
+      itemRow(userText('user-2', new Date(2026, 4, 15, 9, 2, 0))),
+      itemRow(usage('usage-2', 'run-2')),
+    ]);
+
+    const previous = [...container.querySelectorAll('[data-testid="card"]')]
+      .filter((card) => card.textContent === 'usage')
+      .map((card) => card.getAttribute('data-previous-run'));
+    expect(previous).toEqual(['', 'run-1']);
+  });
+
+  it('puts the thinking tail in the last turn, not in a turn of its own', () => {
+    const { container } = render(
+      <ul>
+        <TranscriptRows
+          rows={twoTurns}
+          oqByTurnOrdinal={new Map()}
+          sessionId={brandId<SessionId>({ value: 's1' })}
+          selectedAgentId={brandId<AgentId>({ value: 'a1' })}
+          workingDir={null}
+          onRefreshAuth={() => undefined}
+          onOpenDiff={() => undefined}
+          isThinking
+          thinkingPhrase="Thinking"
+          onRetryRun={retryErrorSpy}
+          retryingRunId={null}
+        />
+      </ul>,
+    );
+
+    const turns = container.querySelectorAll('[data-turn]');
+    expect(turns).toHaveLength(2);
+    expect(turns[1]?.querySelector('[data-testid="thinking"]')).not.toBeNull();
+  });
+
+  it('starts a turn with its day chip, so the chip sits under the turn gap', () => {
+    const { container } = renderRows([
+      itemRow(userText('user-1', new Date(2026, 4, 14, 9, 0, 0))),
+      itemRow({ kind: 'assistant_text', key: 'reply-1', text: 'Yesterday.' }),
+      itemRow(userText('user-2', new Date(2026, 4, 15, 10, 0, 0))),
+    ]);
+
+    const turns = container.querySelectorAll('[data-turn]');
+    expect(turns).toHaveLength(2);
+    expect(turns[1]?.querySelector('ul > li:first-child')?.getAttribute('data-testid')).toBe(
+      'transcript-day',
+    );
   });
 });

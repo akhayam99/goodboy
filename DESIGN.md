@@ -236,8 +236,9 @@ about its effect is a worse defect than one that reads badly.
   the merged purple on purpose. A finished session is almost always a merged
   pull request, and one outcome must not show in two colors.
 - **A card says what it is with a bar, never with a fill.** The kind of an
-  element lives in a `ToneBar` inside the surface and its icon: warning for a
-  question, info for a file, danger for a failure. The surface behind it stays
+  element lives in a `ToneBar` inside the surface and its icon: info for a
+  file, danger for a failure. A card that waits for you (the Next step card in
+  the Auto chat) uses a 6px warning `StatusDot` instead, on a neutral surface. The surface behind it stays
   the app background. A column of cards reads as one dark page with a colored
   bar on each row, not a stack of tinted blocks. Three things still get a
   fill: the neutral elevation ramp (`bg-elevated` panels and insets), a choice

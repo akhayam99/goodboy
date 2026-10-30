@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { cn, PageColumn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 import type { ComposerControlSlots } from './composerControlSlots';
+import { ConversationColumn } from '../ConversationColumn';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
@@ -203,111 +204,109 @@ export const ChatInput = ({
   };
 
   return (
-    <div className="pb-4 pt-2">
-      <PageColumn className="flex flex-col gap-2">
-        {!isRunning && !providerDisconnected && (
-          <RoutingIndicator
-            sessionPreference={session.providerPreference}
-            turnOverride={routing.routingOverride}
-            connectedProviders={routing.connectedProviderIds}
-            onSendAnyway={canSend ? () => void onSendAnyway() : undefined}
+    <ConversationColumn className="flex flex-col gap-2 pb-4 pt-2">
+      {!isRunning && !providerDisconnected && (
+        <RoutingIndicator
+          sessionPreference={session.providerPreference}
+          turnOverride={routing.routingOverride}
+          connectedProviders={routing.connectedProviderIds}
+          onSendAnyway={canSend ? () => void onSendAnyway() : undefined}
+        />
+      )}
+      <div className="flex flex-col">
+        {hasTray && (
+          <ComposerTray
+            queue={queue}
+            suggestions={suggestions}
+            canEdit={isEmpty}
+            onEdit={editQueued}
+            onRemove={removeQueued}
+            onSendNow={sendQueued}
           />
         )}
-        <div className="flex flex-col">
-          {hasTray && (
-            <ComposerTray
-              queue={queue}
-              suggestions={suggestions}
-              canEdit={isEmpty}
-              onEdit={editQueued}
-              onRemove={removeQueued}
-              onSendNow={sendQueued}
-            />
+        <div
+          ref={composerRef}
+          data-drop-composer
+          className={cn(
+            'relative flex flex-col rounded-lg border transition-all',
+            hasTray && 'rounded-t-none',
+            isDragging
+              ? cn(tintClasses('primary').bgSoft, 'border-primary')
+              : cn(
+                  'border-border-soft bg-subtle hover:border-border',
+                  'focus-within:border-border-strong focus-within:shadow-xl',
+                ),
           )}
-          <div
-            ref={composerRef}
-            data-drop-composer
-            className={cn(
-              'relative flex flex-col rounded-lg border transition-all',
-              hasTray && 'rounded-t-none',
-              isDragging
-                ? cn(tintClasses('primary').bgSoft, 'border-primary')
-                : cn(
-                    'border-border-soft bg-subtle hover:border-border',
-                    'focus-within:border-border-strong focus-within:shadow-xl',
-                  ),
-            )}
-          >
-            <PromptDropOverlay isDragging={isDragging} />
-            <ComposerCliGate
-              provider={routing.effectiveProvider}
-              modelId={routing.effectiveModelId}
-            />
-            <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
-            <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
-            <div className="relative" ref={wrapperRef}>
-              {popoverOpen ? (
-                <QuickActionsPopover
-                  items={filteredQuickItems}
-                  emptyHint={quickEmptyHint}
-                  onSelect={onQuickActionSelect}
-                  onDismiss={dismissPopover}
-                />
-              ) : null}
-              <PromptField
-                variant="bare"
-                kind="message"
-                label="Message to the agent"
-                value={value}
-                onChange={onValueChange}
-                onSubmit={(mode) => void (mode === 'now' && isRunning ? onSendNow() : onSend())}
-                canSendNow={isRunning}
-                isSubmitBlocked={popoverOpen}
-                onKeyDown={onKeyDown}
-                files={{
-                  attachments,
-                  isDragging,
-                  composerRef,
-                  fileInputRef,
-                  onPaste,
-                  onFileInputChange,
-                  onRemove: removeAttachment,
-                }}
-                placeholder={placeholder}
-                disabled={isBlocked}
-                minRows={1}
-                maxRows={12}
+        >
+          <PromptDropOverlay isDragging={isDragging} />
+          <ComposerCliGate
+            provider={routing.effectiveProvider}
+            modelId={routing.effectiveModelId}
+          />
+          <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
+          <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
+          <div className="relative" ref={wrapperRef}>
+            {popoverOpen ? (
+              <QuickActionsPopover
+                items={filteredQuickItems}
+                emptyHint={quickEmptyHint}
+                onSelect={onQuickActionSelect}
+                onDismiss={dismissPopover}
               />
-            </div>
-            <ComposerToolbar
-              session={session}
-              routing={routing}
-              isBlocked={isBlocked}
-              hasPermissionPicker={!isAutoChild}
-              {...(controlSlots !== undefined && { controlSlots })}
-              attachmentCount={attachments.length}
-              fileInputRef={fileInputRef}
-              onFileInputChange={onFileInputChange}
-              onInsertPrefix={insertPrefix}
-              isRunning={isRunning}
-              canSend={canSend}
-              sendDisabledTitle={sendDisabledTitle}
-              onSend={() => void onSend()}
-              onSendNow={() => void onSendNow()}
-              stopPhase={agentStop.phase}
-              isStopArmed={escapeStop.isArmed}
-              onStop={agentStop.stop}
+            ) : null}
+            <PromptField
+              variant="bare"
+              kind="message"
+              label="Message to the agent"
+              value={value}
+              onChange={onValueChange}
+              onSubmit={(mode) => void (mode === 'now' && isRunning ? onSendNow() : onSend())}
+              canSendNow={isRunning}
+              isSubmitBlocked={popoverOpen}
+              onKeyDown={onKeyDown}
+              files={{
+                attachments,
+                isDragging,
+                composerRef,
+                fileInputRef,
+                onPaste,
+                onFileInputChange,
+                onRemove: removeAttachment,
+              }}
+              placeholder={placeholder}
+              disabled={isBlocked}
+              minRows={1}
+              maxRows={12}
             />
           </div>
+          <ComposerToolbar
+            session={session}
+            routing={routing}
+            isBlocked={isBlocked}
+            hasPermissionPicker={!isAutoChild}
+            {...(controlSlots !== undefined && { controlSlots })}
+            attachmentCount={attachments.length}
+            fileInputRef={fileInputRef}
+            onFileInputChange={onFileInputChange}
+            onInsertPrefix={insertPrefix}
+            isRunning={isRunning}
+            canSend={canSend}
+            sendDisabledTitle={sendDisabledTitle}
+            onSend={() => void onSend()}
+            onSendNow={() => void onSendNow()}
+            stopPhase={agentStop.phase}
+            isStopArmed={escapeStop.isArmed}
+            onStop={agentStop.stop}
+          />
         </div>
-        {showsDeliveryChoice ? (
-          <p className="px-1 text-meta text-faint-foreground">
-            Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
-            continues with your message.
-          </p>
-        ) : null}
-        <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
-      </PageColumn>
-    </div>
+      </div>
+      {showsDeliveryChoice ? (
+        <p className="px-1 text-meta text-faint-foreground">
+          Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
+          continues with your message.
+        </p>
+      ) : null}
+      <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
+    </ConversationColumn>
   );
 };

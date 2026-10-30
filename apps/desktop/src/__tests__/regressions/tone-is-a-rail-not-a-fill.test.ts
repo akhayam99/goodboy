@@ -137,6 +137,20 @@ describe('tone is a rail, not a fill', () => {
     expect(kit).toContain('railClass: tint.dot');
   });
 
+  it('marks a waiting state in the Auto chat with a status dot, never a rail', () => {
+    const autoChat = join(SOURCE_ROOTS[0] ?? '', 'features', 'auto', 'chat');
+    const offenders = listSourceFiles({ dir: autoChat, acc: [] })
+      .filter((file) => /\bToneBar\b/.test(readFileSync(file, 'utf8')))
+      .map((file) => relative(REPO_ROOT, file).split(sep).join('/'));
+    expect(
+      offenders,
+      `A waiting card is a StatusDot, not a ToneBar:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+    const nextStep = readFileSync(join(autoChat, 'AutoNextAction', 'index.tsx'), 'utf8');
+    expect(nextStep).toMatch(/<StatusDot tone=\{TONE\} size="sm" \/>/);
+    expect(nextStep).not.toMatch(/tintClasses|\.text\b/);
+  });
+
   it('shrinks the allowlist as fills go away', () => {
     const counts = measure();
     const stale = Object.entries(ALLOWED)

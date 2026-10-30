@@ -805,12 +805,12 @@ describe('moving across every place keeps one frame', () => {
       await openAgentTranscript(sessionId);
       const agentLayers = (): RailLayers =>
         sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
-      expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: COLUMN_RAIL });
+      expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: MEASURE_RAIL });
       await openContextDrawer(sessionId);
       expectOneRail({
         place: 'Agent transcript with a drawer',
         layers: agentLayers(),
-        rail: COLUMN_RAIL,
+        rail: MEASURE_RAIL,
       });
       await escape();
 

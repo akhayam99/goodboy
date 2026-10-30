@@ -121,7 +121,7 @@ export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   run: 'column',
   orchestrated: 'column',
   agents: 'column',
-  agent: 'column',
+  agent: 'measure',
   auto: 'column',
   questions: 'column',
   artifacts: 'column',

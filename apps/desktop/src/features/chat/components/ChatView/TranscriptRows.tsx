@@ -1,5 +1,6 @@
 import type { RetryRunParams } from '../../retryRun';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import type {
   AgentId,
   IntegrationDraft,
@@ -29,10 +30,14 @@ import { dayKey, rowAnchorOf } from './lib';
 import { DayDivider } from './DayDivider';
 import { TurnHeading } from './TurnHeading';
 import { planBlockVersions } from './planBlockVersions';
+import { rowVisibilityStyle } from './rowVisibilityStyle';
+import { splitTurns } from './splitTurns';
+import { lastRowIndexByRun } from './lastRowIndexByRun';
 import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { isTurnStartRow } from './isTurnStartRow';
 
 type Props = {
   rows: ReadonlyArray<ConversationRow>;
@@ -65,16 +70,7 @@ type Props = {
 
 const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
 
-type VisibilityParams = {
-  readonly px: number;
-};
-
 const RAIL_ROW_PX = 56;
-
-const visibilityStyle = ({ px }: VisibilityParams): CSSProperties => ({
-  contentVisibility: 'auto',
-  containIntrinsicSize: `auto ${px}px`,
-});
 
 type CacheKeyParams = {
   readonly agentId: AgentId | null;
@@ -87,36 +83,6 @@ const heightKeyOf = ({ agentId, isStepsOnly, key }: CacheKeyParams): string =>
 
 type FlushParams = {
   readonly beforeMs: number | null;
-};
-
-const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
-  'decision_note',
-  'artifact_capture_failed',
-  'error',
-  'permission_request',
-  'permission_decision',
-]);
-
-const rowRunId = ({ row }: { readonly row: ConversationRow }): ProviderRunId | null => {
-  if (row.kind !== 'item' || !RUN_BEARING_KINDS.has(row.item.kind)) {
-    return null;
-  }
-  return 'runId' in row.item ? (row.item.runId ?? null) : null;
-};
-
-const lastRowIndexByRun = ({
-  rows,
-}: {
-  readonly rows: ReadonlyArray<ConversationRow>;
-}): ReadonlyMap<ProviderRunId, number> => {
-  const byRun = new Map<ProviderRunId, number>();
-  rows.forEach((row, index) => {
-    const runId = rowRunId({ row });
-    if (runId !== null) {
-      byRun.set(runId, index);
-    }
-  });
-  return byRun;
 };
 
 export const TranscriptRows = ({
@@ -188,6 +154,11 @@ export const TranscriptRows = ({
   );
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
+  let lastFooterRunId: ProviderRunId | null = null;
+  const turnStarts = new Set<number>();
+  const markTurnStart = () => {
+    turnStarts.add(out.length);
+  };
 
   const flushRailGroup = () => {
     if (railGroup.length === 0 || railGroupKey === null) {
@@ -203,7 +174,7 @@ export const TranscriptRows = ({
         key={`workflow-rail-${railGroupKey}`}
         data-anchor-key={railKey}
         className="flex flex-col"
-        style={visibilityStyle({
+        style={rowVisibilityStyle({
           px: rowHeightCache.read({ key: railKey }) ?? RAIL_ROW_PX * railGroup.length,
         })}
       >
@@ -228,7 +199,9 @@ export const TranscriptRows = ({
   };
 
   rows.forEach((row, idx) => {
-    if (newFromKey !== null && row.key === newFromKey) {
+    const isNewDivider = newFromKey !== null && row.key === newFromKey;
+    const isTurnStart = isTurnStartRow({ row, previous: rows[idx - 1] });
+    if (isNewDivider && !isTurnStart) {
       flushRailGroup();
       out.push(<NewRowsDivider key={`new-${row.key}`} />);
     }
@@ -252,6 +225,12 @@ export const TranscriptRows = ({
       }
       const at = row.item.at;
       flushInsertions({ beforeMs: Date.parse(at) });
+      if (isTurnStart) {
+        markTurnStart();
+        if (isNewDivider) {
+          out.push(<NewRowsDivider key={`new-${row.key}`} />);
+        }
+      }
       const day = dayKey(at);
       const dayChanged = day !== lastDay;
       const isLeadingToday = lastDay === null && day === todayKey;
@@ -296,12 +275,16 @@ export const TranscriptRows = ({
       return;
     }
     flushRailGroup();
+    const previousRunId = row.kind === 'item' && row.item.kind === 'usage' ? lastFooterRunId : null;
+    if (row.kind === 'item' && row.item.kind === 'usage') {
+      lastFooterRunId = row.item.runId;
+    }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
     out.push(
       <li
         key={row.key}
         {...rowAnchorOf({ row, heightKey })}
-        style={visibilityStyle({
+        style={rowVisibilityStyle({
           px:
             rowHeightCache.read({ key: heightKey }) ??
             rowEstimatePx({ row, isClusterOpen: isStepsOnly }),
@@ -355,6 +338,7 @@ export const TranscriptRows = ({
                 ? (turnFooters?.get(row.item.runId)?.startedAt ?? null)
                 : undefined
             }
+            previousRunId={previousRunId}
             isBrief={
               (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
               turnIndex === 0 &&
@@ -397,26 +381,32 @@ export const TranscriptRows = ({
       </li>,
     );
   }
+  if (isThinking) {
+    out.push(
+      <li key="thinking">
+        {onStop === undefined ? (
+          <ThinkingIndicator phrase={thinkingPhrase} startedAt={thinkingStartedAt} />
+        ) : (
+          <ConversationTail
+            phrase={thinkingPhrase}
+            onStop={onStop}
+            startedAt={thinkingStartedAt}
+            waitingFor={waitingFor}
+            {...(stopLabel !== undefined && { stopLabel })}
+            {...(stopPhase !== undefined && { stopPhase })}
+            {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
+          />
+        )}
+      </li>,
+    );
+  }
   return (
     <>
-      {out}
-      {isThinking ? (
-        <li>
-          {onStop === undefined ? (
-            <ThinkingIndicator phrase={thinkingPhrase} startedAt={thinkingStartedAt} />
-          ) : (
-            <ConversationTail
-              phrase={thinkingPhrase}
-              onStop={onStop}
-              startedAt={thinkingStartedAt}
-              waitingFor={waitingFor}
-              {...(stopLabel !== undefined && { stopLabel })}
-              {...(stopPhase !== undefined && { stopPhase })}
-              {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
-            />
-          )}
+      {splitTurns({ nodes: out, starts: turnStarts }).map((nodes, turn) => (
+        <li key={`turn-${turn}`} data-turn="">
+          <ul className={PANE_RHYTHM.transcript.blocks}>{nodes}</ul>
         </li>
-      ) : null}
+      ))}
     </>
   );
 };

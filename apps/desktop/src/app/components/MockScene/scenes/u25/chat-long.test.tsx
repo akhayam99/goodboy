@@ -16,6 +16,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { TRANSCRIPT_FLOOR_PX } from '../../../../../features/chat/components/ChatView/useScrollPin';
 import { U25_CHAT_LONG_SCENES } from './chat-long';
 
 beforeAll(async () => {
@@ -63,13 +64,13 @@ describe('the long transcript scene', () => {
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll('[data-find-root] > li').length).toBeGreaterThanOrEqual(
-        100,
-      );
+      expect(
+        container.querySelectorAll('[data-find-root] > li > ul > li').length,
+      ).toBeGreaterThanOrEqual(100);
     });
-    const rows = [...container.querySelectorAll<HTMLElement>('[data-find-root] > li')].filter(
-      (row) => row.getAttribute('style') !== null,
-    );
+    const rows = [
+      ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
+    ].filter((row) => row.getAttribute('style') !== null);
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => row.style.containIntrinsicSize.startsWith('auto '))).toBe(true);
     expect(new Set(rows.map((row) => row.style.containIntrinsicSize)).size).toBeGreaterThan(3);
@@ -84,18 +85,37 @@ describe('the long transcript scene', () => {
     );
 
     await waitFor(() => {
-      expect(container.querySelectorAll('[data-find-root] > li').length).toBeGreaterThanOrEqual(
-        100,
-      );
+      expect(
+        container.querySelectorAll('[data-find-root] > li > ul > li').length,
+      ).toBeGreaterThanOrEqual(100);
     });
     const viewport = container
       .querySelector('[data-find-root]')
       ?.closest<HTMLElement>('.overflow-y-auto');
     expect(viewport?.style.overflowAnchor).toBe('none');
-    const rows = [...container.querySelectorAll<HTMLElement>('[data-find-root] > li')].filter(
-      (row) => row.style.contentVisibility === 'auto',
-    );
+    const rows = [
+      ...container.querySelectorAll<HTMLElement>('[data-find-root] > li > ul > li'),
+    ].filter((row) => row.style.contentVisibility === 'auto');
     expect(rows.length).toBeGreaterThanOrEqual(100);
     expect(rows.every((row) => (row.getAttribute('data-anchor-key') ?? '') !== '')).toBe(true);
+  });
+
+  it('opens at the bottom on a 48px floor under the last line, with no jump to offer', async () => {
+    const Scene = U25_CHAT_LONG_SCENES['transcript-long'];
+    const { container } = render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-transcript-tail]')).not.toBeNull();
+    });
+    const tail = container.querySelector<HTMLElement>('[data-transcript-tail]');
+    expect(tail?.style.height).toBe(`${TRANSCRIPT_FLOOR_PX}px`);
+    expect(tail?.previousElementSibling?.hasAttribute('data-find-root')).toBe(true);
+    expect(container.querySelector('[data-jump-to-latest]')?.getAttribute('data-visible')).toBe(
+      'false',
+    );
   });
 });

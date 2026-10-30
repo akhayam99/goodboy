@@ -1,5 +1,5 @@
 import { AnchoredPopover, useDropdown, type WorkNodeState } from '@goodboy/ui';
-import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnOutcome } from '../../utils/turnOutcome';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
@@ -15,6 +15,7 @@ type Props = {
   readonly agentId?: AgentId | null;
   readonly outcome?: TurnOutcome;
   readonly startedAt?: IsoDateTime | null;
+  readonly previousRunId?: ProviderRunId | null;
 };
 
 const NODE_STATE_FOR: Record<Exclude<TurnOutcome, 'done'>, WorkNodeState> = {
@@ -33,8 +34,15 @@ export const TurnFooter = ({
   agentId = null,
   outcome = 'done',
   startedAt = null,
+  previousRunId = null,
 }: Props) => {
   const data = useTurnFooter({ sessionId, agentId, runId: item.runId, fallbackUsage: item.usage });
+  const previous = useTurnFooter({
+    sessionId,
+    agentId,
+    runId: previousRunId ?? item.runId,
+    fallbackUsage: item.usage,
+  });
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-max',
@@ -45,6 +53,13 @@ export const TurnFooter = ({
   const durationMs =
     startedAt !== null ? Math.max(0, Date.parse(item.at) - Date.parse(startedAt)) : null;
   const duration = durationMs != null ? formatDuration({ durationMs }) : null;
+  const isSpeakerRepeat =
+    previousRunId !== null &&
+    outcome === 'done' &&
+    duration !== null &&
+    data.model !== null &&
+    data.provider === previous.provider &&
+    data.model === previous.model;
 
   return (
     <TranscriptShell tone="neutral" variant="plain" className="flex w-fit">
@@ -61,6 +76,7 @@ export const TurnFooter = ({
             <TurnFooterSummary
               data={data}
               duration={duration}
+              isSpeakerShown={!isSpeakerRepeat}
               outcome={
                 outcome === 'done'
                   ? null

@@ -122,14 +122,14 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   overview: 'column',
   runs: 'column',
   run: 'column',
-  agent: 'column',
+  agent: 'measure',
   artifacts: 'column',
   report: 'column',
   questions: 'column',
   branch: 'column',
 };
 
-const READING_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['chat']);
+const READING_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['chat', 'agent']);
 
 const HEADER_FILES: ReadonlyArray<string> = [
   'features/workspace/components/StageBoard/SessionsHeader.tsx',
@@ -257,11 +257,14 @@ describe('one page layout', () => {
 });
 
 describe('one measure per page kind', () => {
-  it('puts Overview on the measure of the other session pages', () => {
-    const sessionMeasures = new Set(SESSION_PAGES.map((root) => PAGE_MEASURE[root.page]));
+  it('puts Overview on the measure of the other session pages, the agent conversation apart', () => {
+    const sessionMeasures = new Set(
+      SESSION_PAGES.filter((root) => root.page !== 'agent').map((root) => PAGE_MEASURE[root.page]),
+    );
 
     expect([...sessionMeasures]).toEqual(['column']);
     expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
+    expect(PAGE_MEASURE.agent).toBe('measure');
   });
 
   it('keeps the measure of every page kind', () => {

@@ -340,7 +340,7 @@
     "apps/desktop/src/features/chat/components/ChatView/parts/QuestionWaitingPill.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatView/planBlockVersions.ts": 1,
     "apps/desktop/src/features/chat/components/ChatView/readRetryAttachments.ts": 1,
-    "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 4,
+    "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 2,
     "apps/desktop/src/features/chat/components/CliTooOldNotice/index.tsx": 1,
     "apps/desktop/src/features/chat/components/HandoffBlock/HandoffChips.tsx": 1,
     "apps/desktop/src/features/chat/components/HandoffBlock/HandoffPanel.tsx": 1,

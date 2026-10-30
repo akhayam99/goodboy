@@ -43,7 +43,7 @@ describe('AssistantText', () => {
     const { container } = render(<AssistantText text="assistant response" sessionId={null} />);
     const root = container.firstElementChild!;
 
-    expect(root.className).toBe('flex flex-col gap-2 text-prose');
+    expect(root.className).toBe('group/row relative flex flex-col gap-2 text-prose');
   });
 
   it('keeps prose on the comfortable reading grade while chrome around it compresses', () => {
@@ -64,11 +64,13 @@ describe('AssistantText', () => {
     expect(screen.queryByRole('button', { name: 'copy' })).toBeNull();
   });
 
-  it('shows copy at rest, with no hover reveal around it', () => {
-    render(<AssistantText text="hello" sessionId={null} />);
+  it('draws no copy row under the message: the button sits in one wrapper that ends it', () => {
+    const { container } = render(<AssistantText text="hello" sessionId={null} />);
     const copyButton = screen.getByRole('button', { name: 'copy' });
+    const wrapper = copyButton.parentElement;
 
-    expect(copyButton.parentElement?.className ?? '').not.toContain('opacity-0');
+    expect(wrapper?.hasAttribute('data-message-meta')).toBe(true);
+    expect(container.firstElementChild?.lastElementChild).toBe(wrapper);
   });
 
   it('draws the pull request text card under a message that carries the blocks, and only then', () => {
