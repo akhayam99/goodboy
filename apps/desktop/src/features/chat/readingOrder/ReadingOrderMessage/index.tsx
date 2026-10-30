@@ -14,7 +14,7 @@ import {
 } from '../../components/TranscriptCards/codeActionTarget';
 import { OutcomeLine } from '../OutcomeLine';
 import { READING_BUDGETS } from '../readingBudgets';
-import { cutAtBlockOf } from '../cutAtBlockOf';
+import { cutAtBlockOf, type ClampCut } from '../cutAtBlockOf';
 
 type Props = {
   text: string;
@@ -28,17 +28,24 @@ type Props = {
 
 type ClampStyleParams = {
   readonly lines: number;
-  readonly cutPx: number | null;
+  readonly cut: ClampCut;
 };
 
-const clampStyleOf = ({ lines, cutPx }: ClampStyleParams): CSSProperties =>
-  cutPx === null
-    ? {
-        maxHeight: `${lines}lh`,
-        overflow: 'hidden',
-        maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
-      }
-    : { maxHeight: cutPx, overflow: 'hidden' };
+const LINES_CUT: ClampCut = { kind: 'lines' };
+
+const clampStyleOf = ({ lines, cut }: ClampStyleParams): CSSProperties | undefined => {
+  if (cut.kind === 'fits') {
+    return undefined;
+  }
+  if (cut.kind === 'block') {
+    return { maxHeight: cut.px, overflow: 'hidden' };
+  }
+  return {
+    maxHeight: `${lines}lh`,
+    overflow: 'hidden',
+    maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
+  };
+};
 
 export const ReadingOrderMessage = ({
   text,
@@ -54,15 +61,24 @@ export const ReadingOrderMessage = ({
   const isClamped = clampLines !== null && estimateRenderedLines({ text }) > clampLines;
   const isCut = isClamped && !isExpanded;
   const clampRef = useRef<HTMLDivElement>(null);
-  const [cutPx, setCutPx] = useState<number | null>(null);
+  const [cut, setCut] = useState<ClampCut>(LINES_CUT);
   useLayoutEffect(() => {
     const box = clampRef.current;
     if (box === null || !isCut || clampLines === null) {
-      setCutPx(null);
-      return;
+      setCut(LINES_CUT);
+      return undefined;
     }
-    setCutPx(cutAtBlockOf({ box, lines: clampLines }));
+    const measure = () => setCut(cutAtBlockOf({ box, lines: clampLines }));
+    measure();
+    const content = box.firstElementChild;
+    if (content === null || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    return () => observer.disconnect();
   }, [isCut, clampLines, text]);
+  const hasMore = isClamped && (isExpanded || cut.kind !== 'fits');
   const shownChips = isChipListExpanded ? chips : chips.slice(0, READING_BUDGETS.maxChips);
   const hiddenChipCount = chips.length - shownChips.length;
   return (
@@ -73,12 +89,10 @@ export const ReadingOrderMessage = ({
           <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
             <div
               ref={clampRef}
-              data-clamped={isCut}
+              data-clamped={isCut && cut.kind !== 'fits'}
               className="min-w-0"
               style={
-                isCut && clampLines !== null
-                  ? clampStyleOf({ lines: clampLines, cutPx })
-                  : undefined
+                isCut && clampLines !== null ? clampStyleOf({ lines: clampLines, cut }) : undefined
               }
             >
               <Markdown text={text} fresh={fresh} />
@@ -86,7 +100,7 @@ export const ReadingOrderMessage = ({
           </CodeBlockActionsContext.Provider>
         </CodeActionTargetContext.Provider>
       ) : null}
-      {isClamped ? (
+      {hasMore ? (
         <Button
           variant="quiet"
           size="xs"

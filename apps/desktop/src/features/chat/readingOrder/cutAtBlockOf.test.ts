@@ -19,10 +19,15 @@ const boxWith = ({ blocks }: BoxParams): HTMLElement => {
   const box = document.createElement('div');
   box.style.lineHeight = '24px';
   box.getBoundingClientRect = () => rectOf({ top: 0, bottom: 1000 });
+  const content = document.createElement('div');
+  const last = blocks.at(-1);
+  content.getBoundingClientRect = () =>
+    rectOf({ top: 0, bottom: last === undefined ? 0 : last.bottom });
+  box.appendChild(content);
   blocks.forEach(({ tag, top, bottom }) => {
     const block = document.createElement(tag);
     block.getBoundingClientRect = () => rectOf({ top, bottom });
-    box.appendChild(block);
+    content.appendChild(block);
   });
   document.body.appendChild(box);
   return box;
@@ -43,12 +48,18 @@ describe('cutAtBlockOf', () => {
       ],
     });
 
-    expect(cutAtBlockOf({ box, lines: 12 })).toBe(260);
+    expect(cutAtBlockOf({ box, lines: 12 })).toEqual({ kind: 'block', px: 260 });
   });
 
-  it('gives no cut when the first block alone passes the budget', () => {
+  it('falls back to a line cut when the first block alone passes the budget', () => {
     const box = boxWith({ blocks: [{ tag: 'p', top: 0, bottom: 600 }] });
 
-    expect(cutAtBlockOf({ box, lines: 12 })).toBeNull();
+    expect(cutAtBlockOf({ box, lines: 12 })).toEqual({ kind: 'lines' });
+  });
+
+  it('cuts nothing when the rendered answer fits the budget', () => {
+    const box = boxWith({ blocks: [{ tag: 'p', top: 0, bottom: 120 }] });
+
+    expect(cutAtBlockOf({ box, lines: 12 })).toEqual({ kind: 'fits' });
   });
 });
