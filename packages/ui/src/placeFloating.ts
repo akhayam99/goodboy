@@ -66,29 +66,26 @@ export const placeFloating = ({
     }
   };
 
-  const fits = (s: FloatingSide, p: Point): boolean => {
+  const overflowOf = (s: FloatingSide, p: Point): number => {
     if (s === 'top') {
-      return p.top >= 0;
+      return Math.max(0, edge - p.top);
     }
     if (s === 'bottom') {
-      return p.top + tip.height <= vh;
+      return Math.max(0, p.top + tip.height - (vh - edge));
     }
     if (s === 'left') {
-      return p.left >= 0;
+      return Math.max(0, edge - p.left);
     }
-    return p.left + tip.width <= vw - edge;
+    return Math.max(0, p.left + tip.width - (vw - edge));
   };
 
-  let chosen = side;
-  let pos = place(side);
-  if (!fits(side, pos)) {
-    const flipped = flipSide({ side });
-    const flippedPos = place(flipped);
-    if (fits(flipped, flippedPos)) {
-      chosen = flipped;
-      pos = flippedPos;
-    }
-  }
+  const first = place(side);
+  const flipped = flipSide({ side });
+  const second = place(flipped);
+  const isFlipped =
+    overflowOf(side, first) > 0 && overflowOf(flipped, second) < overflowOf(side, first);
+  const chosen = isFlipped ? flipped : side;
+  const pos = isFlipped ? second : first;
 
   const left = Math.max(edge, Math.min(pos.left, vw - tip.width - edge));
   const top = Math.max(edge, Math.min(pos.top, vh - tip.height - edge));

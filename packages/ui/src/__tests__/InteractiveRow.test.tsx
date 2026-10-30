@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { InteractiveRow } from '../components/InteractiveRow';
+import { TruncatedText } from '../components/TruncatedText';
 
 afterEach(cleanup);
 
@@ -58,5 +59,62 @@ describe('InteractiveRow', () => {
     expect(open.getAttribute('aria-current')).toBe('true');
     expect(open.parentElement?.getAttribute('data-selected')).toBe('true');
     expect(open.parentElement?.className).toContain('data-[selected=true]:bg-selected');
+  });
+
+  it('lets a cut title be hovered and opens the row from it exactly once', () => {
+    const onOpen = vi.fn();
+    render(
+      <InteractiveRow label="Open the agent" isSelected={false} onOpen={onOpen}>
+        <TruncatedText isFocusable>
+          Reconcile the Harborline ledger export for Northwind
+        </TruncatedText>
+        <button type="button">Stop</button>
+      </InteractiveRow>,
+    );
+    const title = screen.getByText('Reconcile the Harborline ledger export for Northwind');
+    Object.defineProperty(title, 'scrollWidth', { configurable: true, value: 300 });
+    Object.defineProperty(title, 'clientWidth', { configurable: true, value: 120 });
+
+    expect(title.closest('.pointer-events-none')?.className).toContain(
+      '[&_[data-truncated-text]]:pointer-events-auto',
+    );
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(title);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole('tooltip').textContent).toBe(
+      'Reconcile the Harborline ledger export for Northwind',
+    );
+
+    fireEvent.click(title);
+    expect(onOpen).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it('puts a cut title in the tab order so the keyboard reads it too', () => {
+    render(
+      <InteractiveRow label="Open the agent" isSelected={false} onOpen={vi.fn()}>
+        <TruncatedText isFocusable>
+          Reconcile the Harborline ledger export for Northwind
+        </TruncatedText>
+      </InteractiveRow>,
+    );
+    const title = screen.getByText('Reconcile the Harborline ledger export for Northwind');
+    Object.defineProperty(title, 'scrollWidth', { configurable: true, value: 300 });
+    Object.defineProperty(title, 'clientWidth', { configurable: true, value: 120 });
+    fireEvent.mouseEnter(title);
+
+    act(() => {
+      title.focus();
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toBe(
+      'Reconcile the Harborline ledger export for Northwind',
+    );
   });
 });

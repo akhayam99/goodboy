@@ -112,7 +112,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     }
     expect(tail.textContent).toContain('Waiting for Implementer and Tester');
     expect(within(tail).getByRole('button', { name: 'Change approach' })).toBeDefined();
-    expect(within(tail).getByRole('button', { name: 'Stop Auto and its agents' })).toBeDefined();
+    expect(within(tail).queryByRole('button', { name: /^Stop/ })).toBeNull();
   });
 
   it('Composer placeholder by state: Message Auto while Auto waits', async () => {

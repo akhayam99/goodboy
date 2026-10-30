@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { AnchoredPopover, Chip, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Chip,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -29,8 +37,8 @@ export const LinkIssueAction = ({
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 440,
-    expectedWidth: 480,
-    width: 'w-[34rem] max-w-[calc(100vw-2rem)]',
+    expectedWidth: POPOVER_WIDTH_PX.studio,
+    width: POPOVER_WIDTH_CLASS.studio,
     openEvent: linkIssueEventName({ sessionId: session.id }),
   });
   const { open: isOpen, toggle } = dropdown;

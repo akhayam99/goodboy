@@ -811,7 +811,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   their nodes, `idle` a gray dot.
 - Stop is one word for the open agent: Stop (a turn, a child or a fix). The
   scope stays in the label only where the object is not the open agent: Stop
-  step (a run step), Stop Auto and its agents. `stopping` is its own tail
+  step (a run step). An Auto child card has no Stop: it is in the card's menu. `stopping` is its own tail
   state (a ring, a clock that keeps counting, no shimmer): the phrase reads
   Stopping with a busy Stop, then Still stopping with Force stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.
@@ -853,7 +853,11 @@ behavior beyond rendering:
 - `step_transition` reports a workflow run advancing, with the context it
   carried forward.
 - `error` carries `retryable`; only a retryable error offers Retry in the
-  transcript.
+  transcript. The failed turn notice also offers **View transcript** (not inside
+  the transcript drawer of the same agent). `reduceTranscript` gives the error row
+  `failedToolUseId`, the last failed call of its run (`failedToolUseIdOf`); the
+  drawer payload `toolUseId` makes the drawer scroll to the row that holds it
+  (`data-tool-use-ids`, `useRevealToolCall`) and without it the drawer opens at the end.
 - `provider_session_init` records the provider's own session id, which later
   turns resume from.
 - `unknown_payload` keeps provider output the parsers do not model yet,

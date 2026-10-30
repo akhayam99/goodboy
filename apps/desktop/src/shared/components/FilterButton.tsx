@@ -21,7 +21,7 @@ export const FilterButton = ({ popoverLabel, activeCount, facets, popoverHeight 
       ariaLabel={popoverLabel}
       className="max-h-[70vh] py-1"
       trigger={
-        <Tooltip content="Filters">
+        <Tooltip content="Filters" isSuppressed={dropdown.open}>
           <Button
             variant="secondary"
             size="sm"

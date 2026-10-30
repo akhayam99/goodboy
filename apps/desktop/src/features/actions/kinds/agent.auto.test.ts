@@ -27,7 +27,7 @@ import { adoptAgent } from '../../../store/runtime/auto/adoptAgent';
 import { MOVE_TO_AUTO_EVENT } from '../../auto/adopt/moveToAutoEvent';
 import { runRoutesKey } from '../../session/startRun/runRoutesSetting';
 import { resolveActions } from '../resolveActions';
-import type { ActionEnv } from '../types';
+import type { ActionEnv, ActionViewing } from '../types';
 import { AGENT_KIND, type AgentFacts } from './agent';
 
 const SOURCE = brandId<AgentId>({ value: 'agent-source' });
@@ -189,6 +189,18 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
   it('takes Message this agent away from an agent that Auto owns', () => {
     expect(idsOf(factsOf({ isAdopted: false }))).toContain('agent.message');
     expect(idsOf(factsOf({ isAdopted: true }))).not.toContain('agent.message');
+  });
+
+  it('takes Message this agent away where its composer is on screen', () => {
+    const facts = factsOf({ isAdopted: false });
+    const idsViewing = (viewing: ActionViewing | null) =>
+      resolveActions({ definitions: AGENT_KIND.actions, facts, viewing }).map(
+        (action) => action.id,
+      );
+
+    expect(idsViewing({ kind: 'agent', id: SOURCE })).not.toContain('agent.message');
+    expect(idsViewing({ kind: 'agent', id: 'agent-other' })).toContain('agent.message');
+    expect(idsViewing(null)).toContain('agent.message');
   });
 
   it('keeps Detach from Auto while the experiment is off, because it is the way back', () => {

@@ -15,6 +15,7 @@ import type {
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { permissionSubjectOf } from '../../permissions/permissionSubjectOf';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
+import { failedToolUseIdOf } from './failedToolUseIdOf';
 import { isRepeatedStepTransition, repeatsEarlierFallbackNotice } from './repeatedNotices';
 import { splitArtifactText } from './split-artifact-blocks';
 import { reduceTranscriptTrace } from './transcript-items-trace';
@@ -78,6 +79,7 @@ export type TranscriptItem =
       message: string;
       runId?: ProviderRunId;
       retryable?: boolean;
+      failedToolUseId?: string;
     }
   | { kind: 'decision_note'; key: string; message: string; runId: ProviderRunId }
   | {
@@ -452,12 +454,14 @@ export const reduceTranscript = (
           });
           break;
         }
+        const failedToolUseId = failedToolUseIdOf({ items, runId: event.runId });
         items.push({
           kind: 'error',
           key: `error-${i}`,
           message: event.message,
           runId: event.runId,
           retryable: event.retryable,
+          ...(failedToolUseId !== null && { failedToolUseId }),
         });
         break;
       }

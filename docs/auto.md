@@ -314,7 +314,7 @@ writing to it reopens it to **Deciding**.
   (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
   **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
   the active work time (`DelegationClock`, the same number as Working now and the
-  Agents row, so a resumed child keeps its earlier work), role and model, and the
+  Agents row, so a resumed child keeps its earlier work), role and model by name with its effort (`modelLineOf`), and the
   child's last tool as the activity line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
   of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
   child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
@@ -417,14 +417,17 @@ writing to it reopens it to **Deciding**.
   second window read the same rows.
 - **The tail.** Auto's state is said once, on the tail at the end of the
   conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
-  Implementer and Tester** with **Change approach** and **Stop Auto and its
-  agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
+  Implementer and Tester** with **Change approach** (it stops the tree and
+  focuses the composer, so the tail has no second Stop there), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
   of $5.00** with **Raise to $10**, **Change limit** (opens the Limit chip's
   popover on the Auto page) and **Stop**, plus a line on the agents still
   running when there are any, **Blocked: <reason>** with **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
-  and **Stop** instead, one at the time limit only **View transcript**). Only `deciding` reads
+  and **Stop** instead, one at the time limit only **View transcript**). The
+  reason is never cut to one line: the phrase wraps to two lines and, when it is
+  longer, the whole text opens in a tooltip on hover and on keyboard focus
+  (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
   **Mark finished** is in the header. A Stop or a Retry that fails says why on the

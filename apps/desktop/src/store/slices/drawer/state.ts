@@ -95,7 +95,11 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'transcript';
-      readonly payload: { readonly agentId: AgentId; readonly turn?: number };
+      readonly payload: {
+        readonly agentId: AgentId;
+        readonly turn?: number;
+        readonly toolUseId?: string;
+      };
     }
   | {
       readonly kind: 'auto-child';

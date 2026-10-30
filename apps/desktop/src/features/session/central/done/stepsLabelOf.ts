@@ -1,5 +1,3 @@
-import { joinNouns } from '../../../auto/joinNouns';
-
 type Params = {
   readonly numbers: ReadonlyArray<number>;
   readonly total: number | null;
@@ -25,5 +23,5 @@ export const stepsLabelOf = ({ numbers, total }: Params): string => {
   if (isContiguous({ numbers: sorted })) {
     return `steps ${first} to ${last}${suffix}`;
   }
-  return `steps ${joinNouns({ nouns: sorted.map(String) })}${suffix}`;
+  return total === null ? `${sorted.length} steps` : `${sorted.length} of ${total} steps`;
 };

@@ -1,5 +1,6 @@
 import type { Tone } from '@goodboy/ui';
 import type { RowPhase, RowState } from '../../workTreeModel/rowState';
+import { runAgentCountOf } from '../runAgentCountOf';
 import { groupSummaryParts, type GroupSummary, type GroupSummaryPart } from './groupSummary';
 
 export const subagentsExpandId = ({ parentId }: { readonly parentId: string }): string =>
@@ -52,6 +53,7 @@ const PHASE_BUCKET: Record<RowPhase, SubagentBucket> = {
 };
 
 export type SubagentFact = {
+  readonly agentId: string;
   readonly state: RowState;
   readonly isAsking: boolean;
 };
@@ -107,14 +109,15 @@ export const subagentsCountSummary = ({
             isFailure: false,
           },
         ];
+  const total = runAgentCountOf({ agentIds: facts.map((fact) => fact.agentId) });
   return {
-    total: facts.length,
+    total,
     parts: [
       {
         state: 'total',
         tone: 'neutral',
-        count: facts.length,
-        noun: facts.length === 1 ? 'subagent' : 'subagents',
+        count: total,
+        noun: total === 1 ? 'subagent' : 'subagents',
         isFailure: false,
       },
       ...tally,

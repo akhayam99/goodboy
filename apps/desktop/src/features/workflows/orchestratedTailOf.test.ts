@@ -181,12 +181,20 @@ describe('orchestratedTailOf', () => {
     expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 
-  it('leaves the hint to the run page when the orchestrator stopped on a human call', () => {
+  it('leaves the hint to the run page and offers View transcript on a human call', () => {
     const tail = tailOf({
       orchestrator: stateOf({ phase: 'blocked', sentence: 'Stopped · needs a human call' }),
       primary: { kind: 'hint', label: 'Add a hint and continue' },
     });
     expect(tail.state).toBe('failed');
+    expect(tail.verbs).toEqual([{ kind: 'viewTranscript', agentId: DONE.id }]);
+  });
+
+  it('offers no transcript on a human call when the run has no step yet', () => {
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'blocked', sentence: 'Stopped · needs a human call' }),
+      agents: [],
+    });
     expect(tail.verbs).toEqual([]);
   });
 

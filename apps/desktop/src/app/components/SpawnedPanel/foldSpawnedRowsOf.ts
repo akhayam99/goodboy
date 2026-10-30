@@ -1,10 +1,20 @@
+import { runAgentCountOf } from '../../../features/session/runAgentCountOf';
+import { helperUrgencyOf, type HelperUrgency } from './helperUrgencyOf';
 import { parentIdsOf } from './parentIdsOf';
 import type { SpawnedRow } from './spawnedRow';
+
+type HelpersSummary = Readonly<{
+  id: string;
+  level: number;
+}>;
 
 export type FoldedSpawnedRow = Readonly<{
   row: SpawnedRow;
   count: number;
   isExpanded: boolean;
+  isFoldable: boolean;
+  urgency: HelperUrgency | null;
+  summary: HelpersSummary | null;
 }>;
 
 type Params = {
@@ -13,28 +23,64 @@ type Params = {
   readonly isOpenByDefault: boolean;
 };
 
+type IdParams = {
+  readonly id: string;
+};
+
+type HelpersParams = {
+  readonly rows: ReadonlyArray<SpawnedRow>;
+  readonly index: number;
+};
+
+const helpersSummaryIdOf = ({ id }: IdParams): string => `${id}:helpers`;
+
+const helpersOf = ({ rows, index }: HelpersParams): ReadonlyArray<SpawnedRow> => {
+  const level = rows[index]?.level ?? 0;
+  const helpers: SpawnedRow[] = [];
+  for (let next = index + 1; next < rows.length; next += 1) {
+    const row = rows[next];
+    if (row === undefined || row.level <= level) {
+      break;
+    }
+    helpers.push(row);
+  }
+  return helpers;
+};
+
 export const foldSpawnedRowsOf = ({
   rows,
   expanded,
   isOpenByDefault,
 }: Params): ReadonlyArray<FoldedSpawnedRow> => {
-  const countById = new Map<string, number>();
-  for (const parentId of parentIdsOf({ nodes: rows }).values()) {
-    if (parentId !== null) {
-      countById.set(parentId, (countById.get(parentId) ?? 0) + 1);
-    }
-  }
+  const parentById = parentIdsOf({ nodes: rows });
   const shown: FoldedSpawnedRow[] = [];
   let hiddenUnder: number | null = null;
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     if (hiddenUnder !== null && row.level > hiddenUnder) {
       continue;
     }
     hiddenUnder = null;
-    const count = countById.get(row.id) ?? 0;
-    const isExpanded = expanded[row.id] ?? isOpenByDefault;
-    shown.push({ row, count, isExpanded });
-    if (count > 0 && !isExpanded) {
+    const helpers = helpersOf({ rows, index });
+    const count = runAgentCountOf({ agentIds: helpers.map((helper) => helper.agentId) });
+    const urgency = helperUrgencyOf({ rows: helpers });
+    const isNeedingYou = urgency?.isNeedsYou === true;
+    const isRoot = parentById.get(row.id) === null;
+    const hasHelpers = count > 0;
+    const isExpanded = isRoot
+      ? isOpenByDefault || (expanded[row.id] ?? isNeedingYou)
+      : (expanded[row.id] ?? (isOpenByDefault || isNeedingYou));
+    const isSummarised = isRoot && hasHelpers && !isOpenByDefault;
+    shown.push({
+      row,
+      count,
+      isExpanded,
+      isFoldable: !isRoot && hasHelpers,
+      urgency,
+      summary: isSummarised
+        ? { id: helpersSummaryIdOf({ id: row.id }), level: row.level + 1 }
+        : null,
+    });
+    if (hasHelpers && !isExpanded) {
       hiddenUnder = row.level;
     }
   }

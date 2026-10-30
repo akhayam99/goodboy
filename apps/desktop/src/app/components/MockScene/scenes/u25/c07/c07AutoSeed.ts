@@ -34,6 +34,7 @@ export type C07Seed = Readonly<{
   hasImages?: boolean;
   isCapped?: boolean;
   isSubstep?: boolean;
+  blockedReason?: string;
 }>;
 
 const SHOTS: ReadonlyArray<MessageAttachment> = [
@@ -259,11 +260,19 @@ export const seedC07 = ({
   hasImages = false,
   isCapped = false,
   isSubstep = false,
+  blockedReason,
 }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
   const base = autoSceneOf({ state });
-  const scene = isSubstep ? withSubstepOf({ scene: base }) : base;
+  const stepped = isSubstep ? withSubstepOf({ scene: base }) : base;
+  const scene =
+    blockedReason === undefined
+      ? stepped
+      : {
+          ...stepped,
+          view: { ...stepped.view, tree: { ...stepped.view.tree, blockedReason } },
+        };
   useAppStore.setState((current) => ({
     navigate,
     openExternalTaskLens,

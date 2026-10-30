@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dayKey, formatDayLabel } from './lib';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { TranscriptItem } from '../../utils/transcript-items';
+import { dayKey, formatDayLabel, rowAnchorOf } from './lib';
 
 describe('dayKey', () => {
   it('returns "unknown" for an invalid date', () => {
@@ -60,5 +64,51 @@ describe('formatDayLabel', () => {
     formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
     expect(spy.mock.calls.map((call) => call[0])).toEqual(['en-US', 'en-US']);
     spy.mockRestore();
+  });
+});
+
+const RUN = brandId<ProviderRunId>({ value: 'run-harborline-1' });
+const AT = brandId<IsoDateTime>({ value: '2026-10-23T12:00:00.000Z' });
+
+type CallParams = {
+  readonly toolUseId: string;
+};
+
+const callOf = ({ toolUseId }: CallParams): TranscriptItem => ({
+  kind: 'tool_call',
+  key: `tool-${toolUseId}`,
+  toolUseId,
+  toolName: 'bash',
+  input: {},
+  output: null,
+  isError: false,
+  ended: true,
+  runId: RUN,
+  startedAt: AT,
+  endedAt: AT,
+});
+
+describe('rowAnchorOf', () => {
+  it('lists every tool call a cluster holds so a link can find its row', () => {
+    const row: TranscriptRow = {
+      kind: 'operations',
+      key: 'ops-tool-a',
+      items: [callOf({ toolUseId: 'a' }), callOf({ toolUseId: 'b' })],
+    };
+
+    expect(rowAnchorOf({ row, heightKey: 'k' })).toEqual({
+      'data-anchor-key': 'k',
+      'data-tool-use-ids': 'a b',
+    });
+  });
+
+  it('adds nothing for a row without a tool call', () => {
+    const row: TranscriptRow = {
+      kind: 'item',
+      key: 'assistant-1',
+      item: { kind: 'assistant_text', key: 'assistant-1', text: 'Done' },
+    };
+
+    expect(rowAnchorOf({ row, heightKey: 'k' })).toEqual({ 'data-anchor-key': 'k' });
   });
 });

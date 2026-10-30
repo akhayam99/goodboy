@@ -2,6 +2,8 @@ import { useContext, type KeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { RailRow } from '../../../features/workTreeModel/railGeometry';
+import { HelperUrgencyWord } from './HelperUrgencyWord';
+import type { HelperUrgency } from './helperUrgencyOf';
 import type { SpawnedFold } from './runSpawnedRowsOf';
 import { SpawnedRailCell } from './SpawnedRailCell';
 import { SpawnedTreeContext } from './spawnedTreeContext';
@@ -15,10 +17,11 @@ type Props = {
   readonly fold: SpawnedFold;
   readonly rail: RailRow;
   readonly railWidth: number;
+  readonly urgency?: HelperUrgency | null;
   readonly onSet: (params: SetParams) => void;
 };
 
-export const SpawnedFoldRow = ({ fold, rail, railWidth, onSet }: Props) => {
+export const SpawnedFoldRow = ({ fold, rail, railWidth, urgency = null, onSet }: Props) => {
   const { activeId, setActiveId } = useContext(SpawnedTreeContext);
   const Chevron = fold.isExpanded ? ChevronUp : ChevronDown;
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -42,7 +45,7 @@ export const SpawnedFoldRow = ({ fold, rail, railWidth, onSet }: Props) => {
       aria-level={fold.level}
       aria-expanded={fold.isExpanded}
       aria-selected={false}
-      aria-label={fold.label}
+      aria-label={urgency === null ? fold.label : `${fold.label}, ${urgency.word}`}
       tabIndex={activeId === fold.id ? 0 : -1}
       onFocus={() => setActiveId(fold.id)}
       onKeyDown={onKeyDown}
@@ -62,6 +65,7 @@ export const SpawnedFoldRow = ({ fold, rail, railWidth, onSet }: Props) => {
         }
       />
       <span className="min-w-0 flex-1 truncate">{fold.label}</span>
+      {urgency === null ? null : <HelperUrgencyWord urgency={urgency} />}
     </div>
   );
 };

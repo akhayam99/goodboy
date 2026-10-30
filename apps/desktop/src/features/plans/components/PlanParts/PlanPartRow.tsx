@@ -47,6 +47,7 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
       <WorkNode state={row.node.state} mark={mark} label={row.node.label} />
       <span className="flex min-w-0 flex-1 flex-col">
         <TruncatedText
+          isFocusable
           className={cn(
             WORK_ROW.title,
             'truncate text-body',
@@ -56,7 +57,11 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
           {row.title}
         </TruncatedText>
         {doneWhen.length === 0 ? null : (
-          <TruncatedText tooltip={doneWhen} className="truncate text-meta text-faint-foreground">
+          <TruncatedText
+            isFocusable
+            tooltip={doneWhen}
+            className="truncate text-meta text-faint-foreground"
+          >
             {`Done when: ${doneWhen}`}
           </TruncatedText>
         )}

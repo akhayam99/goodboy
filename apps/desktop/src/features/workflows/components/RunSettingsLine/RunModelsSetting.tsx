@@ -1,5 +1,11 @@
 import { useRef, useState } from 'react';
-import { Switch, formatError, useDropdown } from '@goodboy/ui';
+import {
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  Switch,
+  formatError,
+  useDropdown,
+} from '@goodboy/ui';
 import type { ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -30,7 +36,11 @@ const HELP = 'Which providers this run may use. A change applies from the next s
 const keyOf = ({ pool }: PoolParams): string => (pool === null ? '' : [...pool].sort().join(' '));
 
 export const RunModelsSetting = ({ sessionId, run, providers, words }: Props) => {
-  const dropdown = useDropdown({ expectedHeight: 220, expectedWidth: 320, width: 'w-80' });
+  const dropdown = useDropdown({
+    expectedHeight: 220,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    width: POPOVER_WIDTH_CLASS.standard,
+  });
   const setWorkflowRunProviderPool = useAppStore((state) => state.setWorkflowRunProviderPool);
   const [error, setError] = useState<string | null>(null);
   const [isWriting, setIsWriting] = useState(false);

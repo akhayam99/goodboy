@@ -101,8 +101,8 @@ describe('the u26 p11 Auto result scenes', () => {
     if (root === undefined) {
       throw new Error('the tree has no root');
     }
-    expect(root.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.keyDown(root, { key: 'ArrowRight' });
+    expect(root.getAttribute('aria-expanded')).toBeNull();
+    fireEvent.click(within(tree).getByRole('treeitem', { name: /\d+ helpers/ }));
     expect(
       within(tree).getByRole('treeitem', { name: `Reviewer, ${FIRST_REVIEW}, Done` }),
     ).toBeDefined();

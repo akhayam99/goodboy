@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Session } from '@goodboy/types';
+import type { Agent, AgentId, Session } from '@goodboy/types';
 import { ListGrid, ListGridGroup, FOCUS_RING, cn } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
 import { useNow } from '../../../../../../shared/hooks/useNow';
@@ -11,6 +11,7 @@ import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { InProgressAction } from './InProgressAction';
+import { RunsGridAgentRow } from './RunsGridAgentRow';
 import { RunsGridRow } from './RunsGridRow';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
 
@@ -23,6 +24,16 @@ type RowParams = {
   readonly run: SessionRun;
 };
 
+type AgentParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly agentId: AgentId;
+};
+
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const agentOf = ({ agents, agentId }: AgentParams): Agent | null =>
+  agents.find((candidate) => candidate.id === agentId) ?? null;
+
 const FOLD_BUTTON = cn(
   'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
   FOCUS_RING,
@@ -33,6 +44,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const now = useNow(30_000);
   const navigate = useAppStore((state) => state.navigate);
   const { aggregatesByAgentId } = useAgentMetrics({ sessionId });
+  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const [isEarlierShown, setIsEarlierShown] = useState(false);
   const [isArchivedShown, setIsArchivedShown] = useState(false);
   const archived = runs.filter((run) => run.isArchived);
@@ -64,16 +76,33 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const renderRow = ({ run }: RowParams) => {
     const aggregates = run.agentIds.map((agentId) => aggregatesByAgentId.get(agentId));
     const isCostTracked = aggregates.some((aggregate) => (aggregate?.turns ?? 0) > 0);
+    const agent =
+      run.shape === 'lead' && run.open.kind !== 'run'
+        ? agentOf({ agents, agentId: run.open.agentId })
+        : null;
+    const costUsd = isCostTracked
+      ? aggregates.reduce((total, aggregate) => total + (aggregate?.estimatedCostUsd ?? 0), 0)
+      : null;
+    if (agent === null) {
+      return (
+        <RunsGridRow
+          key={run.id}
+          sessionId={sessionId}
+          run={run}
+          modelLine={null}
+          costUsd={costUsd}
+          now={now}
+          onOpen={() => open({ run })}
+        />
+      );
+    }
     return (
-      <RunsGridRow
+      <RunsGridAgentRow
         key={run.id}
         sessionId={sessionId}
         run={run}
-        costUsd={
-          isCostTracked
-            ? aggregates.reduce((total, aggregate) => total + (aggregate?.estimatedCostUsd ?? 0), 0)
-            : null
-        }
+        agent={agent}
+        costUsd={costUsd}
         now={now}
         onOpen={() => open({ run })}
       />

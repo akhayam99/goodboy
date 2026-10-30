@@ -46,7 +46,12 @@ describe('outcomeLineOf for an agent', () => {
       }),
     });
 
-    expect(line).toEqual({ title: 'Found 2 doc mismatches', by: 'Reviewer' });
+    expect(line).toEqual({
+      title: 'Found 2 doc mismatches',
+      by: 'Reviewer',
+      kind: 'reviewer',
+      leadAgentId: 'a1',
+    });
   });
 
   it('cuts a chained agent summary to its first step', () => {
@@ -57,7 +62,7 @@ describe('outcomeLineOf for an agent', () => {
       }),
     });
 
-    expect(line.title).toBe('apply fix');
+    expect(line.title).toBe('Apply fix');
   });
 
   it('never shows raw JSON as a title and uses the kind fallback', () => {
@@ -81,7 +86,7 @@ describe('outcomeLineOf for an agent', () => {
   });
 
   it('falls back to Summarised the plan for a Scribe', () => {
-    expect(lineOfAgent({ agent: done({ kind: 'scribe', name: 'x' }) })).toEqual({
+    expect(lineOfAgent({ agent: done({ kind: 'scribe', name: 'x' }) })).toMatchObject({
       title: 'Summarised the plan',
       by: 'Scribe',
     });
@@ -107,13 +112,15 @@ describe('outcomeLineOf for an agent', () => {
       ],
     });
 
-    expect(line).toEqual({ title: 'Rebased on main', by: 'Rebase' });
+    expect(line).toMatchObject({ title: 'Rebased on main', by: 'Rebase' });
   });
 
   it('names the failing check for a check fix, and drops the name when unknown', () => {
     const agent = done({ id: brandId<AgentId>({ value: 'fixer' }), kind: 'ci-fixer' });
 
-    expect(lineOfAgent({ agent, checkNames: new Map([['fixer', 'static-analysis']]) })).toEqual({
+    expect(
+      lineOfAgent({ agent, checkNames: new Map([['fixer', 'static-analysis']]) }),
+    ).toMatchObject({
       title: 'Fixed the failing static-analysis check',
       by: 'Check fix',
     });
@@ -184,7 +191,11 @@ describe('outcomeLineOf for an Auto tree', () => {
   };
 
   it('uses the delivered summary when there was one child', () => {
-    expect(lineOfTree({ keys: ['fixer'] })).toEqual({ title: 'Delivered by fixer', by: 'Auto' });
+    expect(lineOfTree({ keys: ['fixer'] })).toMatchObject({
+      title: 'Delivered by fixer',
+      by: 'Auto',
+      kind: 'auto',
+    });
   });
 
   it('uses the Auto agent summary for several children', () => {
@@ -193,9 +204,9 @@ describe('outcomeLineOf for an Auto tree', () => {
     );
   });
 
-  it('counts the agents and names the roles when nothing else was said', () => {
+  it('names the roles and leaves the count to the meta line when nothing else was said', () => {
     expect(lineOfTree({ keys: ['reviewer', 'fixer'] }).title).toBe(
-      '2 agents finished: Reviewer and Implementer',
+      'Reviewer and Implementer finished',
     );
   });
 });
@@ -220,7 +231,7 @@ describe('outcomeLineOf for a run', () => {
     const slice =
       entry.kind === 'run' ? entry.children.flatMap((c) => (c.kind === 'agent' ? [c] : [])) : [];
 
-    expect(outcomeLineOf({ entry, model, slice })).toEqual({
+    expect(outcomeLineOf({ entry, model, slice })).toMatchObject({
       title: 'Result of step 2',
       by: 'Build · steps 1 and 2 of 6',
     });
@@ -252,10 +263,12 @@ describe('outcomeLineOf for a run', () => {
       ],
     });
 
-    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'run:run-build' }), model })).toEqual({
-      title: 'Mapped the payout code',
-      by: '2 steps',
-    });
+    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'run:run-build' }), model })).toMatchObject(
+      {
+        title: 'Mapped the payout code',
+        by: 'Orchestrated · 2 agents · 2 steps',
+      },
+    );
   });
 
   it('takes the first done line of the recap the orchestrator writes, never the raw JSON', () => {
@@ -300,10 +313,12 @@ describe('outcomeLineOf for a run', () => {
   it('uses the last step summary and the steps summary for a finished static run', () => {
     const model = liveWorld({ total: 2, finished: 2 });
 
-    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'run:run-build' }), model })).toEqual({
-      title: 'Result of step 2',
-      by: '2 steps',
-    });
+    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'run:run-build' }), model })).toMatchObject(
+      {
+        title: 'Result of step 2',
+        by: 'Build · 2 agents · 2 of 2 steps',
+      },
+    );
   });
 });
 
@@ -325,7 +340,7 @@ describe('outcomeLineOf for a rebase event', () => {
     ];
     const model = modelOf({ events });
 
-    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'event:done' }), model })).toEqual({
+    expect(outcomeLineOf({ entry: sourceOf({ model, id: 'event:done' }), model })).toMatchObject({
       title: 'Rebased on main',
       by: 'Rebase',
     });

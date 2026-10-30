@@ -3,7 +3,7 @@ import type { TailAction, TailActionId } from './tailFacts';
 export const TAIL_ACTION = {
   stop: { id: 'stop', label: 'Stop' },
   stopAgent: { id: 'stopAgent', label: 'Stop' },
-  stopAuto: { id: 'stopAuto', label: 'Stop Auto and its agents' },
+  stopAuto: { id: 'stopAuto', label: 'Stop' },
   changeApproach: { id: 'changeApproach', label: 'Change approach' },
   stopStep: { id: 'stopStep', label: 'Stop step' },
   continue: { id: 'continue', label: 'Continue' },

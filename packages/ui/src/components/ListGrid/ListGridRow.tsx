@@ -11,6 +11,7 @@ import { OptionalTooltip } from '../OptionalTooltip';
 import { ROW_INTERACTIVE } from '../../rowInteractive';
 import { SELECTED_ROW_CLASSES } from '../../selectedRow';
 import { TEXT_ROLE } from '../../textRoles';
+import { TruncatedText } from '../TruncatedText';
 import { ListGridColumnsContext } from './ListGridColumnsContext';
 import type { ListGridColumn } from './listGridTemplate';
 
@@ -139,16 +140,25 @@ export const ListGridRow = ({
     return column !== undefined && hiddenKeys.has(column.key) ? [] : [{ cell, column, index }];
   });
   const shown = spannedOf({ visible });
-  const body = shown.map(({ cell, column, index, span }, position) => (
-    <span
-      key={column?.key ?? index}
-      data-list-grid-cell={column?.key}
-      style={span > 1 ? { gridColumnEnd: `span ${span}` } : undefined}
-      className={cellClass({ column, cell, isFirst: position === 0 })}
-    >
-      {cell}
-    </span>
-  ));
+  const body = shown.map(({ cell, column, index, span }, position) => {
+    const props = {
+      'data-list-grid-cell': column?.key,
+      style: span > 1 ? { gridColumnEnd: `span ${span}` } : undefined,
+      className: cellClass({ column, cell, isFirst: position === 0 }),
+    };
+    if ((typeof cell === 'string' || typeof cell === 'number') && tooltip === undefined) {
+      return (
+        <TruncatedText key={column?.key ?? index} {...props}>
+          {cell}
+        </TruncatedText>
+      );
+    }
+    return (
+      <span key={column?.key ?? index} {...props}>
+        {cell}
+      </span>
+    );
+  });
   const rowClass = cn(
     'col-span-full grid grid-cols-subgrid items-center rounded-md text-left',
     HEIGHT_CLASS[rowHeight],

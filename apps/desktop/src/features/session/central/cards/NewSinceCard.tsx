@@ -7,6 +7,7 @@ import { useTimelineOpen } from '../../hooks/useTimelineOpen';
 import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
 import type { LatestDone } from './latestDoneOf';
 import { LatestDoneRow } from './LatestDoneRow';
+import { useLeadAgentOf } from '../../hooks/useLeadAgentOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,6 +26,7 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
   const openFor = useTimelineOpen({ sessionId });
   const nowMs = useNow(MINUTE_MS);
   const pending = usePendingAction({ sessionId });
+  const leadAgentOf = useLeadAgentOf({ sessionId });
   if (latest.unreadItems.length === 0) {
     return null;
   }
@@ -65,6 +67,7 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
               key={item.row.id}
               item={item}
               nowMs={nowMs}
+              leadAgent={leadAgentOf({ agentId: item.row.leadAgentId })}
               openLabel={
                 target === null
                   ? `Show ${item.row.title} in the log`

@@ -425,6 +425,23 @@ describe('StartRun run as', () => {
     screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
   });
 
+  it('shows the limit chip for an Auto or workflow route and none for an agent route', () => {
+    renderField({ sessionId: SESSION.id });
+
+    screen.getByRole('button', { name: 'No limit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+
+    screen.getByRole('button', { name: 'No limit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agent · Scout' }));
+
+    expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+  });
+
   it('shows the Asks you chip for an Auto agent run only', () => {
     renderField({ sessionId: SESSION.id });
 

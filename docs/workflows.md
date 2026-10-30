@@ -387,7 +387,8 @@ read top to bottom at the conversation measure:
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
   **Stop step** the verb is **Resume and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
-  no folded reason, and **Add a hint and continue** at the dock
+  no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
+  last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
@@ -483,7 +484,7 @@ from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
 glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
 "Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
-Scout"), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
+Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
 agents"), cost and age, every row the same columns. Groups:
 **In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state

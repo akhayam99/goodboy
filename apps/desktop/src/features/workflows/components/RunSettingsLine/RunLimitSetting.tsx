@@ -1,4 +1,4 @@
-import { useDropdown } from '@goodboy/ui';
+import { POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
 import { RunLimitFields } from './RunLimitFields';
@@ -15,7 +15,11 @@ type Props = {
 const HELP = 'What this run may spend before it pauses. Applies when you press Enter or close.';
 
 export const RunLimitSetting = ({ sessionId, run, words }: Props) => {
-  const dropdown = useDropdown({ expectedHeight: 240, expectedWidth: 320, width: 'w-80' });
+  const dropdown = useDropdown({
+    expectedHeight: 240,
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    width: POPOVER_WIDTH_CLASS.standard,
+  });
   const limit = useRunLimitDraft({ sessionId, run, isOpen: dropdown.open });
   return (
     <SettingChip

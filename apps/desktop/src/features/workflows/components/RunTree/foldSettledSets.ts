@@ -125,6 +125,7 @@ const sharedKind = ({
 const summaryOf = ({ set }: { readonly set: SettledSet }): SubagentSummary => {
   const base = subagentsCountSummary({
     facts: set.children.map((child) => ({
+      agentId: child.entry.agent.id,
       state: child.rowState,
       isAsking: hasOpenAsk({ entry: child.entry }),
     })),

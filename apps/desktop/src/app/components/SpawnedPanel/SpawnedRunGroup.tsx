@@ -118,6 +118,7 @@ export const SpawnedRunGroup = ({ session, run, workflow, isHeaded, selectedAgen
               title={row.title}
               card={row.card}
               word={row.word}
+              model={row.model}
               time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
               isSelected={row.agentId === selectedAgentId}
               onOpen={() =>

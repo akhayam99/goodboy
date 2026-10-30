@@ -3,14 +3,56 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { POPOVER_WIDTH_PX } from '@goodboy/ui';
+import type { AutoLimitKind } from './autoLimitCopy';
 import { AutoLimitChip } from './AutoLimitChip';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+type LimitParams = {
+  readonly usd: number | null;
+  readonly isDefault?: boolean;
+  readonly defaultUsd?: number | null;
+  readonly isFromSession?: boolean;
+  readonly change?: (usd: number | null) => void;
+};
+
+const limitOf = ({
+  usd,
+  isDefault = false,
+  defaultUsd = null,
+  isFromSession = false,
+  change = vi.fn(),
+}: LimitParams) => ({ usd, isDefault, defaultUsd, isFromSession, change });
+
+type ChipParams = LimitParams & {
+  readonly kind?: AutoLimitKind;
+};
+
+const chip = ({ kind = 'autoAgent', ...limit }: ChipParams) => (
+  <AutoLimitChip limit={limitOf(limit)} kind={kind} isDisabled={false} />
+);
+
+type PlaceParams = {
+  readonly rect: DOMRect;
+};
+
+const placeChip = ({ rect }: PlaceParams): void => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    const isChip = this.tagName === 'BUTTON' && (this.textContent ?? '').startsWith('Limit');
+    return isChip ? rect : new DOMRect(0, 0, 0, 0);
+  });
+};
 
 describe('AutoLimitChip', () => {
   it('shows the limit, opens a field and hands back a valid amount', () => {
-    const onChange = vi.fn();
-    render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
+    const change = vi.fn();
+    render(chip({ usd: 5, change }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     fireEvent.change(screen.getByRole('textbox'), {
@@ -18,40 +60,38 @@ describe('AutoLimitChip', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Use this limit' }));
 
-    expect(onChange).toHaveBeenCalledWith(8);
+    expect(change).toHaveBeenCalledWith(8);
   });
 
   it('takes an amount with cents typed into the field', async () => {
-    const onChange = vi.fn();
+    const change = vi.fn();
     const user = userEvent.setup();
-    render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
+    render(chip({ usd: 5, change }));
 
     await user.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     await user.clear(screen.getByRole('textbox'));
     await user.type(screen.getByRole('textbox'), '2.50');
     await user.click(screen.getByRole('button', { name: 'Use this limit' }));
 
-    expect(onChange).toHaveBeenCalledWith(2.5);
+    expect(change).toHaveBeenCalledWith(2.5);
   });
 
   it('refuses an amount that is not above zero and says so', () => {
-    const onChange = vi.fn();
-    render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
+    const change = vi.fn();
+    render(chip({ usd: 5, change }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: '0' },
     });
 
-    expect(screen.getByText('Enter an amount more than zero.')).toBeDefined();
+    screen.getByText('Enter an amount more than zero.');
     expect(screen.getByRole('button', { name: 'Use this limit' })).toHaveProperty('disabled', true);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(change).not.toHaveBeenCalled();
   });
 
   it('shows no limit when none is set and offers no clear action', () => {
-    render(
-      <AutoLimitChip usd={null} isFromSession={false} isDisabled={false} onChange={vi.fn()} />,
-    );
+    render(chip({ usd: null }));
 
     fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
 
@@ -62,19 +102,97 @@ describe('AutoLimitChip', () => {
   });
 
   it('removes the limit with the No limit action', () => {
-    const onChange = vi.fn();
-    render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
+    const change = vi.fn();
+    render(chip({ usd: 5, change }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'No limit' }));
 
-    expect(onChange).toHaveBeenCalledWith(null);
+    expect(change).toHaveBeenCalledWith(null);
   });
 
   it('is a plain chip when the budget of the session sets the limit', () => {
-    render(<AutoLimitChip usd={25} isFromSession isDisabled={false} onChange={vi.fn()} />);
+    render(chip({ usd: 25, isFromSession: true }));
 
-    expect(screen.getByText('Limit $25.00')).toBeDefined();
+    screen.getByText('Limit $25.00');
     expect(screen.queryByRole('button', { name: 'Limit $25.00' })).toBeNull();
+  });
+
+  it('tags the amount as the default only while it came from the default', () => {
+    const { rerender } = render(chip({ usd: 5, defaultUsd: 5, isDefault: true }));
+
+    screen.getByRole('button', { name: 'Limit $5.00 · default' });
+
+    rerender(chip({ usd: 8, defaultUsd: 5, isDefault: false }));
+
+    screen.getByRole('button', { name: 'Limit $8.00' });
+    expect(screen.queryByText('· default')).toBeNull();
+  });
+
+  it('keeps a typed amount next to the presets and the default, and picks one in a click', () => {
+    const change = vi.fn();
+    render(chip({ usd: 8, defaultUsd: 3, change }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $8.00' }));
+    const amounts = within(screen.getByRole('group', { name: 'Amounts' }));
+
+    expect(amounts.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      '$3.00default',
+      '$5.00',
+      '$8.00',
+      '$10.00',
+      '$25.00',
+    ]);
+    expect(amounts.getByRole('button', { name: '$8.00' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+
+    fireEvent.click(amounts.getByRole('button', { name: '$10.00' }));
+
+    expect(change).toHaveBeenCalledWith(10);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it.each([
+    ['orchestrated', 'Limit for this run'],
+    ['preset', 'Limit for this run'],
+    ['autoAgent', 'Limit for this Auto run'],
+  ] as const)('names the %s kind in the popover title', (kind, title) => {
+    render(chip({ usd: 5, kind }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
+    const dialog = screen.getByRole('dialog', { name: title });
+
+    within(dialog).getByText(title);
+    if (kind !== 'autoAgent') {
+      expect(dialog.textContent).not.toContain('Auto');
+    }
+  });
+
+  it('opens on the design system popover, under its chip, inside the window, at a fixed width', () => {
+    placeChip({ rect: new DOMRect(window.innerWidth - 120, 100, 80, 24) });
+    render(chip({ usd: 5 }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
+    const dialog = screen.getByRole('dialog');
+
+    expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
+    expect(dialog.style.top).toBe('128px');
+    expect(Number.parseFloat(dialog.style.left)).toBe(
+      window.innerWidth - POPOVER_WIDTH_PX.standard - 8,
+    );
+    expect(Number.parseFloat(dialog.style.maxHeight)).toBeGreaterThan(0);
+  });
+
+  it('flips above the chip when there is no room below', () => {
+    placeChip({ rect: new DOMRect(40, window.innerHeight - 40, 80, 24) });
+    render(chip({ usd: 5 }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
+    const dialog = screen.getByRole('dialog');
+
+    expect(dialog.style.top).toBe('');
+    expect(dialog.style.bottom).toBe('44px');
+    expect(dialog.style.left).toBe('40px');
   });
 });

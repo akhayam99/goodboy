@@ -1,5 +1,14 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, ICON_SIZE, PopoverBody, cn, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
+  PopoverBody,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
@@ -13,8 +22,6 @@ type Props = {
   readonly isDisabled: boolean;
 };
 
-const POPOVER_WIDTH = 'w-96 max-w-[calc(100vw-2rem)]';
-
 export const RunModelChip = ({ model, label = RUN_MODEL_COPY.label, isDisabled }: Props) => {
   const { effective, suggestion, isPinned, connectedProviders, pick } = model;
   const menuLabel = RUN_MODEL_COPY.forThisRun({ name: model.label });
@@ -22,8 +29,8 @@ export const RunModelChip = ({ model, label = RUN_MODEL_COPY.label, isDisabled }
   const dropdown = useDropdown({
     align: 'start',
     disabled: isDisabled,
-    width: POPOVER_WIDTH,
-    expectedWidth: 384,
+    width: POPOVER_WIDTH_CLASS.wide,
+    expectedWidth: POPOVER_WIDTH_PX.wide,
     expectedHeight: 520,
   });
   const summary = recommendationSummary({

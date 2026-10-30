@@ -38,6 +38,8 @@ const rowOf = ({ id }: RowParams): DoneRowModel => ({
   entryId: id,
   title: 'Centered the profile page',
   by: 'Implementer',
+  kind: 'implementer',
+  leadAgentId: null,
   at: '09:00',
   mountId: null,
   retryAgentId: null,

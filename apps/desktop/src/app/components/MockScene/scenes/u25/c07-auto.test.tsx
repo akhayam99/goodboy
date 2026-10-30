@@ -14,6 +14,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import {
   registerAutoUserTurnPort,
@@ -28,8 +29,10 @@ import { U25_C07_AUTO_SCENES } from './c07-auto';
 
 const WAIT = { timeout: 15_000 };
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -123,7 +126,8 @@ describe('c07 Auto scenes', () => {
     expect(auto.getAttribute('aria-expanded')).toBe('true');
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(implementer.getAttribute('aria-level')).toBe('2');
-    expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
+    expect(within(implementer).getByText('Sonnet 5.5')).toBeDefined();
+    expect(within(implementer).getByText('Medium')).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
 
     fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });
@@ -404,13 +408,14 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    const auto = await treeRow(/^Auto agent, .+, 4 agents, Idle$/);
-    expect(auto.getAttribute('aria-expanded')).toBe('false');
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
-    fireEvent.click(within(auto).getByTestId('spawned-fold-toggle'));
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(5);
-    fireEvent.keyDown(auto, { key: 'ArrowLeft' });
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
+    const auto = await treeRow(/^Auto agent, .+, Idle$/);
+    expect(auto.getAttribute('aria-expanded')).toBeNull();
+    const summary = await treeRow(/^4 helpers$/);
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
+    fireEvent.click(summary);
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(6);
+    fireEvent.keyDown(summary, { key: 'ArrowLeft' });
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
   });
 
   it('c07-auto-answering shows Auto alone in the tree with the empty state', async () => {
@@ -448,6 +453,16 @@ describe('c07 Auto scenes', () => {
 
     await waitFor(() => expect(retry).toHaveBeenCalledTimes(1), WAIT);
     expect(within(tail).queryByRole('alert')).toBeNull();
+  });
+
+  it('c07-auto-blocked offers View transcript on the tail and opens the root conversation', async () => {
+    mount({ id: 'c07-auto-blocked' });
+
+    const verb = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+    expect(verb.closest('[data-auto-tail]')).not.toBeNull();
+    fireEvent.click(verb);
+
+    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
   });
 
   it('c07-auto-blocked shows a refused Retry on the tail, not in a notification', async () => {

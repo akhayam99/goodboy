@@ -5,6 +5,8 @@ import {
   cn,
   formatUsd,
   ICON_SIZE,
+  POPOVER_WIDTH_CLASS,
+  POPOVER_WIDTH_PX,
   PopoverBody,
   useDropdown,
   FOCUS_RING,
@@ -36,8 +38,8 @@ export const RunSpendLimitPopover = ({
   const limitUsd = run.spendLimitUsd ?? null;
   const dropdown = useDropdown({
     expectedHeight: 220,
-    expectedWidth: 264,
-    width: 'w-80',
+    expectedWidth: POPOVER_WIDTH_PX.standard,
+    width: POPOVER_WIDTH_CLASS.standard,
   });
   const { open, toggle } = dropdown;
   const limit = useRunLimitDraft({ sessionId, run, isOpen: open });

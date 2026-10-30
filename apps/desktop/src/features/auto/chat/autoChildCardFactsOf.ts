@@ -7,7 +7,6 @@ export type AutoChildCardFacts = Readonly<{
   word: string;
   tone: Tone;
   activity: string | null;
-  canStop: boolean;
 }>;
 
 type Params = {
@@ -34,8 +33,5 @@ export const autoChildCardFactsOf = ({ card, live }: Params): AutoChildCardFacts
     word: card.status.word,
     tone: cardToneOf({ card }),
     activity: hasActivity ? live.phrase : null,
-    canStop:
-      card.status.word !== 'Stopping' &&
-      (live?.actions.some((one) => one.id === 'stopAgent') ?? false),
   };
 };

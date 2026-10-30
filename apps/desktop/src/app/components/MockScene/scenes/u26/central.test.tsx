@@ -109,7 +109,7 @@ describe('the central column scenes', () => {
     expect(now.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
     const inNow = within(now);
     const retryName = 'Retry "Fix the two doc mismatches in ledger-core"';
-    inNow.getByRole('button', { name: retryName });
+    expect(inNow.queryByRole('button', { name: retryName })).toBeNull();
     inNow.getByRole('button', { name: 'Answer Auto in its chat' });
     inNow.getByRole('button', { name: 'Stop Auto and its agents' });
     within(screen.getByRole('region', { name: 'Needs you' })).getByRole('button', {

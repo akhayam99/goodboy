@@ -145,6 +145,19 @@ describe('the c06 conversation scenes', () => {
     );
   });
 
+  it('c06-agent-failed offers View transcript next to Retry and opens the drawer on the failing call', async () => {
+    await mount({ name: 'c06-agent-failed' });
+
+    const actions = screen.getByRole('button', { name: /^Retry/ }).parentElement;
+    if (actions === null) {
+      throw new Error('no actions row');
+    }
+    fireEvent.click(within(actions).getByRole('button', { name: 'View transcript' }));
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(C06_AGENT_ID);
+    expect(typeof (drawer?.kind === 'transcript' ? drawer.payload.toolUseId : null)).toBe('string');
+  });
+
   it('c06-agent-steps opens the transcript pane at that turn, with no inline step list', async () => {
     await mount({ name: 'c06-agent-steps' });
 

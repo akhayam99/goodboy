@@ -229,7 +229,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
     expect(run.textContent).toMatch(/\d+m/);
   });
 
-  it('5: the stuck Auto line offers Retry with the quoted title, Answer and Stop', async () => {
+  it('5: the stuck Auto line offers Answer and Stop, and Retry sits once in Needs you', async () => {
     await show({ kind: 'stuck' });
 
     const line = document.querySelector<HTMLElement>('[data-now-actions]');
@@ -237,7 +237,9 @@ describe('the parity list of the Overview, walked on the cards', () => {
       throw new Error('The stuck line must be drawn');
     }
     const actions = within(line);
-    expect(actions.getByRole('button', { name: /^Retry "/ }).textContent).toBe('Retry');
+    expect(actions.queryByRole('button', { name: /^Retry "/ })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Retry "/ })).toHaveLength(1);
+    within(cardOf({ name: 'Needs you' })).getByRole('button', { name: /^Retry "/ });
     actions.getByRole('button', { name: 'Answer Auto in its chat' });
     actions.getByRole('button', { name: 'Stop Auto and its agents' });
   });

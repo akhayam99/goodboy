@@ -65,6 +65,8 @@ Write to an agent the same way everywhere. Every message and document field take
 
 **Agents** in the tool column (⌘⌥L) lists every agent of the session, the same set as the Runs page. Each run and Auto tree has its agents under it, and an agent you started yourself is a launch of one row with its state word. Picking a row opens that agent in the center, on the same page a top-level agent has. The panel stays open with the row selected, so hopping from one agent to the next is one click. With focus on a row of the tree, **j** and **k** do it from the keyboard. A session without agents says "No agents in this session yet".
 
+Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
+
 ### Stop and Continue
 
 Stop an agent without losing its work. While a turn runs, a **Stop** square sits in the message box beside **Send now** and **Queue**, a live chip in the agent header reads **Running** with its clock and a **Stop**, and the line at the end of the conversation keeps its own; all three say one word, **Stop**, and so does the agent's menu, the palette and the Runs header. **Esc** twice stops it too, when no menu, drawer or dialog is open. Stopping keeps what the agent wrote and offers **Continue**. **Stop** waits until the process has exited: the square, the chip and the line read **Stopping** and stay busy, and when the exit takes more than 5 seconds they read **Still stopping** with **Force stop**, which asks again. If Goodboy cannot stop the agent, the agent stays running with the error shown. **Stop all running agents (N)** in the session menu and the palette, and **Stop all (N)** in the **In progress** header of Runs, stop every running agent of the session without asking, since **Continue** brings each back with its work kept, and report "Stopped 4, 1 still running". An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
@@ -117,8 +119,8 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - The same name shows in the **Agents** panel, the chat lines, the result cards and what Auto reads.
 - In the **Agents** panel, each Auto conversation is titled by what you asked it. Its agents hang above it on the same rail as **Activity**, newest on top under a **Now** marker.
 - When you open a conversation there, a new agent arrives at the top without moving what you are reading.
-- A finished conversation folds to one row with its count of agents. Open or fold a row with its chevron or the arrow keys.
-- The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
+- A conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. Open or fold a line with a click or the arrow keys. A fold opens by itself when a hidden helper needs you.
+- The chat shows each agent Auto starts as one card with its role, name, model and state. The whole card opens the agent, by a click or by Enter, and it has no buttons. To stop that agent, right click the card and pick **Stop**. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
@@ -127,13 +129,13 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 
 - Set a **Limit** once per workspace.
 - Change, raise or remove the **Limit** of a running conversation from the chip line under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there.
-- **Stop** or **Change approach** while it waits.
+- **Change approach** while it waits. It stops Auto and puts you in the message field.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
 - An agent's page has the same chip line under its title: how it runs, when it asks you, the session **Limit** and its **Models**. The composer keeps only the message.
 - An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
 - When Auto needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the main button, such as **Spawn implementer**, with one or two other options and a hint field. The keys 1 to 3 pick an option once you are in the card. An option other than the first declines the proposal and tells Auto your pick. **Not now** declines and tells nothing.
 - When the work rests, Auto reads **Idle**. Only you close it, with **Mark finished** in its header. Writing to it again reopens it.
-- When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too.
+- When Auto cannot decide its next step, it reads **Blocked** with the reason and a **Retry**. A message you send retries too. The reason shows on two lines at most, and the whole text opens when you point at it or tab to it. **View transcript** opens the conversation.
 - **Stop** and **Retry** work from every Goodboy window. A failure says why under them.
 
 **Hand an agent to Auto**
@@ -180,6 +182,10 @@ Get agents and summaries in the language of your goal.
 
 This part is for contributors and agents who change the feature.
 
+- Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words, so a retired model still reads by name. The raw id shows in a tooltip only. "Unknown model" is only for an id with no known provider.
+- Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
+- Agents tree fold: `foldSpawnedRowsOf` decides which rows fold and `helperUrgencyOf` picks the state shown beside the count; the helper count comes from `runAgentCountOf`. The `u30-agents-fold` scene shows each case.
+- Failure links: a failed turn offers **View transcript** next to **Retry**. The drawer opens on the failing call when it is known (`TranscriptErrorRow`). A run that stopped on a human call offers it on its tail. The `u30-failure-reason` and `u30-human-call` scenes show the long Auto reason and the run tail.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

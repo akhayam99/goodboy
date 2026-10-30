@@ -156,6 +156,9 @@ const TranscriptCardImpl = ({
         <TranscriptErrorRow
           message={item.message}
           runId={errorRunId ?? null}
+          sessionId={sessionId}
+          agentId={agentId}
+          failedToolUseId={item.failedToolUseId ?? null}
           onRetry={
             item.retryable === true && errorRunId != null && onRetryRun != null
               ? () => onRetryRun({ runId: errorRunId, model: null })

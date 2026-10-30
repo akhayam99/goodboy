@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ListGrid } from '../components/ListGrid/ListGrid';
 import { ListGridGroup } from '../components/ListGrid/ListGridGroup';
 import { ListGridRow } from '../components/ListGrid/ListGridRow';
@@ -281,6 +281,51 @@ describe('ListGrid', () => {
     ]);
     expect(container.querySelectorAll('[data-list-grid-group-label]')).toHaveLength(1);
     expect(screen.getByText('Ledger export times out')).toBeDefined();
+  });
+});
+
+describe('ListGridRow cells', () => {
+  it('opens the whole text of a cut cell in a tooltip and leaves a whole cell alone', () => {
+    renderGrid({ onSelect: () => undefined });
+    const cut = screen.getByText('Speed up the ledger export');
+    Object.defineProperty(cut, 'scrollWidth', { configurable: true, value: 300 });
+    Object.defineProperty(cut, 'clientWidth', { configurable: true, value: 120 });
+    const whole = screen.getByText('Fix the payments-api checks');
+    Object.defineProperty(whole, 'scrollWidth', { configurable: true, value: 100 });
+    Object.defineProperty(whole, 'clientWidth', { configurable: true, value: 100 });
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(whole);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    fireEvent.mouseEnter(cut);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Speed up the ledger export');
+    expect(cut.getAttribute('data-list-grid-cell')).toBe('title');
+    expect(cut.getAttribute('title')).toBeNull();
+  });
+
+  it('leaves the cells to the row tooltip when the row has its own', () => {
+    render(
+      <ListGrid label="Agents" columns={COLUMNS}>
+        <ListGridRow
+          onSelect={() => undefined}
+          tooltip="Open the agent"
+          cells={['', 'Implementer', 'Speed up the ledger export', '1:12']}
+        />
+      </ListGrid>,
+    );
+
+    expect(screen.getByText('Speed up the ledger export').hasAttribute('data-truncated-text')).toBe(
+      false,
+    );
   });
 });
 

@@ -1,14 +1,16 @@
 import type { Agent } from '@goodboy/types';
 import type { DoneDay, DoneRowModel } from '../done/doneTypes';
-import { firstSentenceOf } from '../done/firstSentenceOf';
+import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import { plainTitleOf } from '../done/plainTitleOf';
 
 const LATEST_DONE_LIMIT = 3;
 
-const UNLISTED_AGENT_BY = 'Agent';
-
 const EPOCH = new Date(0).toISOString();
 
-type LatestDoneRowFacts = Pick<DoneRowModel, 'id' | 'entryId' | 'title' | 'by' | 'at' | 'agentIds'>;
+type LatestDoneRowFacts = Pick<
+  DoneRowModel,
+  'id' | 'entryId' | 'title' | 'by' | 'kind' | 'leadAgentId' | 'at' | 'agentIds'
+>;
 
 type LatestDoneItem = Readonly<{
   row: DoneRowModel;
@@ -45,12 +47,15 @@ const isRowUnread = ({ row, unreadAgentIds }: RowParams): boolean =>
 
 const unlistedItemOf = ({ agent }: AgentParams): NewSinceItem => {
   const entryId = `agent:${agent.id}`;
+  const kind = classifyAgent({ agent, override: null });
   return {
     row: {
       id: entryId,
       entryId,
-      title: firstSentenceOf({ text: agent.outputSummary }) ?? agent.name,
-      by: UNLISTED_AGENT_BY,
+      title: plainTitleOf({ text: agent.outputSummary }) ?? agent.name,
+      by: AGENT_KIND_META[kind].noun,
+      kind,
+      leadAgentId: agent.id,
       at: agent.lastFinishedAt ?? agent.completedAt ?? agent.startedAt ?? EPOCH,
       agentIds: [agent.id],
     },

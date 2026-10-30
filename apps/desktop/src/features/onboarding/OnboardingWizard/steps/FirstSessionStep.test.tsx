@@ -148,12 +148,12 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('FirstSessionStep with no task source', () => {
-  it('opens on the real Start a run field with the first starter and the Limit chip', () => {
+  it('opens on the real Start a run field with the first starter and no Limit chip', () => {
     renderStep();
 
     expect(field().value).toContain('Explain how acme-web is organized');
     screen.getByRole('region', { name: 'Start a run' });
-    screen.getByRole('button', { name: 'No limit' });
+    expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
     screen.getByRole('button', { name: 'Explain how acme-web is organized' });
     screen.getByRole('heading', { name: 'Start your first session' });
   });

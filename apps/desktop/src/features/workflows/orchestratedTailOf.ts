@@ -154,7 +154,7 @@ export const orchestratedTailOf = ({
     }
     return { ...base, verbs: [{ kind: 'restartStep' }] };
   }
-  if (phase === 'failed') {
+  if (phase === 'failed' || phase === 'blocked') {
     const last = roots.at(-1);
     const transcript: ReadonlyArray<OrchestratedVerb> =
       last === undefined ? [] : [{ kind: 'viewTranscript', agentId: last.id }];

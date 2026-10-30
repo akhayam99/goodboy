@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { FOCUS_RING, ROW_HOVER, TruncatedText, cn } from '@goodboy/ui';
 import { LIVE_COLUMNS } from '../liveColumns';
 
 type Props = {
@@ -35,6 +35,7 @@ export const LiveRow = ({
     data-live-row=""
     className={cn(
       'relative flex min-w-0 items-center gap-2 rounded-md px-2',
+      ROW_HOVER,
       isChild ? 'min-h-7' : 'min-h-9 py-1',
     )}
   >
@@ -43,7 +44,7 @@ export const LiveRow = ({
       aria-label={openLabel}
       data-live-open=""
       onClick={onOpen}
-      className={cn('absolute inset-0 rounded-md', ROW_INTERACTIVE)}
+      className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
     />
     <span
       data-live-lead=""
@@ -54,25 +55,36 @@ export const LiveRow = ({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="shrink-0 text-row text-foreground">{kindWord}</span>
-          <span className="min-w-0 flex-1 truncate text-ui text-muted-foreground">
+          <TruncatedText
+            isFocusable
+            onClick={onOpen}
+            className="pointer-events-auto min-w-0 flex-1 text-ui text-muted-foreground"
+          >
             {title === kindWord ? '' : title}
-          </span>
+          </TruncatedText>
         </span>
         {reason === null ? null : (
-          <span data-live-reason="" className="truncate text-meta text-muted-foreground">
+          <TruncatedText
+            isFocusable
+            onClick={onOpen}
+            data-live-reason=""
+            className="pointer-events-auto text-meta text-muted-foreground"
+          >
             {reason}
-          </span>
+          </TruncatedText>
         )}
       </span>
     </span>
     {meter}
     {where === null ? null : (
-      <span
+      <TruncatedText
+        isFocusable
+        onClick={onOpen}
         data-live-where=""
-        className="pointer-events-none relative min-w-0 shrink basis-48 truncate text-code text-muted-foreground @max-[640px]:hidden"
+        className="pointer-events-auto relative min-w-0 shrink basis-48 text-code text-muted-foreground @max-[640px]:hidden"
       >
         {where}
-      </span>
+      </TruncatedText>
     )}
     <span className="pointer-events-none relative flex shrink-0 items-center gap-2 [&_button]:pointer-events-auto">
       <span className={cn('flex shrink-0 items-center gap-1', LIVE_COLUMNS.status)}>{end}</span>

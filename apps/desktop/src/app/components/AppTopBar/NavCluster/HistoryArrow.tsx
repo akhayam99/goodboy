@@ -87,7 +87,12 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
       dropdown={dropdown}
       anchorClassName="flex shrink-0"
       trigger={
-        <Tooltip content={tooltip} shortcut={isDisabled ? undefined : shortcut} side="bottom">
+        <Tooltip
+          content={tooltip}
+          shortcut={isDisabled ? undefined : shortcut}
+          side="bottom"
+          isSuppressed={open}
+        >
           <button
             type="button"
             aria-label={isDisabled ? verb : `${verb} to ${target.label}`}

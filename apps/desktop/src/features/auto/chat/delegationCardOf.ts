@@ -1,6 +1,7 @@
 import { parseAutoDelegationRole } from '@goodboy/core';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
+import { modelLineOf, type ModelLine } from '../../providers/modelLine/modelLineOf';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
@@ -14,6 +15,7 @@ export type DelegationCardModel = Readonly<{
   provider: string | null;
   model: string | null;
   effort: string | null;
+  modelLine: ModelLine | null;
   task: string | null;
   reason: string | null;
   routingNote: string | null;
@@ -54,21 +56,24 @@ const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
 
 type NoteParams = {
   readonly routing: unknown;
-  readonly model: string | null;
+  readonly modelLine: ModelLine | null;
 };
 
-const routingNoteOf = ({ routing, model }: NoteParams): string | null => {
+const routingNoteOf = ({ routing, modelLine }: NoteParams): string | null => {
   const proposal = textField({ source: routing, key: 'proposal' });
   if (proposal !== 'adjusted' && proposal !== 'replaced') {
     return null;
   }
-  const requested = textField({
-    source: recordField({ source: routing, key: 'requested' }),
-    key: 'model',
+  const requestedRouting = recordField({ source: routing, key: 'requested' });
+  const requested = modelLineOf({
+    provider: textField({ source: requestedRouting, key: 'provider' }),
+    model: textField({ source: requestedRouting, key: 'model' }),
+    effort: null,
   });
   const why = textField({ source: routing, key: 'reason' });
-  const asked = requested === null ? 'Auto asked for another model' : `Auto asked for ${requested}`;
-  const used = model === null ? 'the app chose' : `used ${model}`;
+  const asked =
+    requested === null ? 'Auto asked for another model' : `Auto asked for ${requested.name}`;
+  const used = modelLine === null ? 'the app chose' : `used ${modelLine.name}`;
   return why === null ? `${asked}, ${used}.` : `${asked}, ${used}: ${why}`;
 };
 
@@ -80,19 +85,23 @@ type Params = {
 export const delegationCardOf = ({ delegation, childAgent }: Params): DelegationCardModel => {
   const role = parseAutoDelegationRole({ role: delegation.role });
   const kind: AgentKind = role === null ? 'generic' : kindForRole({ role });
+  const provider = textField({ source: delegation.routing, key: 'provider' });
   const model = textField({ source: delegation.routing, key: 'model' });
+  const effort = textField({ source: delegation.routing, key: 'effort' });
+  const modelLine = modelLineOf({ provider, model, effort });
   const status = delegationStatusOf({ delegation });
   return {
     delegationId: delegation.id,
     childAgentId: delegation.childAgentId,
     role: kind,
     roleLabel: AGENT_KIND_META[kind].noun,
-    provider: textField({ source: delegation.routing, key: 'provider' }),
+    provider,
     model,
-    effort: textField({ source: delegation.routing, key: 'effort' }),
+    effort,
+    modelLine,
     task: textField({ source: delegation.request, key: 'task' }),
     reason: textField({ source: delegation.request, key: 'reason' }),
-    routingNote: routingNoteOf({ routing: delegation.routing, model }),
+    routingNote: routingNoteOf({ routing: delegation.routing, modelLine }),
     status,
     isRevision: delegation.reviseOf !== null,
     reviseVersion: delegation.baseRevision === null ? null : delegation.baseRevision + 1,

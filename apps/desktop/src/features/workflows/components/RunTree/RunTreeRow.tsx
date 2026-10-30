@@ -1,15 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react';
-import {
-  Button,
-  cn,
-  ICON_SIZE,
-  InteractiveRow,
-  tintClasses,
-  Tooltip,
-  TruncatedText,
-  WORK_META_COLUMN,
-  WORK_ROW,
-} from '@goodboy/ui';
+import { Button, cn, InteractiveRow, TruncatedText, WORK_META_COLUMN, WORK_ROW } from '@goodboy/ui';
 import type {
   EffortLevel,
   OpenQuestion,
@@ -20,13 +9,11 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 import { KIND_TO_ROLE } from '../../../session/agent-kind';
-import {
-  guidanceSentTo,
-  guidanceTagTip,
-} from '../../../../store/slices/workflows/standingGuidance';
+import { guidanceSentTo } from '../../../../store/slices/workflows/standingGuidance';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { openPlanDrawer } from '../../../plans/openPlanDrawer';
+import { RunTreeGuidanceTag } from './RunTreeGuidanceTag';
 import { AgentStepRow } from '../../../session/components/SessionWorkspace/parts/TimelinePane/AgentStepRow';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker';
@@ -223,6 +210,7 @@ export const RunTreeRow = ({
                     {glyph}
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       <TruncatedText
+                        isFocusable
                         className={cn(
                           WORK_ROW.title,
                           'flex-1 truncate',
@@ -236,20 +224,7 @@ export const RunTreeRow = ({
                       >
                         {agent.name}
                       </TruncatedText>
-                      {guidance === null ? null : (
-                        <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
-                          <span
-                            aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
-                            className={cn(
-                              'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
-                              tintClasses('info').text,
-                            )}
-                          >
-                            <SlidersHorizontal size={ICON_SIZE.mark} aria-hidden />
-                            Guidance
-                          </span>
-                        </Tooltip>
-                      )}
+                      {guidance === null ? null : <RunTreeGuidanceTag text={guidance} />}
                       <RunTreeContextNote answersFor={answersFor} waveLabel={waveNote} />
                     </span>
                     {state}

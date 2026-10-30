@@ -10,6 +10,8 @@ vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,
     isFromSession: false,
+    isDefault: true,
+    defaultUsd: 5,
     isStored: true,
     change: () => undefined,
     persist: async () => undefined,
@@ -296,6 +298,20 @@ describe('New session page', () => {
     await settle();
     screen.getByRole('tablist', { name: KINDS });
     expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
+  });
+
+  it('shows the Limit chip under Auto picks, and drops it once the route is an agent', async () => {
+    await openPage();
+    await autoPicks();
+
+    screen.getByRole('button', { name: /^Limit \$5\.00/ });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agent · Scout' }));
+    await settle();
+
+    screen.getByRole('button', { name: 'Run as: Agent · Scout' });
+    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
   it('pins folders from Where, and clearing them gives the choice back to Auto', async () => {

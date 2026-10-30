@@ -1,6 +1,8 @@
-import { formatUsd, ICON_SIZE, ListGridRow, StateDot } from '@goodboy/ui';
+import { formatUsd, ICON_SIZE, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
+import type { ModelLine } from '../../../../../providers/modelLine/modelLineOf';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
@@ -9,6 +11,7 @@ import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
 type Props = {
   readonly sessionId: SessionId;
   readonly run: SessionRun;
+  readonly modelLine: ModelLine | null;
   readonly costUsd: number | null;
   readonly now: number;
   readonly onOpen: () => void;
@@ -31,7 +34,7 @@ type MenuAgentParams = {
 const menuAgentOf = ({ run }: MenuAgentParams): AgentId | null =>
   run.open.kind === 'run' ? null : run.open.agentId;
 
-export const RunsGridRow = ({ sessionId, run, costUsd, now, onOpen }: Props) => {
+export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }: Props) => {
   const agentId = menuAgentOf({ run });
   const menu = useObjectMenuTrigger({
     target:
@@ -54,12 +57,13 @@ export const RunsGridRow = ({ sessionId, run, costUsd, now, onOpen }: Props) => 
         run.isUnread ? (
           <>
             <StateDot state="unread" label="Unread" />
-            <span className="min-w-0 truncate">{run.title}</span>
+            <TruncatedText className="min-w-0">{run.title}</TruncatedText>
           </>
         ) : (
           run.title
         ),
         run.origin,
+        modelLine === null ? '' : <AgentModelLine line={modelLine} />,
         run.stateWord,
         run.progress,
         costUsd === null ? '' : formatUsd(costUsd),
