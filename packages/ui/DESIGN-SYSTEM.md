@@ -177,9 +177,9 @@ roving focus: one tab stop on the picked chip, the arrows (and Home and End) mov
 and pick, wrapping, and the keys 1 to 9 pick by the faint number each chip
 shows (`keyScope` widens the number keys to a whole card, and a field inside it
 keeps its own typing). A chip is 28px (`min-h-7`) and wraps a long label
-instead of cutting it. The selected chip is `bg-selected` only, with no ring.
-The advised answer carries a quiet `Recommended` tag (`Chip` neutral), never a
-tone. Past nine chips the numbers and their keys go away. `AutoNextAction` is
+instead of cutting it. The selected chip follows the selected row rule with a
+stronger border and no ring; the others sit on a hairline. The advised answer
+carries quiet `Recommended` text, never a tone. Past nine chips the numbers and their keys go away. `AutoNextAction` is
 the first use: a neutral `bg-subtle` card of about 116px (12px padding, a title
 row, a chip row, an action row, 8px gaps) whose only colour is a 6px warning
 `StatusDot` before its label, one primary and a quiet `Not now`.

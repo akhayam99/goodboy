@@ -12,6 +12,26 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.6
+
+Answers keep their headings apart, Show more lines up with the text, Stop appears once, and the picked Next step choice is easy to see.
+
+### Improved
+
+#### Answers read in clear sections
+<!-- gb area=agents image=show-more -->
+
+A heading inside an answer sits 24px under the text before it and close to the text it opens. A long answer stops at the end of its last whole block, and Show more lines up with the text.
+
+#### The picked choice stands out
+<!-- gb area=agents image=next-step -->
+
+In Auto's Next step card the picked choice is filled and outlined like any selected row, and Recommended is quiet text beside the advised one.
+
+### Fixed
+
+- A running agent shows Stop in its header and in the message box only, not again on the Writing the answer line. <!-- gb area=agents -->
+
 ## Goodboy v0.29.5
 
 Agent chats read in a calm column with room between turns, a sent message stays in view, and the Next step card is short and quiet.

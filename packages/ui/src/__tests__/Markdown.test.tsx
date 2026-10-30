@@ -118,11 +118,13 @@ describe('Markdown document rhythm', () => {
       <Markdown text={['# One', 'body one', '## Two', 'body two'].join('\n')} />,
     );
     const root = container.firstElementChild;
-    expect(root?.className).toContain('gap-4');
+    expect(root?.className).toContain('gap-6');
     expect(root?.children).toHaveLength(2);
-    expect(root?.children[0]?.className).toContain('gap-3');
-    expect(root?.children[0]?.children).toHaveLength(2);
-    expect(root?.children[1]?.children).toHaveLength(2);
+    const first = root?.children[0];
+    expect(first?.className).toContain('gap-2');
+    expect(first?.children[0]?.tagName).toBe('H1');
+    expect(first?.children[1]?.className).toContain('gap-3');
+    expect(root?.children[1]?.children[0]?.tagName).toBe('H2');
   });
 
   it('gives a rule its own section instead of a margin', () => {

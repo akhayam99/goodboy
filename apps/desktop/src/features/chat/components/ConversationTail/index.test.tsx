@@ -6,13 +6,11 @@ import { ConversationTail } from './index';
 afterEach(cleanup);
 
 describe('ConversationTail', () => {
-  it('shows the phrase it is given and a Stop', () => {
-    const onStop = vi.fn();
-    render(<ConversationTail phrase="Running pnpm in payments-api" onStop={onStop} />);
+  it('shows the phrase it is given and leaves Stop to the header and the composer', () => {
+    render(<ConversationTail phrase="Running pnpm in payments-api" onStop={vi.fn()} />);
 
     screen.getByText('Running pnpm in payments-api');
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
-    expect(onStop).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
   it('says Stopping and busies the Stop while the process exits', () => {
@@ -38,8 +36,15 @@ describe('ConversationTail', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('keeps the step label a run gives the Stop', () => {
-    render(<ConversationTail phrase="Thinking" onStop={vi.fn()} stopLabel="Stop step" />);
+  it('keeps the step label a run gives the Stop while it stops', () => {
+    render(
+      <ConversationTail
+        phrase="Thinking"
+        onStop={vi.fn()}
+        stopLabel="Stop step"
+        stopPhase="stopping"
+      />,
+    );
 
     screen.getByRole('button', { name: 'Stop step' });
   });

@@ -13,6 +13,8 @@ import { CodeBlockContent } from './CodeBlockContent';
 import { CodeBlockFrame } from './CodeBlockFrame';
 import { freshenNode, type FreshTail } from './freshenNode';
 import { ICON_SIZE } from '../../iconSize';
+import { sectionNodeOf } from './sectionNodeOf';
+import { HEADING_CLASS } from './headingClass';
 
 type MarkdownVariant = 'document' | 'preview';
 
@@ -156,15 +158,6 @@ const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): Re
       {lineIndex < lines.length - 1 && <br />}
     </Fragment>
   ));
-
-const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
-  1: 'text-title text-foreground',
-  2: 'text-title text-foreground',
-  3: 'text-heading text-foreground',
-  4: 'text-eyebrow text-muted-foreground',
-  5: 'text-eyebrow text-muted-foreground',
-  6: 'text-eyebrow text-muted-foreground',
-};
 
 const TASK_ICON: Record<TaskState, LucideIcon> = {
   open: Square,
@@ -696,23 +689,26 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
           ? document.blocks.map((block, idx) =>
               renderCachedBlock({ block, id: `b-${idx}`, variant, previous, next }),
             )
-          : document.sections.map((section, si) => (
-              <div key={`s-${si}`} className="flex flex-col gap-3">
-                {section.map((block, bi) =>
-                  renderCachedBlock({
-                    block,
-                    id: `b-${si}-${bi}`,
-                    variant,
-                    previous,
-                    next,
-                    fresh:
-                      si === document.sections.length - 1 && bi === section.length - 1
-                        ? fresh
-                        : undefined,
-                  }),
-                )}
-              </div>
-            ));
+          : document.sections.map((section, si) => {
+              const blocks = section.map((block, bi) =>
+                renderCachedBlock({
+                  block,
+                  id: `b-${si}-${bi}`,
+                  variant,
+                  previous,
+                  next,
+                  fresh:
+                    si === document.sections.length - 1 && bi === section.length - 1
+                      ? fresh
+                      : undefined,
+                }),
+              );
+              return sectionNodeOf({
+                key: `s-${si}`,
+                blocks,
+                isHeadingSection: section[0]?.kind === 'heading',
+              });
+            });
       blockCacheRef.current = cache;
       renderedRef.current = { variant, cache: next };
       return rendered;
@@ -736,7 +732,7 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
   return (
     <div
       data-reading-region=""
-      className={cn('flex flex-col gap-4 text-body text-foreground', className)}
+      className={cn('flex flex-col gap-6 text-body text-foreground', className)}
     >
       {content}
     </div>

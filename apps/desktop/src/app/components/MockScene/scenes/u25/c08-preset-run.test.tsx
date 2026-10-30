@@ -135,7 +135,12 @@ describe('the c08 preset run scenes', () => {
     if (conversationTail === null) {
       throw new Error('no conversation tail');
     }
-    expect(within(conversationTail).getByRole('button', { name: 'Stop step 2' })).toBeDefined();
+    expect(within(conversationTail).queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(
+      screen
+        .getAllByRole('button', { name: /^Stop/ })
+        .some((button) => button.closest('[data-conversation-tail]') === null),
+    ).toBe(true);
   });
 
   it('c08-run-working-other points the tail at the step that works', async () => {

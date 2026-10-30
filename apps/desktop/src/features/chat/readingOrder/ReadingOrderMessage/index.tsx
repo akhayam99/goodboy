@@ -1,9 +1,8 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Button,
   CodeBlockActionsContext,
   Markdown,
-  cn,
   estimateRenderedLines,
   type FreshTail,
   type Tone,
@@ -15,6 +14,7 @@ import {
 } from '../../components/TranscriptCards/codeActionTarget';
 import { OutcomeLine } from '../OutcomeLine';
 import { READING_BUDGETS } from '../readingBudgets';
+import { cutAtBlockOf, type ClampCut } from '../cutAtBlockOf';
 
 type Props = {
   text: string;
@@ -28,14 +28,24 @@ type Props = {
 
 type ClampStyleParams = {
   readonly lines: number;
+  readonly cut: ClampCut;
 };
 
-const clampStyleOf = ({ lines }: ClampStyleParams): CSSProperties => ({
-  display: '-webkit-box',
-  WebkitBoxOrient: 'vertical',
-  WebkitLineClamp: lines,
-  overflow: 'hidden',
-});
+const LINES_CUT: ClampCut = { kind: 'lines' };
+
+const clampStyleOf = ({ lines, cut }: ClampStyleParams): CSSProperties | undefined => {
+  if (cut.kind === 'fits') {
+    return undefined;
+  }
+  if (cut.kind === 'block') {
+    return { maxHeight: cut.px, overflow: 'hidden' };
+  }
+  return {
+    maxHeight: `${lines}lh`,
+    overflow: 'hidden',
+    maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
+  };
+};
 
 export const ReadingOrderMessage = ({
   text,
@@ -49,6 +59,26 @@ export const ReadingOrderMessage = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChipListExpanded, setIsChipListExpanded] = useState(false);
   const isClamped = clampLines !== null && estimateRenderedLines({ text }) > clampLines;
+  const isCut = isClamped && !isExpanded;
+  const clampRef = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState<ClampCut>(LINES_CUT);
+  useLayoutEffect(() => {
+    const box = clampRef.current;
+    if (box === null || !isCut || clampLines === null) {
+      setCut(LINES_CUT);
+      return undefined;
+    }
+    const measure = () => setCut(cutAtBlockOf({ box, lines: clampLines }));
+    measure();
+    const content = box.firstElementChild;
+    if (content === null || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [isCut, clampLines, text]);
+  const hasMore = isClamped && (isExpanded || cut.kind !== 'fits');
   const shownChips = isChipListExpanded ? chips : chips.slice(0, READING_BUDGETS.maxChips);
   const hiddenChipCount = chips.length - shownChips.length;
   return (
@@ -58,12 +88,11 @@ export const ReadingOrderMessage = ({
         <CodeActionTargetContext.Provider value={codeTarget}>
           <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
             <div
-              data-clamped={isClamped && !isExpanded}
-              className={cn('min-w-0', isClamped && !isExpanded && '[&>*]:block')}
+              ref={clampRef}
+              data-clamped={isCut && cut.kind !== 'fits'}
+              className="min-w-0"
               style={
-                isClamped && !isExpanded && clampLines !== null
-                  ? clampStyleOf({ lines: clampLines })
-                  : undefined
+                isCut && clampLines !== null ? clampStyleOf({ lines: clampLines, cut }) : undefined
               }
             >
               <Markdown text={text} fresh={fresh} />
@@ -71,13 +100,13 @@ export const ReadingOrderMessage = ({
           </CodeBlockActionsContext.Provider>
         </CodeActionTargetContext.Provider>
       ) : null}
-      {isClamped ? (
+      {hasMore ? (
         <Button
           variant="quiet"
           size="xs"
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
-          className="w-fit"
+          className="w-fit self-start px-0 hover:bg-transparent"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </Button>

@@ -34,7 +34,7 @@ const factsOf = ({
       phrase: 'Stopping',
       startedAt,
       stepAgentId,
-      actions: [{ ...TAIL_ACTION.stop, isBusy: true }],
+      actions: [{ ...TAIL_ACTION.stop, label: stopLabel ?? TAIL_ACTION.stop.label, isBusy: true }],
     };
   }
   if (stopPhase === 'stalled') {
@@ -53,7 +53,7 @@ const factsOf = ({
     phrase: isWaiting ? `Waiting for ${waitingFor}` : phrase,
     startedAt,
     stepAgentId,
-    actions: [{ ...TAIL_ACTION.stop, label: stopLabel ?? TAIL_ACTION.stop.label }],
+    actions: [],
   };
 };
 
