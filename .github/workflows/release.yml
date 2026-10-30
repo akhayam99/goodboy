@@ -17,7 +17,7 @@ permissions:
 jobs:
   macos:
     name: build universal dmg
-    runs-on: macos-14
+    runs-on: macos-15
     # Apple notarization can be slow, especially the first submission from a new
     # Developer ID account. Keep generous headroom so the runner does not get
     # killed mid-notarization.
