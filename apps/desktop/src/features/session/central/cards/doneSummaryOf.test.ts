@@ -68,6 +68,7 @@ describe('doneSummaryOf', () => {
         entryOf({ branch: 'hl/feat-center-careers-page', state: 'closed' }),
       ],
       days: [DAY],
+      listedCount: 0,
     });
 
     expect(summary.count).toBe(5);
@@ -80,9 +81,23 @@ describe('doneSummaryOf', () => {
     const summary = doneSummaryOf({
       finished: [],
       days: [{ ...DAY, rows: [rowOf({ id: 'a' })] }],
+      listedCount: 0,
     });
 
     expect(summary).toEqual({ count: 1, line: '1 finished run or agent is in the full log.' });
-    expect(doneSummaryOf({ finished: [], days: [] })).toEqual({ count: 0, line: '' });
+    expect(doneSummaryOf({ finished: [], days: [], listedCount: 0 })).toEqual({
+      count: 0,
+      line: '',
+    });
+  });
+
+  it('leaves the full log sentence out while the rows show under it', () => {
+    const summary = doneSummaryOf({
+      finished: [entryOf({ branch: 'hl/feat-center-faq-page', state: 'merged' })],
+      days: [DAY],
+      listedCount: 2,
+    });
+
+    expect(summary).toEqual({ count: 3, line: '1 branch merged: hl/feat-center-faq-page.' });
   });
 });

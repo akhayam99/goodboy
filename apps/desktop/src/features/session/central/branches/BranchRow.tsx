@@ -53,7 +53,7 @@ export const BranchRow = ({ sessionId, entry, isProjectShown, isNarrow = false }
     <Tooltip key="branch" content={fact.branch}>
       <span className="flex min-w-0 flex-col gap-0.5">
         {branchLine}
-        <span className="flex min-w-0 items-baseline gap-2 text-ui">
+        <span data-branch-meta="" className="flex min-w-0 items-baseline gap-2 text-meta">
           {request === '' ? null : (
             <span className="shrink-0 text-faint-foreground">{request}</span>
           )}

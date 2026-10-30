@@ -9,6 +9,7 @@ export type DoneSummary = Readonly<{
 type Params = {
   readonly finished: ReadonlyArray<BranchEntry>;
   readonly days: ReadonlyArray<DoneDay>;
+  readonly listedCount: number;
 };
 
 type ListParams = {
@@ -38,14 +39,14 @@ const workSentenceOf = ({ count }: WorkParams): string | null => {
     : `${count} finished runs and agents are in the full log.`;
 };
 
-export const doneSummaryOf = ({ finished, days }: Params): DoneSummary => {
+export const doneSummaryOf = ({ finished, days, listedCount }: Params): DoneSummary => {
   const merged = finished.filter((entry) => entry.story.state === 'merged');
   const closed = finished.filter((entry) => entry.story.state === 'closed');
   const workCount = days.reduce((total, day) => total + day.rows.length, 0);
   const line = [
     branchSentenceOf({ entries: merged, word: 'merged' }),
     branchSentenceOf({ entries: closed, word: 'closed' }),
-    workSentenceOf({ count: workCount }),
+    listedCount > 0 ? null : workSentenceOf({ count: workCount }),
   ]
     .filter((part) => part !== null)
     .join(' ');

@@ -225,6 +225,10 @@ state is a `StateDot` or a glyph in a 16px column.
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
   where it has nothing, so the column stays on one x. Unknown is an empty cell,
   never "0 B", "-" or "no port".
+- `hideBelow` on a column drops it while the list is narrower than that many
+  pixels, so the title keeps room and no row runs past the list edge. Runs hides
+  the origin below 1008 and the model below 796. `validate-scenes` checks in a
+  browser that no list row ends past its list.
 - `canSpanEmpty` on a column lets its cell take the empty cells right after it in
   a row, so a title keeps the width of a column that row leaves blank. The Questions
   grid sets it on the question column: a waiting question has no answer line.

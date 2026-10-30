@@ -135,6 +135,26 @@ describe('ListGrid', () => {
     expect(list.querySelector('[data-list-grid-cell="title"]')?.className).toContain('col-start-2');
   });
 
+  it('drops a column whose hideBelow is wider than the list, so the rows fit', () => {
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(0, 0, 616, 32));
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'origin', width: 200, hideBelow: 1008 },
+      { key: 'time', width: 56, align: 'end' },
+    ];
+    render(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow cells={['Fix flaky tests', 'Workflow', '2m']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Runs' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(0);
+    rect.mockRestore();
+  });
+
   it('lets a title cell take the empty cells after it when the column opts in', () => {
     const columns: ReadonlyArray<ListGridColumn> = [
       { key: 'title', width: 'fill', isTitle: true, canSpanEmpty: true },

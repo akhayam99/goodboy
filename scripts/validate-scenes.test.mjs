@@ -24,6 +24,7 @@ import {
 } from './validateScenesBrowser.mjs';
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
+import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
   COLUMN_ROW_SELECTOR,
@@ -1146,6 +1147,41 @@ describe('layerFailures', () => {
         },
       }),
       [],
+    );
+  });
+});
+
+describe('listGridFitFailures', () => {
+  const grid = {
+    label: 'Runs',
+    right: 648,
+    rows: [
+      { label: 'Fix flaky tests', right: 640 },
+      { label: 'Write the docs', right: 648 },
+    ],
+  };
+
+  it('passes rows that end inside their list', () => {
+    assert.deepEqual(listGridFitFailures({ scene: 'fixture', width: 1024, grids: [grid] }), []);
+  });
+
+  it('fails a row whose last cell runs past the list edge', () => {
+    const failures = listGridFitFailures({
+      scene: 'fixture',
+      width: 1024,
+      grids: [{ ...grid, rows: [...grid.rows, { label: 'Archived', right: 676 }] }],
+    });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['a row of the Runs list runs past its right edge'],
+    );
+    assert.deepEqual(failures[0]?.rows, [{ row: 'Archived', right: 676 }]);
+  });
+
+  it('fails a scene with no list to measure', () => {
+    assert.deepEqual(
+      listGridFitFailures({ scene: 'fixture', width: 1024, grids: [] }).map((failure) => failure.check),
+      ['no list grid to measure'],
     );
   });
 });

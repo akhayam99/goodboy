@@ -201,9 +201,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
     await show({ kind: 'finished' });
 
     const done = cardOf({ name: 'Done' });
-    expect(done.querySelector('[data-done-line]')?.textContent).toBe(
-      '5 finished runs and agents are in the full log.',
-    );
+    expect(done.querySelector('[data-done-line]')).toBeNull();
     within(done).getByRole('button', { name: 'Full log' });
   });
 

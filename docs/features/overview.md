@@ -26,7 +26,7 @@ An empty card is not drawn. An archived session keeps only **Done**.
 3. **What waits for you.** **Needs you** comes first and each row says why in words.
 4. **What is at work.** **Running** names each agent or run with the step it is on, such as "Step 3 of 6", and the time it has taken or the time left.
 5. **Where each branch stands.** **Branches** shows the six stages of every branch and the one step it stands at.
-6. **What finished.** **Done** counts the runs and agents that finished, lists the last three with their outcome and an unread dot, and opens the full log.
+6. **What finished.** **Done** counts the runs and agents that finished, lists the last three with their outcome and an unread dot, and opens the full log. Its line names merged and closed branches, and points to the full log only while no row shows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
