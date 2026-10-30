@@ -24,6 +24,9 @@ import {
   type AgentKind,
 } from './agent-kind';
 import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
+import { agentCountLabelOf } from './agentCountLabelOf';
+import { descendantAgentsOf } from './descendantAgentsOf';
+import { runAgentCountOf } from './runAgentCountOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
 
@@ -100,14 +103,6 @@ const timeOf = ({ value }: TimeParams): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-type CountParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const countWordOf = ({ count, noun }: CountParams): string =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
-
 type StateParams = {
   readonly dot: DotState;
 };
@@ -116,31 +111,6 @@ const progressStateOf = ({ dot }: StateParams) => ({
   isInProgress: IN_PROGRESS_DOTS.has(dot),
   isWaiting: WAITING_DOTS.has(dot),
 });
-
-type DescendantParams = {
-  readonly agents: ReadonlyArray<Agent>;
-  readonly rootId: AgentId;
-};
-
-const descendantsOf = ({ agents, rootId }: DescendantParams): ReadonlyArray<Agent> => {
-  const found: Array<Agent> = [];
-  const seen = new Set<string>([rootId]);
-  let frontier: ReadonlyArray<string> = [rootId];
-  while (frontier.length > 0) {
-    const children = agents.filter(
-      (agent) =>
-        agent.parentAgentId != null &&
-        frontier.includes(agent.parentAgentId) &&
-        !seen.has(agent.id),
-    );
-    for (const child of children) {
-      seen.add(child.id);
-      found.push(child);
-    }
-    frontier = children.map((child) => child.id);
-  }
-  return found;
-};
 
 type UnreadParams = {
   readonly agents: ReadonlyArray<Agent>;
@@ -240,7 +210,7 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
   const state =
     view === undefined ? resting : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
   const dot = autoDotOf(state);
-  const children = descendantsOf({ agents, rootId: root.id });
+  const children = descendantAgentsOf({ agents, rootId: root.id });
   const agentIds = [root.id, ...children.map((child) => child.id)];
   return {
     id: root.id,
@@ -255,7 +225,9 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
     isFinished: FINISHED_DOTS.has(dot),
     isUnread: isUnreadOf({ agents, agentIds }),
     isRestartStopped: false,
-    progress: children.length === 0 ? '' : countWordOf({ count: children.length, noun: 'agent' }),
+    progress: agentCountLabelOf({
+      count: runAgentCountOf({ agentIds: children.map((child) => child.id) }),
+    }),
     startedAt: view === undefined ? timeOf({ value: root.startedAt }) : view.tree.createdAt,
     agentIds,
     open: { kind: 'auto', agentId: root.id },
@@ -278,8 +250,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
       (question) => question.status === 'open' && question.createdByAgentId === agent.id,
     ),
   });
-  const children = descendantsOf({ agents, rootId: agent.id });
-  const count = children.length + 1;
+  const children = descendantAgentsOf({ agents, rootId: agent.id });
   const agentIds = [agent.id, ...children.map((child) => child.id)];
   return {
     id: agent.id,
@@ -294,7 +265,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     isFinished: state.isFinished,
     isUnread: isUnreadOf({ agents, agentIds }),
     isRestartStopped: state.status === 'stopped' && !state.isFinished && agent.stoppedBy === 'app',
-    progress: countWordOf({ count, noun: 'agent' }),
+    progress: agentCountLabelOf({ count: runAgentCountOf({ agentIds }) }),
     startedAt: timeOf({ value: agent.startedAt }),
     agentIds,
     open: { kind: 'agent', agentId: agent.id },

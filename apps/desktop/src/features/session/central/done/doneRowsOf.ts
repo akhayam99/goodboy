@@ -23,7 +23,7 @@ import type {
   DoneRowModel,
   DoneStepLine,
 } from './doneTypes';
-import { firstSentenceOf } from './firstSentenceOf';
+import { plainTitleOf } from './plainTitleOf';
 import { doneFilesOf } from './doneFilesOf';
 import { fullTextOf } from './fullTextOf';
 import { isRunEntryFinished, outcomeLineOf } from './outcomeLineOf';
@@ -154,7 +154,7 @@ const stepLineOf = ({
   const { model, effort } = agentModelOf({ agent: step.agent, source });
   return {
     id: step.agent.id,
-    title: firstSentenceOf({ text: step.agent.outputSummary }) ?? step.agent.name,
+    title: plainTitleOf({ text: step.agent.outputSummary }) ?? step.agent.name,
     role: AGENT_KIND_META[step.agentKind].noun,
     model,
     effort,
@@ -380,6 +380,8 @@ const stoppedChildRowsOf = ({ model }: ModelParams): ReadonlyArray<DoneRowModel>
             entryId: rootEntry?.id ?? id,
             title: stoppedTitleOf({ child }),
             by: 'Auto',
+            kind: 'auto',
+            leadAgentId: null,
             at: new Date(child.finishedAt).toISOString(),
             mountId: child.mountId,
             retryAgentId: child.agentId,

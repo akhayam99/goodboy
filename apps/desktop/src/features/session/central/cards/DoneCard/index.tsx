@@ -8,6 +8,7 @@ import type { OverviewCardModel } from '../../overviewCardsOf';
 import type { DoneSummary } from '../doneSummaryOf';
 import type { LatestDone } from '../latestDoneOf';
 import { LatestDoneRow } from '../LatestDoneRow';
+import { useLeadAgentOf } from '../../../hooks/useLeadAgentOf';
 import { OverviewCard } from '../OverviewCard';
 
 type Props = {
@@ -29,6 +30,7 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
   const markAgentSeen = useAppStore((state) => state.markAgentSeen);
   const openFor = useTimelineOpen({ sessionId });
   const nowMs = useNow(MINUTE_MS);
+  const leadAgentOf = useLeadAgentOf({ sessionId });
   const openLog = ({ focusEntryId }: LogParams) =>
     openDrawer({ kind: 'session-log', sessionId, payload: { focusEntryId } });
   return (
@@ -54,6 +56,7 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
                 key={item.row.id}
                 item={item}
                 nowMs={nowMs}
+                leadAgent={leadAgentOf({ agentId: item.row.leadAgentId })}
                 openLabel={
                   target === null
                     ? `Show ${item.row.title} in the log`

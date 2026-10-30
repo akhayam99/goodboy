@@ -56,6 +56,8 @@ const foldedRowOf = ({ batch, model }: BatchParams) => {
       base: historyBatchBaseOf({ batch, events: model.events }),
     }),
     by: historyBatchSubOf({ origin: batch.origin, facts }),
+    kind: null,
+    leadAgentId: null,
     at: newest.createdAt,
     mountId: null,
     retryAgentId: null,

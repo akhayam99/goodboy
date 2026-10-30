@@ -20,6 +20,8 @@ const rowOf = ({ id, agents }: RowParams): DoneRowModel => ({
   entryId: id,
   title: `Finished ${id}`,
   by: 'Implementer',
+  kind: 'implementer',
+  leadAgentId: null,
   at: '2026-10-18T09:00:00.000Z',
   mountId: null,
   retryAgentId: null,
@@ -112,6 +114,9 @@ describe('latestDoneOf', () => {
     expect(unread.unreadItems.map((item) => item.row.id)).toEqual(['agent:agent-x', 'b']);
     expect(unread.unreadItems[0]?.row).toMatchObject({
       title: 'Review the ledger',
+      by: 'Reviewer',
+      kind: 'reviewer',
+      leadAgentId: 'agent-x',
       agentIds: ['agent-x'],
       entryId: 'agent:agent-x',
     });

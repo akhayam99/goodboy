@@ -1,15 +1,19 @@
 import { InteractiveRow, StateDot } from '@goodboy/ui';
+import type { Agent } from '@goodboy/types';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { NewSinceItem } from './latestDoneOf';
+import { LatestDoneProviderMark } from './LatestDoneProviderMark';
 
 type Props = {
   readonly item: NewSinceItem;
   readonly nowMs: number;
+  readonly leadAgent: Agent | null;
   readonly openLabel: string;
   readonly onOpen: () => void;
 };
 
-export const LatestDoneRow = ({ item, nowMs, openLabel, onOpen }: Props) => {
+export const LatestDoneRow = ({ item, nowMs, leadAgent, openLabel, onOpen }: Props) => {
   const { row, isUnread } = item;
   return (
     <li data-done-latest={row.id} data-unread={isUnread ? '' : undefined} className="min-w-0">
@@ -24,7 +28,15 @@ export const LatestDoneRow = ({ item, nowMs, openLabel, onOpen }: Props) => {
         </span>
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-row text-foreground">{row.title}</span>
-          <span className="truncate text-meta text-muted-foreground">{row.by}</span>
+          <span className="flex min-w-0 items-center gap-1 text-meta text-muted-foreground">
+            {row.kind === null ? null : (
+              <AgentKindChip kind={row.kind} density="glyph" isDecorative />
+            )}
+            <span data-row-meta="" className="truncate">
+              {row.by}
+            </span>
+            {leadAgent === null ? null : <LatestDoneProviderMark agent={leadAgent} />}
+          </span>
         </span>
         <span className="text-meta tabular-nums text-faint-foreground">
           {formatAge({ from: row.at, now: nowMs })}

@@ -1,6 +1,7 @@
 import type { Agent, AgentId, SessionEvent, TurnFile } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AutoGroup } from '../../../auto/autoGroupOf';
+import type { AgentKind } from '../../agent-kind';
 import type {
   TimelineAgentEntry,
   TimelineEventEntry,
@@ -63,6 +64,8 @@ export type DoneRowModel = {
   readonly entryId: string;
   readonly title: string;
   readonly by: string;
+  readonly kind: AgentKind | null;
+  readonly leadAgentId: AgentId | null;
   readonly at: string;
   readonly mountId: string | null;
   readonly retryAgentId: AgentId | null;

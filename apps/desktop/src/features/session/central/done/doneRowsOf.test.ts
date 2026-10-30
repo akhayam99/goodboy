@@ -145,7 +145,7 @@ describe('doneRowsOf', () => {
     const rows = rowsOf(model);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.by).toBe('2 steps');
+    expect(rows[0]?.by).toBe('Build · 2 agents · 2 of 2 steps');
     expect(rows[0]?.title).toBe('B');
   });
 
@@ -313,7 +313,7 @@ describe('doneRowsOf full text', () => {
       modelOf({ agents: [done({ kind: 'implementer', outputSummary: summary })] }),
     );
 
-    expect(row?.title).toBe('apply fix');
+    expect(row?.title).toBe('Apply fix');
     expect(row?.detail.fullText).toBe(summary);
   });
 

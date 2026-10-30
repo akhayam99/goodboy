@@ -415,6 +415,7 @@ export const agentRows = ({
   }
   const facts: ReadonlyArray<SubagentFact> = hasSubagents
     ? entry.children.map((child) => ({
+        agentId: child.agent.id,
         state: entryRowStateOf({
           entry: child,
           readyAgentId: null,

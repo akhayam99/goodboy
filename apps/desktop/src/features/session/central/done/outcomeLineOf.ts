@@ -1,4 +1,4 @@
-import type { Agent, SessionEvent } from '@goodboy/types';
+import type { Agent, AgentId, SessionEvent } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { ciFixRoleOf } from '../../../branch/checks/ciFixRole';
 import { autoGroupOf } from '../../../auto/autoGroupOf';
@@ -10,16 +10,22 @@ import type {
   TimelineEventEntry,
   TimelineRunEntry,
 } from '../../timeline/buildTimelineGroups';
-import { groupSummaryText, stepsGroupSummary } from '../../timeline/groupSummary';
 import type { DoneModel, DoneSource } from './doneTypes';
-import { firstSentenceOf } from './firstSentenceOf';
-import { runLaneFactsOf } from './runLaneFactsOf';
+import { agentCountLabelOf } from '../../agentCountLabelOf';
+import { descendantAgentsOf } from '../../descendantAgentsOf';
+import { runAgentCountOf } from '../../runAgentCountOf';
+import { autoNeedsYouCountOf } from './autoNeedsYouCountOf';
+import { needsYouLabelOf } from './needsYouLabelOf';
+import { plainTitleOf } from './plainTitleOf';
+import { runNeedsYouCountOf } from './runNeedsYouCountOf';
 import { runStepNumbersOf } from './runStepNumbersOf';
 import { stepsLabelOf } from './stepsLabelOf';
 
 export type OutcomeLine = {
   readonly title: string;
   readonly by: string;
+  readonly kind: AgentKind | null;
+  readonly leadAgentId: AgentId | null;
 };
 
 type Params = {
@@ -27,6 +33,15 @@ type Params = {
   readonly model: DoneModel;
   readonly slice?: ReadonlyArray<TimelineAgentEntry> | null;
 };
+
+const META_SEPARATOR = ' · ';
+
+type MetaParams = {
+  readonly parts: ReadonlyArray<string | null>;
+};
+
+const outcomeMetaOf = ({ parts }: MetaParams): string =>
+  parts.filter((part) => part !== null && part !== '').join(META_SEPARATOR);
 
 const UNKNOWN_BASE_TITLE = 'Rebased the branch';
 
@@ -67,12 +82,12 @@ type AutoParams = {
 };
 
 const autoOutcomeOf = ({ entry, view, model }: AutoParams): string | null => {
-  const own = firstSentenceOf({ text: entry.agent.outputSummary });
+  const own = plainTitleOf({ text: entry.agent.outputSummary });
   const group = autoGroupOf({ view, agents: model.agents, now: model.now });
   const children = (group?.children ?? []).filter((child) => child.state !== 'retried');
   const only = children.length === 1 ? children[0] : undefined;
   if (only !== undefined) {
-    return firstSentenceOf({ text: only.outcome }) ?? own;
+    return plainTitleOf({ text: only.outcome }) ?? own;
   }
   if (own !== null || children.length === 0) {
     return own;
@@ -156,15 +171,28 @@ const agentLineOf = ({
 }): OutcomeLine => {
   const view = model.autoTrees.find((candidate) => candidate.tree.rootAgentId === entry.agent.id);
   if (view !== undefined) {
+    const group = autoGroupOf({ view, agents: model.agents, now: model.now });
+    const spawned = descendantAgentsOf({ agents: model.agents, rootId: entry.agent.id });
     return {
       title: autoOutcomeOf({ entry, view, model }) ?? 'Auto finished',
-      by: 'Auto',
+      by: outcomeMetaOf({
+        parts: [
+          'Auto',
+          agentCountLabelOf({
+            count: runAgentCountOf({ agentIds: spawned.map((agent) => agent.id) }),
+          }),
+          needsYouLabelOf({ count: autoNeedsYouCountOf({ view, group }) }),
+        ],
+      }),
+      kind: 'auto',
+      leadAgentId: entry.agent.id,
     };
   }
   return {
-    title:
-      firstSentenceOf({ text: entry.agent.outputSummary }) ?? agentFallbackOf({ entry, model }),
+    title: plainTitleOf({ text: entry.agent.outputSummary }) ?? agentFallbackOf({ entry, model }),
     by: agentByOf({ entry, model }),
+    kind: entry.agentKind,
+    leadAgentId: entry.agent.id,
   };
 };
 
@@ -176,7 +204,7 @@ const lastSummaryOf = ({
   steps
     .slice()
     .sort((first, second) => first.agent.ordinal - second.agent.ordinal)
-    .map((step) => firstSentenceOf({ text: step.agent.outputSummary }))
+    .map((step) => plainTitleOf({ text: step.agent.outputSummary }))
     .filter((summary) => summary !== null)
     .at(-1) ?? null;
 
@@ -199,6 +227,19 @@ export const isRunEntryFinished = ({ entry }: RunEntryParams): boolean =>
     agents: stepAgentsOf({ entry }).map((child) => child.agent),
   });
 
+type ProgressParams = {
+  readonly done: number;
+  readonly total: number | null;
+};
+
+const progressLabelOf = ({ done, total }: ProgressParams): string | null => {
+  if (done === 0 && total === null) {
+    return null;
+  }
+  const noun = (total ?? done) === 1 ? 'step' : 'steps';
+  return total === null ? `${done} ${noun}` : `${done} of ${total} ${noun}`;
+};
+
 const runLineOf = ({
   entry,
   model,
@@ -214,29 +255,36 @@ const runLineOf = ({
     const numbers = slice.flatMap((step) => numberOf.get(step.agent.id) ?? []);
     return {
       title: lastSummaryOf({ steps: slice }) ?? `${label} steps finished`,
-      by: `${label} · ${stepsLabelOf({ numbers, total })}`,
+      by: outcomeMetaOf({ parts: [label, stepsLabelOf({ numbers, total })] }),
+      kind: null,
+      leadAgentId: null,
     };
   }
   const steps = stepAgentsOf({ entry });
   const done = steps.filter(
     (step) => step.agent.status !== 'pending' && step.agent.status !== 'skipped',
   ).length;
-  const facts = runLaneFactsOf({ entries: model.entries, runId: entry.id });
+  const { total } = runStepNumbersOf({ entry });
   const recap =
     entry.workflow.origin === 'orchestrated'
-      ? firstSentenceOf({ text: entry.run.orchestratorSummary })
+      ? plainTitleOf({ text: entry.run.orchestratorSummary })
       : null;
+  const spawned = model.agents.filter((agent) => agent.workflowRunId === entry.run.id);
   return {
     title:
       recap ?? lastSummaryOf({ steps }) ?? `${entry.run.title ?? entry.workflow.name} finished`,
-    by: groupSummaryText({
-      summary: stepsGroupSummary({
-        kind: 'run',
-        steps: done,
-        answered: facts.answered,
-        contextText: facts.contextText,
-      }),
+    by: outcomeMetaOf({
+      parts: [
+        label,
+        agentCountLabelOf({
+          count: runAgentCountOf({ agentIds: spawned.map((agent) => agent.id) }),
+        }),
+        progressLabelOf({ done, total }),
+        needsYouLabelOf({ count: runNeedsYouCountOf({ steps }) }),
+      ],
     }),
+    kind: null,
+    leadAgentId: null,
   };
 };
 
@@ -249,6 +297,8 @@ const eventLineOf = ({
 }): OutcomeLine => ({
   title: rebaseTitleOf({ events: model.events, at: entry.event.createdAt }),
   by: 'Rebase',
+  kind: null,
+  leadAgentId: null,
 });
 
 export const outcomeLineOf = ({ entry, model, slice = null }: Params): OutcomeLine => {

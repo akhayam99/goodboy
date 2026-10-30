@@ -1097,6 +1097,7 @@ u28-step-ended-run
 u28-tasks-new
 u28-workspace-attention
 u30-model-lines
+u30-new-since
 update-card
 update-card-long-version
 update-card-narrow
