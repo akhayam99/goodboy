@@ -17,6 +17,9 @@ const hasCodeOrTable = ({ blocks }: BlocksParams): boolean =>
     if (block.kind === 'callout') {
       return hasCodeOrTable({ blocks: block.blocks });
     }
+    if (block.kind === 'compare') {
+      return hasCodeOrTable({ blocks: block.before }) || hasCodeOrTable({ blocks: block.after });
+    }
     return false;
   });
 

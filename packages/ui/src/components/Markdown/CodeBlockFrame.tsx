@@ -28,7 +28,7 @@ export const CodeBlockFrame = ({ content, lang, isClosed, children }: Props) => 
         >
           {lang ?? ''}
         </span>
-        {isClosed ? (
+        {isClosed && Actions !== null ? (
           <div data-slot="code-block-actions" className="flex items-center gap-1">
             <Button
               variant="quiet"
@@ -39,7 +39,7 @@ export const CodeBlockFrame = ({ content, lang, isClosed, children }: Props) => 
               <WrapText size={ICON_SIZE.row} aria-hidden />
               Wrap
             </Button>
-            {Actions === null ? null : <Actions content={content} lang={lang} />}
+            <Actions content={content} lang={lang} />
           </div>
         ) : null}
       </div>

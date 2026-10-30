@@ -16,13 +16,12 @@ const Actions = ({ content, lang }: CodeBlockActionsProps) => (
 const TEXT = 'Run this:\n\n```bash\npnpm migrate:up\n```\n\nThen this:\n\n```\nretries = 3\n```';
 
 describe('Markdown code block header', () => {
-  it('gives each code block its language and a Wrap button when no one provides actions', () => {
+  it('keeps a block without actions free of buttons, so it can sit inside a button', () => {
     const { container } = render(<Markdown text={TEXT} />);
     expect(container.querySelectorAll('pre')).toHaveLength(2);
     const langs = [...container.querySelectorAll('[data-slot="code-block-lang"]')];
     expect(langs.map((lang) => lang.textContent)).toEqual(['bash', '']);
-    expect(screen.getAllByRole('button', { name: 'Wrap' })).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: /actions for/ })).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('gives each closed code block the provided actions with its text and language', () => {
@@ -63,7 +62,11 @@ describe('Markdown code block header', () => {
   });
 
   it('draws the code at the 13px role and lets a long line scroll until Wrap is on', () => {
-    const { container } = render(<Markdown text={'```ts\nconst a = 1;\n```'} />);
+    const { container } = render(
+      <CodeBlockActionsContext.Provider value={Actions}>
+        <Markdown text={'```ts\nconst a = 1;\n```'} />
+      </CodeBlockActionsContext.Provider>,
+    );
     const pre = container.querySelector('pre');
     expect(pre?.className).toContain('text-ui');
     expect(pre?.className).toContain('font-mono');
@@ -78,7 +81,11 @@ describe('Markdown code block header', () => {
   });
 
   it('wraps one block without wrapping the next', () => {
-    const { container } = render(<Markdown text={TEXT} />);
+    const { container } = render(
+      <CodeBlockActionsContext.Provider value={Actions}>
+        <Markdown text={TEXT} />
+      </CodeBlockActionsContext.Provider>,
+    );
     const [first] = screen.getAllByRole('button', { name: 'Wrap' });
     if (first === undefined) {
       throw new Error('The first Wrap button is missing.');

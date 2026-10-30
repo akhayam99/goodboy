@@ -64,10 +64,21 @@ describe('ReadingOrderMessage', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
-  it('never clamps a message that holds a table or a code block inside a list', () => {
+  it('never clamps a message that holds a table or a code block inside a list or a compare', () => {
     const table = `${LONG}\n\n| Step | Time |\n| --- | ---: |\n| a | 40 ms |`;
     const nested = `${LONG}\n\n- first\n\n  \`\`\`bash\n  pnpm test\n  \`\`\``;
-    for (const text of [table, nested]) {
+    const compared = [
+      LONG,
+      '<<compare>>',
+      'Before:',
+      '| Step | Time |',
+      '| --- | ---: |',
+      '| a | 40 ms |',
+      'After:',
+      '- one batch',
+      '<</compare>>',
+    ].join('\n');
+    for (const text of [table, nested, compared]) {
       const { container } = render(
         <ReadingOrderMessage text={text} codeTarget={TARGET} clampLines={3} />,
       );

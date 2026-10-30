@@ -66,7 +66,10 @@ export const ReadingOrderMessage = ({
 }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChipListExpanded, setIsChipListExpanded] = useState(false);
-  const hasCodeOrTable = useMemo(() => hasUnclampableBlock({ text }), [text]);
+  const hasCodeOrTable = useMemo(
+    () => clampLines !== null && hasUnclampableBlock({ text }),
+    [clampLines, text],
+  );
   const isClamped =
     clampLines !== null && !hasCodeOrTable && estimateRenderedLines({ text }) > clampLines;
   const isCut = isClamped && !isExpanded;
