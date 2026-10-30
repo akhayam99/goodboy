@@ -99,17 +99,16 @@ describe('the c06 conversation scenes', () => {
     ]);
   });
 
-  it('c06-agent-working carries Stop on the tail and a visible Send now in the composer', async () => {
+  it('c06-agent-working carries Stop in the header, none on the tail, and a visible Send now in the composer', async () => {
     await mount({ name: 'c06-agent-working' });
     const cancel = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ cancelCurrentTurn: cancel }));
 
-    const stop = screen
-      .getAllByRole('button', { name: 'Stop' })
-      .find((button) => button.closest('[data-conversation-tail]') !== null);
-    if (stop === undefined) {
-      throw new Error('no Stop on the tail');
-    }
+    const stops = screen.getAllByRole('button', { name: 'Stop' });
+    expect(stops.some((button) => button.closest('[data-conversation-tail]') !== null)).toBe(false);
+    const stop = within(screen.getByTestId('agent-header-title-row')).getByRole('button', {
+      name: 'Stop',
+    });
     fireEvent.click(stop);
     expect(cancel).toHaveBeenCalledWith(C06_SESSION_ID, C06_AGENT_ID, 'user');
     expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
