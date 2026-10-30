@@ -162,6 +162,40 @@ describe('spawnAgent with the guidance of one run', () => {
     expect(sent).toHaveLength(0);
   });
 
+  it('leaves no agent behind when the guidance cannot be saved, and Retry makes exactly one', async () => {
+    const rowsBefore = await invokeAgentList(AUTO_SEED_SESSION);
+    const publishedBefore = useAppStore.getState().sessionPhaseRuns[AUTO_SEED_SESSION] ?? [];
+    const db = storySqlite();
+    const original = db.execute.bind(db);
+    const execute = vi.spyOn(db, 'execute');
+    execute.mockImplementation(async (sql, params) => {
+      if (sql.includes('workspace_values')) {
+        throw new Error('disk unavailable');
+      }
+      return original(sql, params);
+    });
+
+    await expect(spawn({ guidance: GUIDANCE })).rejects.toThrow('disk unavailable');
+    execute.mockRestore();
+
+    expect(await invokeAgentList(AUTO_SEED_SESSION)).toHaveLength(rowsBefore.length);
+    expect(useAppStore.getState().sessionPhaseRuns[AUTO_SEED_SESSION] ?? []).toHaveLength(
+      publishedBefore.length,
+    );
+    expect(sent).toHaveLength(0);
+
+    const agentId = await spawn({ guidance: GUIDANCE });
+
+    expect(await invokeAgentList(AUTO_SEED_SESSION)).toHaveLength(rowsBefore.length + 1);
+    expect(useAppStore.getState().sessionPhaseRuns[AUTO_SEED_SESSION] ?? []).toHaveLength(
+      publishedBefore.length + 1,
+    );
+    expect(sent).toHaveLength(1);
+    expect(await readRunGuidance({ db: storySqlite(), workspaceId: WORKSPACE, agentId })).toBe(
+      GUIDANCE,
+    );
+  });
+
   it('never leaks one agent guidance to the next agent that has none', async () => {
     await spawn({ guidance: GUIDANCE });
     const plain: AgentId = await spawn({});

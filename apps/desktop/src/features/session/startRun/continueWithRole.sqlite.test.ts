@@ -184,6 +184,48 @@ describe('continuing a run keeps its guidance', () => {
     ).toBe(GUIDANCE);
   });
 
+  it('keeps the guidance on the retry when saving it failed after the agent was adopted', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: SOURCE,
+      text: GUIDANCE,
+    });
+    const sendTurn = vi.fn<SendFn>(async () => ({ blockedOverBudget: false }));
+    useAppStore.setState({ sendTurn });
+    const db = storySqlite();
+    const original = db.execute.bind(db);
+    const execute = vi.spyOn(db, 'execute');
+    execute.mockImplementation(async (sql, params) => {
+      if (sql.includes('workspace_values')) {
+        throw new Error('disk unavailable');
+      }
+      return original(sql, params);
+    });
+    const params = {
+      sessionId: AUTO_SEED_SESSION,
+      role: 'planner',
+      work: 'Turn the scout report into a plan',
+      sourceAgentId: SOURCE,
+    } as const;
+
+    await expect(continueWithRole(params)).rejects.toThrow('disk unavailable');
+    execute.mockRestore();
+    expect(sendTurn).not.toHaveBeenCalled();
+
+    const retried = await continueWithRole(params);
+
+    expect(retried.kind).toBe('message');
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(
+      await readRunGuidance({
+        db: storySqlite(),
+        workspaceId: WORKSPACE,
+        agentId: retried.agentId,
+      }),
+    ).toBe(GUIDANCE);
+  });
+
   it('writes no guidance for the Auto run when the adopted agent had none', async () => {
     const outcome = await continueWithRole({
       sessionId: AUTO_SEED_SESSION,

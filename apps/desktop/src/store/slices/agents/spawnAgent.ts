@@ -1,17 +1,18 @@
 import type { ResolveAttemptBatch, ResolveAttemptLaunch } from '../resolve/types';
-import type {
-  AgentId,
-  AgentSourceKind,
-  IsoDateTime,
-  MountId,
-  PlanId,
-  PlanWithCount,
-  ProviderId,
-  Session,
-  SessionId,
-  Step,
-  StepId,
-  WorkflowRunId,
+import {
+  brandId,
+  type AgentId,
+  type AgentSourceKind,
+  type IsoDateTime,
+  type MountId,
+  type PlanId,
+  type PlanWithCount,
+  type ProviderId,
+  type Session,
+  type SessionId,
+  type Step,
+  type StepId,
+  type WorkflowRunId,
 } from '@goodboy/types';
 import { isAutoOwnProvider } from '@goodboy/core';
 import { updateAgentConfig } from '@goodboy/db';
@@ -138,6 +139,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       stepPromptPrefix = step.promptPrefix;
     }
   }
+  const guidance = args.guidance?.trim() ?? '';
   const { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort } =
     await spawnQueue.run({
       key: sessionId,
@@ -183,7 +185,17 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           throw error;
         }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+        const newAgentId = brandId<AgentId>({ value: crypto.randomUUID() });
+        if (guidance !== '') {
+          await writeRunGuidance({
+            db: tauriDatabase,
+            workspaceId: session.workspaceId,
+            agentId: newAgentId,
+            text: guidance,
+          });
+        }
         const inserted = await invokeAgentInsert({
+          id: newAgentId,
           sessionId,
           ...(args.stepId !== undefined && { stepId: args.stepId }),
           ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
@@ -263,15 +275,6 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   const effectiveKind: AgentKind =
     args.kindOverride ??
     (inserted.kind === undefined ? resolvedKind : storedAgentKind({ kind: inserted.kind }));
-  const guidance = args.guidance?.trim() ?? '';
-  if (guidance !== '') {
-    await writeRunGuidance({
-      db: tauriDatabase,
-      workspaceId: session.workspaceId,
-      agentId: inserted.id,
-      text: guidance,
-    });
-  }
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
   const engagePlan =

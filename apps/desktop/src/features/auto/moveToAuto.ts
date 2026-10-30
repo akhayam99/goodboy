@@ -128,13 +128,6 @@ export const moveToAuto = async ({
     newId: () => crypto.randomUUID(),
   });
   if (outcome.kind === 'adopted' || outcome.kind === 'exists') {
-    const agents = await invokeAgentList(sessionId);
-    useAppStore.setState((current) => ({
-      sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: agents },
-    }));
-    await useAppStore.getState().loadAutoTrees({ sessionId });
-  }
-  if (outcome.kind === 'adopted') {
     if (guidance !== null && guidance.trim() !== '') {
       await writeRunGuidance({
         db,
@@ -143,6 +136,13 @@ export const moveToAuto = async ({
         text: guidance,
       });
     }
+    const agents = await invokeAgentList(sessionId);
+    useAppStore.setState((current) => ({
+      sessionPhaseRuns: { ...current.sessionPhaseRuns, [sessionId]: agents },
+    }));
+    await useAppStore.getState().loadAutoTrees({ sessionId });
+  }
+  if (outcome.kind === 'adopted') {
     await driveAtOnce({ treeId: outcome.treeId, sessionId });
   }
   return outcome;

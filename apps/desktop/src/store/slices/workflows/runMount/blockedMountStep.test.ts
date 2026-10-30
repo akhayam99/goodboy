@@ -445,6 +445,55 @@ describe('story: a run step blocked on a detached mount', () => {
     expect(blockOf()).toBeNull();
   });
 
+  it.each([
+    { label: 'stops', patch: { orchestrationStop: { kind: 'operator', message: 'Stopped.' } } },
+    { label: 'closes', patch: { orchestrationStop: { kind: 'closed', message: 'Closed.' } } },
+    { label: 'discards', patch: { discardedAt: FIXTURE_NOW } },
+  ] as const)(
+    'leaves the step blocked when the run $label while Reattach is pending',
+    async ({ patch }) => {
+      seed({ isDetached: true });
+      await hint('Cover refunds too.');
+      await vi.waitFor(() => {
+        expect(agents()).toHaveLength(3);
+      });
+      const blocked = blockOf()!;
+      const attachMount = vi.fn(async () => {
+        const attached = viewOf({ id: MOUNT_A, branch: BRANCH_A, isAttached: true });
+        useAppStore.setState((state) => ({
+          sessions: state.sessions.map((session) => ({
+            ...session,
+            workflowRuns: session.workflowRuns.map((run) => ({ ...run, ...patch })),
+          })),
+          sessionMounts: {
+            ...state.sessionMounts,
+            [SESSION]: [attached, ...(state.sessionMounts[SESSION] ?? []).slice(1)],
+          },
+          sessionProjectMounts: {
+            ...state.sessionProjectMounts,
+            [SESSION]: [toMount(attached), ...(state.sessionProjectMounts[SESSION] ?? [])],
+          },
+        }));
+        return attached;
+      });
+      const activate = vi.fn(async () => undefined);
+      useAppStore.setState({ attachMount, activateWorkflowAgent: activate });
+      storySpies.invokeAgentUpdateStatus.mockClear();
+
+      await expect(
+        useAppStore.getState().resolveMountBlockedStep({
+          sessionId: SESSION,
+          agentId: blocked.agentId,
+          choice: { kind: 'reattach' },
+        }),
+      ).rejects.toThrow('run was stopped');
+
+      expect(storySpies.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+      expect(activate).not.toHaveBeenCalled();
+      expect(agents().find((agent) => agent.id === blocked.agentId)?.status).toBe('blocked');
+    },
+  );
+
   it('re-pins the step to the other branch and starts it there', async () => {
     seed({ isDetached: true });
     await hint('Cover refunds too.');
