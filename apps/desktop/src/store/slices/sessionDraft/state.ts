@@ -21,6 +21,7 @@ export type SessionDraft = {
   readonly presetCloseness: RunRouteCloseness;
   readonly autonomy: WorkflowAutonomy;
   readonly permissionMode: ClaudePermissionMode | null;
+  readonly guidance: string | null;
   readonly issueQuery: string;
   readonly pickedIssues: ReadonlyArray<IssueCandidate>;
   readonly focusedIssueKey: string | null;
@@ -44,6 +45,7 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   presetCloseness: 'adapt',
   autonomy: 'step',
   permissionMode: null,
+  guidance: null,
   issueQuery: '',
   pickedIssues: [],
   focusedIssueKey: null,

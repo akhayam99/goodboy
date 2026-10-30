@@ -20,6 +20,8 @@ vi.mock('../../../auto/useAutoTreeLimit', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import type {
   AgentId,
   IsoDateTime,
@@ -51,6 +53,8 @@ let useAppStore: StoryStore;
 let cameFrom: Session;
 
 const STAMP = brandedId<IsoDateTime>({ value: '2026-10-14T09:00:00.000Z' });
+const WORKSPACE_GUIDANCE = 'Keep every change inside payments-api.';
+const RUN_GUIDANCE = 'Skip the ledger-core migration.';
 const GOAL = 'Stop retried webhooks posting a second credit in payments-api';
 const PRESET_ID = brandedId<WorkflowId>({ value: 'wf-new-session-preset' });
 
@@ -718,7 +722,13 @@ describe('New session settings row', () => {
     await pickKind({ name: /^Orchestrated/ });
 
     const row = within(screen.getByRole('group', { name: 'Run settings' }));
-    const chips: ReadonlyArray<RegExp> = [/^Model:/, /^Asks you:/, /^Edits:/, /^Limit /];
+    const chips: ReadonlyArray<RegExp> = [
+      /^Model:/,
+      /^Asks you:/,
+      /^Edits:/,
+      /^Limit /,
+      /^Guidance:/,
+    ];
     for (const name of chips) {
       fireEvent.click(row.getByRole('button', { name }));
       await settle();
@@ -785,5 +795,186 @@ describe('New session settings row', () => {
     expect(changeAutoLevel).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: cameFrom.id, level: 'run' }),
     );
+  });
+});
+
+describe('New session guidance', () => {
+  const withWorkspaceGuidance = (): void => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE_ID]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: WORKSPACE_GUIDANCE },
+        },
+      },
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+  };
+
+  const guidanceChip = (): HTMLElement =>
+    within(screen.getByRole('group', { name: 'Run settings' })).getByRole('button', {
+      name: /^Guidance:/,
+    });
+
+  const editGuidance = async (text: string): Promise<void> => {
+    fireEvent.click(guidanceChip());
+    await settle();
+    const popover = screen.getByRole('dialog', { name: 'Guidance for this run' });
+    fireEvent.change(within(popover).getByRole('textbox', { name: 'Guidance text' }), {
+      target: { value: text },
+    });
+    await settle();
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    await settle();
+  };
+
+  const kickoffOf = (): string => {
+    const prompt = spawnAgent.mock.calls[0]?.[1].initialPrompt;
+    return prompt ?? '';
+  };
+
+  it('shows the workspace guidance on every kind with its tag', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+
+    for (const name of [/^Auto/, /^Agent/, /^Orchestrated/, /^Preset/]) {
+      await pickKind({ name });
+      expect(guidanceChip().getAttribute('aria-label')).toBe(
+        `Guidance: ${WORKSPACE_GUIDANCE}, from Harborline`,
+      );
+    }
+  });
+
+  it('says who reads it for the kind you pressed', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    const readers: ReadonlyArray<readonly [RegExp, string]> = [
+      [/^Auto/, 'Read by the Auto agent and the helpers it starts.'],
+      [/^Agent/, 'Read by the agent at the start of its brief.'],
+      [/^Orchestrated/, 'Read by the orchestrator, which carries it into each step.'],
+    ];
+    for (const [name, line] of readers) {
+      await pickKind({ name });
+      fireEvent.click(guidanceChip());
+      await settle();
+      within(screen.getByRole('dialog', { name: 'Guidance for this run' })).getByText(line);
+      fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+      await settle();
+    }
+  });
+
+  it('hands the guidance you wrote to the agent kickoff', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Agent/ });
+    await editGuidance(RUN_GUIDANCE);
+    expect(guidanceChip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
+    expect(kickoffOf()).toBe(GOAL);
+  });
+
+  it('hands the workspace guidance to the Auto agent when you leave it alone', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Auto/ });
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'auto',
+      guidance: WORKSPACE_GUIDANCE,
+    });
+  });
+
+  it('snapshots the guidance you wrote in the rules of an orchestrated run', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    await editGuidance(RUN_GUIDANCE);
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: RUN_GUIDANCE,
+    });
+  });
+
+  it('sends an empty guidance when you press No guidance', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Preset/ });
+    await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
+    fireEvent.click(guidanceChip());
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'No guidance' }));
+    await settle();
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    await settle();
+    expect(guidanceChip().getAttribute('aria-label')).toBe('Guidance: None, this run');
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({ standingGuidance: '' });
+  });
+
+  it('puts the workspace guidance back with Use workspace guidance', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Auto/ });
+    await editGuidance(RUN_GUIDANCE);
+    fireEvent.click(guidanceChip());
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Use workspace guidance' }));
+    await settle();
+
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.guidance).toBeNull();
+    expect(guidanceChip().getAttribute('aria-label')).toBe(
+      `Guidance: ${WORKSPACE_GUIDANCE}, from Harborline`,
+    );
+  });
+
+  it('keeps the guidance you wrote when you switch kind', async () => {
+    withWorkspaceGuidance();
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    await editGuidance(RUN_GUIDANCE);
+
+    await pickKind({ name: /^Agent/ });
+    await pickKind({ name: /^Preset/ });
+    await pickKind({ name: /^Auto/ });
+
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.guidance).toBe(RUN_GUIDANCE);
+    expect(guidanceChip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+  });
+
+  it('keeps the guidance when the start fails, and Retry sends it again', async () => {
+    withWorkspaceGuidance();
+    const failOnce = vi.fn<AppStore['startSessionFromDraft']>();
+    failOnce.mockRejectedValueOnce(new Error('The folder is locked by another window'));
+    failOnce.mockImplementation(startThenRun);
+    useAppStore.setState({ startSessionFromDraft: failOnce });
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    await editGuidance(RUN_GUIDANCE);
+    typeGoal(GOAL);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    expect(await screen.findByText('The folder is locked by another window')).toBeDefined();
+    expect(guidanceChip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: RUN_GUIDANCE,
+    });
   });
 });

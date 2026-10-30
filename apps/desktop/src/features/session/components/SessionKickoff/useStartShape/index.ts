@@ -12,7 +12,9 @@ import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
 import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
 import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
+import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
 import { hasAsksGate } from '../hasAsksGate';
@@ -114,6 +116,10 @@ export const useStartShape = ({
           autonomy,
           level: shape === 'autoAgent' ? level : null,
           limit,
+          guidance: guidanceToSendOf({
+            picked: draft.guidance,
+            workspace: workspaceGuidanceOf({ state, workspaceId }),
+          }),
         });
       };
       await startFromDraft({

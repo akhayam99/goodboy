@@ -19,12 +19,14 @@ import { RunModelChip } from '../StartRun/RunModelChip';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartForm } from './StartForm';
+import { StartGuidanceSetting } from './StartGuidanceSetting';
 import { runAsOfStartFormKind, startFormKindOfRunAs } from './runAsOfStartKind';
 import type { StartFormKind } from './startFormKinds';
 import {
   startAsksOf,
   startFormHintOf,
   startFormNoteOf,
+  startGuidanceReaderOf,
   startLabelOf,
   startLimitKindOf,
 } from './startFormWords';
@@ -64,11 +66,10 @@ export const RunsStartForm = ({
   const isPinned = role !== null;
   const kind = isPinned ? 'agent' : startFormKindOfRunAs({ runAs });
   const hasText = run.text.trim() !== '';
-  const asks = startAsksOf({
-    kind,
-    isAutoLead: route.route.shape === 'lead' && route.role === null,
-    isPlan: route.route.shape === 'plan',
-  });
+  const isAutoLead = route.route.shape === 'lead' && route.role === null;
+  const isPlan = route.route.shape === 'plan';
+  const asks = startAsksOf({ kind, isAutoLead, isPlan });
+  const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -135,6 +136,15 @@ export const RunsStartForm = ({
             limitKind === null ? null : (
               <AutoLimitChip limit={limit} kind={limitKind} isDisabled={isStarting} />
             ),
+          guidance: (
+            <StartGuidanceSetting
+              workspaceId={workspaceId}
+              picked={run.guidance}
+              reader={guidanceReader}
+              isDisabled={isStarting}
+              onPick={({ next }) => run.setGuidance(next)}
+            />
+          ),
         },
       });
 

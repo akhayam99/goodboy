@@ -23,6 +23,7 @@ import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
 import { StartEditsSetting } from './StartEditsSetting';
 import { StartForm } from './StartForm';
+import { StartGuidanceSetting } from './StartGuidanceSetting';
 import { useDraftAgentModel } from './useDraftAgentModel';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 import {
@@ -30,6 +31,7 @@ import {
   startFormHintOf,
   startFormNoteOf,
   startLabelOf,
+  startGuidanceReaderOf,
   startLimitKindOf,
   startReasonOf,
 } from './startFormWords';
@@ -69,6 +71,7 @@ export const NewSessionStartForm = ({
         agentKind: current.agentKind,
         permissionMode: current.permissionMode,
         autonomy: current.autonomy,
+        guidance: current.guidance,
       };
     }),
   );
@@ -100,11 +103,10 @@ export const NewSessionStartForm = ({
     hasPreset: presets.some((preset) => preset.id === draft.workflowId),
   });
   const { route } = autoRun;
-  const asks = startAsksOf({
-    kind,
-    isAutoLead: route.route.shape === 'lead' && route.role === null,
-    isPlan: route.route.shape === 'plan',
-  });
+  const isAutoLead = route.route.shape === 'lead' && route.role === null;
+  const isPlan = route.route.shape === 'plan';
+  const asks = startAsksOf({ kind, isAutoLead, isPlan });
+  const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -190,6 +192,15 @@ export const NewSessionStartForm = ({
         limitKind === null ? null : (
           <AutoLimitChip limit={limit} kind={limitKind} isDisabled={isDisabled} />
         ),
+      guidance: (
+        <StartGuidanceSetting
+          workspaceId={workspaceId}
+          picked={draft.guidance}
+          reader={guidanceReader}
+          isDisabled={isDisabled}
+          onPick={({ next }) => patchSessionDraft({ workspaceId, patch: { guidance: next } })}
+        />
+      ),
     },
   });
 

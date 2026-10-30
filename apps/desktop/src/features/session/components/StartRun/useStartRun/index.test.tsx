@@ -14,13 +14,14 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { insertWorkspace } from '@goodboy/db';
 import {
+  DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
   type IsoDateTime,
   type Workflow,
   type WorkflowId,
 } from '@goodboy/types';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -70,10 +71,12 @@ const startWith = async ({ text, guidance }: StartParams): Promise<void> => {
         workspaceId: WORKSPACE.id,
         sessionId: SESSION.id,
         prepare: async () => ({ usd: null, source: null }),
-        ...(guidance !== undefined && { guidance }),
       }),
     { wrapper: ToastProvider },
   );
+  if (guidance !== undefined) {
+    act(() => result.current.setGuidance(guidance));
+  }
   act(() => result.current.setText(text));
   await act(async () => {
     await result.current.start();
@@ -123,6 +126,23 @@ describe('useStartRun guidance', () => {
     expect(attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
       standingGuidance: GUIDANCE,
     });
+  });
+
+  it('hands the workspace guidance to the agent when the form picked none', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({
+      spawnAgent,
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: GUIDANCE },
+        },
+      },
+    });
+
+    await startWith({ text: QUESTION });
+
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: GUIDANCE });
   });
 
   it('adds nothing to the agent when the form passes no guidance', async () => {

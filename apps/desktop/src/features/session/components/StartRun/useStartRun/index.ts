@@ -23,9 +23,11 @@ import { usePromptFiles } from '../../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import { applyStartEdits } from '../../../startRun/applyStartEdits';
 import { runAutonomyOf } from '../../../../workflows/runAutonomy';
+import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { runDefaultOf } from '../../../startRun/runDefaultOf';
 import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
 import {
   agentRoutingOfPin,
@@ -52,7 +54,6 @@ type Params = {
   readonly prepare: () => Promise<StartLimit>;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
-  readonly guidance?: string | null;
   readonly onStarted?: () => void;
 };
 
@@ -76,6 +77,8 @@ export type StartRunModel = Readonly<{
   setAutonomy: (autonomy: WorkflowAutonomy) => void;
   edits: ClaudePermissionMode | null;
   setEdits: (edits: ClaudePermissionMode) => void;
+  guidance: string | null;
+  setGuidance: (guidance: string | null) => void;
   model: RunModelModel;
   presets: ReadonlyArray<Workflow>;
   files: ReturnType<typeof usePromptFiles>['files'];
@@ -161,7 +164,6 @@ export const useStartRun = ({
   prepare,
   mount = null,
   role = null,
-  guidance = null,
   onStarted,
 }: Params): StartRunModel => {
   const [localText, setLocalText] = useState('');
@@ -195,13 +197,18 @@ export const useStartRun = ({
   const [pickedLevel, setPickedLevel] = useState<AutoLevel | null>(null);
   const [pickedAutonomy, setPickedAutonomy] = useState<WorkflowAutonomy | null>(null);
   const [pickedEdits, setPickedEdits] = useState<ClaudePermissionMode | null>(null);
+  const [pickedGuidance, setPickedGuidance] = useState<string | null>(null);
   const draftAutonomy = useAppStore((state) =>
     sessionId === null ? selectSessionDraft({ state, workspaceId }).autonomy : null,
   );
   const draftEdits = useAppStore((state) =>
     sessionId === null ? selectSessionDraft({ state, workspaceId }).permissionMode : null,
   );
+  const draftGuidance = useAppStore((state) =>
+    sessionId === null ? selectSessionDraft({ state, workspaceId }).guidance : null,
+  );
   const autonomyPick = sessionId === null ? draftAutonomy : pickedAutonomy;
+  const guidancePick = sessionId === null ? draftGuidance : pickedGuidance;
   const edits = sessionId === null ? draftEdits : pickedEdits;
   const setAutonomy = useCallback(
     (next: WorkflowAutonomy): void => {
@@ -220,6 +227,16 @@ export const useStartRun = ({
         return;
       }
       setPickedEdits(next);
+    },
+    [patchSessionDraft, sessionId, workspaceId],
+  );
+  const setGuidance = useCallback(
+    (next: string | null): void => {
+      if (sessionId === null) {
+        patchSessionDraft({ workspaceId, patch: { guidance: next } });
+        return;
+      }
+      setPickedGuidance(next);
     },
     [patchSessionDraft, sessionId, workspaceId],
   );
@@ -292,6 +309,7 @@ export const useStartRun = ({
       setPickedLevel(null);
       setPickedAutonomy(null);
       setPickedEdits(null);
+      setPickedGuidance(null);
       clearModel();
       clearFilesRef.current();
       setError(null);
@@ -377,6 +395,11 @@ export const useStartRun = ({
         sessionId === null
           ? selectSessionDraft({ state, workspaceId }).permissionMode
           : pickedEdits;
+      const guidanceNow = guidanceToSendOf({
+        picked:
+          sessionId === null ? selectSessionDraft({ state, workspaceId }).guidance : pickedGuidance,
+        workspace: workspaceGuidanceOf({ state, workspaceId }),
+      });
       const autonomyNow =
         result.route.shape === 'plan' && autonomyPick !== null ? autonomyPick : null;
       const run = async (created: Session): Promise<void> => {
@@ -388,7 +411,7 @@ export const useStartRun = ({
           level: pickedLevel,
           autonomy: autonomyNow,
           limit,
-          ...(guidance !== null && { guidance }),
+          ...(guidanceNow !== null && { guidance: guidanceNow }),
           ...pinned,
         });
       };
@@ -405,7 +428,7 @@ export const useStartRun = ({
               level: pickedLevel,
               autonomy: autonomyNow,
               limit,
-              ...(guidance !== null && { guidance }),
+              ...(guidanceNow !== null && { guidance: guidanceNow }),
               ...pinned,
             }),
           ));
@@ -419,6 +442,7 @@ export const useStartRun = ({
         setPickedLevel(null);
         setPickedAutonomy(null);
         setPickedEdits(null);
+        setPickedGuidance(null);
         clearModel();
         setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
@@ -438,11 +462,11 @@ export const useStartRun = ({
     autonomyPick,
     clearModel,
     file,
-    guidance,
     mount,
     onStarted,
     pickedLevel,
     pickedEdits,
+    pickedGuidance,
     pinFor,
     prepare,
     role,
@@ -478,6 +502,8 @@ export const useStartRun = ({
     setAutonomy,
     edits,
     setEdits,
+    guidance: guidancePick,
+    setGuidance,
     model,
     presets,
     files: promptFiles.files,

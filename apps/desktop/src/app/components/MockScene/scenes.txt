@@ -1110,6 +1110,8 @@ u30-start-form-auto-picks
 u30-start-form-edits-open
 u30-start-form-limit-open
 u30-start-form-orchestrated
+u30-start-guidance
+u30-start-guidance-open
 u30-tooltips
 update-card
 update-card-long-version

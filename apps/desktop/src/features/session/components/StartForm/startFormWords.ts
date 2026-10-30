@@ -51,6 +51,25 @@ export const startAsksOf = ({ kind, isAutoLead, isPlan }: AsksParams): StartAsks
   return kind === 'agent' ? null : 'steps';
 };
 
+export type StartGuidanceReader = keyof typeof START_KIND_COPY.guidance.readers;
+
+export const startGuidanceReaderOf = ({
+  kind,
+  isAutoLead,
+  isPlan,
+}: AsksParams): StartGuidanceReader => {
+  if (kind === null) {
+    if (isPlan) {
+      return 'orchestrator';
+    }
+    return isAutoLead ? 'auto' : 'agent';
+  }
+  if (kind === 'auto' || kind === 'agent') {
+    return kind;
+  }
+  return 'orchestrator';
+};
+
 type ReasonParams = {
   readonly hasGoal: boolean;
   readonly kind: StartFormKind | null;

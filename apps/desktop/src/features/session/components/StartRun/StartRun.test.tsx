@@ -20,6 +20,7 @@ import {
   setWorkspaceValue,
 } from '@goodboy/db';
 import {
+  DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
   type IsoDateTime,
@@ -29,7 +30,7 @@ import {
   type Workflow,
   type WorkflowId,
 } from '@goodboy/types';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -54,6 +55,8 @@ const OTHER = aSession({
 });
 const AGENT = brandId<AgentId>({ value: 'agent-notify-relay' });
 const QUESTION = 'Which notify-relay handler fires twice?';
+const WORKSPACE_GUIDANCE = 'Keep every change inside notify-relay.';
+const RUN_GUIDANCE = 'Leave the ledger-core schema alone.';
 const LAYOUT_ID = brandId<WorkflowId>({ value: 'workflow-layout' });
 const NOW = brandId<IsoDateTime>({ value: '2026-10-22T09:00:00.000Z' });
 const FIX_A_LAYOUT: Workflow = {
@@ -924,5 +927,152 @@ describe('StartRun model', () => {
       scope: 'providers',
     });
     window.removeEventListener('goodboy:open-settings', opened);
+  });
+});
+
+describe('StartRun guidance', () => {
+  const withWorkspaceGuidance = (): void => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: WORKSPACE_GUIDANCE },
+        },
+      },
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+    });
+  };
+
+  const chip = (): HTMLElement => screen.getByRole('button', { name: /^Guidance:/ });
+
+  const edit = (text: string): void => {
+    fireEvent.click(chip());
+    fireEvent.change(
+      within(screen.getByRole('dialog', { name: 'Guidance for this run' })).getByRole('textbox', {
+        name: 'Guidance text',
+      }),
+      { target: { value: text } },
+    );
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+  };
+
+  it('shows the workspace guidance with its tag on every kind', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+
+    for (const name of ['Auto', 'Agent', 'Orchestrated']) {
+      pickKind({ name });
+      expect(chip().getAttribute('aria-label')).toBe(
+        `Guidance: ${WORKSPACE_GUIDANCE}, from Cascadia`,
+      );
+    }
+  });
+
+  it('hands the guidance to the agent a question starts, the workspace one when left alone', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: WORKSPACE_GUIDANCE });
+  });
+
+  it('hands the guidance you wrote to a role agent', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Agent' });
+    edit(RUN_GUIDANCE);
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'scout',
+      guidance: RUN_GUIDANCE,
+    });
+  });
+
+  it('snapshots the guidance you wrote in the rules of an orchestrated run', async () => {
+    withWorkspaceGuidance();
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({ attachWorkflowToSession });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Orchestrated' });
+    edit(RUN_GUIDANCE);
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: RUN_GUIDANCE,
+    });
+  });
+
+  it('sends an empty guidance for No guidance', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(chip());
+    fireEvent.click(screen.getByRole('button', { name: 'No guidance' }));
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    expect(chip().getAttribute('aria-label')).toBe('Guidance: None, this run');
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: '' });
+  });
+
+  it('puts the workspace guidance back with Use workspace guidance', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+    edit(RUN_GUIDANCE);
+
+    fireEvent.click(chip());
+    fireEvent.click(screen.getByRole('button', { name: 'Use workspace guidance' }));
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+
+    expect(chip().getAttribute('aria-label')).toBe(
+      `Guidance: ${WORKSPACE_GUIDANCE}, from Cascadia`,
+    );
+  });
+
+  it('keeps the guidance when you switch kind', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Orchestrated' });
+    edit(RUN_GUIDANCE);
+
+    pickKind({ name: 'Agent' });
+    pickKind({ name: 'Auto' });
+
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+  });
+
+  it('keeps the guidance when the start fails, and Retry sends it again', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi
+      .fn<SpawnFn>()
+      .mockRejectedValueOnce(new Error('The provider is cooling down'))
+      .mockResolvedValue(AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    edit(RUN_GUIDANCE);
+
+    ask({ text: QUESTION });
+
+    await screen.findByText(/The provider is cooling down/);
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
+    expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
   });
 });

@@ -52,6 +52,10 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
 - The run gets exactly the amount the chip shows. **No limit** means no limit, even when the workspace has a default. A start never adds a limit you did not see.
 - The run page shows the same amount with its source, **default** or **this run**.
+- **Guidance** shows on every kind. It starts as the workspace guidance, with a quiet "from Harborline" tag. Once you edit it the tag reads "this run", and "None" when you clear it.
+- The chip shows the start of the text, and a tooltip shows all of it. Its popover has the text, **Use workspace guidance** and **No guidance**.
+- The popover says who reads it. The orchestrator reads it on Orchestrated and Preset, the agent on Agent, and the Auto agent with the helpers it starts on Auto.
+- Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
 - Switching kind keeps what you typed and the values that still apply.
 - The primary names what starts: **Start workflow**, **Start Scout** (the role you picked), **Start Auto agent**, or **Start** while Auto picks.
 - Setup's Scout run is pinned to Agent, so it draws neither kinds nor settings.
@@ -202,6 +206,7 @@ This part is for contributors and agents who change the feature.
 - No limit: a Limit is stored only when you set one. **No limit** removes the workspace value, and a start never writes a limit you did not set.
 - Kind chip: `runKindLineOf` words the chip, and the Runs list reads it too.
 - Asks you chip: `AsksYouChip` is shared with the run's settings line. For the Auto agent `AutoLevelChip` wraps it, the same chip the running agent's settings line shows. The chip reads the session level, then the workspace default, through `useAutoLevel`, and `startRoutedRun` writes the pick with the `changeAutoLevel` store action before the lead starts.
+- Guidance chip: `StartGuidanceSetting` reads the workspace text through `workspaceGuidanceOf` and the pick from the draft (`SessionDraft.guidance`, `null` until edited) or, on a session's Runs page, from `useStartRun`. `StartGuidanceChip` draws it on `SettingChip`, and `guidanceWordsOf` words the value and its tag. `guidanceShownOf` is the text on screen and `guidanceToSendOf` the text a start sends, so both read one pick. `startGuidanceReaderOf` picks the line on who reads it.
 - Run guidance: `startRoutedRun` takes `guidance`, and `useStartRun` forwards it. A plan writes it to `rulesSnapshot.standingGuidance`, which the orchestrator reads as its Operator process. `null` keeps the workspace value. `''` starts the run without any.
 - Agent guidance: an agent gets a `**Guidance**` section ahead of its ask. The Auto agent keeps its text in the `run.guidance` workspace value, which `spawnAgent` writes before the first turn.
 - Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
