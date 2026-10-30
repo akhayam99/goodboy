@@ -87,7 +87,7 @@
   "packages/ui/src/components/ContextMenu/MenuList.tsx": 275,
   "packages/ui/src/components/DrawerColumn.tsx": 349,
   "packages/ui/src/components/Listbox/index.tsx": 359,
-  "packages/ui/src/components/Markdown/index.tsx": 710,
+  "packages/ui/src/components/Markdown/index.tsx": 707,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,
   "packages/ui/src/components/Tooltip.tsx": 331,
   "scripts/validate-scenes.mjs": 1036

@@ -13,6 +13,8 @@ import { CodeBlockContent } from './CodeBlockContent';
 import { CodeBlockFrame } from './CodeBlockFrame';
 import { freshenNode, type FreshTail } from './freshenNode';
 import { ICON_SIZE } from '../../iconSize';
+import { sectionNodeOf } from './sectionNodeOf';
+import { HEADING_CLASS } from './headingClass';
 
 type MarkdownVariant = 'document' | 'preview';
 
@@ -156,15 +158,6 @@ const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): Re
       {lineIndex < lines.length - 1 && <br />}
     </Fragment>
   ));
-
-const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
-  1: 'text-title text-foreground',
-  2: 'text-title text-foreground',
-  3: 'text-heading text-foreground',
-  4: 'text-eyebrow text-muted-foreground',
-  5: 'text-eyebrow text-muted-foreground',
-  6: 'text-eyebrow text-muted-foreground',
-};
 
 const TASK_ICON: Record<TaskState, LucideIcon> = {
   open: Square,
@@ -710,19 +703,11 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
                       : undefined,
                 }),
               );
-              if (section[0]?.kind !== 'heading' || blocks.length < 2) {
-                return (
-                  <div key={`s-${si}`} className="flex flex-col gap-3">
-                    {blocks}
-                  </div>
-                );
-              }
-              return (
-                <div key={`s-${si}`} data-heading-section="" className="flex flex-col gap-2">
-                  {blocks[0]}
-                  <div className="flex flex-col gap-3">{blocks.slice(1)}</div>
-                </div>
-              );
+              return sectionNodeOf({
+                key: `s-${si}`,
+                blocks,
+                isHeadingSection: section[0]?.kind === 'heading',
+              });
             });
       blockCacheRef.current = cache;
       renderedRef.current = { variant, cache: next };

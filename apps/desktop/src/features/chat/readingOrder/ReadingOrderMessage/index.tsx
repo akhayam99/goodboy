@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Button,
   CodeBlockActionsContext,
@@ -14,6 +14,7 @@ import {
 } from '../../components/TranscriptCards/codeActionTarget';
 import { OutcomeLine } from '../OutcomeLine';
 import { READING_BUDGETS } from '../readingBudgets';
+import { cutAtBlockOf } from '../cutAtBlockOf';
 
 type Props = {
   text: string;
@@ -27,13 +28,17 @@ type Props = {
 
 type ClampStyleParams = {
   readonly lines: number;
+  readonly cutPx: number | null;
 };
 
-const clampStyleOf = ({ lines }: ClampStyleParams): CSSProperties => ({
-  maxHeight: `${lines}lh`,
-  overflow: 'hidden',
-  maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
-});
+const clampStyleOf = ({ lines, cutPx }: ClampStyleParams): CSSProperties =>
+  cutPx === null
+    ? {
+        maxHeight: `${lines}lh`,
+        overflow: 'hidden',
+        maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
+      }
+    : { maxHeight: cutPx, overflow: 'hidden' };
 
 export const ReadingOrderMessage = ({
   text,
@@ -47,6 +52,17 @@ export const ReadingOrderMessage = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChipListExpanded, setIsChipListExpanded] = useState(false);
   const isClamped = clampLines !== null && estimateRenderedLines({ text }) > clampLines;
+  const isCut = isClamped && !isExpanded;
+  const clampRef = useRef<HTMLDivElement>(null);
+  const [cutPx, setCutPx] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const box = clampRef.current;
+    if (box === null || !isCut || clampLines === null) {
+      setCutPx(null);
+      return;
+    }
+    setCutPx(cutAtBlockOf({ box, lines: clampLines }));
+  }, [isCut, clampLines, text]);
   const shownChips = isChipListExpanded ? chips : chips.slice(0, READING_BUDGETS.maxChips);
   const hiddenChipCount = chips.length - shownChips.length;
   return (
@@ -56,11 +72,12 @@ export const ReadingOrderMessage = ({
         <CodeActionTargetContext.Provider value={codeTarget}>
           <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
             <div
-              data-clamped={isClamped && !isExpanded}
+              ref={clampRef}
+              data-clamped={isCut}
               className="min-w-0"
               style={
-                isClamped && !isExpanded && clampLines !== null
-                  ? clampStyleOf({ lines: clampLines })
+                isCut && clampLines !== null
+                  ? clampStyleOf({ lines: clampLines, cutPx })
                   : undefined
               }
             >
