@@ -3,6 +3,7 @@ import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { Button, Notice, TruncatedText, formatError, tintClasses } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
+import { AgentModelLine } from '../../providers/modelLine/AgentModelLine';
 import { useAppStore } from '../../../store';
 import { autoChildCardFactsOf } from './autoChildCardFactsOf';
 import type { DelegationCardModel } from './delegationCardOf';
@@ -47,7 +48,6 @@ export const AutoChildCard = ({
       setIsStopping(false);
     }
   };
-  const meta = [card.roleLabel, card.model].filter((part) => part !== null).join(' · ');
   return (
     <div
       data-auto-child-card={delegation.id}
@@ -87,9 +87,8 @@ export const AutoChildCard = ({
       <span className="col-start-2 col-span-2 flex min-w-0 items-center gap-2" role="status">
         <span className={tintClasses(facts.tone).text}>{facts.word}</span>
         <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
-        {meta === '' ? null : (
-          <span className="min-w-0 truncate text-muted-foreground">{meta}</span>
-        )}
+        <span className="min-w-0 truncate text-muted-foreground">{card.roleLabel}</span>
+        <AgentModelLine line={card.modelLine} />
       </span>
       {facts.activity === null ? null : (
         <p className="col-start-2 col-span-2 min-w-0 truncate text-muted-foreground">

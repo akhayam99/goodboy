@@ -55,7 +55,7 @@ const workflow: Workflow = {
       name: 'Implement',
       promptPrefix: '',
       role: 'implementer',
-      modelOverride: 'gpt-5.1-codex',
+      modelOverride: 'gpt-5.6-sol',
     },
     {
       id: 'step-3' as StepId,
@@ -472,7 +472,7 @@ describe('RunTree step row grammar', () => {
         spec: WORK_META_COLUMN.stack,
       }),
     ).toBe(true);
-    expect(metaOf('agent-2', 'model')).toBe('GPT 5.1 Codex');
+    expect(metaOf('agent-2', 'model')).toBe('GPT-5.6 Sol');
     expect(metaOf('agent-2', 'effort')).toBe('Low');
   });
 
@@ -495,7 +495,7 @@ describe('RunTree step row grammar', () => {
     const card = cardAfterRest({ element: model });
 
     expect(card).toContain('Implementer');
-    expect(card).toContain('GPT 5.1 Codex');
+    expect(card).toContain('GPT-5.6 Sol');
   });
 
   it('opens the identity card when the row takes keyboard focus, and closes it on blur', () => {

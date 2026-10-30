@@ -174,4 +174,30 @@ describe('RunsGrid', () => {
 
     expect(screen.queryByRole('button', { name: /^Stop all/ })).toBeNull();
   });
+
+  it('names the model and its effort on the row of an agent run, never the routing id', () => {
+    const agent: Agent = {
+      ...aNowAgent({ key: 'impl', name: 'Implement the retry cap', status: 'running' }),
+      providerOverride: 'anthropic',
+      modelOverride: 'sonnet-5.5',
+      effort: 'high',
+    };
+    useAppStore.setState({ sessionPhaseRuns: { [NOW_SESSION]: [agent] } });
+
+    renderGrid({ runs: runsOf({ agents: [agent] }) });
+
+    const row = screen.getByRole('button', { name: /^Open Implement the retry cap/ });
+    const line = row.querySelector('[data-model-line]');
+    expect(line?.textContent).toBe('Sonnet 5.5 High');
+    expect(row.textContent).not.toContain('sonnet-5.5');
+  });
+
+  it('keeps the model column out when no run has a model', () => {
+    const agents = [aNowAgent({ key: 'only', name: 'Only', status: 'running' })];
+    useAppStore.setState({ sessionPhaseRuns: { [NOW_SESSION]: agents } });
+
+    renderGrid({ runs: runsOf({ agents }) });
+
+    expect(document.querySelector('[data-list-grid-cell="model"]')).toBeNull();
+  });
 });

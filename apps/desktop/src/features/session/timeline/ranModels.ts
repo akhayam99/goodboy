@@ -1,15 +1,11 @@
-import {
-  PROVIDER_IDS,
-  type AgentId,
-  type AgentTurnSpanEndReason,
-  type MeasuredTurnSpan,
-  type ProviderId,
-  type WorkflowRunId,
+import type {
+  AgentId,
+  AgentTurnSpanEndReason,
+  MeasuredTurnSpan,
+  ProviderId,
+  WorkflowRunId,
 } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../providers/providerLabel';
-import { routingLabelModel } from '../../../shared/components/RoutingLabel/routingLabelModel';
-import { routingNameText } from '../../../shared/components/RoutingPicker/routingSummary';
-import { EFFORT_LABEL, EFFORT_LEVELS } from '../../chat/utils/chat-constants';
+import { modelLineOf } from '../../providers/modelLine/modelLineOf';
 
 export type RanModel = {
   readonly key: string;
@@ -48,30 +44,15 @@ type RouteParams = {
 type Route = Pick<RanModel, 'key' | 'provider' | 'name' | 'effort'>;
 
 const routeOf = ({ provider, model, effort }: RouteParams): Route | null => {
-  if (model == null) {
-    const named = PROVIDER_IDS.find((candidate) => candidate === provider);
-    if (named === undefined) {
-      return null;
-    }
-    return { key: `${named}:`, provider: named, name: PROVIDER_LABEL[named], effort: null };
-  }
-  const shown = routingLabelModel({
-    provider,
-    model,
-    effort,
-    planned: null,
-    isEffortObserved: true,
-  });
-  if (shown.label == null) {
+  const line = modelLineOf({ provider, model, effort });
+  if (line === null) {
     return null;
   }
-  const name = routingNameText(shown.label);
-  const level = EFFORT_LEVELS.find((candidate) => candidate === effort) ?? null;
   return {
-    key: `${shown.provider ?? provider ?? ''}:${name}`,
-    provider: shown.provider,
-    name,
-    effort: level === null ? null : EFFORT_LABEL[level],
+    key: `${line.provider ?? provider ?? ''}:${line.isUnknown ? (line.rawId ?? '') : line.name}`,
+    provider: line.provider,
+    name: line.name,
+    effort: line.effort,
   };
 };
 

@@ -65,6 +65,8 @@ Write to an agent the same way everywhere. Every message and document field take
 
 **Agents** in the tool column (⌘⌥L) lists every agent of the session, the same set as the Runs page. Each run and Auto tree has its agents under it, and an agent you started yourself is a launch of one row with its state word. Picking a row opens that agent in the center, on the same page a top-level agent has. The panel stays open with the row selected, so hopping from one agent to the next is one click. With focus on a row of the tree, **j** and **k** do it from the keyboard. A session without agents says "No agents in this session yet".
 
+Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
+
 ### Stop and Continue
 
 Stop an agent without losing its work. While a turn runs, a **Stop** square sits in the message box beside **Send now** and **Queue**, a live chip in the agent header reads **Running** with its clock and a **Stop**, and the line at the end of the conversation keeps its own; all three say one word, **Stop**, and so does the agent's menu, the palette and the Runs header. **Esc** twice stops it too, when no menu, drawer or dialog is open. Stopping keeps what the agent wrote and offers **Continue**. **Stop** waits until the process has exited: the square, the chip and the line read **Stopping** and stay busy, and when the exit takes more than 5 seconds they read **Still stopping** with **Force stop**, which asks again. If Goodboy cannot stop the agent, the agent stays running with the error shown. **Stop all running agents (N)** in the session menu and the palette, and **Stop all (N)** in the **In progress** header of Runs, stop every running agent of the session without asking, since **Continue** brings each back with its work kept, and report "Stopped 4, 1 still running". An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
@@ -180,6 +182,8 @@ Get agents and summaries in the language of your goal.
 
 This part is for contributors and agents who change the feature.
 
+- Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words (a retired model still reads by name), with the raw id in a tooltip only; "Unknown model" is only for an id with no known provider.
+- Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order; the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row.

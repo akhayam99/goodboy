@@ -28,4 +28,5 @@ export const agentLaunchRowOf = ({ agent, kind, state }: Params): SpawnedRow => 
   node: state.node.state,
   word: state.word,
   isLive: state.row.phase === 'running',
+  model: { agent, routing: null },
 });

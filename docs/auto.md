@@ -314,7 +314,7 @@ writing to it reopens it to **Deciding**.
   (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
   **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
   the active work time (`DelegationClock`, the same number as Working now and the
-  Agents row, so a resumed child keeps its earlier work), role and model, and the
+  Agents row, so a resumed child keeps its earlier work), role and model by name with its effort (`modelLineOf`), and the
   child's last tool as the activity line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
   of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
   child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2

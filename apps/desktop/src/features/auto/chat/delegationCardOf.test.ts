@@ -54,6 +54,41 @@ describe('delegationCardOf', () => {
     expect(card.reason).toContain('idempotency');
   });
 
+  it('names the model and the effort of a child, never its routing id', () => {
+    const named = delegationCardOf({
+      delegation: aDelegation({
+        key: 'x',
+        role: 'scout',
+        state: 'running',
+        model: 'sonnet-5.5',
+        effort: 'high',
+      }),
+      childAgent: null,
+    });
+    const unknown = delegationCardOf({
+      delegation: aDelegation({
+        key: 'y',
+        role: 'scout',
+        state: 'running',
+        model: 'ledger-core-1',
+      }),
+      childAgent: null,
+    });
+
+    expect(named.modelLine).toEqual({
+      provider: 'anthropic',
+      name: 'Sonnet 5.5',
+      effort: 'High',
+      isUnknown: false,
+      rawId: null,
+    });
+    expect(unknown.modelLine).toMatchObject({
+      name: 'Ledger Core 1',
+      isUnknown: true,
+      rawId: 'ledger-core-1',
+    });
+  });
+
   it('maps every delegation state and outcome to one word', () => {
     const wordOf = (
       state: Parameters<typeof aDelegation>[0]['state'],
@@ -284,11 +319,11 @@ describe('delegationCardOf', () => {
         key: 'x',
         role: 'scout',
         state: 'running',
-        model: 'sonnet',
+        model: 'sonnet-5.5',
         routing: {
           proposal: 'adjusted',
           reason: 'not in the role set',
-          requested: { model: 'opus' },
+          requested: { provider: 'anthropic', model: 'opus-5.5' },
         },
       }),
       childAgent: null,
@@ -303,7 +338,9 @@ describe('delegationCardOf', () => {
       childAgent: null,
     });
 
-    expect(adjusted.routingNote).toBe('Auto asked for opus, used sonnet: not in the role set');
+    expect(adjusted.routingNote).toBe(
+      'Auto asked for Opus 5.5, used Sonnet 5.5: not in the role set',
+    );
     expect(kept.routingNote).toBeNull();
   });
 

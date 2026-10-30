@@ -67,6 +67,7 @@ export const SpawnedAgentGroup = ({ sessionId, agentId, selectedAgentId }: Props
           title={row.title}
           card={row.card}
           word={row.word}
+          model={row.model}
           time={<DelegationClock agentId={agentId} isLive={row.isLive} />}
           isSelected={agentId === selectedAgentId}
           onOpen={() => openSpawned({ sessionId, target: { kind: 'agent', agentId } })}

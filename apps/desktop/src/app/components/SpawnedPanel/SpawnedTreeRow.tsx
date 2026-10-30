@@ -3,10 +3,11 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { AgentId } from '@goodboy/types';
 import { FactCard, ICON_SIZE, ROW_INTERACTIVE, cn, type FactCardSpec } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
+import { AgentRowModelLine } from '../../../features/providers/modelLine/AgentRowModelLine';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 import type { RailRow } from '../../../features/workTreeModel/railGeometry';
 import { SpawnedRailCell } from './SpawnedRailCell';
-import type { SpawnedRowFold } from './spawnedRow';
+import type { SpawnedRowFold, SpawnedRowModelSource } from './spawnedRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
 
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
   readonly card: FactCardSpec;
   readonly word: string;
   readonly time: ReactNode;
+  readonly model?: SpawnedRowModelSource | null;
   readonly isSelected: boolean;
   readonly fold?: SpawnedRowFold | null;
   readonly onOpen: () => void;
@@ -47,6 +49,7 @@ export const SpawnedTreeRow = ({
   card,
   word,
   time,
+  model = null,
   isSelected,
   fold = null,
   onOpen,
@@ -97,7 +100,7 @@ export const SpawnedTreeRow = ({
       onKeyDown={onKeyDown}
       onClick={onOpen}
       className={cn(
-        'flex h-7 min-w-0 items-center gap-2 rounded-md pr-2 text-ui text-foreground',
+        '@container flex h-7 min-w-0 items-center gap-2 rounded-md pr-2 text-ui text-foreground',
         ROW_INTERACTIVE,
         isSelected && 'bg-selected',
       )}
@@ -105,6 +108,13 @@ export const SpawnedTreeRow = ({
       <SpawnedRailCell rail={rail} width={railWidth} marker={glyph} />
       {role === null ? null : <AgentKindChip kind={role} density="glyph" />}
       <span className="min-w-0 flex-1 truncate">{title}</span>
+      {model === null ? null : (
+        <AgentRowModelLine
+          agent={model.agent}
+          routing={model.routing}
+          className="hidden max-w-[40%] @min-[24rem]:inline-flex"
+        />
+      )}
       {isFolded && countWord !== null ? (
         <span data-spawned-count="" className="shrink-0 text-meta text-muted-foreground">
           {countWord}

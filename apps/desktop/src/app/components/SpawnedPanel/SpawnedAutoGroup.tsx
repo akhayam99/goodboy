@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../store';
 import { autoRootTitleOf } from '../../../features/session/components/AutoAgentsPane/autoRootTitleOf';
 import { DelegationClock } from '../../../features/auto/chat/DelegationClock';
@@ -12,6 +12,8 @@ import { spawnedRailOf } from './spawnedRailOf';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
 import { useSpawnedReveal } from './useSpawnedReveal';
+
+const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 type Props = {
   readonly sessionId: SessionId;
@@ -26,6 +28,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
       (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === rootAgentId)?.name ??
       'Auto',
   );
+  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const events = useTranscript(rootAgentId);
   const ask = model.tree?.view.rootAsk ?? null;
   const rootTitle = useMemo(
@@ -34,10 +37,10 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
   );
   const rows = useMemo(
     () =>
-      autoSpawnedRowsOf({ rows: model.rows, baseLevel: 1 }).map((row) =>
+      autoSpawnedRowsOf({ rows: model.rows, baseLevel: 1, agents }).map((row) =>
         row.level === 1 ? { ...row, title: rootTitle } : row,
       ),
-    [model.rows, rootTitle],
+    [model.rows, rootTitle, agents],
   );
   const isLiveNow = rows.some((row) => row.isLive);
   const isLoaded = model.tree !== null;
@@ -97,6 +100,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
               title={row.title}
               card={row.card}
               word={row.word}
+              model={row.model}
               time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
               isSelected={row.agentId === selectedAgentId}
               fold={

@@ -96,6 +96,7 @@ export const runSpawnedRowsOf = ({ items, baseLevel }: Params): ReadonlyArray<Sp
         node: node.state,
         word: node.label,
         isLive: item.rowState.phase === 'running',
+        model: { agent, routing: null },
       },
     });
   }

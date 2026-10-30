@@ -1,13 +1,34 @@
+import type { Agent } from '@goodboy/types';
 import type { RailRow } from '../../../features/auto/chat/railRowsOf';
 import { railRowCardOf } from '../../../features/auto/chat/railRowCardOf';
-import type { SpawnedRow } from './spawnedRow';
+import type { SpawnedRow, SpawnedRowModelSource } from './spawnedRow';
 
 type Params = {
   readonly rows: ReadonlyArray<RailRow>;
   readonly baseLevel: number;
+  readonly agents?: ReadonlyArray<Agent>;
 };
 
-export const autoSpawnedRowsOf = ({ rows, baseLevel }: Params): ReadonlyArray<SpawnedRow> =>
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+type SourceParams = {
+  readonly row: RailRow;
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const modelSourceOf = ({ row, agents }: SourceParams): SpawnedRowModelSource | null => {
+  const agent = agents.find((candidate) => candidate.id === row.agentId);
+  if (agent === undefined) {
+    return null;
+  }
+  return { agent, routing: { provider: row.provider, model: row.model, effort: row.effort } };
+};
+
+export const autoSpawnedRowsOf = ({
+  rows,
+  baseLevel,
+  agents = NO_AGENTS,
+}: Params): ReadonlyArray<SpawnedRow> =>
   rows.map((row, index): SpawnedRow => ({
     id: row.id,
     agentId: row.agentId,
@@ -19,4 +40,5 @@ export const autoSpawnedRowsOf = ({ rows, baseLevel }: Params): ReadonlyArray<Sp
     node: row.node,
     word: row.word,
     isLive: row.isLive,
+    model: modelSourceOf({ row, agents }),
   }));

@@ -1,6 +1,12 @@
 import type { FactCardSpec, WorkNodeState } from '@goodboy/ui';
-import type { AgentId } from '@goodboy/types';
+import type { Agent, AgentId } from '@goodboy/types';
+import type { ShownRouting } from '../../../features/auto/executedRoutingOf';
 import type { AgentKind } from '../../../features/session/agent-kind';
+
+export type SpawnedRowModelSource = Readonly<{
+  agent: Agent;
+  routing: ShownRouting | null;
+}>;
 
 export type SpawnedRow = Readonly<{
   id: string;
@@ -13,6 +19,7 @@ export type SpawnedRow = Readonly<{
   node: WorkNodeState;
   word: string;
   isLive: boolean;
+  model?: SpawnedRowModelSource | null;
 }>;
 
 export type SpawnedRowFold = Readonly<{

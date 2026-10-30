@@ -123,7 +123,8 @@ describe('c07 Auto scenes', () => {
     expect(auto.getAttribute('aria-expanded')).toBe('true');
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(implementer.getAttribute('aria-level')).toBe('2');
-    expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
+    expect(within(implementer).getByText('Sonnet 5.5')).toBeDefined();
+    expect(within(implementer).getByText('Medium')).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
 
     fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });

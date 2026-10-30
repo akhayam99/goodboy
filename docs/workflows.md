@@ -483,7 +483,7 @@ from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
 glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
 "Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
-Scout"), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
+Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
 agents"), cost and age, every row the same columns. Groups:
 **In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
