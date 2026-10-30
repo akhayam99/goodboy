@@ -9,6 +9,7 @@ import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { composeStepBoundary } from '../turn/kickoff';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { mountBlockedAgentIdOf } from './runMount/mountBlockedAgentIdOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -53,6 +54,9 @@ export const recoverStuckStep = (get: GetFn) => {
       }
       const agent = findReusableAgent(agents, chain.failedStep.id);
       if (agent == null || !isAgentStatusHalted({ status: agent.status })) {
+        return;
+      }
+      if (mountBlockedAgentIdOf({ state: get(), sessionId, workflowRunId }) === agent.id) {
         return;
       }
       const turn = get().agentTurnState[agent.id];

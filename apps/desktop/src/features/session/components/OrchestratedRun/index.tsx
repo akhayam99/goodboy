@@ -77,7 +77,9 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
           className={cn('flex min-w-0 flex-col gap-6', view.isDiscarded && TERMINAL_DIM)}
         >
           <OrchestratedGoal session={session} view={view} />
-          {view.isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
+          {view.isDiscarded ? null : (
+            <RunWriteDestination sessionId={sessionId} workflowRunId={run.id} />
+          )}
           <OrchestratedChecklist session={session} view={view} />
           {isDone ? <OrchestratedResult session={session} view={view} /> : null}
           <OrchestratedTail session={session} view={view} />

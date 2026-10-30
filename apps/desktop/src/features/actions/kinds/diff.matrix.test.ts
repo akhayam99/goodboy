@@ -44,6 +44,8 @@ const facts = (overrides: Partial<DiffFacts>): DiffFacts => ({
   canStartTurnsHere: false,
   isScribeWriting: false,
   blockers: [],
+  pinnedRunIds: [],
+  pinnedRunLabel: null,
   editors: [],
   patch: 'diff --git a/src/credit.ts b/src/credit.ts',
   rebaseConflicts: 0,

@@ -3,6 +3,7 @@ import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
+import { resolveMountBlockedStep } from './runMount/resolveMountBlockedStep';
 import { askAgentToContinue } from './askAgentToContinue';
 import { markStepDone } from './stepEnd/markStepDone';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
@@ -100,6 +101,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
+    resolveMountBlockedStep: resolveMountBlockedStep({ set, get }),
     askAgentToContinue: askAgentToContinue(get),
     markStepDone: markStepDone({ get }),
     sweepIdleRuns: sweepIdleRuns(set, get),

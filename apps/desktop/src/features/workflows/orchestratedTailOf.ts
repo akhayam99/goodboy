@@ -1,5 +1,6 @@
 import { isAgentStatusHalted } from '@goodboy/core';
 import type { Agent, AgentId } from '@goodboy/types';
+import type { MountBlockedStep } from '../../store/slices/workflows/runMount/selectMountBlockedStep';
 import type { TailState } from '../live-state/tailFacts';
 import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
 import { modelNamesIn } from './modelNamesIn';
@@ -37,6 +38,7 @@ type Params = {
   readonly isDiscarded: boolean;
   readonly quiet: OrchestratedQuiet | null;
   readonly restartStoppedCount: number;
+  readonly mountBlock?: MountBlockedStep | null;
 };
 
 const TAIL_STATE: Readonly<Record<OrchestratorPhase, TailState>> = {
@@ -89,6 +91,7 @@ export const orchestratedTailOf = ({
   isDiscarded,
   quiet,
   restartStoppedCount,
+  mountBlock = null,
 }: Params): OrchestratedTail | null => {
   if (isDiscarded) {
     return null;
@@ -145,6 +148,9 @@ export const orchestratedTailOf = ({
     const halted = [...agents]
       .sort((left, right) => left.ordinal - right.ordinal)
       .find((agent) => isAgentStatusHalted({ status: agent.status }));
+    if (halted?.status === 'blocked' && mountBlock?.agentId === halted.id) {
+      return { ...base, blockedAgentId: halted.id, verbs: [] };
+    }
     if (halted?.status === 'blocked') {
       return {
         ...base,

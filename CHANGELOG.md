@@ -24,7 +24,7 @@ One start form for every way in, a limit that is exactly what the form shows, an
 New session, a session's Runs page, ⌘K and setup's Scout run share one form. Pick Auto, Agent, Orchestrated or Preset, or press none and Auto picks. One row of chips holds Where, Role, Model, Asks you, Edits, Limit and Guidance, and each kind shows only what it uses.
 
 #### Guidance for every kind of run
-<!-- gb area=sessions image=start-guidance -->
+<!-- gb area=sessions -->
 
 Guidance starts from your workspace text and can change for one run. Orchestrated and Preset hand it to the orchestrator, an agent reads it in its brief, and an Auto agent and its helpers read it on every turn.
 
@@ -32,6 +32,11 @@ Guidance starts from your workspace text and can change for one run. Orchestrate
 <!-- gb area=workflows image=run-questions -->
 
 A run's page shows its questions as the same card as the transcript, with the suggested answers, the recommended one and one or many picks. Several questions page as 1 of 2 and the last Answer sends them together.
+
+#### A step that lost its branch says so
+<!-- gb area=workflows image=blocked-step -->
+
+A run step whose branch was detached from the session shows as waiting for that branch, with Reattach, Use the session's branch or Pick a branch. A new hint waits instead of adding another stuck step, and detaching a branch a run uses asks first.
 
 ### Fixed
 

@@ -59,6 +59,10 @@ import {
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { liveWorkflowFor } from './runMount/liveWorkflowFor';
+import { RunStepMountBlockedError } from './runMount/RunStepMountBlockedError';
+import { mountBlockedAgentIdOf } from './runMount/mountBlockedAgentIdOf';
+import { hasOperatorStop } from './runState/hasOperatorStop';
+import { isRunClosedOut } from './runState/isRunClosedOut';
 import { selectRunStepMountId } from './runMount/selectRunStepMountId';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
@@ -301,27 +305,6 @@ const persistOrchestrationFailure = async ({
     stop: { kind: 'failure', message },
   });
 
-type OperatorStopParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId;
-};
-
-const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams): boolean => {
-  const current = sessionById(get().sessions, sessionId)?.workflowRuns.find(
-    (candidate) => candidate.id === workflowRunId,
-  );
-  const kind = current?.orchestrationStop?.kind;
-  return kind === 'operator' || kind === 'closed' || kind === 'paused';
-};
-
-const isRunClosedOut = ({ get, sessionId, workflowRunId }: OperatorStopParams): boolean => {
-  const current = sessionById(get().sessions, sessionId)?.workflowRuns.find(
-    (candidate) => candidate.id === workflowRunId,
-  );
-  return current == null || current.discardedAt != null || current.orchestrationOutcome != null;
-};
-
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
   resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
 
@@ -521,6 +504,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         (candidate) => candidate.id === run.workflowId,
       );
       if (workflow == null) {
+        return;
+      }
+      if (mountBlockedAgentIdOf({ state: get(), sessionId, workflowRunId }) !== null) {
         return;
       }
       if ((await admitWorkflowRun({ set, sessionId, run })) !== null) {
@@ -970,7 +956,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             bypassGate: true,
           });
         } catch (error) {
-          if (!(error instanceof WorkflowGateError) || error.reason !== 'paused') {
+          const isPaused = error instanceof WorkflowGateError && error.reason === 'paused';
+          if (!isPaused && !(error instanceof RunStepMountBlockedError)) {
             throw error;
           }
         }

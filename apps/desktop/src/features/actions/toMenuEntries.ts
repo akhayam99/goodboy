@@ -67,7 +67,7 @@ export const toMenuEntries = ({ actions, env, run, onPreview }: Params): Readonl
                 ...(action.confirm.notes !== undefined && { notes: action.confirm.notes }),
                 ...(alt !== undefined && {
                   alt: {
-                    label: `${alt.label} instead`,
+                    label: action.confirm.altLabel ?? `${alt.label} instead`,
                     onSelect: () => guarded({ env, task: () => run({ actionId: alt.id }) }),
                   },
                 }),

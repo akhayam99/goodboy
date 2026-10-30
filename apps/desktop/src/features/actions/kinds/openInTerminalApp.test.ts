@@ -79,6 +79,8 @@ const mountFacts: MountFacts = {
   canStartTurnsHere: false,
   isScribeWriting: false,
   blockers: [],
+  pinnedRunIds: [],
+  pinnedRunLabel: null,
   editors: [],
 };
 

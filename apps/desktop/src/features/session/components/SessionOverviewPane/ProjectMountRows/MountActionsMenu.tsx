@@ -18,6 +18,7 @@ import {
   projectKeyOf,
   type ProjectDetachRequest,
 } from '../../../../actions/kinds/project';
+import { usePinnedRuns } from '../../../hooks/usePinnedRuns';
 import { DetachConfirm } from './DetachConfirm';
 import {
   REMOVAL_STAGE,
@@ -105,6 +106,7 @@ export const MountActionsMenu = ({
       .join(','),
   );
   const blockers = BLOCKER_CODES.filter((code) => blockerKey.split(',').includes(code));
+  const pinnedRuns = usePinnedRuns({ sessionId, projectId });
   const { showToast } = useToast();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -235,6 +237,7 @@ export const MountActionsMenu = ({
       isOpen={isConfirming}
       isBusy={isBusy}
       stage={stage}
+      pinnedRuns={pinnedRuns}
       onConfirm={({ disposition }) => void detach({ disposition })}
       onRecheck={assess}
       onCancel={cancelDetach}

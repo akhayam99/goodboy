@@ -9,6 +9,7 @@ import { saveGoalAttachments } from '../attachments/saveGoalAttachments';
 import { findWorkflowRun } from './findWorkflowRun';
 import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { readNow } from './readNow';
+import { mountBlockedAgentIdOf } from './runMount/mountBlockedAgentIdOf';
 import type { GetFn, SetFn } from './types';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 
@@ -86,7 +87,8 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
       draft.delivery === 'queue' ||
       run.executionMode !== 'dynamic' ||
       run.discardedAt != null ||
-      isRunPaused({ run: current })
+      isRunPaused({ run: current }) ||
+      mountBlockedAgentIdOf({ state: get(), sessionId, workflowRunId }) !== null
     ) {
       return hint;
     }

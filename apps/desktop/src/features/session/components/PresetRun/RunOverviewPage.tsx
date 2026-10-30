@@ -32,7 +32,7 @@ export const RunOverviewPage = ({ session, view }: Props) => {
       >
         <RunGoal run={run} workflow={workflow} />
         <OrchestratedFacts session={session} view={view} />
-        {isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
+        {isDiscarded ? null : <RunWriteDestination sessionId={sessionId} workflowRunId={run.id} />}
         {isCompleted ? <RunFinishedActions sessionId={sessionId} workflowRunId={run.id} /> : null}
         {isDiscarded ? null : (
           <RunAddStep

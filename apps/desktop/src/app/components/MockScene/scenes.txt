@@ -1097,6 +1097,8 @@ u28-step-ended-run
 u28-tasks-new
 u28-workspace-attention
 u30-agents-fold
+u30-blocked-mount-step
+u30-blocked-mount-step-shot
 u30-failure-reason
 u30-human-call
 u30-limit-chip

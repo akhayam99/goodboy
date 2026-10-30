@@ -16,12 +16,18 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
     unmountMount: vi.fn(async () => ({ kept: false })),
     forgetMount: vi.fn(async () => ({ keptPath: null as string | null })),
     reportError: vi.fn(async () => undefined),
+    stopWorkflowRunNow: vi.fn(async () => undefined),
     projects: [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' as string | null }],
     sessions: [{ id: 'session-1', state: { kind: 'idle' } }],
     terminalTabs: {},
     sessionPhaseRuns: {} as Record<
       string,
-      ReadonlyArray<{ readonly id: string; readonly status: string }>
+      ReadonlyArray<{
+        readonly id: string;
+        readonly status: string;
+        readonly workflowRunId?: string;
+        readonly mountId?: string;
+      }>
     >,
     agentTurnDestination: {} as Record<
       string,
@@ -163,6 +169,19 @@ beforeEach(() => {
     assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }),
   );
 });
+
+const seedRun = (): void => {
+  Object.assign(state.sessions[0] ?? {}, {
+    workflowRuns: [
+      { id: 'run-1', title: 'Speed up the ledger export', ordinal: 0, executionMode: 'dynamic' },
+    ],
+  });
+  state.sessionPhaseRuns = {
+    'session-1': [
+      { id: 'agent-1', status: 'completed', workflowRunId: 'run-1', mountId: 'mount-1' },
+    ],
+  };
+};
 
 describe('MountActionsMenu', () => {
   it('shows the checking status without a destructive action while it assesses', () => {
@@ -600,5 +619,44 @@ describe('MountActionsMenu', () => {
     renderMenu();
 
     expect(screen.queryByRole('button', { name: TRIGGER })).toBeNull();
+  });
+
+  it('warns about the run that still writes to the branch and offers Stop run first', async () => {
+    seedRun();
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach anyway' })));
+    screen.getByText(/The run "Speed up the ledger export" still writes to this branch/);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop run first' }));
+    await waitFor(() =>
+      expect(state.stopWorkflowRunNow).toHaveBeenCalledWith('session-1', 'run-1'),
+    );
+    expect(state.detachProject).not.toHaveBeenCalled();
+  });
+
+  it('detaches anyway when the owner keeps the run going', async () => {
+    seedRun();
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach anyway' })));
+    fireEvent.click(screen.getByRole('button', { name: 'Detach anyway' }));
+
+    await waitFor(() =>
+      expect(state.detachProject).toHaveBeenCalledWith({
+        sessionId: 'session-1',
+        projectId: 'project-1',
+        disposition: 'remove-clean',
+      }),
+    );
+  });
+
+  it('shows no guard when no run uses the branch', async () => {
+    renderMenu();
+    openConfirm();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    expect(screen.queryByRole('button', { name: 'Stop run first' })).toBeNull();
   });
 });

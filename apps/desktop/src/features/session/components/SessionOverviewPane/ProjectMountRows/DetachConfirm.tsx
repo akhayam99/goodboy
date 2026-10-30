@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { ConfirmPopover, ICON_SIZE, Skeleton, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { PINNED_RUN_COPY } from '../../../../workflows/pinnedRunCopy';
+import type { PinnedRunsView } from '../../../hooks/usePinnedRuns';
 import { DetachDetails } from './DetachDetails';
+import { PinnedRunGuard } from './PinnedRunGuard';
 import { CHECKING_STATUS, detachActionFor, type DetachPlan } from './detachPlan';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 
@@ -12,6 +15,7 @@ type Props = {
   readonly trigger: (params: ConfirmPopoverTriggerParams) => ReactNode;
   readonly isBusy: boolean;
   readonly stage: string | null;
+  readonly pinnedRuns: PinnedRunsView;
   readonly onConfirm: (input: { readonly disposition: DetachDisposition }) => void;
   readonly onRecheck: () => void;
   readonly onCancel: () => void;
@@ -27,6 +31,7 @@ export const DetachConfirm = ({
   trigger,
   isBusy,
   stage,
+  pinnedRuns,
   onConfirm,
   onRecheck,
   onCancel,
@@ -89,6 +94,7 @@ export const DetachConfirm = ({
   const hasDetails = details.totals.length > 0 || details.worktrees.length > 0;
   const isUnread =
     plan.kind === 'keep' && (plan.reason === 'unavailable' || plan.reason === 'unverified');
+  const isPinned = pinnedRuns.runIds.length > 0;
 
   return (
     <ConfirmPopover
@@ -98,7 +104,7 @@ export const DetachConfirm = ({
       role={action.role === 'danger' ? 'danger' : 'primary'}
       icon={isRisky ? <AlertIcon size={ICON_SIZE.row} /> : <WorktreeIcon size={ICON_SIZE.row} />}
       title={title}
-      confirmLabel={action.label}
+      confirmLabel={isPinned ? PINNED_RUN_COPY.detachAnyway : action.label}
       isBusy={isBusy}
       onConfirm={() => onConfirm({ disposition: action.disposition })}
       onCancel={onCancel}
@@ -113,6 +119,7 @@ export const DetachConfirm = ({
           </p>
         ))}
       </div>
+      {isPinned ? <PinnedRunGuard pinnedRuns={pinnedRuns} isBusy={isBusy} /> : null}
       {!hasDetails ? null : (
         <DetachDetails
           projectName={projectName}
