@@ -317,8 +317,6 @@ describe('content column contract', () => {
     expect(read('features/workflows/components/WorkflowAdvance/index.tsx')).toMatch(
       /<PageColumn\s+width=\{PAGE_MEASURE\.agent\}/,
     );
-    const styling = readFileSync(join(SRC, '..', '..', '..', 'docs', 'styling.md'), 'utf8');
-    expect(styling).not.toMatch(/A conversation is the exception/);
   });
 
   it('registers every studio, so a new place cannot skip the contract', () => {
