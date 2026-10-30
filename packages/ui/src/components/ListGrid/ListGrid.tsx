@@ -51,7 +51,7 @@ export const ListGrid = ({
         style={{
           gridTemplateColumns: `0px ${listGridTemplate({ columns, hiddenKeys: value.hiddenKeys })} 0px`,
         }}
-        className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-4' : 'gap-y-0', className)}
+        className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-8' : 'gap-y-0', className)}
       >
         {children}
       </ul>

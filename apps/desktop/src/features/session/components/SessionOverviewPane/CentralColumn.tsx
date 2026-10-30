@@ -179,7 +179,7 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
   };
 
   return (
-    <div data-central-column className={PANE_RHYTHM.stack}>
+    <div data-central-column className={PANE_RHYTHM.groups}>
       {isArchived ? null : (
         <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
       )}

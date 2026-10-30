@@ -1,6 +1,6 @@
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { PaneShell, useEscapeLayer } from '@goodboy/ui';
+import { PANE_RHYTHM, PaneShell, cn, useEscapeLayer } from '@goodboy/ui';
 import { leaveRunLevel } from '../../../../workflows/leaveRunLevel';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { OrchestratedRunPage } from '../../OrchestratedRun';
@@ -36,7 +36,7 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
 
   return (
     <PaneShell page="runs" title={NAMES.runs} subheader={<SessionPageIntro page="runs" />}>
-      <div className="flex min-w-0 flex-col gap-6">
+      <div className={cn(PANE_RHYTHM.groups, 'min-w-0')}>
         <StartRun workspaceId={session.workspaceId} sessionId={sessionId} />
         {runs.length > 0 ? <RunsGrid session={session} runs={runs} /> : null}
       </div>

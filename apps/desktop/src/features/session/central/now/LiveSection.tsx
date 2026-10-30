@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
+import { SectionLabel } from '@goodboy/ui';
 import type { LiveSection as LiveSectionModel } from './liveSectionsOf';
 
 type Props = {
@@ -12,14 +12,12 @@ export const LiveSection = ({ section, children }: Props) => (
     role="group"
     aria-label={section.title}
     data-live-section={section.id}
-    className="flex min-w-0 flex-col gap-1"
+    className="flex min-w-0 flex-col gap-2"
   >
-    <span className="flex min-w-0 items-center gap-2">
-      <Eyebrow label={section.title} muted />
-      <span data-live-section-count="" className="text-ui tabular-nums text-faint-foreground">
-        {section.groups.length}
-      </span>
-    </span>
+    <SectionLabel
+      label={section.title}
+      count={<span data-live-section-count="">{section.groups.length}</span>}
+    />
     {children}
   </div>
 );

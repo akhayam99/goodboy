@@ -29,6 +29,7 @@ export const ORCHESTRATED_COPY = {
   showGuidance: 'Show guidance',
   hideGuidance: 'Hide guidance',
   checklist: 'Plan and progress',
+  steps: 'Steps',
   readHint: ({ step }: StepParams): string => `Your hint, read at step ${step}`,
   why: ({ reason }: ReasonParams): string => `Why: ${reason}`,
   whyThisStep: 'Why this step',

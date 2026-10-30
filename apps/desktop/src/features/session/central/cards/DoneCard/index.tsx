@@ -38,7 +38,7 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
       card={card}
       countNote={latest.unreadCount === 0 ? null : `${latest.unreadCount} unread`}
       aside={
-        <Button size="sm" variant="secondary" onClick={() => openLog({ focusEntryId: null })}>
+        <Button size="sm" variant="quiet" onClick={() => openLog({ focusEntryId: null })}>
           Full log
         </Button>
       }

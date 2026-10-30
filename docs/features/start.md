@@ -164,7 +164,8 @@ The tools you reach from anywhere in the session sit as icons in a thin column a
 All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started. One row per request, newest first.
 
 - Each row says what it was, in the same words as the New session page: "Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto agent" and "Agent · Scout".
-- The page says what it holds in two lines under its title, whether it is empty or full.
+- The page says what it holds in one gray line under its title, whether it is empty or full.
+- Groups read **In progress**, **Finished** and **Archived** in bold with their count in gray, 32px apart. A run's name leads its row; the kind, state, progress, cost and age after it are one step smaller and gray.
 - An empty Runs page is the Start a run field alone.
 
 ### Start blank

@@ -201,7 +201,37 @@ describe('ListGrid', () => {
     within(group).getByText('Ledger export times out');
     const heading = screen.getByRole('heading', { name: 'In progress' });
     expect(heading.nextElementSibling?.textContent).toBe('12');
-    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-4');
+    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-8');
+  });
+
+  it('sets a group label at level 2, a 20px row with 8px under it, and groups 32px apart', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="In progress" count={12}>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const heading = screen.getByRole('heading', { name: 'In progress' });
+    expect(heading.className).toContain('text-heading');
+    expect(heading.className).toContain('text-foreground');
+    const label = heading.closest('[data-list-grid-group-label]');
+    expect(label?.className).toContain('h-5');
+    expect(label?.parentElement?.className).toContain('gap-y-2');
+    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-8');
+    expect(heading.nextElementSibling?.className).toContain('text-ui');
+    expect(heading.nextElementSibling?.className).toContain('text-faint-foreground');
+  });
+
+  it('reads the title cell at level 4 and every other cell at level 5', () => {
+    renderGrid({ onSelect: () => undefined });
+    const [first] = screen.getAllByRole('button');
+    const cells = Array.from(first?.querySelectorAll('[data-list-grid-cell]') ?? []);
+    const titles = cells.filter((cell) => cell.className.includes('text-row'));
+    const others = cells.filter((cell) => !cell.className.includes('text-row'));
+    expect(titles).toHaveLength(1);
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.every((cell) => cell.className.includes('text-meta'))).toBe(true);
   });
 
   it('keeps the count beside the name and the group action after them', () => {

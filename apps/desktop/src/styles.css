@@ -162,6 +162,9 @@
   --text-row: 13px;
   --text-row--line-height: 20px;
   --text-row--font-weight: 500;
+  --text-row-strong: 13px;
+  --text-row-strong--line-height: 20px;
+  --text-row-strong--font-weight: 600;
   --text-body: 14px;
   --text-body--line-height: 20px;
   --text-prose: 15px;

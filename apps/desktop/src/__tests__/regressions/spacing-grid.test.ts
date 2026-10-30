@@ -68,6 +68,18 @@ describe('spacing grid', () => {
     expect(heights.filter((height) => !ROW_HEIGHTS.includes(height))).toEqual([]);
   });
 
+  it('holds the page rhythm on the grid: 32px between groups, a 20px label and 8px under it', () => {
+    const gapOf = (utility: string): number =>
+      Number(/\bgap-(\d+)\b/.exec(utility)?.[1] ?? 0) * SPACING_PX;
+    const grid = source({ path: join(UI_SRC, 'components', 'ListGrid', 'ListGrid.tsx') });
+    const group = source({ path: join(UI_SRC, 'components', 'ListGrid', 'ListGridGroup.tsx') });
+
+    expect(gapOf(RHYTHM.groups)).toBe(32);
+    expect(grid).toContain("isGrouped ? 'gap-y-8'");
+    expect(group).toContain("'h-5 items-center'");
+    expect(group).toContain("label !== undefined && 'gap-y-2'");
+  });
+
   it('holds the transcript rhythm on the grid: 32px between turns, 16px between blocks, set by the parent gap', () => {
     const gapOf = (utility: string): number =>
       Number(/\bgap-(\d+)\b/.exec(utility)?.[1] ?? 0) * SPACING_PX;

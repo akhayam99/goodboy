@@ -208,8 +208,9 @@ state is a `StateDot` or a glyph in a 16px column.
 
 - `align: 'end'` with `isNumeric` right aligns a number in tabular figures, so
   "1m 12s" and "12m 40s" end on one edge.
-- `isTitle` marks the `fill` column: foreground, `text-row`. Other columns read
-  muted, or `tone: 'hint'` for ids and ages.
+- `isTitle` marks the `fill` column: foreground, `text-row` (level 4). Every other
+  cell is `text-meta` (level 5), muted, or `tone: 'hint'` for ids and ages, so the
+  name leads the row.
 - A row with `onSelect` is one button: the row is the action, it carries no
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
@@ -240,7 +241,9 @@ state is a `StateDot` or a glyph in a 16px column.
   an `action` (one visible control,
   such as the `Open session` arrow on a Terminal page group) sits at the end of
   the heading row; a
-  grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
+  grouped grid (`isGrouped`) spaces its groups 32px apart, never with a divider.
+  The label is level 2 (`text-heading`, 14/600, foreground) on a 20px row with
+  8px under it, and its count is `text-ui` faint.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
   above the groups. A group with no `label` draws its rows alone, with no heading
   and no count, for a lead group that needs no name above a named one.
@@ -363,6 +366,8 @@ first, and by colour second.
 | 3     | `text-prose`             | 15/24, 400        | foreground                          |
 | 4     | `text-row` and `text-ui` | 13/20, 500 or 400 | foreground                          |
 | 5     | `text-meta`              | 12/16, 400        | muted, or faint for time and counts |
+
+`text-row-strong` is level 4 at 600, for the one live item of a list: the step of a run that works, waits or failed. Every other step reads `text-ui` and turns foreground on hover. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
 
 `text-prose` is the only reading size: `text-read` is gone, merged into it.
 `text-chip` (11/16) stays for tags and moves to 12 later. The sidebar is 13

@@ -1,4 +1,4 @@
-import { Button, Eyebrow } from '@goodboy/ui';
+import { Button, SectionLabel } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -37,15 +37,13 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4"
     >
       <header className="flex min-w-0 items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-2">
-          <Eyebrow label="New since you last looked" muted />
-          <span data-new-since-count="" className="text-ui tabular-nums text-faint-foreground">
-            {latest.unreadCount}
-          </span>
-        </span>
+        <SectionLabel
+          label="New since you last looked"
+          count={<span data-new-since-count="">{latest.unreadCount}</span>}
+        />
         <Button
           size="sm"
-          variant="secondary"
+          variant="quiet"
           disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
           onClick={() =>
             void pending.run({

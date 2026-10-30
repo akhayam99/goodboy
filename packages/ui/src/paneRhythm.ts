@@ -10,6 +10,7 @@ export const PANE_RHYTHM = {
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
   stack: 'flex flex-col gap-6',
+  groups: 'flex flex-col gap-8',
   below: {
     title: 'pb-4',
     section: 'pb-6',

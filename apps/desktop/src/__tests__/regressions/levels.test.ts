@@ -2,7 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { TYPE_ROLES } from '@goodboy/ui';
+import { PANE_RHYTHM, TYPE_ROLES } from '@goodboy/ui';
 import { productSources } from './scanControls';
 
 const css = readFileSync(join(__dirname, '..', '..', 'styles.css'), 'utf8');
@@ -83,5 +83,58 @@ describe('levels on ListGrid surfaces', () => {
       offenders,
       `A ListGrid surface reads in the five levels (DESIGN-SYSTEM.md, Five levels): title, heading, prose, row or ui, meta. text-display, text-body and text-eyebrow are off the ladder.\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+});
+
+const FEATURES = join(__dirname, '..', '..', 'features');
+
+type SourceParams = {
+  readonly path: string;
+};
+
+const featureSource = ({ path }: SourceParams): string =>
+  readFileSync(join(FEATURES, path), 'utf8');
+
+const OVERVIEW_LABEL_FILES = [
+  'session/central/cards/OverviewCard.tsx',
+  'session/central/cards/NewSinceCard.tsx',
+  'session/central/now/LiveSection.tsx',
+  'session/central/branches/BranchList/index.tsx',
+];
+
+describe('levels on the overview and the runs pages', () => {
+  it.each(OVERVIEW_LABEL_FILES)('%s labels its section at level 2, not as an eyebrow', (path) => {
+    const source = featureSource({ path });
+    expect(source).toContain('<SectionLabel');
+    expect(source).not.toContain('Eyebrow');
+  });
+
+  it('weighs only the live step of a run at 600 and sets the others at 400', () => {
+    const source = featureSource({
+      path: 'workflows/components/RunTree/RunTreeChecklistCells.tsx',
+    });
+    expect(source).toContain('text-row-strong text-foreground');
+    expect(source).not.toMatch(/(?<![\w-])text-row(?![\w-])/);
+    expect(source).toContain("'running', 'waiting', 'failed'");
+  });
+
+  it('sets the runs lede at level 4 and the run facts at level 5', () => {
+    expect(featureSource({ path: 'session/components/SessionPageIntro.tsx' })).toContain(
+      'text-ui text-muted-foreground',
+    );
+    expect(
+      featureSource({ path: 'session/components/OrchestratedRun/OrchestratedFacts.tsx' }),
+    ).toContain('text-meta text-muted-foreground');
+  });
+
+  it('spaces the page groups 32px apart, set by the parent gap', () => {
+    expect(PANE_RHYTHM.groups).toContain('gap-8');
+    for (const path of [
+      'session/components/SessionOverviewPane/CentralColumn.tsx',
+      'session/components/SessionWorkspace/parts/WorkflowsPane.tsx',
+      'session/components/OrchestratedRun/index.tsx',
+    ]) {
+      expect(featureSource({ path }), path).toContain('PANE_RHYTHM.groups');
+    }
   });
 });

@@ -46,11 +46,11 @@ export const ListGridGroup = ({
   const headingId = useId();
   const Heading = HEADING_TAG[headingLevel];
   return (
-    <li className={SUBGRID}>
+    <li className={cn(SUBGRID, label !== undefined && 'gap-y-2')}>
       {label === undefined ? null : (
         <div
           data-list-grid-group-label=""
-          className={cn(SUBGRID, 'h-7 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
+          className={cn(SUBGRID, 'h-5 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
         >
           <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -61,14 +61,14 @@ export const ListGridGroup = ({
               )}
               <Heading
                 id={headingId}
-                className={cn('min-w-0 truncate text-row', TEXT_ROLE.secondary)}
+                className={cn('min-w-0 truncate text-heading', TEXT_ROLE.label)}
               >
                 {label}
               </Heading>
               {count === undefined || count < COUNT_FLOOR ? null : (
                 <span
                   data-list-grid-count=""
-                  className={cn('shrink-0 text-row tabular-nums', TEXT_ROLE.hint)}
+                  className={cn('shrink-0 text-ui tabular-nums', TEXT_ROLE.hint)}
                 >
                   {count}
                 </span>
@@ -79,7 +79,7 @@ export const ListGridGroup = ({
                   data-list-grid-fold=""
                   onClick={fold.onToggle}
                   className={cn(
-                    'shrink-0 rounded-sm text-row hover:text-foreground',
+                    'shrink-0 rounded-sm text-ui hover:text-foreground',
                     TEXT_ROLE.hint,
                     FOCUS_RING,
                   )}

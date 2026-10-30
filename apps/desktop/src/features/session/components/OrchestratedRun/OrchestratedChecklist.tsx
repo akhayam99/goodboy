@@ -1,4 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
+import { SectionLabel } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -51,6 +52,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     isDeciding: view.orchestrator.state.phase === 'deciding',
     isDone,
   });
+  const stepCount = agents.filter((agent) => agent.parentAgentId == null).length;
   const skipped = (run.rulesSnapshot?.planChanges ?? []).filter(
     (change) => change.kind === 'skipped',
   );
@@ -112,6 +114,11 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
 
   return (
     <section aria-label={ORCHESTRATED_COPY.checklist} className="flex min-w-0 flex-col gap-2">
+      <SectionLabel
+        label={ORCHESTRATED_COPY.steps}
+        headingLevel={2}
+        count={stepCount === 0 ? undefined : stepCount}
+      />
       {agents.length > 0 ? (
         <RunTree
           density="checklist"

@@ -80,7 +80,7 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
         />
       )}
       {words.length === 0 && timeLeft === null ? null : (
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-ui text-muted-foreground">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground">
           {words.length === 0 ? null : <span data-preset-facts="">{words.join(' · ')}</span>}
           {timeLeft === null ? null : <RunTimeLeftLabel timeLeft={timeLeft} />}
         </span>

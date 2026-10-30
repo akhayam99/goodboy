@@ -1,4 +1,4 @@
-import { PaneShell, TERMINAL_DIM, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, PaneShell, TERMINAL_DIM, cn } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { AgentHeader } from '../AgentDetailPane/AgentHeader';
@@ -74,7 +74,7 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
         <article
           data-orchestrated-run={run.id}
           aria-label={view.name}
-          className={cn('flex min-w-0 flex-col gap-6', view.isDiscarded && TERMINAL_DIM)}
+          className={cn(PANE_RHYTHM.groups, 'min-w-0', view.isDiscarded && TERMINAL_DIM)}
         >
           <OrchestratedGoal session={session} view={view} />
           {view.isDiscarded ? null : (

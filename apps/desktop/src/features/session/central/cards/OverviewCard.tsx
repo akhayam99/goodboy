@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
+import { SectionLabel } from '@goodboy/ui';
 import type { OverviewCardModel } from '../overviewCardsOf';
 
 type Props = {
@@ -38,13 +38,15 @@ export const OverviewCard = ({
   return (
     <section aria-label={card.title} data-overview-card={card.id} className={SURFACE}>
       <header className="flex min-w-0 items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-2">
-          <Eyebrow label={card.title} muted />
-          <span className="flex items-baseline text-ui tabular-nums text-faint-foreground">
-            <span data-overview-count="">{card.count}</span>
-            {countNote === null ? null : <span data-overview-note="">, {countNote}</span>}
-          </span>
-        </span>
+        <SectionLabel
+          label={card.title}
+          count={
+            <>
+              <span data-overview-count="">{card.count}</span>
+              {countNote === null ? null : <span data-overview-note="">, {countNote}</span>}
+            </>
+          }
+        />
         {aside}
       </header>
       {children}
