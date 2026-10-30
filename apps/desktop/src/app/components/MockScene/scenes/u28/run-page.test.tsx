@@ -17,6 +17,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { useOpenQuestions } from '../../../../../features/context/components/QuestionsTab/useOpenQuestions';
 import { MOCK_SCENES } from '../..';
 import { C09_RUN_ID, C09_SESSION_ID, C09_TESTER_ID } from '../u25/c09OrchestratedSeed';
 import { U28_RUN_PAGE_SCENES } from './run-page';
@@ -33,6 +34,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
   stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 }, turn_quiet: [] });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
@@ -128,7 +130,7 @@ describe('the u28 run page scenes', () => {
     expect(fieldValue('Answer the step')).toBe('');
   });
 
-  it('u28-run-needs-answer shows the question inline and sends the answer to the asking step', async () => {
+  it('u28-run-needs-answer shows the question as a card and sends the pick to the asking step', async () => {
     await mount('u28-run-needs-answer');
     const answerOpenQuestions = vi.fn(async () => undefined);
     act(() => {
@@ -138,13 +140,13 @@ describe('the u28 run page scenes', () => {
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('needs-answer');
     expect(tail().textContent).toContain('Which export size should the benchmark treat');
     expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
-    const form = within(tail()).getByRole('form', { name: 'Answer the question' });
-    const answer = within(form).getByRole('button', { name: 'Send answer' });
+    const answer = within(tail()).getByRole('button', { name: 'Answer' });
     expect(answer.hasAttribute('disabled')).toBe(true);
+    within(tail()).getByText('Recommended');
 
-    type('Answer the question', '12,000 rows.');
+    fireEvent.click(within(tail()).getByRole('radio', { name: '12,000 rows' }));
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
     });
 
     expect(answerOpenQuestions).toHaveBeenCalledWith(
@@ -153,99 +155,108 @@ describe('the u28 run page scenes', () => {
         {
           id: 'mock-c09-question',
           text: 'Which export size should the benchmark treat as the target: 12,000 rows or 50,000?',
-          answer: '12,000 rows.',
+          answer: '12,000 rows',
         },
       ],
       C09_TESTER_ID,
     );
-    expect(fieldValue('Answer the question')).toBe('');
   });
 
-  it('u28-run-needs-answer keeps the answer and says why when the send fails', async () => {
+  it('u28-run-needs-answer keeps the pick and says why when the send fails', async () => {
     await mount('u28-run-needs-answer');
+    const reportError = vi.fn(async () => undefined);
     act(() => {
       useAppStore.setState({
+        reportError,
         answerOpenQuestions: vi.fn(async () => {
           throw new Error('Could not save the answer.');
         }),
       });
     });
-    type('Answer the question', '12,000 rows.');
-    const form = within(tail()).getByRole('form', { name: 'Answer the question' });
+    fireEvent.click(within(tail()).getByRole('radio', { name: '12,000 rows' }));
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Send answer' }));
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
     });
 
-    expect(within(form).getByRole('alert').textContent).toContain('Could not save the answer.');
-    expect(fieldValue('Answer the question')).toBe('12,000 rows.');
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't send your answers" }),
+    );
+    expect(
+      within(tail()).getByRole('radio', { name: '12,000 rows' }).getAttribute('aria-checked'),
+    ).toBe('true');
+    expect(within(tail()).getByRole('button', { name: 'Answer' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
-  it('u28-run-needs-answers blocks send until every question has text, then sends one batch', async () => {
+  it('u28-run-needs-answers waits for every question, then sends one batch', async () => {
     await mount('u28-run-needs-answers');
     const answerOpenQuestions = vi.fn(async () => undefined);
     act(() => {
       useAppStore.setState({ answerOpenQuestions });
     });
-    const form = within(tail()).getByRole('form', { name: 'Answer the questions' });
-    const send = within(form).getByRole('button', { name: 'Send answers' });
-    expect(within(form).queryByRole('button', { name: 'Send answer' })).toBeNull();
+    within(tail()).getByText('1 of 3');
 
-    type('Answer question 1 of 3', '12,000 rows.');
-    type('Answer question 2 of 3', 'Northwind.');
-    expect(send.hasAttribute('disabled')).toBe(true);
-    type('Answer question 3 of 3', 'Yes.');
-    expect(send.hasAttribute('disabled')).toBe(false);
-
+    fireEvent.click(within(tail()).getByRole('radio', { name: '12,000 rows' }));
     await act(async () => {
-      fireEvent.click(send);
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
+    });
+    within(tail()).getByText('2 of 3');
+    within(tail()).getByRole('button', { name: '2 left, go to the next unanswered question' });
+    fireEvent.click(within(tail()).getByRole('radio', { name: 'Northwind fixtures' }));
+    await act(async () => {
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
+    });
+    expect(answerOpenQuestions).not.toHaveBeenCalled();
+    within(tail()).getByText('3 of 3');
+
+    fireEvent.click(within(tail()).getByRole('radio', { name: 'yes' }));
+    await act(async () => {
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
     });
 
     expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
     expect(answerOpenQuestions).toHaveBeenCalledWith(
       C09_SESSION_ID,
       [
-        expect.objectContaining({ id: 'mock-c09-question', answer: '12,000 rows.' }),
-        expect.objectContaining({ id: 'mock-c09-question-2', answer: 'Northwind.' }),
-        expect.objectContaining({ id: 'mock-c09-question-3', answer: 'Yes.' }),
+        expect.objectContaining({ id: 'mock-c09-question', answer: '12,000 rows' }),
+        expect.objectContaining({ id: 'mock-c09-question-2', answer: 'Northwind fixtures' }),
+        expect.objectContaining({ id: 'mock-c09-question-3', answer: 'yes' }),
       ],
       C09_TESTER_ID,
     );
-    expect(fieldValue('Answer question 1 of 3')).toBe('');
-    expect(fieldValue('Answer question 3 of 3')).toBe('');
   });
 
-  it('u28-run-needs-answers keeps every answer when the send fails and Retry resends the batch', async () => {
+  it('u28-run-needs-answers keeps every pick when the send fails and the last Answer resends the batch', async () => {
     await mount('u28-run-needs-answers');
     const answerOpenQuestions = vi
       .fn()
       .mockRejectedValueOnce(new Error('Could not save the answers.'))
       .mockResolvedValue(undefined);
+    const reportError = vi.fn(async () => undefined);
     act(() => {
-      useAppStore.setState({ answerOpenQuestions });
+      useAppStore.setState({ answerOpenQuestions, reportError });
     });
-    type('Answer question 1 of 3', 'One.');
-    type('Answer question 2 of 3', 'Two.');
-    type('Answer question 3 of 3', 'Three.');
-    const form = within(tail()).getByRole('form', { name: 'Answer the questions' });
+    for (const pick of ['12,000 rows', 'Northwind fixtures', 'yes']) {
+      fireEvent.click(within(tail()).getByRole('radio', { name: pick }));
+      await act(async () => {
+        fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
+      });
+    }
+
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
+    expect(within(tail()).getByRole('radio', { name: 'yes' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Send answers' }));
-    });
-
-    expect(within(form).getAllByRole('alert')).toHaveLength(1);
-    expect(within(form).getByRole('alert').textContent).toContain('Could not save the answers.');
-    expect(fieldValue('Answer question 1 of 3')).toBe('One.');
-    expect(fieldValue('Answer question 2 of 3')).toBe('Two.');
-    expect(fieldValue('Answer question 3 of 3')).toBe('Three.');
-
-    await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(within(tail()).getByRole('button', { name: 'Answer' }));
     });
 
     expect(answerOpenQuestions).toHaveBeenCalledTimes(2);
     expect(answerOpenQuestions.mock.calls[1]).toEqual(answerOpenQuestions.mock.calls[0]);
-    expect(fieldValue('Answer question 2 of 3')).toBe('');
   });
 
   it('u28-run-step-blocked keeps the answer and says why when the send fails', async () => {

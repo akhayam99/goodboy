@@ -21,6 +21,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { useOpenQuestions } from '../../../../../features/context/components/QuestionsTab/useOpenQuestions';
 import { C09_SESSION_ID, C09_TESTER_ID } from '../u25/c09OrchestratedSeed';
 import { U28_RUN_PAGE_SCENES } from './run-page';
 
@@ -35,6 +36,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
   stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 }, turn_quiet: [] });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
@@ -62,8 +64,20 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const type = (placeholder: string, value: string): void => {
-  fireEvent.change(screen.getByPlaceholderText(placeholder), { target: { value } });
+const nodeOf = (selector: string): HTMLElement => {
+  const node = document.querySelector<HTMLElement>(selector);
+  if (node === null) {
+    throw new Error(`no ${selector}`);
+  }
+  return node;
+};
+
+const pick = async (name: string): Promise<void> => {
+  const open = nodeOf('[data-run-open-question]');
+  fireEvent.click(within(open).getByRole('radio', { name }));
+  await act(async () => {
+    fireEvent.click(within(open).getByRole('button', { name: 'Answer' }));
+  });
 };
 
 const delegateOf = ({ question }: { readonly question: OpenQuestion }): Agent =>
@@ -128,29 +142,21 @@ const expectDelegatedBatch = async ({ askingAgentId }: BatchParams): Promise<voi
   act(() => {
     useAppStore.setState({ answerOpenQuestions });
   });
-  const form = screen.getByRole('form', { name: 'Answer the questions' });
-  const send = within(form).getByRole('button', { name: 'Send answers' });
-  expect(form.querySelectorAll('[data-run-question-waiting]')).toHaveLength(1);
-  expect(screen.queryByPlaceholderText('Answer question 3 of 3')).toBeNull();
-  expect(form.querySelector('[data-run-question-waiting]')?.textContent).toBe(
-    'An agent is answering this',
-  );
+  const open = nodeOf('[data-run-open-question]');
+  expect(within(open).getAllByText('An agent is answering this')).toHaveLength(1);
+  within(open).getByText('1 of 2');
 
-  type('Answer question 1 of 2', '12,000 rows.');
-  expect(send.hasAttribute('disabled')).toBe(true);
-  type('Answer question 2 of 2', 'Yes.');
-  expect(send.hasAttribute('disabled')).toBe(false);
-
-  await act(async () => {
-    fireEvent.click(send);
-  });
+  await pick('12,000 rows');
+  expect(answerOpenQuestions).not.toHaveBeenCalled();
+  within(open).getByText('2 of 2');
+  await pick('yes');
 
   expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
   expect(answerOpenQuestions).toHaveBeenCalledWith(
     C09_SESSION_ID,
     [
-      expect.objectContaining({ id: 'mock-c09-question', answer: '12,000 rows.' }),
-      expect.objectContaining({ id: 'mock-c09-question-3', answer: 'Yes.' }),
+      expect.objectContaining({ id: 'mock-c09-question', answer: '12,000 rows' }),
+      expect.objectContaining({ id: 'mock-c09-question-3', answer: 'yes' }),
     ],
     askingAgentId,
   );
@@ -175,30 +181,27 @@ describe('a batch with a delegated question', () => {
     await expectDelegatedBatch({ askingAgentId: null });
   });
 
-  it('leaves a delivery failure to the pending notice instead of a second alert in the form', async () => {
+  it('leaves a delivery failure to the pending notice instead of a second alert', async () => {
     await mount();
     const answerOpenQuestions = vi.fn(async () => {
       throw new OpenQuestionDeliveryError('The agent is not reachable.');
     });
+    const reportError = vi.fn(async () => undefined);
     act(() => {
-      useAppStore.setState({ answerOpenQuestions });
-    });
-    type('Answer question 1 of 3', 'One.');
-    type('Answer question 2 of 3', 'Two.');
-    type('Answer question 3 of 3', 'Three.');
-    const form = screen.getByRole('form', { name: 'Answer the questions' });
-
-    await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Send answers' }));
+      useAppStore.setState({ answerOpenQuestions, reportError });
     });
 
-    expect(within(form).queryByRole('alert')).toBeNull();
-    expect(within(form).queryByRole('button', { name: 'Retry' })).toBeNull();
-    const field = screen.getByPlaceholderText('Answer question 1 of 3');
-    expect(field instanceof HTMLTextAreaElement ? field.value : null).toBe('');
+    await pick('12,000 rows');
+    await pick('Northwind fixtures');
+    await pick('yes');
+
+    expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
+    expect(reportError).not.toHaveBeenCalled();
+    expect(useOpenQuestions.getState().staged).toEqual([]);
+    expect(useOpenQuestions.getState().drafts).toEqual({});
   });
 
-  it('shows every question as waiting with no send button when all are delegated', async () => {
+  it('shows every question as waiting with no answer button when all are delegated', async () => {
     await mount();
     act(() => {
       const questions = useAppStore.getState().sessionOpenQuestions[C09_SESSION_ID] ?? [];
@@ -214,9 +217,8 @@ describe('a batch with a delegated question', () => {
     });
     await settle();
 
-    const form = screen.getByRole('form', { name: 'Answer the questions' });
-    expect(form.querySelectorAll('[data-run-question-waiting]')).toHaveLength(3);
-    expect(within(form).queryByRole('button', { name: 'Send answers' })).toBeNull();
-    expect(within(form).queryByRole('button', { name: 'Send answer' })).toBeNull();
+    const open = nodeOf('[data-run-open-question]');
+    expect(within(open).getAllByText('An agent is answering this')).toHaveLength(3);
+    expect(within(open).queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 });

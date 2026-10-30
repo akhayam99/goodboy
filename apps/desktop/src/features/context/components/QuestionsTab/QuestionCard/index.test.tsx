@@ -163,7 +163,13 @@ describe('QuestionCard', () => {
   it('pages between the questions of the same agent', () => {
     const onNext = vi.fn();
     renderCard({
-      pager: { index: 0, doneFlags: [false, false, true], onPrevious: vi.fn(), onNext },
+      pager: {
+        index: 0,
+        doneFlags: [false, false, true],
+        onPrevious: vi.fn(),
+        onNext,
+        onJumpToOpen: null,
+      },
     });
     screen.getByText('1 of 3');
     fireEvent.click(screen.getByRole('button', { name: 'Next question' }));

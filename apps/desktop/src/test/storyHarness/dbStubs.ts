@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-import type { Project, Workspace } from '@goodboy/types';
+import type { InsertOpenQuestionInput } from '@goodboy/db';
+import { brandId, type IsoDateTime, type Project, type Workspace } from '@goodboy/types';
 import { countNotifications, getSetting, storyResolveQueries, storySpies } from './spies';
 
 const { resetResolveQueryMocks: _resetResolveQueryMocks, ...storyResolveDbQueries } =
@@ -156,8 +157,18 @@ export const storyDbStubs = () => ({
   countContextSlotHistoryForSession: vi.fn(async () => ({})),
   listMessagesForSession: vi.fn(async () => []),
   listMessagesForAgent: vi.fn(async () => []),
-  insertOpenQuestion: vi.fn(async () => ({ inserted: true })),
+  insertOpenQuestion: vi.fn(async (_db: unknown, input: InsertOpenQuestionInput) => ({
+    inserted: true,
+    question: {
+      ...input,
+      isBlocking: input.isBlocking === true,
+      userAnswer: null,
+      status: 'open' as const,
+      createdAt: brandId<IsoDateTime>({ value: '2026-10-30T09:00:00.000Z' }),
+    },
+  })),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
+  supersedeEarlierBlockingQuestions: vi.fn(async () => []),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),

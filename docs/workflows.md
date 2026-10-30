@@ -368,20 +368,27 @@ read top to bottom at the conversation measure:
   `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
   field with **Answer** as its primary action, **Restart step** as a secondary
   button and **Open agent chat** next to it. A real open question (phase
-  `needs-answer`, a preset run's tail too) shows the same way: the question
-  inline, an **Answer the question** field and **Send answer** as its action
-  (`RunOpenQuestion`, `answerOpenQuestions`). When the asking agent has several
-  open questions the run page shows all of them in creation order (`askingAgentBatch`),
-  each with an **Answer question 2 of 3** field and one **Send answers** that
-  stays off until every field has text and sends them in one call, so the agent
-  resumes once. Another agent's questions wait for the next batch. A question
-  an agent is already answering for you shows as waiting, with no field, and
-  never counts toward the send (`partitionDelegatedQuestions`). A send that
-  fails before the answers are saved keeps every typed answer and shows one
-  alert with **Retry** for the same batch. A send that fails after they are
-  saved keeps the batch in the store (`pendingOpenQuestionDeliveries`) and the
+  `needs-answer`, a preset run's tail too) shows the same card as the transcript
+  (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
+  recommended one tagged, one pick or many, **Something else** for free text and
+  **Answer**. When the asking agent has several open questions they page as
+  "1 of 3" in creation order (`askingAgentBatch`); **Answer** keeps a card's
+  pick, the pager says how many are left ("2 left" jumps to the next
+  unanswered one, `questionsLeft`), and the last **Answer** sends every pick in
+  one call, so the agent resumes once. Another agent's questions wait for the
+  next batch. A question an agent is already answering for you shows as
+  waiting, with no pick, and never counts toward the send
+  (`partitionDelegatedQuestions`). A send that fails before the answers are
+  saved keeps every pick, unstages the card you pressed and reports "Couldn't
+  send your answers"; **Answer** on that card sends the same batch again
+  (`useAnswerQuestion`). A send that fails after they are saved keeps the batch
+  in the store (`pendingOpenQuestionDeliveries`) and the
   run tail shows the questions, your answers and **Retry** (`RunPendingDelivery`)
   until the agent gets them; Retry only sends again and never saves twice.
+  A step that stops while one of its blocking questions is open is never nudged
+  to continue, and a step that asks again in a later turn replaces its earlier
+  blocking questions of that run: they close as "Resolved by the agent" and are
+  never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
   The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
   secondary **Restart step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the

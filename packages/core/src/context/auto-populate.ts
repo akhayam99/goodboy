@@ -11,6 +11,7 @@ import {
   insertOpenQuestion,
   listResolvedQuestionTextsForSession,
   markOpenQuestionsResolvedByText,
+  supersedeEarlierBlockingQuestions,
   type Database,
 } from '@goodboy/db';
 import { ContextEngine } from './engine';
@@ -43,6 +44,7 @@ export type AutoPopulateInput = {
 export type AutoPopulateResult = {
   readonly updatedSlots: ReadonlyArray<SlotKey>;
   readonly openQuestionsChanged: boolean;
+  readonly supersededQuestionIds: ReadonlyArray<OpenQuestionId>;
   readonly decisionChanges: ReadonlyArray<DecisionChange>;
 };
 
@@ -96,6 +98,7 @@ export const autoPopulateContext = async (
     decisions !== null && decisions.slotValue !== decisions.previousSlotValue;
 
   let insertedCount = 0;
+  const askedIds: OpenQuestionId[] = [];
   for (const q of freshQuestions) {
     const res = await insertOpenQuestion(input.db, {
       id: brandId<OpenQuestionId>({ value: (input.newId ?? randomId)() }),
@@ -112,8 +115,42 @@ export const autoPopulateContext = async (
       isBlocking: q.isBlocking,
       turnOrdinal: input.agentContext?.turnOrdinal,
     });
+    askedIds.push(res.question.id);
     if (res.inserted) {
       insertedCount += 1;
+    }
+  }
+
+  const askingAgent = input.agentContext;
+  const askedInTurn = askingAgent?.turnOrdinal;
+  const superseded =
+    insertedCount > 0 &&
+    askingAgent !== undefined &&
+    askedInTurn !== undefined &&
+    freshQuestions.some((q) => q.isBlocking)
+      ? await supersedeEarlierBlockingQuestions({
+          db: input.db,
+          sessionId: input.sessionId,
+          agentId: askingAgent.agentId,
+          workflowRunId: askingAgent.workflowRunId ?? null,
+          turnOrdinal: askedInTurn,
+          keepIds: askedIds,
+        })
+      : [];
+  let isSlotRewritten = false;
+  if (superseded.length > 0) {
+    const slotNow = await engine.load(input.sessionId);
+    const before = slotNow.find((s) => s.key === 'open_questions')?.value ?? '';
+    const after = mergeIntoSlot(
+      removeFromSlot(
+        before,
+        superseded.map((question) => question.text),
+      ),
+      freshQuestions.map((q) => q.text),
+    );
+    if (after !== before) {
+      await engine.upsert(input.sessionId, 'open_questions', after);
+      isSlotRewritten = true;
     }
   }
 
@@ -123,10 +160,14 @@ export const autoPopulateContext = async (
   if (hasDecisionsSlotChanged) {
     updatedKeys.add('decisions');
   }
+  if (isSlotRewritten) {
+    updatedKeys.add('open_questions');
+  }
 
   return {
     updatedSlots: SLOT_ORDER.filter((key) => updatedKeys.has(key)),
-    openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
+    openQuestionsChanged: insertedCount > 0 || resolvedCount > 0 || superseded.length > 0,
+    supersededQuestionIds: superseded.map((question) => question.id),
     decisionChanges: decisions?.changes ?? [],
   };
 };

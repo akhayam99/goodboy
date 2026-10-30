@@ -20,11 +20,6 @@ type CountParams = {
   readonly count: number;
 };
 
-type QuestionNumberParams = {
-  readonly position: number;
-  readonly total: number;
-};
-
 type AsksParams = {
   readonly isQuestion: boolean;
 };
@@ -53,13 +48,6 @@ export const ORCHESTRATED_COPY = {
   hintLabel: 'Add a hint and continue',
   blockedAnswerLabel: 'Answer the step',
   blockedAnswerAction: 'Answer',
-  questionAnswerLabel: 'Answer the question',
-  questionAsks: 'The run asks',
-  questionAnswerAction: 'Send answer',
-  questionsAnswerLabel: 'Answer the questions',
-  questionsAnswerAction: 'Send answers',
-  questionNumberLabel: ({ position, total }: QuestionNumberParams): string =>
-    `Answer question ${position} of ${total}`,
   blockedAnswerFailed: "Couldn't send the answer",
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",

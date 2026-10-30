@@ -241,6 +241,48 @@ export const markOpenQuestionDismissed = async (
   );
 };
 
+type SupersedeEarlierBlockingQuestionsParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly turnOrdinal: number;
+  readonly keepIds: ReadonlyArray<OpenQuestionId>;
+};
+
+const SUPERSEDED_ANSWER = '[resolved by agent]';
+
+export const supersedeEarlierBlockingQuestions = async ({
+  db,
+  sessionId,
+  agentId,
+  workflowRunId,
+  turnOrdinal,
+  keepIds,
+}: SupersedeEarlierBlockingQuestionsParams): Promise<ReadonlyArray<OpenQuestion>> => {
+  const keep = keepIds.length === 0 ? '' : ` AND id NOT IN (${keepIds.map(() => '?').join(', ')})`;
+  const rows = await db.select<OpenQuestionRow>(
+    `SELECT * FROM open_questions
+     WHERE session_id = ? AND created_by_agent_id = ? AND workflow_run_id IS ?
+       AND status = 'open' AND is_blocking = 1
+       AND (turn_ordinal IS NULL OR turn_ordinal < ?)${keep}
+     ORDER BY created_at ASC`,
+    [sessionId, agentId, workflowRunId, turnOrdinal, ...keepIds],
+  );
+  if (rows.length === 0) {
+    return [];
+  }
+  const now = Date.now();
+  await db.execute(
+    `UPDATE open_questions
+     SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?,
+         answer_source = 'agent'
+     WHERE id IN (${rows.map(() => '?').join(', ')}) AND status = 'open'`,
+    [SUPERSEDED_ANSWER, now, now, ...rows.map((row) => row.id)],
+  );
+  return rows.map(toDomain);
+};
+
 export const restoreOpenQuestion = async (db: Database, id: OpenQuestionId): Promise<void> => {
   await db.execute(`UPDATE open_questions SET status = 'open', dismissed_at = NULL WHERE id = ?`, [
     id,

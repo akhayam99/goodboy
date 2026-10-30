@@ -100,7 +100,7 @@ Each step starts from a short brief instead of the whole previous chat. When a s
 
 ### Open questions
 
-Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**. The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one. The role in the drawer title opens the agent that asked, or its run step when it asked inside a run, and **Open the agent** in a row's right click menu does the same; an agent that was deleted keeps its role with no link.
+Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**. The step is not nudged to carry on while it waits. When an agent asks again in a later turn, only its newest blocking question stays open. A run page shows the same card. Several questions from one agent page as "1 of 3" with the number left, and the last **Answer** sends them together. The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one. The role in the drawer title opens the agent that asked, or its run step when it asked inside a run, and **Open the agent** in a row's right click menu does the same; an agent that was deleted keeps its role with no link.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-dark.webp">
@@ -133,3 +133,5 @@ This part is for contributors and agents who change the feature.
 - `prepareTurn` aims a run step at its own pin, else at that latest pin, and uses the active mount only when the run has none yet. `resolvePhaseAgent` then writes the mount the turn ran in to `agents.mount_id`, so the first step pins it.
 - A pinned mount that is gone blocks the step with an error that names its branch. An explicit mount on the turn overrides the pin and replaces it.
 - Auto children already launch on the mount of their delegation.
+- Re-asked questions: `autoPopulateContext` calls `supersedeEarlierBlockingQuestions`. It closes the agent's open blocking questions from earlier turns of the run. They become answered with `[resolved by agent]`, already delivered. No schema change. A question of the same turn stays.
+- `holdForUserQuestion` holds a step whose agent has an open blocking question in `sessionOpenQuestions`. `continueOrPause` then never sends the continue prompt.

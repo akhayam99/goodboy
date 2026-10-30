@@ -562,10 +562,10 @@ export {
   markOpenQuestionDismissed,
   markOpenQuestionsResolvedByText,
   restoreOpenQuestion,
+  supersedeEarlierBlockingQuestions,
   type InsertOpenQuestionInput,
   type InsertOpenQuestionResult,
   type OpenQuestionAnswerProvenance,
-  type MarkOpenQuestionAnswersDeliveredParams,
 } from './queries/open-question';
 
 export {

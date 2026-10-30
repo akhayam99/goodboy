@@ -28,8 +28,16 @@ New session, a session's Runs page, ⌘K and setup's Scout run share one form. P
 
 Guidance starts from your workspace text and can change for one run. Orchestrated and Preset hand it to the orchestrator, an agent reads it in its brief, and an Auto agent and its helpers read it on every turn.
 
+#### Answer a run's questions on its page
+<!-- gb area=workflows image=run-questions -->
+
+A run's page shows its questions as the same card as the transcript, with the suggested answers, the recommended one and one or many picks. Several questions page as 1 of 2 and the last Answer sends them together.
+
 ### Fixed
 
+- A run step no longer gets a reminder to continue while its agent waits on your answer, so the same question is not asked again. <!-- gb area=workflows -->
+- When an agent asks again, its earlier open questions in the run close, and answering the newest one moves the run. <!-- gb area=workflows -->
+- The transcript card says how many questions are left and jumps to the next one. <!-- gb area=workflows -->
 - A run gets the limit the form showed: No limit means no limit, and the run page says whether the amount is the default or set for this run. <!-- gb area=workflows -->
 - The limit menu names the session limit and each provider's monthly limit, with what is already spent. <!-- gb area=sessions -->
 - A run started from the chat or a suggestion now stops at the Run defaults limit it shows. <!-- gb area=workflows -->

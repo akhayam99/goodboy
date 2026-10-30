@@ -1,11 +1,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { Button, cn, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { questionsLeft } from './questionsLeft';
 
 export type QuestionPagerModel = {
   readonly index: number;
   readonly doneFlags: ReadonlyArray<boolean>;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
+  readonly onJumpToOpen: (() => void) | null;
 };
 
 type Props = {
@@ -30,12 +32,29 @@ const dotClass = ({
 
 export const QuestionPager = ({ pager }: Props) => {
   const total = pager.doneFlags.length;
+  const left = questionsLeft({ doneFlags: pager.doneFlags });
+  const leftLabel = `${left} left`;
 
   return (
     <span className="flex shrink-0 items-center gap-2">
       <span className="text-meta tabular-nums text-muted-foreground">
         {pager.index + 1} of {total}
       </span>
+      {left > 0 && left < total ? (
+        pager.onJumpToOpen === null ? (
+          <span className="text-meta tabular-nums text-muted-foreground">{leftLabel}</span>
+        ) : (
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={pager.onJumpToOpen}
+            aria-label={`${leftLabel}, go to the next unanswered question`}
+            className="tabular-nums text-muted-foreground"
+          >
+            {leftLabel}
+          </Button>
+        )
+      ) : null}
       <span aria-hidden className="flex items-center gap-1">
         {pager.doneFlags.map((isDone, position) => (
           <span

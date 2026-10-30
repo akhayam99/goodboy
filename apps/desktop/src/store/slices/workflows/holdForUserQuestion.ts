@@ -1,4 +1,4 @@
-import type { Agent, OpenQuestionId, SessionId, WorkflowId } from '@goodboy/types';
+import type { Agent, OpenQuestion, OpenQuestionId, SessionId, WorkflowId } from '@goodboy/types';
 import { extractMarkers, extractProseQuestion } from '@goodboy/core';
 import { insertOpenQuestion } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -43,6 +43,18 @@ const stepLocationOf = ({
   return { workflowId: template.id, ordinal: step.ordinal };
 };
 
+const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+
+const isWaitingOnOwnerAnswer = ({
+  get,
+  sessionId,
+  agent,
+}: Pick<Params, 'get' | 'sessionId' | 'agent'>): boolean =>
+  (get().sessionOpenQuestions?.[sessionId] ?? NO_QUESTIONS).some(
+    (question) =>
+      question.status === 'open' && question.isBlocking && question.createdByAgentId === agent.id,
+  );
+
 export const holdForUserQuestion = async ({
   set,
   get,
@@ -50,7 +62,10 @@ export const holdForUserQuestion = async ({
   agent,
   assistantText,
 }: Params): Promise<boolean> => {
-  if (extractMarkers(assistantText).questions.length > 0) {
+  if (
+    extractMarkers(assistantText).questions.length > 0 ||
+    isWaitingOnOwnerAnswer({ get, sessionId, agent })
+  ) {
     resetContinueAttempts({ set, get, agentId: agent.id });
     return true;
   }

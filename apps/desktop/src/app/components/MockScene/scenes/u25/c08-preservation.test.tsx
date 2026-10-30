@@ -396,14 +396,14 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(header().getByRole('button', { name: 'Approve plan' })).toBeDefined();
   });
 
-  it('Answer a step question from the header', async () => {
+  it('Answer a step question from the header or the card', async () => {
     await mount('c08-run-ready');
     act(() => {
       useAppStore.setState({ sessionOpenQuestions: { [C08_SESSION_ID]: [QUESTION] } });
     });
     await settle();
     expect(header().getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(tail().queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(tail().getByRole('button', { name: 'Answer' })).toBeDefined();
   });
 
   it('Step model sits in the step footer of the embedded conversation', async () => {
