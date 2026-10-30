@@ -7,7 +7,7 @@ import {
   type WorkflowId,
   type WorkspaceId,
 } from '@goodboy/types';
-import { AUTO_RUN_AS, runAsChoicesOf, runAsLabelOf, runAsRouteOf } from './runAsOf';
+import { AUTO_RUN_AS, runAsRouteOf } from './runAsOf';
 import type { RunRouteFacts } from './runRouteOf';
 
 const NOW = brandId<IsoDateTime>({ value: '2026-10-22T09:00:00.000Z' });
@@ -42,19 +42,6 @@ const factsOf = (text: string): RunRouteFacts => ({
 });
 
 describe('what Run as makes Start do', () => {
-  it('lists Auto, an Auto agent, Orchestrated, each preset and each role', () => {
-    const choices = runAsChoicesOf({ presets: [FIX_A_LAYOUT], roles: ROLES });
-
-    expect(choices.map((choice) => choice.label)).toEqual([
-      'Let Auto pick',
-      'Agent · Auto agent',
-      'Workflow · Orchestrated',
-      'Workflow · Preset Fix a layout',
-      'Agent · Scout',
-      'Agent · Reviewer',
-    ]);
-  });
-
   it('leaves the pick to the rules while it is on Auto', () => {
     const result = runAsRouteOf({ runAs: AUTO_RUN_AS, facts: factsOf('center every page') });
 
@@ -113,10 +100,18 @@ describe('what Run as makes Start do', () => {
     expect(result).toMatchObject({ role: 'scout', ask: 'look at this' });
   });
 
-  it('names the pick for the chip', () => {
-    const choices = runAsChoicesOf({ presets: [FIX_A_LAYOUT], roles: ROLES });
+  it('follows a preset unless the kind says to adapt', () => {
+    const presetId = FIX_A_LAYOUT.id;
+    const followed = runAsRouteOf({
+      runAs: { kind: 'preset', presetId },
+      facts: factsOf('center every page'),
+    });
+    const adapted = runAsRouteOf({
+      runAs: { kind: 'preset', presetId, closeness: 'adapt' },
+      facts: factsOf('center every page'),
+    });
 
-    expect(runAsLabelOf({ runAs: { kind: 'role', role: 'scout' }, choices })).toBe('Agent · Scout');
-    expect(runAsLabelOf({ runAs: AUTO_RUN_AS, choices })).toBe('Let Auto pick');
+    expect(followed.route).toMatchObject({ presetName: 'Fix a layout', closeness: 'follow' });
+    expect(adapted.route).toMatchObject({ presetName: 'Fix a layout', closeness: 'adapt' });
   });
 });

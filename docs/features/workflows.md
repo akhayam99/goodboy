@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Start a workflow
 
-A workflow run starts from the New session page: pick **Workflow**, then **Orchestrated** or **Preset**, and press **Start workflow**. From **Start a run** Auto picks a workflow when the ask has steps, or type `~` and a preset name to follow that preset. A preset's steps, roles and models are edited in the Workflows studio.
+A workflow run starts from the New session page: pick **Orchestrated** or **Preset**, and press **Start workflow**. From **Start a run** Auto picks a workflow when the ask has steps, or type `~` and a preset name to follow that preset. A preset's steps, roles and models are edited in the Workflows studio.
 
 ### Orchestrated
 

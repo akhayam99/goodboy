@@ -1,19 +1,14 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Button, FormActions } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
-import { NAMES } from '../../../../shared/utils/names';
-import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
 import type { AgentKind } from '../../agent-kind';
-import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
-import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
-import { RunChoiceChips } from './RunChoiceChips';
+import { RunsStartForm } from '../StartForm/RunsStartForm';
 import { StartRunFileChip } from './StartRunFileChip';
 import { useRunPrefixMenu } from './useRunPrefixMenu';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
@@ -55,14 +50,8 @@ export const StartRun = ({
     onStarted,
     prepare: limit.persist,
   });
-  const limitKind = limitKindOfRoute({ route: run.route.route });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
-  const modelSummary = recommendationSummary({
-    provider: run.model.effective.provider,
-    model: run.model.effective.model,
-    effort: run.model.effective.effort,
-  });
   const menu = useRunPrefixMenu({
     text: run.text,
     presets: run.presets,
@@ -126,44 +115,16 @@ export const StartRun = ({
           notice={run.filesNotice}
         />
       </div>
-      {hasText ? (
-        <p data-run-route-line="" className="text-meta text-muted-foreground">
-          {[
-            `${RUN_ROUTE_COPY.runAs.startsAs} ${run.route.route.choice}`,
-            ...(role === null ? [modelSummary] : []),
-            run.route.route.why,
-          ].join(' · ')}
-        </p>
-      ) : null}
-      {hint === null || hasText ? null : <p className="text-meta text-muted-foreground">{hint}</p>}
-      <FormActions
-        leading={
-          <div className="flex min-w-0 flex-wrap items-center gap-1">
-            <RunChoiceChips run={run} workspaceId={workspaceId} role={role} />
-            {limitKind === null ? null : (
-              <AutoLimitChip limit={limit} kind={limitKind} isDisabled={run.isStarting} />
-            )}
-          </div>
-        }
-        error={run.error}
-      >
-        {actions === undefined ? null : actions({ isStarting: run.isStarting })}
-        {hasText && !run.isStarting ? (
-          <Button variant="ghost" size="sm" onClick={run.discard}>
-            {RUN_ROUTE_COPY.discard}
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          disabled={!hasText || run.isStarting}
-          isBusy={run.isStarting}
-          busyLabel={RUN_ROUTE_COPY.starting}
-          onClick={() => void run.start()}
-          data-demo-anchor={demoAnchor}
-        >
-          {run.error === null ? RUN_ROUTE_COPY.start : NAMES.retry}
-        </Button>
-      </FormActions>
+      <RunsStartForm
+        workspaceId={workspaceId}
+        sessionId={sessionId}
+        role={role}
+        run={run}
+        limit={limit}
+        hint={hint}
+        demoAnchor={demoAnchor}
+        actions={actions === undefined ? null : actions({ isStarting: run.isStarting })}
+      />
     </section>
   );
 };

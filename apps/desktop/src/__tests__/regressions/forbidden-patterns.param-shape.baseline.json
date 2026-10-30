@@ -759,7 +759,6 @@
     "apps/desktop/src/features/session/components/NewDrawer/NewDrawerBody.tsx": 1,
     "apps/desktop/src/features/session/components/OrchestratedRun/OrchestratedRouting.tsx": 1,
     "apps/desktop/src/features/session/components/OrchestratedRun/PresetChangeAsk.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionKickoff/StartKindChoice.tsx": 2,
     "apps/desktop/src/features/session/components/SessionKickoff/TaskPicker.tsx": 1,
     "apps/desktop/src/features/session/components/SessionKickoff/useStartShape/index.ts": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.tsx": 1,

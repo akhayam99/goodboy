@@ -529,7 +529,7 @@
       "items": [
         {
           "title": "Start a workflow",
-          "text": "A workflow run starts from the New session page: pick Workflow, then Orchestrated or Preset, and press Start workflow.",
+          "text": "A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.",
           "group": "Workflows",
           "main": true
         },

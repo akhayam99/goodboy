@@ -237,7 +237,6 @@ const startFromIssue = async () => {
   const field = await screen.findByRole('textbox', { name: 'Goal' });
   await waitFor(() => expect(field).toHaveProperty('value', ISSUE.goal));
   fireEvent.change(field, { target: { value: ASK } });
-  fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   await waitFor(() => expect(useAppStore.getState().sessions).toHaveLength(1));
   const [session] = useAppStore.getState().sessions;

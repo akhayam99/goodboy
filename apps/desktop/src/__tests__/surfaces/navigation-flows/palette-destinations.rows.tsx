@@ -1,5 +1,5 @@
 import { expect, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import {
   type Row,
@@ -28,6 +28,17 @@ const openDiffHistory = async (): Promise<void> => {
   await openWorktreeMenu();
   await click(await screen.findByRole('menuitem', { name: /^Edit commits/ }));
 };
+
+const pressedKind = (name: string): Promise<void> =>
+  waitFor(() => {
+    const tab = within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole(
+      'tab',
+      {
+        name,
+      },
+    );
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+  }, WAIT);
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
@@ -328,7 +339,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New workflow session$/),
     lands: both(
       () => heading('New session'),
-      () => visible('tablist', 'Which workflow?'),
+      () => pressedKind('Orchestrated'),
     ),
   },
   {
@@ -337,7 +348,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^New agent session$/),
     lands: both(
       () => heading('New session'),
-      () => visible('tablist', 'Which agent?'),
+      () => pressedKind('Auto'),
     ),
   },
   {

@@ -1,4 +1,5 @@
 import type {
+  ClaudePermissionMode,
   ProjectId,
   RunRouteCloseness,
   SessionId,
@@ -19,6 +20,7 @@ export type SessionDraft = {
   readonly hasChosenStart: boolean;
   readonly presetCloseness: RunRouteCloseness;
   readonly autonomy: WorkflowAutonomy;
+  readonly permissionMode: ClaudePermissionMode | null;
   readonly issueQuery: string;
   readonly pickedIssues: ReadonlyArray<IssueCandidate>;
   readonly focusedIssueKey: string | null;
@@ -41,6 +43,7 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   hasChosenStart: false,
   presetCloseness: 'adapt',
   autonomy: 'step',
+  permissionMode: null,
   issueQuery: '',
   pickedIssues: [],
   focusedIssueKey: null,

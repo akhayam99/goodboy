@@ -271,6 +271,29 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
+    name: 'New session door: the four kinds and one settings row, with Where in the row and not under the task',
+    covers: ['navigate'],
+    open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'preset' }),
+    lands: async () => {
+      await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
+      const kinds = within(screen.getByRole('tablist', { name: 'What kind of run?' }));
+      expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+        'Auto',
+        'Agent',
+        'Orchestrated',
+        'Preset',
+      ]);
+      expect(kinds.getByRole('tab', { name: 'Preset' }).getAttribute('aria-selected')).toBe('true');
+      const task = within(screen.getByRole('region', { name: 'Goal' }));
+      expect(task.queryByRole('combobox', { name: 'Where' })).toBeNull();
+      const settings = within(screen.getByRole('group', { name: 'Run settings' }));
+      settings.getByRole('combobox', { name: 'Where' });
+      settings.getByRole('button', { name: /^Asks you:/ });
+      settings.getByRole('button', { name: /^Edits:/ });
+      settings.getByRole('button', { name: /^Limit / });
+    },
+  },
+  {
     name: 'Start from the draft, on the kind started last, creates the session and the run, with one Follow toast and three clicks',
     covers: ['navigate', 'toast:follow'],
     open: async (ctx) => {

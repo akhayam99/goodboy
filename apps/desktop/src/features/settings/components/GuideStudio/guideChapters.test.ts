@@ -298,7 +298,7 @@ describe('the shell chapter', () => {
 
 describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
-    expect(pointOf('kickoff', 'What kind of run?')).toContain('Workflow or Agent');
+    expect(pointOf('kickoff', 'What kind of run?')).toContain('Orchestrated or Preset');
     expect(pointOf('kickoff', NAMES.startARun)).toContain('Auto picks a workflow or an agent');
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Where')).toContain('Auto picks');

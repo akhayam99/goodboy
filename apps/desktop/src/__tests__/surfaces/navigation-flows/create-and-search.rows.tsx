@@ -211,6 +211,16 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
       expect(screen.queryByRole('region', { name: 'Run a workflow' })).toBeNull();
+      const kinds = within(screen.getByRole('tablist', { name: 'What kind of run?' }));
+      expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+        'Auto',
+        'Agent',
+        'Orchestrated',
+        'Preset',
+      ]);
+      const settings = within(screen.getByRole('group', { name: 'Run settings' }));
+      settings.getByRole('button', { name: /^Edits:/ });
+      expect(settings.queryByRole('combobox', { name: 'Where' })).toBeNull();
     },
   },
   {

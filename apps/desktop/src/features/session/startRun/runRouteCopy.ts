@@ -23,9 +23,6 @@ export const RUN_ROUTE_COPY = {
   placeholder: 'Describe what you want done. Auto picks how to run it.',
   hint: 'Auto picks how to run it. ~ lists presets, @ lists roles.',
   runAs: {
-    label: 'Run as',
-    auto: 'Let Auto pick',
-    menu: 'Run as',
     startsAs: 'Starts as',
     emptyPresets: 'No presets yet. Create one in the workspace settings.',
   },

@@ -62,18 +62,31 @@ describe('the u28 start run scenes', () => {
     const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
     expect(line.textContent).toContain('A question or a check, and no preset fits');
     screen.getByRole('button', { name: 'Attach files' });
-    screen.getByRole('button', { name: 'Run as: Let Auto pick' });
+    const kinds = screen.getByRole('tablist', { name: 'What kind of run?' });
+    expect(
+      within(kinds)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['Auto', 'Agent', 'Orchestrated', 'Preset']);
   });
 
-  it('opens the Run as menu with every kind of run', async () => {
-    mount({ id: 'u28-start-run-run-as-menu' });
+  it('opens the Edits menu with the four things an agent may do', async () => {
+    mount({ id: 'u28-start-run-edits-menu' });
 
-    await screen.findByRole('button', { name: 'Workflow · Orchestrated' }, WAIT);
-    screen.getByRole('button', { name: 'Workflow · Preset Fix a layout' });
-    screen.getByRole('button', { name: 'Agent · Scout' });
+    const menu = await screen.findByRole('dialog', { name: 'Edits' }, WAIT);
+    expect(
+      within(menu)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent?.split('.')[0]),
+    ).toEqual([
+      expect.stringContaining('Read only'),
+      expect.stringContaining('Ask first'),
+      expect.stringContaining('Edits allowed'),
+      expect.stringContaining('Full access'),
+    ]);
   });
 
-  it('names the model of the Auto agent next to Run as, and in the route line', async () => {
+  it('names the model of the Auto agent in the settings row, and in the route line', async () => {
     mount({ id: 'u28-start-run-route-line' });
 
     const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);

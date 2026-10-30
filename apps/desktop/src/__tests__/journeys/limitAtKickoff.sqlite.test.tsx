@@ -165,28 +165,24 @@ const open = () => {
   fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), { target: { value: GOAL } });
 };
 
-const formOf = async ({ name }: { readonly name: string }) =>
-  within(await screen.findByRole('region', { name }));
-
 describe('journey: the limit chip at the kickoff', () => {
   it('gives the agent kind no limit chip, since a plain agent has no limit to enforce', async () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Agent One role you pick/ }));
-    const form = await formOf({ name: 'Agent form' });
+    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
 
-    expect(form.queryByRole('button', { name: /^Limit / })).toBeNull();
+    row.getByRole('combobox', { name: 'Role' });
+    expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
   it('names a run, not Auto, in the popover of a workflow kind', async () => {
     spies();
     open();
-    fireEvent.click(screen.getByRole('tab', { name: /^Workflow/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
-    const form = await formOf({ name: 'Orchestrated form' });
+    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
 
-    fireEvent.click(await form.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.click(await row.findByRole('button', { name: 'Limit $5.00 · default' }));
 
     screen.getByRole('dialog', { name: 'Limit for this run' });
   });

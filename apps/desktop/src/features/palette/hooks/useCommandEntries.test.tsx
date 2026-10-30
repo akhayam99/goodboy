@@ -217,13 +217,16 @@ describe('the palette entries for new things', () => {
     act(() => workflow?.run());
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
       startKind: 'workflow',
-      startShape: null,
+      startShape: 'orchestrated',
       hasChosenStart: true,
     });
 
     const agent = entryFor('action:new-session-agent');
     act(() => agent?.run());
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.startKind).toBe('agent');
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
+      startKind: 'agent',
+      startShape: 'autoAgent',
+    });
     expect(openSessionDraft).toHaveBeenCalledTimes(2);
   });
 
