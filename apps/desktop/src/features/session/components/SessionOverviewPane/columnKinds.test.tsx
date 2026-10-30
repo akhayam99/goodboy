@@ -291,9 +291,11 @@ const stuckView = () => {
   return view;
 };
 
+const needsYou = () => within(screen.getByRole('region', { name: 'Needs you' }));
+
 const pressRetry = async () => {
   await act(async () => {
-    fireEvent.click(stuckLine().getByRole('button', { name: RETRY_NAME }));
+    fireEvent.click(needsYou().getByRole('button', { name: RETRY_NAME }));
   });
 };
 
@@ -308,13 +310,15 @@ describe('the stuck line in Running', () => {
     expect(document.querySelector('[data-now-actions]')).toBeNull();
   });
 
-  it('offers Retry with the quoted title, Answer and Stop under the sentence', async () => {
+  it('offers Answer and Stop under the sentence, and Retry once, in Needs you', async () => {
     await showStuck();
     const line = stuckLine();
 
-    expect(line.getByRole('button', { name: RETRY_NAME }).textContent).toBe('Retry');
+    expect(line.queryByRole('button', { name: RETRY_NAME })).toBeNull();
     line.getByRole('button', { name: 'Answer Auto in its chat' });
     line.getByRole('button', { name: 'Stop Auto and its agents' });
+    expect(screen.getAllByRole('button', { name: RETRY_NAME })).toHaveLength(1);
+    expect(needsYou().getByRole('button', { name: RETRY_NAME }).textContent).toBe('Retry');
   });
 
   it('retries the stuck child on the Next card path, naming the child', async () => {
@@ -326,21 +330,23 @@ describe('the stuck line in Running', () => {
     expect(retry.mock.calls[0]?.[0]).toMatchObject({ sessionId: COLUMN_SESSION_ID });
   });
 
-  it('keeps the line on a failed retry, says why, and a second Retry tries again', async () => {
+  it('keeps Retry on a failed retry, says why, and a second Retry tries again', async () => {
     const { retry } = await showStuck();
     retry.mockRejectedValueOnce(new Error('Auto is not running yet.'));
 
     await pressRetry();
 
-    expect(stuckLine().getByRole('alert').textContent).toBe('Auto is not running yet.');
     expect(screen.getByRole('region', { name: 'Needs you' }).textContent).toContain(
       'Auto is not running yet.',
     );
+    expect(stuckLine().queryByRole('alert')).toBeNull();
 
     await pressRetry();
 
     expect(retry).toHaveBeenCalledTimes(2);
-    expect(stuckLine().queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Needs you' }).textContent).not.toContain(
+      'Auto is not running yet.',
+    );
   });
 
   it('opens the Auto chat from Answer', async () => {

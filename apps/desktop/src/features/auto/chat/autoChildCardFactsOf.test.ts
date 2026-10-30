@@ -29,7 +29,7 @@ const factsOf = ({ delegation, isTurnRunning = false }: FactsParams) =>
   });
 
 describe('autoChildCardFactsOf', () => {
-  it('shows the real last tool and Stop for a running child', () => {
+  it('shows the real last tool of a running child', () => {
     const facts = factsOf({
       delegation: aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
       isTurnRunning: true,
@@ -39,11 +39,10 @@ describe('autoChildCardFactsOf', () => {
       word: 'Running',
       tone: 'info',
       activity: 'Reading ledger.ts',
-      canStop: true,
     });
   });
 
-  it('shows a queued child with no activity, still stoppable', () => {
+  it('shows a queued child with no activity', () => {
     const facts = factsOf({
       delegation: aDelegation({ key: 'impl', role: 'implementer', state: 'accepted' }),
     });
@@ -53,10 +52,9 @@ describe('autoChildCardFactsOf', () => {
       tone: 'neutral',
       activity: null,
     });
-    expect(facts.canStop).toBe(true);
   });
 
-  it('paints a child that needs you in the waiting tone, with no Stop', () => {
+  it('paints a child that needs you in the waiting tone', () => {
     const facts = factsOf({
       delegation: aDelegation({ key: 'planner', role: 'planner', state: 'awaiting_confirm' }),
     });
@@ -66,10 +64,9 @@ describe('autoChildCardFactsOf', () => {
       tone: 'warning',
       activity: 'Waiting for your OK',
     });
-    expect(facts.canStop).toBe(false);
   });
 
-  it('takes Stop away while the child is stopping', () => {
+  it('says Stopping while the child is stopping', () => {
     const facts = factsOf({
       delegation: {
         ...aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
@@ -79,10 +76,9 @@ describe('autoChildCardFactsOf', () => {
     });
 
     expect(facts.word).toBe('Stopping');
-    expect(facts.canStop).toBe(false);
   });
 
-  it('offers no Stop once the delegation settled', () => {
+  it('has no activity once the delegation settled', () => {
     const facts = factsOf({
       delegation: aDelegation({
         key: 'impl',
@@ -92,7 +88,6 @@ describe('autoChildCardFactsOf', () => {
       }),
     });
 
-    expect(facts.canStop).toBe(false);
     expect(facts.activity).toBeNull();
   });
 });

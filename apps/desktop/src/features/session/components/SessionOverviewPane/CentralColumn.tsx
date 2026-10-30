@@ -151,9 +151,7 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
             session={session}
             card={card}
             groups={groups}
-            cards={cards}
             model={model}
-            actionsFor={actionsFor}
             whereOf={whereOf}
             leadRunId={leadRunId}
           />

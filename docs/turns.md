@@ -811,7 +811,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   their nodes, `idle` a gray dot.
 - Stop is one word for the open agent: Stop (a turn, a child or a fix). The
   scope stays in the label only where the object is not the open agent: Stop
-  step (a run step), Stop Auto and its agents. `stopping` is its own tail
+  step (a run step). An Auto child card has no Stop: it is in the card's menu. `stopping` is its own tail
   state (a ring, a clock that keeps counting, no shimmer): the phrase reads
   Stopping with a busy Stop, then Still stopping with Force stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.

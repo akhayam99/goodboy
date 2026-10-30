@@ -120,7 +120,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - In the **Agents** panel, each Auto conversation is titled by what you asked it. Its agents hang above it on the same rail as **Activity**, newest on top under a **Now** marker.
 - When you open a conversation there, a new agent arrives at the top without moving what you are reading.
 - A conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. Open or fold a line with a click or the arrow keys. A fold opens by itself when a hidden helper needs you.
-- The chat shows each agent Auto starts with its role and name. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
+- The chat shows each agent Auto starts as one card with its role, name, model and state. The whole card opens the agent, by a click or by Enter, and it has no buttons. To stop that agent, right click the card and pick **Stop**. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
@@ -129,7 +129,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 
 - Set a **Limit** once per workspace.
 - Change, raise or remove the **Limit** of a running conversation from the chip line under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there.
-- **Stop** or **Change approach** while it waits.
+- **Change approach** while it waits. It stops Auto and puts you in the message field.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
 - An agent's page has the same chip line under its title: how it runs, when it asks you, the session **Limit** and its **Models**. The composer keeps only the message.
 - An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.

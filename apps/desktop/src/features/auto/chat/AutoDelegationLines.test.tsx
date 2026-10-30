@@ -57,7 +57,7 @@ const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: 
 };
 
 describe('AutoDelegationLines', () => {
-  it('shows a running child as a live card: role, task, state word and Open', () => {
+  it('shows a running child as a live card: role, task, state word, opening by the card', () => {
     const onOpenChild = vi.fn();
     renderLines({
       view: aView({
@@ -361,36 +361,16 @@ describe('the next step card of a delegation that waits for an OK', () => {
   });
 });
 
-describe('the Stop button of a live child card', () => {
+describe('the live child card', () => {
   const RUNNING = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
   const renderRunning = (delegation = RUNNING) =>
     renderLines({ view: aView({ phase: 'waiting', delegations: [delegation] }) });
 
-  it('stops that child by its own id', async () => {
-    const cancelCurrentTurn = vi.fn(async () => undefined);
-    useAppStore.setState({ cancelCurrentTurn });
+  it('has no Stop button, the card opens the child and Stop lives in its menu', () => {
     renderRunning();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
-
-    await waitFor(() =>
-      expect(cancelCurrentTurn).toHaveBeenCalledWith(FIXTURE_SESSION, 'agent-impl', 'user'),
-    );
-  });
-
-  it('says why when the stop fails and keeps the card working', async () => {
-    useAppStore.setState({
-      cancelCurrentTurn: vi.fn(async () => {
-        throw new Error('the agent did not answer');
-      }),
-    });
-    renderRunning();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Stop work for impl' }));
-
-    await screen.findByRole('alert');
-    screen.getByText('Running');
-    screen.getByRole('button', { name: 'Stop work for impl' });
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(1);
   });
 
   it('turns into the bare line with no Stop once the delegation settled', () => {

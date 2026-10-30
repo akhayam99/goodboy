@@ -67,7 +67,7 @@ never exists on one surface only.
   failure archives the rest with Undo on the toast and names the sessions it
   could not archive above the bar, with Retry for those only. Archive instead
   on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
-  changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
+  changes; Message this agent (not on the agent's own page, where the composer is), Interrupt while a turn runs, Close or Reopen,
   Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A

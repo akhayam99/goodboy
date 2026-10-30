@@ -44,7 +44,7 @@ export const InteractiveRow = ({
       aria-label={label}
       aria-current={isSelected ? 'true' : undefined}
       onClick={onOpen}
-      className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
+      className={cn('absolute inset-0 cursor-pointer rounded-[inherit]', FOCUS_RING)}
       {...dataAttributes}
     />
     <div

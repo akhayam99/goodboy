@@ -158,7 +158,10 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Message this agent',
       icon: MessageSquare,
       group: 'act',
-      when: ({ facts }) => !facts.isClosedByUser && !facts.isAdopted,
+      when: ({ facts, viewing }) =>
+        !facts.isClosedByUser &&
+        !facts.isAdopted &&
+        !(viewing?.kind === 'agent' && viewing.id === facts.agent.id),
       run: ({ facts, env }) => {
         openAgent({ env, facts, pane: 'transcript' });
         dispatchAfterNavigation({

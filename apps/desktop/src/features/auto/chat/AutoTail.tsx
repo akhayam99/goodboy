@@ -39,12 +39,10 @@ type StopParams = {
   readonly facts: TailFacts;
 };
 
-const withPlainStop = ({ facts }: StopParams): TailFacts => ({
-  ...facts,
-  actions: facts.actions.map((action) =>
-    action.id === 'stopAuto' ? { ...action, label: 'Stop' } : action,
-  ),
-});
+const withoutStop = ({ facts }: StopParams): TailFacts =>
+  facts.actions.some((action) => action.id === 'changeApproach')
+    ? { ...facts, actions: facts.actions.filter((action) => action.id !== 'stopAuto') }
+    : facts;
 
 export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
@@ -60,7 +58,7 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   if (live === null || live.state === 'idle') {
     return <AutoWorkingNow sessionId={sessionId} view={view} />;
   }
-  const facts = view.delegations.length > 0 ? live : withPlainStop({ facts: live });
+  const facts = withoutStop({ facts: live });
   const capUsd = view.budget?.capUsd ?? null;
   const raisedTo = capUsd === null ? null : raisedCapOf({ capUsd });
 

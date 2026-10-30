@@ -74,8 +74,8 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run, an agent or Auto started hang under it on one thin line.
-- When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Retry**, **Answer** and **Stop**.
-- **Retry** runs the same retry as the Fix row. When it fails, the line keeps the error. **Answer** opens the Auto chat.
+- When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
+- **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
 **Next**
 

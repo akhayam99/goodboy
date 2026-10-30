@@ -417,8 +417,8 @@ writing to it reopens it to **Deciding**.
   second window read the same rows.
 - **The tail.** Auto's state is said once, on the tail at the end of the
   conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
-  Implementer and Tester** with **Change approach** and **Stop Auto and its
-  agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
+  Implementer and Tester** with **Change approach** (it stops the tree and
+  focuses the composer, so the tail has no second Stop there), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
   of $5.00** with **Raise to $10**, **Change limit** (opens the Limit chip's
   popover on the Auto page) and **Stop**, plus a line on the agents still
