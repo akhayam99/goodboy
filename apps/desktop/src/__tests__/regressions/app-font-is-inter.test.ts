@@ -203,10 +203,8 @@ describe('the app is set in Inter', () => {
     expect(styles).toMatch(/\nbody \{[^}]*font-optical-sizing: auto;/);
   });
 
-  it('keeps tabular figures on the meta role, off running text where they widen the hyphen', () => {
-    expect(styles).toMatch(
-      /\.text-meta,\s*\.text-chip \{\s*font-variant-numeric: tabular-nums;\s*\}/,
-    );
+  it('keeps tabular figures off the meta and chip roles, where they widen the hyphen', () => {
+    expect(styles).not.toMatch(/\.text-meta,\s*\.text-chip \{/);
     expect(bodyFeatureTags()).not.toContain('tnum');
   });
 });

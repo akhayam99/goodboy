@@ -36,7 +36,7 @@ export const GuidePoint = ({ term, desc, flashNonce }: Props) => {
         />
       ) : null}
       <h2 className="relative text-lead text-foreground">{term}</h2>
-      <p className={cn('relative text-read text-muted-foreground', PANE_RHYTHM.prose)}>{desc}</p>
+      <p className={cn('relative text-prose text-muted-foreground', PANE_RHYTHM.prose)}>{desc}</p>
     </div>
   );
 };

@@ -52,7 +52,10 @@ export const WelcomeStep = ({ isLocked, onStart }: Props) => {
         >
           Welcome to Goodboy
         </h2>
-        <p className="welcome-rise text-balance text-read text-muted-foreground" style={delay(340)}>
+        <p
+          className="welcome-rise text-balance text-prose text-muted-foreground"
+          style={delay(340)}
+        >
           Goodboy runs coding agents side by side on your own repositories, one session for each
           goal. Each session works on its own branch when it needs one, and nothing is pushed until
           you say so.

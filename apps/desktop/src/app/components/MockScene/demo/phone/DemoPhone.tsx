@@ -116,7 +116,7 @@ export const DemoPhone = () => {
             <h1 id="demo-phone-title" className="text-display text-foreground">
               Give your agents a structure to work in
             </h1>
-            <p className="text-read text-muted-foreground">
+            <p className="text-prose text-muted-foreground">
               Run Claude Code, Codex and Cursor on one task, with the subscriptions you already
               have.
             </p>

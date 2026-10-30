@@ -66,7 +66,7 @@ export const SearchResultRow = memo(
         </div>
         <div className="flex shrink-0 flex-col items-end">
           <span className="text-meta text-faint-foreground">{meta.label}</span>
-          <span className="text-meta text-faint-foreground">
+          <span className="text-meta tabular-nums text-faint-foreground">
             {formatAge({ from: hit.occurredAt, now })}
           </span>
         </div>

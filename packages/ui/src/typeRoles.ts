@@ -10,6 +10,5 @@ export const TYPE_ROLES = [
   'meta',
   'code',
   'ui',
-  'read',
   'lead',
 ] as const;

@@ -101,9 +101,9 @@ describe('type scale line boxes', () => {
     expect(lineHeight).toBeGreaterThan(size);
   });
 
-  it('pins the row, title, meta and chip roles to the round 16 sizes', () => {
+  it('pins the row, title, meta and chip roles to the five level sizes', () => {
     expect(roleBox({ role: 'row' })).toEqual({ size: 13, lineHeight: 20 });
-    expect(roleBox({ role: 'title' })).toEqual({ size: 16, lineHeight: 24 });
+    expect(roleBox({ role: 'title' })).toEqual({ size: 18, lineHeight: 28 });
     expect(roleBox({ role: 'meta' })).toEqual({ size: 12, lineHeight: 16 });
     expect(roleBox({ role: 'chip' })).toEqual({ size: 11, lineHeight: 16 });
   });

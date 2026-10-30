@@ -152,10 +152,10 @@
   --text-display--line-height: 32px;
   --text-display--font-weight: 600;
   --text-display--letter-spacing: -0.01em;
-  --text-title: 16px;
-  --text-title--line-height: 24px;
+  --text-title: 18px;
+  --text-title--line-height: 28px;
   --text-title--font-weight: 600;
-  --text-title--letter-spacing: -0.005em;
+  --text-title--letter-spacing: -0.012em;
   --text-heading: 14px;
   --text-heading--line-height: 20px;
   --text-heading--font-weight: 600;
@@ -173,8 +173,6 @@
   --text-chip--font-weight: 500;
   --text-ui: 13px;
   --text-ui--line-height: 20px;
-  --text-read: 15px;
-  --text-read--line-height: 24px;
   --text-lead: 15px;
   --text-lead--line-height: 24px;
   --text-lead--font-weight: 500;
@@ -837,13 +835,6 @@ body {
   font-size: var(--text-xs);
   line-height: 16px;
   font-weight: 500;
-}
-
-@layer utilities {
-  .text-meta,
-  .text-chip {
-    font-variant-numeric: tabular-nums;
-  }
 }
 
 @utility text-code {

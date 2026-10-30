@@ -1120,6 +1120,7 @@ u30-tooltips
 u31-chat-anchoring
 u31-chat-reading
 u31-next-step
+u31-text-levels
 update-card
 update-card-long-version
 update-card-narrow

@@ -110,7 +110,7 @@ export const WorktreeRow = ({
             {isRecent ? <span> · idle under {suggestAfterDays} days</span> : null}
           </span>
         </div>
-        <span className={cn(STORAGE_COLUMN.size, 'text-meta text-foreground')}>
+        <span className={cn(STORAGE_COLUMN.size, 'text-meta tabular-nums text-foreground')}>
           {folder.sizeBytes === null ? (
             isMeasuring ? (
               <Skeleton className="ml-auto h-3 w-10" />
@@ -121,7 +121,7 @@ export const WorktreeRow = ({
             formatBytes({ bytes: folder.sizeBytes })
           )}
         </span>
-        <span className={cn(STORAGE_COLUMN.age, 'text-meta text-muted-foreground')}>
+        <span className={cn(STORAGE_COLUMN.age, 'text-meta tabular-nums text-muted-foreground')}>
           {formatAge({ from: lastChange, now })}
         </span>
         <span className={cn(STORAGE_COLUMN.status, 'text-meta', STATUS_TONE[status])}>

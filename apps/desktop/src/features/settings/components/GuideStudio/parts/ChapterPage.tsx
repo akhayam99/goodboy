@@ -39,7 +39,7 @@ const metaOf = ({ chapter }: MetaParams): string => {
 export const ChapterPage = ({ chapter, previous, next, flash, onOpen, onGo }: Props) => (
   <PaneShell page="guideChapter" title={chapter.title} meta={metaOf({ chapter })}>
     <section aria-label={chapter.title} className={PANE_RHYTHM.stack}>
-      <p className={cn('text-read text-foreground', PANE_RHYTHM.prose)}>{chapter.lead}</p>
+      <p className={cn('text-prose text-foreground', PANE_RHYTHM.prose)}>{chapter.lead}</p>
       {chapter.note === undefined ? null : (
         <Notice tone="info" placement="inline" title={chapter.note.term} body={chapter.note.desc} />
       )}

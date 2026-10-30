@@ -13,7 +13,7 @@ export const TailScene = ({ state }: Props) => {
   const facts = tailSceneFacts({ state });
   return (
     <div className="flex w-[720px] flex-col gap-4 bg-background p-6 text-ui">
-      <p className={cn('text-read', TEXT_ROLE.label)}>
+      <p className={cn('text-prose', TEXT_ROLE.label)}>
         I will stream the ledger rows to CSV in payments-api and run its tests.
       </p>
       {state === 'queued' ? (

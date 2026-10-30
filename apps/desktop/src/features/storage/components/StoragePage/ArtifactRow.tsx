@@ -116,13 +116,13 @@ export const ArtifactRow = ({
         <span className={cn(ARTIFACT_COLUMN.workspace, 'text-meta text-muted-foreground')}>
           {artifact.workspaceName}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.age, 'text-meta text-muted-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.age, 'text-meta tabular-nums text-muted-foreground')}>
           {formatAge({ from: artifact.deletedAt, now })}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.age, 'text-meta text-muted-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.age, 'text-meta tabular-nums text-muted-foreground')}>
           {formatAge({ from: storageArtifactLastUsed({ artifact }), now })}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.size, 'text-meta text-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.size, 'text-meta tabular-nums text-foreground')}>
           {artifact.sizeBytes === null ? (
             <EmptyLine className="text-faint-foreground">No copy</EmptyLine>
           ) : (

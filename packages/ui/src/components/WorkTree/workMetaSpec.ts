@@ -9,10 +9,10 @@ export const WORK_ROW = {
 } as const satisfies Record<string, string>;
 
 export const WORK_META_COLUMN = {
-  time: 'w-20 shrink-0 truncate text-right @max-[500px]:hidden',
+  time: 'w-20 shrink-0 truncate text-right tabular-nums @max-[500px]:hidden',
   timeSuffix: '@max-[640px]:sr-only',
-  cost: 'w-12 shrink-0 truncate text-right @max-[620px]:hidden',
-  costRange: 'w-18 shrink-0 truncate text-right @max-[620px]:hidden',
+  cost: 'w-12 shrink-0 truncate text-right tabular-nums @max-[620px]:hidden',
+  costRange: 'w-18 shrink-0 truncate text-right tabular-nums @max-[620px]:hidden',
   model: 'flex w-34 shrink-0 items-center justify-start gap-2 overflow-hidden @max-[640px]:w-auto',
   modelInline: 'flex min-w-0 items-center justify-start gap-2 overflow-hidden',
   modelInlineLines: 'flex min-w-0 items-baseline gap-1 whitespace-nowrap @max-[640px]:sr-only',

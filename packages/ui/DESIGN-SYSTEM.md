@@ -264,7 +264,7 @@ lives in the dot's tooltip, never as colored text. The Sessions door is the one 
 says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
-show the grid, its groups, every dot and the two size specimen.
+show the grid, its groups, every dot and the type specimen.
 
 ### Counts, fact lines and durations
 
@@ -312,34 +312,35 @@ same as the Runs on row and the Defaults rows. The body turns on `calt` and sets
 drawing tightens along the file's optical axis (14 to 32) as the size grows.
 Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
 set `storefront-web` apart as `storefront - web`. `text-meta` and `text-chip`
-carry `tabular-nums` themselves, and any other number that lines up in a column adds
-`tabular-nums`. The file has no character variants and no stylistic sets, so
+do not force them. A number that lines up in a column (a time, a cost, a
+count, a size) adds `tabular-nums` itself: `RelativeTime`, the count slots, the
+`WORK_META_COLUMN` time and cost cells and every `isNumeric` `ListGrid` column
+carry it, and `numbers-are-tabular.test.ts` lists the files that must. The file has no character variants and no stylistic sets, so
 `cv11` or `ss01` would change nothing. `app-font-is-inter.test.ts` reads the
 file's feature list and fails on a feature the file lacks. The face is upright
 only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role           | measure                   | used for                                                                               |
-| -------------- | ------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display` | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                 |
-| `text-title`   | 16/24, 600, -0.005em      | the one pane title (h1) of a surface                                                   |
-| `text-heading` | 14/20, 600                | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`     | 13/20, 500                | a top-level row label, a card title                                                    |
-| `text-body`    | 14/20                     | running text; text with no class inherits it from the body                             |
-| `text-prose`   | 15/24                     | messages, markdown, artifacts                                                          |
-| `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                |
-| `text-meta`    | 12/16, tabular            | controls, a nested row, a status label, time, ordinal, cost, count, a second line      |
-| `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
-| `text-code`    | mono 12/18                | branch, path, command, inline code                                                     |
-| `text-ui`      | 13/20                     | every line of a two size surface that is not its title or prose                        |
-| `text-read`    | 15/24                     | the prose of a two size surface                                                        |
-| `text-lead`    | 15/24, 500                | the title of a two size surface                                                        |
-| `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role |
+| role           | measure                   | used for                                                                                   |
+| -------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| `text-display` | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                     |
+| `text-title`   | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                  |
+| `text-heading` | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                         |
+| `text-row`     | 13/20, 500                | level 4: a top-level row label, a card title                                               |
+| `text-body`    | 14/20                     | running text; text with no class inherits it from the body                                 |
+| `text-prose`   | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions          |
+| `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                    |
+| `text-meta`    | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
+| `text-chip`    | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
+| `text-code`    | mono 12/18                | branch, path, command, inline code                                                         |
+| `text-ui`      | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
+| `text-lead`    | 15/24, 500                | the title of a list surface                                                                |
+| `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role     |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with
-`tabular-nums` (`text-meta` and `text-chip` carry it already). A file whose
+`tabular-nums`. A file whose
 `font-mono` is code is listed with a one-word reason in
 `regressions/scale-rules.mono-code.json`; any other `font-mono` fails
 `scale-rules.test.ts`.
@@ -350,23 +351,37 @@ the report reads the same way in the app, on disk and on paper, and the paper
 medium shrinks every one of its tokens under `@media print`. It never appears
 outside `ArtifactDocument`.
 
-### Two sizes per region
+### Five levels
 
-A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
-is 13 throughout: a door, a session row and a rail entry are one 28px row in
+Every text on a page has one of five levels. They step by size and weight
+first, and by colour second.
+
+| level | role                     | measure           | colour                              |
+| ----- | ------------------------ | ----------------- | ----------------------------------- |
+| 1     | `text-title`             | 18/28, 600        | foreground                          |
+| 2     | `text-heading`           | 14/20, 600        | foreground                          |
+| 3     | `text-prose`             | 15/24, 400        | foreground                          |
+| 4     | `text-row` and `text-ui` | 13/20, 500 or 400 | foreground                          |
+| 5     | `text-meta`              | 12/16, 400        | muted, or faint for time and counts |
+
+`text-prose` is the only reading size: `text-read` is gone, merged into it.
+`text-chip` (11/16) stays for tags and moves to 12 later. The sidebar is 13
+throughout: a door, a session row and a rail entry are one 28px row in
 `text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
 at rest (only the selected entry's icon takes its kind color), `bg-selected`
-plus foreground for the selected row, and
-a trailing slot drawn by `countSlotText`. Nothing appears on hover; a shortcut
-lives in the tooltip. The page is 15 for its title (`text-lead`) and its prose
-(`text-read`) and 13 for everything else: list cells, labels, times, counts,
-state words (`text-ui`, or `text-row` for a row's name and a group label).
-Weight is 400 or 500 and comes with the role, never a `font-*` utility. Hierarchy comes from the three grays of the text hierarchy, never
-from a third size. A branch or a path in such a surface is `text-ui font-mono`,
-listed in `scale-rules.mono-code.json` like any other code. Every list built on
-`ListGrid` is a two size surface, and `two-size-type.test.ts` fails when a file
-that renders `ListGrid` reaches for another role. The older roles stay for the
-surfaces that have not moved yet; a surface moves whole, never half.
+plus foreground for the selected row, and a trailing slot drawn by
+`countSlotText`. Nothing appears on hover; a shortcut lives in the tooltip.
+A page uses the five levels: its title is level 1 (or `text-lead` in a list
+surface), its sections are level 2, its prose is level 3, its names are level
+4 (`text-row` for a row's name and a group label, `text-ui` for the rest of a
+list cell) and its second lines, times, counts and costs are level 5. Weight
+is 400, 500 or 600 and comes with the role, never a `font-*` utility. Colour
+follows the three grays of the text hierarchy. A branch or a path in such a
+surface is `text-ui font-mono`, listed in `scale-rules.mono-code.json` like
+any other code. `levels.test.ts` reads the five sizes from `styles.css` and
+fails when a file that renders `ListGrid` reaches for `text-display`,
+`text-body` or `text-eyebrow`. Scene `u31-text-levels` shows the five levels
+on a title, a list with times, counts and costs, a chip and a meta line.
 
 A role with no weight inherits one: `text-meta font-medium` is a control label
 at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
