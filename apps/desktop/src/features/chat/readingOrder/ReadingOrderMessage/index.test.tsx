@@ -55,6 +55,35 @@ describe('ReadingOrderMessage', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('never clamps a message that holds a code block, so code is not cut mid block', () => {
+    const text = `${LONG}\n\n\`\`\`sql\nselect 1;\n\`\`\``;
+    const { container } = render(
+      <ReadingOrderMessage text={text} codeTarget={TARGET} clampLines={3} />,
+    );
+    expect(container.querySelector('[data-clamped="true"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('never clamps a message that holds a table or a code block inside a list', () => {
+    const table = `${LONG}\n\n| Step | Time |\n| --- | ---: |\n| a | 40 ms |`;
+    const nested = `${LONG}\n\n- first\n\n  \`\`\`bash\n  pnpm test\n  \`\`\``;
+    for (const text of [table, nested]) {
+      const { container } = render(
+        <ReadingOrderMessage text={text} codeTarget={TARGET} clampLines={3} />,
+      );
+      expect(container.querySelector('[data-clamped="true"]')).toBeNull();
+      cleanup();
+    }
+  });
+
+  it('still clamps a long prose message that only names code inline', () => {
+    const text = `${LONG}\nCall \`applyCredit\` once.`;
+    const { container } = render(
+      <ReadingOrderMessage text={text} codeTarget={TARGET} clampLines={3} />,
+    );
+    expect(container.querySelector('[data-clamped="true"]')).not.toBeNull();
+  });
+
   it('draws the outcome line before the text', () => {
     const { container } = render(
       <ReadingOrderMessage

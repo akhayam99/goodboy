@@ -74,7 +74,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'packages/ui/src/components/Dialog.tsx': { count: 2, reason: 'chrome' },
   'packages/ui/src/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
-  'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
+  'packages/ui/src/components/Markdown/renderTable.tsx': { count: 2, reason: 'markdown' },
+  'packages/ui/src/components/Markdown/index.tsx': { count: 1, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,
     reason: 'debt',

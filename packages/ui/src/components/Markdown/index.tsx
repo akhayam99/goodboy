@@ -7,14 +7,13 @@ import { IMAGE_CLASS } from '../RemoteImage/imageClass';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
 import { parseInline, type InlineNode } from './parseInline';
-import { type Block, type CellAlign, type KitEntry, type TaskState } from './parseMarkdown';
+import { type Block, type KitEntry, type TaskState } from './parseMarkdown';
 import { parseStableMarkdown, type BlockCache } from './parseStableMarkdown';
 import { CodeBlockContent } from './CodeBlockContent';
 import { CodeBlockFrame } from './CodeBlockFrame';
+import { renderTable } from './renderTable';
 import { freshenNode, type FreshTail } from './freshenNode';
 import { ICON_SIZE } from '../../iconSize';
-import { sectionNodeOf } from './sectionNodeOf';
-import { HEADING_CLASS } from './headingClass';
 
 type MarkdownVariant = 'document' | 'preview';
 
@@ -28,8 +27,8 @@ type MarkdownProps = {
 const CHIP_CLASS = `mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5 align-baseline ${EYEBROW_CLASS}`;
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
-  document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
-  preview: 'font-mono text-[0.875em] text-foreground wrap-anywhere',
+  document: 'rounded-md bg-muted px-1 py-0 font-mono text-ui text-foreground wrap-anywhere',
+  preview: 'font-mono text-ui text-foreground wrap-anywhere',
 };
 
 type ImageParams = {
@@ -159,6 +158,15 @@ const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): Re
     </Fragment>
   ));
 
+const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: 'text-title text-foreground',
+  2: 'text-title text-foreground',
+  3: 'text-heading text-foreground',
+  4: 'text-eyebrow text-muted-foreground',
+  5: 'text-eyebrow text-muted-foreground',
+  6: 'text-eyebrow text-muted-foreground',
+};
+
 const TASK_ICON: Record<TaskState, LucideIcon> = {
   open: Square,
   done: SquareCheck,
@@ -209,16 +217,6 @@ const renderKitPreview = ({ key, entries }: KitPreviewParams): ReactNode => (
   </div>
 );
 
-const alignClass = (align: CellAlign | undefined): string => {
-  if (align === 'right') {
-    return 'text-right';
-  }
-  if (align === 'center') {
-    return 'text-center';
-  }
-  return 'text-left';
-};
-
 const firstMeaningfulLine = (value: string): string => {
   const line = value.split('\n').find((candidate) => candidate.trim().length > 0);
   return line === undefined ? '' : line.trim();
@@ -267,15 +265,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           lang={block.lang}
           isClosed={block.isClosed}
         >
-          <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-code text-foreground">
-            <code>
-              <CodeBlockContent
-                content={block.content}
-                lang={block.lang}
-                isOpen={!block.isClosed}
-              />
-            </code>
-          </pre>
+          <CodeBlockContent content={block.content} lang={block.lang} isOpen={!block.isClosed} />
         </CodeBlockFrame>
       );
     }
@@ -353,41 +343,13 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           </div>
         );
       }
-      return (
-        <div key={key} className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border-soft">
-                {block.headers.map((h, j) => (
-                  <th
-                    key={`${key}-h-${j}`}
-                    className={cn(
-                      'px-3 py-2 text-eyebrow text-muted-foreground break-words',
-                      alignClass(block.align[j]),
-                    )}
-                  >
-                    {renderInline(h, `${key}-h-${j}`, variant)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {block.rows.map((row, ri) => (
-                <tr key={`${key}-r-${ri}`} className="border-b border-border-soft last:border-b-0">
-                  {row.map((cell, ci) => (
-                    <td
-                      key={`${key}-r-${ri}-c-${ci}`}
-                      className={cn('px-3 py-2 align-top break-words', alignClass(block.align[ci]))}
-                    >
-                      {renderInline(cell, `${key}-r-${ri}-c-${ci}`, variant)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
+      return renderTable({
+        keyPrefix: key,
+        headers: block.headers,
+        alignments: block.align,
+        rows: block.rows,
+        renderCell: ({ text, keyPrefix }) => renderInline(text, keyPrefix, variant),
+      });
     }
     case 'callout': {
       const style = ctxStyleForTag({ tag: block.tag });
@@ -703,11 +665,21 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
                       : undefined,
                 }),
               );
-              return sectionNodeOf({
-                key: `s-${si}`,
-                blocks,
-                isHeadingSection: section[0]?.kind === 'heading',
-              });
+              if (section[0]?.kind !== 'heading') {
+                return (
+                  <div key={`s-${si}`} className="flex flex-col gap-3">
+                    {blocks}
+                  </div>
+                );
+              }
+              return (
+                <div key={`s-${si}`} data-block="section" className="flex flex-col gap-2">
+                  {blocks[0]}
+                  {blocks.length > 1 ? (
+                    <div className="flex flex-col gap-3">{blocks.slice(1)}</div>
+                  ) : null}
+                </div>
+              );
             });
       blockCacheRef.current = cache;
       renderedRef.current = { variant, cache: next };

@@ -2233,7 +2233,7 @@
     "packages/ui/src/components/ListGrid/ListGridRow.tsx": 1,
     "packages/ui/src/components/ListGrid/useFilledColumns/index.ts": 1,
     "packages/ui/src/components/Markdown/ctxTagStyle.ts": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 5,
+    "packages/ui/src/components/Markdown/index.tsx": 4,
     "packages/ui/src/components/Markdown/inlineMarkdownText.ts": 2,
     "packages/ui/src/components/Markdown/parseMarkdown.ts": 7,
     "packages/ui/src/components/PaneShell/index.tsx": 1,

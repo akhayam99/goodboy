@@ -471,6 +471,16 @@ document pane's section label is an eyebrow even when the body under it is
 prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
 
+**Markdown blocks.** `Markdown` lays a body out in sections: a heading is 8px
+above its text, the blocks of a body are 12px apart and sections 24px apart, so
+a heading belongs to the text after it. `h1` and `h2` take `text-title`, `h3`
+`text-heading`. A fenced block is `CodeBlockFrame`, one `bg-muted` surface with a
+header row (language in `text-meta`, **Wrap**, then the host's
+`CodeBlockActionsContext` actions) over `text-ui font-mono` code in a horizontal
+`ScrollFade`; code and tables are never clamped. Inline code is `text-ui`, never
+a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
+one hairline between rows and `tabular-nums` on a number column.
+
 ## Radius scale
 
 One concentric family: an inner radius is the outer radius minus the padding

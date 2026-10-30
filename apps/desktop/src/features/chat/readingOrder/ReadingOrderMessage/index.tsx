@@ -1,4 +1,11 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   Button,
   CodeBlockActionsContext,
@@ -13,6 +20,7 @@ import {
   type CodeActionTarget,
 } from '../../components/TranscriptCards/codeActionTarget';
 import { OutcomeLine } from '../OutcomeLine';
+import { hasUnclampableBlock } from '../hasUnclampableBlock';
 import { READING_BUDGETS } from '../readingBudgets';
 import { cutAtBlockOf, type ClampCut } from '../cutAtBlockOf';
 
@@ -58,7 +66,9 @@ export const ReadingOrderMessage = ({
 }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChipListExpanded, setIsChipListExpanded] = useState(false);
-  const isClamped = clampLines !== null && estimateRenderedLines({ text }) > clampLines;
+  const hasCodeOrTable = useMemo(() => hasUnclampableBlock({ text }), [text]);
+  const isClamped =
+    clampLines !== null && !hasCodeOrTable && estimateRenderedLines({ text }) > clampLines;
   const isCut = isClamped && !isExpanded;
   const clampRef = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState<ClampCut>(LINES_CUT);

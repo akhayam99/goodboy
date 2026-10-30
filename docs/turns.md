@@ -931,7 +931,7 @@ cards, 4 chips, an answer clamped at 12 lines).
 - A turn with a text of the active run is live and untouched, so the reveal
   types it whole. A turn with an `error` item keeps its notes open.
 - `ReadingOrderMessage` is the only place agent prose reaches `Markdown`. It
-  draws the optional `OutcomeLine` (`text-heading`, 14/20 at 600), the clamped text with **Show more**, then
+  draws the optional `OutcomeLine` (`text-heading`, 14/20 at 600), the text (clamped with **Show more** only when it is prose: a message with a fenced block or a table is never clamped, `hasUnclampableBlock`), then
   the chips with **+N** past 4. `AssistantText` is a thin caller, and it draws no copy row: **Copy** is a `row-actions` button on the message root (`group/row`), at its top right, so it shows on hover and on keyboard focus and takes no room in the flow; the message context menu (`message.copy`) always has it. It reads
   `parseOutcomeLine` from the raw text, before the markers are stripped, and
   passes a neutral `outcome` once the message is complete and revealed.
@@ -944,6 +944,7 @@ cards, 4 chips, an answer clamped at 12 lines).
   `AutoResultCard` and `DelegationResult` draw `OutcomeLine`, chips
   (`DelegationResultChips`, same 4 chip budget) and `ReadingNotes`. A result is the outcome
   line, the artifact rows, the chips and a closed Notes line, never a stack of rows.
+- `Markdown` (`packages/ui/src/components/Markdown/`) draws the body of a message as sections. A section opens at a heading, so the heading sits 8px above its text and the blocks of the body 12px apart, and sections are 24px apart. `h1` and `h2` are `text-title`, `h3` is `text-heading`. A fenced block is `CodeBlockFrame`: one surface with a header (the language, **Wrap**, and the host's actions such as **Copy**) over `text-ui font-mono` code that scrolls inside the column until **Wrap** is on (off at the start, one block at a time). Inline code is whole `text-ui`. A table has a `text-meta` header, one hairline between rows (`renderTable`) and tabular figures on a right aligned or all numeric column.
 - `reading-order.test.ts` counts `<Markdown` in `features/chat` and
   `features/auto` outside `readingOrder/` against
   `reading-order.baseline.json`; the count only falls.
