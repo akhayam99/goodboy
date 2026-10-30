@@ -103,7 +103,7 @@ const mountCommandLines = ({
 };
 
 const DEPENDENCY_LINE =
-  'NEVER link or copy `node_modules`, `.next`, `dist` or other build output from another folder. When dependencies are missing, run the project install or setup command in this worktree, or ask once if it is unknown.';
+  'NEVER link or copy `node_modules`, `.next`, `dist` or other build output from another folder. When dependencies are missing, run the install command that matches the lockfile in this worktree without asking: `pnpm install` for pnpm-lock.yaml, `yarn install` for yarn.lock, `npm ci` for package-lock.json, `bun install` for bun.lockb. If typecheck needs the dist of a workspace library, run the repo build step for it too. Ask only when there is no lockfile and no setup command.';
 
 const WRITE_BOUNDARY_LINES: ReadonlyArray<string> = [
   'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount. NEVER write to a project root or any path outside them.',

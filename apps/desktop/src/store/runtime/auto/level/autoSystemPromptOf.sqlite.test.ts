@@ -55,6 +55,16 @@ describe('autoSystemPromptOf', () => {
     });
   }
 
+  it('names the language of the anchor it is handed', async () => {
+    const prompt = await autoSystemPromptOf({
+      sessionId: AUTO_SEED_SESSION,
+      languageAnchor:
+        'Sistema il layout delle pagine membro in harbor-portal e controlla `pnpm typecheck`',
+    });
+
+    expect(prompt).toContain('Write every reply, question, suggestion and summary in Italian.');
+  });
+
   it('follows a level changed between two turns', async () => {
     await writeAutoLevel({ db: storySqlite(), target: TARGET, level: 'step' });
     const first = await autoSystemPromptOf({ sessionId: AUTO_SEED_SESSION });

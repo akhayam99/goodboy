@@ -140,6 +140,28 @@ describe('buildSessionLanguageGuard', () => {
     expect(guard).toContain('The message fixes that language');
   });
 
+  it('names the language of the goal in the quoted block', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: {
+        source: 'goal',
+        text: 'Sistema il layout delle pagine membro in harbor-portal, usa `MemberLayout` e controlla `pnpm typecheck`',
+      },
+    });
+
+    expect(guard).toContain(
+      'Write every reply, question, suggestion and summary in Italian. Answer in the language that goal is written in',
+    );
+  });
+
+  it('names no language when the anchor is too short to tell', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: 'Sistema il layout' },
+    });
+
+    expect(guard).not.toContain('Write every reply, question');
+    expect(guard).toContain('Answer in the language that goal is written in');
+  });
+
   it('emits nothing when either anchor source has blank text', () => {
     expect(buildSessionLanguageGuard({ anchor: { source: 'goal', text: '   ' } })).toBe('');
     expect(buildSessionLanguageGuard({ anchor: { source: 'message', text: '   ' } })).toBe('');

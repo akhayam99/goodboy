@@ -102,6 +102,7 @@ type AutoSystemPromptParams = {
   readonly isDelegationEnabled: boolean;
   readonly level?: AutoLevel;
   readonly guidance?: string | null;
+  readonly languageAnchor?: string;
 };
 
 type GuidanceBlockParams = {
@@ -121,6 +122,7 @@ export const buildAutoSystemPrompt = ({
   isDelegationEnabled,
   level = DEFAULT_AUTO_LEVEL,
   guidance = null,
+  languageAnchor = '',
 }: AutoSystemPromptParams): string =>
   [
     AUTO_IDENTITY,
@@ -132,7 +134,7 @@ export const buildAutoSystemPrompt = ({
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),
-    sessionLanguageTurnRule({ anchorLabel: 'message' }),
+    sessionLanguageTurnRule({ anchorLabel: 'message', anchorText: languageAnchor }),
   ].join('\n\n');
 
 export const AUTO_SYSTEM_PROMPT = buildAutoSystemPrompt({

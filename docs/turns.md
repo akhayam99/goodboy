@@ -210,6 +210,13 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   14 older turns." (`handoffNoticeMessage`).
 - The system prompt is the guards (write scope, session language, connected
   integrations, workspace profile) followed by the agent kind's own prompt.
+  The session-language guard quotes the goal or the operator's last message
+  and names its language ("Write every reply, question, suggestion and summary
+  in Italian.") when `detectSessionLanguage` reads one off that text: stopword
+  scoring over it, en, es, pt, fr and de, after code spans, paths and
+  identifiers are cut out. Under 3 words, under 2 hits, under 15% hits or a
+  winner less than 1.5 times the runner-up gives no name, and the rule reads
+  as before. The Auto prompt and the orchestrator brief name it the same way.
   Claude receives it as an appended system prompt; every other CLI receives it
   at the top of the prompt, with the kind prompt fenced as a role boundary.
 - The write-scope guard (`buildScopeGuard`) is where every agent, in a chat or
@@ -223,7 +230,10 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   `scopeGuard.test.ts` pins the text. A guard that names a worktree or a
   mount also forbids linking or copying `node_modules`, `.next`, `dist` or other
   build output from another folder: a missing dependency is installed in the
-  worktree with the project's install command, or asked about once.
+  worktree without asking, with the command that matches the lockfile
+  (`pnpm install`, `yarn install`, `npm ci`, `bun install`), plus the repo's
+  build step when typecheck needs the dist of a workspace library. The agent
+  asks only when there is no lockfile and no setup command.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary. A fallback rerun of that

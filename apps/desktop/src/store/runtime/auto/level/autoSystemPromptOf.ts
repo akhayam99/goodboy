@@ -8,11 +8,13 @@ import { readAutoLevel } from './readAutoLevel';
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId?: AgentId | null;
+  readonly languageAnchor?: string;
 };
 
 export const autoSystemPromptOf = async ({
   sessionId,
   agentId = null,
+  languageAnchor = '',
 }: Params): Promise<string> => {
   const level = await readAutoLevel({ db: tauriDatabase, target: { sessionId } });
   const session = agentId === null ? null : await getSessionById(tauriDatabase, sessionId);
@@ -24,5 +26,6 @@ export const autoSystemPromptOf = async ({
     isDelegationEnabled: AUTO_GATES.isDelegationEnabled,
     level,
     guidance,
+    languageAnchor,
   });
 };

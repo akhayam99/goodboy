@@ -112,6 +112,29 @@ describe('buildAutoSystemPrompt', () => {
     }
   });
 
+  it('names the language of the anchor in both modes', () => {
+    for (const isDelegationEnabled of [false, true]) {
+      const prompt = buildAutoSystemPrompt({
+        isDelegationEnabled,
+        languageAnchor:
+          'Sistema il layout delle pagine membro in harbor-portal e controlla `pnpm typecheck`',
+      });
+
+      expect(prompt).toContain(
+        'Write every reply, question, suggestion and summary in Italian. Answer in the language that message is written in',
+      );
+    }
+  });
+
+  it('keeps the unnamed rule when the anchor does not show a language', () => {
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: true, languageAnchor: 'ok' })).toBe(
+      buildAutoSystemPrompt({ isDelegationEnabled: true }),
+    );
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: true })).not.toContain(
+      'Write every reply, question, suggestion and summary in',
+    );
+  });
+
   it('has no em dash and no en dash', () => {
     for (const isDelegationEnabled of [false, true]) {
       const prompt = buildAutoSystemPrompt({ isDelegationEnabled });

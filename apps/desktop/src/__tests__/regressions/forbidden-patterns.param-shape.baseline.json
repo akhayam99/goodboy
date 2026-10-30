@@ -2042,7 +2042,7 @@
     "packages/core/src/github/reviews.ts": 9,
     "packages/core/src/handoff/buildHandoff.ts": 1,
     "packages/core/src/handoff/renderHandoff.ts": 2,
-    "packages/core/src/language/sessionLanguage.ts": 2,
+    "packages/core/src/language/sessionLanguage.ts": 1,
     "packages/core/src/monitoring/attributePorts.ts": 9,
     "packages/core/src/monitoring/pathContains.ts": 1,
     "packages/core/src/orchestrator/client.ts": 1,

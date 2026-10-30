@@ -29,11 +29,13 @@ export const resolveSessionLanguageGoal = ({
   return session.goal.trim();
 };
 
+export type SessionLanguageAnchor = {
+  readonly source: 'goal' | 'message';
+  readonly text: string;
+};
+
 type GuardParams = {
-  readonly anchor: {
-    readonly source: 'goal' | 'message';
-    readonly text: string;
-  };
+  readonly anchor: SessionLanguageAnchor;
 };
 
 export const buildSessionLanguageGuard = ({ anchor }: GuardParams): string => {
@@ -49,7 +51,7 @@ export const buildSessionLanguageGuard = ({ anchor }: GuardParams): string => {
     '[session-language]',
     header,
     trimmed,
-    sessionLanguageTurnRule({ anchorLabel: anchor.source }),
+    sessionLanguageTurnRule({ anchorLabel: anchor.source, anchorText: trimmed }),
     '[/session-language]',
   ].join('\n');
 };
