@@ -1,6 +1,10 @@
-import { useRef } from 'react';
-import { Copy, Square } from 'lucide-react';
-import { ContextMenu, ICON_SIZE } from '@goodboy/ui';
+import { useEffect, useRef, useState } from 'react';
+import { Square } from 'lucide-react';
+import { brandId, type AgentId } from '@goodboy/types';
+import { ICON_SIZE } from '@goodboy/ui';
+import { ObjectOverflowMenu } from '../../../../../../features/actions/ObjectOverflowMenu';
+import type { AgentActionTarget } from '../../../../../../features/actions/types';
+import { SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
 import { AsksYouChip } from '../../../../../../features/workflows/AsksYouChip';
 import { RUN_AUTONOMY_HEADER } from '../../../../../../features/workflows/runAutonomy';
 import { QuickActionsPopover } from '../../../../../../features/quick-actions/QuickActionsPopover';
@@ -13,6 +17,12 @@ const WORDS = { value: 'Ask me', source: 'this run', chain: 'This run, then the 
 
 const noop = () => undefined;
 
+const AGENT_TARGET: AgentActionTarget = {
+  kind: 'agent',
+  sessionId: SESSION_ID,
+  agentId: brandId<AgentId>({ value: 'mock-run-agent-planner' }),
+};
+
 const SUGGESTIONS = [
   { id: 'review', label: 'Review the diff', sublabel: 'payments-api', group: 'action' },
   { id: 'retry', label: 'Retry the failed step', sublabel: 'ledger-core', group: 'action' },
@@ -21,8 +31,16 @@ const SUGGESTIONS = [
 
 export const PopoversStage = () => {
   const rootRef = useRef<HTMLDivElement>(null);
-  useOpenTriggers({ rootRef });
+  const [isSeeded, setIsSeeded] = useState(false);
+  useEffect(() => {
+    seedActivityRunScene();
+    setIsSeeded(true);
+  }, []);
+  useOpenTriggers({ rootRef, isReady: isSeeded });
 
+  if (!isSeeded) {
+    return null;
+  }
   return (
     <div ref={rootRef} data-testid="u30-popovers" className="fixed inset-0 bg-background">
       <div data-open-on-mount="" className="fixed left-2 top-2">
@@ -75,23 +93,9 @@ export const PopoversStage = () => {
           />
         </div>
       </div>
-      <ContextMenu
-        label="Agent actions"
-        point={{ x: window.innerWidth - 24, y: window.innerHeight / 2 }}
-        entries={[
-          { kind: 'item', key: 'open', label: 'Open the agent', onSelect: noop },
-          { kind: 'item', key: 'copy', label: 'Copy the link', icon: Copy, onSelect: noop },
-          { kind: 'separator', key: 'divider' },
-          {
-            kind: 'item',
-            key: 'stop',
-            label: 'Stop this agent',
-            isDestructive: true,
-            onSelect: noop,
-          },
-        ]}
-        onClose={noop}
-      />
+      <div data-open-on-mount="" className="fixed right-2 top-1/2">
+        <ObjectOverflowMenu target={AGENT_TARGET} label="Agent actions" align="right" />
+      </div>
     </div>
   );
 };

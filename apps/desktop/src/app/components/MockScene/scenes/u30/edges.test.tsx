@@ -74,7 +74,7 @@ describe('the u30 edge scenes', () => {
 
     expect(screen.getAllByRole('dialog', { name: 'Model' })).toHaveLength(2);
     expect(screen.getAllByRole('dialog').length).toBeGreaterThanOrEqual(4);
-    expect(document.querySelector('[data-context-menu]')).not.toBeNull();
+    screen.getByRole('menu', { name: 'Agent actions' });
     screen.getByText('Review the diff');
   });
 });
