@@ -5,6 +5,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
+import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { RunChoiceChips } from '../StartRun/RunChoiceChips';
 import type { StartRunModel } from '../StartRun/useStartRun';
@@ -18,6 +19,7 @@ type Props = {
 export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const hasText = run.text.trim() !== '';
+  const limitKind = limitKindOfRoute({ route: run.route.route });
 
   return (
     <section aria-label={RUN_ROUTE_COPY.label} className="flex flex-col gap-6">
@@ -26,7 +28,9 @@ export const AutoPicksActions = ({ workspaceId, run, limit }: Props) => {
         leading={
           <div className="flex flex-wrap items-center gap-2">
             <RunChoiceChips run={run} workspaceId={workspaceId} role={null} />
-            <AutoLimitChip limit={limit} kind="autoAgent" isDisabled={run.isStarting} />
+            {limitKind === null ? null : (
+              <AutoLimitChip limit={limit} kind={limitKind} isDisabled={run.isStarting} />
+            )}
             <Button
               variant="ghost"
               size="sm"

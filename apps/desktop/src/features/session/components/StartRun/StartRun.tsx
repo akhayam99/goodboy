@@ -9,7 +9,7 @@ import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover'
 import type { AgentKind } from '../../agent-kind';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
-import { runKindOfRoute } from '../../startRun/runKindOfRoute';
+import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
 import { startRunFileOf } from '../../startRun/startRunFileOf';
@@ -55,8 +55,7 @@ export const StartRun = ({
     onStarted,
     prepare: limit.persist,
   });
-  const shape = runKindOfRoute({ route: run.route.route }).shape;
-  const limitKind = shape === 'agent' ? null : shape;
+  const limitKind = limitKindOfRoute({ route: run.route.route });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
   const modelSummary = recommendationSummary({
