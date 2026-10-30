@@ -696,23 +696,34 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
           ? document.blocks.map((block, idx) =>
               renderCachedBlock({ block, id: `b-${idx}`, variant, previous, next }),
             )
-          : document.sections.map((section, si) => (
-              <div key={`s-${si}`} className="flex flex-col gap-3">
-                {section.map((block, bi) =>
-                  renderCachedBlock({
-                    block,
-                    id: `b-${si}-${bi}`,
-                    variant,
-                    previous,
-                    next,
-                    fresh:
-                      si === document.sections.length - 1 && bi === section.length - 1
-                        ? fresh
-                        : undefined,
-                  }),
-                )}
-              </div>
-            ));
+          : document.sections.map((section, si) => {
+              const blocks = section.map((block, bi) =>
+                renderCachedBlock({
+                  block,
+                  id: `b-${si}-${bi}`,
+                  variant,
+                  previous,
+                  next,
+                  fresh:
+                    si === document.sections.length - 1 && bi === section.length - 1
+                      ? fresh
+                      : undefined,
+                }),
+              );
+              if (section[0]?.kind !== 'heading' || blocks.length < 2) {
+                return (
+                  <div key={`s-${si}`} className="flex flex-col gap-3">
+                    {blocks}
+                  </div>
+                );
+              }
+              return (
+                <div key={`s-${si}`} data-heading-section="" className="flex flex-col gap-2">
+                  {blocks[0]}
+                  <div className="flex flex-col gap-3">{blocks.slice(1)}</div>
+                </div>
+              );
+            });
       blockCacheRef.current = cache;
       renderedRef.current = { variant, cache: next };
       return rendered;
@@ -736,7 +747,7 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
   return (
     <div
       data-reading-region=""
-      className={cn('flex flex-col gap-4 text-body text-foreground', className)}
+      className={cn('flex flex-col gap-6 text-body text-foreground', className)}
     >
       {content}
     </div>

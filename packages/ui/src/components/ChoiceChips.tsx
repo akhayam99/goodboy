@@ -1,7 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { cn } from '../cn';
 import { Button } from './Button';
-import { Chip } from './Chip';
+import { SELECTED_ROW_CLASSES } from '../selectedRow';
 import { nextEnabledIndex } from './tabListKeys';
 
 const MAX_NUMBERED = 9;
@@ -132,9 +132,11 @@ export const ChoiceChips = <T extends string>({
                 ?.querySelectorAll<HTMLButtonElement>('[role="option"]')
                 [target]?.focus();
             }}
+            data-selected={isActive}
             className={cn(
-              'h-auto min-h-7 max-w-full justify-start whitespace-normal border-0 py-1 text-left',
-              isActive && 'bg-selected hover:bg-selected',
+              'h-auto min-h-7 max-w-full justify-start whitespace-normal border-border-soft bg-transparent py-1 text-left',
+              SELECTED_ROW_CLASSES,
+              'data-[selected=true]:border-border',
             )}
           >
             {isNumbered ? (
@@ -144,13 +146,9 @@ export const ChoiceChips = <T extends string>({
             ) : null}
             <span className="min-w-0 break-words text-row">{option.label}</span>
             {option.isRecommended === true ? (
-              <Chip
-                tone="neutral"
-                kind="state"
-                bordered={false}
-                emphasis="subtle"
-                label="Recommended"
-              />
+              <span className="shrink-0 text-meta font-normal text-muted-foreground">
+                Recommended
+              </span>
             ) : null}
           </Button>
         );

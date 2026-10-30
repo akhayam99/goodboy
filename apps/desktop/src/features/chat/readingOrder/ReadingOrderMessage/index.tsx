@@ -3,7 +3,6 @@ import {
   Button,
   CodeBlockActionsContext,
   Markdown,
-  cn,
   estimateRenderedLines,
   type FreshTail,
   type Tone,
@@ -31,10 +30,9 @@ type ClampStyleParams = {
 };
 
 const clampStyleOf = ({ lines }: ClampStyleParams): CSSProperties => ({
-  display: '-webkit-box',
-  WebkitBoxOrient: 'vertical',
-  WebkitLineClamp: lines,
+  maxHeight: `${lines}lh`,
   overflow: 'hidden',
+  maskImage: 'linear-gradient(to bottom, black calc(100% - 2lh), transparent)',
 });
 
 export const ReadingOrderMessage = ({
@@ -59,7 +57,7 @@ export const ReadingOrderMessage = ({
           <CodeBlockActionsContext.Provider value={AssistantCodeActions}>
             <div
               data-clamped={isClamped && !isExpanded}
-              className={cn('min-w-0', isClamped && !isExpanded && '[&>*]:block')}
+              className="min-w-0"
               style={
                 isClamped && !isExpanded && clampLines !== null
                   ? clampStyleOf({ lines: clampLines })
@@ -77,7 +75,7 @@ export const ReadingOrderMessage = ({
           size="xs"
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
-          className="w-fit"
+          className="w-fit self-start px-0 hover:bg-transparent"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </Button>
