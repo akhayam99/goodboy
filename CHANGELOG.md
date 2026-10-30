@@ -12,6 +12,27 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.5
+
+Agent chats read in a calm column with room between turns, a sent message stays in view, and the Next step card is short and quiet.
+
+### Improved
+
+#### Agent chats read in one calm column
+<!-- gb area=agents image=chat-reading -->
+
+The chat, its header and the message box sit in one 720px column. Messages read larger with more room between lines, turns and blocks stand apart, and a long answer shows 12 lines before Show more. Copy appears when you point at a message or tab to it.
+
+#### Your message stays where you can read it
+<!-- gb area=agents image=chat-anchoring -->
+
+When you send, your message moves near the top and the reply grows below it. The view no longer jumps while you read, Jump to latest brings you back, and the last line never sits against the message box.
+
+#### The Next step card is short and quiet
+<!-- gb area=agents image=next-step -->
+
+Auto's Next step is one neutral card with a status dot. The choices sit in one row with Recommended as a quiet tag, a hint opens only when you ask for it, and one button starts the step.
+
 ## Goodboy v0.29.4
 
 One start form for every way in, a limit that is exactly what the form shows, and guidance that reaches every kind of run.
