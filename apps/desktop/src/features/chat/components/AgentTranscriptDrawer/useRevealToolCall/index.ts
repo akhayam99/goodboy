@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react';
+import { RELEASE_FOLLOW_EVENT } from '../../ChatView/useScrollPin';
 
 const GIVE_UP_MS = 2000;
 
@@ -18,6 +19,7 @@ export const useRevealToolCall = ({ bodyRef, toolUseId }: Params): void => {
       if (row === null) {
         return false;
       }
+      row.dispatchEvent(new Event(RELEASE_FOLLOW_EVENT, { bubbles: true }));
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return true;
     };

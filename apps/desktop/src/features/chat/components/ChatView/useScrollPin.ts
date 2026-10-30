@@ -15,6 +15,8 @@ const NON_SCROLL_TARGET_SELECTOR = 'button, a, input, textarea, select';
 
 export const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const;
 
+export const RELEASE_FOLLOW_EVENT = 'goodboy:release-follow';
+
 type PointerDownParams = {
   readonly target: EventTarget | null;
 };
@@ -266,9 +268,16 @@ export const useScrollPin = ({ deps, resetKey, onRevealOverflow }: Params) => {
     [stopSettling, releaseGesture],
   );
 
+  const releaseFollow = useCallback(() => {
+    stopSettling();
+    isAnchoredRef.current = false;
+    isLockedRef.current = false;
+    writePinned({ isPinned: false });
+  }, [stopSettling, writePinned]);
+
   const userInput = useMemo(
-    () => ({ onInput: onUserScroll, onPointerDown }),
-    [onUserScroll, onPointerDown],
+    () => ({ onInput: onUserScroll, onPointerDown, onRelease: releaseFollow }),
+    [onUserScroll, onPointerDown, releaseFollow],
   );
 
   useEffect(

@@ -1,18 +1,22 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { RELEASE_FOLLOW_EVENT } from '../../ChatView/useScrollPin';
 import { useRevealToolCall } from '.';
 
 const scrollIntoView = vi.fn();
+const released = vi.fn();
 
 afterEach(() => {
   scrollIntoView.mockReset();
+  released.mockReset();
 });
 
 const bodyOf = (): HTMLDivElement => {
   const body = document.createElement('div');
   document.body.append(body);
   Element.prototype.scrollIntoView = scrollIntoView;
+  body.addEventListener(RELEASE_FOLLOW_EVENT, released);
   return body;
 };
 
@@ -35,6 +39,10 @@ describe('useRevealToolCall', () => {
     body.append(rowOf({ ids: 'toolu-1 toolu-2' }));
 
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+    expect(released).toHaveBeenCalledOnce();
+    expect(released.mock.invocationCallOrder[0]).toBeLessThan(
+      scrollIntoView.mock.invocationCallOrder[0] ?? 0,
+    );
     body.append(rowOf({ ids: 'toolu-3' }));
     await Promise.resolve();
     expect(scrollIntoView).toHaveBeenCalledOnce();
