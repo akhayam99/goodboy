@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { OpenQuestionDeliveryError } from '../../../../store/slices/open-questions/openQuestionDeliveryError';
 import type { QuestionDelegateRequest } from '../../../../store/slices/open-questions/spawnQuestionDelegates';
 import { partitionDelegatedQuestions } from '../../questionDelegate';
 import {
@@ -56,6 +57,7 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
   const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const answerOpenQuestions = useAppStore((state) => state.answerOpenQuestions);
   const spawnQuestionDelegates = useAppStore((state) => state.spawnQuestionDelegates);
+  const reportError = useAppStore((state) => state.reportError);
   const stageAnswer = useOpenQuestions((state) => state.stageAnswer);
   const unstageAnswer = useOpenQuestions((state) => state.unstageAnswer);
   const flashAnswered = useOpenQuestions((state) => state.flashAnswered);
@@ -87,7 +89,6 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
         }))
         .filter((pair) => pair.answer.length > 0);
       const requests = delegateRequestsFor({ questions: group, drafts });
-      flashAnswered(pairs.map((pair) => pair.id));
       if (requests.length > 0) {
         const outcomes = await spawnQuestionDelegates({ sessionId, requests });
         for (const outcome of outcomes) {
@@ -98,7 +99,16 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
           unstageAnswer(outcome.questionId);
         }
       }
-      await answerOpenQuestions(sessionId, pairs, askerId);
+      try {
+        await answerOpenQuestions(sessionId, pairs, askerId);
+      } catch (cause) {
+        if (!(cause instanceof OpenQuestionDeliveryError)) {
+          unstageAnswer(question.id);
+          void reportError({ title: "Couldn't send your answers", error: cause, sessionId });
+          return;
+        }
+      }
+      flashAnswered(pairs.map((pair) => pair.id));
     },
     [
       agents,
@@ -106,6 +116,7 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
       clearDraft,
       flashAnswered,
       openQuestions,
+      reportError,
       sessionId,
       spawnQuestionDelegates,
       stageAnswer,

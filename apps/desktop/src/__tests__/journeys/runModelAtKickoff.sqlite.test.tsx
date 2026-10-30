@@ -165,15 +165,13 @@ const pickCursor = () => {
 };
 
 describe('journey: pick the model of a run at the kickoff', () => {
-  it('offers Run as and Model on Auto picks, and starts the orchestrator on the model picked', async () => {
+  it('offers Model on Auto picks, and starts the orchestrator on the model picked', async () => {
     const { attachWorkflowToSession } = spies();
     open();
-    fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /^Run as:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     pickCursor();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
@@ -185,8 +183,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('starts the Auto agent of a picked shape on the model picked for that run', async () => {
     const { spawnAgent } = spies();
     open();
-    fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Auto agent/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
 
     pickCursor();
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
@@ -201,7 +198,6 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('starts the orchestrator of a picked shape on the model picked for that run', async () => {
     const { attachWorkflowToSession } = spies();
     open();
-    fireEvent.click(screen.getByRole('tab', { name: /^Workflow/ }));
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
 
     pickCursor();
@@ -216,8 +212,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('leaves the model to the defaults when none is picked', async () => {
     const { spawnAgent } = spies();
     open();
-    fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
-    fireEvent.click(screen.getByRole('tab', { name: /^Auto agent/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));

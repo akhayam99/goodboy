@@ -11,7 +11,9 @@ import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
+import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
+import { OrchestratedMountBlock } from './OrchestratedMountBlock';
 import { OrchestratedTailVerb } from './OrchestratedTailVerb';
 
 type Props = {
@@ -30,6 +32,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     (hint) => hint.consumedAt == null && !readingIds.includes(hint.id),
   ).length;
   const quiet = useQuietStep({ agents });
+  const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
   const [isWhyOpen, setIsWhyOpen] = useState(false);
   const tail = orchestratedTailOf({
     orchestrator: view.orchestrator.state,
@@ -43,11 +46,13 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         : { agentId: quiet.agent.id, minutes: Math.floor(quiet.quietMs / MINUTE_MS) },
     restartStoppedCount: agents.filter((agent) => isStoppedByRestart({ agent, runs: agents }))
       .length,
+    mountBlock,
   });
   if (tail === null) {
     return <RunPendingDelivery sessionId={session.id} />;
   }
   const tailVerbs = tail.verbs.filter((verb) => verb.kind !== 'primary');
+  const isMountBlocked = mountBlock !== null && tail.blockedAgentId === mountBlock.agentId;
   const phase = view.orchestrator.state.phase;
   const entries = decisionEntries({ run, steps: workflow.steps });
   const latest = entries.decisions[0] ?? null;
@@ -65,28 +70,32 @@ export const OrchestratedTail = ({ session, view }: Props) => {
       data-orchestrated-tail={view.orchestrator.state.phase}
       className="flex min-w-0 flex-col gap-1"
     >
-      <TailLine
-        facts={{
-          state: tail.state,
-          phrase: tail.phrase,
-          startedAt: null,
-          stepAgentId: tail.stepAgentId,
-          actions: [],
-        }}
-        onAction={() => undefined}
-        verbs={
-          tailVerbs.length === 0
-            ? null
-            : tailVerbs.map((verb) => (
-                <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
-              ))
-        }
-      />
+      {isMountBlocked ? null : (
+        <TailLine
+          facts={{
+            state: tail.state,
+            phrase: tail.phrase,
+            startedAt: null,
+            stepAgentId: tail.stepAgentId,
+            actions: [],
+          }}
+          onAction={() => undefined}
+          verbs={
+            tailVerbs.length === 0
+              ? null
+              : tailVerbs.map((verb) => (
+                  <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
+                ))
+          }
+        />
+      )}
       {phase === 'needs-answer' && view.orchestrator.runQuestions.length > 0 ? (
         <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
       ) : null}
       <RunPendingDelivery sessionId={session.id} />
-      {tail.blockedAgentId === null ? null : (
+      {isMountBlocked ? (
+        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+      ) : tail.blockedAgentId === null ? null : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
       )}
       {blockedReason === '' ? null : (

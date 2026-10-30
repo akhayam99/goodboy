@@ -33,7 +33,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 [More on tasks and your tools](docs/features/inbox.md)
 
-<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="one-start-form"></a><a id="the-kind-chip"></a><a id="the-model-of-a-run"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
@@ -115,7 +115,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- **Start a workflow**: A workflow run starts from the New session page: pick Workflow, then Orchestrated or Preset, and press Start workflow.
+- **Start a workflow**: A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.
 - **Orchestrated**: Give a goal and a model picks each next step, with its role, model, effort and a reason.
 - **Run defaults**: Set what every new run starts with in the Run defaults tab.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.

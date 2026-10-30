@@ -1,5 +1,8 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { readRunGuidance } from '../../../store/runtime/runGuidance/readRunGuidance';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { autoRootsOf } from '../../auto/autoRootsOf';
 import { moveToAuto } from '../../auto/moveToAuto';
 import { agentKindPalette, type AgentKind } from '../agent-kind';
@@ -11,6 +14,7 @@ type Params = {
   readonly role: AgentKind;
   readonly work: string;
   readonly sourceAgentId: AgentId | null;
+  readonly guidance?: string | null;
 };
 
 export type ContinueOutcome = Readonly<{
@@ -33,11 +37,23 @@ export const continueWithRole = async ({
   role,
   work,
   sourceAgentId,
+  guidance = null,
 }: Params): Promise<ContinueOutcome> => {
   const label = agentKindPalette({ kind: role }).label;
   const content = continueMessageOf({ label, work });
   if (sourceAgentId !== null) {
-    const outcome = await moveToAuto({ sessionId, agentId: sourceAgentId, instruction: content });
+    const workspaceId = sessionById(useAppStore.getState().sessions, sessionId)?.workspaceId;
+    const carried =
+      guidance ??
+      (workspaceId === undefined
+        ? null
+        : await readRunGuidance({ db: tauriDatabase, workspaceId, agentId: sourceAgentId }));
+    const outcome = await moveToAuto({
+      sessionId,
+      agentId: sourceAgentId,
+      instruction: content,
+      guidance: carried,
+    });
     if (outcome.kind === 'adopted') {
       return { kind: 'handed', agentId: outcome.autoAgentId };
     }
@@ -58,6 +74,7 @@ export const continueWithRole = async ({
   }
   const run = await startRoutedRun({
     sessionId,
+    guidance,
     result: {
       ask: work.trim() === '' ? content : work.trim(),
       preset: null,

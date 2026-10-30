@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import type { AutoLevel } from '@goodboy/core';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { createLatestOnly } from '../../../../../store/runtime/state-writes/latestOnly';
 import { rememberLastStart } from '../../../startKind/rememberLastStart';
+import { applyStartEdits } from '../../../startRun/applyStartEdits';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
 import { agentRoutingOfPin, orchestratorRoutingOfPin } from '../../../startRun/runModelPin';
 import { runModelSlotOfShape } from '../../../startRun/runModelSlotOf';
+import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
+import type { StartLimit } from '../../../../auto/startLimitOf';
 import type { RunModelModel } from '../../StartRun/useRunModel';
 import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
@@ -18,8 +23,9 @@ import { useStartFromDraft } from '../useStartFromDraft';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly mount: SessionDraftMount | null;
-  readonly prepare: () => Promise<void>;
+  readonly prepare: () => Promise<StartLimit>;
   readonly model: RunModelModel;
+  readonly level: AutoLevel | null;
 };
 
 export type StartShapeModel = Readonly<{
@@ -30,7 +36,13 @@ export type StartShapeModel = Readonly<{
 
 const START_KEY = 'start-shape';
 
-export const useStartShape = ({ workspaceId, mount, prepare, model }: Params): StartShapeModel => {
+export const useStartShape = ({
+  workspaceId,
+  mount,
+  prepare,
+  model,
+  level,
+}: Params): StartShapeModel => {
   const { clear: clearModel, pinFor } = model;
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,9 +87,7 @@ export const useStartShape = ({ workspaceId, mount, prepare, model }: Params): S
     setIsStarting(true);
     setError(null);
     try {
-      if (shape !== 'agent') {
-        await prepare();
-      }
+      const limit = shape === 'agent' ? null : await prepare();
       const result = pickedRouteOf({
         shape,
         ask,
@@ -97,12 +107,19 @@ export const useStartShape = ({ workspaceId, mount, prepare, model }: Params): S
         pin !== null && slot.kind === 'orchestrator' ? orchestratorRoutingOfPin({ pin }) : null;
       const autonomy = hasAsksGate({ shape }) ? draft.autonomy : null;
       const run = async (created: Session): Promise<void> => {
+        await applyStartEdits({ sessionId: created.id, mode: draft.permissionMode });
         await startRoutedRun({
           sessionId: created.id,
           result,
           routing,
           orchestratorRouting,
           autonomy,
+          level: shape === 'autoAgent' ? level : null,
+          limit,
+          guidance: guidanceToSendOf({
+            picked: draft.guidance,
+            workspace: workspaceGuidanceOf({ state, workspaceId }),
+          }),
         });
       };
       await startFromDraft({
@@ -121,7 +138,7 @@ export const useStartShape = ({ workspaceId, mount, prepare, model }: Params): S
         setIsStarting(false);
       }
     }
-  }, [clearModel, mount, pinFor, prepare, startFromDraft, workspaceId]);
+  }, [clearModel, level, mount, pinFor, prepare, startFromDraft, workspaceId]);
 
   return { start, isStarting, error };
 };

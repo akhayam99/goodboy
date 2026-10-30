@@ -85,6 +85,12 @@
           "shown": true
         },
         {
+          "title": "One start form",
+          "text": "Every door draws the same form: the New session page, a session's Runs page, ⌘K and the setup Scout run.",
+          "group": "Start a task",
+          "also": "start form"
+        },
+        {
           "title": "The Kind chip",
           "text": "Each run says what it is, Workflow or Agent, and why. Pick another kind to start a second run; this one keeps going.",
           "group": "Start a task",
@@ -529,7 +535,7 @@
       "items": [
         {
           "title": "Start a workflow",
-          "text": "A workflow run starts from the New session page: pick Workflow, then Orchestrated or Preset, and press Start workflow.",
+          "text": "A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.",
           "group": "Workflows",
           "main": true
         },

@@ -24,6 +24,8 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { invokeAgentList } from '../../workflows/workflows';
+import { readRunGuidance } from '../../../store/runtime/runGuidance/readRunGuidance';
+import { writeRunGuidance } from '../../../store/runtime/runGuidance/writeRunGuidance';
 import { continueWithRole } from './continueWithRole';
 import { runRoutesKey } from './runRoutesSetting';
 
@@ -151,5 +153,125 @@ describe('continuing a run with a role', () => {
     ).rejects.toThrow();
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(useAppStore.getState().autoTreeViews[AUTO_SEED_SESSION] ?? []).toHaveLength(0);
+  });
+});
+
+describe('continuing a run keeps its guidance', () => {
+  const GUIDANCE = 'Keep every change inside ledger-core.';
+
+  it('gives the Auto run that adopts an agent the guidance that agent had', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: SOURCE,
+      text: GUIDANCE,
+    });
+
+    const outcome = await continueWithRole({
+      sessionId: AUTO_SEED_SESSION,
+      role: 'planner',
+      work: 'Turn the scout report into a plan',
+      sourceAgentId: SOURCE,
+    });
+
+    expect(outcome.kind).toBe('handed');
+    expect(
+      await readRunGuidance({
+        db: storySqlite(),
+        workspaceId: WORKSPACE,
+        agentId: outcome.agentId,
+      }),
+    ).toBe(GUIDANCE);
+  });
+
+  it('keeps the guidance on the retry when saving it failed after the agent was adopted', async () => {
+    await writeRunGuidance({
+      db: storySqlite(),
+      workspaceId: WORKSPACE,
+      agentId: SOURCE,
+      text: GUIDANCE,
+    });
+    const sendTurn = vi.fn<SendFn>(async () => ({ blockedOverBudget: false }));
+    useAppStore.setState({ sendTurn });
+    const db = storySqlite();
+    const original = db.execute.bind(db);
+    const execute = vi.spyOn(db, 'execute');
+    execute.mockImplementation(async (sql, params) => {
+      if (sql.includes('workspace_values')) {
+        throw new Error('disk unavailable');
+      }
+      return original(sql, params);
+    });
+    const params = {
+      sessionId: AUTO_SEED_SESSION,
+      role: 'planner',
+      work: 'Turn the scout report into a plan',
+      sourceAgentId: SOURCE,
+    } as const;
+
+    await expect(continueWithRole(params)).rejects.toThrow('disk unavailable');
+    execute.mockRestore();
+    expect(sendTurn).not.toHaveBeenCalled();
+
+    const retried = await continueWithRole(params);
+
+    expect(retried.kind).toBe('message');
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(
+      await readRunGuidance({
+        db: storySqlite(),
+        workspaceId: WORKSPACE,
+        agentId: retried.agentId,
+      }),
+    ).toBe(GUIDANCE);
+  });
+
+  it('writes no guidance for the Auto run when the adopted agent had none', async () => {
+    const outcome = await continueWithRole({
+      sessionId: AUTO_SEED_SESSION,
+      role: 'planner',
+      work: 'Turn the scout report into a plan',
+      sourceAgentId: SOURCE,
+    });
+
+    expect(
+      await readRunGuidance({
+        db: storySqlite(),
+        workspaceId: WORKSPACE,
+        agentId: outcome.agentId,
+      }),
+    ).toBeNull();
+  });
+
+  it('starts a new agent with the guidance it was given', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => STARTED);
+    useAppStore.setState({ spawnAgent, sessionPhaseRuns: { [AUTO_SEED_SESSION]: [] } });
+
+    await continueWithRole({
+      sessionId: AUTO_SEED_SESSION,
+      role: 'tester',
+      work: 'Writes tests for the changes',
+      sourceAgentId: null,
+      guidance: GUIDANCE,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledWith(
+      AUTO_SEED_SESSION,
+      expect.objectContaining({ kindOverride: 'tester', guidance: GUIDANCE }),
+    );
+  });
+
+  it('starts a new agent with no guidance field when none was given', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => STARTED);
+    useAppStore.setState({ spawnAgent, sessionPhaseRuns: { [AUTO_SEED_SESSION]: [] } });
+
+    await continueWithRole({
+      sessionId: AUTO_SEED_SESSION,
+      role: 'tester',
+      work: 'Writes tests for the changes',
+      sourceAgentId: null,
+    });
+
+    expect(spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('guidance');
   });
 });

@@ -20,6 +20,15 @@ export const standingGuidanceSection = ({ run, role }: SectionParams): string =>
   return text === null ? '' : `**${NAMES.guidance}**\n${text}`;
 };
 
+type RunSectionParams = {
+  readonly text: string;
+};
+
+export const runGuidanceSection = ({ text }: RunSectionParams): string => {
+  const trimmed = text.trim();
+  return trimmed === '' ? '' : `**${NAMES.guidance}**\n${trimmed}`;
+};
+
 export const guidanceTagTip = ({ text }: { readonly text: string }): string => {
   const lines = text
     .split('\n')

@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { DEFAULT_WORKFLOW_RULES, type Session, type WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useRunSpendUsd, useSessionCost } from '../../../../store';
+import { monthTiersOf } from '../../../budget/limitTiersOf';
 import { runProvidersOf } from '../../runProvidersOf';
 import { RunAsksSetting } from './RunAsksSetting';
 import { RunLimitSetting } from './RunLimitSetting';
@@ -24,6 +25,7 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const sessionCapUsd = useAppStore((state) => state.sessionBudgets[sessionId]?.softCapUsd ?? null);
   const allProviders = useAppStore((state) => state.providers ?? EMPTY_ARRAY);
+  const statuses = useAppStore((state) => state.providerBudgetStatus);
   const spentUsd = useRunSpendUsd(sessionId, run.id);
   const sessionSpentUsd = useSessionCost(sessionId);
   const policy = overrides?.providerPool ?? null;
@@ -44,6 +46,7 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
     sessionCapUsd,
     spentUsd,
     sessionSpentUsd,
+    months: monthTiersOf({ statuses }),
     providers,
   });
   return (

@@ -8,7 +8,11 @@ import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../project-mounts/scopeGuard';
-import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
+import {
+  buildSessionLanguageGuard,
+  resolveSessionLanguageGoal,
+  type SessionLanguageAnchor,
+} from './sessionLanguage';
 import { beginTurnFileVersionCapture } from '../file-versions/captureTurnFileVersions';
 import { applyHeuristicTitle } from './applyHeuristicTitle';
 import { fanOutChildKind } from '../agents/fanOutChildKind';
@@ -136,9 +140,28 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ? agentRowEarly.providerSessionId
       : undefined;
 
+  const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
+  const languageAnchor: SessionLanguageAnchor =
+    anchorText.length > 0
+      ? { source: 'message', text: anchorText }
+      : {
+          source: 'goal',
+          text: resolveSessionLanguageGoal({
+            session,
+            workflows: get().phaseTemplates[session.workspaceId] ?? [],
+            ...(agentRowEarly?.workflowRunId != null && {
+              workflowRunId: agentRowEarly.workflowRunId,
+            }),
+          }),
+        };
+
   const kindSystemPrompt =
     earlyAgentKind === 'auto'
-      ? await autoSystemPromptOf({ sessionId })
+      ? await autoSystemPromptOf({
+          sessionId,
+          agentId: activeAgentId,
+          languageAnchor: languageAnchor.text,
+        })
       : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
   const scopeMounts =
@@ -191,22 +214,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       !isReadOnlyAnswer &&
       (inPlaceFolders.length === 0 || hasFolderLease),
   });
-  const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
-  const languageGuard = buildSessionLanguageGuard({
-    anchor:
-      anchorText.length > 0
-        ? { source: 'message', text: anchorText }
-        : {
-            source: 'goal',
-            text: resolveSessionLanguageGoal({
-              session,
-              workflows: get().phaseTemplates[session.workspaceId] ?? [],
-              ...(agentRowEarly?.workflowRunId != null && {
-                workflowRunId: agentRowEarly.workflowRunId,
-              }),
-            }),
-          },
-  });
+  const languageGuard = buildSessionLanguageGuard({ anchor: languageAnchor });
   const githubMode = get().githubStatus?.mode;
   const isGithubConnected = githubMode === 'pat' || githubMode === 'gh-cli';
   const integrationsGuard = buildIntegrationsGuard({

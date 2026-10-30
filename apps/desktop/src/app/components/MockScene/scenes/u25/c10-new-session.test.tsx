@@ -91,12 +91,11 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task puts HBL-412 above the task and asks the kind before any Start', async () => {
+  it('c10-start-task puts HBL-412 above the task and offers the four kinds', async () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
     expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 

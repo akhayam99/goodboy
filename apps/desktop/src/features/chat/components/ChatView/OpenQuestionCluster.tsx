@@ -78,6 +78,12 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           setCurrentId(next?.id ?? null);
         };
 
+  const nextOpen =
+    current === null
+      ? null
+      : (group.find((question) => question.id !== current.id && !staged.includes(question.id)) ??
+        null);
+
   const pager =
     current === null || group.length < 2
       ? null
@@ -86,6 +92,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           doneFlags: group.map((question) => staged.includes(question.id)),
           onPrevious: () => setCurrentId(group[position - 1]?.id ?? current.id),
           onNext: () => setCurrentId(group[position + 1]?.id ?? current.id),
+          onJumpToOpen: nextOpen === null ? null : () => setCurrentId(nextOpen.id),
         };
 
   return (

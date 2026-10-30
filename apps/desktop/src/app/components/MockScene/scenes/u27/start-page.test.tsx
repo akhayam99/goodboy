@@ -45,17 +45,6 @@ const mount = ({ id }: MountParams): void => {
   );
 };
 
-type TabsParams = {
-  readonly name: string;
-};
-
-const tabLabels = async ({ name }: TabsParams): Promise<ReadonlyArray<string>> => {
-  const list = await screen.findByRole('tablist', { name }, WAIT);
-  return within(list)
-    .getAllByRole('tab')
-    .map((tab) => tab.textContent ?? '');
-};
-
 describe('the u27 start page scenes', () => {
   it('registers every scene', () => {
     for (const [id, Scene] of Object.entries(U27_START_PAGE_SCENES)) {
@@ -64,62 +53,68 @@ describe('the u27 start page scenes', () => {
     expect(Object.keys(U27_START_PAGE_SCENES)).toHaveLength(8);
   });
 
-  it('opens on two explained cards and walks Workflow to its two kinds', async () => {
+  it('opens on four kinds with none picked, and says Auto picks', async () => {
     mount({ id: 'u27-start-page-after-choice' });
 
     const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
-    const cards = within(kinds).getAllByRole('tab');
-    expect(cards.map((card) => card.textContent?.split('Example')[0])).toEqual([
-      'WorkflowSteps you can see and steer, one agent on each.',
-      'AgentOne agent works on it in one conversation.',
+    expect(
+      within(kinds)
+        .getAllByRole('tab')
+        .map((tab) => [tab.textContent, tab.getAttribute('aria-selected')]),
+    ).toEqual([
+      ['Auto', 'false'],
+      ['Agent', 'false'],
+      ['Orchestrated', 'false'],
+      ['Preset', 'false'],
     ]);
-    screen.getByRole('button', { name: /Not sure\? Describe it and Auto picks/ });
-
-    fireEvent.click(within(kinds).getByRole('tab', { name: /^Workflow/ }));
-    const shapes = await tabLabels({ name: 'Which workflow?' });
-    expect(shapes.map((label) => label.split('Auto')[0]?.split('A saved')[0])).toEqual([
-      'Orchestrated',
-      'Preset',
-    ]);
+    screen.getByText('Auto picks how to run it. Or pick a kind.');
   });
 
-  it('gives the agent form a role and a model and no limit', async () => {
+  it('gives the agent a role and a model, Edits, and no limit', async () => {
     mount({ id: 'u27-start-page-after-agent-form' });
 
-    const form = await screen.findByRole('region', { name: 'Agent form' }, WAIT);
-    expect(within(form).getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
-    within(form).getByRole('button', { name: /^Model: / });
-    expect(within(form).queryByText(/Limit/)).toBeNull();
-    expect(within(form).queryByRole('button', { name: /^Asks you/ })).toBeNull();
-    within(form).getByRole('button', { name: 'Start Scout' });
-    expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
+    const row = within(await screen.findByRole('group', { name: 'Run settings' }, WAIT));
+    expect(row.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
+    row.getByRole('button', { name: /^Model: / });
+    row.getByRole('button', { name: /^Edits: / });
+    expect(row.queryByText(/Limit/)).toBeNull();
+    expect(row.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    screen.getByRole('button', { name: 'Start Scout' });
   });
 
   it('shows the preset with its steps, Follow it or Adapt as it goes, and the task attached', async () => {
     mount({ id: 'u27-start-page-after-preset-form' });
 
-    const form = await screen.findByRole('region', { name: 'Preset form' }, WAIT);
-    expect(within(form).getByRole('combobox', { name: 'Preset' }).textContent).toContain(
-      'Fix a layout',
-    );
+    const preset = await screen.findByRole('combobox', { name: 'Preset' }, WAIT);
+    expect(preset.textContent).toContain('Fix a layout');
     expect(
-      within(within(form).getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem'),
+      within(screen.getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem'),
     ).toHaveLength(3);
-    within(form).getByRole('tablist', { name: 'With the preset' });
-    within(form).getByRole('button', { name: /^Asks you: Every step/ });
+    screen.getByRole('tablist', { name: 'With the preset' });
+    const row = within(screen.getByRole('group', { name: 'Run settings' }));
+    row.getByRole('button', { name: /^Asks you: Every step/ });
+    expect(row.getByRole('combobox', { name: 'Where' }).textContent).toContain('harbor-portal');
     screen.getByText('Member pages drift left on wide screens');
-    within(form).getByRole('button', { name: 'Start workflow' });
-    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('harbor-portal');
+    screen.getByRole('button', { name: 'Start workflow' });
     fireEvent.click(screen.getByRole('button', { name: 'Remove HBR-142' }));
     expect(await screen.findByRole('combobox', { name: 'Pick from Tasks' }, WAIT)).toBeDefined();
   });
 
-  it('keeps Auto picks as the one field behind the fallback, with a way back', async () => {
+  it('keeps Auto picks as the unpicked state of the same form', async () => {
     mount({ id: 'u27-start-page-after-auto-picks' });
 
-    expect(await screen.findByRole('region', { name: 'Start a run' }, WAIT)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Pick it yourself' }));
-    expect(await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT)).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
+    const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
+    expect(
+      within(kinds)
+        .getAllByRole('tab')
+        .some((tab) => tab.getAttribute('aria-selected') === 'true'),
+    ).toBe(false);
+    screen.getByText(/^Starts[ ]as/);
+    fireEvent.click(within(kinds).getByRole('tab', { name: /^Orchestrated/ }));
+    expect(
+      (await within(kinds).findByRole('tab', { name: /^Orchestrated/ })).getAttribute(
+        'aria-selected',
+      ),
+    ).toBe('true');
   });
 });

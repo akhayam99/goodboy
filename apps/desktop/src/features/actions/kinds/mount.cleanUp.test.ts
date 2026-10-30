@@ -91,6 +91,8 @@ const mountFacts = (overrides: Partial<MountFacts>): MountFacts => ({
   canStartTurnsHere: false,
   isScribeWriting: false,
   blockers: [],
+  pinnedRunIds: [],
+  pinnedRunLabel: null,
   editors: [],
   ...overrides,
 });

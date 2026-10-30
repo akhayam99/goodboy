@@ -13,6 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getSetting } from '@goodboy/db';
 import {
+  DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
   type IsoDateTime,
@@ -21,7 +22,7 @@ import {
   type Workflow,
   type WorkflowId,
 } from '@goodboy/types';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -238,5 +239,82 @@ describe('startRoutedRun pins the model of one run', () => {
     expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]).not.toHaveProperty(
       'orchestratorRouting',
     );
+  });
+});
+
+describe('startRoutedRun carries the guidance of one run', () => {
+  const withWorkspaceGuidance = (): void => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: 'Workspace default.' },
+        },
+      },
+    });
+  };
+
+  it('passes the guidance to the agent it spawns', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Why does the ledger-core importer drop rows?' });
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result,
+      guidance: 'Keep every answer under ten lines.',
+    });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      guidance: 'Keep every answer under ten lines.',
+    });
+  });
+
+  it('adds no guidance to an agent when none is given', async () => {
+    const engines = mockEngines();
+    const result = routeOf({ text: 'Why does the ledger-core importer drop rows?' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result });
+
+    expect(engines.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('guidance');
+  });
+
+  it('snapshots the guidance of an orchestrated run over the workspace value', async () => {
+    const engines = mockEngines();
+    withWorkspaceGuidance();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({
+      sessionId: SESSION.id,
+      result,
+      guidance: '  Only touch the billing pages.  ',
+    });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: 'Only touch the billing pages.',
+    });
+  });
+
+  it('keeps the workspace guidance when the run has none of its own', async () => {
+    const engines = mockEngines();
+    withWorkspaceGuidance();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, guidance: null });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: 'Workspace default.',
+    });
+  });
+
+  it('starts a run without guidance when the person cleared the workspace value', async () => {
+    const engines = mockEngines();
+    withWorkspaceGuidance();
+    const result = routeOf({ text: 'Fix the layout on every billing page' });
+
+    await startRoutedRun({ sessionId: SESSION.id, result, guidance: '' });
+
+    expect(engines.attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: '',
+    });
   });
 });

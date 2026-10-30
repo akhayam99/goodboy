@@ -4,6 +4,7 @@ import type { Database, PlainStatement } from '../client';
 export const WORKSPACE_VALUE_KEYS = [
   'auto.treeLimitUsd',
   'auto.level',
+  'run.guidance',
   'terminal.workspaceFolder',
   'sessions.pinned',
 ] as const;

@@ -6,7 +6,7 @@ import {
   composeBriefDecisions,
   composeDelegationKickoff,
   delegationDepthOf,
-  doesTaskNeedCommands,
+  commandMentionOf,
   roleCannotRunCommandsMessage,
   isAutoSubstepRole,
   isAutoWriterRole,
@@ -39,7 +39,9 @@ import {
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoOutboxId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import { readRunGuidance } from '../runGuidance/readRunGuidance';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { pickChildMount } from './pickChildMount';
@@ -182,7 +184,12 @@ const reviseTargetOf = async ({
 }: ReviseTargetParams): Promise<ReviseTarget | ResolvedDelegateChild> => {
   const revises = child.revises;
   if (revises === null) {
-    return refuse({ slot, code: 'spec_invalid', message: 'a revise names no artifact' });
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message:
+        '"revises" names no artifact. Name the artifact and its latest version, or drop "revises".',
+    });
   }
   const artifactId = brandId<ArtifactId>({ value: revises.artifactId });
   const registered = await getAutoArtifact({ db: ctx.db, artifactId });
@@ -191,18 +198,24 @@ const reviseTargetOf = async ({
     return refuse({
       slot,
       code: 'artifact_unknown',
-      message: 'that artifact is not in this conversation',
+      message:
+        '"revises" names an artifact that is not in this conversation. Use an artifact id Goodboy gave you, or drop "revises".',
     });
   }
   const role = parseAutoDelegationRole({ role: registered.ownerRole });
   if (role === null) {
-    return refuse({ slot, code: 'role_unknown', message: 'the artifact belongs to no known role' });
+    return refuse({
+      slot,
+      code: 'role_unknown',
+      message:
+        'the artifact in "revises" belongs to no role you can hand work to. Drop "revises" and send new work.',
+    });
   }
   if (child.role !== null && child.role !== role) {
     return refuse({
       slot,
       code: 'role_mismatch',
-      message: `a revise goes to ${role}, the role that made it`,
+      message: `a revise goes to ${role}, the role that made the artifact. Set "role" to ${role} or leave "role" out.`,
       latestRevision: live.revision,
     });
   }
@@ -210,7 +223,8 @@ const reviseTargetOf = async ({
     return refuse({
       slot,
       code: 'stale_revision',
-      message: 'the artifact moved on',
+      message:
+        'the artifact in "revises" has a newer version. Set "expectedRevision" to the latest version below and send it again.',
       latestRevision: live.revision,
     });
   }
@@ -223,7 +237,8 @@ const reviseTargetOf = async ({
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: 'changeFrom names a message that is not in this conversation',
+      message:
+        '"changeFrom" names a message that is not in this conversation. Use a message id Goodboy gave you, or drop "changeFrom".',
     });
   }
   const history = (await listArtifactRevisions({ db: ctx.db, artifactId }))
@@ -291,7 +306,11 @@ export const resolveDelegateChild = async ({
   }
   const role = revise === null ? child.role : revise.role;
   if (role === null) {
-    return refuse({ slot, code: 'spec_invalid', message: 'the child needs a role' });
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message: '"role" is missing. Set "role" to a role you can hand work to.',
+    });
   }
   if (role === 'rewriter') {
     return refuse({
@@ -313,21 +332,22 @@ export const resolveDelegateChild = async ({
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: 'forQuestion is for a scout or an investigator. Nothing was started',
+      message: `"forQuestion" is for a scout or an investigator, and this child is ${role}. Change "role" or drop "forQuestion". Nothing was started`,
     });
   }
   if (child.forQuestion !== null && revise !== null) {
     return refuse({
       slot,
       code: 'spec_invalid',
-      message: 'a substep is a new piece of work, so it cannot revise an artifact',
+      message:
+        'a substep is a new piece of work, so "forQuestion" and "revises" cannot go together. Drop one of them. Nothing was started',
     });
   }
   if (child.forQuestion !== null && parent === null) {
     return refuse({
       slot,
       code: 'not_paused',
-      message: `no agent is waiting on question ${child.forQuestion}. Nothing was started`,
+      message: `no agent is waiting on question ${child.forQuestion}. Use the id of a question an agent asked, or drop "forQuestion". Nothing was started`,
     });
   }
   const substep: AdmissionSubstep | null =
@@ -338,27 +358,25 @@ export const resolveDelegateChild = async ({
     return refuse({
       slot,
       code: 'spec_invalid',
-      message:
-        'facts is for a scout: Goodboy reads the branch facts into its brief. Nothing was started',
+      message: `"facts" is for a scout: Goodboy reads the branch facts into a scout's brief. Drop "facts" from this ${role} child, or send it to a scout. Nothing was started`,
     });
   }
   if (child.publish !== null && (!isAutoWriterRole({ role }) || role === 'scribe')) {
     return refuse({
       slot,
       code: 'spec_invalid',
-      message:
-        'publish is for an implementer or a CI fixer: they commit work that Goodboy can push. Nothing was started',
+      message: `"publish" is for an implementer or a CI fixer: they commit work that Goodboy can push. Drop "publish" from this ${role} child, or send it to an implementer. Nothing was started`,
     });
   }
-  if (
-    revise === null &&
-    !canAutoRoleRunCommands({ role }) &&
-    doesTaskNeedCommands({ text: [child.task, child.doneWhen ?? ''].join('\n') })
-  ) {
+  const commandMention =
+    revise === null && !canAutoRoleRunCommands({ role })
+      ? commandMentionOf({ text: [child.task, child.doneWhen ?? ''].join('\n') })
+      : null;
+  if (commandMention !== null) {
     return refuse({
       slot,
       code: 'role_lacks_shell',
-      message: roleCannotRunCommandsMessage({ role }),
+      message: roleCannotRunCommandsMessage({ role, match: commandMention }),
     });
   }
   const picked = await pickChildMount({
@@ -379,7 +397,8 @@ export const resolveDelegateChild = async ({
     return refuse({
       slot,
       code: 'mount_missing',
-      message: 'the mount of the earlier attempt moved, so the work cannot repeat on it',
+      message:
+        'the mount of the earlier attempt moved, so "retryOf" cannot repeat the work on it. Drop "retryOf" and send new work on the mount you want',
     });
   }
   const gathered =
@@ -395,7 +414,7 @@ export const resolveDelegateChild = async ({
     return refuse({
       slot,
       code: 'mount_missing',
-      message: `facts names ${gathered.mountId}, which is not a mount of this conversation. Nothing was started`,
+      message: `"facts" names ${gathered.mountId}, which is not a mount of this conversation. Use a mount id from the mounts list, or drop "facts". Nothing was started`,
     });
   }
   const decisions =
@@ -429,6 +448,11 @@ export const resolveDelegateChild = async ({
     revise === null
       ? (retry?.childAgentId ?? brandId<AgentId>({ value: ctx.ports.newId() }))
       : revise.agentId;
+  const guidance = await readRunGuidance({
+    db: ctx.db,
+    workspaceId: brandId<WorkspaceId>({ value: grant.workspaceId }),
+    agentId: tree.rootAgentId,
+  });
   const kickoff = composeDelegationKickoff({
     role,
     childAgentId,
@@ -441,6 +465,7 @@ export const resolveDelegateChild = async ({
     facts: gathered === null ? null : composeBranchFacts({ facts: gathered.facts }),
     decisions,
     retryNote: retry === null ? null : retryNoteOf({ retry }),
+    guidance,
     isSubstep:
       substep !== null || (retry !== null && substepLinkOf({ request: retry.request }) !== null),
   });

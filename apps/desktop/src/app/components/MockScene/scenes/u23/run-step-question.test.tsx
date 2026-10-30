@@ -58,7 +58,10 @@ describe('the run step question scene', () => {
     }
     expect(tail.textContent).toContain('Waiting for your answer on step 4');
     expect(tail.textContent).not.toContain('is running');
-    expect(within(tail).queryByRole('button', { name: 'Answer' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    within(tail).getByRole('button', { name: 'Answer' });
+    const outsideTail = screen
+      .getAllByRole('button', { name: 'Answer' })
+      .filter((button) => !tail.contains(button));
+    expect(outsideTail).toHaveLength(1);
   });
 });

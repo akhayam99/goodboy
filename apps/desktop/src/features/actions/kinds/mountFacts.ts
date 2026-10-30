@@ -3,6 +3,7 @@ import type {
   MountPullRequestProvider,
   ProjectId,
   SessionId,
+  WorkflowRunId,
   WorktreeStatus,
 } from '@goodboy/types';
 import type { OnlineCommit } from '../../../store/runtime/worktreeStatuses/onlyOnline';
@@ -50,6 +51,8 @@ export type MountFacts = {
   readonly canStartTurnsHere: boolean;
   readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
+  readonly pinnedRunIds: ReadonlyArray<WorkflowRunId>;
+  readonly pinnedRunLabel: string | null;
   readonly editors: ReadonlyArray<MountEditor>;
 };
 
@@ -108,6 +111,8 @@ type Params = {
   readonly canStartTurnsHere: boolean;
   readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
+  readonly pinnedRunIds: ReadonlyArray<WorkflowRunId>;
+  readonly pinnedRunLabel: string | null;
   readonly editors: ReadonlyArray<MountEditor>;
   readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly rebaseConflict: MountRebaseConflict | null;
@@ -135,6 +140,8 @@ export const mountFacts = ({
   canStartTurnsHere,
   isScribeWriting,
   blockers,
+  pinnedRunIds,
+  pinnedRunLabel,
   editors,
   onlyOnline,
   rebaseConflict,
@@ -178,6 +185,8 @@ export const mountFacts = ({
     canStartTurnsHere,
     isScribeWriting,
     blockers,
+    pinnedRunIds,
+    pinnedRunLabel,
     editors,
   };
 };

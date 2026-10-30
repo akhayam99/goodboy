@@ -37,6 +37,8 @@ const factsFor = ({ state }: Params) =>
     canStartTurnsHere: false,
     isScribeWriting: false,
     blockers: [],
+    pinnedRunIds: [],
+    pinnedRunLabel: null,
     editors: [],
     onlyOnline: null,
     rebaseConflict: { isWithAuto: false, count: 2 },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { storedDeliveryOf } from '@goodboy/core';
+import { isAutoGateBlock, storedDeliveryOf } from '@goodboy/core';
 import {
   getAutoTree,
   listAutoAttemptsOfTree,
@@ -232,6 +232,34 @@ describe('a block that cannot be applied', () => {
     const accepted = (await refusalsOf(world))[0];
     expect(accepted?.state).toBe('accepted');
     expect(storedDeliveryOf({ value: accepted?.payload })?.rowIds).toContain(String(accepted?.id));
+  });
+
+  it('ends a run of refused hand overs with a reason and a Retry, not a silent stop', async () => {
+    const world = await started();
+    const planner = [
+      { role: 'planner', task: 'Run pnpm test and plan the fix.', reason: 'a plan from failures' },
+    ];
+
+    for (let index = 0; index < 3; index += 1) {
+      await autoTurnEndsWithBlock({
+        world,
+        block: delegateBlock(planner, `r${index + 1}`),
+      });
+    }
+
+    expect(await delegationsOf(world)).toHaveLength(0);
+    expect(world.state.ports.autoTurns).toHaveLength(3);
+    const tree = await treeOf(world);
+    expect(tree).toMatchObject({ phase: 'blocked', noProgressStreak: 3 });
+    expect(tree?.blockedReason).toBe(
+      'Auto kept trying to hand work over and was refused: the role it chose cannot run commands. Retry to let it choose again, or tell it what to change.',
+    );
+    expect(isAutoGateBlock({ reason: tree?.blockedReason ?? null })).toBe(true);
+    const refusals = await refusalsOf(world);
+    expect(refusals.at(-1)?.payload).toMatchObject({ code: 'role_lacks_shell' });
+    expect(JSON.stringify(refusals.at(-1)?.payload)).toContain(
+      'The task matched: `Run pnpm test`.',
+    );
   });
 
   it('refuses to finish while another agent still works, once even when settled twice', async () => {

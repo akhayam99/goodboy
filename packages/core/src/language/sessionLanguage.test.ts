@@ -101,4 +101,27 @@ describe('sessionLanguageTurnRule', () => {
     expect(rule).toContain('language that message is written in');
     expect(rule).toContain('The message fixes that language');
   });
+
+  it('names the language when the anchor text shows it', () => {
+    const rule = sessionLanguageTurnRule({
+      anchorLabel: 'goal',
+      anchorText:
+        'Sistema il layout delle pagine membro in harbor-portal, usa `MemberLayout` e controlla `pnpm typecheck`',
+    });
+
+    expect(
+      rule.startsWith('Write every reply, question, suggestion and summary in Italian. Answer in'),
+    ).toBe(true);
+    expect(rule).toContain(
+      'Keep identifiers, file paths, commands, and quoted error text verbatim.',
+    );
+  });
+
+  it('keeps the unnamed wording byte for byte when the language is unknown', () => {
+    const bare = sessionLanguageTurnRule({ anchorLabel: 'goal' });
+
+    expect(sessionLanguageTurnRule({ anchorLabel: 'goal', anchorText: 'ok' })).toBe(bare);
+    expect(sessionLanguageTurnRule({ anchorLabel: 'goal', anchorText: '' })).toBe(bare);
+    expect(bare.startsWith('Answer in the language that goal is written in')).toBe(true);
+  });
 });

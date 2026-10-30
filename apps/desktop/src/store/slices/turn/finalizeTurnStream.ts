@@ -209,6 +209,9 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
     if (result.openQuestionsChanged) {
       liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'questions', id: sessionId }) });
       await get().loadSessionOpenQuestions(sessionId);
+      if (result.supersededQuestionIds.length > 0) {
+        await get().loadSessionAnsweredQuestions(sessionId);
+      }
       if (resolveAttemptId !== undefined && agentRowEarly !== null && !wasCancelled) {
         await get().persistResolveTurn({
           sessionId,

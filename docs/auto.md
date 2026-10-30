@@ -731,6 +731,14 @@ that default for every Auto turn. The level's planning instructions take
 precedence over the role-addition guidance below. `prompt.level.test.ts` checks
 each level's text and `store.auto-level-prompt.test.ts` checks what a turn sends.
 
+Guidance for one Auto run lives in the workspace value `run.guidance`, a map of
+the root agent id to its text (`store/runtime/runGuidance/`, compare and swap
+like the level). `spawnAgent` writes it before the first turn. `buildTurnSpawn`
+passes the agent id to `autoSystemPromptOf`, so `buildAutoSystemPrompt` adds a
+**GUIDANCE FOR THIS RUN** block to every turn, and `resolveDelegateChild` reads
+the root's text into each child brief as a `**Guidance**` section before the
+`**Task**`. A run without guidance builds the same prompt and briefs as before.
+
 After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
 (`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
 The default is one implementer with nothing added, a "do not" beats a reason, and a force push
@@ -768,8 +776,15 @@ Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run wi
 each role line of the prompt says whether the role has a shell, and the prompt rule says a task that
 runs a command goes only to a role that does. `resolveDelegateChild` enforces it: a read-only role
 whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm test`, "run the
-tests", or a commit range such as `a1b2c3d4e..HEAD`, which only git can list) is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
-nothing is written, so Auto chooses again in its next turn. There is no read-only shell role yet:
+tests", or a commit range such as `a1b2c3d4e..HEAD`, which only git can list) is refused with
+`role_lacks_shell`, the message lists the roles that can run commands and quotes the phrase that
+matched (`commandMentionOf`), and nothing is written, so Auto chooses again in its next turn. A
+command inside a prohibition does not count: no, never, not, don't, without, skip or avoid (and
+`non`, `senza`, `mai`) within six words before it, in the same clause, make "No yarn install" or
+"never run git push" pass for a planner. A clause ends at a full stop, `!`, `?`, `;`, `:`, a new
+line, "but", "then" or "instead", and at a comma followed by "run" or "execute", so "Do not run git
+log, run pnpm test" still counts `pnpm test`. The scan is a linear walk, no backtracking pattern.
+There is no read-only shell role yet:
 a read-only check goes to a writer role with "read only, change nothing" in the task. A child that
 ends blocked and says it had no shell tool gets the reason `missing_tool` (not `declared_blocked`),
 and its result carries the line that tells Auto to hand the same task once to a role that can run
@@ -1055,7 +1070,14 @@ from an earlier process is settled from the ledger.
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
-`noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
+`noProgressStreak` bounds retries. When the next delivery finds that streak at its limit and the
+row it would deliver is a refusal, the tree blocks with the reason of that refusal
+(`autoRefusedBlockText`: "Auto kept trying to hand work over and was refused: the role it chose
+cannot run commands. Retry to let it choose again, or tell it what to change."), not with the
+generic no progress line, and the tail shows it with **Retry**. Every refusal text of a child
+names the field or phrase to drop or change ("facts" on a reviewer, "publish" on an investigator,
+"forQuestion" on a role that cannot take it, the matched command), so Auto fixes the spec in one
+try. A refusal row keeps the action, the code and the roles of the
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one

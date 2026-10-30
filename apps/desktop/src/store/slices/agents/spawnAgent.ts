@@ -1,17 +1,18 @@
 import type { ResolveAttemptBatch, ResolveAttemptLaunch } from '../resolve/types';
-import type {
-  AgentId,
-  AgentSourceKind,
-  IsoDateTime,
-  MountId,
-  PlanId,
-  PlanWithCount,
-  ProviderId,
-  Session,
-  SessionId,
-  Step,
-  StepId,
-  WorkflowRunId,
+import {
+  brandId,
+  type AgentId,
+  type AgentSourceKind,
+  type IsoDateTime,
+  type MountId,
+  type PlanId,
+  type PlanWithCount,
+  type ProviderId,
+  type Session,
+  type SessionId,
+  type Step,
+  type StepId,
+  type WorkflowRunId,
 } from '@goodboy/types';
 import { isAutoOwnProvider } from '@goodboy/core';
 import { updateAgentConfig } from '@goodboy/db';
@@ -31,6 +32,8 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
+import { runGuidanceSection } from '../workflows/standingGuidance';
+import { writeRunGuidance } from '../../runtime/runGuidance/writeRunGuidance';
 import { namedMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
@@ -63,6 +66,7 @@ type SpawnArgs = {
   provider?: ProviderId;
   effort?: string;
   initialPrompt?: string;
+  guidance?: string | null;
   humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;
@@ -135,6 +139,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       stepPromptPrefix = step.promptPrefix;
     }
   }
+  const guidance = args.guidance?.trim() ?? '';
   const { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort } =
     await spawnQueue.run({
       key: sessionId,
@@ -180,7 +185,17 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           throw error;
         }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+        const newAgentId = brandId<AgentId>({ value: crypto.randomUUID() });
+        if (guidance !== '') {
+          await writeRunGuidance({
+            db: tauriDatabase,
+            workspaceId: session.workspaceId,
+            agentId: newAgentId,
+            text: guidance,
+          });
+        }
         const inserted = await invokeAgentInsert({
+          id: newAgentId,
           sessionId,
           ...(args.stepId !== undefined && { stepId: args.stepId }),
           ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
@@ -313,7 +328,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     return inserted.id;
   }
 
-  const kickoff = composeKickoff(planSection, baseKickoff);
+  const kickoff = composeKickoff(
+    effectiveKind === 'auto' ? '' : runGuidanceSection({ text: guidance }),
+    planSection,
+    baseKickoff,
+  );
   const humanPrompt =
     args.humanPrompt !== undefined && kickoff === args.initialPrompt ? args.humanPrompt : null;
   const machineRules =

@@ -1,30 +1,18 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../../features/workflows/workflows';
 import type { SetFn } from '../types';
+import { placeAgent } from './placeAgent';
+import { RunStepMountBlockedError } from './RunStepMountBlockedError';
 
 type Params = Readonly<{
   set: SetFn;
-  sessionId: SessionId;
   agentId: AgentId;
   branch: string | null;
 }>;
 
-export const blockRunStepOnGoneMount = async ({
-  set,
-  sessionId,
-  agentId,
-  branch,
-}: Params): Promise<never> => {
-  const blocked = await invokeAgentUpdateStatus(agentId, { status: 'blocked' });
-  set((state) => ({
-    sessionPhaseRuns: {
-      ...state.sessionPhaseRuns,
-      [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((candidate) =>
-        candidate.id === agentId ? blocked : candidate,
-      ),
-    },
-  }));
-  throw new Error(
-    `This run step is pinned to ${branch === null ? 'the branch the run started on' : `the branch ${branch}`}, which is no longer in the session. Pick another branch mount to continue.`,
-  );
+export const blockRunStepOnGoneMount = async ({ set, agentId, branch }: Params): Promise<never> => {
+  placeAgent({ set, agent: await invokeAgentUpdateStatus(agentId, { status: 'blocked' }) });
+  throw new RunStepMountBlockedError({
+    message: `This step needs ${branch === null ? 'the branch the run started on' : branch}, which was detached from this session. Reattach it or pick another branch to continue.`,
+  });
 };

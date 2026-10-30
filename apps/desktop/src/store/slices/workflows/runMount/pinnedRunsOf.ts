@@ -1,5 +1,5 @@
 import { isAgentStatusSettled } from '@goodboy/core';
-import type { Agent, MountId, SessionId, WorkflowRun } from '@goodboy/types';
+import type { Agent, MountId, SessionId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../../types';
 import { sessionById } from '../../sessions/sessionIndex';
 
@@ -43,12 +43,19 @@ const runLabel = ({ run }: LabelParams): string => {
   return goal !== '' ? goal : `run ${run.ordinal + 1}`;
 };
 
-export const runsPinnedToMount = ({ state, sessionId, mountId }: Params): ReadonlyArray<string> => {
+export type PinnedRun = Readonly<{
+  runId: WorkflowRunId;
+  label: string;
+}>;
+
+export const pinnedRunsOf = ({ state, sessionId, mountId }: Params): ReadonlyArray<PinnedRun> => {
   const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
   const runs = sessionById(state.sessions, sessionId)?.workflowRuns ?? [];
   return runs.flatMap((run) => {
     const runAgents = agents.filter((agent) => agent.workflowRunId === run.id);
     const isPinned = runAgents.some((agent) => agent.mountId === mountId);
-    return isPinned && isRunOpen({ run, agents: runAgents }) ? [runLabel({ run })] : [];
+    return isPinned && isRunOpen({ run, agents: runAgents })
+      ? [{ runId: run.id, label: runLabel({ run }) }]
+      : [];
   });
 };

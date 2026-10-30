@@ -132,9 +132,6 @@ const renderKickoff = () =>
 
 const field = () => screen.getByRole('textbox', { name: 'Goal' });
 
-const autoPicks = () =>
-  fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
-
 const ASK = `@Implementer ${INSTRUCTIONS}`;
 
 const pickTheIssue = () => {
@@ -168,7 +165,6 @@ describe('journey: start a session from an issue', () => {
     await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
 
     fireEvent.change(field(), { target: { value: ASK } });
-    autoPicks();
     expect(await sessionRows()).toEqual([]);
 
     let release: () => void = () => undefined;
@@ -223,7 +219,6 @@ describe('journey: start a session from an issue', () => {
     pickTheIssue();
     await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
     fireEvent.change(field(), { target: { value: ASK } });
-    autoPicks();
     storySpies.createWorktree.mockRejectedValueOnce(new Error('git worktree add failed'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));

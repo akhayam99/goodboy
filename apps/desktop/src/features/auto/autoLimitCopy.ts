@@ -35,5 +35,5 @@ export const AUTO_LIMIT_COPY = {
   labelOf: ({ usd }: AmountParams): string => (usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`),
   titleOf: ({ kind }: KindParams): string => TITLE[kind],
   helpOf: ({ kind }: KindParams): string =>
-    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Other runs in this workspace start from the same limit.`,
+    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. Other runs in this workspace start from the same limit.`,
 } as const;

@@ -177,11 +177,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'What kind of run?',
-        desc: 'Pick Workflow or Agent, then Orchestrated or Preset, Agent or Auto agent. One form follows, with only that kind.',
+        desc: 'Pick Auto, Agent, Orchestrated or Preset. One form shows only what that kind needs.',
       },
       {
         term: NAMES.startARun,
-        desc: 'Not sure? Describe it and Auto picks a workflow or an agent; @Scout starts that role. Esc closes the draft, asking first if you wrote something.',
+        desc: 'Press no kind and Auto picks a workflow or an agent; @Scout starts that role. Esc closes the draft, asking first if you wrote something.',
       },
       {
         term: 'Start from Tasks',

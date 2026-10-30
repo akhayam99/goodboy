@@ -21,6 +21,8 @@ import { NAMES } from '../../../shared/utils/names';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
+import { MOUNT_STOP_PINNED_RUN_ACTION } from './mountStopPinnedRunAction';
+import { pinnedRunConfirm } from './pinnedRunConfirm';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -31,6 +33,7 @@ import {
   selectTurnMountCount,
 } from '../../../store/slices/project-mounts/selectors';
 import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
+import { pinnedRunsOf } from '../../../store/slices/workflows/runMount/pinnedRunsOf';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { mountReviewGithub } from '../../review/mountReviewGithub';
 import { eligibleReviewThreadCount } from '../../suggestions/eligibleThreads';
@@ -80,6 +83,9 @@ const statusParams = ({ facts }: FactsOnly) => ({
 });
 
 const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {
+  if (facts.pinnedRunIds.length > 0) {
+    return pinnedRunConfirm({ facts });
+  }
   if (facts.pr === 'merged') {
     return {
       title: `Close the branch for ${facts.label}?`,
@@ -425,6 +431,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     run: ({ facts, env }) => env.copyText({ text: facts.worktreePath ?? facts.keptPath ?? '' }),
   },
   MOUNT_CLEAN_UP_ACTION,
+  MOUNT_STOP_PINNED_RUN_ACTION,
   {
     id: 'mount.close',
     label: NAMES.closeBranch,
@@ -543,6 +550,7 @@ export const mountFactsFor = ({
   const isAttached = view.isAttached && view.worktreePath !== null;
   const path = view.worktreePath ?? view.lastWorktreePath ?? '';
   const label = view.branch === '' ? (project?.name ?? view.mountName) : view.branch;
+  const pinnedRuns = pinnedRunsOf({ state, sessionId, mountId });
   return mountFacts({
     sessionId,
     mountId,
@@ -578,6 +586,8 @@ export const mountFactsFor = ({
       run: selectRebaseStop({ state, sessionId, mountId })?.run,
     }),
     autoBlockedReason: autoUnavailableReason({ state }),
+    pinnedRunIds: pinnedRuns.map((pinned) => pinned.runId),
+    pinnedRunLabel: pinnedRuns[0]?.label ?? null,
     blockers: mountCleanupBlockers({
       state,
       sessionId,

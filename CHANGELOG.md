@@ -12,6 +12,48 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.4
+
+One start form for every way in, a limit that is exactly what the form shows, and guidance that reaches every kind of run.
+
+### Improved
+
+#### One start form for every way in
+<!-- gb area=sessions image=start-form -->
+
+New session, a session's Runs page, ⌘K and setup's Scout run share one form. Pick Auto, Agent, Orchestrated or Preset, or press none and Auto picks. One row of chips holds Where, Role, Model, Asks you, Edits, Limit and Guidance, and each kind shows only what it uses.
+
+#### Guidance for every kind of run
+<!-- gb area=sessions -->
+
+Guidance starts from your workspace text and can change for one run. Orchestrated and Preset hand it to the orchestrator, an agent reads it in its brief, and an Auto agent and its helpers read it on every turn.
+
+#### Answer a run's questions on its page
+<!-- gb area=workflows image=run-questions -->
+
+A run's page shows its questions as the same card as the transcript, with the suggested answers, the recommended one and one or many picks. Several questions page as 1 of 2 and the last Answer sends them together.
+
+#### A step that lost its branch says so
+<!-- gb area=workflows image=blocked-step -->
+
+A run step whose branch was detached from the session shows as waiting for that branch, with Reattach, Use the session's branch or Pick a branch. A new hint waits instead of adding another stuck step, and detaching a branch a run uses asks first.
+
+### Fixed
+
+- A run step no longer gets a reminder to continue while its agent waits on your answer, so the same question is not asked again. <!-- gb area=workflows -->
+- When an agent asks again, its earlier open questions in the run close, and answering the newest one moves the run. <!-- gb area=workflows -->
+- The transcript card says how many questions are left and jumps to the next one. <!-- gb area=workflows -->
+- A run gets the limit the form showed: No limit means no limit, and the run page says whether the amount is the default or set for this run. <!-- gb area=workflows -->
+- The limit menu names the session limit and each provider's monthly limit, with what is already spent. <!-- gb area=sessions -->
+- A run started from the chat or a suggestion now stops at the Run defaults limit it shows. <!-- gb area=workflows -->
+- Edits on the start form sets what agents may do in the session before the first one starts. <!-- gb area=sessions -->
+- The Model chip looks and works the same on New session and on a session's Runs page. <!-- gb area=sessions -->
+- Agents reply and ask in the language of the session goal, which their instructions now name, instead of guessing it. <!-- gb area=agents -->
+- An agent that finds missing dependencies runs the install command for the lockfile instead of asking you how. <!-- gb area=agents -->
+- Auto's replies no longer break a word into two paragraphs, and its hand over notes no longer show as raw text. <!-- gb area=agents -->
+- A planner is no longer refused for a task that says not to run a command, and every refusal says what to change. <!-- gb area=agents -->
+- When Auto keeps being refused, the chat says why and offers Retry instead of stopping in silence. <!-- gb area=agents -->
+
 ## Goodboy v0.29.3
 
 Runs and agents read like a person wrote them, every agent shows its model by name, and every failure links to its transcript.

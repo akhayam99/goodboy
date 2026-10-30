@@ -5,10 +5,12 @@ import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRes
 import { TailLine } from '../../../live-state/TailLine';
 import { askingAgentBatch } from '../../../context/askingAgentBatch';
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
+import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
+import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { RunTailVerb } from './RunTailVerb';
@@ -27,6 +29,7 @@ const HEADER_VERBS: ReadonlySet<string> = new Set(['primary', 'raiseCap', 'answe
 export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const { run, workflow, advance } = view;
   const quiet = useQuietStep({ agents: advance.runAgents });
+  const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
   const kindOverride = useAppStore((state) => state.agentKindOverride);
   const roleById = useMemo(
     () =>
@@ -87,6 +90,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           (agent) => agent.parentAgentId == null && agent.status === 'blocked',
         ) ?? null)
       : null;
+  const isMountBlocked = blockedStep !== null && mountBlock?.agentId === blockedStep.id;
   const answered = tail.verb?.kind === 'answer' ? tail.verb.question : null;
   return (
     <section
@@ -99,26 +103,28 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           Not started, the run paused at the limit.
         </p>
       ) : null}
-      <TailLine
-        facts={{
-          state: tail.state,
-          phrase: tail.phrase,
-          startedAt: null,
-          stepAgentId: tail.stepAgentId,
-          actions: [],
-        }}
-        onAction={() => undefined}
-        verbs={
-          tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
-            <RunTailVerb
-              session={session}
-              view={view}
-              verb={tail.verb}
-              isSecondary={blockedStep !== null}
-            />
-          )
-        }
-      />
+      {isMountBlocked ? null : (
+        <TailLine
+          facts={{
+            state: tail.state,
+            phrase: tail.phrase,
+            startedAt: null,
+            stepAgentId: tail.stepAgentId,
+            actions: [],
+          }}
+          onAction={() => undefined}
+          verbs={
+            tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
+              <RunTailVerb
+                session={session}
+                view={view}
+                verb={tail.verb}
+                isSecondary={blockedStep !== null}
+              />
+            )
+          }
+        />
+      )}
       {answered === null ? null : (
         <RunOpenQuestion
           sessionId={session.id}
@@ -135,7 +141,9 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         />
       )}
       <RunPendingDelivery sessionId={session.id} />
-      {blockedStep === null ? null : (
+      {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
+        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+      ) : (
         <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
       )}
     </section>

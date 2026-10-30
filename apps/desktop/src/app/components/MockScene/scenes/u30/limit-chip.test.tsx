@@ -12,7 +12,7 @@ describe('limit chip scene', () => {
     expect(MOCK_SCENES['u30-limit-chip']).toBe(U30_LIMIT_CHIP_SCENES['u30-limit-chip']);
   });
 
-  it('shows the default tag, a typed amount and one open popover with the presets', () => {
+  it('shows the default tag, a typed amount and one open popover with the presets and the tiers', () => {
     const Scene = U30_LIMIT_CHIP_SCENES['u30-limit-chip'];
     render(<Scene />);
 
@@ -20,5 +20,6 @@ describe('limit chip scene', () => {
     expect(screen.getAllByRole('button', { name: 'Limit $8.00' })).toHaveLength(2);
     const dialog = screen.getByRole('dialog', { name: 'Limit for this run' });
     within(dialog).getByRole('group', { name: 'Amounts' });
+    within(dialog).getByText('Session $0 of $20.00 · Claude $41.20 of $200.00 this month');
   });
 });

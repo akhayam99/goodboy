@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, TurnEvent } from '@goodboy/types';
 import { nextProviderRunId } from '@goodboy/types/testing';
 import { parseAnthropicEnvelopeLine, type ParseContext } from './anthropic-envelope-parser';
@@ -65,6 +65,83 @@ const assistantText = (text: string, extra: Record<string, unknown> = {}) => ({
 
 const textOf = (events: ReadonlyArray<TurnEvent>): string =>
   events.map((event) => (event.kind === 'assistant_text' ? event.delta : '')).join('');
+
+const NOISE_PAYLOADS: ReadonlyArray<Record<string, unknown>> = [
+  { type: 'system', subtype: 'status', status: 'requesting' },
+  { type: 'rate_limit_event', rate_limit_info: { status: 'allowed' } },
+  { type: 'thinking', subtype: 'delta', text: 'hm' },
+  { type: 'stream_event', event: { type: 'ping' } },
+];
+
+describe('a block that other payloads interrupt', () => {
+  beforeEach(() => {
+    resetTextBoundary({ runId: RUN_ID });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each(NOISE_PAYLOADS)('keeps a word whole across %j', (noise) => {
+    const { feed } = makeFeed();
+    feed(messageStart('msg_1'));
+    feed(blockStart(0));
+    const streamed = [
+      feed(delta('questa volta senza com')),
+      feed(noise),
+      feed(delta('andi shell.')),
+    ].flat();
+    expect(textOf(streamed)).toBe('questa volta senza comandi shell.');
+  });
+
+  it('keeps an opening tag whole across a status payload', () => {
+    const { feed } = makeFeed();
+    feed(blockStart(0));
+    const streamed = [
+      feed(delta('<<au')),
+      feed({ type: 'system', subtype: 'status' }),
+      feed(delta('to>>{"action":"finish","summary":"Done."}<</auto>>')),
+    ].flat();
+    expect(textOf(streamed)).toBe('<<auto>>{"action":"finish","summary":"Done."}<</auto>>');
+  });
+
+  it('keeps a word whole across a tool result of a nested agent', () => {
+    const { feed } = makeFeed();
+    feed(blockStart(0));
+    const streamed = [
+      feed(delta('typ')),
+      feed({ type: 'user', parent_tool_use_id: 'toolu_1', message: { content: [] } }),
+      feed(delta('echeck')),
+    ].flat();
+    expect(textOf(streamed)).toBe('typecheck');
+  });
+
+  it('still starts a new block after a tool result', () => {
+    const { feed } = makeFeed();
+    feed(blockStart(0));
+    feed(delta('First.'));
+    feed({ type: 'user', message: { content: [] } });
+    expect(textOf(feed(delta('Second.')))).toBe('\n\nSecond.');
+  });
+
+  it('keeps a cursor word whole across a non text payload', () => {
+    const { feed } = makeFeed();
+    const streamed = [
+      feed(assistantText('typ', { timestamp_ms: 1 })),
+      feed({ type: 'thinking', subtype: 'delta', text: 'hm' }),
+      feed(assistantText('echeck', { timestamp_ms: 2 })),
+    ].flat();
+    expect(textOf(streamed)).toBe('typecheck');
+  });
+
+  it('starts a new cursor block after a tool call', () => {
+    const { feed } = makeFeed();
+    feed(assistantText('First.', { timestamp_ms: 1 }));
+    feed({ type: 'tool_call', subtype: 'completed' });
+    expect(textOf(feed(assistantText('Second.', { timestamp_ms: 2 })))).toBe('\n\nSecond.');
+  });
+});
 
 describe('claude partial messages', () => {
   beforeEach(() => {

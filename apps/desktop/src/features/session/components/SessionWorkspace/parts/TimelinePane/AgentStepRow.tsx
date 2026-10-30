@@ -45,7 +45,7 @@ export const AgentStepRow = ({
   children,
 }: Props) => {
   const phase = item.rowState.phase;
-  const work = useAgentRowWork({
+  const estimated = useAgentRowWork({
     agent: entry.agent,
     kind: entry.agentKind,
     step,
@@ -54,6 +54,9 @@ export const AgentStepRow = ({
     sessionEffort,
     phase,
   });
+  const isBlockedBeforeStart =
+    item.rowState.reason?.kind === 'blocked' && entry.agent.startedAt == null;
+  const work: AgentRowWork = isBlockedBeforeStart ? { ...estimated, time: null } : estimated;
   const rowModels = useAgentRowModels({ entry, work, phase });
   const identity = agentRowIdentity({
     entry,

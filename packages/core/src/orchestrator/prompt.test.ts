@@ -294,6 +294,24 @@ describe('buildOrchestratorUserPrompt', () => {
     expect(prompt).toContain('Porta il selettore di lingua dentro le impostazioni');
   });
 
+  it('names the session language when the goal shows it', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        goal: 'Sistema il layout delle pagine membro in harbor-portal e controlla `pnpm typecheck`',
+      }),
+    );
+
+    expect(prompt).toContain(
+      'Session language: Italian. Write name, promptPrefix, expectedOutput, reason and every run summary entry in Italian.',
+    );
+  });
+
+  it('adds no language line when the goal is too short to tell', () => {
+    const prompt = buildOrchestratorUserPrompt(input({ goal: 'Sistema il layout' }));
+
+    expect(prompt).not.toContain('Session language:');
+  });
+
   it('marks the completed step summaries as English by contract', () => {
     const prompt = buildOrchestratorUserPrompt(
       input({

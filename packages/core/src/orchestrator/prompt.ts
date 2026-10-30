@@ -1,5 +1,7 @@
 import { SLOT_BUDGETS } from '../context/budgets';
+import { detectSessionLanguage } from '../language/detectSessionLanguage';
 import { sessionLanguageRule } from '../language/sessionLanguage';
+import { SESSION_LANGUAGE_NAMES } from '../language/sessionLanguages';
 import {
   annotateFallbackStepOutputSummary,
   previewStepOutputSummary,
@@ -15,14 +17,37 @@ const ORCHESTRATOR_ROLE_VOCABULARY = SELECTABLE_AGENT_ROLES.filter(
   (role) => ROLE_REGISTRY[role].workflowEligible,
 ).join(', ');
 
+const ORCHESTRATOR_WRITTEN_FIELDS = [
+  'name',
+  'promptPrefix',
+  'expectedOutput',
+  'reason',
+  'every run summary entry',
+] as const;
+
 const ORCHESTRATOR_LANGUAGE_RULE = [
   sessionLanguageRule({
     goalLabel: 'the Goal in the request',
-    writtenFields: ['name', 'promptPrefix', 'expectedOutput', 'reason', 'every run summary entry'],
+    writtenFields: ORCHESTRATOR_WRITTEN_FIELDS,
   }),
   'role is not prose: it stays one of the canonical English keywords listed above, never translated and never renamed.',
   'promptPrefix is the instruction a step agent and the operator both read, so it carries the session language into the step you are creating. That inheritance is the only language signal a step or a sub-step gets: it never derives one of its own from the context handed to it.',
 ].join('\n');
+
+type NamedLanguageLineParams = {
+  readonly goal: string;
+};
+
+const namedLanguageLines = ({ goal }: NamedLanguageLineParams): ReadonlyArray<string> => {
+  const language = detectSessionLanguage({ text: goal });
+  if (language === null) {
+    return [];
+  }
+  const name = SESSION_LANGUAGE_NAMES[language];
+  const last = ORCHESTRATOR_WRITTEN_FIELDS[ORCHESTRATOR_WRITTEN_FIELDS.length - 1];
+  const rest = ORCHESTRATOR_WRITTEN_FIELDS.slice(0, -1).join(', ');
+  return [`Session language: ${name}. Write ${rest} and ${last} in ${name}.`, ''];
+};
 
 type SystemPromptParams = {
   readonly isModelPickEnabled: boolean;
@@ -310,6 +335,7 @@ export const buildOrchestratorUserPrompt = ({
     'Goal (the session language is the language this is written in):',
     goal.trim(),
     '',
+    ...namedLanguageLines({ goal }),
     ...(process.length > 0 ? ['Operator process:', process, ''] : []),
     ...(preset === undefined ? [] : presetLines({ preset })),
     `Open questions: ${openQuestionCount}`,

@@ -90,6 +90,7 @@ export type DelegationKickoffParams = Readonly<{
   decisions?: string | null;
   retryNote?: string | null;
   isSubstep?: boolean;
+  guidance?: string | null;
 }>;
 
 type RoleSectionParams = {
@@ -211,6 +212,7 @@ export const composeDelegationKickoff = ({
   decisions = null,
   retryNote = null,
   isSubstep = false,
+  guidance = null,
 }: DelegationKickoffParams): string => {
   const sections: string[] = [AUTO_KICKOFF_HEADER, roleSection({ role })];
   if (retryNote !== null) {
@@ -224,6 +226,10 @@ export const composeDelegationKickoff = ({
   }
   if (decisions !== null) {
     sections.push(decisions);
+  }
+  const guidanceText = guidance?.trim() ?? '';
+  if (guidanceText !== '') {
+    sections.push(`**Guidance**\n${guidanceText}`);
   }
   sections.push(revise === null ? `**Task** ${task}` : reviseSection({ revise }));
   sections.push(`**Done when** ${doneWhen ?? AUTO_DEFAULT_DONE_WHEN[role]}`);

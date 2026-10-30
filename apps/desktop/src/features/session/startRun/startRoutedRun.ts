@@ -17,6 +17,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../workflows/uniqueWorkflowName';
 import { presetSnapshotOf } from './presetSnapshotOf';
+import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
@@ -29,7 +30,9 @@ type Params = {
   readonly orchestratorRouting?: OrchestratorRouting | null;
   readonly autonomy?: WorkflowAutonomy | null;
   readonly level?: AutoLevel | null;
+  readonly guidance?: string | null;
   readonly attachments?: ReadonlyArray<AttachmentInput>;
+  readonly limit?: StartLimit | null;
 };
 
 export type RoutedRun =
@@ -43,7 +46,9 @@ export const startRoutedRun = async ({
   orchestratorRouting = null,
   autonomy = null,
   level = null,
+  guidance = null,
   attachments = [],
+  limit = null,
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -64,6 +69,7 @@ export const startRoutedRun = async ({
       kindOverride: role ?? 'auto',
       initialPrompt: work,
       focus: 'agent',
+      ...(guidance !== null && { guidance }),
       ...(routing !== null && {
         provider: routing.provider,
         model: routing.model,
@@ -106,10 +112,15 @@ export const startRoutedRun = async ({
     goal: work,
     ...(attachments.length > 0 && { attachmentInputs: attachments }),
     executionMode: 'dynamic',
+    ...(limit !== null && {
+      spendLimitUsd: limit.usd,
+      ...(limit.source !== null && { limitSource: limit.source }),
+    }),
     ...(orchestratorRouting !== null && { orchestratorRouting }),
     rulesSnapshot: {
       ...rules,
       autonomy: asks,
+      ...(guidance !== null && { standingGuidance: guidance.trim() }),
       route,
       ...(preset !== null && { preset: presetSnapshotOf({ preset }) }),
     },

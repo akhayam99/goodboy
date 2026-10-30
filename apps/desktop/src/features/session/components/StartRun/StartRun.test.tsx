@@ -11,7 +11,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   getSetting,
   getWorkspaceValue,
@@ -20,6 +20,7 @@ import {
   setWorkspaceValue,
 } from '@goodboy/db';
 import {
+  DEFAULT_WORKFLOW_RULES,
   brandId,
   type AgentId,
   type IsoDateTime,
@@ -29,7 +30,7 @@ import {
   type Workflow,
   type WorkflowId,
 } from '@goodboy/types';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -39,6 +40,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
@@ -53,6 +55,8 @@ const OTHER = aSession({
 });
 const AGENT = brandId<AgentId>({ value: 'agent-notify-relay' });
 const QUESTION = 'Which notify-relay handler fires twice?';
+const WORKSPACE_GUIDANCE = 'Keep every change inside notify-relay.';
+const RUN_GUIDANCE = 'Leave the ledger-core schema alone.';
 const LAYOUT_ID = brandId<WorkflowId>({ value: 'workflow-layout' });
 const NOW = brandId<IsoDateTime>({ value: '2026-10-22T09:00:00.000Z' });
 const FIX_A_LAYOUT: Workflow = {
@@ -91,6 +95,20 @@ type SaveFn = StoryState['savePhaseTemplate'];
 type AttachFn = StoryState['attachWorkflowToSession'];
 
 const field = () => screen.getByRole('textbox', { name: 'Start a run' });
+
+type KindParams = {
+  readonly name: string;
+};
+
+const kindTab = ({ name }: KindParams): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', { name });
+
+const pickKind = ({ name }: KindParams): void => {
+  fireEvent.click(kindTab({ name }));
+};
+
+const isPicked = ({ name }: KindParams): boolean =>
+  kindTab({ name }).getAttribute('aria-selected') === 'true';
 
 type RenderParams = {
   readonly sessionId: SessionId;
@@ -382,7 +400,8 @@ describe('StartRun run as', () => {
     pickFromMenu({ label: 'Scout' });
 
     expect(field()).toHaveProperty('value', '');
-    screen.getByRole('button', { name: 'Run as: Agent · Scout' });
+    expect(isPicked({ name: 'Agent' })).toBe(true);
+    expect(screen.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
     ask({ text: QUESTION });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -411,48 +430,49 @@ describe('StartRun run as', () => {
     });
   });
 
-  it('says what Start will do before it is pressed and follows the Run as chip', () => {
+  it('says what Start will do before it is pressed, then what the picked kind does', () => {
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
     expect(routeLine()).toContain('Starts as Agent · Auto');
     expect(routeLine()).toContain('A question or a check, and no preset fits');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
 
-    expect(routeLine()).toMatch(/^Starts as Workflow · Orchestrated · .+ · you picked it$/);
-    screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' });
+    screen.getByText('Auto plans each next step as it goes.');
+    expect(document.querySelector('[data-run-route-line]')).toBeNull();
+    expect(isPicked({ name: 'Orchestrated' })).toBe(true);
   });
 
-  it('shows the limit chip for an Auto or workflow route and none for an agent route', () => {
+  it('shows the limit chip for an Auto or workflow kind and none for an agent', () => {
     renderField({ sessionId: SESSION.id });
 
     screen.getByRole('button', { name: 'No limit' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
 
     screen.getByRole('button', { name: 'No limit' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Agent · Scout' }));
+    pickKind({ name: 'Agent' });
 
     expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
-  it('shows the Asks you chip for an Auto agent run only', () => {
+  it('shows Asks you for an Auto run and for a workflow, and none for an agent', () => {
     renderField({ sessionId: SESSION.id });
 
     fireEvent.change(field(), { target: { value: QUESTION } });
-    screen.getByText('After the plan');
-    screen.getByText('from Cascadia');
+    screen.getByRole('button', { name: 'Asks you: After the plan, from Cascadia' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
 
-    expect(screen.queryByText('from Cascadia')).toBeNull();
+    screen.getByRole('button', { name: /^Asks you: Every step/ });
+    expect(screen.queryByRole('button', { name: /^Asks you: After the plan/ })).toBeNull();
+
+    pickKind({ name: 'Agent' });
+
+    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
   });
 
   it('shows the level the session already has, and a run started untouched keeps it', async () => {
@@ -496,29 +516,103 @@ describe('StartRun run as', () => {
     await waitFor(() => screen.getByText('Never'));
   });
 
-  it('lists Auto, Orchestrated, every preset and every role in the chip', () => {
-    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
+  it('offers the four kinds, lists the roles on Agent and keeps Preset for a saved preset', () => {
     renderField({ sessionId: SESSION.id });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
+    expect(
+      within(screen.getByRole('tablist', { name: 'What kind of run?' }))
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['Auto', 'Agent', 'Orchestrated', 'Preset']);
+    expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
+    cleanup();
 
-    screen.getByRole('button', { name: 'Let Auto pick' });
-    screen.getByRole('button', { name: 'Workflow · Orchestrated' });
-    screen.getByRole('button', { name: 'Workflow · Preset Fix a layout' });
-    screen.getByRole('button', { name: 'Agent · Scout' });
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
+    renderField({ sessionId: SESSION.id });
+    expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(false);
+    pickKind({ name: 'Agent' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Role' }));
+    screen.getByRole('option', { name: /^Scout/ });
   });
 
-  it('keeps a typed token ahead of the chip', async () => {
+  it('starts a plan from the preset the Preset kind names, following it or adapting', async () => {
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
+    });
+    renderField({ sessionId: SESSION.id });
+
+    pickKind({ name: 'Preset' });
+    screen.getByRole('list', { name: 'Preset steps' });
+    expect(
+      screen.getByRole('tab', { name: 'Adapt as it goes' }).getAttribute('aria-selected'),
+    ).toBe('true');
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      rulesSnapshot: { route: { presetName: 'Fix a layout', closeness: 'adapt' } },
+    });
+  });
+
+  it('keeps a typed token ahead of the kind', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
 
     ask({ text: `@Scout ${QUESTION}` });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ kindOverride: 'scout' });
+  });
+
+  it('starts a workflow with the Asks you picked and an agent with the Edits picked', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    const setSessionPermissionMode = vi.fn<StoryState['setSessionPermissionMode']>(
+      async () => undefined,
+    );
+    useAppStore.setState({
+      spawnAgent,
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      setSessionPermissionMode,
+    });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Orchestrated' });
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Edits:/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      autoRun: true,
+      rulesSnapshot: { autonomy: 'run' },
+    });
+    expect(setSessionPermissionMode).toHaveBeenCalledWith(SESSION.id, 'plan');
+    expect(spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('leaves the session mode alone when no Edits were picked', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const setSessionPermissionMode = vi.fn<StoryState['setSessionPermissionMode']>(
+      async () => undefined,
+    );
+    useAppStore.setState({ spawnAgent, setSessionPermissionMode });
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(setSessionPermissionMode).not.toHaveBeenCalled();
   });
 
   it('writes no Auto limit when a run starts and the person set none', async () => {
@@ -539,6 +633,92 @@ describe('StartRun run as', () => {
         key: 'auto.treeLimitUsd',
       }),
     ).toBeNull();
+  });
+});
+
+const startOrchestrated = () => {
+  const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+  useAppStore.setState({
+    savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+    attachWorkflowToSession,
+    generateWorkflowTitle: vi.fn(async () => undefined),
+  });
+  return attachWorkflowToSession;
+};
+
+type DefaultLimitParams = {
+  readonly usd: string;
+};
+
+const storeDefaultLimit = async ({ usd }: DefaultLimitParams) =>
+  setWorkspaceValue({
+    db: storySqlite(),
+    workspaceId: WORKSPACE.id,
+    key: 'auto.treeLimitUsd',
+    value: usd,
+  });
+
+describe('StartRun limit', () => {
+  it('starts a run with the default amount the chip showed, tagged as the default', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    await screen.findByRole('button', { name: 'Limit $5.00 · default' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 5, limitSource: 'default' });
+  });
+
+  it('starts a run with no limit when the chip said No limit, though a default exists', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(await screen.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
+    await screen.findByRole('button', { name: 'No limit' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    const options = attach.mock.calls[0]?.[2];
+    expect(options?.spendLimitUsd).toBeNull();
+    expect(options?.limitSource).toBeUndefined();
+  });
+
+  it('starts a run with the amount typed in the popover, tagged as this run', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    const attach = startOrchestrated();
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(await screen.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Other amount' }), {
+      target: { value: '8' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this limit' }));
+    await screen.findByRole('button', { name: 'Limit $8.00' });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'run' });
+  });
+
+  it('names the session and the provider month in the popover, after the amounts', async () => {
+    await storeDefaultLimit({ usd: '5' });
+    useAppStore.setState({
+      sessionBudgets: {
+        [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
+      },
+      providerBudgetStatus: {
+        anthropic: providerBudgetStatusFor({ spentUsd: 41.2, capUsd: 200 }),
+      },
+    });
+    renderField({ sessionId: SESSION.id });
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Limit / }));
+
+    screen.getByText('Session $0 of $20.00 · Claude $41.20 of $200.00 this month');
   });
 });
 
@@ -641,17 +821,15 @@ describe('StartRun model', () => {
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
   });
 
-  it('puts the model in the route line and follows the Run as chip', () => {
+  it('puts the model in the route line and follows the kind', () => {
     connectProviders();
     renderField({ sessionId: SESSION.id });
     fireEvent.change(field(), { target: { value: QUESTION } });
     const agentLine = routeLine();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
 
     expect(agentLine).toContain('Starts as Agent · Auto agent · ');
-    expect(routeLine()).toContain('Starts as Workflow · Orchestrated · ');
     expect(modelChip().getAttribute('aria-label')).toContain('Model: ');
   });
 
@@ -684,8 +862,7 @@ describe('StartRun model', () => {
       generateWorkflowTitle: vi.fn(async () => undefined),
     });
     renderField({ sessionId: SESSION.id });
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
     fireEvent.change(field(), { target: { value: 'center every member page' } });
 
     fireEvent.click(modelChip());
@@ -699,19 +876,35 @@ describe('StartRun model', () => {
     });
   });
 
+  it('picks the model of a plain Agent from the same chip, for this run only', async () => {
+    connectProviders();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Agent' });
+    fireEvent.change(field(), { target: { value: QUESTION } });
+
+    expect(modelChip().getAttribute('aria-label')).toMatch(/, Auto$/);
+    fireEvent.click(modelChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
+    fireEvent.click(screen.getByRole('button', { name: /^(Start|Retry)/ }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'cursor' });
+  });
+
   it('keeps a model picked for one kind off the other kind', async () => {
     connectProviders();
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Let Auto pick' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow · Orchestrated' }));
+    pickKind({ name: 'Orchestrated' });
     fireEvent.click(modelChip());
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
     expect(modelChip().getAttribute('data-run-model')).toBe('pinned');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Run as: Workflow · Orchestrated' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Agent · Auto agent' }));
+    pickKind({ name: 'Auto' });
 
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
     ask({ text: QUESTION });
@@ -734,5 +927,152 @@ describe('StartRun model', () => {
       scope: 'providers',
     });
     window.removeEventListener('goodboy:open-settings', opened);
+  });
+});
+
+describe('StartRun guidance', () => {
+  const withWorkspaceGuidance = (): void => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: WORKSPACE_GUIDANCE },
+        },
+      },
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+    });
+  };
+
+  const chip = (): HTMLElement => screen.getByRole('button', { name: /^Guidance:/ });
+
+  const edit = (text: string): void => {
+    fireEvent.click(chip());
+    fireEvent.change(
+      within(screen.getByRole('dialog', { name: 'Guidance for this run' })).getByRole('textbox', {
+        name: 'Guidance text',
+      }),
+      { target: { value: text } },
+    );
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+  };
+
+  it('shows the workspace guidance with its tag on every kind', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+
+    for (const name of ['Auto', 'Agent', 'Orchestrated']) {
+      pickKind({ name });
+      expect(chip().getAttribute('aria-label')).toBe(
+        `Guidance: ${WORKSPACE_GUIDANCE}, from Cascadia`,
+      );
+    }
+  });
+
+  it('hands the guidance to the agent a question starts, the workspace one when left alone', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: WORKSPACE_GUIDANCE });
+  });
+
+  it('hands the guidance you wrote to a role agent', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Agent' });
+    edit(RUN_GUIDANCE);
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
+      kindOverride: 'scout',
+      guidance: RUN_GUIDANCE,
+    });
+  });
+
+  it('snapshots the guidance you wrote in the rules of an orchestrated run', async () => {
+    withWorkspaceGuidance();
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({ attachWorkflowToSession });
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Orchestrated' });
+    edit(RUN_GUIDANCE);
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
+      standingGuidance: RUN_GUIDANCE,
+    });
+  });
+
+  it('sends an empty guidance for No guidance', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(chip());
+    fireEvent.click(screen.getByRole('button', { name: 'No guidance' }));
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    expect(chip().getAttribute('aria-label')).toBe('Guidance: None, this run');
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: '' });
+  });
+
+  it('puts the workspace guidance back with Use workspace guidance', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+    edit(RUN_GUIDANCE);
+
+    fireEvent.click(chip());
+    fireEvent.click(screen.getByRole('button', { name: 'Use workspace guidance' }));
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+
+    expect(chip().getAttribute('aria-label')).toBe(
+      `Guidance: ${WORKSPACE_GUIDANCE}, from Cascadia`,
+    );
+  });
+
+  it('keeps the guidance when you switch kind', () => {
+    withWorkspaceGuidance();
+    renderField({ sessionId: SESSION.id });
+    pickKind({ name: 'Orchestrated' });
+    edit(RUN_GUIDANCE);
+
+    pickKind({ name: 'Agent' });
+    pickKind({ name: 'Auto' });
+
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+  });
+
+  it('keeps the guidance when the start fails, and Retry sends it again', async () => {
+    withWorkspaceGuidance();
+    const spawnAgent = vi
+      .fn<SpawnFn>()
+      .mockRejectedValueOnce(new Error('The provider is cooling down'))
+      .mockResolvedValue(AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    edit(RUN_GUIDANCE);
+
+    ask({ text: QUESTION });
+
+    await screen.findByText(/The provider is cooling down/);
+    expect(chip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(2));
+    expect(spawnAgent.mock.calls[1]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
   });
 });

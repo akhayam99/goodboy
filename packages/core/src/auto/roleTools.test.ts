@@ -5,7 +5,7 @@ import { buildDelegationResult, renderDelegationResult, type BuildResultParams }
 import {
   AUTO_COMMAND_ROLES,
   canAutoRoleRunCommands,
-  doesTaskNeedCommands,
+  commandMentionOf,
   isMissingShellText,
   roleCannotRunCommandsMessage,
 } from './roleTools';
@@ -21,7 +21,7 @@ describe('canAutoRoleRunCommands', () => {
   });
 });
 
-describe('doesTaskNeedCommands', () => {
+describe('commandMentionOf', () => {
   it.each([
     'Run git log on the branch and git ls-remote on origin to compare them.',
     'Check what ls-remote returns for ledger-core.',
@@ -30,7 +30,7 @@ describe('doesTaskNeedCommands', () => {
     'Check each commit in `a1b2c3d4e..HEAD`: does its subject match its diff?',
     'Compare origin/main...HEAD and list the commits that revert each other.',
   ])('flags a task that runs commands: %s', (text) => {
-    expect(doesTaskNeedCommands({ text })).toBe(true);
+    expect(commandMentionOf({ text })).not.toBeNull();
   });
 
   it.each([
@@ -40,7 +40,41 @@ describe('doesTaskNeedCommands', () => {
     'Wait... then read the file; deadbeef is not a commit here.',
     '',
   ])('leaves a task that only reads: %s', (text) => {
-    expect(doesTaskNeedCommands({ text })).toBe(false);
+    expect(commandMentionOf({ text })).toBeNull();
+  });
+});
+
+describe('a command named inside a prohibition', () => {
+  it.each([
+    'Read the plan files. No yarn install (no node_modules in this folder).',
+    'Never run git push from here.',
+    'Do not commit anything and do not run git commit.',
+    "Don't run pnpm test, only read the files.",
+    'Work without running npm install.',
+    'No yarn install, git push or pnpm test.',
+    'Leggi i file. Senza eseguire yarn install.',
+    'Non lanciare git push.',
+    'Do not run the tests.',
+  ])('is not a command to run: %s', (text) => {
+    expect(commandMentionOf({ text })).toBeNull();
+  });
+
+  it.each([
+    ['Run pnpm test in the mount.', 'Run pnpm test'],
+    ['No yarn install. Run pnpm test.', 'Run pnpm test'],
+    ['Do not run git log, run pnpm test.', 'pnpm test'],
+    ['No yarn install, run git status.', 'git status'],
+    ['Never push by hand but then git push the branch.', 'git push'],
+    ['No node_modules here.\nThen run cargo build.', 'run cargo build'],
+  ])('still counts the command that is asked for: %s', (text, match) => {
+    expect(commandMentionOf({ text })).not.toBeNull();
+    expect(commandMentionOf({ text })).toBe(match);
+  });
+
+  it('names the first command that is asked for', () => {
+    expect(commandMentionOf({ text: 'No yarn install. Check git log and pnpm test.' })).toBe(
+      'git log',
+    );
   });
 });
 
@@ -62,6 +96,23 @@ describe('roleCannotRunCommandsMessage', () => {
     expect(message).toContain('investigator has no shell');
     expect(message).toContain('implementer');
     expect(message).not.toContain('scout,');
+  });
+
+  it('is unchanged when no phrase matched', () => {
+    expect(roleCannotRunCommandsMessage({ role: 'planner' })).toBe(
+      roleCannotRunCommandsMessage({ role: 'planner', match: null }),
+    );
+    expect(roleCannotRunCommandsMessage({ role: 'planner' })).not.toContain('matched');
+  });
+
+  it('quotes the exact phrase that matched so the brief can be fixed in one try', () => {
+    const text = 'Plan the export. Run pnpm test before you write it.';
+    const message = roleCannotRunCommandsMessage({
+      role: 'planner',
+      match: commandMentionOf({ text }),
+    });
+    expect(message).toContain('The task matched: `Run pnpm test`.');
+    expect(message).toContain('Reword or drop that phrase');
   });
 });
 

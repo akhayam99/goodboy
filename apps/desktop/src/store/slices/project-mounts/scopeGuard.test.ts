@@ -150,6 +150,9 @@ const guardFor = ({
     mounts: entry.mounts,
   });
 
+const DEPENDENCY_LINE =
+  'NEVER link or copy `node_modules`, `.next`, `dist` or other build output from another folder. When dependencies are missing, run the install command that matches the lockfile in this worktree without asking: `pnpm install` for pnpm-lock.yaml, `yarn install` for yarn.lock, `npm ci` for package-lock.json, `bun install` for bun.lockb. If typecheck needs the dist of a workspace library, run the repo build step for it too. Ask only when there is no lockfile and no setup command.';
+
 describe('buildScopeGuard reading entitlement', () => {
   for (const entry of MATRIX) {
     it(`grants reading to a writer kind with ${entry.name}`, () => {
@@ -186,6 +189,13 @@ describe('buildScopeGuard write boundary', () => {
     it(`forbids linking dependencies from another folder with ${entry.name}`, () => {
       const guard = guardFor({ entry, canWrite: true });
       expect(guard).toContain('NEVER link or copy `node_modules`, `.next`, `dist`');
+    });
+
+    it(`tells the agent to install by lockfile without asking with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: true });
+
+      expect(guard).toContain(DEPENDENCY_LINE);
+      expect(guard).not.toContain('ask once');
     });
   }
 

@@ -53,6 +53,7 @@ export type WorkflowRules = Readonly<{
   autonomy: WorkflowAutonomy;
   spendLimitUsd: number | null;
   spendLimitMode: WorkflowRulesSpendMode;
+  limitSource?: 'default' | 'run';
   spreadByHeadroom: boolean;
   standingGuidance: string;
   guidanceRoles: ReadonlyArray<AgentRole>;
@@ -121,6 +122,9 @@ export const parseWorkflowRules = ({
     autonomy: autonomyOf(value.autonomy),
     spendLimitUsd: spendLimitOf(value.spendLimitUsd),
     spendLimitMode: spendModeOf(value.spendLimitMode),
+    ...(value.limitSource === 'default' || value.limitSource === 'run'
+      ? { limitSource: value.limitSource }
+      : {}),
     spreadByHeadroom:
       typeof value.spreadByHeadroom === 'boolean'
         ? value.spreadByHeadroom

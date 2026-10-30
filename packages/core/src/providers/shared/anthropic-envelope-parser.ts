@@ -41,6 +41,8 @@ const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set([
   'stream_event',
 ]);
 
+const BLOCK_BOUNDARY_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['user', 'result', 'tool_call']);
+
 type StreamEvent = {
   readonly type?: unknown;
   readonly delta?: { readonly type?: unknown; readonly text?: unknown };
@@ -267,7 +269,11 @@ export const parseAnthropicEnvelopeValue = ({
 
   const at = ctx.now();
 
-  if (payload.type !== 'assistant' && payload.type !== 'stream_event') {
+  if (
+    payload.parent_tool_use_id == null &&
+    typeof payload.type === 'string' &&
+    BLOCK_BOUNDARY_PAYLOAD_TYPES.has(payload.type)
+  ) {
     closeStreamedBlock({ ctx });
   }
 

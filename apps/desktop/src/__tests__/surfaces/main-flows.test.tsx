@@ -198,7 +198,6 @@ describe('main flows on the real store', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Read the ledger-core importer' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());

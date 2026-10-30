@@ -369,7 +369,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: 'action',
           icon: CONCEPT_ICONS.workflows,
           secondary: ['New workflow', NAMES.runKind.orchestrated, NAMES.runKind.preset],
-          run: () => openNewSessionAs({ startKind: 'workflow' }),
+          run: () => openNewSessionAs({ startKind: 'workflow', startShape: 'orchestrated' }),
         },
         {
           key: 'action:new-session-agent',
@@ -378,7 +378,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: 'action',
           icon: CONCEPT_ICONS.agents,
           secondary: ['New agent', NAMES.runKind.autoAgent],
-          run: () => openNewSessionAs({ startKind: 'agent' }),
+          run: () => openNewSessionAs({ startKind: 'agent', startShape: 'autoAgent' }),
         },
         {
           key: 'action:new-chat',
