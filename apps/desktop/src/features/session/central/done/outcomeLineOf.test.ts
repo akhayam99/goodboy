@@ -204,9 +204,9 @@ describe('outcomeLineOf for an Auto tree', () => {
     );
   });
 
-  it('counts the agents and names the roles when nothing else was said', () => {
+  it('names the roles and leaves the count to the meta line when nothing else was said', () => {
     expect(lineOfTree({ keys: ['reviewer', 'fixer'] }).title).toBe(
-      '2 agents finished: Reviewer and Implementer',
+      'Reviewer and Implementer finished',
     );
   });
 });

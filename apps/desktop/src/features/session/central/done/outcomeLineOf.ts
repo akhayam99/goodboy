@@ -92,9 +92,9 @@ const autoOutcomeOf = ({ entry, view, model }: AutoParams): string | null => {
   if (own !== null || children.length === 0) {
     return own;
   }
-  return `${children.length} agents finished: ${joinNouns({
+  return `${joinNouns({
     nouns: Array.from(new Set(children.map((child) => child.noun))),
-  })}`;
+  })} finished`;
 };
 
 const agentFallbackOf = ({
