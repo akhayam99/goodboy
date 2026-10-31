@@ -9,6 +9,7 @@ import { RunPageActions } from '../PresetRun/RunPageActions';
 import { OrchestratedChecklist } from './OrchestratedChecklist';
 import { OrchestratedComposer } from './OrchestratedComposer';
 import { OrchestratedContinue } from './OrchestratedContinue';
+import { HintRowStateProvider } from './HintRowStateProvider';
 import { OrchestratedGoal } from './OrchestratedGoal';
 import { OrchestratedResult } from './OrchestratedResult';
 import { OrchestratedRouting } from './OrchestratedRouting';
@@ -46,47 +47,53 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
   );
 
   return (
-    <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
-      <PaneShell
-        page="run"
-        header={
-          <AgentHeader
-            title={
-              <span
-                className="min-w-0 truncate"
-                onContextMenu={titleMenu.onContextMenu}
-                onKeyDown={titleMenu.onKeyDown}
-              >
-                {view.name}
-              </span>
-            }
-            actions={
-              <RunPageActions session={session} view={view} stepAgentId={runningStep?.id ?? null} />
-            }
-          />
-        }
-        headerRhythm="section"
-        scroll="body"
-        animationClassName="motion-safe:animate-fade-in"
-        dock={composer}
-        dockEdge="space"
-      >
-        <article
-          data-orchestrated-run={run.id}
-          aria-label={view.name}
-          className={cn(PANE_RHYTHM.groups, 'min-w-0', view.isDiscarded && TERMINAL_DIM)}
+    <HintRowStateProvider>
+      <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
+        <PaneShell
+          page="run"
+          header={
+            <AgentHeader
+              title={
+                <span
+                  className="min-w-0 truncate"
+                  onContextMenu={titleMenu.onContextMenu}
+                  onKeyDown={titleMenu.onKeyDown}
+                >
+                  {view.name}
+                </span>
+              }
+              actions={
+                <RunPageActions
+                  session={session}
+                  view={view}
+                  stepAgentId={runningStep?.id ?? null}
+                />
+              }
+            />
+          }
+          headerRhythm="section"
+          scroll="body"
+          animationClassName="motion-safe:animate-fade-in"
+          dock={composer}
+          dockEdge="space"
         >
-          <OrchestratedGoal session={session} view={view} />
-          {view.isDiscarded ? null : (
-            <RunWriteDestination sessionId={sessionId} workflowRunId={run.id} />
-          )}
-          <OrchestratedChecklist session={session} view={view} />
-          {isDone ? <OrchestratedResult session={session} view={view} /> : null}
-          <OrchestratedTail session={session} view={view} />
-          {view.isDiscarded ? null : <PresetChangeAsk sessionId={sessionId} run={run} />}
-          <OrchestratedRouting sessionId={sessionId} run={run} workflow={workflow} />
-        </article>
-      </PaneShell>
-    </RunWorkTime>
+          <article
+            data-orchestrated-run={run.id}
+            aria-label={view.name}
+            className={cn(PANE_RHYTHM.groups, 'min-w-0', view.isDiscarded && TERMINAL_DIM)}
+          >
+            <OrchestratedGoal session={session} view={view} />
+            {view.isDiscarded ? null : (
+              <RunWriteDestination sessionId={sessionId} workflowRunId={run.id} />
+            )}
+            <OrchestratedChecklist session={session} view={view} />
+            {isDone ? <OrchestratedResult session={session} view={view} /> : null}
+            <OrchestratedTail session={session} view={view} />
+            {view.isDiscarded ? null : <PresetChangeAsk sessionId={sessionId} run={run} />}
+            <OrchestratedRouting sessionId={sessionId} run={run} workflow={workflow} />
+          </article>
+        </PaneShell>
+      </RunWorkTime>
+    </HintRowStateProvider>
   );
 };

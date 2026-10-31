@@ -12,6 +12,8 @@ import type {
 import { writeAttachment } from '../../../features/chat/turn';
 import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { attachmentReadKey } from './attachmentReadKey';
+import { attachmentReads } from './attachmentReads';
 import type { SetFn } from './types';
 
 type Params = {
@@ -46,18 +48,23 @@ export const saveGoalAttachments = async ({
     saved.push(input.id);
   }
 
+  const read = attachmentReads.claim({ key: attachmentReadKey({ owner }) });
   if (owner.type === 'session') {
     const sid = owner.id as SessionId;
     const attachments = await listGoalAttachmentsForSession(tauriDatabase, sid);
-    set((state) => ({
-      sessionAttachments: { ...state.sessionAttachments, [sid]: attachments },
-    }));
+    if (read.isCurrent()) {
+      set((state) => ({
+        sessionAttachments: { ...state.sessionAttachments, [sid]: attachments },
+      }));
+    }
     return saved;
   }
   const runId = owner.id as WorkflowRunId;
   const attachments = await listGoalAttachmentsForRun(tauriDatabase, runId);
-  set((state) => ({
-    workflowRunAttachments: { ...state.workflowRunAttachments, [runId]: attachments },
-  }));
+  if (read.isCurrent()) {
+    set((state) => ({
+      workflowRunAttachments: { ...state.workflowRunAttachments, [runId]: attachments },
+    }));
+  }
   return saved;
 };

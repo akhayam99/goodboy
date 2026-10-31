@@ -21,6 +21,10 @@ Ask what is happening in a session without leaving it. **Ask**, or **⌘L**, ope
 
 Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex. The image shows as a thumbnail in the message box and in your message, and a click on it opens it large.
 
+Images of a message or of a hint show as one row of small thumbnails. What does not fit the row folds into **+N**. The goal keeps every image in view, each with its Remove control. Other files keep their file chip.
+
+Opening one image shows the others in a rail on the left, and the rail follows the image you are on. Press the arrow keys or click a thumbnail to move, and Esc to close. An image that cannot be read shows a quiet placeholder that still opens the viewer.
+
 ### Roles
 
 Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back. **Analyze** on a failing check starts the Debugger: it reproduces the failure and proposes one fix, or two or three options with a recommended one, and you start the one you pick.
@@ -200,3 +204,10 @@ This part is for contributors and agents who change the feature.
 - Auto's running strip: `AutoWorkingNow` uses delegation state and `DelegationClock`; `useAutoTreeActions` names the child in the Agents drawer payload. The `e2-working-now.test.tsx` scene test proves visibility, elapsed time and reveal without changing the main agent.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order. `ChoiceChips` draws the options.
 - Next step scenes: the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row. The `u31-next-step` scene test holds its height.
+- Image strip: `AttachmentStrip` is the one strip for a message (`UserText`), a goal (`GoalAttachmentsStrip`) and a hint (`OrchestratedHintRow`). It lives in `features/attachments/AttachmentStrip/`, outside `components/` and `hooks/`, so other features import it without growing the cross-feature count.
+- Strip split: `splitStripImages` is the one split into shown thumbnails and `+N`. It counts the slots from the strip's measured width (`useElementWidth`), with 48 px thumbnails and 8 px gaps, and keeps one slot for `+N`. Until the strip is measured it assumes the right drawer at `RIGHT_DRAWER_MIN` (384 px) less 32 px of padding, six slots. A strip with a removable image never folds.
+- Strip reads: `useAttachmentThumbnails` reads the shown row, and the rest when the viewer opens. It drops a late answer for an old path and releases the entry of an image that left the list, the hidden ones included once the viewer closes.
+- Strip viewer: the strip closes the viewer when the open image leaves the list. It takes an optional `viewer`, so a caller can keep the open image above a remount. The composer chips (`PendingAttachmentChip`, `ArtifactAttachmentChip`) keep `AttachmentChip`.
+- Image viewer: `ImageLightbox` takes one `src`, or `items` with a `startId` and a `railLabel` for the rail in the `Dialog` panel. `railTargetOf` maps the four arrow keys to the next image and wraps at the ends. The `onKeyDown` of the `Dialog` reads the keys, not a window listener.
+- Viewer state: the image shown is kept by id when the list re-renders. The viewer closes, and frees the page scroll, when that image leaves the list. `ImageLightboxRail` scrolls the active item into view.
+- Viewer focus: a thumbnail that failed to read stays the same button, so focus has a target. The strip focuses the thumbnail before it opens, so Esc returns focus to it. The `u32-attachments` scene shows the strip and `u32-attachments-viewer` the open viewer.

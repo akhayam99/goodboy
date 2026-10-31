@@ -40,7 +40,7 @@ const SUMMARY = {
 } satisfies Parameters<typeof orchestratedChecklistOf>[0]['summary'];
 
 describe('orchestratedChecklistOf', () => {
-  it('puts a read hint before the step that read it, once per step', () => {
+  it('puts each read hint before the step that read it, in the order read', () => {
     const list = orchestratedChecklistOf({
       agents: [SECOND, FIRST],
       hints: [hintOf({ key: 'a', step: 2 }), hintOf({ key: 'b', step: 2 }), hintOf({ key: 'c' })],
@@ -48,9 +48,9 @@ describe('orchestratedChecklistOf', () => {
       isDeciding: false,
       isDone: false,
     });
-    expect(list.readHintsBefore.get(SECOND.id)).toEqual([2]);
+    expect(list.readHintsBefore.get(SECOND.id)?.map((hint) => hint.id)).toEqual(['a', 'b']);
     expect(list.readHintsBefore.get(FIRST.id)).toBeUndefined();
-    expect(list.trailingHintSteps).toEqual([]);
+    expect(list.trailingHints).toEqual([]);
   });
 
   it('keeps a hint read by a step not on the list yet at the end', () => {
@@ -61,9 +61,27 @@ describe('orchestratedChecklistOf', () => {
       isDeciding: true,
       isDone: false,
     });
-    expect(list.trailingHintSteps).toEqual([2]);
+    expect(list.trailingHints.map((hint) => hint.id)).toEqual(['a']);
     expect(list.isNextShown).toBe(true);
     expect(list.left).toEqual([]);
+  });
+
+  it('sends a hint read with no recorded step to the trailing hints, after the stepped ones', () => {
+    const legacy: OrchestratorHint = {
+      id: 'legacy',
+      text: 'legacy',
+      createdAt: AT,
+      consumedAt: AT,
+    };
+    const list = orchestratedChecklistOf({
+      agents: [FIRST],
+      hints: [legacy, hintOf({ key: 'a', step: 2 }), hintOf({ key: 'queued' })],
+      summary: null,
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.trailingHints.map((hint) => hint.id)).toEqual(['a', 'legacy']);
+    expect(list.readHintsBefore.size).toBe(0);
   });
 
   it('lists the Left items while the run lives and leaves them to the result once done', () => {

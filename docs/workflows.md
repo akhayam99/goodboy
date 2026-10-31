@@ -336,8 +336,14 @@ read top to bottom at the conversation measure:
   `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
   duration). The glyph slot is fixed at two levels (`RUN_TREE_SLOT_WIDTH`), so
   sub agents keep their role and title at their step's x and nesting shows only
-  on the tracks and in the "3.1" label; a gray row "Your
-  hint, read at step 4" before the step whose decision read it, a dashed row
+  on the tracks and in the "3.1" label; one round hint node per read hint
+  (`OrchestratedHintRow`: text on one line, **Show more** when the line is cut
+  or the hint has a second line, image thumbnails, and "Read at step 4", a
+  link that focuses that step, or opens it in the drawer when its row is not on
+  screen) before the step whose decision read it; while that step has no row
+  yet, or the hint has no recorded step, the hint sits after the steps and the
+  words are plain text or absent. A hint keeps its expansion, its focus and its
+  open image when it moves from the composer to the list. A dashed row
   "Next step, not decided yet" while the orchestrator chooses, then the recap's
   **Left** items that name a role as dashed rows, so the plan and the progress
   are one list (`orchestratedChecklistOf`). A Left entry with no role is not a
@@ -426,7 +432,8 @@ read top to bottom at the conversation measure:
   When another window reopened the run first, the hint is only queued and the
   orchestrator reads it with its next decision.
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
-  orchestrator". A queued hint shows its first line and "+2 lines".
+  orchestrator". A queued hint is a dashed node with its first line, and
+  **Show more** when that line is cut or the hint has a second line.
   Waiting hints sit above it under one line, **Waits for the next decision**,
   each row with **Remove**; a row being read says **Reading now** with
   **Remove** disabled. Enter queues,

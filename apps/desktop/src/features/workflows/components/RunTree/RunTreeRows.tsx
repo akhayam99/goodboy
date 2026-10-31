@@ -11,7 +11,7 @@ import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 import type { RunTreeDensity } from './runTreeDensity';
 import type { RunTreeInsert } from '../../runTreeInsert';
-import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
+import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
 
 type Props = {
   readonly density?: RunTreeDensity;

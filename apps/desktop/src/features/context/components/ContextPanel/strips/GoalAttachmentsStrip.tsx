@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { Paperclip } from 'lucide-react';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
-import type { GoalAttachment, GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { AttachmentChip } from '../../../../attachments/components/AttachmentChip';
-import { useAttachmentThumbnail } from '../../../../attachments/hooks/useAttachmentThumbnail';
+import { AttachmentStrip, type AttachmentStripItem } from '../../../../attachments/AttachmentStrip';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
 
 export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {
@@ -31,6 +30,17 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
     return null;
   }
 
+  const items: ReadonlyArray<AttachmentStripItem> = attachments.map((att) => ({
+    id: att.id,
+    fileName: att.fileName,
+    mimeType: att.mimeType,
+    kind: att.kind,
+    relPath: att.relPath,
+    workingDir,
+    title: `${att.fileName}\nread by: ${ATTACHMENT_KIND_ROUTING[att.kind].join(', ')}`,
+    ...(isReadOnly ? {} : { onRemove: () => void removeGoalAttachment(owner, att.id) }),
+  }));
+
   return (
     <div className="flex flex-col gap-2">
       <Eyebrow
@@ -39,44 +49,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
         label="Attachments"
         className="gap-2 font-medium"
       />
-      <div className="flex flex-wrap gap-2">
-        {attachments.map((att) => (
-          <GoalAttachmentChip
-            key={att.id}
-            attachment={att}
-            workingDir={workingDir}
-            onRemove={isReadOnly ? null : () => void removeGoalAttachment(owner, att.id)}
-          />
-        ))}
-      </div>
+      <AttachmentStrip items={items} railLabel="Images in this goal" />
     </div>
-  );
-};
-
-const GoalAttachmentChip = ({
-  attachment,
-  workingDir,
-  onRemove,
-}: {
-  readonly attachment: GoalAttachment;
-  readonly workingDir: string | null;
-  readonly onRemove: (() => void) | null;
-}) => {
-  const thumbnail = useAttachmentThumbnail({
-    kind: attachment.kind,
-    relPath: attachment.relPath,
-    workingDir,
-  });
-  const readers = ATTACHMENT_KIND_ROUTING[attachment.kind].join(', ');
-
-  return (
-    <AttachmentChip
-      fileName={attachment.fileName}
-      mimeType={attachment.mimeType}
-      thumbnail={attachment.kind === 'image' && onRemove !== null ? thumbnail : undefined}
-      preview={thumbnail.status === 'ready' ? { src: thumbnail.src } : undefined}
-      title={`${attachment.fileName}\nread by: ${readers}`}
-      {...(onRemove === null ? {} : { onRemove })}
-    />
   );
 };
