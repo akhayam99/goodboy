@@ -14,7 +14,7 @@ onto its own paragraph.
 
 ## Goodboy v0.29.9
 
-Images as thumbnails with a viewer, hints on the run track, and fixes for multi repo runs and the terminal panel.
+Pictures in What's new show whole, images as thumbnails with a viewer, hints on the run track, and fixes for multi repo runs and the terminal.
 
 ### Improved
 
@@ -35,6 +35,7 @@ A hint is a round node on the run's line, with its text, its images and a link t
 
 ### Fixed
 
+- Pictures in What's new show whole, at their own shape, instead of zoomed in and cut at the sides. <!-- gb area=app -->
 - In a project with several repositories, the orchestrator sees every mount and sends each step to the right one. <!-- gb area=workflows -->
 - The terminal panel opens in the installed app again. <!-- gb area=app -->
 - After you move to another open question, keys 1 to 4 pick on that question. <!-- gb area=agents -->

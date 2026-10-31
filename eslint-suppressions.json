@@ -2144,11 +2144,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/changelog/components/ReleaseImage/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/changelog/components/ReleaseNoticeBridge/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

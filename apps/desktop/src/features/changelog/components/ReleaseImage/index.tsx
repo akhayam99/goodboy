@@ -21,7 +21,7 @@ const VARIANT_OPTIONS: ReadonlyArray<{
 
 export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
   const [variant, setVariant] = useState<ChangelogImageVariant>('after');
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const after = useChangelogImage({ version, image, variant: 'after' });
   const before = useChangelogImage({ version, image, variant: 'before', enabled: hasBefore });
 
@@ -42,26 +42,35 @@ export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
           options={VARIANT_OPTIONS}
         />
       ) : null}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge">
-        {active.kind === 'loading' ? (
+      {active.kind === 'loading' ? (
+        <div
+          data-release-image-frame="placeholder"
+          className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge"
+        >
           <Skeleton className="h-full w-full rounded-none" />
-        ) : (
+        </div>
+      ) : (
+        <div
+          data-release-image-frame="image"
+          className="flex w-full items-center justify-center overflow-hidden rounded-lg border border-frame-edge bg-subtle"
+        >
           <button
             type="button"
-            onClick={() => setLightboxOpen(true)}
-            className="absolute inset-0 block h-full w-full cursor-zoom-in"
+            onClick={() => setIsLightboxOpen(true)}
+            className="block max-w-full cursor-zoom-in"
           >
             <img
               key={variant}
               src={active.dataUri}
               alt={alt}
-              className="h-full w-full animate-fade-in object-cover"
+              data-release-image-fit="contain"
+              className="block h-auto max-h-120 w-auto max-w-full animate-fade-in object-contain"
             />
           </button>
-        )}
-      </div>
-      {lightboxOpen && active.kind === 'ready' ? (
-        <ImageLightbox src={active.dataUri} alt={alt} onClose={() => setLightboxOpen(false)} />
+        </div>
+      )}
+      {isLightboxOpen && active.kind === 'ready' ? (
+        <ImageLightbox src={active.dataUri} alt={alt} onClose={() => setIsLightboxOpen(false)} />
       ) : null}
     </div>
   );
