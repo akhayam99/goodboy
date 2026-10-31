@@ -90,18 +90,16 @@ describe('the header scene', () => {
     expect(within(line).getAllByRole('button').length).toBeGreaterThan(0);
   });
 
-  it('draws every setting as the quiet setting button with its chevron at rest', async () => {
+  it('draws every setting as the quiet setting button with no chevron', async () => {
     mount();
 
     const chip = await limitChip();
     expect(chip.getAttribute('data-variant')).toBe('setting');
     expect(chip.getAttribute('aria-expanded')).toBe('false');
-    expect(chip.querySelector('[data-setting-chevron]')?.getAttribute('data-setting-chevron')).toBe(
-      'rest',
-    );
+    expect(chip.querySelector('svg')).toBeNull();
   });
 
-  it('keeps the chevron shown while the popover is open and opens it from the keyboard', async () => {
+  it('opens the popover from the keyboard', async () => {
     mount();
 
     const user = userEvent.setup();
@@ -115,9 +113,6 @@ describe('the header scene', () => {
     await user.keyboard('{Enter}');
 
     expect(chip.getAttribute('aria-expanded')).toBe('true');
-    expect(chip.querySelector('[data-setting-chevron]')?.getAttribute('data-setting-chevron')).toBe(
-      'open',
-    );
     await screen.findByRole('dialog', undefined, WAIT);
     await user.keyboard('{Escape}');
     expect(chip.getAttribute('aria-expanded')).toBe('false');

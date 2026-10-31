@@ -1,13 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  Tooltip,
-  cn,
-  ICON_SIZE,
-  type DropdownController,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, Tooltip, cn, type DropdownController } from '@goodboy/ui';
 import type { SettingWords } from './settingWords';
 
 type Props = {
@@ -42,22 +34,13 @@ export const SettingChip = ({
         .join(', ')}
       data-setting-chip={label}
       onClick={dropdown.toggle}
-      className={cn('group/setting max-w-full', dropdown.open && 'border-border bg-selected')}
+      className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
     >
       <span className="shrink-0 text-faint-foreground">{label}</span>
       <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
       {words.source === '' ? null : (
         <span className="shrink-0 text-faint-foreground">{words.source}</span>
       )}
-      <ChevronDown
-        size={ICON_SIZE.row}
-        aria-hidden
-        data-setting-chevron={dropdown.open ? 'open' : 'rest'}
-        className={cn(
-          'shrink-0 text-faint-foreground motion-safe:transition-opacity group-hover/setting:opacity-100 group-focus-visible/setting:opacity-100',
-          dropdown.open ? 'opacity-100' : 'opacity-0',
-        )}
-      />
     </Button>
   );
   return (
