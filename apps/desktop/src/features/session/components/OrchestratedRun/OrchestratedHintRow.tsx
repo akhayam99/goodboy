@@ -17,6 +17,9 @@ import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 import { useHintImageItems } from './useHintImageItems';
 import { useHintRowState } from './useHintRowState';
 import { useIsClipped } from './useIsClipped';
+import { useRowHeight } from './useRowHeight';
+import { TimelineRail } from '../SessionWorkspace/parts/TimelinePane/TimelineRail';
+import { railThroughOf, type RailInk } from '../../../workTreeModel/railGeometry';
 
 type OrchestratedHintState = 'read' | 'queued' | 'reading';
 
@@ -26,6 +29,8 @@ type Props = {
   readonly runId: WorkflowRunId;
   readonly state: OrchestratedHintState;
   readonly slotWidth: number;
+  readonly ink?: RailInk | null;
+  readonly hasLineBelow?: boolean;
   readonly onOpenStep?: (() => void) | null;
   readonly onRemove?: () => void;
 };
@@ -38,15 +43,20 @@ const NODE_TONE = {
 
 const NAMED_HINT_CHARS = 60;
 
+const HINT_MARKER_Y = 16;
+
 export const OrchestratedHintRow = ({
   hint,
   sessionId,
   runId,
   state,
   slotWidth,
+  ink = null,
+  hasLineBelow = false,
   onOpenStep = null,
   onRemove,
 }: Props) => {
+  const { ref: railRef, height: railHeight } = useRowHeight();
   const { rowRef, isExpanded, openImageId, setIsExpanded, setOpenImageId } = useHintRowState({
     runId,
     hintId: hint.id,
@@ -95,8 +105,28 @@ export const OrchestratedHintRow = ({
       ref={rowRef}
       data-hint-chip={state}
       data-plan-row="hint"
-      className="flex min-w-0 flex-col gap-1"
+      className="relative flex min-w-0 flex-col gap-1"
     >
+      {ink === null ? null : (
+        <span
+          ref={railRef}
+          aria-hidden
+          data-hint-rail=""
+          className="absolute inset-y-0 left-0"
+          style={{ width: slotWidth }}
+        >
+          <TimelineRail
+            rail={railThroughOf({
+              id: hint.id,
+              height: railHeight,
+              markerY: HINT_MARKER_Y,
+              ink,
+              hasLineBelow,
+            })}
+            width={slotWidth}
+          />
+        </span>
+      )}
       <div className="flex h-8 min-w-0 items-center">
         <OrchestratedPlanSlot slotWidth={slotWidth}>
           <WorkNode

@@ -74,7 +74,7 @@ Follow a run step by step, with its sub-agents under their agent and one button 
 
 ### Hints to the orchestrator
 
-Every hint is a round node on the run's line, like a step. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer.
+Every hint is a round node on the run's line, like a step, and the line runs through it and its images without a break. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer.
 
 A read hint says **Read at step 3** before that step. Once the step is on the list, the words are a link that moves to the step, or opens it when it is out of view. Until then they are plain text. A hint keeps its open text and its open image when the orchestrator reads it.
 
@@ -137,6 +137,7 @@ This part is for contributors and agents who change the feature.
 - `OrchestratedChecklist` draws the **Steps** label with `SectionLabel` and counts the top-level agents once.
 - Hint node: `OrchestratedHintRow` draws a queued, reading or read hint with `WorkNode` in the `OrchestratedPlanSlot` column. The checklist and `OrchestratedComposer` both use it, so one hint is drawn under different parents over its life.
 - Hint state: `HintRowStateProvider` in `OrchestratedRunPage` keeps its expansion and open image by run and hint id. `useHintRowState` moves focus to the same control when the row moves.
+- Hint line: `RunTreeRows` hands each hint the ink of the segment above it (`railInkAbove`), and `OrchestratedHintRow` draws it through the row with `railThroughOf` and `TimelineRail`, at the height `useRowHeight` measures. The last hint gets no line below.
 - Hint text: `useIsClipped` measures the line. `hintIsLong` adds the newline rule to decide when **Show more** shows.
 - Hint list: `orchestratedChecklistOf` gives one read hint per row. It sends a hint read with no recorded step to the trailing hints.
 - Hint images: `useHintImageItems` asks `loadGoalAttachments` once per run. A failed load is reported on the session and shows **Retry**.
