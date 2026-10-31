@@ -11,6 +11,7 @@ import {
   recordPendingOpenQuestionDelivery,
 } from './pendingOpenQuestionDelivery';
 import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
+import { clearAnswersInFlight, isQuestionHeldByStop, markAnswersInFlight } from './heldAnswers';
 import type { GetFn, SetFn } from './types';
 
 type ResolveAskingAgentsParams = {
@@ -27,13 +28,18 @@ const resolveAskingAgents = ({
   targetAgentId,
 }: ResolveAskingAgentsParams): ReadonlySet<AskingAgentId> => {
   const open = get().sessionOpenQuestions[sessionId] ?? [];
-  const askingAgentByQuestionId = new Map<string, AskingAgentId>(
-    open.map((question) => [question.id, question.createdByAgentId ?? null]),
-  );
+  const questionById = new Map(open.map((question) => [question.id, question]));
   const agents = new Set<AskingAgentId>();
   for (const pair of pairs) {
-    const known = askingAgentByQuestionId.get(pair.id);
-    agents.add(known === undefined ? targetAgentId : known);
+    const known = questionById.get(pair.id);
+    if (known === undefined) {
+      agents.add(targetAgentId);
+      continue;
+    }
+    if (isQuestionHeldByStop({ get, sessionId, question: known })) {
+      continue;
+    }
+    agents.add(known.createdByAgentId ?? null);
   }
   return agents;
 };
@@ -50,13 +56,19 @@ export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
     }
 
     const askingAgentIds = resolveAskingAgents({ get, sessionId, pairs: valid, targetAgentId });
-    await cancelQuestionDelegates({
-      set,
-      get,
-      sessionId,
-      questionIds: valid.map((pair) => pair.id),
-    });
-    await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
+    markAnswersInFlight({ sessionId });
+    try {
+      await cancelQuestionDelegates({
+        set,
+        get,
+        sessionId,
+        questionIds: valid.map((pair) => pair.id),
+      });
+      await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
+    } catch (cause) {
+      clearAnswersInFlight({ sessionId });
+      throw cause;
+    }
     const attemptId = crypto.randomUUID();
     try {
       await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
@@ -70,6 +82,7 @@ export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
       });
       throw new OpenQuestionDeliveryError(error);
     } finally {
+      clearAnswersInFlight({ sessionId });
       void get().maybeAutoAdvanceWorkflow(sessionId);
     }
   };

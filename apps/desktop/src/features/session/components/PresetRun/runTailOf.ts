@@ -183,9 +183,10 @@ export const runTailOf = ({
     };
   }
   if (question !== null) {
+    const isBudgetStop = run.orchestrationStop?.kind === 'budget';
     return {
-      state: 'waiting',
-      phrase: 'Waiting for your answer',
+      state: isBudgetStop ? 'paused' : 'waiting',
+      phrase: isBudgetStop ? 'Paused at the limit' : 'Waiting for your answer',
       stepAgentId: null,
       verb: { kind: 'answer', question },
     };
