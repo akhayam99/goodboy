@@ -136,6 +136,19 @@ describe('runTailOf', () => {
     ).toMatchObject({ state: 'paused', verb: { kind: 'raiseCap' } });
   });
 
+  it('keeps the limit in the phrase and the answer as the verb when questions wait on a run stopped at it', () => {
+    const open = JSON.parse(
+      '{"id":"q-window","sessionId":"s","text":"Batch refunds?","isBlocking":true,"userAnswer":null,"status":"open","createdAt":"2026-10-16T09:00:00.000Z"}',
+    );
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        run: aWorkflowRun({ orchestrationStop: { kind: 'budget', message: 'Paused' } }),
+        question: open,
+      }),
+    ).toMatchObject({ state: 'paused', phrase: 'Paused at the limit', verb: { kind: 'answer' } });
+  });
+
   it('offers Continue step on a step you stopped', () => {
     expect(
       tailOf({ agents: agentsOf({ scout: 'completed', implementer: 'stopped' }) }),

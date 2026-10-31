@@ -7,6 +7,7 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
+import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
@@ -64,12 +65,21 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     phase !== 'step-failed' &&
     phase !== 'blocked';
 
+  const placement = runQuestionsPlacementOf({
+    phase,
+    questions: view.orchestrator.runQuestions,
+  });
+  const questionCluster = (
+    <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
+  );
+
   return (
     <section
       aria-label="Run state"
       data-orchestrated-tail={view.orchestrator.state.phase}
       className="flex min-w-0 flex-col gap-1"
     >
+      {placement === 'before-state' ? questionCluster : null}
       {isMountBlocked ? null : (
         <TailLine
           facts={{
@@ -89,9 +99,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
           }
         />
       )}
-      {phase === 'needs-answer' && view.orchestrator.runQuestions.length > 0 ? (
-        <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
-      ) : null}
+      {placement === 'after-state' ? questionCluster : null}
       <RunPendingDelivery sessionId={session.id} />
       {isMountBlocked ? (
         <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />

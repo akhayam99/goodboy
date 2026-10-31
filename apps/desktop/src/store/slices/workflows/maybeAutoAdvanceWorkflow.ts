@@ -21,6 +21,7 @@ import { nextRunMove } from './nextRunMove';
 import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { deliverHeldAnswers } from '../open-questions/heldAnswers';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 const advanceInFlight = new Set<SessionId>();
@@ -84,6 +85,7 @@ const hasStaticAutoRun = ({ get, sessionId }: Pick<Params, 'get' | 'sessionId'>)
   ) ?? false;
 
 const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
+  await deliverHeldAnswers({ set, get, sessionId });
   await startChainedRuns({ set, get, sessionId });
   if (hasStaticAutoRun({ get, sessionId })) {
     await waitForSessionSummarizer({ get, sessionId });
