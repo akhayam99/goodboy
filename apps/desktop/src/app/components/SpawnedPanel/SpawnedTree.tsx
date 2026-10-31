@@ -10,11 +10,13 @@ import { hopTargetOf } from './hopTargetOf';
 import { SpawnedNowRow } from './SpawnedNowRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
 import { spawnedTreeItemsOf } from './spawnedTreeItemsOf';
-import { treeKeyTargetOf } from './treeKeyTargetOf';
+import { treeKeyTargetOf, type TreeOrder } from './treeKeyTargetOf';
 import { useSpawnedScrollHold } from './useSpawnedScrollHold';
 
 type Props = {
   readonly label: string;
+  readonly hasNow?: boolean;
+  readonly order?: TreeOrder;
   readonly children: ReactNode;
 };
 
@@ -32,7 +34,12 @@ type ElementParams = {
 const levelOf = ({ element }: ElementParams): number =>
   Number(element.getAttribute('aria-level') ?? '1');
 
-export const SpawnedTree = ({ label, children }: Props) => {
+export const SpawnedTree = ({
+  label,
+  hasNow = true,
+  order = 'children-first',
+  children,
+}: Props) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const focus = useMemo(() => ({ activeId, setActiveId }), [activeId]);
@@ -94,6 +101,7 @@ export const SpawnedTree = ({ label, children }: Props) => {
       key: event.key,
       levels: items.map((element) => levelOf({ element })),
       from: items.indexOf(current),
+      order,
     });
     if (next === null) {
       return;
@@ -117,7 +125,7 @@ export const SpawnedTree = ({ label, children }: Props) => {
         onKeyDown={onKeyDown}
         className="flex min-w-0 flex-col"
       >
-        <SpawnedNowRow />
+        {hasNow ? <SpawnedNowRow /> : null}
         {children}
       </div>
     </SpawnedTreeContext.Provider>

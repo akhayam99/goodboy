@@ -54,6 +54,9 @@ export const PANE_RHYTHM = {
     row: 'min-h-12',
     line: 'h-7',
     meta: 'h-5',
+    stateRow: 'min-h-12 px-2 py-1',
+    stateHead: 'h-7 px-2',
+    stateGroups: 'flex flex-col gap-4',
   },
   board: {
     pad: 'px-6 pb-5',

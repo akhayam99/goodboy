@@ -1,15 +1,21 @@
+export type TreeOrder = 'children-first' | 'parent-first';
+
 type Params = {
   readonly key: string;
   readonly levels: ReadonlyArray<number>;
   readonly from: number;
+  readonly order?: TreeOrder;
 };
 
-const parentIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => {
+type StepParams = Omit<Params, 'key'>;
+
+const parentIndexOf = ({ levels, from, order = 'children-first' }: StepParams): number | null => {
   const level = levels[from];
   if (level === undefined) {
     return null;
   }
-  for (let index = from + 1; index < levels.length; index += 1) {
+  const step = order === 'children-first' ? 1 : -1;
+  for (let index = from + step; index >= 0 && index < levels.length; index += step) {
     const candidate = levels[index];
     if (candidate !== undefined && candidate < level) {
       return index;
@@ -18,16 +24,22 @@ const parentIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => 
   return null;
 };
 
-const childIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => {
+const childIndexOf = ({ levels, from, order = 'children-first' }: StepParams): number | null => {
   const level = levels[from];
-  const above = levels[from - 1];
-  if (level === undefined || above === undefined || above <= level) {
+  const next = order === 'children-first' ? from - 1 : from + 1;
+  const neighbour = levels[next];
+  if (level === undefined || neighbour === undefined || neighbour <= level) {
     return null;
   }
-  return from - 1;
+  return next;
 };
 
-export const treeKeyTargetOf = ({ key, levels, from }: Params): number | null => {
+export const treeKeyTargetOf = ({
+  key,
+  levels,
+  from,
+  order = 'children-first',
+}: Params): number | null => {
   const last = levels.length - 1;
   if (last < 0) {
     return null;
@@ -42,9 +54,9 @@ export const treeKeyTargetOf = ({ key, levels, from }: Params): number | null =>
     case 'End':
       return last;
     case 'ArrowLeft':
-      return parentIndexOf({ levels, from });
+      return parentIndexOf({ levels, from, order });
     case 'ArrowRight':
-      return childIndexOf({ levels, from });
+      return childIndexOf({ levels, from, order });
     default:
       return null;
   }

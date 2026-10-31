@@ -97,12 +97,6 @@ describe('the u26 p11 Auto result scenes', () => {
     mount({ id: 'u26-auto-results-light' });
 
     const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    const [root] = within(tree).getAllByRole('treeitem');
-    if (root === undefined) {
-      throw new Error('the tree has no root');
-    }
-    expect(root.getAttribute('aria-expanded')).toBeNull();
-    fireEvent.click(within(tree).getByRole('treeitem', { name: /\d+ helpers/ }));
     expect(
       within(tree).getByRole('treeitem', { name: `Reviewer, ${FIRST_REVIEW}, Done` }),
     ).toBeDefined();

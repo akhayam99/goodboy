@@ -67,7 +67,7 @@ describe('the u26 Agents panel scenes', () => {
       mount({ id });
       const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
       const tree = within(panel).getByRole('tree', { name: 'Auto agents' });
-      expect(within(tree).getAllByRole('treeitem')).toHaveLength(4);
+      expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     },
   );
 
