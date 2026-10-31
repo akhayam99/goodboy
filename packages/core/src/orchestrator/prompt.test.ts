@@ -3,6 +3,7 @@ import {
   buildOrchestratorUserPrompt,
   ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT,
   ORCHESTRATOR_SYSTEM_PROMPT,
+  orchestratorSystemPromptFor,
 } from './prompt';
 import type { OrchestratorInput, OrchestratorModelOption } from './types';
 
@@ -449,5 +450,35 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('An empty left array means the run is complete');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('it replaces the previous one every time');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('including done and blocked');
+  });
+});
+
+const TWO_MOUNTS: NonNullable<OrchestratorInput['mounts']> = [
+  { id: 'mount-payments', name: 'payments-api', branch: 'ak/fix-ledger' },
+  { id: 'mount-notify', name: 'notify-relay' },
+];
+
+describe('orchestrator mounts', () => {
+  it('lists each mount with its id, name and known branch when there are two', () => {
+    const prompt = buildOrchestratorUserPrompt(input({ mounts: TWO_MOUNTS }));
+
+    expect(prompt).toContain('- mountId mount-payments: payments-api, branch ak/fix-ledger');
+    expect(prompt).toContain('- mountId mount-notify: notify-relay\n');
+  });
+
+  it('teaches the mountId step field only when there are two mounts', () => {
+    expect(orchestratorSystemPromptFor({ input: input({ mounts: TWO_MOUNTS }) })).toContain(
+      'Give a next step "mountId"',
+    );
+    expect(orchestratorSystemPromptFor({ input: input({ mounts: TWO_MOUNTS.slice(0, 1) }) })).toBe(
+      ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT,
+    );
+  });
+
+  it('leaves the one-mount and no-mount prompts as they were', () => {
+    const plain = buildOrchestratorUserPrompt(input());
+
+    expect(buildOrchestratorUserPrompt(input({ mounts: TWO_MOUNTS.slice(0, 1) }))).toBe(plain);
+    expect(buildOrchestratorUserPrompt(input({ mounts: [] }))).toBe(plain);
   });
 });
