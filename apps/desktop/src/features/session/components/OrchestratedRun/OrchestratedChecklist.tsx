@@ -79,7 +79,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     target.focus();
   };
 
-  const beforeRow = ({ agentId, slotWidth }: RunTreeInsert) => {
+  const beforeRow = ({ agentId, slotWidth, ink, hasLineBelow }: RunTreeInsert) => {
     const hints = agentId === null ? [] : (checklist.readHintsBefore.get(agentId) ?? []);
     return hints.map((hint) => (
       <OrchestratedHintRow
@@ -89,12 +89,14 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
         runId={run.id}
         state="read"
         slotWidth={slotWidth}
+        ink={ink}
+        hasLineBelow={hasLineBelow}
         onOpenStep={agentId === null ? null : () => openStep({ agentId })}
       />
     ));
   };
 
-  const trailing = ({ slotWidth }: RunTreeInsert) => (
+  const trailing = ({ slotWidth, ink, hasLineBelow }: RunTreeInsert) => (
     <>
       {checklist.trailingHints.map((hint) => (
         <OrchestratedHintRow
@@ -104,6 +106,8 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           runId={run.id}
           state="read"
           slotWidth={slotWidth}
+          ink={ink}
+          hasLineBelow={hasLineBelow}
         />
       ))}
       {checklist.isNextShown ? (
@@ -174,7 +178,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           onAnswer={() => undefined}
         />
       ) : (
-        trailing({ agentId: null, slotWidth: CHECKLIST_EMPTY_SLOT })
+        trailing({ agentId: null, slotWidth: CHECKLIST_EMPTY_SLOT, ink: null, hasLineBelow: false })
       )}
       <OrchestratedNotes notes={checklist.notes} />
     </section>

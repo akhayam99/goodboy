@@ -106,6 +106,17 @@ describe('the hint node scene', () => {
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(stepRow);
   });
 
+  it('keeps the track line through the read hint down to the next step', async () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(120);
+    render(<Scene />);
+    await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
+    const rail = document.querySelector('[data-hint-chip="read"] [data-hint-rail]');
+    const lines = rail?.querySelectorAll('[data-testid="timeline-rail-segment"]') ?? [];
+    expect(lines).toHaveLength(1);
+    expect(Number(lines[0]?.getAttribute('y1'))).toBeLessThanOrEqual(0);
+    expect(Number(lines[0]?.getAttribute('y2'))).toBeGreaterThanOrEqual(120);
+  });
+
   it('moves focus to that step from the keyboard', async () => {
     const user = userEvent.setup();
     render(<Scene />);
