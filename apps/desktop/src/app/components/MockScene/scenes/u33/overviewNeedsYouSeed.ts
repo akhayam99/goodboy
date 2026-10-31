@@ -26,7 +26,8 @@ export const seedOverviewNeedsYou = (): void => {
   const second: Agent = {
     ...first,
     id: SECOND_AGENT_ID,
-    name: 'Retry the notify-relay webhooks',
+    name: 'Check the notify-relay retries',
+    kind: 'tester',
     ordinal: first.ordinal + 1,
     startedAt: at({ time: '10:12' }),
   };

@@ -4,7 +4,8 @@ import { CentralColumnPane } from '../u26/CentralColumnPane';
 import { seedOverviewNeedsYou } from './overviewNeedsYouSeed';
 
 const FRAME_WIDTH = 680;
-const FRAME_HEIGHT = 560;
+const HIDDEN_CARDS =
+  '[&_[data-overview-card=branches]]:hidden [&_[data-overview-card=done]]:hidden';
 
 export const OverviewNeedsYouScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -19,8 +20,8 @@ export const OverviewNeedsYouScene = () => {
     <AutoReleaseContext.Provider value>
       <div
         data-shot
-        style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }}
-        className="bg-background text-foreground [&>div]:h-full [&>div]:w-full"
+        style={{ width: FRAME_WIDTH }}
+        className={`bg-background text-foreground [&>div]:h-auto [&>div]:w-full ${HIDDEN_CARDS}`}
       >
         <CentralColumnPane />
       </div>

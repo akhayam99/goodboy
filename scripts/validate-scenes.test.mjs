@@ -25,7 +25,7 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
-import { rowAlignFailures } from './validateScenesRowAlign.mjs';
+import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
@@ -1215,8 +1215,35 @@ describe('rowAlignFailures', () => {
   const aligned = {
     needs: { count: 3, left: 48, gaps: [4] },
     waiting: { count: 2, left: 48.4, gaps: [4] },
+    frame: { width: 680, bottom: 700, lastRowBottom: 640, neighbours: 0 },
   };
   const run = (measured) => rowAlignFailures({ scene: 'fixture', width: 1024, measured });
+
+  it('fails a frame that cuts off the last Waiting for you row', () => {
+    const failures = run({ ...aligned, frame: { ...aligned.frame, lastRowBottom: 760 } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the frame cuts off the last Waiting for you row'],
+    );
+  });
+
+  it('fails a frame that shows a neighbour card', () => {
+    assert.deepEqual(
+      run({ ...aligned, frame: { ...aligned.frame, neighbours: 2 } }).map(
+        (failure) => failure.check,
+      ),
+      ['the frame shows a card next to Needs you and Waiting for you'],
+    );
+  });
+
+  it('fails a scene with no frame around the sections', () => {
+    assert.deepEqual(
+      run({ ...aligned, frame: { ...aligned.frame, width: null, lastRowBottom: null } }).map(
+        (failure) => failure.check,
+      ),
+      ['no data-shot frame around the two sections'],
+    );
+  });
 
   it('passes icons on the same left edge and the same row gap', () => {
     assert.deepEqual(run(aligned), []);
@@ -1261,6 +1288,51 @@ describe('rowAlignFailures', () => {
       run({ ...aligned, needs: { ...aligned.needs, gaps: [] } }).map((failure) => failure.check),
       ['a section has no two rows to measure a gap between'],
     );
+  });
+});
+
+describe('rowAlignProbe', () => {
+  const box = ({ top, bottom, left = 48 }) => ({ top, bottom, left, width: 600 });
+  const rowOf = ({ top, bottom, isChild = false, section = 'needs-you' }) => ({
+    getBoundingClientRect: () => box({ top, bottom }),
+    querySelector: () => ({ getBoundingClientRect: () => box({ top, bottom }) }),
+    closest: (selector) => {
+      if (selector === '[data-live-child]') {
+        return isChild ? {} : null;
+      }
+      return section;
+    },
+  });
+
+  const probeWith = ({ waiting }) => {
+    const previous = globalThis.document;
+    globalThis.document = {
+      querySelector: () => null,
+      querySelectorAll: (selector) => {
+        if (selector === '[data-running-rows] [data-live-row]') {
+          return waiting;
+        }
+        return [];
+      },
+    };
+    try {
+      return rowAlignProbe();
+    } finally {
+      globalThis.document = previous;
+    }
+  };
+
+  it('measures the gap between the two Waiting for you rows, not their child rows', () => {
+    const measured = probeWith({
+      waiting: [
+        rowOf({ top: 0, bottom: 36 }),
+        rowOf({ top: 40, bottom: 76 }),
+        rowOf({ top: 76, bottom: 104, isChild: true }),
+        rowOf({ top: 104, bottom: 132, isChild: true }),
+      ],
+    });
+    assert.deepEqual(measured.waiting.gaps, [4]);
+    assert.equal(measured.waiting.count, 2);
   });
 });
 
