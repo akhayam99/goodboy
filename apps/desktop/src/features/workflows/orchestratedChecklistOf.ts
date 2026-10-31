@@ -21,8 +21,8 @@ type Params = {
 };
 
 export type OrchestratedChecklist = {
-  readonly readHintsBefore: ReadonlyMap<AgentId, ReadonlyArray<number>>;
-  readonly trailingHintSteps: ReadonlyArray<number>;
+  readonly readHintsBefore: ReadonlyMap<AgentId, ReadonlyArray<OrchestratorHint>>;
+  readonly trailingHints: ReadonlyArray<OrchestratorHint>;
   readonly left: ReadonlyArray<OrchestratedPlannedItem>;
   readonly notes: ReadonlyArray<string>;
   readonly isNextShown: boolean;
@@ -66,27 +66,28 @@ export const orchestratedChecklistOf = ({
   const roots = agents
     .filter((agent) => agent.parentAgentId == null)
     .sort((left, right) => left.ordinal - right.ordinal);
-  const readSteps = [
-    ...new Set(
-      hints.flatMap((hint) =>
-        hint.consumedAt != null && hint.consumedAtStep != null ? [hint.consumedAtStep] : [],
-      ),
-    ),
-  ].sort((left, right) => left - right);
-  const readHintsBefore = new Map<AgentId, ReadonlyArray<number>>();
-  const trailingHintSteps: Array<number> = [];
-  for (const step of readSteps) {
-    const root = roots[step - 1];
+  const readHints = hints
+    .filter((hint) => hint.consumedAt != null && hint.consumedAtStep != null)
+    .sort((left, right) => {
+      const stepGap = (left.consumedAtStep ?? 0) - (right.consumedAtStep ?? 0);
+      return stepGap === 0
+        ? (left.consumedAt ?? '').localeCompare(right.consumedAt ?? '')
+        : stepGap;
+    });
+  const readHintsBefore = new Map<AgentId, ReadonlyArray<OrchestratorHint>>();
+  const trailingHints: Array<OrchestratorHint> = [];
+  for (const hint of readHints) {
+    const root = roots[(hint.consumedAtStep ?? 0) - 1];
     if (root === undefined) {
-      trailingHintSteps.push(step);
+      trailingHints.push(hint);
       continue;
     }
-    readHintsBefore.set(root.id, [...(readHintsBefore.get(root.id) ?? []), step]);
+    readHintsBefore.set(root.id, [...(readHintsBefore.get(root.id) ?? []), hint]);
   }
   const open = isDone || summary === null ? NO_OPEN_ITEMS : openItemsOf({ agents, summary });
   return {
     readHintsBefore,
-    trailingHintSteps,
+    trailingHints,
     left: open.left,
     notes: open.notes,
     isNextShown: isDeciding,

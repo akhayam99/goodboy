@@ -1133,6 +1133,7 @@ u31-sidebar
 u31-text-levels
 u32-attachments
 u32-attachments-viewer
+u32-hint-node
 update-card
 update-card-long-version
 update-card-narrow

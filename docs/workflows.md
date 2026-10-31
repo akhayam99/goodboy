@@ -336,8 +336,10 @@ read top to bottom at the conversation measure:
   `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
   duration). The glyph slot is fixed at two levels (`RUN_TREE_SLOT_WIDTH`), so
   sub agents keep their role and title at their step's x and nesting shows only
-  on the tracks and in the "3.1" label; a gray row "Your
-  hint, read at step 4" before the step whose decision read it, a dashed row
+  on the tracks and in the "3.1" label; one round hint node per read hint
+  (`OrchestratedHintRow`: text on one line, **Show more** for the rest, image
+  thumbnails, and a "Read at step 4" link that focuses that step) before the
+  step whose decision read it, a dashed row
   "Next step, not decided yet" while the orchestrator chooses, then the recap's
   **Left** items that name a role as dashed rows, so the plan and the progress
   are one list (`orchestratedChecklistOf`). A Left entry with no role is not a

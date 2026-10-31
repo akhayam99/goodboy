@@ -74,6 +74,8 @@ Follow a run step by step, with its sub-agents under their agent and one button 
 
 ### Hints to the orchestrator
 
+Every hint is a round node on the run's line, like a step. Its text sits on one line, and a long hint has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer. A queued hint has a dashed node. A read hint says **Read at step 3**, and that link moves to the step and focuses it.
+
 Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Send now** stops the step in flight, keeps what it wrote and decides again. A complete orchestrated run keeps a field at its end, **Continue with a hint**: send one and the run reopens and the orchestrator picks the next step from the goal and your hint. The orchestrator picks the steps, so an orchestrated run has no **Add step**. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider; **Models in workflows** in Models lets the orchestrator name the model itself.
 
 <picture>
@@ -131,6 +133,7 @@ This part is for contributors and agents who change the feature.
 - Run page checklist: `RunTreeChecklistCells` sets a step that runs, waits or failed in `text-row-strong`.
 - Every other step is `text-ui`, gray until hover.
 - `OrchestratedChecklist` draws the **Steps** label with `SectionLabel` and counts the top-level agents once.
+- Hint node: `OrchestratedHintRow` draws a queued, reading or read hint with `WorkNode` in the `OrchestratedPlanSlot` column. The checklist and `OrchestratedComposer` both use it. `hintIsLong` decides when **Show more** shows, and `orchestratedChecklistOf` gives one read hint per row.
 - Carried history: `PRIOR_TURNS_BUDGET_TOKENS` sets the 8,000 token budget.
 - Run step mount: a step agent is created with `mountId` from `selectRunStepMountId`. It is the mount the orchestrator names in `step.mountId`. Else it is the mount of the run's latest step agent that has one.
 - `prepareTurn` aims a run step at its own pin, else at that latest pin, and uses the active mount only when the run has none yet. `resolvePhaseAgent` then writes the mount the turn ran in to `agents.mount_id`, so the first step pins it.
