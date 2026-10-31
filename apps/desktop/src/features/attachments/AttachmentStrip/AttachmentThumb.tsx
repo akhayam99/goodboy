@@ -4,6 +4,7 @@ import { Button, ICON_SIZE, IconButton, Skeleton, Tooltip } from '@goodboy/ui';
 import type { AttachmentThumbnail } from '../components/AttachmentChip';
 
 type Props = {
+  readonly id: string;
   readonly fileName: string;
   readonly thumbnail: AttachmentThumbnail;
   readonly title: string;
@@ -14,7 +15,7 @@ type Props = {
 const FRAME =
   'group relative h-12 w-12 shrink-0 overflow-hidden rounded-md ring-1 ring-border-soft';
 
-export const AttachmentThumb = ({ fileName, thumbnail, title, onOpen, onRemove }: Props) => {
+export const AttachmentThumb = ({ id, fileName, thumbnail, title, onOpen, onRemove }: Props) => {
   const isFailed = thumbnail.status === 'failed';
   const removeButton =
     onRemove == null ? null : (
@@ -33,6 +34,7 @@ export const AttachmentThumb = ({ fileName, thumbnail, title, onOpen, onRemove }
         <Button
           variant="ghost"
           onClick={onOpen}
+          data-attachment-control={id}
           aria-label={isFailed ? `${fileName}, not available` : `Preview ${fileName}`}
           className="h-full w-full cursor-zoom-in rounded-none p-0"
         >

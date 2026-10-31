@@ -443,6 +443,7 @@ export const storySpies = {
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
   writeAttachment: vi.fn(async () => '.goodboy/attachments/spec.pdf'),
+  deleteAttachment: vi.fn(async () => undefined),
   tauriInvoke: createInvokeMock({ handlers: storyInvokeHandlers, unknownResult: null }),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),

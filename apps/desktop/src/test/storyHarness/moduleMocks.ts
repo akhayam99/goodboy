@@ -47,6 +47,7 @@ export const turnModuleMock = () => ({
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
   writeAttachment: () => storySpies.writeAttachment(),
+  deleteAttachment: () => storySpies.deleteAttachment(),
 });
 
 export const permissionsModuleMock = () => ({

@@ -153,6 +153,35 @@ describe('a hint that moves between the composer and the checklist', () => {
     expect(document.querySelectorAll('dialog[open]')).toHaveLength(1);
   });
 
+  it('keeps focus on the same thumbnail when the orchestrator reads the hint', async () => {
+    const queued = hintOf({ id: 'h1', isWithImages: true });
+    const view = mount({ hints: [queued], isLoaded: true });
+    const thumbnail = await screen.findByRole('button', { name: 'Preview relay-log.png' });
+    thumbnail.focus();
+    expect(document.activeElement).toBe(thumbnail);
+
+    moveTo({ view, hints: [{ ...queued, consumedAt: AT, consumedAtStep: 2 }] });
+
+    const moved = within(readRow()).getByRole('button', { name: 'Preview relay-log.png' });
+    expect(moved).not.toBe(thumbnail);
+    expect(document.activeElement).toBe(moved);
+  });
+
+  it('returns focus to the thumbnail on Escape after the row moved with its viewer open', async () => {
+    const queued = hintOf({ id: 'h1', isWithImages: true });
+    const view = mount({ hints: [queued], isLoaded: true });
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview relay-log.png' }));
+    await screen.findByRole('dialog', { hidden: true });
+
+    moveTo({ view, hints: [{ ...queued, consumedAt: AT, consumedAtStep: 2 }] });
+    await screen.findByRole('dialog', { hidden: true });
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => expect(document.querySelectorAll('dialog[open]')).toHaveLength(0));
+    const thumbnail = within(readRow()).getByRole('button', { name: 'Preview relay-log.png' });
+    expect(document.activeElement).toBe(thumbnail);
+  });
+
   it('keeps each hint of the run on its own state', async () => {
     const first = hintOf({ id: 'h1', text: 'First hint\nwith a second line' });
     const second = hintOf({ id: 'h2', text: 'Second hint\nwith a second line' });

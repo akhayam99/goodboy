@@ -51,6 +51,8 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 
+const MICROTASK_TURNS = 30;
+
 const RUN = aWorkflowRun();
 const SESSION = aSession();
 const OWNER = { type: 'workflow_run', id: RUN.id } as const;
@@ -149,6 +151,41 @@ describe('loadGoalAttachments', () => {
     await load;
 
     expect(idsOf(RUN.id)).toEqual(['b']);
+  });
+
+  it('keeps an add that committed when a remove of another row starts during its refresh', async () => {
+    const { addGoalAttachments, removeGoalAttachment } = useAppStore.getState();
+    useAppStore.setState({
+      currentSessionId: SESSION.id,
+      sessionWorktrees: { [SESSION.id]: ['/worktrees/payments-api'] },
+      workflowRunAttachments: { [RUN.id]: [rowOf({ id: 'a' })] },
+    });
+
+    const add = addGoalAttachments(OWNER, [
+      { id: 'b', fileName: 'b.png', mimeType: 'image/png', dataBase64: 'AAAA' },
+    ]);
+    await vi.waitFor(() => expect(listGoalAttachmentsForRun).toHaveBeenCalledTimes(1));
+    const remove = removeGoalAttachment(OWNER, 'a');
+    for (let turn = 0; turn < MICROTASK_TURNS; turn += 1) {
+      await Promise.resolve();
+    }
+    readAt({ index: 0 }).resolve([rowOf({ id: 'a' }), rowOf({ id: 'b' })]);
+    await Promise.all([add, remove]);
+
+    expect(idsOf(RUN.id)).toEqual(['b']);
+  });
+
+  it('keeps the other row when two removes overlap', async () => {
+    const { removeGoalAttachment } = useAppStore.getState();
+    useAppStore.setState({
+      workflowRunAttachments: {
+        [RUN.id]: [rowOf({ id: 'a' }), rowOf({ id: 'b' }), rowOf({ id: 'c' })],
+      },
+    });
+
+    await Promise.all([removeGoalAttachment(OWNER, 'a'), removeGoalAttachment(OWNER, 'b')]);
+
+    expect(idsOf(RUN.id)).toEqual(['c']);
   });
 
   it('rejects for every waiting row on a failed read and reads again on the next ask', async () => {

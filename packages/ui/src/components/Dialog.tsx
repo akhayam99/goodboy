@@ -33,6 +33,7 @@ export type DialogProps = {
   showClose?: boolean;
   closeOnBackdrop?: boolean;
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  returnFocusTo?: () => HTMLElement | null;
   fullScreenOnSmall?: boolean;
   fixedHeightClass?: string;
   bodyClassName?: string;
@@ -75,6 +76,7 @@ export const Dialog = ({
   showClose = true,
   closeOnBackdrop = true,
   initialFocusRef,
+  returnFocusTo,
   fullScreenOnSmall = false,
   fixedHeightClass,
   bodyClassName,
@@ -98,8 +100,14 @@ export const Dialog = ({
   const programmaticCloseRef = useRef(false);
   const openerRef = useRef<HTMLElement | null>(null);
 
+  const returnFocusToRef = useRef(returnFocusTo);
+  useEffect(() => {
+    returnFocusToRef.current = returnFocusTo;
+  });
+
   const returnFocus = () => {
-    const opener = openerRef.current;
+    const stable = returnFocusToRef.current?.() ?? null;
+    const opener = stable?.isConnected === true ? stable : openerRef.current;
     openerRef.current = null;
     if (opener?.isConnected === true) {
       opener.focus();

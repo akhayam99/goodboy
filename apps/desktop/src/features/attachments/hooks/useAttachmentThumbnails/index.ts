@@ -14,8 +14,13 @@ type Params = {
 
 type SettleParams = {
   readonly id: string;
-  readonly token: string;
+  readonly request: number;
   readonly thumbnail: AttachmentThumbnail;
+};
+
+type RequestEntry = {
+  readonly token: string;
+  readonly request: number;
 };
 
 type TokenParams = {
@@ -29,7 +34,8 @@ export const useAttachmentThumbnails = ({
   sources,
 }: Params): Readonly<Record<string, AttachmentThumbnail>> => {
   const [thumbnails, setThumbnails] = useState<Readonly<Record<string, AttachmentThumbnail>>>({});
-  const requestedRef = useRef(new Map<string, string>());
+  const requestedRef = useRef(new Map<string, RequestEntry>());
+  const requestCountRef = useRef(0);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -41,8 +47,8 @@ export const useAttachmentThumbnails = ({
 
   useEffect(() => {
     const requested = requestedRef.current;
-    const settle = ({ id, token, thumbnail }: SettleParams) => {
-      if (!isMountedRef.current || requested.get(id) !== token) {
+    const settle = ({ id, request, thumbnail }: SettleParams) => {
+      if (!isMountedRef.current || requested.get(id)?.request !== request) {
         return;
       }
       setThumbnails((current) => ({ ...current, [id]: thumbnail }));
@@ -60,12 +66,14 @@ export const useAttachmentThumbnails = ({
     for (const source of sources) {
       const { id, relPath, workingDir } = source;
       const token = tokenOf({ relPath, workingDir });
-      if (requested.get(id) === token) {
+      if (requested.get(id)?.token === token) {
         continue;
       }
-      requested.set(id, token);
+      requestCountRef.current += 1;
+      const request = requestCountRef.current;
+      requested.set(id, { token, request });
       if (workingDir === null) {
-        settle({ id, token, thumbnail: { status: 'failed' } });
+        settle({ id, request, thumbnail: { status: 'failed' } });
         continue;
       }
       setThumbnails((current) => ({ ...current, [id]: { status: 'loading' } }));
@@ -73,11 +81,11 @@ export const useAttachmentThumbnails = ({
         .then((src) =>
           settle({
             id,
-            token,
+            request,
             thumbnail: src === '' ? { status: 'failed' } : { status: 'ready', src },
           }),
         )
-        .catch(() => settle({ id, token, thumbnail: { status: 'failed' } }));
+        .catch(() => settle({ id, request, thumbnail: { status: 'failed' } }));
     }
   }, [sources]);
 

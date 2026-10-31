@@ -98,7 +98,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
 
   const trailing = ({ slotWidth, ink, hasLineBelow }: RunTreeInsert) => (
     <>
-      {checklist.trailingHints.map((hint) => (
+      {checklist.trailingHints.map((hint, index) => (
         <OrchestratedHintRow
           key={hint.id}
           hint={hint}
@@ -107,7 +107,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           state="read"
           slotWidth={slotWidth}
           ink={ink}
-          hasLineBelow={hasLineBelow}
+          hasLineBelow={hasLineBelow || index < checklist.trailingHints.length - 1}
         />
       ))}
       {checklist.isNextShown ? (

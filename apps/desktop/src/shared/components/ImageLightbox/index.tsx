@@ -21,6 +21,7 @@ type Props = {
   readonly startId?: string;
   readonly railLabel?: string;
   readonly onActiveChange?: (id: string) => void;
+  readonly returnFocusTo?: () => HTMLElement | null;
 };
 
 export const ImageLightbox = ({
@@ -32,6 +33,7 @@ export const ImageLightbox = ({
   startId,
   railLabel = 'Images',
   onActiveChange,
+  returnFocusTo,
 }: Props) => {
   const items: ReadonlyArray<ImageLightboxItem> =
     givenItems ??
@@ -73,6 +75,7 @@ export const ImageLightbox = ({
     <Dialog
       open
       onClose={onClose}
+      {...(returnFocusTo === undefined ? {} : { returnFocusTo })}
       title={active.alt}
       size="full"
       surface="screen"

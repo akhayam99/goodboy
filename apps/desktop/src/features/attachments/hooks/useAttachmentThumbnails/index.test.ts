@@ -12,6 +12,7 @@ import { useAttachmentThumbnails, type ThumbnailSource } from '.';
 type Pending = {
   readonly relPath: string;
   readonly resolve: (src: string) => void;
+  readonly reject: (error: Error) => void;
 };
 
 type ReadArgs = {
@@ -22,8 +23,8 @@ const pending: Array<Pending> = [];
 
 const readAttachment = vi.fn(
   ({ relPath }: ReadArgs) =>
-    new Promise<string>((resolve) => {
-      pending.push({ relPath, resolve });
+    new Promise<string>((resolve, reject) => {
+      pending.push({ relPath, resolve, reject });
     }),
 );
 
@@ -46,6 +47,18 @@ const source = ({ relPath, id = 'img-1' }: PathParams): ThumbnailSource => ({
   relPath,
   workingDir: '/worktrees/payments-api',
 });
+
+type NthParams = PathParams & {
+  readonly index: number;
+};
+
+const pendingNth = ({ relPath, index }: NthParams): Pending => {
+  const found = pending.filter((read) => read.relPath === relPath)[index];
+  if (found === undefined) {
+    throw new Error(`no pending read ${index} for ${relPath}`);
+  }
+  return found;
+};
 
 const pendingFor = ({ relPath }: PathParams): Pending => {
   const found = pending.find((read) => read.relPath === relPath);
@@ -135,5 +148,47 @@ describe('useAttachmentThumbnails', () => {
     rerender({ sources: one });
 
     expect(readAttachment).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the reopened read when the first opening fails late on the same path', async () => {
+    const one = [source({ relPath: 'a.png', id: 'a' })];
+    const { result, rerender } = renderHook(({ sources }) => useAttachmentThumbnails({ sources }), {
+      initialProps: { sources: one },
+    });
+    rerender({ sources: [] });
+    rerender({ sources: one });
+
+    await act(async () => {
+      pendingNth({ relPath: 'a.png', index: 1 }).resolve('data:new');
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(result.current['a']).toEqual({ status: 'ready', src: 'data:new' }));
+    await act(async () => {
+      pendingNth({ relPath: 'a.png', index: 0 }).reject(new Error('gone'));
+      await Promise.resolve();
+    });
+
+    expect(result.current['a']).toEqual({ status: 'ready', src: 'data:new' });
+  });
+
+  it('keeps the reopened read when the first opening answers late on the same path', async () => {
+    const one = [source({ relPath: 'a.png', id: 'a' })];
+    const { result, rerender } = renderHook(({ sources }) => useAttachmentThumbnails({ sources }), {
+      initialProps: { sources: one },
+    });
+    rerender({ sources: [] });
+    rerender({ sources: one });
+
+    await act(async () => {
+      pendingNth({ relPath: 'a.png', index: 0 }).resolve('data:first');
+      await Promise.resolve();
+    });
+
+    expect(result.current['a']).toEqual({ status: 'loading' });
+    await act(async () => {
+      pendingNth({ relPath: 'a.png', index: 1 }).resolve('data:new');
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(result.current['a']).toEqual({ status: 'ready', src: 'data:new' }));
   });
 });

@@ -29,6 +29,32 @@ const CLOSED: HintRowViewState = { isExpanded: false, openImageId: null };
 
 const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
+const CONTROLS = '[data-hint-control], [data-attachment-control]';
+
+const ATTACHMENT_PREFIX = 'attachment:';
+
+type ControlParams = {
+  readonly element: HTMLElement;
+};
+
+type FindParams = {
+  readonly row: HTMLElement;
+  readonly control: string;
+};
+
+const controlOf = ({ element }: ControlParams): string | null => {
+  const attachment = element.dataset['attachmentControl'];
+  if (attachment !== undefined) {
+    return `${ATTACHMENT_PREFIX}${attachment}`;
+  }
+  return element.dataset['hintControl'] ?? null;
+};
+
+const findControl = ({ row, control }: FindParams): HTMLElement | null =>
+  Array.from(row.querySelectorAll<HTMLElement>(CONTROLS)).find(
+    (element) => controlOf({ element }) === control,
+  ) ?? null;
+
 export const useHintRowState = ({ runId, hintId }: Params): HintRowState => {
   const shared = useContext(HintRowStateContext);
   const [local, setLocal] = useState<HintRowViewState>(CLOSED);
@@ -45,16 +71,13 @@ export const useHintRowState = ({ runId, hintId }: Params): HintRowState => {
     const mark = focusMark.current;
     if (mark?.key === key) {
       focusMark.current = null;
-      const control =
-        mark.control === null
-          ? null
-          : row.querySelector<HTMLElement>(`[data-hint-control="${mark.control}"]`);
+      const control = mark.control === null ? null : findControl({ row, control: mark.control });
       (control ?? row.querySelector<HTMLElement>(FOCUSABLE))?.focus();
     }
     return () => {
       const active = document.activeElement;
       if (active instanceof HTMLElement && row.contains(active)) {
-        focusMark.current = { key, control: active.dataset['hintControl'] ?? null };
+        focusMark.current = { key, control: controlOf({ element: active }) };
       }
     };
   }, [focusMark, key]);

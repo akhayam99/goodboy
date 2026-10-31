@@ -152,6 +152,21 @@ describe('the line through a hint on the run track', () => {
     expect(spans[0]?.bottom).toBe(MARKER_Y);
   });
 
+  it('continues between trailing hints and ends at the last one', () => {
+    mount({
+      hints: [hintOf({ id: 'h1' }), hintOf({ id: 'h2', step: 9 }), hintOf({ id: 'h3' })],
+      agentCount: 3,
+    });
+    const rails = Array.from(document.querySelectorAll('[data-hint-chip="read"] [data-hint-rail]'));
+    expect(rails).toHaveLength(3);
+    const [first, middle, last] = rails.map((rail) => spansIn({ root: rail }));
+    expect(first).toHaveLength(1);
+    expect(first?.[0]?.bottom).toBeGreaterThanOrEqual(ROW_HEIGHT);
+    expect(middle?.[0]?.bottom).toBeGreaterThanOrEqual(ROW_HEIGHT);
+    expect(last).toHaveLength(1);
+    expect(last?.[0]?.bottom).toBe(MARKER_Y);
+  });
+
   it('draws nothing above the first step', () => {
     mount({ hints: [hintOf({ id: 'h1', step: 1 })], agentCount: 3 });
     expect(document.querySelector('[data-hint-chip="read"] [data-hint-rail]')).toBeNull();

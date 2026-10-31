@@ -74,7 +74,7 @@ Follow a run step by step, with its sub-agents under their agent and one button 
 
 ### Hints to the orchestrator
 
-Every hint is a round node on the run's line, like a step, and the line runs through it and its images without a break. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer.
+Every hint is a round node on the run's line, like a step, and the line runs through it and its images without a break. It runs on through several hints that come after the last step. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer. When the orchestrator reads a queued hint, it moves to the steps. Focus stays on your thumbnail. Esc in an open viewer returns to it.
 
 A read hint says **Read at step 3** before that step. Once the step is on the list, the words are a link that moves to the step, or opens it when it is out of view. Until then they are plain text. A hint keeps its open text and its open image when the orchestrator reads it.
 

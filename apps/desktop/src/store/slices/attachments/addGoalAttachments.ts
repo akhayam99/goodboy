@@ -1,4 +1,6 @@
 import type { AttachmentInput, GoalAttachmentOwner, SessionId } from '@goodboy/types';
+import { attachmentReadKey } from './attachmentReadKey';
+import { attachmentWrites } from './attachmentWrites';
 import { saveGoalAttachments } from './saveGoalAttachments';
 import type { GetFn, SetFn } from './types';
 
@@ -18,6 +20,9 @@ export const addGoalAttachments = (set: SetFn, get: GetFn) => {
     if (worktreeDir === undefined) {
       throw new Error('cannot add goal attachments: session worktree not available');
     }
-    await saveGoalAttachments({ set, worktreeDir, owner, inputs });
+    await attachmentWrites.run({
+      key: attachmentReadKey({ owner }),
+      task: () => saveGoalAttachments({ set, worktreeDir, owner, inputs }),
+    });
   };
 };

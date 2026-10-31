@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { cn } from '@goodboy/ui';
 import { ImageLightbox } from '../../../shared/components/ImageLightbox';
 import type { ImageLightboxItem } from '../../../shared/components/ImageLightbox/types';
@@ -40,7 +40,13 @@ type IdParams = {
   readonly id: string;
 };
 
+type OpenAtParams = IdParams & {
+  readonly control: string;
+};
+
 const LOADING: AttachmentThumbnail = { status: 'loading' };
+
+const MORE_CONTROL = 'more';
 
 export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Props) => {
   const [localOpenId, setLocalOpenId] = useState<string | null>(null);
@@ -56,7 +62,16 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
     },
     [onOpenChange],
   );
-  const { ref, width } = useElementWidth();
+  const openerRef = useRef<string | null>(null);
+  const stripRef = useRef<HTMLElement | null>(null);
+  const { ref: widthRef, width } = useElementWidth();
+  const ref = useCallback(
+    (node: HTMLElement | null) => {
+      stripRef.current = node;
+      widthRef(node);
+    },
+    [widthRef],
+  );
   const images = items.filter((item) => item.kind === 'image');
   const files = items.filter((item) => item.kind !== 'image');
   const canFold = !images.some((item) => item.onRemove !== undefined);
@@ -85,11 +100,21 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
   const thumbnailOf = ({ id }: IdParams): AttachmentThumbnail => thumbnails[id] ?? LOADING;
 
   const openAt =
-    ({ id }: IdParams) =>
+    ({ id, control }: OpenAtParams) =>
     (event: MouseEvent<HTMLButtonElement>) => {
       event.currentTarget.focus();
+      openerRef.current = control;
       setOpenId({ openId: id });
     };
+
+  const openerOf = (): HTMLElement | null => {
+    const control = openerRef.current ?? openId;
+    const candidates = stripRef.current?.querySelectorAll<HTMLElement>('[data-attachment-control]');
+    const found = Array.from(candidates ?? []).find(
+      (element) => element.dataset['attachmentControl'] === control,
+    );
+    return found ?? null;
+  };
 
   const lightboxItems: ReadonlyArray<ImageLightboxItem> = images.map((item) => ({
     id: item.id,
@@ -107,15 +132,20 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
             {images.slice(0, shown).map((item) => (
               <AttachmentThumb
                 key={item.id}
+                id={item.id}
                 fileName={item.fileName}
                 thumbnail={thumbnailOf({ id: item.id })}
                 title={item.title ?? item.fileName}
-                onOpen={openAt({ id: item.id })}
+                onOpen={openAt({ id: item.id, control: item.id })}
                 {...(item.onRemove === undefined ? {} : { onRemove: item.onRemove })}
               />
             ))}
             {hidden > 0 && firstHidden !== undefined && (
-              <AttachmentMoreTile hidden={hidden} onOpen={openAt({ id: firstHidden.id })} />
+              <AttachmentMoreTile
+                id={MORE_CONTROL}
+                hidden={hidden}
+                onOpen={openAt({ id: firstHidden.id, control: MORE_CONTROL })}
+              />
             )}
           </div>
         </div>
@@ -146,6 +176,7 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
           items={lightboxItems}
           startId={openId}
           railLabel={railLabel}
+          returnFocusTo={openerOf}
           onActiveChange={(id) => setOpenId({ openId: id })}
           onClose={() => setOpenId({ openId: null })}
         />
