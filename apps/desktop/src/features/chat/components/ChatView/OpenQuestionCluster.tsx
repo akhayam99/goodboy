@@ -14,6 +14,10 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
+type MoveParams = {
+  readonly id: OpenQuestionId | null;
+};
+
 type NextParams = {
   readonly list: ReadonlyArray<OpenQuestion>;
   readonly from: OpenQuestionId;
@@ -36,6 +40,11 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
   const [currentId, setCurrentId] = useState<OpenQuestionId | null>(null);
+  const [isMoved, setIsMoved] = useState(false);
+  const moveTo = useCallback(({ id }: MoveParams) => {
+    setIsMoved(true);
+    setCurrentId(id);
+  }, []);
 
   const { openQuestions, settled } = useMemo(
     () => ({
@@ -65,9 +74,9 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
         from: question.id,
         isEligible: (candidate) => !staged.includes(candidate.id),
       });
-      setCurrentId(next?.id ?? null);
+      moveTo({ id: next?.id ?? null });
     },
-    [answerable, staged],
+    [answerable, staged, moveTo],
   );
 
   const handleSkip =
@@ -75,7 +84,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
       ? null
       : () => {
           const next = nextAfter({ list: answerable, from: current.id, isEligible: () => true });
-          setCurrentId(next?.id ?? null);
+          moveTo({ id: next?.id ?? null });
         };
 
   const nextOpen =
@@ -90,9 +99,9 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
       : {
           index: position,
           doneFlags: group.map((question) => staged.includes(question.id)),
-          onPrevious: () => setCurrentId(group[position - 1]?.id ?? current.id),
-          onNext: () => setCurrentId(group[position + 1]?.id ?? current.id),
-          onJumpToOpen: nextOpen === null ? null : () => setCurrentId(nextOpen.id),
+          onPrevious: () => moveTo({ id: group[position - 1]?.id ?? current.id }),
+          onNext: () => moveTo({ id: group[position + 1]?.id ?? current.id }),
+          onJumpToOpen: nextOpen === null ? null : () => moveTo({ id: nextOpen.id }),
         };
 
   return (
@@ -109,6 +118,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           question={current}
           sessionId={sessionId}
           variant="compact"
+          autoFocus={isMoved}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}
