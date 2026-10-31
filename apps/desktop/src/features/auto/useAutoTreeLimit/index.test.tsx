@@ -204,7 +204,7 @@ describe('useAutoTreeLimit', () => {
       expect(screen.getByTestId('stored').textContent).toBe('true');
     });
 
-    it('never writes the Auto limit for an amount typed on a run', async () => {
+    it('keeps an amount typed on a run for a retry and never writes the Auto limit', async () => {
       withRunDefault(6);
       render(<Probe defaultFrom="run" />);
 
@@ -212,7 +212,7 @@ describe('useAutoTreeLimit', () => {
       fireEvent.click(screen.getByText('persist'));
       await act(async () => undefined);
 
-      expect(screen.getByTestId('usd').textContent).toBe('6');
+      expect(screen.getByTestId('usd').textContent).toBe('9');
       expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
     });
 

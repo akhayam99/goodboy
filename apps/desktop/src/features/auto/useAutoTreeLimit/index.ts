@@ -104,7 +104,10 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
       if (workspaceId === null || facts.isFromSession || draft === null) {
         return shownLimit;
       }
-      if (defaultFrom === 'run' || draft.usd === storedUsd) {
+      if (defaultFrom === 'run') {
+        return shownLimit;
+      }
+      if (draft.usd === storedUsd) {
         setDraft(null);
         return shownLimit;
       }

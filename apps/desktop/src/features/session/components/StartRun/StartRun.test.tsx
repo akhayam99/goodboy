@@ -819,7 +819,7 @@ describe('StartRun limit by kind', () => {
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
     expect(await storedAutoLimit()).toBe('5');
-    await screen.findByRole('button', { name: AUTO_DEFAULT });
+    screen.getByRole('button', { name: 'Limit $3.00' });
   });
 
   it('keeps writing the typed amount as the Auto limit when an Auto run starts', async () => {
