@@ -15,8 +15,11 @@ import { questionParts } from '../questionParts';
 import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
 import { QuestionAnswerDone } from './QuestionAnswerDone';
 import { QuestionAnswerInput } from './QuestionAnswerInput';
+import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionCardTop } from './QuestionCardTop';
 import type { QuestionPagerModel } from './QuestionPager';
+import { questionDoneLabel } from './questionDoneLabel';
+import { RESOLVED_BY_AGENT } from './resolvedByAgent';
 
 export type QuestionCardState = 'open' | 'staged' | 'answered' | 'dismissed';
 
@@ -43,40 +46,6 @@ type Props = {
 };
 
 const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on.';
-const RESOLVED_BY_AGENT = '[resolved by agent]';
-
-type DoneParams = {
-  readonly state: QuestionCardState;
-  readonly question: OpenQuestion;
-  readonly askerName: string | null;
-  readonly answeredByName: string | null;
-  readonly isHandedOff: boolean;
-};
-
-const doneLabel = ({
-  state,
-  question,
-  askerName,
-  answeredByName,
-  isHandedOff,
-}: DoneParams): string => {
-  const asker = askerName ?? 'the agent';
-  if (state === 'dismissed') {
-    return 'Dismissed';
-  }
-  if (state === 'staged') {
-    return isHandedOff
-      ? 'Handed to an agent · sends with the rest'
-      : 'Answered · sends with the rest';
-  }
-  if (question.userAnswer === RESOLVED_BY_AGENT) {
-    return 'Resolved by the agent';
-  }
-  if (question.answerSource === 'agent') {
-    return answeredByName === null ? 'Answered by an agent' : `Answered by ${answeredByName}`;
-  }
-  return `Answered · sent to ${asker}`;
-};
 
 const inputModeOf = ({
   question,
@@ -138,9 +107,24 @@ export const QuestionCard = ({
   const isHandedOff = delegate.delegateState === 'chosen';
   const canAnswer = isOpen && !isWaiting && (isHandedOff || isDraftReady(draft));
   const isLive = state === 'open' || state === 'staged';
+  const isBlockingNow = question.isBlocking && isOpen;
   const answerText = question.userAnswer ?? '';
   const showsAnswerBox =
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
+
+  const isDelegateInFooter = isCompact && !isHandedOff;
+  const delegateRow = (
+    <DelegateAnswerRow
+      state={delegate.delegateState}
+      hints={delegate.delegateHints}
+      routing={delegate.delegateRouting}
+      connectedProviders={delegate.connectedProviders}
+      onChoose={delegate.onChooseDelegate}
+      onCancel={delegate.onCancelDelegate}
+      onHints={delegate.onDelegateHints}
+      onRouting={delegate.onDelegateRouting}
+    />
+  );
 
   const focusCard = () => articleRef.current?.focus({ preventScroll: true });
 
@@ -191,33 +175,36 @@ export const QuestionCard = ({
       data-question-card={question.id}
       data-state={state}
       aria-label={parts.title}
-      aria-describedby={question.isBlocking && isOpen ? blockingId : undefined}
+      aria-describedby={isBlockingNow ? blockingId : undefined}
       onKeyDown={handleKeyDown}
       style={{ outline: 'none' }}
       className={cn(
         '@container flex min-w-0 flex-col outline-none motion-safe:animate-fade-in',
-        isCompact ? 'gap-3 rounded-lg border border-border-soft bg-elevated p-4' : 'gap-4',
+        isCompact ? 'gap-2 rounded-lg bg-subtle p-3' : 'gap-4',
       )}
     >
       <QuestionCardTop
         askerName={askerName}
         askerKind={askerKind}
-        isBlocking={question.isBlocking && isOpen}
+        isBlocking={isBlockingNow && !isCompact}
         age={age}
         pager={pager}
         isInAskerConversation={isCompact}
         onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
       />
-      <div className="flex min-w-0 flex-col gap-3">
+      <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-2' : 'gap-3')}>
         <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-          <h2
-            className={cn(
-              'min-w-0 break-words text-foreground select-text',
-              isCompact ? 'text-heading' : 'text-title',
-            )}
-          >
-            {parts.title}
-          </h2>
+          <div className="flex min-w-0 items-baseline gap-2">
+            {isBlockingNow && isCompact ? <QuestionBlockingMark /> : null}
+            <h2
+              className={cn(
+                'min-w-0 break-words text-foreground select-text',
+                isCompact ? 'text-heading' : 'text-title',
+              )}
+            >
+              {parts.title}
+            </h2>
+          </div>
           {parts.context.length > 0 && (
             <Markdown
               text={parts.context}
@@ -278,17 +265,9 @@ export const QuestionCard = ({
       )}
       {isOpen && !isWaiting && (
         <>
-          <DelegateAnswerRow
-            state={delegate.delegateState}
-            hints={delegate.delegateHints}
-            routing={delegate.delegateRouting}
-            connectedProviders={delegate.connectedProviders}
-            onChoose={delegate.onChooseDelegate}
-            onCancel={delegate.onCancelDelegate}
-            onHints={delegate.onDelegateHints}
-            onRouting={delegate.onDelegateRouting}
-          />
+          {isDelegateInFooter ? null : delegateRow}
           <AnswerSubmitButton
+            lead={isDelegateInFooter ? delegateRow : undefined}
             inputMode={inputMode}
             optionCount={suggestions.length}
             canAnswer={canAnswer}
@@ -301,11 +280,11 @@ export const QuestionCard = ({
       )}
       {!isOpen && (
         <QuestionAnswerDone
-          label={doneLabel({ state, question, askerName, answeredByName, isHandedOff })}
+          label={questionDoneLabel({ state, question, askerName, answeredByName, isHandedOff })}
           onUndo={onUndo}
         />
       )}
-      {question.isBlocking && isOpen && (
+      {isBlockingNow && (
         <span id={blockingId} className="sr-only">
           {BLOCKING_DESCRIPTION}
         </span>

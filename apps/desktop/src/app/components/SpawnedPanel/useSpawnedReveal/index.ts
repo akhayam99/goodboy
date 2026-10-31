@@ -22,7 +22,7 @@ export const useSpawnedReveal = ({
   const revealedRef = useRef<AgentId | null>(null);
   const hasRevealedRef = useRef(false);
   useEffect(() => {
-    if (selectedAgentId === null || revealedRef.current === selectedAgentId) {
+    if (selectedAgentId === null) {
       return;
     }
     const ancestors = foldAncestorsOf({ rows, agentId: selectedAgentId });
@@ -31,7 +31,11 @@ export const useSpawnedReveal = ({
     }
     const isShown = shown.some(({ row }) => row.agentId === selectedAgentId);
     if (!isShown) {
+      revealedRef.current = null;
       onExpand(ancestors);
+      return;
+    }
+    if (revealedRef.current === selectedAgentId) {
       return;
     }
     const element = [

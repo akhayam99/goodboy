@@ -329,21 +329,22 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role           | measure                   | used for                                                                                   |
-| -------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `text-display` | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                     |
-| `text-title`   | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                  |
-| `text-heading` | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                         |
-| `text-row`     | 13/20, 500                | level 4: a top-level row label, a card title                                               |
-| `text-body`    | 14/20                     | running text; text with no class inherits it from the body                                 |
-| `text-prose`   | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions          |
-| `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                    |
-| `text-meta`    | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
-| `text-chip`    | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
-| `text-code`    | mono 12/18                | branch, path, command, inline code                                                         |
-| `text-ui`      | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
-| `text-lead`    | 15/24, 500                | the title of a list surface                                                                |
-| `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role     |
+| role            | measure                   | used for                                                                                   |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| `text-display`  | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                     |
+| `text-title`    | 18/28, 600, -0.012em      | level 1: the one pane title (h1) of a surface, h1 and h2 inside a message                  |
+| `text-heading`  | 14/20, 600                | level 2: a page-grade section, a popover title, a kickoff question                         |
+| `text-row`      | 13/20, 500                | level 4: a top-level row label, a card title                                               |
+| `text-body`     | 14/20                     | running text; text with no class inherits it from the body                                 |
+| `text-prose`    | 15/24                     | level 3, the one reading size: messages, markdown, artifacts, goals, descriptions          |
+| `text-eyebrow`  | 12/16, 500, sentence case | a section label: `Eyebrow`, or direct in a sidebar group, `SettingChip`, `LevelCard`       |
+| `text-meta`     | 12/16                     | level 5: controls, a nested row, a status label, time, ordinal, cost, count, a second line |
+| `text-chip`     | 11/16, 500                | the label inside a chip, a badge, a key cap, a count pill                                  |
+| `text-code`     | mono 12/18                | branch, path, command, inline code                                                         |
+| `text-code-row` | mono 13/20                | a branch row of the session rail, beside a level 4 name                                    |
+| `text-ui`       | 13/20                     | level 4: every line of a list surface that is not its title or prose                       |
+| `text-lead`     | 15/24, 500                | the title of a list surface                                                                |
+| `document`      | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role     |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with
@@ -374,12 +375,21 @@ first, and by colour second.
 `text-row-strong` is level 4 at 600, for the one live item of a list: the step of a run that works, waits or failed. Every other step reads `text-ui` and turns foreground on hover. `SectionLabel` draws a section label at level 2 with its count faint after it, as a span or as an `h2` or `h3`, and `PANE_RHYTHM.groups` spaces the groups of a page 32px apart.
 
 `text-prose` is the only reading size: `text-read` is gone, merged into it.
-`text-chip` (11/16) stays for tags and moves to 12 later. The sidebar is 13
-throughout: a door, a session row and a rail entry are one 28px row in
-`text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
-at rest (only the selected entry's icon takes its kind color), `bg-selected`
-plus foreground for the selected row, and a trailing slot drawn by
-`countSlotText`. Nothing appears on hover; a shortcut lives in the tooltip.
+`text-chip` (11/16) stays for tags and moves to 12 later. The sidebar has three
+steps. A door, a session row and a rail entry are one 28px row in `text-ui`
+(13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray at rest
+(only the selected entry's icon takes its kind color), `bg-selected` plus
+foreground for the selected row, and a trailing slot drawn by `countSlotText`
+in faint tabular figures. The selected door reads `text-row` (13, 500). A group
+label (Projects, Linked) is level 5, `text-eyebrow` in faint, with 16px between
+groups; a project name is level 4, `text-row` in foreground. A branch row stays
+mono in `text-code-row` (13/20) in muted, never louder than the project name.
+Nothing appears on hover; a shortcut lives in the tooltip.
+
+`SettingChip` is the one setting of a header line: a faint label and a
+`text-eyebrow` value at level 5, no border and no chevron at rest. Hover and
+keyboard focus draw the 1px border and the chevron, and an open popover keeps
+both. The line sits under the title, the model in the same line.
 A page uses the five levels: its title is level 1 (or `text-lead` in a list
 surface), its sections are level 2, its prose is level 3, its names are level
 4 (`text-row` for a row's name and a group label, `text-ui` for the rest of a
@@ -421,7 +431,12 @@ row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
 row in the left column is 28px, and so are the pages nested under it. A tree
 row (the Auto work rail, a run's step tree) is two lines in 48px:
 `PANE_RHYTHM.tree.line` (28, the node sits on its centre) then
-`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. A
+`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. The
+Agents panel of one Auto conversation draws its row as `PANE_RHYTHM.tree.stateRow`
+(48px minimum, the title at `text-row` for a working agent and `text-ui` muted
+otherwise, at most two lines, then a `text-meta` line), under a
+`PANE_RHYTHM.tree.stateHead` group label (28px), groups `stateGroups` (16px)
+apart. A
 property list is `PANE_RHYTHM.property`: an 88px label column and a value
 column, the label and the value's first line both 28px so their centres match,
 a wrapping value flowing below, groups 24px apart. `spacing-grid.test.ts`

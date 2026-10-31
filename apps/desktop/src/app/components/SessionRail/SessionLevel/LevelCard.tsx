@@ -32,7 +32,7 @@ export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children 
             aria-controls={bodyId}
             onClick={onToggle}
             className={cn(
-              'flex h-full min-w-0 items-center gap-1 rounded-md text-ui text-muted-foreground hover:text-foreground',
+              'flex h-full min-w-0 items-center gap-1 rounded-md text-eyebrow text-faint-foreground hover:text-foreground',
               CARD_ROW_INSET,
               FOCUS_RING,
             )}

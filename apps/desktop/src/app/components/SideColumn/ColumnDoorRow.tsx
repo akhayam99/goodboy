@@ -54,11 +54,12 @@ export const ColumnDoorRow = ({
       }}
       className={cn(
         PANE_RHYTHM.navRail.door,
-        'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md text-ui motion-safe:transition-colors',
+        'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md motion-safe:transition-colors',
         FOCUS_RING,
         isCurrent
-          ? 'cursor-default bg-selected text-foreground'
+          ? 'cursor-default bg-selected text-row text-foreground'
           : cn(
+              'text-ui',
               isQuiet ? 'text-faint-foreground' : 'text-muted-foreground',
               'hover:bg-hover hover:text-foreground',
             ),

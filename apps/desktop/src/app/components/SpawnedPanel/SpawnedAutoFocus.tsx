@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { EmptyLine } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAutoTreeRows } from '../../../features/auto/useAutoTreeRows';
-import { SpawnedAutoGroup } from './SpawnedAutoGroup';
+import { SpawnedStateGroups } from './SpawnedStateGroups';
 import { SpawnedTree } from './SpawnedTree';
+import { spawnedStateGroupsOf } from './spawnedStateGroupsOf';
+import { spawnedStateSummaryOf } from './spawnedStateSummaryOf';
+import { useAutoSpawnedRows } from './useAutoSpawnedRows';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -11,14 +14,24 @@ type Props = {
 };
 
 export const SpawnedAutoFocus = ({ sessionId, rootAgentId, selectedAgentId }: Props) => {
-  const model = useAutoTreeRows({ sessionId, agentId: rootAgentId });
-  const hasChildren = model.rows.length > 1;
+  const { rows } = useAutoSpawnedRows({ sessionId, rootAgentId });
+  const rootRow = useMemo(() => rows.find((row) => row.level === 1) ?? null, [rows]);
+  const helperRows = useMemo(() => rows.filter((row) => row.level > 1), [rows]);
+  const groups = useMemo(() => spawnedStateGroupsOf({ rows: helperRows }), [helperRows]);
+  const hasChildren = helperRows.length > 0;
   return (
     <>
-      <SpawnedTree label="Auto agents">
-        <SpawnedAutoGroup
+      {groups.length === 0 ? null : (
+        <p data-spawned-summary="" className="px-2 text-meta text-muted-foreground">
+          {spawnedStateSummaryOf({ groups })}
+        </p>
+      )}
+      <SpawnedTree label="Auto agents" hasNow={false} order="parent-first">
+        <SpawnedStateGroups
           sessionId={sessionId}
-          rootAgentId={rootAgentId}
+          rows={rows}
+          rootRow={rootRow}
+          groups={groups}
           selectedAgentId={selectedAgentId}
         />
       </SpawnedTree>

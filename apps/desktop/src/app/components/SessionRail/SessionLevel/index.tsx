@@ -36,7 +36,7 @@ export const SessionLevel = ({ session, isActive }: Props) => {
           <div className="flex flex-col">
             <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
           </div>
-          <div data-level-cards="" className="flex flex-col gap-2">
+          <div data-level-cards="" className="flex flex-col gap-4">
             {isBranchless ? (
               <LevelFolder session={session} />
             ) : (

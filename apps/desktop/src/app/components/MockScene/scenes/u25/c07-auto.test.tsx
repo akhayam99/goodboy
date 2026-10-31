@@ -97,7 +97,7 @@ describe('c07 Auto scenes', () => {
 
     const tree = await autoTree();
     expect(levelStack().dataset.levelStack).toBe('session');
-    expect(within(tree).getAllByRole('treeitem')).toHaveLength(4);
+    expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
     expect(screen.getByRole('button', { name: /^Limit: \$0\.27 of \$10\.00/ })).toBeDefined();
@@ -108,14 +108,11 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-substep' });
 
     const tree = await autoTree();
-    const levels = within(tree)
-      .getAllByRole('treeitem')
-      .map((row) => row.getAttribute('aria-level'));
-    expect(levels).toEqual(['1', '2', '2', '3', '2']);
-    const implementer = await treeRow(/^Implementer, /);
-    expect(implementer.getAttribute('aria-expanded')).toBe('true');
+    expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(4);
     const scout = await treeRow(/^Scout, /);
-    expect(scout.getAttribute('aria-level')).toBe('3');
+    expect(scout.querySelector('[data-spawned-meta]')?.textContent).toContain('from Implementer');
+    const implementer = await treeRow(/^Implementer, /);
+    expect(implementer.querySelector('[data-spawned-meta]')?.textContent).not.toContain('from ');
   });
 
   it('c07-auto-working nests the children under Auto and names each row by role, title and state', async () => {
@@ -123,9 +120,17 @@ describe('c07 Auto scenes', () => {
 
     const auto = await treeRow(/^Auto agent, /);
     expect(auto.getAttribute('aria-level')).toBe('1');
-    expect(auto.getAttribute('aria-expanded')).toBe('true');
+    expect(auto.closest('[data-spawned-state]')).toBeNull();
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(implementer.getAttribute('aria-level')).toBe('2');
+    expect(implementer.closest('[data-spawned-state]')?.getAttribute('data-spawned-state')).toBe(
+      'working',
+    );
+    expect(
+      (await treeRow(/^Tester, .*, Queued$/))
+        .closest('[data-spawned-state]')
+        ?.getAttribute('data-spawned-state'),
+    ).toBe('waiting');
     expect(within(implementer).getByText('Sonnet 5.5')).toBeDefined();
     expect(within(implementer).getByText('Medium')).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
@@ -140,15 +145,16 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     const auto = await treeRow(/^Auto agent, /);
-    expect(auto.tabIndex).toBe(0);
     act(() => auto.focus());
-    fireEvent.keyDown(auto, { key: 'ArrowRight' });
-    const first = document.activeElement;
-    expect(first?.getAttribute('aria-level')).toBe('2');
-    expect(first?.getAttribute('aria-label')).toMatch(/^Planner, /);
-    fireEvent.keyDown(first ?? auto, { key: 'ArrowLeft' });
-    expect(document.activeElement).toBe(auto);
-    fireEvent.keyDown(auto, { key: 'Home' });
+    fireEvent.keyDown(auto, { key: 'ArrowDown' });
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowDown' });
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Implementer, /);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowLeft' });
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'End' });
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Done, /);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowUp' });
     const last = document.activeElement;
     expect(last?.getAttribute('aria-label')).toMatch(/^Tester, /);
     fireEvent.keyDown(last ?? auto, { key: 'Enter' });
@@ -410,19 +416,19 @@ describe('c07 Auto scenes', () => {
 
     const auto = await treeRow(/^Auto agent, .+, Idle$/);
     expect(auto.getAttribute('aria-expanded')).toBeNull();
-    const summary = await treeRow(/^4 helpers$/);
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
-    fireEvent.click(summary);
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(6);
-    fireEvent.keyDown(summary, { key: 'ArrowLeft' });
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(2);
+    const done = await treeRow(/^Done, 4$/);
+    expect(done.getAttribute('aria-expanded')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Done, 4$/ })).toBeNull();
+    expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(5);
   });
 
   it('c07-auto-answering shows Auto alone in the tree with the empty state', async () => {
     mount({ id: 'c07-auto-answering' });
 
-    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
+    expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(1);
     expect(within(await panel()).getByText('No agents started yet')).toBeDefined();
+    expect(document.querySelector('[data-spawned-summary]')).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /^(Working|Waiting|Done), \d+$/ })).toBeNull();
     expect(await treeRow(/^Auto agent, .*, Idle$/)).toBeDefined();
   });
 

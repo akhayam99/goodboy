@@ -39,7 +39,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
       role="group"
       aria-label="Run settings"
       data-agent-settings=""
-      className="flex min-w-0 flex-wrap items-center gap-1"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta"
     >
       {kind}
       <span ref={asksSlotRef} data-settings-slot="asks" className="inline-flex empty:hidden" />
@@ -65,7 +65,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
         className="inline-flex items-center gap-1 has-[[data-settings-slot=models]:empty]:hidden"
       >
         {auto === null ? null : (
-          <span className="shrink-0 text-meta text-muted-foreground">
+          <span className="shrink-0 text-meta text-faint-foreground">
             {RUN_MODEL_COPY.autoAgent}
           </span>
         )}

@@ -105,6 +105,37 @@ describe('QuestionCard', () => {
     expect(props.onToggleCustomField).toHaveBeenCalledOnce();
   });
 
+  it('numbers the rows 1 to 4 and keeps the keys on the compact card', () => {
+    const props = renderCard({ variant: 'compact' });
+    const keys = Array.from(
+      screen
+        .getByRole('radiogroup')
+        .querySelectorAll('[role="radiogroup"] > div > span[aria-hidden]'),
+    ).map((key) => key.textContent);
+    expect(keys).toEqual(['1', '2', '3', '4']);
+    fireEvent.keyDown(screen.getByRole('article'), { key: '2' });
+    fireEvent.keyDown(screen.getByRole('article'), { key: '4' });
+    expect(props.onToggleSuggestion).toHaveBeenCalledWith('Shared jobs queue');
+    expect(props.onToggleCustomField).toHaveBeenCalledOnce();
+  });
+
+  it('puts the blocking tag on the title line of the compact card', () => {
+    renderCard({ variant: 'compact' });
+    const title = screen.getByRole('heading', {
+      name: 'Which queue should webhook retries run on?',
+    });
+    expect(title.parentElement?.textContent).toBe(
+      'BlockingWhich queue should webhook retries run on?',
+    );
+  });
+
+  it('puts the delegate link and the actions on one footer row of the compact card', () => {
+    renderCard({ variant: 'compact' });
+    const footer = document.querySelector('[data-slot="form-actions"]');
+    expect(footer?.contains(screen.getByTestId('delegate-answer-row'))).toBe(true);
+    expect(footer?.contains(screen.getByRole('button', { name: 'Answer' }))).toBe(true);
+  });
+
   it('keeps Answer off until something is picked', () => {
     renderCard();
     expect(screen.getByRole('button', { name: 'Answer' }).hasAttribute('disabled')).toBe(true);

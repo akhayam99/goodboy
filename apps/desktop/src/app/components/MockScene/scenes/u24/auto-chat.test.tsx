@@ -80,7 +80,7 @@ describe('the Auto chat scenes', () => {
     expect(
       await screen.findByText(/Retries are posted by postCredit/, undefined, WAIT),
     ).toBeDefined();
-    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(1);
+    expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(1);
     expect(screen.getByText('No agents started yet')).toBeDefined();
     expect(screen.queryByRole('article')).toBeNull();
     expect(
@@ -95,7 +95,7 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const work = rail();
-    expect(within(work).getAllByRole('treeitem')).toHaveLength(2);
+    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(2);
     expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
     const tail = screen.getByText('Starting agents').closest('[role="status"]');
@@ -127,7 +127,7 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const work = rail();
-    expect(within(work).getAllByRole('treeitem')).toHaveLength(4);
+    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
@@ -206,10 +206,8 @@ describe('the Auto chat scenes', () => {
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
-    const [root] = within(rail()).getAllByRole('treeitem');
-    expect(root?.getAttribute('aria-label')).toMatch(/, Idle$/);
-    fireEvent.click(within(rail()).getByRole('treeitem', { name: '4 helpers' }));
-    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(6);
+    expect(railLabels().filter((label) => label.endsWith(', Idle'))).toHaveLength(1);
+    expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);

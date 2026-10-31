@@ -221,21 +221,22 @@ describe('QuestionsPane', () => {
     expect(document.querySelector('[data-list-grid-count]')?.textContent).toBe('2');
   });
 
-  it('reads a row as the question, the answer in gray, the asker role and the age', () => {
+  it('reads a row as the question with its answer on a second line, the asker role and the age', () => {
     setup({ answered: [ANSWERED_A1] });
     const answered = row('Which branch should the fix land on?, You: main');
     const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
     expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
       'state',
       'question',
-      'answer',
       'asker',
       'age',
     ]);
-    expect(cells.map((cell) => cell.textContent)).toEqual([
+    const lines = Array.from(cells[1]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
+      (line) => line.textContent,
+    );
+    expect(lines).toEqual(['Which branch should the fix land on?', 'You: main']);
+    expect(cells.map((cell) => cell.textContent).filter((_, index) => index !== 1)).toEqual([
       '',
-      'Which branch should the fix land on?',
-      'You: main',
       'Reviewer',
       formatAge({ from: NOW, now: Date.now() }),
     ]);

@@ -168,8 +168,8 @@ describe('the u27 Agents tree scenes', () => {
 const ROW_PX = 28;
 const VIEWPORT_PX = 200;
 const FOCUSED = 'u27-agents-tree-focus-light';
-const NEWEST = 'Scout, Check notify-relay for duplicate retries, Queued';
-const OLDEST = 'Planner, Plan the retry safe credit flow, Done';
+const TOP = 'Implementer, Fix the applyCredit race, Running';
+const READER = 'Tester, Run the retry tests in payments-api, Queued';
 const ROOT = `Auto agent, ${LIVE_BRIEF}, Running`;
 
 const focusedTree = async (): Promise<HTMLElement> =>
@@ -236,46 +236,60 @@ describe('the focused Auto launch', () => {
     document.head.querySelector('[data-test-scroll]')?.remove();
   });
 
-  it('reads bottom up: Now, the newest child, down to the oldest, the root at the foot', async () => {
+  it('groups the launch by state: Working, Waiting, then Done folded, with no Now marker', async () => {
     const { container } = mount({ id: FOCUSED });
 
     const tree = await focusedTree();
     expect(screen.getByRole('button', { name: 'All launches' })).toBeDefined();
-    const shown = visualLabelsOf({ tree });
-    expect(shown).toHaveLength(13);
-    expect(shown[0]).toBe(NEWEST);
-    expect(shown[11]).toBe(OLDEST);
-    expect(shown[12]).toBe(ROOT);
-    const now = container.querySelector('[data-spawned-now]');
-    const first = spawnedTreeItemsOf({ element: tree })[0];
-    if (now === null || first === undefined) {
-      throw new Error('no Now row or no first row');
-    }
-    expect(now.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(tree.querySelectorAll('[data-spawned-rail]')).toHaveLength(13);
+    expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
+      '2 working, 3 waiting, 7 done',
+    );
+    expect(visualLabelsOf({ tree })).toEqual([
+      ROOT,
+      'Working, 2',
+      TOP,
+      'Reviewer, Review the ledger-core side, Running',
+      'Waiting, 3',
+      'Scout, Check notify-relay for duplicate retries, Queued',
+      READER,
+      'Docs, Write the retry section of the payments-api guide, Queued',
+      'Done, 7',
+    ]);
+    expect(
+      within(tree).getByRole('treeitem', { name: 'Done, 7' }).getAttribute('aria-expanded'),
+    ).toBe('false');
+    expect(container.querySelector('[data-spawned-now]')).toBeNull();
+    expect(tree.querySelectorAll('[data-spawned-rail]')).toHaveLength(0);
     expect(container.querySelector('[data-auto-limit-foot]')).toBeNull();
   });
 
-  it('moves with the arrows in screen order, Home on the newest, End on the root', async () => {
+  it('moves with the arrows in screen order, Home on the Auto row, End on the Done group', async () => {
     mount({ id: FOCUSED });
 
     const tree = await focusedTree();
-    const root = within(tree).getByRole('treeitem', { name: ROOT });
-    expect(root.tabIndex).toBe(0);
-    act(() => root.focus());
-    fireEvent.keyDown(root, { key: 'ArrowUp' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(OLDEST);
-    fireEvent.keyDown(document.activeElement ?? root, { key: 'Home' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(NEWEST);
-    fireEvent.keyDown(document.activeElement ?? root, { key: 'ArrowDown' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(
-      'Tester, Run the retry tests in payments-api, Queued',
-    );
-    fireEvent.keyDown(document.activeElement ?? root, { key: 'End' });
-    expect(document.activeElement).toBe(root);
-    fireEvent.keyDown(root, { key: 'ArrowLeft' });
-    expect(root.getAttribute('aria-expanded')).toBe('true');
-    expect(visualLabelsOf({ tree })).toHaveLength(13);
+    const auto = within(tree).getByRole('treeitem', { name: ROOT });
+    expect(auto.tabIndex).toBe(0);
+    const first = within(tree).getByRole('treeitem', { name: 'Working, 2' });
+    expect(first.tabIndex).toBe(-1);
+    act(() => first.focus());
+    fireEvent.keyDown(first, { key: 'ArrowDown' });
+    expect(document.activeElement?.getAttribute('aria-label')).toBe(TOP);
+    fireEvent.keyDown(document.activeElement ?? first, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'End' });
+    const done = within(tree).getByRole('treeitem', { name: 'Done, 7' });
+    expect(document.activeElement).toBe(done);
+    fireEvent.keyDown(done, { key: 'Home' });
+    expect(document.activeElement?.getAttribute('aria-label')).toBe(ROOT);
+    expect(document.activeElement).toBe(spawnedTreeItemsOf({ element: tree })[0]);
+    fireEvent.keyDown(done, { key: 'End' });
+    expect(document.activeElement).toBe(done);
+    fireEvent.keyDown(done, { key: 'ArrowRight' });
+    expect(done.getAttribute('aria-expanded')).toBe('true');
+    expect(visualLabelsOf({ tree })).toHaveLength(9 + 7);
+    fireEvent.keyDown(done, { key: 'ArrowLeft' });
+    expect(done.getAttribute('aria-expanded')).toBe('false');
+    expect(visualLabelsOf({ tree })).toHaveLength(9);
   });
 
   it('takes a new live child in at the top and keeps the scroll and the focus of a reader below', async () => {
@@ -288,7 +302,7 @@ describe('the focused Auto launch', () => {
       scroller.scrollTop = ROW_PX * 4;
       scroller.dispatchEvent(new Event('scroll'));
     });
-    const reader = within(tree).getByRole('treeitem', { name: OLDEST });
+    const reader = within(tree).getByRole('treeitem', { name: READER });
     act(() => reader.focus());
 
     startChild({ key: 'live-late', title: 'Trace the notify-relay retry storm' });
@@ -296,7 +310,7 @@ describe('the focused Auto launch', () => {
       await Promise.resolve();
     });
 
-    expect(visualLabelsOf({ tree })[0]).toBe('Scout, Trace the notify-relay retry storm, Running');
+    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
     expect(scroller.scrollTop).toBe(ROW_PX * 5);
     expect(document.activeElement).toBe(reader);
   });
@@ -314,7 +328,7 @@ describe('the focused Auto launch', () => {
       await Promise.resolve();
     });
 
-    expect(visualLabelsOf({ tree })[0]).toBe('Scout, Trace the notify-relay retry storm, Running');
+    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
     expect(scroller.scrollTop).toBe(0);
   });
 });

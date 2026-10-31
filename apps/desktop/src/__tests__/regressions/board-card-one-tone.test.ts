@@ -42,7 +42,7 @@ describe('an answer option number', () => {
   it('reads in the muted foreground, the faint one is under 4.5:1 at 11px', () => {
     const source = sourceOf({ path: OPTION_ROW });
 
-    expect(source).toMatch(/'bg-fill text-muted-foreground'/);
-    expect(source).not.toMatch(/bg-fill text-faint-foreground/);
+    expect(source).toMatch(/tabular-nums text-muted-foreground/);
+    expect(source).not.toMatch(/tabular-nums text-faint-foreground/);
   });
 });

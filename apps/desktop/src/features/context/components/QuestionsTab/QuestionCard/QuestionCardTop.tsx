@@ -1,7 +1,8 @@
 import { X } from 'lucide-react';
-import { ICON_SIZE, IconButton, StatusDot } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../../../session/agent-kind';
+import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';
 
 type Props = {
@@ -13,8 +14,6 @@ type Props = {
   readonly isInAskerConversation: boolean;
   readonly onDismiss: (() => void) | null;
 };
-
-const BLOCKING = 'Blocking';
 
 export const QuestionCardTop = ({
   askerName,
@@ -39,12 +38,7 @@ export const QuestionCardTop = ({
           </span>
         </>
       ) : null}
-      {isBlocking ? (
-        <span className="inline-flex shrink-0 items-center gap-1">
-          <StatusDot tone="warning" size="sm" />
-          {BLOCKING}
-        </span>
-      ) : null}
+      {isBlocking ? <QuestionBlockingMark /> : null}
       {hasAsker && age.length > 0 ? (
         <span className="shrink-0 text-faint-foreground">{age}</span>
       ) : null}
