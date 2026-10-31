@@ -6,18 +6,6 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-vi.mock('../../../auto/useAutoTreeLimit', () => ({
-  useAutoTreeLimit: () => ({
-    usd: 5,
-    isFromSession: false,
-    isDefault: true,
-    defaultUsd: 5,
-    isStored: true,
-    change: () => undefined,
-    persist: async () => undefined,
-  }),
-}));
-
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
@@ -116,6 +104,7 @@ beforeEach(async () => {
   spawnAgent.mockResolvedValue(brandedId<AgentId>({ value: 'agent-1' }));
   useAppStore.setState({
     phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
+    workspaceValues: { [WORKSPACE_ID]: { 'auto.treeLimitUsd': '5' } },
     attachWorkflowToSession: attach,
     savePhaseTemplate: save,
     createSession,
@@ -698,7 +687,104 @@ describe('New session page', () => {
   });
 });
 
+const withRunDefault = (): void => {
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE_ID]: {
+        ...EMPTY_OVERRIDES,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: 8 },
+      },
+    },
+    generateWorkflowTitle: vi.fn(async () => undefined),
+    startSessionFromDraft: startThenRun,
+    loadSetting: noSetting,
+  });
+};
+
+describe('New session limit by kind', () => {
+  const AUTO_DEFAULT = /^Limit \$5\.00 · default$/;
+  const RUN_DEFAULT = /^Limit \$8\.00 · default$/;
+
+  const typeLimit = async (usd: string): Promise<void> => {
+    fireEvent.click(screen.getByRole('button', { name: /^Limit / }));
+    await settle();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Other amount' }), {
+      target: { value: usd },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this limit' }));
+    await settle();
+  };
+
+  it('starts every kind from its own default, and Agent has no limit', async () => {
+    withRunDefault();
+    await openPage();
+
+    screen.getByRole('button', { name: AUTO_DEFAULT });
+    await pickKind({ name: /^Orchestrated/ });
+    screen.getByRole('button', { name: RUN_DEFAULT });
+    await pickKind({ name: /^Preset/ });
+    screen.getByRole('button', { name: RUN_DEFAULT });
+    await pickKind({ name: /^Auto/ });
+    screen.getByRole('button', { name: AUTO_DEFAULT });
+    await pickKind({ name: /^Agent/ });
+    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+  });
+
+  it('starts an Orchestrated run from the Run defaults limit', async () => {
+    withRunDefault();
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    typeGoal(GOAL);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
+  });
+
+  it('starts a Preset run from the Run defaults limit', async () => {
+    withRunDefault();
+    await openPage();
+    await pickKind({ name: /^Preset/ });
+    typeGoal(GOAL);
+    await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
+  });
+
+  it('starts a workflow with a typed amount for this run and leaves the Auto limit alone', async () => {
+    withRunDefault();
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    await typeLimit('3');
+    screen.getByRole('button', { name: 'Limit $3.00' });
+    typeGoal(GOAL);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
+    expect(useAppStore.getState().workspaceValues[WORKSPACE_ID]?.['auto.treeLimitUsd']).toBe('5');
+  });
+
+  it('keeps a typed amount when the kind changes', async () => {
+    withRunDefault();
+    await openPage();
+    await pickKind({ name: /^Orchestrated/ });
+    await typeLimit('3');
+
+    await pickKind({ name: /^Auto/ });
+
+    screen.getByRole('button', { name: 'Limit $3.00' });
+  });
+});
+
 describe('New session settings row', () => {
+  beforeEach(withRunDefault);
+
   const chipNames = (): ReadonlyArray<string> =>
     within(screen.getByRole('group', { name: 'Run settings' }))
       .getAllByRole('button')

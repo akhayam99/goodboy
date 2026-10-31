@@ -24,7 +24,7 @@ const HELP =
 
 export const DefaultAutoLimitSetting = ({ workspaceId, workspaceName }: Props) => {
   const dropdown = useDropdown({ expectedHeight: 220, expectedWidth: 320, width: 'w-80' });
-  const limit = useAutoTreeLimit({ workspaceId });
+  const limit = useAutoTreeLimit({ workspaceId }).viewOf({ defaultFrom: 'auto' });
   const loadWorkspaceValue = useAppStore((state) => state.loadWorkspaceValue);
   const reportError = useAppStore((state) => state.reportError);
   const apply = async ({ usd }: ApplyParams): Promise<string | null> => {

@@ -25,6 +25,12 @@ const SPENDER = {
   autoAgent: 'Auto and the agents it starts',
 } as const satisfies Record<AutoLimitKind, string>;
 
+const STARTS_FROM = {
+  orchestrated: 'It applies to this run only. Run defaults set where new runs start.',
+  preset: 'It applies to this run only. Run defaults set where new runs start.',
+  autoAgent: 'Other runs in this workspace start from the same limit.',
+} as const satisfies Record<AutoLimitKind, string>;
+
 export const AUTO_LIMIT_COPY = {
   noLimit: NO_LIMIT,
   defaultTag: 'default',
@@ -35,5 +41,5 @@ export const AUTO_LIMIT_COPY = {
   labelOf: ({ usd }: AmountParams): string => (usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`),
   titleOf: ({ kind }: KindParams): string => TITLE[kind],
   helpOf: ({ kind }: KindParams): string =>
-    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. Other runs in this workspace start from the same limit.`,
+    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. ${STARTS_FROM[kind]}`,
 } as const;

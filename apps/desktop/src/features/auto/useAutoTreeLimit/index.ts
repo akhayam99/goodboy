@@ -8,6 +8,8 @@ import { sumSessionCost } from '../../../store/slices/sessions/sumSessionCost';
 import { autoLimitOf } from '../autoLimitOf';
 import { parseAutoTreeLimit, writeAutoTreeLimit } from '../autoTreeLimit';
 import { startLimitOf, type StartLimit } from '../startLimitOf';
+import type { LimitDefaultParams } from '../limitDefaultFrom';
+import { runDefaultLimitOf } from '../../../store/slices/workflows/runLimit/runDefaultLimitOf';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
@@ -16,7 +18,7 @@ type Params = {
 
 type Draft = Readonly<{ usd: number | null }>;
 
-export type AutoTreeLimitModel = Readonly<{
+export type AutoTreeLimitView = Readonly<{
   usd: number | null;
   isFromSession: boolean;
   isDefault: boolean;
@@ -24,7 +26,11 @@ export type AutoTreeLimitModel = Readonly<{
   isStored: boolean;
   tiers: string;
   change: (usd: number | null) => void;
-  persist: () => Promise<StartLimit>;
+}>;
+
+export type AutoTreeLimitModel = Readonly<{
+  viewOf: (params: LimitDefaultParams) => AutoTreeLimitView;
+  persist: (params: LimitDefaultParams) => Promise<StartLimit>;
 }>;
 
 const NO_RECORDS: ReadonlyArray<TelemetryRecord> = [];
@@ -54,44 +60,61 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
     });
   }, [workspaceId, loadWorkspaceValue, reportError]);
 
-  const facts = autoLimitOf({
-    storedUsd,
-    draftUsd: draft === null ? undefined : draft.usd,
-    sessionCapUsd,
+  const runDefaultUsd = useAppStore((state) =>
+    workspaceId === null ? null : runDefaultLimitOf({ state, workspaceId }),
+  );
+  const tiers = limitTiersOf({
+    session: { capUsd: sessionCapUsd, spentUsd: sessionSpentUsd },
+    months: monthTiersOf({ statuses }),
   });
-  const { isFromSession } = facts;
-  const shown = startLimitOf({ facts });
-  const shownUsd = shown.usd;
-  const shownSource = shown.source;
+  const draftUsd = draft === null ? undefined : draft.usd;
+
+  const factsOf = useCallback(
+    ({ defaultFrom }: LimitDefaultParams) =>
+      autoLimitOf({
+        storedUsd: defaultFrom === 'run' ? runDefaultUsd : storedUsd,
+        draftUsd,
+        sessionCapUsd,
+      }),
+    [draftUsd, runDefaultUsd, sessionCapUsd, storedUsd],
+  );
 
   const change = useCallback((next: number | null): void => setDraft({ usd: next }), []);
 
-  const persist = useCallback(async (): Promise<StartLimit> => {
-    const shownLimit: StartLimit = { usd: shownUsd, source: shownSource };
-    if (workspaceId === null || isFromSession || draft === null) {
-      return shownLimit;
-    }
-    if (draft.usd === storedUsd) {
+  const viewOf = useCallback(
+    ({ defaultFrom }: LimitDefaultParams): AutoTreeLimitView => {
+      const facts = factsOf({ defaultFrom });
+      return {
+        usd: facts.usd,
+        isFromSession: facts.isFromSession,
+        isDefault: facts.isDefault,
+        defaultUsd: facts.defaultUsd,
+        isStored: defaultFrom === 'run' ? runDefaultUsd !== null : storedUsd !== null,
+        tiers,
+        change,
+      };
+    },
+    [change, factsOf, runDefaultUsd, storedUsd, tiers],
+  );
+
+  const persist = useCallback(
+    async ({ defaultFrom }: LimitDefaultParams): Promise<StartLimit> => {
+      const facts = factsOf({ defaultFrom });
+      const shownLimit = startLimitOf({ facts });
+      if (workspaceId === null || facts.isFromSession || draft === null) {
+        return shownLimit;
+      }
+      if (defaultFrom === 'run' || draft.usd === storedUsd) {
+        setDraft(null);
+        return shownLimit;
+      }
+      await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd: draft.usd });
+      await loadWorkspaceValue({ workspaceId, key: 'auto.treeLimitUsd' });
       setDraft(null);
       return shownLimit;
-    }
-    await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd: draft.usd });
-    await loadWorkspaceValue({ workspaceId, key: 'auto.treeLimitUsd' });
-    setDraft(null);
-    return shownLimit;
-  }, [draft, isFromSession, loadWorkspaceValue, shownSource, shownUsd, storedUsd, workspaceId]);
+    },
+    [draft, factsOf, loadWorkspaceValue, storedUsd, workspaceId],
+  );
 
-  return {
-    usd: facts.usd,
-    isFromSession,
-    isDefault: facts.isDefault,
-    defaultUsd: facts.defaultUsd,
-    isStored: storedUsd !== null,
-    tiers: limitTiersOf({
-      session: { capUsd: sessionCapUsd, spentUsd: sessionSpentUsd },
-      months: monthTiersOf({ statuses }),
-    }),
-    change,
-    persist,
-  };
+  return { viewOf, persist };
 };
