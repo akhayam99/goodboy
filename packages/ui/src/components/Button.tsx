@@ -3,7 +3,8 @@ import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { StatusDot } from './StatusDot';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'quiet' | 'ghost-danger';
+export type ButtonVariant =
+  'primary' | 'secondary' | 'ghost' | 'danger' | 'quiet' | 'ghost-danger' | 'setting';
 export type ButtonSize = 'xs' | 'sm' | 'md';
 
 export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
@@ -27,6 +28,8 @@ export const BUTTON_VARIANT_CLASSES = {
     'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   'ghost-danger':
     'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
+  setting:
+    'font-normal text-foreground hover:border-border hover:bg-hover focus-visible:border-border disabled:text-disabled-foreground',
 } as const satisfies Record<ButtonVariant, string>;
 
 export const BUTTON_SIZE_CLASSES = {

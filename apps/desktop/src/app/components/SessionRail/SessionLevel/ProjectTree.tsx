@@ -91,7 +91,9 @@ export const ProjectTree = ({
           onClick={() => tree.toggle(node)}
           className="h-7 min-w-0 flex-1 items-center gap-1 pl-1 pr-0 text-ui"
         >
-          <span className="min-w-0 truncate text-left">{group.projectName}</span>
+          <span className="min-w-0 truncate text-left text-row text-foreground">
+            {group.projectName}
+          </span>
           {isOpen ? null : (
             <ChevronRight
               size={ICON_SIZE.row}
