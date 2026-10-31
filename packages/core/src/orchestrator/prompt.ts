@@ -141,10 +141,13 @@ const ORCHESTRATOR_MODEL_PICK_READING_SYSTEM_PROMPT = orchestratorSystemPrompt({
 });
 
 type SystemPromptForParams = {
-  readonly input: Pick<OrchestratorInput, 'isModelPickEnabled' | 'canReadFiles'>;
+  readonly input: Pick<OrchestratorInput, 'isModelPickEnabled' | 'canReadFiles' | 'mounts'>;
 };
 
-export const orchestratorSystemPromptFor = ({ input }: SystemPromptForParams): string => {
+const MOUNT_STEP_RULE =
+  'The project has several mounts, listed in the request. Give a next step "mountId" with the id of the mount whose repository the step changes, copied from that list. Leave mountId out when the step reads only or when no single mount owns it, and never invent an id.';
+
+const baseSystemPromptFor = ({ input }: SystemPromptForParams): string => {
   const isPick = input.isModelPickEnabled === true;
   if (input.canReadFiles === true) {
     return isPick
@@ -152,6 +155,14 @@ export const orchestratorSystemPromptFor = ({ input }: SystemPromptForParams): s
       : ORCHESTRATOR_READING_SYSTEM_PROMPT;
   }
   return isPick ? ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT : ORCHESTRATOR_SYSTEM_PROMPT;
+};
+
+export const orchestratorSystemPromptFor = ({ input }: SystemPromptForParams): string => {
+  const base = baseSystemPromptFor({ input });
+  if ((input.mounts?.length ?? 0) < 2) {
+    return base;
+  }
+  return `${base}\n\n${MOUNT_STEP_RULE}`;
 };
 
 type RoleModelSetLinesParams = {
@@ -313,7 +324,26 @@ const budgetedDecisions = ({ decisions }: DecisionsParams): string => {
   return kept.join('\n').slice(0, SLOT_BUDGETS.decisions);
 };
 
+type MountLinesParams = {
+  readonly mounts: NonNullable<OrchestratorInput['mounts']>;
+};
+
+const mountLines = ({ mounts }: MountLinesParams): ReadonlyArray<string> => {
+  if (mounts.length < 2) {
+    return [];
+  }
+  return [
+    '',
+    'Mounts of the project (give a next step the mountId of the one whose repository it changes):',
+    ...mounts.map(
+      (mount) =>
+        `- mountId ${mount.id}: ${mount.name}${mount.branch === undefined ? '' : `, branch ${mount.branch}`}`,
+    ),
+  ];
+};
+
 export const buildOrchestratorUserPrompt = ({
+  mounts,
   goal,
   processText,
   completedSteps,
@@ -341,6 +371,7 @@ export const buildOrchestratorUserPrompt = ({
     `Open questions: ${openQuestionCount}`,
     '',
     `Steps used: ${stepsUsed}`,
+    ...mountLines({ mounts: mounts ?? [] }),
   ];
   if (spendLimitUsd != null) {
     lines.push(
