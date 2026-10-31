@@ -3,6 +3,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  SHOT_CLICK_TEXT,
+  SHOT_PAD,
+  SHOT_SELECTOR,
+  SHOT_VIEW,
+  cropClipOf,
+} from './changelogShotCrop.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEV_URL = process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230';
@@ -119,6 +126,29 @@ const captureThemePng = async ({ theme }) => {
     };
     await send({ method: 'Page.enable' });
     await send({ method: 'Emulation.setFocusEmulationEnabled', params: { enabled: true } });
+    if (SHOT_SELECTOR !== null) {
+      const [viewWidth, viewHeight] = SHOT_VIEW;
+      await openScene({
+        width: viewWidth,
+        height: viewHeight,
+        deviceScaleFactor: DEVICE_SCALE_FACTOR,
+      });
+      const clip = await cropClipOf({
+        send,
+        selector: SHOT_SELECTOR,
+        pad: SHOT_PAD,
+        clickText: SHOT_CLICK_TEXT,
+        sleep,
+      });
+      const cropped = await send({
+        method: 'Page.captureScreenshot',
+        params: { format: 'png', clip },
+      });
+      if (cropped.result?.data === undefined) {
+        throw new Error(`could not capture ${SHOT_SELECTOR} in scene "${scene}"`);
+      }
+      return Buffer.from(cropped.result.data, 'base64');
+    }
     await openScene({
       width: CSS_WIDTH,
       height: CSS_HEIGHT,
