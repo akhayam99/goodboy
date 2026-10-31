@@ -3,44 +3,12 @@ import { ChevronDown } from 'lucide-react';
 import { ICON_SIZE, Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
 
 import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
-import { readAttachment } from '../../turn';
-import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
-import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
+import { AttachmentStrip } from '../../../attachments/components/AttachmentStrip';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { ClampedText } from '../../../../shared/components/ClampedText';
-
-type MessageAttachmentChipProps = {
-  readonly attachment: MessageAttachment;
-  readonly workingDir: string | null;
-};
-
-const MessageAttachmentChip = ({ attachment, workingDir }: MessageAttachmentChipProps) => {
-  const readDir = attachment.dir ?? workingDir;
-  const thumbnail = useAttachmentThumbnail({
-    kind: attachment.kind,
-    relPath: attachment.relPath,
-    workingDir: readDir,
-  });
-  const isPdf = attachment.mimeType === 'application/pdf';
-
-  return (
-    <AttachmentChip
-      fileName={attachment.fileName}
-      mimeType={attachment.mimeType}
-      thumbnail={attachment.kind === 'image' ? thumbnail : undefined}
-      preview={thumbnail.status === 'ready' ? { src: thumbnail.src } : undefined}
-      lazyPreview={
-        isPdf && readDir
-          ? { load: () => readAttachment(readDir, attachment.relPath), media: 'pdf' }
-          : undefined
-      }
-      title={attachment.fileName}
-    />
-  );
-};
 
 type Props = {
   text: string;
@@ -103,11 +71,18 @@ export const UserText = ({
       className={`ml-auto flex w-fit ${PANE_RHYTHM.message.user} flex-col gap-2 rounded-lg bg-elevated px-3 py-2 ring-1 ring-border-soft`}
     >
       {atts.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-2">
-          {atts.map((a) => (
-            <MessageAttachmentChip key={a.id} attachment={a} workingDir={workingDir} />
-          ))}
-        </div>
+        <AttachmentStrip
+          isEnd
+          railLabel="Images in this message"
+          items={atts.map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            mimeType: a.mimeType,
+            kind: a.kind,
+            relPath: a.relPath,
+            workingDir: a.dir ?? workingDir,
+          }))}
+        />
       )}
       {text.length > 0 && (
         <ClampedText text={text} className="text-prose text-foreground">

@@ -2,6 +2,7 @@ import {
   useId,
   useEffect,
   useRef,
+  type KeyboardEventHandler,
   type MouseEvent,
   type ReactNode,
   type SyntheticEvent,
@@ -39,6 +40,7 @@ export type DialogProps = {
   panel?: ReactNode;
   panelWidthClass?: string;
   panelClassName?: string;
+  onKeyDown?: KeyboardEventHandler<HTMLDialogElement>;
 };
 
 const SIZE: Record<DialogSize, string> = {
@@ -80,6 +82,7 @@ export const Dialog = ({
   panel,
   panelWidthClass = 'w-48',
   panelClassName,
+  onKeyDown,
 }: DialogProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -170,6 +173,7 @@ export const Dialog = ({
       ref={ref}
       onClick={onBackdropClick}
       onCancel={onCancel}
+      onKeyDown={onKeyDown}
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(

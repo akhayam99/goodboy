@@ -542,7 +542,7 @@ prompt. Everything else is a popover or inline. A centred `Dialog` sits on
 `bg-floating`, like popovers, toasts and the command palette; the full-screen
 viewer passes `size="full"` and `surface="screen"` to stay on the content surface.
 `ImageLightbox` is that viewer: the native dialog traps Tab, focuses Close on open and returns
-focus to the opener on close. The command palette and the session switcher are not dialogs; they
+focus to the opener on close. Given several images it shows a rail of them in the `Dialog` panel. The command palette and the session switcher are not dialogs; they
 share `Scrim` from `@goodboy/ui` for their backdrop. Any line that
 sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
 `bg-floating`, and `no-token-bypass.test.ts` holds that.

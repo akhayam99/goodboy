@@ -1131,6 +1131,8 @@ u31-runs
 u31-runs-run
 u31-sidebar
 u31-text-levels
+u32-attachments
+u32-attachments-viewer
 update-card
 update-card-long-version
 update-card-narrow
