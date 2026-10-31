@@ -21,8 +21,9 @@
 - **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
   groups, **Needs you** then **Answered**, each counted from two; the grouping is
   `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
-  Needs you and says so in gray). A row reads the question, the answer in gray, the
-  asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
+  Needs you and says so in gray). A row reads the question with its answer in gray on a
+  second line (`You:` or `Agent:`), then the asker's role and the age; there is no answer
+  column. A blocking ask is one warning dot in the leading cell. The row
   opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
   the asker's role and the age (`questionMetaOf`, the same function as the row) while the
   card carries the question itself. The role in that title is a link to the asker
@@ -36,7 +37,12 @@
   waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
-  (and Blocking as a dot and a word).
+  (and Blocking as a dot and a word on the title line). That card is one subtle surface
+  with no border: option rows have no boxes (a faint key, the label, `Recommended` as a
+  word), the delegate link and the actions share one footer row, and four options measure
+  about 216px (12 padding, 20 title, 4 rows of 32, a 28 footer, the gaps) where the boxed
+  card measured 370px. The Artifacts list uses the same group label as Questions, and an
+  artifact state is a word with a 6px dot, never an icon.
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
