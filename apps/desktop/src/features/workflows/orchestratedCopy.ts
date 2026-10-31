@@ -20,6 +20,10 @@ type CountParams = {
   readonly count: number;
 };
 
+type HintParams = {
+  readonly hint: string;
+};
+
 type AsksParams = {
   readonly isQuestion: boolean;
 };
@@ -30,7 +34,18 @@ export const ORCHESTRATED_COPY = {
   hideGuidance: 'Hide guidance',
   checklist: 'Plan and progress',
   steps: 'Steps',
-  readHint: ({ step }: StepParams): string => `Your hint, read at step ${step}`,
+  readHint: ({ step }: StepParams): string => `Read at step ${step}`,
+  hintNode: 'Hint',
+  hintQueued: 'Queued hint',
+  hintMore: 'Show more',
+  hintLess: 'Show less',
+  hintMoreNamed: ({ hint }: HintParams): string => `Show more of hint: ${hint}`,
+  hintLessNamed: ({ hint }: HintParams): string => `Show less of hint: ${hint}`,
+  hintReading: 'Reading now',
+  hintImages: 'Images in this hint',
+  hintImagesFailed: "Images didn't load",
+  hintImagesRetry: 'Retry',
+  hintImagesLoadFailed: "Couldn't load the hint images",
   why: ({ reason }: ReasonParams): string => `Why: ${reason}`,
   whyThisStep: 'Why this step',
   done: 'Done',

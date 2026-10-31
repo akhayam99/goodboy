@@ -203,7 +203,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     const queued = within(screen.getByRole('list', { name: 'Queued hints' }));
     expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
     expect(queued.getByRole('button', { name: 'Remove' })).toBeDefined();
-    expect(checklist().getByText('Your hint, read at step 3')).toBeDefined();
+    expect(checklist().getByText('Read at step 3')).toBeDefined();
   });
 
   it('Hint states: Reading now cannot be removed', async () => {

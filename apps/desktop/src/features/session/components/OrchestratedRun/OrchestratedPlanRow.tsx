@@ -1,13 +1,12 @@
-import { CircleDashed, MessageSquareText } from 'lucide-react';
+import { CircleDashed } from 'lucide-react';
 import type { AgentRole } from '@goodboy/types';
 import { cn, ICON_SIZE, WORK_META_COLUMN } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-
-import { railColumnX } from '../../../workTreeModel/railGeometry';
 import { agentKindPalette, kindForRole } from '../../agent-kind';
+import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 
 type Props = {
-  readonly kind: 'hint' | 'next' | 'left' | 'skipped';
+  readonly kind: 'next' | 'left' | 'skipped';
   readonly label: string;
   readonly role?: AgentRole | null;
   readonly slotWidth: number;
@@ -17,21 +16,12 @@ export const OrchestratedPlanRow = ({ kind, label, role = null, slotWidth }: Pro
   const roleKind = role === null ? null : kindForRole({ role });
   return (
     <div data-plan-row={kind} className="flex h-8 min-w-0 items-center">
-      <span aria-hidden className="relative h-full shrink-0" style={{ width: slotWidth }}>
-        <span
-          className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center"
-          style={{ left: railColumnX({ column: 0 }) }}
-        >
-          {kind === 'hint' ? (
-            <MessageSquareText size={ICON_SIZE.mark} className="text-faint-foreground" />
-          ) : (
-            <CircleDashed
-              size={ICON_SIZE.mark}
-              className={kind === 'next' ? 'text-info' : 'text-faint-foreground'}
-            />
-          )}
-        </span>
-      </span>
+      <OrchestratedPlanSlot slotWidth={slotWidth}>
+        <CircleDashed
+          size={ICON_SIZE.mark}
+          className={kind === 'next' ? 'text-info' : 'text-faint-foreground'}
+        />
+      </OrchestratedPlanSlot>
       <span className="flex min-w-0 flex-1 items-center gap-2 px-2 text-ui">
         <span className="w-14 shrink-0" />
         <span

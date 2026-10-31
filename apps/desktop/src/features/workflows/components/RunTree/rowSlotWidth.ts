@@ -1,5 +1,5 @@
 import { RAIL_MARKER_RADIUS, railInsetOf, type RailRow } from '../../../workTreeModel/railGeometry';
-import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
+import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
 
 type Params = {
   readonly rail: RailRow;

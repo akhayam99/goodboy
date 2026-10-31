@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
@@ -12,6 +12,10 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly sessionId: SessionId;
+};
+
+type MoveParams = {
+  readonly id: OpenQuestionId | null;
 };
 
 type NextParams = {
@@ -36,6 +40,16 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
   const [currentId, setCurrentId] = useState<OpenQuestionId | null>(null);
+  const [focusId, setFocusId] = useState<OpenQuestionId | null>(null);
+  const moveTo = useCallback(({ id }: MoveParams) => {
+    setFocusId(id);
+    setCurrentId(id);
+  }, []);
+  useEffect(() => {
+    if (focusId !== null) {
+      setFocusId(null);
+    }
+  }, [focusId]);
 
   const { openQuestions, settled } = useMemo(
     () => ({
@@ -65,9 +79,9 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
         from: question.id,
         isEligible: (candidate) => !staged.includes(candidate.id),
       });
-      setCurrentId(next?.id ?? null);
+      moveTo({ id: next?.id ?? null });
     },
-    [answerable, staged],
+    [answerable, staged, moveTo],
   );
 
   const handleSkip =
@@ -75,7 +89,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
       ? null
       : () => {
           const next = nextAfter({ list: answerable, from: current.id, isEligible: () => true });
-          setCurrentId(next?.id ?? null);
+          moveTo({ id: next?.id ?? null });
         };
 
   const nextOpen =
@@ -90,9 +104,9 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
       : {
           index: position,
           doneFlags: group.map((question) => staged.includes(question.id)),
-          onPrevious: () => setCurrentId(group[position - 1]?.id ?? current.id),
-          onNext: () => setCurrentId(group[position + 1]?.id ?? current.id),
-          onJumpToOpen: nextOpen === null ? null : () => setCurrentId(nextOpen.id),
+          onPrevious: () => moveTo({ id: group[position - 1]?.id ?? current.id }),
+          onNext: () => moveTo({ id: group[position + 1]?.id ?? current.id }),
+          onJumpToOpen: nextOpen === null ? null : () => moveTo({ id: nextOpen.id }),
         };
 
   return (
@@ -109,6 +123,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           question={current}
           sessionId={sessionId}
           variant="compact"
+          autoFocus={focusId !== null && focusId === current.id}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}

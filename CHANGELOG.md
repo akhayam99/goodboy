@@ -12,6 +12,33 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.9
+
+Images as thumbnails with a viewer, hints on the run track, and fixes for multi repo runs and the terminal panel.
+
+### Improved
+
+#### Images as thumbnails
+<!-- gb area=agents image=attachments -->
+
+Images in a message or a run goal show as one row of thumbnails that fits the message, with a count for the rest. Other files keep their chip.
+
+#### A viewer with every image
+<!-- gb area=agents image=viewer -->
+
+Opening an image shows the others from the same message in a rail on the left. Move with the arrow keys or a click, and Escape takes you back to the thumbnail.
+
+#### Hints on the run track
+<!-- gb area=workflows image=hint-node -->
+
+A hint is a round node on the run's line, with its text, its images and a link to the step that read it. A long hint opens with Show more.
+
+### Fixed
+
+- In a project with several repositories, the orchestrator sees every mount and sends each step to the right one. <!-- gb area=workflows -->
+- The terminal panel opens in the installed app again. <!-- gb area=app -->
+- After you move to another open question, keys 1 to 4 pick on that question. <!-- gb area=agents -->
+
 ## Goodboy v0.29.8
 
 Agents grouped by state, answers under each question, a smaller blocking question, and a quieter header and sidebar.

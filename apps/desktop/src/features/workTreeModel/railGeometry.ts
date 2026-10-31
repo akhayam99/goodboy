@@ -39,6 +39,8 @@ export type RailSegment = {
   readonly toY: number;
 };
 
+export type RailInk = Pick<RailSegment, 'column' | 'laneId' | 'identityIndex' | 'isMuted' | 'dash'>;
+
 export type RailJoin = {
   readonly kind: 'branch' | 'fork';
   readonly spineColumn: number;
@@ -92,6 +94,53 @@ type GroupSpan = {
 
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
+
+type InkAboveParams = {
+  readonly rail: RailRow;
+  readonly topY: number;
+};
+
+export const railInkAbove = ({ rail, topY }: InkAboveParams): RailInk | null => {
+  const segment = rail.segments.find(
+    (candidate) => candidate.column === 0 && candidate.fromY <= topY && candidate.toY > topY,
+  );
+  if (segment === undefined) {
+    return null;
+  }
+  return {
+    column: segment.column,
+    laneId: segment.laneId,
+    identityIndex: segment.identityIndex,
+    isMuted: segment.isMuted,
+    dash: segment.dash,
+  };
+};
+
+type ThroughParams = {
+  readonly id: string;
+  readonly height: number;
+  readonly markerY: number;
+  readonly ink: RailInk | null;
+  readonly hasLineBelow: boolean;
+};
+
+export const railThroughOf = ({
+  id,
+  height,
+  markerY,
+  ink,
+  hasLineBelow,
+}: ThroughParams): RailRow => ({
+  id,
+  height,
+  segments:
+    ink === null
+      ? []
+      : [{ ...ink, fromY: 0, toY: hasLineBelow ? height : markerY } satisfies RailSegment],
+  joins: [],
+  markerColumn: 0,
+  markerY,
+});
 
 export const RAIL_MARKER_RADIUS = 10;
 export const RAIL_COUNT_RADIUS = 5;

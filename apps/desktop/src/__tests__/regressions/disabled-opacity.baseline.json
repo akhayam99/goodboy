@@ -8,7 +8,6 @@
   "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/FallbackRow.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/ModelChipPicker.tsx": 1,
-  "apps/desktop/src/features/session/components/OrchestratedRun/OrchestratedHintChip.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx": 3,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/versionHistoryList.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": 1,
@@ -20,8 +19,8 @@
   "apps/desktop/src/shared/components/Conversation/MessageAction.tsx": 1,
   "apps/desktop/src/shared/components/ProfileForm/ChipsInput.tsx": 1,
   "apps/desktop/src/shared/components/PromptField/index.tsx": 1,
-  "apps/desktop/src/shared/components/RoutingPicker/PickerChip.tsx": 1,
   "apps/desktop/src/shared/components/RoutingPicker/index.tsx": 2,
+  "apps/desktop/src/shared/components/RoutingPicker/PickerChip.tsx": 1,
   "apps/desktop/src/shared/components/RunsOn/index.tsx": 1,
   "packages/ui/src/components/SelectionCheckbox.tsx": 1
 }

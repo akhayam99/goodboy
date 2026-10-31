@@ -4,7 +4,8 @@ import { OrchestratorHintComposer } from '../../../workflows/components/Orchestr
 import { OrchestratorRoutingRow } from '../../../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
 import { isRunPaused } from '../../../workflows/isRunPaused';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
-import { OrchestratedHintChip } from './OrchestratedHintChip';
+import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
+import { OrchestratedHintRow } from './OrchestratedHintRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -52,12 +53,16 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
           ) : null}
           <ul aria-label="Queued hints" className="flex min-w-0 flex-col gap-1">
             {waiting.map((hint) => (
-              <OrchestratedHintChip
-                key={hint.id}
-                hint={hint}
-                isReading={readingIds.includes(hint.id)}
-                onRemove={() => void remove({ hint })}
-              />
+              <li key={hint.id} className="min-w-0">
+                <OrchestratedHintRow
+                  hint={hint}
+                  sessionId={sessionId}
+                  runId={run.id}
+                  state={readingIds.includes(hint.id) ? 'reading' : 'queued'}
+                  slotWidth={RUN_TREE_SLOT_WIDTH}
+                  onRemove={() => void remove({ hint })}
+                />
+              </li>
             ))}
           </ul>
         </div>

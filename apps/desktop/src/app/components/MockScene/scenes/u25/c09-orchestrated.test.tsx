@@ -128,7 +128,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(rows.getByText('Step 3')).toBeDefined();
     expect(rows.getByText('Run the 12k export benchmark')).toBeDefined();
     expect(rows.getByText('Time the export five times')).toBeDefined();
-    expect(rows.getByText('Your hint, read at step 3')).toBeDefined();
+    expect(rows.getByText('Read at step 3')).toBeDefined();
     const planned = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row="left"]')];
     expect(
       planned.map((row) => row.querySelector('[data-checklist-cell="role"]')?.textContent ?? null),
@@ -227,7 +227,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(result).getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add step' })).toBeNull();
     expect(document.querySelector('[data-run-add-step]')).toBeNull();
-    expect(within(checklist()).getByText('Your hint, read at step 4')).toBeDefined();
+    expect(within(checklist()).getByText('Read at step 4')).toBeDefined();
     expect(within(checklist()).queryByText('Stream rows to CSV, a follow up')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Queued hints' })).toBeNull();
   });

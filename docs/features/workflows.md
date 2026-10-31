@@ -74,11 +74,15 @@ Follow a run step by step, with its sub-agents under their agent and one button 
 
 ### Hints to the orchestrator
 
-Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Send now** stops the step in flight, keeps what it wrote and decides again. A complete orchestrated run keeps a field at its end, **Continue with a hint**: send one and the run reopens and the orchestrator picks the next step from the goal and your hint. The orchestrator picks the steps, so an orchestrated run has no **Add step**. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider; **Models in workflows** in Models lets the orchestrator name the model itself.
+Every hint is a round node on the run's line, like a step, and the line runs through it and its images without a break. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are thumbnails below it, and a click opens them in the viewer.
+
+A read hint says **Read at step 3** before that step. Once the step is on the list, the words are a link that moves to the step, or opens it when it is out of view. Until then they are plain text. A hint keeps its open text and its open image when the orchestrator reads it.
+
+Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Send now** stops the step in flight, keeps what it wrote and decides again. A complete orchestrated run keeps a field at its end, **Continue with a hint**: send one and the run reopens and the orchestrator picks the next step from the goal and your hint. The orchestrator picks the steps, so an orchestrated run has no **Add step**. When the project has more than one mount, it sees each one and sends a step to the mount whose repository the step changes. It also says how hard each step is, and Goodboy picks the model for that role and difficulty on your preferred provider; **Models in workflows** in Models lets the orchestrator name the model itself.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator hint box of a run: two queued hints, Replay the event from the Sentry trace before the tester signs off and a second hint with 3 more lines, each with Remove, above the Hint the orchestrator box with its model GPT-5.6 Sol, High and pinned">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator hint box of a run: two queued hints, each with Remove, above the Hint the orchestrator box with its model GPT-5.6 Sol, High and pinned">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -131,8 +135,16 @@ This part is for contributors and agents who change the feature.
 - Run page checklist: `RunTreeChecklistCells` sets a step that runs, waits or failed in `text-row-strong`.
 - Every other step is `text-ui`, gray until hover.
 - `OrchestratedChecklist` draws the **Steps** label with `SectionLabel` and counts the top-level agents once.
+- Hint node: `OrchestratedHintRow` draws a queued, reading or read hint with `WorkNode` in the `OrchestratedPlanSlot` column. The checklist and `OrchestratedComposer` both use it, so one hint is drawn under different parents over its life.
+- Hint state: `HintRowStateProvider` in `OrchestratedRunPage` keeps its expansion and open image by run and hint id. `useHintRowState` moves focus to the same control when the row moves.
+- Hint line: `RunTreeRows` hands each hint the ink of the segment above it (`railInkAbove`), and `OrchestratedHintRow` draws it through the row with `railThroughOf` and `TimelineRail`, at the height `useRowHeight` measures. The last hint gets no line below.
+- Hint text: `useIsClipped` measures the line. `hintIsLong` adds the newline rule to decide when **Show more** shows.
+- Hint list: `orchestratedChecklistOf` gives one read hint per row. It sends a hint read with no recorded step to the trailing hints.
+- Hint images: `useHintImageItems` asks `loadGoalAttachments` once per run. A failed load is reported on the session and shows **Retry**.
+- Hint figure: the `workflow-hints` figure in `docs/figures.json` still shows the old queued chip with its line count.
 - Carried history: `PRIOR_TURNS_BUDGET_TOKENS` sets the 8,000 token budget.
-- Run step mount: a step agent is created with `mountId` from `selectRunStepMountId`. It is the mount the orchestrator names in `step.mountId`. Else it is the mount of the run's latest step agent that has one.
+- Run step mount: a step agent is created with `mountId` from `selectRunStepMountId`. It is the mount the orchestrator names in `step.mountId`. Else it is the mount of the run's latest step agent that has one. An id that is not a writable mount of the session is ignored, so a made-up id never starts a step elsewhere.
+- Orchestrator mounts: `orchestrateNextStep` puts the writable mounts of the session in `OrchestratorInput.mounts` (id, project name, branch), for preset runs too. With two or more, `buildOrchestratorUserPrompt` lists them and `orchestratorSystemPromptFor` adds the rule that teaches the `mountId` step field. With one mount the prompts do not change.
 - `prepareTurn` aims a run step at its own pin, else at that latest pin, and uses the active mount only when the run has none yet. `resolvePhaseAgent` then writes the mount the turn ran in to `agents.mount_id`, so the first step pins it.
 - A pinned mount that is gone blocks the step: `blockRunStepOnGoneMount` marks it `blocked` and throws `RunStepMountBlockedError`, which `orchestrateNextStep` swallows. An explicit mount on the turn overrides the pin and replaces it.
 - `selectMountBlockedStep` derives the block from the store state it is given: the first root step that is `blocked` and whose pin (`pinnedMountIdOf`) is not a writable mount. It carries the branch, whether the row and the folder still allow a reattach, the active mount as the suggestion and the other writable mounts. `OrchestratedMountBlock` draws it in the run tail, `orchestratedTailOf` keeps only **Restart step** beside it, and `AgentStepRow` drops the estimate of a blocked step that never started.

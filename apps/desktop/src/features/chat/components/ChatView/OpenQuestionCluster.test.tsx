@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { OpenQuestion } from '@goodboy/types';
+import { brandId, type OpenQuestion, type SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -105,6 +105,32 @@ describe('OpenQuestionCluster', () => {
     expect(screen.queryByRole('heading', { name: 'Redis or Memcached?' })).toBeNull();
     expect(screen.queryByText('scout')).toBeNull();
     screen.getByText('1 of 2');
+  });
+
+  it('moves focus to the card after a page and leaves the composer alone when a question resolves elsewhere', () => {
+    const all = [dbQuestion, cacheQuestion, deployQuestion];
+    const tree = (questions: ReadonlyArray<OpenQuestion>) => (
+      <>
+        <textarea aria-label="Composer" />
+        <OpenQuestionCluster
+          questions={questions}
+          sessionId={brandId<SessionId>({ value: 'sess-1' })}
+        />
+      </>
+    );
+    openInStore.questions = all;
+    const { rerender } = render(tree(all));
+    fireEvent.click(screen.getByRole('button', { name: 'Next question' }));
+    screen.getByRole('heading', { name: 'Redis or Memcached?' });
+    expect(document.activeElement).toBe(screen.getByRole('article'));
+
+    const composer = screen.getByRole('textbox', { name: 'Composer' });
+    composer.focus();
+    expect(document.activeElement).toBe(composer);
+
+    rerender(tree([dbQuestion, deployQuestion]));
+    screen.getByRole('heading', { name: 'Use Postgres or SQLite?' });
+    expect(document.activeElement).toBe(composer);
   });
 
   it('stages the first answer and moves on without reaching the store', () => {

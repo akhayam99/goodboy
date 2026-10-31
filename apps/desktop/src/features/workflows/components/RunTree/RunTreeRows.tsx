@@ -4,6 +4,7 @@ import type { TimelineAgentEntry } from '../../../session/timeline/buildTimeline
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { useAgentSpendById } from '../../hooks/useAgentSpendById';
 import type { RowPhase } from '../../../workTreeModel/rowState';
+import { railInkAbove, type RailInk } from '../../../workTreeModel/railGeometry';
 import { RunTreeFoldRow } from './RunTreeFoldRow';
 import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
 import type { RunStepSkipAction } from './RunStepSkip';
@@ -11,7 +12,7 @@ import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 import type { RunTreeDensity } from './runTreeDensity';
 import type { RunTreeInsert } from '../../runTreeInsert';
-import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
+import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
 
 type Props = {
   readonly density?: RunTreeDensity;
@@ -104,6 +105,22 @@ export const RunTreeRows = ({
       agentById.set(item.entry.agent.id, item.entry.agent);
     }
   }
+  let lastAgentIndex = -1;
+  for (const [index, item] of stream.items.entries()) {
+    if (item.kind === 'row' && isAgentRow(item)) {
+      lastAgentIndex = index;
+    }
+  }
+  const lastItem = stream.items[lastAgentIndex];
+  const lastRail = rail.rows[lastAgentIndex];
+  const lastInk =
+    lastItem === undefined || lastRail === undefined
+      ? null
+      : railInkAbove({ rail: lastRail, topY: lastItem.topY });
+  const trailingInk: RailInk | null =
+    lastInk === null || lastItem === undefined
+      ? null
+      : { ...lastInk, dash: lastItem.isPending ? 'dashed' : 'solid' };
   const parentOf = ({ entry }: { readonly entry: TimelineAgentEntry }): Agent | null => {
     const parentId = entry.agent.parentAgentId;
     return parentId == null ? null : (agentById.get(parentId) ?? null);
@@ -148,7 +165,12 @@ export const RunTreeRows = ({
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
             {isNested || beforeRow === undefined
               ? null
-              : beforeRow({ agentId: item.entry.agent.id, slotWidth: insertSlot })}
+              : beforeRow({
+                  agentId: item.entry.agent.id,
+                  slotWidth: insertSlot,
+                  ink: railInkAbove({ rail: railRow, topY: item.topY }),
+                  hasLineBelow: true,
+                })}
             <RunTreeRow
               density={density}
               item={item}
@@ -176,7 +198,14 @@ export const RunTreeRows = ({
           </div>
         );
       })}
-      {trailing === undefined ? null : trailing({ agentId: null, slotWidth: insertSlot })}
+      {trailing === undefined
+        ? null
+        : trailing({
+            agentId: null,
+            slotWidth: insertSlot,
+            ink: trailingInk,
+            hasLineBelow: false,
+          })}
     </div>
   );
 };
