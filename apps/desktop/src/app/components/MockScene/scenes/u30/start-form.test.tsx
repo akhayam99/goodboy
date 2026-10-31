@@ -66,7 +66,7 @@ describe('the u30 start form scenes', () => {
     row.getByRole('combobox', { name: 'Where' });
     row.getByRole('button', { name: /^Asks you:/ });
     row.getByRole('button', { name: /^Edits:/ });
-    row.getByRole('button', { name: /^Limit \$5\.00/ });
+    row.getByRole('button', { name: /^Limit \$8\.00/ });
     within(screen.getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem');
     screen.getByRole('button', { name: 'Start workflow' });
   });

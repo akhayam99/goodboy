@@ -12,11 +12,11 @@ import {
 import { parseSpendLimit } from '../budget/parseSpendLimit';
 import { AutoLimitChoices } from './AutoLimitChoices';
 import { AUTO_LIMIT_COPY, type AutoLimitKind } from './autoLimitCopy';
-import type { AutoTreeLimitModel } from './useAutoTreeLimit';
+import type { AutoTreeLimitView } from './useAutoTreeLimit';
 
 type Props = {
   readonly limit: Pick<
-    AutoTreeLimitModel,
+    AutoTreeLimitView,
     'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'change'
   > & { readonly tiers?: string };
   readonly kind: AutoLimitKind;

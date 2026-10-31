@@ -290,7 +290,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       settings.getByRole('combobox', { name: 'Where' });
       settings.getByRole('button', { name: /^Asks you:/ });
       settings.getByRole('button', { name: /^Edits:/ });
-      settings.getByRole('button', { name: /^Limit / });
+      settings.getByRole('button', { name: /^(Limit |No limit)/ });
     },
   },
   {

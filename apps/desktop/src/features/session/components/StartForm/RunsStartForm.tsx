@@ -8,6 +8,7 @@ import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { AutoLevelChip } from '../../../auto/level/AutoLevelChip';
 import { AGENT_KIND_META, type AgentKind } from '../../agent-kind';
+import { limitDefaultFromOfKind } from './limitDefaultFromOfKind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { AUTO_RUN_AS } from '../../startRun/runAsOf';
 import { routeLineOf } from '../../startRun/routeLineOf';
@@ -70,6 +71,7 @@ export const RunsStartForm = ({
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
   const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
+  const limitView = limit.viewOf({ defaultFrom: limitDefaultFromOfKind({ kind }) });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -134,7 +136,7 @@ export const RunsStartForm = ({
           ),
           limit:
             limitKind === null ? null : (
-              <AutoLimitChip limit={limit} kind={limitKind} isDisabled={isStarting} />
+              <AutoLimitChip limit={limitView} kind={limitKind} isDisabled={isStarting} />
             ),
           guidance: (
             <StartGuidanceSetting

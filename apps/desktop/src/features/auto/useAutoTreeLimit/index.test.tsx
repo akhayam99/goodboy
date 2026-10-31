@@ -16,9 +16,11 @@ import { vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { Database } from '@goodboy/db';
-import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { brandId, DEFAULT_WORKFLOW_RULES, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { readAutoTreeLimit } from '../autoTreeLimit';
+import type { LimitDefaultFrom } from '../limitDefaultFrom';
 import { useAutoTreeLimit } from '.';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -28,10 +30,12 @@ let db: Database;
 
 type ProbeParams = {
   readonly sessionId?: SessionId | null;
+  readonly defaultFrom?: LimitDefaultFrom;
 };
 
-const Probe = ({ sessionId = null }: ProbeParams) => {
-  const limit = useAutoTreeLimit({ workspaceId: HARBORLINE, sessionId });
+const Probe = ({ sessionId = null, defaultFrom = 'auto' }: ProbeParams) => {
+  const model = useAutoTreeLimit({ workspaceId: HARBORLINE, sessionId });
+  const limit = { ...model.viewOf({ defaultFrom }), persist: () => model.persist({ defaultFrom }) };
   return (
     <div>
       <p data-testid="usd">{String(limit.usd)}</p>
@@ -174,5 +178,50 @@ describe('useAutoTreeLimit', () => {
 
     await waitFor(() => expect(screen.getByTestId('usd').textContent).toBe('5'));
     expect(screen.getByTestId('session').textContent).toBe('false');
+  });
+
+  describe('starting from the Run defaults', () => {
+    const withRunDefault = (usd: number | null): void => {
+      useAppStore.setState({
+        workspaceOverrides: {
+          [HARBORLINE]: {
+            ...EMPTY_OVERRIDES,
+            workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: usd },
+          },
+        },
+      });
+    };
+
+    it('shows the Run defaults amount, not the Auto limit, tagged as the default', async () => {
+      withRunDefault(6);
+      await db.execute(
+        "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
+        [HARBORLINE, '12'],
+      );
+      render(<Probe defaultFrom="run" />);
+
+      await waitFor(() => expect(screen.getByTestId('usd').textContent).toBe('6'));
+      expect(screen.getByTestId('stored').textContent).toBe('true');
+    });
+
+    it('never writes the Auto limit for an amount typed on a run', async () => {
+      withRunDefault(6);
+      render(<Probe defaultFrom="run" />);
+
+      fireEvent.click(screen.getByText('change'));
+      fireEvent.click(screen.getByText('persist'));
+      await act(async () => undefined);
+
+      expect(screen.getByTestId('usd').textContent).toBe('6');
+      expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+    });
+
+    it('has no limit when Run defaults has none', async () => {
+      withRunDefault(null);
+      render(<Probe defaultFrom="run" />);
+
+      expect(screen.getByTestId('usd').textContent).toBe('null');
+      expect(screen.getByTestId('stored').textContent).toBe('false');
+    });
   });
 });

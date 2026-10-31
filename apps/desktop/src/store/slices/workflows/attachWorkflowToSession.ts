@@ -11,9 +11,7 @@ import type {
   WorkflowRunId,
   WorkflowTriggerMode,
   WorkflowRules,
-  WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import {
   attachWorkflowToSession as attachWorkflowToSessionInDb,
   detachWorkflowFromSession as detachWorkflowFromSessionInDb,
@@ -33,6 +31,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { withHeadroom } from './withHeadroom';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { workspaceRulesFor } from './runLimit/workspaceRulesFor';
 import { rulesWithLimit, runLimitOf, type WorkflowLimitSource } from './runLimit/runLimitOf';
 
 type Options = {
@@ -47,19 +46,6 @@ type Options = {
   providerPool?: ReadonlyArray<ProviderId>;
   navigate?: boolean;
   rulesSnapshot?: WorkflowRules;
-};
-
-type RulesParams = {
-  readonly get: GetFn;
-  readonly workspaceId: WorkspaceId;
-};
-
-const workspaceRulesFor = ({ get, workspaceId }: RulesParams): WorkflowRules => {
-  const overrides = get().workspaceOverrides?.[workspaceId];
-  if (overrides === undefined) {
-    return { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: false };
-  }
-  return overrides.workflowRules ?? DEFAULT_WORKFLOW_RULES;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -86,7 +72,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       options.providerPool.length > 0
         ? options.providerPool
         : undefined;
-    const workspaceRules = workspaceRulesFor({ get, workspaceId: session.workspaceId });
+    const workspaceRules = workspaceRulesFor({ state: get(), workspaceId: session.workspaceId });
     const limit = runLimitOf({
       rules: workspaceRules,
       spendLimitUsd: options?.spendLimitUsd,
