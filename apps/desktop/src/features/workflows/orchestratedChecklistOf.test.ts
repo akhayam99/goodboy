@@ -66,6 +66,24 @@ describe('orchestratedChecklistOf', () => {
     expect(list.left).toEqual([]);
   });
 
+  it('sends a hint read with no recorded step to the trailing hints, after the stepped ones', () => {
+    const legacy: OrchestratorHint = {
+      id: 'legacy',
+      text: 'legacy',
+      createdAt: AT,
+      consumedAt: AT,
+    };
+    const list = orchestratedChecklistOf({
+      agents: [FIRST],
+      hints: [legacy, hintOf({ key: 'a', step: 2 }), hintOf({ key: 'queued' })],
+      summary: null,
+      isDeciding: false,
+      isDone: false,
+    });
+    expect(list.trailingHints.map((hint) => hint.id)).toEqual(['a', 'legacy']);
+    expect(list.readHintsBefore.size).toBe(0);
+  });
+
   it('lists the Left items while the run lives and leaves them to the result once done', () => {
     const live = orchestratedChecklistOf({
       agents: [FIRST],

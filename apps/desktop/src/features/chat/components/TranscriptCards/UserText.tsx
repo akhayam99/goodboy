@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { ICON_SIZE, Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
 
 import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
-import { AttachmentStrip } from '../../../attachments/components/AttachmentStrip';
+import { AttachmentStrip } from '../../../attachments/AttachmentStrip';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';

@@ -2,6 +2,8 @@ import { deleteGoalAttachment } from '@goodboy/db';
 import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { deleteAttachment } from '../../../features/chat/turn';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { attachmentReadKey } from './attachmentReadKey';
+import { attachmentReads } from './attachmentReads';
 import type { GetFn, SetFn } from './types';
 
 export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
@@ -19,6 +21,7 @@ export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
       await deleteAttachment(worktreeDir, target.relPath).catch(() => {});
     }
     await deleteGoalAttachment(tauriDatabase, id);
+    attachmentReads.cancel({ key: attachmentReadKey({ owner }) });
 
     if (owner.type === 'session') {
       const sid = owner.id as SessionId;

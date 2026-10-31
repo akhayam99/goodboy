@@ -27,13 +27,13 @@ type AtParams = {
 
 const at = ({ minute }: AtParams) => clock.iso({ at: `2026-10-30T15:${minute}.000Z` });
 
-export const HINT_NODE_WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-u32-hn-workspace' });
-export const HINT_NODE_SESSION_ID = brandId<SessionId>({ value: 'mock-u32-hn-session' });
-export const HINT_NODE_RUN_ID = brandId<WorkflowRunId>({ value: 'mock-u32-hn-run' });
-export const HINT_NODE_WORKING_DIR = '/mock/harborline/payments-api';
-export const HINT_NODE_READ_TEXT =
+const HINT_NODE_WORKSPACE_ID = brandId<WorkspaceId>({ value: 'mock-u32-hn-workspace' });
+const HINT_NODE_SESSION_ID = brandId<SessionId>({ value: 'mock-u32-hn-session' });
+const HINT_NODE_RUN_ID = brandId<WorkflowRunId>({ value: 'mock-u32-hn-run' });
+const HINT_NODE_WORKING_DIR = '/mock/harborline/payments-api';
+const HINT_NODE_READ_TEXT =
   'The retry storm comes from notify-relay, not payments-api.\nCheck the webhook timeout before you touch the ledger.';
-export const HINT_NODE_QUEUED_TEXT = 'Also cover the refund webhook.';
+const HINT_NODE_QUEUED_TEXT = 'Also cover the refund webhook.';
 
 const WORKFLOW_ID = brandId<WorkflowId>({ value: 'mock-u32-hn-workflow' });
 const STEP_IDS = ['scout', 'fix', 'verify'].map((key) =>
@@ -42,7 +42,7 @@ const STEP_IDS = ['scout', 'fix', 'verify'].map((key) =>
 const AGENT_IDS = ['scout', 'fix', 'verify'].map((key) =>
   brandId<AgentId>({ value: `mock-u32-hn-agent-${key}` }),
 );
-export const HINT_NODE_THIRD_AGENT_ID = AGENT_IDS[2]!;
+const HINT_NODE_THIRD_AGENT_ID = AGENT_IDS[2]!;
 const NOW = at({ minute: '12:00' });
 
 const OVERRIDES = {
@@ -98,7 +98,7 @@ const STEPS: ReadonlyArray<Step> = [
   stepOf({ index: 2, name: 'Prove the retries stop', role: 'tester' }),
 ];
 
-export const HINT_NODE_WORKFLOW: Workflow = {
+const HINT_NODE_WORKFLOW: Workflow = {
   id: WORKFLOW_ID,
   workspaceId: HINT_NODE_WORKSPACE_ID,
   name: 'Stop the checkout retry storm',
@@ -141,7 +141,7 @@ const QUEUED_HINT: OrchestratorHint = {
   createdAt: at({ minute: '11:40' }),
 };
 
-export const HINT_NODE_RUN: WorkflowRun = {
+const HINT_NODE_RUN: WorkflowRun = {
   id: HINT_NODE_RUN_ID,
   workflowId: WORKFLOW_ID,
   ordinal: 1,
@@ -186,7 +186,7 @@ const AGENTS: ReadonlyArray<Agent> = [
   agentOf({ index: 2, status: 'running', startedMinute: '10:50' }),
 ];
 
-export const HINT_NODE_SESSION: Session = {
+const HINT_NODE_SESSION: Session = {
   id: HINT_NODE_SESSION_ID,
   workspaceId: HINT_NODE_WORKSPACE_ID,
   goal: 'Checkout retry storm',
@@ -221,7 +221,7 @@ type RelPathParams = {
   readonly relPath: string;
 };
 
-export const hintImageDataUriOf = ({ relPath }: RelPathParams): string | null => {
+const hintImageDataUriOf = ({ relPath }: RelPathParams): string | null => {
   const shot = SHOTS.find(({ fileName }) => relPath.endsWith(fileName));
   if (shot === undefined) {
     return null;
@@ -233,14 +233,14 @@ type PayloadParams = {
   readonly payload: unknown;
 };
 
-export const hintImageRelPathOf = ({ payload }: PayloadParams): string | null => {
+const hintImageRelPathOf = ({ payload }: PayloadParams): string | null => {
   if (typeof payload !== 'object' || payload === null || !('relPath' in payload)) {
     return null;
   }
   return typeof payload.relPath === 'string' ? payload.relPath : null;
 };
 
-export const seedHintNode = (): Session => {
+const seedHintNode = (): Session => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: HINT_NODE_WORKSPACE_ID,
@@ -264,4 +264,20 @@ export const seedHintNode = (): Session => {
     drawer: null,
   });
   return HINT_NODE_SESSION;
+};
+
+export const HINT_NODE_SEED = {
+  workspaceId: HINT_NODE_WORKSPACE_ID,
+  sessionId: HINT_NODE_SESSION_ID,
+  runId: HINT_NODE_RUN_ID,
+  workingDir: HINT_NODE_WORKING_DIR,
+  readText: HINT_NODE_READ_TEXT,
+  queuedText: HINT_NODE_QUEUED_TEXT,
+  thirdAgentId: HINT_NODE_THIRD_AGENT_ID,
+  workflow: HINT_NODE_WORKFLOW,
+  run: HINT_NODE_RUN,
+  session: HINT_NODE_SESSION,
+  imageDataUriOf: hintImageDataUriOf,
+  imageRelPathOf: hintImageRelPathOf,
+  seed: seedHintNode,
 };

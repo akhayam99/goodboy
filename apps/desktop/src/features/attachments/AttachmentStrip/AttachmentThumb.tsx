@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { ImageOff, X } from 'lucide-react';
 import { Button, ICON_SIZE, IconButton, Skeleton, Tooltip } from '@goodboy/ui';
-import type { AttachmentThumbnail } from '../AttachmentChip';
+import type { AttachmentThumbnail } from '../components/AttachmentChip';
 
 type Props = {
   readonly fileName: string;
@@ -15,6 +15,7 @@ const FRAME =
   'group relative h-12 w-12 shrink-0 overflow-hidden rounded-md ring-1 ring-border-soft';
 
 export const AttachmentThumb = ({ fileName, thumbnail, title, onOpen, onRemove }: Props) => {
+  const isFailed = thumbnail.status === 'failed';
   const removeButton =
     onRemove == null ? null : (
       <IconButton
@@ -26,34 +27,21 @@ export const AttachmentThumb = ({ fileName, thumbnail, title, onOpen, onRemove }
       />
     );
 
-  if (thumbnail.status === 'failed') {
-    return (
-      <Tooltip content={title}>
-        <div className={FRAME}>
-          <div
-            role="img"
-            aria-label={`${fileName}, not available`}
-            className="flex h-full w-full items-center justify-center bg-subtle text-muted-foreground"
-          >
-            <ImageOff size={ICON_SIZE.control} aria-hidden />
-          </div>
-          {removeButton}
-        </div>
-      </Tooltip>
-    );
-  }
-
   return (
     <Tooltip content={title}>
       <div className={FRAME}>
         <Button
           variant="ghost"
           onClick={onOpen}
-          aria-label={`Preview ${fileName}`}
+          aria-label={isFailed ? `${fileName}, not available` : `Preview ${fileName}`}
           className="h-full w-full cursor-zoom-in rounded-none p-0"
         >
           {thumbnail.status === 'ready' ? (
             <img src={thumbnail.src} alt="" className="h-full w-full object-cover" />
+          ) : isFailed ? (
+            <span className="flex h-full w-full items-center justify-center bg-subtle text-muted-foreground">
+              <ImageOff size={ICON_SIZE.control} aria-hidden />
+            </span>
           ) : (
             <Skeleton className="h-full w-full rounded-none" />
           )}

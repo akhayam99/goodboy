@@ -69,7 +69,7 @@ describe('the attachments scenes', () => {
     await waitFor(() => expect(frames[0]?.querySelectorAll('img')).toHaveLength(5), WAIT);
   });
 
-  it('opens the viewer on the second image with the other four in the rail', async () => {
+  it('opens the viewer on the second image with all five images in the rail', async () => {
     const Scene = U32_ATTACHMENTS_SCENES['u32-attachments-viewer'];
     render(<Scene />);
 

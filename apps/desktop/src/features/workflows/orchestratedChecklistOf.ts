@@ -67,9 +67,11 @@ export const orchestratedChecklistOf = ({
     .filter((agent) => agent.parentAgentId == null)
     .sort((left, right) => left.ordinal - right.ordinal);
   const readHints = hints
-    .filter((hint) => hint.consumedAt != null && hint.consumedAtStep != null)
+    .filter((hint) => hint.consumedAt != null)
     .sort((left, right) => {
-      const stepGap = (left.consumedAtStep ?? 0) - (right.consumedAtStep ?? 0);
+      const stepGap =
+        (left.consumedAtStep ?? Number.MAX_SAFE_INTEGER) -
+        (right.consumedAtStep ?? Number.MAX_SAFE_INTEGER);
       return stepGap === 0
         ? (left.consumedAt ?? '').localeCompare(right.consumedAt ?? '')
         : stepGap;
@@ -77,7 +79,7 @@ export const orchestratedChecklistOf = ({
   const readHintsBefore = new Map<AgentId, ReadonlyArray<OrchestratorHint>>();
   const trailingHints: Array<OrchestratorHint> = [];
   for (const hint of readHints) {
-    const root = roots[(hint.consumedAtStep ?? 0) - 1];
+    const root = hint.consumedAtStep == null ? undefined : roots[hint.consumedAtStep - 1];
     if (root === undefined) {
       trailingHints.push(hint);
       continue;

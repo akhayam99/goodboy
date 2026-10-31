@@ -239,6 +239,81 @@ describe('ImageLightbox with a rail of the other images', () => {
     expect(shownName()).toBe('retry-trace.png');
   });
 
+  it('scrolls the active rail item into view as the keys and clicks move it', async () => {
+    const user = userEvent.setup();
+    const scrolled: Array<string | null> = [];
+    const scrollIntoView = vi.fn(function (this: HTMLElement, options?: ScrollIntoViewOptions) {
+      scrolled.push(this.querySelector('button')?.getAttribute('aria-label') ?? null);
+      expect(options).toEqual({ block: 'nearest' });
+    });
+    Element.prototype.scrollIntoView = scrollIntoView;
+    mountSet({ startId: 'a' });
+    scrolled.length = 0;
+
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    await user.click(
+      screen.getByRole('button', { name: 'checkout-error.png, image 1 of 3', hidden: true }),
+    );
+
+    expect(scrolled).toEqual([
+      'ledger-diff.png, image 2 of 3',
+      'retry-trace.png, image 3 of 3',
+      'checkout-error.png, image 1 of 3',
+    ]);
+  });
+
+  it('closes instead of showing the first image when the shown image leaves the list', () => {
+    const onClose = vi.fn();
+    const view = mountSet({ startId: 'b', onClose });
+
+    view.rerender(
+      <ImageLightbox
+        items={[FIRST, THIRD]}
+        startId="b"
+        railLabel="Images in this message"
+        onClose={onClose}
+      />,
+    );
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { hidden: true })).toBeNull();
+  });
+
+  it('frees the page scroll when the list empties and never locks it for an empty list', () => {
+    const onClose = vi.fn();
+    const view = mountSet({ onClose });
+    expect(document.body.style.overflow).toBe('hidden');
+
+    view.rerender(<ImageLightbox items={[]} startId="a" railLabel="Images" onClose={onClose} />);
+
+    expect(document.body.style.overflow).toBe('');
+    expect(onClose).toHaveBeenCalled();
+    view.unmount();
+    render(<ImageLightbox items={[]} railLabel="Images" onClose={vi.fn()} />);
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('reports the image shown as the keys and the rail move it', async () => {
+    const user = userEvent.setup();
+    const onActiveChange = vi.fn();
+    render(
+      <ImageLightbox
+        items={ITEMS}
+        startId="a"
+        railLabel="Images"
+        onActiveChange={onActiveChange}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await user.keyboard('{ArrowDown}');
+    await user.click(
+      screen.getByRole('button', { name: 'retry-trace.png, image 3 of 3', hidden: true }),
+    );
+
+    expect(onActiveChange.mock.calls.map(([id]) => id)).toEqual(['b', 'c']);
+  });
+
   it('shows no rail and ignores the arrows for one image', async () => {
     const user = userEvent.setup();
     mountSet({ items: [FIRST] });

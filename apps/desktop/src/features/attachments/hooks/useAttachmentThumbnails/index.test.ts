@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { storySpies, stubStoryInvoke } from '../../../../store/storyHarness';
 import { useAttachmentThumbnails, type ThumbnailSource } from '.';
 
 type Pending = {
@@ -9,34 +14,35 @@ type Pending = {
   readonly resolve: (src: string) => void;
 };
 
-const { pending, readAttachment } = vi.hoisted(() => {
-  const pendingReads: Array<{ relPath: string; resolve: (src: string) => void }> = [];
-  return {
-    pending: pendingReads,
-    readAttachment: vi.fn(
-      (_dir: string, relPath: string) =>
-        new Promise<string>((resolve) => {
-          pendingReads.push({ relPath, resolve });
-        }),
-    ),
-  };
-});
+type ReadArgs = {
+  readonly relPath: string;
+};
 
-vi.mock('../../../chat/turn', () => ({ readAttachment }));
+const pending: Array<Pending> = [];
+
+const readAttachment = vi.fn(
+  ({ relPath }: ReadArgs) =>
+    new Promise<string>((resolve) => {
+      pending.push({ relPath, resolve });
+    }),
+);
 
 beforeEach(() => {
   pending.length = 0;
   readAttachment.mockClear();
+  storySpies.tauriInvoke.mockClear();
+  stubStoryInvoke({ attachment_read: readAttachment });
 });
 
 afterEach(cleanup);
 
 type PathParams = {
   readonly relPath: string;
+  readonly id?: string;
 };
 
-const source = ({ relPath }: PathParams): ThumbnailSource => ({
-  id: 'img-1',
+const source = ({ relPath, id = 'img-1' }: PathParams): ThumbnailSource => ({
+  id,
   relPath,
   workingDir: '/worktrees/payments-api',
 });
@@ -85,5 +91,49 @@ describe('useAttachmentThumbnails', () => {
     rerender();
 
     expect(readAttachment).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the entry of an image that left the list, data included', async () => {
+    const only = source({ relPath: 'a.png', id: 'a' });
+    const both = [only, source({ relPath: 'b.png', id: 'b' })];
+    const { result, rerender } = renderHook(({ sources }) => useAttachmentThumbnails({ sources }), {
+      initialProps: { sources: both },
+    });
+    pendingFor({ relPath: 'a.png' }).resolve('data:a');
+    pendingFor({ relPath: 'b.png' }).resolve('data:b');
+    await waitFor(() => expect(Object.keys(result.current).sort()).toEqual(['a', 'b']));
+
+    rerender({ sources: [only] });
+
+    await waitFor(() => expect(Object.keys(result.current)).toEqual(['a']));
+    expect(result.current['b']).toBeUndefined();
+  });
+
+  it('drops a read that finishes after its image left the list', async () => {
+    const only = source({ relPath: 'a.png', id: 'a' });
+    const both = [only, source({ relPath: 'b.png', id: 'b' })];
+    const { result, rerender } = renderHook(({ sources }) => useAttachmentThumbnails({ sources }), {
+      initialProps: { sources: both },
+    });
+    rerender({ sources: [only] });
+
+    await act(async () => {
+      pendingFor({ relPath: 'b.png' }).resolve('data:late');
+      await Promise.resolve();
+    });
+
+    expect(result.current['b']).toBeUndefined();
+    expect(Object.keys(result.current)).toEqual(['a']);
+  });
+
+  it('reads an image again when it comes back after leaving the list', async () => {
+    const one = [source({ relPath: 'a.png', id: 'a' })];
+    const { rerender } = renderHook(({ sources }) => useAttachmentThumbnails({ sources }), {
+      initialProps: { sources: one },
+    });
+    rerender({ sources: [] });
+    rerender({ sources: one });
+
+    expect(readAttachment).toHaveBeenCalledTimes(2);
   });
 });

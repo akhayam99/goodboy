@@ -47,6 +47,16 @@ export const useAttachmentThumbnails = ({
       }
       setThumbnails((current) => ({ ...current, [id]: thumbnail }));
     };
+    const ids = new Set(sources.map((source) => source.id));
+    for (const id of [...requested.keys()]) {
+      if (!ids.has(id)) {
+        requested.delete(id);
+      }
+    }
+    setThumbnails((current) => {
+      const kept = Object.entries(current).filter(([id]) => ids.has(id));
+      return kept.length === Object.keys(current).length ? current : Object.fromEntries(kept);
+    });
     for (const source of sources) {
       const { id, relPath, workingDir } = source;
       const token = tokenOf({ relPath, workingDir });

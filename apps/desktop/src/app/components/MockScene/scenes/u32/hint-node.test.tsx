@@ -18,7 +18,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
-import { HINT_NODE_THIRD_AGENT_ID, hintImageDataUriOf, hintImageRelPathOf } from './hintNodeSeed';
+import { HINT_NODE_SEED } from './hintNodeSeed';
 import { U32_HINT_NODE_SCENES } from './hint-node';
 
 const WAIT = { timeout: 15_000 };
@@ -41,8 +41,8 @@ beforeEach(async () => {
       throw new Error('The scene command must be a string.');
     }
     if (command === 'attachment_read') {
-      const relPath = hintImageRelPathOf({ payload: args });
-      return Promise.resolve(relPath === null ? null : hintImageDataUriOf({ relPath }));
+      const relPath = HINT_NODE_SEED.imageRelPathOf({ payload: args });
+      return Promise.resolve(relPath === null ? null : HINT_NODE_SEED.imageDataUriOf({ relPath }));
     }
     return sceneInvoke({ command, args });
   });
@@ -101,7 +101,7 @@ describe('the hint node scene', () => {
       row.getByRole('img', { name: 'Hint', hidden: true }).getAttribute('data-node-state'),
     ).toBe('marker');
     await user.click(link);
-    const stepRow = screen.getByTestId(`run-tree-row-${HINT_NODE_THIRD_AGENT_ID}`);
+    const stepRow = screen.getByTestId(`run-tree-row-${HINT_NODE_SEED.thirdAgentId}`);
     expect(stepRow.contains(document.activeElement)).toBe(true);
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(stepRow);
   });
@@ -112,7 +112,7 @@ describe('the hint node scene', () => {
     const link = await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
     link.focus();
     await user.keyboard('{Enter}');
-    const stepRow = screen.getByTestId(`run-tree-row-${HINT_NODE_THIRD_AGENT_ID}`);
+    const stepRow = screen.getByTestId(`run-tree-row-${HINT_NODE_SEED.thirdAgentId}`);
     expect(stepRow.contains(document.activeElement)).toBe(true);
     link.focus();
     await user.keyboard(' ');
@@ -125,26 +125,26 @@ describe('the hint node scene', () => {
     render(<Scene />);
     await screen.findByRole('button', { name: 'Read at step 3' }, WAIT);
     const row = readRow();
-    const toggle = row.getByRole('button', { name: 'Show more' });
+    const toggle = row.getByRole('button', { name: /^Show more of hint: / });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(row.queryByText(/Check the webhook timeout/)).toBeNull();
     toggle.focus();
     await user.keyboard('{Enter}');
-    const open = row.getByRole('button', { name: 'Show less' });
+    const open = row.getByRole('button', { name: /^Show less of hint: / });
     expect(open.getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement).toBe(open);
     row.getByText(/Check the webhook timeout/);
     await user.keyboard(' ');
-    expect(row.getByRole('button', { name: 'Show more' }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
+    expect(
+      row.getByRole('button', { name: /^Show more of hint: / }).getAttribute('aria-expanded'),
+    ).toBe('false');
     expect(row.queryByText(/Check the webhook timeout/)).toBeNull();
   });
 
   it('keeps a short hint on one line with no expand control', async () => {
     render(<Scene />);
     await screen.findByText('Waits for the next decision', undefined, WAIT);
-    expect(queuedRow().queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(queuedRow().queryByRole('button', { name: /^Show more/ })).toBeNull();
   });
 
   it('shows the hint images as thumbnails and opens the viewer on the clicked one', async () => {

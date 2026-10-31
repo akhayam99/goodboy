@@ -3,10 +3,7 @@ import { Paperclip } from 'lucide-react';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
 import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import {
-  AttachmentStrip,
-  type AttachmentStripItem,
-} from '../../../../attachments/components/AttachmentStrip';
+import { AttachmentStrip, type AttachmentStripItem } from '../../../../attachments/AttachmentStrip';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
 
 export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {

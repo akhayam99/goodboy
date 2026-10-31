@@ -8,6 +8,10 @@ import type { ImageLightboxItem } from './types';
 
 const SINGLE_ID = 'single';
 
+type IdParams = {
+  readonly id: string;
+};
+
 type Props = {
   readonly onClose: () => void;
   readonly src?: string;
@@ -16,6 +20,7 @@ type Props = {
   readonly items?: ReadonlyArray<ImageLightboxItem>;
   readonly startId?: string;
   readonly railLabel?: string;
+  readonly onActiveChange?: (id: string) => void;
 };
 
 export const ImageLightbox = ({
@@ -26,23 +31,39 @@ export const ImageLightbox = ({
   items: givenItems,
   startId,
   railLabel = 'Images',
+  onActiveChange,
 }: Props) => {
   const items: ReadonlyArray<ImageLightboxItem> =
     givenItems ??
     (src === undefined ? [] : [{ id: SINGLE_ID, alt, source: { status: 'ready', src }, media }]);
-  const [activeId, setActiveId] = useState(startId ?? items[0]?.id ?? SINGLE_ID);
+  const [activeId, setActiveIdState] = useState(startId ?? items[0]?.id ?? SINGLE_ID);
+  const setActiveId = ({ id }: IdParams) => {
+    setActiveIdState(id);
+    onActiveChange?.(id);
+  };
   const foundIndex = items.findIndex((item) => item.id === activeId);
   const activeIndex = foundIndex === -1 ? 0 : foundIndex;
-  const active = items[activeIndex];
+  const active = foundIndex === -1 ? undefined : items[foundIndex];
   const hasRail = items.length > 1;
 
+  const isShown = active != null;
+
   useEffect(() => {
+    if (!isShown) {
+      return;
+    }
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, []);
+  }, [isShown]);
+
+  useEffect(() => {
+    if (!isShown) {
+      onClose();
+    }
+  }, [isShown, onClose]);
 
   if (active == null) {
     return null;
@@ -72,7 +93,7 @@ export const ImageLightbox = ({
         }
         event.preventDefault();
         event.stopPropagation();
-        setActiveId(target);
+        setActiveId({ id: target });
       }}
       panel={
         hasRail ? (
@@ -81,7 +102,7 @@ export const ImageLightbox = ({
               items={items}
               activeId={active.id}
               label={railLabel}
-              onSelect={setActiveId}
+              onSelect={(id) => setActiveId({ id })}
             />
           </ScrollFade>
         ) : undefined

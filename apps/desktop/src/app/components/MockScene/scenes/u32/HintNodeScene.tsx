@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { HintNodeBody } from './HintNodeBody';
-import { hintImageDataUriOf, hintImageRelPathOf, seedHintNode } from './hintNodeSeed';
+import { HINT_NODE_SEED } from './hintNodeSeed';
 
 const FRAME_WIDTH = 680;
 
@@ -13,10 +13,10 @@ export const HintNodeScene = () => {
       if (cmd !== 'attachment_read') {
         return undefined;
       }
-      const relPath = hintImageRelPathOf({ payload });
-      return relPath === null ? undefined : hintImageDataUriOf({ relPath });
+      const relPath = HINT_NODE_SEED.imageRelPathOf({ payload });
+      return relPath === null ? undefined : HINT_NODE_SEED.imageDataUriOf({ relPath });
     });
-    seedHintNode();
+    HINT_NODE_SEED.seed();
     setIsReady(true);
   }, []);
 

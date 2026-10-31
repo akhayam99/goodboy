@@ -3,11 +3,11 @@ import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-10-14T10:20:00.000Z' });
 
-export const ATTACHMENTS_WORKING_DIR = '/mock/harborline/payments-api';
+const ATTACHMENTS_WORKING_DIR = '/mock/harborline/payments-api';
 
-export const ATTACHMENTS_AT: IsoDateTime = clock.iso({ at: '2026-10-14T10:18:00.000Z' });
+const ATTACHMENTS_AT: IsoDateTime = clock.iso({ at: '2026-10-14T10:18:00.000Z' });
 
-export const ATTACHMENTS_TEXT =
+const ATTACHMENTS_TEXT =
   'Checkout fails after the second retry on payments-api. These are the screens and the log from the Northwind test account.';
 
 type ShotSpec = {
@@ -30,7 +30,7 @@ type IndexParams = {
 
 const idOf = ({ index }: IndexParams): string => `mock-attachment-${index + 1}`;
 
-export const ATTACHMENTS_MESSAGE: ReadonlyArray<MessageAttachment> = [
+const ATTACHMENTS_MESSAGE: ReadonlyArray<MessageAttachment> = [
   ...SHOTS.map(({ fileName }, index): MessageAttachment => ({
     id: idOf({ index }),
     kind: 'image',
@@ -64,7 +64,7 @@ type RelPathParams = {
   readonly relPath: string;
 };
 
-export const attachmentDataUriOf = ({ relPath }: RelPathParams): string | null => {
+const attachmentDataUriOf = ({ relPath }: RelPathParams): string | null => {
   const shot = SHOTS.find(({ fileName }) => relPath.endsWith(fileName));
   if (shot === undefined) {
     return null;
@@ -76,9 +76,18 @@ type PayloadParams = {
   readonly payload: unknown;
 };
 
-export const relPathOfPayload = ({ payload }: PayloadParams): string | null => {
+const relPathOfPayload = ({ payload }: PayloadParams): string | null => {
   if (typeof payload !== 'object' || payload === null || !('relPath' in payload)) {
     return null;
   }
   return typeof payload.relPath === 'string' ? payload.relPath : null;
+};
+
+export const ATTACHMENTS_SEED = {
+  workingDir: ATTACHMENTS_WORKING_DIR,
+  at: ATTACHMENTS_AT,
+  text: ATTACHMENTS_TEXT,
+  message: ATTACHMENTS_MESSAGE,
+  dataUriOf: attachmentDataUriOf,
+  relPathOfPayload,
 };
