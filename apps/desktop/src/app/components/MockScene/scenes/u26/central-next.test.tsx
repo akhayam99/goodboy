@@ -63,14 +63,6 @@ describe('central next scenes', () => {
         (group) => group.dataset.nextGroup,
       ),
     ).toEqual(['decide', 'fix', 'update']);
-    expect(titlesOf()).toEqual(['Cap per day or per payout?']);
-    for (const name of ['Fix', 'Update']) {
-      fireEvent.click(
-        within(within(stack).getByRole('region', { name })).getByRole('button', {
-          expanded: false,
-        }),
-      );
-    }
     expect(titlesOf()).toEqual([
       'Cap per day or per payout?',
       'Fix the failing static-analysis check',

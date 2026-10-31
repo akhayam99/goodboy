@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Disclosure } from '@goodboy/ui';
+import { Button, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { RebaseStopRowFor } from '../../../history/useRebaseStopRows';
 import { NextStepRebasePicker } from '../../../suggestions/NextStepRebasePicker';
 import { ActionCard } from './ActionCard';
 import type { ActionCardModel } from './actionCardsOf';
+import { ROW_COLUMNS } from '../rowColumns';
 import { nextBulkOf } from './nextBulkOf';
 import type { NextGroupModel } from './nextGroupsOf';
 import type { ActionCardActions } from './useActionCardActions';
@@ -16,11 +17,9 @@ type CardParams = {
 
 type Props = {
   readonly group: NextGroupModel;
-  readonly isOpen: boolean;
+  readonly hasLabel: boolean;
   readonly isLead: boolean;
   readonly isNarrow: boolean;
-  readonly hint: string;
-  readonly onToggle: () => void;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor?: ActionCardActions['openFor'];
   readonly chipFor?: (params: CardParams) => ReactNode;
@@ -30,11 +29,9 @@ type Props = {
 
 export const NextGroup = ({
   group,
-  isOpen,
+  hasLabel,
   isLead,
   isNarrow,
-  hint,
-  onToggle,
   actionsFor,
   openFor,
   chipFor,
@@ -108,34 +105,37 @@ export const NextGroup = ({
       data-next-group={group.id}
       className="flex min-w-0 flex-col gap-1"
     >
-      <Disclosure
-        isOpen={isOpen}
-        onToggle={onToggle}
-        actions={bulkButton}
-        label={
-          <span className="flex min-w-0 flex-1 items-baseline gap-2">
-            <span className="text-row text-foreground">{group.label}</span>
-            <span className="text-meta text-faint-foreground">{group.rows.length}</span>
-            {isOpen ? null : (
-              <span className="min-w-0 truncate text-meta text-muted-foreground">{hint}</span>
-            )}
-          </span>
-        }
-      >
-        <div className="flex min-w-0 flex-col gap-1">
-          {shown.map(({ card, actions }, index) => (
-            <ActionCard
-              key={card.id}
-              card={card}
-              actions={actions}
-              isFirst={isLead && index === 0}
-              hasOverflowColumn={hasOverflowColumn}
-              chip={chipFor?.({ card })}
-              onOpen={openFor?.({ card }) ?? null}
-            />
-          ))}
+      {hasLabel || bulkButton !== undefined ? (
+        <div
+          data-next-group-head=""
+          className={cn(
+            'flex min-h-7 min-w-0 items-center justify-between',
+            ROW_COLUMNS.gap,
+            ROW_COLUMNS.inset,
+          )}
+        >
+          {hasLabel ? (
+            <span className="flex min-w-0 items-baseline gap-2 text-meta text-muted-foreground">
+              <span>{group.label}</span>
+              <span className="tabular-nums text-faint-foreground">{group.rows.length}</span>
+            </span>
+          ) : (
+            <span />
+          )}
+          {bulkButton}
         </div>
-      </Disclosure>
+      ) : null}
+      {shown.map(({ card, actions }, index) => (
+        <ActionCard
+          key={card.id}
+          card={card}
+          actions={actions}
+          isFirst={isLead && index === 0}
+          hasOverflowColumn={hasOverflowColumn}
+          chip={chipFor?.({ card })}
+          onOpen={openFor?.({ card }) ?? null}
+        />
+      ))}
       {bulk?.kind === 'rebase' && isPickerOpen ? (
         <NextStepRebasePicker
           sessionId={bulk.sessionId}

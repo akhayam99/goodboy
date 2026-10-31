@@ -54,18 +54,6 @@ type CardViewParams = {
   readonly card: OverviewCardModel;
 };
 
-type NameParams = CardParams & {
-  readonly branchLabelOf: BranchLabelOf;
-};
-
-const nameOf = ({ branchLabelOf, card }: NameParams): string | null => {
-  const { source } = card;
-  if (source.kind === 'auto' && source.target.plan !== null) {
-    return source.target.plan.name;
-  }
-  return branchLabelOf({ mountId: card.mountId })?.branch ?? null;
-};
-
 const chipOf = ({ branchLabelOf, mountId }: ChipParams) => {
   const label = branchLabelOf({ mountId });
   return label === null ? null : <BranchChip label={label} />;
@@ -139,7 +127,6 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
             actionsFor={actionsFor}
             openFor={openFor}
             chipFor={({ card: row }) => chipOf({ branchLabelOf, mountId: row.mountId })}
-            nameFor={({ card: row }) => nameOf({ branchLabelOf, card: row })}
             branchFor={branchFor}
             stopRowFor={stopRowFor}
           />

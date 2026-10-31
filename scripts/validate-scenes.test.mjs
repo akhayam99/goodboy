@@ -25,6 +25,7 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
+import { rowAlignFailures } from './validateScenesRowAlign.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
@@ -1206,6 +1207,59 @@ describe('listGridFitFailures', () => {
         (failure) => failure.check,
       ),
       ['no list grid to measure'],
+    );
+  });
+});
+
+describe('rowAlignFailures', () => {
+  const aligned = {
+    needs: { count: 3, left: 48, gaps: [4] },
+    waiting: { count: 2, left: 48.4, gaps: [4] },
+  };
+  const run = (measured) => rowAlignFailures({ scene: 'fixture', width: 1024, measured });
+
+  it('passes icons on the same left edge and the same row gap', () => {
+    assert.deepEqual(run(aligned), []);
+  });
+
+  it('fails a Needs you icon indented past the Waiting for you icon', () => {
+    const failures = run({ ...aligned, needs: { ...aligned.needs, left: 96 } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the icon of a Needs you row does not line up with the icon of a Waiting for you row'],
+    );
+    assert.equal(failures[0]?.needsLeft, 96);
+    assert.equal(failures[0]?.waitingLeft, 48.4);
+  });
+
+  it('fails a row gap that differs between the two sections', () => {
+    const failures = run({ ...aligned, needs: { ...aligned.needs, gaps: [8] } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the row gap of Needs you differs from the row gap of Waiting for you'],
+    );
+  });
+
+  it('allows a sub-pixel difference within the tolerance', () => {
+    assert.deepEqual(
+      run({ ...aligned, waiting: { ...aligned.waiting, left: 48.9, gaps: [4.6] } }),
+      [],
+    );
+  });
+
+  it('fails a scene with a section that has no row', () => {
+    assert.deepEqual(
+      run({ ...aligned, waiting: { count: 0, left: null, gaps: [] } }).map(
+        (failure) => failure.check,
+      ),
+      ['no Needs you row and Waiting for you row to compare'],
+    );
+  });
+
+  it('fails a section with no two rows to measure a gap between', () => {
+    assert.deepEqual(
+      run({ ...aligned, needs: { ...aligned.needs, gaps: [] } }).map((failure) => failure.check),
+      ['a section has no two rows to measure a gap between'],
     );
   });
 });
