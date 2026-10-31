@@ -12,6 +12,32 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.8
+
+Agents grouped by state, answers under each question, a smaller blocking question, and a quieter header and sidebar.
+
+### Improved
+
+#### Agents grouped by state
+<!-- gb area=agents image=rail-groups -->
+
+In an Auto run the Agents rail shows Working, Waiting and Done with a count each and one summary line. Done stays folded while others work. Each row shows its full title, then the role and time.
+
+#### Questions show their answer
+<!-- gb area=sessions image=questions-answer -->
+
+An answered question shows the answer on a second line under it, marked You or Agent, instead of a cut off column. In Artifacts, each state is a word with a small dot.
+
+#### A smaller blocking question
+<!-- gb area=agents image=question-card -->
+
+A question that blocks an agent is one quiet card: Blocking sits beside the question, the choices are plain numbered rows, and Let an agent decide shares a line with Answer.
+
+#### Quieter header and sidebar
+<!-- gb area=sessions -->
+
+The limit and the other settings under the session title show their border only on hover or focus. In the sidebar, group labels are small and faint, project names stand out and branch names are muted.
+
 ## Goodboy v0.29.7
 
 Five clear text levels across the app, answers with real code blocks and tables, and pages where labels, names and the live step stand apart.
