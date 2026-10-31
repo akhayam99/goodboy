@@ -8,7 +8,7 @@ import { chatReadingSceneOf } from './chatReadingSeed';
 import { SENT_EVENTS, SENT_TURN } from './chatAnchoringSeed';
 
 const FRAME_WIDTH = 1100;
-const FRAME_HEIGHT = 1000;
+const FRAME_HEIGHT = 880;
 const SENT_FRAME_HEIGHT = 560;
 
 type Props = {

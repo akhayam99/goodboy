@@ -19,19 +19,25 @@ Five clear text levels across the app, answers with real code blocks and tables,
 ### Improved
 
 #### Five text levels
-<!-- gb area=sessions image=text-levels -->
+<!-- gb area=sessions image=type-levels -->
 
 Titles read at 18 on 28, headings, prose, rows and meta each have their own size, and figures line up only where they are numbers, such as costs, times and counts.
 
 #### Answers with code blocks and tables
-<!-- gb area=agents image=markdown-blocks -->
+<!-- gb area=agents image=code-blocks -->
 
 A code block has a header with its language, Wrap and Copy, and is never cut by Show more. Tables have quiet headers, one line between rows and numbers aligned right.
 
 #### Overview and runs read in groups
-<!-- gb area=sessions image=overview -->
+<!-- gb area=sessions image=overview-groups -->
 
 Group labels stand above their rows with room between groups, a row's name leads it, the Runs page opens with one line, and the step that runs now is the strongest line on the run page.
+
+### Fixed
+
+- Orchestrated and Preset start from the Run defaults limit; Auto and a single agent start from the Auto limit. A typed amount stays for a retry. <!-- gb area=sessions -->
+- A long answer never stops on a heading with nothing under it; it stops after the last whole paragraph or list. <!-- gb area=agents -->
+- The Runs list fits its card at any width: origin and model hide first when the list is narrow. <!-- gb area=sessions -->
 
 ## Goodboy v0.29.6
 
@@ -40,12 +46,12 @@ Answers keep their headings apart, Show more lines up with the text, Stop appear
 ### Improved
 
 #### Answers read in clear sections
-<!-- gb area=agents image=show-more -->
+<!-- gb area=agents image=answer-sections -->
 
 A heading inside an answer sits 24px under the text before it and close to the text it opens. A long answer stops at the end of its last whole block, and Show more lines up with the text.
 
 #### The picked choice stands out
-<!-- gb area=agents image=next-step -->
+<!-- gb area=agents image=next-step-choice -->
 
 In Auto's Next step card the picked choice is filled and outlined like any selected row, and Recommended is quiet text beside the advised one.
 
@@ -60,17 +66,17 @@ Agent chats read in a calm column with room between turns, a sent message stays 
 ### Improved
 
 #### Agent chats read in one calm column
-<!-- gb area=agents image=chat-reading -->
+<!-- gb area=agents image=reading-column -->
 
 The chat, its header and the message box sit in one 720px column. Messages read larger with more room between lines, turns and blocks stand apart, and a long answer shows 12 lines before Show more. Copy appears when you point at a message or tab to it.
 
 #### Your message stays where you can read it
-<!-- gb area=agents image=chat-anchoring -->
+<!-- gb area=agents image=sent-anchor -->
 
 When you send, your message moves near the top and the reply grows below it. The view no longer jumps while you read, Jump to latest brings you back, and the last line never sits against the message box.
 
 #### The Next step card is short and quiet
-<!-- gb area=agents image=next-step -->
+<!-- gb area=agents image=next-step-card -->
 
 Auto's Next step is one neutral card with a status dot. The choices sit in one row with Recommended as a quiet tag, a hint opens only when you ask for it, and one button starts the step.
 

@@ -51,6 +51,18 @@ describe('cutAtBlockOf', () => {
     expect(cutAtBlockOf({ box, lines: 12 })).toEqual({ kind: 'block', px: 260 });
   });
 
+  it('never ends the cut on a heading with no text under it', () => {
+    const box = boxWith({
+      blocks: [
+        { tag: 'p', top: 0, bottom: 72 },
+        { tag: 'h2', top: 96, bottom: 120 },
+        { tag: 'p', top: 128, bottom: 320 },
+      ],
+    });
+
+    expect(cutAtBlockOf({ box, lines: 12 })).toEqual({ kind: 'block', px: 72 });
+  });
+
   it('falls back to a line cut when the first block alone passes the budget', () => {
     const box = boxWith({ blocks: [{ tag: 'p', top: 0, bottom: 600 }] });
 
