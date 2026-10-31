@@ -14,6 +14,8 @@ type Props = {
   readonly guidance?: string;
 };
 
+const RUN_DEFAULT_USD = 8;
+
 export const StartFormScene = ({ draft, openLabels, guidance }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -23,24 +25,26 @@ export const StartFormScene = ({ draft, openLabels, guidance }: Props) => {
       workspaceValues: { [WORKSPACE_ID]: { 'auto.treeLimitUsd': '5' } },
       loadWorkspaceValue: async () => null,
     });
-    if (guidance !== undefined) {
-      useAppStore.setState((state) => {
-        const current =
-          state.workspaceOverrides[WORKSPACE_ID] ??
-          state.workspaces.find((workspace) => workspace.id === WORKSPACE_ID)?.overrides;
-        return current === undefined
-          ? {}
-          : {
-              workspaceOverrides: {
-                ...state.workspaceOverrides,
-                [WORKSPACE_ID]: {
-                  ...current,
-                  workflowRules: { ...DEFAULT_WORKFLOW_RULES, standingGuidance: guidance },
+    useAppStore.setState((state) => {
+      const current =
+        state.workspaceOverrides[WORKSPACE_ID] ??
+        state.workspaces.find((workspace) => workspace.id === WORKSPACE_ID)?.overrides;
+      return current === undefined
+        ? {}
+        : {
+            workspaceOverrides: {
+              ...state.workspaceOverrides,
+              [WORKSPACE_ID]: {
+                ...current,
+                workflowRules: {
+                  ...DEFAULT_WORKFLOW_RULES,
+                  spendLimitUsd: RUN_DEFAULT_USD,
+                  ...(guidance !== undefined && { standingGuidance: guidance }),
                 },
               },
-            };
-      });
-    }
+            },
+          };
+    });
     setIsReady(true);
   }, [draft, guidance]);
 

@@ -87,7 +87,7 @@ export const NotificationRow = ({
     <Tooltip content={formatDateTime({ at: latest.ts, hasYear: true })}>
       <time
         dateTime={latest.ts}
-        className="pointer-events-none relative text-right text-meta text-faint-foreground"
+        className="pointer-events-none relative text-right text-meta tabular-nums text-faint-foreground"
       >
         {formatAge({ from: latest.ts, now })}
       </time>

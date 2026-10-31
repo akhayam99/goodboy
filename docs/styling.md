@@ -86,9 +86,11 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
-Type takes a role (`text-row`, `text-body`, `text-meta`,
-`text-chip` and the rest), never a size, a weight, a leading and a tracking
-written one by one. Spacing takes whole steps of the 4px grid, never a half
+Type takes a role, never a size, a weight, a leading and a tracking written
+one by one. A page reads in five levels: `text-title` (18/28), `text-heading`
+(14/20), `text-prose` (15/24, the one reading size), `text-row` or `text-ui`
+(13/20) and `text-meta` (12/16). A number that lines up (time, cost, count)
+adds `tabular-nums`; `text-meta` and `text-chip` do not force it. Spacing takes whole steps of the 4px grid, never a half
 step. The roles and the ratchets that count the raw classes and the half steps
 are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 

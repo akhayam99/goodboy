@@ -12,6 +12,7 @@ It reads top to bottom:
 
 - The goal.
 - Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved.
+- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
 - One card per job, in the order of who acts: **Needs you** (you must), **Running** (agents are), **Next** (you may), **Branches** (where each branch stands) and **Done** (finished).
 
 An empty card is not drawn. An archived session keeps only **Done**.
@@ -25,7 +26,7 @@ An empty card is not drawn. An archived session keeps only **Done**.
 3. **What waits for you.** **Needs you** comes first and each row says why in words.
 4. **What is at work.** **Running** names each agent or run with the step it is on, such as "Step 3 of 6", and the time it has taken or the time left.
 5. **Where each branch stands.** **Branches** shows the six stages of every branch and the one step it stands at.
-6. **What finished.** **Done** counts the runs and agents that finished, lists the last three with their outcome and an unread dot, and opens the full log.
+6. **What finished.** **Done** counts the runs and agents that finished, lists the last three with their outcome and an unread dot, and opens the full log. Its line names merged and closed branches, and points to the full log only while no row shows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
@@ -252,7 +253,7 @@ See and undo what agents changed in a session without a branch.
 
 This part is for contributors and agents who change the feature.
 
-- Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**.
+- Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**. `OverviewCard`, `NewSinceCard`, `LiveSection` and the Branches list draw their label with `SectionLabel`, level 2, and `CentralColumn` spaces the cards with `PANE_RHYTHM.groups`.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
 - Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Waiting for you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `LIVE_COLUMNS`.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.

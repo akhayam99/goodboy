@@ -12,12 +12,12 @@ import {
 import { parseSpendLimit } from '../budget/parseSpendLimit';
 import { AutoLimitChoices } from './AutoLimitChoices';
 import { AUTO_LIMIT_COPY, type AutoLimitKind } from './autoLimitCopy';
-import type { AutoTreeLimitModel } from './useAutoTreeLimit';
+import type { AutoTreeLimitView } from './useAutoTreeLimit';
 
 type Props = {
   readonly limit: Pick<
-    AutoTreeLimitModel,
-    'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'change'
+    AutoTreeLimitView,
+    'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'defaultFrom' | 'change'
   > & { readonly tiers?: string };
   readonly kind: AutoLimitKind;
   readonly isDisabled: boolean;
@@ -34,7 +34,7 @@ const POPOVER_HEIGHT_PX = 320;
 const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
 
 export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
-  const { usd, isFromSession, isDefault, defaultUsd, change, tiers = '' } = limit;
+  const { usd, isFromSession, isDefault, defaultUsd, defaultFrom, change, tiers = '' } = limit;
   const dropdown = useDropdown({
     disabled: isDisabled,
     width: POPOVER_WIDTH_CLASS.standard,
@@ -84,7 +84,9 @@ export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
       }
     >
       <p className="text-meta text-foreground">{title}</p>
-      <p className="text-meta text-muted-foreground">{AUTO_LIMIT_COPY.helpOf({ kind })}</p>
+      <p className="text-meta text-muted-foreground">
+        {AUTO_LIMIT_COPY.helpOf({ kind, defaultFrom })}
+      </p>
       <AutoLimitChoices
         usd={usd}
         defaultUsd={defaultUsd}

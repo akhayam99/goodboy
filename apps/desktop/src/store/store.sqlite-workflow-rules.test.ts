@@ -34,6 +34,7 @@ import { NO_PLAN_STATE_INPUTS } from '../features/plans/planStateInputs';
 import { deriveNextSteps } from '../features/suggestions/deriveNextSteps';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { WorkflowGateError } from './slices/workflows/workflowActivationGate';
+import { runDefaultLimitOf } from './slices/workflows/runLimit/runDefaultLimitOf';
 import {
   buildStoryWorkspace,
   connectedAnthropicState,
@@ -449,6 +450,34 @@ describe('store on sqlite: the limit a run starts with', () => {
     expect(live?.spendLimitUsd).toBe(25);
     expect(stored?.spendLimitUsd).toBe(25);
     expect(stored?.rulesSnapshot).toMatchObject({ spendLimitUsd: 25, limitSource: 'default' });
+  });
+
+  it('shows the start form the same number the run takes from the Run defaults', async () => {
+    const { live, stored } = await attachWithLimit({});
+
+    const shown = runDefaultLimitOf({ state: useAppStore.getState(), workspaceId: WORKSPACE_ID });
+    expect(shown).toBe(25);
+    expect(live?.spendLimitUsd).toBe(shown);
+    expect(stored?.spendLimitUsd).toBe(shown);
+  });
+
+  it('reads no Run defaults limit for a workspace without rules or with an unusable one', () => {
+    useAppStore.setState({ workspaceOverrides: {} });
+    expect(
+      runDefaultLimitOf({ state: useAppStore.getState(), workspaceId: WORKSPACE_ID }),
+    ).toBeNull();
+
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE_ID]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: 0 },
+        },
+      },
+    });
+    expect(
+      runDefaultLimitOf({ state: useAppStore.getState(), workspaceId: WORKSPACE_ID }),
+    ).toBeNull();
   });
 });
 

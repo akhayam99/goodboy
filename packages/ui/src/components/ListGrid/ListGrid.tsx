@@ -1,8 +1,9 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useMemo, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '../../cn';
 import { ListGridColumnsContext } from './ListGridColumnsContext';
 import { listGridTemplate, type ListGridColumn } from './listGridTemplate';
 import { useFilledColumns } from './useFilledColumns';
+import { useGridWidth } from './useGridWidth';
 
 export type ListGridProps = {
   readonly label: string;
@@ -41,17 +42,33 @@ export const ListGrid = ({
   children,
   className,
 }: ListGridProps) => {
-  const value = useFilledColumns({ columns });
+  const filled = useFilledColumns({ columns });
+  const gridRef = useRef<HTMLUListElement>(null);
+  const isWatched = columns.some((column) => column.hideBelow !== undefined);
+  const width = useGridWidth({ ref: gridRef, isWatched });
+  const value = useMemo(() => {
+    const narrow = columns.filter(
+      (column) => column.hideBelow !== undefined && width > 0 && width < column.hideBelow,
+    );
+    if (narrow.length === 0) {
+      return filled;
+    }
+    return {
+      ...filled,
+      hiddenKeys: new Set([...filled.hiddenKeys, ...narrow.map((column) => column.key)]),
+    };
+  }, [columns, filled, width]);
   return (
     <ListGridColumnsContext.Provider value={value}>
       <ul
+        ref={gridRef}
         aria-label={label}
         data-list-grid=""
         onKeyDown={moveFocus}
         style={{
           gridTemplateColumns: `0px ${listGridTemplate({ columns, hiddenKeys: value.hiddenKeys })} 0px`,
         }}
-        className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-4' : 'gap-y-0', className)}
+        className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-8' : 'gap-y-0', className)}
       >
         {children}
       </ul>

@@ -7,8 +7,9 @@ import { AUTO_PLAN, AUTO_PLAN_STORED, AUTO_ROOT_ID, AUTO_SESSION } from '../u24/
 import { chatReadingSceneOf } from './chatReadingSeed';
 import { SENT_EVENTS, SENT_TURN } from './chatAnchoringSeed';
 
-const FRAME_WIDTH = 680;
-const FRAME_HEIGHT = 900;
+const FRAME_WIDTH = 1100;
+const FRAME_HEIGHT = 880;
+const SENT_FRAME_HEIGHT = 560;
 
 type Props = {
   readonly isSent?: boolean;
@@ -64,7 +65,10 @@ export const ChatReadingScene = ({ isSent = false }: Props) => {
   }
   return (
     <AutoReleaseContext.Provider value>
-      <div data-shot style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }}>
+      <div
+        data-shot
+        style={{ width: FRAME_WIDTH, height: isSent ? SENT_FRAME_HEIGHT : FRAME_HEIGHT }}
+      >
         <div className="flex h-full min-h-0 flex-col bg-background p-4 text-foreground">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-background ring-1 ring-border-soft">
             <AgentDetailPane

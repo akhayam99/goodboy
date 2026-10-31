@@ -8,6 +8,6 @@ export const StepHeading = ({ title, line }: Props) => (
     <h2 tabIndex={-1} data-step-title className="text-display text-foreground outline-none">
       {title}
     </h2>
-    {line !== undefined && <p className="text-read text-muted-foreground">{line}</p>}
+    {line !== undefined && <p className="text-prose text-muted-foreground">{line}</p>}
   </div>
 );

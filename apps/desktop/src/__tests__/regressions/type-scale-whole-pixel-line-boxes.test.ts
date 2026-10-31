@@ -101,9 +101,9 @@ describe('type scale line boxes', () => {
     expect(lineHeight).toBeGreaterThan(size);
   });
 
-  it('pins the row, title, meta and chip roles to the round 16 sizes', () => {
+  it('pins the row, title, meta and chip roles to the five level sizes', () => {
     expect(roleBox({ role: 'row' })).toEqual({ size: 13, lineHeight: 20 });
-    expect(roleBox({ role: 'title' })).toEqual({ size: 16, lineHeight: 24 });
+    expect(roleBox({ role: 'title' })).toEqual({ size: 18, lineHeight: 28 });
     expect(roleBox({ role: 'meta' })).toEqual({ size: 12, lineHeight: 16 });
     expect(roleBox({ role: 'chip' })).toEqual({ size: 11, lineHeight: 16 });
   });
@@ -112,8 +112,8 @@ describe('type scale line boxes', () => {
     expect(roleBox({ role: 'chip' }).size).toBeLessThan(roleBox({ role: 'meta' }).size);
   });
 
-  it('weighs only display, title, heading, row, chip and lead above regular', () => {
-    const weighted = [...css.matchAll(/--text-([a-z]+)--font-weight:\s*(\d+);/g)].map((match) => [
+  it('weighs only display, title, heading, row, row-strong, chip and lead above regular', () => {
+    const weighted = [...css.matchAll(/--text-([a-z-]+)--font-weight:\s*(\d+);/g)].map((match) => [
       String(match[1]),
       Number(match[2]),
     ]);
@@ -123,6 +123,7 @@ describe('type scale line boxes', () => {
       title: 600,
       heading: 600,
       row: 500,
+      'row-strong': 600,
       chip: 500,
       lead: 500,
     });

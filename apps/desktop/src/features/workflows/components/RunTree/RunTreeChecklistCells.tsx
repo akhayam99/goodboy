@@ -6,6 +6,20 @@ import { agentKindPalette } from '../../../session/agent-kind';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { RowPhase } from '../../../workTreeModel/rowState';
 
+const LIVE_PHASES: ReadonlySet<RowPhase> = new Set(['running', 'waiting', 'failed']);
+
+type TitleParams = {
+  readonly phase: RowPhase;
+  readonly isNested: boolean;
+};
+
+const titleClassOf = ({ phase, isNested }: TitleParams): string => {
+  if (!LIVE_PHASES.has(phase)) {
+    return 'text-ui';
+  }
+  return isNested ? 'text-ui text-foreground' : 'text-row-strong text-foreground';
+};
+
 type Props = {
   readonly entry: TimelineAgentEntry;
   readonly glyph: ReactNode;
@@ -29,23 +43,17 @@ export const RunTreeChecklistCells = ({
     <>
       <span
         data-checklist-cell="step"
-        className="w-14 shrink-0 truncate text-ui tabular-nums text-muted-foreground"
+        className="w-14 shrink-0 truncate text-meta tabular-nums text-muted-foreground"
       >
         {step}
       </span>
-      <span data-checklist-cell="role" className="flex w-28 shrink-0 items-center gap-1 text-ui">
+      <span data-checklist-cell="role" className="flex w-28 shrink-0 items-center gap-1 text-meta">
         {glyph}
         <span className="min-w-0 truncate text-muted-foreground">
           {agentKindPalette({ kind: entry.agentKind }).label}
         </span>
       </span>
-      <TruncatedText
-        className={cn(
-          'min-w-0 flex-1 truncate',
-          isNested ? 'text-ui' : 'text-row',
-          phase === 'queued' ? 'text-muted-foreground' : 'text-foreground',
-        )}
-      >
+      <TruncatedText className={cn('min-w-0 flex-1 truncate', titleClassOf({ phase, isNested }))}>
         {entry.agent.name}
       </TruncatedText>
       {change === null ? null : (

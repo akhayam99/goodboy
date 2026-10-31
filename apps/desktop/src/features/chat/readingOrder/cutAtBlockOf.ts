@@ -1,4 +1,4 @@
-const BLOCK_SELECTOR = 'p, li, h1, h2, h3, h4, h5, h6, pre, table, blockquote';
+const BLOCK_SELECTOR = 'p, li, pre, table, blockquote';
 
 export type ClampCut =
   | { readonly kind: 'fits' }

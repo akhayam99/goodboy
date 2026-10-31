@@ -397,7 +397,7 @@
     "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": 1,
     "packages/ui/src/components/CommandPreview.tsx": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 3,
+    "packages/ui/src/components/Markdown/index.tsx": 1,
     "packages/ui/src/components/Notice/index.tsx": 1,
     "packages/ui/src/components/Popover.tsx": 1
   },

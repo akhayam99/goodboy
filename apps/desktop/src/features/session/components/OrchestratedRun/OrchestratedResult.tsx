@@ -29,7 +29,7 @@ export const OrchestratedResult = ({ session, view }: Props) => {
       data-orchestrated-result=""
       className="flex min-w-0 flex-col gap-4"
     >
-      {reason === '' ? null : <Markdown text={reason} className="text-read text-foreground" />}
+      {reason === '' ? null : <Markdown text={reason} className="text-prose text-foreground" />}
       {summary === null ? (
         text === '' ? null : (
           <Markdown text={text} className="text-ui text-foreground" />

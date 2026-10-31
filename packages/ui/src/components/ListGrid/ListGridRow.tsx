@@ -56,7 +56,7 @@ const cellClass = ({ column, cell, isFirst }: CellParams) =>
     isFirst ? 'col-start-2' : '',
     column?.align === 'end' ? 'justify-self-end justify-end text-right' : '',
     column?.isNumeric === true ? 'tabular-nums' : '',
-    column?.isTitle === true ? 'text-row' : '',
+    column?.isTitle === true ? 'text-row' : 'text-meta',
     toneClass({ column }),
   );
 

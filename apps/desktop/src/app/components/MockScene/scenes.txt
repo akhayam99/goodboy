@@ -1119,7 +1119,12 @@ u30-start-guidance-open
 u30-tooltips
 u31-chat-anchoring
 u31-chat-reading
+u31-markdown-blocks
 u31-next-step
+u31-overview
+u31-runs
+u31-runs-run
+u31-text-levels
 update-card
 update-card-long-version
 update-card-narrow

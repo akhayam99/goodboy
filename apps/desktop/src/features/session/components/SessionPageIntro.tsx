@@ -9,7 +9,7 @@ export const SessionPageIntro = ({ page }: Props) => (
   <div
     data-slot="session-page-intro"
     data-page={page}
-    className={cn('flex min-w-0 flex-col text-body text-muted-foreground', PANE_RHYTHM.prose)}
+    className={cn('flex min-w-0 flex-col text-ui text-muted-foreground', PANE_RHYTHM.prose)}
   >
     {SESSION_PAGE_INTRO[page].map((line) => (
       <p key={line}>{line}</p>

@@ -113,18 +113,45 @@ describe('Markdown html handling', () => {
 });
 
 describe('Markdown document rhythm', () => {
-  it('opens a new section at every heading', () => {
+  it('opens a new section at every heading, 24px apart', () => {
     const { container } = render(
       <Markdown text={['# One', 'body one', '## Two', 'body two'].join('\n')} />,
     );
     const root = container.firstElementChild;
     expect(root?.className).toContain('gap-6');
     expect(root?.children).toHaveLength(2);
-    const first = root?.children[0];
-    expect(first?.className).toContain('gap-2');
-    expect(first?.children[0]?.tagName).toBe('H1');
-    expect(first?.children[1]?.className).toContain('gap-3');
-    expect(root?.children[1]?.children[0]?.tagName).toBe('H2');
+    expect(root?.children[0]?.children).toHaveLength(2);
+    expect(root?.children[1]?.children).toHaveLength(2);
+  });
+
+  it('keeps a heading 8px above its text and the blocks of the body 12px apart', () => {
+    const { container } = render(
+      <Markdown
+        text={['## Two', 'first', '', 'second', '', '```sql', 'select 1;', '```'].join('\n')}
+      />,
+    );
+    const section = container.querySelector('[data-block="section"]');
+    expect(section?.className).toContain('gap-2');
+    expect(section?.firstElementChild?.tagName).toBe('H2');
+    const body = section?.children[1];
+    expect(body?.className).toContain('gap-3');
+    expect(body?.children).toHaveLength(3);
+  });
+
+  it('keeps a lone heading and a text before the first heading out of the body wrapper', () => {
+    const { container } = render(<Markdown text={['lead', 'more lead', '## Two'].join('\n')} />);
+    const root = container.firstElementChild;
+    expect(root?.children[0]?.className).toContain('gap-3');
+    expect(root?.children[0]?.children).toHaveLength(1);
+    expect(root?.children[1]?.children).toHaveLength(1);
+    expect(root?.children[1]?.firstElementChild?.tagName).toBe('H2');
+  });
+
+  it('sets h1 and h2 at the title role and h3 at the heading role', () => {
+    const { container } = render(<Markdown text={['# A', '## B', '### C'].join('\n')} />);
+    expect(container.querySelector('h1')?.className).toContain('text-title');
+    expect(container.querySelector('h2')?.className).toContain('text-title');
+    expect(container.querySelector('h3')?.className).toContain('text-heading');
   });
 
   it('gives a rule its own section instead of a margin', () => {
@@ -152,6 +179,14 @@ describe('Markdown document rhythm', () => {
     expect(code?.className).toContain('wrap-anywhere');
   });
 
+  it('sets inline code at the whole 13px role, not a fraction of the text', () => {
+    const { container } = render(<Markdown text="run `verify-schema` now" />);
+    const code = container.querySelector('code');
+    expect(code?.className).toContain('text-ui');
+    expect(code?.className).toContain('font-mono');
+    expect(code?.className).not.toContain('em]');
+  });
+
   it('softens the blockquote rule and lays its lines out with a gap', () => {
     const { container } = render(<Markdown text={['> one', '> two'].join('\n')} />);
     const quote = container.querySelector('blockquote');
@@ -160,13 +195,46 @@ describe('Markdown document rhythm', () => {
     expect(quote?.className).not.toContain('border-border ');
   });
 
-  it('sets table headers as eyebrows and cells at body size', () => {
+  it('sets table headers at the meta role and cells at body size', () => {
     const { container } = render(
       <Markdown text={['| Name | Value |', '| --- | --- |', '| a | 1 |'].join('\n')} />,
     );
-    expect(container.querySelector('th')?.className).toContain('text-eyebrow');
+    expect(container.querySelector('th')?.className).toContain('text-meta');
+    expect(container.querySelector('th')?.className).not.toContain('text-eyebrow');
     expect(container.querySelector('td')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
     expect(container.querySelector('table')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
+  });
+
+  it('puts one hairline between rows and none under the last', () => {
+    const { container } = render(
+      <Markdown
+        text={['| Step | Time |', '| --- | ---: |', '| a | 40 ms |', '| b | 6 min |'].join('\n')}
+      />,
+    );
+    const rows = [...container.querySelectorAll('tbody tr')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.className).toContain('border-b');
+    expect(rows[1]?.className).toContain('last:border-b-0');
+  });
+
+  it('lines up the figures of a right aligned column and of a column of numbers', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '| Step | Time | Rows | Lock |',
+          '| --- | ---: | --- | --- |',
+          '| a | 40 ms | 1.2M | Brief |',
+          '| b | 6 min | 0 | None |',
+        ].join('\n')}
+      />,
+    );
+    const cells = [...(container.querySelectorAll('tbody tr')[0]?.querySelectorAll('td') ?? [])];
+    expect(cells[0]?.className).not.toContain('tabular-nums');
+    expect(cells[1]?.className).toContain('tabular-nums');
+    expect(cells[1]?.className).toContain('text-right');
+    expect(cells[2]?.className).toContain('tabular-nums');
+    expect(cells[3]?.className).not.toContain('tabular-nums');
+    expect(container.querySelectorAll('th')[1]?.className).toContain('tabular-nums');
   });
 });
 

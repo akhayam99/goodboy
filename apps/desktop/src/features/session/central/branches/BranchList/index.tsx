@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
-  Eyebrow,
   ICON_SIZE,
   ListGrid,
   ROW_INTERACTIVE,
+  SectionLabel,
   cn,
   type ListGridColumn,
 } from '@goodboy/ui';
@@ -73,12 +73,9 @@ export const BranchList = ({ sessionId, entries }: Props) => {
   const rows = isOpen ? entries : fold.shown;
   const isProjectShown = new Set(entries.map((entry) => entry.fact.projectName)).size >= 2;
   return (
-    <section ref={ref} aria-label="Branches" className="flex min-w-0 flex-col gap-1">
+    <section ref={ref} aria-label="Branches" className="flex min-w-0 flex-col gap-2">
       {entries.length >= 2 ? (
-        <div className="flex items-center gap-2 px-1">
-          <Eyebrow label="Branches" muted />
-          <span className="text-ui text-faint-foreground">{entries.length}</span>
-        </div>
+        <SectionLabel label="Branches" count={entries.length} headingLevel={2} />
       ) : null}
       {strips.map((strip) => (
         <SeriesStrip key={strip.id} strip={strip} />

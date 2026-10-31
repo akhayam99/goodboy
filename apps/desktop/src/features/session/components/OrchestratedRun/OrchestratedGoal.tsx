@@ -26,11 +26,11 @@ export const OrchestratedGoal = ({ session, view }: Props) => {
   return (
     <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
       {goal === '' ? (
-        <EmptyLine className="text-read text-faint-foreground">
+        <EmptyLine className="text-prose text-faint-foreground">
           No goal was set for this run.
         </EmptyLine>
       ) : (
-        <ClampedProse text={goal} lines={4} className="text-read text-foreground" />
+        <ClampedProse text={goal} lines={4} className="text-prose text-foreground" />
       )}
       <OrchestratedFacts session={session} view={view} />
       {guidance !== '' ? (

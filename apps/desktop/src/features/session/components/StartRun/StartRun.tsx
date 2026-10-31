@@ -49,6 +49,7 @@ export const StartRun = ({
     role,
     onStarted,
     prepare: limit.persist,
+    settleLimit: limit.settle,
   });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';

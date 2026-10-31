@@ -8,6 +8,7 @@ export type ListGridColumn = {
   readonly shouldHideWhenEmpty?: boolean;
   readonly isShrinkable?: boolean;
   readonly canSpanEmpty?: boolean;
+  readonly hideBelow?: number;
 };
 
 type Params = {

@@ -149,9 +149,7 @@ describe('the Done card lists what finished last', () => {
     ]);
     expect(rows[0]?.textContent).toContain('CI debugger');
     expect(rows[0]?.textContent).toContain('2m ago');
-    expect(doneCard().querySelector('[data-done-line]')?.textContent).toBe(
-      '5 finished runs and agents are in the full log.',
-    );
+    expect(doneCard().querySelector('[data-done-line]')).toBeNull();
   });
 
   it('marks an unread reply with a dot and counts it in the header: Done 5, 2 unread', async () => {

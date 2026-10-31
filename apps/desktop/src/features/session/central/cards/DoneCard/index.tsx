@@ -38,14 +38,16 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
       card={card}
       countNote={latest.unreadCount === 0 ? null : `${latest.unreadCount} unread`}
       aside={
-        <Button size="sm" variant="secondary" onClick={() => openLog({ focusEntryId: null })}>
+        <Button size="sm" variant="quiet" onClick={() => openLog({ focusEntryId: null })}>
           Full log
         </Button>
       }
     >
-      <p data-done-line="" className="min-w-0 text-ui text-muted-foreground">
-        {summary.line}
-      </p>
+      {summary.line === '' ? null : (
+        <p data-done-line="" className="min-w-0 text-ui text-muted-foreground">
+          {summary.line}
+        </p>
+      )}
       {latest.items.length === 0 ? null : (
         <ul aria-label="Latest finished" className="flex min-w-0 list-none flex-col gap-1">
           {latest.items.map((item) => {

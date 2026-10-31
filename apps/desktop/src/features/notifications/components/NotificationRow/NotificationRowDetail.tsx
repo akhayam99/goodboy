@@ -52,7 +52,10 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
             >
               <span className="truncate">{entry.title}</span>
               <Tooltip content={formatDateTime({ at: entry.ts, hasYear: true })}>
-                <time dateTime={entry.ts} className="shrink-0 text-meta text-faint-foreground">
+                <time
+                  dateTime={entry.ts}
+                  className="shrink-0 text-meta tabular-nums text-faint-foreground"
+                >
                   {formatAge({ from: entry.ts, now })}
                 </time>
               </Tooltip>

@@ -97,6 +97,7 @@
   "apps/desktop/src/shared/detail-fields/sentryIssueFields.tsx": "path",
   "packages/ui/src/components/Chip.tsx": "identifier",
   "packages/ui/src/components/CommandPreview.tsx": "command",
+  "packages/ui/src/components/Markdown/CodeBlockFrame.tsx": "code",
   "packages/ui/src/components/Markdown/InlineMarkdown.tsx": "code",
   "packages/ui/src/components/Markdown/index.tsx": "code",
   "packages/ui/src/components/RemoteImage/index.tsx": "code",

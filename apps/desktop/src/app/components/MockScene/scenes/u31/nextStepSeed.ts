@@ -3,9 +3,11 @@ import { AUTO_SESSION } from '../u24/autoSceneSeed';
 import { seedC07 } from '../u25/c07/c07AutoSeed';
 
 const ALTERNATIVES = [
-  { label: 'Spawn a tester first', role: 'tester' },
+  { label: 'Spawn a scout first', role: 'scout' },
   { label: 'Spawn an implementer', role: 'implementer' },
 ] as const;
+
+const TASK = 'Plan how payments-api handles two webhooks for the same credit.';
 
 export const seedNextStep = (): void => {
   seedC07({ state: 'confirm', place: 'session' });
@@ -25,7 +27,7 @@ export const seedNextStep = (): void => {
                 ? {
                     ...delegation,
                     reviseOf: null,
-                    request: { ...delegation.request, alternatives: ALTERNATIVES },
+                    request: { ...delegation.request, task: TASK, alternatives: ALTERNATIVES },
                   }
                 : delegation,
             ),

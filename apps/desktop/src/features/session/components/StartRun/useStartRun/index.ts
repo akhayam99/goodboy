@@ -29,6 +29,9 @@ import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
+import type { LimitDefaultParams } from '../../../../auto/limitDefaultFrom';
+import { limitDefaultFromOfKind } from '../../StartForm/limitDefaultFromOfKind';
+import { startFormKindOfRunAs } from '../../StartForm/runAsOfStartKind';
 import {
   agentRoutingOfPin,
   orchestratorRoutingOfPin,
@@ -51,7 +54,8 @@ import type { StartRunFile } from '../../../startRun/startRunFileOf';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
-  readonly prepare: () => Promise<StartLimit>;
+  readonly prepare: (params: LimitDefaultParams) => Promise<StartLimit>;
+  readonly settleLimit: () => void;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
   readonly onStarted?: () => void;
@@ -162,6 +166,7 @@ export const useStartRun = ({
   workspaceId,
   sessionId,
   prepare,
+  settleLimit,
   mount = null,
   role = null,
   onStarted,
@@ -341,7 +346,9 @@ export const useStartRun = ({
     setIsStarting(true);
     setError(null);
     try {
-      const limit = await prepare();
+      const limit = await prepare({
+        defaultFrom: limitDefaultFromOfKind({ kind: startFormKindOfRunAs({ runAs }) }),
+      });
       const { loadSetting } = useAppStore.getState();
       await Promise.all([
         loadSetting(runDefaultKey({ scope: { kind: 'workspace', workspaceId } })),
@@ -444,6 +451,7 @@ export const useStartRun = ({
         setPickedEdits(null);
         setPickedGuidance(null);
         clearModel();
+        settleLimit();
         setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
       }
@@ -472,6 +480,7 @@ export const useStartRun = ({
     role,
     runAs,
     sessionId,
+    settleLimit,
     setStagedFiles,
     stagedFiles,
     startFromDraft,

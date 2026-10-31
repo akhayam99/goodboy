@@ -39,7 +39,7 @@ import { U26_CENTRAL_SCENES } from '../../../app/components/MockScene/scenes/u26
 
 const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES];
 
-const ALLOWED_VARIANTS: ReadonlySet<string> = new Set(['primary', 'secondary']);
+const ALLOWED_VARIANTS: ReadonlySet<string> = new Set(['primary', 'secondary', 'quiet']);
 const NARROW_SCENE = 'u26-central-next-narrow-light';
 
 beforeAll(async () => {
@@ -117,7 +117,7 @@ describe('the CTA rule of the central column', () => {
     }
   });
 
-  it.each(cases)('$name: only primary and secondary variants, no ghost', (params) => {
+  it.each(cases)('$name: only primary, secondary and quiet variants, no ghost', (params) => {
     const { container } = show(params);
 
     const variants = buttonsOf({ root: container })

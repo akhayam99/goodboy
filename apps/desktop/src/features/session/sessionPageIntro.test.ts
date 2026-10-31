@@ -17,8 +17,8 @@ describe('SESSION_PAGE_INTRO', () => {
     expect(Object.keys(SESSION_PAGE_INTRO)).toEqual(runPages);
   });
 
-  it('gives the page two lines', () => {
-    expect(Object.values(SESSION_PAGE_INTRO).map((lines) => lines.length)).toEqual([2]);
+  it('gives the page one lede line', () => {
+    expect(Object.values(SESSION_PAGE_INTRO).map((lines) => lines.length)).toEqual([1]);
   });
 
   it.each(LINES)('keeps "%s" one short sentence line', (line) => {

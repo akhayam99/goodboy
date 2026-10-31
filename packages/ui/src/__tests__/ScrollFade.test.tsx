@@ -69,7 +69,8 @@ describe('ScrollFade', () => {
       </ScrollFade>,
     );
     const viewport = viewportOf(container);
-    expect(viewport.style.maskImage).toContain('linear-gradient');
+    expect(viewport.className).toContain('mask-fade-y');
+    expect(viewport.getAttribute('style') ?? '').not.toContain('mask-image');
     const root = container.firstElementChild as HTMLElement;
     expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-b').length).toBe(0);
     expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-t').length).toBe(0);

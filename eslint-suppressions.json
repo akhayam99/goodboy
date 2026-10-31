@@ -13754,7 +13754,7 @@
   },
   "packages/ui/src/components/ScrollFade/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 1
     }
   },
   "packages/ui/src/components/ScrollFade/useOverlayThumb/index.ts": {

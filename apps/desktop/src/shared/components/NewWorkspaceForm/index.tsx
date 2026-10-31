@@ -160,7 +160,7 @@ export const NewWorkspaceForm = ({
         >
           {copy.title}
         </h2>
-        <p className="text-read text-muted-foreground">{copy.lede}</p>
+        <p className="text-prose text-muted-foreground">{copy.lede}</p>
       </div>
 
       {draft.stage === 'empty' ? (

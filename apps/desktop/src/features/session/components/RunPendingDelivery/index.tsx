@@ -35,7 +35,7 @@ export const RunPendingDelivery = ({ sessionId }: Props) => {
     >
       {pending.pairs.map((pair) => (
         <div key={pair.id} className="flex min-w-0 flex-col gap-1 px-2">
-          <Markdown text={pair.text} className="text-read text-foreground" />
+          <Markdown text={pair.text} className="text-prose text-foreground" />
           <p className="text-ui text-muted-foreground">{pair.answer}</p>
         </div>
       ))}

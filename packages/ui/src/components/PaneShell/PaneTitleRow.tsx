@@ -15,10 +15,7 @@ export const PaneTitleRow = ({ title, meta, actions }: Props) => (
       ) : null}
     </div>
     {meta != null && meta !== '' ? (
-      <p
-        data-slot="pane-meta"
-        className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
-      >
+      <p data-slot="pane-meta" className="min-w-0 truncate text-meta text-muted-foreground">
         {meta}
       </p>
     ) : null}

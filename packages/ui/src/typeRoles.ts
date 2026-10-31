@@ -3,6 +3,7 @@ export const TYPE_ROLES = [
   'title',
   'heading',
   'row',
+  'row-strong',
   'body',
   'prose',
   'chip',
@@ -10,6 +11,5 @@ export const TYPE_ROLES = [
   'meta',
   'code',
   'ui',
-  'read',
   'lead',
 ] as const;

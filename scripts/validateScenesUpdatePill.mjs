@@ -82,3 +82,23 @@ export const updatePillFailures = ({
   }
   return failures;
 };
+
+export const runUpdatePill = async ({ send, only, measure, open, run }) => {
+  for (const scene of only === undefined || only === 'update-pill' ? UPDATE_PILL_SCENES : []) {
+    await measure({
+      scene,
+      task: async () => {
+        const failures = [];
+        for (const width of UPDATE_PILL_WIDTHS) {
+          await open({ send, scene, width, zoom: 1, readySelector: UPDATE_PILL_READY });
+          const measured = await run(send, updatePillProbe, null);
+          failures.push(...updatePillFailures({ scene, width, measured }));
+        }
+        console.log(
+          `${scene}: ${UPDATE_PILL_WIDTHS.length} widths, ${failures.length} pill overflows`,
+        );
+        return { failures, wraps: 0 };
+      },
+    });
+  }
+};

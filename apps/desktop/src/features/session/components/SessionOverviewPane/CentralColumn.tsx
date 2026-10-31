@@ -92,14 +92,14 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     [detailByMountId, facts],
   );
   const liveEntries = branches.live;
-  const summary = useMemo(
-    () => doneSummaryOf({ finished: branches.finished, days }),
-    [branches.finished, days],
-  );
   const unreadAgents = useAppStore(
     useShallow((state) => unreadAgentsOf({ agents: state.sessionPhaseRuns[sessionId] })),
   );
   const latest = useMemo(() => latestDoneOf({ days, unreadAgents }), [days, unreadAgents]);
+  const summary = useMemo(
+    () => doneSummaryOf({ finished: branches.finished, days, listedCount: latest.items.length }),
+    [branches.finished, days, latest.items.length],
+  );
   const branchLabelOf = useBranchLabels({ sessionId });
   const branchNameOf = useBranchNames({ sessionId });
   const whereOf = useWhereOf({ sessionId });
@@ -179,7 +179,7 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
   };
 
   return (
-    <div data-central-column className={PANE_RHYTHM.stack}>
+    <div data-central-column className={PANE_RHYTHM.groups}>
       {isArchived ? null : (
         <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
       )}

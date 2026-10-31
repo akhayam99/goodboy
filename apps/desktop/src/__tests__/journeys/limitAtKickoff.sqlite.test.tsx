@@ -3,7 +3,14 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { insertProject, insertWorkspace, setWorkspaceValue } from '@goodboy/db';
-import type { AgentId, ProjectId, ProviderId, WorkspaceId } from '@goodboy/types';
+import {
+  DEFAULT_WORKFLOW_RULES,
+  type AgentId,
+  type ProjectId,
+  type ProviderId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { stubProviderRouting } from '../helpers/journeyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -131,6 +138,12 @@ beforeEach(async () => {
     archivedSessions: {},
     ...connectedAnthropicState(),
     providers: [providerOf({ id: 'anthropic' }), providerOf({ id: 'cursor' })],
+    workspaceOverrides: {
+      [WORKSPACE_ID]: {
+        ...EMPTY_OVERRIDES,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: 8 },
+      },
+    },
   });
 });
 
@@ -176,14 +189,23 @@ describe('journey: the limit chip at the kickoff', () => {
     expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
   });
 
-  it('names a run, not Auto, in the popover of a workflow kind', async () => {
+  it('names a run, not Auto, in the popover of a workflow kind, which starts from the Run defaults', async () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     const row = within(await screen.findByRole('group', { name: 'Run settings' }));
 
-    fireEvent.click(await row.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.click(await row.findByRole('button', { name: 'Limit $8.00 · default' }));
 
     screen.getByRole('dialog', { name: 'Limit for this run' });
+  });
+
+  it('keeps the Auto limit on the Auto kind', async () => {
+    spies();
+    open();
+    fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
+    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
+
+    await row.findByRole('button', { name: 'Limit $5.00 · default' });
   });
 });

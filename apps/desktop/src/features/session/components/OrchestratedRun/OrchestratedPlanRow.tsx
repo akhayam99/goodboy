@@ -34,7 +34,10 @@ export const OrchestratedPlanRow = ({ kind, label, role = null, slotWidth }: Pro
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-2 px-2 text-ui">
         <span className="w-14 shrink-0" />
-        <span data-checklist-cell="role" className="flex w-28 shrink-0 items-center gap-1">
+        <span
+          data-checklist-cell="role"
+          className="flex w-28 shrink-0 items-center gap-1 text-meta"
+        >
           {roleKind === null ? null : (
             <>
               <AgentKindChip kind={roleKind} density="glyph" isDecorative />

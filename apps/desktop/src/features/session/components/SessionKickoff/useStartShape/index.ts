@@ -16,6 +16,9 @@ import { guidanceToSendOf } from '../../../startRun/guidanceToSendOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
+import type { LimitDefaultParams } from '../../../../auto/limitDefaultFrom';
+import { limitDefaultFromOfKind } from '../../StartForm/limitDefaultFromOfKind';
+import { startFormKindOfShape } from '../../StartForm/startFormKinds';
 import type { RunModelModel } from '../../StartRun/useRunModel';
 import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
@@ -23,7 +26,8 @@ import { useStartFromDraft } from '../useStartFromDraft';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly mount: SessionDraftMount | null;
-  readonly prepare: () => Promise<StartLimit>;
+  readonly prepare: (params: LimitDefaultParams) => Promise<StartLimit>;
+  readonly settleLimit: () => void;
   readonly model: RunModelModel;
   readonly level: AutoLevel | null;
 };
@@ -40,6 +44,7 @@ export const useStartShape = ({
   workspaceId,
   mount,
   prepare,
+  settleLimit,
   model,
   level,
 }: Params): StartShapeModel => {
@@ -87,7 +92,12 @@ export const useStartShape = ({
     setIsStarting(true);
     setError(null);
     try {
-      const limit = shape === 'agent' ? null : await prepare();
+      const limit =
+        shape === 'agent'
+          ? null
+          : await prepare({
+              defaultFrom: limitDefaultFromOfKind({ kind: startFormKindOfShape({ shape }) }),
+            });
       const result = pickedRouteOf({
         shape,
         ask,
@@ -128,6 +138,7 @@ export const useStartShape = ({
       });
       rememberLastStart({ workspaceId, last: shape });
       clearModel();
+      settleLimit();
     } catch (cause) {
       if (claim.isCurrent()) {
         setError(formatError(cause));
@@ -138,7 +149,7 @@ export const useStartShape = ({
         setIsStarting(false);
       }
     }
-  }, [clearModel, level, mount, pinFor, prepare, startFromDraft, workspaceId]);
+  }, [clearModel, level, mount, pinFor, prepare, settleLimit, startFromDraft, workspaceId]);
 
   return { start, isStarting, error };
 };

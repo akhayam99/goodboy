@@ -124,7 +124,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['running', 'next', 'branches', 'done'],
       primary: 'Answer',
-      done: '4 finished runs and agents are in the full log.',
+      done: null,
     },
   },
   {
@@ -132,7 +132,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['new-since', 'next', 'branches', 'done'],
       primary: 'Mark ready',
-      done: '5 finished runs and agents are in the full log.',
+      done: null,
     },
   },
   {
@@ -140,7 +140,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Retry',
-      done: '3 finished runs and agents are in the full log.',
+      done: null,
     },
   },
   {
@@ -148,7 +148,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['running', 'branches', 'done'],
       primary: null,
-      done: '4 finished runs and agents are in the full log.',
+      done: null,
     },
   },
   {
@@ -156,7 +156,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Review',
-      done: '3 finished runs and agents are in the full log.',
+      done: null,
     },
   },
   {
@@ -164,7 +164,7 @@ const CASES: ReadonlyArray<Case> = [
     facts: {
       cards: ['running', 'next', 'branches', 'done'],
       primary: 'Answer',
-      done: '4 finished runs and agents are in the full log.',
+      done: null,
     },
   },
 ];

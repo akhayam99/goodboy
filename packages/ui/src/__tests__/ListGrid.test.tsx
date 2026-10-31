@@ -135,6 +135,26 @@ describe('ListGrid', () => {
     expect(list.querySelector('[data-list-grid-cell="title"]')?.className).toContain('col-start-2');
   });
 
+  it('drops a column whose hideBelow is wider than the list, so the rows fit', () => {
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(0, 0, 616, 32));
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'origin', width: 200, hideBelow: 1008 },
+      { key: 'time', width: 56, align: 'end' },
+    ];
+    render(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow cells={['Fix flaky tests', 'Workflow', '2m']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Runs' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(0);
+    rect.mockRestore();
+  });
+
   it('lets a title cell take the empty cells after it when the column opts in', () => {
     const columns: ReadonlyArray<ListGridColumn> = [
       { key: 'title', width: 'fill', isTitle: true, canSpanEmpty: true },
@@ -201,7 +221,37 @@ describe('ListGrid', () => {
     within(group).getByText('Ledger export times out');
     const heading = screen.getByRole('heading', { name: 'In progress' });
     expect(heading.nextElementSibling?.textContent).toBe('12');
-    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-4');
+    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-8');
+  });
+
+  it('sets a group label at level 2, a 20px row with 8px under it, and groups 32px apart', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="In progress" count={12}>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const heading = screen.getByRole('heading', { name: 'In progress' });
+    expect(heading.className).toContain('text-heading');
+    expect(heading.className).toContain('text-foreground');
+    const label = heading.closest('[data-list-grid-group-label]');
+    expect(label?.className).toContain('h-5');
+    expect(label?.parentElement?.className).toContain('gap-y-2');
+    expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-8');
+    expect(heading.nextElementSibling?.className).toContain('text-ui');
+    expect(heading.nextElementSibling?.className).toContain('text-faint-foreground');
+  });
+
+  it('reads the title cell at level 4 and every other cell at level 5', () => {
+    renderGrid({ onSelect: () => undefined });
+    const [first] = screen.getAllByRole('button');
+    const cells = Array.from(first?.querySelectorAll('[data-list-grid-cell]') ?? []);
+    const titles = cells.filter((cell) => cell.className.includes('text-row'));
+    const others = cells.filter((cell) => !cell.className.includes('text-row'));
+    expect(titles).toHaveLength(1);
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.every((cell) => cell.className.includes('text-meta'))).toBe(true);
   });
 
   it('keeps the count beside the name and the group action after them', () => {

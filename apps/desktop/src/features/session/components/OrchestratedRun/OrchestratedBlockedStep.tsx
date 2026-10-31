@@ -58,7 +58,7 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
             {question === null ? (
               <p className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.blockedNoReason}</p>
             ) : (
-              <Markdown text={question.text} className="text-read text-foreground" />
+              <Markdown text={question.text} className="text-prose text-foreground" />
             )}
           </div>
         }

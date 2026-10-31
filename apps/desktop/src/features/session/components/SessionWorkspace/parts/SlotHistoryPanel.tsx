@@ -28,7 +28,7 @@ const HistoryEntry = ({
     <li className="flex flex-col gap-2 rounded-md border border-border-soft bg-elevated p-3">
       <div className="flex items-center gap-2">
         <AuthorshipChip byUser={entry.author === 'user'} />
-        <span className="text-meta text-muted-foreground">
+        <span className="text-meta tabular-nums text-muted-foreground">
           {formatAge({ from: entry.createdAt, now })}
         </span>
         <div className="ml-auto flex items-center gap-1">
