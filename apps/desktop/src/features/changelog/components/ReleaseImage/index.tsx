@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedTabs, Skeleton } from '@goodboy/ui';
 import { useChangelogImage } from '../../hooks/useChangelogImage';
+import { ReleaseImageCell } from './ReleaseImageCell';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 
@@ -43,30 +44,31 @@ export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
         />
       ) : null}
       {active.kind === 'loading' ? (
-        <div
-          data-release-image-frame="placeholder"
-          className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge"
-        >
+        <div className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge">
           <Skeleton className="h-full w-full rounded-none" />
         </div>
       ) : (
-        <div
-          data-release-image-frame="image"
-          className="flex w-full items-center justify-center overflow-hidden rounded-lg border border-frame-edge bg-subtle"
-        >
-          <button
-            type="button"
-            onClick={() => setIsLightboxOpen(true)}
-            className="block max-w-full cursor-zoom-in"
-          >
-            <img
-              key={variant}
-              src={active.dataUri}
+        <div className="relative grid w-full grid-cols-[minmax(0,1fr)] overflow-hidden rounded-lg border border-frame-edge bg-subtle">
+          {after.kind === 'ready' ? (
+            <ReleaseImageCell
+              src={after.dataUri}
               alt={alt}
-              data-release-image-fit="contain"
-              className="block h-auto max-h-120 w-auto max-w-full animate-fade-in object-contain"
+              isActive={variant === 'after'}
+              onOpen={() => setIsLightboxOpen(true)}
             />
-          </button>
+          ) : null}
+          {hasBefore && before.kind === 'ready' ? (
+            <ReleaseImageCell
+              src={before.dataUri}
+              alt={alt}
+              isActive={variant === 'before'}
+              onOpen={() => setIsLightboxOpen(true)}
+            />
+          ) : null}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-lg opacity-0 ring-2 ring-inset ring-focus-ring peer-focus-visible:opacity-100"
+          />
         </div>
       )}
       {isLightboxOpen && active.kind === 'ready' ? (

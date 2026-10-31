@@ -1134,6 +1134,7 @@ u31-text-levels
 u32-attachments
 u32-attachments-viewer
 u32-hint-node
+u32-release-images
 u32-run-questions
 update-card
 update-card-long-version

@@ -46,7 +46,7 @@ import {
   layerScrollMoves,
 } from './validateScenesLayers.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
-import { runListGridFit } from './validateScenesListGridFit.mjs';
+import { runFitProbes } from './validateScenesFitProbes.mjs';
 import {
   HEADER_LINE_READY,
   HEADER_LINE_SCENES,
@@ -976,7 +976,7 @@ const main = async () => {
       await measure({ scene, task: () => measureHeaderLine({ send, scene }) });
     }
     await runUpdatePill({ send, only, measure, open, run });
-    await runListGridFit({ send, only, measure, open, run });
+    await runFitProbes({ send, only, measure, open, run });
     for (const scene of only === undefined || only === 'drawer-composer'
       ? DRAWER_COMPOSER_SCENES
       : []) {

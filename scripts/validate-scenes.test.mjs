@@ -25,6 +25,7 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
+import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
   COLUMN_ROW_SELECTOR,
@@ -1206,5 +1207,67 @@ describe('listGridFitFailures', () => {
       ),
       ['no list grid to measure'],
     );
+  });
+});
+
+describe('releaseImageShapeFailures', () => {
+  const measured = ({ shown, frameHeight, src = 'after' }) => ({
+    src,
+    natural: { width: 1360, height: 568 },
+    image: { left: 0, top: 0, right: shown.width, bottom: shown.height, ...shown },
+    frame: { left: 0, top: 0, right: 976, bottom: frameHeight, height: frameHeight },
+  });
+  const fitted = { width: 960, height: 400.9 };
+  const wideCase = {
+    label: 'wide',
+    after: measured({ shown: fitted, frameHeight: 420 }),
+    afterPress: measured({ shown: fitted, frameHeight: 420, src: 'before' }),
+  };
+  const checksOf = (cases) =>
+    releaseImageShapeFailures({ scene: 'fixture', width: 1024, cases }).map(
+      (failure) => failure.check,
+    );
+
+  it('passes a picture shown whole inside a frame that keeps its height', () => {
+    assert.deepEqual(checksOf([wideCase]), []);
+  });
+
+  it('fails a picture stretched out of its aspect ratio', () => {
+    const stretched = measured({ shown: { width: 960, height: 600 }, frameHeight: 420 });
+    assert.deepEqual(checksOf([{ ...wideCase, after: stretched }]), [
+      'the picture keeps its natural aspect ratio',
+      'the picture sits inside its frame',
+      'the picture is never taller than 480px',
+    ]);
+  });
+
+  it('fails a picture cropped by a frame narrower than it', () => {
+    const wide = { width: 1000, height: 417.65 };
+    const cases = [{ ...wideCase, after: measured({ shown: wide, frameHeight: 420 }) }];
+    assert.deepEqual(checksOf(cases), [
+      'the picture sits inside its frame',
+      'the picture is never wider than its frame',
+    ]);
+  });
+
+  it('fails a frame whose height changes when Before is pressed', () => {
+    const jumped = measured({ shown: fitted, frameHeight: 560, src: 'before' });
+    assert.deepEqual(checksOf([{ ...wideCase, afterPress: jumped }]), [
+      'the frame keeps its height when Before is pressed',
+    ]);
+  });
+
+  it('fails when Before is pressed and the same picture stays', () => {
+    const same = { ...wideCase.afterPress, src: 'after' };
+    assert.deepEqual(checksOf([{ ...wideCase, afterPress: same }]), [
+      'pressing Before shows the before picture',
+    ]);
+  });
+
+  it('fails a scene with no picture to measure', () => {
+    assert.deepEqual(checksOf([]), ['no release picture to measure']);
+    assert.deepEqual(checksOf([{ label: 'wide', after: null, afterPress: null }]), [
+      'a picture is shown inside its frame',
+    ]);
   });
 });
