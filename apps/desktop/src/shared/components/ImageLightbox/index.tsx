@@ -115,7 +115,7 @@ export const ImageLightbox = ({
             onClose();
           }
         }}
-        className="relative flex min-h-0 flex-1 items-center justify-center"
+        className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-2"
       >
         <IconButton
           icon={X}
@@ -127,10 +127,7 @@ export const ImageLightbox = ({
           className="absolute right-0 top-0 h-9 w-9 rounded-full bg-background p-0 text-foreground shadow-lg ring-1 ring-border-soft hover:bg-background hover:text-foreground"
         />
         {hasRail ? (
-          <p
-            aria-live="polite"
-            className="absolute left-0 top-0 text-meta tabular-nums text-muted-foreground"
-          >
+          <p aria-live="polite" className="text-meta tabular-nums text-muted-foreground">
             {activeIndex + 1} of {items.length}
           </p>
         ) : null}
