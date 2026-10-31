@@ -5,6 +5,8 @@ import { useAppStore } from '../../../../store';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { NAMES } from '../../../../shared/utils/names';
 import { useBlockedQuestion } from '../../hooks/useBlockedQuestion';
+import { useBlockedStepQuestions } from '../../hooks/useBlockedStepQuestions';
+import { OpenQuestionCluster } from '../../../chat/openQuestionSurfaces';
 import { StepEndedNotice } from '../../../workflows/StepEndedNotice';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
@@ -15,6 +17,7 @@ type Props = {
 
 export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
   const question = useBlockedQuestion({ sessionId, agentId });
+  const openQuestions = useBlockedStepQuestions({ sessionId, agentId });
   const answerBlockedStep = useAppStore((state) => state.answerBlockedStep);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,14 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
       setIsSending(false);
     }
   };
+
+  if (openQuestions.length > 0) {
+    return (
+      <div data-orchestrated-blocked-step={agentId} className="min-w-0">
+        <OpenQuestionCluster questions={openQuestions} sessionId={sessionId} />
+      </div>
+    );
+  }
 
   return (
     <form
