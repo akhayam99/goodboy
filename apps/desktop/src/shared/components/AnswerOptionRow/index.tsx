@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
-import { cn, FOCUS_RING } from '@goodboy/ui';
+import { Check } from 'lucide-react';
+import { cn, FOCUS_RING, ICON_SIZE, ICON_STROKE } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { SelectionIndicator } from './SelectionIndicator';
 
@@ -28,6 +29,7 @@ export const AnswerOptionRow = ({
 }: Props) => {
   const recommendedId = useId();
   const isMany = mode === 'many';
+  const isPicked = selected && !isMany;
 
   return (
     <div
@@ -45,7 +47,16 @@ export const AnswerOptionRow = ({
         aria-hidden
         className="grid h-5 place-items-center text-meta tabular-nums text-muted-foreground"
       >
-        {keyHint}
+        {isPicked ? (
+          <Check
+            size={ICON_SIZE.row}
+            strokeWidth={ICON_STROKE.check}
+            aria-hidden
+            className="text-foreground"
+          />
+        ) : (
+          keyHint
+        )}
       </span>
       <span className="flex min-w-0 flex-col gap-2">
         <button

@@ -15,8 +15,10 @@ type Props = {
 
 export const SpawnedAutoFocus = ({ sessionId, rootAgentId, selectedAgentId }: Props) => {
   const { rows } = useAutoSpawnedRows({ sessionId, rootAgentId });
-  const groups = useMemo(() => spawnedStateGroupsOf({ rows }), [rows]);
-  const hasChildren = rows.length > 1;
+  const rootRow = useMemo(() => rows.find((row) => row.level === 1) ?? null, [rows]);
+  const helperRows = useMemo(() => rows.filter((row) => row.level > 1), [rows]);
+  const groups = useMemo(() => spawnedStateGroupsOf({ rows: helperRows }), [helperRows]);
+  const hasChildren = helperRows.length > 0;
   return (
     <>
       {groups.length === 0 ? null : (
@@ -28,6 +30,7 @@ export const SpawnedAutoFocus = ({ sessionId, rootAgentId, selectedAgentId }: Pr
         <SpawnedStateGroups
           sessionId={sessionId}
           rows={rows}
+          rootRow={rootRow}
           groups={groups}
           selectedAgentId={selectedAgentId}
         />

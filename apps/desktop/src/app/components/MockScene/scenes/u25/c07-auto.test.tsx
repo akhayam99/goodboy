@@ -120,9 +120,7 @@ describe('c07 Auto scenes', () => {
 
     const auto = await treeRow(/^Auto agent, /);
     expect(auto.getAttribute('aria-level')).toBe('2');
-    expect(auto.closest('[data-spawned-state]')?.getAttribute('data-spawned-state')).toBe(
-      'working',
-    );
+    expect(auto.closest('[data-spawned-state]')).toBeNull();
     const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(implementer.closest('[data-spawned-state]')?.getAttribute('data-spawned-state')).toBe(
       'working',
@@ -147,7 +145,9 @@ describe('c07 Auto scenes', () => {
 
     const auto = await treeRow(/^Auto agent, /);
     act(() => auto.focus());
-    fireEvent.keyDown(auto, { key: 'ArrowUp' });
+    fireEvent.keyDown(auto, { key: 'ArrowDown' });
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowDown' });
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Implementer, /);
     fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowLeft' });
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
@@ -415,10 +415,9 @@ describe('c07 Auto scenes', () => {
 
     const auto = await treeRow(/^Auto agent, .+, Idle$/);
     expect(auto.getAttribute('aria-expanded')).toBeNull();
-    const done = await treeRow(/^Done, 5$/);
+    const done = await treeRow(/^Done, 4$/);
     expect(done.getAttribute('aria-expanded')).toBeNull();
-    expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(5);
-    fireEvent.click(done);
+    expect(screen.queryByRole('button', { name: /^Done, 4$/ })).toBeNull();
     expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(5);
   });
 
@@ -427,6 +426,8 @@ describe('c07 Auto scenes', () => {
 
     expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(1);
     expect(within(await panel()).getByText('No agents started yet')).toBeDefined();
+    expect(document.querySelector('[data-spawned-summary]')).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /^(Working|Waiting|Done), \d+$/ })).toBeNull();
     expect(await treeRow(/^Auto agent, .*, Idle$/)).toBeDefined();
   });
 

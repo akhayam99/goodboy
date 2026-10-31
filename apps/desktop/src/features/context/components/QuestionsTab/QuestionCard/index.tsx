@@ -19,6 +19,7 @@ import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionCardTop } from './QuestionCardTop';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
+import { RESOLVED_BY_AGENT } from './resolvedByAgent';
 
 export type QuestionCardState = 'open' | 'staged' | 'answered' | 'dismissed';
 
@@ -45,7 +46,6 @@ type Props = {
 };
 
 const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on.';
-const RESOLVED_BY_AGENT = '[resolved by agent]';
 
 const inputModeOf = ({
   question,

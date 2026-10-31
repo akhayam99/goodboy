@@ -38,7 +38,7 @@
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
   (and Blocking as a dot and a word on the title line). That card is one subtle surface
-  with no border: option rows have no boxes (a faint key, the label, `Recommended` as a
+  with no border: option rows have no boxes (a faint key that becomes a check mark when its option is picked, the label, `Recommended` as a
   word), the delegate link and the actions share one footer row, and four options measure
   about 216px (12 padding, 20 title, 4 rows of 32, a 28 footer, the gaps) where the boxed
   card measured 370px. The Artifacts list uses the same group label as Questions, and an

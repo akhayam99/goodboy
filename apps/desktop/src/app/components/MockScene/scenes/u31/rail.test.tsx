@@ -95,9 +95,9 @@ describe('the u31 rail scene', () => {
 
     const tree = await railTree();
     expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '4 working, 2 waiting, 6 done',
+      '3 working, 2 waiting, 6 done',
     );
-    headOf({ tree, name: 'Working, 4' });
+    headOf({ tree, name: 'Working, 3' });
     headOf({ tree, name: 'Waiting, 2' });
     headOf({ tree, name: 'Done, 6' });
     const working = container.querySelector<HTMLElement>('[data-spawned-state="working"]');
@@ -109,12 +109,15 @@ describe('the u31 rail scene', () => {
         .getAllByRole('treeitem')
         .map((item) => item.getAttribute('aria-label')),
     ).toEqual([
-      'Working, 4',
+      'Working, 3',
       'Docs, Write the retry summary, Running',
       'Reviewer, Review the ledger-core diff, Running',
       'Implementer, Fix the applyCredit retry, Running',
-      'Auto agent, Make the payments-api retry safe, Running',
     ]);
+    expect(working.contains(within(tree).getAllByRole('treeitem')[0] ?? null)).toBe(false);
+    expect(within(tree).getAllByRole('treeitem')[0]?.getAttribute('aria-label')).toBe(
+      'Auto agent, Make the payments-api retry safe, Running',
+    );
   });
 
   it('folds Done by default and keeps its rows out of the tree', async () => {
@@ -149,7 +152,7 @@ describe('the u31 rail scene', () => {
     mount();
 
     const tree = await railTree();
-    for (const name of ['Working, 4', 'Waiting, 2']) {
+    for (const name of ['Working, 3', 'Waiting, 2']) {
       const head = headOf({ tree, name });
       expect(head.getAttribute('aria-expanded')).toBeNull();
       fireEvent.click(head);

@@ -8,7 +8,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -103,14 +104,27 @@ describe('the header scene', () => {
   it('keeps the chevron shown while the popover is open and opens it from the keyboard', async () => {
     mount();
 
+    const user = userEvent.setup();
     const chip = await limitChip();
-    chip.focus();
-    fireEvent.click(chip);
+    for (let step = 0; step < 60 && document.activeElement !== chip; step += 1) {
+      await user.tab();
+    }
+    expect(document.activeElement).toBe(chip);
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+
+    await user.keyboard('{Enter}');
 
     expect(chip.getAttribute('aria-expanded')).toBe('true');
     expect(chip.querySelector('[data-setting-chevron]')?.getAttribute('data-setting-chevron')).toBe(
       'open',
     );
+    await screen.findByRole('dialog', undefined, WAIT);
+    await user.keyboard('{Escape}');
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+
+    await user.keyboard(' ');
+
+    expect(chip.getAttribute('aria-expanded')).toBe('true');
     await screen.findByRole('dialog', undefined, WAIT);
   });
 });

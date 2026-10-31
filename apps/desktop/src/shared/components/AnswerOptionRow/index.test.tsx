@@ -15,6 +15,28 @@ describe('AnswerOptionRow', () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
+  it('turns the key number into a check mark at foreground weight once picked in single mode', () => {
+    const { container, rerender } = render(
+      <AnswerOptionRow label="yes" keyHint={1} selected={false} onToggle={() => undefined} />,
+    );
+    expect(screen.getByRole('radio', { name: 'yes' }).getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByText('1').textContent).toBe('1');
+    expect(container.querySelector('svg')).toBeNull();
+
+    rerender(<AnswerOptionRow label="yes" keyHint={1} selected onToggle={() => undefined} />);
+
+    expect(screen.getByRole('radio', { name: 'yes' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByText('1')).toBeNull();
+    expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('keeps the key number in multi-choice mode, where the box carries the check', () => {
+    render(
+      <AnswerOptionRow label="yes" keyHint={1} selected mode="many" onToggle={() => undefined} />,
+    );
+    expect(screen.getByText('1').textContent).toBe('1');
+  });
+
   it('uses the checkbox role and aria-checked in multi-choice mode', () => {
     render(
       <AnswerOptionRow label="yes" keyHint={1} selected mode="many" onToggle={() => undefined} />,

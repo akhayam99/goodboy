@@ -1,7 +1,6 @@
 import type { OpenQuestion } from '@goodboy/types';
 import type { QuestionCardState } from '.';
-
-const RESOLVED_BY_AGENT = '[resolved by agent]';
+import { RESOLVED_BY_AGENT } from './resolvedByAgent';
 
 type Params = {
   readonly state: QuestionCardState;

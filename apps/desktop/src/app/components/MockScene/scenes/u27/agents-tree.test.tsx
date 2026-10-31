@@ -242,13 +242,13 @@ describe('the focused Auto launch', () => {
     const tree = await focusedTree();
     expect(screen.getByRole('button', { name: 'All launches' })).toBeDefined();
     expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '3 working, 3 waiting, 7 done',
+      '2 working, 3 waiting, 7 done',
     );
     expect(visualLabelsOf({ tree })).toEqual([
-      'Working, 3',
+      ROOT,
+      'Working, 2',
       TOP,
       'Reviewer, Review the ledger-core side, Running',
-      ROOT,
       'Waiting, 3',
       'Scout, Check notify-relay for duplicate retries, Queued',
       READER,
@@ -263,11 +263,11 @@ describe('the focused Auto launch', () => {
     expect(container.querySelector('[data-auto-limit-foot]')).toBeNull();
   });
 
-  it('moves with the arrows in screen order, Home on the first group, End on the Done group', async () => {
+  it('moves with the arrows in screen order, Home on the Auto row, End on the Done group', async () => {
     mount({ id: FOCUSED });
 
     const tree = await focusedTree();
-    const first = within(tree).getByRole('treeitem', { name: 'Working, 3' });
+    const first = within(tree).getByRole('treeitem', { name: 'Working, 2' });
     expect(first.tabIndex).toBe(0);
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'ArrowDown' });
@@ -276,6 +276,11 @@ describe('the focused Auto launch', () => {
     expect(document.activeElement).toBe(first);
     fireEvent.keyDown(first, { key: 'End' });
     const done = within(tree).getByRole('treeitem', { name: 'Done, 7' });
+    expect(document.activeElement).toBe(done);
+    fireEvent.keyDown(done, { key: 'Home' });
+    expect(document.activeElement?.getAttribute('aria-label')).toBe(ROOT);
+    expect(document.activeElement).toBe(spawnedTreeItemsOf({ element: tree })[0]);
+    fireEvent.keyDown(done, { key: 'End' });
     expect(document.activeElement).toBe(done);
     fireEvent.keyDown(done, { key: 'ArrowRight' });
     expect(done.getAttribute('aria-expanded')).toBe('true');
@@ -303,7 +308,7 @@ describe('the focused Auto launch', () => {
       await Promise.resolve();
     });
 
-    expect(visualLabelsOf({ tree })[1]).toBe('Scout, Trace the notify-relay retry storm, Running');
+    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
     expect(scroller.scrollTop).toBe(ROW_PX * 5);
     expect(document.activeElement).toBe(reader);
   });
@@ -321,7 +326,7 @@ describe('the focused Auto launch', () => {
       await Promise.resolve();
     });
 
-    expect(visualLabelsOf({ tree })[1]).toBe('Scout, Trace the notify-relay retry storm, Running');
+    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
     expect(scroller.scrollTop).toBe(0);
   });
 });
