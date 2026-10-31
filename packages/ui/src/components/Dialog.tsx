@@ -2,6 +2,7 @@ import {
   useId,
   useEffect,
   useRef,
+  type KeyboardEventHandler,
   type MouseEvent,
   type ReactNode,
   type SyntheticEvent,
@@ -32,6 +33,7 @@ export type DialogProps = {
   showClose?: boolean;
   closeOnBackdrop?: boolean;
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  returnFocusTo?: () => HTMLElement | null;
   fullScreenOnSmall?: boolean;
   fixedHeightClass?: string;
   bodyClassName?: string;
@@ -39,6 +41,7 @@ export type DialogProps = {
   panel?: ReactNode;
   panelWidthClass?: string;
   panelClassName?: string;
+  onKeyDown?: KeyboardEventHandler<HTMLDialogElement>;
 };
 
 const SIZE: Record<DialogSize, string> = {
@@ -73,6 +76,7 @@ export const Dialog = ({
   showClose = true,
   closeOnBackdrop = true,
   initialFocusRef,
+  returnFocusTo,
   fullScreenOnSmall = false,
   fixedHeightClass,
   bodyClassName,
@@ -80,6 +84,7 @@ export const Dialog = ({
   panel,
   panelWidthClass = 'w-48',
   panelClassName,
+  onKeyDown,
 }: DialogProps) => {
   const ref = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -95,8 +100,14 @@ export const Dialog = ({
   const programmaticCloseRef = useRef(false);
   const openerRef = useRef<HTMLElement | null>(null);
 
+  const returnFocusToRef = useRef(returnFocusTo);
+  useEffect(() => {
+    returnFocusToRef.current = returnFocusTo;
+  });
+
   const returnFocus = () => {
-    const opener = openerRef.current;
+    const stable = returnFocusToRef.current?.() ?? null;
+    const opener = stable?.isConnected === true ? stable : openerRef.current;
     openerRef.current = null;
     if (opener?.isConnected === true) {
       opener.focus();
@@ -170,6 +181,7 @@ export const Dialog = ({
       ref={ref}
       onClick={onBackdropClick}
       onCancel={onCancel}
+      onKeyDown={onKeyDown}
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(

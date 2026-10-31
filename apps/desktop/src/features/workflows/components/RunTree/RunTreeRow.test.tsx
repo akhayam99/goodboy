@@ -11,7 +11,7 @@ import {
 } from '../../../workTreeModel/railGeometry';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { RunTreeRow } from './RunTreeRow';
-import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
+import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
 import type { RunTreeDensity } from './runTreeDensity';
 import { baseAgents, child, streamOf } from './testing/runTreeFixtures';
 

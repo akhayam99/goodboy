@@ -836,6 +836,10 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   `main`, before the change, as `-before-`; after the change, the same scene,
   same name, as `-after-`. A brand-new screen only ever gets `-after-`: there
   is nothing to be "before".
+- **Any shape is fine.** What's new shows a picture whole, at its own shape,
+  up to 480px tall, and a Before and After pair share one frame height, so a
+  wide card or a tall rail needs no padding to fit. The `release-image-shape`
+  probe in `scripts/validate-scenes.mjs` measures the `u32-release-images` scene.
 - **Promotion at the version bump.** The `next` folder under `docs/changelog` holds
   work-in-progress pictures across PRs in the same release. The PR that bumps
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets

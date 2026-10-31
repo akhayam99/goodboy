@@ -24,7 +24,7 @@ vi.mock('../../turn', async () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { MessageAttachment } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -65,8 +65,10 @@ describe('UserText attachments', () => {
         workingDir={PROJECT_ROOT}
       />,
     );
-    const image = await screen.findByAltText('checkout-502.png');
-    expect(image.getAttribute('src')).toBe('data:image/png;base64,QUJD');
+    const thumb = await screen.findByRole('button', { name: 'Preview checkout-502.png' });
+    await waitFor(() =>
+      expect(thumb.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,QUJD'),
+    );
     expect(reads).toEqual([{ dir: PROJECT_ROOT, relPath: SHOT.relPath }]);
   });
 
@@ -79,8 +81,8 @@ describe('UserText attachments', () => {
         workingDir={PROJECT_ROOT}
       />,
     );
-    await screen.findByAltText('checkout-502.png');
-    expect(reads).toEqual([{ dir: SCRATCH, relPath: SHOT.relPath }]);
+    await screen.findByRole('button', { name: 'Preview checkout-502.png' });
+    await waitFor(() => expect(reads).toEqual([{ dir: SCRATCH, relPath: SHOT.relPath }]));
   });
 
   it('reads a first lap image even when the session has no working folder', async () => {
@@ -92,7 +94,7 @@ describe('UserText attachments', () => {
         workingDir={null}
       />,
     );
-    await screen.findByAltText('checkout-502.png');
-    expect(reads).toEqual([{ dir: SCRATCH, relPath: SHOT.relPath }]);
+    await screen.findByRole('button', { name: 'Preview checkout-502.png' });
+    await waitFor(() => expect(reads).toEqual([{ dir: SCRATCH, relPath: SHOT.relPath }]));
   });
 });

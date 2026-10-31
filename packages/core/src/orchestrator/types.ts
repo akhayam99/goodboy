@@ -90,7 +90,14 @@ export type OrchestratorRoleDefault = {
   readonly skippedPin?: string;
 };
 
+type OrchestratorMount = {
+  readonly id: string;
+  readonly name: string;
+  readonly branch?: string;
+};
+
 export type OrchestratorInput = {
+  readonly mounts?: ReadonlyArray<OrchestratorMount>;
   readonly goal: string;
   readonly processText: string;
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;

@@ -1,5 +1,6 @@
 import type { OrchestratorInput } from '@goodboy/core';
 import type { OrchestratorHint, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
+import { selectWritableMounts } from '../../project-mounts/selectors';
 import { buildProfileGuard } from '../../turn/profileGuard';
 import { getSessionRepo } from '../../worktrees/getSessionRepo';
 import { buildWorkspaceProjectsBlock } from '../buildWorkspaceProjectsBlock';
@@ -17,7 +18,10 @@ type Params = {
 
 type Result = {
   readonly worktreePath: string | null;
-  readonly hintInput: Pick<OrchestratorInput, 'operatorHints' | 'canReadFiles' | 'decisions'>;
+  readonly hintInput: Pick<
+    OrchestratorInput,
+    'operatorHints' | 'canReadFiles' | 'decisions' | 'mounts'
+  >;
 };
 
 export const orchestratorHintContext = async ({
@@ -62,6 +66,11 @@ export const orchestratorHintContext = async ({
       ...(operatorHints !== '' && { operatorHints }),
       ...(canReadFiles && { canReadFiles: true }),
       decisions: decisionsSlot?.value ?? '',
+      mounts: selectWritableMounts({ state: get(), sessionId }).map((mount) => ({
+        id: mount.mountId,
+        name: mount.mountName,
+        branch: mount.branch,
+      })),
     },
   };
 };

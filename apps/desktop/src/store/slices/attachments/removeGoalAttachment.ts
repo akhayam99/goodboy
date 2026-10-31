@@ -2,10 +2,18 @@ import { deleteGoalAttachment } from '@goodboy/db';
 import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { deleteAttachment } from '../../../features/chat/turn';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { attachmentReadKey } from './attachmentReadKey';
+import { attachmentReads } from './attachmentReads';
+import { attachmentWrites } from './attachmentWrites';
 import type { GetFn, SetFn } from './types';
 
+type RemoveParams = {
+  readonly owner: GoalAttachmentOwner;
+  readonly id: string;
+};
+
 export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
-  return async (owner: GoalAttachmentOwner, id: string): Promise<void> => {
+  const removeNow = async ({ owner, id }: RemoveParams): Promise<void> => {
     const state = get();
     const list =
       owner.type === 'session'
@@ -19,6 +27,7 @@ export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
       await deleteAttachment(worktreeDir, target.relPath).catch(() => {});
     }
     await deleteGoalAttachment(tauriDatabase, id);
+    attachmentReads.cancel({ key: attachmentReadKey({ owner }) });
 
     if (owner.type === 'session') {
       const sid = owner.id as SessionId;
@@ -38,4 +47,10 @@ export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
       },
     }));
   };
+
+  return (owner: GoalAttachmentOwner, id: string): Promise<void> =>
+    attachmentWrites.run({
+      key: attachmentReadKey({ owner }),
+      task: () => removeNow({ owner, id }),
+    });
 };

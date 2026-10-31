@@ -32,7 +32,6 @@
     "apps/desktop/src/features/bug-report/reportBody.ts": 1,
     "apps/desktop/src/features/changelog/components/ChangelogStudio/FeatureBlock.tsx": 1,
     "apps/desktop/src/features/changelog/components/ChangelogStudio/FixRow.tsx": 1,
-    "apps/desktop/src/features/changelog/components/ReleaseImage/index.tsx": 1,
     "apps/desktop/src/features/changelog/hooks/useChangelogImage/index.ts": 1,
     "apps/desktop/src/features/chat/components/ArtifactBlockCard/index.tsx": 1,
     "apps/desktop/src/features/chat/components/ArtifactCaptureNoticeCard/index.tsx": 2,

@@ -367,7 +367,7 @@
     "apps/desktop/src/features/chat/utils/turnOutcome.ts": 1,
     "apps/desktop/src/features/companion/commandExecutor.ts": 21,
     "apps/desktop/src/features/companion/mobileConfinement.ts": 10,
-    "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 2,
+    "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/askerQuestions/index.ts": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/CustomAnswerField/index.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/deriveSuggestions/index.ts": 5,

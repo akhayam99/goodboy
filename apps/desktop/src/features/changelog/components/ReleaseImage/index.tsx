@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedTabs, Skeleton } from '@goodboy/ui';
 import { useChangelogImage } from '../../hooks/useChangelogImage';
+import { ReleaseImageCell } from './ReleaseImageCell';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 
@@ -21,7 +22,7 @@ const VARIANT_OPTIONS: ReadonlyArray<{
 
 export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
   const [variant, setVariant] = useState<ChangelogImageVariant>('after');
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const after = useChangelogImage({ version, image, variant: 'after' });
   const before = useChangelogImage({ version, image, variant: 'before', enabled: hasBefore });
 
@@ -42,26 +43,36 @@ export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
           options={VARIANT_OPTIONS}
         />
       ) : null}
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge">
-        {active.kind === 'loading' ? (
+      {active.kind === 'loading' ? (
+        <div className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge">
           <Skeleton className="h-full w-full rounded-none" />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setLightboxOpen(true)}
-            className="absolute inset-0 block h-full w-full cursor-zoom-in"
-          >
-            <img
-              key={variant}
-              src={active.dataUri}
+        </div>
+      ) : (
+        <div className="relative grid w-full grid-cols-[minmax(0,1fr)] overflow-hidden rounded-lg border border-frame-edge bg-subtle">
+          {after.kind === 'ready' ? (
+            <ReleaseImageCell
+              src={after.dataUri}
               alt={alt}
-              className="h-full w-full animate-fade-in object-cover"
+              isActive={variant === 'after'}
+              onOpen={() => setIsLightboxOpen(true)}
             />
-          </button>
-        )}
-      </div>
-      {lightboxOpen && active.kind === 'ready' ? (
-        <ImageLightbox src={active.dataUri} alt={alt} onClose={() => setLightboxOpen(false)} />
+          ) : null}
+          {hasBefore && before.kind === 'ready' ? (
+            <ReleaseImageCell
+              src={before.dataUri}
+              alt={alt}
+              isActive={variant === 'before'}
+              onOpen={() => setIsLightboxOpen(true)}
+            />
+          ) : null}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-lg opacity-0 ring-2 ring-inset ring-focus-ring peer-focus-visible:opacity-100"
+          />
+        </div>
+      )}
+      {isLightboxOpen && active.kind === 'ready' ? (
+        <ImageLightbox src={active.dataUri} alt={alt} onClose={() => setIsLightboxOpen(false)} />
       ) : null}
     </div>
   );

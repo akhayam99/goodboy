@@ -1,7 +1,8 @@
+import { useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SectionLabel } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core';
-import type { Session } from '@goodboy/types';
+import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { RunTree } from '../../../workflows/components/RunTree';
@@ -12,6 +13,7 @@ import { orchestratedChecklistOf } from '../../../workflows/orchestratedChecklis
 import type { AgentKind } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedNotes } from './OrchestratedNotes';
+import { OrchestratedHintRow } from './OrchestratedHintRow';
 import { OrchestratedPlanRow } from './OrchestratedPlanRow';
 
 type Props = {
@@ -21,9 +23,16 @@ type Props = {
 
 const CHECKLIST_EMPTY_SLOT = 28;
 
+const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
+
+type AgentParams = {
+  readonly agentId: AgentId;
+};
+
 export const OrchestratedChecklist = ({ session, view }: Props) => {
   const { run, workflow, agents } = view;
   const sessionId = session.id;
+  const sectionRef = useRef<HTMLElement | null>(null);
   const roleModels = useSessionRoleModels({ sessionId });
   const openDrawer = useAppStore((state) => state.openDrawer);
   const openStepId = useAppStore((state) =>
@@ -57,26 +66,48 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     (change) => change.kind === 'skipped',
   );
 
-  const beforeRow = ({ agentId, slotWidth }: RunTreeInsert) => {
-    const steps = agentId === null ? [] : (checklist.readHintsBefore.get(agentId) ?? []);
-    return steps.map((step) => (
-      <OrchestratedPlanRow
-        key={`hint-${step}`}
-        kind="hint"
-        label={ORCHESTRATED_COPY.readHint({ step })}
+  const openStep = ({ agentId }: AgentParams) => {
+    const row = sectionRef.current?.querySelector<HTMLElement>(
+      `[data-testid="run-tree-row-${agentId}"]`,
+    );
+    const target = row?.querySelector<HTMLElement>(FOCUSABLE);
+    if (row == null || target == null) {
+      openDrawer({ kind: 'run-step', sessionId, payload: { runId: run.id, agentId } });
+      return;
+    }
+    row.scrollIntoView({ block: 'nearest' });
+    target.focus();
+  };
+
+  const beforeRow = ({ agentId, slotWidth, ink, hasLineBelow }: RunTreeInsert) => {
+    const hints = agentId === null ? [] : (checklist.readHintsBefore.get(agentId) ?? []);
+    return hints.map((hint) => (
+      <OrchestratedHintRow
+        key={hint.id}
+        hint={hint}
+        sessionId={sessionId}
+        runId={run.id}
+        state="read"
         slotWidth={slotWidth}
+        ink={ink}
+        hasLineBelow={hasLineBelow}
+        onOpenStep={agentId === null ? null : () => openStep({ agentId })}
       />
     ));
   };
 
-  const trailing = ({ slotWidth }: RunTreeInsert) => (
+  const trailing = ({ slotWidth, ink, hasLineBelow }: RunTreeInsert) => (
     <>
-      {checklist.trailingHintSteps.map((step) => (
-        <OrchestratedPlanRow
-          key={`hint-${step}`}
-          kind="hint"
-          label={ORCHESTRATED_COPY.readHint({ step })}
+      {checklist.trailingHints.map((hint, index) => (
+        <OrchestratedHintRow
+          key={hint.id}
+          hint={hint}
+          sessionId={sessionId}
+          runId={run.id}
+          state="read"
           slotWidth={slotWidth}
+          ink={ink}
+          hasLineBelow={hasLineBelow || index < checklist.trailingHints.length - 1}
         />
       ))}
       {checklist.isNextShown ? (
@@ -113,7 +144,11 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
   }
 
   return (
-    <section aria-label={ORCHESTRATED_COPY.checklist} className="flex min-w-0 flex-col gap-2">
+    <section
+      ref={sectionRef}
+      aria-label={ORCHESTRATED_COPY.checklist}
+      className="flex min-w-0 flex-col gap-2"
+    >
       <SectionLabel
         label={ORCHESTRATED_COPY.steps}
         headingLevel={2}
@@ -143,7 +178,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           onAnswer={() => undefined}
         />
       ) : (
-        trailing({ agentId: null, slotWidth: CHECKLIST_EMPTY_SLOT })
+        trailing({ agentId: null, slotWidth: CHECKLIST_EMPTY_SLOT, ink: null, hasLineBelow: false })
       )}
       <OrchestratedNotes notes={checklist.notes} />
     </section>
