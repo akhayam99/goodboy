@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { OpenQuestion } from '@goodboy/types';
+import { brandId, type OpenQuestion, type SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -112,7 +112,10 @@ describe('OpenQuestionCluster', () => {
     const tree = (questions: ReadonlyArray<OpenQuestion>) => (
       <>
         <textarea aria-label="Composer" />
-        <OpenQuestionCluster questions={questions} sessionId={'sess-1' as never} />
+        <OpenQuestionCluster
+          questions={questions}
+          sessionId={brandId<SessionId>({ value: 'sess-1' })}
+        />
       </>
     );
     openInStore.questions = all;
