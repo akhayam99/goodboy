@@ -15,6 +15,7 @@ export const LiveSection = ({ section, children }: Props) => (
     className="flex min-w-0 flex-col gap-2"
   >
     <SectionLabel
+      headingLevel={2}
       label={section.title}
       count={<span data-live-section-count="">{section.groups.length}</span>}
     />

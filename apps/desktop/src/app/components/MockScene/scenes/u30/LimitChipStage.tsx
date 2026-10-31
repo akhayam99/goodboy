@@ -8,6 +8,7 @@ const DEFAULT_LIMIT = {
   isFromSession: false,
   isDefault: true,
   defaultUsd: 5,
+  defaultFrom: 'auto',
   change: noop,
 } as const;
 
@@ -16,6 +17,7 @@ const TYPED_LIMIT = {
   isFromSession: false,
   isDefault: false,
   defaultUsd: 5,
+  defaultFrom: 'run',
   change: noop,
 } as const;
 

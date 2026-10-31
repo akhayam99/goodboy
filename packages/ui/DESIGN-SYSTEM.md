@@ -487,7 +487,8 @@ a fraction of the text size. A table (`renderTable`) has a `text-meta` header,
 one hairline between rows and `tabular-nums` on a number column.
 `ScrollFade` paints its fade with the `mask-fade-x` and `mask-fade-y` utilities
 and writes its fade sizes only while the content overflows, so a static artifact
-page carries no inline style.
+page carries no inline style. The utilities reset both sizes to `0px`, so a
+viewport that does not overflow never inherits the fade of an outer `ScrollFade`.
 
 ## Radius scale
 

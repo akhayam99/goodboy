@@ -24,15 +24,19 @@ vi.mock('@tauri-apps/api/event', async () =>
 const SESSION = aSession({ workspaceId: aWorkspace({ name: 'Harborline' }).id });
 const SESSION_ID: SessionId = SESSION.id;
 
-const entriesOf = () => {
-  const rows = [
+type EntriesParams = {
+  readonly count?: number;
+};
+
+const entriesOf = ({ count = 1 }: EntriesParams = {}) => {
+  const rows = Array.from({ length: count }, (_, index) =>
     aMountRow({
-      key: 'fix-duplicate-credit',
+      key: index === 0 ? 'fix-duplicate-credit' : `fix-duplicate-credit-${index}`,
       projectName: 'payments-api',
-      branch: 'hl/fix-duplicate-credit',
-      request: aRequest({ provider: 'github', number: 318, checks: 'success' }),
+      branch: index === 0 ? 'hl/fix-duplicate-credit' : `hl/fix-duplicate-credit-${index}`,
+      request: aRequest({ provider: 'github', number: 318 + index, checks: 'success' }),
     }),
-  ];
+  );
   const facts = branchFactsOf({
     rows,
     fetchedAtByMountId: new Map(),
@@ -81,6 +85,12 @@ describe('the Branches block at a narrow centre pane', () => {
     expect(branchCell?.textContent).toContain('hl/fix-duplicate-credit');
     expect(branchCell?.textContent).toContain('#318');
     expect(branchCell?.querySelector('[data-branch-state]')).not.toBeNull();
+  });
+
+  it('names the block with a level 2 heading once there are two branches', () => {
+    render(<BranchList sessionId={SESSION_ID} entries={entriesOf({ count: 2 })} />);
+
+    screen.getByRole('heading', { level: 2, name: /^Branches/ });
   });
 
   it('keeps every column when the pane is wide', () => {

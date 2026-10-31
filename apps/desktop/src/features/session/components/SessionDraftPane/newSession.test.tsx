@@ -705,7 +705,11 @@ describe('New session limit by kind', () => {
   const AUTO_DEFAULT = /^Limit \$5\.00 · default$/;
   const RUN_DEFAULT = /^Limit \$8\.00 · default$/;
 
-  const typeLimit = async (usd: string): Promise<void> => {
+  type TypeLimitParams = {
+    readonly usd: string;
+  };
+
+  const typeLimit = async ({ usd }: TypeLimitParams): Promise<void> => {
     fireEvent.click(screen.getByRole('button', { name: /^Limit / }));
     await settle();
     fireEvent.change(screen.getByRole('textbox', { name: 'Other amount' }), {
@@ -759,7 +763,7 @@ describe('New session limit by kind', () => {
     withRunDefault();
     await openPage();
     await pickKind({ name: /^Orchestrated/ });
-    await typeLimit('3');
+    await typeLimit({ usd: '3' });
     screen.getByRole('button', { name: 'Limit $3.00' });
     typeGoal(GOAL);
 
@@ -774,7 +778,7 @@ describe('New session limit by kind', () => {
     withRunDefault();
     await openPage();
     await pickKind({ name: /^Orchestrated/ });
-    await typeLimit('3');
+    await typeLimit({ usd: '3' });
 
     await pickKind({ name: /^Auto/ });
 

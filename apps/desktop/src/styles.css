@@ -806,6 +806,8 @@ body {
 }
 
 @utility mask-fade-x {
+  --fade-top: 0px;
+  --fade-bottom: 0px;
   mask-image: linear-gradient(
     to right,
     transparent,
@@ -823,6 +825,8 @@ body {
 }
 
 @utility mask-fade-y {
+  --fade-top: 0px;
+  --fade-bottom: 0px;
   mask-image: linear-gradient(
     to bottom,
     transparent,

@@ -35,7 +35,7 @@ Group labels stand above their rows with room between groups, a row's name leads
 
 ### Fixed
 
-- Orchestrated and Preset start from the Run defaults limit; Auto and a single agent start from the Auto limit. A typed amount stays for a retry. <!-- gb area=sessions -->
+- Orchestrated and Preset start from the Run defaults limit; Auto and a start with no kind start from the Auto limit. A typed amount stays for a retry. <!-- gb area=sessions -->
 - A long answer never stops on a heading with nothing under it; it stops after the last whole paragraph or list. <!-- gb area=agents -->
 - The Runs list fits its card at any width: origin and model hide first when the list is narrow. <!-- gb area=sessions -->
 

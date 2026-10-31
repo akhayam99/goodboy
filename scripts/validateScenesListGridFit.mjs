@@ -7,14 +7,21 @@ export const listGridFitProbe = () =>
   [...document.querySelectorAll('[data-list-grid]')].map((grid) => {
     const right = grid.getBoundingClientRect().right;
     const rows = [...grid.querySelectorAll('[data-list-grid-row]')].map((row) => {
-      const cells = [...row.querySelectorAll('*')].filter(
-        (cell) => cell.children.length === 0 && (cell.textContent ?? '').trim() !== '',
-      );
-      const cellRight = cells.reduce(
-        (widest, cell) => Math.max(widest, cell.getBoundingClientRect().right),
+      const leaves = [...row.querySelectorAll('*')].filter((leaf) => leaf.children.length === 0);
+      const leafRight = leaves.reduce(
+        (widest, leaf) => Math.max(widest, leaf.getBoundingClientRect().right),
         row.getBoundingClientRect().right,
       );
-      return { label: (row.textContent ?? '').trim().slice(0, 40), right: cellRight };
+      const boxes = [row, ...row.querySelectorAll('[data-list-grid-cell]')];
+      const overflow = boxes.reduce(
+        (widest, box) => Math.max(widest, box.scrollWidth - box.clientWidth),
+        0,
+      );
+      return {
+        label: (row.textContent ?? '').trim().slice(0, 40),
+        right: leafRight,
+        overflow,
+      };
     });
     return { label: grid.getAttribute('aria-label') ?? '', right, rows };
   });
@@ -40,6 +47,15 @@ export const listGridFitFailures = ({
         check: `a row of the ${grid.label} list runs past its right edge`,
         edge: round(grid.right),
         rows: over.map((row) => ({ row: row.label, right: round(row.right) })),
+      });
+    }
+    const wide = grid.rows.filter((row) => (row.overflow ?? 0) > tolerance);
+    if (wide.length > 0) {
+      failures.push({
+        scene,
+        width,
+        check: `a row or cell of the ${grid.label} list holds content wider than itself`,
+        rows: wide.map((row) => ({ row: row.label, overflow: round(row.overflow) })),
       });
     }
   }

@@ -8,7 +8,7 @@ import { sumSessionCost } from '../../../store/slices/sessions/sumSessionCost';
 import { autoLimitOf } from '../autoLimitOf';
 import { parseAutoTreeLimit, writeAutoTreeLimit } from '../autoTreeLimit';
 import { startLimitOf, type StartLimit } from '../startLimitOf';
-import type { LimitDefaultParams } from '../limitDefaultFrom';
+import type { LimitDefaultFrom, LimitDefaultParams } from '../limitDefaultFrom';
 import { runDefaultLimitOf } from '../../../store/slices/workflows/runLimit/runDefaultLimitOf';
 
 type Params = {
@@ -16,13 +16,14 @@ type Params = {
   readonly sessionId?: SessionId | null;
 };
 
-type Draft = Readonly<{ usd: number | null }>;
+type Draft = Readonly<{ usd: number | null; enteredFrom: LimitDefaultFrom }>;
 
 export type AutoTreeLimitView = Readonly<{
   usd: number | null;
   isFromSession: boolean;
   isDefault: boolean;
   defaultUsd: number | null;
+  defaultFrom: LimitDefaultFrom;
   isStored: boolean;
   tiers: string;
   change: (usd: number | null) => void;
@@ -31,6 +32,7 @@ export type AutoTreeLimitView = Readonly<{
 export type AutoTreeLimitModel = Readonly<{
   viewOf: (params: LimitDefaultParams) => AutoTreeLimitView;
   persist: (params: LimitDefaultParams) => Promise<StartLimit>;
+  settle: () => void;
 }>;
 
 const NO_RECORDS: ReadonlyArray<TelemetryRecord> = [];
@@ -79,7 +81,14 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
     [draftUsd, runDefaultUsd, sessionCapUsd, storedUsd],
   );
 
-  const change = useCallback((next: number | null): void => setDraft({ usd: next }), []);
+  const changeFromAuto = useCallback(
+    (next: number | null): void => setDraft({ usd: next, enteredFrom: 'auto' }),
+    [],
+  );
+  const changeFromRun = useCallback(
+    (next: number | null): void => setDraft({ usd: next, enteredFrom: 'run' }),
+    [],
+  );
 
   const viewOf = useCallback(
     ({ defaultFrom }: LimitDefaultParams): AutoTreeLimitView => {
@@ -89,12 +98,13 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
         isFromSession: facts.isFromSession,
         isDefault: facts.isDefault,
         defaultUsd: facts.defaultUsd,
+        defaultFrom,
         isStored: defaultFrom === 'run' ? runDefaultUsd !== null : storedUsd !== null,
         tiers,
-        change,
+        change: defaultFrom === 'run' ? changeFromRun : changeFromAuto,
       };
     },
-    [change, factsOf, runDefaultUsd, storedUsd, tiers],
+    [changeFromAuto, changeFromRun, factsOf, runDefaultUsd, storedUsd, tiers],
   );
 
   const persist = useCallback(
@@ -104,7 +114,7 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
       if (workspaceId === null || facts.isFromSession || draft === null) {
         return shownLimit;
       }
-      if (defaultFrom === 'run') {
+      if (defaultFrom === 'run' || draft.enteredFrom !== 'auto') {
         return shownLimit;
       }
       if (draft.usd === storedUsd) {
@@ -119,5 +129,7 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
     [draft, factsOf, loadWorkspaceValue, storedUsd, workspaceId],
   );
 
-  return { viewOf, persist };
+  const settle = useCallback((): void => setDraft(null), []);
+
+  return { viewOf, persist, settle };
 };

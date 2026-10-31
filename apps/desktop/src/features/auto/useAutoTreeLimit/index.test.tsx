@@ -50,6 +50,9 @@ const Probe = ({ sessionId = null, defaultFrom = 'auto' }: ProbeParams) => {
       <button type="button" onClick={() => void limit.persist()}>
         persist
       </button>
+      <button type="button" onClick={model.settle}>
+        settle
+      </button>
     </div>
   );
 };
@@ -181,7 +184,11 @@ describe('useAutoTreeLimit', () => {
   });
 
   describe('starting from the Run defaults', () => {
-    const withRunDefault = (usd: number | null): void => {
+    type RunDefaultParams = {
+      readonly usd: number | null;
+    };
+
+    const withRunDefault = ({ usd }: RunDefaultParams): void => {
       useAppStore.setState({
         workspaceOverrides: {
           [HARBORLINE]: {
@@ -193,7 +200,7 @@ describe('useAutoTreeLimit', () => {
     };
 
     it('shows the Run defaults amount, not the Auto limit, tagged as the default', async () => {
-      withRunDefault(6);
+      withRunDefault({ usd: 6 });
       await db.execute(
         "INSERT INTO workspace_values (workspace_id, key, value, updated_at) VALUES (?, 'auto.treeLimitUsd', ?, 0)",
         [HARBORLINE, '12'],
@@ -205,7 +212,7 @@ describe('useAutoTreeLimit', () => {
     });
 
     it('keeps an amount typed on a run for a retry and never writes the Auto limit', async () => {
-      withRunDefault(6);
+      withRunDefault({ usd: 6 });
       render(<Probe defaultFrom="run" />);
 
       fireEvent.click(screen.getByText('change'));
@@ -216,8 +223,32 @@ describe('useAutoTreeLimit', () => {
       expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
     });
 
+    it('never writes an amount typed against the Run defaults when Auto persists it', async () => {
+      withRunDefault({ usd: 6 });
+      const view = render(<Probe defaultFrom="run" />);
+      fireEvent.click(screen.getByText('change'));
+
+      view.rerender(<Probe defaultFrom="auto" />);
+      expect(screen.getByTestId('usd').textContent).toBe('9');
+      fireEvent.click(screen.getByText('persist'));
+      await act(async () => undefined);
+
+      expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+    });
+
+    it('forgets the typed amount after settle and shows the default again', async () => {
+      withRunDefault({ usd: 6 });
+      render(<Probe defaultFrom="run" />);
+      fireEvent.click(screen.getByText('change'));
+      expect(screen.getByTestId('usd').textContent).toBe('9');
+
+      fireEvent.click(screen.getByText('settle'));
+
+      expect(screen.getByTestId('usd').textContent).toBe('6');
+    });
+
     it('has no limit when Run defaults has none', async () => {
-      withRunDefault(null);
+      withRunDefault({ usd: null });
       render(<Probe defaultFrom="run" />);
 
       expect(screen.getByTestId('usd').textContent).toBe('null');

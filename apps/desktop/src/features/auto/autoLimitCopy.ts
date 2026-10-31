@@ -1,5 +1,6 @@
 import { formatUsd } from '@goodboy/ui';
 import type { StartShape } from '../../store/slices/sessionDraft/state';
+import type { LimitDefaultFrom, LimitDefaultParams } from './limitDefaultFrom';
 
 type AmountParams = {
   readonly usd: number | null;
@@ -25,11 +26,12 @@ const SPENDER = {
   autoAgent: 'Auto and the agents it starts',
 } as const satisfies Record<AutoLimitKind, string>;
 
+type HelpParams = KindParams & LimitDefaultParams;
+
 const STARTS_FROM = {
-  orchestrated: 'It applies to this run only. Run defaults set where new runs start.',
-  preset: 'It applies to this run only. Run defaults set where new runs start.',
-  autoAgent: 'Other runs in this workspace start from the same limit.',
-} as const satisfies Record<AutoLimitKind, string>;
+  run: 'It applies to this run only. Run defaults set where new runs start.',
+  auto: 'Other runs in this workspace start from the same limit.',
+} as const satisfies Record<LimitDefaultFrom, string>;
 
 export const AUTO_LIMIT_COPY = {
   noLimit: NO_LIMIT,
@@ -40,6 +42,6 @@ export const AUTO_LIMIT_COPY = {
   fromSession: 'From the budget of this session',
   labelOf: ({ usd }: AmountParams): string => (usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`),
   titleOf: ({ kind }: KindParams): string => TITLE[kind],
-  helpOf: ({ kind }: KindParams): string =>
-    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. ${STARTS_FROM[kind]}`,
+  helpOf: ({ kind, defaultFrom }: HelpParams): string =>
+    `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. ${STARTS_FROM[defaultFrom]}`,
 } as const;

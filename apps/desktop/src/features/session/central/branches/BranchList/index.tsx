@@ -74,7 +74,9 @@ export const BranchList = ({ sessionId, entries }: Props) => {
   const isProjectShown = new Set(entries.map((entry) => entry.fact.projectName)).size >= 2;
   return (
     <section ref={ref} aria-label="Branches" className="flex min-w-0 flex-col gap-2">
-      {entries.length >= 2 ? <SectionLabel label="Branches" count={entries.length} /> : null}
+      {entries.length >= 2 ? (
+        <SectionLabel label="Branches" count={entries.length} headingLevel={2} />
+      ) : null}
       {strips.map((strip) => (
         <SeriesStrip key={strip.id} strip={strip} />
       ))}

@@ -52,11 +52,18 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     sessionId: null,
     slot: runModelSlotOfShape({ shape: startShape ?? 'orchestrated', agentKind }),
   });
-  const autoRun = useStartRun({ workspaceId, sessionId: null, mount, prepare: limit.persist });
+  const autoRun = useStartRun({
+    workspaceId,
+    sessionId: null,
+    mount,
+    prepare: limit.persist,
+    settleLimit: limit.settle,
+  });
   const shapeRun = useStartShape({
     workspaceId,
     mount,
     prepare: limit.persist,
+    settleLimit: limit.settle,
     model: shapeModel,
     level: autoRun.pickedLevel,
   });

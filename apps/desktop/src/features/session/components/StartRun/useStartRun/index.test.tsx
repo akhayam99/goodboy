@@ -71,6 +71,7 @@ const startWith = async ({ text, guidance }: StartParams): Promise<void> => {
         workspaceId: WORKSPACE.id,
         sessionId: SESSION.id,
         prepare: async () => ({ usd: null, source: null }),
+        settleLimit: () => undefined,
       }),
     { wrapper: ToastProvider },
   );

@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { POPOVER_WIDTH_PX } from '@goodboy/ui';
 import type { AutoLimitKind } from './autoLimitCopy';
 import { AutoLimitChip } from './AutoLimitChip';
+import type { LimitDefaultFrom } from './limitDefaultFrom';
 
 afterEach(() => {
   cleanup();
@@ -17,6 +18,7 @@ type LimitParams = {
   readonly isDefault?: boolean;
   readonly defaultUsd?: number | null;
   readonly isFromSession?: boolean;
+  readonly defaultFrom?: LimitDefaultFrom;
   readonly change?: (usd: number | null) => void;
 };
 
@@ -25,8 +27,9 @@ const limitOf = ({
   isDefault = false,
   defaultUsd = null,
   isFromSession = false,
+  defaultFrom = 'auto',
   change = vi.fn(),
-}: LimitParams) => ({ usd, isDefault, defaultUsd, isFromSession, change });
+}: LimitParams) => ({ usd, isDefault, defaultUsd, isFromSession, defaultFrom, change });
 
 type ChipParams = LimitParams & {
   readonly kind?: AutoLimitKind;
@@ -116,6 +119,24 @@ describe('AutoLimitChip', () => {
 
     screen.getByText('Limit $25.00');
     expect(screen.queryByRole('button', { name: 'Limit $25.00' })).toBeNull();
+  });
+
+  it('speaks of the Auto limit when the amount comes from it, whatever the run kind', () => {
+    render(chip({ usd: 5, kind: 'orchestrated', defaultFrom: 'auto' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
+
+    screen.getByText(/Other runs in this workspace start from the same limit\./);
+    expect(screen.queryByText(/Run defaults/)).toBeNull();
+  });
+
+  it('speaks of the Run defaults when the amount comes from them', () => {
+    render(chip({ usd: 8, kind: 'preset', defaultFrom: 'run' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $8.00' }));
+
+    screen.getByText(/Run defaults set where new runs start\./);
+    expect(screen.queryByText(/Other runs in this workspace/)).toBeNull();
   });
 
   it('tags the amount as the default only while it came from the default', () => {

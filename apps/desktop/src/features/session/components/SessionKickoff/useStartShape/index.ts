@@ -27,6 +27,7 @@ type Params = {
   readonly workspaceId: WorkspaceId;
   readonly mount: SessionDraftMount | null;
   readonly prepare: (params: LimitDefaultParams) => Promise<StartLimit>;
+  readonly settleLimit: () => void;
   readonly model: RunModelModel;
   readonly level: AutoLevel | null;
 };
@@ -43,6 +44,7 @@ export const useStartShape = ({
   workspaceId,
   mount,
   prepare,
+  settleLimit,
   model,
   level,
 }: Params): StartShapeModel => {
@@ -136,6 +138,7 @@ export const useStartShape = ({
       });
       rememberLastStart({ workspaceId, last: shape });
       clearModel();
+      settleLimit();
     } catch (cause) {
       if (claim.isCurrent()) {
         setError(formatError(cause));
@@ -146,7 +149,7 @@ export const useStartShape = ({
         setIsStarting(false);
       }
     }
-  }, [clearModel, level, mount, pinFor, prepare, startFromDraft, workspaceId]);
+  }, [clearModel, level, mount, pinFor, prepare, settleLimit, startFromDraft, workspaceId]);
 
   return { start, isStarting, error };
 };

@@ -55,6 +55,7 @@ type Params = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
   readonly prepare: (params: LimitDefaultParams) => Promise<StartLimit>;
+  readonly settleLimit: () => void;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
   readonly onStarted?: () => void;
@@ -165,6 +166,7 @@ export const useStartRun = ({
   workspaceId,
   sessionId,
   prepare,
+  settleLimit,
   mount = null,
   role = null,
   onStarted,
@@ -449,6 +451,7 @@ export const useStartRun = ({
         setPickedEdits(null);
         setPickedGuidance(null);
         clearModel();
+        settleLimit();
         setStagedFiles((current) => (current === staged ? [] : current));
         onStarted?.();
       }
@@ -477,6 +480,7 @@ export const useStartRun = ({
     role,
     runAs,
     sessionId,
+    settleLimit,
     setStagedFiles,
     stagedFiles,
     startFromDraft,

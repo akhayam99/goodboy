@@ -38,6 +38,7 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
     >
       <header className="flex min-w-0 items-center justify-between gap-2">
         <SectionLabel
+          headingLevel={2}
           label="New since you last looked"
           count={<span data-new-since-count="">{latest.unreadCount}</span>}
         />
