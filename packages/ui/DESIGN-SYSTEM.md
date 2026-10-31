@@ -421,7 +421,12 @@ row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
 row in the left column is 28px, and so are the pages nested under it. A tree
 row (the Auto work rail, a run's step tree) is two lines in 48px:
 `PANE_RHYTHM.tree.line` (28, the node sits on its centre) then
-`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. A
+`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. The
+Agents panel of one Auto conversation draws its row as `PANE_RHYTHM.tree.stateRow`
+(48px minimum, the title at `text-row` for a working agent and `text-ui` muted
+otherwise, at most two lines, then a `text-meta` line), under a
+`PANE_RHYTHM.tree.stateHead` group label (28px), groups `stateGroups` (16px)
+apart. A
 property list is `PANE_RHYTHM.property`: an 88px label column and a value
 column, the label and the value's first line both 28px so their centres match,
 a wrapping value flowing below, groups 24px apart. `spacing-grid.test.ts`

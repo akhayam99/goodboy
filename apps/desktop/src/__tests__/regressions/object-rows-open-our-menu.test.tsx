@@ -73,7 +73,11 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
     selector: 'ul[aria-label="Linked work"] > li button',
   },
   { row: 'worktree page', scene: 'c04-worktree-files', selector: '[data-worktree-entries] button' },
-  { row: 'Auto launch', scene: 'u26-spawned-auto-light', selector: '[role="treeitem"]' },
+  {
+    row: 'Auto launch',
+    scene: 'u26-spawned-auto-light',
+    selector: '[role="treeitem"][data-agent-id]',
+  },
   {
     row: 'run launch and its agents',
     scene: 'u26-spawned-run-light',

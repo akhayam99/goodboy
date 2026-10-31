@@ -69,9 +69,9 @@ describe('the u30 model lines scene', () => {
       expect(line.textContent).toMatch(/^(Opus|Sonnet) 5\.5 (High|Medium|Low)$/);
     }
     const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    const rowLines = within(tree)
-      .getAllByRole('treeitem')
-      .flatMap((row) => Array.from(row.querySelectorAll('[data-model-line]')));
+    const rowLines = Array.from(
+      tree.querySelectorAll('[data-spawned-state-row] [data-model-line]'),
+    );
     expect(rowLines.length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toMatch(/sonnet-5\.5|opus-5\.5/);
   });

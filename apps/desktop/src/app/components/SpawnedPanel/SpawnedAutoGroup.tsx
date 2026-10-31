@@ -1,11 +1,7 @@
 import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { useAppStore, useTranscript } from '../../../store';
-import { autoRootTitleOf } from '../../../features/session/components/AutoAgentsPane/autoRootTitleOf';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { DelegationClock } from '../../../features/auto/chat/DelegationClock';
-import { useAutoTreeRows } from '../../../features/auto/useAutoTreeRows';
-import { autoSpawnedRowsOf } from './autoSpawnedRowsOf';
 import { foldSpawnedRowsOf } from './foldSpawnedRowsOf';
 import { openSpawned } from '../../../features/session/openSpawned';
 import { helpersWordOf } from './helpersWordOf';
@@ -13,9 +9,8 @@ import { spawnedRailOf } from './spawnedRailOf';
 import { SpawnedFoldRow } from './SpawnedFoldRow';
 import { ObjectMenuArea } from '../../../features/actions/components/ObjectMenuArea';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
+import { useAutoSpawnedRows } from './useAutoSpawnedRows';
 import { useSpawnedReveal } from './useSpawnedReveal';
-
-const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 type SetParams = {
   readonly id: string;
@@ -29,28 +24,8 @@ type Props = {
 };
 
 export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Props) => {
-  const model = useAutoTreeRows({ sessionId, agentId: rootAgentId });
-  const rootName = useAppStore(
-    (state) =>
-      (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === rootAgentId)?.name ??
-      'Auto',
-  );
-  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
-  const events = useTranscript(rootAgentId);
-  const ask = model.tree?.view.rootAsk ?? null;
-  const rootTitle = useMemo(
-    () => autoRootTitleOf({ name: rootName, ask, events }),
-    [rootName, ask, events],
-  );
-  const rows = useMemo(
-    () =>
-      autoSpawnedRowsOf({ rows: model.rows, baseLevel: 1, agents }).map((row) =>
-        row.level === 1 ? { ...row, title: rootTitle } : row,
-      ),
-    [model.rows, rootTitle, agents],
-  );
+  const { rows, isLoaded } = useAutoSpawnedRows({ sessionId, rootAgentId });
   const isLiveNow = rows.some((row) => row.isLive);
-  const isLoaded = model.tree !== null;
   const [wasLiveAtLoad, setWasLiveAtLoad] = useState<boolean | null>(isLoaded ? isLiveNow : null);
   if (wasLiveAtLoad === null && isLoaded) {
     setWasLiveAtLoad(isLiveNow);

@@ -5,7 +5,9 @@ import { SpawnedPanelScene } from '../u26/SpawnedPanelScene';
 const OPEN_DELAY_MS = 250;
 
 const openLaunchMenu = (): boolean => {
-  const row = document.querySelector<HTMLElement>('[data-spawned-tree] [role="treeitem"]');
+  const row = document.querySelector<HTMLElement>(
+    '[data-spawned-tree] [role="treeitem"][data-agent-id]',
+  );
   if (row === null) {
     return false;
   }

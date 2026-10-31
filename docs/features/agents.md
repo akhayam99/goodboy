@@ -117,9 +117,12 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - The **Work** list shows Auto, then every agent it started with its state.
 - Each agent has a short name for what it does, such as **Review the payments-api side**. Auto gives it, or the first sentence of the task stands in. The role is the glyph beside it.
 - The same name shows in the **Agents** panel, the chat lines, the result cards and what Auto reads.
-- In the **Agents** panel, each Auto conversation is titled by what you asked it. Its agents hang above it on the same rail as **Activity**, newest on top under a **Now** marker.
-- When you open a conversation there, a new agent arrives at the top without moving what you are reading.
-- A conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. Open or fold a line with a click or the arrow keys. A fold opens by itself when a hidden helper needs you.
+- In the **Agents** panel, each Auto conversation is titled by what you asked it.
+- Open a conversation there and its agents sit in three groups: **Working**, **Waiting** and **Done**, each with a count. Waiting holds queued agents and any agent that needs you. One line under the title sums them up, such as "3 working, 2 waiting, 7 done".
+- An agent takes two lines. The first is its name, at most two lines long. The second is its role, then who asked it when another agent did ("from Planner"), then its time. A working agent reads bold; waiting and done agents read quieter.
+- **Done** is folded. Open or fold it with a click or the arrow keys. It opens by itself when you open one of its agents, and it stays open once the whole conversation is finished.
+- A new agent arrives at the top of its group without moving what you are reading.
+- In the list of all conversations, a conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. A fold opens by itself when a hidden helper needs you.
 - The chat shows each agent Auto starts as one card with its role, name, model and state. The whole card opens the agent, by a click or by Enter, and it has no buttons. To stop that agent, right click the card and pick **Stop**. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
 - Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
@@ -183,7 +186,9 @@ Get agents and summaries in the language of your goal.
 This part is for contributors and agents who change the feature.
 
 - Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words, so a retired model still reads by name. The raw id shows in a tooltip only. "Unknown model" is only for an id with no known provider.
-- Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
+- Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow` and `SpawnedStateRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.
+- Agents state groups: `spawnedStateGroupsOf` sorts the rows of an Auto conversation by node. Running and merging are Working. An idle Auto root is Done. Every other node that needs you or has not started is Waiting.
+- `spawnedStateSummaryOf` writes the summary line from the same groups. `SpawnedStateGroups` keeps the Done choice in local state. It opens Done for a finished conversation and for a revealed agent (`useSpawnedReveal`). The `u31-rail` scene shows a story with every group.
 - Agents tree fold: `foldSpawnedRowsOf` decides which rows fold and `helperUrgencyOf` picks the state shown beside the count; the helper count comes from `runAgentCountOf`. The `u30-agents-fold` scene shows each case.
 - Failure links: a failed turn offers **View transcript** next to **Retry**. The drawer opens on the failing call when it is known (`TranscriptErrorRow`). A run that stopped on a human call offers it on its tail. The `u30-failure-reason` and `u30-human-call` scenes show the long Auto reason and the run tail.
 - Reading column: `PAGE_MEASURE.agent` is `measure`. `ConversationColumn` wraps it for `ChatView`, `ChatInput` and the advance rows.

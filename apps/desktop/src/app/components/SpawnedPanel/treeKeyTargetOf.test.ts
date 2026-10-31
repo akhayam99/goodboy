@@ -28,3 +28,20 @@ describe('treeKeyTargetOf, children drawn above their parent as Activity does', 
     expect(treeKeyTargetOf({ key: 'ArrowDown', levels: [], from: 0 })).toBeNull();
   });
 });
+
+describe('treeKeyTargetOf, groups drawn above their rows as the state groups do', () => {
+  const GROUPED: ReadonlyArray<number> = [1, 2, 2, 1, 2];
+
+  it.each([
+    ['ArrowRight', 0, 1],
+    ['ArrowRight', 1, null],
+    ['ArrowRight', 3, 4],
+    ['ArrowLeft', 2, 0],
+    ['ArrowLeft', 4, 3],
+    ['ArrowLeft', 0, null],
+    ['ArrowDown', 2, 3],
+    ['End', 0, 4],
+  ] as const)('moves %s from row %i to %s', (key, from, target) => {
+    expect(treeKeyTargetOf({ key, levels: GROUPED, from, order: 'parent-first' })).toBe(target);
+  });
+});
