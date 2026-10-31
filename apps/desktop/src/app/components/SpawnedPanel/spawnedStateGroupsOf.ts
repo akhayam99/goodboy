@@ -70,11 +70,9 @@ const newestFirstOf = ({ rows }: Params): ReadonlyArray<SpawnedRow> => {
   });
 };
 
-export const spawnedStateGroupsOf = ({ rows }: Params): ReadonlyArray<SpawnedStateGroup> => {
-  const newestFirst = newestFirstOf({ rows });
-  return KEYS.map((key) => ({
+export const spawnedStateGroupsOf = ({ rows }: Params): ReadonlyArray<SpawnedStateGroup> =>
+  KEYS.map((key) => ({
     key,
     label: LABEL_BY_KEY[key],
-    rows: newestFirst.filter((row) => groupKeyOf({ row }) === key),
+    rows: newestFirstOf({ rows: rows.filter((row) => groupKeyOf({ row }) === key) }),
   })).filter((group) => group.rows.length > 0);
-};

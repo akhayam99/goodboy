@@ -10,6 +10,7 @@ import { SpawnedTreeContext } from './spawnedTreeContext';
 
 type Props = {
   readonly row: SpawnedRow;
+  readonly level: 1 | 2;
   readonly fromRole: AgentKind | null;
   readonly isWorking: boolean;
   readonly isSelected: boolean;
@@ -27,7 +28,7 @@ const rowLabelOf = ({ roleLabel, title, word }: LabelParams): string => {
   return [...new Set([...(isRoleNamed ? [title] : [roleLabel, title]), word])].join(', ');
 };
 
-export const SpawnedStateRow = ({ row, fromRole, isWorking, isSelected, onOpen }: Props) => {
+export const SpawnedStateRow = ({ row, level, fromRole, isWorking, isSelected, onOpen }: Props) => {
   const { activeId, setActiveId } = useContext(SpawnedTreeContext);
   const source = useContext(WorkTimeContext);
   const roleLabel = agentKindPalette({ kind: row.role }).label;
@@ -48,7 +49,7 @@ export const SpawnedStateRow = ({ row, fromRole, isWorking, isSelected, onOpen }
         data-agent-id={row.agentId}
         data-spawned-row={row.level}
         data-spawned-state-row={isWorking ? 'working' : 'resting'}
-        aria-level={2}
+        aria-level={level}
         aria-selected={isSelected}
         aria-label={rowLabelOf({ roleLabel, title: row.title, word: row.word })}
         tabIndex={activeId === row.id ? 0 : -1}

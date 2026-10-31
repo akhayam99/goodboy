@@ -7,6 +7,7 @@ import { SpawnedStateRow } from './SpawnedStateRow';
 type Props = {
   readonly sessionId: SessionId;
   readonly row: SpawnedRow;
+  readonly level: 1 | 2;
   readonly parent: SpawnedRow | null;
   readonly isWorking: boolean;
   readonly selectedAgentId: AgentId | null;
@@ -15,6 +16,7 @@ type Props = {
 export const SpawnedStateRowItem = ({
   sessionId,
   row,
+  level,
   parent,
   isWorking,
   selectedAgentId,
@@ -25,6 +27,7 @@ export const SpawnedStateRowItem = ({
   >
     <SpawnedStateRow
       row={row}
+      level={level}
       fromRole={parent === null || parent.level === 1 ? null : parent.role}
       isWorking={isWorking}
       isSelected={row.agentId === selectedAgentId}

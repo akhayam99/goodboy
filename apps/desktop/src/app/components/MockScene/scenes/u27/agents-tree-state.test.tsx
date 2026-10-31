@@ -44,6 +44,7 @@ afterEach(() => {
 
 const DONE = { state: 'settled', outcome: 'completed' } as const;
 const RUNNING = { state: 'running', outcome: null } as const;
+const QUEUED = { state: 'accepted', outcome: null } as const;
 
 type ChildParams = {
   readonly key: string;
@@ -321,5 +322,81 @@ describe('the Auto agents rail grouped by state', () => {
     expect(hasRow({ tree: root, ...SECOND })).toBe(false);
     const done = within(root).getByRole('treeitem', { name: 'Done, 1' });
     expect(document.activeElement).toBe(done);
+  });
+
+  it('keeps Done folded while Auto still works, and keeps the reader choice', async () => {
+    const seed = seedOf({
+      phase: 'waiting',
+      children: [
+        childOf({ ...FIRST, key: 'plan', status: DONE }),
+        childOf({ ...SECOND, key: 'fix', status: DONE }),
+      ],
+    });
+    mount({ seed });
+
+    const root = await tree();
+    const done = within(root).getByRole('treeitem', { name: 'Done, 2' });
+    expect(done.getAttribute('aria-expanded')).toBe('false');
+    expect(hasRow({ tree: root, ...FIRST })).toBe(false);
+    fireEvent.click(done);
+    expect(done.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(done);
+    expect(done.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('forces Done open with no fold control when Auto and every helper are done', async () => {
+    const seed = seedOf({
+      phase: 'done',
+      children: [
+        childOf({ ...FIRST, key: 'plan', status: DONE }),
+        childOf({ ...SECOND, key: 'fix', status: DONE }),
+      ],
+    });
+    mount({ seed });
+
+    const root = await tree();
+    const done = within(root).getByRole('treeitem', { name: 'Done, 2' });
+    expect(done.getAttribute('aria-expanded')).toBeNull();
+    expect(hasRow({ tree: root, ...FIRST })).toBe(true);
+  });
+
+  it('keeps Auto at level 1 and its first tab stop, with grouped helpers at level 2', async () => {
+    const seed = seedOf({
+      phase: 'waiting',
+      children: [childOf({ ...FIRST, key: 'plan', status: RUNNING })],
+    });
+    mount({ seed });
+
+    const root = await tree();
+    const auto = within(root).getByRole('treeitem', { name: /^Auto agent, / });
+    expect(auto.getAttribute('aria-level')).toBe('1');
+    expect(auto.tabIndex).toBe(0);
+    expect(rowOf({ tree: root, ...FIRST }).getAttribute('aria-level')).toBe('2');
+    expect(within(root).getByRole('treeitem', { name: 'Working, 1' }).tabIndex).toBe(-1);
+  });
+
+  it('moves focus to the Auto row when the Waiting head vanishes and no Done head exists', async () => {
+    const seed = seedOf({
+      phase: 'waiting',
+      children: [
+        childOf({ ...FIRST, key: 'plan', status: RUNNING }),
+        childOf({ ...SECOND, key: 'fix', status: QUEUED }),
+      ],
+    });
+    mount({ seed });
+
+    const root = await tree();
+    const head = within(root).getByRole('treeitem', { name: 'Waiting, 1' });
+    act(() => head.focus());
+    expect(document.activeElement).toBe(head);
+
+    retarget({ seed, ...SECOND, status: RUNNING });
+
+    expect(within(root).queryByRole('treeitem', { name: 'Waiting, 1' })).toBeNull();
+    const auto = within(root).getByRole('treeitem', { name: /^Auto agent, / });
+    expect(document.activeElement).toBe(auto);
+    fireEvent.keyDown(auto, { key: 'ArrowDown' });
+    expect(root.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).not.toBe(auto);
   });
 });

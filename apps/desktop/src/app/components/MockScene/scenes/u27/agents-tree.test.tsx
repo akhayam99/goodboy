@@ -267,8 +267,10 @@ describe('the focused Auto launch', () => {
     mount({ id: FOCUSED });
 
     const tree = await focusedTree();
+    const auto = within(tree).getByRole('treeitem', { name: ROOT });
+    expect(auto.tabIndex).toBe(0);
     const first = within(tree).getByRole('treeitem', { name: 'Working, 2' });
-    expect(first.tabIndex).toBe(0);
+    expect(first.tabIndex).toBe(-1);
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'ArrowDown' });
     expect(document.activeElement?.getAttribute('aria-label')).toBe(TOP);

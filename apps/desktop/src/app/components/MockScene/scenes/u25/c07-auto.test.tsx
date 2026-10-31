@@ -119,9 +119,10 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     const auto = await treeRow(/^Auto agent, /);
-    expect(auto.getAttribute('aria-level')).toBe('2');
+    expect(auto.getAttribute('aria-level')).toBe('1');
     expect(auto.closest('[data-spawned-state]')).toBeNull();
     const implementer = await treeRow(/^Implementer, .*, Running$/);
+    expect(implementer.getAttribute('aria-level')).toBe('2');
     expect(implementer.closest('[data-spawned-state]')?.getAttribute('data-spawned-state')).toBe(
       'working',
     );

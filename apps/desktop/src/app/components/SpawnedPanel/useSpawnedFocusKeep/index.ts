@@ -44,7 +44,8 @@ export const useSpawnedFocusKeep = ({ rootRef, fallbackId }: Params): void => {
     const heldId = held.dataset.treeId;
     const next =
       items.find((item) => item.dataset.treeId === heldId) ??
-      items.find((item) => item.dataset.treeId === fallbackId);
+      items.find((item) => item.dataset.treeId === fallbackId) ??
+      items[0];
     next?.focus();
   });
 };

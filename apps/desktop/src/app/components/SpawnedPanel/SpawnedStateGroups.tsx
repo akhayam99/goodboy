@@ -35,7 +35,8 @@ export const SpawnedStateGroups = ({
 }: Props) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [isDoneChosen, setIsDoneChosen] = useState<boolean | null>(null);
-  const isFinished = groups.every((group) => group.key === 'done');
+  const isFinished =
+    groups.every((group) => group.key === 'done') && (rootRow === null || !rootRow.isLive);
   const isSelectedDone =
     selectedAgentId !== null &&
     groups.some(
@@ -77,6 +78,7 @@ export const SpawnedStateGroups = ({
         <SpawnedStateRowItem
           sessionId={sessionId}
           row={rootRow}
+          level={1}
           parent={null}
           isWorking={rootRow.node === 'running' || rootRow.node === 'merging'}
           selectedAgentId={selectedAgentId}
@@ -99,6 +101,7 @@ export const SpawnedStateGroups = ({
                     key={row.id}
                     sessionId={sessionId}
                     row={row}
+                    level={2}
                     parent={parentOf({ row })}
                     isWorking={group.key === 'working'}
                     selectedAgentId={selectedAgentId}

@@ -94,6 +94,19 @@ describe('spawnedStateGroupsOf', () => {
     expect(keysOf({ rows: partial[0]?.rows ?? [] })).toEqual(['b', 'a']);
   });
 
+  it('orders Working by start time even when an undated helper waits', () => {
+    const groups = spawnedStateGroupsOf({
+      rows: [
+        rowOf({ key: 'a', node: 'running', startedAt: '2026-10-20T09:01:00.000Z' }),
+        rowOf({ key: 'c', node: 'running', level: 3, startedAt: '2026-10-20T09:03:00.000Z' }),
+        rowOf({ key: 'w', node: 'queued' }),
+        rowOf({ key: 'b', node: 'running', startedAt: '2026-10-20T09:02:00.000Z' }),
+      ],
+    });
+
+    expect(keysOf({ rows: groups[0]?.rows ?? [] })).toEqual(['c', 'b', 'a']);
+  });
+
   it.each(['question', 'approval', 'budget', 'alert', 'failed'] as const)(
     'keeps an agent that needs you (%s) out of Done',
     (node) => {
