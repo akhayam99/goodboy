@@ -387,6 +387,7 @@ describe('action cards in a stack', () => {
     const cardsNow = () => [...region.querySelectorAll('[data-action-card]')];
     expect(cardsNow().map((card) => card.getAttribute('data-testid'))).toEqual([
       'action-card-owner:question-cap',
+      'action-card-auto:agent-fixer:neverStarted',
     ]);
     const answer = within(cardAt({ index: 0, cards: cardsNow() })).getByRole('button', {
       name: 'Answer',
@@ -394,8 +395,6 @@ describe('action cards in a stack', () => {
     expect(answer.dataset.variant).toBe('primary');
 
     const fix = within(region).getByRole('region', { name: 'Fix' });
-    fireEvent.click(within(fix).getByRole('button', { expanded: false }));
-
     const stuck = within(within(fix).getByTestId('action-card-auto:agent-fixer:neverStarted'));
     stuck.getByText('Auto is stuck');
     stuck.getByText(

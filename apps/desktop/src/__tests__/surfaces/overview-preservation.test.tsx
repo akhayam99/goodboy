@@ -147,9 +147,6 @@ describe('Overview capabilities from the session Overview', () => {
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
     const next = screen.getByRole('region', { name: 'Next' });
-    for (const fold of next.querySelectorAll<HTMLElement>('button[aria-expanded="false"]')) {
-      fireEvent.click(fold);
-    }
     const row =
       Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]')).find((candidate) =>
         (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),

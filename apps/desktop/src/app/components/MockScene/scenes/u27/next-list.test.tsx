@@ -98,7 +98,7 @@ describe('the u27 Next list scenes', () => {
     expect(filledOf({ stack })).toHaveLength(1);
   });
 
-  it('builds four groups in a fixed order from the real producers, with only Decide open', async () => {
+  it('builds four groups in a fixed order from the real producers, each with a quiet label', async () => {
     mount({ id: 'u27-next-list-after-light' });
 
     const stack = await nextStack();
@@ -113,18 +113,8 @@ describe('the u27 Next list scenes', () => {
       'Next13',
     );
     expect(
-      groups.map((group) =>
-        group.querySelector('button[aria-controls]')?.getAttribute('aria-expanded'),
-      ),
-    ).toEqual(['true', 'false', 'false', 'false']);
-    expect(
-      groups.map((group) => group.querySelector('button[aria-controls]')?.textContent),
-    ).toEqual([
-      'Decide2',
-      'Fix4hl/feat-center-home-page, hl/feat-center-billing-page, hl/feat-center-search-page, hl/feat-center-about-page',
-      'Update2Rebase harbor-portal, hl/feat-center-settings-page',
-      'Ship5hl/feat-center-faq-page, hl/feat-center-search-page, hl/feat-center-pricing-page, hl/feat-center-careers-page, Remove the harbor-portal worktree',
-    ]);
+      groups.map((group) => group.querySelector('[data-next-group-head]')?.textContent),
+    ).toEqual(['Decide2', 'Fix4Retry 4', 'Update2Rebase all', 'Ship5']);
     const texts = cardsOf({ stack }).map((card) => card.textContent ?? '');
     expect(texts.filter((text) => text.startsWith('Profile page polish'))).toHaveLength(1);
     expect(
@@ -159,16 +149,14 @@ describe('the u27 Next list scenes', () => {
     expect(
       texts.filter((text) => text.includes('4 review conversations wait for a fix.')),
     ).toHaveLength(1);
-    expect(filledOf({ stack }).map((button) => button.textContent)).toEqual(['Retry']);
-    fireEvent.click(within(stack).getByRole('button', { name: /^Ship/ }));
-    expect(cardsOf({ stack })).toHaveLength(9);
+    expect(filledOf({ stack: fix })).toEqual([]);
+    expect(cardsOf({ stack })).toHaveLength(13);
   });
 
   it('folds the three stopped rebases into the behind card', async () => {
     mount({ id: 'u27-next-list-after-light' });
 
     const stack = await nextStack();
-    fireEvent.click(within(stack).getByRole('button', { name: /^Update/ }));
     const update = within(stack).getByRole('region', { name: 'Update' });
     const texts = cardsOf({ stack: update }).map((card) => card.textContent ?? '');
     expect(texts).toHaveLength(2);
@@ -181,7 +169,6 @@ describe('the u27 Next list scenes', () => {
     mount({ id: 'u27-next-list-after-light' });
 
     const stack = await nextStack();
-    fireEvent.click(within(stack).getByRole('button', { name: /^Update/ }));
     const update = within(stack).getByRole('region', { name: 'Update' });
     fireEvent.click(within(update).getAllByRole('button', { name: /^More options for / })[0]!);
 

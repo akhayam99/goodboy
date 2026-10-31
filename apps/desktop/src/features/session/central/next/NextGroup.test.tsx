@@ -132,11 +132,9 @@ const Harness = ({ group }: HarnessProps) => {
   return (
     <NextGroup
       group={group}
-      isOpen
+      hasLabel
       isLead
       isNarrow={false}
-      hint=""
-      onToggle={() => undefined}
       actionsFor={actionsFor}
       openFor={openFor}
     />

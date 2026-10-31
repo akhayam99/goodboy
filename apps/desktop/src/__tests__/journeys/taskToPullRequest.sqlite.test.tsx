@@ -433,7 +433,6 @@ describe('journey: from a task to a merged pull request', () => {
     await vi.waitFor(() => expect(showNext(view)).toContain('Move HBL-412 to Done'));
     expect(linearWrites).toEqual([]);
 
-    fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Ship/ }));
     showNext(view);
     fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Move/ }));
 

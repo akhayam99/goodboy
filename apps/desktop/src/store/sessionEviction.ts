@@ -109,7 +109,6 @@ export const SESSION_EVICTION = [
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreMountPath', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'nextGroupChoice', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoves', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoveSettled', keyedBy: 'session', evictOn: 'archive' },
   { key: 'trackerMoveChecks', keyedBy: 'session', evictOn: 'archive' },
