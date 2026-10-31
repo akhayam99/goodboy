@@ -51,7 +51,7 @@ export const BranchRowLine = ({
             data-title-kind={facts.isBranchTitle ? 'branch' : 'request'}
             className={cn(
               'min-w-0 flex-1 truncate text-left',
-              facts.isBranchTitle && 'text-code',
+              facts.isBranchTitle && 'text-code-row text-muted-foreground',
               facts.isFinished && 'text-muted-foreground',
             )}
           >

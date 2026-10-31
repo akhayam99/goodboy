@@ -61,6 +61,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason:
       'decorative: the "Add a description" hint text; the project name button opens the editor',
   },
+  'apps/desktop/src/shared/components/SettingChip/index.tsx': {
+    count: 1,
+    reason:
+      'decorative: the aria-hidden chevron inside a setting button, whose label and value show at rest',
+  },
   'packages/ui/src/components/ResizeHandle.tsx': {
     count: 1,
     reason: 'decorative: the edge line of a resize handle; the handle itself is always there',

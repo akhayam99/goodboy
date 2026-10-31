@@ -1120,6 +1120,7 @@ u30-tooltips
 u31-artifacts
 u31-chat-anchoring
 u31-chat-reading
+u31-header
 u31-markdown-blocks
 u31-next-step
 u31-overview
@@ -1128,6 +1129,7 @@ u31-questions
 u31-rail
 u31-runs
 u31-runs-run
+u31-sidebar
 u31-text-levels
 update-card
 update-card-long-version

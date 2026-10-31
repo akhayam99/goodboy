@@ -23,10 +23,26 @@ const VARIANTS = [
   'danger',
   'quiet',
   'ghost-danger',
+  'setting',
 ] as const satisfies ReadonlyArray<ButtonVariant>;
 
 describe('Button', () => {
   afterEach(cleanup);
+
+  it('draws a setting with no border at rest and the border on hover and keyboard focus', () => {
+    render(
+      <Button variant="setting" size="xs">
+        Limit
+      </Button>,
+    );
+    const classes = screen.getByRole('button', { name: 'Limit' }).className.split(/\s+/);
+
+    expect(classes).toContain('border-transparent');
+    expect(classes).not.toContain('border-border');
+    expect(classes).toContain('hover:border-border');
+    expect(classes).toContain('focus-visible:border-border');
+    expect(classes).not.toContain('bg-fill');
+  });
 
   it('shows a pulsing status dot while busy, never a spinner', () => {
     const { container } = render(<Button isBusy>Save</Button>);

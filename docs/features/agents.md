@@ -131,10 +131,10 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 **Limit and control**
 
 - Set a **Limit** once per workspace.
-- Change, raise or remove the **Limit** of a running conversation from the chip line under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there.
+- Change, raise or remove the **Limit** of a running conversation from the line of settings under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there.
 - **Change approach** while it waits. It stops Auto and puts you in the message field.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
-- An agent's page has the same chip line under its title: how it runs, when it asks you, the session **Limit** and its **Models**. The composer keeps only the message.
+- An agent's page has the same line of settings under its title: how it runs, when it asks you, the session **Limit** and its **Models**. Each setting is plain text with no border. The border and a chevron appear when you point at it or tab to it. The composer keeps only the message.
 - An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
 - When Auto needs a choice, it shows one **Next step** card, never a yes or no question. The proposed agent is the main button, such as **Spawn implementer**, with one or two other options in one row, the first labeled **Recommended**. The picked option is filled and outlined. The card is small and plain, and only a small dot says it waits for you. A hint stays hidden until you press **Add a hint**. The keys 1 to 3 and the arrow keys pick an option once you are in the card. An option other than the first declines the proposal and tells Auto your pick. **Not now** declines and tells nothing.
 - When the work rests, Auto reads **Idle**. Only you close it, with **Mark finished** in its header. Writing to it again reopens it.
