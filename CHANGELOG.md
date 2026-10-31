@@ -29,7 +29,7 @@ Titles read at 18 on 28, headings, prose, rows and meta each have their own size
 A code block has a header with its language, Wrap and Copy, and is never cut by Show more. Tables have quiet headers, one line between rows and numbers aligned right.
 
 #### Overview and runs read in groups
-<!-- gb area=sessions image=overview-groups -->
+<!-- gb area=sessions -->
 
 Group labels stand above their rows with room between groups, a row's name leads it, the Runs page opens with one line, and the step that runs now is the strongest line on the run page.
 

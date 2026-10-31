@@ -5,10 +5,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   SHOT_CLICK_TEXT,
+  SHOT_CLOCK_STOP_MS,
+  SHOT_NOW,
   SHOT_PAD,
   SHOT_SELECTOR,
   SHOT_VIEW,
   cropClipOf,
+  fixedClockScript,
 } from './changelogShotCrop.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -125,6 +128,12 @@ const captureThemePng = async ({ theme }) => {
       }
     };
     await send({ method: 'Page.enable' });
+    if (SHOT_NOW !== null) {
+      await send({
+        method: 'Page.addScriptToEvaluateOnNewDocument',
+        params: { source: fixedClockScript({ now: SHOT_NOW, stopMs: SHOT_CLOCK_STOP_MS }) },
+      });
+    }
     await send({ method: 'Emulation.setFocusEmulationEnabled', params: { enabled: true } });
     if (SHOT_SELECTOR !== null) {
       const [viewWidth, viewHeight] = SHOT_VIEW;

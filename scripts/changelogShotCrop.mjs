@@ -6,8 +6,28 @@ export const SHOT_VIEW = (process.env.GOODBOY_SHOT_VIEW ?? '1100x1400')
 export const SHOT_CLICK_TEXT = process.env.GOODBOY_SHOT_CLICK_TEXT ?? null;
 export const SHOT_PRE_CLICK_TEXT = process.env.GOODBOY_SHOT_PRE_CLICK_TEXT ?? null;
 export const SHOT_HIDE = process.env.GOODBOY_SHOT_HIDE ?? null;
+export const SHOT_REMOVE = process.env.GOODBOY_SHOT_REMOVE ?? null;
+export const SHOT_FRAME_WIDTH = process.env.GOODBOY_SHOT_FRAME_WIDTH ?? null;
 export const SHOT_TOP_SELECTOR = process.env.GOODBOY_SHOT_TOP_SELECTOR ?? null;
 export const SHOT_PAD_TOP = Number(process.env.GOODBOY_SHOT_PAD_TOP ?? process.env.GOODBOY_SHOT_PAD ?? 24);
+export const SHOT_NOW = process.env.GOODBOY_SHOT_NOW ?? null;
+export const SHOT_CLOCK_STOP_MS = Number(process.env.GOODBOY_SHOT_CLOCK_STOP_MS ?? Infinity);
+
+export const fixedClockScript = ({ now, stopMs }) => `(() => {
+  const RealDate = Date;
+  const start = RealDate.now();
+  const base = RealDate.parse(${JSON.stringify(now)});
+  const current = () => base + Math.min(RealDate.now() - start, ${stopMs === Infinity ? 'Infinity' : stopMs});
+  class ShotDate extends RealDate {
+    constructor(...args) {
+      super(...(args.length === 0 ? [current()] : args));
+    }
+    static now() {
+      return current();
+    }
+  }
+  globalThis.Date = ShotDate;
+})()`;
 
 const cropExpression = ({ selector, pad, clickText }) => `(() => {
   const all = [...document.querySelectorAll(${JSON.stringify(selector)})];
@@ -27,11 +47,19 @@ const cropExpression = ({ selector, pad, clickText }) => `(() => {
     if (node !== target) {
       node.style.boxShadow = 'none';
       node.style.borderColor = 'transparent';
+      node.style.maskImage = 'none';
+      node.style.webkitMaskImage = 'none';
     }
     for (const sibling of node.parentElement?.children ?? []) {
       if (sibling !== node) {
         sibling.style.visibility = 'hidden';
       }
+    }
+  }
+  const remove = ${JSON.stringify(SHOT_REMOVE)};
+  if (remove !== null) {
+    for (const removed of document.querySelectorAll(remove)) {
+      removed.style.display = 'none';
     }
   }
   const hide = ${JSON.stringify(SHOT_HIDE)};
@@ -59,6 +87,15 @@ const cropExpression = ({ selector, pad, clickText }) => `(() => {
 })()`;
 
 export const cropClipOf = async ({ send, selector, pad, clickText, sleep }) => {
+  if (SHOT_FRAME_WIDTH !== null) {
+    await send({
+      method: 'Runtime.evaluate',
+      params: {
+        expression: `document.querySelector('[data-shot]').style.width = ${JSON.stringify(`${SHOT_FRAME_WIDTH}px`)}`,
+      },
+    });
+    await sleep({ ms: 600 });
+  }
   if (SHOT_PRE_CLICK_TEXT !== null) {
     await send({
       method: 'Runtime.evaluate',
