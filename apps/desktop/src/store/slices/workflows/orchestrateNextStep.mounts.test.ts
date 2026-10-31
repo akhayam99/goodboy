@@ -6,6 +6,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
 import {
@@ -81,30 +82,17 @@ vi.mock('../../../features/integrations/linear/client', async () =>
 vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@goodboy/core')>();
-  const reply = JSON.stringify({
+const REPLY = {
+  stdout: JSON.stringify({
     type: 'result',
     subtype: 'success',
     is_error: false,
     result: '<<orchestrator>>{"action":"done","reason":"all set"}<</orchestrator>>',
     usage: { input_tokens: 10, output_tokens: 5 },
-  });
-  return {
-    ...original,
-    OrchestratorClient: vi.fn(function (
-      deps: ConstructorParameters<typeof original.OrchestratorClient>[0],
-    ) {
-      return new original.OrchestratorClient({
-        ...deps,
-        invokeFn: async (_command: string, args?: Record<string, unknown>) => {
-          transport.requests.push(args ?? {});
-          return JSON.parse(JSON.stringify({ stdout: reply, stderr: '', exitCode: 0 }));
-        },
-      });
-    }),
-  };
-});
+  }),
+  stderr: '',
+  exitCode: 0,
+};
 
 let useAppStore: StoryStore;
 
@@ -116,6 +104,12 @@ beforeEach(async () => {
   vi.clearAllMocks();
   transport.requests.length = 0;
   await resetStoryStore();
+  stubStoryInvoke({
+    planner_run: (payload: Record<string, unknown>) => {
+      transport.requests.push(payload);
+      return REPLY;
+    },
+  });
 });
 
 const PAYMENTS = mountFixture({
@@ -181,7 +175,11 @@ const seedRun = ({ mounts, isPreset = false }: SeedParams): void => {
   useAppStore.setState({ phaseTemplates: { [WORKSPACE]: [workflowFixture()] } });
 };
 
-const sentText = (field: 'userMessage' | 'systemPrompt'): string => {
+type SentParams = {
+  readonly field: 'userMessage' | 'systemPrompt';
+};
+
+const sentText = ({ field }: SentParams): string => {
   const value = transport.requests[0]?.['args'];
   if (typeof value !== 'object' || value === null) {
     return '';
@@ -199,10 +197,10 @@ describe('orchestrateNextStep mounts', () => {
     await decide();
 
     expect(transport.requests).toHaveLength(1);
-    const prompt = sentText('userMessage');
+    const prompt = sentText({ field: 'userMessage' });
     expect(prompt).toContain('- mountId mount-payments-api: payments-api, branch hl/refund-flow');
     expect(prompt).toContain('- mountId mount-notify-relay: notify-relay, branch hl/refund-mail');
-    expect(sentText('systemPrompt')).toContain('"mountId"');
+    expect(sentText({ field: 'systemPrompt' })).toContain('"mountId"');
   });
 
   it('keeps the request free of mount lines with one mount', async () => {
@@ -211,8 +209,8 @@ describe('orchestrateNextStep mounts', () => {
     await decide();
 
     expect(transport.requests).toHaveLength(1);
-    expect(sentText('userMessage')).not.toContain('mountId');
-    expect(sentText('systemPrompt')).not.toContain('mountId');
+    expect(sentText({ field: 'userMessage' })).not.toContain('mountId');
+    expect(sentText({ field: 'systemPrompt' })).not.toContain('mountId');
   });
 
   it('names both mounts in a preset run too', async () => {
@@ -220,8 +218,8 @@ describe('orchestrateNextStep mounts', () => {
 
     await decide();
 
-    expect(sentText('userMessage')).toContain('Preset: Fix a refund');
-    expect(sentText('userMessage')).toContain('mountId mount-payments-api');
-    expect(sentText('userMessage')).toContain('mountId mount-notify-relay');
+    expect(sentText({ field: 'userMessage' })).toContain('Preset: Fix a refund');
+    expect(sentText({ field: 'userMessage' })).toContain('mountId mount-payments-api');
+    expect(sentText({ field: 'userMessage' })).toContain('mountId mount-notify-relay');
   });
 });

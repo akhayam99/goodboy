@@ -389,11 +389,6 @@ read top to bottom at the conversation measure:
   to continue, and a step that asks again in a later turn replaces its earlier
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
-  A blocked step that has open questions of its own shows them as the same
-  compact card and pager as the run page (`OrchestratedBlockedStep` renders
-  `OpenQuestionCluster` over `useBlockedStepQuestions`, whatever the run link
-  of each question), so "1 of 3" and the rows come from one list. Moving to
-  another question focuses its card, so the number keys keep working.
   The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
   secondary **Restart step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the

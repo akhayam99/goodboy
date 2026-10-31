@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
@@ -40,11 +40,16 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
   const [currentId, setCurrentId] = useState<OpenQuestionId | null>(null);
-  const [isMoved, setIsMoved] = useState(false);
+  const [focusId, setFocusId] = useState<OpenQuestionId | null>(null);
   const moveTo = useCallback(({ id }: MoveParams) => {
-    setIsMoved(true);
+    setFocusId(id);
     setCurrentId(id);
   }, []);
+  useEffect(() => {
+    if (focusId !== null) {
+      setFocusId(null);
+    }
+  }, [focusId]);
 
   const { openQuestions, settled } = useMemo(
     () => ({
@@ -118,7 +123,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           question={current}
           sessionId={sessionId}
           variant="compact"
-          autoFocus={isMoved}
+          autoFocus={focusId !== null && focusId === current.id}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}

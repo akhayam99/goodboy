@@ -4,32 +4,31 @@ const XTERM_PLUGIN_NAME = 'goodboy-xterm-frozen-prototype';
 
 const XTERM_MODULE = /[\\/]@xterm[\\/+]/;
 
-const TO_STRING_ASSIGNMENT = /\b([A-Za-z_$][\w$]*)\.toString=([A-Za-z_$][\w$]*)(?=[;,}])/g;
+const XTERM_PACKAGES: ReadonlyArray<string> = [
+  '@xterm/xterm',
+  '@xterm/addon-clipboard',
+  '@xterm/addon-fit',
+  '@xterm/addon-search',
+  '@xterm/addon-unicode11',
+  '@xterm/addon-web-links',
+  '@xterm/addon-webgl',
+];
+
+const TO_STRING_ASSIGNMENT =
+  /(?<![\w$.])((?:[A-Za-z_$][\w$]*\.)*[A-Za-z_$][\w$]*)\.toString\s*=\s*([A-Za-z_$][\w$]*)(?=\s*[;,}])/g;
 
 const OWN_TO_STRING =
   'Object.defineProperty($1,"toString",{value:$2,writable:true,configurable:true,enumerable:true})';
 
-type CodeParams = {
-  readonly code: string;
-};
-
-type IdParams = {
-  readonly id: string;
-};
-
-export const isXtermModule = ({ id }: IdParams): boolean => XTERM_MODULE.test(id);
-
-export const defineOwnToString = ({ code }: CodeParams): string =>
-  code.replace(TO_STRING_ASSIGNMENT, OWN_TO_STRING);
-
 export const xtermFrozenPrototype = (): Plugin => ({
   name: XTERM_PLUGIN_NAME,
   enforce: 'pre',
+  config: () => ({ optimizeDeps: { exclude: [...XTERM_PACKAGES] } }),
   transform: (code, id) => {
-    if (!isXtermModule({ id })) {
+    if (!XTERM_MODULE.test(id)) {
       return null;
     }
-    const patched = defineOwnToString({ code });
+    const patched = code.replace(TO_STRING_ASSIGNMENT, OWN_TO_STRING);
     return patched === code ? null : { code: patched, map: null };
   },
 });

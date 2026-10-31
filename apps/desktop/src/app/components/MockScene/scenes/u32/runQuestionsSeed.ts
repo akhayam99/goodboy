@@ -11,6 +11,7 @@ import { sceneClock } from '../../sceneClock';
 import {
   BLOCKED_MOUNT_AGENT_ID,
   BLOCKED_MOUNT_B,
+  BLOCKED_MOUNT_RUN_ID,
   BLOCKED_MOUNT_SESSION_ID,
   seedBlockedMountStep,
 } from '../u30/blockedMountStepSeed';
@@ -29,6 +30,7 @@ type QuestionParams = {
 const questionOf = ({ id, text, suggestedAnswers, minute }: QuestionParams): OpenQuestion => ({
   id: brandId<OpenQuestionId>({ value: id }),
   sessionId: BLOCKED_MOUNT_SESSION_ID,
+  workflowRunId: BLOCKED_MOUNT_RUN_ID,
   createdByAgentId: BLOCKED_MOUNT_AGENT_ID,
   text,
   suggestedAnswers,
@@ -39,7 +41,7 @@ const questionOf = ({ id, text, suggestedAnswers, minute }: QuestionParams): Ope
   createdAt: clock.iso({ at: `2026-10-29T15:${minute}.000Z` }),
 });
 
-export const REFUNDS_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+const REFUNDS_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   questionOf({
     id: 'mock-u32-rq-window',
     text: 'Should refunds older than 90 days be batched too?',

@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useOpenQuestions } from '../../../../../features/context/components/QuestionsTab/useOpenQuestions';
@@ -25,6 +25,7 @@ import { U32_RUN_QUESTIONS_SCENES } from './run-questions';
 
 const SCENE = 'u32-run-questions';
 const SETTLE_MS = 2_000;
+const FIRST_QUESTION_ID = 'mock-u32-rq-window';
 
 const pendingInvoke = () => new Promise<never>(() => undefined);
 
@@ -53,7 +54,11 @@ afterEach(() => {
   cleanup();
 });
 
-const mount = async (): Promise<HTMLElement> => {
+type MountParams = {
+  readonly executionMode?: 'static' | 'dynamic';
+};
+
+const mount = async ({ executionMode = 'dynamic' }: MountParams = {}): Promise<HTMLElement> => {
   const Scene = U32_RUN_QUESTIONS_SCENES[SCENE];
   render(
     <ToastProvider>
@@ -63,16 +68,31 @@ const mount = async (): Promise<HTMLElement> => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
+  if (executionMode === 'static') {
+    await act(async () => {
+      useAppStore.setState((state) => ({
+        sessions: state.sessions.map((session) => ({
+          ...session,
+          workflowRuns: session.workflowRuns.map((run) => ({ ...run, executionMode })),
+        })),
+      }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+  }
   const block = document.querySelector<HTMLElement>(
-    `[data-orchestrated-blocked-step="${BLOCKED_MOUNT_AGENT_ID}"]`,
+    `[data-run-open-question="${FIRST_QUESTION_ID}"]`,
   );
   if (block === null) {
-    throw new Error('the run page shows no blocked step');
+    throw new Error('the run page shows no open question');
   }
   return block;
 };
 
-const click = async (node: HTMLElement): Promise<void> => {
+type ClickParams = {
+  readonly node: HTMLElement;
+};
+
+const click = async ({ node }: ClickParams): Promise<void> => {
   await act(async () => {
     fireEvent.click(node);
   });
@@ -100,20 +120,32 @@ describe('the u32 run questions scene', () => {
     expect(within(block).queryByPlaceholderText('Answer')).toBeNull();
   });
 
+  it('shows the first of three questions of a preset run with a count the pager walks', async () => {
+    const block = await mount({ executionMode: 'static' });
+
+    within(block).getByRole('heading', {
+      name: 'Should refunds older than 90 days be batched too?',
+    });
+    within(block).getByText('1 of 3');
+    await click({ node: within(block).getByRole('button', { name: 'Next question' }) });
+    within(block).getByRole('heading', { name: 'Which batch size should refunds use?' });
+    within(block).getByText('2 of 3');
+  });
+
   it('moves to the next question in place and back', async () => {
     const block = await mount();
 
-    await click(within(block).getByRole('button', { name: 'Next question' }));
+    await click({ node: within(block).getByRole('button', { name: 'Next question' }) });
     within(block).getByRole('heading', { name: 'Which batch size should refunds use?' });
     within(block).getByText('2 of 3');
 
-    await click(within(block).getByRole('button', { name: 'Next question' }));
+    await click({ node: within(block).getByRole('button', { name: 'Next question' }) });
     within(block).getByRole('heading', {
       name: 'May the refunds CSV gain a column for the batch number?',
     });
     within(block).getByText('3 of 3');
 
-    await click(within(block).getByRole('button', { name: 'Previous question' }));
+    await click({ node: within(block).getByRole('button', { name: 'Previous question' }) });
     within(block).getByText('2 of 3');
   });
 
@@ -124,20 +156,20 @@ describe('the u32 run questions scene', () => {
       useAppStore.setState({ answerOpenQuestions });
     });
 
-    await click(within(block).getByRole('radio', { name: 'Batch them' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
+    await click({ node: within(block).getByRole('radio', { name: 'Batch them' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
     within(block).getByRole('heading', { name: 'Which batch size should refunds use?' });
     within(block).getByText('2 left');
     expect(answerOpenQuestions).not.toHaveBeenCalled();
 
-    await click(within(block).getByRole('radio', { name: '500 rows' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
+    await click({ node: within(block).getByRole('radio', { name: '500 rows' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
     within(block).getByRole('heading', {
       name: 'May the refunds CSV gain a column for the batch number?',
     });
 
-    await click(within(block).getByRole('radio', { name: 'No' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
+    await click({ node: within(block).getByRole('radio', { name: 'No' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
 
     expect(answerOpenQuestions).toHaveBeenCalledExactlyOnceWith(
       BLOCKED_MOUNT_SESSION_ID,
@@ -159,12 +191,12 @@ describe('the u32 run questions scene', () => {
     act(() => {
       useAppStore.setState({ answerOpenQuestions, reportError });
     });
-    await click(within(block).getByRole('radio', { name: 'Batch them' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
-    await click(within(block).getByRole('radio', { name: '500 rows' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
-    await click(within(block).getByRole('radio', { name: 'No' }));
-    await click(within(block).getByRole('button', { name: 'Answer' }));
+    await click({ node: within(block).getByRole('radio', { name: 'Batch them' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
+    await click({ node: within(block).getByRole('radio', { name: '500 rows' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
+    await click({ node: within(block).getByRole('radio', { name: 'No' }) });
+    await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
 
     expect(answerOpenQuestions).toHaveBeenCalledTimes(1);
     expect(reportError).toHaveBeenCalledWith(
