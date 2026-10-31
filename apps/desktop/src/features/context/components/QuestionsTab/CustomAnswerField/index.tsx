@@ -12,6 +12,7 @@ type Props = {
   readonly disabled?: boolean;
   readonly dimmed?: boolean;
   readonly placeholder?: string;
+  readonly keyNumber?: number;
   readonly onToggle: () => void;
   readonly onChange: (value: string) => void;
   readonly onSubmit: () => void;
@@ -25,6 +26,7 @@ export const CustomAnswerField = ({
   disabled = false,
   dimmed = false,
   placeholder = 'Tell the agent what you want instead',
+  keyNumber,
   onToggle,
   onChange,
   onSubmit,
@@ -41,7 +43,7 @@ export const CustomAnswerField = ({
   return (
     <AnswerOptionRow
       label="Something else"
-      keyHint={<Pencil size={ICON_SIZE.row} aria-hidden />}
+      keyHint={keyNumber ?? <Pencil size={ICON_SIZE.row} aria-hidden />}
       selected={open}
       mode={mode}
       dimmed={dimmed}
@@ -63,7 +65,11 @@ export const CustomAnswerField = ({
           className="relative z-10 w-full bg-background"
         />
       ) : (
-        <span className="text-meta text-muted-foreground">
+        <span
+          className={
+            open && value.trim().length > 0 ? 'text-meta text-muted-foreground' : 'sr-only'
+          }
+        >
           {open && value.trim().length > 0 ? value : 'Write your own answer'}
         </span>
       )}

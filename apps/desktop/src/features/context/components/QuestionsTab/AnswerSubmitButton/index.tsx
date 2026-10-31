@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, FormActions, Tooltip } from '@goodboy/ui';
 import type { AnswerInputMode } from './answerInputMode';
 import { KeyHint } from './KeyHint';
@@ -10,6 +11,7 @@ type Props = {
   readonly onAnswer: () => void;
   readonly onSkip: (() => void) | null;
   readonly onSendAsMessage?: (() => void) | null;
+  readonly lead?: ReactNode;
 };
 
 const SEND_AS_MESSAGE_HINT =
@@ -23,12 +25,17 @@ export const AnswerSubmitButton = ({
   onAnswer,
   onSkip,
   onSendAsMessage = null,
+  lead,
 }: Props) => (
   <FormActions
     leading={
-      <span className="flex min-w-0 items-center gap-2 whitespace-nowrap text-meta text-faint-foreground @max-[34rem]:hidden">
-        <KeyHint inputMode={inputMode} optionCount={optionCount} />
-      </span>
+      lead === undefined ? (
+        <span className="flex min-w-0 items-center gap-2 whitespace-nowrap text-meta text-faint-foreground @max-[34rem]:hidden">
+          <KeyHint inputMode={inputMode} optionCount={optionCount} />
+        </span>
+      ) : (
+        lead
+      )
     }
   >
     {onSkip !== null && (

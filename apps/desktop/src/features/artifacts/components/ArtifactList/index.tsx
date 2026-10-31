@@ -149,7 +149,7 @@ export const ArtifactList = ({
             {NO_MATCH_LINE[filter]}
           </EmptyLine>
         ) : (
-          <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-3">
+          <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-8">
             {groups.map((entry) => (
               <ArtifactListGroup
                 key={entry.group}

@@ -38,13 +38,13 @@ export const ArtifactListGroup = ({
     <section
       data-testid={`artifact-group-${group}`}
       aria-labelledby={headingId}
-      className="flex min-w-0 flex-col"
+      className="flex min-w-0 flex-col gap-2"
     >
-      <div className="flex h-7 min-w-0 items-center gap-2">
-        <h2 id={headingId} className="flex items-center gap-2 text-meta text-muted-foreground">
+      <div className="flex h-5 min-w-0 items-center gap-2">
+        <h2 id={headingId} className="flex items-center gap-2 text-heading text-foreground">
           {ARTIFACT_GROUP_LABEL[group]}
           {rows.length > 1 ? (
-            <span className="tabular-nums text-faint-foreground">{rows.length}</span>
+            <span className="text-ui tabular-nums text-faint-foreground">{rows.length}</span>
           ) : null}
         </h2>
         {isTrash ? (

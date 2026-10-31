@@ -13,7 +13,7 @@
   "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 400,
   "apps/desktop/src/features/chat/components/OperationsCluster/index.tsx": 254,
   "apps/desktop/src/features/companion/commandExecutor.ts": 783,
-  "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 301,
+  "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 281,
   "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": 384,
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": 461,
   "apps/desktop/src/features/diff/components/DiffView/DiffRows.tsx": 288,

@@ -1,4 +1,4 @@
-import { ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
+import { cn, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { AGENT_KIND_META, type AgentKind } from '../../../../agent-kind';
@@ -30,23 +30,33 @@ export const QuestionsGridRow = ({ sessionId, row, askerKind, age, isSelected, o
   const isSettled = row.kind !== 'waiting' && row.kind !== 'delegated';
   const isBlocking = row.kind === 'waiting' && row.question.isBlocking;
   const answer = questionAnswerLine({ row });
+  const titleCell = (
+    <TruncatedText className={cn('min-w-0', isSettled && 'text-muted-foreground')}>
+      {title}
+    </TruncatedText>
+  );
 
   return (
     <ListGridRow
       ariaLabel={answer === '' ? title : `${title}, ${answer}`}
       isSelected={isSelected}
       rowKey={row.question.id}
+      rowHeight={answer === '' ? 32 : 'stack'}
       onSelect={onOpen}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       cells={[
         isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
-        isSettled ? (
-          <TruncatedText className="min-w-0 text-muted-foreground">{title}</TruncatedText>
+        answer === '' ? (
+          titleCell
         ) : (
-          title
+          <span className="flex min-w-0 flex-1 flex-col">
+            {titleCell}
+            <TruncatedText className="min-w-0 text-meta text-muted-foreground">
+              {answer}
+            </TruncatedText>
+          </span>
         ),
-        answer,
         askerKind === null ? '' : AGENT_KIND_META[askerKind].noun,
         age,
       ]}

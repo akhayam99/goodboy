@@ -81,7 +81,7 @@ export const QuestionAnswerInput = ({
     <div
       role={mode === 'many' ? 'group' : 'radiogroup'}
       aria-label={mode === 'many' ? 'Pick one or more answers' : 'Pick one answer'}
-      className={'flex flex-col gap-2'}
+      className="flex flex-col"
     >
       {suggestions.map((suggestion, index) => {
         const isSelected = !isHandedOff && selectedSuggestions.includes(suggestion);
@@ -107,6 +107,7 @@ export const QuestionAnswerInput = ({
           disabled={isInert}
           dimmed={isHandedOff}
           placeholder={placeholder}
+          keyNumber={suggestions.length + 1}
           onToggle={onToggleCustomField}
           onChange={onSetCustomAnswer}
           onSubmit={onSubmit}

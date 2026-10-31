@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { Chip, cn, FOCUS_RING } from '@goodboy/ui';
+import { cn, FOCUS_RING } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { SelectionIndicator } from './SelectionIndicator';
 
@@ -27,31 +27,30 @@ export const AnswerOptionRow = ({
   onToggle,
 }: Props) => {
   const recommendedId = useId();
+  const isMany = mode === 'many';
 
   return (
     <div
       data-selected={selected ? '' : undefined}
       className={cn(
-        'relative grid grid-cols-[20px_minmax(0,1fr)_16px] items-start gap-3 rounded-md border px-3 py-2',
-        'motion-safe:transition-[background-color,border-color,opacity] motion-safe:duration-150',
-        selected ? 'border-border bg-fill bg-selected' : 'border-border-soft bg-fill',
-        !selected && !disabled && 'hover:border-border',
+        'relative grid min-h-8 items-center gap-3 rounded-md px-2 py-1',
+        isMany ? 'grid-cols-[16px_minmax(0,1fr)_16px]' : 'grid-cols-[16px_minmax(0,1fr)]',
+        'motion-safe:transition-[background-color,opacity] motion-safe:duration-150',
+        selected && 'bg-selected',
+        !selected && !disabled && 'hover:bg-hover',
         dimmed && 'opacity-50',
       )}
     >
       <span
         aria-hidden
-        className={cn(
-          'grid size-5 place-items-center rounded-sm text-chip',
-          selected ? 'bg-hover text-foreground' : 'bg-fill text-muted-foreground',
-        )}
+        className="grid h-5 place-items-center text-meta tabular-nums text-muted-foreground"
       >
         {keyHint}
       </span>
       <span className="flex min-w-0 flex-col gap-2">
         <button
           type="button"
-          role={mode === 'many' ? 'checkbox' : 'radio'}
+          role={isMany ? 'checkbox' : 'radio'}
           aria-checked={selected}
           aria-label={label}
           aria-describedby={recommended ? recommendedId : undefined}
@@ -66,20 +65,14 @@ export const AnswerOptionRow = ({
         >
           <span className="min-w-0 break-words">{label}</span>
           {recommended && (
-            <span id={recommendedId} className="flex">
-              <Chip
-                className="rounded-md"
-                kind="state"
-                tone="primary"
-                label="Recommended"
-                bordered={false}
-              />
+            <span id={recommendedId} className="shrink-0 text-meta text-muted-foreground">
+              Recommended
             </span>
           )}
         </button>
         {children}
       </span>
-      <SelectionIndicator mode={mode} selected={selected} />
+      {isMany ? <SelectionIndicator mode={mode} selected={selected} /> : null}
     </div>
   );
 };
