@@ -337,7 +337,7 @@ const mountLines = ({ mounts }: MountLinesParams): ReadonlyArray<string> => {
     'Mounts of the project (give a next step the mountId of the one whose repository it changes):',
     ...mounts.map(
       (mount) =>
-        `- mountId ${mount.id}: ${mount.name}${mount.branch === undefined ? '' : `, branch ${mount.branch}`}`,
+        `- mountId ${mount.id}: ${mount.name}${mount.branch === undefined || mount.branch.trim() === '' ? '' : `, branch ${mount.branch}`}`,
     ),
   ];
 };

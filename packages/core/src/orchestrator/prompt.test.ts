@@ -466,6 +466,21 @@ describe('orchestrator mounts', () => {
     expect(prompt).toContain('- mountId mount-notify: notify-relay\n');
   });
 
+  it('leaves the branch part out when the branch is empty or blank', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        mounts: [
+          { id: 'mount-payments', name: 'payments-api', branch: '' },
+          { id: 'mount-notify', name: 'notify-relay', branch: '  ' },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('- mountId mount-payments: payments-api\n');
+    expect(prompt).toContain('- mountId mount-notify: notify-relay\n');
+    expect(prompt).not.toContain('branch');
+  });
+
   it('teaches the mountId step field only when there are two mounts', () => {
     expect(orchestratorSystemPromptFor({ input: input({ mounts: TWO_MOUNTS }) })).toContain(
       'Give a next step "mountId"',
