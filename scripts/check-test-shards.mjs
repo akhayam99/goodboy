@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const SHARD_COUNT = 4;
+const SHARD_COUNT = 6;
 const VITEST_NODE_ENTRY = 'vitest/node';
 
 export const verifyShards = ({ all, shards }) => {
