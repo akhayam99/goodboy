@@ -1,42 +1,86 @@
-import type { BitbucketIntegrationBinding, GitlabIntegrationBinding } from '@goodboy/types';
+import type {
+  BitbucketIntegrationBinding,
+  GitlabIntegrationBinding,
+  IntegrationBinding,
+  ProjectId,
+  SessionId,
+} from '@goodboy/types';
 import type { AppState } from '../../types';
-import { viewerLoginsOf } from '../resolve/viewerLogins';
+import type { ReviewSourceEntry } from '../review-source/types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly state: Pick<
     AppState,
-    'githubStatus' | 'githubWorkspaceStatus' | 'workspaceIntegrations'
+    'githubStatus' | 'githubWorkspaceStatus' | 'workspaceIntegrations' | 'sessions'
   >;
-  readonly kind: 'github' | 'gitlab' | 'bitbucket';
+  readonly sessionId: SessionId;
+  readonly entry: Pick<ReviewSourceEntry, 'kind' | 'projectId' | 'url'> | null;
 };
 
-type LoweredParams = {
-  readonly values: ReadonlyArray<string | undefined>;
+type BindingsParams<Binding extends IntegrationBinding> = {
+  readonly bindings: ReadonlyArray<Binding>;
+  readonly projectId: ProjectId | null;
 };
 
-const lowered = ({ values }: LoweredParams): ReadonlyArray<string> =>
-  values.flatMap((value) => (value === undefined || value === '' ? [] : [value.toLowerCase()]));
+type ValueParams = {
+  readonly value: string;
+};
 
-export const viewerIdentityOf = ({ state, kind }: Params): ReadonlySet<string> | null => {
+const hostnameOf = ({ value }: ValueParams): string => {
+  const withoutScheme = value.trim().split('://').pop() ?? '';
+  return (withoutScheme.split('/')[0] ?? '').toLowerCase();
+};
+
+const canonicalIdOf = ({ value }: ValueParams): ReadonlySet<string> | null =>
+  value === '' ? null : new Set([value.toLowerCase()]);
+
+const mostSpecificOf = <Binding extends IntegrationBinding>({
+  bindings,
+  projectId,
+}: BindingsParams<Binding>): Binding | null =>
+  bindings.find((binding) => projectId !== null && binding.projectId === projectId) ??
+  bindings.find((binding) => binding.projectId === null) ??
+  null;
+
+export const viewerIdentityOf = ({
+  state,
+  sessionId,
+  entry,
+}: Params): ReadonlySet<string> | null => {
+  const session = sessionById(state.sessions, sessionId);
+  if (session === undefined) {
+    return null;
+  }
+  const kind = entry?.kind ?? 'github';
   if (kind === 'github') {
-    const logins = viewerLoginsOf({ state });
-    return logins.size === 0 ? null : logins;
+    const workspaceStatus = state.githubWorkspaceStatus?.[session.workspaceId];
+    const user =
+      workspaceStatus?.user ??
+      (workspaceStatus?.scoped === true ? undefined : state.githubStatus?.user);
+    return canonicalIdOf({ value: user ?? '' });
   }
-  const bindings = Object.values(state.workspaceIntegrations ?? {}).flat();
+  const bindings = state.workspaceIntegrations?.[session.workspaceId] ?? [];
+  const projectId = entry?.projectId ?? null;
   if (kind === 'gitlab') {
-    const configs = bindings
-      .filter((binding): binding is GitlabIntegrationBinding => binding.provider === 'gitlab')
-      .map((binding) => binding.config);
-    const logins = lowered({ values: configs.map((config) => config.username) });
-    return logins.length === 0
-      ? null
-      : new Set([...logins, ...lowered({ values: configs.map((config) => config.userName) })]);
+    const host = entry?.url == null ? '' : hostnameOf({ value: entry.url });
+    if (host === '') {
+      return null;
+    }
+    const binding = mostSpecificOf({
+      bindings: bindings.filter(
+        (candidate): candidate is GitlabIntegrationBinding =>
+          candidate.provider === 'gitlab' && hostnameOf({ value: candidate.config.host }) === host,
+      ),
+      projectId,
+    });
+    return binding === null ? null : canonicalIdOf({ value: binding.config.username ?? '' });
   }
-  const configs = bindings
-    .filter((binding): binding is BitbucketIntegrationBinding => binding.provider === 'bitbucket')
-    .map((binding) => binding.config);
-  const logins = lowered({ values: configs.map((config) => config.nickname) });
-  return logins.length === 0
-    ? null
-    : new Set([...logins, ...lowered({ values: configs.map((config) => config.displayName) })]);
+  const binding = mostSpecificOf({
+    bindings: bindings.filter(
+      (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
+    ),
+    projectId,
+  });
+  return binding === null ? null : canonicalIdOf({ value: binding.config.nickname ?? '' });
 };

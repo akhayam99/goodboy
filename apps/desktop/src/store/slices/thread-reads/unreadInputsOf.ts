@@ -26,7 +26,7 @@ const NO_THREADS: ReadonlyArray<ResolveThread> = [];
 export const unreadInputsOf = ({ state, sessionId, mountId }: Params): UnreadInputs => {
   const entry = selectedReviewEntryOf({ state, sessionId, mountId });
   const source = activeReviewSourceOf({ state, sessionId, mountId });
-  const identity = viewerIdentityOf({ state, kind: entry?.kind ?? 'github' });
+  const identity = viewerIdentityOf({ state, sessionId, entry });
   const fetchedAt = source?.fetchedAt ?? null;
   return {
     threads: state.sessionResolveThreads?.[sessionId] ?? NO_THREADS,

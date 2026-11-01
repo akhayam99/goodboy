@@ -351,7 +351,7 @@ describe('useThreadVisit', () => {
     });
 
     const { result } = renderHook(() =>
-      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER }),
+      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible: true }),
     );
     await waitFor(() => expect(attempts).toHaveLength(1));
     expect(useAppStore.getState().sessionThreadReads[SESSION_ID]).toEqual({});
@@ -380,7 +380,7 @@ describe('useThreadVisit', () => {
     seedUnread({ isViewerKnown: true });
     stubStoryInvoke({ db_select: [], db_transaction: commitStub });
     const { result } = renderHook(() =>
-      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER }),
+      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible: true }),
     );
     await waitFor(() =>
       expect(useAppStore.getState().sessionThreadReads[SESSION_ID]?.['thread-a']).toBe(
@@ -409,6 +409,72 @@ describe('useThreadVisit', () => {
       ),
     );
     expect(result.current.has('thread-c')).toBe(true);
+  });
+});
+
+describe('useThreadVisit visibility', () => {
+  it('takes no snapshot and sends no write while Comments is hidden, then marks when it is shown', async () => {
+    seedUnread({ isViewerKnown: true });
+    const attempts: Array<unknown> = [];
+    stubStoryInvoke({
+      db_select: [],
+      db_transaction: (args: unknown) => {
+        attempts.push(args);
+        return commitStub;
+      },
+    });
+
+    const { result, rerender } = renderHook(
+      ({ isVisible }: { readonly isVisible: boolean }) =>
+        useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible }),
+      { initialProps: { isVisible: false } },
+    );
+    await act(async () => undefined);
+
+    expect(result.current.size).toBe(0);
+    expect(attempts).toHaveLength(0);
+    expect(useAppStore.getState().sessionThreadReads[SESSION_ID]).toEqual({});
+
+    rerender({ isVisible: true });
+
+    await waitFor(() => expect(attempts).toHaveLength(1));
+    expect([...result.current].sort()).toEqual(['thread-a', 'thread-b']);
+  });
+});
+
+describe('usePullRequestReadiness unread identity of the source connection', () => {
+  const OTHER_WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-northwind' });
+  const OWN_WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+
+  it('does not take the account of another workspace as the viewer', async () => {
+    seedUnread({ isViewerKnown: false });
+    act(() => {
+      useAppStore.setState({
+        githubWorkspaceStatus: {
+          [OTHER_WORKSPACE]: { mode: 'pat', available: true, user: 'harborline-dev' },
+        },
+      });
+    });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+    await act(async () => undefined);
+
+    expect(result.current.commentsUnread).toBe(0);
+  });
+
+  it('takes the account of the workspace of the session as the viewer', async () => {
+    seedUnread({ isViewerKnown: false });
+    act(() => {
+      useAppStore.setState({
+        githubWorkspaceStatus: {
+          [OWN_WORKSPACE]: { mode: 'pat', available: true, user: 'harborline-dev' },
+        },
+      });
+    });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+
+    await waitFor(() => expect(result.current.commentsUnread).toBe(2));
   });
 });
 

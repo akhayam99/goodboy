@@ -6,6 +6,7 @@ import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId?: MountId | null;
+  readonly isVisible: boolean;
 };
 
 type Visit = {
@@ -16,14 +17,18 @@ type Visit = {
 const NO_THREADS: ReadonlySet<string> = new Set<string>();
 const NO_VISIT: Visit = { sessionId: null, threadIds: NO_THREADS };
 
-export const useThreadVisit = ({ sessionId, mountId = null }: Params): ReadonlySet<string> => {
+export const useThreadVisit = ({
+  sessionId,
+  mountId = null,
+  isVisible,
+}: Params): ReadonlySet<string> => {
   const { unread, fetchedAtMs } = useUnreadThreads({ sessionId, mountId });
   const markThreadsRead = useAppStore((s) => s.markThreadsRead);
   const [snapshot, setSnapshot] = useState<Visit>(NO_VISIT);
   const inFlight = useRef<Visit>(NO_VISIT);
 
   useEffect(() => {
-    if (unread === null) {
+    if (!isVisible || unread === null) {
       return;
     }
     const pending =
@@ -57,7 +62,7 @@ export const useThreadVisit = ({ sessionId, mountId = null }: Params): ReadonlyS
         threadIds: new Set([...inFlight.current.threadIds].filter((id) => !freshIds.includes(id))),
       };
     });
-  }, [fetchedAtMs, markThreadsRead, sessionId, unread]);
+  }, [fetchedAtMs, isVisible, markThreadsRead, sessionId, unread]);
 
   return snapshot.sessionId === sessionId ? snapshot.threadIds : NO_THREADS;
 };

@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SliceDeps } from '../../slice-types';
 
-export type ThreadReadMark = {
+type ThreadReadMark = {
   readonly threadId: string;
   readonly readAt: number;
 };

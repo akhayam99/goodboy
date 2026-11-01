@@ -331,11 +331,10 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       : { kind: 'disabled', reason: requestReason };
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
-  const hasRemote = sources.length > 0;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
-    if ((tab === 'pr' || tab === 'comments') && !hasRemote && repo === null) {
+    if ((tab === 'pr' || tab === 'comments') && sources.length === 0 && repo === null) {
       return (
         <NoPullRequest
           session={session}
@@ -414,7 +413,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    return <ReviewFlowVisit session={session} mountId={historyMountId} push={push} />;
+    const visit = { mountId: historyMountId, push, isVisible: isActive };
+    return <ReviewFlowVisit session={session} {...visit} />;
   };
 
   const baseRow =
