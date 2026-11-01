@@ -8,8 +8,8 @@ import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { DelegateAnswerRow } from '.';
 
 vi.mock('../../../../../shared/components/RoutingPicker', () => ({
-  RoutingPicker: ({ disabled }: { disabled: boolean }) => (
-    <span data-testid="routing-picker" aria-disabled={disabled} />
+  RoutingPicker: (props: Record<string, unknown>) => (
+    <span data-testid="routing-picker" aria-disabled={props['disabled'] === true} />
   ),
 }));
 

@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
-import type { OpenQuestionId, WorkflowOrchestrationStop } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type WorkflowOrchestrationStop } from '@goodboy/types';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { useOpenQuestions } from '../../context/components/QuestionsTab/useOpenQuestions';
 import { OpenQuestionCluster } from '../../chat/components/ChatView/OpenQuestionCluster';
@@ -68,7 +68,7 @@ describe('a stopped run question in the Needs you drawer', () => {
       <ToastProvider>
         <QuestionDrawer
           sessionId={BLOCKED_MOUNT_SESSION_ID}
-          questionId={STOPPED_FIRST_QUESTION_ID as OpenQuestionId}
+          questionId={brandId<OpenQuestionId>({ value: STOPPED_FIRST_QUESTION_ID })}
           from={null}
           onClose={() => undefined}
         />
@@ -135,8 +135,11 @@ describe('a stopped run question in the chat transcript', () => {
     });
     await settle();
     const card = container.querySelector<HTMLElement>('[data-question-card]');
+    if (card === null) {
+      throw new Error('the transcript shows no question card');
+    }
 
-    expect(card?.querySelector('[role="radio"]')?.getAttribute('aria-disabled')).not.toBe('true');
-    expect(within(card as HTMLElement).queryByText('Resume the run to answer')).toBeNull();
+    expect(card.querySelector('[role="radio"]')?.getAttribute('aria-disabled')).not.toBe('true');
+    expect(within(card).queryByText('Resume the run to answer')).toBeNull();
   });
 });
