@@ -9,7 +9,9 @@ class InlineHighlightWorker {
     void import('../shared/lib/highlight/tokenize')
       .then(({ tokenizeCode }) => tokenizeCode({ code: request.code, lang: request.lang }))
       .then((lines) => {
-        this.onmessage?.({ data: { id: request.id, lines } } as MessageEvent<HighlightResponse>);
+        this.onmessage?.(
+          new MessageEvent<HighlightResponse>('message', { data: { id: request.id, lines } }),
+        );
       });
   };
 

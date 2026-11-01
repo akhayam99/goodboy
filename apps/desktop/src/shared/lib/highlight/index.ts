@@ -23,7 +23,7 @@ const createWorkerTransport = (): Transport | null => {
     return null;
   }
   let nextId = 0;
-  let broken = false;
+  let isBroken = false;
   const pending = new Map<number, { resolve: (lines: SyntaxLines | null) => void }>();
   worker.onmessage = (event: MessageEvent<HighlightResponse>) => {
     const entry = pending.get(event.data.id);
@@ -31,7 +31,7 @@ const createWorkerTransport = (): Transport | null => {
     entry?.resolve(event.data.lines);
   };
   worker.onerror = () => {
-    broken = true;
+    isBroken = true;
     worker.terminate();
     for (const entry of pending.values()) {
       entry.resolve(null);
@@ -39,7 +39,7 @@ const createWorkerTransport = (): Transport | null => {
     pending.clear();
   };
   return (request) => {
-    if (broken) {
+    if (isBroken) {
       return plain(request);
     }
     return new Promise((resolve) => {
