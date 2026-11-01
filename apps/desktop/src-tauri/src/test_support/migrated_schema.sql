@@ -1421,6 +1421,16 @@ CREATE TABLE turn_file_sets (
   UNIQUE (run_id, mount_id)
 );
 
+CREATE TABLE thread_reads (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  thread_id TEXT NOT NULL,
+  read_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (session_id, thread_id)
+);
+
 CREATE INDEX idx_permission_audit_retry_created ON permission_audit_retry(created_at);
 
 CREATE INDEX idx_turn_events_agent_created ON turn_events(agent_id, created_at);

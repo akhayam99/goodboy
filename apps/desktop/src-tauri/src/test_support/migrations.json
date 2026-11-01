@@ -950,5 +950,9 @@
   {
     "version": 238,
     "sql": "\nALTER TABLE notifications ADD COLUMN acted_at INTEGER;\n"
+  },
+  {
+    "version": 239,
+    "sql": "\nCREATE TABLE thread_reads (\n  id TEXT PRIMARY KEY,\n  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,\n  thread_id TEXT NOT NULL,\n  read_at INTEGER NOT NULL,\n  created_at INTEGER NOT NULL,\n  updated_at INTEGER NOT NULL,\n  UNIQUE (session_id, thread_id)\n);\n"
   }
 ]
