@@ -12,6 +12,21 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.30.0
+
+The pull request page counts the review threads you have not read, and Comments marks them for that visit.
+
+This version updates your data in one direction. To go back to 0.29, restore the backup Goodboy made before updating.
+
+### New
+
+#### Unread review threads
+<!-- gb area=review image=unread-threads -->
+
+The line at the top of the pull request page now ends with a count of unread threads, after the open threads and the ones that need you. It reads 6 open threads, 1 needs you, 2 unread, and each part after the first hides at zero.
+
+In Comments, an unread thread gets a dot in the margin of its row for that visit. Your own replies never make a thread unread, and the threads you already had count as read after the update.
+
 ## Goodboy v0.29.10
 
 Needs you reads like Waiting for you, and a stopped run shows its open questions.
