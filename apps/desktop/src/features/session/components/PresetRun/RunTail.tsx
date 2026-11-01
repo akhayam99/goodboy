@@ -122,43 +122,45 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     <section
       aria-label="Run state"
       data-run-tail={tail.verb?.kind ?? 'none'}
-      className="flex min-w-0 flex-col gap-2"
+      className="flex min-w-0 flex-col gap-4"
     >
       {placement === 'before-state' ? questionCluster : null}
-      {isNotStarted ? (
-        <p data-run-step-not-started="" className="text-ui text-muted-foreground">
-          Not started, the run paused at the limit.
-        </p>
-      ) : null}
-      {isMountBlocked ? null : (
-        <TailLine
-          facts={{
-            state: tail.state,
-            phrase: tail.phrase,
-            startedAt: null,
-            stepAgentId: tail.stepAgentId,
-            actions: [],
-          }}
-          onAction={() => undefined}
-          verbs={
-            tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
-              <RunTailVerb
-                session={session}
-                view={view}
-                verb={tail.verb}
-                isSecondary={blockedStep !== null}
-              />
-            )
-          }
-        />
-      )}
+      <div className="flex min-w-0 flex-col gap-2">
+        {isNotStarted ? (
+          <p data-run-step-not-started="" className="text-ui text-muted-foreground">
+            Not started, the run paused at the limit.
+          </p>
+        ) : null}
+        {isMountBlocked ? null : (
+          <TailLine
+            facts={{
+              state: tail.state,
+              phrase: tail.phrase,
+              startedAt: null,
+              stepAgentId: tail.stepAgentId,
+              actions: [],
+            }}
+            onAction={() => undefined}
+            verbs={
+              tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
+                <RunTailVerb
+                  session={session}
+                  view={view}
+                  verb={tail.verb}
+                  isSecondary={blockedStep !== null}
+                />
+              )
+            }
+          />
+        )}
+        <RunPendingDelivery sessionId={session.id} />
+        {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
+          <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+        ) : (
+          <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
+        )}
+      </div>
       {placement === 'after-state' ? questionCluster : null}
-      <RunPendingDelivery sessionId={session.id} />
-      {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
-        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-      ) : (
-        <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
-      )}
     </section>
   );
 };

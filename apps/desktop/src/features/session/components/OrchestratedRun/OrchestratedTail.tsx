@@ -78,54 +78,61 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     <section
       aria-label="Run state"
       data-orchestrated-tail={view.orchestrator.state.phase}
-      className="flex min-w-0 flex-col gap-1"
+      className="flex min-w-0 flex-col gap-4"
     >
       {placement === 'before-state' ? questionCluster : null}
-      {isMountBlocked ? null : (
-        <TailLine
-          facts={{
-            state: tail.state,
-            phrase: tail.phrase,
-            startedAt: null,
-            stepAgentId: tail.stepAgentId,
-            actions: [],
-          }}
-          onAction={() => undefined}
-          verbs={
-            tailVerbs.length === 0
-              ? null
-              : tailVerbs.map((verb) => (
-                  <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
-                ))
-          }
-        />
-      )}
-      {placement === 'after-state' ? questionCluster : null}
-      <RunPendingDelivery sessionId={session.id} />
-      {isMountBlocked ? (
-        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-      ) : tail.blockedAgentId === null ? null : (
-        <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
-      )}
-      {blockedReason === '' ? null : (
-        <div data-orchestrated-block="" className="min-w-0 px-2">
-          <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
-        </div>
-      )}
-      {isReasonShown ? (
-        <Disclosure
-          label={
-            <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
-          }
-          isOpen={isWhyOpen}
-          onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
-          className="self-start"
-        >
-          <div data-orchestrated-reason="" className="min-w-0">
-            <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
+      <div className="flex min-w-0 flex-col gap-1">
+        {isMountBlocked ? null : (
+          <TailLine
+            facts={{
+              state: tail.state,
+              phrase: tail.phrase,
+              startedAt: null,
+              stepAgentId: tail.stepAgentId,
+              actions: [],
+            }}
+            onAction={() => undefined}
+            verbs={
+              tailVerbs.length === 0
+                ? null
+                : tailVerbs.map((verb) => (
+                    <OrchestratedTailVerb
+                      key={verb.kind}
+                      session={session}
+                      view={view}
+                      verb={verb}
+                    />
+                  ))
+            }
+          />
+        )}
+        <RunPendingDelivery sessionId={session.id} />
+        {isMountBlocked ? (
+          <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+        ) : tail.blockedAgentId === null ? null : (
+          <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
+        )}
+        {blockedReason === '' ? null : (
+          <div data-orchestrated-block="" className="min-w-0 px-2">
+            <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
           </div>
-        </Disclosure>
-      ) : null}
+        )}
+        {isReasonShown ? (
+          <Disclosure
+            label={
+              <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
+            }
+            isOpen={isWhyOpen}
+            onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
+            className="self-start"
+          >
+            <div data-orchestrated-reason="" className="min-w-0">
+              <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
+            </div>
+          </Disclosure>
+        ) : null}
+      </div>
+      {placement === 'after-state' ? questionCluster : null}
     </section>
   );
 };
