@@ -1493,15 +1493,15 @@ describe('questionCardFailures', () => {
 
   it('fails a baseline, a pager top and a dot that drift', () => {
     assert.deepEqual(checksOf({ baselineDelta: 3, pagerDelta: 9, dotDelta: 2 }), [
-      'Blocking and the question share a baseline',
-      'the pager is centred on the first line of the question',
-      'the dot is centred on the x-height of Blocking',
+      'Blocking and the pager count share a baseline',
+      'Blocking and the pager share one centre line',
+      'the dot is centred on Blocking',
     ]);
   });
 
   it('fails an empty box above the question and a header off the card edge', () => {
     assert.deepEqual(checksOf({ emptyBoxes: [{ tag: 'div', height: 24 }], edgeDelta: 40 }), [
-      'the header starts on the card edge',
+      'the question starts on the card edge',
       'no empty box above the question',
     ]);
   });

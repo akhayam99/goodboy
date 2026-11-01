@@ -99,54 +99,56 @@ const isFirstRow = ({ node }: FirstRowParams): boolean => {
   return current === card();
 };
 
-const header = (): HTMLElement => {
-  const row = card().querySelector<HTMLElement>('[data-question-header]');
-  if (row === null) {
-    throw new Error('the card has no header row');
+const title = (): HTMLElement => screen.getByRole('heading', { name: QUESTION.text });
+
+const topRow = (): HTMLElement => {
+  const row = card().firstElementChild;
+  if (!(row instanceof HTMLElement)) {
+    throw new Error('the card has no first row');
   }
   return row;
 };
 
-describe('the question card header row', () => {
-  it('holds Blocking and the question on the first row, with no pager', () => {
+describe('the question card top row', () => {
+  it('puts Blocking on the first row and the question on its own line below', () => {
     renderCard();
 
-    expect(isFirstRow({ node: header() })).toBe(true);
-    within(header()).getByText('Blocking');
-    within(header()).getByRole('heading', { name: QUESTION.text });
-    expect(header().querySelector('[data-question-controls]')).toBeNull();
+    within(topRow()).getByText('Blocking');
+    expect(topRow().contains(title())).toBe(false);
+    expect(title().textContent).toBe(QUESTION.text);
+    expect(topRow().querySelector('[data-question-controls]')).toBeNull();
   });
 
-  it('holds Blocking, the question and the pager on one first row', () => {
+  it('holds Blocking and the pager on the first row, apart from the question', () => {
     renderCard({ pager: PAGER });
 
-    expect(isFirstRow({ node: header() })).toBe(true);
-    const row = within(header());
+    const row = within(topRow());
     row.getByText('Blocking');
-    row.getByRole('heading', { name: QUESTION.text });
     row.getByText('1 of 2');
     row.getByRole('button', { name: 'Next question' });
+    expect(topRow().contains(title())).toBe(false);
   });
 
   it('keeps the dismiss button on the first row of a question that does not block', () => {
     renderCard({ question: { ...QUESTION, isBlocking: false }, onDismiss: vi.fn() });
 
-    expect(isFirstRow({ node: header() })).toBe(true);
-    within(header()).getByRole('button', { name: 'Dismiss question' });
-    expect(within(header()).queryByText('Blocking')).toBeNull();
+    within(topRow()).getByRole('button', { name: 'Dismiss question' });
+    expect(within(card()).queryByText('Blocking')).toBeNull();
   });
 
-  it('puts the asker row above a full card and Blocking beside the question', () => {
+  it('shows no first row when the question neither blocks nor pages', () => {
+    renderCard({ question: { ...QUESTION, isBlocking: false } });
+
+    expect(isFirstRow({ node: title() })).toBe(true);
+  });
+
+  it('puts Blocking beside the asker on the full card, with the pager on the same row', () => {
     renderCard({ variant: 'full', pager: PAGER });
 
-    const top = card().firstElementChild;
-    if (!(top instanceof HTMLElement)) {
-      throw new Error('the full card has no first row');
-    }
-    expect(top).not.toBe(header());
-    within(top).getByText('Implementer');
-    within(top).getByText('1 of 2');
-    within(header()).getByText('Blocking');
-    expect(within(header()).queryByText('1 of 2')).toBeNull();
+    const row = within(topRow());
+    row.getByText('Implementer');
+    row.getByText('Blocking');
+    row.getByText('1 of 2');
+    expect(topRow().contains(title())).toBe(false);
   });
 });

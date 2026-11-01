@@ -36,7 +36,7 @@ describe('the u34 question card states scene', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U34_QUESTION_CARD_SCENES[SCENE]);
   });
 
-  it('shows every state once, each with one header row holding the question', () => {
+  it('shows every state once, each with one question title', () => {
     const Scene = U34_QUESTION_CARD_SCENES[SCENE];
     const { container } = render(
       <ToastProvider>
@@ -50,7 +50,7 @@ describe('the u34 question card states scene', () => {
     );
     for (const node of cases) {
       expect(node.querySelectorAll('[data-question-header]')).toHaveLength(1);
-      expect(node.querySelectorAll('[data-question-header] h2')).toHaveLength(1);
+      expect(node.querySelectorAll('h2[data-question-header]')).toHaveLength(1);
     }
   });
 });

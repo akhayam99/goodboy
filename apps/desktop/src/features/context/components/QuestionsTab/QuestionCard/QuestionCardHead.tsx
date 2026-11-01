@@ -1,5 +1,7 @@
+import { cn } from '@goodboy/ui';
 import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionParts } from '../questionParts';
+import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionCardControls } from './QuestionCardControls';
 import { QuestionCardText } from './QuestionCardText';
 import { QuestionCardTop } from './QuestionCardTop';
@@ -25,26 +27,34 @@ export const QuestionCardHead = ({
   age,
   pager,
   onDismiss,
-}: Props) => (
-  <>
-    {isCompact ? null : (
-      <QuestionCardTop
-        askerName={askerName}
-        askerKind={askerKind}
-        age={age}
-        pager={pager}
-        onDismiss={onDismiss}
-      />
-    )}
-    <QuestionCardText
-      parts={parts}
-      isCompact={isCompact}
-      isBlocking={isBlocking}
-      trailing={
-        isCompact && (pager !== null || onDismiss !== null) ? (
-          <QuestionCardControls pager={pager} onDismiss={onDismiss} />
-        ) : null
-      }
-    />
-  </>
-);
+}: Props) => {
+  const hasControls = pager !== null || onDismiss !== null;
+  const hasCompactTop = isCompact && (isBlocking || hasControls);
+  return (
+    <>
+      {isCompact ? null : (
+        <QuestionCardTop
+          askerName={askerName}
+          askerKind={askerKind}
+          age={age}
+          isBlocking={isBlocking}
+          pager={pager}
+          onDismiss={onDismiss}
+        />
+      )}
+      {hasCompactTop ? (
+        <div
+          data-question-top=""
+          className={cn(
+            'flex min-h-6 min-w-0 items-center gap-2',
+            isBlocking ? 'justify-between' : 'justify-end',
+          )}
+        >
+          {isBlocking ? <QuestionBlockingMark /> : null}
+          {hasControls ? <QuestionCardControls pager={pager} onDismiss={onDismiss} /> : null}
+        </div>
+      ) : null}
+      <QuestionCardText parts={parts} isCompact={isCompact} />
+    </>
+  );
+};

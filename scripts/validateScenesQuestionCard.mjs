@@ -1,6 +1,6 @@
 export const QUESTION_CARD_SCENES = ['u34-question-card-states'];
 export const QUESTION_CARD_WIDTHS = [360, 960, 1440];
-export const QUESTION_CARD_READY = '[data-qc-case] h2';
+export const QUESTION_CARD_READY = '[data-qc-case] [data-question-header]';
 export const QUESTION_CARD_BASELINE_PX = 1;
 export const QUESTION_CARD_PAGER_PX = 1;
 export const QUESTION_CARD_EMPTY_PX = 4;
@@ -17,12 +17,6 @@ export const questionCardProbe = () => {
     marker.remove();
     return baseline;
   };
-  const xHeightOf = (element) => {
-    const style = getComputedStyle(element);
-    const context = document.createElement('canvas').getContext('2d');
-    context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    return context.measureText('x').actualBoundingBoxAscent;
-  };
   const isEmptyBox = (element) =>
     element.textContent.trim() === '' &&
     element.querySelector('svg, img, button, input, textarea, [role]') === null;
@@ -30,17 +24,23 @@ export const questionCardProbe = () => {
   return [...document.querySelectorAll('[data-qc-case]')].map((wrapper) => {
     const card = wrapper.querySelector('article');
     const cardRect = card.getBoundingClientRect();
-    const header = card.querySelector('[data-question-header]');
-    const title = header.querySelector('h2');
-    const mark = header.querySelector('[data-question-blocking]');
-    const label = header.querySelector('[data-question-blocking-label]');
+    const title = card.querySelector('[data-question-header]');
+    const mark = card.querySelector('[data-question-blocking]');
+    const label = card.querySelector('[data-question-blocking-label]');
     const dot = mark === null ? null : mark.firstElementChild;
-    const controls = header.querySelector('[data-question-controls]');
+    const controls = card.querySelector('[data-question-controls]');
+    const count =
+      controls === null
+        ? null
+        : ([...controls.querySelectorAll('span')].find(
+            (element) => element.children.length === 0 && / of /.test(element.textContent),
+          ) ?? null);
     const titleRect = title.getBoundingClientRect();
-    const titleBaseline = baselineOf(title);
-    const labelBaseline = label === null ? null : baselineOf(label);
+    const centreOf = (element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    };
     const dotRect = dot === null ? null : dot.getBoundingClientRect();
-    const xCentre = label === null ? null : labelBaseline - xHeightOf(label) / 2;
     const emptyBoxes = [...card.querySelectorAll('*')]
       .filter(
         (element) =>
@@ -55,7 +55,7 @@ export const questionCardProbe = () => {
         tag: element.tagName.toLowerCase(),
         height: Math.round(element.getBoundingClientRect().height * 10) / 10,
       }));
-    const firstEdge = (mark ?? title).getBoundingClientRect().left;
+    const firstEdge = titleRect.left;
     const contentLeft =
       cardRect.left +
       parseFloat(getComputedStyle(card).borderLeftWidth) +
@@ -67,16 +67,12 @@ export const questionCardProbe = () => {
       name: wrapper.dataset.qcCase,
       hasControls: controls !== null,
       titleLines: Math.round(titleRect.height / parseFloat(getComputedStyle(title).lineHeight)),
-      baselineDelta: label === null ? null : Math.abs(labelBaseline - titleBaseline),
+      baselineDelta:
+        label === null || count === null ? null : Math.abs(baselineOf(label) - baselineOf(count)),
       pagerDelta:
-        controls === null
-          ? null
-          : Math.abs(
-              controls.getBoundingClientRect().top +
-                controls.getBoundingClientRect().height / 2 -
-                (titleRect.top + parseFloat(getComputedStyle(title).lineHeight) / 2),
-            ),
-      dotDelta: dotRect === null ? null : Math.abs(dotRect.top + dotRect.height / 2 - xCentre),
+        mark === null || controls === null ? null : Math.abs(centreOf(mark) - centreOf(controls)),
+      dotDelta:
+        dotRect === null ? null : Math.abs(dotRect.top + dotRect.height / 2 - centreOf(label)),
       edgeDelta: Math.abs(firstEdge - contentLeft),
       emptyBoxes,
       overflow,
@@ -96,28 +92,28 @@ export const questionCardFailures = ({ scene, width, measured }) => {
     if (card.baselineDelta !== null && card.baselineDelta > QUESTION_CARD_BASELINE_PX) {
       failures.push({
         ...at,
-        check: 'Blocking and the question share a baseline',
+        check: 'Blocking and the pager count share a baseline',
         delta: round(card.baselineDelta),
       });
     }
     if (card.pagerDelta !== null && card.pagerDelta > QUESTION_CARD_PAGER_PX) {
       failures.push({
         ...at,
-        check: 'the pager is centred on the first line of the question',
+        check: 'Blocking and the pager share one centre line',
         delta: round(card.pagerDelta),
       });
     }
     if (card.dotDelta !== null && card.dotDelta > QUESTION_CARD_DOT_PX) {
       failures.push({
         ...at,
-        check: 'the dot is centred on the x-height of Blocking',
+        check: 'the dot is centred on Blocking',
         delta: round(card.dotDelta),
       });
     }
     if (card.edgeDelta > QUESTION_CARD_EDGE_PX) {
       failures.push({
         ...at,
-        check: 'the header starts on the card edge',
+        check: 'the question starts on the card edge',
         delta: round(card.edgeDelta),
       });
     }

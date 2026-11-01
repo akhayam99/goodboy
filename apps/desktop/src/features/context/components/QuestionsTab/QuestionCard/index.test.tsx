@@ -119,13 +119,14 @@ describe('QuestionCard', () => {
     expect(props.onToggleCustomField).toHaveBeenCalledOnce();
   });
 
-  it('puts the blocking tag on the title line of the compact card', () => {
+  it('puts the blocking tag above the title of the compact card', () => {
     renderCard({ variant: 'compact' });
     const title = screen.getByRole('heading', {
       name: 'Which queue should webhook retries run on?',
     });
-    expect(title.parentElement?.textContent).toBe(
-      'Blocking Which queue should webhook retries run on?',
+    expect(title.textContent).toBe('Which queue should webhook retries run on?');
+    expect(screen.getByText('Blocking').compareDocumentPosition(title)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
 
