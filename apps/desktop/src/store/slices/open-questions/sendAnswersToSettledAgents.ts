@@ -1,44 +1,15 @@
-import type {
-  AgentId,
-  OpenQuestion,
-  OpenQuestionId,
-  SessionId,
-  WorkflowRunId,
-} from '@goodboy/types';
+import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
 import { wrapOpenQuestionAnswers } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { findWorkflowRun } from '../workflows/findWorkflowRun';
-import { isQuestionHeldByStop } from './isQuestionHeldByStop';
 import type { GetFn } from './types';
 
 export type AskingAgentId = AgentId | null;
-
-type DeliveredRun = {
-  readonly id: WorkflowRunId;
-  readonly isStopIgnored: boolean;
-};
 
 type SendAnswersToSettledAgentsParams = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly askingAgentIds: ReadonlySet<AskingAgentId>;
-  readonly run?: DeliveredRun;
-};
-
-type RunLiveParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly run: DeliveredRun;
-};
-
-const isRunLive = ({ get, sessionId, run }: RunLiveParams): boolean => {
-  const live = findWorkflowRun({ get, sessionId, workflowRunId: run.id });
-  return (
-    live != null &&
-    live.discardedAt == null &&
-    (run.isStopIgnored || live.orchestrationStop == null)
-  );
 };
 
 const askingAgentOf = (question: OpenQuestion): AskingAgentId => question.createdByAgentId ?? null;
@@ -62,7 +33,6 @@ export const sendAnswersToSettledAgents = async ({
   get,
   sessionId,
   askingAgentIds,
-  run,
 }: SendAnswersToSettledAgentsParams): Promise<void> => {
   const stillOpen = get().sessionOpenQuestions[sessionId] ?? [];
   const answered = get().sessionAnsweredQuestions[sessionId] ?? [];
@@ -73,17 +43,11 @@ export const sendAnswersToSettledAgents = async ({
     if (hasOpenLeft) {
       continue;
     }
-    if (run !== undefined && !isRunLive({ get, sessionId, run })) {
-      break;
-    }
     const undelivered = answered.filter(
       (question) =>
         askingAgentOf(question) === agentId &&
         question.answerDeliveredAt === undefined &&
-        question.userAnswer !== null &&
-        (run === undefined
-          ? !isQuestionHeldByStop({ get, sessionId, question })
-          : question.workflowRunId === run.id),
+        question.userAnswer !== null,
     );
     if (undelivered.length === 0) {
       continue;

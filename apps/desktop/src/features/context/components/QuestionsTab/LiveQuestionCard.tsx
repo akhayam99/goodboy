@@ -22,6 +22,7 @@ type Props = {
   readonly pager?: QuestionPagerModel | null;
   readonly settled?: 'answered' | 'dismissed' | null;
   readonly autoFocus?: boolean;
+  readonly isReadOnly?: boolean;
   readonly onAnswered?: (question: OpenQuestion) => void;
   readonly onSkip?: (() => void) | null;
   readonly onDismiss?: (() => void) | null;
@@ -37,6 +38,7 @@ export const LiveQuestionCard = ({
   pager = null,
   settled = null,
   autoFocus = false,
+  isReadOnly = false,
   onAnswered,
   onSkip = null,
   onDismiss = null,
@@ -122,6 +124,7 @@ export const LiveQuestionCard = ({
         delegate={delegate}
         answeredByName={answeredBy}
         autoFocus={autoFocus}
+        isReadOnly={isReadOnly}
         onToggleSuggestion={(suggestion) => toggleSuggestion(question.id, suggestion, mode)}
         onToggleCustomField={() => toggleCustomField(question.id, mode)}
         onSetCustomAnswer={(text) => setCustomAnswer(question.id, text)}

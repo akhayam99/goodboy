@@ -11,8 +11,9 @@ import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-k
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
+import { runQuestionsActionOf, runQuestionsHintOf } from '../../../workflows/runQuestionsPlacement';
+import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import { RunOpenQuestion } from '../RunOpenQuestion';
-import { RunHeldAnswers } from '../RunHeldAnswers';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { RunTailVerb } from './RunTailVerb';
 import { runTailOf } from './runTailOf';
@@ -26,7 +27,6 @@ type Props = {
 const MINUTE_MS = 60_000;
 
 const HEADER_VERBS: ReadonlySet<string> = new Set(['primary', 'raiseCap', 'answer']);
-
 export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const { run, workflow, advance } = view;
   const quiet = useQuietStep({ agents: advance.runAgents });
@@ -93,6 +93,9 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
       : null;
   const isMountBlocked = blockedStep !== null && mountBlock?.agentId === blockedStep.id;
   const answered = tail.verb?.kind === 'answer' ? tail.verb.question : null;
+  const stop = run.orchestrationStop;
+  const isReadOnly = stop != null && stop.kind !== 'questions';
+  const stopPrimary = runQuestionsActionOf({ primary: view.primary });
   return (
     <section
       aria-label="Run state"
@@ -129,6 +132,22 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
       {answered === null ? null : (
         <RunOpenQuestion
           sessionId={session.id}
+          readOnly={
+            isReadOnly
+              ? {
+                  hint: runQuestionsHintOf({ stop }),
+                  action:
+                    stopPrimary === null ? null : (
+                      <RunPrimaryAction
+                        session={session}
+                        view={view}
+                        primary={stopPrimary}
+                        variant="secondary"
+                      />
+                    ),
+                }
+              : null
+          }
           questions={askingAgentBatch({
             questions: [
               answered,
@@ -141,7 +160,6 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           })}
         />
       )}
-      <RunHeldAnswers sessionId={session.id} run={run} />
       <RunPendingDelivery sessionId={session.id} />
       {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
         <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />

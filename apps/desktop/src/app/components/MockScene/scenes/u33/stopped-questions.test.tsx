@@ -33,6 +33,8 @@ type StopCase = {
   readonly name: string;
   readonly stop: WorkflowOrchestrationStop;
   readonly phrase: string;
+  readonly hint: string;
+  readonly action: string | null;
 };
 
 const STOP_CASES: ReadonlyArray<StopCase> = [
@@ -40,31 +42,43 @@ const STOP_CASES: ReadonlyArray<StopCase> = [
     name: 'budget',
     stop: { kind: 'budget', message: 'Paused at the $5 limit for this session.' },
     phrase: 'Paused at the $5 limit for this session.',
+    hint: 'Raise the limit to answer',
+    action: 'Raise limit',
   },
   {
     name: 'failure',
     stop: { kind: 'failure', message: 'the orchestrator reply could not be parsed' },
     phrase: 'Last decision failed: the orchestrator reply could not be parsed',
+    hint: 'Retry the run to answer',
+    action: 'Retry',
   },
   {
     name: 'operator',
     stop: { kind: 'operator', message: 'Stopped from the run page' },
     phrase: 'Stopped by you · the step in flight was skipped',
+    hint: 'Continue the run to answer',
+    action: 'Continue the run',
   },
   {
     name: 'needs-approval',
     stop: { kind: 'needs-approval', message: 'Deploy to Cascadia needs a go' },
     phrase: 'Paused · needs your approval',
+    hint: 'Approve to answer',
+    action: null,
   },
   {
     name: 'paused',
     stop: { kind: 'paused', message: 'Paused from the run page' },
     phrase: 'Paused by you',
+    hint: 'Resume the run to answer',
+    action: 'Resume',
   },
   {
     name: 'preset-change',
     stop: { kind: 'preset-change', message: 'The preset changed under the run' },
     phrase: 'Paused · the preset needs your call',
+    hint: 'Decide on the preset to answer',
+    action: null,
   },
 ];
 
@@ -93,6 +107,22 @@ afterEach(() => {
   cleanup();
 });
 
+type StopParams = {
+  readonly stop: WorkflowOrchestrationStop | undefined;
+};
+
+const setStop = async ({ stop }: StopParams): Promise<void> => {
+  await act(async () => {
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) => ({
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({ ...run, orchestrationStop: stop })),
+      })),
+    }));
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+  });
+};
+
 type MountParams = {
   readonly stop?: WorkflowOrchestrationStop;
 };
@@ -110,22 +140,19 @@ const mount = async ({ stop }: MountParams = {}): Promise<void> => {
   if (stop === undefined) {
     return;
   }
-  await act(async () => {
-    useAppStore.setState((state) => ({
-      sessions: state.sessions.map((session) => ({
-        ...session,
-        workflowRuns: session.workflowRuns.map((run) => ({ ...run, orchestrationStop: stop })),
-      })),
-    }));
-    await vi.advanceTimersByTimeAsync(SETTLE_MS);
-  });
+  await setStop({ stop });
 };
 
 const clusters = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-run-open-question]'));
 
-const heldLine = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('[data-run-held-answers]');
+const hintRow = (): HTMLElement => {
+  const row = document.querySelector<HTMLElement>('[data-run-questions-hint]');
+  if (row === null) {
+    throw new Error('the questions show no hint');
+  }
+  return row;
+};
 
 const tailLine = (): HTMLElement => {
   const line = document.querySelector<HTMLElement>('[aria-label="Run state"] [data-tail]');
@@ -134,10 +161,6 @@ const tailLine = (): HTMLElement => {
   }
   return line;
 };
-
-const runOf = () =>
-  useAppStore.getState().sessions.find((session) => session.id === BLOCKED_MOUNT_SESSION_ID)
-    ?.workflowRuns[0];
 
 type ClickParams = {
   readonly node: HTMLElement;
@@ -149,16 +172,48 @@ const click = async ({ node }: ClickParams): Promise<void> => {
   });
 };
 
+const isDisabled = (node: HTMLElement): boolean =>
+  (node instanceof HTMLButtonElement && node.disabled) ||
+  node.getAttribute('aria-disabled') === 'true';
+
+const stubAnswerStore = () => {
+  const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+  const opened = useAppStore.getState().sessionOpenQuestions[BLOCKED_MOUNT_SESSION_ID] ?? [];
+  act(() => {
+    useAppStore.setState({
+      sendTurn,
+      loadSessionOpenQuestions: async () => {
+        useAppStore.setState({ sessionOpenQuestions: { [BLOCKED_MOUNT_SESSION_ID]: [] } });
+      },
+      loadSessionAnsweredQuestions: async () => {
+        useAppStore.setState({
+          sessionAnsweredQuestions: {
+            [BLOCKED_MOUNT_SESSION_ID]: opened.map((question, index) => ({
+              ...question,
+              status: 'answered',
+              userAnswer: ['Batch them', '500 rows'][index] ?? null,
+            })),
+          },
+        });
+      },
+    });
+  });
+  return sendTurn;
+};
+
 describe('the u33 stopped run questions scene', () => {
   it('registers the scene for the capture', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U33_STOPPED_QUESTIONS_SCENES[SCENE]);
   });
 
-  it('frames the stopped run in a 680px shot with padding on an inner element', async () => {
+  it('frames the run tail in a 680px shot without the page chrome', async () => {
     await mount();
     const frame = document.querySelector<HTMLElement>('[data-shot]');
     expect(frame?.style.width).toBe('680px');
     expect(frame?.style.padding).toBe('');
+    expect(frame?.querySelector('[data-orchestrated-composer]')).not.toBeNull();
+    expect(frame?.querySelector('[data-tail]')).not.toBeNull();
+    expect(frame?.querySelector('[data-session-rail]')).toBeNull();
   });
 
   it.each(STOP_CASES)('shows the $name stop and the open questions once', async (stopCase) => {
@@ -169,6 +224,50 @@ describe('the u33 stopped run questions scene', () => {
     expect(cluster.dataset.runOpenQuestion).toBe(STOPPED_FIRST_QUESTION_ID);
     within(cluster).getByText('1 of 2');
     within(tailLine()).getByText(stopCase.phrase);
+  });
+
+  it.each(STOP_CASES)(
+    'reads the $name stop as read only: Answer is disabled and the stop action is reachable',
+    async (stopCase) => {
+      await mount({ stop: stopCase.stop });
+      const cluster = clusters()[0]!;
+
+      expect(isDisabled(within(cluster).getByRole('button', { name: 'Answer' }))).toBe(true);
+      within(cluster)
+        .getAllByRole('radio')
+        .forEach((option) => expect(isDisabled(option)).toBe(true));
+      const sendAsMessage = within(cluster).queryByRole('button', { name: 'Send as message' });
+      expect(sendAsMessage === null || isDisabled(sendAsMessage)).toBe(true);
+      const delegate = within(cluster).queryByTestId('delegate-answer-row');
+      expect(delegate === null || isDisabled(delegate)).toBe(true);
+
+      const row = hintRow();
+      expect(row.parentElement).toBe(cluster);
+      within(row).getByText(stopCase.hint);
+      if (stopCase.action === null) {
+        expect(within(row).queryAllByRole('button')).toHaveLength(0);
+        return;
+      }
+      expect(isDisabled(within(row).getByRole('button', { name: stopCase.action }))).toBe(false);
+    },
+  );
+
+  it.each(STOP_CASES)('ignores the keys 1 to 4 and Enter on the $name stop', async (stopCase) => {
+    await mount({ stop: stopCase.stop });
+    const sendTurn = stubAnswerStore();
+    const card = within(clusters()[0]!).getByRole('article');
+
+    for (const key of ['1', '2', '3', '4', 'Enter']) {
+      await act(async () => {
+        fireEvent.keyDown(card, { key });
+      });
+    }
+
+    within(card)
+      .getAllByRole('radio')
+      .forEach((option) => expect(option.getAttribute('aria-checked')).toBe('false'));
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(useOpenQuestions.getState().staged).toEqual([]);
   });
 
   it('puts the questions before the stop line when they block the run', async () => {
@@ -186,32 +285,15 @@ describe('the u33 stopped run questions scene', () => {
   });
 
   it.each(STOP_CASES)(
-    'keeps the $name stop on answering and says the answers wait for resume',
+    'makes the questions answerable once the $name stop clears, and the answers send once',
     async (stopCase) => {
       await mount({ stop: stopCase.stop });
-      const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
-      const opened = useAppStore.getState().sessionOpenQuestions[BLOCKED_MOUNT_SESSION_ID] ?? [];
-      act(() => {
-        useAppStore.setState({
-          sendTurn,
-          loadSessionOpenQuestions: async () => {
-            useAppStore.setState({ sessionOpenQuestions: { [BLOCKED_MOUNT_SESSION_ID]: [] } });
-          },
-          loadSessionAnsweredQuestions: async () => {
-            useAppStore.setState({
-              sessionAnsweredQuestions: {
-                [BLOCKED_MOUNT_SESSION_ID]: opened.map((question, index) => ({
-                  ...question,
-                  status: 'answered',
-                  userAnswer: ['Batch them', '500 rows'][index] ?? null,
-                })),
-              },
-            });
-          },
-        });
-      });
+      const sendTurn = stubAnswerStore();
+
+      await setStop({ stop: undefined });
       const block = clusters()[0]!;
 
+      expect(document.querySelector('[data-run-questions-hint]')).toBeNull();
       await click({ node: within(block).getByRole('radio', { name: 'Batch them' }) });
       await click({ node: within(block).getByRole('button', { name: 'Answer' }) });
       await click({ node: within(block).getByRole('radio', { name: '500 rows' }) });
@@ -220,15 +302,14 @@ describe('the u33 stopped run questions scene', () => {
         await vi.advanceTimersByTimeAsync(SETTLE_MS);
       });
 
-      expect(sendTurn).not.toHaveBeenCalled();
-      expect(runOf()?.orchestrationStop?.kind).toBe(stopCase.stop.kind);
+      expect(sendTurn).toHaveBeenCalledTimes(1);
       expect(clusters()).toHaveLength(0);
-      expect(heldLine()?.textContent).toBe('2 answers wait for resume');
     },
   );
 
-  it('keeps the typed answer, the stop and the questions when storing the answers fails', async () => {
-    await mount();
+  it('keeps the typed answer and the questions when storing the answers fails after resume', async () => {
+    await mount({ stop: STOP_CASES[0]!.stop });
+    await setStop({ stop: undefined });
     stubStoryInvoke({
       db_select: [],
       db_execute: () => {
@@ -255,9 +336,7 @@ describe('the u33 stopped run questions scene', () => {
       expect.objectContaining({ title: "Couldn't send your answers" }),
     );
     expect(sendTurn).not.toHaveBeenCalled();
-    expect(runOf()?.orchestrationStop?.kind).toBe('budget');
     expect(clusters()).toHaveLength(1);
     within(clusters()[0]!).getByRole('radio', { name: '500 rows', checked: true });
-    within(clusters()[0]!).getByRole('button', { name: 'Answer' });
   });
 });

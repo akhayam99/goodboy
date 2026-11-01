@@ -12,6 +12,7 @@ type Props = {
   readonly hints: string;
   readonly routing: DelegateRouting;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly isDisabled?: boolean;
   readonly onChoose: () => void;
   readonly onCancel: () => void;
   readonly onHints: (hints: string) => void;
@@ -29,6 +30,7 @@ export const DelegateAnswerRow = ({
   hints,
   routing,
   connectedProviders,
+  isDisabled = false,
   onChoose,
   onCancel,
   onHints,
@@ -79,7 +81,7 @@ export const DelegateAnswerRow = ({
       type="button"
       data-testid="delegate-answer-row"
       data-state={state}
-      disabled={isBlocked}
+      disabled={isBlocked || isDisabled}
       onClick={onChoose}
       className={LINK_CLASS}
     >

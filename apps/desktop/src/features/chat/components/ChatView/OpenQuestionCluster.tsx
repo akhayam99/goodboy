@@ -12,6 +12,7 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly sessionId: SessionId;
+  readonly isReadOnly?: boolean;
 };
 
 type MoveParams = {
@@ -35,7 +36,7 @@ const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null 
   return null;
 };
 
-export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
+export const OpenQuestionCluster = ({ questions, sessionId, isReadOnly = false }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
@@ -115,7 +116,13 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
       {waiting.map((q) => (
-        <LiveQuestionCard key={q.id} question={q} sessionId={sessionId} variant="compact" />
+        <LiveQuestionCard
+          key={q.id}
+          question={q}
+          sessionId={sessionId}
+          variant="compact"
+          isReadOnly={isReadOnly}
+        />
       ))}
       {current !== null && (
         <LiveQuestionCard
@@ -124,10 +131,11 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           sessionId={sessionId}
           variant="compact"
           autoFocus={focusId !== null && focusId === current.id}
+          isReadOnly={isReadOnly}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}
-          onDismiss={() => void dismissOpenQuestion(sessionId, current)}
+          onDismiss={isReadOnly ? null : () => void dismissOpenQuestion(sessionId, current)}
         />
       )}
     </div>

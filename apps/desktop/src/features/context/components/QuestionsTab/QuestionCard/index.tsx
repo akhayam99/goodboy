@@ -7,7 +7,6 @@ import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { AnswerSubmitButton } from '../AnswerSubmitButton';
 import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
-import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
 import { orderSuggestions } from '../orderSuggestions';
@@ -17,6 +16,7 @@ import { QuestionAnswerDone } from './QuestionAnswerDone';
 import { QuestionAnswerInput } from './QuestionAnswerInput';
 import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionCardTop } from './QuestionCardTop';
+import { QuestionDelegateRow } from './QuestionDelegateRow';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
 import { RESOLVED_BY_AGENT } from './resolvedByAgent';
@@ -35,6 +35,7 @@ type Props = {
   readonly delegate: QuestionDelegateControls;
   readonly answeredByName?: string | null;
   readonly autoFocus?: boolean;
+  readonly isReadOnly?: boolean;
   readonly onToggleSuggestion: (suggestion: string) => void;
   readonly onToggleCustomField: () => void;
   readonly onSetCustomAnswer: (text: string) => void;
@@ -72,6 +73,7 @@ export const QuestionCard = ({
   delegate,
   answeredByName = null,
   autoFocus = false,
+  isReadOnly = false,
   onToggleSuggestion,
   onToggleCustomField,
   onSetCustomAnswer,
@@ -105,7 +107,7 @@ export const QuestionCard = ({
   const isOpen = state === 'open';
   const isWaiting = delegate.delegateState === 'running';
   const isHandedOff = delegate.delegateState === 'chosen';
-  const canAnswer = isOpen && !isWaiting && (isHandedOff || isDraftReady(draft));
+  const canAnswer = isOpen && !isWaiting && !isReadOnly && (isHandedOff || isDraftReady(draft));
   const isLive = state === 'open' || state === 'staged';
   const isBlockingNow = question.isBlocking && isOpen;
   const answerText = question.userAnswer ?? '';
@@ -113,18 +115,7 @@ export const QuestionCard = ({
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
   const isDelegateInFooter = isCompact && !isHandedOff;
-  const delegateRow = (
-    <DelegateAnswerRow
-      state={delegate.delegateState}
-      hints={delegate.delegateHints}
-      routing={delegate.delegateRouting}
-      connectedProviders={delegate.connectedProviders}
-      onChoose={delegate.onChooseDelegate}
-      onCancel={delegate.onCancelDelegate}
-      onHints={delegate.onDelegateHints}
-      onRouting={delegate.onDelegateRouting}
-    />
-  );
+  const delegateRow = <QuestionDelegateRow delegate={delegate} isDisabled={isReadOnly} />;
 
   const focusCard = () => articleRef.current?.focus({ preventScroll: true });
 
@@ -136,7 +127,7 @@ export const QuestionCard = ({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (!isOpen || isWaiting || event.metaKey || event.ctrlKey || event.altKey) {
+    if (!isOpen || isWaiting || isReadOnly || event.metaKey || event.ctrlKey || event.altKey) {
       return;
     }
     const target = event.target;
@@ -256,6 +247,7 @@ export const QuestionCard = ({
           isSettled={state === 'staged'}
           isHandedOff={isHandedOff}
           isCompact={isCompact}
+          isReadOnly={isReadOnly}
           onToggleSuggestion={onToggleSuggestion}
           onToggleCustomField={onToggleCustomField}
           onSetCustomAnswer={onSetCustomAnswer}

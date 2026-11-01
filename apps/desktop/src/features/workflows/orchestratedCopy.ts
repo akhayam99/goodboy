@@ -65,8 +65,6 @@ export const ORCHESTRATED_COPY = {
   blockedAnswerLabel: 'Answer the step',
   blockedAnswerAction: 'Answer',
   blockedAnswerFailed: "Couldn't send the answer",
-  heldAnswers: ({ count }: CountParams): string =>
-    count === 1 ? '1 answer waits for resume' : `${count} answers wait for resume`,
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",
   blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',

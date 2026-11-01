@@ -21,7 +21,6 @@ import { nextRunMove } from './nextRunMove';
 import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { settleHeldAnswers } from '../open-questions/heldAnswers';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 const advanceInFlight = new Set<SessionId>();
@@ -90,7 +89,8 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     await waitForSessionSummarizer({ get, sessionId });
   }
 
-  const session = sessionById(get().sessions, sessionId);
+  const state = get();
+  const session = sessionById(state.sessions, sessionId);
   if (session == null || session.workflowRuns.length === 0) {
     return;
   }
@@ -111,7 +111,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   if (!sessionBlocked) {
     await loadSpendLimitTelemetry({ get, sessionId, runs: activeRuns });
   }
-  const spendClearedRuns: typeof activeRuns = [];
+  const runnableRuns: typeof activeRuns = [];
   for (const run of activeRuns) {
     const spendStop = sessionBlocked ? null : resolveSpendLimitStop({ get, sessionId, run });
     const blockMessage = sessionBlocked
@@ -120,7 +120,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         ? spendStop.message
         : null;
     if (blockMessage == null) {
-      spendClearedRuns.push(run);
+      runnableRuns.push(run);
       continue;
     }
     if (run.orchestrationStop?.kind === 'budget') {
@@ -133,27 +133,6 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
       stop: { kind: 'budget', message: blockMessage },
     });
   }
-  const answeredRunIds = new Set<WorkflowRunId>();
-  for (const run of spendClearedRuns) {
-    const heldAnswers = await settleHeldAnswers({
-      set,
-      get,
-      sessionId,
-      workflowRunId: run.id,
-      isStopIgnored: false,
-    });
-    if (heldAnswers === 'clear') {
-      answeredRunIds.add(run.id);
-    }
-  }
-  const state = get();
-  const freshRuns = sessionById(state.sessions, sessionId)?.workflowRuns ?? [];
-  const runnableRuns = spendClearedRuns.flatMap((cleared) => {
-    const fresh = freshRuns.find((candidate) => candidate.id === cleared.id);
-    return answeredRunIds.has(cleared.id) && fresh != null && fresh.discardedAt == null
-      ? [fresh]
-      : [];
-  });
   if (runnableRuns.length === 0) {
     return;
   }
@@ -205,7 +184,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     return null;
   })();
   if (nextPendingAgent == null && dynamicRunId != null) {
-    await get().orchestrateNextStep(sessionId, dynamicRunId, { isAutoAdvance: true });
+    await get().orchestrateNextStep(sessionId, dynamicRunId);
     return;
   }
   if (nextPendingAgent == null) {

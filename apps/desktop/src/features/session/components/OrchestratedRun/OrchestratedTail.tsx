@@ -7,11 +7,15 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
-import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
+import {
+  runQuestionsActionOf,
+  runQuestionsHintOf,
+  runQuestionsPlacementOf,
+} from '../../../workflows/runQuestionsPlacement';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
-import { RunHeldAnswers } from '../RunHeldAnswers';
+import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
@@ -70,8 +74,29 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     phase,
     questions: view.orchestrator.runQuestions,
   });
+  const isReadOnly = placement !== 'hidden' && phase !== 'needs-answer';
+  const stopAction = runQuestionsActionOf({ primary: view.primary });
   const questionCluster = (
-    <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
+    <RunOpenQuestion
+      sessionId={session.id}
+      questions={view.orchestrator.runQuestions}
+      readOnly={
+        isReadOnly
+          ? {
+              hint: runQuestionsHintOf({ stop: run.orchestrationStop }),
+              action:
+                stopAction === null ? null : (
+                  <RunPrimaryAction
+                    session={session}
+                    view={view}
+                    primary={stopAction}
+                    variant="secondary"
+                  />
+                ),
+            }
+          : null
+      }
+    />
   );
 
   return (
@@ -101,7 +126,6 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         />
       )}
       {placement === 'after-state' ? questionCluster : null}
-      <RunHeldAnswers sessionId={session.id} run={run} />
       <RunPendingDelivery sessionId={session.id} />
       {isMountBlocked ? (
         <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />

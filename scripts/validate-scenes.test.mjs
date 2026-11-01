@@ -26,6 +26,7 @@ import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
+import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
@@ -1395,5 +1396,82 @@ describe('releaseImageShapeFailures', () => {
     assert.deepEqual(checksOf([{ label: 'wide', after: null, afterPress: null }]), [
       'a picture is shown inside its frame',
     ]);
+  });
+});
+
+describe('runTailFitFailures', () => {
+  const rect = (top, bottom) => ({ top, bottom, left: 24, right: 656 });
+  const measured = {
+    frame: { ...rect(0, 755), width: 680 },
+    card: rect(244, 464),
+    cardContent: { scrollHeight: 220, clientHeight: 220 },
+    lastChildBottom: 450,
+    clippers: [],
+    tails: [{ text: 'Paused at the $5 limit for this session.', ...rect(560, 590) }],
+    hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(472, 500) },
+    answerEnabled: 0,
+    hasComposer: true,
+    hasChecklist: true,
+    hasSidebar: false,
+  };
+  const checksOf = (override) =>
+    runTailFitFailures({
+      scene: 'fixture',
+      width: 1024,
+      measured: { ...measured, ...override },
+    }).map((failure) => failure.check);
+
+  it('passes a card that shows whole beside its stop line, action and composer', () => {
+    assert.deepEqual(checksOf({}), []);
+  });
+
+  it('fails a card cut off by a scroll container that ends above its bottom', () => {
+    assert.deepEqual(
+      checksOf({
+        card: rect(628, 868),
+        hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(876, 900) },
+        clippers: [{ name: 'mask-fade-y overflow-y-auto', ...rect(0, 701) }],
+        frame: { ...rect(0, 900), width: 680 },
+      }),
+      ['no container clips the question card'],
+    );
+  });
+
+  it('fails a card whose content is taller than the card', () => {
+    assert.deepEqual(
+      checksOf({ cardContent: { scrollHeight: 260, clientHeight: 220 }, lastChildBottom: 500 }),
+      ['the question card holds all its content', 'the last line of the card sits inside the card'],
+    );
+  });
+
+  it('fails a frame without the stop line, the action or the composer', () => {
+    assert.deepEqual(
+      checksOf({
+        tails: [],
+        hint: { text: 'Raise the limit to answer', buttons: [], ...rect(472, 500) },
+        hasComposer: false,
+      }),
+      [
+        'the stop line shows with the questions',
+        'the stop action sits next to the questions',
+        'the frame holds the composer',
+      ],
+    );
+  });
+
+  it('fails an enabled Answer button and a frame that holds the sidebar', () => {
+    assert.deepEqual(checksOf({ answerEnabled: 1, hasSidebar: true }), [
+      'no Answer button is enabled on a stopped run',
+      'the frame holds the run tail without the sidebar',
+    ]);
+  });
+
+  it('fails a scene with no question card', () => {
+    assert.deepEqual(
+      runTailFitFailures({ scene: 'fixture', width: 1024, measured: null }).map(
+        (failure) => failure.check,
+      ),
+      ['the run tail shows a question card inside a data-shot frame'],
+    );
   });
 });
