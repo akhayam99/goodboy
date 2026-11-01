@@ -123,14 +123,17 @@ describe('the u31 lists scenes', () => {
     }
   });
 
-  it('u31-question-card holds four option rows, the tag on the title line and one footer row', async () => {
+  it('u31-question-card holds four option rows, the tag on the top row above the title and one footer row', async () => {
     mount({ name: 'u31-question-card' });
 
     const card = await screen.findByRole('article', undefined, WAIT);
     expect(within(card).getAllByRole('radio')).toHaveLength(4);
     expect(card.querySelectorAll('[role="radiogroup"] > div')).toHaveLength(4);
     const title = within(card).getByRole('heading', { level: 2 });
-    expect(title.parentElement?.textContent).toMatch(/^Blocking/);
+    const text = card.textContent ?? '';
+    expect(text.indexOf('Blocking')).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf('Blocking')).toBeLessThan(text.indexOf(title.textContent ?? ''));
+    expect(title.textContent).not.toMatch(/Blocking/);
     const footer = card.querySelector('[data-slot="form-actions"]');
     expect(footer?.contains(within(card).getByRole('button', { name: 'Answer' }))).toBe(true);
     expect(footer?.contains(within(card).getByTestId('delegate-answer-row'))).toBe(true);
