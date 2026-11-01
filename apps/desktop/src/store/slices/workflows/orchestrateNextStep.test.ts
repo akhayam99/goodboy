@@ -106,7 +106,6 @@ vi.mock('@goodboy/db', async () =>
 );
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
   invokeAgentInsert: invokeAgentInsertSpy,

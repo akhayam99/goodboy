@@ -49,14 +49,8 @@ import { roleDefaultsFor } from './roleDefaultsFor';
 import { resolveProposedRouting } from './resolveProposedRouting';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
-import {
-  budgetBlockMessage,
-  sessionBudgetBlockAfterLoad,
-  loadSpendLimitTelemetry,
-  resolveSpendLimitStop,
-  spentUsdForRun,
-  type SpendLimitStop,
-} from './budgetBlock';
+import { spentUsdForRun } from './budgetBlock';
+import { admitOrchestration } from './runState/admitOrchestration';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { liveWorkflowFor } from './runMount/liveWorkflowFor';
 import { RunStepMountBlockedError } from './runMount/RunStepMountBlockedError';
@@ -95,6 +89,7 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
   readonly bypassGate?: boolean;
+  readonly isAutoAdvance?: boolean;
 };
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
@@ -169,37 +164,6 @@ const emitDecision = ({
   liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'transcript-event', id: event.at }) });
   get().appendTurnEvent(agentId, sessionId, event);
   return agentId;
-};
-
-type AnnounceBudgetParams = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId;
-  readonly stop: SpendLimitStop;
-};
-
-const announceRunBudget = ({
-  set,
-  get,
-  sessionId,
-  workflowRunId,
-  stop,
-}: AnnounceBudgetParams): void => {
-  if (get().announcedRunBudget[workflowRunId] === stop.limitUsd) {
-    return;
-  }
-  set((state) => ({
-    announcedRunBudget: { ...state.announcedRunBudget, [workflowRunId]: stop.limitUsd },
-  }));
-  void get().emitNotification({
-    kind: 'budget-cap',
-    severity: 'warning',
-    title: 'Run is over its limit',
-    body: stop.message,
-    sessionId,
-    action: { kind: 'open-budget', sessionId },
-  });
 };
 
 type PersistOutcomeParams = {
@@ -512,29 +476,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if ((await admitWorkflowRun({ set, sessionId, run })) !== null) {
         return;
       }
-      const sessionBlock = await sessionBudgetBlockAfterLoad({ get, sessionId });
-      if (sessionBlock !== null) {
-        await persistOrchestrationStop({
-          set,
-          sessionId,
-          workflowRunId,
-          stop: { kind: 'budget', message: budgetBlockMessage({ limitUsd: sessionBlock.capUsd }) },
-        });
+      const admission = await admitOrchestration({
+        set,
+        get,
+        sessionId,
+        run,
+        isAutoAdvance: options?.isAutoAdvance === true,
+      });
+      if (admission.kind === 'stop') {
+        await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: admission.stop });
         return;
       }
-      await loadSpendLimitTelemetry({ get, sessionId, runs: [run] });
-      const spendStop = resolveSpendLimitStop({ get, sessionId, run });
-      if (spendStop?.kind === 'pause') {
-        await persistOrchestrationStop({
-          set,
-          sessionId,
-          workflowRunId,
-          stop: { kind: 'budget', message: spendStop.message },
-        });
+      if (admission.kind === 'held') {
         return;
-      }
-      if (spendStop != null) {
-        announceRunBudget({ set, get, sessionId, workflowRunId, stop: spendStop });
       }
       if (options?.bypassGate !== true) {
         const blocked = await findWorkflowActivationBlock({

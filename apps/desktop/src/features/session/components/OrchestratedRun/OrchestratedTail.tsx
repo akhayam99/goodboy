@@ -11,6 +11,7 @@ import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacemen
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
+import { RunHeldAnswers } from '../RunHeldAnswers';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
@@ -100,6 +101,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         />
       )}
       {placement === 'after-state' ? questionCluster : null}
+      <RunHeldAnswers sessionId={session.id} run={run} />
       <RunPendingDelivery sessionId={session.id} />
       {isMountBlocked ? (
         <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />

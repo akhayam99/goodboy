@@ -12,6 +12,7 @@ import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
 import { RunOpenQuestion } from '../RunOpenQuestion';
+import { RunHeldAnswers } from '../RunHeldAnswers';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { RunTailVerb } from './RunTailVerb';
 import { runTailOf } from './runTailOf';
@@ -140,6 +141,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           })}
         />
       )}
+      <RunHeldAnswers sessionId={session.id} run={run} />
       <RunPendingDelivery sessionId={session.id} />
       {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
         <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
