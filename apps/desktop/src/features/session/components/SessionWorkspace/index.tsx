@@ -129,7 +129,11 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
               ) : null}
               {lens === 'branch' ? (
-                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+                <BranchPage
+                  session={session}
+                  workingDir={workingDir}
+                  isActive={isActive && showLens}
+                />
               ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane

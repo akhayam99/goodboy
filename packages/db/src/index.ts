@@ -97,7 +97,6 @@ export {
   describeProjectAdoption,
   moveProjectToWorkspace,
   type ProjectAdoptionInfo,
-  type ProjectMoveResult,
 } from './queries/project-adoption';
 export {
   upsertIntegrationBinding,
@@ -447,6 +446,7 @@ export {
   type NotificationKind,
   type NotificationSeverity,
 } from './queries/notification';
+export { listThreadReads, markThreadsRead, type ThreadRead } from './queries/thread-read';
 export {
   deleteNudgeEvent,
   insertNudgeEvent,

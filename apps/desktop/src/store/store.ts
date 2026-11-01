@@ -70,6 +70,8 @@ import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
 import { createTerminalSlice } from './slices/terminal';
 import { createEndedWorkSlice } from './slices/ended-work';
+import { createThreadReadsSlice } from './slices/thread-reads';
+import { threadReadsInitialState } from './slices/thread-reads/state';
 import { createScriptsSlice } from './slices/scripts';
 import { scriptsInitialState } from './slices/scripts/state';
 import { createPermissionsSlice } from './slices/permissions';
@@ -262,6 +264,7 @@ export type AppStore = AppState &
   ReturnType<typeof createNudgesSlice> &
   ReturnType<typeof createTerminalSlice> &
   ReturnType<typeof createEndedWorkSlice> &
+  ReturnType<typeof createThreadReadsSlice> &
   ReturnType<typeof createScriptsSlice> &
   ReturnType<typeof createPermissionsSlice> &
   ReturnType<typeof createSessionViewSlice> &
@@ -410,6 +413,7 @@ const initialState: AppState = {
   ...slackDraftsInitialState,
   ...terminalInitialState,
   ...endedWorkInitialState,
+  ...threadReadsInitialState,
   ...repoDivergenceInitialState,
 };
 
@@ -455,6 +459,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
   ...createEndedWorkSlice({ set, get }),
+  ...createThreadReadsSlice({ set, get }),
   ...createScriptsSlice({ set, get }),
   ...createPermissionsSlice({ set, get }),
   ...createProvidersSlice({ set, get }),

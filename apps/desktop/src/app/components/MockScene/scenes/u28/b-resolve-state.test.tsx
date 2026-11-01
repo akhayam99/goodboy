@@ -30,7 +30,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 } });
+  stubStoryInvoke({
+    db_select: [],
+    db_execute: { rowsAffected: 0 },
+    db_transaction: { status: 'committed', results: [] },
+  });
 });
 
 afterEach(cleanup);

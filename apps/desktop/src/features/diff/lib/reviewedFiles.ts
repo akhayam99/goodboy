@@ -20,9 +20,7 @@ export const fileSignature = (file: FileDiff): string =>
     .map((hunk) => hunk.header)
     .join('§')}`;
 
-const LEGACY_REVIEWED_KEY_UNTIL = '0.30.0';
-
-const legacyKey = (sessionId: SessionId | null, view: DiffView): string | null =>
+const unmountedKey = (sessionId: SessionId | null, view: DiffView): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
 
 const storageKey = (
@@ -32,7 +30,7 @@ const storageKey = (
 ): string | null =>
   sessionId && mountId
     ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${mountId}:${viewKeyOf(view)}`
-    : legacyKey(sessionId, view);
+    : unmountedKey(sessionId, view);
 
 const NOTHING_REVIEWED: ReviewedMap = {};
 
@@ -55,11 +53,7 @@ export const readReviewedMap = (
   if (key === null) {
     return NOTHING_REVIEWED;
   }
-  const saved = reviewedPref({ key }).read();
-  const legacy = legacyKey(sessionId, view);
-  return saved === NOTHING_REVIEWED && legacy !== null && legacy !== key
-    ? reviewedPref({ key: legacy }).read()
-    : saved;
+  return reviewedPref({ key }).read();
 };
 
 export const writeReviewedMap = (

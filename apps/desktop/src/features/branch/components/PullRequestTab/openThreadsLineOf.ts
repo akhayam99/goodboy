@@ -1,12 +1,17 @@
 type Params = {
   readonly unresolved: number;
+  readonly unreadCount: number;
   readonly needYou: number;
 };
 
-export const openThreadsLineOf = ({ unresolved, needYou }: Params): string | null => {
+export const openThreadsLineOf = ({ unresolved, unreadCount, needYou }: Params): string | null => {
   if (unresolved === 0) {
     return null;
   }
-  const open = `${unresolved} open ${unresolved === 1 ? 'thread' : 'threads'}`;
-  return needYou === 0 ? open : `${open} · ${needYou} ${needYou === 1 ? 'needs' : 'need'} you`;
+  const parts = [
+    `${unresolved} open ${unresolved === 1 ? 'thread' : 'threads'}`,
+    ...(needYou > 0 ? [`${needYou} ${needYou === 1 ? 'needs' : 'need'} you`] : []),
+    ...(unreadCount > 0 ? [`${unreadCount} unread`] : []),
+  ];
+  return parts.join(' · ');
 };

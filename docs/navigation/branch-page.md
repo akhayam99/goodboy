@@ -238,7 +238,7 @@ a heading inside code stays literal), while the edit preview keeps them as writt
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
 Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
-reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
+reviews, one line `4 comments on files, 2 need you` that opens Comments (the line above the columns reads `6 open threads · 1 needs you · 2 unread`, each part after the first hidden at 0, from `openThreadsLineOf`; the unread part comes from `unreadThreadsOf` over the threads of the selected source, the ones not yet seen in Comments, and stays hidden until the reads and your name on the host are loaded), one line
 for the checks that opens Checks, your edits of this session and the merge. Bot comments
 in a row fold into one event, `4 bots commented`, each comment clamped to two lines; a person
 in between splits the group (`groupBotActivity`). The glyphs sit on a spine, a 1px line from
@@ -328,7 +328,7 @@ moves from one section to the next, except that Files gives up the width of its 
 on the right and the column re-centres in what is left. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
 opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
-Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you; Files the
+Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you (it never counts unread threads, which only the page line and the row dots show); Files the
 count; Commits `↑2` (tooltip `2 not pushed`, `branchPushFactsOf(...).toPush`: the history draft's unpushed
 commits once the branch has an upstream, else the status: the upstream's ahead count, a
 diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed

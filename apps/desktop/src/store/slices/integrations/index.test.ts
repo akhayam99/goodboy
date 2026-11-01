@@ -525,6 +525,7 @@ describe('store contract', () => {
       expect(cached?.config).toEqual({
         userName: 'Amin K',
         userId: '99',
+        username: 'amin',
         host: 'https://gitlab.example.com',
       });
       expect(store.getState().integrationCredentials[0]?.account).toBe(

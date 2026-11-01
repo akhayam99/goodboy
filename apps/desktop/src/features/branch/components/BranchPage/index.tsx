@@ -17,7 +17,7 @@ import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
-import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
+import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { pushFixCount } from '../../../resolve/reviewPushCopy';
@@ -331,11 +331,10 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       : { kind: 'disabled', reason: requestReason };
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
-  const hasRemote = sources.length > 0;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
-    if ((tab === 'pr' || tab === 'comments') && !hasRemote && repo === null) {
+    if ((tab === 'pr' || tab === 'comments') && sources.length === 0 && repo === null) {
       return (
         <NoPullRequest
           session={session}
@@ -414,7 +413,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    return <ReviewFlow session={session} mountId={historyMountId} push={push} />;
+    const visit = { mountId: historyMountId, push, isVisible: isActive };
+    return <ReviewFlowVisit session={session} {...visit} />;
   };
 
   const baseRow =

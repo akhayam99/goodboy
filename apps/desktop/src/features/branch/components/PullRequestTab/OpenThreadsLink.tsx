@@ -4,12 +4,13 @@ import { openThreadsLineOf } from './openThreadsLineOf';
 
 type Props = {
   readonly unresolved: number;
+  readonly unreadCount: number;
   readonly needYou: number;
   readonly onOpen: () => void;
 };
 
-export const OpenThreadsLink = ({ unresolved, needYou, onOpen }: Props) => {
-  const line = openThreadsLineOf({ unresolved, needYou });
+export const OpenThreadsLink = ({ unresolved, unreadCount, needYou, onOpen }: Props) => {
+  const line = openThreadsLineOf({ unresolved, unreadCount, needYou });
   if (line === null) {
     return null;
   }

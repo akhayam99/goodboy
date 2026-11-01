@@ -72,15 +72,12 @@ describe('reviewed map storage', () => {
     expect(viewedStateOf(file, working)).toBe('none');
   });
 
-  it('reads what was saved before mounts had their own key until the mount saves its own', () => {
+  it('no longer reads what was saved before mounts had their own key', () => {
     const file = fileAt();
     writeReviewedMap(SESSION, BRANCH, { [file.path]: fileSignature(file) });
 
-    expect(viewedStateOf(file, readReviewedMap(SESSION, BRANCH, LEDGER_MOUNT))).toBe('viewed');
-
-    writeReviewedMap(SESSION, BRANCH, {}, LEDGER_MOUNT);
-
     expect(viewedStateOf(file, readReviewedMap(SESSION, BRANCH, LEDGER_MOUNT))).toBe('none');
+    expect(viewedStateOf(file, readReviewedMap(SESSION, BRANCH))).toBe('viewed');
   });
 
   it('saves nothing without a session', () => {

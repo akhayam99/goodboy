@@ -8,13 +8,15 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type {
   IsoDateTime,
   MountId,
+  PrComment,
   ProjectId,
   PullRequestState,
   PullRequestView,
+  ResolveThread,
   SessionId,
   SessionProjectMount,
   WorkspaceId,
@@ -25,9 +27,12 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { MountGithubState } from '../../../../store/types';
+import { useThreadVisit } from '../../../resolve/hooks/useThreadVisit';
+import { queueRowAt } from '../../../resolve/testing/queueRow';
 import { withPullRequestViewEntry } from '../../../../store/slices/pull-request-view/pullRequestViewAt';
 import { usePullRequestReadiness } from './index';
 
@@ -184,6 +189,7 @@ const PAYMENTS = mountOf({
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({ db_select: [] });
   useAppStore.setState({
     sessions: [
       aSession({
@@ -246,5 +252,271 @@ describe('usePullRequestReadiness with the same request number in two repositori
     const merge = readinessOf({ mountId: MOUNT_PAYMENTS }).result.current.facts.mergeMethods;
 
     expect(merge).not.toEqual(['merge']);
+  });
+});
+
+const reviewCommentOf = ({
+  id,
+  threadId,
+  author,
+}: {
+  readonly id: string;
+  readonly threadId: string;
+  readonly author: string;
+}): PrComment => ({
+  id,
+  threadId,
+  author,
+  authorAvatarUrl: null,
+  body: 'Please rename this in ledger-core',
+  createdAt: '2026-10-06T09:00:00Z',
+  url: `https://github.com/harborline/ledger-core/pull/${SAME_NUMBER}#${id}`,
+  source: 'review',
+});
+
+const threadOf = ({
+  threadId,
+  prNumber = SAME_NUMBER,
+}: {
+  readonly threadId: string;
+  readonly prNumber?: number;
+}): ResolveThread => ({
+  ...queueRowAt({ stage: 'new', threadId }).thread,
+  sessionId: SESSION_ID,
+  projectId: PROJECT_LEDGER,
+  prNumber,
+});
+
+const seedUnread = ({ isViewerKnown }: { readonly isViewerKnown: boolean }): void => {
+  const github = githubOf({ mount: LEDGER, name: 'ledger-core' });
+  useAppStore.setState({
+    mountGithub: {
+      [MOUNT_LEDGER]: {
+        ...github,
+        detail: {
+          prNumber: SAME_NUMBER,
+          comments: [
+            reviewCommentOf({ id: 'c1', threadId: 'thread-a', author: 'northwind-rev' }),
+            reviewCommentOf({ id: 'c2', threadId: 'thread-b', author: 'northwind-rev' }),
+            reviewCommentOf({ id: 'c3', threadId: 'thread-c', author: 'harborline-dev' }),
+            reviewCommentOf({ id: 'c4', threadId: 'thread-other', author: 'northwind-rev' }),
+          ],
+          reviews: [],
+          reviewRequests: [],
+          checks: [],
+        },
+        detailFetchedAt: STAMP,
+      },
+    },
+    sessionResolveThreads: {
+      [SESSION_ID]: [
+        threadOf({ threadId: 'thread-a' }),
+        threadOf({ threadId: 'thread-b' }),
+        threadOf({ threadId: 'thread-c' }),
+        threadOf({ threadId: 'thread-other', prNumber: 99 }),
+      ],
+    },
+    githubStatus: isViewerKnown
+      ? { mode: 'gh-cli', available: true, user: 'harborline-dev' }
+      : null,
+  });
+};
+
+const commitStub = { status: 'committed', results: [] };
+
+const detailWith = ({
+  comments,
+}: {
+  readonly comments: ReadonlyArray<PrComment>;
+}): MountGithubState => ({
+  ...githubOf({ mount: LEDGER, name: 'ledger-core' }),
+  detail: { prNumber: SAME_NUMBER, comments, reviews: [], reviewRequests: [], checks: [] },
+  detailFetchedAt: STAMP,
+});
+
+describe('useThreadVisit', () => {
+  it('sends the marks again on the next list change after a failed write, then keeps them', async () => {
+    seedUnread({ isViewerKnown: true });
+    const attempts: Array<unknown> = [];
+    stubStoryInvoke({
+      db_select: [],
+      db_execute: { rowsAffected: 0 },
+      db_transaction: (args: unknown) => {
+        attempts.push(args);
+        if (attempts.length === 1) {
+          throw new Error('disk is full');
+        }
+        return commitStub;
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible: true }),
+    );
+    await waitFor(() => expect(attempts).toHaveLength(1));
+    expect(useAppStore.getState().sessionThreadReads[SESSION_ID]).toEqual({});
+
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionResolveThreads: {
+          [SESSION_ID]: [
+            ...(state.sessionResolveThreads[SESSION_ID] ?? []),
+            threadOf({ threadId: 'thread-d' }),
+          ],
+        },
+      }));
+    });
+
+    await waitFor(() => expect(attempts).toHaveLength(2));
+    await waitFor(() =>
+      expect(Object.keys(useAppStore.getState().sessionThreadReads[SESSION_ID] ?? {})).toEqual(
+        expect.arrayContaining(['thread-a', 'thread-b']),
+      ),
+    );
+    expect([...result.current].sort()).toEqual(['thread-a', 'thread-b', 'thread-d']);
+  });
+
+  it('shows and records a reply that arrives while the tab is open', async () => {
+    seedUnread({ isViewerKnown: true });
+    stubStoryInvoke({ db_select: [], db_transaction: commitStub });
+    const { result } = renderHook(() =>
+      useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible: true }),
+    );
+    await waitFor(() =>
+      expect(useAppStore.getState().sessionThreadReads[SESSION_ID]?.['thread-a']).toBe(
+        Date.parse('2026-10-06T09:00:00Z'),
+      ),
+    );
+
+    act(() => {
+      const github = useAppStore.getState().mountGithub[MOUNT_LEDGER];
+      const reply = {
+        ...reviewCommentOf({ id: 'c5', threadId: 'thread-c', author: 'northwind-rev' }),
+        createdAt: '2026-10-06T11:00:00Z',
+      };
+      useAppStore.setState({
+        mountGithub: {
+          [MOUNT_LEDGER]: detailWith({
+            comments: [...(github?.detail?.comments ?? []), reply],
+          }),
+        },
+      });
+    });
+
+    await waitFor(() =>
+      expect(useAppStore.getState().sessionThreadReads[SESSION_ID]?.['thread-c']).toBe(
+        Date.parse('2026-10-06T11:00:00Z'),
+      ),
+    );
+    expect(result.current.has('thread-c')).toBe(true);
+  });
+});
+
+describe('useThreadVisit visibility', () => {
+  it('takes no snapshot and sends no write while Comments is hidden, then marks when it is shown', async () => {
+    seedUnread({ isViewerKnown: true });
+    const attempts: Array<unknown> = [];
+    stubStoryInvoke({
+      db_select: [],
+      db_transaction: (args: unknown) => {
+        attempts.push(args);
+        return commitStub;
+      },
+    });
+
+    const { result, rerender } = renderHook(
+      ({ isVisible }: { readonly isVisible: boolean }) =>
+        useThreadVisit({ sessionId: SESSION_ID, mountId: MOUNT_LEDGER, isVisible }),
+      { initialProps: { isVisible: false } },
+    );
+    await act(async () => undefined);
+
+    expect(result.current.size).toBe(0);
+    expect(attempts).toHaveLength(0);
+    expect(useAppStore.getState().sessionThreadReads[SESSION_ID]).toEqual({});
+
+    rerender({ isVisible: true });
+
+    await waitFor(() => expect(attempts).toHaveLength(1));
+    expect([...result.current].sort()).toEqual(['thread-a', 'thread-b']);
+  });
+});
+
+describe('usePullRequestReadiness unread identity of the source connection', () => {
+  const OTHER_WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-northwind' });
+  const OWN_WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+
+  it('does not take the account of another workspace as the viewer', async () => {
+    seedUnread({ isViewerKnown: false });
+    act(() => {
+      useAppStore.setState({
+        githubWorkspaceStatus: {
+          [OTHER_WORKSPACE]: { mode: 'pat', available: true, user: 'harborline-dev' },
+        },
+      });
+    });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+    await act(async () => undefined);
+
+    expect(result.current.commentsUnread).toBe(0);
+  });
+
+  it('takes the account of the workspace of the session as the viewer', async () => {
+    seedUnread({ isViewerKnown: false });
+    act(() => {
+      useAppStore.setState({
+        githubWorkspaceStatus: {
+          [OWN_WORKSPACE]: { mode: 'pat', available: true, user: 'harborline-dev' },
+        },
+      });
+    });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+
+    await waitFor(() => expect(result.current.commentsUnread).toBe(2));
+  });
+});
+
+describe('usePullRequestReadiness unread threads', () => {
+  it('counts the threads of this pull request that someone else wrote and you have not read', async () => {
+    seedUnread({ isViewerKnown: true });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+
+    await waitFor(() => expect(result.current.commentsUnread).toBe(2));
+  });
+
+  it('counts nothing before the reads of the session have loaded', async () => {
+    seedUnread({ isViewerKnown: true });
+    stubStoryInvoke({ db_select: () => new Promise(() => undefined) });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+    await act(async () => undefined);
+
+    expect(result.current.commentsUnread).toBe(0);
+  });
+
+  it('counts nothing while the identity of the host is not known', async () => {
+    seedUnread({ isViewerKnown: false });
+
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+    await act(async () => undefined);
+
+    expect(result.current.commentsUnread).toBe(0);
+  });
+
+  it('counts the threads once the identity arrives', async () => {
+    seedUnread({ isViewerKnown: false });
+    const { result } = readinessOf({ mountId: MOUNT_LEDGER });
+    await act(async () => undefined);
+
+    act(() => {
+      useAppStore.setState({
+        githubStatus: { mode: 'gh-cli', available: true, user: 'harborline-dev' },
+      });
+    });
+
+    await waitFor(() => expect(result.current.commentsUnread).toBe(2));
   });
 });

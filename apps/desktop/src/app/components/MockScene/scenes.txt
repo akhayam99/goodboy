@@ -123,6 +123,8 @@ branch-reply-alone
 branch-reply-bundled
 branch-reply-posted
 branch-split-mounted
+branch-threads-new
+branch-threads-new-comments
 brand-codex
 brand-compare
 brand-context

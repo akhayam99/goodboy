@@ -94,6 +94,7 @@ import { m235AutoPointerKeys } from './m235-auto-pointer-keys';
 import { m236EntityValues } from './m236-entity-values';
 import { m237TurnFileSets } from './m237-turn-file-sets';
 import { m238NotificationActedAt } from './m238-notification-acted-at';
+import { m239ThreadReads } from './m239-thread-reads';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -481,4 +482,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 236, sql: m236EntityValues },
   { version: 237, sql: m237TurnFileSets },
   { version: 238, sql: m238NotificationActedAt },
+  { version: 239, sql: m239ThreadReads },
 ];

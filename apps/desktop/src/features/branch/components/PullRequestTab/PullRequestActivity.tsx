@@ -42,7 +42,7 @@ const plural = ({
 
 const commentsWord = ({ item }: { readonly item: Extract<ActivityItem, { kind: 'comments' }> }) => {
   if (item.needYou > 0) {
-    return `${item.needYou} need you`;
+    return `${item.needYou} ${item.needYou === 1 ? 'needs' : 'need'} you`;
   }
   return item.open > 0 ? `${item.open} open` : 'all resolved';
 };

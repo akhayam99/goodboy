@@ -10,7 +10,7 @@ import type { InvokeHandlers } from '../invokeMock';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
 import { TEST_NOW } from '@goodboy/types/testing';
-import type { Notification } from '@goodboy/db';
+import type { Notification, ThreadRead } from '@goodboy/db';
 import type {
   Agent,
   BranchCommit,
@@ -245,6 +245,8 @@ export const storySpies = {
   countNotifications,
   markNotificationRead: vi.fn(async () => undefined),
   markNotificationsActed: vi.fn(async () => undefined),
+  listThreadReads: vi.fn(async (): Promise<ReadonlyArray<ThreadRead>> => []),
+  markThreadsRead: vi.fn(async () => undefined),
   markAllNotificationsRead: vi.fn(async () => undefined),
   deleteNotification: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),

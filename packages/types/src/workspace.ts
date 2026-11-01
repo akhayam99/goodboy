@@ -235,6 +235,7 @@ export type SentryIntegrationConfig = Readonly<{
 export type GitlabIntegrationConfig = Readonly<{
   userName: string;
   userId: string;
+  username?: string;
   host: string;
 }>;
 
@@ -252,6 +253,7 @@ export type BitbucketIntegrationConfig = Readonly<{
   workspaceName?: string;
   accountId?: string;
   displayName?: string;
+  nickname?: string;
 }>;
 
 export type SlackIntegrationConfig = Readonly<{

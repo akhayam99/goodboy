@@ -12,6 +12,7 @@ import {
   sessionPullRequestHostOf,
   sessionPullRequestOf,
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
+import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
 import { sessionMergeFacts, type PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
 import { evaluatePrMergeReadiness, type PrMergeReadiness } from '../../../review/prMergeReadiness';
 
@@ -25,6 +26,7 @@ export type PullRequestReadiness = {
   readonly readiness: PrMergeReadiness;
   readonly facts: PullRequestFacts;
   readonly commentsNeedYou: number;
+  readonly commentsUnread: number;
   readonly reviewers: PullRequestReviewerGroups;
 };
 
@@ -43,6 +45,7 @@ export const usePullRequestReadiness = ({
     [githubState, pr],
   );
   const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
+  const { unread } = useUnreadThreads({ sessionId, mountId });
   const prNumber = github?.pr?.number ?? null;
   const view = useAppStore(
     (state) => pullRequestViewOf({ state, sessionId, mountId, prNumber })?.view ?? null,
@@ -65,7 +68,8 @@ export const usePullRequestReadiness = ({
       readiness: evaluatePrMergeReadiness({ facts }),
       facts,
       commentsNeedYou: facts.commentsNeedYou,
+      commentsUnread: unread?.length ?? 0,
       reviewers: pullRequestReviewerGroupsOf({ reviewers }),
     };
-  }, [github, host, isRebaseStopOpen, sessionId, threads, view]);
+  }, [github, host, isRebaseStopOpen, sessionId, threads, unread, view]);
 };

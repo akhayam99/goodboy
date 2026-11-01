@@ -9,10 +9,11 @@ export const configFromBitbucketConnection = ({
   connection,
 }: Params): Pick<
   BitbucketIntegrationConfig,
-  'accountId' | 'displayName' | 'workspaceName' | 'workspaceSlug'
+  'accountId' | 'displayName' | 'nickname' | 'workspaceName' | 'workspaceSlug'
 > => ({
   accountId: connection.user.accountId ?? undefined,
   displayName: connection.user.displayName,
+  nickname: connection.user.nickname,
   workspaceName: connection.workspace.name,
   workspaceSlug: connection.workspace.slug,
 });

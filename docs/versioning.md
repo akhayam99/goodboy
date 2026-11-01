@@ -55,12 +55,15 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State                                                     | Old shape                    | New shape written since | Old shape read until (excluded) |
-| --------------------------------------------------------- | ---------------------------- | ----------------------- | ------------------------------- |
-| local storage key `goodboy:diffReviewed:<session>:<view>` | no mount id in the key       | 0.18.1                  | 0.30.0                          |
-| skills folder of a project                                | `<project-root>/.kay/skills` | 0.28.0                  | 0.31.0                          |
+| State                      | Old shape                    | New shape written since | Old shape read until (excluded) |
+| -------------------------- | ---------------------------- | ----------------------- | ------------------------------- |
+| skills folder of a project | `<project-root>/.kay/skills` | 0.28.0                  | 0.31.0                          |
 
 Gone already:
+
+- The local storage key of the reviewed files without a mount id (written until
+  0.18.1) is not read since 0.30.0. A mount reads only its own key, and a file
+  marked in the old key shows as not viewed again.
 
 - The setting `context.roleMap` (introduced in 0.16.0) switched the role map off
   for a person who edited the database by hand; no screen set it. It is not

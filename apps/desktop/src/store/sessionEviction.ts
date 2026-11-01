@@ -34,6 +34,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionThreadGit', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionThreadRechecks', keyedBy: 'session', evictOn: 'archive' },
   { key: 'threadFixDismissals', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionThreadReads', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionWorktrees', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionWorktreeRecords', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectMounts', keyedBy: 'session', evictOn: 'archive' },
