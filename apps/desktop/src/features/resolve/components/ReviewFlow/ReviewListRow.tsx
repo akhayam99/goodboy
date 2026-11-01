@@ -147,7 +147,7 @@ export const ReviewListRow = ({
         <StateDot
           state="unread"
           label="Unread"
-          className="pointer-events-none absolute left-[3px] top-[18px] -translate-y-1/2"
+          className="pointer-events-none absolute left-0 top-[18px] -translate-y-1/2"
         />
       ) : null}
       {entry.fix?.kind === 'fixed' ? (

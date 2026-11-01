@@ -328,7 +328,7 @@ moves from one section to the next, except that Files gives up the width of its 
 on the right and the column re-centres in what is left. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
 opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
-Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you; Files the
+Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you (it never counts unread threads, which only the page line and the row dots show); Files the
 count; Commits `↑2` (tooltip `2 not pushed`, `branchPushFactsOf(...).toPush`: the history draft's unpushed
 commits once the branch has an upstream, else the status: the upstream's ahead count, a
 diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed

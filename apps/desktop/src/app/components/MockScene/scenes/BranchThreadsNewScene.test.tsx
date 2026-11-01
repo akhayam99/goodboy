@@ -91,6 +91,36 @@ describe('the unread threads scenes', () => {
     }
   });
 
+  it('sits every mark on the left edge of the page column, outside the row button', async () => {
+    renderScene('comments');
+
+    const marks = await screen.findAllByRole('img', { name: 'Unread' });
+
+    for (const mark of marks) {
+      expect(mark.className).toContain('left-0');
+      expect(mark.className).not.toContain('left-[');
+    }
+  });
+
+  it('frames the Comments list for the changelog picture and leaves the page whole', async () => {
+    const comments = renderScene('comments');
+    await screen.findAllByRole('img', { name: 'Unread' });
+    const frame = comments.container.querySelector<HTMLElement>('[data-shot]');
+
+    const inFrame = within(frame ?? document.body);
+
+    expect(frame?.style.width).toBe('680px');
+    expect(frame?.style.height).toBe('800px');
+    expect(inFrame.getAllByRole('img', { name: 'Unread' })).toHaveLength(2);
+    expect(inFrame.getByRole('tab', { name: /Resolved/ })).toBeTruthy();
+    cleanup();
+
+    const page = renderScene('pr');
+    await screen.findByTestId('open-threads');
+
+    expect(page.container.querySelector('[data-shot]')).toBeNull();
+  });
+
   it('shows no mark on the next visit because the threads were read', async () => {
     renderScene('comments');
     expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);

@@ -21,6 +21,9 @@ const STAGES: ReadonlyArray<ResolveStage> = [
   'resolved',
 ];
 
+const SHOT_WIDTH = 680;
+const SHOT_HEIGHT = 800;
+
 const UNREAD_INDEXES: ReadonlyArray<number> = [0, 2];
 
 export const BranchThreadsNewScene = ({ tab }: Props) => {
@@ -66,6 +69,18 @@ export const BranchThreadsNewScene = ({ tab }: Props) => {
 
   if (!isReady) {
     return null;
+  }
+
+  if (tab === 'comments') {
+    return (
+      <div
+        data-shot
+        style={{ width: SHOT_WIDTH, height: SHOT_HEIGHT }}
+        className="flex min-h-0 flex-col overflow-hidden bg-background text-foreground"
+      >
+        <BranchPage session={SESSION} workingDir={null} />
+      </div>
+    );
   }
 
   return (
