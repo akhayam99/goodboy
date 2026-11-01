@@ -238,7 +238,7 @@ a heading inside code stays literal), while the edit preview keeps them as writt
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
 Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
-reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
+reviews, one line `4 comments on files, 2 need you` that opens Comments (the line above the columns reads `6 open threads · 2 new · 1 needs you`, each part after the first hidden at 0, from `openThreadsLineOf` and `commentsCountOf`; new threads are the ones not yet seen in Comments), one line
 for the checks that opens Checks, your edits of this session and the merge. Bot comments
 in a row fold into one event, `4 bots commented`, each comment clamped to two lines; a person
 in between splits the group (`groupBotActivity`). The glyphs sit on a spine, a 1px line from

@@ -2,6 +2,7 @@ import {
   Chip,
   ROW_INTERACTIVE,
   SelectionCheckbox,
+  StatusDot,
   Tooltip,
   WorkNode,
   cn,
@@ -29,6 +30,7 @@ type RowSelection = {
 type Props = {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
+  readonly isNew: boolean;
   readonly isSelected: boolean;
   readonly isSourceShown: boolean;
   readonly onSelect: () => void;
@@ -47,6 +49,7 @@ const GROUP_WORDS: ReadonlySet<string> = new Set([
 export const ReviewListRow = ({
   sessionId,
   entry,
+  isNew,
   isSelected,
   isSourceShown,
   onSelect,
@@ -111,6 +114,7 @@ export const ReviewListRow = ({
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex h-5 min-w-0 items-center gap-2 text-meta">
+            {isNew ? <StatusDot tone="primary" size="sm" ariaLabel="New" /> : null}
             <span data-row-author className="min-w-0 flex-1 truncate text-muted-foreground">
               {meta}
             </span>

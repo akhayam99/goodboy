@@ -25,6 +25,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { MountGithubState } from '../../../../store/types';
@@ -184,6 +185,7 @@ const PAYMENTS = mountOf({
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({ db_select: [] });
   useAppStore.setState({
     sessions: [
       aSession({

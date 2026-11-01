@@ -189,6 +189,8 @@ export const storyDbStubs = () => ({
   NOTIFICATION_LIST_LIMIT: 200,
   markNotificationRead: storySpies.markNotificationRead,
   markNotificationsActed: storySpies.markNotificationsActed,
+  listThreadReads: storySpies.listThreadReads,
+  markThreadsRead: storySpies.markThreadsRead,
   markAllNotificationsRead: storySpies.markAllNotificationsRead,
   deleteNotification: storySpies.deleteNotification,
   clearAllNotifications: storySpies.clearAllNotifications,
