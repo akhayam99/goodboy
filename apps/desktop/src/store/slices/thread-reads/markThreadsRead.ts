@@ -3,19 +3,23 @@ import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SliceDeps } from '../../slice-types';
 
+export type ThreadReadMark = {
+  readonly threadId: string;
+  readonly readAt: number;
+};
+
 type MarkParams = {
   readonly sessionId: SessionId;
-  readonly threadIds: ReadonlyArray<string>;
+  readonly marks: ReadonlyArray<ThreadReadMark>;
 };
 
 export const markThreadsRead = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId, threadIds }: MarkParams): Promise<boolean> => {
-    if (threadIds.length === 0) {
+  return async ({ sessionId, marks }: MarkParams): Promise<boolean> => {
+    if (marks.length === 0) {
       return true;
     }
-    const readAt = Date.now();
     try {
-      await markThreadsReadDb({ db: tauriDatabase, sessionId, threadIds, readAt });
+      await markThreadsReadDb({ db: tauriDatabase, sessionId, marks });
     } catch (error) {
       void get().reportError({
         title: 'Could not save which comments you have seen',
@@ -24,15 +28,17 @@ export const markThreadsRead = ({ set, get }: SliceDeps) => {
       });
       return false;
     }
-    set((state) => ({
-      sessionThreadReads: {
-        ...state.sessionThreadReads,
-        [sessionId]: {
-          ...state.sessionThreadReads[sessionId],
-          ...Object.fromEntries(threadIds.map((threadId) => [threadId, readAt])),
-        },
-      },
-    }));
+    set((state) => {
+      const current = state.sessionThreadReads[sessionId];
+      if (current === undefined) {
+        return state;
+      }
+      const merged = { ...current };
+      for (const { threadId, readAt } of marks) {
+        merged[threadId] = Math.max(merged[threadId] ?? 0, readAt);
+      }
+      return { sessionThreadReads: { ...state.sessionThreadReads, [sessionId]: merged } };
+    });
     return true;
   };
 };

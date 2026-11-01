@@ -12,8 +12,7 @@ type ListParams = {
 };
 
 type MarkParams = ListParams & {
-  readonly threadIds: ReadonlyArray<string>;
-  readonly readAt: number;
+  readonly marks: ReadonlyArray<ThreadRead>;
 };
 
 export const listThreadReads = ({
@@ -25,23 +24,19 @@ export const listThreadReads = ({
     [sessionId],
   );
 
-export const markThreadsRead = async ({
-  db,
-  sessionId,
-  threadIds,
-  readAt,
-}: MarkParams): Promise<void> => {
-  if (threadIds.length === 0) {
+export const markThreadsRead = async ({ db, sessionId, marks }: MarkParams): Promise<void> => {
+  if (marks.length === 0) {
     return;
   }
+  const writtenAt = Date.now();
   await db.transaction({
-    statements: threadIds.map((threadId) => ({
+    statements: marks.map(({ threadId, readAt }) => ({
       sql: `INSERT INTO thread_reads (id, session_id, thread_id, read_at, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT (session_id, thread_id) DO UPDATE SET
           read_at = MAX(read_at, excluded.read_at),
           updated_at = excluded.updated_at`,
-      params: [`${sessionId}:${threadId}`, sessionId, threadId, readAt, readAt, readAt],
+      params: [`${sessionId}:${threadId}`, sessionId, threadId, readAt, writtenAt, writtenAt],
     })),
   });
 };

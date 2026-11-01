@@ -16,12 +16,13 @@ export const loadThreadReads = ({ set, get }: SliceDeps) => {
         key: sessionId,
         request: async () => ({ reads: await listThreadReads({ db: tauriDatabase, sessionId }) }),
         apply: ({ reads }) => {
-          set((state) => ({
-            sessionThreadReads: {
-              ...state.sessionThreadReads,
-              [sessionId]: Object.fromEntries(reads.map((read) => [read.threadId, read.readAt])),
-            },
-          }));
+          set((state) => {
+            const merged = { ...state.sessionThreadReads[sessionId] };
+            for (const { threadId, readAt } of reads) {
+              merged[threadId] = Math.max(merged[threadId] ?? 0, readAt);
+            }
+            return { sessionThreadReads: { ...state.sessionThreadReads, [sessionId]: merged } };
+          });
         },
       });
     } catch (error) {

@@ -117,19 +117,79 @@ describe('thread reads', () => {
       await write.promise;
     });
 
+    await useAppStore.getState().loadThreadReads({ sessionId: SESSION });
+
     const pending = useAppStore.getState().markThreadsRead({
       sessionId: SESSION,
-      threadIds: ['thread-a', 'thread-b'],
+      marks: [
+        { threadId: 'thread-a', readAt: 40 },
+        { threadId: 'thread-b', readAt: 50 },
+      ],
     });
 
-    expect(useAppStore.getState().sessionThreadReads[SESSION]).toBeUndefined();
+    expect(useAppStore.getState().sessionThreadReads[SESSION]).toEqual({});
     write.resolve([]);
     await expect(pending).resolves.toBe(true);
-    const reads = useAppStore.getState().sessionThreadReads[SESSION] ?? {};
-    expect(Object.keys(reads)).toEqual(['thread-a', 'thread-b']);
+    expect(useAppStore.getState().sessionThreadReads[SESSION]).toEqual({
+      'thread-a': 40,
+      'thread-b': 50,
+    });
     expect(storySpies.markThreadsRead).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: SESSION, threadIds: ['thread-a', 'thread-b'] }),
+      expect.objectContaining({
+        sessionId: SESSION,
+        marks: [
+          { threadId: 'thread-a', readAt: 40 },
+          { threadId: 'thread-b', readAt: 50 },
+        ],
+      }),
     );
+  });
+
+  it('keeps a read time that is already later than the mark', async () => {
+    storySpies.listThreadReads.mockResolvedValue([{ threadId: 'thread-a', readAt: 90 }]);
+    await useAppStore.getState().loadThreadReads({ sessionId: SESSION });
+
+    await useAppStore
+      .getState()
+      .markThreadsRead({ sessionId: SESSION, marks: [{ threadId: 'thread-a', readAt: 40 }] });
+
+    expect(useAppStore.getState().sessionThreadReads[SESSION]).toEqual({ 'thread-a': 90 });
+  });
+
+  it('does not invent a partial entry for a session archived during the write', async () => {
+    const write = deferred();
+    storySpies.markThreadsRead.mockImplementation(async () => {
+      await write.promise;
+    });
+    await useAppStore.getState().loadThreadReads({ sessionId: SESSION });
+    const pending = useAppStore
+      .getState()
+      .markThreadsRead({ sessionId: SESSION, marks: [{ threadId: 'thread-a', readAt: 40 }] });
+
+    useAppStore.setState({ sessionThreadReads: {} });
+    write.resolve([]);
+    await pending;
+
+    expect(useAppStore.getState().sessionThreadReads[SESSION]).toBeUndefined();
+  });
+
+  it('keeps a mark that completed while an older load was still in flight', async () => {
+    storySpies.listThreadReads.mockResolvedValueOnce([{ threadId: 'thread-a', readAt: 10 }]);
+    await useAppStore.getState().loadThreadReads({ sessionId: SESSION });
+    const lateLoad = deferred();
+    storySpies.listThreadReads.mockImplementationOnce(() => lateLoad.promise);
+    const loading = useAppStore.getState().loadThreadReads({ sessionId: SESSION });
+
+    await useAppStore
+      .getState()
+      .markThreadsRead({ sessionId: SESSION, marks: [{ threadId: 'thread-b', readAt: 60 }] });
+    lateLoad.resolve([{ threadId: 'thread-a', readAt: 10 }]);
+    await loading;
+
+    expect(useAppStore.getState().sessionThreadReads[SESSION]).toEqual({
+      'thread-a': 10,
+      'thread-b': 60,
+    });
   });
 
   it('leaves the thread new, keeps the old reads and reports when the write fails', async () => {
@@ -139,7 +199,7 @@ describe('thread reads', () => {
 
     const isSaved = await useAppStore
       .getState()
-      .markThreadsRead({ sessionId: SESSION, threadIds: ['thread-b'] });
+      .markThreadsRead({ sessionId: SESSION, marks: [{ threadId: 'thread-b', readAt: 20 }] });
 
     expect(isSaved).toBe(false);
     expect(useAppStore.getState().sessionThreadReads[SESSION]).toEqual({ 'thread-a': 10 });
@@ -147,7 +207,7 @@ describe('thread reads', () => {
 
   it('does not write for an empty snapshot', async () => {
     await expect(
-      useAppStore.getState().markThreadsRead({ sessionId: SESSION, threadIds: [] }),
+      useAppStore.getState().markThreadsRead({ sessionId: SESSION, marks: [] }),
     ).resolves.toBe(true);
 
     expect(storySpies.markThreadsRead).not.toHaveBeenCalled();
