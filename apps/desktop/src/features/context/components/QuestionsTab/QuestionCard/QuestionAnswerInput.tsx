@@ -15,7 +15,6 @@ type Props = {
   readonly isSettled: boolean;
   readonly isHandedOff: boolean;
   readonly isCompact: boolean;
-  readonly isReadOnly?: boolean;
   readonly onToggleSuggestion: (suggestion: string) => void;
   readonly onToggleCustomField: () => void;
   readonly onSetCustomAnswer: (text: string) => void;
@@ -37,14 +36,13 @@ export const QuestionAnswerInput = ({
   isSettled,
   isHandedOff,
   isCompact,
-  isReadOnly = false,
   onToggleSuggestion,
   onToggleCustomField,
   onSetCustomAnswer,
   onSubmit,
   onEscape,
 }: Props) => {
-  const isInert = isSettled || isHandedOff || isReadOnly;
+  const isInert = isSettled || isHandedOff;
   const placeholder = `Tell ${askerName ?? 'the agent'} what you want instead`;
 
   if (inputMode === 'text') {
@@ -58,7 +56,7 @@ export const QuestionAnswerInput = ({
         kind="message"
         label="Your answer"
         value={customAnswer}
-        disabled={isHandedOff || isReadOnly}
+        disabled={isHandedOff}
         onChange={onSetCustomAnswer}
         onSubmit={onSubmit}
         onKeyDown={(event) => {

@@ -12,7 +12,6 @@ type Props = {
   readonly hints: string;
   readonly routing: DelegateRouting;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly isDisabled?: boolean;
   readonly onChoose: () => void;
   readonly onCancel: () => void;
   readonly onHints: (hints: string) => void;
@@ -30,7 +29,6 @@ export const DelegateAnswerRow = ({
   hints,
   routing,
   connectedProviders,
-  isDisabled = false,
   onChoose,
   onCancel,
   onHints,
@@ -53,10 +51,10 @@ export const DelegateAnswerRow = ({
             provider={routing.provider}
             model={routing.model}
             effort={{ editable: true, value: routing.effort }}
-            disabled={isDisabled}
+            disabled={false}
             onChange={onRouting}
           />
-          <button type="button" disabled={isDisabled} onClick={onCancel} className={LINK_CLASS}>
+          <button type="button" onClick={onCancel} className={LINK_CLASS}>
             {QUESTION_DELEGATE_COPY.cancel}
           </button>
         </div>
@@ -64,7 +62,6 @@ export const DelegateAnswerRow = ({
           kind="document"
           label="Hints for the delegated agent"
           value={hints}
-          disabled={isDisabled}
           onChange={onHints}
           onKeyDown={(event) => event.stopPropagation()}
           placeholder={QUESTION_DELEGATE_COPY.hintsPlaceholder}
@@ -82,7 +79,7 @@ export const DelegateAnswerRow = ({
       type="button"
       data-testid="delegate-answer-row"
       data-state={state}
-      disabled={isBlocked || isDisabled}
+      disabled={isBlocked}
       onClick={onChoose}
       className={LINK_CLASS}
     >

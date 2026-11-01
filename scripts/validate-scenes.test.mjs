@@ -1408,8 +1408,6 @@ describe('runTailFitFailures', () => {
     lastChildBottom: 450,
     clippers: [],
     tails: [{ text: 'Paused at the $5 limit for this session.', ...rect(560, 590) }],
-    hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(430, 458) },
-    answerEnabled: 0,
     hasComposer: true,
     hasChecklist: true,
     hasSidebar: false,
@@ -1421,7 +1419,7 @@ describe('runTailFitFailures', () => {
       measured: { ...measured, ...override },
     }).map((failure) => failure.check);
 
-  it('passes a card that shows whole beside its stop line, action and composer', () => {
+  it('passes a card that shows whole beside its stop line and composer', () => {
     assert.deepEqual(checksOf({}), []);
   });
 
@@ -1429,7 +1427,6 @@ describe('runTailFitFailures', () => {
     assert.deepEqual(
       checksOf({
         card: rect(628, 868),
-        hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(834, 862) },
         clippers: [{ name: 'mask-fade-y overflow-y-auto', ...rect(0, 701) }],
         frame: { ...rect(0, 900), width: 680 },
       }),
@@ -1444,24 +1441,18 @@ describe('runTailFitFailures', () => {
     );
   });
 
-  it('fails a frame without the stop line, the action or the composer', () => {
+  it('fails a frame without the stop line or the composer', () => {
     assert.deepEqual(
       checksOf({
         tails: [],
-        hint: { text: 'Raise the limit to answer', buttons: [], ...rect(430, 458) },
         hasComposer: false,
       }),
-      [
-        'the stop line shows with the questions',
-        'the stop action sits next to the questions',
-        'the frame holds the composer',
-      ],
+      ['the stop line shows with the questions', 'the frame holds the composer'],
     );
   });
 
-  it('fails an enabled Answer button and a frame that holds the sidebar', () => {
-    assert.deepEqual(checksOf({ answerEnabled: 1, hasSidebar: true }), [
-      'no Answer button is enabled on a stopped run',
+  it('fails a frame that holds the sidebar', () => {
+    assert.deepEqual(checksOf({ hasSidebar: true }), [
       'the frame holds the run tail without the sidebar',
     ]);
   });

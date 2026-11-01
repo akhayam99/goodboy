@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
@@ -12,7 +12,6 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly sessionId: SessionId;
-  readonly readOnlyAction?: ReactNode;
 };
 
 type MoveParams = {
@@ -36,7 +35,7 @@ const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null 
   return null;
 };
 
-export const OpenQuestionCluster = ({ questions, sessionId, readOnlyAction = null }: Props) => {
+export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
@@ -125,7 +124,6 @@ export const OpenQuestionCluster = ({ questions, sessionId, readOnlyAction = nul
           sessionId={sessionId}
           variant="compact"
           autoFocus={focusId !== null && focusId === current.id}
-          readOnlyAction={readOnlyAction}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}

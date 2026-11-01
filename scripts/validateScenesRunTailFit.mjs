@@ -26,7 +26,6 @@ export const runTailFitProbe = () => {
     }
   }
   const tails = frame === null ? [] : [...frame.querySelectorAll('[data-tail]')];
-  const hint = frame?.querySelector('[data-run-questions-hint]') ?? null;
   const first = card?.querySelector('h2') ?? null;
   const last = card === null ? null : [...card.querySelectorAll('*')].at(-1);
   return {
@@ -41,22 +40,6 @@ export const runTailFitProbe = () => {
       text: tail.textContent?.trim() ?? '',
       ...rectOf(tail),
     })),
-    hint:
-      hint === null
-        ? null
-        : {
-            text: hint.textContent?.trim() ?? '',
-            buttons: [...hint.querySelectorAll('button')].map(
-              (button) => button.textContent?.trim() ?? '',
-            ),
-            ...rectOf(hint),
-          },
-    answerEnabled:
-      card === null
-        ? 0
-        : [...card.querySelectorAll('button')].filter(
-            (button) => /^Answer$/.test(button.textContent?.trim() ?? '') && !button.disabled,
-          ).length,
     hasComposer: frame?.querySelector('[data-orchestrated-composer]') != null,
     hasChecklist: frame?.querySelector('[data-testid^="run-tree-row-"]') != null,
     hasSidebar: document.querySelector('[data-sidebar], [data-session-rail]') != null,
@@ -127,28 +110,6 @@ export const runTailFitFailures = ({
   if (stop === undefined) {
     failures.push({ scene, width, check: 'the stop line shows with the questions' });
   }
-  if (measured.hint === null) {
-    failures.push({ scene, width, check: 'the questions say how to answer a stopped run' });
-  } else {
-    if (measured.hint.buttons.length === 0) {
-      failures.push({ scene, width, check: 'the stop action sits next to the questions' });
-    }
-    if (
-      measured.hint.top < card.top - tolerance ||
-      measured.hint.bottom > card.bottom + tolerance ||
-      measured.hint.bottom > frame.bottom + tolerance
-    ) {
-      failures.push({ scene, width, check: 'the hint sits inside the card inside the frame' });
-    }
-  }
-  if (measured.answerEnabled > 0) {
-    failures.push({
-      scene,
-      width,
-      check: 'no Answer button is enabled on a stopped run',
-      enabled: measured.answerEnabled,
-    });
-  }
   if (!measured.hasComposer) {
     failures.push({ scene, width, check: 'the frame holds the composer' });
   }
@@ -176,7 +137,7 @@ export const runRunTailFit = async ({ send, only, measure, open, run }) => {
         const measured = await run(send, runTailFitProbe, null);
         const failures = runTailFitFailures({ scene, width: RUN_TAIL_FIT_WIDTH, measured });
         console.log(
-          `${scene}: ${failures.length} failures, frame ${round(measured?.frame?.width ?? 0)}x${round((measured?.frame?.bottom ?? 0) - (measured?.frame?.top ?? 0))}, card ${round(measured?.card?.top ?? 0)}..${round(measured?.card?.bottom ?? 0)}, content ${measured?.cardContent?.scrollHeight}/${measured?.cardContent?.clientHeight}, clippers ${measured?.clippers?.length}, hint "${measured?.hint?.text}" buttons ${measured?.hint?.buttons?.join(',')}, answer enabled ${measured?.answerEnabled}, stop line "${measured?.tails?.map((tail) => tail.text).join(' | ')}"`,
+          `${scene}: ${failures.length} failures, frame ${round(measured?.frame?.width ?? 0)}x${round((measured?.frame?.bottom ?? 0) - (measured?.frame?.top ?? 0))}, card ${round(measured?.card?.top ?? 0)}..${round(measured?.card?.bottom ?? 0)}, content ${measured?.cardContent?.scrollHeight}/${measured?.cardContent?.clientHeight}, clippers ${measured?.clippers?.length}, stop line "${measured?.tails?.map((tail) => tail.text).join(' | ')}"`,
         );
         return { failures, wraps: 0 };
       },

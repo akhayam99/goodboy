@@ -8,7 +8,6 @@ type Props = {
   readonly optionCount: number;
   readonly canAnswer: boolean;
   readonly isHandOff: boolean;
-  readonly isReadOnly?: boolean;
   readonly onAnswer: () => void;
   readonly onSkip: (() => void) | null;
   readonly onSendAsMessage?: (() => void) | null;
@@ -23,7 +22,6 @@ export const AnswerSubmitButton = ({
   optionCount,
   canAnswer,
   isHandOff,
-  isReadOnly = false,
   onAnswer,
   onSkip,
   onSendAsMessage = null,
@@ -31,7 +29,7 @@ export const AnswerSubmitButton = ({
 }: Props) => (
   <FormActions
     leading={
-      isReadOnly && lead === undefined ? null : lead === undefined ? (
+      lead === undefined ? (
         <span className="flex min-w-0 items-center gap-2 whitespace-nowrap text-meta text-faint-foreground @max-[34rem]:hidden">
           <KeyHint inputMode={inputMode} optionCount={optionCount} />
         </span>

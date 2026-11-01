@@ -11,7 +11,6 @@ import {
   recordPendingOpenQuestionDelivery,
 } from './pendingOpenQuestionDelivery';
 import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
-import { stoppedQuestionHintOf } from './stoppedQuestionHintOf';
 import type { GetFn, SetFn } from './types';
 
 type ResolveAskingAgentsParams = {
@@ -48,18 +47,6 @@ export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
     const valid = pairs.filter((pair) => pair.answer.trim().length > 0);
     if (valid.length === 0) {
       return;
-    }
-
-    const answeredIds = new Set(valid.map((pair) => pair.id));
-    const stoppedHint = stoppedQuestionHintOf({
-      get,
-      sessionId,
-      questions: (get().sessionOpenQuestions[sessionId] ?? []).filter((question) =>
-        answeredIds.has(question.id),
-      ),
-    });
-    if (stoppedHint !== null) {
-      throw new Error(stoppedHint);
     }
 
     const askingAgentIds = resolveAskingAgents({ get, sessionId, pairs: valid, targetAgentId });

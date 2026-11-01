@@ -3,7 +3,6 @@ import { cancelQuestionDelegates } from './cancelQuestionDelegates';
 import { settleDismissedQuestion } from './dismissOpenQuestion';
 import { isReportedError } from '../notifications/reportedError';
 import type { SendTurnResult } from '../turn/types';
-import { stoppedQuestionHintOf } from './stoppedQuestionHintOf';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -27,18 +26,6 @@ export const sendQuestionAsMessage = (set: SetFn, get: GetFn) => {
     const agentId = question.createdByAgentId;
     const content = text.trim();
     if (agentId == null || content.length === 0) {
-      return false;
-    }
-    const stoppedHint = stoppedQuestionHintOf({ get, sessionId, questions: [question] });
-    if (stoppedHint !== null) {
-      void get().emitNotification({
-        kind: 'error',
-        severity: 'warning',
-        title: "The message didn't send",
-        body: stoppedHint,
-        sessionId,
-        coalesceKey: `question-message-refused:${question.id}`,
-      });
       return false;
     }
     let result: SendTurnResult;

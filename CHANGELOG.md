@@ -26,7 +26,7 @@ Needs you drops its grey group bars. Decide and Fix are quiet labels with a coun
 #### A stopped run shows its questions
 <!-- gb area=workflows image=stopped-questions -->
 
-A run that stopped on its limit, on a failure or because you stopped it shows its open questions. Raise the limit or resume it from the same place to answer them.
+A run that stopped on its limit, on a failure or because you stopped it shows its open questions on the run page, where you can answer them.
 
 ## Goodboy v0.29.9
 
