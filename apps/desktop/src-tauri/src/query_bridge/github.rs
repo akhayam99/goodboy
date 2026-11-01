@@ -304,6 +304,7 @@ async fn context(_app: &AppHandle, scope: &Scope<'_>) -> Result<Ctx, String> {
 
 impl Ctx {
     async fn gh(&self, args: Vec<String>) -> Result<GhRunResult, String> {
+        crate::gh_allowlist::check_args(&args)?;
         let workspace = self.workspace.clone();
         let project = self.project.clone();
         let cwd = self.cwd.clone();
@@ -722,6 +723,68 @@ mod tests {
         assert_eq!(args[5], "threadId=PRRT_abc");
         assert_eq!(args[6], "-f");
         assert_eq!(args[7], "body=done in abc123");
+    }
+
+    #[test]
+    fn every_bridge_argv_is_in_the_shared_allowlist() {
+        use crate::gh_allowlist::check_args;
+
+        let mut all = vec![
+            thread_resolve_args("PRRT_abc"),
+            thread_reply_args("PRRT_abc", "done in abc123"),
+            review_threads_args("acme", "ledger-core", 42),
+            strs(&["pr", "view", "--json", "number"]),
+            strs(&["repo", "view", "--json", "nameWithOwner"]),
+            strs(&["pr", "list", "--state", "open", "--json", PR_LIST_FIELDS]),
+            strs(&[
+                "pr",
+                "list",
+                "--head",
+                "feat/x",
+                "--state",
+                "all",
+                "--json",
+                PR_LIST_FIELDS,
+            ]),
+            strs(&[
+                "issue",
+                "list",
+                "--assignee",
+                "@me",
+                "--state",
+                "open",
+                "--json",
+                ISSUE_LIST_FIELDS,
+            ]),
+            strs(&["issue", "view", "7", "--json", ISSUE_VIEW_FIELDS]),
+            strs(&["issue", "view", "7", "--json", "comments"]),
+            strs(&["issue", "comment", "7", "--body", "hello"]),
+        ];
+        for number in [None, Some(12)] {
+            all.push(with_selector(
+                strs(&["pr", "view"]),
+                number,
+                &["--json", PR_VIEW_FIELDS],
+            ));
+            all.push(with_selector(strs(&["pr", "diff"]), number, &[]));
+            all.push(with_selector(
+                strs(&["pr", "checks"]),
+                number,
+                &["--json", PR_CHECK_FIELDS],
+            ));
+            all.push(with_selector(
+                strs(&["pr", "comment"]),
+                number,
+                &["--body", "hello"],
+            ));
+            all.push(with_selector(strs(&["pr", "ready"]), number, &[]));
+            for flag in ["--squash", "--merge", "--rebase"] {
+                all.push(with_selector(strs(&["pr", "merge"]), number, &[flag]));
+            }
+        }
+        for args in all {
+            assert_eq!(check_args(&args), Ok(()), "{args:?}");
+        }
     }
 
     #[test]

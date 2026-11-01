@@ -33,6 +33,7 @@ mod file_versions;
 mod folder_git;
 mod folder_signals;
 mod frame_protocol;
+mod gh_allowlist;
 mod github;
 mod gitlab;
 mod goodboy_ignore;
