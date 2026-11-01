@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import type { ReviewEntry } from '../../components/ReviewFlow/useReviewEntries';
-import { useNewThreadIds } from '../useNewThreadIds';
+import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly entries: ReadonlyArray<ReviewEntry>;
+  readonly mountId?: MountId | null;
 };
 
 type Visit = {
@@ -17,38 +16,48 @@ type Visit = {
 const NO_THREADS: ReadonlySet<string> = new Set<string>();
 const NO_VISIT: Visit = { sessionId: null, threadIds: NO_THREADS };
 
-export const useThreadVisit = ({ sessionId, entries }: Params): ReadonlySet<string> => {
-  const { newThreadIds, isLoaded } = useNewThreadIds({ sessionId, entries });
+export const useThreadVisit = ({ sessionId, mountId = null }: Params): ReadonlySet<string> => {
+  const { unread, fetchedAtMs } = useUnreadThreads({ sessionId, mountId });
   const markThreadsRead = useAppStore((s) => s.markThreadsRead);
   const [snapshot, setSnapshot] = useState<Visit>(NO_VISIT);
   const inFlight = useRef<Visit>(NO_VISIT);
+
   useEffect(() => {
-    if (!isLoaded) {
+    if (unread === null) {
       return;
     }
     const pending =
       inFlight.current.sessionId === sessionId ? inFlight.current.threadIds : NO_THREADS;
-    const fresh = [...newThreadIds].filter((threadId) => !pending.has(threadId));
+    const fresh = unread.filter(({ threadId }) => !pending.has(threadId));
     if (fresh.length === 0) {
       return;
     }
-    inFlight.current = { sessionId, threadIds: new Set([...pending, ...fresh]) };
+    const freshIds = fresh.map(({ threadId }) => threadId);
+    inFlight.current = { sessionId, threadIds: new Set([...pending, ...freshIds]) };
     setSnapshot((current) => ({
       sessionId,
       threadIds: new Set([
         ...(current.sessionId === sessionId ? current.threadIds : NO_THREADS),
-        ...fresh,
+        ...freshIds,
       ]),
     }));
-    void markThreadsRead({ sessionId, threadIds: fresh }).then((isSaved) => {
-      if (isSaved || inFlight.current.sessionId !== sessionId) {
+    const fallbackMs = fetchedAtMs ?? Date.now();
+    void markThreadsRead({
+      sessionId,
+      marks: fresh.map(({ threadId, latestOtherMs }) => ({
+        threadId,
+        readAt: latestOtherMs ?? fallbackMs,
+      })),
+    }).then(() => {
+      if (inFlight.current.sessionId !== sessionId) {
         return;
       }
       inFlight.current = {
         sessionId,
-        threadIds: new Set([...inFlight.current.threadIds].filter((id) => !fresh.includes(id))),
+        threadIds: new Set([...inFlight.current.threadIds].filter((id) => !freshIds.includes(id))),
       };
     });
-  }, [isLoaded, markThreadsRead, newThreadIds, sessionId]);
+  }, [fetchedAtMs, markThreadsRead, sessionId, unread]);
+
   return snapshot.sessionId === sessionId ? snapshot.threadIds : NO_THREADS;
 };

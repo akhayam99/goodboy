@@ -21,7 +21,7 @@ const STAGES: ReadonlyArray<ResolveStage> = [
   'resolved',
 ];
 
-const UNREAD_COUNT = 2;
+const UNREAD_INDEXES: ReadonlyArray<number> = [0, 2];
 
 export const BranchThreadsNewScene = ({ tab }: Props) => {
   const [isReady, setIsReady] = useState(false);
@@ -37,20 +37,24 @@ export const BranchThreadsNewScene = ({ tab }: Props) => {
       branchTab: { [SESSION_ID]: tab },
       sessionResolveQueueItems: { [SESSION_ID]: queue },
       sessionResolveThreads: { [SESSION_ID]: queue.map((entry) => entry.thread) },
+      githubStatus: { mode: 'gh-cli', available: true, user: 'harborline-dev' },
       sessionThreadReads: {
         [SESSION_ID]: Object.fromEntries(
-          queue.slice(UNREAD_COUNT).map((entry) => [entry.thread.threadId, readAt]),
+          queue.flatMap((entry, index) =>
+            UNREAD_INDEXES.includes(index) ? [] : [[entry.thread.threadId, readAt]],
+          ),
         ),
       },
       loadThreadReads: async () => undefined,
-      markThreadsRead: async ({ sessionId, threadIds }) => {
-        const readNow = Date.now();
+      markThreadsRead: async ({ sessionId, marks }) => {
         useAppStore.setState((state) => ({
           sessionThreadReads: {
             ...state.sessionThreadReads,
             [sessionId]: {
               ...state.sessionThreadReads[sessionId],
-              ...Object.fromEntries(threadIds.map((threadId) => [threadId, readNow])),
+              ...Object.fromEntries(
+                marks.map(({ threadId, readAt: markedAt }) => [threadId, markedAt]),
+              ),
             },
           },
         }));

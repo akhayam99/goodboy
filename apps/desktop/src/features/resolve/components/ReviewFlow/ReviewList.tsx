@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { TEXT_ROLE, cn } from '@goodboy/ui';
@@ -9,8 +9,8 @@ import {
   type ResolveGroup,
 } from '../../commentProjection';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
-import { useThreadVisit } from '../../hooks/useThreadVisit';
 import { ReviewListRow } from './ReviewListRow';
+import { ThreadVisitContext } from './threadVisitContext';
 import type { ReviewEntry, ReviewGroup } from './useReviewEntries';
 
 type Props = {
@@ -58,8 +58,7 @@ export const ReviewList = ({
   runHeader = null,
 }: Props) => {
   const isSourceShown = isMixedOf({ groups });
-  const listed = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
-  const newThreadIds = useThreadVisit({ sessionId, entries: listed });
+  const unreadThreadIds = useContext(ThreadVisitContext);
   return (
     <nav
       aria-label={REVIEW_FLOW_LABEL.list}
@@ -94,7 +93,7 @@ export const ReviewList = ({
                   <ReviewListRow
                     sessionId={sessionId}
                     entry={entry}
-                    isNew={newThreadIds.has(entry.threadId)}
+                    isUnread={unreadThreadIds.has(entry.threadId)}
                     isSelected={entry.threadId === focusedThreadId}
                     isSourceShown={isSourceShown}
                     onSelect={() => onSelect(entry.threadId)}

@@ -17,7 +17,7 @@ import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
-import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
+import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { pushFixCount } from '../../../resolve/reviewPushCopy';
@@ -414,7 +414,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    return <ReviewFlow session={session} mountId={historyMountId} push={push} />;
+    return <ReviewFlowVisit session={session} mountId={historyMountId} push={push} />;
   };
 
   const baseRow =

@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -46,35 +46,60 @@ const showTab = async (tab: 'files' | 'comments'): Promise<void> => {
   });
 };
 
-describe('the new threads scenes', () => {
-  it('reads six open threads, two new and one that needs you on the pull request page', async () => {
+describe('the unread threads scenes', () => {
+  it('reads six open threads, one that needs you and two unread on the pull request page', async () => {
     renderScene('pr');
 
     const line = await screen.findByTestId('open-threads');
 
-    expect(line.textContent).toBe('6 open threads · 2 new · 1 needs you');
+    expect(line.textContent).toBe('6 open threads · 1 needs you · 2 unread');
   });
 
-  it('marks the two new threads in the Comments tab and keeps the marks for the visit', async () => {
+  it('marks the two unread threads in the Comments tab and keeps the marks for the visit', async () => {
     renderScene('comments');
 
-    expect(await screen.findAllByRole('img', { name: 'New' })).toHaveLength(2);
+    expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
     await waitFor(() => {
       const reads = useAppStore.getState().sessionThreadReads[SESSION_ID] ?? {};
       expect(Object.keys(reads).length).toBeGreaterThan(2);
     });
-    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(2);
+    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(2);
+  });
+
+  it('keeps the two marks after the Resolved view is shown and left', async () => {
+    renderScene('comments');
+    expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Resolved/ }));
+    await waitFor(() => expect(screen.queryAllByRole('img', { name: 'Unread' })).toHaveLength(0));
+    fireEvent.click(screen.getByRole('tab', { name: /Open/ }));
+
+    expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
+  });
+
+  it('puts the mark in the gutter of a thread that needs you, next to its state word', async () => {
+    renderScene('comments');
+
+    const marks = await screen.findAllByRole('img', { name: 'Unread' });
+    const rows = marks
+      .map((mark) => mark.closest('[class*="group/review-row"]'))
+      .filter((element): element is HTMLElement => element instanceof HTMLElement);
+
+    expect(rows.some((row) => within(row).queryByText('Question for you') !== null)).toBe(true);
+    for (const mark of marks) {
+      expect(mark.closest('button')).toBeNull();
+    }
   });
 
   it('shows no mark on the next visit because the threads were read', async () => {
     renderScene('comments');
-    expect(await screen.findAllByRole('img', { name: 'New' })).toHaveLength(2);
+    expect(await screen.findAllByRole('img', { name: 'Unread' })).toHaveLength(2);
 
     await showTab('files');
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Comments' })).toBeNull());
     await showTab('comments');
 
     await screen.findByRole('navigation', { name: 'Comments' });
-    expect(screen.queryAllByRole('img', { name: 'New' })).toHaveLength(0);
+    expect(screen.queryAllByRole('img', { name: 'Unread' })).toHaveLength(0);
   });
 });

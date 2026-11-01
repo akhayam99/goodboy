@@ -88,7 +88,7 @@ export const PullRequestPage = ({
   const sessionId = session.id;
   const openFolder = useOpenBranchFolder({ sessionId, onSelectTab });
   const port = usePullRequestPort({ sessionId, mountId });
-  const { readiness, commentsNeedYou, commentsNew, facts, reviewers } = prReadiness;
+  const { readiness, commentsNeedYou, commentsUnread, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
   const cells = pullRequestCellsOf({
@@ -135,7 +135,7 @@ export const PullRequestPage = ({
       />
       <OpenThreadsLink
         unresolved={facts.commentsUnresolved}
-        newCount={commentsNew}
+        unreadCount={commentsUnread}
         needYou={commentsNeedYou}
         onOpen={() => onSelectTab('comments')}
       />
