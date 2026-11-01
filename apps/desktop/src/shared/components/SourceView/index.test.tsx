@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { SourceView } from '.';
+import { installInlineHighlightWorker } from '../../../test/installInlineHighlightWorker';
+
+beforeAll(installInlineHighlightWorker);
 
 afterEach(cleanup);
 

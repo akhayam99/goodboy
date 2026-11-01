@@ -5,6 +5,7 @@ import {
   evaluateBudget,
   initialAssets,
   measureBundle,
+  mockSceneFiles,
   suggestedBudget,
 } from './check-bundle-budget.mjs';
 
@@ -97,6 +98,33 @@ describe('evaluateBudget', () => {
     });
     assert.equal(result.isWithinBudget, false);
     assert.match(result.failures[0], /nothing was measured/);
+  });
+});
+
+describe('mockSceneFiles', () => {
+  it('lists mock scene chunks found in the dist assets', () => {
+    const files = mockSceneFiles({
+      distDirectory: '/dist',
+      list: () => ['index-abc.js', 'MockEntry-def.js', 'installMockRuntime-ghi.js', 'a.css'],
+    });
+    assert.deepEqual(files, ['MockEntry-def.js', 'installMockRuntime-ghi.js']);
+  });
+
+  it('finds nothing in a dist without mock chunks', () => {
+    assert.deepEqual(
+      mockSceneFiles({ distDirectory: '/dist', list: () => ['index-abc.js', 'worker-x.js'] }),
+      [],
+    );
+  });
+
+  it('fails the budget when a mock chunk is present', () => {
+    const result = evaluateBudget({
+      measured: { files: ['a.js'], rawBytes: 10, gzipBytes: 10 },
+      budget: { rawBytes: 1000, gzipBytes: 400 },
+      mockFiles: ['MockEntry-def.js'],
+    });
+    assert.equal(result.isWithinBudget, false);
+    assert.match(result.failures[0], /MockEntry-def\.js/);
   });
 });
 

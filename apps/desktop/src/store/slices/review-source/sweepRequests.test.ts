@@ -440,7 +440,7 @@ describe('sweepRequests', () => {
       expect(refreshGithub).not.toHaveBeenCalled();
     });
 
-    it('stays unreleased when gh answers and no mount has a branch to ask about', () => {
+    it('releases when gh answers and no mount has a branch to ask about', () => {
       store.setState({
         sessionMounts: {
           [SESSION.id]: [{ ...mountView({ id: LEDGER_MOUNT, project: LEDGER }), branch: '' }],
@@ -449,7 +449,8 @@ describe('sweepRequests', () => {
 
       void store.getState().sweepRequests();
 
-      expect(store.getState().boardReady).toBe(false);
+      expect(store.getState().boardReady).toBe(true);
+      expect(refreshGithub).not.toHaveBeenCalled();
     });
 
     it('releases after every host settled and not before', async () => {
