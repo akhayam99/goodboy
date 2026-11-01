@@ -165,7 +165,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
     });
 
     const needsYou = cardOf({ name: 'Needs you' });
-    expect(needsYou.textContent).toContain('Fix');
+    expect(needsYou.querySelector('[data-next-group-head]')).toBeNull();
     expect(needsYou.textContent).toContain('Auto is stuck');
     fireEvent.click(within(needsYou).getByRole('button', { name: 'Open Auto' }));
 

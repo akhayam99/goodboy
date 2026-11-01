@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FOCUS_RING, ROW_HOVER, TruncatedText, cn } from '@goodboy/ui';
-import { LIVE_COLUMNS } from '../liveColumns';
+import { ROW_COLUMNS } from '../../rowColumns';
 
 type Props = {
   readonly glyph: ReactNode;
@@ -34,7 +34,9 @@ export const LiveRow = ({
   <div
     data-live-row=""
     className={cn(
-      'relative flex min-w-0 items-center gap-2 rounded-md px-2',
+      'relative flex min-w-0 items-center rounded-md',
+      ROW_COLUMNS.gap,
+      ROW_COLUMNS.inset,
       ROW_HOVER,
       isChild ? 'min-h-7' : 'min-h-9 py-1',
     )}
@@ -51,7 +53,7 @@ export const LiveRow = ({
       className="pointer-events-none relative flex min-w-0 flex-1 items-center gap-2"
     >
       {lane}
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center">{glyph}</span>
+      <span className={ROW_COLUMNS.glyph}>{glyph}</span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="shrink-0 text-row text-foreground">{kindWord}</span>
@@ -87,12 +89,9 @@ export const LiveRow = ({
       </TruncatedText>
     )}
     <span className="pointer-events-none relative flex shrink-0 items-center gap-2 [&_button]:pointer-events-auto">
-      <span className={cn('flex shrink-0 items-center gap-1', LIVE_COLUMNS.status)}>{end}</span>
+      <span className={cn('flex shrink-0 items-center gap-1', ROW_COLUMNS.status)}>{end}</span>
       <span
-        className={cn(
-          'flex shrink-0 justify-end whitespace-nowrap tabular-nums',
-          LIVE_COLUMNS.time,
-        )}
+        className={cn('flex shrink-0 justify-end whitespace-nowrap tabular-nums', ROW_COLUMNS.time)}
       >
         {time}
       </span>

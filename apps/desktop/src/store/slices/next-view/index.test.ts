@@ -16,7 +16,6 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
 
 const HARBORLINE = brandId<SessionId>({ value: 'session-harborline' });
-const NORTHWIND = brandId<SessionId>({ value: 'session-northwind' });
 
 let useAppStore: StoryStore;
 
@@ -29,19 +28,6 @@ beforeEach(async () => {
 });
 
 describe('the next view slice', () => {
-  it('keeps the open choice of a group per session', () => {
-    const { chooseNextGroup } = useAppStore.getState();
-
-    chooseNextGroup({ sessionId: HARBORLINE, groupId: 'ship', isOpen: true });
-    chooseNextGroup({ sessionId: HARBORLINE, groupId: 'decide', isOpen: false });
-    chooseNextGroup({ sessionId: NORTHWIND, groupId: 'fix', isOpen: true });
-
-    expect(useAppStore.getState().nextGroupChoice).toEqual({
-      [HARBORLINE]: { ship: true, decide: false },
-      [NORTHWIND]: { fix: true },
-    });
-  });
-
   it('notes each subject once, in the order it was first seen', () => {
     const { noteNextSubjects } = useAppStore.getState();
 

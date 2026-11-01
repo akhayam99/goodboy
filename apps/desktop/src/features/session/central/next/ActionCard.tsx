@@ -8,13 +8,15 @@ import {
   ICON_SIZE,
   TruncatedText,
   cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { BAND_TONE } from '../../../suggestions/bandTone';
 import { NextStepMenu } from '../../../suggestions/NextStepMenu';
 import { NextStepRebasePicker } from '../../../suggestions/NextStepRebasePicker';
-import { NextStepTile } from '../../../suggestions/NextStepTile';
 import { ActionCardOverflowMenu } from '../../../actions/ActionCardOverflowMenu';
-import type { AgentKind } from '../../agent-kind';
+import { agentKindPalette, type AgentKind } from '../../agent-kind';
+import { LiveGlyph } from '../now/LiveGlyph';
+import { ROW_COLUMNS } from '../rowColumns';
 import type { ActionCardModel } from './actionCardsOf';
 import { cardIconOf } from './cardIconOf';
 import type { CardActions, CardVerb } from './useActionCardActions';
@@ -62,6 +64,8 @@ export const ActionCard = ({
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
   const { main, second, failure, menu, foldedTarget } = actions;
   const Icon = cardIconOf({ card });
+  const glyphKind = previewKind ?? actions.agentKind;
+  const palette = glyphKind === null ? null : agentKindPalette({ kind: glyphKind });
 
   useEffect(() => {
     setIsConfirming(false);
@@ -149,13 +153,18 @@ export const ActionCard = ({
         data-action-card
         data-band={card.band}
         data-testid={`action-card-${card.id}`}
-        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2 rounded-md bg-subtle p-2"
+        className={cn(
+          'grid min-h-9 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center rounded-md py-1',
+          ROW_COLUMNS.gap,
+          ROW_COLUMNS.inset,
+        )}
       >
-        <NextStepTile
-          agentKind={previewKind ?? actions.agentKind}
-          fallbackIcon={Icon}
-          tone={BAND_TONE[card.band]}
-        />
+        <span data-action-glyph="" className={ROW_COLUMNS.glyph}>
+          <LiveGlyph
+            icon={palette === null ? Icon : palette.icon}
+            colorClass={palette === null ? tintClasses(BAND_TONE[card.band]).icon : palette.fg}
+          />
+        </span>
         <div
           data-opens-place={onOpen === null ? undefined : ''}
           onClick={onOpen ?? undefined}

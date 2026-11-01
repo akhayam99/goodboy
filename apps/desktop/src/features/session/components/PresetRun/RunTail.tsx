@@ -11,6 +11,7 @@ import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-k
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
+import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { RunTailVerb } from './RunTailVerb';
@@ -91,61 +92,75 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         ) ?? null)
       : null;
   const isMountBlocked = blockedStep !== null && mountBlock?.agentId === blockedStep.id;
-  const answered = tail.verb?.kind === 'answer' ? tail.verb.question : null;
+  const stop = run.orchestrationStop;
+  const isStopped = stop != null && stop.kind !== 'questions';
+  const first =
+    tail.verb?.kind === 'answer'
+      ? tail.verb.question
+      : isStopped
+        ? (advance.questions[0] ?? null)
+        : null;
+  const clusterQuestions =
+    first === null
+      ? []
+      : askingAgentBatch({
+          questions: [
+            first,
+            ...advance.questions.filter(
+              (question) =>
+                question.id !== first.id &&
+                (question.createdByAgentId ?? null) === (first.createdByAgentId ?? null),
+            ),
+          ],
+        });
+  const placement = runQuestionsPlacementOf({ phase: null, stop, questions: clusterQuestions });
+  const questionCluster =
+    clusterQuestions.length === 0 ? null : (
+      <RunOpenQuestion sessionId={session.id} questions={clusterQuestions} />
+    );
   return (
     <section
       aria-label="Run state"
       data-run-tail={tail.verb?.kind ?? 'none'}
-      className="flex min-w-0 flex-col gap-2"
+      className="flex min-w-0 flex-col gap-4"
     >
-      {isNotStarted ? (
-        <p data-run-step-not-started="" className="text-ui text-muted-foreground">
-          Not started, the run paused at the limit.
-        </p>
-      ) : null}
-      {isMountBlocked ? null : (
-        <TailLine
-          facts={{
-            state: tail.state,
-            phrase: tail.phrase,
-            startedAt: null,
-            stepAgentId: tail.stepAgentId,
-            actions: [],
-          }}
-          onAction={() => undefined}
-          verbs={
-            tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
-              <RunTailVerb
-                session={session}
-                view={view}
-                verb={tail.verb}
-                isSecondary={blockedStep !== null}
-              />
-            )
-          }
-        />
-      )}
-      {answered === null ? null : (
-        <RunOpenQuestion
-          sessionId={session.id}
-          questions={askingAgentBatch({
-            questions: [
-              answered,
-              ...advance.questions.filter(
-                (question) =>
-                  question.id !== answered.id &&
-                  (question.createdByAgentId ?? null) === (answered.createdByAgentId ?? null),
-              ),
-            ],
-          })}
-        />
-      )}
-      <RunPendingDelivery sessionId={session.id} />
-      {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
-        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-      ) : (
-        <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
-      )}
+      {placement === 'before-state' ? questionCluster : null}
+      <div className="flex min-w-0 flex-col gap-2">
+        {isNotStarted ? (
+          <p data-run-step-not-started="" className="text-ui text-muted-foreground">
+            Not started, the run paused at the limit.
+          </p>
+        ) : null}
+        {isMountBlocked ? null : (
+          <TailLine
+            facts={{
+              state: tail.state,
+              phrase: tail.phrase,
+              startedAt: null,
+              stepAgentId: tail.stepAgentId,
+              actions: [],
+            }}
+            onAction={() => undefined}
+            verbs={
+              tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
+                <RunTailVerb
+                  session={session}
+                  view={view}
+                  verb={tail.verb}
+                  isSecondary={blockedStep !== null}
+                />
+              )
+            }
+          />
+        )}
+        <RunPendingDelivery sessionId={session.id} />
+        {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
+          <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+        ) : (
+          <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
+        )}
+      </div>
+      {placement === 'after-state' ? questionCluster : null}
     </section>
   );
 };

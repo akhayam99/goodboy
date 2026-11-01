@@ -2,20 +2,17 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { SectionHeader } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import type { NextGroupChoice } from '../../../../store/slices/next-view/state';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { OVERVIEW_CARD_OF_GROUP, type NextOverviewCardId } from '../cards/overviewCardOfGroup';
 import type { ActionCardModel } from './actionCardsOf';
 import { NextGroup } from './NextGroup';
 import type { RebaseStopRowFor } from '../../../history/useRebaseStopRows';
-import { nextGroupsOf, type NextGroupModel } from './nextGroupsOf';
+import { nextGroupsOf } from './nextGroupsOf';
 import { nextRowCopyOf, type NextBranchName } from './nextRowCopyOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
 import type { ActionCardActions } from './useActionCardActions';
 
 const NARROW_COLUMN_PX = 560;
-
-const NO_CHOICE: NextGroupChoice = {};
 
 type NextCardParams = {
   readonly card: ActionCardModel;
@@ -27,27 +24,12 @@ type Props = {
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor?: ActionCardActions['openFor'];
   readonly chipFor?: (params: NextCardParams) => ReactNode;
-  readonly nameFor?: (params: NextCardParams) => string | null;
   readonly branchFor?: (params: NextCardParams) => NextBranchName | null;
   readonly stopRowFor?: RebaseStopRowFor;
   readonly overviewCard?: NextOverviewCardId | null;
   readonly hasHeader?: boolean;
-  readonly openByDefault?: NextOpenDefault;
   readonly canLead?: boolean;
 };
-
-type NextOpenDefault = 'first' | 'all' | 'none';
-
-type GroupParams = {
-  readonly group: NextGroupModel;
-};
-
-type HintParams = GroupParams & {
-  readonly nameFor: Props['nameFor'];
-};
-
-const hintOf = ({ group, nameFor }: HintParams): string =>
-  Array.from(new Set(group.rows.map((card) => nameFor?.({ card }) ?? card.title))).join(', ');
 
 export const NextStackView = ({
   sessionId,
@@ -55,19 +37,15 @@ export const NextStackView = ({
   actionsFor,
   openFor,
   chipFor,
-  nameFor,
   branchFor,
   stopRowFor,
   overviewCard = null,
   hasHeader = true,
-  openByDefault = 'first',
   canLead = true,
 }: Props) => {
   const { ref: observe, width: observedWidth } = useElementWidth();
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
-  const choice = useAppStore((state) => state.nextGroupChoice[sessionId]) ?? NO_CHOICE;
   const seen = useAppStore((state) => state.nextSeenSubjects[sessionId] ?? EMPTY_ARRAY);
-  const chooseNextGroup = useAppStore((state) => state.chooseNextGroup);
   const noteNextSubjects = useAppStore((state) => state.noteNextSubjects);
   const ref = useCallback(
     (node: HTMLElement | null) => {
@@ -112,12 +90,8 @@ export const NextStackView = ({
   if (groups.length === 0) {
     return null;
   }
-  const firstId = groups[0]?.id;
-  const isOpenByDefault = ({ group }: GroupParams): boolean =>
-    openByDefault === 'all' || (openByDefault === 'first' && group.id === firstId);
-  const isOpenOf = ({ group }: GroupParams): boolean =>
-    choice[group.id] ?? isOpenByDefault({ group });
-  const leadId = canLead ? (groups.find((group) => isOpenOf({ group }))?.id ?? null) : null;
+  const leadId = canLead ? (groups[0]?.id ?? null) : null;
+  const hasLabels = groups.length > 1;
   const total = groups.reduce((sum, group) => sum + group.rows.length, 0);
   return (
     <section
@@ -133,26 +107,21 @@ export const NextStackView = ({
           meta={<span className="text-meta text-faint-foreground">{total}</span>}
         />
       ) : null}
-      <div className="flex min-w-0 flex-col gap-1">
-        {groups.map((group) => {
-          const isOpen = isOpenOf({ group });
-          return (
-            <NextGroup
-              key={group.id}
-              group={group}
-              isOpen={isOpen}
-              isLead={group.id === leadId}
-              isNarrow={isNarrow}
-              hint={hintOf({ group, nameFor })}
-              onToggle={() => chooseNextGroup({ sessionId, groupId: group.id, isOpen: !isOpen })}
-              actionsFor={actionsFor}
-              openFor={openFor}
-              chipFor={chipFor}
-              sessionId={sessionId}
-              stopRowFor={stopRowFor}
-            />
-          );
-        })}
+      <div className="flex min-w-0 flex-col gap-2">
+        {groups.map((group) => (
+          <NextGroup
+            key={group.id}
+            group={group}
+            hasLabel={hasLabels}
+            isLead={group.id === leadId}
+            isNarrow={isNarrow}
+            actionsFor={actionsFor}
+            openFor={openFor}
+            chipFor={chipFor}
+            sessionId={sessionId}
+            stopRowFor={stopRowFor}
+          />
+        ))}
       </div>
     </section>
   );

@@ -22,7 +22,6 @@ type Props = {
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor: ActionCardActions['openFor'];
   readonly chipFor: (params: CardParams) => ReactNode;
-  readonly nameFor: (params: CardParams) => string | null;
   readonly branchFor: (params: CardParams) => NextBranchName | null;
   readonly stopRowFor: RebaseStopRowFor;
 };
@@ -36,7 +35,6 @@ export const NextRowsCard = ({
   actionsFor,
   openFor,
   chipFor,
-  nameFor,
   branchFor,
   stopRowFor,
 }: Props) => (
@@ -46,12 +44,10 @@ export const NextRowsCard = ({
       cards={cards}
       overviewCard={rows}
       hasHeader={false}
-      openByDefault={rows === 'needs-you' ? 'all' : canLead ? 'first' : 'none'}
       canLead={canLead}
       actionsFor={actionsFor}
       openFor={openFor}
       chipFor={chipFor}
-      nameFor={nameFor}
       branchFor={branchFor}
       stopRowFor={stopRowFor}
     />

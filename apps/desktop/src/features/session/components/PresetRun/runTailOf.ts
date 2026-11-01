@@ -4,6 +4,7 @@ import type { NextAction } from '../../../workflows/resolveNextAction';
 import type { RunPrimary } from '../../../workflows/runPrimaryOf';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { stepNumberOf } from './stepNumberOf';
+import { stoppedQuestionTailOf } from './stoppedQuestionTailOf';
 
 export type RunTailVerb =
   | { readonly kind: 'primary'; readonly primary: RunPrimary }
@@ -182,18 +183,19 @@ export const runTailOf = ({
       verb: { kind: 'resumeAll', count: restartStoppedCount },
     };
   }
+  const stoppedTail = stoppedQuestionTailOf({ stop: run.orchestrationStop });
   if (question !== null) {
     return {
-      state: 'waiting',
-      phrase: 'Waiting for your answer',
+      state: stoppedTail?.state ?? 'waiting',
+      phrase: stoppedTail?.phrase ?? 'Waiting for your answer',
       stepAgentId: null,
       verb: { kind: 'answer', question },
     };
   }
   if (nextAction.kind === 'answer') {
     return {
-      state: 'waiting',
-      phrase: nextAction.sentence,
+      state: stoppedTail?.state ?? 'waiting',
+      phrase: stoppedTail?.phrase ?? nextAction.sentence,
       stepAgentId: null,
       verb: { kind: 'answer', question: nextAction.question },
     };

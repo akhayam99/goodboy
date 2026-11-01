@@ -12,6 +12,22 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.29.10
+
+Needs you reads like Waiting for you, and a stopped run shows its open questions.
+
+### Improved
+
+#### Needs you reads like Waiting for you
+<!-- gb area=sessions image=needs-you -->
+
+Needs you drops its grey group bars. Decide and Fix are quiet labels with a count, shown only when both are there, and every row lines up with the rows of Waiting for you.
+
+#### A stopped run shows its questions
+<!-- gb area=workflows image=stopped-questions -->
+
+A run that stopped on its limit, on a failure or because you stopped it shows its open questions on the run page, where you can answer them. On every question card, Blocking sits on the top row with the pager and the question starts on its own line below.
+
 ## Goodboy v0.29.9
 
 Pictures in What's new show whole, images as thumbnails with a viewer, hints on the run track, and fixes for multi repo runs and the terminal.

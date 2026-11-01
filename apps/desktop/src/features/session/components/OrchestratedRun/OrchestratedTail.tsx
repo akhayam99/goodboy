@@ -7,6 +7,7 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
+import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
@@ -64,59 +65,74 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     phase !== 'step-failed' &&
     phase !== 'blocked';
 
+  const placement = runQuestionsPlacementOf({
+    phase,
+    stop: run.orchestrationStop,
+    questions: view.orchestrator.runQuestions,
+  });
+  const questionCluster = (
+    <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
+  );
+
   return (
     <section
       aria-label="Run state"
       data-orchestrated-tail={view.orchestrator.state.phase}
-      className="flex min-w-0 flex-col gap-1"
+      className="flex min-w-0 flex-col gap-4"
     >
-      {isMountBlocked ? null : (
-        <TailLine
-          facts={{
-            state: tail.state,
-            phrase: tail.phrase,
-            startedAt: null,
-            stepAgentId: tail.stepAgentId,
-            actions: [],
-          }}
-          onAction={() => undefined}
-          verbs={
-            tailVerbs.length === 0
-              ? null
-              : tailVerbs.map((verb) => (
-                  <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
-                ))
-          }
-        />
-      )}
-      {phase === 'needs-answer' && view.orchestrator.runQuestions.length > 0 ? (
-        <RunOpenQuestion sessionId={session.id} questions={view.orchestrator.runQuestions} />
-      ) : null}
-      <RunPendingDelivery sessionId={session.id} />
-      {isMountBlocked ? (
-        <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-      ) : tail.blockedAgentId === null ? null : (
-        <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
-      )}
-      {blockedReason === '' ? null : (
-        <div data-orchestrated-block="" className="min-w-0 px-2">
-          <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
-        </div>
-      )}
-      {isReasonShown ? (
-        <Disclosure
-          label={
-            <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
-          }
-          isOpen={isWhyOpen}
-          onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
-          className="self-start"
-        >
-          <div data-orchestrated-reason="" className="min-w-0">
-            <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
+      {placement === 'before-state' ? questionCluster : null}
+      <div className="flex min-w-0 flex-col gap-1">
+        {isMountBlocked ? null : (
+          <TailLine
+            facts={{
+              state: tail.state,
+              phrase: tail.phrase,
+              startedAt: null,
+              stepAgentId: tail.stepAgentId,
+              actions: [],
+            }}
+            onAction={() => undefined}
+            verbs={
+              tailVerbs.length === 0
+                ? null
+                : tailVerbs.map((verb) => (
+                    <OrchestratedTailVerb
+                      key={verb.kind}
+                      session={session}
+                      view={view}
+                      verb={verb}
+                    />
+                  ))
+            }
+          />
+        )}
+        <RunPendingDelivery sessionId={session.id} />
+        {isMountBlocked ? (
+          <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
+        ) : tail.blockedAgentId === null ? null : (
+          <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
+        )}
+        {blockedReason === '' ? null : (
+          <div data-orchestrated-block="" className="min-w-0 px-2">
+            <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
           </div>
-        </Disclosure>
-      ) : null}
+        )}
+        {isReasonShown ? (
+          <Disclosure
+            label={
+              <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
+            }
+            isOpen={isWhyOpen}
+            onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
+            className="self-start"
+          >
+            <div data-orchestrated-reason="" className="min-w-0">
+              <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
+            </div>
+          </Disclosure>
+        ) : null}
+      </div>
+      {placement === 'after-state' ? questionCluster : null}
     </section>
   );
 };

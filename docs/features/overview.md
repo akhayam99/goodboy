@@ -63,7 +63,8 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Needs you**
 
 - It holds the **Decide** and **Fix** rows of Next: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations.
-- Its header counts them. Every group is open.
+- Its header counts them. The rows are flat, like the rows of **Waiting for you** under it: the icon sits in the same column and the rows are spaced the same.
+- With both kinds present, each kind has a quiet label with its count (**Decide 2**, **Fix 1**), no bar and no chevron. With one kind, the rows sit right under the header with no label.
 
 **Running**
 
@@ -80,7 +81,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Next**
 
-- It holds **Update** and **Ship**. Its groups fold until nothing needs you.
+- It holds **Update** and **Ship**, flat like **Needs you**: a quiet label with a count when both show, no label when one does.
 - Only one button is filled across both cards. It sits on the first row of **Needs you** or, with nothing there, the first row of **Next**.
 
 **Done**
@@ -161,8 +162,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 | **Ship**   | push, open a pull request, mark ready, merge, move the tracker item, clean up, and last **Archive this session** |
 
 - An empty group is not drawn. Each card counts its own rows in its header.
-- Each group folds behind its name with its row count. While folded, it shows the branches or plans it holds.
-- The first group with rows opens. What you open or fold stays as you left it for that session.
+- A group never folds. With two or more groups in a card, each shows its name and its row count above its rows; with one, the label is dropped.
 - Inside a group the row that unblocks most comes first. A plan that covers 4 branches comes before a single retry, and a rebase of 8 branches before one push.
 - Rows that unblock as much keep the place they had when they first showed in this window. A refresh never moves them and a new one lands after them.
 - **Archive this session** shows with the reason "All branches merged" (or "closed", or "merged or closed"). It needs every branch merged or closed and nothing running, waiting or asking.
@@ -201,7 +201,7 @@ When every open question out of view was asked by one Auto run (its root or an a
 
 **Act on a group**
 
-A group can act on its rows at once from its header.
+A group can act on its rows at once from its header. The button stays on the right of the group's label, or alone on that line when the label is dropped.
 
 - **Fix** with two or more stuck agents Auto can retry shows **Retry 3**. It counts the stuck agents folded into a branch row too.
 - **Retry 3** runs each agent's own **Retry**, so each one reports its own result. A row whose retry fails stays with its error. A second **Retry 3** runs again.
@@ -255,14 +255,14 @@ This part is for contributors and agents who change the feature.
 
 - Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**. `OverviewCard`, `NewSinceCard`, `LiveSection` and the Branches list draw their label with `SectionLabel`, level 2, and `CentralColumn` spaces the cards with `PANE_RHYTHM.groups`.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
-- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Waiting for you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `LIVE_COLUMNS`.
+- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Waiting for you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
 - Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`, `needsYouLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
-- Next groups: `nextGroupsOf`, `NextGroup` and the `next-view` store slice keep the fold state, and `nextUnblockCountOf` orders the rows.
+- Next groups: `nextGroupsOf`, `NextGroup` draws the quiet label and the bulk button, the `next-view` store slice keeps the order rows were first seen in, and `nextUnblockCountOf` orders the rows. The `u33-overview-needs-you` probe in `validate-scenes` measures that the two icon columns and the row gaps match.
 - Next row copy: `planSentenceOf` writes the plan sentence, `nextRowCopyOf` and `useBranchNames` write a **Fix** row, and `rebaseStopRowOf` writes a stopped rebase.
 - Folded rows: `foldDivergedIntoStops` in `actionCardsOf` folds a diverged card into its stopped rebase, `historyStopDetailOf` and `foldedVerbOf` word the folded stops, and `MENU_MAX_WIDTH` caps that menu.
 - Open questions of one Auto run: `askingAutoRootOf` finds the run, from the `rootAgentId` of the answer-questions suggestion.

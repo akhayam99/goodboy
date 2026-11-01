@@ -1,8 +1,11 @@
 import { StatusDot } from '@goodboy/ui';
 
 export const QuestionBlockingMark = () => (
-  <span className="inline-flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
+  <span
+    data-question-blocking=""
+    className="inline-flex shrink-0 items-center gap-1 text-meta text-muted-foreground"
+  >
     <StatusDot tone="warning" size="sm" />
-    Blocking
+    <span data-question-blocking-label="">Blocking</span>
   </span>
 );

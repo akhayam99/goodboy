@@ -1,12 +1,10 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
-import { FileText } from 'lucide-react';
-import { cn, ICON_SIZE, Markdown } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 
 import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { AnswerSubmitButton } from '../AnswerSubmitButton';
-import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
@@ -15,8 +13,8 @@ import { questionParts } from '../questionParts';
 import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
 import { QuestionAnswerDone } from './QuestionAnswerDone';
 import { QuestionAnswerInput } from './QuestionAnswerInput';
-import { QuestionBlockingMark } from './QuestionBlockingMark';
-import { QuestionCardTop } from './QuestionCardTop';
+import { QuestionCardHead } from './QuestionCardHead';
+import { inputModeOf } from './inputModeOf';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
 import { RESOLVED_BY_AGENT } from './resolvedByAgent';
@@ -46,19 +44,6 @@ type Props = {
 };
 
 const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on.';
-
-const inputModeOf = ({
-  question,
-  suggestions,
-}: {
-  readonly question: OpenQuestion;
-  readonly suggestions: ReadonlyArray<string>;
-}): AnswerInputMode => {
-  if (suggestions.length === 0) {
-    return 'text';
-  }
-  return question.selectMode === 'many' ? 'many' : 'one';
-};
 
 export const QuestionCard = ({
   question,
@@ -112,6 +97,7 @@ export const QuestionCard = ({
   const showsAnswerBox =
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
+  const dismiss = isOpen && !question.isBlocking && !isWaiting ? onDismiss : null;
   const isDelegateInFooter = isCompact && !isHandedOff;
   const delegateRow = (
     <DelegateAnswerRow
@@ -183,56 +169,16 @@ export const QuestionCard = ({
         isCompact ? 'gap-2 rounded-lg bg-subtle p-3' : 'gap-4',
       )}
     >
-      <QuestionCardTop
+      <QuestionCardHead
+        parts={parts}
+        isCompact={isCompact}
+        isBlocking={isBlockingNow}
         askerName={askerName}
         askerKind={askerKind}
-        isBlocking={isBlockingNow && !isCompact}
         age={age}
         pager={pager}
-        isInAskerConversation={isCompact}
-        onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
+        onDismiss={dismiss}
       />
-      <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-2' : 'gap-3')}>
-        <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-          <div className="flex min-w-0 items-baseline gap-2">
-            {isBlockingNow && isCompact ? <QuestionBlockingMark /> : null}
-            <h2
-              className={cn(
-                'min-w-0 break-words text-foreground select-text',
-                isCompact ? 'text-heading' : 'text-title',
-              )}
-            >
-              {parts.title}
-            </h2>
-          </div>
-          {parts.context.length > 0 && (
-            <Markdown
-              text={parts.context}
-              className={cn(
-                'min-w-0 gap-2 break-words text-body text-muted-foreground select-text',
-                isCompact && 'line-clamp-3',
-              )}
-            />
-          )}
-        </div>
-        {!isCompact && parts.files.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {parts.files.map((file) => (
-              <span
-                key={file}
-                className="inline-flex items-center gap-1 rounded-sm border border-border-soft bg-fill px-2 text-code text-muted-foreground"
-              >
-                <FileText
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-faint-foreground"
-                />
-                {file}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
       {showsAnswerBox && (
         <p className="rounded-md bg-fill px-3 py-2 text-body text-foreground select-text">
           {answerText}

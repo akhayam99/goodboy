@@ -136,6 +136,55 @@ describe('runTailOf', () => {
     ).toMatchObject({ state: 'paused', verb: { kind: 'raiseCap' } });
   });
 
+  it('keeps the limit in the phrase and the answer as the verb when questions wait on a run stopped at it', () => {
+    const open = JSON.parse(
+      '{"id":"q-window","sessionId":"s","text":"Batch refunds?","isBlocking":true,"userAnswer":null,"status":"open","createdAt":"2026-10-16T09:00:00.000Z"}',
+    );
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        run: aWorkflowRun({ orchestrationStop: { kind: 'budget', message: 'Paused' } }),
+        question: open,
+      }),
+    ).toMatchObject({ state: 'paused', phrase: 'Paused at the limit', verb: { kind: 'answer' } });
+  });
+
+  it.each([
+    ['failure', 'failed', 'The run stopped on an error'],
+    ['operator', 'stopped', 'Stopped by you'],
+    ['paused', 'stopped', 'Paused by you'],
+    ['needs-approval', 'waiting', 'Paused · needs your approval'],
+    ['plan-approval', 'waiting', 'The plan waits for your review'],
+    ['preset-change', 'waiting', 'Paused · the preset needs your call'],
+  ] as const)(
+    'names the %s stop instead of waiting for an answer when questions wait on it',
+    (kind, state, phrase) => {
+      const open = JSON.parse(
+        '{"id":"q-window","sessionId":"s","text":"Batch refunds?","isBlocking":true,"userAnswer":null,"status":"open","createdAt":"2026-10-16T09:00:00.000Z"}',
+      );
+      expect(
+        tailOf({
+          agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+          run: aWorkflowRun({ orchestrationStop: { kind, message: 'Stopped for Northwind' } }),
+          question: open,
+        }),
+      ).toMatchObject({ state, phrase, verb: { kind: 'answer' } });
+    },
+  );
+
+  it('keeps waiting for the answer on a stop that is only the questions', () => {
+    const open = JSON.parse(
+      '{"id":"q-window","sessionId":"s","text":"Batch refunds?","isBlocking":true,"userAnswer":null,"status":"open","createdAt":"2026-10-16T09:00:00.000Z"}',
+    );
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        run: aWorkflowRun({ orchestrationStop: { kind: 'questions', message: 'Asked' } }),
+        question: open,
+      })?.phrase,
+    ).toBe('Waiting for your answer');
+  });
+
   it('offers Continue step on a step you stopped', () => {
     expect(
       tailOf({ agents: agentsOf({ scout: 'completed', implementer: 'stopped' }) }),

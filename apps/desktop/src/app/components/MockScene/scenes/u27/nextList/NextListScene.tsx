@@ -7,7 +7,6 @@ import {
 import { NextStackView } from '../../../../../../features/session/central/next/NextStackView';
 import type { NextBranchName } from '../../../../../../features/session/central/next/nextRowCopyOf';
 import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
-import { useAppStore } from '../../../../../../store';
 import { SESSION_ID, seedResolveScene } from '../../resolveSeed';
 import { NextListBeforeView } from './NextListBeforeView';
 import { nextListBeforeActionsFor } from './nextListBeforeActionsFor';
@@ -44,14 +43,6 @@ type NameParams = {
   readonly card: ActionCardModel;
 };
 
-const nameOf = ({ card }: NameParams): string | null => {
-  const { source } = card;
-  if (source.kind === 'auto' && source.target.plan !== null) {
-    return source.target.plan.name;
-  }
-  return MOUNTS.find((candidate) => candidate.mountId === card.mountId)?.branch ?? null;
-};
-
 const branchOf = ({ card }: NameParams): NextBranchName | null => {
   const mount = MOUNTS.find((candidate) => candidate.mountId === card.mountId);
   return mount === undefined ? null : { branch: mount.branch, request: mount.request };
@@ -62,13 +53,8 @@ export const NextListScene = ({ theme, moment }: Props) => {
   useEffect(() => {
     applyDocumentTheme({ theme });
     seedResolveScene({ expandedThreadId: null });
-    if (moment === 'after-fix') {
-      const { chooseNextGroup } = useAppStore.getState();
-      chooseNextGroup({ sessionId: SESSION_ID, groupId: 'decide', isOpen: false });
-      chooseNextGroup({ sessionId: SESSION_ID, groupId: 'fix', isOpen: true });
-    }
     setIsReady(true);
-  }, [moment, theme]);
+  }, [theme]);
   if (!isReady) {
     return null;
   }
@@ -87,7 +73,6 @@ export const NextListScene = ({ theme, moment }: Props) => {
             cards={BUILT_CARDS}
             actionsFor={nextListBuiltActionsFor}
             chipFor={({ card }) => chipOf({ mountId: card.mountId })}
-            nameFor={nameOf}
             branchFor={branchOf}
           />
         )}

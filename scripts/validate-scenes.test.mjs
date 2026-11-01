@@ -25,6 +25,9 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
+import { questionCardFailures } from './validateScenesQuestionCard.mjs';
+import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
+import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
@@ -1210,6 +1213,131 @@ describe('listGridFitFailures', () => {
   });
 });
 
+describe('rowAlignFailures', () => {
+  const aligned = {
+    needs: { count: 3, left: 48, gaps: [4] },
+    waiting: { count: 2, left: 48.4, gaps: [4] },
+    frame: { width: 680, bottom: 700, lastRowBottom: 640, neighbours: 0 },
+  };
+  const run = (measured) => rowAlignFailures({ scene: 'fixture', width: 1024, measured });
+
+  it('fails a frame that cuts off the last Waiting for you row', () => {
+    const failures = run({ ...aligned, frame: { ...aligned.frame, lastRowBottom: 760 } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the frame cuts off the last Waiting for you row'],
+    );
+  });
+
+  it('fails a frame that shows a neighbour card', () => {
+    assert.deepEqual(
+      run({ ...aligned, frame: { ...aligned.frame, neighbours: 2 } }).map(
+        (failure) => failure.check,
+      ),
+      ['the frame shows a card next to Needs you and Waiting for you'],
+    );
+  });
+
+  it('fails a scene with no frame around the sections', () => {
+    assert.deepEqual(
+      run({ ...aligned, frame: { ...aligned.frame, width: null, lastRowBottom: null } }).map(
+        (failure) => failure.check,
+      ),
+      ['no data-shot frame around the two sections'],
+    );
+  });
+
+  it('passes icons on the same left edge and the same row gap', () => {
+    assert.deepEqual(run(aligned), []);
+  });
+
+  it('fails a Needs you icon indented past the Waiting for you icon', () => {
+    const failures = run({ ...aligned, needs: { ...aligned.needs, left: 96 } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the icon of a Needs you row does not line up with the icon of a Waiting for you row'],
+    );
+    assert.equal(failures[0]?.needsLeft, 96);
+    assert.equal(failures[0]?.waitingLeft, 48.4);
+  });
+
+  it('fails a row gap that differs between the two sections', () => {
+    const failures = run({ ...aligned, needs: { ...aligned.needs, gaps: [8] } });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['the row gap of Needs you differs from the row gap of Waiting for you'],
+    );
+  });
+
+  it('allows a sub-pixel difference within the tolerance', () => {
+    assert.deepEqual(
+      run({ ...aligned, waiting: { ...aligned.waiting, left: 48.9, gaps: [4.6] } }),
+      [],
+    );
+  });
+
+  it('fails a scene with a section that has no row', () => {
+    assert.deepEqual(
+      run({ ...aligned, waiting: { count: 0, left: null, gaps: [] } }).map(
+        (failure) => failure.check,
+      ),
+      ['no Needs you row and Waiting for you row to compare'],
+    );
+  });
+
+  it('fails a section with no two rows to measure a gap between', () => {
+    assert.deepEqual(
+      run({ ...aligned, needs: { ...aligned.needs, gaps: [] } }).map((failure) => failure.check),
+      ['a section has no two rows to measure a gap between'],
+    );
+  });
+});
+
+describe('rowAlignProbe', () => {
+  const box = ({ top, bottom, left = 48 }) => ({ top, bottom, left, width: 600 });
+  const rowOf = ({ top, bottom, isChild = false, section = 'needs-you' }) => ({
+    getBoundingClientRect: () => box({ top, bottom }),
+    querySelector: () => ({ getBoundingClientRect: () => box({ top, bottom }) }),
+    closest: (selector) => {
+      if (selector === '[data-live-child]') {
+        return isChild ? {} : null;
+      }
+      return section;
+    },
+  });
+
+  const probeWith = ({ waiting }) => {
+    const previous = globalThis.document;
+    globalThis.document = {
+      querySelector: () => null,
+      querySelectorAll: (selector) => {
+        if (selector === '[data-running-rows] [data-live-row]') {
+          return waiting;
+        }
+        return [];
+      },
+    };
+    try {
+      return rowAlignProbe();
+    } finally {
+      globalThis.document = previous;
+    }
+  };
+
+  it('measures the gap between the two Waiting for you rows, not their child rows', () => {
+    const measured = probeWith({
+      waiting: [
+        rowOf({ top: 0, bottom: 36 }),
+        rowOf({ top: 40, bottom: 76 }),
+        rowOf({ top: 76, bottom: 104, isChild: true }),
+        rowOf({ top: 104, bottom: 132, isChild: true }),
+      ],
+    });
+    assert.deepEqual(measured.waiting.gaps, [4]);
+    assert.equal(measured.waiting.count, 2);
+  });
+});
+
 describe('releaseImageShapeFailures', () => {
   const measured = ({ shown, frameHeight, src = 'after' }) => ({
     src,
@@ -1269,5 +1397,125 @@ describe('releaseImageShapeFailures', () => {
     assert.deepEqual(checksOf([{ label: 'wide', after: null, afterPress: null }]), [
       'a picture is shown inside its frame',
     ]);
+  });
+});
+
+describe('runTailFitFailures', () => {
+  const rect = (top, bottom) => ({ top, bottom, left: 24, right: 656 });
+  const measured = {
+    frame: { ...rect(0, 755), width: 680 },
+    card: rect(244, 464),
+    cardContent: { scrollHeight: 220, clientHeight: 220 },
+    lastChildBottom: 450,
+    clippers: [],
+    tails: [{ text: 'Paused at the $5 limit for this session.', ...rect(560, 590) }],
+    hasComposer: true,
+    hasChecklist: true,
+    hasSidebar: false,
+  };
+  const checksOf = (override) =>
+    runTailFitFailures({
+      scene: 'fixture',
+      width: 1024,
+      measured: { ...measured, ...override },
+    }).map((failure) => failure.check);
+
+  it('passes a card that shows whole beside its stop line and composer', () => {
+    assert.deepEqual(checksOf({}), []);
+  });
+
+  it('fails a card cut off by a scroll container that ends above its bottom', () => {
+    assert.deepEqual(
+      checksOf({
+        card: rect(628, 868),
+        clippers: [{ name: 'mask-fade-y overflow-y-auto', ...rect(0, 701) }],
+        frame: { ...rect(0, 900), width: 680 },
+      }),
+      ['no container clips the question card'],
+    );
+  });
+
+  it('fails a card whose content is taller than the card', () => {
+    assert.deepEqual(
+      checksOf({ cardContent: { scrollHeight: 260, clientHeight: 220 }, lastChildBottom: 500 }),
+      ['the question card holds all its content', 'the last line of the card sits inside the card'],
+    );
+  });
+
+  it('fails a frame without the stop line or the composer', () => {
+    assert.deepEqual(
+      checksOf({
+        tails: [],
+        hasComposer: false,
+      }),
+      ['the stop line shows with the questions', 'the frame holds the composer'],
+    );
+  });
+
+  it('fails a frame that holds the sidebar', () => {
+    assert.deepEqual(checksOf({ hasSidebar: true }), [
+      'the frame holds the run tail without the sidebar',
+    ]);
+  });
+
+  it('fails a scene with no question card', () => {
+    assert.deepEqual(
+      runTailFitFailures({ scene: 'fixture', width: 1024, measured: null }).map(
+        (failure) => failure.check,
+      ),
+      ['the run tail shows a question card inside a data-shot frame'],
+    );
+  });
+});
+
+describe('questionCardFailures', () => {
+  const card = {
+    name: 'pager',
+    hasControls: true,
+    titleLines: 1,
+    baselineDelta: 0.2,
+    pagerDelta: 0,
+    dotDelta: 0.3,
+    edgeDelta: 0,
+    emptyBoxes: [],
+    overflow: 0,
+  };
+  const checksOf = (override) =>
+    questionCardFailures({
+      scene: 'fixture',
+      width: 360,
+      measured: [{ ...card, ...override }],
+    }).map((failure) => failure.check);
+
+  it('passes a card whose Blocking, question and pager share one row', () => {
+    assert.deepEqual(checksOf({}), []);
+  });
+
+  it('fails a baseline, a pager top and a dot that drift', () => {
+    assert.deepEqual(checksOf({ baselineDelta: 3, pagerDelta: 9, dotDelta: 2 }), [
+      'Blocking and the pager count share a baseline',
+      'Blocking and the pager share one centre line',
+      'the dot is centred on Blocking',
+    ]);
+  });
+
+  it('fails an empty box above the question and a header off the card edge', () => {
+    assert.deepEqual(checksOf({ emptyBoxes: [{ tag: 'div', height: 24 }], edgeDelta: 40 }), [
+      'the question starts on the card edge',
+      'no empty box above the question',
+    ]);
+  });
+
+  it('fails a card that overflows on the right', () => {
+    assert.deepEqual(checksOf({ overflow: 2 }), ['nothing leaves the card on the right']);
+  });
+
+  it('fails a scene with no card', () => {
+    assert.deepEqual(
+      questionCardFailures({ scene: 'fixture', width: 360, measured: [] }).map(
+        (failure) => failure.check,
+      ),
+      ['the scene shows question cards'],
+    );
   });
 });
