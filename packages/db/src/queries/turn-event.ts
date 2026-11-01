@@ -44,6 +44,7 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
         ...(event.model !== undefined ? { model: markTruncated(event.model) } : {}),
         ...(event.handoffId !== undefined ? { handoffId: event.handoffId } : {}),
         ...(event.sentVia !== undefined ? { sentVia: event.sentVia } : {}),
+        ...(event.deliveryId !== undefined ? { deliveryId: event.deliveryId } : {}),
         ...(event.deliveredBy !== undefined ? { deliveredBy: event.deliveredBy } : {}),
         at: event.at,
       };
@@ -301,6 +302,28 @@ export const countUserTextEvents = async ({
     [agentId],
   );
   return rows[0]?.count ?? 0;
+};
+
+type HasDeliveredTurnParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+  readonly deliveryId: string;
+};
+
+export const hasDeliveredTurn = async ({
+  db,
+  agentId,
+  deliveryId,
+}: HasDeliveredTurnParams): Promise<boolean> => {
+  const rows = await db.select<CountRow>(
+    `SELECT COUNT(*) AS count
+     FROM turn_events
+     WHERE agent_id = ?
+       AND json_extract(payload, '$.kind') = 'user_text'
+       AND json_extract(payload, '$.deliveryId') = ?`,
+    [agentId, deliveryId],
+  );
+  return (rows[0]?.count ?? 0) > 0;
 };
 
 type TextRow = {

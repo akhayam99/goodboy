@@ -1,4 +1,6 @@
+import { hasDeliveredTurn } from '@goodboy/db';
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
@@ -39,14 +41,30 @@ export const deliverQueuedTurn = async ({
     writeAgentQueue({ set, agentId, queue: [{ ...turn, status: 'queued' }, ...rest] });
     await persistAgentQueue({ get, agentId });
   };
+  const deliveryId = `queue:${turn.id}`;
   let isAccepted = false;
+  try {
+    const isDelivered = await hasDeliveredTurn({ db: tauriDatabase, agentId, deliveryId });
+    if (isDelivered) {
+      await accept();
+      return 'delivered';
+    }
+  } catch (error) {
+    void get().reportError({
+      title: "Couldn't check the queued message",
+      error,
+      sessionId,
+    });
+    await hold();
+    return 'held';
+  }
   try {
     const result = await get().sendTurn({
       sessionId,
       agentId,
       content: turn.content,
       origin: 'operator',
-      deliveryId: `queue:${turn.id}`,
+      deliveryId,
       ...(turn.attachments.length > 0 && {
         attachments: turn.attachments.map(storedToAttachmentInput),
       }),
