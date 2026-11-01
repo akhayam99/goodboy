@@ -1,12 +1,10 @@
-import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
-import { FileText } from 'lucide-react';
-import { cn, ICON_SIZE, Markdown } from '@goodboy/ui';
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { cn } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 
 import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { AnswerSubmitButton } from '../AnswerSubmitButton';
-import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
 import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
 import { orderSuggestions } from '../orderSuggestions';
@@ -14,9 +12,11 @@ import { questionParts } from '../questionParts';
 import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
 import { QuestionAnswerDone } from './QuestionAnswerDone';
 import { QuestionAnswerInput } from './QuestionAnswerInput';
-import { QuestionBlockingMark } from './QuestionBlockingMark';
+import { QuestionCardText } from './QuestionCardText';
 import { QuestionCardTop } from './QuestionCardTop';
 import { QuestionDelegateRow } from './QuestionDelegateRow';
+import { QuestionReadOnlyHint } from './QuestionReadOnlyHint';
+import { inputModeOf } from './inputModeOf';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
 import { RESOLVED_BY_AGENT } from './resolvedByAgent';
@@ -36,6 +36,8 @@ type Props = {
   readonly answeredByName?: string | null;
   readonly autoFocus?: boolean;
   readonly isReadOnly?: boolean;
+  readonly readOnlyHint?: string | null;
+  readonly readOnlyAction?: ReactNode;
   readonly onToggleSuggestion: (suggestion: string) => void;
   readonly onToggleCustomField: () => void;
   readonly onSetCustomAnswer: (text: string) => void;
@@ -47,19 +49,6 @@ type Props = {
 };
 
 const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on.';
-
-const inputModeOf = ({
-  question,
-  suggestions,
-}: {
-  readonly question: OpenQuestion;
-  readonly suggestions: ReadonlyArray<string>;
-}): AnswerInputMode => {
-  if (suggestions.length === 0) {
-    return 'text';
-  }
-  return question.selectMode === 'many' ? 'many' : 'one';
-};
 
 export const QuestionCard = ({
   question,
@@ -74,6 +63,8 @@ export const QuestionCard = ({
   answeredByName = null,
   autoFocus = false,
   isReadOnly = false,
+  readOnlyHint = null,
+  readOnlyAction = null,
   onToggleSuggestion,
   onToggleCustomField,
   onSetCustomAnswer,
@@ -85,6 +76,7 @@ export const QuestionCard = ({
 }: Props) => {
   const articleRef = useRef<HTMLElement>(null);
   const blockingId = useId();
+  const readOnlyHintId = useId();
   const isCompact = variant === 'compact';
 
   useEffect(() => {
@@ -113,6 +105,11 @@ export const QuestionCard = ({
   const answerText = question.userAnswer ?? '';
   const showsAnswerBox =
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
+
+  const isHintShown = isReadOnly && readOnlyHint !== null;
+  const describedBy = [isBlockingNow ? blockingId : '', isHintShown ? readOnlyHintId : '']
+    .filter((id) => id !== '')
+    .join(' ');
 
   const isDelegateInFooter = isCompact && !isHandedOff;
   const delegateRow = <QuestionDelegateRow delegate={delegate} isDisabled={isReadOnly} />;
@@ -166,7 +163,7 @@ export const QuestionCard = ({
       data-question-card={question.id}
       data-state={state}
       aria-label={parts.title}
-      aria-describedby={isBlockingNow ? blockingId : undefined}
+      aria-describedby={describedBy === '' ? undefined : describedBy}
       onKeyDown={handleKeyDown}
       style={{ outline: 'none' }}
       className={cn(
@@ -183,47 +180,7 @@ export const QuestionCard = ({
         isInAskerConversation={isCompact}
         onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
       />
-      <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-2' : 'gap-3')}>
-        <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-          <div className="flex min-w-0 items-baseline gap-2">
-            {isBlockingNow && isCompact ? <QuestionBlockingMark /> : null}
-            <h2
-              className={cn(
-                'min-w-0 break-words text-foreground select-text',
-                isCompact ? 'text-heading' : 'text-title',
-              )}
-            >
-              {parts.title}
-            </h2>
-          </div>
-          {parts.context.length > 0 && (
-            <Markdown
-              text={parts.context}
-              className={cn(
-                'min-w-0 gap-2 break-words text-body text-muted-foreground select-text',
-                isCompact && 'line-clamp-3',
-              )}
-            />
-          )}
-        </div>
-        {!isCompact && parts.files.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {parts.files.map((file) => (
-              <span
-                key={file}
-                className="inline-flex items-center gap-1 rounded-sm border border-border-soft bg-fill px-2 text-code text-muted-foreground"
-              >
-                <FileText
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-faint-foreground"
-                />
-                {file}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      <QuestionCardText parts={parts} isCompact={isCompact} isBlocking={isBlockingNow} />
       {showsAnswerBox && (
         <p className="rounded-md bg-fill px-3 py-2 text-body text-foreground select-text">
           {answerText}
@@ -264,11 +221,15 @@ export const QuestionCard = ({
             optionCount={suggestions.length}
             canAnswer={canAnswer}
             isHandOff={isHandedOff}
+            isReadOnly={isReadOnly}
             onAnswer={submit}
             onSkip={onSkip}
             onSendAsMessage={onSendAsMessage}
           />
         </>
+      )}
+      {isHintShown && (
+        <QuestionReadOnlyHint id={readOnlyHintId} hint={readOnlyHint} action={readOnlyAction} />
       )}
       {!isOpen && (
         <QuestionAnswerDone

@@ -2,18 +2,13 @@ import type { ReactNode } from 'react';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { OpenQuestionCluster } from '../../../chat/openQuestionSurfaces';
 
-type RunQuestionsReadOnly = {
-  readonly hint: string;
-  readonly action: ReactNode;
-};
-
 type Props = {
   readonly sessionId: SessionId;
   readonly questions: ReadonlyArray<OpenQuestion>;
-  readonly readOnly?: RunQuestionsReadOnly | null;
+  readonly readOnlyAction?: ReactNode;
 };
 
-export const RunOpenQuestion = ({ sessionId, questions, readOnly = null }: Props) => {
+export const RunOpenQuestion = ({ sessionId, questions, readOnlyAction = null }: Props) => {
   const first = questions[0];
   if (first === undefined) {
     return null;
@@ -23,14 +18,8 @@ export const RunOpenQuestion = ({ sessionId, questions, readOnly = null }: Props
       <OpenQuestionCluster
         questions={questions}
         sessionId={sessionId}
-        isReadOnly={readOnly !== null}
+        readOnlyAction={readOnlyAction}
       />
-      {readOnly === null ? null : (
-        <div data-run-questions-hint="" className="flex min-w-0 items-center gap-2 px-2 text-ui">
-          <span className="min-w-0 text-muted-foreground">{readOnly.hint}</span>
-          {readOnly.action}
-        </div>
-      )}
     </div>
   );
 };

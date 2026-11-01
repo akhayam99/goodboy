@@ -53,7 +53,7 @@ export const runTailFitProbe = () => {
           },
     answerEnabled:
       card === null
-        ? []
+        ? 0
         : [...card.querySelectorAll('button')].filter(
             (button) => /^Answer$/.test(button.textContent?.trim() ?? '') && !button.disabled,
           ).length,
@@ -134,10 +134,11 @@ export const runTailFitFailures = ({
       failures.push({ scene, width, check: 'the stop action sits next to the questions' });
     }
     if (
-      measured.hint.top < card.bottom - tolerance ||
+      measured.hint.top < card.top - tolerance ||
+      measured.hint.bottom > card.bottom + tolerance ||
       measured.hint.bottom > frame.bottom + tolerance
     ) {
-      failures.push({ scene, width, check: 'the hint sits under the card inside the frame' });
+      failures.push({ scene, width, check: 'the hint sits inside the card inside the frame' });
     }
   }
   if (measured.answerEnabled > 0) {

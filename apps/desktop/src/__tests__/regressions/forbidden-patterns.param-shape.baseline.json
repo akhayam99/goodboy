@@ -371,7 +371,7 @@
     "apps/desktop/src/features/context/components/QuestionsTab/askerQuestions/index.ts": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/CustomAnswerField/index.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/deriveSuggestions/index.ts": 5,
-    "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 2,
+    "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/QuestionAnswerInput.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/useOpenQuestions.ts": 13,

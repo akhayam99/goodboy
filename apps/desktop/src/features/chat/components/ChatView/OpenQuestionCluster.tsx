@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
@@ -12,7 +12,7 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly sessionId: SessionId;
-  readonly isReadOnly?: boolean;
+  readonly readOnlyAction?: ReactNode;
 };
 
 type MoveParams = {
@@ -36,7 +36,7 @@ const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null 
   return null;
 };
 
-export const OpenQuestionCluster = ({ questions, sessionId, isReadOnly = false }: Props) => {
+export const OpenQuestionCluster = ({ questions, sessionId, readOnlyAction = null }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
@@ -116,13 +116,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, isReadOnly = false }
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
       {waiting.map((q) => (
-        <LiveQuestionCard
-          key={q.id}
-          question={q}
-          sessionId={sessionId}
-          variant="compact"
-          isReadOnly={isReadOnly}
-        />
+        <LiveQuestionCard key={q.id} question={q} sessionId={sessionId} variant="compact" />
       ))}
       {current !== null && (
         <LiveQuestionCard
@@ -131,11 +125,11 @@ export const OpenQuestionCluster = ({ questions, sessionId, isReadOnly = false }
           sessionId={sessionId}
           variant="compact"
           autoFocus={focusId !== null && focusId === current.id}
-          isReadOnly={isReadOnly}
+          readOnlyAction={readOnlyAction}
           pager={pager}
           onAnswered={handleAnswered}
           onSkip={handleSkip}
-          onDismiss={isReadOnly ? null : () => void dismissOpenQuestion(sessionId, current)}
+          onDismiss={() => void dismissOpenQuestion(sessionId, current)}
         />
       )}
     </div>

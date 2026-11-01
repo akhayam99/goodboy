@@ -19,6 +19,7 @@ import {
   questionDelegates,
 } from '../../../features/context/questionDelegate';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { stoppedQuestionHintOf } from './stoppedQuestionHintOf';
 import type { GetFn } from './types';
 
 export type QuestionDelegateRequest = {
@@ -94,6 +95,20 @@ export const spawnQuestionDelegates = (get: GetFn) => {
       const { question } = request;
       const agents = get().sessionPhaseRuns[sessionId] ?? [];
       const asker = askerOf({ agents, question });
+
+      const stoppedHint = stoppedQuestionHintOf({ get, sessionId, questions: [question] });
+      if (stoppedHint !== null) {
+        outcomes.push({ questionId: question.id, agentId: null, kind: 'refused' });
+        void get().emitNotification({
+          kind: 'agent-auto-spawn',
+          severity: 'warning',
+          title: 'This question cannot be delegated',
+          body: stoppedHint,
+          sessionId,
+          coalesceKey: `question-delegate:${question.id}`,
+        });
+        continue;
+      }
 
       if (!canDelegateQuestion({ asker })) {
         outcomes.push({ questionId: question.id, agentId: null, kind: 'refused' });

@@ -119,6 +119,8 @@ Each question arrives as one card with who asks, whether it is **Blocking**, and
 
 Hand a question to another agent with a hint and a model from **Let an agent decide**, then press **Hand off**. Its answer counts as yours, and **Answer it yourself** takes it back.
 
+A stopped run keeps its questions in view, in Needs you, in the chat and on the run page, but none can be answered until the stop clears. Each card says how to go on. **Raise limit** unlocks them once the new limit covers the spend.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Questions page of a session with Which queue should the delivery retries run on? open in the drawer on Let an agent decide: An agent decides with GPT-5.6 Terra Medium, a hints box, Cancel, Skip and Hand off">
@@ -135,10 +137,11 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 This part is for contributors and agents who change the feature.
 
 - Stopped run questions: `runQuestionsPlacementOf` decides if `OrchestratedTail` draws the run's open questions, and where. They show in the paused, limit, failed, stopped, needs-approval and plan-approval phases, before the state line when one question `isBlocking`, else after it. A closed run, a finished run and the in-flight phases hide them. A preset run keeps its stop phrase through `runTailOf` and shows the same cluster once.
-- Stopped run questions are read only. `RunOpenQuestion` passes `readOnly` to `OpenQuestionCluster`, which passes `isReadOnly` down to `QuestionCard`. `canAnswer` is false and the keys do nothing. The options, the custom field, the delegate row and Send as message are disabled.
-- Stopped run answers: nothing reaches the store while the run is stopped, so nothing waits for delivery. When the stop clears, the phase is `needs-answer` and `answerOpenQuestions` sends the way it always did.
-- Stopped run hint: `runQuestionsHintOf` words the line from `run.orchestrationStop.kind`. `runQuestionsActionOf` keeps the primary of the run: `resume`, `raise-cap`, `continue`, `retry`, `review-plan` or `approve-plan`.
-- Stopped run action: the tail draws that primary with `RunPrimaryAction` beside the line, because the tail line carries no primary verb. A needs-approval or preset-change stop has no primary, so the line stands alone.
+- Stopped run questions are read only on every surface. `questionStopOf` is the one predicate: the stop of the run the question belongs to, other than `questions`. `LiveQuestionCard` reads it through `useQuestionStopHint`. The Needs you drawer, the chat transcript (`OpenQuestionCluster`) and the run tails all render the same read only `QuestionCard`. `canAnswer` is false and the keys do nothing. The options, the custom field, the delegate row (the chosen state too) and Send as message are disabled. The key hint is gone.
+- Stopped run guard: `answerOpenQuestions` throws the hint, `sendQuestionAsMessage` refuses and `spawnQuestionDelegates` returns `refused` for a question of a stopped run (`stoppedQuestionHintOf`), so no surface can send around the card. The header Answer button only opens the card.
+- Stopped run hint: `runQuestionsHintOf` words the line from `run.orchestrationStop.kind`, and the card ties it to itself with `aria-describedby`. `runQuestionsActionOf` resolves the action from the stop, not from the filtered primary. It gives `raise-cap`, `retry`, `continue`, `resume`, or the plan primary on a plan-approval stop. The tails pass it to `RunOpenQuestion` as `readOnlyAction`, drawn beside the hint. A needs-approval or preset-change stop has no action.
+- Stopped run tail of a preset run: `stoppedQuestionTailOf` gives each non-question stop kind its own phrase, so no stop reads "Waiting for your answer" next to a disabled card.
+- Stopped run answers: nothing reaches the store while the run is stopped. When the stop clears, the phase is `needs-answer` and `answerOpenQuestions` sends the way it always did. `setWorkflowRunSpendLimit` ends in `clearCoveredBudgetStop`. When a `budget` stop holds a run with open questions and the new limit covers the spend, only the stop is cleared. No step starts.
 - Run page checklist: `RunTreeChecklistCells` sets a step that runs, waits or failed in `text-row-strong`.
 - Every other step is `text-ui`, gray until hover.
 - `OrchestratedChecklist` draws the **Steps** label with `SectionLabel` and counts the top-level agents once.

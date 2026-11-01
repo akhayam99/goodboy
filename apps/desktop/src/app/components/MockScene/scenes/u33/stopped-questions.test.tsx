@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
-import type { WorkflowOrchestrationStop } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type WorkflowOrchestrationStop } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useOpenQuestions } from '../../../../../features/context/components/QuestionsTab/useOpenQuestions';
 import {
@@ -172,7 +172,11 @@ const click = async ({ node }: ClickParams): Promise<void> => {
   });
 };
 
-const isDisabled = (node: HTMLElement): boolean =>
+type DisabledParams = {
+  readonly node: HTMLElement;
+};
+
+const isDisabled = ({ node }: DisabledParams): boolean =>
   (node instanceof HTMLButtonElement && node.disabled) ||
   node.getAttribute('aria-disabled') === 'true';
 
@@ -232,23 +236,27 @@ describe('the u33 stopped run questions scene', () => {
       await mount({ stop: stopCase.stop });
       const cluster = clusters()[0]!;
 
-      expect(isDisabled(within(cluster).getByRole('button', { name: 'Answer' }))).toBe(true);
+      expect(isDisabled({ node: within(cluster).getByRole('button', { name: 'Answer' }) })).toBe(
+        true,
+      );
       within(cluster)
         .getAllByRole('radio')
-        .forEach((option) => expect(isDisabled(option)).toBe(true));
+        .forEach((option) => expect(isDisabled({ node: option })).toBe(true));
       const sendAsMessage = within(cluster).queryByRole('button', { name: 'Send as message' });
-      expect(sendAsMessage === null || isDisabled(sendAsMessage)).toBe(true);
+      expect(sendAsMessage === null || isDisabled({ node: sendAsMessage })).toBe(true);
       const delegate = within(cluster).queryByTestId('delegate-answer-row');
-      expect(delegate === null || isDisabled(delegate)).toBe(true);
+      expect(delegate === null || isDisabled({ node: delegate })).toBe(true);
 
       const row = hintRow();
-      expect(row.parentElement).toBe(cluster);
+      expect(cluster.contains(row)).toBe(true);
       within(row).getByText(stopCase.hint);
       if (stopCase.action === null) {
         expect(within(row).queryAllByRole('button')).toHaveLength(0);
         return;
       }
-      expect(isDisabled(within(row).getByRole('button', { name: stopCase.action }))).toBe(false);
+      expect(isDisabled({ node: within(row).getByRole('button', { name: stopCase.action }) })).toBe(
+        false,
+      );
     },
   );
 
@@ -256,6 +264,15 @@ describe('the u33 stopped run questions scene', () => {
     await mount({ stop: stopCase.stop });
     const sendTurn = stubAnswerStore();
     const card = within(clusters()[0]!).getByRole('article');
+    act(() => {
+      useOpenQuestions
+        .getState()
+        .toggleSuggestion(
+          brandId<OpenQuestionId>({ value: STOPPED_FIRST_QUESTION_ID }),
+          'Batch them',
+          'one',
+        );
+    });
 
     for (const key of ['1', '2', '3', '4', 'Enter']) {
       await act(async () => {
@@ -263,11 +280,9 @@ describe('the u33 stopped run questions scene', () => {
       });
     }
 
-    within(card)
-      .getAllByRole('radio')
-      .forEach((option) => expect(option.getAttribute('aria-checked')).toBe('false'));
     expect(sendTurn).not.toHaveBeenCalled();
     expect(useOpenQuestions.getState().staged).toEqual([]);
+    expect(within(card).getByRole('button', { name: 'Answer' })).toHaveProperty('disabled', true);
   });
 
   it('puts the questions before the stop line when they block the run', async () => {

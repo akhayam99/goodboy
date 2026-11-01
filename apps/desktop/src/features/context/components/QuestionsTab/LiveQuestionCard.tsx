@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -9,6 +9,7 @@ import {
   useSendQuestionAsMessage,
 } from '../../hooks/useSendQuestionAsMessage';
 import { useQuestionDelegateControls } from '../../hooks/useQuestionDelegateControls';
+import { useQuestionStopHint } from '../../hooks/useQuestionStopHint';
 import { QuestionCard, type QuestionCardState } from './QuestionCard';
 import type { QuestionPagerModel } from './QuestionCard/QuestionPager';
 import { useOpenQuestions } from './useOpenQuestions';
@@ -23,6 +24,7 @@ type Props = {
   readonly settled?: 'answered' | 'dismissed' | null;
   readonly autoFocus?: boolean;
   readonly isReadOnly?: boolean;
+  readonly readOnlyAction?: ReactNode;
   readonly onAnswered?: (question: OpenQuestion) => void;
   readonly onSkip?: (() => void) | null;
   readonly onDismiss?: (() => void) | null;
@@ -39,6 +41,7 @@ export const LiveQuestionCard = ({
   settled = null,
   autoFocus = false,
   isReadOnly = false,
+  readOnlyAction = null,
   onAnswered,
   onSkip = null,
   onDismiss = null,
@@ -52,6 +55,8 @@ export const LiveQuestionCard = ({
       : (state.agentKindOverride?.[question.createdByAgentId] ?? null),
   );
   const draft = useOpenQuestions((state) => state.drafts[question.id]);
+  const stopHint = useQuestionStopHint({ sessionId, question });
+  const isStopped = stopHint !== null;
   const isStaged = useOpenQuestions((state) => state.staged.includes(question.id));
   const toggleSuggestion = useOpenQuestions((state) => state.toggleSuggestion);
   const toggleCustomField = useOpenQuestions((state) => state.toggleCustomField);
@@ -124,7 +129,9 @@ export const LiveQuestionCard = ({
         delegate={delegate}
         answeredByName={answeredBy}
         autoFocus={autoFocus}
-        isReadOnly={isReadOnly}
+        isReadOnly={isReadOnly || isStopped}
+        readOnlyHint={stopHint}
+        readOnlyAction={isStopped ? readOnlyAction : null}
         onToggleSuggestion={(suggestion) => toggleSuggestion(question.id, suggestion, mode)}
         onToggleCustomField={() => toggleCustomField(question.id, mode)}
         onSetCustomAnswer={(text) => setCustomAnswer(question.id, text)}
@@ -136,7 +143,7 @@ export const LiveQuestionCard = ({
             ? handleUndo
             : null
         }
-        onDismiss={onDismiss}
+        onDismiss={isStopped ? null : onDismiss}
       />
     </div>
   );

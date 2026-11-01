@@ -8,7 +8,9 @@ import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { DelegateAnswerRow } from '.';
 
 vi.mock('../../../../../shared/components/RoutingPicker', () => ({
-  RoutingPicker: () => <span data-testid="routing-picker" />,
+  RoutingPicker: ({ disabled }: { disabled: boolean }) => (
+    <span data-testid="routing-picker" aria-disabled={disabled} />
+  ),
 }));
 
 afterEach(cleanup);
@@ -47,6 +49,19 @@ describe('DelegateAnswerRow', () => {
     fireEvent.click(screen.getByRole('button', { name: QUESTION_DELEGATE_COPY.cancel }));
     expect(props.onHints).toHaveBeenCalledWith('weigh the cost');
     expect(props.onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('disables the routing, the hints and Cancel once chosen while read only', () => {
+    const props = renderRow({ state: 'chosen', isDisabled: true });
+    expect(screen.getByTestId('routing-picker').getAttribute('aria-disabled')).toBe('true');
+    const cancel = screen.getByRole('button', { name: QUESTION_DELEGATE_COPY.cancel });
+    expect(cancel).toHaveProperty('disabled', true);
+    expect(screen.getByRole('textbox', { name: 'Hints for the delegated agent' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    fireEvent.click(cancel);
+    expect(props.onCancel).not.toHaveBeenCalled();
   });
 
   it('offers a retry after the delegated agent failed', () => {

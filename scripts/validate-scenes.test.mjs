@@ -1408,7 +1408,7 @@ describe('runTailFitFailures', () => {
     lastChildBottom: 450,
     clippers: [],
     tails: [{ text: 'Paused at the $5 limit for this session.', ...rect(560, 590) }],
-    hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(472, 500) },
+    hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(430, 458) },
     answerEnabled: 0,
     hasComposer: true,
     hasChecklist: true,
@@ -1429,7 +1429,7 @@ describe('runTailFitFailures', () => {
     assert.deepEqual(
       checksOf({
         card: rect(628, 868),
-        hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(876, 900) },
+        hint: { text: 'Raise the limit to answer', buttons: ['Raise limit'], ...rect(834, 862) },
         clippers: [{ name: 'mask-fade-y overflow-y-auto', ...rect(0, 701) }],
         frame: { ...rect(0, 900), width: 680 },
       }),
@@ -1448,7 +1448,7 @@ describe('runTailFitFailures', () => {
     assert.deepEqual(
       checksOf({
         tails: [],
-        hint: { text: 'Raise the limit to answer', buttons: [], ...rect(472, 500) },
+        hint: { text: 'Raise the limit to answer', buttons: [], ...rect(430, 458) },
         hasComposer: false,
       }),
       [

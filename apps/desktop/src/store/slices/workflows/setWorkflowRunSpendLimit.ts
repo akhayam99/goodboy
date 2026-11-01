@@ -1,6 +1,7 @@
 import type { SessionId, WorkflowRunId, WorkflowSpendLimitMode } from '@goodboy/types';
 import { updateWorkflowRunSpendLimit } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { clearCoveredBudgetStop } from './runState/clearCoveredBudgetStop';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -32,5 +33,6 @@ export const setWorkflowRunSpendLimit = (set: SetFn, get: GetFn) => {
       const { [workflowRunId]: _cleared, ...announcedRunBudget } = state.announcedRunBudget ?? {};
       return { announcedRunBudget };
     });
+    await clearCoveredBudgetStop({ set, get, sessionId, workflowRunId });
   };
 };

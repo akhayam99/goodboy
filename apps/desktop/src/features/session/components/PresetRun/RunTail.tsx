@@ -11,7 +11,7 @@ import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-k
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
-import { runQuestionsActionOf, runQuestionsHintOf } from '../../../workflows/runQuestionsPlacement';
+import { runQuestionsActionOf } from '../../../workflows/runQuestionsActionOf';
 import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
@@ -27,6 +27,7 @@ type Props = {
 const MINUTE_MS = 60_000;
 
 const HEADER_VERBS: ReadonlySet<string> = new Set(['primary', 'raiseCap', 'answer']);
+
 export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const { run, workflow, advance } = view;
   const quiet = useQuietStep({ agents: advance.runAgents });
@@ -93,9 +94,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
       : null;
   const isMountBlocked = blockedStep !== null && mountBlock?.agentId === blockedStep.id;
   const answered = tail.verb?.kind === 'answer' ? tail.verb.question : null;
-  const stop = run.orchestrationStop;
-  const isReadOnly = stop != null && stop.kind !== 'questions';
-  const stopPrimary = runQuestionsActionOf({ primary: view.primary });
+  const stopPrimary = runQuestionsActionOf({ stop: run.orchestrationStop, primary: view.primary });
   return (
     <section
       aria-label="Run state"
@@ -132,21 +131,15 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
       {answered === null ? null : (
         <RunOpenQuestion
           sessionId={session.id}
-          readOnly={
-            isReadOnly
-              ? {
-                  hint: runQuestionsHintOf({ stop }),
-                  action:
-                    stopPrimary === null ? null : (
-                      <RunPrimaryAction
-                        session={session}
-                        view={view}
-                        primary={stopPrimary}
-                        variant="secondary"
-                      />
-                    ),
-                }
-              : null
+          readOnlyAction={
+            stopPrimary === null ? null : (
+              <RunPrimaryAction
+                session={session}
+                view={view}
+                primary={stopPrimary}
+                variant="secondary"
+              />
+            )
           }
           questions={askingAgentBatch({
             questions: [

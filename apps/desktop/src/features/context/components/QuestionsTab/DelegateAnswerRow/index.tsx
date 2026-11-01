@@ -53,10 +53,10 @@ export const DelegateAnswerRow = ({
             provider={routing.provider}
             model={routing.model}
             effort={{ editable: true, value: routing.effort }}
-            disabled={false}
+            disabled={isDisabled}
             onChange={onRouting}
           />
-          <button type="button" onClick={onCancel} className={LINK_CLASS}>
+          <button type="button" disabled={isDisabled} onClick={onCancel} className={LINK_CLASS}>
             {QUESTION_DELEGATE_COPY.cancel}
           </button>
         </div>
@@ -64,6 +64,7 @@ export const DelegateAnswerRow = ({
           kind="document"
           label="Hints for the delegated agent"
           value={hints}
+          disabled={isDisabled}
           onChange={onHints}
           onKeyDown={(event) => event.stopPropagation()}
           placeholder={QUESTION_DELEGATE_COPY.hintsPlaceholder}

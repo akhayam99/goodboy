@@ -7,11 +7,8 @@ import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
-import {
-  runQuestionsActionOf,
-  runQuestionsHintOf,
-  runQuestionsPlacementOf,
-} from '../../../workflows/runQuestionsPlacement';
+import { runQuestionsActionOf } from '../../../workflows/runQuestionsActionOf';
+import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
@@ -74,27 +71,20 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     phase,
     questions: view.orchestrator.runQuestions,
   });
-  const isReadOnly = placement !== 'hidden' && phase !== 'needs-answer';
-  const stopAction = runQuestionsActionOf({ primary: view.primary });
+  const stopAction = runQuestionsActionOf({ stop: run.orchestrationStop, primary: view.primary });
   const questionCluster = (
     <RunOpenQuestion
       sessionId={session.id}
       questions={view.orchestrator.runQuestions}
-      readOnly={
-        isReadOnly
-          ? {
-              hint: runQuestionsHintOf({ stop: run.orchestrationStop }),
-              action:
-                stopAction === null ? null : (
-                  <RunPrimaryAction
-                    session={session}
-                    view={view}
-                    primary={stopAction}
-                    variant="secondary"
-                  />
-                ),
-            }
-          : null
+      readOnlyAction={
+        stopAction === null ? null : (
+          <RunPrimaryAction
+            session={session}
+            view={view}
+            primary={stopAction}
+            variant="secondary"
+          />
+        )
       }
     />
   );
