@@ -23,9 +23,9 @@ This version updates your data in one direction. To go back to 0.29, restore the
 #### Unread review threads
 <!-- gb area=review image=unread-threads -->
 
-The line at the top of the pull request page now ends with a count of unread threads, after the open threads and the ones that need you. It reads 6 open threads, 1 needs you, 2 unread, and each part after the first hides at zero.
+The line at the top of the pull request page now also counts the threads you have not read yet, after the open ones and the ones that need you.
 
-In Comments, an unread thread gets a dot in the margin of its row for that visit. Your own replies never make a thread unread, and the threads you already had count as read after the update.
+In Comments, each unread thread gets a dot in the margin for that visit. Your own replies never make a thread unread, and threads from before the update count as read.
 
 ## Goodboy v0.29.10
 

@@ -6,7 +6,7 @@
     {
       "title": "Unread review threads",
       "area": "review",
-      "copy": "The line at the top of the pull request page now ends with a count of unread threads, after the open threads and the ones that need you."
+      "copy": "The line at the top of the pull request page now also counts the threads you have not read yet, after the open ones and the ones that need you."
     }
   ],
   "groups": [

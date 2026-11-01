@@ -99,7 +99,7 @@ describe('the unread threads scenes', () => {
     const inFrame = within(frame ?? document.body);
 
     expect(frame?.style.width).toBe('680px');
-    expect(frame?.style.height).toBe('800px');
+    expect(frame?.style.height).toBe('440px');
     expect(inFrame.getAllByRole('img', { name: 'Unread' })).toHaveLength(2);
     expect(inFrame.queryByRole('tab', { name: /Resolved/ })).not.toBeNull();
     cleanup();

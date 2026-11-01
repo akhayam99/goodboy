@@ -22,9 +22,9 @@ const STAGES: ReadonlyArray<ResolveStage> = [
 ];
 
 const SHOT_WIDTH = 680;
-const SHOT_HEIGHT = 800;
+const SHOT_HEIGHT = 440;
 
-const UNREAD_INDEXES: ReadonlyArray<number> = [0, 2];
+const UNREAD_INDEXES: ReadonlyArray<number> = [2, 3];
 
 export const BranchThreadsNewScene = ({ tab }: Props) => {
   const [isReady, setIsReady] = useState(false);
