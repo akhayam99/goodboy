@@ -2,7 +2,7 @@ export const QUESTION_CARD_SCENES = ['u34-question-card-states'];
 export const QUESTION_CARD_WIDTHS = [360, 960, 1440];
 export const QUESTION_CARD_READY = '[data-qc-case] h2';
 export const QUESTION_CARD_BASELINE_PX = 1;
-export const QUESTION_CARD_PAGER_PX = 2;
+export const QUESTION_CARD_PAGER_PX = 1;
 export const QUESTION_CARD_EMPTY_PX = 4;
 export const QUESTION_CARD_DOT_PX = 1;
 export const QUESTION_CARD_EDGE_PX = 1;
@@ -46,15 +46,20 @@ export const questionCardProbe = () => {
         (element) =>
           !element.contains(title) &&
           !title.contains(element) &&
-          (element.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
           isEmptyBox(element) &&
-          element.getBoundingClientRect().height > 4,
+          element.getBoundingClientRect().height > 4 &&
+          element.getBoundingClientRect().width > cardRect.width / 2 &&
+          element.getBoundingClientRect().bottom <= titleRect.top + 0.5,
       )
       .map((element) => ({
         tag: element.tagName.toLowerCase(),
         height: Math.round(element.getBoundingClientRect().height * 10) / 10,
       }));
     const firstEdge = (mark ?? title).getBoundingClientRect().left;
+    const contentLeft =
+      cardRect.left +
+      parseFloat(getComputedStyle(card).borderLeftWidth) +
+      parseFloat(getComputedStyle(card).paddingLeft);
     const overflow = [...card.querySelectorAll('*')].filter(
       (element) => element.getBoundingClientRect().right > cardRect.right + 0.5,
     ).length;
@@ -64,9 +69,15 @@ export const questionCardProbe = () => {
       titleLines: Math.round(titleRect.height / parseFloat(getComputedStyle(title).lineHeight)),
       baselineDelta: label === null ? null : Math.abs(labelBaseline - titleBaseline),
       pagerDelta:
-        controls === null ? null : Math.abs(controls.getBoundingClientRect().top - titleRect.top),
+        controls === null
+          ? null
+          : Math.abs(
+              controls.getBoundingClientRect().top +
+                controls.getBoundingClientRect().height / 2 -
+                (titleRect.top + parseFloat(getComputedStyle(title).lineHeight) / 2),
+            ),
       dotDelta: dotRect === null ? null : Math.abs(dotRect.top + dotRect.height / 2 - xCentre),
-      edgeDelta: Math.abs(firstEdge - cardRect.left),
+      edgeDelta: Math.abs(firstEdge - contentLeft),
       emptyBoxes,
       overflow,
     };
@@ -92,7 +103,7 @@ export const questionCardFailures = ({ scene, width, measured }) => {
     if (card.pagerDelta !== null && card.pagerDelta > QUESTION_CARD_PAGER_PX) {
       failures.push({
         ...at,
-        check: 'question top equals pager top',
+        check: 'the pager is centred on the first line of the question',
         delta: round(card.pagerDelta),
       });
     }

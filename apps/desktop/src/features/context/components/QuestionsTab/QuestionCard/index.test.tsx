@@ -125,7 +125,7 @@ describe('QuestionCard', () => {
       name: 'Which queue should webhook retries run on?',
     });
     expect(title.parentElement?.textContent).toBe(
-      'BlockingWhich queue should webhook retries run on?',
+      'Blocking Which queue should webhook retries run on?',
     );
   });
 

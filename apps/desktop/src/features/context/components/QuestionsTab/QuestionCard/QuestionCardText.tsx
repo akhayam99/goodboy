@@ -14,17 +14,22 @@ type Props = {
 export const QuestionCardText = ({ parts, isCompact, isBlocking, trailing = null }: Props) => (
   <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-2' : 'gap-3')}>
     <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-      <div data-question-header="" className="flex min-w-0 items-baseline gap-2">
+      <div data-question-header="" className="flow-root min-w-0 break-words">
+        {trailing === null ? null : (
+          <span className="float-right flex h-5 items-center [shape-margin:0.5rem] [shape-outside:border-box]">
+            {trailing}
+          </span>
+        )}
         {isBlocking ? <QuestionBlockingMark /> : null}
+        {isBlocking ? ' ' : null}
         <h2
           className={cn(
-            'min-w-0 flex-1 break-words text-foreground select-text',
+            'inline text-foreground select-text',
             isCompact ? 'text-heading' : 'text-title',
           )}
         >
           {parts.title}
         </h2>
-        {trailing === null ? null : <span className="shrink-0 self-start">{trailing}</span>}
       </div>
       {parts.context.length > 0 && (
         <Markdown

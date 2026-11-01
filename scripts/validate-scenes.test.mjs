@@ -1494,7 +1494,7 @@ describe('questionCardFailures', () => {
   it('fails a baseline, a pager top and a dot that drift', () => {
     assert.deepEqual(checksOf({ baselineDelta: 3, pagerDelta: 9, dotDelta: 2 }), [
       'Blocking and the question share a baseline',
-      'question top equals pager top',
+      'the pager is centred on the first line of the question',
       'the dot is centred on the x-height of Blocking',
     ]);
   });
