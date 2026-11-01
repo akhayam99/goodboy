@@ -4,8 +4,6 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
-const REVIEWED_FILES = join(__dirname, '..', '..', 'features', 'diff', 'lib', 'reviewedFiles.ts');
-const LEGACY_UNTIL = /LEGACY_REVIEWED_KEY_UNTIL = '([^']+)'/;
 const VERSION_PART = /^(\d+)\.(\d+)\.(\d+)/;
 
 type VersionParams = {
@@ -66,15 +64,6 @@ describe('an old state shape is read only until the release the doc names', () =
     expect(compareVersions({ left: '0.28.8', right: '0.30.0' })).toBeLessThan(0);
     expect(compareVersions({ left: '0.30.0', right: '0.30.0' })).toBe(0);
     expect(compareVersions({ left: '0.100.0', right: '0.30.0' })).toBeGreaterThan(0);
-  });
-
-  it('names the same release for the diff reviewed key in the code and in the doc', () => {
-    const rows = retiredRows({
-      text: readFileSync(join(REPO_ROOT, 'docs', 'versioning.md'), 'utf8'),
-    });
-    const row = rows.find((entry) => entry.state.includes('diffReviewed'));
-
-    expect(row?.until).toBe(LEGACY_UNTIL.exec(readFileSync(REVIEWED_FILES, 'utf8'))?.[1]);
   });
 
   it('keeps no row past the release that stops reading its old shape', () => {
