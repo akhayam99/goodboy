@@ -1141,6 +1141,7 @@ u32-run-questions
 u33-overview-needs-you
 u33-run-stopped-questions
 u34-question-card-states
+u34-t52-long-transcript
 update-card
 update-card-long-version
 update-card-narrow
