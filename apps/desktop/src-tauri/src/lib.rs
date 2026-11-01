@@ -83,6 +83,7 @@ mod secrets;
 mod sentry;
 mod session_dir;
 mod settings_overrides;
+#[allow(dead_code)]
 mod skills;
 mod slack;
 mod step_end_log;
@@ -577,12 +578,6 @@ pub fn run() {
             budget::budget_emit_alerts,
             budget::check_provider_budget,
             budget::provider_budget_overview,
-            skills::skill_list,
-            skills::skill_get,
-            skills::skill_upsert,
-            skills::skill_delete,
-            skills::skill_rescan,
-            skills::skill_run_script,
             project_scripts::project_scripts_scan,
             scripts::workspace_script_run,
             scripts::workspace_script_run_adhoc,

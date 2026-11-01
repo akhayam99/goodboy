@@ -15,6 +15,8 @@ const FRONTEND_SOURCE_DIRECTORIES = [
   resolve(ROOT_DIRECTORY, 'packages'),
 ];
 const ALLOWLIST_REASON_BY_COMMAND = new Map([]);
+const WINDOW_COMMANDS_PATH = resolve(ROOT_DIRECTORY, 'apps/desktop/src-tauri/window-commands.json');
+const RETIRED_COMMAND_PATTERN = /^skill_/;
 
 const collectSourceFiles = ({ directory }) => {
   const files = [];
@@ -68,7 +70,12 @@ const collectMapValues = ({ source, mapName }) => {
 };
 
 const difference = ({ left, right }) =>
-  [...left].filter((command) => !right.has(command) && !ALLOWLIST_REASON_BY_COMMAND.has(command));
+  [...left].filter(
+    (command) =>
+      !right.has(command) &&
+      !ALLOWLIST_REASON_BY_COMMAND.has(command) &&
+      !RETIRED_COMMAND_PATTERN.test(command),
+  );
 
 for (const [command, reason] of ALLOWLIST_REASON_BY_COMMAND) {
   if (command.length === 0 || reason.trim().length === 0) {
@@ -81,6 +88,17 @@ const registeredCommands = collectRegisteredCommands({
 });
 if (registeredCommands.size === 0) {
   throw new Error('No commands found in tauri::generate_handler! blocks');
+}
+
+const windowCommands = JSON.parse(readFileSync(WINDOW_COMMANDS_PATH, 'utf8'));
+const retiredButLive = [...registeredCommands, ...Object.values(windowCommands).flat()].filter(
+  (command) => typeof command === 'string' && RETIRED_COMMAND_PATTERN.test(command),
+);
+if (retiredButLive.length > 0) {
+  console.error(
+    `Retired commands still registered or listed (the skill runner stays unregistered):\n${retiredButLive.sort().join('\n')}`,
+  );
+  process.exit(1);
 }
 
 const invokedCommands = new Set();
