@@ -1,9 +1,10 @@
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const ASSET_PATTERN = /(?:src|href)="\/(assets\/[^"]+\.(?:js|css))"/g;
+const MOCK_CHUNK_PATTERN = /(?:MockEntry|MockScene|installMockRuntime)/;
 const HEADROOM = 1.05;
 const MEGABYTE = 1_048_576;
 
@@ -23,8 +24,19 @@ export const measureBundle = ({ distDirectory, read = (path) => readFileSync(pat
   return { files, rawBytes, gzipBytes };
 };
 
-export const evaluateBudget = ({ measured, budget }) => {
+export const mockSceneFiles = ({
+  distDirectory,
+  list = (path) => readdirSync(path, { recursive: true }),
+}) =>
+  list(resolve(distDirectory, 'assets'))
+    .map(String)
+    .filter((file) => file.endsWith('.js') && MOCK_CHUNK_PATTERN.test(file));
+
+export const evaluateBudget = ({ measured, budget, mockFiles = [] }) => {
   const failures = [];
+  if (mockFiles.length > 0) {
+    failures.push(`mock scene code shipped in the app dist: ${mockFiles.join(', ')}`);
+  }
   if (measured.files.length === 0) {
     failures.push('no initial js or css file was found in index.html, so nothing was measured');
   }
@@ -76,7 +88,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(0);
   }
   const budget = JSON.parse(readFileSync(budgetPath, 'utf8'));
-  const { isWithinBudget, failures } = evaluateBudget({ measured, budget });
+  const { isWithinBudget, failures } = evaluateBudget({
+    measured,
+    budget,
+    mockFiles: mockSceneFiles({ distDirectory }),
+  });
   const table = summaryTable({ measured, budget });
   console.log(table);
   if (process.env.GITHUB_STEP_SUMMARY) {

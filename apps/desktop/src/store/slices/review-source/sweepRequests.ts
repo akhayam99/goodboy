@@ -59,7 +59,7 @@ export const sweepRequests = ({ set, get }: SliceDeps) => {
       }
     }
     if (tasks.length === 0) {
-      if (sessionId === undefined && get().githubStatus?.available !== true) {
+      if (sessionId === undefined) {
         set({ boardReady: true });
       }
       return Promise.resolve();
