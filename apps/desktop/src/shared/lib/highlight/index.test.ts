@@ -1,11 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { highlightCode, languageForName, languageForPath, peekHighlight } from '.';
+import { installInlineHighlightWorker } from '../../../test/installInlineHighlightWorker';
 import { SENTINEL_THEME, kindForColor } from './theme';
 import { MAX_HIGHLIGHT_LINES, MAX_HIGHLIGHT_LINE_LENGTH, exceedsHighlightCap } from './caps';
 
 const kindsOf = (line: ReadonlyArray<{ text: string; kind: string }> | undefined) =>
   (line ?? []).filter((token) => token.text.trim().length > 0).map((token) => token.kind);
+
+beforeAll(installInlineHighlightWorker);
 
 describe('sentinel theme', () => {
   it('maps every sentinel colour back to a syntax kind', () => {

@@ -28,14 +28,16 @@ bootstrapTheme();
 bootstrapContrast();
 installCrashCapture();
 
-const MockEntry = lazy(async () => {
-  const [entry, runtime] = await Promise.all([
-    import('./app/components/MockScene/MockEntry'),
-    import('./app/components/MockScene/installMockRuntime'),
-  ]);
-  installBackends(runtime.mockRuntime());
-  return { default: entry.MockEntry };
-});
+const MockEntry = MOCK_ENABLED
+  ? lazy(async () => {
+      const [entry, runtime] = await Promise.all([
+        import('./app/components/MockScene/MockEntry'),
+        import('./app/components/MockScene/installMockRuntime'),
+      ]);
+      installBackends(runtime.mockRuntime());
+      return { default: entry.MockEntry };
+    })
+  : null;
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
@@ -60,7 +62,7 @@ createRoot(container).render(
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>
-            {MOCK_ENABLED ? (
+            {MockEntry !== null ? (
               <Suspense fallback={null}>
                 <MockEntry />
               </Suspense>
