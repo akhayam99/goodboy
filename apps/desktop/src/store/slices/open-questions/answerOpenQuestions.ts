@@ -11,7 +11,8 @@ import {
   recordPendingOpenQuestionDelivery,
 } from './pendingOpenQuestionDelivery';
 import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
-import { clearAnswersInFlight, isQuestionHeldByStop, markAnswersInFlight } from './heldAnswers';
+import { clearAnswersInFlight, markAnswersHeld, markAnswersInFlight } from './heldAnswers';
+import { isQuestionHeldByStop } from './isQuestionHeldByStop';
 import type { GetFn, SetFn } from './types';
 
 type ResolveAskingAgentsParams = {
@@ -37,6 +38,7 @@ const resolveAskingAgents = ({
       continue;
     }
     if (isQuestionHeldByStop({ get, sessionId, question: known })) {
+      markAnswersHeld({ ids: [known.id] });
       continue;
     }
     agents.add(known.createdByAgentId ?? null);

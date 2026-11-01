@@ -20,7 +20,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { MOCK_SCENES } from '../..';
-import { BLOCKED_MOUNT_AGENT_ID, BLOCKED_MOUNT_SESSION_ID } from '../u30/blockedMountStepSeed';
+import { BLOCKED_MOUNT_SESSION_ID } from '../u30/blockedMountStepSeed';
 import { U33_STOPPED_QUESTIONS_SCENES } from './stopped-questions';
 import { STOPPED_FIRST_QUESTION_ID } from './stoppedQuestionsSeed';
 
@@ -124,6 +124,9 @@ const mount = async ({ stop }: MountParams = {}): Promise<void> => {
 const clusters = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-run-open-question]'));
 
+const heldLine = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('[data-run-held-answers]');
+
 const tailLine = (): HTMLElement => {
   const line = document.querySelector<HTMLElement>('[aria-label="Run state"] [data-tail]');
   if (line === null) {
@@ -183,7 +186,7 @@ describe('the u33 stopped run questions scene', () => {
   });
 
   it.each(STOP_CASES)(
-    'keeps the $name stop on answering and sends the answers on resume',
+    'keeps the $name stop on answering and says the answers wait for resume',
     async (stopCase) => {
       await mount({ stop: stopCase.stop });
       const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
@@ -219,27 +222,8 @@ describe('the u33 stopped run questions scene', () => {
 
       expect(sendTurn).not.toHaveBeenCalled();
       expect(runOf()?.orchestrationStop?.kind).toBe(stopCase.stop.kind);
-
-      await act(async () => {
-        useAppStore.setState((state) => ({
-          sessions: state.sessions.map((session) => ({
-            ...session,
-            workflowRuns: session.workflowRuns.map(({ orchestrationStop, ...run }) => run),
-          })),
-        }));
-        await useAppStore.getState().maybeAutoAdvanceWorkflow(BLOCKED_MOUNT_SESSION_ID);
-        await vi.advanceTimersByTimeAsync(SETTLE_MS);
-      });
-
-      expect(runOf()?.orchestrationStop).toBeUndefined();
-      expect(sendTurn).toHaveBeenCalledTimes(1);
-      expect(sendTurn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sessionId: BLOCKED_MOUNT_SESSION_ID,
-          agentId: BLOCKED_MOUNT_AGENT_ID,
-          content: expect.stringContaining('500 rows'),
-        }),
-      );
+      expect(clusters()).toHaveLength(0);
+      expect(heldLine()?.textContent).toBe('2 answers wait for resume');
     },
   );
 

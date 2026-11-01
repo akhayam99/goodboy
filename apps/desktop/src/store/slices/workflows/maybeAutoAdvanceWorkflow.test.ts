@@ -41,7 +41,6 @@ vi.mock('@goodboy/db', async () =>
 );
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 
 const WS_ID = 'ws-1' as WorkspaceId;
@@ -248,7 +247,9 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
 
     expect(state['orchestrateNextStep']).toHaveBeenCalledTimes(1);
-    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, SECOND_ID);
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, SECOND_ID, {
+      isAutoAdvance: true,
+    });
   });
 
   it('does not skip past a step that failed', async () => {
@@ -440,7 +441,9 @@ describe('maybeAutoAdvanceWorkflow', () => {
 
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
 
-    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      isAutoAdvance: true,
+    });
   });
 
   it('does not orchestrate a dynamic run with a persisted terminal outcome', async () => {
