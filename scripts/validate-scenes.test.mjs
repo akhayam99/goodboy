@@ -25,6 +25,7 @@ import {
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
 import { listGridFitFailures } from './validateScenesListGridFit.mjs';
+import { questionCardFailures } from './validateScenesQuestionCard.mjs';
 import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
@@ -1463,6 +1464,58 @@ describe('runTailFitFailures', () => {
         (failure) => failure.check,
       ),
       ['the run tail shows a question card inside a data-shot frame'],
+    );
+  });
+});
+
+describe('questionCardFailures', () => {
+  const card = {
+    name: 'pager',
+    hasControls: true,
+    titleLines: 1,
+    baselineDelta: 0.2,
+    pagerDelta: 0,
+    dotDelta: 0.3,
+    edgeDelta: 0,
+    emptyBoxes: [],
+    overflow: 0,
+  };
+  const checksOf = (override) =>
+    questionCardFailures({
+      scene: 'fixture',
+      width: 360,
+      measured: [{ ...card, ...override }],
+    }).map((failure) => failure.check);
+
+  it('passes a card whose Blocking, question and pager share one row', () => {
+    assert.deepEqual(checksOf({}), []);
+  });
+
+  it('fails a baseline, a pager top and a dot that drift', () => {
+    assert.deepEqual(checksOf({ baselineDelta: 3, pagerDelta: 9, dotDelta: 2 }), [
+      'Blocking and the question share a baseline',
+      'question top equals pager top',
+      'the dot is centred on the x-height of Blocking',
+    ]);
+  });
+
+  it('fails an empty box above the question and a header off the card edge', () => {
+    assert.deepEqual(checksOf({ emptyBoxes: [{ tag: 'div', height: 24 }], edgeDelta: 40 }), [
+      'the header starts on the card edge',
+      'no empty box above the question',
+    ]);
+  });
+
+  it('fails a card that overflows on the right', () => {
+    assert.deepEqual(checksOf({ overflow: 2 }), ['nothing leaves the card on the right']);
+  });
+
+  it('fails a scene with no card', () => {
+    assert.deepEqual(
+      questionCardFailures({ scene: 'fixture', width: 360, measured: [] }).map(
+        (failure) => failure.check,
+      ),
+      ['the scene shows question cards'],
     );
   });
 });

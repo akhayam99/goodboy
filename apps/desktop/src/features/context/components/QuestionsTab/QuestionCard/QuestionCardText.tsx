@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { FileText } from 'lucide-react';
 import { cn, ICON_SIZE, Markdown } from '@goodboy/ui';
 import type { QuestionParts } from '../questionParts';
@@ -7,21 +8,23 @@ type Props = {
   readonly parts: QuestionParts;
   readonly isCompact: boolean;
   readonly isBlocking: boolean;
+  readonly trailing?: ReactNode;
 };
 
-export const QuestionCardText = ({ parts, isCompact, isBlocking }: Props) => (
+export const QuestionCardText = ({ parts, isCompact, isBlocking, trailing = null }: Props) => (
   <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-2' : 'gap-3')}>
     <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-      <div className="flex min-w-0 items-baseline gap-2">
-        {isBlocking && isCompact ? <QuestionBlockingMark /> : null}
+      <div data-question-header="" className="flex min-w-0 items-baseline gap-2">
+        {isBlocking ? <QuestionBlockingMark /> : null}
         <h2
           className={cn(
-            'min-w-0 break-words text-foreground select-text',
+            'min-w-0 flex-1 break-words text-foreground select-text',
             isCompact ? 'text-heading' : 'text-title',
           )}
         >
           {parts.title}
         </h2>
+        {trailing === null ? null : <span className="shrink-0 self-start">{trailing}</span>}
       </div>
       {parts.context.length > 0 && (
         <Markdown

@@ -13,8 +13,7 @@ import { questionParts } from '../questionParts';
 import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
 import { QuestionAnswerDone } from './QuestionAnswerDone';
 import { QuestionAnswerInput } from './QuestionAnswerInput';
-import { QuestionCardText } from './QuestionCardText';
-import { QuestionCardTop } from './QuestionCardTop';
+import { QuestionCardHead } from './QuestionCardHead';
 import { inputModeOf } from './inputModeOf';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
@@ -98,6 +97,7 @@ export const QuestionCard = ({
   const showsAnswerBox =
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
+  const dismiss = isOpen && !question.isBlocking && !isWaiting ? onDismiss : null;
   const isDelegateInFooter = isCompact && !isHandedOff;
   const delegateRow = (
     <DelegateAnswerRow
@@ -169,16 +169,16 @@ export const QuestionCard = ({
         isCompact ? 'gap-2 rounded-lg bg-subtle p-3' : 'gap-4',
       )}
     >
-      <QuestionCardTop
+      <QuestionCardHead
+        parts={parts}
+        isCompact={isCompact}
+        isBlocking={isBlockingNow}
         askerName={askerName}
         askerKind={askerKind}
-        isBlocking={isBlockingNow && !isCompact}
         age={age}
         pager={pager}
-        isInAskerConversation={isCompact}
-        onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
+        onDismiss={dismiss}
       />
-      <QuestionCardText parts={parts} isCompact={isCompact} isBlocking={isBlockingNow} />
       {showsAnswerBox && (
         <p className="rounded-md bg-fill px-3 py-2 text-body text-foreground select-text">
           {answerText}
