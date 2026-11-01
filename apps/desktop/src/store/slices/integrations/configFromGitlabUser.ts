@@ -5,5 +5,6 @@ export const configFromGitlabUser = (user: GitlabUser): Omit<GitlabIntegrationCo
   return {
     userName: user.name,
     userId: String(user.id),
+    username: user.username,
   };
 };
