@@ -260,6 +260,15 @@ pub fn run() {
                 );
             }
             std::thread::spawn(history::clean_stale_copies);
+            if let Some(dir) = terminal::scrollback_dir_of(app.handle()) {
+                std::thread::spawn(move || {
+                    terminal_scrollback::prune_stale(
+                        &dir,
+                        std::time::SystemTime::now(),
+                        terminal_scrollback::STALE_AFTER,
+                    );
+                });
+            }
             std::thread::spawn(|| {
                 proc::reap::sweep_stale_turn_dirs(
                     &std::env::temp_dir(),
