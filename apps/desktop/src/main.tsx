@@ -28,16 +28,17 @@ bootstrapTheme();
 bootstrapContrast();
 installCrashCapture();
 
-const MockEntry = MOCK_ENABLED
-  ? lazy(async () => {
-      const [entry, runtime] = await Promise.all([
-        import('./app/components/MockScene/MockEntry'),
-        import('./app/components/MockScene/installMockRuntime'),
-      ]);
-      installBackends(runtime.mockRuntime());
-      return { default: entry.MockEntry };
-    })
-  : null;
+const MockEntry =
+  import.meta.env.VITE_GOODBOY_MOCK === '1' && MOCK_ENABLED
+    ? lazy(async () => {
+        const [entry, runtime] = await Promise.all([
+          import('./app/components/MockScene/MockEntry'),
+          import('./app/components/MockScene/installMockRuntime'),
+        ]);
+        installBackends(runtime.mockRuntime());
+        return { default: entry.MockEntry };
+      })
+    : null;
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport

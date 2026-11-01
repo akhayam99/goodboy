@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import { tokenizeCode } from '../shared/lib/highlight/tokenize';
 import type { HighlightRequest, HighlightResponse } from '../shared/lib/highlight/protocol';
 
 class InlineHighlightWorker {
@@ -7,9 +6,11 @@ class InlineHighlightWorker {
   onerror: (() => void) | null = null;
 
   postMessage = (request: HighlightRequest) => {
-    void tokenizeCode({ code: request.code, lang: request.lang }).then((lines) => {
-      this.onmessage?.({ data: { id: request.id, lines } } as MessageEvent<HighlightResponse>);
-    });
+    void import('../shared/lib/highlight/tokenize')
+      .then(({ tokenizeCode }) => tokenizeCode({ code: request.code, lang: request.lang }))
+      .then((lines) => {
+        this.onmessage?.({ data: { id: request.id, lines } } as MessageEvent<HighlightResponse>);
+      });
   };
 
   terminate = () => undefined;
