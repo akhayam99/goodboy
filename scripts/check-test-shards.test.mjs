@@ -37,8 +37,8 @@ describe('ci.yml shard matrix', () => {
     'utf8',
   );
 
-  it('runs the four shards this check covers', () => {
-    assert.match(workflow, /shard: \[1, 2, 3, 4\]/);
-    assert.match(workflow, /--shard=\$\{\{ matrix\.shard \}\}\/4/);
+  it('runs the six shards this check covers', () => {
+    assert.match(workflow, /shard: \[1, 2, 3, 4, 5, 6\]/);
+    assert.match(workflow, /--shard=\$\{\{ matrix\.shard \}\}\/6/);
   });
 });

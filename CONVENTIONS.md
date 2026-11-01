@@ -123,7 +123,7 @@ Branch protection is a repository setting the repo cannot read, so this table is
 | `typecheck`, `lint-ts`, `website-drift`, `tauri-commands`, `doc-refs`  | `checks`: typecheck, typed lint, and the step of the same name |
 | `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build` | `checks`: script tests, knip, knip production, shards, build   |
 | `packages-tests`, `a11y`                                               | `test-packages`                                                |
-| `desktop-unit` (one run, not four shards)                              | `test-desktop`                                                 |
+| `desktop-unit` (one run, not six shards)                               | `test-desktop`                                                 |
 | `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                  | `rust`: fmt, clippy, test                                      |
 | not run locally (`pnpm --dir website build` by hand)                   | `website`                                                      |
 

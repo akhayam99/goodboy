@@ -79,9 +79,9 @@ Twelve files kept a claim from a release migration: each `it()` says a capabilit
 
 A file name or a baseline key that still says `preservation` moves with its baseline in the PR that owns the ratchet, never here.
 
-## Desktop unit tests run in four shards
+## Desktop unit tests run in six shards
 
-CI splits the desktop `unit` project with `vitest run --project unit --shard=i/4`. Vitest sorts the files by the hash of their path and cuts the list into four equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/4`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
+CI splits the desktop `unit` project with `vitest run --project unit --shard=i/6`, and each job stops at 20 minutes. Vitest sorts the files by the hash of their path and cuts the list into six equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/6`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
 
 ## Test environment
 
