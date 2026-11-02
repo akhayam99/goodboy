@@ -1,11 +1,12 @@
-import { useEscapeLayer } from '@goodboy/ui';
+import { useEscapeLayer, useSkeletonGate } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
 import { leaveRunLevel } from '../../../workflows/leaveRunLevel';
 import type { PresetRunFocus } from '../../../workflows/presetRunFocusOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { PresetRunBody } from './PresetRunBody';
+import { RunPageSkeleton } from './RunPageSkeleton';
 
 type Props = {
   readonly session: Session;
@@ -21,9 +22,14 @@ export const PresetRunPage = ({ session, focus }: Props) => {
         (candidate) => candidate.id === focus.agentId,
       ) ?? null,
   );
+  const isLoaded = useIsSessionCollectionLoaded({
+    sessionId: session.id,
+    collection: 'workflows',
+  });
+  const phase = useSkeletonGate({ gateKey: focus.runId, isLoaded });
   useEscapeLayer(() => leaveRunLevel({ sessionId: session.id }), agent === null);
   if (attached === null) {
-    return null;
+    return phase === 'skeleton' || phase === 'fading' ? <RunPageSkeleton /> : null;
   }
   return (
     <div data-preset-run={focus.runId} className="flex h-full min-h-0 min-w-0 flex-col">

@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Button, cn } from '@goodboy/ui';
+import { Fragment, useState, type ReactNode } from 'react';
+import { Button, cn, EntryWash } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { RebaseStopRowFor } from '../../../history/useRebaseStopRows';
@@ -20,6 +20,7 @@ type Props = {
   readonly hasLabel: boolean;
   readonly isLead: boolean;
   readonly isNarrow: boolean;
+  readonly washedIds?: ReadonlySet<string>;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor?: ActionCardActions['openFor'];
   readonly chipFor?: (params: CardParams) => ReactNode;
@@ -32,6 +33,7 @@ export const NextGroup = ({
   hasLabel,
   isLead,
   isNarrow,
+  washedIds,
   actionsFor,
   openFor,
   chipFor,
@@ -125,17 +127,26 @@ export const NextGroup = ({
           {bulkButton}
         </div>
       ) : null}
-      {shown.map(({ card, actions }, index) => (
-        <ActionCard
-          key={card.id}
-          card={card}
-          actions={actions}
-          isFirst={isLead && index === 0}
-          hasOverflowColumn={hasOverflowColumn}
-          chip={chipFor?.({ card })}
-          onOpen={openFor?.({ card }) ?? null}
-        />
-      ))}
+      {shown.map(({ card, actions }, index) => {
+        const row = (
+          <ActionCard
+            card={card}
+            actions={actions}
+            isFirst={isLead && index === 0}
+            hasOverflowColumn={hasOverflowColumn}
+            chip={chipFor?.({ card })}
+            onOpen={openFor?.({ card }) ?? null}
+          />
+        );
+        if (washedIds === undefined) {
+          return <Fragment key={card.id}>{row}</Fragment>;
+        }
+        return (
+          <EntryWash key={card.id} isWashed={washedIds.has(card.id)}>
+            {row}
+          </EntryWash>
+        );
+      })}
       {bulk?.kind === 'rebase' && isPickerOpen ? (
         <NextStepRebasePicker
           sessionId={bulk.sessionId}

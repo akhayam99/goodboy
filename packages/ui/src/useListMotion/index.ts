@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { prefersReducedMotion } from '../prefersReducedMotion';
 import { DURATION_BASE_MS, DURATION_QUICK_MS } from '../motionTimings';
+import { sameKeys } from '../sameKeys';
 
 export const LIST_MOTION_MAX_BATCH = 20;
+
+const NO_SILENT_KEYS: ReadonlySet<string> = new Set();
 
 export type ListMotionPhase = 'stable' | 'entering' | 'leaving' | 'collapsing';
 
@@ -18,6 +21,7 @@ export type ListMotionEntry<T> = ListMotionItem<T> & {
 type Params<T> = {
   readonly items: ReadonlyArray<ListMotionItem<T>>;
   readonly resetKey: string;
+  readonly silentKeys?: ReadonlySet<string>;
 };
 
 type Leaving<T> = ListMotionItem<T> & {
@@ -41,19 +45,16 @@ const stateOf = <T>({ items, resetKey }: Params<T>): MotionState<T> => ({
   leaving: [],
 });
 
-type SameKeysParams = {
-  readonly left: ReadonlyArray<string>;
-  readonly right: ReadonlyArray<string>;
-};
-
-const sameKeys = ({ left, right }: SameKeysParams): boolean =>
-  left.length === right.length && left.every((key, index) => key === right[index]);
-
 type NextStateParams<T> = Params<T> & {
   readonly state: MotionState<T>;
 };
 
-const nextStateOf = <T>({ state, items, resetKey }: NextStateParams<T>): MotionState<T> => {
+const nextStateOf = <T>({
+  state,
+  items,
+  resetKey,
+  silentKeys,
+}: NextStateParams<T>): MotionState<T> => {
   const keys = items.map((item) => item.key);
   if (state.resetKey === resetKey && sameKeys({ left: keys, right: state.keys })) {
     return state;
@@ -68,17 +69,24 @@ const nextStateOf = <T>({ state, items, resetKey }: NextStateParams<T>): MotionS
   if (added.length + removed.length > LIST_MOTION_MAX_BATCH) {
     return stateOf({ items, resetKey });
   }
+  const silent = silentKeys ?? NO_SILENT_KEYS;
   const values = new Map(items.map((item) => [item.key, item.value]));
-  const enteringKeys = new Set([...state.entering, ...added].filter((key) => current.has(key)));
+  const enteringKeys = new Set(
+    [...state.entering, ...added.filter((key) => !silent.has(key))].filter((key) =>
+      current.has(key),
+    ),
+  );
   const survivors = state.leaving.filter((entry) => !current.has(entry.key));
   const leaving = [
     ...survivors,
-    ...removed.flatMap((key) => {
-      const value = state.values.get(key);
-      return value === undefined
-        ? []
-        : [{ key, value, index: state.keys.indexOf(key), status: 'leaving' as const }];
-    }),
+    ...removed
+      .filter((key) => !silent.has(key))
+      .flatMap((key) => {
+        const value = state.values.get(key);
+        return value === undefined
+          ? []
+          : [{ key, value, index: state.keys.indexOf(key), status: 'leaving' as const }];
+      }),
   ];
   return { resetKey, keys, values, entering: enteringKeys, leaving };
 };
@@ -86,9 +94,10 @@ const nextStateOf = <T>({ state, items, resetKey }: NextStateParams<T>): MotionS
 export const useListMotion = <T>({
   items,
   resetKey,
+  silentKeys,
 }: Params<T>): ReadonlyArray<ListMotionEntry<T>> => {
   const [state, setState] = useState<MotionState<T>>(() => stateOf({ items, resetKey }));
-  const next = nextStateOf({ state, items, resetKey });
+  const next = nextStateOf({ state, items, resetKey, silentKeys });
   if (next !== state) {
     setState(next);
   }

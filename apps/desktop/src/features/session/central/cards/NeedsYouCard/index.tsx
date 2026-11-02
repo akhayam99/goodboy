@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { EmptyLine } from '@goodboy/ui';
+import { EmptyLine, EntryWash, useEntryWash } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import type { ActionCardModel } from '../../next/actionCardsOf';
 import type { NextBranchName } from '../../next/nextRowCopyOf';
@@ -10,6 +10,7 @@ import type { LiveGroupModel } from '../../now/liveGroupsOf';
 import type { WhereOf } from '../../now/useWhereOf';
 import type { OverviewCardModel } from '../../overviewCardsOf';
 import { OverviewCard } from '../OverviewCard';
+import { needsYouRowKeysOf } from './needsYouRowKeysOf';
 
 type CardParams = {
   readonly card: ActionCardModel;
@@ -42,6 +43,7 @@ export const NeedsYouCard = ({
   branchFor,
   stopRowFor,
 }: Props) => {
+  const washed = useEntryWash({ keys: needsYouRowKeysOf({ waiting, cards }) });
   if (card.count === 0) {
     return (
       <section
@@ -59,14 +61,18 @@ export const NeedsYouCard = ({
       {waiting.length === 0 ? null : (
         <div data-needs-you-live="" className="flex min-w-0 flex-col gap-1">
           {waiting.map((group) => (
-            <LiveGroup
+            <EntryWash
               key={`${group.kind}:${group.id}`}
-              sessionId={session.id}
-              session={session}
-              group={group}
-              where={whereOf({ mountId: group.mountId })}
-              isLead={group.id === leadRunId}
-            />
+              isWashed={washed.has(`${group.kind}:${group.id}`)}
+            >
+              <LiveGroup
+                sessionId={session.id}
+                session={session}
+                group={group}
+                where={whereOf({ mountId: group.mountId })}
+                isLead={group.id === leadRunId}
+              />
+            </EntryWash>
           ))}
         </div>
       )}
@@ -74,6 +80,7 @@ export const NeedsYouCard = ({
         sessionId={session.id}
         cards={cards}
         overviewCard="needs-you"
+        washedIds={washed}
         hasHeader={false}
         canLead
         actionsFor={actionsFor}

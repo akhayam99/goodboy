@@ -29,7 +29,7 @@
   "apps/desktop/src/features/integrations/gitlab/client.ts": 689,
   "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 363,
   "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 282,
-  "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 680,
+  "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 676,
   "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 636,
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 355,
   "apps/desktop/src/features/reports/buildReportContext.ts": 911,

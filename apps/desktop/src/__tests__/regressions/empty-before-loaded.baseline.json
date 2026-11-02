@@ -11,7 +11,6 @@
   "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
   "apps/desktop/src/features/session/central/log/LogDrawer.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx": 1,
   "apps/desktop/src/features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx": 1,

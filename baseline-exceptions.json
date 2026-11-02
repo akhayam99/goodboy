@@ -327,5 +327,12 @@
     "count": 22,
     "reason": "first measure of the guard that ux34 PR 78 adds; the ledger only falls from here",
     "release": "0.31.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/rust-reason-copy.baseline.json",
+    "count": 77,
+    "reason": "first measure of the guard that ux34 PR 96 adds; the ledger only falls from here",
+    "release": "0.31.0"
   }
 ]

@@ -65,6 +65,8 @@ Follow a run step by step, with its sub-agents under their agent and one button 
 
 A run that stopped, whether at its limit, by you, on a failure or for an approval, still shows the questions its steps asked. They sit above the line that says why it stopped when they block the run, and below it otherwise. Answer them from the run page as anywhere else.
 
+While the session's workflows load, the run page draws its goal, its facts and three step rows as a skeleton, after 120 ms and never as a blank page.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The run Fix flaky tests in the ledger: the rail with Overview and three steps, step 2 Fix the batching selected, the step conversation with its answer, the line Step 2 done, ready to continue with Start step 3, Stop run in the header and the limit and spend at the foot">

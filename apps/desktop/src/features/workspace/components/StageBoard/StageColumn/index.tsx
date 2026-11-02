@@ -74,6 +74,7 @@ type StageColumnProps = {
   readonly placement?: 'lane' | 'half';
   readonly isLoading?: boolean;
   readonly motionResetKey?: string;
+  readonly travelerIds?: ReadonlySet<string>;
   readonly onCardEnter?: (target: CardHover) => void;
   readonly onCardLeave?: () => void;
 };
@@ -88,6 +89,7 @@ export const StageColumn = ({
   placement = 'lane',
   isLoading = false,
   motionResetKey = '',
+  travelerIds,
   onCardEnter,
   onCardLeave,
 }: StageColumnProps) => {
@@ -102,6 +104,7 @@ export const StageColumn = ({
   const motion = useListMotion({
     items: drawn.map((session) => ({ key: session.id, value: session })),
     resetKey: motionResetKey,
+    silentKeys: travelerIds,
   });
 
   return (

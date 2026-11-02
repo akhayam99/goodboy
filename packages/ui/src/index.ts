@@ -244,6 +244,7 @@ export {
   SKELETON_SHOW_AFTER_MS,
 } from './motionTimings';
 export { canAnimate } from './canAnimate';
+export { prefersReducedMotion } from './prefersReducedMotion';
 export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
@@ -316,6 +317,8 @@ export { useListMotion } from './useListMotion';
 export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';
 export { ListItemMotion } from './components/ListItemMotion';
 export { HeightMotion } from './components/HeightMotion';
+export { EntryWash } from './components/EntryWash';
+export { useEntryWash } from './useEntryWash';
 export { useScrollMemory } from './useScrollMemory';
 export { forgetScrollMemory } from './forgetScrollMemory';
 export { PaneSwap } from './components/PaneSwap';

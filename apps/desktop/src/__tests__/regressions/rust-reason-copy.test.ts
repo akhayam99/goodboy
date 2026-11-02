@@ -3,7 +3,8 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 
-const RUST_ROOT = join(__dirname, '..', '..', '..', 'src-tauri', 'src');
+const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
+const RUST_ROOT = join(REPO_ROOT, 'apps', 'desktop', 'src-tauri', 'src');
 const BASELINE_PATH = join(__dirname, 'rust-reason-copy.baseline.json');
 const UPDATE_FLAG = process.env.GOODBOY_UPDATE_BASELINE;
 
@@ -32,7 +33,7 @@ const measure = (): Counts => {
     const production = testStart === -1 ? lines : lines.slice(0, testStart);
     const count = production.filter((line) => FAILURE_SENTENCE.test(line)).length;
     if (count > 0) {
-      counts[relative(RUST_ROOT, path).split(sep).join('/')] = count;
+      counts[relative(REPO_ROOT, path).split(sep).join('/')] = count;
     }
   });
   return Object.fromEntries(Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)));
@@ -48,7 +49,10 @@ describe('Rust returns reason codes, not failure sentences', () => {
   }
 
   it('converted files stay free of failure sentences', () => {
-    ['history/preflight.rs', 'history/dirty.rs'].forEach((file) => {
+    [
+      'apps/desktop/src-tauri/src/history/preflight.rs',
+      'apps/desktop/src-tauri/src/history/dirty.rs',
+    ].forEach((file) => {
       expect(measured[file] ?? 0).toBe(0);
     });
   });

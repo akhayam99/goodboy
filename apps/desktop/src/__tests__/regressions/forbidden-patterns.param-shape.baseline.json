@@ -533,7 +533,7 @@
     "apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx": 2,
     "apps/desktop/src/features/onboarding/OnboardingWizard/wizardSteps.ts": 2,
     "apps/desktop/src/features/palette/commandList.ts": 5,
-    "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 10,
+    "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 9,
     "apps/desktop/src/features/palette/components/CommandsMode/EntryPreview.tsx": 1,
     "apps/desktop/src/features/palette/components/CommandsMode/index.tsx": 1,
     "apps/desktop/src/features/palette/components/CommandsMode/PreviewHints.tsx": 1,

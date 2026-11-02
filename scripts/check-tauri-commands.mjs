@@ -52,6 +52,11 @@ const collectLiteralInvocations = ({ source }) => {
   for (const match of source.matchAll(invokePattern)) {
     commands.add(match[2]);
   }
+  const namedCommandPattern =
+    /\binvokeHistory(?:\s*<[^()]*>)?\s*\(\s*\{\s*command:\s*(['"`])([^'"`]+)\1/g;
+  for (const match of source.matchAll(namedCommandPattern)) {
+    commands.add(match[2]);
+  }
   return commands;
 };
 

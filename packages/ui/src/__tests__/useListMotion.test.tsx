@@ -57,6 +57,20 @@ describe('useListMotion', () => {
     expect(phasesOf({ entries: result.current })).toEqual(['a:stable', 'b:stable']);
   });
 
+  it('draws a silent key stable on arrival and drops it at once on exit', () => {
+    const silentKeys = new Set(['b']);
+    const { result, rerender } = renderHook(
+      (props: HookProps) => useListMotion({ ...props, silentKeys }),
+      { initialProps: { items: itemsOf({ keys: ['a'] }), resetKey: 'all' } },
+    );
+
+    rerender({ items: itemsOf({ keys: ['a', 'b'] }), resetKey: 'all' });
+    expect(phasesOf({ entries: result.current })).toEqual(['a:stable', 'b:stable']);
+
+    rerender({ items: itemsOf({ keys: ['a'] }), resetKey: 'all' });
+    expect(phasesOf({ entries: result.current })).toEqual(['a:stable']);
+  });
+
   it('enters an added card for 200 ms and then rests', () => {
     const { result, rerender } = mount({ items: itemsOf({ keys: ['a', 'b'] }), resetKey: 'all' });
 

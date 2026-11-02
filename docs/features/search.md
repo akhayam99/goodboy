@@ -72,4 +72,4 @@ Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search s
 
 ### Right click menus
 
-Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and the palette list the same actions, and one that cannot run says why.
+Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and the palette list the same actions, and one that cannot run says why. On a session scope that has not loaded yet, an empty palette draws skeleton rows instead of "Nothing to do here yet".

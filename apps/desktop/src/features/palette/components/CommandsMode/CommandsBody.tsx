@@ -8,7 +8,6 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { ChevronRight, List } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
 import { Divider } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
 import { parseQuery } from '../../../quick-actions/grammar';
@@ -44,12 +43,14 @@ import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
 import { hasOwnPreviewOf, paletteBodyLayoutOf, paletteListMaxHeightOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
-import type { PaletteEntry, PaletteScope } from '../../types';
+import type { PaletteEntry } from '../../types';
 import { PaletteInputRow } from '../PaletteOverlay/PaletteInputRow';
 import { ScopeChip } from '../PaletteOverlay/ScopeChip';
 import { CommandsList } from './CommandsList';
 import { EntryPreview } from './EntryPreview';
 import { PreviewHints } from './PreviewHints';
+import { sessionIdOfScope } from './sessionIdOfScope';
+import { useIsScopeLoaded } from './useIsScopeLoaded';
 import { useScopeInfo } from './useScopeInfo';
 import { VerbConfirm } from './VerbConfirm';
 
@@ -72,15 +73,6 @@ type Props = PaletteModeProps & {
 const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
 
 const ALL_ACTIONS_KEY = 'level:session-actions';
-
-const sessionIdOf = (scope: PaletteScope | null): SessionId | null =>
-  scope !== null &&
-  (scope.kind === 'session' ||
-    scope.kind === 'agent' ||
-    scope.kind === 'workflowRun' ||
-    scope.kind === 'pullRequest')
-    ? scope.sessionId
-    : null;
 
 const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set(['lens:review', 'lens:files']);
 
@@ -114,7 +106,7 @@ export const CommandsBody = ({
   const scopeTarget: ObjectTarget | null =
     scope === null || scope.kind === 'workspace' ? null : scope;
   const scopeActions = useObjectActions({ target: scopeTarget, env });
-  const scopeSessionId = sessionIdOf(scope);
+  const scopeSessionId = sessionIdOfScope({ scope });
   const parentTarget = useMemo<ObjectTarget | null>(
     () =>
       scopeSessionId !== null && scope?.kind !== 'session'
@@ -127,6 +119,7 @@ export const CommandsBody = ({
   const entries = useCommandEntries();
   const needsYou = useNeedsYouEntries();
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
+  const isScopeLoaded = useIsScopeLoaded({ scopeSessionId });
   const activePalette = scopeSessionId === null ? null : palette;
   const runTarget = scope?.kind === 'workflowRun' ? null : (activePalette?.run?.target ?? null);
   const liveTarget = scope?.kind === 'agent' ? null : (activePalette?.liveAgent?.target ?? null);
@@ -680,6 +673,8 @@ export const CommandsBody = ({
               sections={sections}
               selectedKey={selected?.item.key ?? null}
               query={level === null ? query : filter}
+              isLoaded={isScopeLoaded}
+              gateKey={scopeInfo?.key ?? 'workspace'}
               optionId={optionId}
               onSelect={selectRow}
               onRun={activate}
