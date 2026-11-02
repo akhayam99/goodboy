@@ -261,9 +261,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           }
         }
       }
-      if (import.meta.env.DEV) {
-        console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
-      }
+      console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
 
       void get()
         .loadDormantSpend(id)
@@ -338,9 +336,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           }
           void get().maybeAutoAdvanceWorkflow(session.id);
         }
-        if (import.meta.env.DEV) {
-          console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
-        }
+        console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
       })();
       void get().loadWorkspaceOverrides(id);
     } else {
