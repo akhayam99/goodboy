@@ -1,4 +1,4 @@
-import { hasDeliveredTurn } from '@goodboy/db';
+import { countUserTextEvents } from '@goodboy/db';
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
@@ -44,8 +44,8 @@ export const deliverQueuedTurn = async ({
   const deliveryId = `queue:${turn.id}`;
   let isAccepted = false;
   try {
-    const isDelivered = await hasDeliveredTurn({ db: tauriDatabase, agentId, deliveryId });
-    if (isDelivered) {
+    const delivered = await countUserTextEvents({ db: tauriDatabase, agentId, deliveryId });
+    if (delivered > 0) {
       await accept();
       return 'delivered';
     }

@@ -191,7 +191,6 @@ export {
   insertTurnEvent,
   insertTurnEventsBatch,
   countUserTextEvents,
-  hasDeliveredTurn,
   readFirstUserText,
   listTurnEventsForAgent,
   listTurnEventEntriesForAgent,

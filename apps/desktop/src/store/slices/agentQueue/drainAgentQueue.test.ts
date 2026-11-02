@@ -8,9 +8,9 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 
-const { hasDeliveredTurn, listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(
+const { countUserTextEvents, listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(
   () => ({
-    hasDeliveredTurn: vi.fn(async (_params: { readonly deliveryId: string }) => false),
+    countUserTextEvents: vi.fn(async (_params: { readonly deliveryId?: string }) => 0),
     listAgentQueuedMessages: vi.fn(async () => [] as ReadonlyArray<unknown>),
     replaceAgentQueuedMessages: vi.fn(
       async (
@@ -23,7 +23,7 @@ const { hasDeliveredTurn, listAgentQueuedMessages, replaceAgentQueuedMessages } 
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../storyHarness')).dbModuleMock({
-    hasDeliveredTurn,
+    countUserTextEvents,
     listAgentQueuedMessages,
     replaceAgentQueuedMessages,
   }),
@@ -78,8 +78,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  hasDeliveredTurn.mockReset();
-  hasDeliveredTurn.mockResolvedValue(false);
+  countUserTextEvents.mockReset();
+  countUserTextEvents.mockResolvedValue(0);
   listAgentQueuedMessages.mockReset();
   listAgentQueuedMessages.mockResolvedValue([]);
   replaceAgentQueuedMessages.mockClear();
@@ -89,21 +89,25 @@ beforeEach(async () => {
     agentQueue: {},
     agentTurnState: { [AGENT_ID]: { kind: 'idle' } },
     sessionPhaseRuns: {
-      [SESSION_ID]: [{ id: AGENT_ID, sessionId: SESSION_ID, status: 'pending' }],
+      [SESSION_ID]: [
+        { id: AGENT_ID, sessionId: SESSION_ID, ordinal: 0, name: 'Agent', status: 'pending' },
+      ],
     },
     sendTurn,
     reportError,
-  } as never);
+  });
 });
 
 describe('drainAgentQueue after a crash', () => {
   it('does not send a message whose turn was recorded before the crash', async () => {
-    hasDeliveredTurn.mockImplementation(async ({ deliveryId }) => deliveryId === 'queue:q1');
+    countUserTextEvents.mockImplementation(async ({ deliveryId }) =>
+      deliveryId === 'queue:q1' ? 1 : 0,
+    );
     await restartWithSavedMessage();
 
     await store.getState().drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
-    expect(hasDeliveredTurn).toHaveBeenCalledWith(
+    expect(countUserTextEvents).toHaveBeenCalledWith(
       expect.objectContaining({ agentId: AGENT_ID, deliveryId: 'queue:q1' }),
     );
     expect(sendTurn).not.toHaveBeenCalled();
@@ -123,7 +127,7 @@ describe('drainAgentQueue after a crash', () => {
   });
 
   it('keeps the message and shows the error when the delivery check fails', async () => {
-    hasDeliveredTurn.mockRejectedValue(new Error('database is locked'));
+    countUserTextEvents.mockRejectedValue(new Error('database is locked'));
     await restartWithSavedMessage();
 
     await store.getState().drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });

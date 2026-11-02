@@ -4,7 +4,6 @@ import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countUserTextEvents,
-  hasDeliveredTurn,
   insertTurnEvent,
   listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
@@ -64,11 +63,12 @@ describe('turn event queries', () => {
       event: { kind: 'user_text', runId, text: 'plain', at },
     });
 
-    await expect(hasDeliveredTurn({ db, agentId, deliveryId: 'queue:q1' })).resolves.toBe(true);
-    await expect(hasDeliveredTurn({ db, agentId, deliveryId: 'queue:q2' })).resolves.toBe(false);
+    await expect(countUserTextEvents({ db, agentId, deliveryId: 'queue:q1' })).resolves.toBe(1);
+    await expect(countUserTextEvents({ db, agentId, deliveryId: 'queue:q2' })).resolves.toBe(0);
     await expect(
-      hasDeliveredTurn({ db, agentId: otherAgentId, deliveryId: 'queue:q1' }),
-    ).resolves.toBe(false);
+      countUserTextEvents({ db, agentId: otherAgentId, deliveryId: 'queue:q1' }),
+    ).resolves.toBe(0);
+    await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
   });
 
   it('counts only user_text payloads for the requested agent', async () => {

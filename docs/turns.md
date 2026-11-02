@@ -708,7 +708,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   same message twice gives the same id (the queue sends `queue:<id>`). The
   registry forgets every id when the app restarts, so the saved `user_text`
   event carries the `deliveryId` too, and `deliverQueuedTurn` asks
-  `hasDeliveredTurn` before it sends: a queued message whose turn is already
+  `countUserTextEvents` for that id before it sends: a queued message whose turn is already
   saved is removed from the queue, never sent again. If that check fails the
   message stays queued and the error shows. A second
   send of a known id never starts a run: `sendTurn` first asks
