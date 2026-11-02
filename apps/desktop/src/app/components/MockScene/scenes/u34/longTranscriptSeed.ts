@@ -14,7 +14,8 @@ import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-07T09:12:00.000Z' });
 
-export const LONG_TRANSCRIPT_ROWS = 3000;
+export const LONG_TRANSCRIPT_ROWS = 300;
+export const LONG_TRANSCRIPT_PERF_ROWS = 3000;
 
 export const LONG_TRANSCRIPT_WORKSPACE_ID = brandId<WorkspaceId>({
   value: 'mock-long-transcript-workspace',
@@ -118,5 +119,9 @@ const rowOf = ({ index }: RowParams) => {
   };
 };
 
-export const longTranscriptRows = () =>
-  Array.from({ length: LONG_TRANSCRIPT_ROWS }, (_, index) => rowOf({ index }));
+type RowsParams = {
+  readonly count: number;
+};
+
+export const longTranscriptRows = ({ count }: RowsParams) =>
+  Array.from({ length: count }, (_, index) => rowOf({ index }));
