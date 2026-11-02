@@ -20,6 +20,7 @@ export const asksWordsOf = ({ own, workspaceName, workspaceAutonomy }: Params): 
   return {
     value: own.label,
     source: 'this run',
+    isChanged: true,
     chain: `This run: ${own.label}. ${workspaceName}: ${inherited.label}. The run wins.`,
   };
 };

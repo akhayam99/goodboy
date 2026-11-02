@@ -1,8 +1,8 @@
 import { PaneShell } from '@goodboy/ui';
-import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { WorkTimeProvider } from '../../../workTreeModel/WorkTimeProvider';
 import { CentralColumn } from './CentralColumn';
+import { EmptySessionStart } from './EmptySessionStart';
 import { FolderCard } from './FolderCard';
 import { HeaderBand } from './HeaderBand';
 import { OverviewTitle } from './OverviewTitle';
@@ -14,30 +14,25 @@ type Props = {
   readonly session: Session;
 };
 
-type LeadChange = {
-  readonly hasLead: boolean;
-};
-
 export const SessionOverviewPane = ({ session }: Props) => {
   const sessionId: SessionId = session.id;
-  const [hasNextLead, setHasNextLead] = useState(false);
-  const onLeadChange = useCallback(({ hasLead }: LeadChange) => setHasNextLead(hasLead), []);
   const isArchived = session.archivedAt != null;
 
   return (
     <PaneShell
       page="overview"
       title={<OverviewTitle session={session} />}
-      actions={<OverviewHeaderActions session={session} hasNextLead={hasNextLead} />}
+      actions={<OverviewHeaderActions session={session} />}
       headerRhythm="section"
       animationClassName="animate-fade-in"
     >
       <HeaderBand session={session} />
       {isArchived ? null : <OverviewNotices session={session} />}
       {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
+      <EmptySessionStart session={session} />
       {isArchived ? null : <FolderCard sessionId={sessionId} />}
       <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-        <CentralColumn session={session} onLeadChange={onLeadChange} />
+        <CentralColumn session={session} />
       </WorkTimeProvider>
     </PaneShell>
   );

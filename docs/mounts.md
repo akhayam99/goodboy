@@ -71,7 +71,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 
 ## Who picks the folders
 
-A new session starts from its task, not from a folder. With nothing pinned in **Where**,
+A new session starts from its task, not from a folder. With nothing pinned in **Projects**,
 `mountTaskFolders` (`store/slices/project-mounts/mountTaskFolders.ts`) mounts at start the
 folders the task needs, and it is the one rule for this: `createSession` runs it when
 `startSessionFromDraft` passes `shouldPickFolders`, and Auto runs it for a writer with no folder
@@ -87,7 +87,7 @@ folders the task needs, and it is the one rule for this: `createSession` runs it
   mount nothing. A name shorter than four characters (`web`, `app`) matches only in backticks
   or as `owner/repo`, so a plain word in the task mounts nothing. The match is a plain index
   scan, no regex.
-- **A pin wins.** Any folder pinned in **Where** turns the rule off; only the pins are mounted.
+- **A pin wins.** Any folder pinned in **Projects** turns the rule off; only the pins are mounted.
 - **One allowance.** Each candidate goes through `admitProjectMount`, the same gate and proposal
   step an agent's `<<materialize>>` uses (`materializationGate`): the active project, task-linked
   projects and two more per session mount at once, and the next becomes a mount proposal the

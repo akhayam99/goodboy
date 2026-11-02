@@ -57,7 +57,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
 
     const start = await screen.findByRole('region', { name: 'Start a run' }, WAIT);
     expect(within(start).getByRole('textbox', { name: 'Start a run' })).toBeDefined();
-    expect(within(start).getByText('No limit')).toBeDefined();
+    expect(within(start).getByText('Limit: none')).toBeDefined();
     expect(screen.queryByText(/Spend cap/)).toBeNull();
   });
 

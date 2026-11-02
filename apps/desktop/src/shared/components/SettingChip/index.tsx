@@ -1,6 +1,15 @@
 import type { ReactNode } from 'react';
-import { AnchoredPopover, Button, Tooltip, cn, type DropdownController } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  Tooltip,
+  cn,
+  tintClasses,
+  type DropdownController,
+} from '@goodboy/ui';
 import type { SettingWords } from './settingWords';
+
+const CHANGED_TINT = tintClasses('info');
 
 type Props = {
   readonly dropdown: DropdownController;
@@ -34,13 +43,15 @@ export const SettingChip = ({
         .join(', ')}
       data-setting-chip={label}
       onClick={dropdown.toggle}
-      className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
-    >
-      <span className="shrink-0 text-faint-foreground">{label}</span>
-      <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
-      {words.source === '' ? null : (
-        <span className="shrink-0 text-faint-foreground">{words.source}</span>
+      data-setting-changed={words.isChanged === true ? '' : undefined}
+      className={cn(
+        'max-w-full',
+        words.isChanged === true && `${CHANGED_TINT.bgSoft} ${CHANGED_TINT.borderSoft}`,
+        dropdown.open && 'border-border bg-selected',
       )}
+    >
+      <span className="shrink-0 text-faint-foreground">{label}:</span>
+      <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
     </Button>
   );
   return (

@@ -14,6 +14,8 @@ type KindParams = {
 
 const NO_LIMIT = 'No limit';
 
+const LIMIT_NONE = 'Limit: none';
+
 const TITLE = {
   orchestrated: 'Limit for this run',
   preset: 'Limit for this run',
@@ -40,7 +42,8 @@ export const AUTO_LIMIT_COPY = {
   use: 'Use this limit',
   invalid: 'Enter an amount more than zero.',
   fromSession: 'From the budget of this session',
-  labelOf: ({ usd }: AmountParams): string => (usd === null ? NO_LIMIT : `Limit ${formatUsd(usd)}`),
+  labelOf: ({ usd }: AmountParams): string =>
+    usd === null ? LIMIT_NONE : `Limit: ${formatUsd(usd)}`,
   titleOf: ({ kind }: KindParams): string => TITLE[kind],
   helpOf: ({ kind, defaultFrom }: HelpParams): string =>
     `The most ${SPENDER[kind]} may spend. Without a limit, it only stops when the work is done. Your session limit and a provider's monthly limit still apply, whichever comes first. ${STARTS_FROM[defaultFrom]}`,

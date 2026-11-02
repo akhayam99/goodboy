@@ -167,18 +167,17 @@ describe('the c05 overview scenes', () => {
     expect(sectionOrder()[0]).toBe('Notices');
   });
 
-  it('c05-overview-blank offers Add a goal and fills one primary only', async () => {
+  it('c05-overview-blank starts inline, with New as the outline button and Start as the primary', async () => {
     await mount('c05-overview-blank');
 
     screen.getByRole('button', { name: 'Add a goal' });
-    const hasNext = cardOrder().some((card) => card === 'needs-you' || card === 'next');
+    screen.getByRole('textbox', { name: 'Start a run' });
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
-      hasNext ? 'secondary' : 'primary',
+      'secondary',
     );
-    expect(
-      document.querySelectorAll('[data-slot="pane-body"] [data-variant="primary"]').length +
-        (hasNext ? 0 : 1),
-    ).toBe(1);
+    expect(screen.getByRole('button', { name: 'Start' }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
   });
 
   it('c05-overview-archived is read only with Restore in the header', async () => {

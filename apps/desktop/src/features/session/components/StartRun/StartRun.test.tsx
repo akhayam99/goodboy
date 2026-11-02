@@ -114,12 +114,18 @@ type RenderParams = {
   readonly sessionId: SessionId;
 };
 
-const renderField = ({ sessionId }: RenderParams) =>
-  render(
+const renderField = ({ sessionId }: RenderParams) => {
+  const view = render(
     <ToastProvider>
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
+  const more = screen.queryByRole('button', { name: /^More/ });
+  if (more !== null) {
+    fireEvent.click(more);
+  }
+  return view;
+};
 
 type AskParams = {
   readonly text: string;
@@ -447,16 +453,16 @@ describe('StartRun run as', () => {
   it('shows the limit chip for an Auto or workflow kind and none for an agent', () => {
     renderField({ sessionId: SESSION.id });
 
-    screen.getByRole('button', { name: 'No limit' });
+    screen.getByRole('button', { name: 'Limit: none' });
 
     pickKind({ name: 'Orchestrated' });
 
-    screen.getByRole('button', { name: 'No limit' });
+    screen.getByRole('button', { name: 'Limit: none' });
 
     pickKind({ name: 'Agent' });
 
-    expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Limit: none' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
   it('shows Asks you for an Auto run and for a workflow, and none for an agent', () => {

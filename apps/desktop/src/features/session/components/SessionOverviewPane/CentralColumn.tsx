@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo } from 'react';
+import { Fragment, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
@@ -33,13 +33,8 @@ import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
 
-type LeadChange = {
-  readonly hasLead: boolean;
-};
-
 type Props = {
   readonly session: Session;
-  readonly onLeadChange: (change: LeadChange) => void;
 };
 
 type ChipParams = {
@@ -62,7 +57,7 @@ const chipOf = ({ branchLabelOf, mountId }: ChipParams) => {
   return label === null ? null : <BranchChip label={label} />;
 };
 
-export const CentralColumn = ({ session, onLeadChange }: Props) => {
+export const CentralColumn = ({ session }: Props) => {
   const sessionId = session.id;
   const isArchived = session.archivedAt != null;
   const model = useSessionWorkModel({ session });
@@ -99,7 +94,6 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     [branchNameOf],
   );
   const stopRowFor = useRebaseStopRows({ sessionId });
-  const hasLead = !isArchived && nextCards.length > 0;
   const waiting = useMemo(() => waitingGroupsOf({ groups }), [groups]);
   const shown = overviewCardsOf({
     cards: nextCards,
@@ -112,10 +106,6 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
   });
   const hasNeedsYouRows = nextRowCountOf({ cards: nextCards, card: 'needs-you' }) > 0;
   const leadRunId = hasNeedsYouRows ? null : runLeadOf({ groups });
-
-  useEffect(() => {
-    onLeadChange({ hasLead });
-  }, [hasLead, onLeadChange]);
 
   const cardViewOf = ({ card }: CardViewParams) => {
     switch (card.id) {

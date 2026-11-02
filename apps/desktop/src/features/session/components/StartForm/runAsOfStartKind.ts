@@ -9,9 +9,8 @@ type KindParams = {
 export const startFormKindOfRunAs = ({ runAs }: KindParams): StartFormKind | null => {
   switch (runAs.kind) {
     case 'auto':
-      return null;
     case 'autoAgent':
-      return 'auto';
+      return null;
     case 'role':
       return 'agent';
     case 'orchestrated':
@@ -31,7 +30,7 @@ type RunAsParams = {
 
 export const runAsOfStartFormKind = ({ kind, presets }: RunAsParams): RunAs => {
   if (kind === 'auto') {
-    return { kind: 'autoAgent' };
+    return AUTO_RUN_AS;
   }
   if (kind === 'orchestrated') {
     return { kind: 'orchestrated' };

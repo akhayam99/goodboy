@@ -106,7 +106,7 @@ describe('New session draft and the New forms', () => {
     await mountScene({ name: 'c10-start-projects' });
 
     expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
-    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('2 folders');
+    expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('2');
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {

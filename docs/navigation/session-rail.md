@@ -570,11 +570,11 @@ the draft. The field text is the draft's `workflowGoal`, so leaving keeps it.
 workspace, then closes the page. Back
 returns to the draft like any other place. **Start blank** in the header (`startBlankSession`) is the way
 to start from the goal: it creates a session with no title and no goal slot
-and lands on its normal Overview (`Untitled session`, `Add a goal`), where
+and lands on its normal Overview (`Untitled session`, `Add a goal`, the start form inline), where
 the goal, projects and work are added from the usual controls. Nothing is
 required first, and the draft stays for the next New.
 
-The draft asks no question first (`SessionKickoff`): **Where** (`WhereChip`) is
+The draft asks no question first (`SessionKickoff`): **Projects** (`WhereChip`) is
 optional and sits in the task field, and **Start blank** sits in the page
 header. Where is a searchable multiple `Listbox` in two groups
 (`projectPickerOptions`): "Suggested" holds at most five (the most recently

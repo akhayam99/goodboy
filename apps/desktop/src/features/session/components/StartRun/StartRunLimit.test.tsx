@@ -104,12 +104,18 @@ type RenderParams = {
   readonly sessionId: SessionId;
 };
 
-const renderField = ({ sessionId }: RenderParams) =>
-  render(
+const renderField = ({ sessionId }: RenderParams) => {
+  const view = render(
     <ToastProvider>
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
+  const more = screen.queryByRole('button', { name: /^More/ });
+  if (more !== null) {
+    fireEvent.click(more);
+  }
+  return view;
+};
 
 type AskParams = {
   readonly text: string;
@@ -181,7 +187,7 @@ describe('StartRun limit', () => {
     await storeDefaultLimit({ usd: '5' });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
-    await screen.findByRole('button', { name: 'Limit $5.00 · default' });
+    await screen.findByRole('button', { name: 'Limit: $5.00 · default' });
 
     ask({ text: 'center every member page' });
 
@@ -193,9 +199,9 @@ describe('StartRun limit', () => {
     await storeDefaultLimit({ usd: '5' });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
-    fireEvent.click(await screen.findByRole('button', { name: 'Limit $5.00 · default' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Limit: $5.00 · default' }));
     fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
-    await screen.findByRole('button', { name: 'No limit' });
+    await screen.findByRole('button', { name: 'Limit: none' });
 
     ask({ text: 'center every member page' });
 
@@ -209,7 +215,7 @@ describe('StartRun limit', () => {
     await storeDefaultLimit({ usd: '5' });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
-    await typeLimit({ from: 'Limit $5.00 · default', usd: '8', shown: 'Limit $8.00' });
+    await typeLimit({ from: 'Limit: $5.00 · default', usd: '8', shown: 'Limit: $8.00' });
 
     ask({ text: 'center every member page' });
 
@@ -229,7 +235,7 @@ describe('StartRun limit', () => {
     });
     renderField({ sessionId: SESSION.id });
 
-    fireEvent.click(await screen.findByRole('button', { name: /^Limit / }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Limit: / }));
 
     screen.getByText('Session $0 of $20.00 · Claude $41.20 of $200.00 this month');
   });
@@ -254,8 +260,8 @@ const withRunDefault = ({ usd }: RunDefaultParams): void => {
 const storedAutoLimit = () =>
   getWorkspaceValue({ db: storySqlite(), workspaceId: WORKSPACE.id, key: 'auto.treeLimitUsd' });
 
-const AUTO_DEFAULT = 'Limit $5.00 · default';
-const RUN_DEFAULT = 'Limit $8.00 · default';
+const AUTO_DEFAULT = 'Limit: $5.00 · default';
+const RUN_DEFAULT = 'Limit: $8.00 · default';
 
 describe('StartRun limit by kind', () => {
   beforeEach(async () => {
@@ -294,7 +300,7 @@ describe('StartRun limit by kind', () => {
     pickKind({ name: 'Preset' });
     screen.getByRole('button', { name: RUN_DEFAULT });
     pickKind({ name: 'Agent' });
-    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
   it('words the chip help like the default it shows, with a kind and without one', async () => {
@@ -324,9 +330,9 @@ describe('StartRun limit by kind', () => {
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Orchestrated' });
-    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit $3.00' });
+    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit: $3.00' });
     pickKind({ name: 'Auto' });
-    screen.getByRole('button', { name: 'Limit $3.00' });
+    screen.getByRole('button', { name: 'Limit: $3.00' });
     pickKind({ name: 'Orchestrated' });
 
     ask({ text: QUESTION });
@@ -341,7 +347,7 @@ describe('StartRun limit by kind', () => {
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Orchestrated' });
-    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit $3.00' });
+    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit: $3.00' });
     ask({ text: QUESTION });
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(field()).toHaveProperty('value', ''));
@@ -359,10 +365,10 @@ describe('StartRun limit by kind', () => {
     attach.mockRejectedValueOnce(new Error('session worktree not available'));
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Orchestrated' });
-    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit $3.00' });
+    await typeLimit({ from: RUN_DEFAULT, usd: '3', shown: 'Limit: $3.00' });
     ask({ text: QUESTION });
     await screen.findByText(/session worktree not available/);
-    screen.getByRole('button', { name: 'Limit $3.00' });
+    screen.getByRole('button', { name: 'Limit: $3.00' });
 
     fireEvent.click(screen.getByRole('button', { name: /^Retry/ }));
 
@@ -375,9 +381,9 @@ describe('StartRun limit by kind', () => {
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Orchestrated' });
-    await typeLimit({ from: RUN_DEFAULT, usd: '9', shown: 'Limit $9.00' });
+    await typeLimit({ from: RUN_DEFAULT, usd: '9', shown: 'Limit: $9.00' });
     pickKind({ name: 'Auto' });
-    screen.getByRole('button', { name: 'Limit $9.00' });
+    screen.getByRole('button', { name: 'Limit: $9.00' });
 
     ask({ text: QUESTION });
 
@@ -390,7 +396,7 @@ describe('StartRun limit by kind', () => {
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Auto' });
-    await typeLimit({ from: AUTO_DEFAULT, usd: '9', shown: 'Limit $9.00' });
+    await typeLimit({ from: AUTO_DEFAULT, usd: '9', shown: 'Limit: $9.00' });
 
     ask({ text: QUESTION });
 

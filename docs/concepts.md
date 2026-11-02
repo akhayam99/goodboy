@@ -526,7 +526,7 @@ whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
 never offered there. The block disappears when nothing waits, and there is no
-filter to switch on first. **New** is the one primary, and its menu
+filter to switch on first. **New** is always the outline button, and its menu
 offers **Start a run**, a report or a wireframe. Suggestions live in **Next steps**,
 above Activity, not as a row inside the feed.
 

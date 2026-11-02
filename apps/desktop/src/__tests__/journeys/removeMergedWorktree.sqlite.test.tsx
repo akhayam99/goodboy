@@ -162,7 +162,7 @@ const showNext = (view: RenderResult): string => {
   view.rerender(
     <ToastProvider>
       <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
-        <CentralColumn session={session} onLeadChange={() => undefined} />
+        <CentralColumn session={session} />
       </WorkTimeProvider>
     </ToastProvider>,
   );

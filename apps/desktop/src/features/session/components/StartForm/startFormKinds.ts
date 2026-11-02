@@ -57,6 +57,8 @@ export const startFormKindOfDraft = ({
   startKind,
   startShape,
 }: DraftParams): StartFormKind | null =>
-  (startKind === 'workflow' || startKind === 'agent') && startShape !== null
+  (startKind === 'workflow' || startKind === 'agent') &&
+  startShape !== null &&
+  startShape !== 'autoAgent'
     ? startFormKindOfShape({ shape: startShape })
     : null;

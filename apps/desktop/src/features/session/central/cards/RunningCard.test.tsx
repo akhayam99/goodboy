@@ -139,7 +139,7 @@ const show = async () => {
   render(
     <ToastProvider>
       <WorkTimeProvider sessionId={SESSION_ID} workspaceId={WORKSPACE_ID}>
-        <CentralColumn session={session} onLeadChange={() => undefined} />
+        <CentralColumn session={session} />
       </WorkTimeProvider>
     </ToastProvider>,
   );

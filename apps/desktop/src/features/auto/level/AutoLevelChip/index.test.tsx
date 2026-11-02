@@ -20,7 +20,7 @@ describe('AutoLevelChip', () => {
     );
 
     screen.getByText('After the plan');
-    screen.getByText('from Harborline');
+    screen.getByRole('button', { name: /, from Harborline/ });
   });
 
   it('says this run when the level differs from the workspace default', () => {
@@ -35,7 +35,7 @@ describe('AutoLevelChip', () => {
       />,
     );
 
-    screen.getByText('this run');
+    screen.getByRole('button', { name: /, this run/ });
   });
 
   it('hands back the level picked in the popover', () => {

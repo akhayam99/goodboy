@@ -2,6 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../helpers/startSettingsRowOf';
 import { insertProject, insertWorkspace, setWorkspaceValue } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,
@@ -180,7 +181,9 @@ describe('journey: the limit chip at the kickoff', () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
-    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
+    const row = startSettingsRowOf({
+      group: await screen.findByRole('group', { name: 'Run settings' }),
+    });
 
     row.getByRole('combobox', { name: 'Role' });
     expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
@@ -190,9 +193,11 @@ describe('journey: the limit chip at the kickoff', () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
-    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
+    const row = startSettingsRowOf({
+      group: await screen.findByRole('group', { name: 'Run settings' }),
+    });
 
-    fireEvent.click(await row.findByRole('button', { name: 'Limit $8.00 · default' }));
+    fireEvent.click(await row.findByRole('button', { name: 'Limit: $8.00 · default' }));
 
     screen.getByRole('dialog', { name: 'Limit for this run' });
   });
@@ -201,8 +206,10 @@ describe('journey: the limit chip at the kickoff', () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
-    const row = within(await screen.findByRole('group', { name: 'Run settings' }));
+    const row = startSettingsRowOf({
+      group: await screen.findByRole('group', { name: 'Run settings' }),
+    });
 
-    await row.findByRole('button', { name: 'Limit $5.00 · default' });
+    await row.findByRole('button', { name: 'Limit: $5.00 · default' });
   });
 });

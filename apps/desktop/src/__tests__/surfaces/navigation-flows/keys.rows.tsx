@@ -1696,7 +1696,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       const composer = await openAgentChat(ctx);
       await pressed('session.permissions', composer);
     },
-    lands: () => visible('dialog', 'Asks you'),
+    lands: () => visible('dialog', 'Edits'),
   }),
   keyRow({
     id: 'composer.newLine',

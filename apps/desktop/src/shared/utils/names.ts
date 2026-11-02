@@ -9,6 +9,7 @@ export const NAMES = {
   building: 'Building',
   done: 'Done',
   asksYou: 'Asks you',
+  edits: 'Edits',
   replyLength: 'Reply length',
   short: 'Short',
   normal: 'Normal',

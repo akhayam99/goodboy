@@ -300,9 +300,9 @@ describe('the start, agent and workflow chapters', () => {
     expect(pointOf('kickoff', 'What kind of run?')).toContain('Orchestrated or Preset');
     expect(pointOf('kickoff', NAMES.startARun)).toContain('Auto picks a workflow or an agent');
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
-    expect(pointOf('kickoff', 'Where')).toContain('Auto picks');
-    expect(pointOf('kickoff', 'Where')).toContain('Suggested');
-    expect(pointOf('kickoff', 'Where')).toContain('All folders');
+    expect(pointOf('kickoff', 'Pin folders')).toContain('Auto picks');
+    expect(pointOf('kickoff', 'Pin folders')).toContain('Suggested');
+    expect(pointOf('kickoff', 'Pin folders')).toContain('All folders');
   });
 
   it('lists the New menu forms by their titles', () => {

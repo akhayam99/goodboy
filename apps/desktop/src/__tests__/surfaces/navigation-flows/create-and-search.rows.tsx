@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../helpers/startSettingsRowOf';
 import type { AgentId, IsoDateTime, MountId, SearchHit } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { currentPlatform } from '../../../shared/platform';
@@ -218,9 +219,11 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
         'Orchestrated',
         'Preset',
       ]);
-      const settings = within(screen.getByRole('group', { name: 'Run settings' }));
+      const settings = startSettingsRowOf({
+        group: screen.getByRole('group', { name: 'Run settings' }),
+      });
       settings.getByRole('button', { name: /^Edits:/ });
-      expect(settings.queryByRole('combobox', { name: 'Where' })).toBeNull();
+      expect(settings.queryByRole('combobox', { name: 'Projects' })).toBeNull();
     },
   },
   {

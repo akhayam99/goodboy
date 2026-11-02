@@ -165,7 +165,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       expect(screen.getByRole('region', { name: 'Start a run' })).toBeDefined();
       expect(screen.queryByRole('tablist', { name: 'What kind of run?' })).toBeNull();
       expect(screen.queryByRole('group', { name: 'Run settings' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Limit: none' })).toBeNull();
       expect(screen.queryByText('reads only')).toBeNull();
     },
   },

@@ -123,6 +123,13 @@ const settle = async (): Promise<void> => {
   });
 };
 
+const openMore = (): void => {
+  const more = screen.queryByRole('button', { name: /^More/ });
+  if (more !== null) {
+    fireEvent.click(more);
+  }
+};
+
 const openPage = async (): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom.id }) });
   useAppStore.getState().openSessionDraft();
@@ -132,6 +139,7 @@ const openPage = async (): Promise<void> => {
     </ToastProvider>,
   );
   await settle();
+  openMore();
 };
 
 const textBox = (name: string): HTMLTextAreaElement => {
@@ -212,6 +220,7 @@ const renderPage = async (): Promise<void> => {
     </ToastProvider>,
   );
   await settle();
+  openMore();
 };
 
 const KINDS = 'What kind of run?';
@@ -238,16 +247,18 @@ describe('New session page', () => {
     const task = within(screen.getByRole('region', { name: 'Goal' }));
     expect(textBox('Goal').placeholder).toBe('Describe the goal, or pick one from Tasks');
     task.getByRole('combobox', { name: 'Pick from Tasks' });
-    expect(task.queryByRole('combobox', { name: 'Where' })).toBeNull();
+    expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
     const settings = within(screen.getByRole('group', { name: 'Run settings' }));
-    expect(settings.getByRole('combobox', { name: 'Where' }).textContent).toContain('Auto picks');
+    expect(settings.getByRole('combobox', { name: 'Projects' }).textContent).toContain(
+      'Auto picks',
+    );
     expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
+    expect(startButton().textContent).toBe('Start');
     expect(startButton().disabled).toBe(true);
     screen.getByText('Write the goal first.');
   });
 
-  it('shows four kinds on one row, none picked, and says Auto picks until one is', async () => {
+  it('shows four kinds on one row, Auto picked, and says Auto picks until another is', async () => {
     await openPage();
 
     const kinds = within(screen.getByRole('tablist', { name: KINDS }));
@@ -258,12 +269,25 @@ describe('New session page', () => {
       'Preset',
     ]);
     expect(kinds.getAllByRole('tab').map((tab) => tab.getAttribute('aria-selected'))).toEqual([
-      'false',
+      'true',
       'false',
       'false',
       'false',
     ]);
     screen.getByText('Auto picks how to run it. Or pick a kind.');
+  });
+
+  it('keeps the button reading Start whatever the kind', async () => {
+    await openPage();
+
+    expect(startButton().textContent).toBe('Start');
+    await pickKind({ name: /^Orchestrated/ });
+    expect(startButton().textContent).toBe('Start');
+    await pickKind({ name: /^Agent/ });
+    expect(startButton().textContent).toBe('Start');
+    await pickKind({ name: /^Auto/ });
+    expect(startButton().textContent).toBe('Start');
+    expect(isPicked({ name: /^Auto/ })).toBe(true);
   });
 
   it('says what the picked kind does, and gives the choice back to Auto on a second press', async () => {
@@ -302,19 +326,19 @@ describe('New session page', () => {
   it('keeps the Limit chip under Auto picks, and drops it once the route is an agent', async () => {
     await openPage();
 
-    screen.getByRole('button', { name: /^Limit \$5\.00/ });
+    screen.getByRole('button', { name: /^Limit: \$5\.00/ });
 
     typeGoal('@Scout list every page that uses the old layout');
     await settle();
 
-    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
   it('pins folders from Where, and clearing them gives the choice back to Auto', async () => {
     await openPage();
 
-    await chooseOption({ box: 'Where', option: /payments-api/ });
-    const where = screen.getByRole('combobox', { name: 'Where' });
+    await chooseOption({ box: 'Projects', option: /payments-api/ });
+    const where = screen.getByRole('combobox', { name: 'Projects' });
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.projectIds).toHaveLength(1);
     expect(where.textContent).not.toContain('Auto picks');
 
@@ -325,7 +349,7 @@ describe('New session page', () => {
       }),
     );
     await settle();
-    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('Auto picks');
+    expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('Auto picks');
   });
 
   it('opens on the kind you started last in this workspace', async () => {
@@ -416,7 +440,7 @@ describe('New session page', () => {
     await pickKind({ name: /^Orchestrated/ });
 
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({
@@ -457,7 +481,7 @@ describe('New session page', () => {
     await openPage();
     await pickKind({ name: /^Orchestrated/ });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({
@@ -480,7 +504,7 @@ describe('New session page', () => {
     await settle();
     screen.getByRole('button', { name: 'Asks you: Never, this run' });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({
@@ -499,15 +523,13 @@ describe('New session page', () => {
     await pickKind({ name: /^Preset/ });
     typeGoal(GOAL);
 
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start workflow' }).disabled).toBe(
-      true,
-    );
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start' }).disabled).toBe(true);
     screen.getByText('Pick a preset first.');
     await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
     const steps = screen.getByRole('list', { name: 'Preset steps' });
     expect(within(steps).getAllByRole('listitem')).toHaveLength(1);
     fireEvent.click(screen.getByRole('tab', { name: 'Follow it' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({
@@ -530,7 +552,7 @@ describe('New session page', () => {
       patch: { agentRouting: { provider: 'anthropic', model: 'opus', effort: 'high' } },
     });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Planner' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent).toHaveBeenCalledWith(
@@ -571,7 +593,7 @@ describe('New session page', () => {
       'pinned',
     );
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Planner' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent).toHaveBeenCalledWith(
       cameFrom.id,
@@ -585,7 +607,7 @@ describe('New session page', () => {
     await pickKind({ name: /^Auto/ });
 
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent).toHaveBeenCalledWith(
@@ -607,7 +629,7 @@ describe('New session page', () => {
     await pickKind({ name: /^Orchestrated/ });
     typeGoal(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(await screen.findByText('The folder is locked by another window')).toBeDefined();
     expect(textBox('Goal').value).toBe(GOAL);
@@ -625,7 +647,7 @@ describe('New session page', () => {
     await openPage();
     await pickKind({ name: /^Auto/ });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await settle();
 
     cleanup();
@@ -634,7 +656,7 @@ describe('New session page', () => {
     await renderPage();
 
     expect(screen.queryByText('Late failure')).toBeNull();
-    screen.getByRole('button', { name: 'Start Auto agent' });
+    screen.getByRole('button', { name: 'Start' });
   });
 
   it('attaches a task on any kind, starts on it, and Remove takes it off', async () => {
@@ -652,7 +674,7 @@ describe('New session page', () => {
     );
     await settle();
     expect(screen.queryByRole('combobox', { name: 'Pick from Tasks' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
     expect(start.mock.calls[0]?.[0].start).toMatchObject({
       kind: 'task',
@@ -702,15 +724,15 @@ const withRunDefault = (): void => {
 };
 
 describe('New session limit by kind', () => {
-  const AUTO_DEFAULT = /^Limit \$5\.00 · default$/;
-  const RUN_DEFAULT = /^Limit \$8\.00 · default$/;
+  const AUTO_DEFAULT = /^Limit: \$5\.00 · default$/;
+  const RUN_DEFAULT = /^Limit: \$8\.00 · default$/;
 
   type TypeLimitParams = {
     readonly usd: string;
   };
 
   const typeLimit = async ({ usd }: TypeLimitParams): Promise<void> => {
-    fireEvent.click(screen.getByRole('button', { name: /^Limit / }));
+    fireEvent.click(screen.getByRole('button', { name: /^Limit: / }));
     await settle();
     fireEvent.change(screen.getByRole('textbox', { name: 'Other amount' }), {
       target: { value: usd },
@@ -731,7 +753,7 @@ describe('New session limit by kind', () => {
     await pickKind({ name: /^Auto/ });
     screen.getByRole('button', { name: AUTO_DEFAULT });
     await pickKind({ name: /^Agent/ });
-    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
   it('starts an Orchestrated run from the Run defaults limit', async () => {
@@ -740,7 +762,7 @@ describe('New session limit by kind', () => {
     await pickKind({ name: /^Orchestrated/ });
     typeGoal(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
@@ -753,7 +775,7 @@ describe('New session limit by kind', () => {
     typeGoal(GOAL);
     await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
@@ -764,10 +786,10 @@ describe('New session limit by kind', () => {
     await openPage();
     await pickKind({ name: /^Orchestrated/ });
     await typeLimit({ usd: '3' });
-    screen.getByRole('button', { name: 'Limit $3.00' });
+    screen.getByRole('button', { name: 'Limit: $3.00' });
     typeGoal(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
@@ -782,7 +804,7 @@ describe('New session limit by kind', () => {
 
     await pickKind({ name: /^Auto/ });
 
-    screen.getByRole('button', { name: 'Limit $3.00' });
+    screen.getByRole('button', { name: 'Limit: $3.00' });
   });
 });
 
@@ -816,7 +838,7 @@ describe('New session settings row', () => {
       /^Model:/,
       /^Asks you:/,
       /^Edits:/,
-      /^Limit /,
+      /^Limit: /,
       /^Guidance:/,
     ];
     for (const name of chips) {
@@ -843,7 +865,7 @@ describe('New session settings row', () => {
     fireEvent.click(screen.getByRole('tab', { name: /^Read only/ }));
     await settle();
     screen.getByRole('button', { name: /^Edits: Read only, this session/ });
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(setMode).toHaveBeenCalledWith(cameFrom.id, 'plan');
@@ -859,7 +881,7 @@ describe('New session settings row', () => {
     await openPage();
     await pickKind({ name: /^Auto/ });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(setMode).not.toHaveBeenCalled();
@@ -879,7 +901,7 @@ describe('New session settings row', () => {
     await settle();
     fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
     await settle();
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(changeAutoLevel).toHaveBeenCalledWith(
@@ -962,7 +984,7 @@ describe('New session guidance', () => {
     await editGuidance(RUN_GUIDANCE);
     expect(guidanceChip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ guidance: RUN_GUIDANCE });
@@ -974,7 +996,7 @@ describe('New session guidance', () => {
     await openPage();
     await pickKind({ name: /^Auto/ });
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
@@ -989,7 +1011,7 @@ describe('New session guidance', () => {
     await pickKind({ name: /^Orchestrated/ });
     await editGuidance(RUN_GUIDANCE);
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({
@@ -1010,7 +1032,7 @@ describe('New session guidance', () => {
     await settle();
     expect(guidanceChip().getAttribute('aria-label')).toBe('Guidance: None, this run');
     typeGoal(GOAL);
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]?.rulesSnapshot).toMatchObject({ standingGuidance: '' });
@@ -1057,7 +1079,7 @@ describe('New session guidance', () => {
     await editGuidance(RUN_GUIDANCE);
     typeGoal(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(await screen.findByText('The folder is locked by another window')).toBeDefined();
     expect(guidanceChip().getAttribute('aria-label')).toBe(`Guidance: ${RUN_GUIDANCE}, this run`);

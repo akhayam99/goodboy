@@ -188,8 +188,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `${NAMES.startSession}, on an issue in Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.`,
       },
       {
-        term: 'Where',
-        desc: 'Reads Auto picks: an agent adds the folder it must edit. Pin folders here from Suggested or All folders.',
+        term: 'Pin folders',
+        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Suggested or All folders.',
       },
       {
         term: 'New menu',

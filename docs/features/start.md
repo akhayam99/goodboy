@@ -41,14 +41,15 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 Every door draws the same form: the New session page, a session's Runs page (and so the New menu's **Start a run**), ⌘K, and the setup Scout run.
 
 - Four kinds sit in one row: **Auto**, **Agent**, **Orchestrated** and **Preset**. One line under them says what the pressed kind does.
-- With none pressed, Auto picks by the table above. Press the pressed kind again to give the choice back.
+- Auto is pressed by default and picks by the table above. Press the pressed kind again to give the choice back to Auto.
 - **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Follow it** or **Adapt as it goes**.
-- One row of quiet chips holds the settings. Each chip opens its own popover, anchored to it, so it stays inside the window.
-- A kind shows only the settings it uses. **Where** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
+- One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
+- **Projects**, **Model** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
+- A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
 - **Model** names the orchestrator or the agent for this run, **Auto** until you pick one. A pick is for this run only.
 - **Asks you** is Every step, After the plan or Never for a workflow, and the Auto level for an Auto agent.
-- **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, the same as the chat box's picker, and is set before the first agent starts.
-- **Limit** reads "Limit $5.00", with a quiet "default" while the amount is the one the kind starts from. Auto starts from the **Auto limit**, and so does a start with no kind pressed. Orchestrated and Preset start from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
+- **Edits** is what agents may do in the session: **Read only**, **Ask first**, **Edits allowed** or **Full access**. It reads the workspace default until you pick, and a start never writes a mode you did not pick. A pick applies to the whole session, and is set before the first agent starts. The chat box picker reads **Edits: Ask first**, the same label.
+- **Limit** reads "Limit: $5.00" ("Limit: none" without one), with a quiet "default" while the amount is the one the kind starts from. Auto starts from the **Auto limit**, and so does a start with no kind pressed. Orchestrated and Preset start from the **Run defaults** limit. Switching kind shows the new kind's default and keeps an amount you typed. Its popover lists $5, $10 and $25 beside the default and your typed amount, with an **Other amount** field and **No limit**.
 - Under the amounts the popover names the limits that still apply: the session limit, then each provider's monthly limit. Each shows what is spent, as in "Session $0 of $20.00 · Claude $41.20 of $200.00 this month".
 - The run gets exactly the amount the chip shows. **No limit** means no limit, even when the workspace has a default. A start never adds a limit you did not see. An amount typed for Orchestrated or Preset applies to the run you start and never changes the Auto limit. It stays in the chip until the run starts, so a failed start keeps it for Retry and the next start begins from the default again. The help in the popover names the same source as the amount.
 - The run page shows the same amount with its source, **default** or **this run**.
@@ -57,7 +58,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - The popover says who reads it. The orchestrator reads it on Orchestrated and Preset, the agent on Agent, and the Auto agent with the helpers it starts on Auto.
 - Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
 - Switching kind keeps what you typed and the values that still apply.
-- The primary names what starts: **Start workflow**, **Start Scout** (the role you picked), **Start Auto agent**, or **Start** while Auto picks.
+- The primary always reads **Start**, whatever the kind.
 - Setup's Scout run is pinned to Agent, so it draws neither kinds nor settings.
 
 ### The Kind chip
@@ -93,24 +94,26 @@ The settings line of a run names the model that runs it, next to the **Kind** ch
 Start a session from your goal: write it or pick an issue, then choose the kind of run.
 
 - The first field is **Goal** ("Describe the goal, or pick one from Tasks"). Write it, or press **Pick from Tasks** in its bottom row to pick an open issue. The issue fills the goal when it is empty and links to the session.
-- **Where** sits in the settings row and reads **Auto picks**. The session runs on the workspace, and agents read every folder.
+- **Projects** sits in the settings row and reads **Auto picks**. The session runs on the workspace, and agents read every folder.
 - The folders the goal needs are mounted on start. They are the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the goal names by their exact name.
 - Later an agent mounts the folder it must edit by itself.
 - Both share one allowance: the active folder, a folder linked by the issue and up to two more per session. More wait for your approval. See [mounts.md](../mounts.md#who-picks-the-folders).
-- Open **Where** to pin folders yourself. Clear it to give the choice back.
-- A picked issue whose repository Goodboy recognizes pins that repository in **Where**.
+- Open **Projects** to pin folders yourself. Clear it to give the choice back.
+- A picked issue whose repository Goodboy recognizes pins that repository in **Projects**.
 
 Under the task sits [one start form](#one-start-form).
 
-- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind next time. The first visit opens with none pressed, so Auto picks.
+- The page remembers the last kind you started in this workspace (saved after a start succeeds). It opens on that kind next time. The first visit opens on Auto.
 - Each window keeps its own pick while it is open.
-- ⌘K **New workflow session** opens the page on Orchestrated, **New agent session** on Auto, and **Start a run** with none pressed.
+- ⌘K **New workflow session** opens the page on Orchestrated, **New agent session** on Auto, and **Start a run** on Auto.
 - The goal is required on every kind. If the start fails, the page keeps everything and Start becomes **Retry**. Leaving the page while a start is on its way drops the late answer.
+- A session with no run shows this form inline on its Overview, so the first action is on the page. **New** stays the outline button in every state.
+- After a start, if the new worktree reads its dependencies from another folder, a warning says to reinstall before the agent runs checks. The Branch page keeps its own notice.
 - Start sends the kind you pressed, so the router does not guess. The run's line says "you picked it".
 
 **Start blank** sits in the page header, and **Discard** sits next to Start once you wrote something. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text.
 
-**Where** is optional. Search it by name, even with 50 folders in the workspace.
+**Projects** is optional. Search it by name, even with 50 folders in the workspace.
 
 - The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All folders by name.
 - It reads **Auto picks**, the folder you pinned, or how many you pinned.

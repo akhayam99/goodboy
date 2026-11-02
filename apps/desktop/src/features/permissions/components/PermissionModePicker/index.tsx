@@ -69,7 +69,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={NAMES.asksYou}
+      ariaLabel={NAMES.edits}
       className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
       trigger={
         <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
@@ -81,7 +81,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             onClick={toggle}
             hasPopup="dialog"
             expanded={open}
-            ariaLabel={`${NAMES.asksYou}: ${current.label}`}
+            ariaLabel={`${NAMES.edits}: ${current.label}`}
             className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
             icon={
               <CurrentIcon
@@ -90,7 +90,12 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
                 className={tintClasses(current.tone).icon}
               />
             }
-            label={<span className="text-foreground @max-sm:hidden">{current.label}</span>}
+            label={
+              <span className="text-foreground @max-sm:hidden">
+                <span className="text-faint-foreground">{`${NAMES.edits}: `}</span>
+                {current.label}
+              </span>
+            }
             trailing={
               <ChevronDown
                 size={ICON_SIZE.row}

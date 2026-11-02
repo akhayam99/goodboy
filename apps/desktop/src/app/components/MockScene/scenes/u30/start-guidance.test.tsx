@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../../../../__tests__/helpers/startSettingsRowOf';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -59,18 +60,20 @@ describe('the u30 start guidance scenes', () => {
   it('draws the Guidance chip with the workspace default and its tag', async () => {
     mount({ id: 'u30-start-guidance' });
 
-    const row = within(await screen.findByRole('group', { name: 'Run settings' }, WAIT));
+    const row = startSettingsRowOf({
+      group: await screen.findByRole('group', { name: 'Run settings' }, WAIT),
+    });
     const chip = row.getByRole('button', {
       name: /^Guidance: Keep every change inside payments-api/,
     });
     expect(chip.getAttribute('aria-label')).toMatch(/, from Harborline$/);
   });
 
-  it('opens the popover for the Auto agent and its helpers', async () => {
+  it('opens the popover for the kind Auto routed to', async () => {
     mount({ id: 'u30-start-guidance-open' });
 
     const popover = await screen.findByRole('dialog', { name: 'Guidance for this run' }, WAIT);
-    within(popover).getByText('Read by the Auto agent and the helpers it starts.');
+    within(popover).getByText('Read by the orchestrator, which carries it into each step.');
     expect(within(popover).getByRole<HTMLTextAreaElement>('textbox').value).toContain(
       'ledger-core schema',
     );

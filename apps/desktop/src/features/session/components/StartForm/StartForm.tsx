@@ -42,7 +42,7 @@ export const StartForm = ({
       <div className="flex min-w-0 flex-col gap-2">
         {onKind === null ? null : (
           <StartKindTabs
-            kind={kind}
+            kind={kind ?? 'auto'}
             hasPresets={hasPresets}
             isDisabled={isDisabled}
             onPick={onKind}

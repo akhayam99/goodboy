@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../helpers/startSettingsRowOf';
 import type {
   IsoDateTime,
   Session,
@@ -285,12 +286,14 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       ]);
       expect(kinds.getByRole('tab', { name: 'Preset' }).getAttribute('aria-selected')).toBe('true');
       const task = within(screen.getByRole('region', { name: 'Goal' }));
-      expect(task.queryByRole('combobox', { name: 'Where' })).toBeNull();
-      const settings = within(screen.getByRole('group', { name: 'Run settings' }));
-      settings.getByRole('combobox', { name: 'Where' });
+      expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
+      const settings = startSettingsRowOf({
+        group: screen.getByRole('group', { name: 'Run settings' }),
+      });
+      settings.getByRole('combobox', { name: 'Projects' });
       settings.getByRole('button', { name: /^Asks you:/ });
       settings.getByRole('button', { name: /^Edits:/ });
-      settings.getByRole('button', { name: /^(Limit |No limit)/ });
+      settings.getByRole('button', { name: /^Limit:/ });
     },
   },
   {
@@ -299,7 +302,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       await openTasksAndStartOn({ ctx, lastStart: 'orchestrated' });
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
-      counted(await screen.findByRole('button', { name: 'Start workflow' }, WAIT));
+      counted(await screen.findByRole('button', { name: 'Start' }, WAIT));
       await settle(6);
     },
     lands: async () => {

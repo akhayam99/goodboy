@@ -1,37 +1,20 @@
 import { ChevronDown, Plus } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 import { AnchoredPopover, Button, ICON_SIZE, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
 import { NewFormMenuList } from '../../../../actions/NewFormMenuList';
-import { isSessionIdle } from '../../../isSessionIdle';
 
 type Props = {
   readonly session: Session;
-  readonly hasNextLead?: boolean;
 };
 
-export const OverviewActions = ({ session, hasNextLead = false }: Props) => {
+export const OverviewActions = ({ session }: Props) => {
   const sessionId = session.id;
   const isAskOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'ask');
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
-  const agents = useAppStore(
-    useShallow((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
-  );
-  const openQuestionCount = useAppStore(
-    (state) =>
-      (state.sessionOpenQuestions[sessionId] ?? EMPTY_ARRAY).filter(
-        (question) => question.status === 'open',
-      ).length,
-  );
-  const isIdle = isSessionIdle({
-    agents,
-    workflowRuns: session.workflowRuns,
-    openQuestionCount,
-  });
   const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 220 });
 
   useShortcut('overview.newHere', dropdown.toggle, !isAskOpen && !isStudioOpen);
@@ -42,7 +25,7 @@ export const OverviewActions = ({ session, hasNextLead = false }: Props) => {
       trigger={
         <Tooltip content="New" shortcut="overview.newHere" isSuppressed={dropdown.open}>
           <Button
-            variant={isIdle && !hasNextLead ? 'primary' : 'secondary'}
+            variant="secondary"
             size="sm"
             onClick={dropdown.toggle}
             aria-haspopup="menu"
