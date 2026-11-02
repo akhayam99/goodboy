@@ -438,7 +438,7 @@ covered.
   on a provider under `+N`, opens the Providers menu anchored under the strip
   (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
-  Providers and models. Without a workspace a chip still opens that usage page.
+  Providers. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
@@ -749,7 +749,7 @@ destination, so it has a door, the icon beside the bell; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
 open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
-from the Limits strip). Settings > Providers and models is the one home for
+from the Limits strip). Settings > Providers is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
 Models row When a provider is out, writing through the same
@@ -767,7 +767,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
 - **Before any workspace exists, the column keeps its app half**: Settings,
   the Goodboy row and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
-  App and Providers and models groups, and Providers opens on an account instead
+  App and Providers groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
 

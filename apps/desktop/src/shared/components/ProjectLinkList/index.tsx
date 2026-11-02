@@ -9,12 +9,17 @@ import { ProjectGroups } from './ProjectGroups';
 
 const FILTER_VISIBLE_FROM = 10;
 
+type ProjectParams = {
+  readonly project: Project;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly emptyHint?: string;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
   readonly editorScripts?: (params: { readonly project: Project }) => ReactNode;
+  readonly isRowInitiallyOpen?: (params: ProjectParams) => boolean;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
   readonly hint?: string;
 };
@@ -25,6 +30,7 @@ export const ProjectLinkList = ({
   editorExtra,
   rowBadge,
   editorScripts,
+  isRowInitiallyOpen,
   heading,
   hint,
 }: Props) => {
@@ -91,6 +97,7 @@ export const ProjectLinkList = ({
           editorExtra={editorExtra}
           rowBadge={rowBadge}
           editorScripts={editorScripts}
+          isRowInitiallyOpen={isRowInitiallyOpen}
         />
       ) : null}
       {linking.error !== null && (

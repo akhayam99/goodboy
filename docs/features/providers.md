@@ -38,7 +38,7 @@ Choose which providers a workspace uses and in what order. **When a provider is 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings › Providers and models › Models: the line When a provider is out with Claude, Codex and Cursor as backup, the Chat row for new chats, and the roles Scout, Debugger and Planner, Implementer, Tester and Resolver, then Reviewer, Docs and Report, each with its model, effort and an Auto picker">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings › Providers › Models: the line When a provider is out with Claude, Codex and Cursor as backup, the Chat row for new chats, and the roles Scout, Debugger and Planner, Implementer, Tester and Resolver, then Reviewer, Docs and Report, each with its model, effort and an Auto picker">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

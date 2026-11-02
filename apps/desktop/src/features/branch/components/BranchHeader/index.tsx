@@ -173,8 +173,12 @@ export const BranchHeader = ({
           }
         />
       )}
-      {isPushNext && activeMountId !== null && (
-        <StaleDepsNotice sessionId={sessionId} mountId={activeMountId} />
+      {(isPushNext || pushFailure !== null) && activeMountId !== null && (
+        <StaleDepsNotice
+          sessionId={sessionId}
+          mountId={activeMountId}
+          {...(pushFailure === null ? {} : { onInstalled: controls.diffControls.retry })}
+        />
       )}
       {pushFailure === null && activeMountId !== null && (
         <PushFixStatus sessionId={sessionId} mountId={activeMountId} />
@@ -209,7 +213,6 @@ export const BranchHeader = ({
               confirmedRemoteSha={pushFailure.confirmedRemoteSha}
               message={pushFailure.message}
               onResolved={controls.diffControls.dismissFailure}
-              onRetry={controls.diffControls.retry}
             />
           )
         }

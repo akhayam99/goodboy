@@ -15,6 +15,8 @@ const TRACK_WITH_GIT_SECTION_ID = 'track-with-git';
 
 const LEGACY_DEV_PROJECT_SECTION_ID = 'dev-project';
 
+const FOLDER_OPTIONS_SECTION_ID = 'folder-options';
+
 type WorkspacePageEntry = {
   readonly id: WorkspacePage;
   readonly label: string;
@@ -34,7 +36,7 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: 'general',
-    label: 'New sessions',
+    label: NAMES.runDefaults,
     concept: 'terminal',
   },
   {
@@ -63,11 +65,15 @@ type SectionParams = {
 export const isTrackWithGitSection = ({ section }: SectionParams): boolean =>
   section === TRACK_WITH_GIT_SECTION_ID || section === LEGACY_DEV_PROJECT_SECTION_ID;
 
+export const isFolderOptionsSection = ({ section }: SectionParams): boolean =>
+  section === FOLDER_OPTIONS_SECTION_ID;
+
 const DEFAULT_WORKSPACE_PAGE: WorkspacePage = 'projects';
 
 const SECTION_ALIASES: ReadonlyMap<string, WorkspacePage> = new Map<string, WorkspacePage>([
   [TRACK_WITH_GIT_SECTION_ID, 'projects'],
   [LEGACY_DEV_PROJECT_SECTION_ID, 'projects'],
+  [FOLDER_OPTIONS_SECTION_ID, 'projects'],
   ['after-merge', 'branches'],
 ]);
 
@@ -82,14 +88,9 @@ export const workspacePageOf = ({ section }: { readonly section?: string }): Wor
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>
   WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
 
-const WORKFLOW_RULES_PLAN_PAGE = 'workflow-rules';
+export type PlanPage = WorkspacePage;
 
-export type PlanPage = WorkspacePage | typeof WORKFLOW_RULES_PLAN_PAGE;
-
-export const PLAN_PAGES: ReadonlyArray<PlanPage> = [
-  ...WORKSPACE_PAGES.map((entry) => entry.id),
-  WORKFLOW_RULES_PLAN_PAGE,
-];
+export const PLAN_PAGES: ReadonlyArray<PlanPage> = WORKSPACE_PAGES.map((entry) => entry.id);
 
 export const planPageLabel = ({ page }: { readonly page: PlanPage }): string =>
-  page === WORKFLOW_RULES_PLAN_PAGE ? NAMES.runDefaults : workspacePageEntry({ page }).label;
+  workspacePageEntry({ page }).label;

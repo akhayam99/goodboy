@@ -53,7 +53,7 @@ Choose how often a run stops for you: **Every step**, **After the plan** to appr
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab. It uses the same chips a run page shows: how it asks, the limit, the models, the **Auto limit** and shared **Guidance** for the agents that write code. A change reaches new runs only. The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Orchestrated and Preset start from this limit, Auto from the **Auto limit**. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
+Set what every new run starts with on the **Run defaults** page in Settings. It uses the same chips a run page shows: how it asks, the limit, the models and shared **Guidance** for the agents that write code. A change reaches new runs only. The limit here applies to a run started from a chat prefix or a suggestion, and the run page names it **default**. Every kind starts from this one limit; a limit saved earlier as the Auto limit is folded into it. A new run starts from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers**.
 
 ### Limit
 

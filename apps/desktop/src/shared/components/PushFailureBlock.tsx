@@ -17,7 +17,10 @@ export const PushFailureBlock = ({ output }: Props) => {
       {digest.check !== null && (
         <p className="min-w-0 text-foreground">{`${digest.check} failed`}</p>
       )}
-      <pre className="min-w-0 whitespace-pre-wrap break-words text-muted-foreground">{text}</pre>
+      <details className="min-w-0" open={digest.check === null}>
+        <summary className="cursor-pointer text-faint-foreground">Details</summary>
+        <pre className="min-w-0 whitespace-pre-wrap break-words text-muted-foreground">{text}</pre>
+      </details>
       {hidden > 0 && (
         <p className="text-faint-foreground">{`${hidden} more ${hidden === 1 ? 'line' : 'lines'} in the full output`}</p>
       )}

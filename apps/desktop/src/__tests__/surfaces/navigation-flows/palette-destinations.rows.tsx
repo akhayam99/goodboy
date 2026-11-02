@@ -245,13 +245,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: Run defaults',
-    covers: ['studio:workflow', 'palette:Run defaults'],
+    covers: ['openSettings', 'scope:workspace', 'palette:Run defaults'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'run defaults'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'palette: Impact',

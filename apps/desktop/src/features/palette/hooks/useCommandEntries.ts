@@ -34,7 +34,7 @@ import { terminalStudioPlace } from '../../terminal/terminalStudioPlace';
 import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
-import { openWorkflowRules } from '../../workflows/openWorkflowRules';
+import { openRunDefaults } from '../../settings/openRunDefaults';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
@@ -305,7 +305,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: null,
           icon: CONCEPT_ICONS.workflows,
           secondary: formerNamesOf(NAMES.runDefaults),
-          run: openWorkflowRules,
+          run: openRunDefaults,
         },
         {
           key: 'goto:impact',

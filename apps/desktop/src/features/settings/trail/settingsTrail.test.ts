@@ -32,7 +32,7 @@ describe('settingsTrail', () => {
 
     expect(segments.map((segment) => segment.label)).toEqual([
       'Settings',
-      'Workspace',
+      'This workspace',
       'Replies and commits',
     ]);
   });

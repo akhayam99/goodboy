@@ -64,7 +64,7 @@ describe('the Settings tree scenes', () => {
       within(rail)
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['App', 'Workspace · Harborline', 'Providers and models', 'Integrations']);
+    ).toEqual(['App', 'Providers', 'This workspace · Harborline', 'Integrations']);
     expect(title()).toBe('General');
     screen.getByRole('heading', { level: 2, name: 'Appearance' });
     expect(screen.queryByRole('switch', { name: 'Download updates in the background' })).toBeNull();

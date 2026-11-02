@@ -157,11 +157,11 @@ flag plus the run's copy of the rules, and can change later from the run's
 ## Workflow rules
 
 Rules are the workspace defaults every new run starts from. They live only in the
-**Run defaults** tab of the Workflows studio; the workspace settings have no page for
+**Run defaults** page of the workspace settings (Settings > This workspace > Run defaults); the Workflows studio has no tab for
 them. The all-pages Restore defaults and Copy from in the workspace settings menu
 still carry them and list them as Workflow rules in the preview.
 
-The tab is titled **Run defaults**: one chip line, the same chips and popovers
+The page is titled **Run defaults**: one chip line, the same chips and popovers
 as on a run page (`SettingChip`, now in `shared/components/SettingChip`, with
 `useLimitAmountDraft` in `shared/hooks`), then the guidance field. Each chip
 reads "new runs" as its source; a change reaches new runs only, since every run
@@ -173,13 +173,16 @@ keeps its own copy of the rules (`attachWorkflowToSession` copies them at start)
   close (a blank amount is no limit), and what happens at the limit, Pause or
   Warn only, applied on click
 - **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
-  Cursor as backup") and **Open Providers and models**. It holds no switch and
+  Cursor as backup") and **Open Providers**. It holds no switch and
   lists no provider: the order and the **Send new steps to the provider with
-  the most room** option live in Settings > Providers and models, the one home
+  the most room** option live in Settings > Providers, the one home
   of the provider policy
-- **Auto limit** (`DefaultAutoLimitSetting`): what a new Auto starts on
-  (`auto.treeLimitUsd.<workspace id>`, `writeAutoTreeLimit`), "none" until
-  you set one, with a **No limit** action; the smaller of it and the session limit pauses Auto
+- No separate Auto limit: a limit stored under the old Auto limit
+  (`auto.treeLimitUsd.<workspace id>`) is folded into the **Limit** above when
+  the page opens (`foldAutoLimitIntoRunDefaults`). The smaller of the two
+  stays when both were set, the old key is cleared once the Limit is saved,
+  and a failed save leaves the old value in place. Until then an Auto start
+  still reads the old key, so nobody loses a value
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance
@@ -235,11 +238,11 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
 with it off (m217); new workspaces start with it on. The switch is the
 **Send new steps to the provider with the most room** option of the policy popover in
-Settings > Providers and models, with one sentence under it: with it off, "New
+Settings > Providers, with one sentence under it: with it off, "New
 steps follow the provider order."; with it on and a provider passed, where the
 next step goes and how full the passed one is, and otherwise that steps of one
 run can land on different providers (`nextStepPick`, `spreadSentence`).
-The Run defaults tab only links there.
+The Run defaults page only links there.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot

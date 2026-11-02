@@ -15,11 +15,12 @@ import { TrackWithGitFlow } from './index';
 type Props = {
   readonly projectId: ProjectId;
   readonly isInitiallyOpen: boolean;
+  readonly isEmbedded?: boolean;
 };
 
 type Mode = 'idle' | 'review' | 'publish' | 'tracked' | 'published';
 
-export const FolderGitCard = ({ projectId, isInitiallyOpen }: Props) => {
+export const FolderGitCard = ({ projectId, isInitiallyOpen, isEmbedded = false }: Props) => {
   const project = useAppStore((state) => projectById(state.projects, projectId) ?? null);
   const probe = useAppStore((state) => state.folderGit[projectId] ?? null);
   const notice = useAppStore((state) => state.folderGitNotice[projectId] ?? null);
@@ -108,18 +109,26 @@ export const FolderGitCard = ({ projectId, isInitiallyOpen }: Props) => {
     <div
       role="group"
       aria-label={`${project.name}, git`}
-      className="flex flex-col gap-2 rounded-md bg-background py-2 pl-4 pr-3"
+      className={
+        isEmbedded
+          ? 'flex flex-col gap-2'
+          : 'flex flex-col gap-2 rounded-md bg-background py-2 pl-4 pr-3'
+      }
     >
       {notice === null ? null : <FolderGitNotice project={project} notice={notice} />}
       {row === 'hidden' ? null : (
         <div className="flex min-h-9 items-center gap-3">
-          <Glyph size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
+          {isEmbedded ? null : (
+            <Glyph size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
+          )}
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="flex min-w-0 items-center gap-2 text-row text-foreground">
-              <span className="truncate">{project.name}</span>
+              <span className="truncate">{isEmbedded ? 'Git' : project.name}</span>
               <FolderGitChips row={row} branch={probe?.branch ?? null} />
             </span>
-            <span className="truncate text-code text-faint-foreground">{project.rootPath}</span>
+            {isEmbedded ? null : (
+              <span className="truncate text-code text-faint-foreground">{project.rootPath}</span>
+            )}
             {isReviewing ? null : (
               <span className="text-meta text-faint-foreground">
                 {folderGitSubline({ row, probe })}

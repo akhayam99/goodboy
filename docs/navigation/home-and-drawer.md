@@ -379,7 +379,7 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers and models, Models, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is

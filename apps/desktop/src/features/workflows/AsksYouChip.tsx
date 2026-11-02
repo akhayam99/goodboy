@@ -15,9 +15,18 @@ type Props = {
   readonly error: string | null;
   readonly isDisabled: boolean;
   readonly onPick: (params: PickParams) => void;
+  readonly onChangeDefault?: () => void;
 };
 
-export const AsksYouChip = ({ value, words, help, error, isDisabled, onPick }: Props) => {
+export const AsksYouChip = ({
+  value,
+  words,
+  help,
+  error,
+  isDisabled,
+  onPick,
+  onChangeDefault,
+}: Props) => {
   const dropdown = useDropdown({
     expectedHeight: 200,
     expectedWidth: POPOVER_WIDTH_PX.standard,
@@ -30,6 +39,7 @@ export const AsksYouChip = ({ value, words, help, error, isDisabled, onPick }: P
       words={words}
       help={help}
       error={error}
+      {...(onChangeDefault === undefined ? {} : { onChangeDefault })}
     >
       <SegmentedTabs<WorkflowAutonomy>
         fill

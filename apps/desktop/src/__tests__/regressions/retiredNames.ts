@@ -163,8 +163,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   {
     id: 'providers-and-models-amp',
     pattern: /\bProviders & models\b/,
-    use: NAMES.providersAndModels,
+    use: NAMES.providers,
   },
+  { id: 'providers-and-models', pattern: /\bProviders and models\b/, use: NAMES.providers },
   { id: 'pair-your-iphone', pattern: /\bPair your iPhone\b/i, use: NAMES.pairIphone },
   {
     id: 'unlink-from-session',

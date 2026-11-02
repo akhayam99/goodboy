@@ -21,7 +21,7 @@ export const DefaultModelsSetting = ({ workspaceId }: Props) => {
       words={{
         value: summary,
         source: 'new runs',
-        chain: `Set in ${NAMES.providersAndModels}. A run can change its own from its page.`,
+        chain: `Set in ${NAMES.providers}. A run can change its own from its page.`,
       }}
       help={HELP}
       error={null}
@@ -38,7 +38,7 @@ export const DefaultModelsSetting = ({ workspaceId }: Props) => {
           openSettings({ scope: 'providers' });
         }}
       >
-        {`Open ${NAMES.providersAndModels}`}
+        {`Open ${NAMES.providers}`}
       </Button>
     </SettingChip>
   );

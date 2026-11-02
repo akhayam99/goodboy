@@ -21,7 +21,7 @@ import { isForMeRecord } from '../../isForMeRecord';
 import { shownTaskRecords } from '../../shownTaskRecords';
 import { openCountWord } from '../../openCountWord';
 import { taskGroupTotalsOf } from '../../taskGroupTotalsOf';
-import { sourceFailureLine } from '../../sourceFailureLine';
+import { sourceFailureOf } from '../../sourceFailureOf';
 import { taskGroupsOf, type TaskGroup } from '../../taskGroups';
 import { readTaskListView, writeTaskListView, type TaskListView } from '../../taskListViewStorage';
 import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
@@ -484,14 +484,12 @@ export const InboxStudio = ({
     query.trim() !== '' || activeFilterCount({ filters }) > 0 || sessionFilter != null;
 
   const failingProviders = INBOX_PROVIDERS.filter((provider) => errors[provider] != null);
-  const failureLineOf = (provider: InboxProvider): TaskLine => ({
-    key: `failure:${provider}`,
-    text: sourceFailureLine({
-      name: integrationLabel({ provider }),
-      message: errors[provider] ?? '',
-    }),
-    onRetry: refetch,
-  });
+  const failureLineOf = (provider: InboxProvider): TaskLine => {
+    const name = integrationLabel({ provider });
+    const failure = sourceFailureOf({ name, message: errors[provider] ?? '' });
+    const onAction = failure.isRefused ? () => openToolSettings({ tool: provider }) : refetch;
+    return { key: `failure:${provider}`, failure, onAction };
+  };
   const isSourceGrouped = view.groupBy === 'source';
   const failedSourceGroups = isSourceGrouped
     ? failingProviders.filter(

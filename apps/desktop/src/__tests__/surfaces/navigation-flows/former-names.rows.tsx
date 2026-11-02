@@ -3,23 +3,17 @@ import { both, heading, lens, openPalette, studio, type Row } from './harness';
 export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Rules finds Run defaults',
-    covers: ['studio:workflow'],
+    covers: ['openSettings', 'scope:workspace'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Rules'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'searching Workflow rules finds Run defaults',
-    covers: ['studio:workflow'],
+    covers: ['openSettings', 'scope:workspace'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Workflow rules'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'searching Open Workflows finds Open Runs in a session',

@@ -86,7 +86,6 @@ export const PushDepsScene = ({ variant }: Props) => {
               confirmedRemoteSha={null}
               message={error.message}
               onResolved={() => undefined}
-              onRetry={() => undefined}
             />
           }
         />

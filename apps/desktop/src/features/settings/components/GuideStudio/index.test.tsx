@@ -171,7 +171,7 @@ describe('HelpStudio on the Guide', () => {
     fireEvent.click(chapterButton('Providers and limits'));
     fireEvent.click(
       within(page('Providers and limits')).getByRole('button', {
-        name: 'Open Providers and models',
+        name: 'Open Providers',
       }),
     );
 

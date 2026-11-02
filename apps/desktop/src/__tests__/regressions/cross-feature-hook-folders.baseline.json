@@ -52,7 +52,6 @@
   "suggestions -> workflows": 3,
   "terminal -> monitoring": 2,
   "workflows -> actions": 1,
-  "workflows -> auto": 1,
   "workflows -> plans": 1,
   "workspace -> actions": 9,
   "workspace -> onboarding": 2,

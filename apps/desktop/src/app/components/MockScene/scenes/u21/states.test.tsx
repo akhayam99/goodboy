@@ -135,13 +135,14 @@ describe('the u21 page-state scenes', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('shows the Tasks load failure as one gray line in its source group that retries', async () => {
+  it('shows a refused token in its source group as a notice that reconnects', async () => {
     renderScene('inbox-error');
 
-    expect(
-      await screen.findByText("Sentry didn't load: The token was refused (401)."),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect((await screen.findByText('Sentry refused the token')).textContent).toBe(
+      'Sentry refused the token',
+    );
+    expect(screen.getByRole('button', { name: 'Reconnect' }).textContent).toBe('Reconnect');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Sentry' })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
   });

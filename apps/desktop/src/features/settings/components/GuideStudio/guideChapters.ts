@@ -131,7 +131,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One page per provider',
-        desc: `${NAMES.providersAndModels}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
+        desc: `${NAMES.providers}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
       },
       {
         term: 'Usage in the top bar',
@@ -160,7 +160,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.providersAndModels}`,
+        label: `Open ${NAMES.providers}`,
         target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'providers' } } },
       },
       {
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providersAndModels} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',

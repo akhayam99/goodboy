@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
-import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
+import { SettingsFrame } from '../audit/SettingsFrame';
+import { SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
 import { useAppStore } from '../../../../../store';
 import { RULES_PROVIDERS, rulesProviderLimits } from '../audit/workflowRulesSeed';
-import { OVERRIDES, WORKSPACE_ID } from '../flow-audit/fixtures';
+import { OVERRIDES } from '../flow-audit/fixtures';
 
 const noop = () => undefined;
 
 const seedRunDefaults = (): void => {
   useAppStore.setState({
-    workflowStudioView: 'rules',
     providers: RULES_PROVIDERS,
     refreshProviders: async () => undefined,
     providerLimits: rulesProviderLimits(),
@@ -16,7 +15,7 @@ const seedRunDefaults = (): void => {
     loadStepLibrary: async () => undefined,
     setWorkflowStudioVisible: noop,
     workspaceOverrides: {
-      [WORKSPACE_ID]: {
+      [SETTINGS_WORKSPACE_ID]: {
         ...OVERRIDES,
         providerPool: [
           { id: 'anthropic', state: 'on' },
@@ -29,11 +28,6 @@ const seedRunDefaults = (): void => {
   });
 };
 
-export const RunDefaultsLinkScene = () => {
-  const [isReady, setIsReady] = useState(false);
-  useEffect(() => {
-    seedRunDefaults();
-    setIsReady(true);
-  }, []);
-  return isReady ? <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} /> : null;
-};
+export const RunDefaultsLinkScene = () => (
+  <SettingsFrame focus={{ scope: 'workspace', section: 'general' }} seed={seedRunDefaults} />
+);

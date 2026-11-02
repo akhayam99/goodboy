@@ -116,7 +116,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 - **Start a workflow**: A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.
 - **Orchestrated**: Give a goal and a model picks each next step, with its role, model, effort and a reason.
-- **Run defaults**: Set what every new run starts with in the Run defaults tab.
+- **Run defaults**: Set what every new run starts with on the Run defaults page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.
 

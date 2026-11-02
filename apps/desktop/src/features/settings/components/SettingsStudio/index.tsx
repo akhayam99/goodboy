@@ -195,7 +195,6 @@ export const SettingsStudio = ({
 
   const renderRail = ({ isInColumn }: { readonly isInColumn: boolean }): ReactNode => (
     <SettingsRail
-      scope={availableScope}
       pageKey={pageKey}
       groups={groups}
       workspaceName={workspaceName}

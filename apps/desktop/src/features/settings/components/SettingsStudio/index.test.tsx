@@ -288,9 +288,7 @@ describe('SettingsStudio', () => {
     expect(within(rail).queryByRole('button', { name: /^Integrations/ })).toBeNull();
     expect(within(rail).getByText('Open a workspace to see its settings.')).toBeDefined();
     expect(within(rail).getByText('Integrations belong to a workspace.')).toBeDefined();
-    expect(
-      within(rail).getByRole('button', { name: 'Providers and models', expanded: false }),
-    ).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Providers', expanded: false })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
 
     rerender(
@@ -303,9 +301,7 @@ describe('SettingsStudio', () => {
     );
     expect(screen.getByText('Provider settings content')).toBeDefined();
     expect(screen.getByRole('list', { name: 'App settings' })).toBeDefined();
-    expect(
-      within(rail).getByRole('button', { name: 'Providers and models', expanded: true }),
-    ).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Providers', expanded: true })).toBeDefined();
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
@@ -324,7 +320,7 @@ describe('SettingsStudio', () => {
 
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
     expect(within(rail).getByRole('list', { name: 'App settings' })).toBeDefined();
-    expect(within(rail).getByRole('list', { name: 'Providers and models settings' })).toBeDefined();
+    expect(within(rail).getByRole('list', { name: 'Providers settings' })).toBeDefined();
     expect(screen.getByText('Provider settings content')).toBeDefined();
 
     rerender(
@@ -358,10 +354,9 @@ describe('SettingsStudio', () => {
       const flagged = screen.getByRole('navigation', { name: /settings scopes/i });
       expect(within(flagged).getByRole('img', { name: 'Update available' })).toBeDefined();
       expect(
-        within(within(flagged).getByRole('button', { name: /^Providers and models/ })).getByRole(
-          'img',
-          { name: 'Claude CLI needs an update' },
-        ),
+        within(within(flagged).getByRole('button', { name: /^Providers/ })).getByRole('img', {
+          name: 'Claude CLI needs an update',
+        }),
       ).toBeDefined();
     } finally {
       state.updaterStatus = 'idle';
@@ -377,9 +372,9 @@ describe('SettingsStudio', () => {
     try {
       renderApp();
       const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-      const group = within(rail).getByRole('button', { name: /^Providers and models/ });
+      const group = within(rail).getByRole('button', { name: /^Providers/ });
 
-      expect(group.textContent).toBe('Providers and models');
+      expect(group.textContent).toBe('Providers');
       expect(group.getAttribute('aria-expanded')).toBe('false');
       expect(within(rail).queryByRole('img')).toBeNull();
     } finally {
@@ -391,7 +386,7 @@ describe('SettingsStudio', () => {
     const onScopeChange = vi.fn();
     renderApp({ onScopeChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Providers and models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     fireEvent.click(screen.getByRole('button', { name: 'Storage' }));
 
     expect(onScopeChange.mock.calls).toEqual([[{ scope: 'app', section: 'storage' }]]);

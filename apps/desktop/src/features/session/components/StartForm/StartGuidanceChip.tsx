@@ -1,6 +1,7 @@
 import { Button, POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { SettingChip } from '../../../../shared/components/SettingChip';
+import { openRunDefaults } from '../../../settings/openRunDefaults';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
 import { guidanceWordsOf } from './guidanceWordsOf';
 import type { StartGuidanceReader } from './startFormWords';
@@ -42,6 +43,7 @@ export const StartGuidanceChip = ({
       help={COPY.readers[reader]}
       tooltip={value.trim()}
       error={null}
+      onChangeDefault={openRunDefaults}
     >
       <PromptField
         kind="document"

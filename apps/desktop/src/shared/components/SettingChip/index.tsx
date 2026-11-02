@@ -19,6 +19,7 @@ type Props = {
   readonly error: string | null;
   readonly title?: string;
   readonly tooltip?: string;
+  readonly onChangeDefault?: () => void;
   readonly children: ReactNode;
 };
 
@@ -30,6 +31,7 @@ export const SettingChip = ({
   error,
   title = label,
   tooltip,
+  onChangeDefault,
   children,
 }: Props) => {
   const trigger = (
@@ -73,9 +75,16 @@ export const SettingChip = ({
     >
       <div className="flex min-w-0 items-baseline justify-between gap-2">
         <span className="text-row text-foreground">{title}</span>
-        {words.source === '' ? null : (
-          <span className="text-meta text-faint-foreground">{words.source}</span>
-        )}
+        <span className="flex shrink-0 items-baseline gap-2">
+          {words.source === '' ? null : (
+            <span className="text-meta text-faint-foreground">{words.source}</span>
+          )}
+          {onChangeDefault === undefined ? null : (
+            <Button variant="ghost" size="xs" onClick={onChangeDefault}>
+              Change default
+            </Button>
+          )}
+        </span>
       </div>
       <p className="text-meta text-muted-foreground">{help}</p>
       {children}

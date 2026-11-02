@@ -6,7 +6,7 @@ import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
 import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
 import { TaskGroupRows } from '../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
-import { sourceFailureLine } from '../../../../../features/inbox/sourceFailureLine';
+import { sourceFailureOf } from '../../../../../features/inbox/sourceFailureOf';
 import { ScriptsPanel } from '../../../../../features/scripts/components/ScriptsPanel';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -120,8 +120,8 @@ const StateScene = ({
 
 const INBOX_FAILURE = {
   key: 'failure:sentry',
-  text: sourceFailureLine({ name: 'Sentry', message: 'The token was refused (401).' }),
-  onRetry: noop,
+  failure: sourceFailureOf({ name: 'Sentry', message: 'The token was refused (401).' }),
+  onAction: noop,
 };
 
 const NO_GROUP_HANDLERS = {

@@ -37,7 +37,7 @@ describe('the folder face scenes', () => {
   it('settings shows the switch and the saved versions of acme-notes', async () => {
     render(<FoldersScene state="settings" theme="light" />);
 
-    const band = await screen.findByRole('region', { name: 'Plain folders' }, WAIT);
+    const band = await screen.findByRole('group', { name: 'acme-notes, what it is for' }, WAIT);
     const faces = within(band).getByRole('tablist', { name: 'What acme-notes is for' });
     expect(
       within(faces).getByRole('tab', { name: 'Documents' }).getAttribute('aria-selected'),

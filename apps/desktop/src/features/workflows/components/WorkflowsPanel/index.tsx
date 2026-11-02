@@ -13,7 +13,6 @@ import { SavedStepsList } from '../WorkflowStudio/SavedStepsList';
 import { StudioHomeTabs } from '../WorkflowStudio/StudioHomeTabs';
 import type { StudioHomeView } from '../../studioHomeView';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
-import { WorkflowRulesPanel } from '../WorkflowRulesPanel';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
@@ -150,12 +149,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   );
 
   const list =
-    view === 'rules' ? (
-      <div className="flex min-w-0 flex-col gap-4">
-        {tabs}
-        <WorkflowRulesPanel workspaceId={workspaceId} />
-      </div>
-    ) : view === 'steps' ? (
+    view === 'steps' ? (
       <SavedStepsList
         workspaceId={workspaceId}
         connectedProviders={connectedProviders}

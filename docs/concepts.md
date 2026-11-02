@@ -170,7 +170,7 @@ added, at Create and through `addProject` (`prepareLinkedFolder`, in the
 background; a failure marks the folder failed and Projects settings offers
 Retry), and `removeProject` forgets that copy once the folder is removed. Home
 names a one folder workspace by its face (`workspaceFaceLabel`), and Projects
-settings switches it (the Plain folders band, [navigation.md](navigation.md)).
+settings switches it (the folder's own row, [navigation.md](navigation.md)).
 Storage shows the saved versions of every plain folder once, as one row in
 the app data band (`savedVersionsBytes`, summed in Rust).
 
@@ -1890,7 +1890,7 @@ session up again in Goodboy.
   Shortcuts, iPhone was Pair device and Companion; Security findings is a
   section at the end of Storage). **Branches** is a Workspace page that starts
   with After merge. **Pair an iPhone** is the one verb that opens the iPhone
-  page, **Providers and models** is its group in the rail (it was Providers &
+  page, **Providers** is its group in the rail (it was Providers &
   models), and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
   provider or tool (it was Sign out). The old words are palette aliases and

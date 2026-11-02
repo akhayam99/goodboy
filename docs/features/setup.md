@@ -48,11 +48,11 @@ A window with no workspace open shows Home, which lists your workspaces with the
 
 ### One page per provider
 
-Each provider has its own page in **Providers and models** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
+Each provider has its own page in **Providers** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Settings › Providers and models: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and Permissions with Claude">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Settings › Providers: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and Permissions with Claude">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

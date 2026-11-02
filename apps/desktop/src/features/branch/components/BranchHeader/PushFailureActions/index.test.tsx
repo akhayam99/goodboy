@@ -8,13 +8,12 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
-  storySpies,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../store/storyHarness';
@@ -96,10 +95,9 @@ const outcome = (overrides: Partial<PushFixOutcome>): PushFixOutcome => ({
 
 type Handlers = {
   readonly onResolved?: () => void;
-  readonly onRetry?: () => void;
 };
 
-const actions = ({ onResolved = vi.fn(), onRetry = vi.fn() }: Handlers = {}) => (
+const actions = ({ onResolved = vi.fn() }: Handlers = {}) => (
   <PushFailureActions
     sessionId={SESSION.id}
     mountId={MOUNT_TARGET.mountId}
@@ -108,7 +106,6 @@ const actions = ({ onResolved = vi.fn(), onRetry = vi.fn() }: Handlers = {}) => 
     confirmedRemoteSha={null}
     message="husky - pre-push script failed"
     onResolved={onResolved}
-    onRetry={onRetry}
   />
 );
 
@@ -116,7 +113,6 @@ describe('PushFailureActions', () => {
   it('offers the agent and the terminal while no fix runs', async () => {
     render(actions());
 
-    await waitFor(() => expect(storySpies.tauriInvoke).toHaveBeenCalled());
     screen.getByRole('button', { name: 'Let an agent fix the push' });
     screen.getByRole('button', { name: 'Open terminal here' });
   });
@@ -160,20 +156,13 @@ describe('PushFailureActions', () => {
     expect(onResolved).toHaveBeenCalledOnce();
   });
 
-  it('offers to reinstall stale dependencies and retries the push after it', async () => {
+  it('leaves Reinstall dependencies to the stale dependencies notice above it', async () => {
     world.check = { ...READY, state: 'missing' };
-    const onRetry = vi.fn();
-    store.setState({
-      runDiscoveredScript: vi.fn(async () => {
-        world.check = { ...READY };
-        return { stdout: '', stderr: '', exitCode: 0 };
-      }),
-    });
-    render(actions({ onRetry }));
+    render(actions());
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Reinstall dependencies' }));
+    await screen.findByRole('button', { name: 'Let an agent fix the push' });
 
-    await waitFor(() => expect(onRetry).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
   });
 
   it('starts the fix with the failure output', async () => {

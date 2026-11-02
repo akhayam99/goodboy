@@ -26,7 +26,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { FolderFacesBand } from './index';
+import { PlainFolderOptions } from './index';
 
 let useAppStore: StoryStore;
 
@@ -88,12 +88,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-describe('the plain folders band in Folders settings', () => {
-  it('lists each plain folder with its face, never a repository', async () => {
-    render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
+describe('the options of a plain folder row', () => {
+  it('shows the face of a plain folder with what it means', async () => {
+    render(<PlainFolderOptions folder={NOTES} isGitInitiallyOpen={false} />);
 
     expect(await screen.findByRole('group', { name: 'acme-notes, what it is for' })).toBeDefined();
-    expect(screen.queryByRole('group', { name: 'ledger-core, what it is for' })).toBeNull();
     expect(faces().getByRole('tab', { name: 'Documents' }).getAttribute('aria-selected')).toBe(
       'true',
     );
@@ -101,7 +100,7 @@ describe('the plain folders band in Folders settings', () => {
   });
 
   it('switches the face from the next turn on and saves the row', async () => {
-    render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
+    render(<PlainFolderOptions folder={NOTES} isGitInitiallyOpen={false} />);
 
     fireEvent.click(faces().getByRole('tab', { name: 'Code project' }));
 
@@ -117,7 +116,7 @@ describe('the plain folders band in Folders settings', () => {
 
   it('keeps the old face with the error beside it when the write fails', async () => {
     injectDbFault({ match: /UPDATE project_values/, message: 'disk I/O error' });
-    render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
+    render(<PlainFolderOptions folder={NOTES} isGitInitiallyOpen={false} />);
 
     fireEvent.click(faces().getByRole('tab', { name: 'Code project' }));
 
@@ -131,7 +130,7 @@ describe('the plain folders band in Folders settings', () => {
   it('shows the size of saved versions and leads to Storage', async () => {
     const opened = vi.fn();
     window.addEventListener('goodboy:open-settings', opened);
-    render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
+    render(<PlainFolderOptions folder={NOTES} isGitInitiallyOpen={false} />);
 
     expect(
       await screen.findByText(
@@ -166,7 +165,7 @@ describe('the plain folders band in Folders settings', () => {
         method: 'clone',
       },
     });
-    render(<FolderFacesBand workspaceId={WORKSPACE.id} />);
+    render(<PlainFolderOptions folder={NOTES} isGitInitiallyOpen={false} />);
 
     expect(screen.getByRole('alert').textContent).toContain(
       "Saved versions couldn't start: disk full",

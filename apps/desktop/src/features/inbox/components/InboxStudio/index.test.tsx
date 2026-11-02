@@ -990,7 +990,7 @@ describe('InboxStudio at scale', () => {
     renderStudio();
 
     expect(groupNames()).toContain('Jira');
-    screen.getByText('Jira is rate limited.');
+    screen.getByText('Jira is rate limited');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(h.refetch).toHaveBeenCalledTimes(1);
   });

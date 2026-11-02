@@ -121,9 +121,7 @@ describe('the policy and failure scenes', () => {
     fireEvent.click(within(line).getByRole('button', { name: /^Models:/ }));
     const popover = screen.getByRole('dialog', { name: 'Models' });
     expect(within(popover).getByTestId('rules-policy-summary')).toBeDefined();
-    expect(
-      within(popover).getByRole('button', { name: 'Open Providers and models' }),
-    ).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Open Providers' })).toBeDefined();
     expect(within(popover).queryAllByRole('switch')).toEqual([]);
   });
 

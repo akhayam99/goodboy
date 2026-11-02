@@ -359,7 +359,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
-    ['New sessions', 'Branches', 'Replies and commits'].forEach((page) =>
+    ['Run defaults', 'Branches', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
     fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Branches' }));
@@ -477,6 +477,7 @@ describe('track with git', () => {
         commitCount: 0,
         remoteUrl: null,
       }),
+      project_scripts_scan: () => [],
       folder_git_first_commit_plan: () => ({
         rootPath: '/work/harborline/runbooks',
         start: 'no_git',

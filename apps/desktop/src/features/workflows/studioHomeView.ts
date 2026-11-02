@@ -1,1 +1,1 @@
-export type StudioHomeView = 'workflows' | 'steps' | 'rules';
+export type StudioHomeView = 'workflows' | 'steps';

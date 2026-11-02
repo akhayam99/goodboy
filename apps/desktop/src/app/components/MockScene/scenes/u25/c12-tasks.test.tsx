@@ -118,7 +118,7 @@ describe('c12 task scenes', () => {
   it('puts the rate limited source as one gray line in its group', async () => {
     await mount('c12-tasks-ratelimited');
 
-    expect(screen.getByText('Linear is rate limited.')).toBeDefined();
+    expect(screen.getByText('Linear is rate limited').textContent).toBe('Linear is rate limited');
     expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 

@@ -10,6 +10,10 @@ import { PROJECT_ROW_GRID } from './projectRowGrid';
 
 const SHOWN_BEFORE_EXPAND = 8;
 
+type ProjectParams = {
+  readonly project: Project;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly projects: ReadonlyArray<Project>;
@@ -19,6 +23,7 @@ type Props = {
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
   readonly editorScripts?: (params: { readonly project: Project }) => ReactNode;
+  readonly isRowInitiallyOpen?: (params: ProjectParams) => boolean;
 };
 
 export const ProjectGroups = ({
@@ -30,6 +35,7 @@ export const ProjectGroups = ({
   editorExtra,
   rowBadge,
   editorScripts,
+  isRowInitiallyOpen,
 }: Props) => {
   const [isPointerInside, setIsPointerInside] = useState(false);
   const [isFocusInside, setIsFocusInside] = useState(false);
@@ -64,6 +70,7 @@ export const ProjectGroups = ({
       editorExtra={editorExtra?.({ project })}
       badge={rowBadge?.({ project })}
       scripts={editorScripts?.({ project })}
+      isInitiallyOpen={isRowInitiallyOpen?.({ project }) === true}
     />
   );
 

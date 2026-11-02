@@ -11,7 +11,7 @@ import { settingsPaletteEntries } from './settingsPaletteEntries';
 
 const providersGroup: SettingsGroup = {
   scope: 'providers',
-  label: NAMES.providersAndModels,
+  label: NAMES.providers,
   concept: 'providers',
   place: 'Providers',
   attention: undefined,

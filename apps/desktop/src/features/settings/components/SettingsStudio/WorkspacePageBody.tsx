@@ -6,13 +6,17 @@ import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
+import { WorkflowRulesPanel } from '../../../workflows/workflowRulesPanel';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
 import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
-import { FolderGitBand } from '../../../workspace/folderGitBand';
-import { isTrackWithGitSection, type WorkspacePage } from './workspacePages';
+import {
+  isFolderOptionsSection,
+  isTrackWithGitSection,
+  type WorkspacePage,
+} from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -32,10 +36,10 @@ export const WorkspacePageBody = ({
       return (
         <>
           <WorkspaceNameBand workspaceId={workspaceId} />
-          <WorkspaceProjectsSection workspaceId={workspaceId} />
-          <FolderGitBand
+          <WorkspaceProjectsSection
             workspaceId={workspaceId}
-            isInitiallyOpen={isTrackWithGitSection({ section })}
+            isTrackWithGit={isTrackWithGitSection({ section })}
+            isFolderOptions={isFolderOptionsSection({ section })}
           />
           <WorkspaceStorageNotice workspaceId={workspaceId} />
           <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />
@@ -44,7 +48,12 @@ export const WorkspacePageBody = ({
     case 'profile':
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
-      return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
+      return (
+        <>
+          <WorkflowRulesPanel workspaceId={workspaceId} />
+          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
+        </>
+      );
     case 'branches':
       return (
         <>

@@ -331,7 +331,8 @@ describe('main flows on the real store', () => {
         onClose={() => undefined}
       />,
     );
-    const rail = screen.getByRole('list', { name: 'Providers and models settings' });
+    fireEvent.click(screen.getByRole('button', { name: /^Providers/ }));
+    const rail = screen.getByRole('list', { name: 'Providers settings' });
     expect(screen.queryByRole('heading', { name: 'Claude' })).toBeNull();
     fireEvent.click(within(rail).getByRole('button', { name: /Claude/ }));
     expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers', provider: 'anthropic' });

@@ -64,12 +64,12 @@ describe('settings rail rows', () => {
     expect(texts.filter((text) => text.endsWith('.'))).toEqual([]);
   });
 
-  it('reads App, Workspace, Providers and models and Integrations in that order', () => {
+  it('reads App, This workspace, Providers and Integrations in that order', () => {
     expect(
       settingsDirectory({ workspaceName: 'Acme', status: QUIET_STATUS }).map(
         (group) => group.label,
       ),
-    ).toEqual(['App', 'Workspace', 'Providers and models', 'Integrations']);
+    ).toEqual(['App', 'This workspace', 'Providers', 'Integrations']);
   });
 
   it('lists the App pages with Updates and iPhone, and Branches under the workspace', () => {
@@ -88,7 +88,8 @@ describe('settings rail rows', () => {
     expect(labelsOf('workspace')).toEqual([
       'Projects',
       'About you',
-      'New sessions',
+      'Run defaults',
+      'Models',
       'Branches',
       'Replies and commits',
       'Permissions',

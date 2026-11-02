@@ -41,7 +41,7 @@ export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, PlanPage>> = {
   aboutWork: 'profile',
   workingRules: 'profile',
   explainMore: 'profile',
-  workflowRules: 'workflow-rules',
+  workflowRules: 'general',
 };
 
 type OverrideOwner =

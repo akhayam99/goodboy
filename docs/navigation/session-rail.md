@@ -941,7 +941,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers and models and
+  section. The scope segment lists App, the workspace, Providers and
   Integrations; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.

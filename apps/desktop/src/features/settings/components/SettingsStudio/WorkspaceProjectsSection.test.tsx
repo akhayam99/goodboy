@@ -56,6 +56,13 @@ const { state, repoMocks } = vi.hoisted(() => {
       setFolderPurpose: vi.fn(async () => 'documents'),
       loadFolderHistorySize: vi.fn(async () => undefined),
       prepareFolderVersions: vi.fn(async () => undefined),
+      folderGit: {},
+      folderGitNotice: {},
+      folderGitChoice: {},
+      bootstrapPhase: {},
+      agentTurnState: {},
+      probeFolderGit: vi.fn(async () => null),
+      switchFolderToRepo: vi.fn(async () => undefined),
     },
     repoMocks: {
       validateGitRepo: vi.fn(async () => ({
@@ -572,6 +579,48 @@ describe('WorkspaceProjectsSection', () => {
         folder: null,
       }),
     );
+  });
+
+  it('lists each folder once, counts them, and opens a plain folder in its own row', () => {
+    state.projects = [
+      {
+        id: 'p-1',
+        name: 'payments-api',
+        rootPath: '/r/payments-api',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+      {
+        id: 'p-2',
+        name: 'notify-relay',
+        rootPath: '/r/notify-relay',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+      {
+        id: 'p-3',
+        name: 'runbooks',
+        rootPath: '/r/runbooks',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByText('2 projects, 1 plain folder').textContent).toBe(
+      '2 projects, 1 plain folder',
+    );
+    expect(screen.getAllByText('runbooks')).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Plain folders' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Git repository' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'What runbooks is for' })).toBeNull();
+
+    openEditor('runbooks');
+
+    expect(
+      screen.getByRole('tablist', { name: 'What runbooks is for' }).getAttribute('aria-label'),
+    ).toBe('What runbooks is for');
+    expect(screen.getAllByText('runbooks')).toHaveLength(1);
   });
 
   it('shows no terminal folder row before a project is linked', () => {

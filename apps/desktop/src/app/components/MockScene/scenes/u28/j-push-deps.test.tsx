@@ -97,12 +97,13 @@ describe('the u28 push and dependencies scenes', () => {
     );
   });
 
-  it('warns that the worktree reads dependencies from another folder and offers the reinstall beside the push actions', async () => {
+  it('warns that the worktree reads dependencies from another folder and offers the reinstall once, on its own notice', async () => {
     show({ name: 'push-stale-deps-linked' });
 
     await screen.findByText('This worktree reads dependencies from another folder');
     const alert = await screen.findByRole('alert');
-    within(alert).getByRole('button', { name: 'Reinstall dependencies' });
+    expect(within(alert).queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Reinstall dependencies' })).toHaveLength(1);
     within(alert).getByRole('button', { name: 'Let an agent fix the push' });
   });
 

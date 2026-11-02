@@ -14,6 +14,7 @@ type Props = {
   readonly editorExtra?: ReactNode;
   readonly badge?: ReactNode;
   readonly scripts?: ReactNode;
+  readonly isInitiallyOpen?: boolean;
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
 };
 
@@ -24,9 +25,10 @@ export const ProjectLinkCompactRow = ({
   editorExtra,
   badge,
   scripts,
+  isInitiallyOpen = false,
   onUnlink,
 }: Props) => {
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(isInitiallyOpen);
   const isRepo = project.kind === 'repo';
   const KindIcon = isRepo ? FolderGit2 : Folder;
   const isFolderMissing = status?.state === 'missing';

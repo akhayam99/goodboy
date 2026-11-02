@@ -850,7 +850,6 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/index.tsx": 7,
     "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/FlowPlanPreview.tsx": 1,
-    "apps/desktop/src/features/settings/components/SettingsStudio/FolderFacesBand/FolderFaceCard.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/GoodboyIgnoreField.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": 7,
     "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": 2,

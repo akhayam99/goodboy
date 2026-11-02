@@ -12,13 +12,22 @@ import { LocateMovedProjects } from '../../../workspace/components/LocateMovedPr
 import { ProjectScriptsField } from '../../../scripts';
 import { NewWorktreesField } from '../../../worktree/NewWorktreesField';
 import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
-import { FolderFacesBand } from './FolderFacesBand';
+import { PlainFolderOptions } from './PlainFolderOptions';
+import { projectsCountLine } from './projectsCountLine';
+import { FolderGitCard } from '../../../workspace/folderGitCard';
+import { useFolderGitOpening } from '../../../workspace/folderGitOpening';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly isTrackWithGit?: boolean;
+  readonly isFolderOptions?: boolean;
 };
 
-export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
+export const WorkspaceProjectsSection = ({
+  workspaceId,
+  isTrackWithGit = false,
+  isFolderOptions = false,
+}: Props) => {
   const hasProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
@@ -27,6 +36,22 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       (binding) => binding.provider === 'sentry',
     ),
   );
+  const repoCount = useAppStore(
+    (state) =>
+      state.projects.filter(
+        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
+      ).length,
+  );
+  const folderCount = useAppStore(
+    (state) =>
+      state.projects.filter(
+        (project) => project.workspaceId === workspaceId && project.kind === 'folder',
+      ).length,
+  );
+  const { openId, noticeIds } = useFolderGitOpening({
+    workspaceId,
+    isOpeningFirst: isTrackWithGit || isFolderOptions,
+  });
   const loadProjectSentryLinks = useAppStore((state) => state.loadProjectSentryLinks);
   const statuses = useProjectGitStatuses({ workspaceId });
   const missing = statuses.filter((entry) => entry.status?.state === 'missing');
@@ -71,18 +96,36 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       <ProjectLinkList
         workspaceId={workspaceId}
         emptyHint="No folders yet"
+        heading={() => (
+          <h2 className="flex items-baseline gap-2 text-row text-foreground">
+            Projects
+            <span className="text-meta text-muted-foreground">
+              {projectsCountLine({ repoCount, folderCount })}
+            </span>
+          </h2>
+        )}
+        isRowInitiallyOpen={({ project }) =>
+          project.id === openId || noticeIds.includes(project.id)
+        }
         editorExtra={({ project }) =>
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }
         rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
         editorScripts={({ project }) => (
           <>
+            {project.kind === 'folder' ? (
+              <PlainFolderOptions
+                folder={project}
+                isGitInitiallyOpen={isTrackWithGit && project.id === openId}
+              />
+            ) : (
+              <FolderGitCard projectId={project.id} isInitiallyOpen={false} isEmbedded />
+            )}
             <ProjectScriptsField project={project} />
             {project.kind === 'repo' ? <NewWorktreesField project={project} /> : null}
           </>
         )}
       />
-      <FolderFacesBand workspaceId={workspaceId} />
     </section>
   );
 };

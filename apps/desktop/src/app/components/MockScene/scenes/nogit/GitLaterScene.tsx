@@ -139,7 +139,7 @@ export const GitLaterScene = ({ theme, state }: Props) => {
     <SettingsFrame
       focus={{
         scope: 'workspace',
-        section: state === 'review' ? 'track-with-git' : 'projects',
+        section: state === 'review' ? 'track-with-git' : 'folder-options',
       }}
       seed={seed}
     />

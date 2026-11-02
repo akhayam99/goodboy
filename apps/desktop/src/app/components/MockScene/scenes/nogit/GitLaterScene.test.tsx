@@ -29,7 +29,7 @@ type MountParams = {
 
 const mount = ({ state }: MountParams) => render(<GitLaterScene theme="light" state={state} />);
 
-const gitBand = async () => screen.findByRole('region', { name: 'Git repository' }, WAIT);
+const gitBand = async () => screen.findByRole('group', { name: 'acme-web, git' }, WAIT);
 
 describe('the git later scenes', () => {
   it('none offers Track with git on a code folder', async () => {
