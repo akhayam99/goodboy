@@ -587,9 +587,8 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           key={key}
           data-block={block.isTree ? 'tree' : undefined}
           className={cn(
-            'text-prose',
-            block.isTree && 'overflow-x-auto whitespace-pre-wrap font-mono',
-            !block.isTree && 'wrap-anywhere',
+            'text-prose wrap-anywhere',
+            block.isTree && 'whitespace-pre-wrap font-mono',
           )}
         >
           {block.isTree

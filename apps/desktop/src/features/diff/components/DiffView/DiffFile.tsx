@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { Button, cn, EmptyState } from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade } from '@goodboy/ui';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -429,12 +429,10 @@ const DiffFileView = ({
               className="justify-center"
             />
           ) : (
-            <div
-              className={cn(
-                'min-w-0',
-                !wrap && layout === 'unified' ? 'overflow-x-auto' : 'overflow-hidden',
-                drag !== null && 'select-none',
-              )}
+            <ScrollFade
+              orientation="horizontal"
+              className={cn('min-w-0', drag !== null && 'select-none')}
+              viewportClassName={!wrap && layout === 'unified' ? '' : 'overflow-x-hidden'}
             >
               <DiffRows
                 file={file}
@@ -456,7 +454,7 @@ const DiffFileView = ({
                 onHover={onHover}
                 onActivate={onActivate}
               />
-            </div>
+            </ScrollFade>
           )}
           {remaining > 0 ? (
             <div className="flex items-center justify-center gap-2 py-1 text-meta text-muted-foreground">

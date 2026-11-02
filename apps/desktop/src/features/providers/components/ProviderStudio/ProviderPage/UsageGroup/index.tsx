@@ -1,6 +1,6 @@
 import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Band, Button, Notice, RefreshIconButton, cn } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Band, Button, Notice, RefreshIconButton, Skeleton, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../../store';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { useAutoDetour } from '../../../../hooks/useAutoDetour';
@@ -51,7 +51,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const isClaudeOut =
     providerId === 'anthropic' &&
     windows.some((window) => window.status === 'reached' || (window.usedFraction ?? 0) >= 1);
-  const status = isChecking ? 'Checking…' : lastAge === null ? null : `Updated ${lastAge}`;
+  const status = isChecking || lastAge === null ? null : `Updated ${lastAge}`;
 
   return (
     <div id={USAGE_SECTION_ID} className="flex scroll-mt-4 flex-col gap-2">
@@ -61,6 +61,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
         action={
           billing === 'token' || !reports ? undefined : (
             <div className="flex items-center gap-1">
+              {isChecking ? <Skeleton className="h-3 w-16" /> : null}
               {status === null ? null : (
                 <span className="text-meta text-faint-foreground">{status}</span>
               )}

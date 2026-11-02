@@ -1,4 +1,4 @@
-import { Skeleton, cn, EmptyState } from '@goodboy/ui';
+import { Skeleton, ScrollFade, cn, EmptyState } from '@goodboy/ui';
 import type { SentryStackFrame } from './client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 
@@ -39,15 +39,21 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
   }
 
   return (
-    <pre className="overflow-x-auto rounded-lg border border-border-soft bg-subtle p-3 font-mono text-meta text-muted-foreground">
-      {frames
-        .map(
-          (frame) =>
-            `${frame.in_app ? '› ' : '  '}${frame.function ?? '?'} (${frame.filename ?? '?'}${
-              frame.line_no != null ? `:${frame.line_no}` : ''
-            })`,
-        )
-        .join('\n')}
-    </pre>
+    <ScrollFade
+      orientation="horizontal"
+      fadeFrom="subtle"
+      className="rounded-lg border border-border-soft bg-subtle"
+    >
+      <pre className="p-3 font-mono text-meta text-muted-foreground">
+        {frames
+          .map(
+            (frame) =>
+              `${frame.in_app ? '› ' : '  '}${frame.function ?? '?'} (${frame.filename ?? '?'}${
+                frame.line_no != null ? `:${frame.line_no}` : ''
+              })`,
+          )
+          .join('\n')}
+      </pre>
+    </ScrollFade>
   );
 };

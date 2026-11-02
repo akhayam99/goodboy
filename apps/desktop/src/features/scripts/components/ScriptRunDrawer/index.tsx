@@ -120,19 +120,6 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
       action={action}
       {...(back !== undefined && { back })}
       onClose={onClose}
-      dock={
-        record === null ? null : (
-          <ScriptRunDock
-            status={scriptRun.status}
-            exitCode={scriptRun.result?.exitCode ?? null}
-            elapsedMs={scriptRun.elapsedMs}
-            output={output}
-            canAsk={handOutput.canHandOff}
-            askLabel={handOutput.askLabel}
-            onAsk={askAboutOutput}
-          />
-        )
-      }
     >
       <div className="flex h-full min-h-0 flex-col gap-2">
         <ScriptRunMeta
@@ -152,6 +139,17 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
                   void openFileLink({ sessionId, root: fileRoot, baseDir: fileBaseDir, link })
           }
         />
+        {record === null ? null : (
+          <ScriptRunDock
+            status={scriptRun.status}
+            exitCode={scriptRun.result?.exitCode ?? null}
+            elapsedMs={scriptRun.elapsedMs}
+            output={output}
+            canAsk={handOutput.canHandOff}
+            askLabel={handOutput.askLabel}
+            onAsk={askAboutOutput}
+          />
+        )}
       </div>
     </DrawerFrame>
   );

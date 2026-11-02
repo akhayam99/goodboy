@@ -13,8 +13,8 @@ describe('TranscriptRowHeader', () => {
       <TranscriptRowHeader tone="primary" eyebrow="step" preview="1. plan" onToggle={onToggle} />,
     );
     const row = screen.getByRole('button');
-    expect(row.className).toContain('border-l-2');
-    expect(row.className).toContain('border-primary/40');
+    expect(row.className).not.toContain('border-l-2');
+    expect(row.querySelector('[data-testid="tone-bar"][data-tone="primary"]')).not.toBeNull();
     expect(row.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(row);
     expect(onToggle).toHaveBeenCalledOnce();

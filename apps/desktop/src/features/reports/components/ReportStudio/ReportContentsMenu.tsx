@@ -23,7 +23,7 @@ export const ReportContentsMenu = ({ entries, activeId, onSelect }: Props) => {
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Contents"
-      className="max-h-80 overflow-y-auto p-2"
+      className="max-h-80 p-2"
       anchorClassName="self-start"
       trigger={
         <Button

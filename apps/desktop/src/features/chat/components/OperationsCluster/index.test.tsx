@@ -140,8 +140,8 @@ describe('OperationsCluster', () => {
       'approval',
     );
     const rail = screen.getByRole('button').parentElement!;
-    expect(rail.className).toContain('border-l-2');
-    expect(rail.className).toContain('border-warning');
+    expect(rail.className).not.toContain('border-l-2');
+    expect(rail.querySelector('[data-testid="tone-bar"][data-tone="warning"]')).not.toBeNull();
     screen.getByText('Waiting for your permission');
   });
 

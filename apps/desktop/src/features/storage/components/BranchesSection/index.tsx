@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DeletedBranch, Project, ProjectId } from '@goodboy/types';
-import { Band, Listbox, SectionHeader, type ListboxOption } from '@goodboy/ui';
+import { Band, Listbox, SectionHeader, SkeletonRow, type ListboxOption } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { BranchScanEntry } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
@@ -249,10 +249,10 @@ export const BranchesSection = ({ scope }: Props) => {
         }
       />
       <Band>
-        {visibleGroups.length === 0 ? (
-          <p className="px-2 py-2 text-meta text-muted-foreground">
-            {isLoading ? 'Checking…' : EMPTY_COPY[tab]}
-          </p>
+        {visibleGroups.length === 0 && isLoading ? (
+          <SkeletonRow label="Checking branches" />
+        ) : visibleGroups.length === 0 ? (
+          <p className="px-2 py-2 text-meta text-muted-foreground">{EMPTY_COPY[tab]}</p>
         ) : (
           <div className="flex flex-col">
             {visibleGroups.map((group) =>

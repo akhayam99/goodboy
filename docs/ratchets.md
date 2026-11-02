@@ -112,80 +112,80 @@ test file, unless its row above says otherwise.
 
 ## Baseline files
 
-| Baseline                                                 | Guards                                                                 |
-| -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `forbidden-patterns.baseline.json`                       | the original rules over product source                                 |
-| `forbidden-patterns-guards.baseline.json`                | every later rule, and the originals over new trees                     |
-| `forbidden-patterns.<rule-id>.baseline.json`             | a rule with `ledger: 'own'`                                            |
-| `whole-record-selectors.baseline.json`                   | `useAppStore` selectors on a whole record keyed by an id               |
-| `ambient-target-session.baseline.json`                   | store reads of the current session, agent or project                   |
-| `optional-mount-param.baseline.json`                     | an optional `mountId` in a store file                                  |
-| `set-before-await.baseline.json`                         | store files that `set` before their first `await`                      |
-| `catch-return.baseline.json`                             | a `catch` block that only returns, in a store file                     |
-| `class-assertions.baseline.json`                         | class assertions in desktop tests                                      |
-| `truthy-queries.baseline.json`                           | `expect(getBy*(...)).toBeTruthy()`                                     |
-| `store-mocks.baseline.json`                              | tests that mock the store                                              |
-| `test-casts.baseline.json`                               | casts in tests                                                         |
-| `escape-and-keys-use-the-stack.baseline.json`            | `'Escape'` and window key listeners                                    |
-| `time-formatting-goes-through-the-module.baseline.json`  | own date and time formatting                                           |
-| `copy-budget.baseline.json`, `jargon-copy.baseline.json` | long or internal on-screen copy                                        |
-| `contractions-copy.baseline.json`                        | could not, cannot and other spelled out negations                      |
-| `doc-budget.baseline.json`                               | long sentences and paragraphs, long picture text, code names in docs   |
-| `website/scripts/site-copy.baseline.json`                | retired names and em or en dashes in the website copy                  |
-| `former-names-guard.baseline.json`                       | former names that the retired names guard cannot catch                 |
-| `cross-feature-imports.baseline.json`                    | imports across features                                                |
-| `control-heights.baseline.json`                          | a height class on a control                                            |
-| `popover-widths.baseline.json`                           | popover widths off the scale                                           |
-| `row-hover-copies.baseline.json`                         | hand-copied row hover styles                                           |
-| `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                |
-| `disabled-opacity.baseline.json`                         | a disabled control dimmed by hand, not by the role                     |
-| `loading-is-a-skeleton.baseline.json`                    | a visible Loading word where a skeleton belongs                        |
-| `eslint-suppressions.json` (root)                        | the seven typed lint rules                                             |
-| `eslint-suppressions-strict.json` (root)                 | the strict pass: bare conditions and loose compares                    |
-| `hand-made-chips.baseline.json`                          | hand-rolled status pills                                               |
-| `hand-made-dots.baseline.json`                           | a round status span, not `StatusDot`                                   |
-| `hand-made-meters.baseline.json`                         | a bar track with a styled width, not `Meter`                           |
-| `own-focus-ring.baseline.json`                           | a focus ring written by hand, not `FOCUS_RING`                         |
-| `ui-exports-have-consumers.baseline.json`                | a `@goodboy/ui` export that nothing reads                              |
-| `raw-button.baseline.json`                               | a raw `<button>` instead of a `@goodboy/ui` primitive                  |
-| `raw-row-button.baseline.json`                           | a raw row button instead of `SelectableRow`                            |
-| `hand-made-notices-and-empty-lines.baseline.json`        | hand-rolled notices and bare empty lines                               |
-| `hand-rolled-radio-groups.baseline.json`                 | radio groups outside `SegmentedTabs`                                   |
-| `ambient-target.baseline.json`                           | store slice reads of the current workspace or mount                    |
-| `catch-swallow.baseline.json`                            | `.catch(() => undefined \| null \| {})`                                |
-| `raw-set-interval.baseline.json`                         | a `setInterval` outside `startPoll`                                    |
-| `busy-controls.baseline.json`                            | async controls that do not say they are busy                           |
-| `fill-child-uses-min-h-0.baseline.json`                  | `h-full` beside a `shrink-0` sibling                                   |
-| `hand-indent.baseline.json`                              | hand-indented disclosure bodies                                        |
-| `hand-rolled-icon-buttons.baseline.json`                 | icon-only buttons that are not `IconButton`                            |
-| `identical-ternary.baseline.json`                        | a ternary with the same value on both sides                            |
-| `inline-confirm-placement.baseline.json`                 | inline confirms off their place                                        |
-| `native-title.baseline.json`                             | a native `title` instead of `Tooltip`                                  |
-| `no-layout-by-attribute.baseline.json`                   | layout claims proved by an attribute or a class                        |
-| `popover-anchoring.baseline.json`                        | popovers not under their trigger                                       |
-| `resolver-entrypoints.baseline.json`                     | files that ask the old resolver entry points                           |
-| `rust-spawn-sites.baseline.json`                         | process starts outside `src-tauri/src/proc`                            |
-| `truthy-queries.defined.baseline.json`                   | `expect(getBy*(...)).toBeDefined()` or `.not.toBeNull()`               |
-| `no-wall-clock-in-unit.baseline.json`                    | a time budget asserted in a unit test                                  |
-| `no-real-wait.baseline.json`                             | a promise that resolves on a real `setTimeout`                         |
-| `static-store-imports.baseline.json`                     | tests that import the store statically                                 |
-| `hand-written-tauri-mocks.baseline.json`                 | tests with their own Tauri core mock                                   |
-| `hand-written-db-mocks.baseline.json`                    | tests with their own `@goodboy/db` mock                                |
-| `provider-id-comparisons.baseline.json`                  | `=== 'cursor'` and the like: branches on a provider id                 |
-| `no-layout-by-attribute.elsewhere.baseline.json`         | the same claims outside `__tests__/surfaces`                           |
-| `file-lines.baseline.json`                               | a component past 250 lines or another module past 600                  |
-| `test-file-lines.baseline.json`                          | a test file past 1,000 lines                                           |
-| `duplicate-helper.baseline.json`                         | a private helper name written in three or more files                   |
-| `no-local-plural.baseline.json`                          | a local `plural` helper instead of `countNoun`                         |
-| `cross-feature-hook-folders.baseline.json`               | a `use*` folder at the root of another feature                         |
-| `shared-imports-features.baseline.json`                  | an import from `shared/` into `features/`                              |
-| `flat-component-pairs.baseline.json`                     | a flat `Name.tsx` with a `Name.test.tsx` beside it                     |
-| `index-only-folders.baseline.json`                       | a component folder that holds only `index.tsx`                         |
-| `kebab-modules.baseline.json`                            | a kebab-case `.ts` module                                              |
-| `hook-folders-under-hooks.baseline.json`                 | a `use*` folder outside `hooks/` and component folders                 |
-| `types-function-bodies.baseline.json`                    | a function body in `packages/types` that is not a guard                |
-| `drawer-host-imports.baseline.json`                      | feature imports in `app/components/DrawerHost.tsx`                     |
-| `artifact-family-cycles.baseline.json`                   | imports across a two-way pair of artifacts, plans, reports, wireframes |
+| Baseline                                                 | Guards                                                                                               |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `forbidden-patterns.baseline.json`                       | the original rules over product source                                                               |
+| `forbidden-patterns-guards.baseline.json`                | every later rule, and the originals over new trees                                                   |
+| `forbidden-patterns.<rule-id>.baseline.json`             | a rule with `ledger: 'own'`                                                                          |
+| `whole-record-selectors.baseline.json`                   | `useAppStore` selectors on a whole record keyed by an id                                             |
+| `ambient-target-session.baseline.json`                   | store reads of the current session, agent or project                                                 |
+| `optional-mount-param.baseline.json`                     | an optional `mountId` in a store file                                                                |
+| `set-before-await.baseline.json`                         | store files that `set` before their first `await`                                                    |
+| `catch-return.baseline.json`                             | a `catch` block that only returns, in a store file                                                   |
+| `class-assertions.baseline.json`                         | class assertions in desktop tests                                                                    |
+| `truthy-queries.baseline.json`                           | `expect(getBy*(...)).toBeTruthy()`                                                                   |
+| `store-mocks.baseline.json`                              | tests that mock the store                                                                            |
+| `test-casts.baseline.json`                               | casts in tests                                                                                       |
+| `escape-and-keys-use-the-stack.baseline.json`            | `'Escape'` and window key listeners                                                                  |
+| `time-formatting-goes-through-the-module.baseline.json`  | own date and time formatting                                                                         |
+| `copy-budget.baseline.json`, `jargon-copy.baseline.json` | long or internal on-screen copy                                                                      |
+| `contractions-copy.baseline.json`                        | could not, cannot and other spelled out negations                                                    |
+| `doc-budget.baseline.json`                               | long sentences and paragraphs, long picture text, code names in docs                                 |
+| `website/scripts/site-copy.baseline.json`                | retired names and em or en dashes in the website copy                                                |
+| `former-names-guard.baseline.json`                       | former names that the retired names guard cannot catch                                               |
+| `cross-feature-imports.baseline.json`                    | imports across features                                                                              |
+| `control-heights.baseline.json`                          | a height class on a control                                                                          |
+| `popover-widths.baseline.json`                           | popover widths off the scale                                                                         |
+| `row-hover-copies.baseline.json`                         | hand-copied row hover styles                                                                         |
+| `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                                              |
+| `disabled-opacity.baseline.json`                         | a disabled control dimmed by hand, not by the role                                                   |
+| `loading-is-a-skeleton.baseline.json`                    | a visible Loading, or a bare Checking, Reading, Fetching or Searching word, where a skeleton belongs |
+| `eslint-suppressions.json` (root)                        | the seven typed lint rules                                                                           |
+| `eslint-suppressions-strict.json` (root)                 | the strict pass: bare conditions and loose compares                                                  |
+| `hand-made-chips.baseline.json`                          | hand-rolled status pills                                                                             |
+| `hand-made-dots.baseline.json`                           | a round status span, not `StatusDot`                                                                 |
+| `hand-made-meters.baseline.json`                         | a bar track with a styled width, not `Meter`                                                         |
+| `own-focus-ring.baseline.json`                           | a focus ring written by hand, not `FOCUS_RING`                                                       |
+| `ui-exports-have-consumers.baseline.json`                | a `@goodboy/ui` export that nothing reads                                                            |
+| `raw-button.baseline.json`                               | a raw `<button>` instead of a `@goodboy/ui` primitive                                                |
+| `raw-row-button.baseline.json`                           | a raw row button instead of `SelectableRow`                                                          |
+| `hand-made-notices-and-empty-lines.baseline.json`        | hand-rolled notices and bare empty lines                                                             |
+| `hand-rolled-radio-groups.baseline.json`                 | radio groups outside `SegmentedTabs`                                                                 |
+| `ambient-target.baseline.json`                           | store slice reads of the current workspace or mount                                                  |
+| `catch-swallow.baseline.json`                            | `.catch(() => undefined \| null \| {})`                                                              |
+| `raw-set-interval.baseline.json`                         | a `setInterval` outside `startPoll`                                                                  |
+| `busy-controls.baseline.json`                            | async controls that do not say they are busy                                                         |
+| `fill-child-uses-min-h-0.baseline.json`                  | `h-full` beside a `shrink-0` sibling                                                                 |
+| `hand-indent.baseline.json`                              | hand-indented disclosure bodies                                                                      |
+| `hand-rolled-icon-buttons.baseline.json`                 | icon-only buttons that are not `IconButton`                                                          |
+| `identical-ternary.baseline.json`                        | a ternary with the same value on both sides                                                          |
+| `inline-confirm-placement.baseline.json`                 | inline confirms off their place                                                                      |
+| `native-title.baseline.json`                             | a native `title` instead of `Tooltip`                                                                |
+| `no-layout-by-attribute.baseline.json`                   | layout claims proved by an attribute or a class                                                      |
+| `popover-anchoring.baseline.json`                        | popovers not under their trigger                                                                     |
+| `resolver-entrypoints.baseline.json`                     | files that ask the old resolver entry points                                                         |
+| `rust-spawn-sites.baseline.json`                         | process starts outside `src-tauri/src/proc`                                                          |
+| `truthy-queries.defined.baseline.json`                   | `expect(getBy*(...)).toBeDefined()` or `.not.toBeNull()`                                             |
+| `no-wall-clock-in-unit.baseline.json`                    | a time budget asserted in a unit test                                                                |
+| `no-real-wait.baseline.json`                             | a promise that resolves on a real `setTimeout`                                                       |
+| `static-store-imports.baseline.json`                     | tests that import the store statically                                                               |
+| `hand-written-tauri-mocks.baseline.json`                 | tests with their own Tauri core mock                                                                 |
+| `hand-written-db-mocks.baseline.json`                    | tests with their own `@goodboy/db` mock                                                              |
+| `provider-id-comparisons.baseline.json`                  | `=== 'cursor'` and the like: branches on a provider id                                               |
+| `no-layout-by-attribute.elsewhere.baseline.json`         | the same claims outside `__tests__/surfaces`                                                         |
+| `file-lines.baseline.json`                               | a component past 250 lines or another module past 600                                                |
+| `test-file-lines.baseline.json`                          | a test file past 1,000 lines                                                                         |
+| `duplicate-helper.baseline.json`                         | a private helper name written in three or more files                                                 |
+| `no-local-plural.baseline.json`                          | a local `plural` helper instead of `countNoun`                                                       |
+| `cross-feature-hook-folders.baseline.json`               | a `use*` folder at the root of another feature                                                       |
+| `shared-imports-features.baseline.json`                  | an import from `shared/` into `features/`                                                            |
+| `flat-component-pairs.baseline.json`                     | a flat `Name.tsx` with a `Name.test.tsx` beside it                                                   |
+| `index-only-folders.baseline.json`                       | a component folder that holds only `index.tsx`                                                       |
+| `kebab-modules.baseline.json`                            | a kebab-case `.ts` module                                                                            |
+| `hook-folders-under-hooks.baseline.json`                 | a `use*` folder outside `hooks/` and component folders                                               |
+| `types-function-bodies.baseline.json`                    | a function body in `packages/types` that is not a guard                                              |
+| `drawer-host-imports.baseline.json`                      | feature imports in `app/components/DrawerHost.tsx`                                                   |
+| `artifact-family-cycles.baseline.json`                   | imports across a two-way pair of artifacts, plans, reports, wireframes                               |
 
 All sit in `apps/desktop/src/__tests__/regressions/`. `no-skipped-tests.test.ts` has no baseline: its count is zero and stays zero.
 

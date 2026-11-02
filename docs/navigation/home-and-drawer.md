@@ -476,7 +476,7 @@ tooltip says why, never a native title); the body is a status
 line (state, time, project, branch), a `Command` disclosure closed by default,
 and the log, which follows the tail until you scroll up and then offers
 `Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
-hash) wraps at the edge instead of breaking every word. The dock
+hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
 `Ask the agent about this` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled

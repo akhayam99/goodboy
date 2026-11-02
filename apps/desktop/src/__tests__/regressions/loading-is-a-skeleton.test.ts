@@ -12,7 +12,8 @@ import {
 
 const BASELINE_FILE = 'loading-is-a-skeleton.baseline.json';
 
-const LOADING_WORD = /(?:>\s*|heading=["'])Loading\b[^<]*/g;
+const LOADING_WORD =
+  /(?:>\s*|heading=["'])Loading\b[^<]*|(?:>\s*|['"`])(?:Checking|Reading|Fetching|Searching)(?:…|\.\.\.)/g;
 
 const countLoadingWords = ({ text }: { readonly text: string }): number =>
   (text.match(LOADING_WORD) ?? []).length;
@@ -28,6 +29,13 @@ describe('loading is a skeleton, never a word on screen', () => {
   it('counts a visible Loading word and leaves a label alone', () => {
     expect(countLoadingWords({ text: '<span>Loading people</span>' })).toBe(1);
     expect(countLoadingWords({ text: '<EmptyLine>Loading</EmptyLine>' })).toBe(1);
+    expect(countLoadingWords({ text: '<EmptyLine>Checking…</EmptyLine>' })).toBe(1);
+    expect(countLoadingWords({ text: "const word = 'Reading…';" })).toBe(1);
+    expect(countLoadingWords({ text: '<span>Fetching…</span>' })).toBe(1);
+    expect(countLoadingWords({ text: '<span>Searching...</span>' })).toBe(1);
+    expect(countLoadingWords({ text: '<span>Reading 3 issues</span>' })).toBe(0);
+    expect(countLoadingWords({ text: '<span>Checking origin…</span>' })).toBe(0);
+    expect(countLoadingWords({ text: "const copy = 'Checking out the branch';" })).toBe(0);
     expect(countLoadingWords({ text: '<div aria-label="Loading board" />' })).toBe(0);
     expect(countLoadingWords({ text: '<SkeletonRow label="Loading people" />' })).toBe(0);
   });

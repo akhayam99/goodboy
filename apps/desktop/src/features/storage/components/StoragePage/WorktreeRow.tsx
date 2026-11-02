@@ -125,7 +125,7 @@ export const WorktreeRow = ({
           {formatAge({ from: lastChange, now })}
         </span>
         <span className={cn(STORAGE_COLUMN.status, 'text-meta', STATUS_TONE[status])}>
-          {statusLabel}
+          {status === 'checking' ? <Skeleton className="h-3 w-16" /> : statusLabel}
         </span>
         <WorktreeRowActions
           folder={folder}

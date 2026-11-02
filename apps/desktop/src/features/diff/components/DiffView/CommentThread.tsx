@@ -2,13 +2,12 @@ import { useState, type ReactNode } from 'react';
 import { Lock, Trash2 } from 'lucide-react';
 import {
   Chip,
-  cn,
   ConfirmPopover,
   formatError,
   ICON_SIZE,
   Markdown,
   OptionalTooltip,
-  tintClasses,
+  ToneBar,
 } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 
@@ -47,7 +46,6 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const tint = tintClasses(thread.tone);
   const lockReason = thread.lockReason ?? null;
   const isLocked = lockReason !== null;
   const replyCount = thread.replies?.length ?? 0;
@@ -148,11 +146,9 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
       tabIndex={-1}
       data-thread-state="open"
       data-thread-source={thread.source}
-      className={cn(
-        'flex min-w-0 flex-col gap-2 rounded-md border-l-2 bg-elevated px-3 py-2 font-sans',
-        tint.rail,
-      )}
+      className="relative flex min-w-0 flex-col gap-2 rounded-md bg-elevated py-2 pl-4 pr-3 font-sans"
     >
+      <ToneBar tone={thread.tone} density="card" />
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
         <ThreadWho thread={thread} />
         <ThreadKindChip thread={thread} />

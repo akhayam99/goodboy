@@ -153,7 +153,7 @@ export const repoRowFactsOf = ({ report, pull }: Params): RepoRowFacts => {
   const facts =
     report === undefined
       ? quiet({
-          word: 'Checking…',
+          word: '',
           tooltip: 'Fetching origin to compare the base branch.',
           tone: 'faint',
         })

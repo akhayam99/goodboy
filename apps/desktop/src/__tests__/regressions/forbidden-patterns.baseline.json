@@ -372,38 +372,13 @@
     "packages/ui/src/components/Dialog.tsx": 1
   },
   "raw-scroller": {
-    "apps/desktop/src/app/components/MockScene/scenes/ActivityScenes.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/CardRailsScene.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/ConversationScene.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/flow-audit/TranscriptScene.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,
-    "apps/desktop/src/features/budget/components/spend/TurnsTable.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
-    "apps/desktop/src/features/chat/components/PhaseTransitionCard/index.tsx": 1,
-    "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": 1,
-    "apps/desktop/src/features/integrations/sentry/SentryStackTrace.tsx": 1,
-    "apps/desktop/src/features/reports/components/ReportStudio/index.tsx": 1,
-    "apps/desktop/src/features/reports/components/ReportStudio/ReportContentsMenu.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeFlowOverview.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeIssues.tsx": 1,
-    "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,
-    "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": 1,
-    "packages/ui/src/components/CommandPreview.tsx": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 1,
-    "packages/ui/src/components/Notice/index.tsx": 1,
     "packages/ui/src/components/Popover.tsx": 1
   },
-  "tone-border-rail": {
-    "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 1,
-    "apps/desktop/src/features/chat/components/TranscriptDisclosure.tsx": 1,
-    "apps/desktop/src/features/chat/components/TranscriptShell/index.tsx": 2,
-    "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 1
-  },
-  "footer-cta-bar": {
-    "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx": 1,
-    "apps/desktop/src/features/scripts/components/ScriptRunDrawer/index.tsx": 1
-  },
+  "tone-border-rail": {},
+  "footer-cta-bar": {},
   "half-step-spacing": {},
   "role-weight-override": {}
 }

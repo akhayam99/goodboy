@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, ToneBar, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly tone: Tone;
@@ -20,18 +20,14 @@ export const TranscriptDisclosure = ({
   bodyClassName,
   'data-testid': testId,
 }: Props) => {
-  const accent = tintClasses(tone);
   const hasRail = tone !== 'neutral';
 
   return (
     <div
       data-testid={testId}
-      className={cn(
-        'flex min-w-0 flex-col',
-        hasRail ? cn('rounded-r-md border-l-2', accent.border) : 'rounded-md',
-        className,
-      )}
+      className={cn('relative flex min-w-0 flex-col rounded-md', className)}
     >
+      {hasRail ? <ToneBar tone={tone} density="row" /> : null}
       {header}
       {open && children != null ? (
         <div className={cn('flex min-w-0 flex-col gap-1 pb-2 pl-7 pr-2', bodyClassName)}>

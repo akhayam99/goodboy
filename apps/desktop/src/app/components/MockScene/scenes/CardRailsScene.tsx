@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { Eyebrow, ICON_SIZE, PageColumn } from '@goodboy/ui';
+import { Eyebrow, ICON_SIZE, PageColumn, ScrollFade } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
 import { AnsweredCard } from '../../../../features/chat/components/ChatView/AnsweredCard';
@@ -131,95 +131,100 @@ export const CardRailsScene = () => {
   }, []);
 
   return (
-    <main className="h-screen overflow-auto bg-background text-foreground">
-      <PageColumn className="gap-6 py-5">
-        <Row label="question, blocking">
-          <QuestionCard {...questionProps} question={OPEN_QUESTION} />
-        </Row>
-        <Row label="question, answered by an agent">
-          <AnsweredCard question={ANSWERED_QUESTION} answeredByName="answer: the cache question" />
-        </Row>
-        <Row label="approval">
-          <PermissionRequestCard
-            item={PERMISSION_REQUEST}
-            sessionId={'sess-1' as SessionId}
-            agentId={'agent-1' as AgentId}
-          />
-        </Row>
-        <Row label="approval, decided">
-          <PermissionDecisionCard
-            item={PERMISSION_DECISION}
-            sessionId={'sess-1' as SessionId}
-            agentId={'agent-1' as AgentId}
-          />
-        </Row>
-        <Row label="nudge">
-          <NudgeCard
-            severity="warning"
-            icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.control} aria-hidden />}
-            title="This step has been running for eleven minutes"
-            body="The implementer has not written anything since the rebase."
-            primary={{ label: 'Open the agent', onClick: noop }}
-            secondary={{ label: 'Stop it', onClick: noop }}
-            onDismiss={noop}
-            ariaLabel="Nudge"
-          />
-        </Row>
-        <Row label="provider signed out">
-          <AuthRequiredCallout
-            providerId="anthropic"
-            identity="dana@example.invalid"
-            onRefresh={noop}
-          />
-        </Row>
-        <Row label="file touched">
-          <FileEditBlock path="packages/core/src/summarizer/step-output.ts" editType="modify" />
-        </Row>
-        <Row label="turn footer">
-          <TurnFooter
-            item={{
-              kind: 'usage',
-              key: 'usage-scene',
-              usage: {
+    <main className="h-screen bg-background text-foreground">
+      <ScrollFade className="h-full">
+        <PageColumn className="gap-6 py-5">
+          <Row label="question, blocking">
+            <QuestionCard {...questionProps} question={OPEN_QUESTION} />
+          </Row>
+          <Row label="question, answered by an agent">
+            <AnsweredCard
+              question={ANSWERED_QUESTION}
+              answeredByName="answer: the cache question"
+            />
+          </Row>
+          <Row label="approval">
+            <PermissionRequestCard
+              item={PERMISSION_REQUEST}
+              sessionId={'sess-1' as SessionId}
+              agentId={'agent-1' as AgentId}
+            />
+          </Row>
+          <Row label="approval, decided">
+            <PermissionDecisionCard
+              item={PERMISSION_DECISION}
+              sessionId={'sess-1' as SessionId}
+              agentId={'agent-1' as AgentId}
+            />
+          </Row>
+          <Row label="nudge">
+            <NudgeCard
+              severity="warning"
+              icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.control} aria-hidden />}
+              title="This step has been running for eleven minutes"
+              body="The implementer has not written anything since the rebase."
+              primary={{ label: 'Open the agent', onClick: noop }}
+              secondary={{ label: 'Stop it', onClick: noop }}
+              onDismiss={noop}
+              ariaLabel="Nudge"
+            />
+          </Row>
+          <Row label="provider signed out">
+            <AuthRequiredCallout
+              providerId="anthropic"
+              identity="dana@example.invalid"
+              onRefresh={noop}
+            />
+          </Row>
+          <Row label="file touched">
+            <FileEditBlock path="packages/core/src/summarizer/step-output.ts" editType="modify" />
+          </Row>
+          <Row label="turn footer">
+            <TurnFooter
+              item={{
+                kind: 'usage',
+                key: 'usage-scene',
+                usage: {
+                  inputTokens: 182412,
+                  outputTokens: 1388,
+                  cachedInputTokens: 171300,
+                  cacheCreationInputTokens: 8204,
+                  contextTokens: 76000,
+                  estimatedCostUsd: 0.12,
+                },
+                runId: 'run-scene' as ProviderRunId,
+                at: NOW,
+              }}
+              startedAt={clock.iso({ at: '2026-09-22T09:11:18.000Z' })}
+            />
+          </Row>
+          <Row label="brief usage footer">
+            <AgentUsageFooter
+              aggregate={{
                 inputTokens: 182412,
                 outputTokens: 1388,
-                cachedInputTokens: 171300,
-                cacheCreationInputTokens: 8204,
-                contextTokens: 76000,
-                estimatedCostUsd: 0.12,
-              },
-              runId: 'run-scene' as ProviderRunId,
-              at: NOW,
-            }}
-            startedAt={clock.iso({ at: '2026-09-22T09:11:18.000Z' })}
-          />
-        </Row>
-        <Row label="brief usage footer">
-          <AgentUsageFooter
-            aggregate={{
-              inputTokens: 182412,
-              outputTokens: 1388,
-              estimatedCostUsd: 0.34,
-              turns: 6,
-            }}
-            contextUsage={[
-              {
-                provider: 'anthropic',
-                model: 'claude-opus-5',
-                inputTokens: 182412,
-                outputTokens: 1388,
-                cachedInputTokens: 171300,
-                cacheCreationInputTokens: 8204,
-                contextTokens: 76000,
-              },
-            ]}
-            turns={6}
-          />
-        </Row>
-        <Row label="your message">
-          <UserText text="Ship the rail treatment everywhere, no tinted card fills." at={NOW} />
-        </Row>
-      </PageColumn>
+                estimatedCostUsd: 0.34,
+                turns: 6,
+              }}
+              contextUsage={[
+                {
+                  provider: 'anthropic',
+                  model: 'claude-opus-5',
+                  inputTokens: 182412,
+                  outputTokens: 1388,
+                  cachedInputTokens: 171300,
+                  cacheCreationInputTokens: 8204,
+                  contextTokens: 76000,
+                },
+              ]}
+              turns={6}
+            />
+          </Row>
+          <Row label="your message">
+            <UserText text="Ship the rail treatment everywhere, no tinted card fills." at={NOW} />
+          </Row>
+        </PageColumn>
+      </ScrollFade>
     </main>
   );
 };
