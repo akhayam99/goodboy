@@ -31,6 +31,7 @@ import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
 import { integrationsByWorkspace } from './integrationsByWorkspace';
 import { stageInfoOf, type StageInfoState } from './stageInfoOf';
+import { stageInfosOf } from './stageInfosOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -235,12 +236,10 @@ const useStageSources = ({
       sessionDismissedNextSteps,
       sessionArtifacts,
     };
+    const infoMap = stageInfosOf({ state: partial });
     const stageMap: Record<SessionId, SessionStage> = {};
-    const infoMap: Record<SessionId, SessionStageInfo> = {};
     for (const session of filteredSessions) {
-      const info = stageInfoOf(partial, session);
-      stageMap[session.id] = info.stage;
-      infoMap[session.id] = info;
+      stageMap[session.id] = infoMap[session.id].stage;
     }
     return { stageMap, infoMap };
   }, [

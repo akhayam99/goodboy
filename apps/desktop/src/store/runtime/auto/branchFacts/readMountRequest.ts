@@ -1,12 +1,7 @@
 import type { BranchFactsCheck, BranchFactsPart, BranchFactsRequest } from '@goodboy/core';
-import {
-  brandId,
-  type IsoDateTime,
-  type MountId,
-  type PullRequestHost,
-  type PullRequestView,
-} from '@goodboy/types';
+import { brandId, type MountId, type PullRequestView } from '@goodboy/types';
 import type { AppStore } from '../../../store';
+import { mountRequestEntryOf } from '../../../slices/review-source/mountRequestEntryOf';
 import { sessionMountTargets } from '../../../slices/project-mounts/mountRequests';
 import { pullRequestPortFor } from '../../../slices/review-source/pullRequestPortFor';
 import { mountRequestHostOf } from '../../../slices/review-source/mountRequestHostOf';
@@ -40,41 +35,6 @@ const checksOf = ({ view }: ViewParams): BranchFactsPart<ReadonlyArray<BranchFac
         kind: 'unavailable',
         reason: view.checks.error ?? `the host answered ${view.checks.read}`,
       };
-
-type Seen = Readonly<{
-  hasRequest: boolean;
-  fetchedAt: IsoDateTime | null;
-  error: string | null;
-}>;
-
-type SeenParams = {
-  readonly state: AppStore;
-  readonly host: PullRequestHost;
-  readonly mountId: MountId;
-};
-
-const seenOf = ({ state, host, mountId }: SeenParams): Seen | null => {
-  if (host === 'github') {
-    const entry = state.mountGithub?.[mountId];
-    return entry === undefined
-      ? null
-      : { hasRequest: entry.pr !== null, fetchedAt: entry.fetchedAt, error: entry.error };
-  }
-  if (host === 'gitlab') {
-    const entry = state.mountGitlabMr?.[mountId];
-    return entry === undefined
-      ? null
-      : { hasRequest: entry.mr !== null, fetchedAt: entry.fetchedAt, error: entry.error };
-  }
-  const entry = state.mountBitbucketPr?.[mountId];
-  return entry === undefined
-    ? null
-    : {
-        hasRequest: entry.pr !== null || entry.prs.length > 0,
-        fetchedAt: entry.fetchedAt,
-        error: entry.error,
-      };
-};
 
 type Params = Readonly<{
   getState: () => AppStore;
@@ -115,7 +75,7 @@ export const readMountRequest = async ({
     const view = await port.read();
     return { request: requestOf({ view }), checks: checksOf({ view }) };
   }
-  const seen = seenOf({ state: getState(), host, mountId });
+  const seen = mountRequestEntryOf({ state: getState(), host, mountId });
   if (seen === null) {
     throw new Error(NOT_READ);
   }
