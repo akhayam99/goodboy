@@ -1,3 +1,4 @@
+use super::reason::{REWRITTEN_UNREADABLE, STATUS_UNREADABLE, UNTRACKED_UNREADABLE};
 use crate::worktree::{
     git, in_progress_operation, read_working_tree, resolve_commit, GitWorkingTree,
 };
@@ -33,7 +34,7 @@ pub(super) fn blocking_reason(cwd: &Path, can_carry_dirty: bool) -> Option<Strin
                 if pending == 1 { "it" } else { "them" }
             ))
         }
-        GitWorkingTree::Unknown { .. } => Some("Couldn't read the worktree status.".to_string()),
+        GitWorkingTree::Unknown { .. } => Some(STATUS_UNREADABLE.to_string()),
     }
 }
 
@@ -51,14 +52,14 @@ fn parents_of(path: &str) -> impl Iterator<Item = &str> {
 
 pub(crate) fn untracked_in_the_way(cwd: &Path, target: &str) -> Option<String> {
     let Ok(raw_untracked) = git(cwd, &["ls-files", "-z", "--others", "--directory"]) else {
-        return Some("Couldn't list the untracked files here, so nothing was changed.".to_string());
+        return Some(UNTRACKED_UNREADABLE.to_string());
     };
     let untracked = nul_paths(&raw_untracked);
     if untracked.is_empty() {
         return None;
     }
     let Ok(raw_tracked) = git(cwd, &["ls-tree", "-r", "-z", "--name-only", target]) else {
-        return Some("Couldn't read the rewritten files, so nothing was changed.".to_string());
+        return Some(REWRITTEN_UNREADABLE.to_string());
     };
     let files: std::collections::HashSet<String> = nul_paths(&raw_tracked).into_iter().collect();
     let dirs: std::collections::HashSet<&str> =

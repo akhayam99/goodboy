@@ -1,4 +1,5 @@
-use super::plan::plan_error;
+use super::plan::{plan_error, reason_error};
+use super::reason::{CASE_UNREADABLE, CHANGED_UNREADABLE, REWRITTEN_UNREADABLE};
 use super::runner::git_run;
 use crate::worktree::{git, resolve_commit, WorktreeError};
 use std::collections::BTreeSet;
@@ -19,7 +20,7 @@ pub(super) fn parse_dirty(raw: &str) -> Result<Vec<String>, WorktreeError> {
             || !record.as_bytes()[..2].iter().all(u8::is_ascii)
             || record.as_bytes()[2] != b' '
         {
-            return Err(plan_error("couldn't read the changed files safely"));
+            return Err(reason_error(CHANGED_UNREADABLE));
         }
         files.insert(record[3..].to_string());
         if record[..2].contains(['R', 'C']) {
@@ -40,7 +41,7 @@ pub(super) fn dirty_files(cwd: &Path) -> Result<Vec<String>, WorktreeError> {
         None,
     )?;
     if run.status != 0 || run.stdout.contains('\u{fffd}') {
-        return Err(plan_error("couldn't read the changed files safely"));
+        return Err(reason_error(CHANGED_UNREADABLE));
     }
     parse_dirty(&run.stdout)
 }
@@ -65,7 +66,7 @@ pub(super) fn touched_files(
         None,
     )?;
     if run.status != 0 || run.stdout.contains('\u{fffd}') {
-        return Err(plan_error("couldn't read the rewritten files safely"));
+        return Err(reason_error(REWRITTEN_UNREADABLE));
     }
     Ok(paths(&run.stdout))
 }
@@ -91,7 +92,7 @@ pub(super) fn overlap_for_repo(
 ) -> Result<Vec<String>, WorktreeError> {
     let mode = git_run(cwd, &["config", "--bool", "core.ignorecase"], None, None)?;
     if ![0, 1].contains(&mode.status) {
-        return Err(plan_error("couldn't check path case sensitivity safely"));
+        return Err(reason_error(CASE_UNREADABLE));
     }
     if mode.stdout.trim() != "true" {
         return Ok(overlap(dirty, touched));

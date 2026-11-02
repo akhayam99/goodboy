@@ -1,5 +1,6 @@
 import { Channel } from '@tauri-apps/api/core';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
+import { invokeHistory } from './invokeHistory';
 import type {
   HistoryBackup,
   HistoryBackupFacts,
@@ -82,9 +83,9 @@ export const runHistoryPlan = async ({
 }: RunPlanParams): Promise<HistoryRunOutcome> => {
   const channel = new Channel<HistoryTrialProgress>();
   channel.onmessage = onProgress;
-  return invokeCommand<HistoryRunOutcome>('history_plan_run', {
-    args: { plan: toArgs(plan), branch },
-    onProgress: channel,
+  return invokeHistory<HistoryRunOutcome>({
+    command: 'history_plan_run',
+    args: { args: { plan: toArgs(plan), branch }, onProgress: channel },
   });
 };
 
@@ -105,8 +106,9 @@ export const applyHistoryPlan = async ({
   shouldStash,
   ...args
 }: MoveBranchParams): Promise<HistoryMoveOutcome> =>
-  invokeCommand<HistoryMoveOutcome>('history_plan_apply', {
-    args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+  invokeHistory<HistoryMoveOutcome>({
+    command: 'history_plan_apply',
+    args: { args: { ...args, ...(shouldStash === true ? { stash: true } : {}) } },
   });
 
 type ForgetParams = {
@@ -120,8 +122,9 @@ export const forgetSavedFiles = async ({
   stash,
   ...args
 }: ForgetParams): Promise<HistoryForgetOutcome> =>
-  invokeCommand<HistoryForgetOutcome>('history_plan_apply', {
-    args: { ...args, newHead: args.expectedHead, forgetStash: stash },
+  invokeHistory<HistoryForgetOutcome>({
+    command: 'history_plan_apply',
+    args: { args: { ...args, newHead: args.expectedHead, forgetStash: stash } },
   });
 
 export const restoreHistoryBackup = async ({
@@ -129,11 +132,14 @@ export const restoreHistoryBackup = async ({
   shouldStash,
   ...args
 }: RestoreParams): Promise<HistoryMoveOutcome> =>
-  invokeCommand<HistoryMoveOutcome>('history_restore', {
+  invokeHistory<HistoryMoveOutcome>({
+    command: 'history_restore',
     args: {
-      ...args,
-      ...(isLive === true ? { isLive: true } : {}),
-      ...(shouldStash === true ? { stash: true } : {}),
+      args: {
+        ...args,
+        ...(isLive === true ? { isLive: true } : {}),
+        ...(shouldStash === true ? { stash: true } : {}),
+      },
     },
   });
 

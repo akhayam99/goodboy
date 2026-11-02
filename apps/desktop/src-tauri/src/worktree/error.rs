@@ -13,6 +13,8 @@ pub enum WorktreeError {
     NoCommit(String),
     #[error("git failed: {message}")]
     Git { message: String },
+    #[error("{code}")]
+    Reason { code: String },
     #[error(
         "branch {branch} is already checked out at {path}. switch that worktree to another branch, or fork a new one instead"
     )]
@@ -62,6 +64,7 @@ impl WorktreeError {
             WorktreeError::NoRepository(_) => "no_repository",
             WorktreeError::NoCommit(_) => "no_commit",
             WorktreeError::Git { .. } => "git",
+            WorktreeError::Reason { .. } => "reason",
             WorktreeError::BranchInUse { .. } => "branch_in_use",
             WorktreeError::BranchNotFound { .. } => "branch_not_found",
             WorktreeError::LocalBranchDiffers { .. } => "local_branch_differs",

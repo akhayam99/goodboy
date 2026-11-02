@@ -9,6 +9,12 @@ pub(super) fn plan_error(message: &str) -> WorktreeError {
     }
 }
 
+pub(super) fn reason_error(code: &str) -> WorktreeError {
+    WorktreeError::Reason {
+        code: code.to_string(),
+    }
+}
+
 fn commit_rev(name: &str) -> String {
     format!("{}^{{commit}}", name.trim())
 }

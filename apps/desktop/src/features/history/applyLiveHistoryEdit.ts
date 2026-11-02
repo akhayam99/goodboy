@@ -1,5 +1,5 @@
 import type { HistoryPlanArgs } from '@goodboy/types';
-import { invokeCommand } from '../../shared/lib/invokeCommand';
+import { invokeHistory } from './invokeHistory';
 import type { HistoryLiveOutcome } from './historyLiveTypes';
 
 type Params = {
@@ -9,6 +9,7 @@ type Params = {
 };
 
 export const applyLiveHistoryEdit = ({ plan, branch, shouldStash }: Params) =>
-  invokeCommand<HistoryLiveOutcome>('history_live_edit', {
-    args: { request: { plan, branch }, shouldStash },
+  invokeHistory<HistoryLiveOutcome>({
+    command: 'history_live_edit',
+    args: { args: { request: { plan, branch }, shouldStash } },
   });

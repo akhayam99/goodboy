@@ -444,7 +444,10 @@ the steps and resolves the revisions, `merge_tree` and `predict` build the
 in-memory prediction, `reservation` and `copies` own the throwaway copies
 under the app folder, `trial` and `check` replay a plan in a copy and verify
 the result, `journal`, `preflight` and `apply` move the branch safely,
-`backups` keeps the restore refs, `run` chains preflight and trial, `rebase`
+`backups` keeps the restore refs, `reason` holds the codes Rust returns when it
+cannot read the worktree (`status-unreadable`, `changed-unreadable` and the
+like; the sentence for each lives in `features/history/historyReasonCopy.ts`,
+and `invokeHistory` swaps a code for its sentence at the bridge), `run` chains preflight and trial, `rebase`
 and `remote` read origin, `rewriter` collects an agent rewrite, and `runner`,
 `commits` and `types` hold what they share. `mod.rs` only declares the files
 and re-exports the items lib.rs, `turn.rs` and the worktree module use, so
@@ -872,6 +875,32 @@ not the table. The atomic agent operations moved with the agents: the routing
 gate, the fan-out of a delegated batch and the status stamps are guarded
 statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
 one transaction in `saveWorkflow`.
+
+One owner per table is the rule. The owner defines the columns, the
+migrations, the row type and every write; the other side reads the table with a
+query that names the columns it needs and never writes it outside a listed
+exception. A column both sides must agree on (a status word, a kind) is a
+constant with a twin in the other language, and
+`apps/desktop/src/__tests__/regressions/rust-twin-constants.test.ts` fails when
+the two copies differ. Migrations stay in TypeScript: Rust does not carry a
+second copy of the schema, and the migration code loads only when the database
+is behind the build (see Database migrations). Rust reads these tables while it
+runs, so a rename or a dropped column in one of them has to change the Rust
+query in the same commit:
+
+- Owned by TypeScript, read by Rust: `agents`, `chat_message_attachments`,
+  `chats`, `context_slots`, `github_pr_cache`, `goal_attachments`,
+  `integration_drafts`, `messages`, `mount_operations`, `mount_pr_links`, `open_questions`,
+  `project_scripts`, `projects`, `resolve_threads`, `retained_worktree_paths`,
+  `search_docs`, `search_index`, `security_findings`, `session_artifacts`,
+  `session_external_tasks`, `session_workflows`, `session_worktrees`,
+  `sessions`, `settings`, `steps`, `telemetry_records`, `turn_events`,
+  `workflows`, `workspace_profiles`, `workspaces`, `worktree_roots`.
+- Owned by Rust, read by Rust and TypeScript: `budget_alerts`, `budget_rules`,
+  `integration_bindings`, `integration_credentials`, `permission_audit_log`,
+  `permission_audit_retry`, `permission_rules`, `project_relocations`,
+  `session_budgets`, `skills`, `step_library`.
+- Read for boot only: `schema_version`.
 
 The `ts` rows below have a ratchet:
 `packages/db/src/migrations/rust-writer-map.test.ts` reads this table, scans

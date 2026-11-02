@@ -12,6 +12,7 @@ mod merge_tree;
 mod plan;
 mod predict;
 mod preflight;
+mod reason;
 mod rebase;
 mod remote;
 mod reservation;
