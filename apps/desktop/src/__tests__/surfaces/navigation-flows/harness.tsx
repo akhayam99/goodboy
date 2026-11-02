@@ -508,9 +508,21 @@ const worktreeLevel = async (): Promise<HTMLElement> => {
   return level;
 };
 
+export const branchPageReady = (): Promise<void> =>
+  waitFor(
+    () =>
+      expect(
+        screen
+          .getByRole('tablist', { name: 'Branch pages' })
+          .querySelector('[aria-selected="true"]'),
+      ).not.toBeNull(),
+    WAIT,
+  );
+
 export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
-  const level = within(await worktreeLevel());
-  await click(await level.findByRole('button', { name }, WAIT));
+  await worktreeLevel();
+  await branchPageReady();
+  await click(await findSection(name));
 };
 
 export const openWorktreeMenu = async (): Promise<void> => {
@@ -594,14 +606,16 @@ const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
 };
 
 export const getSection = (name: RegExp): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', { name });
+  within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', { name });
 
 export const sectionLabels = (): ReadonlyArray<string> =>
-  [
-    ...screen
-      .getByRole('navigation', { name: 'Worktree' })
-      .querySelectorAll<HTMLElement>('[data-entry-label]'),
-  ].map((label) => label.textContent ?? '');
+  within(screen.getByRole('tablist', { name: 'Branch pages' }))
+    .getAllByRole('tab')
+    .map((tab) => {
+      const text = tab.textContent ?? '';
+      const count = tab.querySelector('[data-tab-count]')?.textContent ?? '';
+      return text.slice(0, text.length - count.length);
+    });
 
 export const findSection = (name: RegExp): Promise<HTMLElement> =>
   waitFor(() => getSection(name), WAIT);
@@ -610,7 +624,7 @@ export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
   await lens('branch')(ctx);
   await waitFor(() => {
     expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(tab);
-    expect(getSection(BRANCH_TAB_LABEL[tab]).getAttribute('aria-current')).toBe('page');
+    expect(getSection(BRANCH_TAB_LABEL[tab]).getAttribute('aria-selected')).toBe('true');
   }, WAIT);
 };
 

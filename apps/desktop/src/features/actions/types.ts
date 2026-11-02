@@ -48,6 +48,8 @@ export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
 export type ActionGroup = (typeof ACTION_GROUPS)[number];
 
+export type ActionSubmenu = 'goto';
+
 const ACTION_SLOTS = [
   'primary',
   'secondary',
@@ -167,6 +169,7 @@ export type ActionDefinition<F> = {
   readonly iconOf?: (params: FactsParams<F>) => LucideIcon;
   readonly iconClassName?: string;
   readonly group: ActionGroup;
+  readonly submenu?: ActionSubmenu;
   readonly shortcut?: ShortcutId;
   readonly preview?: (params: FactsParams<F>) => ActionPreview | null;
   readonly description?: (params: FactsParams<F>) => string | null;
@@ -205,6 +208,7 @@ export type ResolvedAction = {
   readonly icon: LucideIcon;
   readonly iconClassName: string | null;
   readonly group: ActionGroup;
+  readonly submenu?: ActionSubmenu;
   readonly slot: ActionSlot;
   readonly pendingLabel: string | null;
   readonly doneLabel: string | null;

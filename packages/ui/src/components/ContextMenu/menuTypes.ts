@@ -46,6 +46,7 @@ export type MenuItemEntry = {
   readonly shouldStayOpen?: boolean;
   readonly confirm?: MenuConfirm | null;
   readonly choices?: ReadonlyArray<MenuChoice> | null;
+  readonly children?: ReadonlyArray<MenuItemEntry> | null;
   readonly onActive?: () => void;
   readonly onInactive?: () => void;
   readonly onSelect: (choice: string | null) => void | Promise<void>;

@@ -11,6 +11,7 @@ import {
   type Row,
   WAIT,
   branchTab,
+  branchPageReady,
   click,
   clickButton,
   openCrumb,
@@ -240,6 +241,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
+      await branchPageReady();
       await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
@@ -270,6 +272,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
+      await branchPageReady();
       await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
@@ -292,6 +295,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
+      await branchPageReady();
       await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
@@ -315,6 +319,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
+      await branchPageReady();
       await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });

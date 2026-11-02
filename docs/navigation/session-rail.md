@@ -235,20 +235,14 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   one state pill, with Rebase stopped before failing checks, behind and not
   pushed (`branchRowChipOf`, `branchRowFactsOf`). Request numbers lead the
   title before it truncates (`BranchRowLine`). Rebase actions live on the
-  Branch page; Rebase all stays on the Projects header. Under the current row,
-  its pages (`WorktreeEntries`), open unless you folded them: Pull request
-  (Merge request on GitLab, with its number and the branch in mono),
-  Comments, Files, Commits, Checks, the one with the open page marked
-  current. Each page ends in one fixed right-aligned slot from
-  `worktreeEntryFactsOf`: `Draft`, the comment count with a warning dot while
-  one waits on you, the diff stat `+652 -99` in green and red beside the file
-  count (the `useMountDiffStats` source of the Overview rows), `2 not pushed`
-  or the commit count, `1 failed` with a danger dot or the check count; a
-  known zero leaves the slot empty. Files is a plain page like the others:
-  picking it opens the diff in the center, whose changed file list sits in its
-  own rail on the right of that page, never in the session rail. The pages are
-  drawn once, by the tree; the Branch page no longer portals its own rail
-  anywhere. The branch switch (Switch branch…), Link work to this branch, Copy
+  Branch page; Rebase all stays on the Projects header. A branch is one row
+  and has no rows under it: its five pages (Pull request, or Merge request on
+  GitLab, Comments, Files, Commits, Checks) are the tab strip under the title
+  of the Branch page, each tab with its count from `worktreeEntryFactsOf`. The
+  row carries the one pill, and the failing count in it is the number the
+  Checks tab shows (`checksCountsOf`). Files opens the diff in the center,
+  whose changed file list sits in its own rail on the right of that page,
+  never in the session rail. The branch switch (Switch branch…), Link work to this branch, Copy
   branch name, Copy path, Open in editor, Close branch and the rest are the
   mount registry, in the row menu below. A session restored with the Branch
   lens saved opens on the tree with that branch current and its page in the

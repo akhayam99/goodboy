@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { InlineConfirm } from '../InlineConfirm';
 import { MenuChoicePanel } from './MenuChoicePanel';
+import { MenuConfirmView } from './MenuConfirmView';
 import { MenuRadioGroup } from './MenuRadioGroup';
 import { MenuRow } from './MenuRow';
+import { hasSubmenu } from './hasSubmenu';
+import { MenuSubmenuPanel } from './MenuSubmenuPanel';
 import {
   focusFirstMenuItem,
   isMenuNavigationKey,
@@ -11,7 +13,6 @@ import {
   typeaheadMenuFocus,
 } from './menuKeys';
 import type { MenuEntry, MenuItemEntry } from './menuTypes';
-import { ICON_SIZE } from '../../iconSize';
 
 const TYPEAHEAD_RESET_MS = 500;
 
@@ -35,7 +36,6 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
   const listRef = useRef<HTMLDivElement>(null);
   const [confirmKey, setConfirmKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Expanded | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
   const typeahead = useRef({ query: '', at: 0 });
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
@@ -79,7 +79,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     if (entry.blockedReason != null || entry.isDisabled === true) {
       return;
     }
-    if (entry.choices != null && entry.choices.length > 0) {
+    if (hasSubmenu({ entry })) {
       const anchor = rowRefs.current.get(entry.key);
       if (anchor !== undefined) {
         setExpanded({ key: entry.key, anchor });
@@ -151,7 +151,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     readonly event: KeyboardEvent<HTMLButtonElement>;
     readonly entry: MenuItemEntry;
   }) => {
-    if (event.key === 'ArrowRight' && entry.choices != null && entry.choices.length > 0) {
+    if (event.key === 'ArrowRight' && hasSubmenu({ entry })) {
       event.preventDefault();
       activate(entry);
     }
@@ -180,46 +180,15 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
   );
 
   if (confirming !== null && confirm !== null) {
-    const Icon = confirming.icon;
     return (
-      <div ref={listRef} data-menu-panel onKeyDown={onListKeyDown} className="w-80 max-w-full">
-        <InlineConfirm
-          role={confirm.role}
-          icon={Icon === undefined ? null : <Icon size={ICON_SIZE.control} aria-hidden />}
-          title={confirm.title}
-          description={confirm.description}
-          confirmLabel={confirm.confirmLabel}
-          isBusy={isBusy}
-          note={
-            confirm.notes === undefined || confirm.notes.length === 0 ? undefined : (
-              <ul className="flex min-w-0 flex-col gap-0.5 text-muted-foreground">
-                {confirm.notes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            )
-          }
-          {...(confirm.alt !== undefined && {
-            altAction: {
-              label: confirm.alt.label,
-              onClick: () => {
-                onClose();
-                void confirm.alt?.onSelect();
-              },
-            },
-          })}
-          onConfirm={async () => {
-            setIsBusy(true);
-            try {
-              await confirming.onSelect(null);
-            } finally {
-              setIsBusy(false);
-              onClose();
-            }
-          }}
-          onCancel={() => setConfirmKey(null)}
-        />
-      </div>
+      <MenuConfirmView
+        entry={confirming}
+        confirm={confirm}
+        listRef={listRef}
+        onKeyDown={onListKeyDown}
+        onCancel={() => setConfirmKey(null)}
+        onClose={onClose}
+      />
     );
   }
 
@@ -276,6 +245,15 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
         }
         return renderRow({ entry });
       })}
+      {expanded !== null && expandedEntry !== null && expandedEntry.children != null ? (
+        <MenuSubmenuPanel
+          label={expandedEntry.label}
+          items={expandedEntry.children}
+          anchor={expanded.anchor}
+          onChoose={(child) => void select({ entry: child, choice: null })}
+          onBack={closeSubmenu}
+        />
+      ) : null}
       {expanded !== null && expandedEntry !== null && expandedEntry.choices != null ? (
         <MenuChoicePanel
           label={expandedEntry.label}

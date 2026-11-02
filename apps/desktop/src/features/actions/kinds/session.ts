@@ -55,7 +55,7 @@ import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
-import { SESSION_EXTERNAL_OPEN_ACTIONS } from './sessionExternalOpenActions';
+import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
 import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
@@ -623,5 +623,5 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       canMarkUnread: unreadTargetOf({ state, sessionId: target.sessionId }) !== null,
     };
   },
-  actions: SESSION_ACTIONS,
+  actions: withGoToSubmenu({ definitions: SESSION_ACTIONS }),
 };

@@ -559,7 +559,7 @@ only to a dragged card.
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
 (`rounded-lg border border-border bg-floating shadow-lg`, from
 `packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
-`MenuChoicePanel`, the crumb menu, the history arrow menu, the session hover
+`MenuChoicePanel`, `MenuSubmenuPanel` (a row with `children` opens its rows beside it: ArrowRight opens, ArrowLeft closes and returns focus to the row, Escape closes the whole menu), the crumb menu, the history arrow menu, the session hover
 card, the session switcher, the update arrival card and the delete confirm
 take it as it is; a site adds layout and padding only, never a border, a fill or
 a shadow of its own. So do the find bars, the selection bars and their confirm,

@@ -13,6 +13,7 @@ import { ToastProvider } from '../../shared/components/Toast';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
+import { stripTab } from '../../test/branchTabStrip';
 import { BRANCH_TAB_REGISTRY } from '../../features/branch/branchTabs';
 import { U25_C04_WORKTREE_SCENES } from '../../app/components/MockScene/scenes/u25/c04-worktree';
 
@@ -61,7 +62,7 @@ const level = () => {
 };
 
 const entry = async (name: RegExp): Promise<void> => {
-  fireEvent.click(level().getByRole('button', { name }));
+  fireEvent.click(stripTab({ name }));
   await advance();
 };
 
@@ -82,7 +83,7 @@ describe('Branch page capabilities from the branch tree', () => {
     await mount('c04-worktree-pr-behind');
 
     for (const name of [/^Pull request/, /^Comments/, /^Files/]) {
-      expect(level().getByRole('button', { name })).toBeDefined();
+      expect(stripTab({ name })).toBeDefined();
     }
     expect(BRANCH_TAB_REGISTRY.pr.shortcut).toBe('lens.pr');
     expect(BRANCH_TAB_REGISTRY.comments.shortcut).toBe('lens.review');
@@ -186,11 +187,7 @@ describe('Branch page capabilities from the branch tree', () => {
     await mount('c04-worktree-pr-behind');
 
     await entry(/^Commits/);
-    expect(
-      level()
-        .getByRole('button', { name: /^Commits/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(stripTab({ name: /^Commits/ }).getAttribute('aria-selected')).toBe('true');
     await entry(/^Checks/);
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });

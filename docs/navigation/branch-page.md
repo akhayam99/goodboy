@@ -13,11 +13,11 @@ Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
 **Frame.** The Branch page is the center of the Projects tree (Session
-rail): one detail with no rail of its own. Its sections are the pages under
-the current branch row of the tree (`SessionLevel/WorktreeEntries`); the page
-publishes its counts once (`worktreeEntryFactsBus`, read by the folded rail)
-and the tree computes the same facts for its rows (`worktreeEntryFactsOf`). A host
-with no session rail (a scene, a test) shows the page alone. The
+rail): one detail with no rail of its own. Its sections are the tab strip under
+its title (`BranchTabStrip`); the page computes its counts once
+(`worktreeEntryFactsOf`) and publishes them for the folded rail
+(`worktreeEntryFactsBus`). The tree row of the branch has no rows under it, only
+one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
 

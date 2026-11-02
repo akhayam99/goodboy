@@ -43,7 +43,7 @@ const bodyColumns = (): ReadonlyArray<string | null> =>
 
 const visitTab = async (name: RegExp): Promise<void> => {
   await click(await findSection(name));
-  await waitFor(() => expect(getSection(name).getAttribute('aria-current')).toBe('page'), WAIT);
+  await waitFor(() => expect(getSection(name).getAttribute('aria-selected')).toBe('true'), WAIT);
 };
 
 const addSecondBranch = ({ sessionId }: Ctx): void => {

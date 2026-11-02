@@ -97,14 +97,16 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="min-w-0 break-words text-heading text-foreground">{copy.title}</p>
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-                <p className="min-w-0 break-words text-meta text-muted-foreground">{copy.body}</p>
+              <p className="min-w-0 break-words text-meta text-muted-foreground">
                 {card.whatsNew === null ? null : (
-                  <Button variant="quiet" size="xs" onClick={card.whatsNew.run}>
-                    {card.whatsNew.label}
-                  </Button>
+                  <>
+                    <Button variant="quiet" size="xs" onClick={card.whatsNew.run}>
+                      {card.whatsNew.label}
+                    </Button>{' '}
+                  </>
                 )}
-              </div>
+                {copy.body}
+              </p>
               {copy.detail === null ? null : (
                 <p className="min-w-0 break-words text-meta text-faint-foreground">{copy.detail}</p>
               )}

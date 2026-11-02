@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
-type RailTreeNodeKind = 'project' | 'branch' | 'finished';
+type RailTreeNodeKind = 'project' | 'finished';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -18,7 +18,6 @@ export type RailTreeNode = {
 export type RailTreeOpen = {
   readonly isOpen: (node: RailTreeNode) => boolean;
   readonly toggle: (node: RailTreeNode) => void;
-  readonly open: (node: RailTreeNode) => void;
 };
 
 type SessionChoices = Readonly<Record<string, boolean>>;
@@ -93,9 +92,5 @@ export const useRailTreeOpen = ({ sessionId }: Params): RailTreeOpen => {
     },
     [choices, write],
   );
-  const open = useCallback(
-    ({ kind, id }: RailTreeNode): void => write({ key: nodeKey({ kind, id }), isNowOpen: true }),
-    [write],
-  );
-  return { isOpen, toggle, open };
+  return { isOpen, toggle };
 };

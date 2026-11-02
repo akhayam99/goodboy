@@ -245,7 +245,8 @@ drawer instead of the Terminal page.
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
      of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
-     both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
+     both list the same verbs (`menuParity.test.tsx`, which counts the verbs
+     inside the **Go to** submenu), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved

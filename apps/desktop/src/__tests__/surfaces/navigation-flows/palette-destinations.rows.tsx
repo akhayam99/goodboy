@@ -179,7 +179,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Pull request/).getAttribute('aria-current')).toBe('page'),
+        () => expect(getSection(/^Pull request/).getAttribute('aria-selected')).toBe('true'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();

@@ -3,6 +3,7 @@ import { ChevronRight, SquareArrowOutUpRight } from 'lucide-react';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import { tintClasses } from '../../tint';
+import { hasSubmenu } from './hasSubmenu';
 import type { MenuItemEntry } from './menuTypes';
 import { ICON_SIZE } from '../../iconSize';
 
@@ -20,7 +21,7 @@ type Props = {
 export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyDown }: Props) => {
   const Icon = entry.icon;
   const isBlocked = entry.blockedReason != null || entry.isDisabled === true;
-  const hasChoices = entry.choices != null && entry.choices.length > 0;
+  const hasChoices = hasSubmenu({ entry });
   const detail = entry.description ?? null;
   return (
     <OptionalTooltip content={entry.tooltip ?? entry.blockedReason} side="right">

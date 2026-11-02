@@ -473,7 +473,6 @@
   "apps/desktop/src/features/workspace-chat/components/ChatStudio.test.tsx": 9,
   "apps/desktop/src/features/workspace/components/RepoEntry/index.test.tsx": 11,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": 2,
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/inactive.test.tsx": 3,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/menu.test.tsx": 9,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/rows.test.tsx": 7,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/selection.test.tsx": 6,

@@ -12,7 +12,6 @@ const NUMBER_CARRIERS: ReadonlyArray<string> = [
   'apps/desktop/src/features/notifications/components/NotificationsStudio/FacetCount.tsx',
   'apps/desktop/src/features/notifications/components/NotificationRow/index.tsx',
   'apps/desktop/src/features/notifications/components/NotificationRow/NotificationRowDetail.tsx',
-  'apps/desktop/src/features/branch/components/WorktreeEntrySlot.tsx',
   'apps/desktop/src/features/storage/components/StoragePage/ArtifactRow.tsx',
   'apps/desktop/src/features/storage/components/StoragePage/WorktreeRow.tsx',
   'apps/desktop/src/features/search/components/SearchMode/SearchResultRow.tsx',

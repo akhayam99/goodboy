@@ -4,7 +4,7 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 ### Session list
 
-The left column lists the sessions of the workspace, one line each. The title is on the left. A sign on the right says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one shows its pages under its row.
+The left column lists the sessions of the workspace, one line each. The title is on the left. A sign on the right says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one marks its row.
 
 **Pick several sessions**
 

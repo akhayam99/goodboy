@@ -176,7 +176,7 @@ const menuLabels = async (): Promise<ReadonlyArray<string>> =>
 const ACTIONS = `payments-api · ${mount.branch} actions`;
 
 describe('one tree for every branch', () => {
-  it('opens a branch in place: its pages expand under the row and the rail never drills into a second level', async () => {
+  it('opens a branch page from its row and the rail never drills into a second level', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
     const row = rowButton('payments-api', /#418/);
@@ -190,47 +190,25 @@ describe('one tree for every branch', () => {
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(railLevel()).toBe('session');
     expect(levelCount()).toBe(0);
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
-    expect(entryLabels(entriesOf('payments-api'))).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Commits',
-      'Checks',
-    ]);
+    expect(rowButton('payments-api', /#418/).hasAttribute('aria-expanded')).toBe(false);
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('names the pull request entry by its number alone, so the label is never cut by the reference', async () => {
+  it('keeps the current branch on its page when its row is clicked again', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-
-    const reference = entriesOf('payments-api').querySelector('[data-entry-reference]');
-    expect(reference?.textContent).toBe('#418');
-    const label = reference?.parentElement?.querySelector('[data-entry-label]');
-    expect(label?.textContent).toBe('Pull request');
-  });
-
-  it('collapses and expands the current branch from its row and stays on its page', async () => {
-    seedTwoProjects({ status: worktreeStatusOf({}) });
-    await openWorktree();
-    await mountRail();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
     const path = useAppStore.getState().diffMountPath[sessionId];
 
     fireEvent.click(rowButton('payments-api', /#418/));
     await settle();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('false');
-    expect(projectRows('payments-api').querySelector('[data-worktree-entries]')).toBeNull();
+
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[sessionId]).toBe(path);
-
-    fireEvent.click(rowButton('payments-api', /#418/));
-    await settle();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('lands a saved branch lens on the tree with that branch current and its pages open', async () => {
+  it('lands a saved branch lens on the tree with that branch current and one row per branch', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
@@ -239,7 +217,7 @@ describe('one tree for every branch', () => {
     expect(levelCount()).toBe(0);
     const row = rowButton('payments-api', /#418/);
     expect(row.getAttribute('aria-current')).toBe('page');
-    expect(entryLabels(entriesOf('payments-api'))).toContain('Files');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
     expect(rowButton('ledger-core', /#77/).hasAttribute('aria-current')).toBe(false);
   });
 
@@ -1081,81 +1059,32 @@ const seedChangedFiles = ({ additions, deletions }: ChangedParams) => {
   });
 };
 
-const entriesOf = (name: string): HTMLElement => {
-  const list = projectRows(name).querySelector<HTMLElement>('[data-worktree-entries]');
-  if (list === null) {
-    throw new Error(`${name} shows no worktree pages`);
-  }
-  return list;
-};
-
-const expandBranch = async (name: string): Promise<void> => {
-  const row = worktreeButton(projectRows(name));
-  if (row.getAttribute('aria-expanded') === 'true') {
-    return;
-  }
-  await act(async () => {
-    fireEvent.click(row);
-  });
-  await settle();
-};
-
-const entryLabels = (list: HTMLElement): ReadonlyArray<string> =>
-  [...list.querySelectorAll('[data-entry-label]')].map((label) => label.textContent ?? '');
-
-describe('the worktree pages inside the Projects card', () => {
-  it('lists Pull request, Comments, Files, Commits and Checks under a worktree with a pull request', async () => {
+describe('the branch row inside the Projects card', () => {
+  it('draws no page rows under a branch, with a pull request or without one', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     seedChangedFiles({ additions: 652, deletions: 99 });
+    await openWorktree();
     await mountRail();
-    await expandBranch('payments-api');
 
-    expect(entryLabels(entriesOf('payments-api'))).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Commits',
-      'Checks',
-    ]);
-    await waitFor(() =>
-      expect(
-        within(entriesOf('payments-api'))
-          .getByRole('button', { name: /^Files/ })
-          .querySelector('[data-testid="diff-stat"]')?.textContent,
-      ).toBe('+652-99'),
-    );
-    expect(
-      within(entriesOf('payments-api'))
-        .getByRole('button', { name: /^Files/ })
-        .getAttribute('aria-label'),
-    ).toBe('Files, +652 -99');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Checks/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Commits/ })).toBeNull();
   });
 
-  it('lists Pull request, Files and Commits under a worktree with no pull request', async () => {
-    seed({ status: worktreeStatusOf({}) });
-    useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
-    await mountRail();
-    await expandBranch('payments-api');
-
-    expect(entryLabels(entriesOf('payments-api'))).toEqual(['Pull request', 'Files', 'Commits']);
-  });
-
-  it('opens the worktree page of an entry directly, on its tab', async () => {
+  it('opens the branch page on the stored tab when its row is clicked', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     useAppStore.setState({ setSessionActiveMount: vi.fn(async () => undefined) });
     await mountRail();
-    await expandBranch('payments-api');
 
     await act(async () => {
-      fireEvent.click(within(entriesOf('payments-api')).getByRole('button', { name: /^Files/ }));
+      fireEvent.click(rowButton('payments-api', /#418/));
     });
 
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[sessionId]).toBe(mount.worktreePath);
-    expect(useAppStore.getState().branchTab?.[sessionId]).toBe('files');
   });
 
-  it('puts the failing count on the Checks entry and the one chip on its worktree row', async () => {
+  it('carries the failing count in the one chip of its row', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     patchRequest({ mountId: mount.mountId, patch: { checks: 'failure' } });
@@ -1185,9 +1114,6 @@ describe('the worktree pages inside the Projects card', () => {
     });
     await mountRail();
 
-    const checks = within(entriesOf('payments-api')).getByRole('button', { name: /^Checks/ });
-    expect(checks.getAttribute('aria-label')).toBe('Checks, 1 failing');
-    expect(checks.querySelector('[data-entry-slot]')?.textContent).toBe('1');
     expect(
       within(worktreeButton(projectRows('payments-api'))).getByTestId('branch-row-chip')
         .textContent,
@@ -1247,37 +1173,28 @@ const failChecks = ({ mountId, prNumber }: FailParams) => {
 const projectToggle = (name: string): HTMLElement =>
   screen.getByRole('button', { name: new RegExp(`^${name}, \\d+ branch`) });
 
-const branchOpen = (name: string): string | null =>
-  worktreeButton(projectRows(name)).getAttribute('aria-expanded');
-
 const prMarkOf = (name: string): Element | null =>
   worktreeButton(projectRows(name)).querySelector('[data-pr-state]');
 
 describe('the Projects tree', () => {
-  it('opens folders and closes every branch until one is current, even one that needs you', async () => {
+  it('opens folders and never expands a branch row, even one that needs you', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     failChecks({ mountId: mount.mountId, prNumber: 418 });
     await mountRail();
 
     expect(projectToggle('payments-api').getAttribute('aria-expanded')).toBe('true');
     expect(projectToggle('ledger-core').getAttribute('aria-expanded')).toBe('true');
-    expect(branchOpen('payments-api')).toBeNull();
-    expect(branchOpen('ledger-core')).toBeNull();
+    expect(worktreeButton(projectRows('payments-api')).hasAttribute('aria-expanded')).toBe(false);
+    expect(worktreeButton(projectRows('ledger-core')).hasAttribute('aria-expanded')).toBe(false);
     expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('opens the current branch only, and closes it when another branch becomes current', async () => {
+  it('marks only the current branch row as the page', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-    expect(branchOpen('payments-api')).toBe('true');
-    expect(branchOpen('ledger-core')).toBeNull();
-
-    await expandBranch('ledger-core');
-
-    expect(branchOpen('ledger-core')).toBe('true');
-    expect(branchOpen('payments-api')).toBeNull();
-    expect(document.querySelectorAll('[data-worktree-entries]')).toHaveLength(1);
+    expect(worktreeButton(projectRows('payments-api')).getAttribute('aria-current')).toBe('page');
+    expect(worktreeButton(projectRows('ledger-core')).hasAttribute('aria-current')).toBe(false);
   });
 
   it('toggles a folder and keeps the other one', async () => {
@@ -1296,7 +1213,6 @@ describe('the Projects tree', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-    fireEvent.click(worktreeButton(projectRows('payments-api')));
     fireEvent.click(projectToggle('ledger-core'));
     await settle();
     cleanup();
@@ -1304,7 +1220,6 @@ describe('the Projects tree', () => {
     await mountRail();
 
     expect(projectToggle('ledger-core').getAttribute('aria-expanded')).toBe('false');
-    expect(branchOpen('payments-api')).toBe('false');
     const stored: unknown = JSON.parse(
       localStorage.getItem(STORAGE_KEYS.sessionRailTreeOpen) ?? '{}',
     );

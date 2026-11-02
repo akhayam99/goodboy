@@ -26,8 +26,10 @@ never exists on one surface only.
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
 - **The sidebar session row.** Its right click (and Shift+F10) opens the
-  session kind's menu, the full set of session verbs: Open, the lenses, Rename,
-  Pin session or Unpin session, **Refresh session** (`session.refresh`, the
+  session kind's menu, the full set of session verbs: **Go to** (a submenu
+  with Open, Comments, Files, Open in editor and Open in terminal app; a verb
+  that cannot run stays in it with its reason as a tooltip), Open the full log,
+  Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
   flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is

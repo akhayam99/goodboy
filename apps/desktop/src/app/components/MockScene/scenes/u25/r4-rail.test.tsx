@@ -184,33 +184,17 @@ describe('r4 session rail scenes', () => {
     ).toBe('false');
   });
 
-  it('r4-rail-worktree opens the current branch in place with its pages and Files selected', async () => {
+  it('r4-rail-worktree marks the current branch as the page with one row and one pill', async () => {
     await mount('r4-rail-worktree');
 
     expect(rail().getAttribute('data-session-rail')).toBe('session');
     const projects = card('Projects');
-    expect(entryLabels(projects)).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Commits',
-      'Checks',
-    ]);
-    expect(
-      within(projects)
-        .getByRole('button', { name: /^Files/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
-    expect(
-      within(projects)
-        .getByRole('button', { name: /^Checks/ })
-        .getAttribute('aria-label'),
-    ).toBe('Checks, 1 failing');
-    expect(
-      within(projects)
-        .getByRole('button', { name: /^Comments/ })
-        .getAttribute('aria-label'),
-    ).toBe('Comments, 2 need you');
+    expect(entryLabels(projects)).toEqual([]);
+    const current = projects.querySelector('[data-worktree-current]');
+    expect(current?.querySelector('[aria-current="page"]')).not.toBeNull();
+    expect(current?.querySelector('[data-testid="branch-row-chip"]')?.textContent).toBe(
+      '1 failing',
+    );
   });
 
   it('r4-rail-tools-open presses Context while its drawer is open', async () => {

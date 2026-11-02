@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { cn, ICON_SIZE, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore, useMountDiffStats } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
@@ -48,7 +48,6 @@ export const LevelProjects = ({ session, isActive }: Props) => {
     [groups, projects],
   );
   const snapshot = useWorktreeStatusSnapshot({ targets });
-  const diffStats = useMountDiffStats(sessionId);
   useRebaseStatuses({ sessionId });
   const signal = useProjectsSignal({ sessionId, rows: liveRows, statuses: snapshot.statuses });
   const run = useAppStore((state) => state.rebaseAllRuns[sessionId] ?? null);
@@ -108,7 +107,6 @@ export const LevelProjects = ({ session, isActive }: Props) => {
               group={group}
               tree={tree}
               statuses={snapshot.statuses}
-              diffStats={diffStats}
               shownPath={shownPath}
               openedPath={openedPath}
               isBatchSettled={isBatchSettled}

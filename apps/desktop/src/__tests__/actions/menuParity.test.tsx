@@ -174,6 +174,33 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(after).not.toContain('Pin session');
   });
 
+  it('session menu: Go to groups the navigation verbs and the submenu still lists each of them', async () => {
+    seedActionState({
+      useAppStore,
+      seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
+    });
+    withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
+    fireEvent.contextMenu(screen.getByRole('article'));
+    const topLevel = menuLabels();
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'session', sessionId: SESSION },
+      })?.resolve() ?? []
+    ).map((action) => action.label);
+    expect(topLevel[0]).toBe('Go to');
+    expect(topLevel).not.toContain('Comments');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Go to' }));
+    const goTo = within(screen.getByRole('menu', { name: 'Go to' }))
+      .getAllByRole('menuitem')
+      .map((item) => item.getAttribute('data-menu-label') ?? '');
+    expect(goTo).toEqual(['Open', 'Comments', 'Files', 'Open in editor', 'Open in terminal app']);
+    const surfaceOwned = new Set(['Go to', 'Select']);
+    expect([...topLevel.filter((label) => !surfaceOwned.has(label)), ...goTo].sort()).toEqual(
+      [...registry].sort(),
+    );
+  });
+
   it('diff file header', async () => {
     withMenus(
       <FileHeader

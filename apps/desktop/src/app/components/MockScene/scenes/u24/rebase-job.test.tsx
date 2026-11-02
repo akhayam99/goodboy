@@ -14,7 +14,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
-import { sectionRow } from '../../../../../test/branchRail';
+import { stripTab } from '../../../../../test/branchTabStrip';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import type { RebaseJobSceneState } from './rebaseJobSeed';
@@ -144,7 +144,7 @@ describe('the u24 rebase job scenes', () => {
     const region = await screen.findByRole('region', { name: 'Rebase job' }, { timeout: 4_000 });
 
     expect(region.textContent).toContain('History rewriter is merging webhook.ts in a copy');
-    expect(sectionRow(/^Pull request/).getAttribute('aria-current')).toBe('page');
+    expect(stripTab({ name: /^Pull request/ }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('draws the log rows from the jobs', async () => {

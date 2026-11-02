@@ -1,7 +1,7 @@
 import { StatusDot } from '@goodboy/ui';
-import { DiffStat } from '../../../shared/components/DiffStat';
-import type { BranchTab } from '../../../store/slices/navigation/types';
-import type { WorktreeEntryFacts } from '../worktreeEntryFacts';
+import { DiffStat } from '../../../../shared/components/DiffStat';
+import type { BranchTab } from '../../../../store/slices/navigation/types';
+import type { WorktreeEntryFacts } from '../../../../features/branch/worktreeEntryFacts';
 
 type Props = {
   readonly fact: WorktreeEntryFacts[BranchTab];

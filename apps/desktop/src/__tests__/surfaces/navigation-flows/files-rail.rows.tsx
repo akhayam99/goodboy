@@ -46,7 +46,7 @@ const escape = async (): Promise<void> => {
   await settle();
 };
 
-const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Worktree' });
+const railNav = (): HTMLElement | null => screen.queryByRole('tablist', { name: 'Branch pages' });
 
 const fileRail = (): HTMLElement | null => screen.queryByRole('complementary', { name: 'Files' });
 

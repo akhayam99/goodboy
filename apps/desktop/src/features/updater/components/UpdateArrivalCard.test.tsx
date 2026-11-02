@@ -158,14 +158,13 @@ describe('UpdateArrivalCard', () => {
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
   });
 
-  it('keeps What’s new beside the sentence, so the verb row holds two buttons', async () => {
+  it('sets What’s new as a link inside the sentence, so the verb row holds two buttons', async () => {
     const dialog = await openCard();
 
-    const sentence = within(dialog).getByText(
-      'Nothing is running. A restart takes a few seconds.',
-    ).parentElement;
     const link = within(dialog).getByRole('button', { name: "What's new" });
+    const sentence = link.closest('p');
     const verbRow = within(dialog).getByRole('button', { name: 'Later' }).parentElement;
+    expect(sentence?.textContent).toContain('Nothing is running. A restart takes a few seconds.');
     expect(sentence?.contains(link)).toBe(true);
     expect(verbRow?.contains(link)).toBe(false);
     expect(verbRow?.querySelectorAll('button')).toHaveLength(2);
