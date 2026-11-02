@@ -26,7 +26,7 @@ type Props = {
 };
 
 const MAX_HEIGHT_PX = 360;
-const WIDTH_PX = 420;
+const WIDTH_PX = 500;
 
 export const IdentifierPeek = ({
   anchor,
@@ -39,7 +39,7 @@ export const IdentifierPeek = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-[420px]',
+    width: 'w-[500px]',
     expectedHeight: MAX_HEIGHT_PX,
     expectedWidth: WIDTH_PX,
   });
@@ -157,7 +157,7 @@ export const IdentifierPeek = ({
             {groups.kind !== null ? (
               <>
                 {[
-                  { label: PEEK_GROUP_LABELS.definitions, matches: groups.definitions },
+                  { label: PEEK_GROUP_LABELS.definitions, matches: groups.definitionFileMatches },
                   { label: PEEK_GROUP_LABELS.changed, matches: groups.inChange },
                   { label: PEEK_GROUP_LABELS.unchanged, matches: groups.elsewhere },
                 ].map(({ label, matches: groupMatches }) => (

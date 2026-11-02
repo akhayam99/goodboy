@@ -925,16 +925,21 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   "Not defined in this project" and lists no uses. It shows the symbol kind and
   definition, use and change counts. Defined in comes first, then Changed on
   this branch with changed lines first and tagged, then Unchanged files with
-  five references and Show more. A long directory drops its leading segments
-  behind a `…/` and keeps the segments next to the file whole, dimmed before
-  the filename; the full path is the row's title. It says when it shows only the
-  first 300. This contract lives in `features/diff/components/IdentifierPeek`.
+  five references and Show more. A file appears under one group only: the
+  file that holds the definition lists all its uses under Defined in, so
+  Changed on this branch holds the other changed files. A long directory drops
+  its leading segments behind a `…/` and keeps the segments next to the file
+  whole, dimmed and joined to the filename with no gap; the file name is never
+  truncated, the directory shrinks first, and the full path is the row's
+  title. It says when it shows only the first 300. This contract lives in `features/diff/components/IdentifierPeek`.
   Every result opens the right drawer (`identifier-peek`, in
   `features/diff/components/IdentifierPeekDrawer`) and never moves the page: its
   scroll and selection stay. The drawer lists the same files in the same three
-  groups. A file changed on this branch shows its whole-file diff scrolled to
-  the match; an unchanged file shows its source around the match under a note
-  that it has no changes here. Choosing another file swaps the view and keeps
+  groups, one row per file with one row selected; a definition file the branch
+  changed carries a Changed tag. The list scrolls and shows five to six rows. A
+  file changed on this branch shows its whole-file diff scrolled to the match;
+  an unchanged file shows its source around the match under its full path and a
+  one-line note, with an info icon, that it has no changes here. Choosing another file swaps the view and keeps
   the drawer open. A failed search or diff load has a Retry in the drawer. The
   drawer is keyed by worktree and word, so a late answer for an old word is
   dropped. The commit view has no peek, because its lines are not the working

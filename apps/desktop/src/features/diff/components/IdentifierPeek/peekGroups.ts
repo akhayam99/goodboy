@@ -23,17 +23,27 @@ export const peekGroups = ({ matches, word, changedPaths, changedLines, isExpand
   }));
   const definitions = declarations.filter(({ kind }) => kind !== null).map(({ match }) => match);
   const references = declarations.filter(({ kind }) => kind === null).map(({ match }) => match);
-  const inChange = references.filter((match) => changedPaths.has(match.path));
+  const definitionPaths = new Set(definitions.map((match) => match.path));
+  const inChange = references.filter(
+    (match) => changedPaths.has(match.path) && !definitionPaths.has(match.path),
+  );
   inChange.sort(
     (left, right) =>
       Number(changedLines?.get(right.path)?.has(right.line) === true) -
       Number(changedLines?.get(left.path)?.has(left.line) === true),
   );
-  const elsewhere = references.filter((match) => !changedPaths.has(match.path));
+  const elsewhere = references.filter(
+    (match) => !changedPaths.has(match.path) && !definitionPaths.has(match.path),
+  );
   const hiddenCount = isExpanded ? 0 : Math.max(0, elsewhere.length - ELSEWHERE_LIMIT);
   const changeCount = projectMatches.filter((match) => changedPaths.has(match.path)).length;
+  const definitionFileMatches = [
+    ...definitions,
+    ...references.filter((match) => definitionPaths.has(match.path)),
+  ];
   return {
     definitions,
+    definitionFileMatches,
     inChange,
     elsewhere: isExpanded ? elsewhere : elsewhere.slice(0, ELSEWHERE_LIMIT),
     hiddenCount,

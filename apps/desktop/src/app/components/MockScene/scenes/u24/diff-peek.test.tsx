@@ -29,7 +29,7 @@ describe('diff peek scenes', () => {
     const Scene = U24_DIFF_PEEK_SCENES['diff-peek-open'];
     render(<Scene />);
     const dialog = await screen.findByRole('dialog', { name: 'Uses of creditKey' });
-    await within(dialog).findByText('1 definition · 4 uses · 2 in this change');
+    await within(dialog).findByText('1 definition · 4 uses · 3 in this change');
     within(dialog).getByRole('group', { name: 'Defined in' });
     within(dialog).getByRole('group', { name: 'Changed on this branch' });
     within(dialog).getByRole('group', { name: 'Unchanged files' });

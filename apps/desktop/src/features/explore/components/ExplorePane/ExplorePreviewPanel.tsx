@@ -16,6 +16,7 @@ type Props = {
   readonly view: ExplorePreviewView;
   readonly isWrapped: boolean;
   readonly line?: number;
+  readonly shouldShowName?: boolean;
 };
 
 type SvgParams = {
@@ -34,6 +35,7 @@ export const ExplorePreviewPanel = ({
   view,
   isWrapped,
   line,
+  shouldShowName = false,
 }: Props) => {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
 
@@ -147,7 +149,7 @@ export const ExplorePreviewPanel = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ExplorePathLine entry={entry} />
+      <ExplorePathLine entry={entry} shouldShowName={shouldShowName} />
       {renderBody()}
     </div>
   );

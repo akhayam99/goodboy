@@ -147,13 +147,13 @@ describe('identifier peek', () => {
     const groups = within(dialog).getAllByRole('group');
     expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
       'Defined in',
-      'Changed on this branch',
       'Unchanged files',
     ]);
-    within(within(dialog).getByRole('group', { name: 'Changed on this branch' })).getByRole(
-      'button',
-      { name: 'ledger-core.ts:90' },
-    );
+    expect(
+      within(within(dialog).getByRole('group', { name: 'Defined in' }))
+        .getAllByRole('button')
+        .map((row) => row.getAttribute('aria-label')),
+    ).toEqual(['ledger-core.ts:31', 'ledger-core.ts:90']);
     within(within(dialog).getByRole('group', { name: 'Unchanged files' })).getByRole('button', {
       name: 'notify-relay/send.ts:7',
     });
@@ -179,9 +179,9 @@ describe('identifier peek', () => {
     renderDiff();
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
     const row = await screen.findByRole('button', { name: `${path}:7` });
-    within(row).getByText('/');
-    within(row).getByText('…/src/ledger-core/components');
-    within(row).getByText('notify-relay.tsx');
+    within(row).getByText('…/src/ledger-core/components/');
+    const name = within(row).getByText('notify-relay.tsx');
+    expect(name.hasAttribute('data-truncates')).toBe(false);
     expect(within(row).getByText('creditKey').tagName).toBe('MARK');
   });
 

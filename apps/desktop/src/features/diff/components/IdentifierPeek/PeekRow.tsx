@@ -1,6 +1,6 @@
 import { ROW_INTERACTIVE, StateBadge, Tooltip, cn } from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
-import { splitPeekPath } from './splitPeekPath';
+import { PeekPath } from './PeekPath';
 
 type Props = {
   readonly match: GrepMatch;
@@ -11,7 +11,6 @@ type Props = {
 };
 
 export const PeekRow = ({ match, word, isInChange, isChangedLine, onPick }: Props) => {
-  const { directory, separator, name } = splitPeekPath({ path: match.path });
   const requestedStart = match.column - 1;
   const start =
     match.text.slice(requestedStart, requestedStart + word.length) === word
@@ -26,16 +25,11 @@ export const PeekRow = ({ match, word, isInChange, isChangedLine, onPick }: Prop
       onClick={() => onPick(match)}
       className={cn(
         ROW_INTERACTIVE,
-        'grid min-h-8 w-full shrink-0 grid-cols-[15rem_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
+        'grid min-h-8 w-full shrink-0 grid-cols-[minmax(0,max-content)_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
       )}
     >
       <Tooltip content={match.path}>
-        <span data-peek-path="" className="flex min-w-0 items-baseline text-meta">
-          <span className="shrink-0 text-faint-foreground">{directory}</span>
-          <span className="shrink-0 text-faint-foreground">{separator}</span>
-          <span className="min-w-0 truncate text-foreground">{name}</span>
-          <span className="shrink-0 tabular-nums text-faint-foreground">:{match.line}</span>
-        </span>
+        <PeekPath path={match.path} line={match.line} />
       </Tooltip>
       <span
         data-peek-snippet=""

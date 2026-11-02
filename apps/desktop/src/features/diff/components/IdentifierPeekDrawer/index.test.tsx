@@ -97,14 +97,31 @@ afterEach(() => {
 });
 
 describe('identifier peek drawer', () => {
-  it('orders the files definition first, then changed, then unchanged', async () => {
+  it('lists a changed definition file once, tagged Changed, with one selected row', async () => {
     mount();
     await screen.findByRole('group', { name: 'Unchanged files' });
     expect(screen.getAllByRole('group').map((group) => group.getAttribute('aria-label'))).toEqual([
       'Defined in',
-      'Changed on this branch',
       'Unchanged files',
     ]);
+    const rows = screen
+      .getAllByRole('button')
+      .filter((button) => /^[\w/.-]+:\d+$/.test(button.getAttribute('aria-label') ?? ''));
+    const paths = rows.map((row) => (row.getAttribute('aria-label') ?? '').replace(/:\d+$/, ''));
+    expect(new Set(paths).size).toBe(paths.length);
+    expect(rows.filter((row) => row.getAttribute('aria-current') === 'true')).toHaveLength(1);
+    const definition = screen.getByRole('group', { name: 'Defined in' });
+    within(definition).getByText('Changed');
+    within(definition).getByText('2 uses');
+  });
+
+  it('keeps the file name out of the truncating part of the path', async () => {
+    mount();
+    const row = await screen.findByRole('button', { name: 'apps/notify-relay/src/send.ts:7' });
+    const name = row.querySelector('[data-peek-name]');
+    expect(name?.textContent).toBe('send.ts');
+    expect(name?.hasAttribute('data-truncates')).toBe(false);
+    expect(row.querySelector('[data-peek-directory]')?.hasAttribute('data-truncates')).toBe(true);
   });
 
   it('shows the diff of a file changed on this branch and scrolls to the match', async () => {
