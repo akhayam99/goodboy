@@ -5,6 +5,7 @@ import {
   LONG_TRANSCRIPT_AGENT,
   LONG_TRANSCRIPT_AGENT_ID,
   LONG_TRANSCRIPT_PROJECTS,
+  LONG_TRANSCRIPT_ROWS,
   LONG_TRANSCRIPT_SESSION,
   LONG_TRANSCRIPT_SESSION_ID,
   LONG_TRANSCRIPT_WORKSPACE,
@@ -12,7 +13,11 @@ import {
   longTranscriptRows,
 } from './longTranscriptSeed';
 
-export const LongTranscriptScene = () => {
+type Props = {
+  readonly rowCount?: number;
+};
+
+export const LongTranscriptScene = ({ rowCount = LONG_TRANSCRIPT_ROWS }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
 
   useEffect(() => {
@@ -24,7 +29,7 @@ export const LongTranscriptScene = () => {
       currentSessionId: LONG_TRANSCRIPT_SESSION_ID,
       selectedAgentId: { [LONG_TRANSCRIPT_SESSION_ID]: LONG_TRANSCRIPT_AGENT_ID },
       sessionPhaseRuns: { [LONG_TRANSCRIPT_SESSION_ID]: [LONG_TRANSCRIPT_AGENT] },
-      transcripts: { [LONG_TRANSCRIPT_AGENT_ID]: longTranscriptRows() },
+      transcripts: { [LONG_TRANSCRIPT_AGENT_ID]: longTranscriptRows({ count: rowCount }) },
       sessionEvents: { [LONG_TRANSCRIPT_SESSION_ID]: [] },
       sessionProjectMounts: { [LONG_TRANSCRIPT_SESSION_ID]: [] },
       sessionOpenQuestions: { [LONG_TRANSCRIPT_SESSION_ID]: [] },
@@ -51,7 +56,7 @@ export const LongTranscriptScene = () => {
       recordSessionEvent: async () => undefined,
     });
     setIsSeeded(true);
-  }, []);
+  }, [rowCount]);
 
   if (!isSeeded) {
     return null;

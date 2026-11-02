@@ -21,6 +21,7 @@ import { MOCK_SCENES } from '../..';
 import { U34_LONG_TRANSCRIPT_SCENES } from './long-transcript';
 import {
   LONG_TRANSCRIPT_AGENT_ID,
+  LONG_TRANSCRIPT_PERF_ROWS,
   LONG_TRANSCRIPT_ROWS,
   longTranscriptRows,
 } from './longTranscriptSeed';
@@ -45,9 +46,9 @@ describe('the u34 long transcript scene', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U34_LONG_TRANSCRIPT_SCENES[SCENE]);
   });
 
-  it('seeds one transcript of exactly 3000 rows', () => {
-    expect(longTranscriptRows()).toHaveLength(LONG_TRANSCRIPT_ROWS);
-    expect(LONG_TRANSCRIPT_ROWS).toBe(3000);
+  it('seeds a light transcript for the scan and a 3000 row one for the perf run', () => {
+    expect(longTranscriptRows({ count: LONG_TRANSCRIPT_ROWS })).toHaveLength(300);
+    expect(longTranscriptRows({ count: LONG_TRANSCRIPT_PERF_ROWS })).toHaveLength(3000);
   });
 
   it('mounts the chat over the seeded transcript and records the mount cost', async () => {
@@ -56,13 +57,13 @@ describe('the u34 long transcript scene', () => {
     await act(async () => {
       render(
         <ToastProvider>
-          <Scene />
+          <Scene rowCount={LONG_TRANSCRIPT_PERF_ROWS} />
         </ToastProvider>,
       );
     });
     const mountMs = performance.now() - startedAt;
     const rows = useAppStore.getState().transcripts[LONG_TRANSCRIPT_AGENT_ID] ?? [];
-    expect(rows).toHaveLength(LONG_TRANSCRIPT_ROWS);
+    expect(rows).toHaveLength(LONG_TRANSCRIPT_PERF_ROWS);
     process.stdout.write(`[perf] u34-t52 mount ${mountMs.toFixed(0)}ms (${rows.length} rows)\n`);
   });
 });

@@ -162,6 +162,39 @@ describe('noteHostAnswer', () => {
     expect(useAppStore.getState().hostReachability.gitlab).toBeUndefined();
   });
 
+  it('notifies subscribers once for a run of unchanged ok answers', () => {
+    const { noteHostAnswer } = useAppStore.getState();
+    const listener = vi.fn();
+
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 });
+    const unsubscribe = useAppStore.subscribe(listener);
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 + 1 });
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 + 2 });
+    unsubscribe();
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('still drops a late answer after quiet ok answers advanced the guard', () => {
+    const { noteHostAnswer } = useAppStore.getState();
+
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 });
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 + 5 });
+    noteHostAnswer({ host: 'gitlab', answer: 'network', askedAt: T0 + 3 });
+
+    expect(useAppStore.getState().hostReachability.gitlab).toBeUndefined();
+  });
+
+  it('writes again after the store state was reset', async () => {
+    const { noteHostAnswer } = useAppStore.getState();
+    noteHostAnswer({ host: 'gitlab', answer: 'ok', askedAt: T0 + 9 });
+
+    await resetStoryStore();
+    useAppStore.getState().noteHostAnswer({ host: 'gitlab', answer: 'network', askedAt: T0 });
+
+    expect(useAppStore.getState().hostReachability.gitlab?.status).toBe('unreachable');
+  });
+
   it('keeps one host out of the way of another', () => {
     const { noteHostAnswer } = useAppStore.getState();
 

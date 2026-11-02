@@ -30,7 +30,8 @@ import { projectsBySession } from './projectOfSession';
 import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
 import { integrationsByWorkspace } from './integrationsByWorkspace';
-import { stageInfoOf, type StageInfoState } from './stageInfoOf';
+import { cachedStageInfoOf } from './cachedStageInfoOf';
+import type { StageInfoState } from './stageInfoOf';
 import { stageInfosOf } from './stageInfosOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
@@ -82,14 +83,16 @@ const pickBySessions = <T>({
 };
 
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
-  useAppStore(useShallow((s) => stageInfoOf(s, session)));
+  useAppStore(useShallow((s) => cachedStageInfoOf({ state: s, session })));
 
 export const useSessionStages = (
   sessions: ReadonlyArray<Session>,
 ): Readonly<Record<string, SessionStage>> =>
   useAppStore(
     useShallow((s) =>
-      Object.fromEntries(sessions.map((session) => [session.id, stageInfoOf(s, session).stage])),
+      Object.fromEntries(
+        sessions.map((session) => [session.id, cachedStageInfoOf({ state: s, session }).stage]),
+      ),
     ),
   );
 
