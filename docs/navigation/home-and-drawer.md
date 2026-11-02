@@ -126,7 +126,7 @@ the slot's top to its bottom; the slot's own sheet steps aside
 covers the left column) keeps `frame="none"`, which draws only the drawer
 container as a card inset 8px on its right, top and bottom.
 
-**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
+**Two tiers, one width each.** A side drawer (Ask, Decisions, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 (the plan, report and wireframe document, an Explore file, a file diff) opens at
@@ -138,20 +138,12 @@ the two saved widths never bleed. There is no third tier: no drawer expands over
 the whole column, the reader tier is the large one. `selectDrawerSizing` picks
 the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
-**One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
-own width) minus the drawer's two 8px insets, the page's gutters and the 560px
-the page keeps. The drawer pushes only while the page container keeps 560 plus
-its 48px of gutters and `room` covers the drawer's saved width; it is never
-squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. The mode reads the committed width, never a drag in progress,
-and while it pushes the handle stops at `min(tier max, room)`, so a drag never
-flips the mode. Once a drawer pushes at some width it pushes at every wider one.
-The column and measure pages are centred, and the column slides left to
-re-centre in the space left of the drawer (full tier work surfaces keep their
-left edge and give up their right).
-
-**The thresholds are fixed.** The default side drawer (400) pushes from a 1024
-column and the default reader (720) from a 1344 column; below that they lie over
-the page. `drawerGeometry.test.ts` pins both numbers and
+**One push rule.** The drawer uses the content width after both rails and the
+reserve of its tier, as defined in [styling.md](../styling.md). It pushes at
+its saved width when that fits, and overlays otherwise. The mode reads the
+committed width; a drag stops at the available room and never flips the mode.
+The centred column slides left into the space beside the drawer; a full-tier
+work surface keeps its left edge. `drawerGeometry.test.ts` pins the thresholds;
 `regressions/drawer-rule.test.ts` fails a drawer that measures the window, reads
 a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
 width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
@@ -221,9 +213,15 @@ one labelled action, close), one divider, a `ScrollFade` body and an optional
 fills the frame instead. A new kind adds a variant to `DrawerContent` and a
 case to the host.
 
+Opening a side drawer folds the session rail when its expanded width would
+leave too little content for the push rule. A reader folds it at every width.
+Closing restores the saved fold. Unfolding by hand keeps the rail open for
+that drawer, including through resize; the drawer overlays when it cannot
+push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold.
+
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
-drawer repeats its own name in the label. The one exception is the Context
+drawer repeats its own name in the label. The one exception is the Decisions
 drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
@@ -348,7 +346,7 @@ resolver's transcript always opens here, on the Comments tab of its Branch
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
 versions of that slot, inside the same drawer, with Restore; Escape and the
-header's **Back to current** leave the view before the drawer). The **Context** chip in the session header toggles it
+header's **Back to current** leave the view before the drawer). The **Decisions** tool in the session tools toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip carries a quiet dot, never a count, when the
@@ -378,8 +376,7 @@ through `requestContextUpdate`, behind any pass in flight and never beside it;
 queued, and the row reads only that queue state, as the pane's first gray line
 (no label). The pane is one scroll with Goal, Decisions, Summary and Learned as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. The
-count lives on the Active group and the change signal on its own group. The engine has one name, **Context**, in Activity, in the
-drawer and in these docs.
+count lives on the Active group and the change signal on its own group. The engine remains Context in Activity; its drawer and tool are named Decisions.
 
 Every section reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
@@ -423,10 +420,10 @@ comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
 In Activity, a `decisions_changed` row that carries `decisionChanges` is a
 disclosure: the row toggles (`Show changes` / `Hide changes`, `aria-expanded`)
 a diff under it, `+ D12`, `D3 → D12` with the reason, `− D5` with the
-withdrawal reason, at most six lines, and **Open in Context**. Each decision is
+withdrawal reason, at most six lines, and **Open in Decisions**. Each decision is
 a three-column grid (sign, id, text): the text wraps whole beside the hanging
 id, and the reason or note sits on its own line under it, never truncated.
-**Open in Context** opens the
+**Open in Decisions** opens the
 drawer on Decisions with those numbers in `payload.highlight` (highlighted for
 2.4s, the closed group opened when one of them is there). The expanded row
 adds the diff's height to its item before `layoutTimelineRail`, so the rail and

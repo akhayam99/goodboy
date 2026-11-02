@@ -221,7 +221,7 @@ describe('r4 session rail scenes', () => {
       .getAllByRole('button')
       .filter((button) => button.getAttribute('aria-pressed') === 'true')
       .map((button) => button.getAttribute('aria-label'));
-    expect(pressed).toEqual(['Context']);
+    expect(pressed).toEqual(['Decisions']);
     expect(document.querySelector('[data-slot="page-trail"]')).toBeNull();
   });
 

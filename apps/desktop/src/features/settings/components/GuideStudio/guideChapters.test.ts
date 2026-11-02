@@ -207,7 +207,7 @@ describe('what the Guide may name', () => {
       'left column',
       'More panes',
       'New drawer',
-      'Context drawer',
+      'Decisions drawer',
     ].forEach((removed) => expect(text).not.toContain(removed));
     expect(text).not.toMatch(/\bcap\b/i);
   });
@@ -291,7 +291,7 @@ describe('the shell chapter', () => {
 
   it('names the session tools in their column at the right of the page', () => {
     const tools = pointOf('shell', 'Session tools');
-    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'right of the session page'].forEach(
+    ['Ask', 'Terminal', 'Explore', 'Decisions', 'Scripts', 'right of the session page'].forEach(
       (tool) => expect(tools).toContain(tool),
     );
     expect(tools).toContain('Fold session rail');

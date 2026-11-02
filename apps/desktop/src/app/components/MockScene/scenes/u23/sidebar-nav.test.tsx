@@ -48,13 +48,13 @@ describe('the sidebar navigation scenes', () => {
     show('rail-flyout');
     const card = await screen.findByRole('dialog', { name: 'Session pages' }, { timeout: 4_000 });
     expect(within(card).getByRole('list', { name: 'Pages' })).toBeDefined();
-    expect(within(card).getByText('Pinned')).toBeDefined();
+    expect(within(card).getByText('Sessions')).toBeDefined();
   });
 
-  it('shows seven pinned buttons then +2', async () => {
+  it('shows eight session buttons then +7', async () => {
     show('rail-pinned');
-    const more = await screen.findByLabelText('2 more pinned sessions');
-    expect(more.textContent).toBe('+2');
+    const more = await screen.findByLabelText('7 more sessions', {}, { timeout: 4_000 });
+    expect(more.textContent).toBe('+7');
     expect(document.querySelectorAll('[data-rail-session]')).toHaveLength(8);
   });
 

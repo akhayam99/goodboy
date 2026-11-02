@@ -377,7 +377,9 @@ describe('primary surfaces mount on real store selectors', () => {
 
       expect(
         screen
-          .getByRole('region', { name: CONTEXT_TAB_LABEL[tab] })
+          .getByRole('region', {
+            name: tab === 'decisions' ? 'Decision records' : CONTEXT_TAB_LABEL[tab],
+          })
           .getAttribute('data-context-section'),
       ).toBe(tab);
       expectNoRenderLoop();

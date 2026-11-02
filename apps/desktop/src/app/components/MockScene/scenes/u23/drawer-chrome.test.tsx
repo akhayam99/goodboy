@@ -93,7 +93,7 @@ describe('the drawer chrome scenes', () => {
   it('headers: Context in versions says Back to current, the others say Close', async () => {
     renderScene('drawer-headers');
 
-    const context = await screen.findByRole('region', { name: 'Context' }, WAIT);
+    const context = await screen.findByRole('region', { name: 'Decisions' }, WAIT);
     expect(within(context).getByRole('button', { name: 'Back to current' })).toBeDefined();
 
     const diff = screen.getByRole('region', { name: 'Changes' });
@@ -137,7 +137,7 @@ describe('the drawer chrome scenes', () => {
   });
 
   it('toast over an overlay drawer: the stack stays at the right edge', async () => {
-    stubColumnWidth(1000);
+    stubColumnWidth(900);
     renderScene('toast-over-drawer-overlay');
 
     const toast = await screen.findByText('Fix run started', undefined, WAIT);

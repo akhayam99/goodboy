@@ -2245,7 +2245,7 @@
     "packages/ui/src/components/WorkTree/WorkNode.tsx": 2,
     "packages/ui/src/components/WorkTree/workNodeSpec.ts": 1,
     "packages/ui/src/confirmReturnFocus.ts": 1,
-    "packages/ui/src/drawerGeometry.ts": 2,
+    "packages/ui/src/drawerGeometry.ts": 1,
     "packages/ui/src/escape.ts": 2,
     "packages/ui/src/exitSnapshot.ts": 3,
     "packages/ui/src/format-cost.ts": 3,

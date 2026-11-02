@@ -24,7 +24,7 @@ export const RailFlyoutBody = ({
     )}
     {pinned.length === 0 ? null : (
       <div className="flex flex-col" data-slot="rail-flyout-pinned">
-        <Eyebrow label="Pinned" muted className="px-2 pt-1" />
+        <Eyebrow label="Sessions" muted className="px-2 pt-1" />
         {pinned.map((entry) => (
           <RailPinnedRow
             key={entry.id}

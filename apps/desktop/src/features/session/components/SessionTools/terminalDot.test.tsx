@@ -1,3 +1,4 @@
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 // @vitest-environment happy-dom
 
 import { act, cleanup, render, screen } from '@testing-library/react';
@@ -66,6 +67,7 @@ describe('the Terminal tool dot', () => {
     renderTools();
 
     expect(terminal().getAttribute('aria-label')).toBe('Terminal, pnpm test finished after 42s');
+    expect(tooltipTextOf({ element: terminal() })).toContain('pnpm test finished after 42s');
     expect(
       terminal().closest('.relative')?.querySelector('[data-signal]')?.getAttribute('data-signal'),
     ).toBe('changed');

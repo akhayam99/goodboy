@@ -53,7 +53,7 @@
   header toggles that hide themselves at zero. So a session whose runs are all
   done shows an empty state, instead of opening the last completed run.
 - **The Overview is one column: goal, notices, Needs you, Next, Activity.**
-  The goal reads as prose (`GoalTeaser`, it opens the Context drawer on its
+  The goal reads as prose (`GoalTeaser`, it opens the Decisions drawer on its
   Goal), with one gray provenance line under it only when it came from chat
   (`From chat: <title>`, one label whether the chat started or fed the
   session, the others behind `+N more`). The notices slot (`OverviewNotices`) holds what a worktree
@@ -210,8 +210,8 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
 - **The switcher and the palette list only destinations the session can
-  use.** One function feeds both. Context is a drawer, not a destination: the
-  palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  use.** One function feeds both. Decisions is a drawer, not a destination: the
+  palette offers **Show decisions** (⌘⌥C) and neither lists a Decisions page.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
   draws the shared page header (`PaneShell` `page="explore"` inside the

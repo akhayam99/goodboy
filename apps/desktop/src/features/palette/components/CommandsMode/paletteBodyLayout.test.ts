@@ -3,7 +3,15 @@ import { Inbox } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { PaletteEntry } from '../../types';
-import { PALETTE_MIN_HEIGHT_PX, hasOwnPreviewOf, paletteBodyLayoutOf } from './paletteBodyLayout';
+import {
+  PALETTE_LIST_PAD_PX,
+  PALETTE_MIN_HEIGHT_PX,
+  PALETTE_ROW_PX,
+  PALETTE_SECTION_PX,
+  hasOwnPreviewOf,
+  paletteBodyLayoutOf,
+  paletteListMaxHeightOf,
+} from './paletteBodyLayout';
 
 const entry = (patch: Partial<PaletteEntry>): PaletteEntry => ({
   key: 'entry',
@@ -31,6 +39,35 @@ describe('paletteBodyLayoutOf', () => {
       minHeightPx: 320,
       previewShown: true,
     });
+  });
+});
+
+describe('paletteListMaxHeightOf', () => {
+  it('keeps 320 when every row fits', () => {
+    expect(paletteListMaxHeightOf({ sections: [{ hasTitle: true, rowCount: 3 }] })).toBe(320);
+  });
+
+  it('ends on a whole 28px row when the list overflows', () => {
+    const sections = [
+      { hasTitle: true, rowCount: 3 },
+      { hasTitle: true, rowCount: 5 },
+      { hasTitle: true, rowCount: 6 },
+    ];
+    const height = paletteListMaxHeightOf({ sections });
+
+    expect(height).toBeLessThanOrEqual(320);
+    expect((height - PALETTE_LIST_PAD_PX * 2 - 2 * PALETTE_SECTION_PX) % PALETTE_ROW_PX).toBe(0);
+  });
+
+  it('never ends on a section title without a row under it', () => {
+    const height = paletteListMaxHeightOf({
+      sections: [
+        { hasTitle: true, rowCount: 9 },
+        { hasTitle: true, rowCount: 4 },
+      ],
+    });
+
+    expect(height).toBe(PALETTE_LIST_PAD_PX * 2 + PALETTE_SECTION_PX + 9 * PALETTE_ROW_PX);
   });
 });
 

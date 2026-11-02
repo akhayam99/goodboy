@@ -133,7 +133,7 @@ describe('Overview capabilities from the session Overview', () => {
     ).toBeNull();
     fireEvent.click(
       within(screen.getByRole('toolbar', { name: 'Session tools' })).getByRole('button', {
-        name: /^Context/,
+        name: /^Decisions/,
       }),
     );
     await advance();

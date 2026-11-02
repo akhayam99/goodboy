@@ -67,15 +67,15 @@ A file that fakes the store gets one verdict before anything is deleted: keep (i
 
 Twelve files kept a claim from a release migration: each `it()` says a capability still has a home. A file that lists capabilities has no source document in the repository, so each `it()` is judged against `__tests__/surfaces/navigation-flows` (`*.rows.tsx`, with `harness tests` as the other home). An `it()` that a row proves on the same control is deleted. One that a row only reaches, without asserting what the `it()` asserts, stays under a title that names the domain, never a release or a sprint. The first pass removed 7 tests, replaced by 7 rows:
 
-| Removed `it()`                                            | Row that proves it                                                                  |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| session tools: the Context row opens the Context drawer   | `palette-destinations`: context drawer from the session tools                       |
-| Sessions page: Archived lane keeps Restore                | `board-lanes`: Archived stays in view and Restore sends its first card to its stage |
-| Tasks issue pane: Start session on an issue nobody linked | `start-paths`: Tasks issue Start opens the New session draft with the issue above   |
-| New session: Start a run from the Overview New menu       | `create-and-search`: overview New opens its menu, and Start a run opens the field   |
-| New session: Report and Wireframe drawer forms            | `create-and-search`: new drawer, write report and write wireframe                   |
-| Agent page: View transcript opens the transcript pane     | `headers`: agent page, View transcript opens the transcript pane                    |
-| Branch page: Comments entry keeps its groups              | `branch-page`: worktree level, the Comments entry opens the Branch on its Comments  |
+| Removed `it()`                                              | Row that proves it                                                                  |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| session tools: the Decisions row opens the Decisions drawer | `palette-destinations`: context drawer from the session tools                       |
+| Sessions page: Archived lane keeps Restore                  | `board-lanes`: Archived stays in view and Restore sends its first card to its stage |
+| Tasks issue pane: Start session on an issue nobody linked   | `start-paths`: Tasks issue Start opens the New session draft with the issue above   |
+| New session: Start a run from the Overview New menu         | `create-and-search`: overview New opens its menu, and Start a run opens the field   |
+| New session: Report and Wireframe drawer forms              | `create-and-search`: new drawer, write report and write wireframe                   |
+| Agent page: View transcript opens the transcript pane       | `headers`: agent page, View transcript opens the transcript pane                    |
+| Branch page: Comments entry keeps its groups                | `branch-page`: worktree level, the Comments entry opens the Branch on its Comments  |
 
 A file name or a baseline key that still says `preservation` moves with its baseline in the PR that owns the ratchet, never here.
 

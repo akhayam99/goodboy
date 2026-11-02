@@ -117,7 +117,7 @@ export const paletteTierOf = ({ isArchived, stage, suggestionKinds }: TierParams
 
 const actionIdOf = (entry: PaletteEntry): string => entry.action?.id ?? entry.key;
 
-const isDanger = (entry: PaletteEntry): boolean => entry.action?.group === 'danger';
+export const isDanger = (entry: PaletteEntry): boolean => entry.action?.group === 'danger';
 
 const isOpenVerb = (entry: PaletteEntry): boolean =>
   entry.action !== undefined && entry.action.group === 'open' && entry.action.id.endsWith('.open');

@@ -148,7 +148,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 [More on plans, reports and wireframes](docs/features/artifacts.md)
 
-<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
+<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="decisions-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
 
 ## Shared context
 
@@ -156,7 +156,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 - **Decisions**: Record a decision once and have the agents after it read it.
 - **Running summary**: Hand the next agent where things stand.
-- **Context drawer**: Open goal, decisions, summary and explanations from any session page with the Context button, and copy them all with Copy context.
+- **Decisions drawer**: Open goal, decisions, summary and explanations from any session page with the Decisions button, and copy them all with Copy context.
 - **Who receives what**: See which agents read each part of the context.
 - **Explanations**: Read back what agents explained about the topics you follow.
 

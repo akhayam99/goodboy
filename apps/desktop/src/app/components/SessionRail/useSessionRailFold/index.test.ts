@@ -54,3 +54,27 @@ describe('useSessionRailFold', () => {
     expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
   });
 });
+
+it('keeps a manual unfold through resizing until the drawer closes', () => {
+  const { result, rerender } = renderHook((props) => useSessionRailFold(props), {
+    initialProps: { isNarrow: true, isDrawerOpen: true },
+  });
+  act(() => {
+    result.current.toggle();
+  });
+  rerender({ isNarrow: false, isDrawerOpen: true });
+  rerender({ isNarrow: true, isDrawerOpen: true });
+  expect(result.current.isFolded).toBe(false);
+  rerender({ isNarrow: false, isDrawerOpen: false });
+  rerender({ isNarrow: true, isDrawerOpen: true });
+  expect(result.current.isFolded).toBe(true);
+});
+
+it('restores a saved fold when a temporary drawer fold ends', () => {
+  localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+  const { result, rerender } = renderFold({ isNarrow: false });
+  rerender({ isNarrow: true });
+  rerender({ isNarrow: false });
+  expect(result.current.isFolded).toBe(true);
+  expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
+});

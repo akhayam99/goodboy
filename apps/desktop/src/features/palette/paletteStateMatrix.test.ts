@@ -169,8 +169,6 @@ describe('palette verbs follow the session state', () => {
       'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
-      'Archive',
-      'Delete',
     ]);
   });
 
@@ -195,8 +193,6 @@ describe('palette verbs follow the session state', () => {
       'Start a run',
       'Link work',
       'Copy title',
-      'Archive',
-      'Delete',
     ]);
     expect(sessionView({ facts, query: 'files' })).toEqual([
       'Open files (Add a folder to this session first)',
@@ -225,7 +221,6 @@ describe('palette verbs follow the session state', () => {
       'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
-      'Delete',
     ]);
     for (const query of ['archive', 'review', 'diff', 'terminal', 'editor', 'rename', 'start']) {
       expect(sessionView({ facts, query })).toEqual([]);
@@ -272,16 +267,7 @@ describe('palette verbs follow the commit state, in the order of its ⋯ menu', 
     [
       'commit with one below',
       COMMIT,
-      [
-        'Rename',
-        'Fold down',
-        'Squash down',
-        'Move up',
-        'Move down',
-        'Copy SHA',
-        'Copy subject',
-        'Remove',
-      ],
+      ['Rename', 'Fold down', 'Squash down', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
     ],
     [
       'oldest commit that takes others in',

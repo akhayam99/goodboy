@@ -1,7 +1,7 @@
 import { parseQuery } from '../quick-actions/grammar';
 import { ACTION_GROUPS, type ActionGroup } from '../actions/types';
 import { recentKeys, type FrecencyState } from './frecency';
-import { rankSessionVerbs, type PaletteTier } from './paletteTiers';
+import { isDanger, rankSessionVerbs, type PaletteTier } from './paletteTiers';
 import { rankCandidates } from './rank';
 import type { PaletteEntry, PaletteKind } from './types';
 
@@ -159,7 +159,7 @@ export const buildCommandList = ({
   }): ReadonlyArray<PaletteEntry> =>
     isRanked && tier !== null
       ? [...rankSessionVerbs({ tier, verbs: list }), ...(allActions === null ? [] : [allActions])]
-      : list.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
+      : list.filter((entry) => isRunnable(entry) && !isScopeOpen(entry) && !isDanger(entry));
   const verbs = tiered({ list: scopeVerbs, isRanked: isScopeSession });
   const parents = tiered({ list: parentVerbs, isRanked: parentVerbs.length > 0 });
   const byKey = new Map(entries.map((entry) => [entry.key, entry] as const));

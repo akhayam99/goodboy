@@ -1,54 +1,47 @@
+import { SESSION_TOOL_RAIL_WIDTH } from '../../../features/session/components/SessionTools/sessionToolRailWidth';
 import { useMemo, type KeyboardEvent } from 'react';
 import {
   COLLAPSED_RAIL_WIDTH,
   FoldLayers,
-  LEFT_SIDEBAR_DEFAULT,
-  LEFT_SIDEBAR_MAX,
-  LEFT_SIDEBAR_MIN,
   PANE_RHYTHM,
   ResizeHandle,
   cn,
   useInnerColumn,
-  useResizableWidth,
+  useDrawerContentInset,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openLens } from '../../../features/session/openLens';
 import { ActionStatusLine } from '../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ObjectTarget } from '../../../features/actions/types';
 import { useActionControls } from '../../../features/actions/useActionControls';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
-import { useShellFolds } from '../../hooks/useShellFolds';
 import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
-import { useSessionRailFold, type SessionRailFold } from './useSessionRailFold';
 import { useSessionRailLevel } from './useSessionRailLevel';
+import {
+  SESSION_RAIL_WIDTH_VAR,
+  useSessionRailSizing,
+  type SessionRailSizing,
+} from './useSessionRailSizing';
 
 type Props = {
   readonly session: Session;
-  readonly fold?: SessionRailFold;
+  readonly sizing?: SessionRailSizing;
 };
-
-const WIDTH_VAR = '--goodboy-session-rail-width';
 
 const isBackKey = (event: KeyboardEvent): boolean =>
   event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
 
-export const SessionRail = ({ session, fold: providedFold }: Props) => {
+export const SessionRail = ({ session, sizing }: Props) => {
   const sessionId = session.id;
   const place = useColumnPlace();
-  const folds = useShellFolds();
-  const localFold = useSessionRailFold({ isNarrow: folds.isRailNarrow });
-  const fold = providedFold ?? localFold;
+  const localSizing = useSessionRailSizing();
+  const { resizable, fold } = sizing ?? localSizing;
   const level = useSessionRailLevel({ sessionId, isFolded: fold.isFolded });
-  const resizable = useResizableWidth<HTMLElement>({
-    storageKey: STORAGE_KEYS.sessionRailWidth,
-    defaultWidth: LEFT_SIDEBAR_DEFAULT,
-    min: LEFT_SIDEBAR_MIN,
-    max: LEFT_SIDEBAR_MAX,
-    cssVar: WIDTH_VAR,
+  useDrawerContentInset({
+    width: (fold.isFolded ? COLLAPSED_RAIL_WIDTH : resizable.width) + SESSION_TOOL_RAIL_WIDTH,
   });
   const isStudioOver = place !== null;
   useInnerColumn({
@@ -77,7 +70,7 @@ export const SessionRail = ({ session, fold: providedFold }: Props) => {
       }}
       style={{
         ...resizable.style,
-        width: fold.isFolded ? COLLAPSED_RAIL_WIDTH : `var(${WIDTH_VAR})`,
+        width: fold.isFolded ? COLLAPSED_RAIL_WIDTH : `var(${SESSION_RAIL_WIDTH_VAR})`,
       }}
       className={cn(
         'relative flex h-full min-h-0 shrink-0 flex-col gap-1 bg-background pb-2',
@@ -102,7 +95,7 @@ export const SessionRail = ({ session, fold: providedFold }: Props) => {
       ) : null}
       <FoldLayers
         isFolded={fold.isFolded}
-        openWidth={`var(${WIDTH_VAR})`}
+        openWidth={`var(${SESSION_RAIL_WIDTH_VAR})`}
         open={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />

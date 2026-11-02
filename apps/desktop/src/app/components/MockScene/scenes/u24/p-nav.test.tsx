@@ -102,16 +102,16 @@ describe('the navigation scenes', () => {
   it('railorder moves only the frame when another pin is opened', async () => {
     await mount('railorder');
     const order = pinOrder();
-    expect(order).toHaveLength(5);
-    expect(currentPins()).toEqual([order[1]]);
+    expect(order).toHaveLength(7);
+    expect(currentPins()).toEqual([order[3]]);
 
-    fireEvent.click(document.querySelector(`[data-rail-session="${order[3]}"]`) as HTMLElement);
+    fireEvent.click(document.querySelector(`[data-rail-session="${order[5]}"]`) as HTMLElement);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(50);
     });
 
     expect(pinOrder()).toEqual(order);
-    expect(currentPins()).toEqual([order[3]]);
+    expect(currentPins()).toEqual([order[5]]);
   });
 
   it.each(Object.keys(U24_P_NAV_SCENES))(

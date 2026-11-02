@@ -446,7 +446,7 @@ fails silently at runtime.
 - The `auto` role is in `AgentRole` and in every exhaustive map, and it is left
   out of every list a person sees on purpose: `SELECTABLE_AGENT_ROLES` (all its
   flags in `ROLE_REGISTRY` are `false`), `DEFAULT_GROUPS`, `GUIDANCE_ROLES`, and
-  the visibility chips of the Context drawer (`ALL_ROLES` in `roleVisibility.ts`
+  the visibility chips of the Decisions drawer (`ALL_ROLES` in `roleVisibility.ts`
   drops it). Do not add it to one of them to make a list complete. Showing Auto
   is the release that turns the experiment on.
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the

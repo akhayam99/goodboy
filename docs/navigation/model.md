@@ -38,12 +38,12 @@
   title's left edge is the first lane's left edge and the actions' right edge is
   the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
-  review, done, archived), each from 13rem to 20rem wide with 0.75rem gaps, and
+  review, done, archived), each from 12.25rem to 20rem wide with 0.75rem gaps, and
   the frame stops at six lanes of 20rem, so a wide or zoomed-out window never
   stretches the board. `boardLanesOf` decides by the frame's width in those rem
   values times the root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM`
   in `paneRhythm.ts`, the same numbers the lane classes use; 15px root): six
-  lanes from 1226px; from 1020px five lanes with Done above Archived in the
+  lanes from 1159px; from 964px five lanes with Done above Archived in the
   fifth, each half with its own header, count, empty line and scroll; below
   that the five lanes scroll sideways, the title row stays, and the scroller
   opens at its end so Done and Archived are on screen. Every lane always renders

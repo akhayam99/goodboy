@@ -189,7 +189,7 @@ the one door (`navigate`, or the opener the rest of the app uses).
 | Message                 | Its agent's transcript, scrolled to the message                             | The session is archived, the agent is gone |
 | Agent                   | The agent                                                                   | Same                                       |
 | Plan, report, wireframe | The artifact viewer                                                         | The session is archived                    |
-| Decision                | The Context drawer on its number, highlighted                               | The decision is gone                       |
+| Decision                | The Decisions drawer on its number, highlighted                             | The decision is gone                       |
 | Question                | The Questions lens with the question focused                                | The session is archived                    |
 | Issue                   | The issue lens of its session, or the Tasks record when it is starred       | Nothing to open                            |
 | Pull request            | Its Branch page, or its page on the code host when no session has it        | No session and no link                     |

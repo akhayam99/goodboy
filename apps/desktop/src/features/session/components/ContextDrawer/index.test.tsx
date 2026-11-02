@@ -170,7 +170,7 @@ describe('ContextDrawer', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
+    ).toEqual(['Decisions', 'Goal', 'Decisions', 'Summary', 'Explanations']);
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-context-card]'));
     expect(cards.map((card) => card.getAttribute('data-context-section'))).toEqual([
       'goal',
@@ -199,7 +199,7 @@ describe('ContextDrawer', () => {
 
   it('counts the active decisions on the card header from two, never one', () => {
     const countOf = () =>
-      screen.getByRole('region', { name: 'Decisions' }).querySelector('[data-context-count]')
+      screen.getByRole('region', { name: 'Decision records' }).querySelector('[data-context-count]')
         ?.textContent ?? null;
     store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
     const { unmount } = renderDrawer('decisions');
@@ -214,7 +214,7 @@ describe('ContextDrawer', () => {
   it('says which roles receive a section and lists them on demand', () => {
     renderDrawer('decisions');
 
-    const section = screen.getByRole('region', { name: 'Decisions' });
+    const section = screen.getByRole('region', { name: 'Decision records' });
     const toggle = within(section).getByRole('button', { name: /^Visible to/ });
     expect(toggle.getAttribute('aria-label')).toBe('Visible to All roles except Scout, Docs');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
@@ -278,7 +278,7 @@ describe('ContextDrawer', () => {
     renderDrawer('decisions');
 
     expect(
-      within(screen.getByRole('region', { name: 'Decisions' })).queryByRole('button', {
+      within(screen.getByRole('region', { name: 'Decision records' })).queryByRole('button', {
         name: /^Visible to/,
       }),
     ).not.toBeNull();
@@ -288,7 +288,7 @@ describe('ContextDrawer', () => {
     renderDrawer('summary');
 
     expect(screen.queryByText('Problem')).toBeNull();
-    const panel = screen.getByRole('region', { name: 'Context' });
+    const panel = screen.getByRole('region', { name: 'Decisions' });
     expect(within(panel).getByText('State')).toBeDefined();
     expect(within(panel).getByText('Next')).toBeDefined();
   });
@@ -566,7 +566,7 @@ describe('ContextDrawer', () => {
     expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
     expect(
-      within(screen.getByRole('region', { name: 'Decisions' })).getByText(
+      within(screen.getByRole('region', { name: 'Decision records' })).getByText(
         'Editing opens when the update finishes.',
       ),
     ).toBeDefined();

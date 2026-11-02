@@ -384,8 +384,8 @@
           "main": true
         },
         {
-          "title": "Context drawer",
-          "text": "Open the goal, decisions and summary from any session page. Copy them out as a brief and see what changed since you last looked.",
+          "title": "Decisions drawer",
+          "text": "Open goal, decisions, summary and explanations from any session page with the Decisions button, and copy them all with Copy context.",
           "group": "Shared context",
           "also": "context drawer"
         },

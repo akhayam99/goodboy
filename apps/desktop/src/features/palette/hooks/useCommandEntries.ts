@@ -1,3 +1,4 @@
+import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
@@ -231,15 +232,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
-      out.push({
-        key: 'action:context',
-        label: SHORTCUTS['lens.context'].label,
-        kind: 'page',
-        group: 'action',
-        icon: CONCEPT_ICONS.context,
-        shortcut: 'lens.context',
-        run: () => toggleContextDrawer({ sessionId }),
-      });
+      out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));
     }
 
     for (const workspace of workspaces) {

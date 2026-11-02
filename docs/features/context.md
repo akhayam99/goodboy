@@ -28,9 +28,9 @@ Hand the next agent where things stand. After a turn the summary is updated with
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
-### Context drawer
+### Decisions drawer
 
-Open goal, decisions, summary and explanations from any session page with the **Context** button, and copy them all with **Copy context**. They read as one scroll of cards: each card has its title, a count from two, and its quiet controls (**Versions**, **Edit source**, the eye for who receives it) on its header row, with the content and its folds inside. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations from any session page with the **Decisions** button, and copy them all with **Copy context**. They read as one scroll of cards: each card has its title, a count from two, and its quiet controls (**Versions**, **Edit source**, the eye for who receives it) on its header row, with the content and its folds inside. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">

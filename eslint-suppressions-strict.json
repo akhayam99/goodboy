@@ -461,7 +461,7 @@
   },
   "apps/desktop/src/features/quick-actions/registry.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/resolve/resolveFixupTargets.ts": {

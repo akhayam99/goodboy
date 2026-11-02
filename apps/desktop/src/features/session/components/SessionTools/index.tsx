@@ -1,3 +1,4 @@
+import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 import { Fragment, useState, type KeyboardEvent } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -44,13 +45,14 @@ export const SessionTools = ({ sessionId }: Props) => {
   };
   return (
     <div
+      style={{ width: SESSION_TOOL_RAIL_WIDTH }}
       role="toolbar"
       aria-label="Session tools"
       aria-orientation="vertical"
       data-testid="session-tools"
       onKeyDown={onKeyDown}
       className={cn(
-        'flex h-full w-10 shrink-0 flex-col items-center gap-1 bg-background px-1',
+        'flex h-full shrink-0 flex-col items-center gap-1 bg-background px-1',
         PANE_RHYTHM.headerInset,
       )}
     >

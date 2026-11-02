@@ -13,7 +13,7 @@ export const RailMoreButton = ({ count, onEnter, onLeave, onKeyDown }: Props) =>
   <button
     type="button"
     data-rail-more=""
-    aria-label={`${count} more pinned ${count === 1 ? 'session' : 'sessions'}`}
+    aria-label={`${count} more ${count === 1 ? 'session' : 'sessions'}`}
     aria-haspopup="dialog"
     onMouseEnter={onEnter}
     onMouseLeave={onLeave}

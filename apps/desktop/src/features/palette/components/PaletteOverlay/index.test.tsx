@@ -488,7 +488,7 @@ describe('PaletteOverlay on a focused commit row', () => {
     const chip = scopeChipOf({ label: 'Keep trailing-comma rows in the ledger-core importer' });
     expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this commit')).toBeDefined();
-    expect(optionNames().slice(0, 8)).toEqual([
+    expect(optionNames().slice(0, 7)).toEqual([
       'Rename',
       'Fold down',
       'Squash down',
@@ -496,7 +496,6 @@ describe('PaletteOverlay on a focused commit row', () => {
       'Move down',
       'Copy SHA',
       'Copy subject',
-      'Remove',
     ]);
     release();
   });

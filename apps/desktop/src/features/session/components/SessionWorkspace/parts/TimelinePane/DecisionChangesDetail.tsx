@@ -44,7 +44,7 @@ export const DecisionChangesDetail = ({
       ) : null}
       <span className="flex items-center">
         <Button variant="ghost" size="xs" onClick={onOpenInContext}>
-          Open in Context
+          Open in Decisions
         </Button>
       </span>
     </div>

@@ -22,11 +22,11 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 The **⋯** holds **Spend and limit**, **Archive** and **Delete** with the session's other actions.
 
-At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Explore**, **Context**, **Ask**, **Agents**, **Scripts** and **Terminal**. A thin line separates three groups: what you read, what you work with, then the terminal.
+At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Explore**, **Decisions**, **Ask**, **Agents**, **Scripts** and **Terminal**. The active tool shows its name below its icon. A thin line separates reading from the other tools.
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 
-**⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. In a narrow window the sidebar folds first, then the rail.
+**⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. Opening a drawer folds the rail when needed; closing it restores your fold. Folded sessions show initials. Branches with a request show its number. Each tooltip names the state.
 
 An amber dot on **Sessions** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
 
@@ -43,7 +43,7 @@ Reach any screen without the mouse. **⌘K** opens a window where a few letters 
 
 ### Command palette
 
-Press **⌘K** to act on what you are looking at. Inside a session it opens on **Next**, the step Goodboy would take now, then the actions that fit the session, ranked by how often you use them. Any text you type can also go to **Ask in Chat** as a new question.
+Press **⌘K** to act on what you are looking at. Inside a session it opens on **Next**, the step Goodboy would take now, then the actions that fit the session, ranked by how often you use them. Any text you type can also go to **Ask in Chat** as a new question. Delete stays out of the default list; typing its name finds it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-dark.webp">

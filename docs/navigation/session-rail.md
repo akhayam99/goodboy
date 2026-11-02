@@ -298,8 +298,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   rail, ⌥⌘B) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on a branch the back icon, then one icon per page of the
   worktree (`RailWorktreeLevel`; only the folded rail drills there); on level 1
-  one icon per page with its dot, then one pull request state icon per
-  worktree. The folded rail has no foot and no top
+  one icon per page with its dot, then the pull request number per
+  worktree, with its state and dot reason in the tooltip. The folded rail has no foot and no top
   row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session rail leaves the diff page's file
@@ -324,7 +324,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
   to the Overview.
 
-The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
+The tools (Explore, Decisions, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -497,24 +497,15 @@ focus of the branch it leaves. The Pull request entry under a branch row names t
 by its number alone (`#9998`, `MR !42`), so the label is never cut; the row above already
 names the branch.
 
-**The rail holds the pinned sessions and, when needed, the open one.** Under the
-doors, in the workspace scope only, the pinned sessions are 28px node buttons
-(the same `StateNode` as their rows) in pin order, up to seven
-(`RAIL_PINNED_LIMIT`), whatever is open: opening another session never moves a
-node, only the marker. The open session, when it is one of those pins, keeps its
-slot and takes the current sign (`bg-selected`, a 1px inset hairline, the glyph
-at full foreground, `aria-current="page"`). When it is not pinned, or is pinned
-beyond the seventh, it is one extra node after the pins and before `+N`
-(`data-slot="rail-open-tail"`). A click opens the session; hovering or focusing
-the current node opens a flyout (`RailFlyout`, the overlay layer of the hover
-card) with the same pages list as the card (`SessionPages`, one source), the
-branches when there are several, and the pinned sessions. Esc closes it and
-returns focus to the button, and `→` or `↓` on the button moves into it. A studio
-over the session leaves its button `remembered` (full foreground, no marker). The
-other nodes carry the session title and the stage words in their tooltip. `+N`
-counts the pins past the seventh and opens the same flyout with every pin. `New`
-shows the draft dot and reads `New session, Draft in progress` while a written
-draft waits elsewhere.
+**Folded sessions have names and state.** Under the doors, the workspace rail
+shows sessions that need you, then running sessions, followed by pins, up to
+seven (`RAIL_PINNED_LIMIT`). Each button carries two title initials in its
+state colour and a tooltip with the full title, state and unread reason.
+The open session keeps its slot when shown; otherwise it gets one extra
+button before `+N`. The count covers the remaining sessions and opens the
+session flyout. A studio leaves the current button remembered. Hover or focus
+on the current button opens its pages; Esc returns focus, and Right or Down
+moves into the flyout. `RailSessions` owns this list and its count.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
 pinned sessions (a **Pinned** section, up to eight, in pin order) and then the
@@ -657,36 +648,24 @@ activity yet show the plain overview with its actions.
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Context lives in the session tools.
+  Restore. Decisions lives in the session tools.
 
 ## The session tools
 
-One icon-only column at the right edge of the session content, between the
-page and the open drawer, the same on every rail level and in this order:
-**Explore** (⌘⌥X), **Context** (⌘⌥C), **Ask** (⌘L), **Agents** (⌘⌥L),
-**Scripts** (⌘⌥S) and **Terminal** (⌘⌥T) (`SESSION_TOOLS`), read from what you
-read to what you act with: Explore and Context first, Ask, Agents and Scripts
-next, the Terminal, a tool, last. A thin separator (`role="separator"`, not a
-button, so the arrow keys skip it) sits between the three groups, which each
-tool carries as its `group`. Each tool keeps its pane id and its chord, so a
-saved pane or a shortcut opens the same tool wherever it sits in the column. `SessionTools`
-(`features/session/components/SessionTools`) is mounted by `SessionFrame`
-after the page, one icon button plus its inset wide (40px) on the sheet background, its buttons starting on the
-rail top row's line. Each tool is a square `md` `IconButton` with its icon only
-(`SessionToolButton`), its name and chord in a left tooltip, its accessible name
-reading the word and any note ("Context, Decisions changed since you last
-looked" while a dot shows), `aria-pressed` with the `bg-selected` fill while
-its drawer is open (`openPaneOf`). The Context dot is a badge on the icon's top right corner: info while the
-summary runs, danger when it failed, primary when the context changed since
-you looked. The column is a `toolbar` (`aria-orientation="vertical"`, named
-Session tools) with one tab stop; Up, Down, Home and End move it
-(`toolbarIndexAfter`). There is no menu, so a page header never shows a second
-`⋯`. With a side pane in push mode the column sits right before the drawer;
-when the window is too narrow for the pane to push (about 1100px with the
-sidebar open), the pane floats over the page with the scrim and covers the
-column, as it covers the rest of the page, until Esc or its close returns it;
-the tool chords keep working. The line between the two is one rule,
-`drawerLayoutOf` with `DRAWER_PUSH_RESERVE` ([styling.md](../styling.md)).
+One 44px column at the right edge of the session content holds Explore,
+Decisions, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
+Decisions form the reading group; one separator leads to the other tools.
+Each tool keeps its pane id and shortcut. `SessionToolButton` shows the active
+tool's name below its icon. Every icon's tooltip gives its name, shortcut and
+any signal reason. Ask uses its own question glyph, distinct from Chat.
+
+The column is a vertical toolbar with one tab stop. Up, Down, Home and End
+move it (`toolbarIndexAfter`). Its signal dots keep their reason in the
+button's accessible name: updating, failed, changed, or a finished script or
+terminal command. An overlay drawer leaves live tools at its right edge
+through `DrawerEdgeContext`. The page has a scrim and is inert until close.
+`drawerLayoutOf` decides push or overlay from the content width excluding
+both rails ([styling.md](../styling.md)).
 Folding the rail leaves the column in place, and a drill never moves it.
 
 - **Agents holds every agent of the session** (drawer kind `spawned`,
@@ -774,7 +753,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   board, the studios) already hold the two tools that make sense there as
   column doors: **Terminal** (with New terminal on its plus) and **Chat**
   (with New chat), the workspace conversation that answers what Ask answers
-  for one session. Ask, Explore, Context and Scripts read one session, so they
+  for one session. Ask, Explore, Decisions and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.
 
 - **One pane at a time.** Every toggle goes through `togglePane`
@@ -793,7 +772,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
   the old `explore` and `scripts` lenses to the panes, so the palette, toasts
   and stored notifications (`open-lens` scripts) still land.
-- **Context signals ride on its row.** A 6px dot in the Context row's right
+- **Context signals ride on Decisions.** A 6px dot in the Decisions tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)
   (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible

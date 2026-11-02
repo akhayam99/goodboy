@@ -48,6 +48,7 @@ export {
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   canDrawerPush,
+  isRailFoldNeeded,
   drawerModeOf,
   drawerWidthOf,
   mainWidthOf,
@@ -402,3 +403,6 @@ export { HeaderActions } from './components/HeaderActions';
 
 export { Disclosure } from './components/Disclosure';
 export type { DisclosureProps } from './components/Disclosure';
+
+export { DrawerContentContext } from './drawerContentContext';
+export { useDrawerContentInset } from './useDrawerContentInset';

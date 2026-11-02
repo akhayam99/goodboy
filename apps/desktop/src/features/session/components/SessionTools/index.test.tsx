@@ -1,3 +1,4 @@
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -68,14 +69,14 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Explore, Context, Ask, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
+  it('stacks Explore, Decisions, Ask, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
     const buttons = within(toolbar).getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
-      'Context',
+      'Decisions',
       'Ask',
       'Agents',
       'Scripts',
@@ -102,7 +103,7 @@ describe('SessionTools', () => {
     }
   });
 
-  it('draws one separator between the reading, working and tool groups, and no more', () => {
+  it('draws one separator between the reading and working groups, and no more', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     const order = Array.from(
@@ -117,7 +118,6 @@ describe('SessionTools', () => {
       'ask',
       'spawned',
       'scripts',
-      'session-tools-separator',
       'terminal',
     ]);
     const separators = within(toolbar).getAllByRole('separator');
@@ -128,8 +128,14 @@ describe('SessionTools', () => {
   it('names each icon with its label and chord in the tooltip on the left', () => {
     renderCluster();
 
-    expect(tooltipTextOf({ element: toggle('ask') })).toContain('Ask');
-    expect(tooltipTextOf({ element: toggle('terminal') })).toContain('Terminal');
+    for (const tool of SESSION_TOOLS) {
+      expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
+        tool.label,
+      );
+      expect(tooltipTextOf({ element: screen.getByTestId(`pane-toggle-${tool.pane}`) })).toContain(
+        shortcutGlyphs(tool.shortcut),
+      );
+    }
   });
 
   it('draws the Context dot on the icon as a badge, not after a word', () => {
@@ -180,6 +186,7 @@ describe('SessionTools', () => {
     await settle();
     expect(drawerKind()).toBe('scripts');
     expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('toolbar', { name: 'Session tools' }).textContent).toBe('Scripts');
     expect(toggle('scripts').getAttribute('data-icon-tone')).toBe('info');
     expect(toggle('ask').getAttribute('aria-pressed')).toBe('false');
     expect(toggle('ask').hasAttribute('data-icon-tone')).toBe(false);
@@ -205,12 +212,13 @@ describe('SessionTools', () => {
 
     seed('running');
     expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('running');
-    expect(toggle('context').getAttribute('aria-label')).toBe('Context, Updating context');
+    expect(toggle('context').getAttribute('aria-label')).toBe('Decisions, Updating context');
+    expect(tooltipTextOf({ element: toggle('context') })).toContain('Updating context');
 
     seed('error');
     expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('error');
     expect(toggle('context').getAttribute('aria-label')).toBe(
-      "Context, Couldn't update the context. Open to retry.",
+      "Decisions, Couldn't update the context. Open to retry.",
     );
     expect(toggle('ask').getAttribute('aria-label')).toBe('Ask');
   });
@@ -311,6 +319,9 @@ describe('SessionTools', () => {
     renderCluster();
     const signal = () => toggle('scripts').closest('.relative')?.querySelector('[data-signal]');
     expect(signal()?.getAttribute('data-signal')).toBe('error');
+    expect(tooltipTextOf({ element: toggle('scripts') })).toContain(
+      'test failed. Open its output.',
+    );
     expect(toggle('scripts').getAttribute('aria-label')).toBe(
       'Scripts, test failed. Open its output.',
     );

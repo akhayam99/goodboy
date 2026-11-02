@@ -7,8 +7,8 @@ import { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM, PANE_RHYTHM } from '@goodboy/ui
 import { boardLanesOf, type BoardLanes } from './boardLanesOf';
 
 const ROOT_PX = 15;
-const SIX_LANES_AT = 1226.25;
-const FIVE_LANES_AT = 1020;
+const SIX_LANES_AT = 1158.75;
+const FIVE_LANES_AT = 963.75;
 
 const SIX: BoardLanes = { lanes: 6, stacked: false, scrolls: false };
 const STACKED: BoardLanes = { lanes: 5, stacked: true, scrolls: false };
@@ -17,13 +17,12 @@ const SCROLLING: BoardLanes = { lanes: 5, stacked: true, scrolls: true };
 describe('boardLanesOf', () => {
   it.each([
     [900, SCROLLING],
-    [1000, SCROLLING],
-    [1019, SCROLLING],
-    [1020, STACKED],
+    [1000, STACKED],
+    [963, SCROLLING],
+    [964, STACKED],
     [1100, STACKED],
-    [1200, STACKED],
-    [1226, STACKED],
-    [1226.25, SIX],
+    [1158, STACKED],
+    [1158.75, SIX],
     [1440, SIX],
     [1920, SIX],
     [2048, SIX],
@@ -32,14 +31,14 @@ describe('boardLanesOf', () => {
     expect(boardLanesOf({ width })).toEqual(expected);
   });
 
-  it('puts the six lane threshold at six 13rem lanes and five 0.75rem gaps of the 15px root', () => {
+  it('puts the six lane threshold at six 12.25rem lanes and five 0.75rem gaps of the 15px root', () => {
     expect((6 * BOARD_LANE_MIN_REM + 5 * BOARD_LANE_GAP_REM) * ROOT_PX).toBe(SIX_LANES_AT);
     expect(boardLanesOf({ width: SIX_LANES_AT - 0.5 })).toEqual(STACKED);
     expect(boardLanesOf({ width: SIX_LANES_AT })).toEqual(SIX);
     expect(boardLanesOf({ width: SIX_LANES_AT + 1 })).toEqual(SIX);
   });
 
-  it('puts the scroll threshold at five 13rem lanes and four 0.75rem gaps of the 15px root', () => {
+  it('puts the scroll threshold at five 12.25rem lanes and four 0.75rem gaps of the 15px root', () => {
     expect((5 * BOARD_LANE_MIN_REM + 4 * BOARD_LANE_GAP_REM) * ROOT_PX).toBe(FIVE_LANES_AT);
     expect(boardLanesOf({ width: FIVE_LANES_AT - 1 })).toEqual(SCROLLING);
     expect(boardLanesOf({ width: FIVE_LANES_AT })).toEqual(STACKED);
@@ -47,14 +46,14 @@ describe('boardLanesOf', () => {
   });
 
   it('follows the root font size, so the rule never drifts from the rem lanes', () => {
-    expect(boardLanesOf({ width: 1080, remPx: 16 })).toEqual(SCROLLING);
-    expect(boardLanesOf({ width: 1080, remPx: 15 })).toEqual(STACKED);
-    expect(boardLanesOf({ width: 1080, remPx: 14 })).toEqual(STACKED);
+    expect(boardLanesOf({ width: 1000, remPx: 16 })).toEqual(SCROLLING);
+    expect(boardLanesOf({ width: 1000, remPx: 15 })).toEqual(STACKED);
+    expect(boardLanesOf({ width: 1000, remPx: 14 })).toEqual(STACKED);
     expect(boardLanesOf({ width: 1300, remPx: 14 })).toEqual(SIX);
   });
 
-  it('fits six lanes from 1227px where the grid really needs 1226.25px, not from 1308px', () => {
-    expect(boardLanesOf({ width: 1250 })).toEqual(SIX);
+  it('fits six lanes from 1159px where the grid really needs 1158.75px, not from 1308px', () => {
+    expect(boardLanesOf({ width: 1200 })).toEqual(SIX);
     expect(boardLanesOf({ width: 1307 })).toEqual(SIX);
   });
 

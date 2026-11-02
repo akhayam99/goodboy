@@ -5,8 +5,7 @@ import type { Session } from '@goodboy/types';
 import { SessionTools } from '../../../features/session/components/SessionTools';
 import { SessionCostChip } from '../../../features/session/components/SessionOverviewPane/SessionCostChip';
 import { SessionRailFoldContext } from '../../../features/session/sessionRailFoldContext';
-import { useShellFolds } from '../../hooks/useShellFolds';
-import { useSessionRailFold } from './useSessionRailFold';
+import { useSessionRailSizing } from './useSessionRailSizing';
 import { SessionRail } from './index';
 
 type Props = {
@@ -16,12 +15,11 @@ type Props = {
 
 export const SessionFrame = ({ session, children }: Props) => {
   const edgeHost = useContext(DrawerEdgeContext);
-  const folds = useShellFolds();
-  const fold = useSessionRailFold({ isNarrow: folds.isRailNarrow });
+  const sizing = useSessionRailSizing();
   return (
-    <SessionRailFoldContext value={fold.isFolded}>
+    <SessionRailFoldContext value={sizing.fold.isFolded}>
       <div data-session-frame="" className="relative flex h-full w-full min-w-0">
-        <SessionRail key={session.id} session={session} fold={fold} />
+        <SessionRail key={session.id} session={session} sizing={sizing} />
         <div className="pointer-events-none absolute bottom-2 left-2 flex">
           <SessionCostChip
             key={`spend-${session.id}`}

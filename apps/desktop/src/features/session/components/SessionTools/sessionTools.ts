@@ -1,9 +1,10 @@
+import { NAMES } from '../../../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { ClusterPane } from '../../panes/clusterPane';
 
-type SessionToolGroup = 'read' | 'work' | 'tools';
+type SessionToolGroup = 'read' | 'work';
 
 export type SessionTool = {
   readonly pane: ClusterPane;
@@ -25,13 +26,13 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
     pane: 'context',
     group: 'read',
     icon: CONCEPT_ICONS.context,
-    label: 'Context',
+    label: NAMES.context,
     shortcut: 'lens.context',
   },
   {
     pane: 'ask',
     group: 'work',
-    icon: CONCEPT_ICONS.chat,
+    icon: CONCEPT_ICONS.ask,
     label: 'Ask',
     shortcut: 'ask.open',
   },
@@ -51,7 +52,7 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
   },
   {
     pane: 'terminal',
-    group: 'tools',
+    group: 'work',
     icon: CONCEPT_ICONS.terminal,
     label: 'Terminal',
     shortcut: 'session.terminal',

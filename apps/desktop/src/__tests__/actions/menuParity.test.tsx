@@ -517,7 +517,10 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     ]);
     expect(fromContext).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
-    expect(fromPalette).toEqual(fromOverflow);
+    expect(fromPalette.slice(0, fromOverflow.length - 1)).toEqual(
+      fromOverflow.filter((label) => label !== 'Remove'),
+    );
+    expect(fromPalette).not.toContain('Remove');
   });
 });
 

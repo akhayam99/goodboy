@@ -1144,9 +1144,17 @@ u34-question-card-states
 u34-t52-long-transcript
 u34-u12-failure
 u34-u12-provider
+u34-u24-folded-sessions
+u34-u26-board
+u34-u28-agents-open
+u34-u28-drawer-closed
+u34-u29-narrow-running
+u34-u30-active-tool
+u34-u31-folded-branches
 u34-u33-branches
 u34-u35-unpushed
 u34-u5-question
+u34-u53-palette
 u34-u56-step
 update-card
 update-card-long-version

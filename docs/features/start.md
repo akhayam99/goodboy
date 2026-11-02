@@ -142,16 +142,16 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put while the rail steps into a branch.
 
-| Tool         | Key |
-| ------------ | --- |
-| **Ask**      | ⌘L  |
-| **Terminal** | ⌘⌥T |
-| **Explore**  | ⌘⌥X |
-| **Context**  | ⌘⌥C |
-| **Agents**   | ⌘⌥L |
-| **Scripts**  | ⌘⌥S |
+| Tool          | Key |
+| ------------- | --- |
+| **Explore**   | ⌘⌥X |
+| **Decisions** | ⌘⌥C |
+| **Ask**       | ⌘L  |
+| **Agents**    | ⌘⌥L |
+| **Scripts**   | ⌘⌥S |
+| **Terminal**  | ⌘⌥T |
 
-- Hover one to read its name and key. The one whose panel is open shows pressed.
+- Hover one to read its name and key. The active tool shows its name below its icon.
 - **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
 - The tree follows the run or Auto you have open, or shows every launch of the session when nothing is open.
 - Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
