@@ -95,7 +95,7 @@ export const WorkspaceProjectsSection = ({
       {hasProjects ? <WorkspaceTerminalFolderRow workspaceId={workspaceId} /> : null}
       <ProjectLinkList
         workspaceId={workspaceId}
-        emptyHint="No folders yet"
+        emptyHint="No projects yet"
         heading={() => (
           <h2 className="flex items-baseline gap-2 text-row text-foreground">
             Projects

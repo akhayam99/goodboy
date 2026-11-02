@@ -15,16 +15,16 @@ const PROJECTS = [
 ] as const;
 
 describe('folderMetaOf', () => {
-  it('counts the folders of one workspace and the ones with git', () => {
+  it('counts the projects of one workspace and the ones with git', () => {
     expect(folderMetaOf({ projects: PROJECTS, workspaceId: HARBORLINE })).toBe(
-      '3 folders · 2 with git',
+      '3 projects · 2 with git',
     );
     expect(folderMetaOf({ projects: PROJECTS, workspaceId: NORTHWIND })).toBe(
-      '1 folder · 1 with git',
+      '1 project · 1 with git',
     );
   });
 
   it('says so when the workspace has none', () => {
-    expect(folderMetaOf({ projects: [], workspaceId: HARBORLINE })).toBe('No folders yet');
+    expect(folderMetaOf({ projects: [], workspaceId: HARBORLINE })).toBe('No projects yet');
   });
 });

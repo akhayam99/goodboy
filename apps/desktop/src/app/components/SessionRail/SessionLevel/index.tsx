@@ -1,6 +1,6 @@
 import { ScrollFade, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useSessionLoading } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { useSessionPageLens } from '../../../../features/session/hooks/useSessionPageLens';
 import { currentSignOf } from '../../../../features/workspace/components/SessionActivityBar/currentSign';
@@ -9,6 +9,7 @@ import { useCardPages } from '../../../../features/workspace/hooks/useCardPages'
 import { LevelFolder } from './LevelFolder';
 import { LevelLinked } from './LevelLinked';
 import { LevelProjects } from './LevelProjects';
+import { LevelSkeleton } from './LevelSkeleton';
 import { RAIL_INSET } from './railInset';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 
 export const SessionLevel = ({ session, isActive }: Props) => {
   const sessionId = session.id;
+  const isLoading = useSessionLoading(sessionId).agents;
   const { pages, facts } = useCardPages({ session });
   const pageLens = useSessionPageLens({ session });
   const isBranchless = useAppStore((state) =>
@@ -36,14 +38,18 @@ export const SessionLevel = ({ session, isActive }: Props) => {
           <div className="flex flex-col">
             <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
           </div>
-          <div data-level-cards="" className="flex flex-col gap-4">
-            {isBranchless ? (
-              <LevelFolder session={session} />
-            ) : (
-              <LevelProjects session={session} isActive={isActive} />
-            )}
-            <LevelLinked session={session} isActive={isActive} />
-          </div>
+          {isLoading ? (
+            <LevelSkeleton />
+          ) : (
+            <div data-level-cards="" className="flex flex-col gap-4">
+              {isBranchless ? (
+                <LevelFolder session={session} />
+              ) : (
+                <LevelProjects session={session} isActive={isActive} />
+              )}
+              <LevelLinked session={session} isActive={isActive} />
+            </div>
+          )}
         </div>
       </ScrollFade>
     </div>

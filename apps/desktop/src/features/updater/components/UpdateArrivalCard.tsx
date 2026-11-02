@@ -98,14 +98,20 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="min-w-0 break-words text-heading text-foreground">{copy.title}</p>
               <p className="min-w-0 break-words text-meta text-muted-foreground">
+                {copy.body}
                 {card.whatsNew === null ? null : (
                   <>
-                    <Button variant="quiet" size="xs" onClick={card.whatsNew.run}>
+                    {' '}
+                    <Button
+                      variant="quiet"
+                      size="xs"
+                      className="h-auto px-0 text-primary underline underline-offset-2 hover:bg-transparent"
+                      onClick={card.whatsNew.run}
+                    >
                       {card.whatsNew.label}
-                    </Button>{' '}
+                    </Button>
                   </>
                 )}
-                {copy.body}
               </p>
               {copy.detail === null ? null : (
                 <p className="min-w-0 break-words text-meta text-faint-foreground">{copy.detail}</p>

@@ -146,11 +146,11 @@ describe('WorkspaceScopePanel pages', () => {
     },
   );
 
-  it('says the workspace has no folders yet in the Folders header', () => {
+  it('says the workspace has no projects yet in the header', () => {
     renderPage();
 
     const header = screen.getByRole('heading', { level: 1 }).closest('[data-page-header]');
-    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No folders yet');
+    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No projects yet');
   });
 
   it('opens Branches with After merge first and Check again in the header', () => {

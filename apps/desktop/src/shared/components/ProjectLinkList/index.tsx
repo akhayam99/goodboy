@@ -49,8 +49,8 @@ export const ProjectLinkList = ({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter folders"
-            aria-label="Filter folders"
+            placeholder="Filter projects"
+            aria-label="Filter projects"
             className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
           />
         ) : null}

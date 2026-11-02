@@ -195,7 +195,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           />
         ) : null}
 
-        {!pending && hasProjects && <SetupCard isMainWindow={isMainWindow} />}
+        {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
         {pending && <BoardSkeleton lanes={layout.lanes} />}
 

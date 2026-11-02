@@ -19,6 +19,7 @@ import {
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { GuideScene } from '../audit/GuideScene';
 import { U34_HELP_SCENES } from './help';
 
 const WAIT = { timeout: 15_000 };
@@ -60,6 +61,17 @@ describe('the Help scenes', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shortcuts' }, WAIT);
     screen.getByRole('button', { name: /^Back to app/ });
     screen.getByRole('button', { name: 'Customize in Settings' });
+    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
+  });
+
+  it('the guide scene leaves the same way as the other Help scenes', async () => {
+    render(
+      <ToastProvider>
+        <GuideScene />
+      </ToastProvider>,
+    );
+
+    await screen.findByRole('button', { name: /^Back to app/ }, WAIT);
     expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 

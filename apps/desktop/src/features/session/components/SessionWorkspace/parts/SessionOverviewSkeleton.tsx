@@ -3,7 +3,6 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 import { OVERVIEW_CARD_SURFACE } from '../../../central/cards/overviewCardSurface';
 import { overviewCardsOf } from '../../../central/overviewCardsOf';
 
-const PROJECT_ROWS = [0, 1];
 const CARD_ROWS = [0, 1];
 
 type Props = {
@@ -25,24 +24,8 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
       <PageSkeleton page="overview" label="Loading session overview">
         <div className={PANE_RHYTHM.stack}>
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-24 rounded-md" />
-                  <Skeleton className="h-6 w-20 rounded-md" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-28 rounded-md" />
-                  <Skeleton className="h-6 w-14 rounded-md" />
-                </div>
-              </div>
-            </div>
-            <SkeletonText lines={2} />
-            <div className="flex flex-col gap-2">
-              {PROJECT_ROWS.map((row) => (
-                <Skeleton key={row} className="h-9 w-full rounded-md" />
-              ))}
-            </div>
+            <Skeleton className="h-6 w-2/5 rounded-md" />
+            <SkeletonText lines={1} />
           </div>
 
           <div data-central-column-skeleton="" className={PANE_RHYTHM.groups}>

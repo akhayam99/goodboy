@@ -164,6 +164,7 @@ describe('the c05 overview scenes', () => {
     const notices = screen.getByRole('region', { name: 'Notices' });
     within(notices).getByRole('button', { name: /^Restore branch for/ });
     within(notices).getByRole('button', { name: 'Use this branch here' });
+    expect(screen.queryByPlaceholderText('What should it do?')).toBeNull();
     expect(sectionOrder()[0]).toBe('Notices');
   });
 

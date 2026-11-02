@@ -6,6 +6,7 @@ import { installSceneDatabase } from '../sceneDatabase';
 
 const SIDEBAR_WIDTH_PX = 240;
 const VERSION = '0.31.0';
+const OPEN_MS = 300;
 
 const noop = () => undefined;
 
@@ -16,7 +17,7 @@ const UpdateCardAvailableScene = () => {
     installSceneDatabase();
     useAppStore.setState({ updaterStatus: 'available', updateVersion: VERSION, updateNotes: null });
     setIsReady(true);
-    const timer = window.setTimeout(toggleUpdateCard, 0);
+    const timer = window.setTimeout(toggleUpdateCard, OPEN_MS);
     return () => window.clearTimeout(timer);
   }, []);
 

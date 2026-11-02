@@ -166,6 +166,7 @@ describe('UpdateArrivalCard', () => {
     const verbRow = within(dialog).getByRole('button', { name: 'Later' }).parentElement;
     expect(sentence?.textContent).toContain('Nothing is running. A restart takes a few seconds.');
     expect(sentence?.contains(link)).toBe(true);
+    expect(sentence?.textContent?.endsWith("What's new")).toBe(true);
     expect(verbRow?.contains(link)).toBe(false);
     expect(verbRow?.querySelectorAll('button')).toHaveLength(2);
   });

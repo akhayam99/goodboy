@@ -158,7 +158,7 @@ export const OpenWithBand = () => {
         />
         <ToolChoiceField
           label="Terminal"
-          help="Opens folders, and runs provider commands."
+          help="Opens projects, and runs provider commands."
           value={terminalApp}
           choices={terminalChoices}
           onChange={(id) => void onChangeTerminal({ id })}

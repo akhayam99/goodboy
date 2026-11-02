@@ -251,12 +251,14 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
-  it('draws the setup card on an empty board and on a board with sessions, not while loading', () => {
+  it('draws the setup card on an empty board only, not on a board with sessions or while loading', () => {
     const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByTestId('setup-card')).not.toBeNull();
 
     rerender(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(screen.queryByTestId('setup-card')).not.toBeNull();
+    expect(screen.queryByTestId('setup-card')).toBeNull();
+
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
 
     state.boardReady = false;
     rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
