@@ -17,7 +17,8 @@ import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { createReviewSourceSlice, reviewSourceInitialState } from './slices/review-source';
 import { resolveInitialState } from './slices/resolve/state';
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
+import { createTrackedStore } from './createTrackedStore';
 import { createNotificationsSlice } from './slices/notifications';
 import { createTaskArrivalsSlice } from './slices/taskArrivals';
 import { createNudgesSlice } from './slices/nudges';
@@ -411,7 +412,7 @@ const initialState: AppState = {
   ...repoDivergenceInitialState,
 };
 
-export const useAppStore = create<AppStore>((set, get) => ({
+const appStoreApi = createStore<AppStore>((set, get) => ({
   ...initialState,
   ...createUndoSlice({ set, get }),
   ...createNotificationsSlice({ set, get }),
@@ -518,3 +519,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDrawerSlice({ set, get }),
   ...createNavigationSlice({ set, get }),
 }));
+
+export const useAppStore = createTrackedStore({ api: appStoreApi });

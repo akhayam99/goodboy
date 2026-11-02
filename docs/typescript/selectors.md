@@ -42,7 +42,14 @@ of this session changes. Write the second.
    hook owns the selectors.
 5. The selector argument is called `state`, not `s` and not `store`. An older
    file keeps `s` until someone edits its selector; a new selector uses `state`.
-6. There is no comment that opts a selector out. If the selector is stable,
+6. A selector is a pure function of the state it reads. `useAppStore` runs a
+   selector again only when a top-level key it read on its last run changed
+   (`store/hooks/useTrackedSelector`), so a streaming tick reaches only the
+   selectors that read `transcripts` or another changed key. A selector that
+   reads a module variable or the clock gets a stale value until a key it read
+   changes. A selector that lists the keys of the state, or returns the whole
+   state, runs on every write.
+7. There is no comment that opts a selector out. If the selector is stable,
    write it so the guard sees that; if it is not, fix it.
 
 ## The guards

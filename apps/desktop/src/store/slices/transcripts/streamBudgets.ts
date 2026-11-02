@@ -11,4 +11,5 @@ export const STREAM_BUDGETS = {
   copiedRowsPerEvent: ({ runLength }: RunLengthParams): number => runLength,
   dispatchMsPerEvent: 0.25,
   totalMsPerEvent: 1,
+  tickMs: 2,
 } as const;
