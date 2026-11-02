@@ -13,6 +13,7 @@ export const selectDrawerSizing = (
     drawer.kind === 'new' ||
     drawer.kind === 'explore-file' ||
     drawer.kind === 'file-diff' ||
+    drawer.kind === 'identifier-peek' ||
     drawer.kind === 'artifact-document'
   ) {
     return 'reader';

@@ -388,7 +388,7 @@
     "apps/desktop/src/features/diff/components/IdentifierPeek/index.tsx": 1,
     "apps/desktop/src/features/diff/components/SessionDiffPane/DiffBaseBranchRow.tsx": 1,
     "apps/desktop/src/features/diff/components/SessionDiffPane/DiffEmptyState.tsx": 2,
-    "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": 2,
+    "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": 1,
     "apps/desktop/src/features/diff/components/SyntaxText.tsx": 1,
     "apps/desktop/src/features/diff/HistoryChangeDiff.tsx": 1,
     "apps/desktop/src/features/diff/hooks/useAskAgent/askAgentPrompt.ts": 2,

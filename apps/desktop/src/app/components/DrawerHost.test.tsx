@@ -269,6 +269,20 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'identifier-peek',
+    region: 'creditKey',
+    seed: seedSession,
+    drawer: {
+      kind: 'identifier-peek',
+      sessionId: SESSION,
+      payload: {
+        worktreePath: '/mock/ledger-core',
+        word: 'creditKey',
+        selected: { path: 'src/ledger-core.ts', line: 31 },
+      },
+    },
+  },
+  {
     kind: 'artifact-document',
     region: 'Rounding drift in ledger-core',
     seed: seedSession,

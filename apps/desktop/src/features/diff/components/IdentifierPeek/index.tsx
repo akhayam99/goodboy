@@ -12,6 +12,7 @@ import type { GrepMatch } from '../../../worktree/worktree';
 import { useIdentifierUses } from '../../hooks/useIdentifierUses';
 import type { PeekAnchor } from '../../lib/wordAtEvent';
 import { PeekGroup } from './PeekGroup';
+import { PEEK_GROUP_LABELS } from './peekGroupLabels';
 import { peekGroups } from './peekGroups';
 
 type Props = {
@@ -156,9 +157,9 @@ export const IdentifierPeek = ({
             {groups.kind !== null ? (
               <>
                 {[
-                  { label: 'Defined in', matches: groups.definitions },
-                  { label: 'In this change', matches: groups.inChange },
-                  { label: 'Elsewhere', matches: groups.elsewhere },
+                  { label: PEEK_GROUP_LABELS.definitions, matches: groups.definitions },
+                  { label: PEEK_GROUP_LABELS.changed, matches: groups.inChange },
+                  { label: PEEK_GROUP_LABELS.unchanged, matches: groups.elsewhere },
                 ].map(({ label, matches: groupMatches }) => (
                   <PeekGroup
                     key={label}

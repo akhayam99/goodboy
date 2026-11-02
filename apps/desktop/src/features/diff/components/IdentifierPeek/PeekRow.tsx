@@ -1,4 +1,4 @@
-import { ROW_INTERACTIVE, StateBadge, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, StateBadge, Tooltip, cn } from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
 import { splitPeekPath } from './splitPeekPath';
 
@@ -26,15 +26,17 @@ export const PeekRow = ({ match, word, isInChange, isChangedLine, onPick }: Prop
       onClick={() => onPick(match)}
       className={cn(
         ROW_INTERACTIVE,
-        'grid min-h-8 w-full shrink-0 grid-cols-[11rem_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
+        'grid min-h-8 w-full shrink-0 grid-cols-[15rem_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
       )}
     >
-      <span data-peek-path="" className="flex min-w-0 items-baseline text-meta">
-        <span className="min-w-0 max-w-[40%] truncate text-faint-foreground">{directory}</span>
-        <span className="shrink-0 text-faint-foreground">{separator}</span>
-        <span className="min-w-0 truncate text-foreground">{name}</span>
-        <span className="shrink-0 tabular-nums text-faint-foreground">:{match.line}</span>
-      </span>
+      <Tooltip content={match.path}>
+        <span data-peek-path="" className="flex min-w-0 items-baseline text-meta">
+          <span className="shrink-0 text-faint-foreground">{directory}</span>
+          <span className="shrink-0 text-faint-foreground">{separator}</span>
+          <span className="min-w-0 truncate text-foreground">{name}</span>
+          <span className="shrink-0 tabular-nums text-faint-foreground">:{match.line}</span>
+        </span>
+      </Tooltip>
       <span
         data-peek-snippet=""
         className="min-w-0 truncate whitespace-pre text-code text-muted-foreground"

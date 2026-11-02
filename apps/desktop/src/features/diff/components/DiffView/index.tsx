@@ -118,16 +118,10 @@ export const DiffView = ({
   const focusFrame = useRef<number | null>(null);
   const onActivePathChangeRef = useRef(onActivePathChange);
   onActivePathChangeRef.current = onActivePathChange;
-  const expandersRef = useRef(new Map<string, () => Promise<void>>());
   const registerExpandAllRef = useRef(registerExpandAll);
   registerExpandAllRef.current = registerExpandAll;
   const trackExpandAll = useCallback((path: string, expand: (() => Promise<void>) | null) => {
     registerExpandAllRef.current?.(path, expand);
-    if (expand === null) {
-      expandersRef.current.delete(path);
-      return;
-    }
-    expandersRef.current.set(path, expand);
   }, []);
   const filesRef = useRef(files);
   filesRef.current = files;
@@ -496,7 +490,7 @@ export const DiffView = ({
     identifierPeek === null ? (
       body
     ) : (
-      <PeekHost config={identifierPeek} files={files} expandersRef={expandersRef}>
+      <PeekHost config={identifierPeek} files={files}>
         {body}
       </PeekHost>
     );

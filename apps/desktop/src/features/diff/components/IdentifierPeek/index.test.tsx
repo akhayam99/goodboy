@@ -23,6 +23,7 @@ import {
 import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
 import type { FileSidesLoader } from '../../hooks/useFileSides';
 import { DiffView } from '../DiffView';
+import type { PeekOpenParams } from './PeekHost';
 
 const FILE: FileDiff = {
   path: 'ledger-core.ts',
@@ -102,15 +103,15 @@ const selectWord = ({ word }: SelectParams): Selected => {
   throw new Error(`no text node holds ${word}`);
 };
 
-type RenderParams = { readonly onOpenElsewhere?: (match: GrepMatch) => void };
+type RenderParams = { readonly onOpen?: (params: PeekOpenParams) => void };
 
-const renderDiff = ({ onOpenElsewhere = () => undefined }: RenderParams = {}) =>
+const renderDiff = ({ onOpen = () => undefined }: RenderParams = {}) =>
   render(
     <DiffView
       files={[FILE]}
       presentation="inline"
       loadFileSides={load}
-      identifierPeek={{ worktreePath: '/mock/payments-api', onOpenElsewhere }}
+      identifierPeek={{ worktreePath: '/mock/payments-api', onOpen }}
     />,
   );
 
@@ -142,17 +143,18 @@ describe('identifier peek', () => {
     renderDiff();
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
     const dialog = await screen.findByRole('dialog', { name: 'Uses of creditKey' });
-    await within(dialog).findByRole('group', { name: 'Elsewhere' });
+    await within(dialog).findByRole('group', { name: 'Unchanged files' });
     const groups = within(dialog).getAllByRole('group');
     expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
       'Defined in',
-      'In this change',
-      'Elsewhere',
+      'Changed on this branch',
+      'Unchanged files',
     ]);
-    within(within(dialog).getByRole('group', { name: 'In this change' })).getByRole('button', {
-      name: 'ledger-core.ts:90',
-    });
-    within(within(dialog).getByRole('group', { name: 'Elsewhere' })).getByRole('button', {
+    within(within(dialog).getByRole('group', { name: 'Changed on this branch' })).getByRole(
+      'button',
+      { name: 'ledger-core.ts:90' },
+    );
+    within(within(dialog).getByRole('group', { name: 'Unchanged files' })).getByRole('button', {
       name: 'notify-relay/send.ts:7',
     });
   });
@@ -171,14 +173,14 @@ describe('identifier peek', () => {
     expect(within(dialog).queryByRole('group')).toBeNull();
   });
 
-  it('keeps the directory separator visible and highlights a word when its column was clipped', async () => {
+  it('shows the end of the directory next to the file and highlights a word when its column was clipped', async () => {
     const path = 'apps/payments-api/src/ledger-core/components/notify-relay.tsx';
     stubStoryInvoke(grep({ matches: [DEFINITION, { ...OTHER_FILE, path, column: 90 }] }));
     renderDiff();
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
     const row = await screen.findByRole('button', { name: `${path}:7` });
     within(row).getByText('/');
-    within(row).getByText('apps/payments-…ore/components');
+    within(row).getByText('…/src/ledger-core/components');
     within(row).getByText('notify-relay.tsx');
     expect(within(row).getByText('creditKey').tagName).toBe('MARK');
   });
@@ -187,7 +189,7 @@ describe('identifier peek', () => {
     renderDiff();
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
     const dialog = await screen.findByRole('dialog', { name: 'Uses of creditKey' });
-    await within(dialog).findByRole('group', { name: 'Elsewhere' });
+    await within(dialog).findByRole('group', { name: 'Unchanged files' });
     const rows = within(dialog).getAllByRole('button', { name: /:\d+$/ });
 
     expect(rows.length).toBeGreaterThan(2);
@@ -218,7 +220,7 @@ describe('identifier peek', () => {
     );
     renderDiff();
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
-    const group = await screen.findByRole('group', { name: 'In this change' });
+    const group = await screen.findByRole('group', { name: 'Changed on this branch' });
     expect(
       within(group)
         .getAllByRole('button')
@@ -236,7 +238,7 @@ describe('identifier peek', () => {
     const matches = Array.from({ length: 8 }, (_, index) => ({ ...OTHER_FILE, line: index + 1 }));
     stubStoryInvoke(grep({ matches: [DEFINITION, ...matches] }));
     const open = vi.fn();
-    renderDiff({ onOpenElsewhere: open });
+    renderDiff({ onOpen: open });
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
     const more = await screen.findByRole('button', { name: 'Show 3 more' });
     expect(screen.queryByRole('button', { name: 'notify-relay/send.ts:6' })).toBeNull();
@@ -245,7 +247,7 @@ describe('identifier peek', () => {
       screen.getByRole('button', { name: 'notify-relay/send.ts:6' }),
     );
     await userEvent.keyboard('{ArrowDown}{Enter}');
-    expect(open).toHaveBeenCalledWith(matches[6]);
+    expect(open).toHaveBeenCalledWith({ word: 'creditKey', match: matches[6] });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
@@ -299,42 +301,20 @@ describe('identifier peek', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('Enter on a result in a visible changed line scrolls the diff and flashes it', async () => {
+  it.each([
+    ['a changed line in this diff', 'ledger-core.ts:31', DEFINITION],
+    ['a line hidden in a collapsed gap', 'ledger-core.ts:90', HIDDEN],
+    ['a file outside this diff', 'notify-relay/send.ts:7', OTHER_FILE],
+  ])('hands %s to the drawer and leaves the page alone', async (_label, name, match) => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
     const open = vi.fn();
-    renderDiff({ onOpenElsewhere: open });
+    renderDiff({ onOpen: open });
     fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
-    const row = await screen.findByRole('button', { name: 'ledger-core.ts:31' });
-    row.focus();
-    await userEvent.keyboard('{Enter}');
-    await waitFor(() =>
-      expect(
-        document.querySelector('[data-peek-flash]')?.querySelector('[data-line="new:31"]'),
-      ).not.toBeNull(),
-    );
-    expect(scroll).toHaveBeenCalled();
-    expect(open).not.toHaveBeenCalled();
-  });
-
-  it('expands the gap for a result hidden in it, then scrolls there', async () => {
-    Element.prototype.scrollIntoView = vi.fn();
-    const open = vi.fn();
-    renderDiff({ onOpenElsewhere: open });
-    fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
-    await userEvent.click(await screen.findByRole('button', { name: 'ledger-core.ts:90' }));
-    await waitFor(() =>
-      expect(document.querySelector('[data-peek-flash] [data-line="new:90"]')).not.toBeNull(),
-    );
-    expect(open).not.toHaveBeenCalled();
-  });
-
-  it('opens the Explore drawer for a result in a file outside this diff', async () => {
-    const open = vi.fn();
-    renderDiff({ onOpenElsewhere: open });
-    fireEvent.doubleClick(selectWord({ word: 'creditKey' }).host);
-    await userEvent.click(await screen.findByRole('button', { name: 'notify-relay/send.ts:7' }));
-    expect(open).toHaveBeenCalledWith(OTHER_FILE);
+    await userEvent.click(await screen.findByRole('button', { name }));
+    expect(open).toHaveBeenCalledWith({ word: 'creditKey', match });
+    expect(scroll).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-peek-flash]')).toBeNull();
   });
 
   it('moves between results with the arrow keys', async () => {

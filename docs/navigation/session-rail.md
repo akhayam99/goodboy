@@ -923,14 +923,22 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   Alt click does the same. The anchored popover shows project constants,
   functions, methods and types; a word without a project definition reads
   "Not defined in this project" and lists no uses. It shows the symbol kind and
-  definition, use and change counts. Defined in comes first, then In this change
-  with changed lines first and tagged, then Elsewhere with five references and
-  Show more. Directory paths truncate in the middle and keep their separator
-  before the filename. It says when it shows only the first 300. This contract
-  lives in `features/diff/components/IdentifierPeek`. A result in this diff scrolls to its
-  line and flashes it, expanding the hidden range first when the line sits in
-  one; any other result opens the Explore file drawer on that line. The commit
-  view has no peek, because its lines are not the working tree's.
+  definition, use and change counts. Defined in comes first, then Changed on
+  this branch with changed lines first and tagged, then Unchanged files with
+  five references and Show more. A long directory drops its leading segments
+  behind a `…/` and keeps the segments next to the file whole, dimmed before
+  the filename; the full path is the row's title. It says when it shows only the
+  first 300. This contract lives in `features/diff/components/IdentifierPeek`.
+  Every result opens the right drawer (`identifier-peek`, in
+  `features/diff/components/IdentifierPeekDrawer`) and never moves the page: its
+  scroll and selection stay. The drawer lists the same files in the same three
+  groups. A file changed on this branch shows its whole-file diff scrolled to
+  the match; an unchanged file shows its source around the match under a note
+  that it has no changes here. Choosing another file swaps the view and keeps
+  the drawer open. A failed search or diff load has a Retry in the drawer. The
+  drawer is keyed by worktree and word, so a late answer for an old word is
+  dropped. The commit view has no peek, because its lines are not the working
+  tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings draws no band in the column.** On Home, where it covers the
