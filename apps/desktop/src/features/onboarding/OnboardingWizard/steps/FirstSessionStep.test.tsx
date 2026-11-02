@@ -158,12 +158,13 @@ describe('FirstSessionStep with no task source', () => {
     screen.getByRole('heading', { name: 'Start your first session' });
   });
 
-  it('draws no pill that looks like a control and does nothing', () => {
+  it('shows the same chip row as the start forms, without a kind or role to pick', () => {
     renderStep();
 
+    const group = screen.getByRole('group', { name: 'Run settings' });
+    expect(within(group).getAllByRole('button').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('tab', { name: 'Auto' })).toBeNull();
     expect(screen.queryByText('reads only')).toBeNull();
-    expect(screen.queryByText('Auto')).toBeNull();
-    expect(screen.queryByText('Claude')).toBeNull();
     screen.getByText(/Scout reads acme-web and answers in a new session/);
   });
 

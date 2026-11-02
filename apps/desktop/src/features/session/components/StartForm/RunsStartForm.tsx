@@ -83,38 +83,36 @@ export const RunsStartForm = ({
     run.setRunAs(next === kind ? AUTO_RUN_AS : runAsOfStartFormKind({ kind: next, presets }));
   };
 
-  const settings = isPinned
-    ? []
-    : startSettingItemsOf({
-        kind,
-        workspaceId,
-        sessionId,
-        workspaceName,
-        isDisabled: isStarting,
-        model: run.model,
-        where: null,
-        role:
-          runAs.kind === 'role'
-            ? {
-                value: runAs.role,
-                onChange: ({ next }) => run.setRunAs({ kind: 'role', role: next }),
-              }
-            : null,
-        asks,
-        level: {
-          value: run.level,
-          workspaceLevel: run.workspaceLevel,
-          onPick: ({ next }) => run.setLevel(next),
-        },
-        autonomy: { value: run.autonomy, onPick: ({ next }) => run.setAutonomy(next) },
-        edits: { value: run.edits, onPick: ({ next }) => run.setEdits(next) },
-        guidance: {
-          value: run.guidance,
-          reader: guidanceReader,
-          onPick: ({ next }) => run.setGuidance(next),
-        },
-        limit: { view: limitView, kind: limitKind },
-      });
+  const settings = startSettingItemsOf({
+    kind,
+    workspaceId,
+    sessionId,
+    workspaceName,
+    isDisabled: isStarting,
+    model: run.model,
+    where: null,
+    role:
+      runAs.kind === 'role' && !isPinned
+        ? {
+            value: runAs.role,
+            onChange: ({ next }) => run.setRunAs({ kind: 'role', role: next }),
+          }
+        : null,
+    asks,
+    level: {
+      value: run.level,
+      workspaceLevel: run.workspaceLevel,
+      onPick: ({ next }) => run.setLevel(next),
+    },
+    autonomy: { value: run.autonomy, onPick: ({ next }) => run.setAutonomy(next) },
+    edits: { value: run.edits, onPick: ({ next }) => run.setEdits(next) },
+    guidance: {
+      value: run.guidance,
+      reader: guidanceReader,
+      onPick: ({ next }) => run.setGuidance(next),
+    },
+    limit: { view: limitView, kind: limitKind },
+  });
 
   return (
     <StartForm

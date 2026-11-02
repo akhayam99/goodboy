@@ -59,7 +59,8 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
 - Switching kind keeps what you typed and the values that still apply.
 - The primary always reads **Start**, whatever the kind.
-- Setup's Scout run is pinned to Agent, so it draws neither kinds nor settings.
+- Setup's Scout run is pinned to Agent, so it draws no kind tabs and no role chip, and the same chips as every other form.
+- Start work from chat drafts the brief in the drawer, makes the session, then opens this form on the session with the goal filled in.
 
 ### The Kind chip
 

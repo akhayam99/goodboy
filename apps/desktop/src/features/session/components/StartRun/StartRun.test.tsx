@@ -384,6 +384,19 @@ describe('StartRun', () => {
 
     await waitFor(() => expect(field()).toHaveProperty('value', QUESTION));
   });
+
+  it('opens a chat brief on the same chip row and the one Start button', async () => {
+    renderField({ sessionId: SESSION.id });
+
+    window.dispatchEvent(
+      new CustomEvent(`goodboy:start-run:${SESSION.id}`, { detail: { text: QUESTION } }),
+    );
+
+    await waitFor(() => expect(field()).toHaveProperty('value', QUESTION));
+    const group = screen.getByRole('group', { name: 'Run settings' });
+    expect(within(group).getAllByRole('button').length).toBeGreaterThan(1);
+    expect(screen.getByRole('button', { name: /^Start$/ }).hasAttribute('disabled')).toBe(false);
+  });
 });
 
 type PickParams = {
