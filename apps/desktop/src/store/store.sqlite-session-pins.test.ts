@@ -41,9 +41,6 @@ vi.mock('../features/providers/routing', async () =>
 vi.mock('../features/budget/budget', async () =>
   (await import('./storyHarness')).budgetModuleMock(),
 );
-vi.mock('../features/skills/skills', async () =>
-  (await import('./storyHarness')).skillsModuleMock(),
-);
 vi.mock('../features/workflows/workflows', async () =>
   (await import('./storyHarness')).workflowsModuleMock(),
 );

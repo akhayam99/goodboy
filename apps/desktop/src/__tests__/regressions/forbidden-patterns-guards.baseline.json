@@ -93,7 +93,6 @@
     "apps/desktop/src-tauri/src/repo.rs": 2,
     "apps/desktop/src-tauri/src/scroller_style.rs": 1,
     "apps/desktop/src-tauri/src/session_dir.rs": 1,
-    "apps/desktop/src-tauri/src/skills.rs": 3,
     "apps/desktop/src-tauri/src/storage/other_tools.rs": 1,
     "apps/desktop/src-tauri/src/terminal.rs": 1,
     "apps/desktop/src-tauri/src/thread_git.rs": 1,

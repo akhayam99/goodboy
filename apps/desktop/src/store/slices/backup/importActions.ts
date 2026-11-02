@@ -134,14 +134,11 @@ export const applyBackupImport = (set: SetFn, get: GetFn) => {
       ).flat();
       set({ workspaces, projects });
       await Promise.all([
-        ...workspaces.flatMap((workspace) => [
+        ...workspaces.map((workspace) =>
           get()
             .loadPhaseTemplates(workspace.id)
             .catch(() => undefined),
-          get()
-            .rescanSkills(workspace.id)
-            .catch(() => undefined),
-        ]),
+        ),
         get()
           .loadBudgetRules()
           .catch(() => undefined),

@@ -25,7 +25,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList } from '../../../features/budget/budget';
-import { listWorkspaceSkills } from './workspaceSkills';
 import {
   invokeWorkflowList,
   invokeWorkflowsForSession,
@@ -273,7 +272,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           providerSummaries,
           providerBudgetStatus,
           budgetAlerts,
-          skills,
           phaseTemplates,
           stepLibrary,
         ] = await Promise.all([
@@ -281,7 +279,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
           loadCurrentProviderBudgetStatuses(),
           invokeBudgetAlertsList().catch(() => []),
-          listWorkspaceSkills(id),
           invokeWorkflowList(id).catch(() => []),
           invokeStepDefList(id).catch(() => []),
         ]);
@@ -317,7 +314,6 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),
           providerBudgetStatus,
           budgetAlerts,
-          skills: { ...state.skills, [id]: skills },
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
           stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },
         }));

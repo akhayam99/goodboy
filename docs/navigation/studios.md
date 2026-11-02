@@ -336,8 +336,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   face means, and its saved versions: the size against the cap
   (`folderHistorySize`) with Review in Storage, or a failed first copy with
   Retry. Every window reads the faces again on focus (`useFolderFacesOnFocus`,
-  in the top bar watch and on Home). Skills stays
-  hidden behind its feature flag. Precedent: GitHub repository settings and
+  in the top bar watch and on Home). Precedent: GitHub repository settings and
   Linear's settings pages.
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings

@@ -41,7 +41,6 @@ const {
     workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
     cliRequirements: ReadonlyArray<never>;
-    skills: Record<string, never>;
     projectScripts: Record<string, never>;
     scriptRuns: Record<string, never>;
     sessionProjectMounts: Record<string, never>;
@@ -103,7 +102,6 @@ const {
       { id: 'codex', connection: 'connected' },
     ],
     cliRequirements: [],
-    skills: {},
     projectScripts: {},
     scriptRuns: {},
     sessionProjectMounts: {},

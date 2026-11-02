@@ -92,14 +92,6 @@ export const budgetModuleMock = () => ({
   invokeCheckProviderBudget: vi.fn(async () => undefined),
 });
 
-export const skillsModuleMock = () => ({
-  invokeSkillList: storySpies.invokeSkillList,
-  invokeSkillUpsert: storySpies.invokeSkillUpsert,
-  invokeSkillDelete: storySpies.invokeSkillDelete,
-  invokeSkillRescan: storySpies.invokeSkillRescan,
-  resolveSkillInvocation: vi.fn(),
-});
-
 export const workflowsModuleMock = () => ({
   invokeWorkflowList: storySpies.invokeWorkflowList,
   invokeWorkflowUpsert: storySpies.invokeWorkflowUpsert,

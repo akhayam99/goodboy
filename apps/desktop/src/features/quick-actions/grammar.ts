@@ -1,7 +1,7 @@
 import { WORKSPACE_FEATURES } from '../../shared/lib/features';
 
 export type QuickActionGroup =
-  'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
+  'agent' | 'session' | 'workspace' | 'workflow' | 'script' | 'action' | 'help';
 
 export type PrefixMeta = {
   readonly symbol: string;
@@ -14,7 +14,6 @@ const ALL_PREFIXES: ReadonlyArray<PrefixMeta> = [
   { symbol: '@', noun: 'agents', hint: 'agents in current session', group: 'agent' },
   { symbol: '#', noun: 'sessions', hint: 'sessions', group: 'session' },
   { symbol: ':', noun: 'workspaces', hint: 'workspaces', group: 'workspace' },
-  { symbol: '/', noun: 'skills', hint: 'skills', group: 'skill' },
   { symbol: '~', noun: 'workflows', hint: 'workflows', group: 'workflow' },
   { symbol: '$', noun: 'scripts', hint: 'scripts', group: 'script' },
   { symbol: '>', noun: 'actions', hint: 'actions', group: 'action' },
@@ -22,7 +21,6 @@ const ALL_PREFIXES: ReadonlyArray<PrefixMeta> = [
 ];
 
 const GROUP_ENABLED: Partial<Record<QuickActionGroup, boolean>> = {
-  skill: WORKSPACE_FEATURES.skills,
   workflow: WORKSPACE_FEATURES.workflows,
 };
 
@@ -31,7 +29,6 @@ export const PREFIXES: ReadonlyArray<PrefixMeta> = ALL_PREFIXES.filter(
 );
 
 export const COMPOSER_PREFIX_GROUPS: ReadonlyArray<QuickActionGroup> = [
-  'skill',
   'workflow',
   'agent',
   'script',
@@ -45,7 +42,6 @@ export const PALETTE_PREFIX_GROUPS: ReadonlyArray<QuickActionGroup> = [
   'action',
   'help',
   'workflow',
-  'skill',
 ];
 
 type SurfaceParams = {

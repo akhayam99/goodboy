@@ -55,12 +55,14 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State                      | Old shape                    | New shape written since | Old shape read until (excluded) |
-| -------------------------- | ---------------------------- | ----------------------- | ------------------------------- |
-| skills folder of a project | `<project-root>/.kay/skills` | 0.28.0                  | 0.31.0                          |
+| State | Old shape | New shape written since | Old shape read until (excluded) |
+| ----- | --------- | ----------------------- | ------------------------------- |
 
 Gone already:
 
+- The Skills feature is removed in 0.31.0, with the `<project-root>/.kay/skills`
+  read. Skill files in a project folder are no longer scanned or run. The
+  `skills` tables stay in the database so a downgrade still finds them.
 - The local storage key of the reviewed files without a mount id (written until
   0.18.1) is not read since 0.30.0. A mount reads only its own key, and a file
   marked in the old key shows as not viewed again.

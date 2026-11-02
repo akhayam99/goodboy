@@ -13,7 +13,6 @@ vi.mock('../../store', () => ({
     const state = {
       budgetAlerts: [],
       providers: [],
-      skills: {},
       settings: {},
       phaseTemplates: {},
       sessionBudgets: {},
@@ -157,9 +156,15 @@ describe('keyboard, DeleteSessionConfirm', () => {
 
 describe('keyboard, QuickActionsPopover arrow / tab navigation', () => {
   const items: ReadonlyArray<QuickActionItem> = [
-    { id: 'review', label: 'review', sublabel: 'code review', group: 'skill', perform: vi.fn() },
-    { id: 'test', label: 'test', sublabel: 'run tests', group: 'skill', perform: vi.fn() },
-    { id: 'deploy', label: 'deploy', sublabel: 'deploy to env', group: 'skill', perform: vi.fn() },
+    { id: 'review', label: 'review', sublabel: 'code review', group: 'workflow', perform: vi.fn() },
+    { id: 'test', label: 'test', sublabel: 'run tests', group: 'workflow', perform: vi.fn() },
+    {
+      id: 'deploy',
+      label: 'deploy',
+      sublabel: 'deploy to env',
+      group: 'workflow',
+      perform: vi.fn(),
+    },
   ];
 
   it('ArrowDown advances active index and calls onSelect with Enter', () => {
