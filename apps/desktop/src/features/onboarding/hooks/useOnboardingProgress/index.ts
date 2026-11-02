@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { ghStatus } from '../../../integrations/github/github';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import { folderCountLabel } from '../../../workspace/folderCountLabel';
@@ -81,56 +80,15 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     profile.aboutWork !== null ||
     profile.workingRules !== null;
 
-  const needsToolsDetect = !persistedCompleted.has('tools');
-  const integrationProviders = useAppStore((s) =>
-    workspaceId === null
-      ? ''
-      : (s.workspaceIntegrations[workspaceId] ?? []).map((i) => i.provider).join(','),
-  );
-  const globalGithubConnected = useAppStore(
-    (s) => s.githubStatus !== null && s.githubStatus.mode !== 'absent',
-  );
-  const connectedIntegrations = useMemo(
-    () => new Set(integrationProviders.split(',').filter((entry) => entry.length > 0)),
-    [integrationProviders],
-  );
-  const hasHostIntegration =
-    connectedIntegrations.has('gitlab') || connectedIntegrations.has('bitbucket');
-  const hasTaskManager = connectedIntegrations.has('linear') || connectedIntegrations.has('jira');
-  const [isGithubScoped, setIsGithubScoped] = useState(false);
-
-  const refreshGithubStatus = useCallback(() => {
-    if (workspaceId === null || !needsToolsDetect) {
-      return;
-    }
-    void ghStatus(workspaceId)
-      .then((status) => setIsGithubScoped(status.scoped ?? false))
-      .catch(() => setIsGithubScoped(false));
-  }, [workspaceId, needsToolsDetect]);
-
-  useEffect(() => {
-    refreshGithubStatus();
-  }, [refreshGithubStatus]);
-
   const live = useMemo(() => {
     const entries: ReadonlyArray<readonly [OnboardingStepId, boolean]> = [
       ['agents', readyProviderId !== null],
       ['workspace', hasProjects],
-      ['tools', hasHostIntegration || isGithubScoped || globalGithubConnected || hasTaskManager],
       ['first-session', anyAgentFinished],
       ['profile', hasProfile],
     ];
     return entries.filter(([, isDone]) => isDone).map(([id]) => id);
-  }, [
-    readyProviderId,
-    hasProjects,
-    hasHostIntegration,
-    isGithubScoped,
-    globalGithubConnected,
-    hasTaskManager,
-    anyAgentFinished,
-    hasProfile,
-  ]);
+  }, [readyProviderId, hasProjects, anyAgentFinished, hasProfile]);
 
   useEffect(() => {
     for (const id of live) {
@@ -157,7 +115,6 @@ export const useOnboardingProgress = (): OnboardingProgress => {
         workspaceName === null || !hasProjects
           ? 'Pick a folder to work in'
           : `${workspaceName}, ${foldersLabel}`,
-      tools: completed.has('tools') ? 'Code host or tasks connected' : 'Optional',
       'first-session': completed.has('first-session')
         ? 'Your first agent finished'
         : 'Ask Scout about the code',

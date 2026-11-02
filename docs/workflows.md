@@ -178,11 +178,13 @@ keeps its own copy of the rules (`attachWorkflowToSession` copies them at start)
   the most room** option live in Settings > Providers, the one home
   of the provider policy
 - No separate Auto limit: a limit stored under the old Auto limit
-  (`auto.treeLimitUsd.<workspace id>`) is folded into the **Limit** above when
-  the page opens (`foldAutoLimitIntoRunDefaults`). The smaller of the two
-  stays when both were set, the old key is cleared once the Limit is saved,
-  and a failed save leaves the old value in place. Until then an Auto start
-  still reads the old key, so nobody loses a value
+  (`auto.treeLimitUsd`) is folded into the **Limit** above once at boot, for
+  every workspace (`foldAutoLimitsAtBoot`, `foldAutoLimitIntoRunDefaults`). The
+  smaller of the two stays when both were set, the old key is cleared once the
+  Limit is saved, and a failed save leaves the old value in place and reports
+  the error. After the fold every reader and writer of a run limit (the start
+  form, the Auto start, `moveToAuto`, the Auto runtime) uses the Limit of this
+  page, and nothing reads the old key
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance

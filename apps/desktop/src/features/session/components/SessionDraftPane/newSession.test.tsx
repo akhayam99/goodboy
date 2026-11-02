@@ -104,7 +104,6 @@ beforeEach(async () => {
   spawnAgent.mockResolvedValue(brandedId<AgentId>({ value: 'agent-1' }));
   useAppStore.setState({
     phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
-    workspaceValues: { [WORKSPACE_ID]: { 'auto.treeLimitUsd': '5' } },
     attachWorkflowToSession: attach,
     savePhaseTemplate: save,
     createSession,
@@ -326,7 +325,7 @@ describe('New session page', () => {
   it('keeps the Limit chip under Auto picks, and drops it once the route is an agent', async () => {
     await openPage();
 
-    screen.getByRole('button', { name: /^Limit: \$5\.00/ });
+    screen.getByRole('button', { name: 'Limit: none' });
 
     typeGoal('@Scout list every page that uses the old layout');
     await settle();
@@ -724,7 +723,6 @@ const withRunDefault = (): void => {
 };
 
 describe('New session limit by kind', () => {
-  const AUTO_DEFAULT = /^Limit: \$5\.00 · default$/;
   const RUN_DEFAULT = /^Limit: \$8\.00 · default$/;
 
   type TypeLimitParams = {
@@ -741,17 +739,17 @@ describe('New session limit by kind', () => {
     await settle();
   };
 
-  it('starts every kind from its own default, and Agent has no limit', async () => {
+  it('starts every kind from the Run defaults limit, and Agent has no limit', async () => {
     withRunDefault();
     await openPage();
 
-    screen.getByRole('button', { name: AUTO_DEFAULT });
+    screen.getByRole('button', { name: RUN_DEFAULT });
     await pickKind({ name: /^Orchestrated/ });
     screen.getByRole('button', { name: RUN_DEFAULT });
     await pickKind({ name: /^Preset/ });
     screen.getByRole('button', { name: RUN_DEFAULT });
     await pickKind({ name: /^Auto/ });
-    screen.getByRole('button', { name: AUTO_DEFAULT });
+    screen.getByRole('button', { name: RUN_DEFAULT });
     await pickKind({ name: /^Agent/ });
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
@@ -781,7 +779,7 @@ describe('New session limit by kind', () => {
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
   });
 
-  it('starts a workflow with a typed amount for this run and leaves the Auto limit alone', async () => {
+  it('starts a workflow with a typed amount for this run and leaves the Run defaults alone', async () => {
     withRunDefault();
     await openPage();
     await pickKind({ name: /^Orchestrated/ });
@@ -793,7 +791,9 @@ describe('New session limit by kind', () => {
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
-    expect(useAppStore.getState().workspaceValues[WORKSPACE_ID]?.['auto.treeLimitUsd']).toBe('5');
+    expect(
+      useAppStore.getState().workspaceOverrides[WORKSPACE_ID]?.workflowRules?.spendLimitUsd,
+    ).toBe(8);
   });
 
   it('keeps a typed amount when the kind changes', async () => {

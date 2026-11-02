@@ -1,8 +1,8 @@
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 import {
-  isNumberedStepId,
   resumeStep,
+  savedWizardStepOf,
   type NumberedWizardStepId,
   type WizardMode,
   type WizardStepId,
@@ -40,7 +40,6 @@ export type OpenWizardDetail = {
 const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
   'agents',
   'workspace',
-  'tools',
   'first-session',
   'profile',
 ];
@@ -48,8 +47,6 @@ const STEP_IDS: ReadonlyArray<OnboardingStepId> = [
 const LEGACY_STEP_IDS: Readonly<Record<string, OnboardingStepId>> = {
   provider: 'agents',
   project: 'workspace',
-  codeHost: 'tools',
-  taskManager: 'tools',
   firstSession: 'first-session',
 };
 
@@ -101,13 +98,6 @@ const parseWizard = (raw: string | null): WizardState => {
   return 'open';
 };
 
-const parseStep = (raw: string | null): NumberedWizardStepId | null => {
-  if (raw === null || !isNumberedStepId(raw)) {
-    return null;
-  }
-  return raw;
-};
-
 const completedFrom = (parsed: unknown): ReadonlyArray<unknown> => {
   if (typeof parsed !== 'object' || parsed === null || !('completed' in parsed)) {
     return [];
@@ -145,7 +135,7 @@ export const hydrateOnboardingFromDb = async (): Promise<void> => {
   cache.collapsed = rawCollapsed === '1';
   cache.finished = rawFinished === '1';
   cache.wizard = parseWizard(rawWizard);
-  cache.step = parseStep(rawStep);
+  cache.step = savedWizardStepOf({ raw: rawStep });
   announce();
 };
 
@@ -228,10 +218,4 @@ type ResumeSetupParams = {
 
 export const resumeSetup = ({ step, hasWorkspace }: ResumeSetupParams): void => {
   reopenWizard('setup', step ?? resumeStep({ saved: cache.step, hasWorkspace }));
-};
-
-export const openWizardStep = (step: WizardStepId): void => {
-  window.dispatchEvent(
-    new CustomEvent<OpenWizardDetail>(OPEN_WIZARD_EVENT, { detail: { mode: 'single', step } }),
-  );
 };

@@ -28,7 +28,7 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
   pick row.
 - **No workspace yet.** A card that says how a workspace starts, with New
   workspace and, while setup is unfinished in the main window, "Setup paused at
-  Workspace · 1 of 4 done" and **Resume setup** (`useSetupResume`, counted by
+  Workspace · 1 of 3 done" and **Resume setup** (`useSetupResume`, counted by
   `setupProgress`).
 - **Reopen the last workspace on launch**, a switch.
 

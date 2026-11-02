@@ -13,7 +13,7 @@ export const CompletedBody = () => (
       <IconButton icon={X} label="Hide setup" size="xs" onClick={() => finish()} />
     </div>
     <p className="text-meta text-muted-foreground">
-      Agents, workspace, tools and a first session are all set.
+      Agents, a workspace and a first session are all set.
     </p>
   </>
 );

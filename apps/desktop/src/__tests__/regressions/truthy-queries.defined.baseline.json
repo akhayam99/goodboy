@@ -321,7 +321,6 @@
   "apps/desktop/src/features/onboarding/OnboardingWizard/Stepper.test.tsx": 2,
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/AgentsStep.test.tsx": 6,
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/ToolsStep.test.tsx": 3,
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/WelcomeStep.test.tsx": 1,
   "apps/desktop/src/features/onboarding/OnboardingWizard/StepTransition.test.tsx": 1,
   "apps/desktop/src/features/onboarding/SetupChecklist/ChecklistBody.test.tsx": 3,
   "apps/desktop/src/features/onboarding/SetupChecklist/StepRow.test.tsx": 2,

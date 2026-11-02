@@ -54,6 +54,6 @@ describe('home scenes', () => {
   it('says no workspace yet with setup paused at Workspace', async () => {
     await mount({ state: 'empty' });
     expect(screen.getByRole('heading', { name: 'No workspace yet' })).toBeDefined();
-    expect(await screen.findByText('Setup paused at Workspace · 1 of 4 done')).toBeDefined();
+    expect(await screen.findByText('Setup paused at Workspace · 1 of 3 done')).toBeDefined();
   });
 });

@@ -12,7 +12,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-- **Welcome to Goodboy**: Four short steps take you from install to a first agent reading your code.
+- **Welcome to Goodboy**: Three short steps take you from install to a first agent reading your code.
 - **Your agents**: Goodboy runs the coding agents already on this Mac, and one ready agent is enough.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.

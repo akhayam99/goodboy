@@ -20,7 +20,7 @@ import { isTurnStateLive } from '../session/agent-lifecycle';
 import { lastReplyOf } from '../session/lastReplyOf';
 import { invokeAgentList } from '../workflows/workflows';
 import { currentAutoDrivePort } from './autoDrivePort';
-import { readAutoTreeLimit } from './autoTreeLimit';
+import { runDefaultLimitOf } from '../../store/slices/workflows/runLimit/runDefaultLimitOf';
 
 const OFF_MESSAGE = 'Auto is not available in this build.';
 const GONE_MESSAGE = 'This agent is no longer in the session.';
@@ -98,12 +98,10 @@ export const moveToAuto = async ({
   }));
   const settings = selectResolvedSettings({ state, sessionId });
   const routing = scopedKindRouting({ state, settings, kind: 'auto' });
+  const workspaceId = brandId<WorkspaceId>({ value: session.workspaceId });
   const capUsd = autoTreeCapUsd({
     sessionCapUsd: pausingSessionCapOf({ budget: state.sessionBudgets[sessionId] }),
-    workspaceLimitUsd: await readAutoTreeLimit({
-      db,
-      workspaceId: brandId<WorkspaceId>({ value: session.workspaceId }),
-    }),
+    workspaceLimitUsd: runDefaultLimitOf({ state: useAppStore.getState(), workspaceId }),
   });
   const outcome = await adoptAgent({
     db,

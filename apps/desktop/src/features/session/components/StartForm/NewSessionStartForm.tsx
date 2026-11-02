@@ -8,7 +8,6 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { NAMES } from '../../../../shared/utils/names';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { limitDefaultFromOfKind } from './limitDefaultFromOfKind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { routeLineOf } from '../../startRun/routeLineOf';
 import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
@@ -99,7 +98,6 @@ export const NewSessionStartForm = ({
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
   const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
-  const limitView = limit.viewOf({ defaultFrom: limitDefaultFromOfKind({ kind }) });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -171,7 +169,7 @@ export const NewSessionStartForm = ({
       reader: guidanceReader,
       onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { guidance: next } }),
     },
-    limit: { view: limitView, kind: limitKind },
+    limit: { view: limit.view, kind: limitKind },
   });
 
   return (

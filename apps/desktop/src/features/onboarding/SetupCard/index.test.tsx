@@ -19,7 +19,6 @@ const { mocks } = vi.hoisted(() => ({
       details: {
         agents: 'Claude is ready',
         workspace: 'Harborline, 3 projects',
-        tools: 'Optional',
         'first-session': 'Ask Scout about the code',
       },
     },
@@ -57,13 +56,13 @@ afterEach(() => {
 });
 
 describe('the setup card', () => {
-  it('counts the four steps in one card until setup is finished', () => {
+  it('counts the three steps in one card until setup is finished', () => {
     render(<SetupCard isMainWindow />);
 
     const setup = screen.getByRole('region', { name: 'Setup' });
-    within(setup).getByText('Setup · 2 of 4');
+    within(setup).getByText('Setup · 2 of 3');
     expect(within(setup).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
-    expect(within(setup).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(setup).getAllByRole('listitem')).toHaveLength(3);
     expect(within(setup).queryByText(/about you/i)).toBeNull();
   });
 
@@ -114,7 +113,7 @@ describe('the setup card', () => {
 
     const setup = screen.getByRole('region', { name: 'Setup' });
     within(setup).getByRole('button', { name: 'Open Tell agents about you' });
-    within(setup).getByText('Setup · 2 of 4');
+    within(setup).getByText('Setup · 2 of 3');
   });
 
   it('stays out of the demo', () => {

@@ -234,7 +234,6 @@ const NEW_WORKSPACE_STATES: ReadonlyArray<NewWorkspaceSceneState> = [
 ];
 
 const WIZARD_STEP_STATES: ReadonlyArray<WizardSceneState> = [
-  'welcome',
   'agents-ready',
   'agents-signin',
   'agents-none',

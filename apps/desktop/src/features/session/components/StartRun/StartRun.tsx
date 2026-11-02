@@ -48,7 +48,7 @@ export const StartRun = ({
     mount,
     role,
     onStarted,
-    prepare: limit.persist,
+    prepare: limit.start,
     settleLimit: limit.settle,
   });
   const sectionRef = useRef<HTMLElement | null>(null);

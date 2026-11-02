@@ -104,7 +104,6 @@
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/AgentsStep.tsx": 1,
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FirstSessionStep.tsx": 1,
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/ToolsStep.tsx": 1,
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/WelcomeStep.tsx": 1,
   "apps/desktop/src/features/onboarding/SetupChecklist/ChecklistBody.tsx": 1,
   "apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx": 1,
   "apps/desktop/src/features/palette/components/CommandsMode/PreviewHints.tsx": 1,

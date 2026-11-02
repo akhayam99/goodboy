@@ -14,7 +14,6 @@ import { SettingsRail } from './SettingsRail';
 import { SettingsColumnNav } from './SettingsColumnNav';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
 import { appSectionOf } from './appSections';
-import { workspacePageOf } from './workspacePages';
 import type { ScopeFrame } from './types';
 import type { SettingsFocus, SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
@@ -249,8 +248,8 @@ export const SettingsStudio = ({
           <StudioTrail
             segments={settingsTrail({
               scope: availableScope,
-              appSection: appSectionOf({ section: focus.section }),
-              workspacePage: workspacePageOf({ section: focus.section }),
+              section: focus.section,
+              pageKey,
             })}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1">

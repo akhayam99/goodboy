@@ -1,6 +1,5 @@
 import type { WorkflowRules, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useFoldAutoLimit } from '../../../auto/foldAutoLimit';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { DefaultAsksSetting } from './DefaultAsksSetting';
 import { DefaultLimitSetting } from './DefaultLimitSetting';
@@ -15,7 +14,6 @@ type Props = {
 export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
   const { rules, patch } = useWorkflowRules({ workspaceId });
   const reportError = useAppStore((state) => state.reportError);
-  useFoldAutoLimit({ workspaceId });
   const save = (next: Partial<WorkflowRules>) => {
     void patch(next).catch((error: unknown) => {
       void reportError({

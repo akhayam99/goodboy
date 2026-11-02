@@ -27,14 +27,7 @@ const pressEscape = async (): Promise<void> => {
 };
 
 const getStarted = async (): Promise<void> => {
-  await waitFor(
-    () =>
-      expect(within(wizardDialog()).getByRole('status').textContent).toBe(
-        'Found Claude on this Mac',
-      ),
-    WAIT,
-  );
-  await click(await screen.findByRole('button', { name: /^Get started/ }));
+  await heading('Welcome to Goodboy');
   await onStep('agents');
 };
 
@@ -52,15 +45,13 @@ const createHarborline = async (): Promise<void> => {
   const name = screen.getByRole('textbox', { name: 'Workspace name' });
   expect(name).toHaveProperty('value', 'Harborline');
   await click(screen.getByRole('button', { name: /^Create workspace/ }));
-  await onStep('tools');
+  await onStep('first-session');
 };
 
 const reachFirstSession = async (): Promise<void> => {
   await getStarted();
   await continueFromAgents();
   await createHarborline();
-  await click(await screen.findByRole('button', { name: /^Continue/ }));
-  await onStep('first-session');
 };
 
 const closed = async (): Promise<void> => {
@@ -73,14 +64,14 @@ const closed = async (): Promise<void> => {
 
 export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'first launch: an empty database opens Welcome over the real App',
+    name: 'first launch: an empty database opens the Agents step under the Welcome heading',
     covers: ['onboarding:welcome'],
     seed: 'empty',
     open: async () => undefined,
     lands: async () => {
       await heading('Welcome to Goodboy');
-      await visible('button', /^Get started/);
-      expect(stepOf()).toBe('welcome');
+      await visible('button', /^Continue/);
+      expect(stepOf()).toBe('agents');
       expect(useAppStore.getState().workspaces).toEqual([]);
       expect(await savedWizard()).toBeNull();
     },
@@ -91,15 +82,15 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     seed: 'empty',
     open: async () => {
       await pressEscape();
-      expect(stepOf()).toBe('welcome');
-      await getStarted();
+      expect(stepOf()).toBe('agents');
+      await continueFromAgents();
       await pressEscape();
     },
     lands: async () => {
-      await onStep('welcome');
+      await onStep('agents');
       await pressEscape();
       expect(screen.getByRole('dialog', { name: 'Goodboy setup' })).toBeDefined();
-      expect(stepOf()).toBe('welcome');
+      expect(stepOf()).toBe('agents');
       expect(await savedWizard()).toBeNull();
     },
   },
@@ -186,7 +177,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'setup card: counts the four steps and offers Resume setup while setup is paused',
+    name: 'setup card: counts the three steps and offers Resume setup while setup is paused',
     covers: ['onboarding:menu-count'],
     seed: 'empty',
     open: async () => {
@@ -198,8 +189,8 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       const setup = within(await screen.findByRole('region', { name: 'Setup' }));
-      expect(setup.getByText('Setup · 2 of 4')).toBeDefined();
-      expect(setup.getAllByRole('listitem')).toHaveLength(4);
+      expect(setup.getByText('Setup · 2 of 3')).toBeDefined();
+      expect(setup.getAllByRole('listitem')).toHaveLength(3);
       expect(setup.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
       expect(setup.getByRole('button', { name: 'Resume setup' })).toBeDefined();
       expect(await savedWizard()).toBe('later');

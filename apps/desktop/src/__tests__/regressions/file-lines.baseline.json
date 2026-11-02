@@ -45,7 +45,7 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 302,
   "apps/desktop/src/features/session/timeline/buildTimelineGroups.ts": 649,
   "apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts": 852,
-  "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": 256,
+  "apps/desktop/src/features/settings/components/SettingsStudio/index.tsx": 255,
   "apps/desktop/src/features/storage/components/BranchesSection/index.tsx": 286,
   "apps/desktop/src/features/suggestions/deriveNextSteps.ts": 612,
   "apps/desktop/src/features/wireframes/buildWireframeContext.ts": 611,

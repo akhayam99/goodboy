@@ -664,15 +664,14 @@ before anything moves, so Settings stays open under it.
   keep counting through a sleep, so only the thread's own tick catches it.
 
 First-run setup is a full-screen wizard in one shell that never moves: a header
-with the lockup (a 22 px `BrandTile` and the word, absent on Welcome, where the
-hero is the lockup), a labelled four-step stepper (Agents, Workspace, Tools
-marked Optional, First session) and Set up later at the right; one 600 px
+with the lockup (a 22 px `BrandTile` and the word), a labelled three-step
+stepper (Agents, Workspace, First session) and Set up later at the right; one 600 px
 column whose title starts at the same line on every step; and the form actions
 inline at the end of the step, owned by the step (Back and the primary,
 right-aligned, no divider; Skip on First session only). Steps crossfade in one grid cell (240 ms, 80 ms of
 opacity with reduced motion); the actions are disabled while they do. Escape
 goes through the escape stack: an open inner layer closes first, else setup
-goes back one step; on Welcome and on the first step of a resume it does
+goes back one step; on Agents and on the first step of a resume it does
 nothing, and it never ends setup. Set up later writes `onboarding.wizard =
 later`; entering a step writes `onboarding.step`. A relaunch with setup still
 open reopens at that step (`resumeStep` falls back to Workspace when the step
@@ -680,16 +679,13 @@ needs a workspace that is gone), in the main window only, on Home (see Home
 below); the Goodboy menu offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
-`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash's 84 px
-black tile stays on its pixel with no morph (`useSplashAnchor` puts the tile's
-centre `SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX` above the window middle, the spot
-`BootSplash` draws it), the splash name fades out, the 6% cover backdrop
-(`bg-backdrop-cover`, `--app-backdrop-cover-strength`) shows behind it, and
-agent detection starts there. The boot splash is the tile, the name, a 160 px
+`finish`, `later` and `setBusy`. There is no splash step: the first step is
+Agents, headed "Welcome to Goodboy" with the one sentence and the trust line,
+and agent detection starts there. The boot splash is the tile, the name, a 160 px
 determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
 never on a timer, and jumps under reduced motion. On `ready` the bar fills for
-200 ms, then `App` mounts the app or Welcome underneath and `BootSplashExit`
+200 ms, then `App` mounts the app or the setup underneath and `BootSplashExit`
 crossfades the splash out over 200 ms on top of it (same `BootStage`, so the tile
 does not move); reduced motion skips both waits. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
@@ -707,10 +703,13 @@ agent is dropped. The ready count comes from `readyAgents()`; Continue needs one
 ready agent and saves the default agent (`agents.default`), which the new
 workspace takes as its default provider. API key providers sit behind Use an API
 key instead. Workspace is `NewWorkspaceForm` in first-run mode. Tools holds Code
-and Tasks on one step and never leaves the stepper: the host the first
-repository pushes to leads, the others fold under Other code hosts, and with no
-repository Code says why while Tasks still works. Continue with nothing
-connected is the skip; every form binds to the workspace the step opened for.
+and Tasks on one step that is not numbered: First session reaches it from its
+Connect Linear or Jira row (`goTo` tools), and Back, Continue and Escape return
+to First session (`numberedStepOf` keeps First session current in the
+stepper). The host the first repository pushes to leads, the others fold under
+Other code hosts, and with no repository Code says why while Tasks still works.
+Continue with nothing connected is the skip; every form binds to the workspace
+the step opened for.
 Sentry, Slack and the rest live in Settings › Integrations. There is no
 permissions question: every workspace starts on Full access. First session is
 one input card: three starters that name the folder, the agent, Scout reads
@@ -720,14 +719,14 @@ failure keeps the prompt and reads Retry. With a task source connected, Pick up
 an issue lists assigned issues and Draft the brief opens the session draft with
 that issue picked. The draft carries the first folder, so the session lands in
 it. The setup card on the Sessions page (`features/onboarding/SetupCard`, drawn on the
-board and the empty board until setup is finished or hidden) has the stepper's four
+board and the empty board until setup is finished or hidden) has the stepper's three
 rows, counted by `setupProgress()` in `features/onboarding/setupProgress.ts`, the one
-function the card reads ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
+function the card reads ("Setup · 2 of 3"). About you is not counted: it is suggested under Next
 once the first session is done. While setup is open or paused a row resumes
-setup at its step; once setup is done Tools reopens its own step. Tools ticks
-when the user moves past it or connects a code host or task source, and the
-first session ticks when an agent finishes a turn, not when a session row
-exists. Old checklist ids map to the four on hydrate.
+setup at its step. The first session ticks when an agent finishes a turn, not
+when a session row exists. Old checklist ids map to the three on hydrate
+(`savedWizardStepOf`): a saved Tools step resumes at First session, a saved
+Welcome step at Agents, and a stored tools entry counts for nothing.
 
 ## Auto in the shell
 

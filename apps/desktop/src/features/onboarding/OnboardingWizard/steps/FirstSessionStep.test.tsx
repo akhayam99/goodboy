@@ -266,7 +266,7 @@ describe('FirstSessionStep with no task source', () => {
     const handlers = renderStep();
 
     expect(screen.queryByRole('tab', { name: 'Pick up an issue' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Linear or Jira' }));
 
     expect(handlers.onOpenTools).toHaveBeenCalledOnce();
   });

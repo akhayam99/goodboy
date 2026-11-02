@@ -37,11 +37,7 @@ const pickParam = <T extends string>({ key, options, fallback }: PickParams<T>):
   return options.find((option) => option === value) ?? fallback;
 };
 
-const STEPS_BEFORE_A_WORKSPACE: ReadonlySet<WizardStepId> = new Set([
-  'welcome',
-  'agents',
-  'workspace',
-]);
+const STEPS_BEFORE_A_WORKSPACE: ReadonlySet<WizardStepId> = new Set(['agents', 'workspace']);
 
 type SceneSetup = {
   readonly step: WizardStepId;
@@ -50,7 +46,7 @@ type SceneSetup = {
 };
 
 const readSetup = (): SceneSetup => {
-  const step = pickParam<WizardStepId>({ key: 'step', options: WIZARD_STEPS, fallback: 'welcome' });
+  const step = pickParam<WizardStepId>({ key: 'step', options: WIZARD_STEPS, fallback: 'agents' });
   const agents = pickParam<WizardSceneAgents>({
     key: 'agents',
     options: WIZARD_SCENE_AGENTS,
@@ -118,7 +114,7 @@ export const OnboardingScene = () => {
       if (isWizardOpen || state.currentSessionId !== null) {
         return;
       }
-      const step: WizardStepId = state.workspaces.length > 0 ? 'first-session' : 'welcome';
+      const step: WizardStepId = state.workspaces.length > 0 ? 'first-session' : 'agents';
       const detail: OpenWizardDetail = { mode: 'full', step };
       window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
     }, REOPEN_MS);

@@ -17,10 +17,11 @@ import type { AutoTreeLimitView } from './useAutoTreeLimit';
 type Props = {
   readonly limit: Pick<
     AutoTreeLimitView,
-    'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'defaultFrom' | 'change'
+    'usd' | 'isFromSession' | 'isDefault' | 'defaultUsd' | 'change'
   > & { readonly tiers?: string };
   readonly kind: AutoLimitKind;
   readonly isDisabled: boolean;
+  readonly onChangeDefault?: () => void;
 };
 
 type TextParams = {
@@ -33,8 +34,8 @@ const POPOVER_HEIGHT_PX = 320;
 
 const amountTextOf = ({ usd }: TextParams): string => (usd === null ? '' : String(usd));
 
-export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
-  const { usd, isFromSession, isDefault, defaultUsd, defaultFrom, change, tiers = '' } = limit;
+export const AutoLimitChip = ({ limit, kind, isDisabled, onChangeDefault }: Props) => {
+  const { usd, isFromSession, isDefault, defaultUsd, change, tiers = '' } = limit;
   const dropdown = useDropdown({
     disabled: isDisabled,
     width: POPOVER_WIDTH_CLASS.standard,
@@ -83,10 +84,15 @@ export const AutoLimitChip = ({ limit, kind, isDisabled }: Props) => {
         />
       }
     >
-      <p className="text-meta text-foreground">{title}</p>
-      <p className="text-meta text-muted-foreground">
-        {AUTO_LIMIT_COPY.helpOf({ kind, defaultFrom })}
-      </p>
+      <div className="flex min-w-0 items-baseline justify-between gap-2">
+        <p className="text-meta text-foreground">{title}</p>
+        {onChangeDefault === undefined ? null : (
+          <Button variant="ghost" size="xs" onClick={onChangeDefault}>
+            {AUTO_LIMIT_COPY.changeDefault}
+          </Button>
+        )}
+      </div>
+      <p className="text-meta text-muted-foreground">{AUTO_LIMIT_COPY.helpOf({ kind })}</p>
       <AutoLimitChoices
         usd={usd}
         defaultUsd={defaultUsd}

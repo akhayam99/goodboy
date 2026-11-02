@@ -56,13 +56,13 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     workspaceId,
     sessionId: null,
     mount,
-    prepare: limit.persist,
+    prepare: limit.start,
     settleLimit: limit.settle,
   });
   const shapeRun = useStartShape({
     workspaceId,
     mount,
-    prepare: limit.persist,
+    prepare: limit.start,
     settleLimit: limit.settle,
     model: shapeModel,
     level: autoRun.pickedLevel,

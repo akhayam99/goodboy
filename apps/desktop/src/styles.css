@@ -344,7 +344,6 @@
   --duration-base: 200ms;
   --duration-slow: 280ms;
   --delay-step: 60ms;
-  --delay-welcome-end: 520ms;
   --hold-history-arrive: 1400ms;
   --loop-pulse: 2.8s;
   --loop-spin: 3.6s;
@@ -1087,49 +1086,6 @@ dialog[open]::backdrop {
     to {
       opacity: 0;
       transform: translateX(calc(var(--wizard-step-shift, 8px) * -1));
-    }
-  }
-}
-
-.welcome-splash-word {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .welcome-entrance .welcome-splash-word {
-    animation: welcome-word-out var(--duration-quick) var(--ease-exit) both;
-  }
-
-  .welcome-entrance .welcome-rise {
-    animation: welcome-rise var(--duration-base) var(--ease-enter) var(--welcome-delay, 0ms) both;
-  }
-
-  .welcome-entrance-frame > header {
-    animation: welcome-rise var(--duration-base) var(--ease-enter) var(--delay-welcome-end) both;
-  }
-
-  .wizard-step-in .welcome-entrance .welcome-splash-word,
-  .wizard-step-in .welcome-entrance .welcome-rise {
-    animation: none;
-  }
-
-  @keyframes welcome-word-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes welcome-rise {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
     }
   }
 }

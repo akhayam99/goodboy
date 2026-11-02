@@ -4089,14 +4089,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 7
+      "count": 5
     },
     "react-hooks/exhaustive-deps": {
       "count": 4

@@ -840,8 +840,8 @@ one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 `drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `level-in-forward`,
 `level-in-back`, `level-out-forward`, `level-out-back`, `wizard-fade-in`,
-`wizard-fade-out`, `wizard-step-in`, `wizard-step-out`, `welcome-word-out`,
-`welcome-rise`) move content between states and sit outside the meanings.
+`wizard-fade-out`, `wizard-step-in`, `wizard-step-out`) move content between
+states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
 

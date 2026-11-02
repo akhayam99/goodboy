@@ -9,6 +9,7 @@ import type {
 import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoLimitKind } from '../../../auto/autoLimitCopy';
 import { AutoLevelChip } from '../../../auto/level/AutoLevelChip';
+import { openRunDefaults } from '../../../settings/openRunDefaults';
 import type { AgentKind } from '../../agent-kind';
 import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
 import { StartRoleField } from '../SessionKickoff/StartRoleField';
@@ -127,7 +128,12 @@ export const startSettingItemsOf = ({
       ),
       limit:
         limit.kind === null ? null : (
-          <AutoLimitChip limit={limit.view} kind={limit.kind} isDisabled={isDisabled} />
+          <AutoLimitChip
+            limit={limit.view}
+            kind={limit.kind}
+            isDisabled={isDisabled}
+            onChangeDefault={openRunDefaults}
+          />
         ),
       guidance: (
         <StartGuidanceSetting

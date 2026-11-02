@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { settingsTrail } from './settingsTrail';
 
-const trailOf = (scope: Parameters<typeof settingsTrail>[0]['scope']) =>
+const trailOf = (scope: Parameters<typeof settingsTrail>[0]['scope'], isModelsPage = false) =>
   settingsTrail({
     scope,
-    appSection: 'general',
-    workspacePage: 'review-replies',
+    section: scope === 'workspace' ? 'review-replies' : 'general',
+    pageKey: isModelsPage ? 'providers:defaults' : 'provider:anthropic',
   });
 
 describe('settingsTrail', () => {
@@ -34,6 +34,24 @@ describe('settingsTrail', () => {
       'Settings',
       'This workspace',
       'Replies and commits',
+    ]);
+  });
+
+  it('reads This workspace, Models on the Models page', () => {
+    const segments = trailOf('providers', true);
+
+    expect(segments.map((segment) => segment.label)).toEqual([
+      'Settings',
+      'This workspace',
+      'Models',
+    ]);
+    expect(segments.map((segment) => segment.id)).toEqual(['settings', 'scope', 'section']);
+  });
+
+  it('keeps Settings, Providers on a provider page', () => {
+    expect(trailOf('providers', false).map((segment) => segment.label)).toEqual([
+      'Settings',
+      'Providers',
     ]);
   });
 

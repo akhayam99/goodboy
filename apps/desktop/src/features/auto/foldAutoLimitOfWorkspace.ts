@@ -11,7 +11,11 @@ const rulesOf = ({ workspaceId }: Params) =>
   useAppStore.getState().workspaceOverrides[workspaceId]?.workflowRules ?? DEFAULT_WORKFLOW_RULES;
 
 export const foldAutoLimitOfWorkspace = async ({ workspaceId }: Params): Promise<void> => {
-  const isFolded = await foldAutoLimitIntoRunDefaults({
+  await useAppStore.getState().loadWorkspaceOverrides(workspaceId);
+  if (useAppStore.getState().workspaceOverrides[workspaceId] === undefined) {
+    return;
+  }
+  await foldAutoLimitIntoRunDefaults({
     db: tauriDatabase,
     workspaceId,
     runLimitUsd: rulesOf({ workspaceId }).spendLimitUsd,
@@ -21,7 +25,4 @@ export const foldAutoLimitOfWorkspace = async ({ workspaceId }: Params): Promise
         patch: { workflowRules: { ...rulesOf({ workspaceId }), spendLimitUsd: usd } },
       }),
   });
-  if (isFolded) {
-    await useAppStore.getState().loadWorkspaceValue({ workspaceId, key: 'auto.treeLimitUsd' });
-  }
 };

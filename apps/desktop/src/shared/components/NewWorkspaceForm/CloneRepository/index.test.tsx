@@ -245,7 +245,7 @@ describe('cloning a repository on the Workspace step', () => {
       step: 'Sign in with git',
     },
   ])(
-    'says one line and points to the Tools step when $label has no login',
+    'says one line and points to Integrations when $label has no login',
     async ({ label, text, step }) => {
       stubStoryInvoke({
         ...FOLDER_ANSWERS,
@@ -258,7 +258,7 @@ describe('cloning a repository on the Workspace step', () => {
       const alert = await screen.findByRole('alert');
       expect(alert.textContent).toContain(`No ${label} login found`);
       expect(alert.textContent).toContain(step);
-      expect(alert.textContent).toContain('Tools step');
+      expect(alert.textContent).toContain('Integrations');
       expect(alert.textContent).toContain('A public repository needs no login.');
       expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
       expect(callsOf({ command: 'clone_repository' })).toHaveLength(0);

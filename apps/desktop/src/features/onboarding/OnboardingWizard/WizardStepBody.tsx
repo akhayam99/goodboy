@@ -10,7 +10,6 @@ import type { WizardNav, WizardStepId } from './wizardSteps';
 import { AgentsStep } from './steps/AgentsStep';
 import { FirstSessionStep } from './steps/FirstSessionStep';
 import { ToolsStep } from './steps/ToolsStep';
-import { WelcomeStep } from './steps/WelcomeStep';
 import { WorkspaceStep } from './steps/WorkspaceStep';
 
 type Props = {
@@ -43,8 +42,6 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
   const onOpenSettings = () => nav.later({ after: () => openSettings({ scope: 'tools' }) });
 
   switch (step) {
-    case 'welcome':
-      return <WelcomeStep isLocked={nav.isLocked} onStart={nav.goNext} />;
     case 'agents':
       return (
         <AgentsStep

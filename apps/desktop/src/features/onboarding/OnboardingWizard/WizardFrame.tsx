@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollFade, cn, useEscapeLayer } from '@goodboy/ui';
-import {
-  enterWizardStep,
-  finishWizard,
-  markStepComplete,
-  pauseWizard,
-} from '../onboardingSettings';
+import { enterWizardStep, finishWizard, pauseWizard } from '../onboardingSettings';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 import { useStepTransition } from './useStepTransition';
 import { StepTransition } from './StepTransition';
@@ -14,6 +9,7 @@ import { WizardStepBody } from './WizardStepBody';
 import {
   firstWizardStep,
   isNumberedStep,
+  numberedStepOf,
   visibleWizardSteps,
   type FinishParams,
   type GoToParams,
@@ -40,7 +36,6 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
   const { mode, start } = wizard;
   const steps = visibleWizardSteps({ mode, start });
   const [step, setStep] = useState<WizardStepId>(() => firstWizardStep({ mode, start }));
-  const [isOpenedOnCover] = useState(() => firstWizardStep({ mode, start }) === 'welcome');
   const [isBusy, setIsBusy] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +43,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
 
   const stepIndex = steps.indexOf(step);
   const isLocked = isBusy || isClosing || transition.isTransitioning;
-  const isCover = step === 'welcome';
+  const isSideStep = mode !== 'single' && !isNumberedStep(step);
 
   useEffect(() => {
     containerRef.current?.focus();
@@ -69,17 +64,14 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
   };
 
   const goNext = () => {
-    const next = steps[stepIndex + 1];
+    const next = isSideStep ? numberedStepOf({ step }) : steps[stepIndex + 1];
     if (next === undefined) {
       return;
-    }
-    if (step === 'tools' && mode !== 'single') {
-      markStepComplete('tools');
     }
     goTo({ step: next });
   };
 
-  const previous = steps[stepIndex - 1];
+  const previous = isSideStep ? numberedStepOf({ step }) : steps[stepIndex - 1];
   const goBack = previous === undefined ? null : () => goTo({ step: previous });
 
   const leave = ({ outcome, after }: LeaveParams) => {
@@ -122,7 +114,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
     mode,
     step,
     isFirst: stepIndex <= 0,
-    isLast: stepIndex === steps.length - 1,
+    isLast: step === 'first-session' || isSideStep,
     isLocked,
     goNext,
     goBack,
@@ -143,19 +135,9 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
       className={cn(
         'fixed inset-0 z-onboarding grid grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background outline-none',
         isClosing && 'motion-safe:animate-studio-out',
-        !isClosing &&
-          (isOpenedOnCover ? 'welcome-entrance-frame' : 'motion-safe:animate-studio-in'),
+        !isClosing && 'motion-safe:animate-studio-in',
       )}
     >
-      <div
-        aria-hidden
-        data-testid="wizard-backdrop"
-        data-state={isCover ? 'shown' : 'hidden'}
-        className={cn(
-          'pointer-events-none absolute inset-0 -z-10 bg-backdrop-cover motion-safe:transition-opacity motion-safe:duration-200',
-          isCover ? 'opacity-100' : 'opacity-0',
-        )}
-      />
       <WizardHeader
         mode={mode}
         step={step}
@@ -163,12 +145,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
         onLeave={onLeaveFromHeader}
       />
       <ScrollFade className="min-h-0">
-        <div
-          className={cn(
-            'flex min-h-full flex-col items-center px-6 pb-10',
-            isCover ? 'justify-center' : 'pt-16',
-          )}
-        >
+        <div className="flex min-h-full flex-col items-center px-6 pb-10 pt-16">
           <div data-testid="wizard-column" className={WIZARD_COLUMN_CLASS}>
             <StepTransition
               transition={transition}

@@ -1,6 +1,5 @@
 import {
   NUMBERED_WIZARD_STEPS,
-  OPTIONAL_WIZARD_STEPS,
   WIZARD_STEP_LABEL,
   type NumberedWizardStepId,
 } from './OnboardingWizard/wizardSteps';
@@ -11,7 +10,6 @@ type SetupRow = {
   readonly id: SetupItemId;
   readonly title: string;
   readonly isDone: boolean;
-  readonly isOptional: boolean;
 };
 
 export type SetupProgress = {
@@ -33,7 +31,6 @@ export const setupProgress = ({ completed }: Params): SetupProgress => {
     id,
     title: WIZARD_STEP_LABEL[id],
     isDone: completed.has(id),
-    isOptional: OPTIONAL_WIZARD_STEPS.has(id),
   }));
   const done = rows.filter((row) => row.isDone).length;
   const total = rows.length;

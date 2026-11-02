@@ -3,9 +3,9 @@ import { cn, ICON_SIZE } from '@goodboy/ui';
 
 import {
   NUMBERED_WIZARD_STEPS,
-  OPTIONAL_WIZARD_STEPS,
   WIZARD_STEP_LABEL,
   isNumberedStep,
+  numberedStepOf,
   type WizardStepId,
 } from './wizardSteps';
 
@@ -51,7 +51,7 @@ export const stepAnnouncement = ({ current }: Props): string => {
 };
 
 export const Stepper = ({ current }: Props) => {
-  const currentPosition = isNumberedStep(current) ? NUMBERED_WIZARD_STEPS.indexOf(current) : -1;
+  const currentPosition = NUMBERED_WIZARD_STEPS.indexOf(numberedStepOf({ step: current }));
 
   return (
     <nav aria-label="Setup steps" className="flex min-w-0 justify-center">
@@ -87,9 +87,6 @@ export const Stepper = ({ current }: Props) => {
               <span className={cn('truncate text-meta', LABEL_CLASS[state])}>
                 {WIZARD_STEP_LABEL[step]}
               </span>
-              {OPTIONAL_WIZARD_STEPS.has(step) ? (
-                <span className="shrink-0 text-chip text-faint-foreground">Optional</span>
-              ) : null}
               {isLast ? null : (
                 <span
                   aria-hidden

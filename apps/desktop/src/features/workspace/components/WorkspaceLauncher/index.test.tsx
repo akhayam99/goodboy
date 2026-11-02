@@ -362,7 +362,7 @@ describe('Home with no workspace yet', () => {
     renderHome();
 
     expect(screen.getByRole('heading', { name: 'No workspace yet' })).toBeDefined();
-    expect(screen.getByText('Setup paused at Workspace · 1 of 4 done')).toBeDefined();
+    expect(screen.getByText('Setup paused at Workspace · 1 of 3 done')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Resume setup' }));
 

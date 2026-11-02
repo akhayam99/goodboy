@@ -70,7 +70,7 @@ const startWith = async ({ text, guidance }: StartParams): Promise<void> => {
       useStartRun({
         workspaceId: WORKSPACE.id,
         sessionId: SESSION.id,
-        prepare: async () => ({ usd: null, source: null }),
+        prepare: () => ({ usd: null, source: null }),
         settleLimit: () => undefined,
       }),
     { wrapper: ToastProvider },
@@ -117,7 +117,7 @@ describe('useStartRun guidance', () => {
         useStartRun({
           workspaceId: WORKSPACE.id,
           sessionId: SESSION.id,
-          prepare: async () => ({ usd: null, source: null }),
+          prepare: () => ({ usd: null, source: null }),
           settleLimit: () => undefined,
         }),
       { wrapper: ToastProvider },

@@ -6,7 +6,6 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { NAMES } from '../../../../shared/utils/names';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import type { AgentKind } from '../../agent-kind';
-import { limitDefaultFromOfKind } from './limitDefaultFromOfKind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { AUTO_RUN_AS } from '../../startRun/runAsOf';
 import { routeLineOf } from '../../startRun/routeLineOf';
@@ -63,7 +62,6 @@ export const RunsStartForm = ({
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
   const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
-  const limitView = limit.viewOf({ defaultFrom: limitDefaultFromOfKind({ kind }) });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -111,7 +109,7 @@ export const RunsStartForm = ({
       reader: guidanceReader,
       onPick: ({ next }) => run.setGuidance(next),
     },
-    limit: { view: limitView, kind: limitKind },
+    limit: { view: limit.view, kind: limitKind },
   });
 
   return (

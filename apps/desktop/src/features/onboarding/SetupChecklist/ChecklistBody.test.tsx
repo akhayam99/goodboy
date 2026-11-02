@@ -22,7 +22,6 @@ const progressOf = ({ completed, isWizardDone }: ProgressParams): OnboardingProg
     details: {
       agents: 'Claude is ready',
       workspace: 'Harborline, 3 folders',
-      tools: 'Optional',
       'first-session': 'Ask Scout about the code',
     },
     completed: set,
@@ -42,13 +41,13 @@ const FINISHED = progressOf({ completed: ['agents', 'workspace'], isWizardDone: 
 const dispatched = () => vi.spyOn(window, 'dispatchEvent');
 
 describe('ChecklistBody', () => {
-  it('lists the four steps with the details, done ones without an action', () => {
+  it('lists the three steps with the details, done ones without an action', () => {
     render(<ChecklistBody progress={PAUSED} isMainWindow onLeave={vi.fn()} />);
 
-    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
     expect(screen.getByText('Harborline, 3 folders')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Open Agents' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open Tools' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Open Tools' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Start First session' })).toBeDefined();
   });
 
@@ -57,27 +56,13 @@ describe('ChecklistBody', () => {
     const onLeave = vi.fn();
     render(<ChecklistBody progress={PAUSED} isMainWindow onLeave={onLeave} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Tools' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start First session' }));
 
     expect(onLeave).toHaveBeenCalledOnce();
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: OPEN_WIZARD_EVENT,
-        detail: { mode: 'setup', step: 'tools' },
-      }),
-    );
-  });
-
-  it('opens Tools on its own once setup is done', () => {
-    const dispatch = dispatched();
-    render(<ChecklistBody progress={FINISHED} isMainWindow onLeave={vi.fn()} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open Tools' }));
-
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: OPEN_WIZARD_EVENT,
-        detail: { mode: 'single', step: 'tools' },
+        detail: { mode: 'setup', step: 'first-session' },
       }),
     );
   });

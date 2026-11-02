@@ -166,6 +166,9 @@ vi.mock('../store', () => {
     useWorkspaces: () => state.workspaces,
   };
 });
+vi.mock('../store/runtime/auto/startAutoRuntime', () => ({
+  startAutoRuntime: vi.fn(async () => () => undefined),
+}));
 vi.mock('../features/integrations/github/hooks/useGithubPolling', () => ({
   useGithubPolling: vi.fn(),
 }));

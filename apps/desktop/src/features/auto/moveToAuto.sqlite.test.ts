@@ -17,7 +17,6 @@ import {
   listAutoDelegations,
   listAutoOutbox,
   setSetting,
-  setWorkspaceValue,
   type Database,
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
@@ -28,13 +27,14 @@ import {
 } from '@goodboy/db/test-helpers/auto-seeds';
 import {
   brandId,
+  DEFAULT_WORKFLOW_RULES,
   type AgentId,
   type AutoTreeId,
   type IsoDateTime,
   type ProviderRunId,
   type WorkspaceId,
 } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { aSession, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import { invokeAgentList } from '../workflows/workflows';
 import { moveToAuto } from './moveToAuto';
@@ -62,6 +62,7 @@ beforeEach(async () => {
     agentKindOverride: {},
     autoTreeViews: {},
     sessionBudgets: {},
+    workspaceOverrides: {},
     settings: {},
     transcripts: {
       [SOURCE]: [
@@ -71,6 +72,21 @@ beforeEach(async () => {
     },
   });
 });
+
+type RunLimitParams = {
+  readonly usd: number;
+};
+
+const setRunLimit = ({ usd }: RunLimitParams): void => {
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE]: {
+        ...EMPTY_OVERRIDES,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: usd },
+      },
+    },
+  });
+};
 
 type MoveParams = {
   readonly instruction?: string;
@@ -127,13 +143,8 @@ describe('moving an agent to Auto from the app', () => {
     );
   });
 
-  it('sizes the cap from the limit stored for the workspace', async () => {
-    await setWorkspaceValue({
-      db,
-      workspaceId: WORKSPACE,
-      key: 'auto.treeLimitUsd',
-      value: '8',
-    });
+  it('sizes the cap from the run default limit of the workspace', async () => {
+    setRunLimit({ usd: 8 });
 
     const outcome = await move();
 
@@ -144,7 +155,7 @@ describe('moving an agent to Auto from the app', () => {
   });
 
   it('caps the new Auto at a smaller session budget only when that budget pauses', async () => {
-    await setWorkspaceValue({ db, workspaceId: WORKSPACE, key: 'auto.treeLimitUsd', value: '8' });
+    setRunLimit({ usd: 8 });
     useAppStore.setState({
       sessionBudgets: {
         [AUTO_SEED_SESSION]: {
@@ -165,7 +176,7 @@ describe('moving an agent to Auto from the app', () => {
   });
 
   it('leaves the new Auto at the workspace limit under a session budget that only warns', async () => {
-    await setWorkspaceValue({ db, workspaceId: WORKSPACE, key: 'auto.treeLimitUsd', value: '8' });
+    setRunLimit({ usd: 8 });
     useAppStore.setState({
       sessionBudgets: {
         [AUTO_SEED_SESSION]: {

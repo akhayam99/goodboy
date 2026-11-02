@@ -634,7 +634,7 @@ describe('StartRun run as', () => {
     expect(setSessionPermissionMode).not.toHaveBeenCalled();
   });
 
-  it('writes no Auto limit when a run starts and the person set none', async () => {
+  it('writes no run default when a run starts and the person set none', async () => {
     useAppStore.setState({
       savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
       attachWorkflowToSession: vi.fn<AttachFn>(async () => undefined),
@@ -645,13 +645,7 @@ describe('StartRun run as', () => {
     ask({ text: 'center every member page' });
 
     await waitFor(() => expect(field()).toHaveProperty('value', ''));
-    expect(
-      await getWorkspaceValue({
-        db: storySqlite(),
-        workspaceId: WORKSPACE.id,
-        key: 'auto.treeLimitUsd',
-      }),
-    ).toBeNull();
+    expect(useAppStore.getState().workspaceOverrides[WORKSPACE.id]).toBeUndefined();
   });
 });
 

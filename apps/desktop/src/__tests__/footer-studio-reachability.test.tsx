@@ -213,6 +213,9 @@ vi.mock('../features/workspace/hooks/useSessionPinsSync', () => ({
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));
+vi.mock('../store/runtime/auto/startAutoRuntime', () => ({
+  startAutoRuntime: vi.fn(async () => () => undefined),
+}));
 vi.mock('../store', async () => {
   const { useEffect: useMountEffect, useReducer } = await import('react');
   const useAppStore = Object.assign(

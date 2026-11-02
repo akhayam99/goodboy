@@ -12,11 +12,6 @@ const ctaOf = ({ step, ...rest }: Params) =>
 
 describe('wizardCta', () => {
   it('pins one label per step, and Skip on First session only', () => {
-    expect(ctaOf({ step: 'welcome' })).toEqual({
-      primary: 'Get started',
-      skip: null,
-      reason: null,
-    });
     expect(ctaOf({ step: 'agents' })).toEqual({ primary: 'Continue', skip: null, reason: null });
     expect(ctaOf({ step: 'workspace' })).toEqual({ primary: null, skip: null, reason: null });
     expect(ctaOf({ step: 'tools' })).toEqual({ primary: 'Continue', skip: null, reason: null });

@@ -154,14 +154,14 @@ describe('useOnboardingWizard', () => {
   });
 
   describe('resume', () => {
-    it('resumes at Tools after relaunch', () => {
+    it('resumes at First session after relaunch', () => {
       workspaces.push({ id: 'w1' });
       currentWorkspaceId = 'w1';
-      savedStep = 'tools';
+      savedStep = 'first-session';
       const { result } = renderWizard();
       expect(result.current.isOpen).toBe(true);
       expect(result.current.mode).toBe('setup');
-      expect(result.current.start).toBe('tools');
+      expect(result.current.start).toBe('first-session');
     });
 
     it('resumes from Home, with workspaces and none open', () => {
@@ -173,14 +173,14 @@ describe('useOnboardingWizard', () => {
     });
 
     it('resumes at Workspace when the saved step needs a workspace that is gone', () => {
-      savedStep = 'tools';
+      savedStep = 'first-session';
       const { result } = renderWizard();
       expect(result.current.mode).toBe('setup');
       expect(result.current.start).toBe('workspace');
     });
 
     it('does not open in a second window', () => {
-      savedStep = 'tools';
+      savedStep = 'first-session';
       const { result } = renderWizard({ isMainWindow: false });
       expect(result.current.isOpen).toBe(false);
     });

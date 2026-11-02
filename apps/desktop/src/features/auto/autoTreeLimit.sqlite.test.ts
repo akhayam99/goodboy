@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { setWorkspaceValue, type Database } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import { brandId, type WorkspaceId } from '@goodboy/types';
-import { parseAutoTreeLimit, readAutoTreeLimit, writeAutoTreeLimit } from './autoTreeLimit';
+import { readAutoTreeLimit, writeAutoTreeLimit } from './autoTreeLimit';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 const NORTHWIND = brandId<WorkspaceId>({ value: 'workspace-northwind' });
@@ -70,8 +70,14 @@ describe('the Auto tree limit of a workspace', () => {
     });
 
     expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
-    expect(parseAutoTreeLimit({ raw: '-2' })).toBeNull();
-    expect(parseAutoTreeLimit({ raw: '7.5' })).toBe(7.5);
-    expect(parseAutoTreeLimit({ raw: undefined })).toBeNull();
+    await setWorkspaceValue({ db, workspaceId: HARBORLINE, key: 'auto.treeLimitUsd', value: '-2' });
+    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+    await setWorkspaceValue({
+      db,
+      workspaceId: HARBORLINE,
+      key: 'auto.treeLimitUsd',
+      value: '7.5',
+    });
+    expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBe(7.5);
   });
 });

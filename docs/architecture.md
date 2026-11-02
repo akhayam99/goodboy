@@ -970,7 +970,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                                                          |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                                                        |
-| `workspace_values`            | ts     | Per-workspace values (`auto.treeLimitUsd`, `auto.level`, `run.guidance`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                     |
+| `workspace_values`            | ts     | Per-workspace values (`auto.level`, `run.guidance`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                                          |
 | `workspaces`                  | ts     | Exceptions: the backup import and the override columns, which have one writer, `patch_workspace_overrides` in `settings_overrides.rs`. It writes only the columns a patch names, refuses a value the column does not allow, and returns the stored row; `packages/db` only reads them.                                                 |
 | `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                                                                                                                                                                                                                                        |
 
@@ -1117,7 +1117,7 @@ kept.
   every fifteen seconds, which also renews the owner lease. The interval starts with the
   runtime and stops only on teardown. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
-  else at the `workspace_values` key `auto.treeLimitUsd`, else with no cap
+  else at the Limit of the Run defaults of the workspace (`runDefaultLimitOf`), else with no cap
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
   confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
   reports a tree that did not stop, and one that another window runs. When delegation is

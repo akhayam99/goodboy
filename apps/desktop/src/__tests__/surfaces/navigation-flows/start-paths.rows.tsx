@@ -87,10 +87,6 @@ const installFakes = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId as WorkspaceId;
   useAppStore.setState({
-    workspaceValues: {
-      ...state.workspaceValues,
-      [workspaceId]: { ...state.workspaceValues[workspaceId], 'auto.treeLimitUsd': '5' },
-    },
     starredIssues: { [workspaceId]: [starredIssue()] },
     requestIssueBrief: async (params) => {
       startCalls.briefs.push(params);

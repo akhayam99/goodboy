@@ -67,8 +67,8 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   agent (rows 4 to 6 of `runRouteOf`, see
   [Start a run](features/start.md#start-a-run)): `spawnAgent` with the `auto`
   kind and the ask as its first message, or the role named with `@`. The field
-  carries the same **Limit** chip (`useAutoTreeLimit`), persisted before the
-  start. The route is kept per agent in `runs.routes.<sessionId>`.
+  carries the same **Limit** chip (`useAutoTreeLimit`), which starts from the
+  Limit of the Run defaults and applies to this run only. The route is kept per agent in `runs.routes.<sessionId>`.
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
@@ -83,7 +83,7 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   limit pauses Auto, as for runs. A session budget that only warns caps no
   Auto run: every path reads the session cap through `pausingSessionCapOf`
   (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
-  starts on the smaller of that cap and the workspace's Auto limit
+  starts on the smaller of that cap and the Limit of the Run defaults of the workspace
   (`autoTreeLimitOf` in `packages/core/src/auto/`, which also names the winner;
   `startAutoRuntime`, `moveToAuto`, `useAutoTreeLimit` and `setSessionBudget`
   read the session cap this way), and
@@ -93,9 +93,9 @@ with `@` in the field, which starts that role at once with no Auto turn first.
   write time; only the write checks the cap and the phase, never the earlier
   read, so a cap another window lowered first still ends at the smaller one
   and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
-  already spent. A limit exists only when a person sets one. It is stored for the
-  workspace (`workspace_values` key `auto.treeLimitUsd`, compare and swap; No limit
-  deletes the key), and a start never stores one the person did not set.
+  already spent. A limit exists only when a person sets one. The workspace default is the Limit
+  of the Run defaults page (see [Workflows](workflows.md)), and a start never
+  stores a limit: an amount typed on the form is for that run only.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a

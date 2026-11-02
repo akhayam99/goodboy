@@ -567,8 +567,6 @@ onboarding-step-tools-linear-dark
 onboarding-step-tools-linear-light
 onboarding-step-tools-nogit-dark
 onboarding-step-tools-nogit-light
-onboarding-step-welcome-dark
-onboarding-step-welcome-light
 open-question-prose
 open-questions
 overview-after-analyze-dark

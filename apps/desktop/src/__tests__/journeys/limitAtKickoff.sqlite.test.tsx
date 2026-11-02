@@ -3,7 +3,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { startSettingsRowOf } from '../helpers/startSettingsRowOf';
-import { insertProject, insertWorkspace, setWorkspaceValue } from '@goodboy/db';
+import { insertProject, insertWorkspace } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,
   type AgentId,
@@ -113,12 +113,6 @@ beforeEach(async () => {
   db = await openStorySqlite();
   await insertWorkspace({ db, workspace });
   await insertProject({ db, project });
-  await setWorkspaceValue({
-    db,
-    workspaceId: WORKSPACE_ID,
-    key: 'auto.treeLimitUsd',
-    value: '5',
-  });
   stubStoryInvoke({
     workspaces_with_unread: [],
     workflow_list: [],
@@ -202,7 +196,7 @@ describe('journey: the limit chip at the kickoff', () => {
     screen.getByRole('dialog', { name: 'Limit for this run' });
   });
 
-  it('keeps the Auto limit on the Auto kind', async () => {
+  it('starts the Auto kind from the same Run defaults limit and links to its page', async () => {
     spies();
     open();
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
@@ -210,6 +204,8 @@ describe('journey: the limit chip at the kickoff', () => {
       group: await screen.findByRole('group', { name: 'Run settings' }),
     });
 
-    await row.findByRole('button', { name: 'Limit: $5.00 · default' });
+    fireEvent.click(await row.findByRole('button', { name: 'Limit: $8.00 · default' }));
+
+    screen.getByRole('button', { name: 'Change default' });
   });
 });

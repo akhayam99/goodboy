@@ -38,7 +38,7 @@ type ShapeParams = {
   readonly shape: StartShape;
 };
 
-export const startFormKindOfShape = ({ shape }: ShapeParams): StartFormKind =>
+const startFormKindOfShape = ({ shape }: ShapeParams): StartFormKind =>
   shape === 'autoAgent' ? 'auto' : shape;
 
 type KindParams = {

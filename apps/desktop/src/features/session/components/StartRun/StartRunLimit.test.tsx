@@ -12,13 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import {
-  getSetting,
-  getWorkspaceValue,
-  insertWorkspace,
-  setSetting,
-  setWorkspaceValue,
-} from '@goodboy/db';
+import { getSetting, insertWorkspace, setSetting } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,
   brandId,
@@ -155,17 +149,23 @@ const startOrchestrated = () => {
   return attachWorkflowToSession;
 };
 
-type DefaultLimitParams = {
-  readonly usd: string;
+type RunDefaultParams = {
+  readonly usd: number;
 };
 
-const storeDefaultLimit = async ({ usd }: DefaultLimitParams) =>
-  setWorkspaceValue({
-    db: storySqlite(),
-    workspaceId: WORKSPACE.id,
-    key: 'auto.treeLimitUsd',
-    value: usd,
+const storeDefaultLimit = ({ usd }: RunDefaultParams): void => {
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE.id]: {
+        ...EMPTY_OVERRIDES,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: usd },
+      },
+    },
   });
+};
+
+const storedRunLimit = () =>
+  useAppStore.getState().workspaceOverrides[WORKSPACE.id]?.workflowRules?.spendLimitUsd;
 
 type TypedParams = {
   readonly from: string;
@@ -184,7 +184,7 @@ const typeLimit = async ({ from, usd, shown }: TypedParams): Promise<void> => {
 
 describe('StartRun limit', () => {
   it('starts a run with the default amount the chip showed, tagged as the default', async () => {
-    await storeDefaultLimit({ usd: '5' });
+    storeDefaultLimit({ usd: 5 });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     await screen.findByRole('button', { name: 'Limit: $5.00 · default' });
@@ -196,7 +196,7 @@ describe('StartRun limit', () => {
   });
 
   it('starts a run with no limit when the chip said No limit, though a default exists', async () => {
-    await storeDefaultLimit({ usd: '5' });
+    storeDefaultLimit({ usd: 5 });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     fireEvent.click(await screen.findByRole('button', { name: 'Limit: $5.00 · default' }));
@@ -212,7 +212,7 @@ describe('StartRun limit', () => {
   });
 
   it('starts a run with the amount typed in the popover, tagged as this run', async () => {
-    await storeDefaultLimit({ usd: '5' });
+    storeDefaultLimit({ usd: 5 });
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     await typeLimit({ from: 'Limit: $5.00 · default', usd: '8', shown: 'Limit: $8.00' });
@@ -224,7 +224,7 @@ describe('StartRun limit', () => {
   });
 
   it('names the session and the provider month in the popover, after the amounts', async () => {
-    await storeDefaultLimit({ usd: '5' });
+    storeDefaultLimit({ usd: 5 });
     useAppStore.setState({
       sessionBudgets: {
         [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause', warnRatio: 0.8 },
@@ -241,32 +241,12 @@ describe('StartRun limit', () => {
   });
 });
 
-type RunDefaultParams = {
-  readonly usd: number;
-};
-
-const withRunDefault = ({ usd }: RunDefaultParams): void => {
-  useAppStore.setState({
-    workspaceOverrides: {
-      [WORKSPACE.id]: {
-        ...EMPTY_OVERRIDES,
-        workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: usd },
-      },
-    },
-    phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] },
-  });
-};
-
-const storedAutoLimit = () =>
-  getWorkspaceValue({ db: storySqlite(), workspaceId: WORKSPACE.id, key: 'auto.treeLimitUsd' });
-
-const AUTO_DEFAULT = 'Limit: $5.00 · default';
 const RUN_DEFAULT = 'Limit: $8.00 · default';
 
 describe('StartRun limit by kind', () => {
-  beforeEach(async () => {
-    await storeDefaultLimit({ usd: '5' });
-    withRunDefault({ usd: 8 });
+  beforeEach(() => {
+    storeDefaultLimit({ usd: 8 });
+    useAppStore.setState({ phaseTemplates: { [WORKSPACE.id]: [FIX_A_LAYOUT] } });
   });
 
   it.each(['Orchestrated', 'Preset'])(
@@ -274,7 +254,6 @@ describe('StartRun limit by kind', () => {
     async (name) => {
       const attach = startOrchestrated();
       renderField({ sessionId: SESSION.id });
-      await screen.findByRole('button', { name: AUTO_DEFAULT });
 
       pickKind({ name });
       await screen.findByRole('button', { name: RUN_DEFAULT });
@@ -285,28 +264,28 @@ describe('StartRun limit by kind', () => {
         spendLimitUsd: 8,
         limitSource: 'default',
       });
-      expect(await storedAutoLimit()).toBe('5');
     },
   );
 
-  it('shows the default of the kind just pressed, and no chip on Agent', async () => {
+  it('shows the Run defaults limit on every kind, and no chip on Agent', async () => {
     renderField({ sessionId: SESSION.id });
-    await screen.findByRole('button', { name: AUTO_DEFAULT });
+    await screen.findByRole('button', { name: RUN_DEFAULT });
 
     pickKind({ name: 'Orchestrated' });
     screen.getByRole('button', { name: RUN_DEFAULT });
     pickKind({ name: 'Auto' });
-    screen.getByRole('button', { name: AUTO_DEFAULT });
+    screen.getByRole('button', { name: RUN_DEFAULT });
     pickKind({ name: 'Preset' });
     screen.getByRole('button', { name: RUN_DEFAULT });
     pickKind({ name: 'Agent' });
     expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
-  it('words the chip help like the default it shows, with a kind and without one', async () => {
+  it('words the chip help from the Run defaults, with a kind and without one', async () => {
     renderField({ sessionId: SESSION.id });
-    fireEvent.click(await screen.findByRole('button', { name: AUTO_DEFAULT }));
-    screen.getByText(/Other runs in this workspace start from the same limit\./);
+    fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
+    screen.getByText(/Run defaults set where new runs start\./);
+    expect(screen.queryByText(/Other runs in this workspace/)).toBeNull();
     fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
 
     pickKind({ name: 'Orchestrated' });
@@ -315,18 +294,33 @@ describe('StartRun limit by kind', () => {
     screen.getByText(/Run defaults set where new runs start\./);
   });
 
-  it('starts a no-kind ask from the Auto limit even when the route is a plan', async () => {
+  it('opens the Run defaults page from the Change default link of the chip', async () => {
+    const details: Array<unknown> = [];
+    const opened = (event: Event): void => {
+      details.push(event instanceof CustomEvent ? event.detail : null);
+    };
+    window.addEventListener('goodboy:open-settings', opened);
+    renderField({ sessionId: SESSION.id });
+    fireEvent.click(await screen.findByRole('button', { name: RUN_DEFAULT }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change default' }));
+
+    window.removeEventListener('goodboy:open-settings', opened);
+    expect(details).toEqual([{ scope: 'workspace', section: 'general' }]);
+  });
+
+  it('starts a no-kind ask from the Run defaults limit even when the route is a plan', async () => {
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
-    await screen.findByRole('button', { name: AUTO_DEFAULT });
+    await screen.findByRole('button', { name: RUN_DEFAULT });
 
     ask({ text: 'center every member page' });
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
-    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 5, limitSource: 'default' });
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 8, limitSource: 'default' });
   });
 
-  it('keeps a typed amount across kinds, starts a workflow with it for this run and never writes the Auto limit', async () => {
+  it('keeps a typed amount across kinds and starts a workflow with it for this run only', async () => {
     const attach = startOrchestrated();
     renderField({ sessionId: SESSION.id });
     pickKind({ name: 'Orchestrated' });
@@ -339,8 +333,8 @@ describe('StartRun limit by kind', () => {
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
     expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
-    expect(await storedAutoLimit()).toBe('5');
-    await screen.findByRole('button', { name: AUTO_DEFAULT });
+    expect(storedRunLimit()).toBe(8);
+    await screen.findByRole('button', { name: RUN_DEFAULT });
   });
 
   it('forgets a typed amount once the run started, so the next start uses the default again', async () => {
@@ -376,31 +370,16 @@ describe('StartRun limit by kind', () => {
     expect(attach.mock.calls[1]?.[2]).toMatchObject({ spendLimitUsd: 3, limitSource: 'run' });
   });
 
-  it('never writes an amount typed for a workflow as the Auto limit when Auto starts', async () => {
+  it('never writes an amount typed on an Auto run into the Run defaults', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });
     renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Orchestrated' });
+    pickKind({ name: 'Auto' });
     await typeLimit({ from: RUN_DEFAULT, usd: '9', shown: 'Limit: $9.00' });
-    pickKind({ name: 'Auto' });
-    screen.getByRole('button', { name: 'Limit: $9.00' });
 
     ask({ text: QUESTION });
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(await storedAutoLimit()).toBe('5');
-  });
-
-  it('keeps writing the typed amount as the Auto limit when an Auto run starts', async () => {
-    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
-    useAppStore.setState({ spawnAgent });
-    renderField({ sessionId: SESSION.id });
-    pickKind({ name: 'Auto' });
-    await typeLimit({ from: AUTO_DEFAULT, usd: '9', shown: 'Limit: $9.00' });
-
-    ask({ text: QUESTION });
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
-    expect(await storedAutoLimit()).toBe('9');
+    expect(storedRunLimit()).toBe(8);
   });
 });

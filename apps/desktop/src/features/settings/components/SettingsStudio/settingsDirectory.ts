@@ -168,8 +168,10 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
 
 const MODELS_AFTER_PAGE: WorkspacePage = 'general';
 
+export const MODELS_PAGE_KEY = 'providers:defaults';
+
 const modelsPage: SettingsPage = {
-  key: 'providers:defaults',
+  key: MODELS_PAGE_KEY,
   label: NAMES.models,
   attention: null,
   target: { scope: 'providers' },

@@ -1,42 +1,63 @@
 export type WizardMode = 'full' | 'setup' | 'single';
 
-export type WizardStepId = 'welcome' | 'agents' | 'workspace' | 'tools' | 'first-session';
+export type WizardStepId = 'agents' | 'workspace' | 'first-session' | 'tools';
 
-export type NumberedWizardStepId = Exclude<WizardStepId, 'welcome'>;
+export type NumberedWizardStepId = Exclude<WizardStepId, 'tools'>;
 
 export const NUMBERED_WIZARD_STEPS = [
   'agents',
   'workspace',
-  'tools',
   'first-session',
 ] as const satisfies ReadonlyArray<NumberedWizardStepId>;
 
 export const WIZARD_STEPS = [
-  'welcome',
   ...NUMBERED_WIZARD_STEPS,
+  'tools',
 ] as const satisfies ReadonlyArray<WizardStepId>;
 
 export const WIZARD_STEP_LABEL: Readonly<Record<NumberedWizardStepId, string>> = {
   agents: 'Agents',
   workspace: 'Workspace',
-  tools: 'Tools',
   'first-session': 'First session',
 };
 
-export const OPTIONAL_WIZARD_STEPS: ReadonlySet<NumberedWizardStepId> = new Set(['tools']);
+const SIDE_STEP_OWNER: NumberedWizardStepId = 'first-session';
 
-const STEPS_NEEDING_A_WORKSPACE: ReadonlySet<NumberedWizardStepId> = new Set([
-  'tools',
-  'first-session',
-]);
+const LEGACY_WIZARD_STEPS: Readonly<Record<string, NumberedWizardStepId>> = {
+  welcome: 'agents',
+  tools: 'first-session',
+};
+
+const STEPS_NEEDING_A_WORKSPACE: ReadonlySet<NumberedWizardStepId> = new Set(['first-session']);
 
 const SETUP_START: NumberedWizardStepId = 'agents';
 
 export const isNumberedStep = (step: WizardStepId): step is NumberedWizardStepId =>
-  step !== 'welcome';
+  step !== 'tools';
 
 export const isNumberedStepId = (value: string): value is NumberedWizardStepId =>
   NUMBERED_WIZARD_STEPS.some((step) => step === value);
+
+type SavedParams = {
+  readonly raw: string | null;
+};
+
+export const savedWizardStepOf = ({ raw }: SavedParams): NumberedWizardStepId | null => {
+  if (raw === null) {
+    return null;
+  }
+  if (isNumberedStepId(raw)) {
+    return raw;
+  }
+  return LEGACY_WIZARD_STEPS[raw] ?? null;
+};
+
+type DisplayParams = {
+  readonly step: WizardStepId;
+};
+
+export const numberedStepOf = ({ step }: DisplayParams): NumberedWizardStepId =>
+  isNumberedStep(step) ? step : SIDE_STEP_OWNER;
 
 type ResumeParams = {
   readonly saved: NumberedWizardStepId | null;
@@ -62,9 +83,6 @@ export const visibleWizardSteps = ({ mode, start }: VisibleParams): ReadonlyArra
   if (mode === 'single') {
     return [start ?? 'tools'];
   }
-  if (mode === 'setup') {
-    return NUMBERED_WIZARD_STEPS;
-  }
   return WIZARD_STEPS;
 };
 
@@ -73,10 +91,7 @@ export const firstWizardStep = ({ mode, start }: VisibleParams): WizardStepId =>
   if (start !== null && steps.includes(start)) {
     return start;
   }
-  if (mode === 'setup') {
-    return 'tools';
-  }
-  return steps[0] ?? 'welcome';
+  return steps[0] ?? 'agents';
 };
 
 export type FinishParams = {
