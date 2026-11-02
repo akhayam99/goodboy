@@ -153,6 +153,7 @@ test file, unless its row above says otherwise.
 | `hand-rolled-radio-groups.baseline.json`                 | radio groups outside `SegmentedTabs`                                   |
 | `ambient-target.baseline.json`                           | store slice reads of the current workspace or mount                    |
 | `catch-swallow.baseline.json`                            | `.catch(() => undefined \| null \| {})`                                |
+| `raw-set-interval.baseline.json`                         | a `setInterval` outside `startPoll`                                    |
 | `busy-controls.baseline.json`                            | async controls that do not say they are busy                           |
 | `fill-child-uses-min-h-0.baseline.json`                  | `h-full` beside a `shrink-0` sibling                                   |
 | `hand-indent.baseline.json`                              | hand-indented disclosure bodies                                        |

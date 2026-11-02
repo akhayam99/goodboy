@@ -407,7 +407,6 @@ describe('sweepRequests', () => {
       expect(refreshGithub).not.toHaveBeenCalled();
       expect(refreshGitlab).toHaveBeenCalledTimes(1);
       expect(refreshBitbucket).toHaveBeenCalledTimes(1);
-      expect(store.getState().boardReady).toBe(true);
     });
 
     it('does not send a GitLab remote to gh when the project has no remote yet', () => {
@@ -424,33 +423,8 @@ describe('sweepRequests', () => {
     });
   });
 
-  describe('boardReady', () => {
-    it('releases at once when no host can be asked', () => {
-      store.setState({
-        githubStatus: { mode: 'absent', available: false },
-        workspaceIntegrations: {},
-      });
-
-      void store.getState().sweepRequests();
-
-      expect(store.getState().boardReady).toBe(true);
-      expect(refreshGithub).not.toHaveBeenCalled();
-    });
-
-    it('releases when gh answers and no mount has a branch to ask about', () => {
-      store.setState({
-        sessionMounts: {
-          [SESSION.id]: [{ ...mountView({ id: LEDGER_MOUNT, project: LEDGER }), branch: '' }],
-        },
-      });
-
-      void store.getState().sweepRequests();
-
-      expect(store.getState().boardReady).toBe(true);
-      expect(refreshGithub).not.toHaveBeenCalled();
-    });
-
-    it('releases after every host settled and not before', async () => {
+  describe('the board', () => {
+    it('is never gated by a sweep: boardReady is left as the workspace load set it', async () => {
       const gates: Array<() => void> = [];
       for (const spy of [refreshGithub, refreshGitlab, refreshBitbucket]) {
         spy.mockImplementation(
@@ -460,36 +434,29 @@ describe('sweepRequests', () => {
             }),
         );
       }
+      store.setState({ boardReady: true });
 
       void store.getState().sweepRequests();
       expect(gates).toHaveLength(3);
+      expect(store.getState().boardReady).toBe(true);
 
-      gates[0]?.();
-      gates[1]?.();
-      await flush();
-      expect(store.getState().boardReady).toBe(false);
-
-      gates[2]?.();
+      for (const release of gates) {
+        release();
+      }
       await flush();
       expect(store.getState().boardReady).toBe(true);
     });
 
-    it('drops the release when the workspace changed while it waited', async () => {
-      let release: () => void = () => undefined;
-      refreshGithub.mockImplementation(
-        () =>
-          new Promise<undefined>((resolve) => {
-            release = () => resolve(undefined);
-          }),
-      );
-      store.setState({ sessionMounts: mountsOf(LEDGER_MOUNT) });
+    it('stays as it was when nothing can be asked', () => {
+      store.setState({
+        githubStatus: { mode: 'absent', available: false },
+        workspaceIntegrations: {},
+      });
 
       void store.getState().sweepRequests();
-      store.setState({ currentWorkspaceId: OTHER_WORKSPACE });
-      release();
-      await flush();
 
       expect(store.getState().boardReady).toBe(false);
+      expect(refreshGithub).not.toHaveBeenCalled();
     });
   });
 
@@ -1041,7 +1008,6 @@ describe('sweepRequests', () => {
       }
       await flush();
       expect(refreshGithub).toHaveBeenCalledTimes(REVIEW_REFRESH_CONCURRENCY + 2);
-      expect(store.getState().boardReady).toBe(true);
     });
   });
 });

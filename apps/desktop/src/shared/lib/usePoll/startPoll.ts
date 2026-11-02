@@ -1,4 +1,4 @@
-export type PollGate = 'visible' | 'focused';
+export type PollGate = 'always' | 'visible' | 'focused';
 
 type StartPollParams = {
   readonly run: () => void;
@@ -12,6 +12,9 @@ type OpenParams = {
 };
 
 const isOpen = ({ gate }: OpenParams): boolean => {
+  if (gate === 'always') {
+    return true;
+  }
   if (document.visibilityState !== 'visible') {
     return false;
   }
@@ -27,13 +30,16 @@ export const startPoll = ({ run, everyMs, gate, isImmediate }: StartPollParams):
   if (isImmediate) {
     tick();
   }
-  const timer = window.setInterval(tick, everyMs);
+  const timer = setInterval(tick, everyMs);
+  if (gate === 'always') {
+    return () => clearInterval(timer);
+  }
   document.addEventListener('visibilitychange', tick);
   if (gate === 'focused') {
     window.addEventListener('focus', tick);
   }
   return () => {
-    window.clearInterval(timer);
+    clearInterval(timer);
     document.removeEventListener('visibilitychange', tick);
     window.removeEventListener('focus', tick);
   };

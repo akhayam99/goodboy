@@ -220,3 +220,45 @@ describe('StageColumn', () => {
     expect(screen.getByRole('tooltip').querySelector('kbd')).toBeNull();
   });
 });
+
+describe('StageColumn window', () => {
+  const many = (count: number): ReadonlyArray<Session> =>
+    Array.from({ length: count }, (_, index) => makeSession(`s-${index}`, `task ${index}`));
+
+  it('draws 50 archived cards, keeps the real total and reveals the rest on one click', () => {
+    renderColumn({ spec: { kind: 'archived' }, sessions: many(237) });
+    const lane = screen.getByRole('group', { name: 'archived' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
+    expect(within(lane).getByText('237').textContent).toBe('237');
+
+    fireEvent.click(within(lane).getByRole('button', { name: 'Show 187 more' }));
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(237);
+    expect(within(lane).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+
+  it('windows the done lane the same way', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'done' }, sessions: many(60) });
+    const lane = screen.getByRole('group', { name: 'done' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
+    expect(within(lane).getByRole('button', { name: 'Show 10 more' }).textContent).toBe(
+      'Show 10 more',
+    );
+  });
+
+  it('draws every card of a live lane, however long', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'building' }, sessions: many(80) });
+    const lane = screen.getByRole('group', { name: 'building' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(80);
+    expect(within(lane).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+
+  it('offers no button when the lane fits the window', () => {
+    renderColumn({ spec: { kind: 'archived' }, sessions: many(50) });
+
+    expect(screen.queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+});

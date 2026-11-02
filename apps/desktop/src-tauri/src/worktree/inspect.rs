@@ -53,54 +53,76 @@ pub(super) fn inspect_worktree_with(
     worktree_path: &Path,
     run_git: RunGit<'_>,
 ) -> WorktreeInspection {
-    let requested_path = worktree_path.to_string_lossy().into_owned();
+    let requested = worktree_path.to_string_lossy().into_owned();
+    inspect_worktrees_with(repo_path, &[requested], run_git)
+        .pop()
+        .expect("one inspection per requested path")
+}
+
+pub(super) fn inspect_worktrees_with(
+    repo_path: &Path,
+    worktree_paths: &[String],
+    run_git: RunGit<'_>,
+) -> Vec<WorktreeInspection> {
+    let unavailable = || {
+        worktree_paths
+            .iter()
+            .map(|path| WorktreeInspection::RepositoryUnavailable { path: path.clone() })
+            .collect::<Vec<_>>()
+    };
     if !repo_path.is_dir() || canonical_path(repo_path).is_none() {
-        return WorktreeInspection::RepositoryUnavailable {
-            path: requested_path,
-        };
+        return unavailable();
     }
     let registered = match registered_worktrees_with(repo_path, run_git) {
         Ok(found) => found,
-        Err(_) => {
-            return WorktreeInspection::RepositoryUnavailable {
-                path: requested_path,
-            };
-        }
+        Err(_) => return unavailable(),
     };
     let Some(repository_common) = common_git_dir_with(repo_path, run_git) else {
-        return WorktreeInspection::RepositoryUnavailable {
-            path: requested_path,
-        };
+        return unavailable();
     };
+    let registered_paths: Vec<(PathBuf, &RegisteredWorktree)> = registered
+        .iter()
+        .filter_map(|entry| canonical_path(Path::new(&entry.path)).map(|path| (path, entry)))
+        .collect();
+    worktree_paths
+        .iter()
+        .map(|requested| inspect_one(requested, &registered_paths, &repository_common, run_git))
+        .collect()
+}
+
+fn inspect_one(
+    requested: &str,
+    registered: &[(PathBuf, &RegisteredWorktree)],
+    repository_common: &Path,
+    run_git: RunGit<'_>,
+) -> WorktreeInspection {
+    let worktree_path = Path::new(requested);
     if !worktree_path.exists() {
         return WorktreeInspection::Missing {
-            path: requested_path,
+            path: requested.to_string(),
         };
     }
     let Some(target) = canonical_path(worktree_path) else {
         return WorktreeInspection::ForeignDirectory {
-            path: requested_path,
+            path: requested.to_string(),
         };
     };
     let target_key = target.to_string_lossy().into_owned();
-    for entry in registered {
-        let Some(entry_path) = canonical_path(Path::new(&entry.path)) else {
-            continue;
-        };
-        if entry_path != target {
+    for (entry_path, entry) in registered {
+        if *entry_path != target {
             continue;
         }
         if repository_top_level_with(&target, run_git) != Some(target.clone()) {
             return WorktreeInspection::ForeignDirectory { path: target_key };
         }
-        if common_git_dir_with(&target, run_git) != Some(repository_common.clone()) {
+        if common_git_dir_with(&target, run_git).as_deref() != Some(repository_common) {
             return WorktreeInspection::ForeignDirectory { path: target_key };
         }
         return WorktreeInspection::Registered {
             path: target_key,
             is_main: entry.is_main,
             is_locked: entry.is_locked,
-            lock_reason: entry.lock_reason,
+            lock_reason: entry.lock_reason.clone(),
         };
     }
     WorktreeInspection::ForeignDirectory { path: target_key }
@@ -115,6 +137,22 @@ pub async fn worktree_inspect(
         Ok(inspect_worktree_with(
             Path::new(&repo_path),
             Path::new(&worktree_path),
+            &mut |cwd, args| git(cwd, args),
+        ))
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[tauri::command]
+pub async fn worktree_list_registered(
+    repo_path: String,
+    worktree_paths: Vec<String>,
+) -> Result<Vec<WorktreeInspection>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        Ok(inspect_worktrees_with(
+            Path::new(&repo_path),
+            &worktree_paths,
             &mut |cwd, args| git(cwd, args),
         ))
     })

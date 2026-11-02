@@ -59,7 +59,7 @@
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 267,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 404,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": 269,
-  "apps/desktop/src/features/workspace/components/StageBoard/index.tsx": 321,
+  "apps/desktop/src/features/workspace/components/StageBoard/index.tsx": 319,
   "apps/desktop/src/features/worktree/worktree.ts": 972,
   "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": 348,
   "apps/desktop/src/shared/components/PromptField/index.tsx": 324,

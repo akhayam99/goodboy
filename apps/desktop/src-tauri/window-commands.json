@@ -387,6 +387,7 @@
     "worktree_is_ancestor",
     "worktree_list_branch_names",
     "worktree_list_local_branches",
+    "worktree_list_registered",
     "worktree_list_remote_branches",
     "worktree_locate_fix",
     "worktree_origin_commits_touching",

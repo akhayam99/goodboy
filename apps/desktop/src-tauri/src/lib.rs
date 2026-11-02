@@ -366,6 +366,7 @@ pub fn run() {
             scratch_dir::scratch_dir_remove,
             worktree::worktree_create,
             worktree::worktree_inspect,
+            worktree::worktree_list_registered,
             worktree::worktree_git_common_dir,
             worktree::worktree_git_dir,
             worktree::worktree_remove_checked,

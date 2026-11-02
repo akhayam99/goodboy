@@ -107,6 +107,11 @@ type AuxArgs = {
   };
 };
 
+type ListRegisteredArgs = {
+  readonly repoPath: string;
+  readonly worktreePaths: ReadonlyArray<string>;
+};
+
 export const storySummarizeSession =
   (stepSummary: string) =>
   ({ args }: AuxArgs) => {
@@ -188,6 +193,14 @@ const storyInvokeHandlers = {
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
+  worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
+    worktreePaths.map((path) => ({
+      kind: 'registered',
+      path,
+      isMain: false,
+      isLocked: false,
+      lockReason: null,
+    })),
   other_tools_scan: { status: 'ready', tools: [] },
   other_tools_cancel: null,
   summarize_session: storySummarizeSession('The step finished.'),

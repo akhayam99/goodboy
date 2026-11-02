@@ -17,7 +17,6 @@ export const sweepRequests = ({ set, get }: SliceDeps) => {
     sessionId,
     isForced = false,
   }: SweepRequestsParams = {}): Promise<void> => {
-    const workspaceAtStart = get().currentWorkspaceId;
     const { sessions, currentSessionId } = get();
     const baseOptions = isForced ? FORCED_OPTIONS : SWEEP_OPTIONS;
     const tasks: Array<() => Promise<void>> = [];
@@ -59,15 +58,8 @@ export const sweepRequests = ({ set, get }: SliceDeps) => {
       }
     }
     if (tasks.length === 0) {
-      if (sessionId === undefined) {
-        set({ boardReady: true });
-      }
       return Promise.resolve();
     }
-    return runWithLimit({ tasks, limit: REVIEW_REFRESH_CONCURRENCY }).then(() => {
-      if (sessionId === undefined && get().currentWorkspaceId === workspaceAtStart) {
-        set({ boardReady: true });
-      }
-    });
+    return runWithLimit({ tasks, limit: REVIEW_REFRESH_CONCURRENCY }).then(() => undefined);
   };
 };

@@ -554,9 +554,14 @@ describe('StageBoard lanes', () => {
     expect(columnNames()).toContain('archived');
   });
 
-  it('asks for the archived list on every open', () => {
+  it('asks for the archived list on open and again, forced, when the window regains focus', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(state.loadArchivedSessions).toHaveBeenCalledWith(wsId);
+    expect(state.loadArchivedSessions).toHaveBeenCalledWith({ workspaceId: wsId });
+    fireEvent.focus(window);
+    expect(state.loadArchivedSessions).toHaveBeenLastCalledWith({
+      workspaceId: wsId,
+      isForced: true,
+    });
   });
 });

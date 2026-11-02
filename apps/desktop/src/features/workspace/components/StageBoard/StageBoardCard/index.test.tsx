@@ -179,6 +179,9 @@ const cardTitle = () => screen.getByRole('button', { name: session.goal });
 
 const signalSlot = () => screen.getByRole('article').querySelector('[data-slot="card-signal"]');
 
+const reservedSlot = () =>
+  screen.getByRole('article').querySelector('[data-slot="card-signal-reserve"]');
+
 describe('StageBoardCard layout', () => {
   it('keeps a 96px floor with a two-line title and one bottom line', () => {
     render(<StageBoardCard session={session} nav={nav} />);
@@ -298,7 +301,7 @@ describe('StageBoardCard selection', () => {
 describe('StageBoardCard one signal', () => {
   it('shows nothing at the right when nothing asks for attention', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(signalSlot()?.children.length).toBe(0);
+    expect(reservedSlot()?.children.length).toBe(0);
   });
 
   it('puts an open question first, above a failed check, a pull request and running work', () => {
@@ -365,7 +368,21 @@ describe('StageBoardCard one signal', () => {
   it('leaves the slot empty while GitHub has not answered, no skeleton per card', () => {
     hooks.prFetchState = 'unknown';
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(signalSlot()?.children.length).toBe(0);
+    expect(reservedSlot()?.children.length).toBe(0);
+  });
+
+  it('reserves the pull request width before GitHub answers and fills the same slot in place', () => {
+    hooks.prFetchState = 'unknown';
+    const { rerender } = render(<StageBoardCard session={session} nav={nav} />);
+    const slotBefore = reservedSlot();
+    expect(slotBefore?.children.length).toBe(0);
+
+    hooks.prFetchState = 'known';
+    state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
+    rerender(<StageBoardCard session={aSession({ ...session })} nav={nav} />);
+
+    expect(reservedSlot()).toBe(slotBefore);
+    expect(reservedSlot()?.querySelector('[data-board-signal]')).not.toBeNull();
   });
 
   it('marks the slot offline when GitHub could not be reached', () => {
@@ -378,7 +395,7 @@ describe('StageBoardCard one signal', () => {
     hooks.openQuestionCount = 1;
     hooks.isRunning = true;
     render(<StageBoardCard session={session} nav={nav} archived />);
-    expect(signalSlot()?.children.length).toBe(0);
+    expect(reservedSlot()?.children.length).toBe(0);
   });
 });
 

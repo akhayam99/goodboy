@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import type { BootPhase } from '../../../store/slices/boot/state';
 
 type Params = {
@@ -11,11 +12,12 @@ export const useElapsedSincePhase = ({ phase }: Params): number => {
   useEffect(() => {
     const startedAt = Date.now();
     setElapsedMs(0);
-    const intervalId = window.setInterval(() => {
-      setElapsedMs(Date.now() - startedAt);
-    }, 1_000);
-
-    return () => window.clearInterval(intervalId);
+    return startPoll({
+      run: () => setElapsedMs(Date.now() - startedAt),
+      everyMs: 1_000,
+      gate: 'visible',
+      isImmediate: false,
+    });
   }, [phase]);
 
   return elapsedMs;

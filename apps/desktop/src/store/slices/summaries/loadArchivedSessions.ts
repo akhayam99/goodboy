@@ -1,13 +1,41 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { listArchivedSessionsForWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import { switchEpoch } from '../workspaces/switchEpoch';
+import type { GetFn, SetFn } from './types';
 
-export const loadArchivedSessions = (set: SetFn) => {
-  return async (workspaceId: WorkspaceId) => {
-    const archived = await listArchivedSessionsForWorkspace(tauriDatabase, workspaceId);
-    set((state) => ({
-      archivedSessions: { ...state.archivedSessions, [workspaceId]: archived },
-    }));
+type Params = {
+  readonly workspaceId: WorkspaceId;
+  readonly isForced?: boolean;
+};
+
+export const loadArchivedSessions = (set: SetFn, get: GetFn) => {
+  const inFlight = new Map<WorkspaceId, Promise<void>>();
+  const loadedAtEpoch = new Map<WorkspaceId, number>();
+  return async ({ workspaceId, isForced = false }: Params): Promise<void> => {
+    const isLoaded =
+      loadedAtEpoch.get(workspaceId) === switchEpoch.value &&
+      get().archivedSessions[workspaceId] !== undefined;
+    if (!isForced && isLoaded) {
+      return;
+    }
+    const pending = inFlight.get(workspaceId);
+    if (pending !== undefined) {
+      return pending;
+    }
+    const epoch = switchEpoch.value;
+    const request = (async () => {
+      try {
+        const archived = await listArchivedSessionsForWorkspace(tauriDatabase, workspaceId);
+        set((state) => ({
+          archivedSessions: { ...state.archivedSessions, [workspaceId]: archived },
+        }));
+        loadedAtEpoch.set(workspaceId, epoch);
+      } finally {
+        inFlight.delete(workspaceId);
+      }
+    })();
+    inFlight.set(workspaceId, request);
+    return request;
   };
 };

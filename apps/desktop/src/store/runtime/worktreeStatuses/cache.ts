@@ -1,4 +1,5 @@
 import type { WorktreeStatus } from '@goodboy/types';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 
 type CacheEntry = {
@@ -31,7 +32,7 @@ const entries = new Map<string, CacheEntry>();
 
 let running = 0;
 const queue: Array<() => void> = [];
-let timer: ReturnType<typeof setInterval> | null = null;
+let stopTimer: (() => void) | null = null;
 
 export const worktreeStatusKey = ({
   worktreePath,
@@ -120,31 +121,33 @@ const fetchInto = (entry: CacheEntry): Promise<void> => {
 };
 
 const startTimer = () => {
-  if (timer !== null || typeof setInterval !== 'function') {
+  if (stopTimer !== null || typeof window === 'undefined') {
     return;
   }
-  timer = setInterval(() => {
-    if (typeof document !== 'undefined' && document.hidden) {
-      return;
-    }
-    entries.forEach((entry) => {
-      if (entry.listeners.size > 0) {
-        void fetchInto(entry);
-      }
-    });
-  }, REFRESH_MS);
+  stopTimer = startPoll({
+    run: () => {
+      entries.forEach((entry) => {
+        if (entry.listeners.size > 0) {
+          void fetchInto(entry);
+        }
+      });
+    },
+    everyMs: REFRESH_MS,
+    gate: 'visible',
+    isImmediate: false,
+  });
 };
 
 const stopTimerWhenIdle = () => {
-  if (timer === null) {
+  if (stopTimer === null) {
     return;
   }
   const hasListener = Array.from(entries.values()).some((entry) => entry.listeners.size > 0);
   if (hasListener) {
     return;
   }
-  clearInterval(timer);
-  timer = null;
+  stopTimer();
+  stopTimer = null;
 };
 
 export const subscribe = ({ key, listener }: SubscribeParams): (() => void) => {
@@ -263,8 +266,8 @@ export const resetWorktreeStatusCache = () => {
   entries.clear();
   queue.length = 0;
   running = 0;
-  if (timer !== null) {
-    clearInterval(timer);
-    timer = null;
+  if (stopTimer !== null) {
+    stopTimer();
+    stopTimer = null;
   }
 };

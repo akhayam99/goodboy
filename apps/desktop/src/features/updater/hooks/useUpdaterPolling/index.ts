@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 import { useAppStore } from '../../../../store';
 
 const POLL_INTERVAL_MS = 60 * 60_000;
@@ -26,20 +27,17 @@ export const useUpdaterPolling = (): void => {
       void checkForUpdates();
     };
 
-    const tick = (): void => {
-      if (document.visibilityState === 'visible') {
-        maybeCheck();
-      }
-    };
-
-    const intervalId = window.setInterval(tick, POLL_INTERVAL_MS);
+    const stopPoll = startPoll({
+      run: maybeCheck,
+      everyMs: POLL_INTERVAL_MS,
+      gate: 'visible',
+      isImmediate: false,
+    });
     window.addEventListener('focus', maybeCheck);
-    document.addEventListener('visibilitychange', tick);
 
     return () => {
-      window.clearInterval(intervalId);
+      stopPoll();
       window.removeEventListener('focus', maybeCheck);
-      document.removeEventListener('visibilitychange', tick);
     };
   }, [checkForUpdates]);
 };

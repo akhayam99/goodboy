@@ -45,7 +45,7 @@ export const SessionNavSidebar = ({
     if (!currentWorkspace) {
       return;
     }
-    void loadArchivedSessions(currentWorkspace.id);
+    void loadArchivedSessions({ workspaceId: currentWorkspace.id });
   }, [currentWorkspace, loadArchivedSessions]);
 
   return (

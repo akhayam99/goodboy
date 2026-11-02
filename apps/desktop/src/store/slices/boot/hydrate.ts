@@ -10,6 +10,7 @@ import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/works
 import { consumeReloadIntent } from '../../../features/workspace/windowView';
 import { restoreLaunchLayout, type LaunchLayout } from './restoreLaunchLayout';
 import { reopenSecondaryWindows } from './reopenSecondaryWindows';
+import { openWorkspaceOrFail } from './openWorkspaceOrFail';
 import {
   SETTING_CHAT_IMAGES,
   SETTING_CONTEXT_LEARNINGS,
@@ -64,10 +65,12 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
         await runDbMigrations();
         await hydrateOnboardingFromDb();
-        await get().hydrateBootstrapPhases();
-        await get().hydrateFolderPurposes();
-        await get().hydrateChangelogSeen();
-        await get().hydrateCliRequirements();
+        await Promise.all([
+          get().hydrateBootstrapPhases(),
+          get().hydrateFolderPurposes(),
+          get().hydrateChangelogSeen(),
+          get().hydrateCliRequirements(),
+        ]);
         void get()
           .loadNotifications()
           .catch(() => {});
@@ -177,7 +180,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         if (reloadIntent?.mode === 'restore') {
           const snapWorkspace = workspaces.find((w) => w.id === reloadIntent.workspaceId) ?? null;
           if (snapWorkspace) {
-            await get().setCurrentWorkspace(snapWorkspace.id);
+            await openWorkspaceOrFail({ get, id: snapWorkspace.id });
             void setWindowTitle(snapWorkspace.name);
             const { location } = reloadIntent;
             if (location !== undefined) {
@@ -209,7 +212,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           }).catch(() => null);
           const isLayoutRestored = launchLayout?.isRestored === true;
           if (!isLayoutRestored && hashWorkspace) {
-            await get().setCurrentWorkspace(hashWorkspace.id);
+            await openWorkspaceOrFail({ get, id: hashWorkspace.id });
             void setWindowTitle(hashWorkspace.name);
           } else if (!isLayoutRestored && reopenLast) {
             const lastWorkspaceId =
@@ -220,7 +223,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
               ? (workspaces.find((w) => w.id === lastWorkspaceId) ?? null)
               : null;
             if (targetWorkspace) {
-              await get().setCurrentWorkspace(targetWorkspace.id);
+              await openWorkspaceOrFail({ get, id: targetWorkspace.id });
               const lastSessionId =
                 lastSessionRaw && lastSessionRaw.length > 0 ? (lastSessionRaw as SessionId) : null;
               if (lastSessionId) {

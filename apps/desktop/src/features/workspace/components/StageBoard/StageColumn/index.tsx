@@ -1,4 +1,5 @@
-import { cn, EmptyState, Eyebrow, ScrollFade, SkeletonRow, Tooltip } from '@goodboy/ui';
+import { useState } from 'react';
+import { Button, cn, EmptyState, Eyebrow, ScrollFade, SkeletonRow, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -11,6 +12,8 @@ import { DoneLaneMenu } from './DoneLaneMenu';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
 import { PANE_RHYTHM } from '@goodboy/ui';
+
+const LANE_WINDOW = 50;
 
 type ColumnSpec =
   { readonly kind: 'stage'; readonly stage: SessionStage } | { readonly kind: 'archived' };
@@ -80,6 +83,10 @@ export const StageColumn = ({
   const isEmpty = sessions.length === 0;
   const isHalf = placement === 'half';
   const { isSelected } = selection;
+  const [isWindowOpen, setIsWindowOpen] = useState(false);
+  const isWindowed = view.key === 'done' || view.key === 'archived';
+  const hiddenCount = isWindowed && !isWindowOpen ? Math.max(0, sessions.length - LANE_WINDOW) : 0;
+  const drawn = hiddenCount === 0 ? sessions : sessions.slice(0, LANE_WINDOW);
 
   return (
     <div
@@ -127,7 +134,7 @@ export const StageColumn = ({
               PANE_RHYTHM.board.cardGap,
             )}
           >
-            {sessions.map((session) => (
+            {drawn.map((session) => (
               <StageBoardCard
                 key={session.id}
                 session={session}
@@ -142,6 +149,16 @@ export const StageColumn = ({
                 onHoverLeave={onCardLeave}
               />
             ))}
+            {hiddenCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-start"
+                onClick={() => setIsWindowOpen(true)}
+              >
+                {`Show ${hiddenCount} more`}
+              </Button>
+            )}
           </div>
         </ScrollFade>
       )}

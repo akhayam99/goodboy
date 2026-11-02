@@ -34,6 +34,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
 import type { AutoRuntime } from './createAutoRuntime';
 import { followArtifactAnnouncements } from './followArtifactAnnouncements';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
 import {
@@ -269,9 +270,9 @@ export const startAutoRuntime = async ({
       });
   };
   run();
-  const timer = setInterval(run, tickMs);
+  const stopPoll = startPoll({ run, everyMs: tickMs, gate: 'always', isImmediate: false });
   return () => {
-    clearInterval(timer);
+    stopPoll();
     unregister();
   };
 };

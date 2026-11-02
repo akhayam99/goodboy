@@ -25,6 +25,7 @@ import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
 import { lookupDeliveryRun } from '../../../features/chat/turn';
 import { stopLingeringTurn } from '../../../features/chat/stopLingeringTurn';
 import { handDelivery } from './handDelivery';
+import { workspaceVerification } from '../project-mounts/verify/workspaceVerification';
 import { waitForClusterOverlap } from './clusterOverlap/waitForClusterOverlap';
 
 type DiscardParams = Readonly<{
@@ -45,6 +46,7 @@ const ALREADY_SENT: SendTurnResult = { blockedOverBudget: false, isAlreadySent: 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async ({ input: given, lease }: RunOnceParams): Promise<SendTurnResult> => {
     const input = handDelivery.withId({ input: given });
+    await workspaceVerification.settled();
     const prepared = await prepareTurn({ set, get, input });
     if (prepared.isDone) {
       return prepared.result;

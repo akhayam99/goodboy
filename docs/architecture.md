@@ -370,7 +370,10 @@ and `exclude` for the goodboy directory, `git` for the shared runner, and
 files and re-exports their items, so callers keep writing
 `crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
-sit in a `tests.rs` beside the file they cover.
+sit in a `tests.rs` beside the file they cover. `worktree_list_registered`
+inspects many folders of one repo with a single `git worktree list`; opening a
+workspace calls it once per repo, in the background after the first paint, and a
+turn start waits for that verdict for at most five seconds.
 
 ### Diff file sides
 

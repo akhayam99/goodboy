@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Band, Button, formatError, Notice, PaneShell } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 import {
   bridgeRevoke,
   bridgeStart,
@@ -140,8 +141,12 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
     if (info === null) {
       return;
     }
-    const id = setInterval(() => setRemaining((left) => Math.max(0, left - 1)), 1000);
-    return () => clearInterval(id);
+    return startPoll({
+      run: () => setRemaining((left) => Math.max(0, left - 1)),
+      everyMs: 1000,
+      gate: 'always',
+      isImmediate: false,
+    });
   }, [info]);
 
   useEffect(() => {
@@ -155,8 +160,12 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
       return;
     }
     pairedAtStartRef.current = enrolledRef.current;
-    const id = setInterval(() => void refreshStatus(), STATUS_POLL_MS);
-    return () => clearInterval(id);
+    return startPoll({
+      run: () => void refreshStatus(),
+      everyMs: STATUS_POLL_MS,
+      gate: 'visible',
+      isImmediate: false,
+    });
   }, [isShowingCode, refreshStatus]);
 
   useEffect(() => {

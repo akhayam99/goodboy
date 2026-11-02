@@ -97,6 +97,28 @@ describe('useProjectGitStatuses', () => {
     expect(statusCalls().length - before).toBe(2);
   });
 
+  it('runs one 30 s poll for three components and stops it with the last one', async () => {
+    const first = renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    const second = renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    const third = renderHook(() => useProjectGitStatuses({ workspaceId: harborline.id }));
+    await settle(0);
+    const before = statusCalls().length;
+
+    await settle(30_000);
+    expect(statusCalls().length - before).toBe(2);
+
+    first.unmount();
+    second.unmount();
+    const afterTwoUnmounts = statusCalls().length;
+    await settle(30_000);
+    expect(statusCalls().length - afterTwoUnmounts).toBe(2);
+
+    third.unmount();
+    const afterAllUnmounted = statusCalls().length;
+    await settle(60_000);
+    expect(statusCalls().length).toBe(afterAllUnmounted);
+  });
+
   it('shows a missing status when the read fails', async () => {
     stubStoryInvoke({
       repo_identity: null,

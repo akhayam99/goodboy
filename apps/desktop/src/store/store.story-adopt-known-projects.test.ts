@@ -242,7 +242,7 @@ describe('story: two migrated shells fuse into one workspace board', () => {
     expect(state.workspaces.map((workspace) => workspace.id)).toEqual([acme.id]);
     expect(state.projects.map((project) => project.workspaceId)).toEqual([acme.id, acme.id]);
 
-    await state.loadArchivedSessions(acme.id);
+    await state.loadArchivedSessions({ workspaceId: acme.id });
     const archived = useAppStore.getState().archivedSessions[acme.id] ?? [];
     expect(archived).toHaveLength(1);
     expect(useAppStore.getState().sessions.length + archived.length).toBe(9);

@@ -223,6 +223,8 @@ export const NON_SESSION_STATE_KEYS = [
   'backupImportError',
   'backupImportResult',
   'currentWorkspaceId',
+  'switchingToWorkspaceId',
+  'workspaceSwitchError',
   'windowPresence',
   'hostReachability',
   'hostAnsweredAt',

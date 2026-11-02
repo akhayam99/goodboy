@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import type {
@@ -32,6 +32,7 @@ import { BoardLanes } from './BoardLanes';
 import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
+import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
 import { useBoardSelection } from './useBoardSelection';
 import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
@@ -108,7 +109,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady);
-  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );
@@ -142,9 +142,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     [closeHover, navigate],
   );
 
-  useEffect(() => {
-    void loadArchivedSessions(workspaceId);
-  }, [loadArchivedSessions, workspaceId]);
+  useArchivedSessionsLoad({ workspaceId });
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();
