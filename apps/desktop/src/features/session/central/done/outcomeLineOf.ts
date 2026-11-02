@@ -1,7 +1,7 @@
+import { autoGroupOf } from '../../../auto/autoGroupOf';
 import type { Agent, AgentId, SessionEvent } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { ciFixRoleOf } from '../../../branch/checks/ciFixRole';
-import { autoGroupOf } from '../../../auto/autoGroupOf';
 import { joinNouns } from '../../../auto/joinNouns';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { AGENT_KIND_META, type AgentKind } from '../../agent-kind';
@@ -14,10 +14,7 @@ import type { DoneModel, DoneSource } from './doneTypes';
 import { agentCountLabelOf } from '../../agentCountLabelOf';
 import { descendantAgentsOf } from '../../descendantAgentsOf';
 import { runAgentCountOf } from '../../runAgentCountOf';
-import { autoNeedsYouCountOf } from './autoNeedsYouCountOf';
-import { needsYouLabelOf } from './needsYouLabelOf';
 import { plainTitleOf } from './plainTitleOf';
-import { runNeedsYouCountOf } from './runNeedsYouCountOf';
 import { runStepNumbersOf } from './runStepNumbersOf';
 import { stepsLabelOf } from './stepsLabelOf';
 
@@ -171,7 +168,6 @@ const agentLineOf = ({
 }): OutcomeLine => {
   const view = model.autoTrees.find((candidate) => candidate.tree.rootAgentId === entry.agent.id);
   if (view !== undefined) {
-    const group = autoGroupOf({ view, agents: model.agents, now: model.now });
     const spawned = descendantAgentsOf({ agents: model.agents, rootId: entry.agent.id });
     return {
       title: autoOutcomeOf({ entry, view, model }) ?? 'Auto finished',
@@ -181,7 +177,6 @@ const agentLineOf = ({
           agentCountLabelOf({
             count: runAgentCountOf({ agentIds: spawned.map((agent) => agent.id) }),
           }),
-          needsYouLabelOf({ count: autoNeedsYouCountOf({ view, group }) }),
         ],
       }),
       kind: 'auto',
@@ -280,7 +275,6 @@ const runLineOf = ({
           count: runAgentCountOf({ agentIds: spawned.map((agent) => agent.id) }),
         }),
         progressLabelOf({ done, total }),
-        needsYouLabelOf({ count: runNeedsYouCountOf({ steps }) }),
       ],
     }),
     kind: null,

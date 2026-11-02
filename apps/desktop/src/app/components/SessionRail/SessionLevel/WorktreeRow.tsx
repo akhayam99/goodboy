@@ -5,6 +5,7 @@ import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
+import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { mainBehindOf, unmergedCount } from '../../../../shared/lib/gitStatus';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
@@ -22,7 +23,6 @@ import { useTaskDropState } from '../../../../features/session/hooks/useTaskDrop
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { BranchRowAnchors } from './BranchRowAnchors';
 import { BranchRowLine } from './BranchRowLine';
-import { BranchStatusLine } from './BranchStatusLine';
 import { branchRowChipOf } from './branchRowChipOf';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { useWorktreeCardEntries } from './useWorktreeCardEntries';
@@ -87,6 +87,7 @@ export const WorktreeRow = ({
     checks: runs,
     behind,
     conflicts,
+    notPushed: row.isFinished ? 0 : branchPushFactsOf({ status }).toPush,
   });
   const storedTab = useBranchTab({ sessionId, mountPath: row.worktreePath });
   const currentTab = isShown ? resolveBranchTab({ tab: storedTab, scope }) : null;
@@ -182,9 +183,6 @@ export const WorktreeRow = ({
         </span>
       </div>
       <BranchRowAnchors sessionId={sessionId} row={row} />
-      {isOpened ? (
-        <BranchStatusLine sessionId={sessionId} row={row} status={status} target={target} />
-      ) : null}
       {livePath === null || !isOpened ? null : (
         <Reveal open={isOpen} id={entriesId}>
           <WorktreeEntries

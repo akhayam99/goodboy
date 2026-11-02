@@ -23,11 +23,12 @@ import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
-import { useSessionRailFold } from './useSessionRailFold';
+import { useSessionRailFold, type SessionRailFold } from './useSessionRailFold';
 import { useSessionRailLevel } from './useSessionRailLevel';
 
 type Props = {
   readonly session: Session;
+  readonly fold?: SessionRailFold;
 };
 
 const WIDTH_VAR = '--goodboy-session-rail-width';
@@ -35,11 +36,12 @@ const WIDTH_VAR = '--goodboy-session-rail-width';
 const isBackKey = (event: KeyboardEvent): boolean =>
   event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
 
-export const SessionRail = ({ session }: Props) => {
+export const SessionRail = ({ session, fold: providedFold }: Props) => {
   const sessionId = session.id;
   const place = useColumnPlace();
   const folds = useShellFolds();
-  const fold = useSessionRailFold({ isNarrow: folds.isRailNarrow });
+  const localFold = useSessionRailFold({ isNarrow: folds.isRailNarrow });
+  const fold = providedFold ?? localFold;
   const level = useSessionRailLevel({ sessionId, isFolded: fold.isFolded });
   const resizable = useResizableWidth<HTMLElement>({
     storageKey: STORAGE_KEYS.sessionRailWidth,

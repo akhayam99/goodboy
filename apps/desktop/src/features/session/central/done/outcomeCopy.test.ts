@@ -180,11 +180,11 @@ describe('the copy of every row kind', () => {
     expect(byOf({ name: 'live run slice with gaps' })).toBe('Build · 7 of 26 steps');
   });
 
-  it('puts the agent count and what needs you on an Auto row, and nothing else', () => {
+  it('keeps open questions off a finished Auto row', () => {
     const byOf = ({ name }: { readonly name: string }): string =>
       ROWS.find((row) => row.name === name)?.line.by ?? '';
 
     expect(byOf({ name: 'auto, nothing waiting' })).toBe('Auto · 3 agents');
-    expect(byOf({ name: 'auto, waiting on you' })).toBe('Auto · 3 agents · 1 needs you');
+    expect(byOf({ name: 'auto, waiting on you' })).toBe('Auto · 3 agents');
   });
 });

@@ -5416,7 +5416,7 @@
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMountPreflight/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMountPreflight/index.ts": {

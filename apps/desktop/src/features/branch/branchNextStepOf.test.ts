@@ -50,7 +50,7 @@ describe('branchNextStepOf', () => {
       hasConflictStop: false,
     });
 
-    expect(step).toMatchObject({ state: 'unpushed', unpushed: 2, isPushed: true });
+    expect(step).toMatchObject({ state: 'unpushed', unpushed: 2, isPushed: false });
   });
 
   it('rebases first when the branch is behind and also has unpushed commits', () => {

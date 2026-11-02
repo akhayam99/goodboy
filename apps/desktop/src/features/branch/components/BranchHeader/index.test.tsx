@@ -449,16 +449,22 @@ describe('BranchHeader actions by state', () => {
     screen.getByRole('menuitem', { name: /Cancel auto-merge/ });
   });
 
-  it('puts Push N as the secondary ahead of Publish and Retry, counting the accepted threads', () => {
+  it('puts Push N as the secondary ahead of Publish and Retry, counting commits ahead of origin', () => {
     withMountPr();
     status = statusOf({});
     renderHeader({
       pr: PR,
-      review: { accepted: 3, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
+      review: {
+        accepted: 1,
+        replies: 2,
+        failed: 1,
+        isPushing: false,
+        push: { state: 'idle', count: 3 },
+      },
     });
 
     expect(
-      screen.getByRole('button', { name: /^Push 3 fixes$/ }).getAttribute('data-variant'),
+      screen.getByRole('button', { name: /^Push 3 commits$/ }).getAttribute('data-variant'),
     ).toBe('secondary');
     expect(secondaries()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
@@ -488,11 +494,17 @@ describe('BranchHeader actions by state', () => {
     status = statusOf({});
     renderHeader({
       pr: open,
-      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
+      review: {
+        accepted: 1,
+        replies: 0,
+        failed: 0,
+        isPushing: false,
+        push: { state: 'idle', count: 3 },
+      },
       nextStep: 'merge',
     });
 
-    const push = screen.getByRole('button', { name: /^Push 1 fix$/ });
+    const push = screen.getByRole('button', { name: /^Push 3 commits$/ });
     const primary = primaries()[0] as HTMLElement;
     const more = screen.getByRole('button', { name: 'Branch actions' });
     expect(push.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

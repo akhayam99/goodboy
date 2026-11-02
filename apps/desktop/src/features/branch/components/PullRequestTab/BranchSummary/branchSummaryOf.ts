@@ -1,8 +1,10 @@
 import type { BranchCommit, FileDiff } from '@goodboy/types';
+import { branchPushFactsOf } from '../../../../../shared/lib/branchPushState';
 import { topFolderOf } from '../../../../diff/lib/topFolderOf';
 
 type Params = {
   readonly commits: ReadonlyArray<BranchCommit>;
+  readonly notPushed?: number;
   readonly files: ReadonlyArray<Pick<FileDiff, 'path' | 'additions' | 'deletions' | 'binary'>>;
 };
 
@@ -27,7 +29,7 @@ export type BranchSummary = {
 const SUMMARY_SUBJECTS = 3;
 const SUMMARY_FOLDERS = 3;
 
-export const branchSummaryOf = ({ commits, files }: Params): BranchSummary => {
+export const branchSummaryOf = ({ commits, files, notPushed }: Params): BranchSummary => {
   const counts = new Map<string, number>();
   for (const file of files) {
     const folder = topFolderOf({ path: file.path });
@@ -39,7 +41,8 @@ export const branchSummaryOf = ({ commits, files }: Params): BranchSummary => {
   const hidden = folders.slice(SUMMARY_FOLDERS);
   return {
     commitCount: commits.length,
-    notPushed: commits.filter((commit) => !commit.pushed).length,
+    notPushed:
+      notPushed ?? branchPushFactsOf({ status: null, commits, hasRemoteHead: true }).toPush,
     latestSubjects: commits.slice(0, SUMMARY_SUBJECTS).map((commit) => commit.subject),
     fileCount: files.length,
     additions: files.reduce((sum, file) => sum + (file.binary ? 0 : file.additions), 0),

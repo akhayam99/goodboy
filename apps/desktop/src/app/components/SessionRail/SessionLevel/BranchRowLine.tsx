@@ -55,6 +55,9 @@ export const BranchRowLine = ({
               facts.isFinished && 'text-muted-foreground',
             )}
           >
+            {facts.number === null ? null : (
+              <span className="text-muted-foreground">{facts.number} </span>
+            )}
             {facts.title}
           </span>
           {chip === null ? null : <BranchRowChip chip={chip} />}

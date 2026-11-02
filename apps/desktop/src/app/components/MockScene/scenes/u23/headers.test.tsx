@@ -40,7 +40,7 @@ describe('the header branch push scene', () => {
     const panel = screen.getByRole('group', { name: /^Push 2 commits to/ });
     expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     within(panel).getByText('Not a fix');
-    const header = screen.getByRole('button', { name: /^Push \d+ (fix|fixes)$/, expanded: true });
+    const header = screen.getByRole('button', { name: /^Push commits$/, expanded: true });
     expect(panel.contains(header)).toBe(false);
   });
 });

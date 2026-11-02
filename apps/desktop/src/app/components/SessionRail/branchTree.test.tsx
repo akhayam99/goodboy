@@ -170,22 +170,6 @@ const levelCount = (): number => document.querySelectorAll('[data-level-layer="w
 const railLevel = (): string | null =>
   screen.getByRole('navigation', { name: 'Session' }).getAttribute('data-session-rail');
 
-const statusLine = (): HTMLElement => {
-  const line = document.querySelector<HTMLElement>('[data-worktree-status]');
-  if (line === null) {
-    throw new Error('the current branch shows no status line');
-  }
-  return line;
-};
-
-const failureLine = (): HTMLElement => {
-  const failure = document.querySelector<HTMLElement>('[data-branch-failure]');
-  if (failure === null) {
-    throw new Error('the current branch shows no error under its line');
-  }
-  return failure;
-};
-
 const menuLabels = async (): Promise<ReadonlyArray<string>> =>
   (await screen.findAllByRole('menuitem')).map((item) => item.textContent ?? '');
 
@@ -331,64 +315,26 @@ describe('one tree for every branch', () => {
     expect(document.querySelector('[data-worktree-status]')).toBeNull();
   });
 
-  it('says how far behind the current branch is and rebases that mount once from its line', async () => {
-    const rebaseBranch = vi.fn(async () => 'rebased' as const);
+  it('shows a behind pill without a row rebase action', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 6 }) });
-    useAppStore.setState({ rebaseBranch });
     await openWorktree();
     await mountRail();
-
-    const line = await waitFor(statusLine);
-    expect(line.textContent).toContain('6 behind main');
-    expect(line.closest('[data-card-project]')?.getAttribute('data-card-project')).toBe(
-      'payments-api',
-    );
-    fireEvent.click(within(line).getByRole('button', { name: 'Rebase on main' }));
-    await settle();
-
-    expect(rebaseBranch).toHaveBeenCalledTimes(1);
-    expect(rebaseBranch).toHaveBeenCalledWith({ sessionId, mountId: mount.mountId });
-  });
-
-  it('keeps the line and shows the error under it when a rebase fails, and rebases again on retry', async () => {
-    const rebaseBranch = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('origin cannot be reached'))
-      .mockResolvedValue('rebased');
-    seedTwoProjects({ status: worktreeStatusOf({ behind: 6 }) });
-    useAppStore.setState({ rebaseBranch });
-    await openWorktree();
-    await mountRail();
-
-    const line = await waitFor(statusLine);
-    fireEvent.click(within(line).getByRole('button', { name: 'Rebase on main' }));
-    await settle();
-
-    const failure = failureLine();
-    expect(failure.textContent).toContain('origin cannot be reached');
-    expect(statusLine().textContent).toContain('6 behind main');
     expect(
-      statusLine().compareDocumentPosition(failure) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-
-    fireEvent.click(within(failure).getByRole('button', { name: 'Retry' }));
-    await settle();
-
-    expect(rebaseBranch).toHaveBeenCalledTimes(2);
-    expect(rebaseBranch).toHaveBeenLastCalledWith({ sessionId, mountId: mount.mountId });
+      within(rowButton('payments-api', /#418/)).getByTestId('branch-row-chip').textContent,
+    ).toBe('6 behind');
+    expect(document.querySelector('[data-worktree-status]')).toBeNull();
+    expect(document.querySelector('[data-worktree-verb]')).toBeNull();
   });
 
-  it('says a rebase is running and asks before Abort runs', async () => {
+  it('shows one stopped pill without Open rebase below the row', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ unmerged: 1, inProgress: 'rebase' }) });
     await openWorktree();
     await mountRail();
-
-    const line = await waitFor(statusLine);
-    expect(line.textContent).toContain('Rebasing · 1 conflict');
-    fireEvent.click(within(line).getByRole('button', { name: 'Abort rebase' }));
-    await settle();
-
-    expect(screen.getByRole('group', { name: 'Abort the rebase?' })).toBeDefined();
+    expect(
+      within(rowButton('payments-api', /#418/)).getByTestId('branch-row-chip').textContent,
+    ).toBe('Rebase stopped');
+    expect(screen.queryByRole('button', { name: /^Open rebase of/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
   });
 });
 
@@ -435,7 +381,30 @@ const branchesIn = (list: HTMLElement): ReadonlyArray<string> =>
   );
 
 describe('the branch rows', () => {
-  it('draws one line: the pull request title, else the branch name in mono, with no number or branch beside it', async () => {
+  it('keeps two titles with the same prefix distinct by their leading numbers', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    const first = extraMount({ seed: { name: 'northwind-one' }, state: 'open', number: 322 });
+    const second = extraMount({ seed: { name: 'northwind-two' }, state: 'open', number: 323 });
+    useAppStore.setState((state) => ({
+      mountGithub: Object.fromEntries(
+        Object.entries(state.mountGithub).map(([id, value]) => [
+          id,
+          (id === first || id === second) && value.pr !== null
+            ? { ...value, pr: { ...value.pr, title: 'Add an idempotency guard to payments-api' } }
+            : value,
+        ]),
+      ),
+    }));
+    await mountRail();
+    expect(
+      rowButton('payments-api', /#322/).querySelector('[data-worktree-branch]')?.textContent,
+    ).toBe('#322 Add an idempotency guard to payments-api');
+    expect(
+      rowButton('payments-api', /#323/).querySelector('[data-worktree-branch]')?.textContent,
+    ).toBe('#323 Add an idempotency guard to payments-api');
+  });
+
+  it('draws one line: the pull request title, else the branch name in mono, with the number first', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     useAppStore.setState((state) => {
       const ledger = state.mountGithub[ledgerMount.mountId];
@@ -446,7 +415,7 @@ describe('the branch rows', () => {
     await mountRail();
 
     const titled = rowButton('payments-api', /#418/);
-    expect(titled.textContent).toBe('Retry window');
+    expect(titled.textContent).toBe('#418 Retry window');
     expect(titled.querySelector('[data-worktree-branch]')?.getAttribute('data-title-kind')).toBe(
       'request',
     );
@@ -516,7 +485,7 @@ describe('the branch rows', () => {
     await waitFor(() =>
       expect(
         within(rowButton('ledger-core', /#77/)).getByTestId('branch-row-chip').textContent,
-      ).toBe('Conflict'),
+      ).toBe('Rebase stopped'),
     );
   });
 
@@ -699,7 +668,7 @@ describe('rebase all on the rows', () => {
     ).not.toBeNull();
     expect(chipOf('payments-api', /branch hl\/four/)?.textContent).toBe('Queued');
     expect(chipOf('payments-api', /branch hl\/four/)?.closest('[data-is-breathing]')).toBeNull();
-    expect(chipOf('payments-api', /branch hl\/five/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/five/)?.textContent).toBe('Rebase stopped');
     expect(chipOf('payments-api', /branch hl\/six/)?.textContent).toBe('Failed');
   });
 
@@ -790,7 +759,7 @@ describe('rebase all on the rows', () => {
       phase: 'done',
     });
     await settle();
-    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Rebase stopped');
     expect(chipOf('payments-api', /branch hl\/two/)?.textContent).toBe('Failed');
 
     stubStoryInvoke({
@@ -825,7 +794,7 @@ describe('rebase all on the rows', () => {
     });
     await settle();
 
-    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Rebase stopped');
   });
 
   it('offers Dismiss in the header once the batch is done and clears every chip', async () => {
@@ -872,6 +841,7 @@ describe('the folder cards of the session level', () => {
       scan_child_repos: () => [],
       repo_identity: () => ({ rootCommits: [], remoteUrl: null }),
       worktree_list_branch_names: () => ['main'],
+      session_dir_exists: () => false,
     });
     vi.mocked(openDialog).mockResolvedValueOnce('/repos/acme-docs');
     await mountRail();

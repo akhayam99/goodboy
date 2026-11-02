@@ -17,6 +17,7 @@ export type EnsureProjectMountedInput = {
   readonly mountId?: MountId;
   readonly requestId?: string;
   readonly branch?: string;
+  readonly dirName?: string;
 };
 
 export type EnsureProjectMountedResult =

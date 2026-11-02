@@ -92,19 +92,19 @@ describe('the c04 worktree level scenes', () => {
 
     expect(screen.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
     const ledger = within(screen.getByRole('list', { name: 'ledger-core worktrees' }));
-    expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Failing');
+    expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Checks failing');
     const notify = document.querySelector<HTMLElement>('[data-card-project="notify-relay"]');
     expect(notify?.querySelector('[data-finished-fold]')?.textContent).toBe('1 finished');
     expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 
-  it('c04-worktree-pr-behind shows the current branch, its status line with Rebase and the property block', async () => {
+  it('c04-worktree-pr-behind shows the current branch, the property block, no rail status line', async () => {
     await mount('c04-worktree-pr-behind');
 
     const level = within(worktreeLayer());
     expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
-    expect(level.getByRole('status').textContent).toContain('6 behind main');
-    expect(level.getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
+    expect(level.queryByRole('status')).toBeNull();
+    expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('group', { name: 'Status' }).textContent).toContain('6 behind main');
@@ -175,12 +175,15 @@ describe('the c04 worktree level scenes', () => {
     ).toBe('page');
   });
 
-  it('c04-worktree-rebasing says the rebase on the status line with Abort', async () => {
+  it('c04-worktree-rebasing says the stopped rebase in one pill', async () => {
     await mount('c04-worktree-rebasing');
 
-    const line = within(worktreeLayer()).getByRole('status');
-    expect(line.textContent).toContain('Rebasing · 1 conflict');
-    expect(within(worktreeLayer()).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
+    const level = within(worktreeLayer());
+    expect(level.queryByRole('status')).toBeNull();
+    expect(level.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
+    expect(document.querySelector('[data-chip-kind="conflict"]')?.textContent).toBe(
+      'Rebase stopped',
+    );
   });
 
   it('c04-worktree-menu opens the worktree menu', async () => {

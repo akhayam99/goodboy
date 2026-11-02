@@ -232,11 +232,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Branch lens only marks one row current (`SessionLevel/WorktreeRow`,
   `isOpened`: the row of the mount the Branch page shows). What level 2 held
   moved onto that row. Under it, always visible while it is current: the
-  status line, only while a git act is due (`BranchStatusLine`: `6 behind main
-· 1 conflict` with `Rebase`, or `Rebasing on main` with `Abort`, the one home
-  of Rebase; a failure keeps the line and shows the error under it with Retry,
-  and a stopped rebase adds one line under it, its title with `Open rebase`, which opens the
-  Branch page of that mount where the full panel lives); then
+  one state pill, with Rebase stopped before failing checks, behind and not
+  pushed (`branchRowChipOf`, `branchRowFactsOf`). Request numbers lead the
+  title before it truncates (`BranchRowLine`). Rebase actions live on the
+  Branch page; Rebase all stays on the Projects header. Under the current row,
   its pages (`WorktreeEntries`), open unless you folded them: Pull request
   (Merge request on GitLab, with its number and the branch in mono),
   Comments, Files, Commits, Checks, the one with the open page marked
@@ -621,13 +620,13 @@ activity yet show the plain overview with its actions.
 ## Breadcrumbs
 
 - **Every session page below the Overview draws one trail above its title.**
-  Cut C1 is reversed: with the sidebar folded nothing else named the session.
   `SessionWorkspace` hands `<SessionTrail>` to the visible layer through
   `PageTrailContext` (`@goodboy/ui`), and `PageHeader` draws it as a 24px line
   at the head of the header, above the title row, in the same gap; `PaneShell`
   clears the context for its body, so a nested header never repeats it. The
-  trail is `upTrailOf`: the session title, the page, then the item's kind
-  (`Stop retried webhooks… › Orchestrated › Run › Agent`). Every crumb but the
+  trail comes from `upTrailOf`: the page and its parents, ending in the
+  agent's display name (`Runs › Run › Implementer`). `SessionTrail` retains
+  the session title first when `SessionRailFoldContext` says the column is folded. Every crumb but the
   last is a link that calls `upTo` (Back when the entry below is that place,
   else a push); the parent crumb's tooltip reads `Go up to Run (⌘↑)`. The
   Overview draws no trail (its title names the session), nor does a drawer,
@@ -861,10 +860,9 @@ Folding the rail leaves the column in place, and a drill never moves it.
   the pure rule; the label closes with a 220ms width transition (120ms fade),
   and a new crumb enters from the right 60ms later. Under reduced motion only
   the opacity changes.
-- **The session trail starts at the session title.** The sidebar row and the
-  rail vanish or point at a list when the sidebar is folded, so the first crumb
-  names the session (`crumbOf`, through `sessionTitle`) and folds by the
-  `compactTrail` rule when the line is short.
+- **The session trail starts after the session when the column is open.**
+  The column already names it. Folded or narrow, the first crumb names the
+  session (`crumbOf`, through `sessionTitle`) and follows `compactTrail`.
 - The last crumb is the current location and is never clickable. A list view
   never fills in a crumb for an item the user has not opened yet.
 - **A crumb carries no status dot.** The trail is structure, movement rather than
@@ -881,7 +879,7 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
   lens. A studio belongs under its own tool, never under another tool's lens.
 - **Opening a child extends the trail and keeps every ancestor**:
-  `{session} › {HomeLens} › Agent`. Selecting a sibling changes only the last
+  `{HomeLens} › {agent name}`. Selecting a sibling changes only the last
   crumb and the child region.
 - **The trail shows the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the

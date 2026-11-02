@@ -9,7 +9,7 @@ export const CommitsCardBody = ({ summary }: Props) => (
     <span className="flex items-baseline gap-2 text-foreground">
       <span className="text-title">{summary.commitCount}</span>
       <span className="text-meta text-muted-foreground">
-        {summary.commitCount === 1 ? 'commit' : 'commits'}
+        {summary.commitCount === 1 ? 'commit' : 'commits'} on this branch
         {summary.notPushed > 0 ? `, ${summary.notPushed} not pushed` : ''}
       </span>
     </span>

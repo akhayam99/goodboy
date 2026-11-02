@@ -57,9 +57,7 @@ describe('the u25 push fix scenes', () => {
     expect(panel.getByText('Rebased, but the push failed')).toBeDefined();
     expect(panel.getByRole('button', { name: 'Fix with agent' })).toBeDefined();
     expect(panel.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
-    expect(document.querySelector('[data-rebase-conflict]')?.textContent).toContain(
-      'Rebased, but the push failed',
-    );
+    expect(document.querySelector('[data-rebase-conflict]')).toBeNull();
   });
 
   it('shows the agent fixing and hides the failure actions', async () => {

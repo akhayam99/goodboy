@@ -3,6 +3,7 @@ import type { BranchRowFacts } from '../../../../features/branch/branchRowFactsO
 import type { RebaseAllBranch } from '../../../../store/slices/rebaseAll/types';
 
 type BranchRowChipKind =
+  | 'not-pushed'
   | 'failing'
   | 'conflict'
   | 'behind'
@@ -76,7 +77,7 @@ const autoChipOf = ({
     return {
       kind: 'conflict',
       tone: 'danger',
-      text: 'Conflict',
+      text: 'Rebase stopped',
       reason: 'Waiting for Auto',
       isBreathing: false,
       icon: null,
@@ -122,7 +123,7 @@ const rebaseChipOf = (params: RebaseParams): RebaseChip => {
       return {
         kind: 'conflict',
         tone: 'danger',
-        text: 'Conflict',
+        text: 'Rebase stopped',
         reason: null,
         isBreathing: false,
         icon: null,
@@ -148,6 +149,16 @@ const rebaseChipOf = (params: RebaseParams): RebaseChip => {
 };
 
 export const branchRowChipOf = ({ signal, rebase, ...rest }: Params): BranchRowChip | null => {
+  if (rest.isRebaseStopped && rebase?.state !== 'auto') {
+    return {
+      kind: 'conflict',
+      tone: 'warning',
+      text: 'Rebase stopped',
+      reason: null,
+      isBreathing: false,
+      icon: null,
+    };
+  }
   if (rebase !== null) {
     const chip = rebaseChipOf({ ...rest, rebase });
     if (chip !== undefined) {

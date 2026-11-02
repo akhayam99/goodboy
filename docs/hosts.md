@@ -116,3 +116,10 @@ The Workspace step of setup clones through `repo_clone.rs`, the one clone path i
 4. Add its bridge verbs in `protocol.rs` and name them in `bridgeVerbs`. The parity test fails until the catalog and the row agree.
 5. Fill its column of the table above with the vendor page each field comes from.
 6. Add its store step: a `refreshSession<Host>` that refreshes one mount through `refreshMountRequest`, one arm in `refreshMountRequests` (`store/slices/review-source/`), one entry reader in `mountFetchFactsOf`, one branch in `requestHostOfRemote` and, for review threads, one arm in `refreshMountThreads` that lists the comments through `refreshSourceThreads`. The sweep, the stage reason and the board signal read those, so nothing else in the store names the host.
+
+## Branch push counts
+
+The branch header counts commits ahead of origin through `branchPushFactsOf`,
+as does the Push action. A branch with nothing left to push reads Up to date
+with origin; a diverged branch names both sides (`branchStartLineOf`). The
+request summary calls its total commits on this branch (`CommitsCardBody`).

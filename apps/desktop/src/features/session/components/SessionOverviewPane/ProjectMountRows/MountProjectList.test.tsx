@@ -100,6 +100,7 @@ describe('MountProjectList', () => {
         projectId: PID,
         reason: 'added manually by the user',
         mountId: MID,
+        dirName: 'gb-7k2q9x',
         branch: 'ak/ship-it',
       }),
     );
@@ -132,8 +133,12 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     screen.getByText('Reading the branches already in the repository…');
+    expect(screen.getByRole('button', { name: 'Add folder' }).hasAttribute('disabled')).toBe(true);
+    cleanup();
 
     h.preflight.status = 'ready';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     const deferred: { resolve: () => void } = { resolve: () => undefined };
     h.ensureProjectMounted.mockReturnValueOnce(
       new Promise<undefined>((resolve) => {

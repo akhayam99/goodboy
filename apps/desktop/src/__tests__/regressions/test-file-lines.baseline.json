@@ -1,6 +1,6 @@
 {
   "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 2192,
-  "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 1198,
+  "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 1178,
   "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1185,
   "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 1264,
   "apps/desktop/src/features/session/timeline/buildTimelineStream/index.test.ts": 3136,

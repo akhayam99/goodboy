@@ -256,7 +256,7 @@ describe('the branch page of a branch with no pull request', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'hl/fix-duplicate-credit' }),
     ).toBeDefined();
-    expect(header().textContent).toBe('Pushed5 ahead, 3 behind main');
+    expect(header().textContent).toBe('Up to date with origin');
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),

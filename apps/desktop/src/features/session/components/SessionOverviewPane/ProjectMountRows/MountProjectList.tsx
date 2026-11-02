@@ -81,6 +81,7 @@ export const MountProjectList = ({
           ? {}
           : {
               mountId: preflight.mountId,
+              dirName: preflight.targetPath.split('/').at(-1),
               ...(preflight.branch === null ? {} : { branch: preflight.branch }),
             }),
       });

@@ -41,18 +41,20 @@ type Params = {
   readonly mountId: MountId;
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly repoBranches?: ReadonlyArray<string>;
+  readonly dirName?: string;
 };
 
 type PathParams = {
   readonly project: Project;
   readonly mountId: MountId;
+  readonly dirName?: string;
 };
 
-const targetPathFor = ({ project, mountId }: PathParams): string => {
+const targetPathFor = ({ project, mountId, dirName }: PathParams): string => {
   if (project.kind !== 'repo') {
     return project.rootPath;
   }
-  return `${project.rootPath}/.goodboy/worktrees/${mountDirName({ mountId })}`;
+  return `${project.rootPath}/.goodboy/worktrees/${dirName ?? mountDirName({ mountId })}`;
 };
 
 export const mountPlan = ({
@@ -62,6 +64,7 @@ export const mountPlan = ({
   mountId,
   taskIdentifiers,
   repoBranches = [],
+  dirName,
 }: Params): MountPlan | null => {
   const session =
     sessionById(state.sessions, sessionId) ??
@@ -125,7 +128,7 @@ export const mountPlan = ({
     branch,
     adoptedBranch: project.kind === 'repo' ? adoptedBranch : null,
     baseBranch: project.kind === 'repo' ? (project.baseBranch ?? null) : null,
-    targetPath: targetPathFor({ project, mountId }),
+    targetPath: targetPathFor({ project, mountId, dirName }),
     takenBranches,
   };
 };

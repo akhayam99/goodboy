@@ -120,8 +120,8 @@ describe('the u23 comments scenes', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Ready to push' });
     expect(within(ready).getByRole('heading', { name: 'Ready to push 3' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /^Push 3 fixes$/ })).toHaveLength(1);
-    expect(within(ready).queryByRole('button', { name: 'Push 3 fixes' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Push commits$/ })).toHaveLength(1);
+    expect(within(ready).queryByRole('button', { name: 'Push commits' })).toBeNull();
     expect(within(ready).getAllByRole('listitem')).toHaveLength(3);
     const first = ready.querySelector<HTMLElement>('button[data-thread-id]');
     expect(first).not.toBeNull();

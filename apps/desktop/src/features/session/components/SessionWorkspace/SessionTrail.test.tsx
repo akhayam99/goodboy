@@ -29,6 +29,7 @@ import { currentStack } from '../../../../store/slices/navigation/currentStack';
 import { locationKey } from '../../../../store/slices/navigation/locationKey';
 import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import type { PlaceRequest } from '../../../../store/slices/navigation/types';
+import { SessionRailFoldContext } from '../../sessionRailFoldContext';
 import { SessionTrail } from './SessionTrail';
 
 const S1 = brandId<SessionId>({ value: 'session-notify-relay' });
@@ -114,13 +115,22 @@ const crumbNames = (): ReadonlyArray<string> =>
   ].map((piece) => piece.textContent ?? '');
 
 describe('SessionTrail', () => {
+  it('starts after the session while the rail names it', () => {
+    walk({ places: [OVERVIEW, STEP_PLACE] });
+    render(
+      <SessionRailFoldContext value={false}>
+        <SessionTrail sessionId={S1} />
+      </SessionRailFoldContext>,
+    );
+    expect(crumbNames()).toEqual(['Runs', 'Run', 'implementer']);
+  });
   it('names the session, the page and the kind, and marks the last crumb current', () => {
     walk({ places: [OVERVIEW, STEP_PLACE] });
     render(<SessionTrail sessionId={S1} />);
 
-    expect(crumbNames()).toEqual([TITLE, 'Runs', 'Run', 'Agent']);
-    expect(screen.getByText('Agent').getAttribute('aria-current')).toBe('page');
-    expect(screen.queryByRole('button', { name: 'Agent' })).toBeNull();
+    expect(crumbNames()).toEqual([TITLE, 'Runs', 'Run', 'implementer']);
+    expect(screen.getByText('implementer').getAttribute('aria-current')).toBe('page');
+    expect(screen.queryByRole('button', { name: 'implementer' })).toBeNull();
   });
 
   it('draws nothing on the Overview, which has no way up', () => {

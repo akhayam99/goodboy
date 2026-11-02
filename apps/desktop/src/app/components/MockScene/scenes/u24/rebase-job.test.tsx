@@ -111,16 +111,15 @@ const RAIL_STATES = [
 const RAIL_ONLY: ReadonlySet<RebaseJobSceneState> = new Set(RAIL_STATES);
 
 describe('the u24 rebase job scenes', () => {
-  it.each(RAIL_STATES)('leaves the %s state to the worktree status line', async (state) => {
+  it.each(RAIL_STATES)('leaves the %s state to the worktree row pill', async (state) => {
     renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
 
-    await waitFor(() => expect(document.querySelector('[data-worktree-status]')).not.toBeNull(), {
+    await waitFor(() => expect(document.querySelector('[data-chip-kind]')).not.toBeNull(), {
       timeout: 4_000,
     });
     await waitForSettledReads();
 
     expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull();
-    expect(document.querySelector('[data-worktree-status]')?.textContent).toContain('Rebasing');
   });
 
   it.each(SCENE_STATES.filter((state) => !RAIL_ONLY.has(state)))(

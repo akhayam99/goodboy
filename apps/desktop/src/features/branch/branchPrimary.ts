@@ -143,12 +143,6 @@ const reviewAction = ({
   tab: null,
 });
 
-type FixesParams = {
-  readonly count: number;
-};
-
-const fixes = ({ count }: FixesParams): string => plural({ count, one: 'fix', many: 'fixes' });
-
 const secondaryOf = ({
   diff,
   review,
@@ -161,9 +155,9 @@ const secondaryOf = ({
   }
   if (review.accepted > 0 || review.isPushing || review.push.state !== 'idle') {
     const isBusy = review.isPushing || review.push.state === 'busy';
-    const count = review.push.state === 'busy' ? review.push.count : review.accepted;
+    const count = review.push.count;
     return reviewAction({
-      label: `${isBusy ? 'Pushing' : 'Push'} ${fixes({ count })}`,
+      label: `${isBusy ? 'Pushing' : 'Push'} ${count > 0 ? plural({ count, one: 'commit', many: 'commits' }) : 'commits'}`,
       icon: ArrowUp,
       blockedReason: isBusy ? 'Pushing now.' : null,
       isBusy,

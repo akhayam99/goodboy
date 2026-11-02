@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { LENS_ICON, LENS_LABEL } from '../../../features/session/lens-labels';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
@@ -31,7 +32,16 @@ export const crumbOf = ({ state, place }: Params): Crumb => {
     return { label: 'Branch', icon: LENS_ICON.branch };
   }
   if (view.agentId !== null) {
-    return { label: 'Agent', icon: CONCEPT_ICONS.agents };
+    const agent = state.sessionPhaseRuns[place.sessionId]?.find(
+      (candidate) => candidate.id === view.agentId,
+    );
+    return {
+      label:
+        agent === undefined
+          ? 'Agent'
+          : agentDisplayName({ name: agent.name, kind: agent.kind ?? '' }),
+      icon: CONCEPT_ICONS.agents,
+    };
   }
   if (view.target?.kind === 'run') {
     return { label: 'Run', icon: LENS_ICON.workflows };

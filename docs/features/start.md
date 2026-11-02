@@ -188,6 +188,8 @@ Unlinking a task from a session acts at once, with a 10-second **Undo** toast, a
 
 Choose where an issue belongs with **Move to** in its chip menu: the session or one of the open branches of its project. You can also drag the chip onto a branch row, and hold Alt to copy it instead. Every move has one Undo.
 
+A failed start keeps the goal and settings. Its cause appears above the form actions, and starting again retries. A missing provider offers Connect a provider; other failures offer Copy details.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
@@ -214,3 +216,5 @@ This part is for contributors and agents who change the feature.
 - Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.
+
+`StartFailure` owns the recovery line shared by `StartForm`.
