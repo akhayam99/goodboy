@@ -30,7 +30,6 @@ const h = vi.hoisted(() => ({
   describeProjectAdoption: vi.fn(async (): Promise<ProjectAdoptionInfo | null> => null),
   seedWorkflowLibrary: vi.fn(async () => undefined),
   invokeWorkflowList: vi.fn(async () => []),
-  invokeSkillRescan: vi.fn(async () => []),
   updateProjectIdentity: vi.fn(async () => undefined),
 }));
 
@@ -62,7 +61,6 @@ vi.mock('../../../shared/lib/repo', () => ({
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: h.invokeWorkflowList,
 }));
-vi.mock('../../../features/skills/skills', () => ({ invokeSkillRescan: h.invokeSkillRescan }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn: vi.fn(async () => undefined) }));
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalClose: vi.fn(async () => undefined),
@@ -133,7 +131,6 @@ const harness = (initial: Record<string, unknown>): Harness => {
     workspaces: [],
     projects: [],
     phaseTemplates: {},
-    skills: {},
     currentWorkspaceId: null,
     sessions: [],
     terminalSessions: {},
@@ -182,15 +179,6 @@ describe('workspace and project slices', () => {
     expect(insertedProject.workspaceId).toBe(insertedWorkspace.id);
     expect(store.state.workspaces).toEqual([insertedWorkspace]);
     expect(store.state.projects).toEqual([insertedProject]);
-  });
-
-  it('scans no skills from disk when a workspace is added while the skills feature is off', async () => {
-    h.invokeSkillRescan.mockClear();
-    const store = harness({});
-
-    await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
-
-    expect(h.invokeSkillRescan).not.toHaveBeenCalled();
   });
 
   it('reconnects a disconnected project into its existing container', async () => {

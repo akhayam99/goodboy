@@ -47,8 +47,7 @@ Which helper to use depends on what the process runs.
 - Everything else gets the resolved `PATH` on top of the app's own environment. Use `command`. It sets `PATH` and does not clear anything else, so the child inherits every variable the app process holds. Nothing here is an allowlist.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
-gets it too, because a skill script is the user's own bash. `PATH`
+variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
@@ -383,7 +382,7 @@ also walks the path with `openat` and `O_NOFOLLOW`, so a file swapped for a
 symlink after the check is refused (unix only; other platforms refuse, and
 `open_file_within` falls back to `resolve_within` where an attachment must still
 work). `local_image_read`, `attachment_read`, `attachment_write`,
-`attachment_delete`, `explore_*`, the single-file diff and `skill_run_script` all
+`attachment_delete`, `explore_*` and the single-file diff all
 go through it; a new command that takes a path must too.
 
 `attachment_read_dropped` accepts only a path the window reported in a drag drop
@@ -393,9 +392,9 @@ drop as a window event, never as a webview event) and removes a path the first t
 was never dropped, or was dropped once and already read, is refused with
 `not_dropped`.
 
-`skill_run_script` takes the skill id, not a root. The roots come from the
-skill's workspace projects in the database, and the script must resolve inside
-`<root>/.kay/skills`. `session_dir_remove` takes the session id and removes a
+No `skill_*` command exists: the Skills feature and its script runner are
+deleted, and `check-tauri-commands.mjs` fails if one comes back.
+`session_dir_remove` takes the session id and removes a
 directory only when it is a direct child of a `sessions` folder (or a mount
 inside one) whose `.goodboy` marker names that session, and never through a
 symlink. `worktree_scratch_remove` takes only a direct child of the temp folder
@@ -737,6 +736,18 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   from a screen) always asks. Any other answer, even a refused sign-in, means
   the host is there. The top bar shows one quiet line per host with Retry, and
   Retry asks again for every session that already holds a request of that host.
+- **A silent refresh that finds nothing new writes nothing.** For a mount that
+  already holds an entry, `refreshMountRequest` skips the pending write and
+  writes the result only when the data differs from the stored entry, the
+  `fetchedAt` time aside. A second silent refresh of the same mount while one
+  runs is dropped. A refresh from a screen or a first read still writes both.
+  `noteHostAnswer` writes only when the host state changes. Its late-answer
+  guard sits in a record the slice owns, which an unchanged answer advances in
+  place, so an older answer is still dropped.
+- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
+  sessions array and input tuple, so the board, the top bar and the sidebar
+  share one pass per store change. `cachedStageInfoOf` does the same per
+  session for `useSessionStageInfo` and `useSessionStages`.
 
 ### Database migrations
 
@@ -940,7 +951,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                                                                                                                                                                                                                                          |
 | `sessions`                    | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                                                                                                                                                                                                                                            |
-| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                                                                                                                                                                                                                                    |
+| `skills`                      | ts     | No code writes it. The Skills feature is gone; the backup import and a project move still touch it, and the rows stay for a downgrade.                                                                                                                                                                                                 |
 | `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                                                                                                                                                                                                                                        |
 | `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                                          |
 | `telemetry_records`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
@@ -1221,12 +1232,9 @@ workspace is gone, and the storage scan only ever looks inside
 `<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
 the way Finder's "size on disk" does.
 
-Two things live next to your code instead of in `~/.goodboy`. A folder
-project keeps the session folders of sessions made before 0.27.3 in
-`<project-root>/sessions/`; newer sessions write in the folder itself and add
-nothing to it. Skills live
-in `<project-root>/.goodboy/skills/`, the older `<project-root>/.kay/skills/`
-(read until 0.31.0) or `<project-root>/.claude/skills/`.
+A folder project keeps the session folders of sessions made before 0.27.3 in
+`<project-root>/sessions/` next to your code instead of in `~/.goodboy`; newer
+sessions write in the folder itself and add nothing to it.
 
 ### How mounts are saved and recovered
 

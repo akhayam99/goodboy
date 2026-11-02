@@ -59,7 +59,7 @@ The webview reads `CommandError.failure` (`hostFailureOf`). The GitLab and Bitbu
 
 ## What an unreachable host looks like
 
-Only a `network` or `timeout` failure means the host did not answer. A refused sign-in, a missing project or a rate limit means it did, and it ends an outage. `refreshMountRequest` takes the host of the adapter (GitLab and Bitbucket pass theirs) and reports each answer to `hostReachability`; an answer to a question asked before the last counted one is dropped. After three unreachable answers a silent refresh waits five minutes, the pace of `hostPollDelayMs`. GitHub goes through `gh`, whose failures are classified by `classifyGhFailure` and do not reach this state yet. The line under the top bar reads "GitLab unreachable since 10:42" with Retry, says it checks again every five minutes once it has backed off, and turns into "GitLab is reachable again" for four seconds when the host answers.
+Only a `network` or `timeout` failure means the host did not answer. A refused sign-in, a missing project or a rate limit means it did, and it ends an outage. `refreshMountRequest` takes the host of the adapter (GitLab and Bitbucket pass theirs) and reports each answer to `hostReachability`; an answer to a question asked before the last counted one is dropped. After three unreachable answers a silent refresh waits five minutes, the pace of `hostPollDelayMs`. A silent refresh of a mount that already holds an entry writes no pending state and writes the result only when it changed. GitHub goes through `gh`, whose failures are classified by `classifyGhFailure` and do not reach this state yet. The line under the top bar reads "GitLab unreachable since 10:42" with Retry, says it checks again every five minutes once it has backed off, and turns into "GitLab is reachable again" for four seconds when the host answers.
 
 ## What a request state looks like
 
@@ -75,13 +75,13 @@ For the open session the same pass then reads the review threads of that mount: 
 
 ## Where each adapter lives
 
-| Host      | Reads and writes                                                                                                                                | Where                                                                                                     |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| GitHub    | The `gh` CLI. There is no Rust adapter for request data: Rust only runs `gh` under a bounded runner (`github.rs`, `gh_run`) and keeps the token | `packages/core/src/github/` builds the `gh` commands, `githubPullRequestPort` adapts them                 |
-| GitLab    | The REST API with a personal token                                                                                                              | `gitlab.rs` for calls, `gitlabPullRequestPort` and its transport in `apps/desktop/src` for the port       |
-| Bitbucket | The REST API with an email and a token                                                                                                          | `bitbucket.rs` for calls, `bitbucketPullRequestPort` and its transport in `apps/desktop/src` for the port |
+| Host      | Reads and writes                                                                                                                                                                                                                     | Where                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| GitHub    | The `gh` CLI. There is no Rust adapter for request data: Rust only runs `gh` under a bounded runner (`github.rs`, `gh_run`) and keeps the token; `gh_run` refuses any argument list that `src-tauri/gh-allowlist.json` does not name | `packages/core/src/github/` builds the `gh` commands, `githubPullRequestPort` adapts them                 |
+| GitLab    | The REST API with a personal token                                                                                                                                                                                                   | `gitlab.rs` for calls, `gitlabPullRequestPort` and its transport in `apps/desktop/src` for the port       |
+| Bitbucket | The REST API with an email and a token                                                                                                                                                                                               | `bitbucket.rs` for calls, `bitbucketPullRequestPort` and its transport in `apps/desktop/src` for the port |
 
-The query bridge (`query_bridge/github.rs`) keeps its own list of `gh pr` commands for agents, with its own `--limit` and field list. It is a second copy of the commands in `packages/core/src/github/`; `packages/core` owns the meaning, and a change to a field or a limit there has to be made in the bridge file by hand until the two are merged.
+`src-tauri/gh-allowlist.json` is the one list of `gh` command shapes. `gh_allowlist.rs` reads it for `gh_run` and for the query bridge (`query_bridge/github.rs`), which still builds its own `gh pr` commands for agents with its own `--limit` and field list and now has each one checked against that list. `gh_run` also refuses `--hostname`, `--input`, `GH_HOST`, a GraphQL mutation that is not listed by name, and a working directory that is not a registered project or session worktree. A new `gh` call in `packages/core` needs a shape in the file; `gh-allowlist-parity.test.ts` runs the core callers against it.
 
 ## Find the request for a branch
 
@@ -116,3 +116,10 @@ The Workspace step of setup clones through `repo_clone.rs`, the one clone path i
 4. Add its bridge verbs in `protocol.rs` and name them in `bridgeVerbs`. The parity test fails until the catalog and the row agree.
 5. Fill its column of the table above with the vendor page each field comes from.
 6. Add its store step: a `refreshSession<Host>` that refreshes one mount through `refreshMountRequest`, one arm in `refreshMountRequests` (`store/slices/review-source/`), one entry reader in `mountFetchFactsOf`, one branch in `requestHostOfRemote` and, for review threads, one arm in `refreshMountThreads` that lists the comments through `refreshSourceThreads`. The sweep, the stage reason and the board signal read those, so nothing else in the store names the host.
+
+## Branch push counts
+
+The branch header counts commits ahead of origin through `branchPushFactsOf`,
+as does the Push action. A branch with nothing left to push reads Up to date
+with origin; a diverged branch names both sides (`branchStartLineOf`). The
+request summary calls its total commits on this branch (`CommitsCardBody`).

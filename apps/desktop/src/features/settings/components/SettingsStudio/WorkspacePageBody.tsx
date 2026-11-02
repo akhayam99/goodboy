@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { SkillsPanel } from '../../../skills/components/SkillsPanel';
 import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
 import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
@@ -66,8 +65,6 @@ export const WorkspacePageBody = ({
           )}
         />
       );
-    case 'skills':
-      return <SkillsPanel workspaceId={workspaceId} />;
     default: {
       const exhaustive: never = page;
       return exhaustive;

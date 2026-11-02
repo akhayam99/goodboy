@@ -33,6 +33,7 @@ mod file_versions;
 mod folder_git;
 mod folder_signals;
 mod frame_protocol;
+mod gh_allowlist;
 mod github;
 mod gitlab;
 mod goodboy_ignore;
@@ -82,7 +83,6 @@ mod secrets;
 mod sentry;
 mod session_dir;
 mod settings_overrides;
-mod skills;
 mod slack;
 mod step_end_log;
 mod storage;
@@ -259,6 +259,15 @@ pub fn run() {
                 );
             }
             std::thread::spawn(history::clean_stale_copies);
+            if let Some(dir) = terminal::scrollback_dir_of(app.handle()) {
+                std::thread::spawn(move || {
+                    terminal_scrollback::prune_stale(
+                        &dir,
+                        util::system_now(),
+                        terminal_scrollback::STALE_AFTER,
+                    );
+                });
+            }
             std::thread::spawn(|| {
                 proc::reap::sweep_stale_turn_dirs(
                     &std::env::temp_dir(),
@@ -567,12 +576,6 @@ pub fn run() {
             budget::budget_emit_alerts,
             budget::check_provider_budget,
             budget::provider_budget_overview,
-            skills::skill_list,
-            skills::skill_get,
-            skills::skill_upsert,
-            skills::skill_delete,
-            skills::skill_rescan,
-            skills::skill_run_script,
             project_scripts::project_scripts_scan,
             scripts::workspace_script_run,
             scripts::workspace_script_run_adhoc,

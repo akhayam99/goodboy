@@ -19,6 +19,7 @@ type Entry = {
   readonly loading: boolean;
   readonly value: string;
   readonly error: string | null;
+  readonly fetchedAt?: number;
 };
 
 type Context = {
@@ -173,5 +174,98 @@ describe('refreshMountRequest', () => {
     });
     expect(load).toHaveBeenCalledTimes(2);
     expect(state.entry?.value).toBe('ok');
+  });
+});
+
+describe('a quiet refresh', () => {
+  beforeEach(() => {
+    h.revision = 1;
+  });
+
+  type CountedParams = {
+    readonly load: Load;
+  };
+
+  const counted = ({ load }: CountedParams) => {
+    const { state, set, get } = harness();
+    state.entry = { loading: false, value: 'same', error: null, fetchedAt: 1 };
+    let writes = 0;
+    const base = adapterFor({ state, load });
+    const adapter: MountRequestAdapter<Entry, Context> = {
+      ...base,
+      apply: (params) => {
+        writes += 1;
+        return base.apply(params);
+      },
+    };
+    const run = () =>
+      refreshMountRequest({
+        set,
+        get,
+        sessionId: SESSION,
+        mount: MOUNT,
+        opts: { silent: true },
+        adapter,
+      });
+    return { state, run, writeCount: () => writes };
+  };
+
+  const settleEntry =
+    ({ value, fetchedAt }: { readonly value: string; readonly fetchedAt: number }): Load =>
+    async () => ({
+      kind: 'settle',
+      next: () => ({ loading: false, value, error: null, fetchedAt }),
+    });
+
+  it('writes nothing when the data is identical', async () => {
+    const { run, writeCount } = counted({ load: settleEntry({ value: 'same', fetchedAt: 1 }) });
+    await run();
+    expect(writeCount()).toBe(0);
+  });
+
+  it('writes nothing when only the answer time moved', async () => {
+    const { state, run, writeCount } = counted({
+      load: settleEntry({ value: 'same', fetchedAt: 99 }),
+    });
+    await run();
+    expect(writeCount()).toBe(0);
+    expect(state.entry?.fetchedAt).toBe(1);
+  });
+
+  it('writes the result once when the data changed', async () => {
+    const { state, run, writeCount } = counted({
+      load: settleEntry({ value: 'changed', fetchedAt: 2 }),
+    });
+    await run();
+    expect(writeCount()).toBe(1);
+    expect(state.entry).toEqual({ loading: false, value: 'changed', error: null, fetchedAt: 2 });
+  });
+
+  it('runs one load at a time for the same mount', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const load = vi.fn<Load>(async (params) => {
+      await gate;
+      return settleEntry({ value: 'same', fetchedAt: 1 })(params);
+    });
+    const { run } = counted({ load });
+    const first = run();
+    const second = run();
+    release();
+    await Promise.all([first, second]);
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('frees the mount for the next refresh after a failure', async () => {
+    const load = vi
+      .fn<Load>()
+      .mockRejectedValueOnce(new Error('flaky'))
+      .mockImplementationOnce(settleEntry({ value: 'same', fetchedAt: 1 }));
+    const { run } = counted({ load });
+    await run();
+    await run();
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });

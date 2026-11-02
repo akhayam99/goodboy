@@ -14,7 +14,7 @@ describe('quick action grammar', () => {
   it('advertises a prefix only while its capability is on', () => {
     const symbols = PREFIXES.map((prefix) => prefix.symbol);
 
-    expect(WORKSPACE_FEATURES.skills).toBe(false);
+    expect(WORKSPACE_FEATURES.workflows).toBe(true);
     expect(symbols).not.toContain('/');
     expect(symbols).toContain('~');
     expect(symbols).toContain('$');

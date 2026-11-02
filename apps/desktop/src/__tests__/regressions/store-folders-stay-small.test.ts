@@ -11,7 +11,7 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'runtime/auto': 93,
   'slices/project-mounts': 70,
   'slices/resolve': 109,
-  'slices/turn': 102,
+  'slices/turn': 101,
   'slices/workflows': 101,
 };
 

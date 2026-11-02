@@ -249,6 +249,8 @@ See and undo what agents changed in a session without a branch.
 - Storage shows their size under **Saved versions**.
 - A session that still works in an older session folder keeps its list of file versions under the same page.
 
+Finished rows never repeat a needs-you count. An open question stays on its Needs you card, with See result linking to the finished work.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
@@ -257,7 +259,8 @@ This part is for contributors and agents who change the feature.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
 - Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Waiting for you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
-- Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`, `needsYouLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
+- `useActionCardActions` offers See result for an open question whose run or agent finished.
+- Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.

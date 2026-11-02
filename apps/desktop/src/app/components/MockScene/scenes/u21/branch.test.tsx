@@ -68,7 +68,7 @@ describe('the u21 branch scenes', () => {
     expect(level.getByRole('button', { name: /#331/ }).textContent).toContain(
       'Retry credit notes through the same guard',
     );
-    expect(level.getByRole('button', { name: 'hl/ledger-posting-dedupe' })).toBeDefined();
+    expect(level.getByRole('button', { name: /^hl[/]ledger-posting-dedupe/ })).toBeDefined();
   });
 
   it('shows the description on the pull request tab with its text and one visible Edit', async () => {

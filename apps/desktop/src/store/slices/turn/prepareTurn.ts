@@ -19,7 +19,6 @@ import { rewriterCopyFor } from '../history/rewriterCopyFor';
 import { queueTurnInLane } from '../resolve/queueTurnInLane';
 import { resolverLaunchCopy } from '../resolve/resolverLaunchCopy';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
-import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
 import type { GetFn, SetFn, SendTurnInput, TurnPhaseValue } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -227,19 +226,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
 
   const userTurnText = content;
 
-  const slashResult = await resolveSkillPrompt(get, {
-    before,
-    session,
-    sessionId,
-    activeAgentId,
-    workingDir,
-    content,
-    now,
-  });
-  if (!slashResult.ok) {
-    return turnDone({ result: NOT_BLOCKED });
-  }
-  let resolvedPrompt = slashResult.resolvedPrompt;
+  let resolvedPrompt = content;
 
   const attachmentInputs = attachments ?? [];
   const alreadyPersistedRefs = retry?.attachmentRefs ?? storedAttachments ?? [];

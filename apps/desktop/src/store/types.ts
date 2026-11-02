@@ -88,7 +88,6 @@ import type { WorkflowRoutingState } from './slices/workflowRouting/types';
 import type { PermissionsState } from './slices/permissions/state';
 import type { AttachmentsState } from './slices/attachments/state';
 import type { StorageState } from './slices/storage/state';
-import type { SkillsState } from './slices/skills/state';
 import type { ScriptsSliceState } from './slices/scripts/state';
 import type { TurnSliceState } from './slices/turn/state';
 import type { GithubState } from './slices/github/state';
@@ -209,7 +208,6 @@ type AppSliceState = ArtifactsState &
   PermissionsState &
   AttachmentsState &
   StorageState &
-  SkillsState &
   ScriptsSliceState &
   GithubState &
   GitlabMrSliceState &

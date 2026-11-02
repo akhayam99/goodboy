@@ -4,6 +4,7 @@ use std::time::Duration;
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::gh_allowlist;
 use crate::integration_credentials;
 use crate::proc::git::GitError;
 use crate::secrets;
@@ -419,11 +420,22 @@ pub async fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubEr
 
 #[tauri::command]
 pub async fn gh_run(
+    state: tauri::State<'_, crate::db::Db>,
     args: Vec<String>,
     cwd: Option<String>,
     workspace_id: Option<String>,
     project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
+    gh_allowlist::check_args(&args).map_err(GithubError::Validation)?;
+    let roots = {
+        let conn = state
+            .0
+            .lock()
+            .map_err(|_| GithubError::Validation("the database is unavailable".to_string()))?;
+        gh_allowlist::registered_roots(&conn)
+            .map_err(|error| GithubError::Validation(error.to_string()))?
+    };
+    gh_allowlist::check_cwd(cwd.as_deref(), &roots).map_err(GithubError::Validation)?;
     tauri::async_runtime::spawn_blocking(move || {
         let token = read_token(workspace_id.as_deref(), project_id.as_deref())?;
         let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();

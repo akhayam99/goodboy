@@ -64,6 +64,7 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
     mountId: plannedMountId,
     requestId,
     branch,
+    dirName,
   }: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult> => {
     const trimmedReason = reason.trim();
     if (trimmedReason === '') {
@@ -160,6 +161,7 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
           parallelIndex: allocated.reduce((max, row) => Math.max(max, row.parallelIndex), 0) + 1,
           ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
           ...(branch === undefined ? {} : { branch }),
+          ...(dirName === undefined ? {} : { dirName }),
         });
       },
     });

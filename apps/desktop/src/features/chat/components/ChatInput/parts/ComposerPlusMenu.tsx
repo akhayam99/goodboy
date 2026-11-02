@@ -15,7 +15,6 @@ const GROUP_LABEL: Partial<Record<QuickActionGroup, string>> = {
   script: 'Run a script',
   workflow: NAMES.startRun,
   agent: 'Ask another agent',
-  skill: 'Run a skill',
 };
 
 export const ComposerPlusMenu = ({ onAttachFiles, onInsertPrefix, disabled = false }: Props) => {

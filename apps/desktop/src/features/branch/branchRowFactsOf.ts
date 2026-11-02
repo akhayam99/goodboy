@@ -7,7 +7,7 @@ import { countSlotText } from '../../shared/utils/countSlotText';
 import { checksCountsOf, type ChecksCounts } from '../integrations/github/checksRollup';
 import { pullRequestStateWordOf } from './pullRequestStateWordOf';
 
-type BranchRowSignalKind = 'failing' | 'conflict' | 'behind';
+type BranchRowSignalKind = 'failing' | 'conflict' | 'behind' | 'not-pushed';
 
 type BranchRowSignal = {
   readonly kind: BranchRowSignalKind;
@@ -38,6 +38,7 @@ type Params = {
   readonly checks: ReadonlyArray<PrCheckRun> | null;
   readonly behind: number | null;
   readonly conflicts: number | null;
+  readonly notPushed?: number;
 };
 
 const RANK: Readonly<Record<PullRequestPresentationState, number>> = {
@@ -50,7 +51,7 @@ const RANK: Readonly<Record<PullRequestPresentationState, number>> = {
   closed: 6,
 };
 
-type SignalParams = Pick<Params, 'behind' | 'conflicts'> & {
+type SignalParams = Pick<Params, 'behind' | 'conflicts' | 'notPushed'> & {
   readonly counts: ChecksCounts | null;
   readonly isChecksFailing: boolean;
 };
@@ -60,20 +61,24 @@ const signalOf = ({
   isChecksFailing,
   conflicts,
   behind,
+  notPushed = 0,
 }: SignalParams): BranchRowSignal | null => {
+  if (conflicts !== null && conflicts > 0) {
+    return { kind: 'conflict', tone: 'warning', text: 'Rebase stopped' };
+  }
   if (counts !== null && counts.failing > 0) {
     return { kind: 'failing', tone: 'danger', text: `${counts.failing} failing` };
   }
   if (counts === null && isChecksFailing) {
-    return { kind: 'failing', tone: 'danger', text: 'Failing' };
-  }
-  if (conflicts !== null && conflicts > 0) {
-    return { kind: 'conflict', tone: 'warning', text: 'Conflict' };
+    return { kind: 'failing', tone: 'danger', text: 'Checks failing' };
   }
   const behindText = countSlotText({ count: behind });
-  return behindText === null
-    ? null
-    : { kind: 'behind', tone: 'warning', text: `${behindText} behind` };
+  if (behindText !== null) {
+    return { kind: 'behind', tone: 'warning', text: `${behindText} behind` };
+  }
+  return notPushed > 0
+    ? { kind: 'not-pushed', tone: 'warning', text: `${notPushed} not pushed` }
+    : null;
 };
 
 export const branchRowFactsOf = ({
@@ -83,6 +88,7 @@ export const branchRowFactsOf = ({
   checks,
   behind,
   conflicts,
+  notPushed = 0,
 }: Params): BranchRowFacts => {
   const name = branch === '' ? mountName : branch;
   const state: PullRequestPresentationState =
@@ -94,7 +100,13 @@ export const branchRowFactsOf = ({
   const counts = checks === null ? null : checksCountsOf({ checks });
   const signal = isFinished
     ? null
-    : signalOf({ counts, isChecksFailing: request?.checks === 'failure', conflicts, behind });
+    : signalOf({
+        counts,
+        isChecksFailing: request?.checks === 'failure',
+        conflicts,
+        behind,
+        notPushed,
+      });
   const number =
     request === null
       ? null

@@ -181,6 +181,9 @@ const menuOf = (): ReadonlyArray<string> => {
 
 const MODEL: SessionWorkModel = {
   entries: [],
+  agents: [],
+  worktrees: [],
+  settledStopIds: new Set(),
   events: [],
   autoTrees: [],
   workflows: [],

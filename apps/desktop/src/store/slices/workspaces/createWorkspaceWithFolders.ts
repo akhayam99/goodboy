@@ -33,7 +33,6 @@ import { prepareLinkedFolder } from '../file-versions/prepareLinkedFolder';
 import { refuseAdoptionWhileAgentsRun } from '../projects/refuseAdoptionWhileAgentsRun';
 import { nowIso } from '../project-mounts/nowIso';
 import { folderName, trimTrailingSeparators } from '../terminal/terminalOwner';
-import { rescanWorkspaceSkills } from './workspaceSkills';
 import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
 
@@ -364,8 +363,6 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
       );
       const templates = await invokeWorkflowList(workspaceId).catch(() => []);
       set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates } }));
-      const skills = await rescanWorkspaceSkills(workspaceId);
-      set((state) => ({ skills: { ...state.skills, [workspaceId]: skills } }));
     }
 
     let movedSessionCount = 0;

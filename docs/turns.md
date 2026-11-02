@@ -24,8 +24,8 @@ read; a phase that can end the turn early (blocked over budget, lease denied,
 cancelled before the spawn) returns `turnDone` with the result, the others
 return `turnReady` with their values. Side effects run in the order below.
 
-1. `prepareTurn`: the mount and working directory, the agent, the slash skill,
-   the attachments and the workflow step the agent belongs to.
+1. `prepareTurn`: the mount and working directory, the agent, the
+   attachments and the workflow step the agent belongs to.
 2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
    the disconnected-provider gate.
 3. `leaseTurnWriter`: the captured-mount check, the resolver's worktree writer
@@ -705,7 +705,12 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   a live run is never forgotten. Every hand-sent turn passes one too:
   `sendTurn` mints `hand:<uuid>` for a turn the caller gave none (and for
   every fallback retry, which is a new attempt), and a caller that sends the
-  same message twice gives the same id (the queue sends `queue:<id>`). A second
+  same message twice gives the same id (the queue sends `queue:<id>`). The
+  registry forgets every id when the app restarts, so the saved `user_text`
+  event carries the `deliveryId` too, and `deliverQueuedTurn` asks
+  `countUserTextEvents` for that id before it sends: a queued message whose turn is already
+  saved is removed from the queue, never sent again. If that check fails the
+  message stays queued and the error shows. A second
   send of a known id never starts a run: `sendTurn` first asks
   `turn_delivery_lookup` and keeps the ids it is sending in this window, and
   answers `isAlreadySent` without a second user message. When the backend
@@ -1366,10 +1371,7 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
   sits above that, since it is a warning rather than composer content.
-- `resolveSkillPrompt` returns the content unresolved when
-  `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
-  plain text instead of failing with "unknown skill" while skills are
-  disabled.
+- A message starting with `/` sends as plain text; no slash command is resolved.
 - Sending: the text box is a `PromptField` of kind `message` in its `bare`
   variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
   sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.

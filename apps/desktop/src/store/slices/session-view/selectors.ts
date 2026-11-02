@@ -30,7 +30,9 @@ import { projectsBySession } from './projectOfSession';
 import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
 import { integrationsByWorkspace } from './integrationsByWorkspace';
-import { stageInfoOf, type StageInfoState } from './stageInfoOf';
+import { cachedStageInfoOf } from './cachedStageInfoOf';
+import type { StageInfoState } from './stageInfoOf';
+import { stageInfosOf } from './stageInfosOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -81,14 +83,16 @@ const pickBySessions = <T>({
 };
 
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
-  useAppStore(useShallow((s) => stageInfoOf(s, session)));
+  useAppStore(useShallow((s) => cachedStageInfoOf({ state: s, session })));
 
 export const useSessionStages = (
   sessions: ReadonlyArray<Session>,
 ): Readonly<Record<string, SessionStage>> =>
   useAppStore(
     useShallow((s) =>
-      Object.fromEntries(sessions.map((session) => [session.id, stageInfoOf(s, session).stage])),
+      Object.fromEntries(
+        sessions.map((session) => [session.id, cachedStageInfoOf({ state: s, session }).stage]),
+      ),
     ),
   );
 
@@ -235,12 +239,13 @@ const useStageSources = ({
       sessionDismissedNextSteps,
       sessionArtifacts,
     };
+    const infoMap = stageInfosOf({ state: partial });
     const stageMap: Record<SessionId, SessionStage> = {};
-    const infoMap: Record<SessionId, SessionStageInfo> = {};
     for (const session of filteredSessions) {
-      const info = stageInfoOf(partial, session);
-      stageMap[session.id] = info.stage;
-      infoMap[session.id] = info;
+      const info = infoMap[session.id];
+      if (info !== undefined) {
+        stageMap[session.id] = info.stage;
+      }
     }
     return { stageMap, infoMap };
   }, [
