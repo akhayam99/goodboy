@@ -206,10 +206,10 @@
       "id": "api-graphql",
       "verb": ["api"],
       "positional": ["graphql"],
-      "graphql": true,
+      "isGraphql": true,
       "flags": [
-        { "name": "-f", "slot": "assignment", "repeat": true },
-        { "name": "-F", "slot": "assignment", "repeat": true }
+        { "name": "-f", "slot": "assignment", "isRepeatable": true },
+        { "name": "-F", "slot": "assignment", "isRepeatable": true }
       ]
     },
     {
@@ -218,7 +218,7 @@
       "positional": ["repos/{slug}/issues/{number}"],
       "flags": [
         { "name": "-X", "values": ["PATCH"], "isRequired": true },
-        { "name": "-f", "slot": "assignment", "repeat": true }
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
       ]
     },
     {
@@ -233,7 +233,7 @@
       "positional": ["repos/{slug}/issues/{number}/comments"],
       "flags": [
         { "name": "-X", "values": ["POST"], "isRequired": true },
-        { "name": "-f", "slot": "assignment", "repeat": true }
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
       ]
     },
     {
@@ -248,7 +248,7 @@
       "positional": ["search/issues"],
       "flags": [
         { "name": "-X", "values": ["GET"], "isRequired": true },
-        { "name": "-f", "slot": "assignment", "repeat": true }
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
       ]
     },
     {

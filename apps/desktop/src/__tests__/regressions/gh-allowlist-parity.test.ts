@@ -23,7 +23,7 @@ type Flag = {
   readonly name: string;
   readonly slot?: string | null;
   readonly values?: ReadonlyArray<string>;
-  readonly repeat?: boolean;
+  readonly isRepeatable?: boolean;
   readonly isRequired?: boolean;
 };
 
@@ -33,7 +33,7 @@ type Shape = {
   readonly positional: ReadonlyArray<string>;
   readonly flags: ReadonlyArray<Flag>;
   readonly tail?: string;
-  readonly graphql?: boolean;
+  readonly isGraphql?: boolean;
 };
 
 type Allowlist = {
@@ -52,7 +52,7 @@ const ALLOWLIST_PATH = join(
   'gh-allowlist.json',
 );
 
-const allowlist = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8')) as Allowlist;
+const allowlist: Allowlist = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8'));
 
 const WORD = /^[A-Za-z0-9._-]+$/;
 const SLOT_PATTERN: Readonly<Record<string, string>> = {
@@ -149,7 +149,7 @@ const shapeAccepts = ({ shape, args }: ShapeParams): boolean => {
       continue;
     }
     const flag = shape.flags.find((candidate) => candidate.name === token);
-    if (flag === undefined || (flag.repeat !== true && seen.includes(flag.name))) {
+    if (flag === undefined || (flag.isRepeatable !== true && seen.includes(flag.name))) {
       return false;
     }
     seen.push(flag.name);
@@ -161,7 +161,7 @@ const shapeAccepts = ({ shape, args }: ShapeParams): boolean => {
     if (value === undefined || !flagValueMatches({ flag, value })) {
       return false;
     }
-    if (shape.graphql === true && value.startsWith('query=')) {
+    if (shape.isGraphql === true && value.startsWith('query=')) {
       if (flag.name !== '-f' || query !== null) {
         return false;
       }
@@ -189,7 +189,7 @@ const shapeAccepts = ({ shape, args }: ShapeParams): boolean => {
   if (!isEachPositionalMatching) {
     return false;
   }
-  return shape.graphql === true ? query !== null && queryIsAllowed({ query }) : true;
+  return shape.isGraphql === true ? query !== null && queryIsAllowed({ query }) : true;
 };
 
 const isAllowed = ({ args }: ArgsParams): boolean =>

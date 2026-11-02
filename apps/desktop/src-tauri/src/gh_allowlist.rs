@@ -21,6 +21,7 @@ struct Allowlist {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Shape {
     verb: Vec<String>,
     positional: Vec<String>,
@@ -28,7 +29,7 @@ struct Shape {
     #[serde(default)]
     tail: Option<String>,
     #[serde(default)]
-    graphql: bool,
+    is_graphql: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,7 +41,7 @@ struct Flag {
     #[serde(default)]
     values: Option<Vec<String>>,
     #[serde(default)]
-    repeat: bool,
+    is_repeatable: bool,
     #[serde(default)]
     is_required: bool,
 }
@@ -247,7 +248,7 @@ fn shape_accepts(shape: &Shape, args: &[String], mutations: &[String]) -> bool {
         let Some(flag) = shape.flags.iter().find(|flag| flag.name == token) else {
             return false;
         };
-        if !flag.repeat && seen_flags.contains(&flag.name.as_str()) {
+        if !flag.is_repeatable && seen_flags.contains(&flag.name.as_str()) {
             return false;
         }
         seen_flags.push(flag.name.as_str());
@@ -262,7 +263,7 @@ fn shape_accepts(shape: &Shape, args: &[String], mutations: &[String]) -> bool {
         if !flag_value_matches(flag, value) {
             return false;
         }
-        if shape.graphql && flag.slot.as_deref() == Some("assignment") {
+        if shape.is_graphql && flag.slot.as_deref() == Some("assignment") {
             if let Some(body) = value.strip_prefix("query=") {
                 if flag.name != "-f" || query.is_some() {
                     return false;
@@ -295,7 +296,7 @@ fn shape_accepts(shape: &Shape, args: &[String], mutations: &[String]) -> bool {
     if !is_each_positional_matching {
         return false;
     }
-    if shape.graphql {
+    if shape.is_graphql {
         return match query {
             Some(body) => graphql_query_is_allowed(body, mutations),
             None => false,

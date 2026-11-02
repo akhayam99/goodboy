@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -11,7 +12,7 @@ import {
 const { countUserTextEvents, listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(
   () => ({
     countUserTextEvents: vi.fn(async (_params: { readonly deliveryId?: string }) => 0),
-    listAgentQueuedMessages: vi.fn(async () => [] as ReadonlyArray<unknown>),
+    listAgentQueuedMessages: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
     replaceAgentQueuedMessages: vi.fn(
       async (
         _database: unknown,
@@ -35,8 +36,9 @@ vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
 );
 
-const SESSION_ID = 'session-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
+const IDLE_SINCE = brandId<IsoDateTime>({ value: '2026-11-02T14:00:00.000Z' });
 
 const SAVED_MESSAGE = {
   id: 'q1',
@@ -87,11 +89,9 @@ beforeEach(async () => {
   reportError.mockClear();
   store.setState({
     agentQueue: {},
-    agentTurnState: { [AGENT_ID]: { kind: 'idle' } },
+    agentTurnState: { [AGENT_ID]: { kind: 'idle', lastActivityAt: IDLE_SINCE } },
     sessionPhaseRuns: {
-      [SESSION_ID]: [
-        { id: AGENT_ID, sessionId: SESSION_ID, ordinal: 0, name: 'Agent', status: 'pending' },
-      ],
+      [SESSION_ID]: [anAgent({ id: AGENT_ID, sessionId: SESSION_ID, status: 'pending' })],
     },
     sendTurn,
     reportError,
