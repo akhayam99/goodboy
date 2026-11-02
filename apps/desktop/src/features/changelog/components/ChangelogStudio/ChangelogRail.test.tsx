@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReleaseEntry } from '../../parseChangelog';
@@ -21,16 +22,16 @@ afterEach(() => {
 type RenderRailParams = {
   readonly releases: ReadonlyArray<ReleaseEntry>;
   readonly dates?: Readonly<Record<string, string>>;
-  readonly query?: string;
-  readonly onQueryChange?: (query: string) => void;
+  readonly header?: ReactNode;
+  readonly results?: ReactNode | null;
   readonly catchUp?: Parameters<typeof ChangelogRail>[0]['catchUp'];
 };
 
 const renderRail = ({
   releases,
   dates = {},
-  query = '',
-  onQueryChange = vi.fn(),
+  header = null,
+  results = null,
   catchUp = null,
 }: RenderRailParams) =>
   render(
@@ -39,8 +40,8 @@ const renderRail = ({
       selectedVersion={null}
       installedVersion={null}
       dates={dates}
-      query={query}
-      onQueryChange={onQueryChange}
+      header={header}
+      results={results}
       catchUp={catchUp}
       isCatchUpSelected={false}
       onSelect={vi.fn()}
@@ -93,14 +94,15 @@ describe('ChangelogRail', () => {
     expect(screen.getByText('0.6.0').nextElementSibling?.textContent).toBe('');
   });
 
-  it('searches with the shared rail field', () => {
-    const onQueryChange = vi.fn();
-    renderRail({ releases: [buildRelease('0.7.0')], query: 'export', onQueryChange });
+  it('draws the help header on top and swaps the list for the results while searching', () => {
+    renderRail({
+      releases: [buildRelease('0.7.0')],
+      header: <p>help header</p>,
+      results: <p>help results</p>,
+    });
 
-    const field = screen.getByRole('searchbox', { name: 'Search releases' });
-    fireEvent.change(field, { target: { value: 'exports' } });
-
-    expect(onQueryChange).toHaveBeenCalledWith('exports');
-    expect(document.querySelector('[data-rail-search]')).not.toBeNull();
+    screen.getByText('help header');
+    screen.getByText('help results');
+    expect(screen.queryByText('0.7.0')).toBeNull();
   });
 });

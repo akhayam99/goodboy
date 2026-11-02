@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { cn, EmptyLine, ICON_SIZE, ScrollFade, SearchField, FOCUS_RING } from '@goodboy/ui';
+import { EmptyLine, ScrollFade, SearchField } from '@goodboy/ui';
 
+import { StudioBackButton } from '../../../../shared/components/StudioShell/StudioBackButton';
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
 import type { SettingsFocus } from '../../settingsFocus';
@@ -39,21 +39,7 @@ export const SettingsColumnNav = ({ groups, rail, onBack, onOpen }: Props) => {
 
   return (
     <div data-settings-column="" className="flex min-h-0 flex-1 flex-col gap-2">
-      <button
-        type="button"
-        onClick={onBack}
-        className={cn(
-          'group flex h-7 w-full shrink-0 items-center gap-2 rounded-md px-2 text-row text-muted-foreground motion-safe:transition-colors',
-          'hover:bg-hover hover:text-foreground',
-          FOCUS_RING,
-        )}
-      >
-        <ChevronLeft size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate text-left">Back to app</span>
-        <span aria-hidden className="shrink-0 text-chip text-faint-foreground">
-          Esc
-        </span>
-      </button>
+      <StudioBackButton isFullWidth onBack={onBack} />
       <SearchField
         value={query}
         onChange={setQuery}

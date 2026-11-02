@@ -19,7 +19,6 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { modeCopyOf } from '../../modeCopy';
 import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../shared/components/Toast';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
@@ -64,7 +63,6 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
   const denyWithReason = useAppStore((s) => s.denyWithReason);
   const reportError = useAppStore((s) => s.reportError);
-  const { showToast } = useToast();
 
   const inputPreview = formatRequestInput({ input: item.input });
   const commandText =
@@ -178,8 +176,8 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
     if (sessionId === null || agentId === null) {
       return;
     }
-    void withBusy(async () => {
-      await resolvePermissionRequest({
+    void withBusy(() =>
+      resolvePermissionRequest({
         sessionId,
         agentId,
         toolUseId: item.toolUseId,
@@ -187,12 +185,8 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         runId: item.runId,
         scope: 'deny',
         pattern: rule.pattern,
-      });
-      showToast({
-        kind: 'info',
-        message: `Blocked ${rule.subject} for the rest of this session`,
-      });
-    });
+      }),
+    );
   };
 
   const handleDenyWithReason = () => {

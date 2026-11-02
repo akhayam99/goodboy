@@ -297,9 +297,9 @@ const approvedAndFollowed = async (ctx: Ctx): Promise<void> => {
     ?.workflowRuns.find((candidate) => candidate.id === RUN_ID);
   expect(run?.rulesSnapshot?.planApproved).toBe(true);
   expect(run?.orchestrationStop).toBeUndefined();
-  await waitFor(() => expect(screen.getAllByText('Plan approved')).toHaveLength(1), WAIT);
-  expect(screen.getAllByText('Implement started')).toHaveLength(1);
-  expect(screen.queryAllByRole('button', { name: 'Dismiss notification' })).toHaveLength(1);
+  expect(screen.queryByText('Plan approved')).toBeNull();
+  expect(screen.queryByText('Implement started')).toBeNull();
+  expect(screen.queryAllByRole('button', { name: 'Dismiss notification' })).toHaveLength(0);
   expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
   const state = useAppStore.getState();
   expect(state.activeLens[ctx.sessionId]).toBe('workflows');

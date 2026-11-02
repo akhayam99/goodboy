@@ -297,7 +297,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'Start from the draft, on the kind started last, creates the session and the run, with one Follow toast and three clicks',
+    name: 'Start from the draft, on the kind started last, creates the session and the run, with no toast and three clicks',
     covers: ['navigate', 'toast:follow'],
     open: async (ctx) => {
       await openTasksAndStartOn({ ctx, lastStart: 'orchestrated' });
@@ -314,7 +314,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       });
       expect(startCalls.runs[0]?.sessionId).toBe(newSessionId);
       await waitFor(() => expect(useAppStore.getState().currentSessionId).toBe(newSessionId), WAIT);
-      expect(await screen.findAllByText('Run started', {}, WAIT)).toHaveLength(1);
+      expect(screen.queryByText('Run started')).toBeNull();
       expect(toastTitles('Session started')).toHaveLength(0);
       expect(clicks).toBeLessThanOrEqual(3);
     },
@@ -349,7 +349,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
         throw new Error('the review did not create a session');
       }
       await branchTab('pr')({ sessionId: newSessionId });
-      expect(await screen.findAllByText('Review started', {}, WAIT)).toHaveLength(1);
+      expect(screen.queryByText('Review started')).toBeNull();
       expect(clicks).toBeLessThanOrEqual(2);
     },
   },

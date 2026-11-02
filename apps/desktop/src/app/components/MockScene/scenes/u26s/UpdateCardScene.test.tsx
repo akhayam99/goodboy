@@ -105,8 +105,8 @@ describe('the update card scenes', () => {
     await mount({ id: 'u26s-update-available' });
 
     expect(verbsOfCard({ name: 'Goodboy 0.27.2 is available' })).toEqual([
-      'Later',
       "What's new",
+      'Later',
       'Update now',
     ]);
   });
@@ -115,8 +115,8 @@ describe('the update card scenes', () => {
     await mount({ id: 'u26s-update-ready' });
 
     expect(verbsOfCard({ name: 'Goodboy 0.27.2 is ready' })).toEqual([
-      'Later',
       "What's new",
+      'Later',
       'Restart now',
     ]);
   });

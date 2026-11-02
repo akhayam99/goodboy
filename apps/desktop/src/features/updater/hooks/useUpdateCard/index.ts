@@ -6,13 +6,7 @@ import type { UpdateCardState } from '../../updateCardState';
 import { useUpdateCardState } from '../useUpdateCardState';
 
 type UpdateVerbId =
-  | 'later'
-  | 'whats-new'
-  | 'update-now'
-  | 'restart-now'
-  | 'restart-when-idle'
-  | 'cancel-restart'
-  | 'retry';
+  'later' | 'update-now' | 'restart-now' | 'restart-when-idle' | 'cancel-restart' | 'retry';
 
 export type UpdateVerb = {
   readonly id: UpdateVerbId;
@@ -28,13 +22,21 @@ type Params = {
   readonly onOpenChangelog?: () => void;
 };
 
+type UpdateLink = {
+  readonly label: string;
+  readonly run: () => void;
+};
+
 export type UpdateCard = {
   readonly state: UpdateCardState | null;
   readonly version: string | null;
   readonly runningCount: number;
   readonly copy: UpdateCardCopy | null;
   readonly verbs: ReadonlyArray<UpdateVerb>;
+  readonly whatsNew: UpdateLink | null;
 };
+
+const LINKED_STATES: ReadonlySet<UpdateCardState> = new Set(['available', 'ready']);
 
 type VerbParams = {
   readonly id: UpdateVerbId;
@@ -65,27 +67,23 @@ export const useUpdateCard = ({ onLater, onOpenChangelog }: Params = {}): Update
   const { state, version, runningCount } = useUpdateCardState();
 
   if (state === null) {
-    return { state, version, runningCount, copy: null, verbs: [] };
+    return { state, version, runningCount, copy: null, verbs: [], whatsNew: null };
   }
 
   const later =
     onLater === undefined
       ? []
       : [verbOf({ id: 'later', label: 'Later', variant: 'quiet', run: onLater })];
-  const whatsNew =
-    onOpenChangelog === undefined
-      ? []
-      : [
-          verbOf({
-            id: 'whats-new',
-            label: NAMES.whatsNew,
-            variant: 'ghost',
-            run: () => {
-              focusChangelogRelease({ version });
-              onOpenChangelog();
-            },
-          }),
-        ];
+  const whatsNew: UpdateLink | null =
+    onOpenChangelog === undefined || !LINKED_STATES.has(state)
+      ? null
+      : {
+          label: NAMES.whatsNew,
+          run: () => {
+            focusChangelogRelease({ version });
+            onOpenChangelog();
+          },
+        };
   const restartNow = ({ variant }: RestartParams): UpdateVerb =>
     verbOf({
       id: 'restart-now',
@@ -104,7 +102,7 @@ export const useUpdateCard = ({ onLater, onOpenChangelog }: Params = {}): Update
   const verbsByState: Record<UpdateCardState, ReadonlyArray<UpdateVerb>> = {
     available: [
       ...later,
-      ...whatsNew,
+
       verbOf({
         id: 'update-now',
         label: 'Update now',
@@ -116,7 +114,7 @@ export const useUpdateCard = ({ onLater, onOpenChangelog }: Params = {}): Update
         },
       }),
     ],
-    ready: [...later, ...whatsNew, restartNow({ variant: 'primary' })],
+    ready: [...later, restartNow({ variant: 'primary' })],
     running: [
       ...later,
       restartNow({ variant: 'secondary' }),
@@ -160,5 +158,6 @@ export const useUpdateCard = ({ onLater, onOpenChangelog }: Params = {}): Update
     runningCount,
     copy: updateCardCopy({ state, version, runningCount, failure }),
     verbs: verbsByState[state],
+    whatsNew,
   };
 };

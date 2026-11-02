@@ -75,7 +75,7 @@ vi.mock('../../features/session/components/DeleteSessionConfirm', () => ({
 vi.mock('../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => null,
 }));
-vi.mock('../../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
+vi.mock('../../app/components/HelpStudio', () => ({ HelpStudio: () => null }));
 vi.mock('../../shared/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,

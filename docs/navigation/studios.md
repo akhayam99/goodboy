@@ -29,8 +29,11 @@ exception is Home, which has no column to give. On Home, New workspace swaps
 the list for the form in place, and the app studios take the whole window:
 Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
 opens there too.
-Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
-one is open at a time.
+Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
+open at a time. There is no Close button: a studio beside the column leaves by
+its door or Esc, and a studio that replaces the column (Settings, Help, New
+workspace) shows `Back to app` with the Esc chip at the top left
+(`StudioBackButton`, `close: 'back'` in `studioMeta.ts`).
 
 - **An open studio is a history entry.** Opening a studio, or switching from
   one studio to another, pushes an entry over the page underneath
@@ -46,7 +49,7 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Tasks to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle, Close; Settings in the default shell has no band at all,
+  subtitle, Back to app; Settings in the default shell has no band at all,
   so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
@@ -59,13 +62,11 @@ one is open at a time.
   studio open, no frame node exists, so nothing covers the page.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
-  `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
-  (Tasks, Chat, Workflows, Terminal, Impact, Monitoring: no band, no Close, the
-  top bar Back and Escape leave them), `header` for Notifications, the guide and
-  What's new (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
-  action of the page title row, and the band holds it only until a page header
-  claims it), `band` for the rest (Settings over the window, Add workspace),
-  whose 40px band holds only Close
+  `STUDIO_META[kind].close` places the exit: `none` for the studios beside the
+  column (Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications:
+  no band, no Close, the door or Escape leaves them), `back` for the studios
+  that replace the column (Settings over the window, Help, Add workspace),
+  whose 40px band holds only `Back to app` with the Esc chip at the left
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
@@ -80,7 +81,7 @@ one is open at a time.
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
   one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
-  under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
+  under it (the band keeps the crumb and Back to app only), Help's three tabs and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)

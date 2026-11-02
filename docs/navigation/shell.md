@@ -549,9 +549,11 @@ the Storage worktree row's "What is a worktree?" (Words). They share
 `features/settings/openGuideChapter.ts`, and an id the Guide no longer has
 (a renamed chapter keeps its old id as an alias in `resolveGuideChapter.ts`)
 opens What is Goodboy, never an empty page. The Guide shows one chapter per
-page on the `guideChapter` reader frame, with Previous and Next; its rail
-search (`shared/components/RailSearch.tsx`) lists chapters and points, Enter
+page on the `guideChapter` reader frame, with Previous and Next; the Help search
+(`shared/components/RailSearch.tsx`) lists chapters and points, Enter
 opens the first hit and flashes its point, Escape clears it. The chapter
+"Listens" holds one table of prefixes (`PrefixTable`, read from
+`quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
 "Sidebar and session rail" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
@@ -562,14 +564,18 @@ first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
 update arrival); the copy inside a peeked column is quiet.
 
-**What's new** is the changelog studio (`ChangelogStudio`): a rail of releases
-grouped by minor, with an Older group below 0.4 (`ChangelogRail`, filtered by
-`RailSearch`), and a reader beside it. `CatchUpReader` (`page="whatsNew"`)
-opens first and sums up everything since the version you last read;
-`ReleaseReader` (`page="release"`) shows one release. Close is the last action
-of the reader's title row (`close: 'header'`), and only when no page header
-renders does the studio fall back to a Close in its band
-(`StudioFrame/index.test.tsx` pins both). A release that is the pending update
+**Help** is one studio (`app/components/HelpStudio`) with three tabs, Guide,
+What's new and Shortcuts, and one search (`RailSearch`, "Search help") over all
+three: a result opens its tab and its chapter, release or shortcut group. The
+Guide and What's new doors open it on their tab (`initialTab`); it replaces the
+column like Settings, so its band holds `Back to app` with the Esc chip at the
+top left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx`
+pins it). The Shortcuts tab is the read only sheet with one link, "Customize in
+Settings", because the recorder stays in Settings. The What's new tab is a rail
+of releases grouped by minor, with an Older group below 0.4 (`ChangelogRail`),
+and a reader beside it. `CatchUpReader` (`page="whatsNew"`) opens first and sums
+up everything since the version you last read; `ReleaseReader`
+(`page="release"`) shows one release. A release that is the pending update
 shows `UpdateActions`, the same verbs as the update card, and never a confirm of
 its own.
 

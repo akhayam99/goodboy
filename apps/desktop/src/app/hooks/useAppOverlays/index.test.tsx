@@ -86,8 +86,10 @@ vi.mock('../../../features/settings/components/SettingsStudio', () => ({
     />
   ),
 }));
-vi.mock('../../../features/settings/components/GuideStudio', () => ({
-  GuideStudio: () => <div data-testid="studio" data-kind="guide" />,
+vi.mock('../../components/HelpStudio', () => ({
+  HelpStudio: ({ initialTab }: { readonly initialTab: string }) => (
+    <div data-testid="studio" data-kind={initialTab === 'guide' ? 'guide' : 'changelog'} />
+  ),
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({
   WorkspaceLinkStudio: ({ onClose }: { readonly onClose: () => void }) => (
@@ -110,9 +112,6 @@ vi.mock('../../../features/impact/components/ImpactStudio', () => ({
   ImpactStudio: ({ initialScope }: { readonly initialScope?: { readonly kind: string } }) => (
     <div data-testid="studio" data-kind="impact" data-scope={initialScope?.kind ?? ''} />
   ),
-}));
-vi.mock('../../../features/changelog/components/ChangelogStudio', () => ({
-  ChangelogStudio: () => <div data-testid="studio" data-kind="changelog" />,
 }));
 vi.mock('../../../features/notifications/components/NotificationsStudio', () => ({
   NotificationsStudio: () => <div data-testid="studio" data-kind="notifications" />,

@@ -17,7 +17,6 @@ import { useToast } from '../../../../shared/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -310,21 +309,6 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
           ...(behind === null ? {} : { behind }),
           branch: target.baseBranch,
           agentId,
-        },
-      });
-      showToast({
-        kind: 'info',
-        message: `An agent on ${routingShortText({
-          provider: config.provider,
-          model: config.model,
-          effort: config.effort,
-        })} is rebasing this branch on ${target.baseBranch}. You can keep working.`,
-        title: 'Rebase started',
-        action: {
-          label: 'Open the rebase agent',
-          onClick: () => {
-            navigate({ to: agentPlace({ sessionId, agentId }) });
-          },
         },
       });
     } catch (failure) {

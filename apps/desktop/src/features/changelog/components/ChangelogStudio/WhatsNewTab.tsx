@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react';
-import { ScrollFade, useStudioRailFold } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioRailLayout } from '@goodboy/ui';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useEffect, useState, type ReactNode } from 'react';
+import { StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
-import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';
@@ -17,7 +13,6 @@ import { ChangelogRail } from './ChangelogRail';
 import { CatchUpReader } from './CatchUpReader';
 import { ReleaseReader } from './ReleaseReader';
 import { releaseDateLabel } from '../../releaseDateLabel';
-import { searchReleases } from '../../searchReleases';
 import { upcomingEntries, withUpcomingReleases } from '../../upcomingReleases';
 
 type PickReleaseParams = {
@@ -35,7 +30,7 @@ const sameVersion = ({
   readonly version: string | null;
 }): boolean => isInstalledRelease({ tag, installed: version });
 
-export const pickRelease = ({
+const pickRelease = ({
   releases,
   selectedVersion,
   focusVersion,
@@ -47,12 +42,19 @@ export const pickRelease = ({
   releases[0] ??
   null;
 
+export type ReleaseRequest = {
+  readonly version: string;
+  readonly nonce: number;
+};
+
 type Props = {
-  readonly onClose: () => void;
+  readonly header: ReactNode;
+  readonly results: ReactNode | null;
+  readonly request: ReleaseRequest | null;
   readonly onOpenScreen: (params: { readonly screen: ChangelogScreen }) => void;
 };
 
-export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
+export const WhatsNewTab = ({ header, results, request, onOpenScreen }: Props) => {
   const fold = useStudioRailFold({ surface: 'changelog' });
   const bundledReleases = useAppStore((state) => state.changelogReleases);
   const upcoming = useAppStore((state) => state.changelogUpcoming);
@@ -75,16 +77,24 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
       : state.updateVersion,
   );
   const installedVersion = useInstalledVersion();
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(request?.version ?? null);
   const focusAtOpen = useAppStore((state) => state.changelogFocusVersion);
   const [focusVersion] = useState(focusAtOpen);
   const [isCatchUpSelected, setIsCatchUpSelected] = useState(
     () =>
-      focusAtOpen === null ||
-      updateTarget === null ||
-      !sameVersion({ tag: focusAtOpen, version: updateTarget }),
+      request === null &&
+      (focusAtOpen === null ||
+        updateTarget === null ||
+        !sameVersion({ tag: focusAtOpen, version: updateTarget })),
   );
+
+  useEffect(() => {
+    if (request === null) {
+      return;
+    }
+    setSelectedVersion(request.version);
+    setIsCatchUpSelected(false);
+  }, [request]);
 
   useEffect(() => {
     if (updateTarget === null) {
@@ -124,9 +134,8 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
     releases: bundledReleases,
   });
   const catchUp = changelogCatchUp({ releases, seenVersion, installedVersion });
-  const filteredReleases = searchReleases({ releases, query });
   const selected = pickRelease({
-    releases: filteredReleases,
+    releases,
     selectedVersion,
     focusVersion,
     installedVersion,
@@ -148,61 +157,45 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
     setIsCatchUpSelected(true);
   };
 
-  const showCatchUp = catchUp !== null && isCatchUpSelected && query.trim() === '';
+  const isCatchUpShown = catchUp !== null && isCatchUpSelected;
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.changelog}
-      tone={CONCEPT_TONE.changelog}
-      title={NAMES.whatsNew}
-      {...(installedVersion !== null && { subtitle: `Installed ${installedVersion}` })}
-      onClose={onClose}
-    >
-      {() => (
-        <StudioRailLayout
-          railLabel="Releases"
-          railWidth="standard"
-          surface="changelog"
-          placement="page"
-          isCollapsed={fold.isCollapsed}
-          onCollapsedChange={fold.setFolded}
-          rail={
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-              <ChangelogRail
-                releases={filteredReleases}
-                selectedVersion={showCatchUp ? null : (selected?.version ?? null)}
-                installedVersion={installedVersion}
-                dates={dates}
-                query={query}
-                onQueryChange={setQuery}
-                catchUp={catchUp}
-                isCatchUpSelected={showCatchUp}
-                onSelect={selectRelease}
-                onSelectCatchUp={selectCatchUp}
-              />
-            </ScrollFade>
-          }
-          detail={
-            <StudioDetail>
-              {showCatchUp && catchUp !== null ? (
-                <CatchUpReader
-                  catchUp={catchUp}
-                  dates={dates}
-                  installedVersion={installedVersion}
-                />
-              ) : selected !== null ? (
-                <ReleaseReader
-                  release={selected}
-                  dateLabel={releaseDateLabel({ publishedAt: dates[selected.version] })}
-                  installedVersion={installedVersion}
-                  onOpenScreen={onOpenScreen}
-                  action={updateAction}
-                />
-              ) : null}
-            </StudioDetail>
-          }
+    <StudioRailLayout
+      railLabel="Releases"
+      railWidth="standard"
+      surface="changelog"
+      placement="page"
+      isCollapsed={fold.isCollapsed}
+      onCollapsedChange={fold.setFolded}
+      rail={
+        <ChangelogRail
+          releases={releases}
+          selectedVersion={isCatchUpShown ? null : (selected?.version ?? null)}
+          installedVersion={installedVersion}
+          dates={dates}
+          header={header}
+          results={results}
+          catchUp={catchUp}
+          isCatchUpSelected={isCatchUpShown}
+          onSelect={selectRelease}
+          onSelectCatchUp={selectCatchUp}
         />
-      )}
-    </StudioShell>
+      }
+      detail={
+        <StudioDetail>
+          {isCatchUpShown && catchUp !== null ? (
+            <CatchUpReader catchUp={catchUp} dates={dates} installedVersion={installedVersion} />
+          ) : selected !== null ? (
+            <ReleaseReader
+              release={selected}
+              dateLabel={releaseDateLabel({ publishedAt: dates[selected.version] })}
+              installedVersion={installedVersion}
+              onOpenScreen={onOpenScreen}
+              action={updateAction}
+            />
+          ) : null}
+        </StudioDetail>
+      }
+    />
   );
 };

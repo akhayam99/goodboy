@@ -317,7 +317,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Goodboy beta/);
       await clickMenuItem(/^Guide/);
     },
-    lands: () => studio('Guide'),
+    lands: () => studio('Help'),
   },
   {
     name: 'column: goodboy chip to pair an iPhone',

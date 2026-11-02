@@ -282,7 +282,6 @@
     "apps/desktop/src/features/notifications/components/NotificationRow/RetryWithPicker.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/index.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.tsx": 1,
-    "apps/desktop/src/features/settings/components/GuideStudio/parts/PrefixRow.tsx": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/StageBoard/StageColumn/index.tsx": 1,
     "apps/desktop/src/shared/components/Toast/ToastCard.tsx": 1,

@@ -178,18 +178,18 @@ describe('the plan drawer scenes', () => {
   });
 
   describe('the flows the mock engine answers', () => {
-    it('approve: the real approval runs, the drawer closes and the toast says Plan approved', async () => {
+    it('approve: the real approval runs and the drawer closes with no toast over the run page', async () => {
       renderScene('plan-drawer-waiting');
 
       await screen.findByTestId('plan-drawer');
       fireEvent.click(screen.getByTestId('plan-primary'));
 
-      expect(await screen.findByText('Plan approved', undefined, WAIT)).toBeDefined();
-      expect(screen.getByText('Implement started')).toBeDefined();
       await waitFor(() => expect(useAppStore.getState().drawer).toBeNull(), WAIT);
       const run = useAppStore.getState().sessions[0]?.workflowRuns[0];
       expect(run?.orchestrationStop).toBeUndefined();
       expect(run?.rulesSnapshot?.planApproved).toBe(true);
+      expect(screen.queryByText('Plan approved')).toBeNull();
+      expect(screen.queryByText('Implement started')).toBeNull();
     });
 
     it('follow: approving over the overview raises the toast with Follow the run, and it goes to the run', async () => {

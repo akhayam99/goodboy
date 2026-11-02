@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Workflow } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../../../store';
-import type { ShowToast } from '../../../../../../shared/components/Toast';
 import { parseQuery } from '../../../../../quick-actions/grammar';
 import {
   buildAgentActions,
@@ -27,10 +26,9 @@ type Params = {
   readonly session: Session;
   readonly value: string;
   readonly setValue: (next: string) => void;
-  readonly showToast: ShowToast;
 };
 
-export const useChatPrefix = ({ session, value, setValue, showToast }: Params) => {
+export const useChatPrefix = ({ session, value, setValue }: Params) => {
   const runScript = useAppStore((s) => s.runScript);
   const runDiscoveredScript = useAppStore((s) => s.runDiscoveredScript);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -100,7 +98,6 @@ export const useChatPrefix = ({ session, value, setValue, showToast }: Params) =
       setShowPopover(false);
       try {
         await attachWorkflowToSession(session.id, workflow.id, { navigate: true });
-        showToast({ kind: 'success', message: `Started ${workflow.name}.` });
       } catch (error) {
         void reportError({
           title: `Couldn't start ${workflow.name}`,
@@ -109,7 +106,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast }: Params) =
         });
       }
     },
-    [attachWorkflowToSession, reportError, session.id, showToast, setValue],
+    [attachWorkflowToSession, reportError, session.id, setValue],
   );
 
   const onSwitchAgent = useCallback(
@@ -126,11 +123,10 @@ export const useChatPrefix = ({ session, value, setValue, showToast }: Params) =
     setShowPopover(false);
     try {
       await spawnAgent(session.id, { focus: 'agent' });
-      showToast({ kind: 'success', message: 'Started a new agent.' });
     } catch (error) {
       void reportError({ title: "Couldn't start a new agent", error, sessionId: session.id });
     }
-  }, [reportError, spawnAgent, session.id, showToast, setValue]);
+  }, [reportError, spawnAgent, session.id, setValue]);
 
   const quickItems = useMemo<ReadonlyArray<QuickActionItem> | null>(() => {
     const symbol = parsed.prefix?.symbol;

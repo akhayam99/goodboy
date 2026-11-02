@@ -158,11 +158,24 @@ describe('UpdateArrivalCard', () => {
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
   });
 
+  it('keeps What’s new beside the sentence, so the verb row holds two buttons', async () => {
+    const dialog = await openCard();
+
+    const sentence = within(dialog).getByText(
+      'Nothing is running. A restart takes a few seconds.',
+    ).parentElement;
+    const link = within(dialog).getByRole('button', { name: "What's new" });
+    const verbRow = within(dialog).getByRole('button', { name: 'Later' }).parentElement;
+    expect(sentence?.contains(link)).toBe(true);
+    expect(verbRow?.contains(link)).toBe(false);
+    expect(verbRow?.querySelectorAll('button')).toHaveLength(2);
+  });
+
   it('ready: says nothing is running and offers Later, What’s new and Restart now', async () => {
     const dialog = await openCard();
 
     within(dialog).getByText('Nothing is running. A restart takes a few seconds.');
-    expect(verbsOf({ dialog })).toEqual(['Later', "What's new", 'Restart now']);
+    expect(verbsOf({ dialog })).toEqual(["What's new", 'Later', 'Restart now']);
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Restart now' }));
 
@@ -177,7 +190,7 @@ describe('UpdateArrivalCard', () => {
     act(() => toggleUpdateCard());
 
     const dialog = screen.getByRole('dialog', { name: 'Goodboy 0.24.1 is available' });
-    expect(verbsOf({ dialog })).toEqual(['Later', "What's new", 'Update now']);
+    expect(verbsOf({ dialog })).toEqual(["What's new", 'Later', 'Update now']);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Update now' }));
     expect(actions.downloadUpdate).toHaveBeenCalledTimes(1);
     expect(actions.applyUpdate).not.toHaveBeenCalled();

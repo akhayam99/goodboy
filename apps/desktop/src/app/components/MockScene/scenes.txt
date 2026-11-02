@@ -1133,6 +1133,8 @@ u32-release-images
 u32-run-questions
 u33-overview-needs-you
 u33-run-stopped-questions
+u34-help-search
+u34-help-shortcuts
 u34-question-card-states
 u34-t52-long-transcript
 u34-u12-failure

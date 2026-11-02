@@ -1,10 +1,5 @@
 import { Band, KeyHint } from '@goodboy/ui';
 import {
-  COMPOSER_PREFIX_GROUPS,
-  PALETTE_PREFIX_GROUPS,
-  prefixesOf,
-} from '../../../../quick-actions/grammar';
-import {
   formatCombo,
   shortcutRangeGlyphs,
   shortcutGlyphs,
@@ -14,7 +9,7 @@ import {
   CHOICE_OVERFLOW_LABEL,
   CHOICE_SEGMENT_LIMIT,
 } from '../../../../../shared/lib/interactionRules';
-import { PrefixRow } from './PrefixRow';
+import { PrefixTable } from './PrefixTable';
 import { shortcutRows } from '../../SettingsStudio/shortcutRows';
 
 const FIELD_KINDS: ReadonlyArray<{
@@ -103,16 +98,7 @@ export const ListensExtra = () => (
 
     <div className="col-span-2">
       <Band inset="content" label="Prefixes" headingLevel={3}>
-        <div className="grid grid-cols-2 gap-4">
-          <PrefixRow
-            title="In the composer"
-            prefixes={prefixesOf({ groups: COMPOSER_PREFIX_GROUPS })}
-          />
-          <PrefixRow
-            title={`In ${shortcutGlyphs('palette.open')}`}
-            prefixes={prefixesOf({ groups: PALETTE_PREFIX_GROUPS })}
-          />
-        </div>
+        <PrefixTable />
       </Band>
     </div>
   </div>

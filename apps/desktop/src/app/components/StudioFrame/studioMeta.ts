@@ -11,13 +11,12 @@ export type StudioSkeletonSpec = {
   readonly hasRail: boolean;
 };
 
-type StudioCloseHome = 'none' | 'header' | 'band';
+type StudioCloseHome = 'none' | 'back';
 
 type StudioMeta = {
   readonly icon: LucideIcon;
   readonly tone?: Tone;
   readonly title: string;
-  readonly closeLabel: string;
   readonly close: StudioCloseHome;
   readonly tier: 'column' | 'full';
   readonly page: FramePage | null;
@@ -31,8 +30,7 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.settings,
     tone: CONCEPT_TONE.settings,
     title: 'Settings',
-    closeLabel: 'Close settings',
-    close: 'band',
+    close: 'back',
     tier: 'column',
     page: 'settings',
     skeleton: { shape: 'rows', hasRail: true },
@@ -41,9 +39,8 @@ export const STUDIO_META = {
   guide: {
     icon: CONCEPT_ICONS.guide,
     tone: CONCEPT_TONE.guide,
-    title: 'Guide',
-    closeLabel: 'Close guide',
-    close: 'header',
+    title: 'Help',
+    close: 'back',
     tier: 'column',
     page: 'guide',
     skeleton: { shape: 'prose', hasRail: true },
@@ -53,8 +50,7 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.workspace,
     tone: CONCEPT_TONE.workspace,
     title: NAMES.newWorkspace,
-    closeLabel: 'Close new workspace',
-    close: 'band',
+    close: 'back',
     tier: 'column',
     page: null,
     skeleton: { shape: 'rows', hasRail: false },
@@ -63,7 +59,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.workflows,
     tone: CONCEPT_TONE.workflows,
     title: 'Workflows',
-    closeLabel: 'Close workflows',
     close: 'none',
     tier: 'column',
     page: 'workflows',
@@ -74,7 +69,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.inbox,
     tone: CONCEPT_TONE.inbox,
     title: NAMES.tasks,
-    closeLabel: 'Close tasks',
     close: 'none',
     tier: 'column',
     page: 'inbox',
@@ -86,7 +80,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.impact,
     tone: CONCEPT_TONE.impact,
     title: 'Impact',
-    closeLabel: 'Close impact',
     close: 'none',
     tier: 'column',
     page: 'impact',
@@ -95,9 +88,8 @@ export const STUDIO_META = {
   changelog: {
     icon: CONCEPT_ICONS.changelog,
     tone: CONCEPT_TONE.changelog,
-    title: NAMES.whatsNew,
-    closeLabel: `Close ${NAMES.whatsNew.toLowerCase()}`,
-    close: 'header',
+    title: 'Help',
+    close: 'back',
     tier: 'column',
     page: 'whatsNew',
     skeleton: { shape: 'prose', hasRail: true },
@@ -106,8 +98,7 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.notifications,
     tone: CONCEPT_TONE.notifications,
     title: 'Notifications',
-    closeLabel: 'Close notifications',
-    close: 'header',
+    close: 'none',
     tier: 'column',
     page: 'notifications',
     skeleton: { shape: 'rows', hasRail: true },
@@ -117,7 +108,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.chat,
     tone: CONCEPT_TONE.chat,
     title: 'Chat',
-    closeLabel: 'Close chat',
     close: 'none',
     tier: 'column',
     page: 'chat',
@@ -129,7 +119,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.terminal,
     tone: CONCEPT_TONE.terminal,
     title: 'Terminal',
-    closeLabel: 'Close terminal',
     close: 'none',
     tier: 'full',
     page: 'terminal',
@@ -140,7 +129,6 @@ export const STUDIO_META = {
     icon: CONCEPT_ICONS.monitoring,
     tone: CONCEPT_TONE.monitoring,
     title: 'Monitoring',
-    closeLabel: 'Close monitoring',
     close: 'none',
     tier: 'column',
     page: 'monitoring',

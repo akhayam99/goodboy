@@ -220,7 +220,7 @@ describe('one page layout', () => {
   it('registers a page root for every studio door that opens a page', () => {
     const doors = new Set(DOOR_PAGES.map((root) => root.page));
     const studioPages = Object.values(STUDIO_META).flatMap((meta) =>
-      meta.page !== null && meta.close !== 'band' ? [meta.page] : [],
+      meta.page !== null && meta.close !== 'back' ? [meta.page] : [],
     );
 
     expect(studioPages.filter((page) => !doors.has(page))).toEqual([]);

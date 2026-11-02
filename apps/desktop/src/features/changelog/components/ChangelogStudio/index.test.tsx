@@ -45,7 +45,7 @@ vi.mock('../../hooks/useInstalledVersion', () => ({
   useInstalledVersion: () => mocks.installedVersion,
 }));
 
-import { ChangelogStudio } from './index';
+import { HelpStudio } from '../../../../app/components/HelpStudio';
 
 const buildRelease = (version: string, markdown: string): ReleaseEntry => ({
   version,
@@ -57,7 +57,8 @@ const buildRelease = (version: string, markdown: string): ReleaseEntry => ({
   publishedAt: null,
 });
 
-const renderStudio = () => render(<ChangelogStudio onClose={vi.fn()} onOpenScreen={vi.fn()} />);
+const renderStudio = () =>
+  render(<HelpStudio initialTab="whatsNew" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
 const baseState = (releases: ReadonlyArray<ReleaseEntry>): ChangelogState => ({
   changelogReleases: releases,
@@ -82,7 +83,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('ChangelogStudio', () => {
+describe('HelpStudio on What is new', () => {
   it('marks the installed version in the rail and leaves the newer one unmarked', () => {
     mocks.state = baseState([
       buildRelease('0.5.6', 'shipped something newer'),
@@ -183,16 +184,16 @@ describe('ChangelogStudio', () => {
     expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
   });
 
-  it('filters the rail with a search query', () => {
+  it('swaps the rail for the help results with a search query', () => {
     mocks.state = threeReleases();
     mocks.installedVersion = '0.3.14';
 
     renderStudio();
 
-    const search = screen.getByRole('searchbox', { name: 'Search releases' });
+    const search = screen.getByRole('searchbox', { name: 'Search help' });
     fireEvent.change(search, { target: { value: 'xylophonemarmot' } });
 
-    expect(screen.getByText(/No release mentions/)).toBeDefined();
+    expect(screen.getByText(/Nothing in help matches/)).toBeDefined();
   });
 
   const railVersions = (): ReadonlyArray<string> => {

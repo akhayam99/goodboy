@@ -276,7 +276,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
-      () => studio("What's new"),
+      () => studio('Help'),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -449,7 +449,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     door: 'palette',
     open: () => openPalette(/^Guide/),
-    lands: () => studio('Guide'),
+    lands: () => studio('Help'),
   },
   {
     name: 'palette verb: Rename',

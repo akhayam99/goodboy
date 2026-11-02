@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { GuideStudio } from '../../../../../features/settings/components/GuideStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { requestGuideChapter } from '../../../../../features/settings/components/GuideStudio/guideChapterRequest';
 import { FramedStudioScene } from '../u23/FramedStudioScene';
 
@@ -51,7 +51,7 @@ const GuideChapterScene = ({ variant }: Props) => {
 
   return (
     <FramedStudioScene kind="guide" place="link" seed={SEED_OF[variant]}>
-      <GuideStudio onClose={NOOP} />
+      <HelpStudio initialTab="guide" onClose={NOOP} onOpenScreen={NOOP} />
     </FramedStudioScene>
   );
 };

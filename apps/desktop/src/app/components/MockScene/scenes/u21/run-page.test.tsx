@@ -147,19 +147,18 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
   });
 
-  it('approves from the drawer on the run page: the hold lifts, the drawer closes, one toast', async () => {
+  it('approves from the drawer on the run page: the hold lifts, the drawer closes, no toast', async () => {
     renderScene('workflow-run-plan-review');
 
     fireEvent.click(await screen.findByTestId('plan-primary'));
 
-    expect(await screen.findByText('Plan approved')).toBeDefined();
-    expect(screen.getByText('The run goes on')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
     await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
     const run = useAppStore.getState().sessions.find((session) => session.id === FLOW_SESSION_ID)
       ?.workflowRuns[0];
     expect(run?.orchestrationStop).toBeUndefined();
     expect(run?.rulesSnapshot?.planApproved).toBe(true);
+    expect(screen.queryByText('Plan approved')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
     expect(screen.queryByText("Couldn't approve the plan")).toBeNull();
   });
 

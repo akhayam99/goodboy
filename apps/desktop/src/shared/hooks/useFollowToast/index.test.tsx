@@ -183,12 +183,12 @@ describe('useFollowToast', () => {
     expect(currentKey()).toBe('board');
   });
 
-  it('keeps the title and drops the action when the target is on screen', () => {
+  it('shows no toast for a start whose target is on screen', () => {
     mountToasts();
 
     showFollow({ title: 'Run started', target: { place: sessionPlace({ sessionId }) } });
 
-    expect(screen.getByText('Run started')).toBeDefined();
+    expect(screen.queryByText('Run started')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Follow' })).toBeNull();
   });
 

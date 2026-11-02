@@ -1,5 +1,5 @@
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { GuideStudio } from '../../../../../features/settings/components/GuideStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { requestGuideChapter } from '../../../../../features/settings/components/GuideStudio/guideChapterRequest';
 import { sceneParam } from './sceneParams';
 
@@ -14,7 +14,7 @@ if (CHAPTER !== null) {
 export const GuideScene = () => (
   <ToastProvider>
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <GuideStudio onClose={noop} />
+      <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
     </main>
   </ToastProvider>
 );

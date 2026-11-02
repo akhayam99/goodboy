@@ -712,12 +712,11 @@ export const installNavigationHooks = (): void => {
     useAppStore = await importStore();
     await Promise.all([
       import('../../../features/settings/components/SettingsStudio'),
-      import('../../../features/settings/components/GuideStudio'),
+      import('../../../app/components/HelpStudio'),
       import('../../../features/workspace/components/WorkspaceLinkStudio'),
       import('../../../features/workflows/components/WorkflowStudio'),
       import('../../../features/inbox/components/InboxStudio'),
       import('../../../features/impact/components/ImpactStudio'),
-      import('../../../features/changelog/components/ChangelogStudio'),
       import('../../../features/notifications/components/NotificationsStudio'),
       import('../../../features/workspace-chat/components/ChatStudio'),
     ]);

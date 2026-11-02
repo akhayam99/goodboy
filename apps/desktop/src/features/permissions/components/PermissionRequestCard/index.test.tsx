@@ -194,10 +194,7 @@ describe('PermissionRequestCard', () => {
         pattern: { tool: 'Bash', argsMatcher: 'pnpm test *' },
       }),
     );
-    expect(toastMock).toHaveBeenCalledWith({
-      kind: 'info',
-      message: 'Blocked "pnpm test" for the rest of this session',
-    });
+    expect(toastMock).not.toHaveBeenCalled();
   });
 
   it('allows all commands in this session from the overflow', async () => {

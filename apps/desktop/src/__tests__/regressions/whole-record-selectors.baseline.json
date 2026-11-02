@@ -4,7 +4,7 @@
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": 1,
   "apps/desktop/src/features/artifacts/useArtifactScoutRoster/index.ts": 1,
   "apps/desktop/src/features/backup/components/BackupPage/index.tsx": 1,
-  "apps/desktop/src/features/changelog/components/ChangelogStudio/index.tsx": 1,
+  "apps/desktop/src/features/changelog/components/ChangelogStudio/WhatsNewTab.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatInput/hooks/useChatPrefix/index.ts": 1,
   "apps/desktop/src/features/chat/components/ChatView/ChatEmptyState.tsx": 1,
   "apps/desktop/src/features/history/useRebaseStatuses/index.ts": 1,

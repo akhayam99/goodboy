@@ -57,7 +57,6 @@ function renderChatPrefix() {
       session,
       value: '~',
       setValue: vi.fn(),
-      showToast: vi.fn(),
     }),
   );
 }
@@ -119,7 +118,6 @@ const renderScripts = (value: string) =>
       session,
       value,
       setValue: vi.fn(),
-      showToast: vi.fn(),
     }),
   );
 

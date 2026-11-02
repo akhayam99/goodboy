@@ -26,24 +26,30 @@ describe('ListensExtra', () => {
     }
   });
 
-  it('lists the composer prefixes the composer reads, and no other', () => {
+  it('lists every prefix once in one table, read from the registry', () => {
     render(<ListensExtra />);
-    const composer = screen.getByText('In the composer').parentElement as HTMLElement;
+    const table = screen.getByRole('table');
 
-    expect([...symbolsIn(composer)].sort()).toEqual(
-      CHAT_PREFIXES.map((prefix) => prefix.symbol).sort(),
-    );
+    expect(symbolsIn(table)).toEqual(PREFIXES.map((prefix) => prefix.symbol));
   });
 
-  it('lists the palette prefixes, with the workflow prefix on both sides', () => {
+  it('marks the composer column used for exactly the prefixes the composer reads', () => {
     render(<ListensExtra />);
-    const palette = screen.getByText(`In ${shortcutGlyphs('palette.open')}`)
-      .parentElement as HTMLElement;
-    const composer = screen.getByText('In the composer').parentElement as HTMLElement;
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const used = rows
+      .filter((row) => within(row).queryAllByRole('cell')[1]?.textContent !== 'not used')
+      .map((row) => row.querySelector('kbd')?.textContent ?? '');
 
-    expect([...symbolsIn(palette)].sort()).toEqual(PREFIXES.map((prefix) => prefix.symbol).sort());
-    expect(symbolsIn(palette)).toContain('~');
-    expect(symbolsIn(composer)).toContain('~');
+    expect(used.sort()).toEqual(CHAT_PREFIXES.map((prefix) => prefix.symbol).sort());
+  });
+
+  it('gives a shared symbol one meaning on both surfaces', () => {
+    render(<ListensExtra />);
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const scripts = rows.find((row) => row.querySelector('kbd')?.textContent === '$');
+    const cells = within(scripts as HTMLElement).getAllByRole('cell');
+
+    expect(cells.map((cell) => cell.textContent)).toEqual(['Scripts', 'Scripts']);
   });
 
   it('shows the list keys from the registry and the two kinds of field', () => {

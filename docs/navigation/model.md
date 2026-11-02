@@ -446,11 +446,14 @@ form that was still open.
 
 On screen is the exception: when the target place is the current place (and
 its named drawer is the open one), no studio covers the page and no overlay
-drawer covers it (`data-drawer-mode="overlay"` on the drawer `aside`), the
-toast keeps its title and drops the action. A push drawer leaves the page
-visible, so it does not count as covering.
+drawer covers it (`data-drawer-mode="overlay"` on the drawer `aside`), there is
+no toast at all: a start you caused and can see announces nothing. A push drawer
+leaves the page visible, so it does not count as covering. The same holds for
+the rebase start, the composer's `$`, `~` and `@` picks and a plain Deny; a
+session-long ban is the explicit overflow action and is a line on the
+permission card, not a toast.
 
-A user start raises one toast. The caller passes a `startKey` (a run id or an
+A user start that happens out of sight raises one toast. The caller passes a `startKey` (a run id or an
 agent id) to `useFollowToast`; the key marks the run or agent as user-started
 for 5 seconds (`shared/lib/userStarts.ts`) and becomes the toast's `dedupeKey`
 `follow:<startKey>`. `WorkflowFollowToastBridge` skips a step start whose run
