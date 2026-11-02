@@ -1,5 +1,5 @@
 export type Tone =
-  'success' | 'info' | 'warning' | 'danger' | 'primary' | 'merged' | 'draft' | 'neutral';
+  'success' | 'info' | 'warning' | 'danger' | 'primary' | 'unread' | 'merged' | 'draft' | 'neutral';
 
 export type TintClasses = {
   readonly bg: string;
@@ -110,6 +110,24 @@ const TINT: Record<Tone, TintClasses> = {
     dot: 'bg-primary',
     solid: 'bg-primary text-on-tone [&_svg]:text-current',
     rail: 'border-l-primary',
+  },
+  unread: {
+    bg: 'bg-unread/10',
+    bgSoft: 'bg-unread/5',
+    ring: 'ring-unread/20',
+    ringStrong: 'ring-unread/60',
+    border: 'border-unread/40',
+    borderSoft: 'border-unread/20',
+    hoverBorder: 'hover:border-unread/40',
+    hoverRing: 'hover:ring-unread/60',
+    hoverBg: 'hover:bg-hover',
+    hoverBgSoft: 'hover:bg-unread/5',
+    hoverText: 'hover:text-unread',
+    text: 'text-unread',
+    icon: 'text-unread',
+    dot: 'bg-unread',
+    solid: 'bg-unread text-on-tone [&_svg]:text-current',
+    rail: 'border-l-unread',
   },
   merged: {
     bg: 'bg-merged/10',

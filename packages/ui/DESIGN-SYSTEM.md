@@ -262,13 +262,15 @@ state is a `StateDot` or a glyph in a 16px column.
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),
-`running` (info), `needsYou` (warning), `failed` (danger), `unread` (primary),
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma cyan, 6.3:1 on dark and 3.8:1 on light, never used on a button),
 `done` (success), and `idle` and `stopped`, a neutral ring with a transparent
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
 lives in the dot's tooltip, never as colored text. The Sessions door is the one exception: it
 says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
+
+A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one left edge (`StateNode` with `hasEmptySlot`). Unread is the title in `text-row-strong`, never a second dot on the mark (`UNREAD_TITLE`); only a row with no room for a title (the icon rail) or no 13px weighted role (the pinned and switcher rows at 12px) keeps the quiet dot (`isUnreadDot`).
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.

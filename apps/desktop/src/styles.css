@@ -51,6 +51,7 @@
   --color-scrollbar-thumb-active: oklch(1 0 0 / 0.4);
 
   --color-primary: oklch(0.74 0.13 210);
+  --color-unread: oklch(0.66 0.07 210);
   --color-on-tone: oklch(0.16 0 0);
   --color-brand: #0b0b0d;
 
@@ -606,6 +607,7 @@ html[data-theme='light'] {
   --color-scrollbar-thumb: oklch(0 0 0 / 0.26);
   --color-scrollbar-thumb-active: oklch(0 0 0 / 0.45);
   --color-primary: oklch(0.455 0.14 210);
+  --color-unread: oklch(0.56 0.08 210);
   --color-on-tone: oklch(0.99 0 0);
   /* Semantic, tuned for AA on light bg (text use) and white-fg readability (bg use).
      Warning hue shifted from pure yellow (78) to amber (55), pure yellow at AA-passing

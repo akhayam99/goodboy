@@ -79,8 +79,7 @@ const rowOf = (title: string): HTMLElement => {
   return row;
 };
 
-const isLit = (row: HTMLElement): boolean =>
-  row.querySelector('[role="img"]')?.getAttribute('aria-label')?.endsWith(', unseen') === true;
+const isLit = (row: HTMLElement): boolean => row.className.includes('text-row-strong');
 
 const openMenu = () => {
   fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));

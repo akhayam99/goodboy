@@ -10,6 +10,7 @@ const SELECTED_ICON: Readonly<Record<Tone, string>> = {
   warning: '[&>svg:first-child]:text-warning',
   danger: '[&>svg:first-child]:text-danger',
   primary: '[&>svg:first-child]:text-primary',
+  unread: '[&>svg:first-child]:text-unread',
   merged: '[&>svg:first-child]:text-merged',
   draft: '[&>svg:first-child]:text-draft',
   neutral: '[&>svg:first-child]:text-foreground',

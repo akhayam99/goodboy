@@ -14,7 +14,7 @@ const DOT_TONE = {
   running: 'info',
   needsYou: 'warning',
   failed: 'danger',
-  unread: 'primary',
+  unread: 'unread',
   done: 'success',
   idle: 'neutral',
   stopped: 'neutral',

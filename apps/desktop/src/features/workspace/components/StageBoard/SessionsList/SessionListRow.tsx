@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ListGridRow, TEXT_ROLE, cn } from '@goodboy/ui';
+import { ListGridRow, TEXT_ROLE, UNREAD_TITLE, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { StateNode } from '../../../../../shared/components/StateNode';
@@ -31,12 +31,12 @@ export const SessionListRow = memo(function SessionListRow({
       tooltip={plainTitle}
       onSelect={() => onOpen(session)}
       cells={[
-        <StateNode key="node" node={node} />,
+        <StateNode key="node" node={node} hasEmptySlot />,
         <span key="title" className="flex min-w-0 items-baseline gap-2">
           {keys[0] === undefined ? null : (
             <span className={cn('shrink-0 font-mono', TEXT_ROLE.hint)}>{keys[0]}</span>
           )}
-          <span className="truncate">{plainTitle}</span>
+          <span className={cn('truncate', node.hasUnread && UNREAD_TITLE)}>{plainTitle}</span>
         </span>,
         projectLineOf({ mounts }),
         <SessionSignal key="signal" signal={signal} />,

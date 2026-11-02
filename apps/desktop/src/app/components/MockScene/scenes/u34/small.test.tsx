@@ -65,6 +65,22 @@ describe('the small flows scenes', () => {
     expect(done.contains(document.activeElement)).toBe(true);
   });
 
+  it('draws one mark per row, an empty slot at rest, and a bold title when unread', () => {
+    const { container } = mount({ name: 'u34-u22-row-marks' });
+    const rows = [...container.querySelectorAll<HTMLElement>('[data-row-mark]')];
+    expect(rows).toHaveLength(8);
+    expect(container.querySelectorAll('[data-testid="state-node-slot"]')).toHaveLength(4);
+    expect(container.querySelectorAll('.bg-unread')).toHaveLength(0);
+    for (const row of rows) {
+      expect(row.querySelectorAll('[data-node-kind]')).toHaveLength(1);
+    }
+    const bold = container.querySelectorAll('.text-row-strong');
+    expect([...bold].map((title) => title.textContent)).toEqual([
+      'Stop retried webhooks posting twice',
+      'Draft the payout delay notice',
+    ]);
+  });
+
   it('mounts the branch header with commit wording', async () => {
     const { container } = mount({ name: 'u34-u35-unpushed' });
     await waitFor(() => expect(container.querySelector('[data-branch-start-line]')).not.toBeNull());

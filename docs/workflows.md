@@ -377,7 +377,10 @@ read top to bottom at the conversation measure:
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
   recommended one tagged, one pick or many, **Something else** for free text and
-  **Answer**. When the asking agent has several open questions they page as
+  **Answer**. **Something else** keeps the option row when it opens: the field grows
+  under its label. An answered or resolved card shares one shape: the answer on one
+  line (cut, full text on hover), then the quiet status and **Undo**
+  (`QuestionAnswerDone`). When the asking agent has several open questions they page as
   "1 of 3" in creation order (`askingAgentBatch`); **Answer** keeps a card's
   pick, the pager says how many are left ("2 left" jumps to the next
   unanswered one, `questionsLeft`), and the last **Answer** sends every pick in

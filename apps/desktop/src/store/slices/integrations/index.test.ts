@@ -8,6 +8,7 @@ import {
   storySpies,
   type StoryStore,
 } from '../../storyHarness';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -563,6 +564,95 @@ describe('store contract', () => {
       expect(gitlab[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect(gitlab[0]?.updatedAt).not.toBe('2026-01-01T00:00:00.000Z');
       expect((gitlab[0]?.config as { host: string }).host).toBe('https://self.hosted');
+    });
+
+    describe('refreshViewerIdentity', () => {
+      const legacy: IntegrationBinding = {
+        id: brandId<IntegrationBindingId>({ value: 'gl-legacy' }),
+        workspaceId: WS_ID,
+        projectId: null,
+        provider: 'gitlab',
+        config: { userName: 'Harborline Dev', userId: '3', host: 'https://gitlab.com' },
+        credentialId: CRED_ID,
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+
+      type UsernameParams = {
+        readonly binding: IntegrationBinding | undefined;
+      };
+
+      const usernameOf = ({ binding }: UsernameParams): string | undefined =>
+        binding?.provider === 'gitlab' ? binding.config.username : undefined;
+
+      it('fills the username of a connection made before it was stored, with no token sent', async () => {
+        const store = useAppStore;
+        storySpies.getIntegrationBinding.mockResolvedValueOnce(legacy);
+        store.setState({ workspaceIntegrations: { [WS_ID]: [legacy] } });
+        storySpies.gitlabValidateConnection.mockResolvedValueOnce({
+          id: 3,
+          username: 'nadia-p',
+          name: 'Harborline Dev',
+        });
+
+        const outcomes = await store.getState().refreshViewerIdentity({ workspaceId: WS_ID });
+
+        expect(outcomes).toEqual(['refreshed']);
+        expect(storySpies.gitlabValidateConnection).toHaveBeenCalledWith(
+          CRED_ID,
+          'https://gitlab.com',
+          null,
+        );
+        const gitlab = store.getState().workspaceIntegrations[WS_ID]?.[0];
+        expect(gitlab?.id).toBe('gl-legacy');
+        expect(usernameOf({ binding: gitlab })).toBe('nadia-p');
+      });
+
+      it('leaves the connection as it was when the host refuses, so the reconnect line stays', async () => {
+        const store = useAppStore;
+        store.setState({ workspaceIntegrations: { [WS_ID]: [legacy] } });
+        storySpies.gitlabValidateConnection.mockRejectedValueOnce(new Error('401'));
+
+        const outcomes = await store.getState().refreshViewerIdentity({ workspaceId: WS_ID });
+
+        expect(outcomes).toEqual(['failed']);
+        expect(storySpies.upsertIntegrationBinding).not.toHaveBeenCalled();
+        expect(store.getState().workspaceIntegrations[WS_ID]?.[0]).toEqual(legacy);
+      });
+
+      it('retries from the Reconnect line and fills the username the second time', async () => {
+        const store = useAppStore;
+        storySpies.getIntegrationBinding.mockResolvedValueOnce(legacy);
+        store.setState({ workspaceIntegrations: { [WS_ID]: [legacy] } });
+        storySpies.gitlabValidateConnection.mockRejectedValueOnce(new Error('offline'));
+        storySpies.gitlabValidateConnection.mockResolvedValueOnce({
+          id: 3,
+          username: 'nadia-p',
+          name: 'Harborline Dev',
+        });
+
+        expect(await store.getState().refreshViewerIdentity({ workspaceId: WS_ID })).toEqual([
+          'failed',
+        ]);
+        expect(await store.getState().refreshViewerIdentity({ workspaceId: WS_ID })).toEqual([
+          'refreshed',
+        ]);
+        expect(usernameOf({ binding: store.getState().workspaceIntegrations[WS_ID]?.[0] })).toBe(
+          'nadia-p',
+        );
+      });
+
+      it('does not call the host for a connection that already has its username', async () => {
+        const store = useAppStore;
+        const complete: IntegrationBinding = {
+          ...legacy,
+          config: { userName: 'Amin K', userId: '9', username: 'amin', host: 'https://gitlab.com' },
+        };
+        store.setState({ workspaceIntegrations: { [WS_ID]: [complete] } });
+
+        expect(await store.getState().refreshViewerIdentity({ workspaceId: WS_ID })).toEqual([]);
+        expect(storySpies.gitlabValidateConnection).not.toHaveBeenCalled();
+      });
     });
 
     it('connectJira caches the site, project and account details it validated', async () => {

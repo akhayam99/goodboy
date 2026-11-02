@@ -28,7 +28,7 @@ export const DrawerTabs = ({ tab, onPick, hasLeadDot, hasTranscriptDot }: Props)
       label: TRANSCRIPT_DRAWER_COPY.transcriptTab,
       badge: hasTranscriptDot ? (
         <StatusDot
-          tone="primary"
+          tone="unread"
           size="sm"
           role="status"
           ariaLabel={TRANSCRIPT_DRAWER_COPY.transcriptDot}

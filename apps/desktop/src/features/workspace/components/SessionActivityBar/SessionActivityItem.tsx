@@ -1,6 +1,6 @@
 import { memo, useEffect, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
+import { ROW_INTERACTIVE, UNREAD_TITLE, cn, tintClasses } from '@goodboy/ui';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
@@ -174,7 +174,8 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left text-ui',
+          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left',
+          node.hasUnread ? UNREAD_TITLE : 'text-ui',
           ROW_INTERACTIVE,
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',
@@ -184,7 +185,7 @@ const SessionActivityItemView = ({
       >
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
         <span data-row-state="" className="flex shrink-0 items-center">
-          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} />
+          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} hasEmptySlot />
         </span>
       </button>
       <span id={descriptionId} className="sr-only">

@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
+import { IdentityHealthLine } from '../components/IdentityHealthLine';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { normalizeHostUrl } from '../shared/normalizeHostUrl';
@@ -33,15 +34,18 @@ export const GitlabFormBody = ({
 
   if (gitlab != null && config != null) {
     return (
-      <IntegrationConnectedRow
-        provider="gitlab"
-        credentialId={gitlab?.credentialId ?? null}
-        primary={`Connected as ${config.userName}`}
-        secondary={config.host}
-        disconnectDescription={disconnectDescriptionOf({ provider: 'gitlab' })}
-        hasHeaderDisconnect={hasHeaderDisconnect}
-        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'gitlab' })}
-      />
+      <div className="flex w-full min-w-0 flex-col gap-2">
+        <IdentityHealthLine workspaceId={workspaceId} binding={gitlab} />
+        <IntegrationConnectedRow
+          provider="gitlab"
+          credentialId={gitlab?.credentialId ?? null}
+          primary={`Connected as ${config.userName}`}
+          secondary={config.host}
+          disconnectDescription={disconnectDescriptionOf({ provider: 'gitlab' })}
+          hasHeaderDisconnect={hasHeaderDisconnect}
+          onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'gitlab' })}
+        />
+      </div>
     );
   }
 

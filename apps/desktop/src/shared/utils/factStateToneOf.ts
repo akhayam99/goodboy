@@ -13,6 +13,7 @@ export const factStateToneOf = ({ tone }: Params): FactState['tone'] => {
     case 'danger':
       return tone;
     case 'primary':
+    case 'unread':
     case 'merged':
     case 'draft':
     case 'neutral':
