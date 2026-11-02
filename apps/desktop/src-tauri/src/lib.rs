@@ -265,7 +265,7 @@ pub fn run() {
                 std::thread::spawn(move || {
                     terminal_scrollback::prune_stale(
                         &dir,
-                        std::time::SystemTime::now(),
+                        util::system_now(),
                         terminal_scrollback::STALE_AFTER,
                     );
                 });

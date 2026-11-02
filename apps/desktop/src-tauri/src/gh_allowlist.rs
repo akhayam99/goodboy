@@ -32,6 +32,7 @@ struct Shape {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Flag {
     name: String,
     #[serde(default)]
@@ -40,7 +41,7 @@ struct Flag {
     values: Option<Vec<String>>,
     #[serde(default)]
     repeat: bool,
-    #[serde(default, rename = "isRequired")]
+    #[serde(default)]
     is_required: bool,
 }
 
