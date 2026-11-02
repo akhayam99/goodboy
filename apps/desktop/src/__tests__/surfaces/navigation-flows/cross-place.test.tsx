@@ -222,7 +222,10 @@ type LeftEdge = {
 
 const visiblePageColumns = (): ReadonlyArray<HTMLElement> =>
   [...document.querySelectorAll<HTMLElement>('main [data-drawer-main] [data-page-column]')].filter(
-    (column) => column.closest('[inert]') === null && column.closest('.invisible') === null,
+    (column) =>
+      column.closest('[inert]') === null &&
+      column.closest('.invisible') === null &&
+      column.closest('[style*="display: none"]') === null,
   );
 
 const columnShape = (column: HTMLElement): string => column.getAttribute('data-width') ?? '';
@@ -440,7 +443,9 @@ const placeRoot = (): Element => {
 };
 
 const isShown = (element: Element): boolean =>
-  element.closest('[inert]') === null && element.closest('.invisible') === null;
+  element.closest('[inert]') === null &&
+  element.closest('.invisible') === null &&
+  element.closest('[style*="display: none"]') === null;
 
 const shown = (selector: string): Element | null =>
   [...placeRoot().querySelectorAll(selector)].find(isShown) ?? null;

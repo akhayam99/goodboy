@@ -32,8 +32,15 @@ export const STUDIO_SKELETON_BODIES: Readonly<Record<StudioSkeletonShape, ReactE
   ),
   room: (
     <div className="flex flex-col gap-6">
+      <div className="flex min-h-8 items-center gap-3">
+        <Skeleton className="size-6 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-40" />
+      </div>
       {BLOCKS.map((block) => (
-        <SkeletonText key={block} lines={2} />
+        <div key={block} className="flex min-w-0 items-start gap-3">
+          <Skeleton className="size-6 shrink-0 rounded-full" />
+          <SkeletonText className="min-w-0 flex-1" lines={2} />
+        </div>
       ))}
       <Skeleton className="h-20 w-full rounded-lg" />
     </div>

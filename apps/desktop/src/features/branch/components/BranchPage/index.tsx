@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
+import { PageColumn, PaneShell } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
@@ -53,6 +53,7 @@ import { PullRequestTab } from '../PullRequestTab';
 import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
+import { BranchScroll } from './BranchScroll';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 const NO_PREFILL = { title: '', body: '' };
@@ -295,8 +296,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     : requestReason === null
       ? { kind: 'allowed' }
       : { kind: 'disabled', reason: requestReason };
-  const isGithubConnected =
-    githubConnection.isResolved === false || githubConnection.isAuthenticated;
+  const isGithubConnected = !githubConnection.isResolved || githubConnection.isAuthenticated;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
@@ -315,7 +315,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'pr') {
       return (
-        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
             <PullRequestTab
               session={session}
@@ -348,7 +348,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               onSelectTab={selectTab}
             />
           </PageColumn>
-        </ScrollFade>
+        </BranchScroll>
       );
     }
     if (tab === 'files') {
@@ -374,9 +374,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'checks') {
       return (
-        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+        <BranchScroll sessionId={sessionId} tab={tab} view={pullRequestView.view}>
           <BranchChecks sessionId={sessionId} mountId={historyMountId} />
-        </ScrollFade>
+        </BranchScroll>
       );
     }
     const visit = {

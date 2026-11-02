@@ -235,7 +235,14 @@ export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export { FoldLayers } from './components/FoldLayers';
 export type { FoldLayersProps } from './components/FoldLayers';
-export { DURATION_BASE_MS, DURATION_QUICK_MS, DURATION_SLOW_MS } from './motionTimings';
+export {
+  DURATION_BASE_MS,
+  DURATION_QUICK_MS,
+  DURATION_SLOW_MS,
+  SKELETON_FADE_MS,
+  SKELETON_HOLD_MS,
+  SKELETON_SHOW_AFTER_MS,
+} from './motionTimings';
 export { canAnimate } from './canAnimate';
 export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
@@ -304,6 +311,17 @@ export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { SkeletonRow } from './components/SkeletonRow';
+export { SkeletonSwap } from './components/SkeletonSwap';
+export { useListMotion } from './useListMotion';
+export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';
+export { ListItemMotion } from './components/ListItemMotion';
+export { HeightMotion } from './components/HeightMotion';
+export { useScrollMemory } from './useScrollMemory';
+export { forgetScrollMemory } from './forgetScrollMemory';
+export { PaneSwap } from './components/PaneSwap';
+export type { PaneLayer } from './components/PaneSwap';
+export { useSkeletonGate } from './useSkeletonGate';
+export type { SkeletonGatePhase } from './useSkeletonGate';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
 export { StatusDot } from './components/StatusDot';

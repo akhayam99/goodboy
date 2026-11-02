@@ -177,11 +177,7 @@ const showPage = (view: RenderResult): string => {
   }
   view.rerender(
     <ToastProvider>
-      <PresetRunPage
-        session={session}
-        focus={{ runId: runIdOfSession(), agentId: null }}
-        isActive
-      />
+      <PresetRunPage session={session} focus={{ runId: runIdOfSession(), agentId: null }} />
     </ToastProvider>,
   );
   return view.container.textContent ?? '';

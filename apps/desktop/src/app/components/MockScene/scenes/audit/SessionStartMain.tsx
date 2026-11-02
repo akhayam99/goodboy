@@ -15,7 +15,7 @@ export const SessionStartMain = () => {
   }
   return (
     <div className="relative h-full w-full">
-      <SessionWorkspace key={session.id} session={session} isActive />
+      <SessionWorkspace key={session.id} session={session} />
     </div>
   );
 };

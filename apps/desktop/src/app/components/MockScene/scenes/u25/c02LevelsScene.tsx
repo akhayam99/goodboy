@@ -132,7 +132,7 @@ export const LevelsScene = ({ config }: Props) => {
           <main className="flex min-w-0 flex-1 flex-col gap-2 p-6" />
         ) : (
           <SessionFrame session={current ?? seed.session}>
-            <SessionWorkspace session={current ?? seed.session} isActive />
+            <SessionWorkspace session={current ?? seed.session} />
           </SessionFrame>
         )}
       </div>

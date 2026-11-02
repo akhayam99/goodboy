@@ -550,6 +550,11 @@ export const openPalette = async (label: RegExp, query?: string): Promise<void> 
 
 export const WAIT = { timeout: 5_000 };
 
+export const shownAll = (selector: string): ReadonlyArray<Element> =>
+  [...document.querySelectorAll(selector)].filter(
+    (node) => node.closest('[style*="display: none"]') === null,
+  );
+
 export const visible = async (role: string, name: RegExp | string): Promise<void> => {
   expect(await screen.findByRole(role, { name }, WAIT)).toBeDefined();
 };

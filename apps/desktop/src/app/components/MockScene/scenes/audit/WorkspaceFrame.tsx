@@ -60,7 +60,7 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         main={
           hasRail ? (
             <SessionFrame session={session}>
-              {main ?? <SessionWorkspace session={session} isActive />}
+              {main ?? <SessionWorkspace session={session} />}
             </SessionFrame>
           ) : (
             main

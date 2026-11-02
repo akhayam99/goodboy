@@ -28,6 +28,7 @@ import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
+import { useBoardMotionKey } from './useBoardMotionKey';
 import { useBoardSelection } from './useBoardSelection';
 import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
@@ -66,6 +67,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
+  const motionResetKey = useBoardMotionKey({ workspaceId });
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady && s.switchingToWorkspaceId == null);
   const workspace = useAppStore(
@@ -227,6 +229,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             nav={nav}
             selection={selection}
             onRestore={onRestore}
+            motionResetKey={motionResetKey}
             onCardEnter={hover.enter}
             onCardLeave={hover.leave}
           />

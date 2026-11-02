@@ -1,6 +1,6 @@
 # The board
 
-The Sessions page shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board.
+The Sessions page shows every session of a workspace, as a board in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes. The list of sessions lives in the sidebar, so the page stays a board. Open a session and come back: the board is as you left it, with the same scroll and the same cards selected.
 
 ### Stage board
 
@@ -38,6 +38,8 @@ This part is for contributors and agents who change the feature.
 
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.
 - Lane window: `StageColumn` draws 50 cards of the `done` and `archived` lanes (`LANE_WINDOW`); selection reads the whole list, so Select all keeps selecting every session. `loadArchivedSessions({ workspaceId, isForced })` serves its cache, joins an in-flight read and re-reads only when forced on window focus (`useArchivedSessionsLoad`). A read that overlapped an archive, restore or delete is dropped (`archivedCacheVersion`), so the action's cache write is never overwritten by the older read.
+- Main region: `App` gives the board (`WorkspaceBoard`, which reads its own sessions), the session frame and the draft to one `PaneSwap`. The layer that leaves stays mounted, inert, for 120 ms while the new one is live, then sits under `Activity`, so the board comes back with the same scroll and selected cards and no new read. `PaneSwap` keeps each scroller's offset, because a hidden layer is `display: none`.
+- Card motion: `StageColumn` draws its cards through `useListMotion` and `ListItemMotion` (`packages/ui`). An arrival fades in with a 4px rise while its height opens over 200 ms, a leaver fades out over 120 ms and then collapses over 200 ms. A change of more than 20 cards, a change of the view prefs or project filter (`motionResetKey`) and reduced motion update in place. Lane travel (a card moving between lanes) and the Needs you wash are not built: a card that changes lane leaves one lane and enters the other.
 - Load gate: `setCurrentWorkspace` sets `boardReady` with the rows, never the PR sweep; `StageBoardCard` reserves the signal width (`card-signal-reserve`).
 - Card signal: `boardSignalOf` reads `attentionWordsOf`, so a new reason needs no second table.
 - Card action in **Needs you**: `attentionPlace` is the place the top bar chip opens.

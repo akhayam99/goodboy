@@ -160,7 +160,7 @@ export const ActivityRunScene = ({
       main={
         isPageFollowed ? (
           <div className="relative h-full w-full">
-            <SessionWorkspace session={session} isActive />
+            <SessionWorkspace session={session} />
           </div>
         ) : isLogShown ? (
           <LogPane session={session} />

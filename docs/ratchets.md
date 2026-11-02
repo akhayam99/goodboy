@@ -140,6 +140,7 @@ test file, unless its row above says otherwise.
 | `scale-rules.baseline.json`                              | type, icon and spacing scale violations                                                              |
 | `disabled-opacity.baseline.json`                         | a disabled control dimmed by hand, not by the role                                                   |
 | `loading-is-a-skeleton.baseline.json`                    | a visible Loading, or a bare Checking, Reading, Fetching or Searching word, where a skeleton belongs |
+| `empty-before-loaded.baseline.json`                      | a file with an empty state, a data read and no loaded flag                                           |
 | `eslint-suppressions.json` (root)                        | the seven typed lint rules                                                                           |
 | `eslint-suppressions-strict.json` (root)                 | the strict pass: bare conditions and loose compares                                                  |
 | `hand-made-chips.baseline.json`                          | hand-rolled status pills                                                                             |

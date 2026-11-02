@@ -26,6 +26,7 @@ type Props = {
   readonly nav: BoardNavigation;
   readonly selection: BoardSelection;
   readonly onRestore: (session: Session) => void;
+  readonly motionResetKey: string;
   readonly onCardEnter: (target: CardHover) => void;
   readonly onCardLeave: () => void;
 };
@@ -43,6 +44,7 @@ export const BoardLanes = ({
   nav,
   selection,
   onRestore,
+  motionResetKey,
   onCardEnter,
   onCardLeave,
 }: Props) => {
@@ -74,6 +76,7 @@ export const BoardLanes = ({
       onClearSelection={selection.clearAll}
       onRestore={onRestore}
       placement={placement}
+      motionResetKey={motionResetKey}
       onCardEnter={onCardEnter}
       onCardLeave={onCardLeave}
     />
@@ -88,6 +91,7 @@ export const BoardLanes = ({
       onRestore={onRestore}
       placement={placement}
       isLoading={isArchivedLoading}
+      motionResetKey={motionResetKey}
       onCardEnter={onCardEnter}
       onCardLeave={onCardLeave}
     />
@@ -119,6 +123,7 @@ export const BoardLanes = ({
             selection={selection}
             onClearSelection={selection.clearAll}
             onRestore={onRestore}
+            motionResetKey={motionResetKey}
             onCardEnter={onCardEnter}
             onCardLeave={onCardLeave}
           />

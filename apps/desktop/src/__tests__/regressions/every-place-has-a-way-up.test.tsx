@@ -229,7 +229,7 @@ describe('every place has a way up', () => {
 
     render(
       <ToastProvider>
-        <SessionWorkspace session={FLOW_SESSION} isActive />
+        <SessionWorkspace session={FLOW_SESSION} />
       </ToastProvider>,
     );
 

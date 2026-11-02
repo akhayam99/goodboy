@@ -9,6 +9,7 @@ import { STUDIO_META } from './studioMeta';
 const SRC = join(__dirname, '..', '..', '..');
 const FEATURES = join(SRC, 'features');
 const WORKSPACE = 'features/session/components/SessionWorkspace/index.tsx';
+const LENS_PANE = 'features/session/components/SessionWorkspace/parts/SessionLensPane.tsx';
 
 const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 
@@ -462,13 +463,16 @@ describe('content column contract', () => {
   });
 
   it('classifies every component the session workspace mounts', () => {
-    const source = read(WORKSPACE);
+    const source = [WORKSPACE, LENS_PANE].map(read).join('\n');
     const mounted = [...source.matchAll(/(?<![\w.])<([A-Z][A-Za-z]+)\b/g)]
       .map((match) => match[1] ?? '')
       .filter(
         (name) =>
           name !== '' &&
           name !== 'Suspense' &&
+          name !== 'PaneSwap' &&
+          name !== 'SkeletonSwap' &&
+          name !== 'SessionLensPane' &&
           name !== 'LensSkeleton' &&
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&

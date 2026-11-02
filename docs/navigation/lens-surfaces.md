@@ -13,6 +13,13 @@
   above its title). The row is fixed (`h-8`, centred, never wraps, a long title
   truncates), no glyph ever indents the title, and the crumb names the structure while
   the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
+- **A lens you leave stays alive.** `SessionWorkspace` gives the lens panes to one
+  `PaneSwap`, keyed by surface, and keeps the last three visited (`LENS_KEEP_ALIVE_CAP`)
+  mounted under `Activity`: scroll, filters and open threads come back as they were, and
+  the panes cross-fade. A lens older than three loses its state; `useScrollMemory`
+  (`packages/ui`, 50 keys, LRU, `<sessionId>|<slot>`) puts the Branch page's scroll back
+  only once its data is loaded, never into the short skeleton, and `evictSession` clears
+  it on delete. After a swap that the user caused, focus moves to the new pane's `h1`.
 - **A first-lap session says where it works in one notice.** Before main is on the
   remote the Overview notices slot holds one row, `Not published yet` with Publish
   (`LapPublishNotice`; Retry when the remote did not answer, `Checking the remote`

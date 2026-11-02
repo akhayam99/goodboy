@@ -660,6 +660,17 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   tests in `remote_image.rs` pin each range and its public neighbours; a new
   range changes both lists.
 
+### Hidden pages
+
+- **A page that is not on screen is hidden under React `Activity`, not unmounted
+  and not kept running.** The board, the session frame and the draft are layers
+  of one `PaneSwap` in `App`; the five kept-alive session pages
+  (`KEEP_ALIVE_CAP`) are each wrapped in `Activity` by `KeepAliveWorkSurface`.
+  A hidden page keeps its state, drafts and pending turns, its effects are
+  cleaned up, and it does not re-render on store writes. A hook that must work
+  for a hidden page cannot live in a page effect: `useSessionBranchSync` runs
+  only for the visible session and re-reads the branch when it shows again.
+
 ### Render errors
 
 - **A render error ends one panel, not the window.** `PanelBoundary`

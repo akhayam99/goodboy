@@ -1,55 +1,31 @@
-import { Suspense, useCallback, useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useCallback, useState } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneShell } from '@goodboy/ui';
-import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
+import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneSwap } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { SessionOverviewPane } from '../SessionOverviewPane';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
 import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
 import { AgentOverlay } from './parts/AgentOverlay';
-import { QuestionsPane } from './parts/QuestionsPane';
-import { FilesPane } from './parts/FilesPane';
+import { SessionLensPane } from './parts/SessionLensPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
-import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
-import { WorkflowsPane } from './parts/WorkflowsPane';
 import { PresetRunPage } from '../PresetRun';
 import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
-import { IntegrationPane } from './parts/IntegrationPane';
-import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
-import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
-import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
-import { lazyNamed } from '../../../../shared/lib/lazyNamed';
-import { LensSkeleton } from './parts/LensSkeleton';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
-import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
 import { SIMPLE_LENSES } from '../../lens-labels';
-import { resolveLensSurface } from '../../lens-surface';
-import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { resolveLensSurface, type LensSurface } from '../../lens-surface';
 import { SessionTrail } from './SessionTrail';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 
-const BranchPage = lazyNamed({
-  load: () => import('../../../branch/components/BranchPage'),
-  pick: ({ BranchPage }) => BranchPage,
-});
+const LENS_KEEP_ALIVE_CAP = 3;
 
-const ArtifactStudio = lazyNamed({
-  load: () => import('../../../artifacts/components/ArtifactStudio'),
-  pick: ({ ArtifactStudio }) => ArtifactStudio,
-});
-
-type SessionWorkspaceProps = {
+type Props = {
   readonly session: Session;
-  readonly isActive: boolean;
 };
 
-export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
-  const sessionId = session.id as SessionId;
-  useSessionBranchSync({ session, isActive });
+export const SessionWorkspace = ({ session }: Props) => {
+  const sessionId: SessionId = session.id;
+  useSessionBranchSync({ session });
   useAskOpenShortcut({ sessionId });
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
@@ -58,40 +34,22 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? null
       : storedActiveLens;
   const up = useAppStore((s) => s.up);
-  const focusedGithubIssueNumber = useAppStore(
-    (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
-  );
-  const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
-  const workingDir = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId }));
-  const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
-  const projectWorktreePath = sessionRepo?.worktreePath ?? null;
-  const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
   const artifactConversationAgentId = useAppStore(
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
   );
-  const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
-  const arePlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
-  const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
-  const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
 
   const lens: LensKind | null = foldedLensOf({ lens: activeLens ?? null });
   const surface = resolveLensSurface({ lens });
-  const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;
-  const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
-  const onRetryOverview = () => {
-    void loadPhaseRunsForSession(sessionId);
-    void loadSessionPlans(sessionId);
-  };
-  const onSelectLens = (next: LensKind) => {
-    openLens({ sessionId, lens: next });
-  };
-  const onSelectOverview = () => {
-    openLens({ sessionId, lens: null });
-  };
+  const [visitedSurfaces, setVisitedSurfaces] = useState<ReadonlyArray<LensSurface>>([surface]);
+  const keptSurfaces = visitedSurfaces.includes(surface)
+    ? visitedSurfaces
+    : [...visitedSurfaces, surface].slice(-LENS_KEEP_ALIVE_CAP);
+  if (keptSurfaces !== visitedSurfaces) {
+    setVisitedSurfaces(keptSurfaces);
+  }
   const runFocus = usePresetRunFocus({ sessionId });
   const surfaceLayer = resolveSessionSurfaceLayer({
     lens,
@@ -101,18 +59,21 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   });
   const showAgentOverlay = surfaceLayer === 'agent';
   const showLens = surfaceLayer === 'lens';
-  const githubTask = useMemo(
-    () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
-    [sessionExternalTasks],
-  );
-  const githubIssueNumber =
-    focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
   const leaveAgentOverlay = useCallback(() => up(), [up]);
 
-  useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive, true);
+  useEscapeLayer(leaveAgentOverlay, showAgentOverlay, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
   const trail = <SessionTrail sessionId={sessionId} />;
+
+  const lensLayers = keptSurfaces.map((target) => ({
+    key: target,
+    content: (
+      <PageTrailContext.Provider value={showLens && target !== 'overview' ? trail : null}>
+        <SessionLensPane session={session} target={target} isShown={showLens} />
+      </PageTrailContext.Provider>
+    ),
+  }));
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
@@ -122,92 +83,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           inert={!showLens}
         >
           <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
-            <PageTrailContext.Provider value={showLens && surface !== 'overview' ? trail : null}>
-              {surface === 'overview' ? (
-                isOverviewLoaded ? (
-                  <SessionOverviewPane session={session} />
-                ) : (
-                  <SessionOverviewLoading
-                    isFreshLayout={isFreshOverviewLayout}
-                    onRetry={onRetryOverview}
-                  />
-                )
-              ) : null}
-              {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-              {lens === 'plans' ? (
-                <Suspense fallback={<LensSkeleton page="artifacts" label="Loading artifacts" />}>
-                  <ArtifactStudio sessionId={sessionId} />
-                </Suspense>
-              ) : null}
-              {lens === 'workflows' ? (
-                <WorkflowsPane session={session} isActive={isActive && showLens} />
-              ) : null}
-              {lens === 'branch' ? (
-                <Suspense fallback={<LensSkeleton page="branch" label="Loading branch" />}>
-                  <BranchPage
-                    session={session}
-                    workingDir={workingDir}
-                    isActive={isActive && showLens}
-                  />
-                </Suspense>
-              ) : null}
-              {lens === 'linear' ? (
-                <IntegrationPane
-                  sessionId={sessionId}
-                  workspaceId={session.workspaceId}
-                  provider="linear"
-                />
-              ) : null}
-              {lens === 'gitlab_issues' ? (
-                <IntegrationPane
-                  sessionId={sessionId}
-                  workspaceId={session.workspaceId}
-                  provider="gitlab"
-                />
-              ) : null}
-              {lens === 'jira_issues' ? (
-                <IntegrationPane
-                  sessionId={sessionId}
-                  workspaceId={session.workspaceId}
-                  provider="jira"
-                />
-              ) : null}
-              {lens === 'slack_threads' ? (
-                <IntegrationPane
-                  sessionId={sessionId}
-                  workspaceId={session.workspaceId}
-                  provider="slack"
-                />
-              ) : null}
-              {lens === 'github_issue' ? (
-                githubIssueNumber != null ? (
-                  <GithubTaskDetail
-                    workspaceId={session.workspaceId}
-                    rootPath={projectWorktreePath}
-                    {...(githubTask != null && { task: githubTask })}
-                    issueNumber={githubIssueNumber}
-                  />
-                ) : (
-                  <PaneShell title="GitHub issue">
-                    <EmptyState
-                      size="section"
-                      icon={CONCEPT_ICONS.github}
-                      tone={CONCEPT_TONE.github}
-                      title="No GitHub issue linked"
-                      description="Link a GitHub issue to this session to see it here."
-                      action={<LinkIssueAction session={session} initialSource="github" />}
-                    />
-                  </PaneShell>
-                )
-              ) : null}
-              {lens === 'files' ? (
-                <FilesPane
-                  sessionId={sessionId}
-                  sessionDir={workingDir}
-                  onClose={onSelectOverview}
-                />
-              ) : null}
-            </PageTrailContext.Provider>
+            <PaneSwap activeKey={surface} layers={lensLayers} shouldFocusTitle={showLens} />
           </PaneBannerContext.Provider>
         </div>
 
@@ -215,7 +91,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           <PaneBannerContext.Provider value={banner}>
             <PageTrailContext.Provider value={trail}>
               <div className="absolute inset-0 z-20 flex flex-col bg-background">
-                <PresetRunPage session={session} focus={runFocus} isActive={isActive} />
+                <PresetRunPage session={session} focus={runFocus} />
               </div>
             </PageTrailContext.Provider>
           </PaneBannerContext.Provider>
@@ -226,7 +102,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <AgentOverlay
                 session={session}
                 sessionId={sessionId}
-                isChatActive={isActive && selectedAgentId != null}
+                isChatActive={selectedAgentId != null}
                 selectedAgentId={selectedAgentId}
                 onBack={leaveAgentOverlay}
               />

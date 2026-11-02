@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { HeightMotion, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
@@ -176,7 +176,11 @@ export const CentralColumn = ({ session }: Props) => {
     <div data-central-column className={PANE_RHYTHM.groups}>
       {shown.map((card) => (
         <Fragment key={card.id}>
-          {cardViewOf({ card })}
+          {card.id === 'needs-you' ? (
+            <HeightMotion>{cardViewOf({ card })}</HeightMotion>
+          ) : (
+            cardViewOf({ card })
+          )}
           {card.id === 'needs-you' ? (
             <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
           ) : null}

@@ -835,7 +835,7 @@ the Tailwind name `animate-pulse` (`--animate-pulse` points at it), so the
 app has one breathing animation, not two: a loading skeleton and a running
 sign share the same period and dip, and the surface they sit on says which
 one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `studio-body-in`,
+`nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
 `drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `level-in-forward`,
@@ -844,6 +844,15 @@ one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
+
+**Skeleton timing.** One hook, `useSkeletonGate`, and one swap component,
+`SkeletonSwap`, in the UI package hold the rule for every skeleton: nothing
+shows for the first 120 ms (`SKELETON_SHOW_AFTER_MS`), a skeleton that has
+appeared stays at least 160 ms (`SKELETON_HOLD_MS`), and it fades out over
+120 ms (`SKELETON_FADE_MS`) from the moment the data is there and the hold is
+met. The rule applies to the first mount per key: a mount that already has
+data shows content at once, and a refresh never brings a skeleton back.
+Reduced motion swaps in place at the same times.
 
 **Three durations, two curves.** Every transition and animation takes one of
 `--duration-quick` (120ms: a popover, a fade, anything that leaves),

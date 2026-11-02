@@ -279,7 +279,7 @@ afterEach(cleanup);
 describe('SessionWorkspace agent overlay', () => {
   it('gives a workflow agent no trail band and no second ladder', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
@@ -297,7 +297,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.selectedAgentId = { [SESSION_ID]: adHocAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [adHocAgent] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
     expect(screen.queryByRole('separator', { name: 'Resize workflow step inspector' })).toBeNull();
@@ -317,7 +317,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe('resolver-1');
     expect(trailBands()).toBe(0);
@@ -351,7 +351,7 @@ describe('SessionWorkspace agent overlay', () => {
       ],
     });
 
-    render(<SessionWorkspace session={workflowSession} isActive />);
+    render(<SessionWorkspace session={workflowSession} />);
 
     expect(screen.queryByText('Part of')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
@@ -372,7 +372,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe('resolver-1');
     expect(screen.queryByTestId('agent-inspector')).toBeNull();
@@ -385,7 +385,7 @@ describe('SessionWorkspace agent overlay', () => {
       workflowRunId: undefined,
     });
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
     expect(screen.getByTestId('agents-lane')).toBeDefined();
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe(standaloneAgent.id);
@@ -398,7 +398,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByRole('status', { name: 'Loading branch' })).toBeDefined();
     expect(await screen.findByTestId('branch-page')).toBeDefined();
@@ -409,7 +409,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
@@ -421,7 +421,7 @@ describe('SessionWorkspace code host routing', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
@@ -431,7 +431,7 @@ describe('SessionWorkspace code host routing', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
@@ -448,7 +448,7 @@ describe('SessionWorkspace agents lens', () => {
     store.selectedAgentId = {};
     store.sessionPhaseRuns = { [SESSION_ID]: [standalone] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('agents-lane')).toBeDefined();
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
@@ -482,7 +482,7 @@ describe('SessionWorkspace pane metadata', () => {
       ],
     };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.queryByTestId('pane-meta-agents')).toBeNull();
     expect(screen.queryByText(/\d+ running, \d+ done/)).toBeNull();
@@ -494,7 +494,7 @@ describe('SessionWorkspace overview layout', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.queryByTestId('repo-scope-bar')).toBeNull();
   });
@@ -504,17 +504,17 @@ describe('SessionWorkspace page header', () => {
   it('draws no trail band on any page: the path is the sidebar back row', async () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
-    const view = render(<SessionWorkspace session={session} isActive />);
+    const view = render(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
 
     store.activeLens = { [SESSION_ID]: 'branch' };
-    view.rerender(<SessionWorkspace session={session} isActive />);
+    view.rerender(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
     expect((await screen.findByTestId('branch-page')).textContent).toBe('');
 
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
-    view.rerender(<SessionWorkspace session={session} isActive />);
+    view.rerender(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
   });
 
@@ -523,7 +523,7 @@ describe('SessionWorkspace page header', () => {
     store.selectedAgentId = { [SESSION_ID]: 'agent-not-loaded' };
     store.sessionPhaseRuns = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByRole('status', { name: 'Loading' })).toBeDefined();
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
@@ -534,7 +534,7 @@ describe('SessionWorkspace page header', () => {
     store.selectedAgentId = { [SESSION_ID]: 'agent-gone' };
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByText('This agent is no longer in this session')).toBeDefined();
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
@@ -542,12 +542,12 @@ describe('SessionWorkspace page header', () => {
 
   it('does not unmount the ancestor lens when a child is selected', () => {
     store.selectedAgentId = {};
-    const view = render(<SessionWorkspace session={session} isActive />);
+    const view = render(<SessionWorkspace session={session} />);
 
     expect(hooks.agentsLaneMounts).toBe(1);
 
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
-    view.rerender(<SessionWorkspace session={session} isActive />);
+    view.rerender(<SessionWorkspace session={session} />);
 
     expect(hooks.agentsLaneMounts).toBe(1);
     expect(hooks.agentsLaneUnmounts).toBe(0);
@@ -577,7 +577,7 @@ describe('SessionWorkspace page header', () => {
       ],
     });
 
-    render(<SessionWorkspace session={workflowSession} isActive />);
+    render(<SessionWorkspace session={workflowSession} />);
 
     expect(screen.queryByText('Part of')).toBeNull();
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
@@ -585,14 +585,30 @@ describe('SessionWorkspace page header', () => {
   });
 });
 
+const showSkeleton = () => {
+  act(() => {
+    vi.advanceTimersByTime(120);
+  });
+};
+
 describe('SessionWorkspace overview', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the overview skeleton while agents have never loaded', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
     store.sessionPhaseRuns = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+    showSkeleton();
     expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
@@ -602,7 +618,8 @@ describe('SessionWorkspace overview', () => {
     store.selectedAgentId = {};
     store.sessionPlans = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
+    showSkeleton();
 
     expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
@@ -615,7 +632,8 @@ describe('SessionWorkspace overview', () => {
     store.sessionPlans = {};
     store.sessionLoading = { [SESSION_ID]: { agents: false, plans: false } };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
+    showSkeleton();
 
     expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
@@ -626,7 +644,7 @@ describe('SessionWorkspace overview', () => {
     store.selectedAgentId = {};
     store.sessionLoading = { [SESSION_ID]: { agents: false, plans: false } };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
@@ -639,7 +657,8 @@ describe('SessionWorkspace overview', () => {
     store.sessionPhaseRuns = {};
     store.sessionPlans = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
+    showSkeleton();
 
     expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
 
@@ -673,7 +692,7 @@ describe('SessionWorkspace github issue lens', () => {
     store.selectedAgentId = {};
     store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('github-task-detail').textContent).toBe('42');
   });
@@ -684,7 +703,7 @@ describe('SessionWorkspace github issue lens', () => {
     store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
     store.focusedGithubIssueNumber = { [SESSION_ID]: 99 };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('github-task-detail').textContent).toBe('99');
   });
@@ -694,11 +713,31 @@ describe('SessionWorkspace github issue lens', () => {
     store.selectedAgentId = {};
     store.sessionExternalTasks = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
     expect(screen.queryByTestId('github-task-detail')).toBeNull();
     expect(screen.getByTestId('link-work-action').textContent).toBe('Link work from github');
+  });
+
+  it('keeps a visited lens mounted and hidden while another lens shows', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.focusedGithubIssueNumber = { [SESSION_ID]: 12 };
+
+    const { rerender, container } = render(<SessionWorkspace session={session} />);
+    const detail = screen.getByTestId('github-task-detail');
+
+    store.activeLens = { [SESSION_ID]: null };
+    rerender(<SessionWorkspace session={session} />);
+
+    expect(screen.getByTestId('github-task-detail')).toBe(detail);
+    expect(
+      container.querySelector('[data-pane-layer="github_issue"]')?.getAttribute('data-pane-state'),
+    ).not.toBe('active');
+    expect(
+      container.querySelector('[data-pane-layer="overview"]')?.getAttribute('data-pane-state'),
+    ).toBe('active');
   });
 
   it('swaps the empty state for the linked issue once linking writes an external task', () => {
@@ -706,13 +745,13 @@ describe('SessionWorkspace github issue lens', () => {
     store.selectedAgentId = {};
     store.sessionExternalTasks = {};
 
-    const { rerender } = render(<SessionWorkspace session={session} isActive />);
+    const { rerender } = render(<SessionWorkspace session={session} />);
 
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
     fireEvent.click(screen.getByTestId('link-work-action'));
 
     store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
-    rerender(<SessionWorkspace session={session} isActive />);
+    rerender(<SessionWorkspace session={session} />);
 
     expect(screen.queryByText('No GitHub issue linked')).toBeNull();
     expect(screen.getByTestId('github-task-detail').textContent).toBe('42');
@@ -724,7 +763,7 @@ describe('SessionWorkspace github issue lens', () => {
     store.sessionExternalTasks = {};
     store.focusedGithubIssueNumber = { [SESSION_ID]: 12 };
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('github-task-detail').textContent).toBe('12');
     expect(screen.queryByText('No GitHub issue linked')).toBeNull();
@@ -741,7 +780,7 @@ describe('SessionWorkspace integration lenses', () => {
     store.activeLens = { [SESSION_ID]: lens };
     store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+    render(<SessionWorkspace session={session} />);
 
     expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
   });
@@ -754,7 +793,7 @@ describe('SessionWorkspace context routing', () => {
       store.activeLens = { [SESSION_ID]: lens };
       store.selectedAgentId = {};
 
-      render(<SessionWorkspace session={session} isActive />);
+      render(<SessionWorkspace session={session} />);
 
       expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
     },

@@ -6,11 +6,10 @@ import { AppShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
 import { BootSplashExit } from './app/components/BootSplash/BootSplashExit';
-import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
+import { MainRegion } from './app/components/MainRegion';
 import { AppTopBar } from './app/components/AppTopBar';
 import { useAppShortcuts } from './app/hooks/useAppShortcuts';
 import { useAppOverlays } from './app/hooks/useAppOverlays';
-import { StageBoard } from './features/workspace/components/StageBoard';
 import { ToastProvider } from './shared/components/Toast';
 import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
@@ -18,13 +17,11 @@ import { AwayAlertsBridge } from './features/notifications/components/AwayAlerts
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { ScriptEndToastBridge } from './features/scripts/components/ScriptEndToastBridge';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
-import { SessionDraftPane } from './features/session/components/SessionDraftPane';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { RowActionsCueBridge } from './app/components/RowActionsCueBridge';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
-import { SessionFrame } from './app/components/SessionRail/SessionFrame';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -50,7 +47,7 @@ import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import { useArtifactMirror } from './features/artifacts/hooks/useArtifactMirror';
 import { useMonitoringSignalRefresh } from './features/monitoring/hooks/useMonitoringSignalRefresh';
-import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessions } from './store';
+import { useAppStore, useCurrentSession, useCurrentWorkspace } from './store';
 import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
 import { useRunWatchdog } from './features/workflows/hooks/useRunWatchdog';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
@@ -94,7 +91,6 @@ export const App = () => {
       : primaryProjectRoot({ projects: s.projects, workspaceId: currentWorkspaceId }),
   );
   const currentSession = useCurrentSession();
-  const currentWorkspaceSessions = useSessions();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
   const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
   const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
@@ -348,23 +344,13 @@ export const App = () => {
           drawerSizing={drawerSizing}
           drawerPlacement={drawerPlacement}
           main={
-            <div className="relative h-full w-full">
-              {currentSession ? (
-                <SessionFrame session={currentSession}>
-                  {deferredRenderedIds.map((id) => (
-                    <KeepAliveWorkSurface
-                      key={id}
-                      sessionId={id}
-                      isActive={id === deferredActiveId}
-                    />
-                  ))}
-                </SessionFrame>
-              ) : isDraftShown ? (
-                <SessionDraftPane workspaceId={currentWorkspace.id} />
-              ) : (
-                <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
-              )}
-            </div>
+            <MainRegion
+              workspaceId={currentWorkspace.id}
+              currentSession={currentSession}
+              isDraftShown={isDraftShown}
+              renderedIds={deferredRenderedIds}
+              activeId={deferredActiveId}
+            />
           }
           studio={studio}
         />

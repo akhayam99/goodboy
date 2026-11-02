@@ -39,7 +39,7 @@ export const BreadcrumbsScene = ({ theme, placeId }: Props) => {
   return (
     <>
       {spec.handlers === null ? null : <SceneTauri handlers={spec.handlers} />}
-      <ShellFrame session={session} main={<SessionWorkspace session={session} isActive />} />
+      <ShellFrame session={session} main={<SessionWorkspace session={session} />} />
     </>
   );
 };

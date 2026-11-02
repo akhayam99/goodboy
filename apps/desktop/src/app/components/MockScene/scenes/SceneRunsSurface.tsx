@@ -12,5 +12,5 @@ export const SceneRunsSurface = ({ session }: Props) => {
   if (focus === null) {
     return <WorkflowsPane session={session} />;
   }
-  return <SessionWorkspace session={session} isActive />;
+  return <SessionWorkspace session={session} />;
 };

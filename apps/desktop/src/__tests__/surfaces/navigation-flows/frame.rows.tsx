@@ -34,7 +34,7 @@ const titleRowOf = (title: HTMLElement): HTMLElement | null =>
 
 const onlyH1 = ({ scope }: { readonly scope: ParentNode }): HTMLElement => {
   const titles = [...scope.querySelectorAll<HTMLElement>('h1')].filter(
-    (title) => title.closest('.invisible, [inert], [hidden]') === null,
+    (title) => title.closest('.invisible, [inert], [hidden], [style*="display: none"]') === null,
   );
   expect(titles).toHaveLength(1);
   return titles[0] as HTMLElement;

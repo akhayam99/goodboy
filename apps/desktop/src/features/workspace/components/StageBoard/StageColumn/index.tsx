@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Button, cn, EmptyState, Eyebrow, ScrollFade, SkeletonRow, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  EmptyState,
+  Eyebrow,
+  ListItemMotion,
+  ScrollFade,
+  Tooltip,
+  useListMotion,
+} from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -8,6 +17,7 @@ import {
 } from '../../../../../shared/utils/statePresentation';
 import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
 import { StageBoardCard } from '../StageBoardCard';
+import { ColumnSkeleton } from './ColumnSkeleton';
 import { DoneLaneMenu } from './DoneLaneMenu';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
@@ -63,6 +73,7 @@ type StageColumnProps = {
   readonly onRestore: (session: Session) => void;
   readonly placement?: 'lane' | 'half';
   readonly isLoading?: boolean;
+  readonly motionResetKey?: string;
   readonly onCardEnter?: (target: CardHover) => void;
   readonly onCardLeave?: () => void;
 };
@@ -76,6 +87,7 @@ export const StageColumn = ({
   onRestore,
   placement = 'lane',
   isLoading = false,
+  motionResetKey = '',
   onCardEnter,
   onCardLeave,
 }: StageColumnProps) => {
@@ -87,6 +99,10 @@ export const StageColumn = ({
   const isWindowed = view.key === 'done' || view.key === 'archived';
   const hiddenCount = isWindowed && !isWindowOpen ? Math.max(0, sessions.length - LANE_WINDOW) : 0;
   const drawn = hiddenCount === 0 ? sessions : sessions.slice(0, LANE_WINDOW);
+  const motion = useListMotion({
+    items: drawn.map((session) => ({ key: session.id, value: session })),
+    resetKey: motionResetKey,
+  });
 
   return (
     <div
@@ -116,7 +132,7 @@ export const StageColumn = ({
         {view.key === 'done' && !isEmpty && !isLoading && <DoneLaneMenu sessions={sessions} />}
       </div>
 
-      {isLoading && <SkeletonRow label="Loading sessions" />}
+      {isLoading && <ColumnSkeleton label="Loading sessions" />}
 
       {!isLoading && isEmpty && (
         <EmptyState
@@ -134,20 +150,21 @@ export const StageColumn = ({
               PANE_RHYTHM.board.cardGap,
             )}
           >
-            {drawn.map((session) => (
-              <StageBoardCard
-                key={session.id}
-                session={session}
-                nav={nav}
-                archived={view.archived}
-                selected={isSelected(session.id as SessionId)}
-                onModifierClick={selection.onItemClick}
-                getSelectedIds={selection.getSelectedIds}
-                onClearSelection={onClearSelection}
-                onRestore={onRestore}
-                onHoverEnter={onCardEnter}
-                onHoverLeave={onCardLeave}
-              />
+            {motion.map((entry) => (
+              <ListItemMotion key={entry.key} phase={entry.phase}>
+                <StageBoardCard
+                  session={entry.value}
+                  nav={nav}
+                  archived={view.archived}
+                  selected={isSelected(entry.value.id as SessionId)}
+                  onModifierClick={selection.onItemClick}
+                  getSelectedIds={selection.getSelectedIds}
+                  onClearSelection={onClearSelection}
+                  onRestore={onRestore}
+                  onHoverEnter={onCardEnter}
+                  onHoverLeave={onCardLeave}
+                />
+              </ListItemMotion>
             ))}
             {hiddenCount > 0 && (
               <Button

@@ -10,10 +10,9 @@ import { PresetRunBody } from './PresetRunBody';
 type Props = {
   readonly session: Session;
   readonly focus: PresetRunFocus;
-  readonly isActive: boolean;
 };
 
-export const PresetRunPage = ({ session, focus, isActive }: Props) => {
+export const PresetRunPage = ({ session, focus }: Props) => {
   const attached =
     useAttachedWorkflowRuns({ session }).find(({ run }) => run.id === focus.runId) ?? null;
   const agent = useAppStore(
@@ -22,7 +21,7 @@ export const PresetRunPage = ({ session, focus, isActive }: Props) => {
         (candidate) => candidate.id === focus.agentId,
       ) ?? null,
   );
-  useEscapeLayer(() => leaveRunLevel({ sessionId: session.id }), isActive && agent === null);
+  useEscapeLayer(() => leaveRunLevel({ sessionId: session.id }), agent === null);
   if (attached === null) {
     return null;
   }
@@ -34,7 +33,6 @@ export const PresetRunPage = ({ session, focus, isActive }: Props) => {
           run={attached.run}
           workflow={attached.workflow}
           agent={agent}
-          isActive={isActive}
         />
       </RunWorkTime>
     </div>

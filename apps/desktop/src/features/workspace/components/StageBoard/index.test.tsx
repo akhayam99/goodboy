@@ -41,6 +41,7 @@ vi.mock('../../../../store', () => ({
     quietReasons: [],
   }),
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
+  useSelectedProjectIds: () => [],
   useSessionViewPrefs: () => ({
     sort: 'needsYou',
     group: 'none',

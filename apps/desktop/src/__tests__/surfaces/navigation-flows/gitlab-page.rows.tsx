@@ -143,7 +143,11 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
         expect(sectionLabels()).toHaveLength(5);
       }, WAIT);
       expect((await screen.findAllByText(/MR !42/, undefined, WAIT)).length).toBeGreaterThan(0);
-      expect(screen.queryByText(/pull request/i)).toBeNull();
+      expect(
+        screen
+          .queryAllByText(/pull request/i)
+          .filter((node) => node.closest('[style*="display: none"]') === null),
+      ).toHaveLength(0);
     },
   },
   {

@@ -1139,6 +1139,9 @@ u34-plan-revising
 u34-question-card-states
 u34-t26-lane-window
 u34-t26-pr-slot
+u34-t33-overview-loading
+u34-t34-column-loading
+u34-t37-pr-page-loading
 u34-t52-long-transcript
 u34-u12-failure
 u34-u12-provider

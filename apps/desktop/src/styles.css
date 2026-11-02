@@ -236,7 +236,13 @@
      out. Keyframes live under prefers-reduced-motion: no-preference. */
   --animate-nav-step-in: nav-step-in var(--duration-base) var(--ease-enter);
 
-  --animate-nav-step-out: nav-step-out var(--duration-base) var(--ease-exit);
+  --animate-nav-step-in-back: nav-step-in-back var(--duration-base) var(--ease-enter);
+
+  --animate-pane-in: pane-in var(--duration-base) var(--ease-enter);
+
+  --animate-pane-out: pane-out var(--duration-quick) var(--ease-exit) forwards;
+
+  --animate-item-out: item-out var(--duration-quick) var(--ease-exit) forwards;
 
   --animate-popover-in: popover-in var(--duration-quick) var(--ease-enter);
 
@@ -546,7 +552,36 @@
     }
   }
 
-  @keyframes nav-step-out {
+  @keyframes pane-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pane-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes item-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes nav-step-in-back {
     from {
       opacity: 0;
       transform: translateX(-12px);

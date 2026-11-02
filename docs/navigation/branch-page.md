@@ -226,7 +226,7 @@ detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3
 `Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
 `Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
 queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
-someone pushed online). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+someone pushed online). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
 the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
 requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
 `pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on

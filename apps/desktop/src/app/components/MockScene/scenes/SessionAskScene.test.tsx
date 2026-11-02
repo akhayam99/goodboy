@@ -123,7 +123,11 @@ describe('the session Ask scene', () => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
-    expect(screen.queryByTestId('overview-title')).toBeNull();
+    expect(
+      screen
+        .queryAllByTestId('overview-title')
+        .filter((title) => title.closest('[style*="display: none"]') === null),
+    ).toHaveLength(0);
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'question',
       sessionId: SESSION.id,

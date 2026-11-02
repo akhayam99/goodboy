@@ -57,7 +57,7 @@ afterEach(() => {
 
 describe('useSessionBranchSync', () => {
   it('reads the branch off disk once the session is on screen', async () => {
-    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    renderHook(() => useSessionBranchSync({ session }));
 
     await waitFor(() =>
       expect(h.reconcileSessionBranch).toHaveBeenCalledWith({
@@ -70,7 +70,7 @@ describe('useSessionBranchSync', () => {
   });
 
   it('reads it again when a turn ends, even though no file changed', async () => {
-    const { rerender } = renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    const { rerender } = renderHook(() => useSessionBranchSync({ session }));
     await waitFor(() => expect(h.status).toHaveBeenCalledTimes(1));
 
     h.lastTurnFinishedAt = '2026-08-27T10:00:00.000Z';
@@ -79,19 +79,13 @@ describe('useSessionBranchSync', () => {
     await waitFor(() => expect(h.status).toHaveBeenCalledTimes(2));
   });
 
-  it('leaves a session alone while it is off screen', () => {
-    renderHook(() => useSessionBranchSync({ session, isActive: false }));
-
-    expect(h.status).not.toHaveBeenCalled();
-  });
-
   it('reads the online copy when the branch differs from it', async () => {
     h.status.mockResolvedValueOnce({
       branch: 'ak/renamed-by-an-agent',
       upstreamDistance: { kind: 'known', ahead: 2, behind: 1 },
     });
 
-    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    renderHook(() => useSessionBranchSync({ session }));
 
     await waitFor(() =>
       expect(h.invokeCommand).toHaveBeenCalledWith(
@@ -110,7 +104,7 @@ describe('useSessionBranchSync', () => {
       upstreamDistance: { kind: 'known', ahead: 2, behind: 0 },
     });
 
-    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    renderHook(() => useSessionBranchSync({ session }));
     await waitFor(() => expect(h.reconcileSessionBranch).toHaveBeenCalled());
 
     expect(h.invokeCommand).not.toHaveBeenCalled();
@@ -123,7 +117,7 @@ describe('useSessionBranchSync', () => {
     });
     h.invokeCommand.mockRejectedValueOnce(new Error('offline'));
 
-    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    renderHook(() => useSessionBranchSync({ session }));
 
     await waitFor(() =>
       expect(h.reportError).toHaveBeenCalledWith(

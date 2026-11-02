@@ -5459,10 +5459,10 @@
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.test.tsx": {

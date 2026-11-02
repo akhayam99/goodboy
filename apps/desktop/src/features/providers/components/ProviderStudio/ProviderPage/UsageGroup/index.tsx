@@ -1,6 +1,15 @@
 import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Band, Button, Notice, RefreshIconButton, Skeleton, cn } from '@goodboy/ui';
+import {
+  BAND_ROW_CLASS,
+  Band,
+  Button,
+  Notice,
+  RefreshIconButton,
+  Skeleton,
+  SkeletonRow,
+  cn,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../../../store';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { useAutoDetour } from '../../../../hooks/useAutoDetour';
@@ -51,7 +60,8 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const isClaudeOut =
     providerId === 'anthropic' &&
     windows.some((window) => window.status === 'reached' || (window.usedFraction ?? 0) >= 1);
-  const status = isChecking || lastAge === null ? null : `Updated ${lastAge}`;
+  const isFirstCheck = isChecking && lastAge === null;
+  const status = lastAge === null ? null : `Updated ${lastAge}`;
 
   return (
     <div id={USAGE_SECTION_ID} className="flex scroll-mt-4 flex-col gap-2">
@@ -61,7 +71,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
         action={
           billing === 'token' || !reports ? undefined : (
             <div className="flex items-center gap-1">
-              {isChecking ? <Skeleton className="h-3 w-16" /> : null}
+              {isFirstCheck ? <Skeleton className="h-3 w-20 rounded-sm" /> : null}
               {status === null ? null : (
                 <span className="text-meta text-faint-foreground">{status}</span>
               )}
@@ -80,6 +90,9 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
           <p className={cn(BAND_ROW_CLASS, 'text-meta text-muted-foreground')}>
             Billed per token by your key. No usage windows.
           </p>
+        ) : null}
+        {billing === 'plan' && windows.length === 0 && isFirstCheck ? (
+          <SkeletonRow label={`Checking ${label} usage`} />
         ) : null}
         {billing === 'plan' && windows.length > 0 ? (
           <ul aria-label={`${label} usage windows`} className="flex flex-col">

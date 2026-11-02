@@ -106,7 +106,7 @@ export const C09OrchestratedScene = ({
         <DrawerColumn
           main={
             <SessionFrame session={session}>
-              <SessionWorkspace session={session} isActive />
+              <SessionWorkspace session={session} />
             </SessionFrame>
           }
           drawer={isDrawerOpen ? <DrawerHost /> : null}

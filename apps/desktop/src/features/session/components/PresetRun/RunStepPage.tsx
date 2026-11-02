@@ -13,10 +13,9 @@ type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly agent: Agent;
-  readonly isActive: boolean;
 };
 
-export const RunStepPage = ({ session, view, agent, isActive }: Props) => {
+export const RunStepPage = ({ session, view, agent }: Props) => {
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const stepAgent = resolveRootAgent({ agents: phaseRuns, agentId: agent.id });
   return (
@@ -24,7 +23,7 @@ export const RunStepPage = ({ session, view, agent, isActive }: Props) => {
       key={agent.id}
       session={session}
       agent={agent}
-      isChatActive={isActive}
+      isChatActive
       onBack={() => leaveRunLevel({ sessionId: session.id })}
       runStep={{
         heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={view.workflow} />,

@@ -13,6 +13,7 @@ import {
   getSection,
   openCrumb,
   settle,
+  shownAll,
   useAppStore,
 } from './harness';
 
@@ -20,24 +21,21 @@ const SECOND_MOUNT_ID = 'navigation-mount-second-branch' as MountId;
 const SECOND_BRANCH = 'cs/second-branch';
 const SECOND_PATH = '/work/cascade-second-branch';
 
-const trailBands = (): number => document.querySelectorAll('main [data-slot="trail-bar"]').length;
+const trailBands = (): number => shownAll('main [data-slot="trail-bar"]').length;
 
 const currentWorktree = (): string =>
-  document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]')
-    ?.textContent ?? '';
+  shownAll('[data-level-layer="session"]:not([inert]) [data-worktree-current]')[0]?.textContent ??
+  '';
 
 const headerColumn = (): string | null =>
-  document
-    .querySelector('[data-slot="pane-header"] [data-page-column]')
-    ?.getAttribute('data-width') ??
-  document
-    .querySelector('[data-slot="pane-header"]')
+  shownAll('[data-slot="pane-header"] [data-page-column]')[0]?.getAttribute('data-width') ??
+  shownAll('[data-slot="pane-header"]')[0]
     ?.closest('[data-page-column]')
     ?.getAttribute('data-width') ??
   null;
 
 const bodyColumns = (): ReadonlyArray<string | null> =>
-  Array.from(document.querySelectorAll('[data-slot="pane-body"] [data-page-column]'))
+  shownAll('[data-slot="pane-body"] [data-page-column]')
     .filter((column) => column.parentElement?.closest('[data-page-column]') === null)
     .map((column) => column.getAttribute('data-width'));
 
@@ -89,7 +87,7 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 };
 
 const paneHeading = (): string | null =>
-  document.querySelector('[data-slot="pane-header"] h1')?.textContent ?? null;
+  shownAll('[data-slot="pane-header"] h1')[0]?.textContent ?? null;
 
 const openBranchPage = (): Promise<void> => openCrumb(/Branch/);
 

@@ -320,5 +320,12 @@
     "count": 11,
     "reason": "first measure of the reading order guard that ux29 F2 adds; owner approved 29/10; the ledger only falls from here",
     "release": "0.29.0"
+  },
+  {
+    "rule": "new",
+    "file": "apps/desktop/src/__tests__/regressions/empty-before-loaded.baseline.json",
+    "count": 22,
+    "reason": "first measure of the guard that ux34 PR 78 adds; the ledger only falls from here",
+    "release": "0.31.0"
   }
 ]
