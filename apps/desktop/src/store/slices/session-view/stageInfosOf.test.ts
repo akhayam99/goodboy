@@ -13,7 +13,6 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -35,7 +34,7 @@ beforeEach(async () => {
   seedColumn({
     store: useAppStore,
     sessions: [current, sessionOf({ goal: 'Fix rounding' })],
-    currentSessionId: current.id as SessionId,
+    currentSessionId: current.id,
   });
 });
 

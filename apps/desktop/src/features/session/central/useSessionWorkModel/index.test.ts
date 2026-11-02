@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AgentId, SessionId } from '@goodboy/types';
+import { brandId, type AgentId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -41,7 +41,7 @@ describe('useSessionWorkModel per-id selectors', () => {
     seedColumn({
       store: useAppStore,
       sessions: [session],
-      currentSessionId: session.id as SessionId,
+      currentSessionId: session.id,
     });
     useAppStore.setState({
       loadSessionEvents: async () => undefined,
@@ -59,7 +59,7 @@ describe('useSessionWorkModel per-id selectors', () => {
 
     act(() => {
       useAppStore.setState({
-        agentKindOverride: { ['agent-of-another-session' as AgentId]: 'planner' },
+        agentKindOverride: { [brandId<AgentId>({ value: 'agent-of-another-session' })]: 'planner' },
       });
     });
 

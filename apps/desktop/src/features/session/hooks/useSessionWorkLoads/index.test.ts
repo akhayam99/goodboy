@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -22,8 +22,8 @@ import {
 } from '../../../../store/storyHarness';
 import { useSessionWorkLoads } from '.';
 
-const FIRST = 'session-northwind' as SessionId;
-const SECOND = 'session-cascadia' as SessionId;
+const FIRST = brandId<SessionId>({ value: 'session-northwind' });
+const SECOND = brandId<SessionId>({ value: 'session-cascadia' });
 
 let useAppStore: StoryStore;
 

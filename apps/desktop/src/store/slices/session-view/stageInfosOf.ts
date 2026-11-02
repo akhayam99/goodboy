@@ -16,10 +16,10 @@ type SameInputsParams = {
 };
 
 const areInputsSame = ({ first, second }: SameInputsParams): boolean => {
-  const firstKeys = Object.keys(first) as ReadonlyArray<keyof StageInfoState>;
+  const entries = Object.entries(first);
   return (
-    firstKeys.length === Object.keys(second).length &&
-    firstKeys.every((key) => Object.is(first[key], second[key]))
+    entries.length === Object.keys(second).length &&
+    entries.every(([key, value]) => Object.is(value, Reflect.get(second, key)))
   );
 };
 

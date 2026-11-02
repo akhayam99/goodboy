@@ -5634,7 +5634,7 @@
       "count": 2
     },
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/questionsLensModel.test.ts": {
@@ -7872,11 +7872,6 @@
   "apps/desktop/src/shared/lib/dbBoot.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/shared/lib/highlight/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/shared/lib/highlight/languages.ts": {

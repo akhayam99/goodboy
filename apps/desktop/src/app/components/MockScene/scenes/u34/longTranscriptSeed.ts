@@ -1,13 +1,14 @@
-import type {
-  Agent,
-  AgentId,
-  Project,
-  ProjectId,
-  ProviderRunId,
-  Session,
-  SessionId,
-  Workspace,
-  WorkspaceId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type Project,
+  type ProjectId,
+  type ProviderRunId,
+  type Session,
+  type SessionId,
+  type Workspace,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { sceneClock } from '../../sceneClock';
 
@@ -15,11 +16,15 @@ const clock = sceneClock({ anchor: '2026-09-07T09:12:00.000Z' });
 
 export const LONG_TRANSCRIPT_ROWS = 3000;
 
-export const LONG_TRANSCRIPT_WORKSPACE_ID = 'mock-long-transcript-workspace' as WorkspaceId;
-export const LONG_TRANSCRIPT_SESSION_ID = 'mock-long-transcript-session' as SessionId;
-export const LONG_TRANSCRIPT_AGENT_ID = 'mock-long-transcript-agent' as AgentId;
-const PROJECT_ID = 'mock-long-transcript-project' as ProjectId;
-const RUN_ID = 'mock-long-transcript-run' as ProviderRunId;
+export const LONG_TRANSCRIPT_WORKSPACE_ID = brandId<WorkspaceId>({
+  value: 'mock-long-transcript-workspace',
+});
+export const LONG_TRANSCRIPT_SESSION_ID = brandId<SessionId>({
+  value: 'mock-long-transcript-session',
+});
+export const LONG_TRANSCRIPT_AGENT_ID = brandId<AgentId>({ value: 'mock-long-transcript-agent' });
+const PROJECT_ID = brandId<ProjectId>({ value: 'mock-long-transcript-project' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'mock-long-transcript-run' });
 const NOW = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
 const OVERRIDES = {

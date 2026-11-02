@@ -48,9 +48,8 @@ export const LongTranscriptScene = () => {
       navigate: () => undefined,
       markAgentViewed: async () => undefined,
       refreshProviders: async () => undefined,
-      ensureProjectMounted: async () => undefined,
       recordSessionEvent: async () => undefined,
-    } as never);
+    });
     setIsSeeded(true);
   }, []);
 
